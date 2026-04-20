@@ -1,0 +1,184 @@
+@functions {
+    string CurrentController => (ViewContext.RouteData.Values["controller"] as string ?? "").ToLowerInvariant();
+    string CurrentAction => (ViewContext.RouteData.Values["action"] as string ?? "").ToLowerInvariant();
+
+    bool IsActive(string controller, string action) =>
+        CurrentController == controller.ToLowerInvariant() && CurrentAction == action.ToLowerInvariant();
+
+    string NavClass(string controller, string action = "Index") => IsActive(controller, action)
+        ? "text-[#1DB954] font-bold border-l-4 border-[#1DB954] pl-4 flex items-center gap-x-4 transition-colors duration-300"
+        : "text-slate-400 font-medium pl-4 hover:text-white flex items-center gap-x-4 transition-colors duration-300";
+
+    string IconStyle(string controller, string action = "Index") =>
+        IsActive(controller, action) ? "font-variation-settings: 'FILL' 1;" : "";
+}
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>@ViewData["Title"] - Glosify</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary-fixed-variant": "#881d28",
+                        "on-tertiary-fixed": "#400009",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-highest": "#27354c",
+                        "surface-dim": "#041329",
+                        "outline-variant": "#3d4a3d",
+                        "primary-fixed-dim": "#53e076",
+                        "outline": "#869585",
+                        "tertiary-fixed": "#ffdad9",
+                        "on-tertiary": "#680114",
+                        "on-primary-fixed-variant": "#005320",
+                        "surface-container-lowest": "#010e24",
+                        "secondary-fixed-dim": "#99d59d",
+                        "surface-bright": "#2c3951",
+                        "primary": "#53e076",
+                        "error": "#ffb4ab",
+                        "surface-container-low": "#0d1c32",
+                        "on-primary-fixed": "#002108",
+                        "on-secondary-fixed": "#002108",
+                        "tertiary-container": "#ff767b",
+                        "on-secondary-fixed-variant": "#195127",
+                        "primary-container": "#1db954",
+                        "surface-container-high": "#1c2a41",
+                        "on-secondary-container": "#8cc690",
+                        "background": "#041329",
+                        "on-surface": "#d6e3ff",
+                        "inverse-on-surface": "#233148",
+                        "secondary-container": "#1c5329",
+                        "on-primary": "#003914",
+                        "primary-fixed": "#72fe8f",
+                        "surface-tint": "#53e076",
+                        "secondary": "#99d59d",
+                        "surface-container": "#112036",
+                        "surface": "#041329",
+                        "on-background": "#d6e3ff",
+                        "tertiary-fixed-dim": "#ffb3b3",
+                        "inverse-primary": "#006e2d",
+                        "on-primary-container": "#004118",
+                        "inverse-surface": "#d6e3ff",
+                        "on-error": "#690005",
+                        "on-surface-variant": "#bccbb9",
+                        "surface-variant": "#27354c",
+                        "on-secondary": "#003914",
+                        "secondary-fixed": "#b5f1b8",
+                        "tertiary": "#ffb3b3",
+                        "on-tertiary-container": "#730a1b"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #041329;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-player {
+            background: rgba(17, 32, 54, 0.9);
+            backdrop-filter: blur(40px);
+        }
+    </style>
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body class="text-on-surface selection:bg-primary selection:text-on-primary overflow-hidden">
+    <!-- SideNavBar -->
+    <aside class="h-full w-64 fixed left-0 top-0 hidden md:flex flex-col bg-[#041329] dark:bg-[#041329] font-['Plus_Jakarta_Sans'] text-sm tracking-tight z-50">
+        <div class="flex flex-col gap-y-6 py-8 px-6 h-full">
+            <div class="mb-8">
+                <span class="text-2xl font-bold tracking-tighter text-[#1DB954]">Sonic Polyglot</span>
+                <p class="text-slate-400 text-xs mt-1">Premium Learner</p>
+            </div>
+            <nav class="flex flex-col gap-y-4">
+                <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
+                    <span class="material-symbols-outlined" style="@IconStyle("Languages")">language</span>
+                    Language selector
+                </a>
+                <a class="@NavClass("Home")" asp-controller="Home" asp-action="Index">
+                    <span class="material-symbols-outlined" style="@IconStyle("Home")">home</span>
+                    Home
+                </a>
+                <a class="@NavClass("Explore")" asp-controller="Explore" asp-action="Index">
+                    <span class="material-symbols-outlined" style="@IconStyle("Explore")">explore</span>
+                    Explore
+                </a>
+                <a class="@NavClass("Dictionary")" asp-controller="Dictionary" asp-action="Index">
+                    <span class="material-symbols-outlined" style="@IconStyle("Dictionary")">menu_book</span>
+                    Dictionary
+                </a>
+                <a class="@NavClass("Practice")" asp-controller="Practice" asp-action="Index">
+                    <span class="material-symbols-outlined" style="@IconStyle("Practice")">fitness_center</span>
+                    Practice
+                </a>
+                <a class="@NavClass("Library")" asp-controller="Library" asp-action="Index">
+                    <span class="material-symbols-outlined" style="@IconStyle("Library")">subscriptions</span>
+                    Library
+                </a>
+                <a class="@NavClass("Quizzes")" asp-controller="Quizzes" asp-action="Index">
+                    <span class="material-symbols-outlined" style="@IconStyle("Quizzes")">quiz</span>
+                    Quizzes
+                </a>
+            </nav>
+            <div class="mt-auto">
+                <button class="w-full py-4 bg-primary-container text-on-primary font-bold rounded-full hover:scale-105 transition-transform">
+                    Start New Unit
+                </button>
+            </div>
+        </div>
+    </aside>
+    <!-- Main Content Area -->
+    <main class="md:ml-64 min-h-screen">
+        <!-- TopNavBar -->
+        <header class="fixed top-0 right-0 w-full md:w-[calc(100%-16rem)] z-40 bg-[#041329]/80 dark:bg-[#041329]/80 backdrop-blur-xl font-['Plus_Jakarta_Sans'] font-semibold">
+            <div class="flex justify-between items-center px-8 h-16">
+                <div class="flex items-center gap-x-4 flex-1">
+                    <div class="bg-surface-container-high rounded-full px-4 py-2 flex items-center gap-x-3 w-full max-w-md">
+                        <span class="material-symbols-outlined text-slate-400">search</span>
+                        <input class="bg-transparent border-none focus:ring-0 text-sm text-on-surface w-full" placeholder="What do you want to learn?" type="text" />
+                    </div>
+                </div>
+                <div class="flex items-center gap-x-6">
+                    <button class="hover:bg-[#112036] rounded-full p-2 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-slate-300">notifications</span>
+                    </button>
+                    <button class="hover:bg-[#112036] rounded-full p-2 transition-all active:scale-95">
+                        <span class="material-symbols-outlined text-slate-300">settings</span>
+                    </button>
+                    <div class="w-8 h-8 rounded-full overflow-hidden">
+                        <img class="w-full h-full object-cover" alt="User avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeBTrBJRjcR0GIKlQbpEQo-nSXs1z65Q9qOaHFhlikzyxl8BHpbjQAaim7B4bbsdMSHtwkxh7-hUiD9_ybMDayKtbUDBqfTXQ2dzsHZ9yqXmOmFMHrxX6tyScXzIwZ5xpjFJ-AnZrpB5Ffwfi1kI9UZvo6M-FD7rqApGaXV2kuovHZP06d_zfxZ6zSn0gLddc_yFhpvKsUVXzJ2c6O5OAea7_hWdKYKiAxeWOHpfqiAvFnrcyN9fjfIPC6CQiF4_uYy_oDPvFoh59B" />
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Canvas -->
+        <div class="pt-24 px-8 max-w-7xl mx-auto">
+            @RenderBody()
+        </div>
+    </main>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

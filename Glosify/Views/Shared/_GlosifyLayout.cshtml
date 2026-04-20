@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Glosify</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary-fixed-variant": "#881d28",
+                        "on-tertiary-fixed": "#400009",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-highest": "#27354c",
+                        "surface-dim": "#041329",
+                        "outline-variant": "#3d4a3d",
+                        "primary-fixed-dim": "#53e076",
+                        "outline": "#869585",
+                        "tertiary-fixed": "#ffdad9",
+                        "on-tertiary": "#680114",
+                        "on-primary-fixed-variant": "#005320",
+                        "surface-container-lowest": "#010e24",
+                        "secondary-fixed-dim": "#99d59d",
+                        "surface-bright": "#2c3951",
+                        "primary": "#53e076",
+                        "error": "#ffb4ab",
+                        "surface-container-low": "#0d1c32",
+                        "on-primary-fixed": "#002108",
+                        "on-secondary-fixed": "#002108",
+                        "tertiary-container": "#ff767b",
+                        "on-secondary-fixed-variant": "#195127",
+                        "primary-container": "#1db954",
+                        "surface-container-high": "#1c2a41",
+                        "on-secondary-container": "#8cc690",
+                        "background": "#041329",
+                        "on-surface": "#d6e3ff",
+                        "inverse-on-surface": "#233148",
+                        "secondary-container": "#1c5329",
+                        "on-primary": "#003914",
+                        "primary-fixed": "#72fe8f",
+                        "surface-tint": "#53e076",
+                        "secondary": "#99d59d",
+                        "surface-container": "#112036",
+                        "surface": "#041329",
+                        "on-background": "#d6e3ff",
+                        "tertiary-fixed-dim": "#ffb3b3",
+                        "inverse-primary": "#006e2d",
+                        "on-primary-container": "#004118",
+                        "inverse-surface": "#d6e3ff",
+                        "on-error": "#690005",
+                        "on-surface-variant": "#bccbb9",
+                        "surface-variant": "#27354c",
+                        "on-secondary": "#003914",
+                        "secondary-fixed": "#b5f1b8",
+                        "tertiary": "#ffb3b3",
+                        "on-tertiary-container": "#730a1b"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #041329;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-effect {
+            background: rgba(44, 57, 81, 0.6);
+            backdrop-filter: blur(40px);
+        }
+    </style>
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body class="bg-background text-on-surface min-h-screen flex items-center justify-center p-6 selection:bg-primary selection:text-on-primary">
+    <!-- Background Atmospheric Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-surface-container-highest/20 blur-[120px]"></div>
+    </div>
+
+    @RenderBody()
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

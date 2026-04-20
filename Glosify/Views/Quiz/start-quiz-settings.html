@@ -1,0 +1,334 @@
+﻿<!DOCTYPE html>
+
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Quiz Configuration - Sonic Polyglot</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#99d59d",
+                        "on-tertiary-container": "#730a1b",
+                        "on-tertiary": "#680114",
+                        "error-container": "#93000a",
+                        "on-secondary-container": "#8cc690",
+                        "primary-fixed": "#72fe8f",
+                        "tertiary": "#ffb3b3",
+                        "on-primary": "#003914",
+                        "surface-variant": "#27354c",
+                        "tertiary-container": "#ff767b",
+                        "tertiary-fixed-dim": "#ffb3b3",
+                        "on-secondary-fixed-variant": "#195127",
+                        "secondary-container": "#1c5329",
+                        "surface-tint": "#53e076",
+                        "surface-container-lowest": "#010e24",
+                        "on-primary-fixed": "#002108",
+                        "inverse-on-surface": "#233148",
+                        "primary-container": "#1db954",
+                        "surface-container-low": "#0d1c32",
+                        "surface-bright": "#2c3951",
+                        "on-error-container": "#ffdad6",
+                        "secondary": "#99d59d",
+                        "on-secondary-fixed": "#002108",
+                        "on-primary-fixed-variant": "#005320",
+                        "on-error": "#690005",
+                        "background": "#041329",
+                        "on-surface": "#d6e3ff",
+                        "on-secondary": "#003914",
+                        "surface-dim": "#041329",
+                        "inverse-surface": "#d6e3ff",
+                        "surface-container-highest": "#27354c",
+                        "on-primary-container": "#004118",
+                        "inverse-primary": "#006e2d",
+                        "surface-container-high": "#1c2a41",
+                        "on-surface-variant": "#bccbb9",
+                        "primary-fixed-dim": "#53e076",
+                        "on-background": "#d6e3ff",
+                        "tertiary-fixed": "#ffdad9",
+                        "on-tertiary-fixed-variant": "#881d28",
+                        "surface": "#041329",
+                        "secondary-fixed": "#b5f1b8",
+                        "surface-container": "#112036",
+                        "on-tertiary-fixed": "#400009",
+                        "outline-variant": "#3d4a3d",
+                        "error": "#ffb4ab",
+                        "outline": "#869585",
+                        "primary": "#53e076"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #010e24;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #27354c;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex">
+    <!-- SideNavBar (Authority Source: JSON) -->
+    <aside class="fixed left-0 top-0 h-screen w-72 z-40 bg-[#041329] flex flex-col py-10 font-['Plus_Jakarta_Sans'] font-medium text-sm">
+        <div class="px-8 mb-10">
+            <span class="text-xl font-black text-[#1DB954] tracking-tighter">Sonic Learner</span>
+            <p class="text-slate-400 text-xs mt-1">Fluency Level 4</p>
+        </div>
+        <nav class="flex-1 flex flex-col space-y-1 px-4 custom-scrollbar overflow-y-auto">
+            <!-- Navigation Items Mapping -->
+            <a class="text-slate-400 hover:text-white px-6 py-3 hover:bg-[#27354C] rounded-full transition-colors duration-200 flex items-center gap-3" href="#">
+                <span class="material-symbols-outlined">language</span>
+                Language Selector
+            </a>
+            <a class="text-slate-400 hover:text-white px-6 py-3 hover:bg-[#27354C] rounded-full transition-colors duration-200 flex items-center gap-3" href="#">
+                <span class="material-symbols-outlined">home</span>
+                Home
+            </a>
+            <a class="text-slate-400 hover:text-white px-6 py-3 hover:bg-[#27354C] rounded-full transition-colors duration-200 flex items-center gap-3" href="#">
+                <span class="material-symbols-outlined">explore</span>
+                Explore
+            </a>
+            <a class="text-slate-400 hover:text-white px-6 py-3 hover:bg-[#27354C] rounded-full transition-colors duration-200 flex items-center gap-3" href="#">
+                <span class="material-symbols-outlined">menu_book</span>
+                Dictionary
+            </a>
+            <a class="text-slate-400 hover:text-white px-6 py-3 hover:bg-[#27354C] rounded-full transition-colors duration-200 flex items-center gap-3" href="#">
+                <span class="material-symbols-outlined">fitness_center</span>
+                Practice
+            </a>
+            <a class="text-slate-400 hover:text-white px-6 py-3 hover:bg-[#27354C] rounded-full transition-colors duration-200 flex items-center gap-3" href="#">
+                <span class="material-symbols-outlined">auto_stories</span>
+                Library
+            </a>
+            <!-- Active Navigation (Contextual Logic) -->
+            <div class="space-y-1">
+                <a class="text-[#1DB954] bg-[#112036] rounded-full px-6 py-3 font-bold flex items-center gap-3" href="#">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">quiz</span>
+                    Quizzes
+                </a>
+                <div class="ml-12 flex flex-col space-y-2 mt-2 border-l border-surface-container-highest/30 pl-4">
+                    <a class="text-xs text-slate-400 hover:text-primary transition-colors" href="#">Daily Review</a>
+                    <a class="text-xs text-slate-400 hover:text-primary transition-colors" href="#">Verbs Folder</a>
+                    <a class="text-xs text-slate-400 hover:text-primary transition-colors" href="#">Travel Basics</a>
+                </div>
+            </div>
+        </nav>
+        <div class="px-6 mt-6">
+            <button class="w-full py-4 bg-primary-container text-on-primary-container rounded-full font-bold flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary-container/10">
+                <span class="material-symbols-outlined">bolt</span>
+                Start Daily Pulse
+            </button>
+        </div>
+        <footer class="mt-auto px-4 flex flex-col space-y-1">
+            <a class="text-slate-400 hover:text-white px-6 py-3 hover:bg-[#27354C] rounded-full transition-colors duration-200 flex items-center gap-3" href="#">
+                <span class="material-symbols-outlined">help</span>
+                Support
+            </a>
+            <a class="text-slate-400 hover:text-white px-6 py-3 hover:bg-[#27354C] rounded-full transition-colors duration-200 flex items-center gap-3" href="#">
+                <span class="material-symbols-outlined">logout</span>
+                Sign Out
+            </a>
+        </footer>
+    </aside>
+    <!-- Main Canvas -->
+    <main class="ml-72 flex-1 p-12 overflow-y-auto">
+        <!-- TopAppBar Placeholder (Contextual Filter applied - suppressed for configuration focus) -->
+        <header class="mb-12 max-w-5xl mx-auto">
+            <div class="flex items-center gap-4 mb-2">
+                <span class="bg-surface-container-highest text-primary-fixed-dim text-[10px] px-3 py-1 rounded-full font-bold tracking-widest uppercase">Configuration</span>
+            </div>
+            <h1 class="text-5xl font-black text-on-surface tracking-tighter leading-tight">Configure Your Session</h1>
+            <p class="text-on-surface-variant mt-2 text-lg">Tailor your midnight study session to your current focus.</p>
+        </header>
+        <div class="max-w-5xl mx-auto grid grid-cols-12 gap-8">
+            <!-- Bento Configuration Grid -->
+            <div class="col-span-12 lg:col-span-8 space-y-8">
+                <!-- Session Length Section -->
+                <section class="bg-surface-container rounded-xl p-8 shadow-2xl shadow-surface-container-lowest/50 border-none">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 class="text-xl font-bold text-on-surface">Session Length</h2>
+                            <p class="text-sm text-on-surface-variant">Choose how many words to review</p>
+                        </div>
+                        <span class="material-symbols-outlined text-primary-fixed-dim">timer</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                        <button class="group p-6 rounded-lg bg-surface-container-low hover:bg-surface-container-highest transition-all duration-300 border border-outline-variant/10 flex flex-col items-center gap-2">
+                            <span class="text-3xl font-black text-on-surface group-hover:text-primary transition-colors">10</span>
+                            <span class="text-xs uppercase tracking-widest text-on-surface-variant">Words</span>
+                        </button>
+                        <button class="group p-6 rounded-lg bg-primary-container text-on-primary-container transition-all duration-300 flex flex-col items-center gap-2 ring-4 ring-primary-container/20">
+                            <span class="text-3xl font-black">20</span>
+                            <span class="text-xs uppercase tracking-widest opacity-80">Words</span>
+                        </button>
+                        <button class="group p-6 rounded-lg bg-surface-container-low hover:bg-surface-container-highest transition-all duration-300 border border-outline-variant/10 flex flex-col items-center gap-2">
+                            <span class="text-3xl font-black text-on-surface group-hover:text-primary transition-colors">50</span>
+                            <span class="text-xs uppercase tracking-widest text-on-surface-variant">Words</span>
+                        </button>
+                    </div>
+                </section>
+                <!-- Quiz Mode Section -->
+                <section class="bg-surface-container rounded-xl p-8 shadow-2xl shadow-surface-container-lowest/50 border-none">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 class="text-xl font-bold text-on-surface">Quiz Mode</h2>
+                            <p class="text-sm text-on-surface-variant">Select your preferred interaction type</p>
+                        </div>
+                        <span class="material-symbols-outlined text-primary-fixed-dim">psychology</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-6">
+                        <label class="relative cursor-pointer group">
+                            <input checked="" class="peer sr-only" name="quiz_mode" type="radio" />
+                            <div class="p-6 bg-surface-container-low rounded-xl border border-transparent peer-checked:bg-surface-container-highest peer-checked:border-primary-fixed-dim/30 transition-all flex flex-col items-center gap-4 text-center">
+                                <span class="material-symbols-outlined text-4xl text-on-surface-variant peer-checked:text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">style</span>
+                                <span class="font-bold text-on-surface">Flashcards</span>
+                            </div>
+                        </label>
+                        <label class="relative cursor-pointer group">
+                            <input class="peer sr-only" name="quiz_mode" type="radio" />
+                            <div class="p-6 bg-surface-container-low rounded-xl border border-transparent peer-checked:bg-surface-container-highest peer-checked:border-primary-fixed-dim/30 transition-all flex flex-col items-center gap-4 text-center">
+                                <span class="material-symbols-outlined text-4xl text-on-surface-variant peer-checked:text-primary-fixed-dim">keyboard</span>
+                                <span class="font-bold text-on-surface">Typing Mastery</span>
+                            </div>
+                        </label>
+                        <label class="relative cursor-pointer group">
+                            <input class="peer sr-only" name="quiz_mode" type="radio" />
+                            <div class="p-6 bg-surface-container-low rounded-xl border border-transparent peer-checked:bg-surface-container-highest peer-checked:border-primary-fixed-dim/30 transition-all flex flex-col items-center gap-4 text-center">
+                                <span class="material-symbols-outlined text-4xl text-on-surface-variant peer-checked:text-primary-fixed-dim">hearing</span>
+                                <span class="font-bold text-on-surface">Listening</span>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+                <!-- Difficulty Selection (Horizontal Scroll/Chip style) -->
+                <section class="bg-surface-container-low rounded-xl p-8 border-none">
+                    <h2 class="text-xl font-bold text-on-surface mb-6">Difficulty Level</h2>
+                    <div class="flex flex-wrap gap-4">
+                        <button class="px-8 py-3 rounded-full bg-surface-container-highest text-on-surface font-bold hover:bg-primary-container hover:text-on-primary-container transition-all">Beginner</button>
+                        <button class="px-8 py-3 rounded-full bg-primary-container text-on-primary-container font-bold shadow-lg shadow-primary-container/10">Intermediate</button>
+                        <button class="px-8 py-3 rounded-full bg-surface-container-highest text-on-surface font-bold hover:bg-primary-container hover:text-on-primary-container transition-all">Advanced</button>
+                    </div>
+                </section>
+            </div>
+            <!-- Side Sidebar / Focus Areas -->
+            <div class="col-span-12 lg:col-span-4 space-y-8">
+                <section class="bg-surface-container-high rounded-xl p-8 shadow-2xl relative overflow-hidden">
+                    <!-- Glassmorphism accent -->
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/10 blur-3xl -mr-16 -mt-16"></div>
+                    <h2 class="text-xl font-bold text-on-surface mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">target</span>
+                        Focus Areas
+                    </h2>
+                    <div class="space-y-4">
+                        <label class="flex items-center justify-between p-4 rounded-lg bg-surface-container hover:bg-surface-container-highest transition-colors cursor-pointer group">
+                            <span class="font-medium text-on-surface">Verbs &amp; Conjugation</span>
+                            <div class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center group-hover:border-primary transition-colors">
+                                <input checked="" class="hidden peer" type="checkbox" />
+                                <span class="material-symbols-outlined text-primary scale-0 peer-checked:scale-100 transition-transform text-sm">check</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center justify-between p-4 rounded-lg bg-surface-container hover:bg-surface-container-highest transition-colors cursor-pointer group">
+                            <span class="font-medium text-on-surface">Travel Vocabulary</span>
+                            <div class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center group-hover:border-primary transition-colors">
+                                <input class="hidden peer" type="checkbox" />
+                                <span class="material-symbols-outlined text-primary scale-0 peer-checked:scale-100 transition-transform text-sm">check</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center justify-between p-4 rounded-lg bg-surface-container hover:bg-surface-container-highest transition-colors cursor-pointer group">
+                            <span class="font-medium text-on-surface">Idiomatic Expressions</span>
+                            <div class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center group-hover:border-primary transition-colors">
+                                <input checked="" class="hidden peer" type="checkbox" />
+                                <span class="material-symbols-outlined text-primary scale-0 peer-checked:scale-100 transition-transform text-sm">check</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center justify-between p-4 rounded-lg bg-surface-container hover:bg-surface-container-highest transition-colors cursor-pointer group">
+                            <span class="font-medium text-on-surface">Business Terms</span>
+                            <div class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center group-hover:border-primary transition-colors">
+                                <input class="hidden peer" type="checkbox" />
+                                <span class="material-symbols-outlined text-primary scale-0 peer-checked:scale-100 transition-transform text-sm">check</span>
+                            </div>
+                        </label>
+                        <label class="flex items-center justify-between p-4 rounded-lg bg-surface-container hover:bg-surface-container-highest transition-colors cursor-pointer group">
+                            <span class="font-medium text-on-surface">Restaurant &amp; Dining</span>
+                            <div class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center group-hover:border-primary transition-colors">
+                                <input class="hidden peer" type="checkbox" />
+                                <span class="material-symbols-outlined text-primary scale-0 peer-checked:scale-100 transition-transform text-sm">check</span>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- Visual Soul: Decorative Element -->
+                    <div class="mt-8 pt-8 border-t border-outline-variant/20">
+                        <div class="relative w-full h-32 rounded-xl overflow-hidden">
+                            <img alt="aesthetic close-up of a vintage neon light against a dark blue brick wall" class="w-full h-full object-cover grayscale opacity-40 mix-blend-screen" data-alt="aesthetic close-up of a vintage neon light against a dark blue brick wall at night creating a soft cyan glow" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOgggOTnQwfmpQLph6pReUF2aVBfR4NuZ4lWR94MlTL-3Fppf4gkQiwGpkf06P9ACYuMzHuZ5Mq_2Qxug1Sj8i0lFwh4Q3St3Yok6MS_nDuiQlnhn9IrglUaKjGNTzjSELCvIDr0DFuqa-i4Wt8hbK_zg_ugGiny5DmIv_Z4AYfDxNN8ucNIcmn_FTjXruK1-VTdiBqsnVFhDTdZIpvJ8x4ABMbXHczzbuWQNE96nWShHv3ejGn7pkaBBE9zbC7s2pNf8ySXt9HMnh" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-surface-container-high to-transparent"></div>
+                            <div class="absolute bottom-4 left-4">
+                                <p class="text-[10px] uppercase tracking-widest font-bold text-primary">Pro Tip</p>
+                                <p class="text-xs text-on-surface">Mixing idioms with verbs increases retention by 40%.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- Final Call to Action -->
+                <div class="space-y-4">
+                    <button class="w-full py-8 bg-primary-container text-on-primary-container rounded-xl font-extrabold text-2xl flex flex-col items-center justify-center gap-1 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-primary/20">
+                        <span class="material-symbols-outlined text-4xl mb-2">play_circle</span>
+                        Start Learning
+                        <span class="text-xs font-medium opacity-70">ETA: 12 Minutes</span>
+                    </button>
+                    <p class="text-center text-on-surface-variant text-xs">By starting, you agree to our <a class="underline" href="#">Sonic Learning Guidelines</a></p>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Sonic Progress Overlay (Contextual Element) -->
+    <div class="fixed bottom-8 right-8 z-50">
+        <div class="bg-surface-container-highest/80 backdrop-blur-xl p-4 rounded-xl shadow-2xl border border-outline-variant/20 flex items-center gap-4">
+            <div class="relative w-12 h-12">
+                <svg class="w-full h-full transform -rotate-90">
+                    <circle class="text-surface-container" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+                    <circle class="text-primary" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="37.6" stroke-width="4"></circle>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold">70%</div>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-on-surface">Daily Goal</p>
+                <p class="text-[10px] text-on-surface-variant">14/20 words practiced</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

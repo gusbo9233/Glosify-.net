@@ -1,0 +1,134 @@
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "Quiz Settings";
+}
+
+<form asp-action="Start" method="post" class="space-y-8">
+    @Html.AntiForgeryToken()
+
+    <header>
+        <div class="flex items-center gap-4 mb-2">
+            <span class="bg-surface-container-highest text-primary-fixed-dim text-[10px] px-3 py-1 rounded-full font-bold tracking-widest uppercase">Configuration</span>
+        </div>
+        <h1 class="text-5xl font-black text-on-surface tracking-tighter leading-tight">Configure Your Session</h1>
+        <p class="text-on-surface-variant mt-2 text-lg">Tailor your midnight study session to your current focus.</p>
+    </header>
+
+    <div class="grid grid-cols-12 gap-8">
+        <div class="col-span-12 lg:col-span-8 space-y-8">
+            <!-- Session Length -->
+            <section class="bg-surface-container rounded-xl p-8 shadow-2xl shadow-surface-container-lowest/50">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-xl font-bold text-on-surface">Session Length</h2>
+                        <p class="text-sm text-on-surface-variant">Choose how many words to review</p>
+                    </div>
+                    <span class="material-symbols-outlined text-primary-fixed-dim">timer</span>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    @foreach (var (value, selected) in new[] { (10, false), (20, true), (50, false) })
+                    {
+                        var inputId = $"len-{value}";
+                        <label for="@inputId" class="cursor-pointer">
+                            <input id="@inputId" type="radio" name="sessionLength" value="@value" class="peer sr-only" checked="@selected" />
+                            <div class="p-6 rounded-lg bg-surface-container-low peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:ring-4 peer-checked:ring-primary-container/20 hover:bg-surface-container-highest transition-all duration-300 border border-outline-variant/10 flex flex-col items-center gap-2">
+                                <span class="text-3xl font-black">@value</span>
+                                <span class="text-xs uppercase tracking-widest">Words</span>
+                            </div>
+                        </label>
+                    }
+                </div>
+            </section>
+
+            <!-- Quiz Mode -->
+            <section class="bg-surface-container rounded-xl p-8 shadow-2xl shadow-surface-container-lowest/50">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h2 class="text-xl font-bold text-on-surface">Quiz Mode</h2>
+                        <p class="text-sm text-on-surface-variant">Select your preferred interaction type</p>
+                    </div>
+                    <span class="material-symbols-outlined text-primary-fixed-dim">psychology</span>
+                </div>
+                <div class="grid grid-cols-3 gap-6">
+                    @foreach (var (mode, icon, label, selected, filled) in new[]
+                    {
+                        ("flashcards", "style", "Flashcards", true, true),
+                        ("typing", "keyboard", "Typing Mastery", false, false),
+                        ("listening", "hearing", "Listening", false, false)
+                    })
+                    {
+                        var inputId = $"mode-{mode}";
+                        var iconStyle = filled ? "font-variation-settings: 'FILL' 1;" : "";
+                        <label for="@inputId" class="relative cursor-pointer group">
+                            <input id="@inputId" class="peer sr-only" name="mode" type="radio" value="@mode" checked="@selected" />
+                            <div class="p-6 bg-surface-container-low rounded-xl border border-transparent peer-checked:bg-surface-container-highest peer-checked:border-primary-fixed-dim/30 transition-all flex flex-col items-center gap-4 text-center">
+                                <span class="material-symbols-outlined text-4xl text-on-surface-variant peer-checked:text-primary-fixed-dim" style="@iconStyle">@icon</span>
+                                <span class="font-bold text-on-surface">@label</span>
+                            </div>
+                        </label>
+                    }
+                </div>
+            </section>
+
+            <!-- Difficulty -->
+            <section class="bg-surface-container-low rounded-xl p-8">
+                <h2 class="text-xl font-bold text-on-surface mb-6">Difficulty Level</h2>
+                <div class="flex flex-wrap gap-4">
+                    @foreach (var (level, selected) in new[] { ("beginner", false), ("intermediate", true), ("advanced", false) })
+                    {
+                        var inputId = $"diff-{level}";
+                        var label = char.ToUpper(level[0]) + level[1..];
+                        <label for="@inputId" class="cursor-pointer">
+                            <input id="@inputId" type="radio" name="difficulty" value="@level" class="peer sr-only" checked="@selected" />
+                            <span class="inline-block px-8 py-3 rounded-full bg-surface-container-highest text-on-surface font-bold peer-checked:bg-primary-container peer-checked:text-on-primary-container peer-checked:shadow-lg peer-checked:shadow-primary-container/10 hover:bg-primary-container hover:text-on-primary-container transition-all">
+                                @label
+                            </span>
+                        </label>
+                    }
+                </div>
+            </section>
+        </div>
+
+        <!-- Focus Areas / CTA -->
+        <div class="col-span-12 lg:col-span-4 space-y-8">
+            <section class="bg-surface-container-high rounded-xl p-8 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/10 blur-3xl -mr-16 -mt-16"></div>
+                <h2 class="text-xl font-bold text-on-surface mb-6 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">target</span>
+                    Focus Areas
+                </h2>
+                <div class="space-y-4">
+                    @foreach (var (focus, label, selected) in new[]
+                    {
+                        ("verbs", "Verbs & Conjugation", true),
+                        ("travel", "Travel Vocabulary", false),
+                        ("idioms", "Idiomatic Expressions", true),
+                        ("business", "Business Terms", false),
+                        ("dining", "Restaurant & Dining", false)
+                    })
+                    {
+                        var inputId = $"focus-{focus}";
+                        <label for="@inputId" class="flex items-center justify-between p-4 rounded-lg bg-surface-container hover:bg-surface-container-highest transition-colors cursor-pointer group">
+                            <span class="font-medium text-on-surface">@label</span>
+                            <div class="w-6 h-6 rounded border-2 border-outline-variant flex items-center justify-center group-hover:border-primary transition-colors">
+                                <input id="@inputId" name="focus" value="@focus" class="hidden peer" type="checkbox" checked="@selected" />
+                                <span class="material-symbols-outlined text-primary scale-0 peer-checked:scale-100 transition-transform text-sm">check</span>
+                            </div>
+                        </label>
+                    }
+                </div>
+            </section>
+
+            <div class="space-y-4">
+                <button type="submit" class="w-full py-8 bg-primary-container text-on-primary-container rounded-xl font-extrabold text-2xl flex flex-col items-center justify-center gap-1 hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-primary/20">
+                    <span class="material-symbols-outlined text-4xl mb-2">play_circle</span>
+                    Start Learning
+                    <span class="text-xs font-medium opacity-70">ETA: 12 Minutes</span>
+                </button>
+                <p class="text-center text-on-surface-variant text-xs">
+                    By starting, you agree to our <a class="underline" href="#">Sonic Learning Guidelines</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</form>

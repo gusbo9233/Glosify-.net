@@ -1,0 +1,112 @@
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "Quiz Master";
+}
+
+<div class="space-y-8">
+    <!-- Hero Action Area -->
+    <section class="relative rounded-xl overflow-hidden min-h-[220px] flex items-center p-12 bg-surface-container-low group">
+        <div class="absolute inset-0 z-0">
+            <div class="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent z-10"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary-container/10 to-transparent"></div>
+        </div>
+        <div class="relative z-20 space-y-6 max-w-xl">
+            <div class="space-y-2">
+                <span class="text-primary font-bold text-xs uppercase tracking-[0.2em]">Ready for Session #24</span>
+                <h3 class="text-4xl font-extrabold text-on-surface tracking-tighter leading-none">Expand Your Vocabulary</h3>
+            </div>
+            <a asp-action="Settings"
+               class="inline-flex bg-primary text-on-primary px-10 py-4 rounded-full font-black text-lg shadow-[0_0_30px_rgba(29,185,84,0.4)] hover:scale-105 active:scale-95 transition-all items-center gap-3">
+                Start Quiz <span class="material-symbols-outlined">play_circle</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Tools Bento Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Quick Add Section -->
+        <section class="lg:col-span-1 bg-surface-container rounded-lg p-8 space-y-6 shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined">add_circle</span>
+                </div>
+                <h4 class="text-lg font-bold">Quick Add</h4>
+            </div>
+            <form class="space-y-4">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-on-surface-variant px-1 block">WORD</label>
+                    <input class="w-full bg-surface-container-highest border-none rounded-full px-6 py-3 text-on-surface placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary transition-all" placeholder="e.g. Bibliothèque" type="text" />
+                </div>
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-on-surface-variant px-1 block">TRANSLATION</label>
+                    <input class="w-full bg-surface-container-highest border-none rounded-full px-6 py-3 text-on-surface placeholder:text-on-surface-variant/40 focus:ring-2 focus:ring-primary transition-all" placeholder="e.g. Library" type="text" />
+                </div>
+                <button type="button" class="w-full bg-surface-bright text-on-surface font-bold py-4 rounded-full hover:bg-primary hover:text-on-primary transition-all mt-4">
+                    Add Word
+                </button>
+            </form>
+        </section>
+
+        <!-- AI Assistant Section -->
+        <section class="lg:col-span-2 bg-surface-container rounded-lg p-8 space-y-6 relative overflow-hidden">
+            <div class="flex justify-between items-center relative z-10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                    </div>
+                    <h4 class="text-lg font-bold">AI Assistant</h4>
+                </div>
+                <span class="text-[10px] font-bold px-3 py-1 bg-primary/20 text-primary rounded-full tracking-widest uppercase">Sonic Powered</span>
+            </div>
+            <div class="space-y-4 relative z-10">
+                <textarea class="w-full h-40 bg-surface-container-lowest border-none rounded-lg p-6 text-on-surface placeholder:text-on-surface-variant/30 focus:ring-2 focus:ring-primary resize-none transition-all"
+                          placeholder="Paste an article, lyrics, or transcript here to extract key vocabulary automatically..."></textarea>
+                <div class="flex justify-end">
+                    <button type="button" class="bg-primary-container text-on-primary px-8 py-3 rounded-full font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/10">
+                        Generate words <span class="material-symbols-outlined text-sm">bolt</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Collection Area -->
+    <section class="space-y-6">
+        <div class="flex justify-between items-end">
+            <div class="space-y-1">
+                <h4 class="text-2xl font-black tracking-tight">Collection</h4>
+                <p class="text-on-surface-variant text-sm">Managing 124 saved items</p>
+            </div>
+            <div class="flex bg-surface-container p-1 rounded-full">
+                <button class="px-8 py-2 rounded-full bg-primary text-on-primary font-bold text-sm transition-all">Words</button>
+                <button class="px-8 py-2 rounded-full text-on-surface-variant hover:text-on-surface font-bold text-sm transition-all">Sentences</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @foreach (var item in new[]
+            {
+                (Word: "Éphémère", Meta: "French · Adjective", Translation: "Ephemeral", Added: "Added 2h ago"),
+                (Word: "Fernweh", Meta: "German · Noun", Translation: "Wanderlust", Added: "Added 5h ago"),
+                (Word: "L'appel du vide", Meta: "French · Phrase", Translation: "Call of the void", Added: "Added Yesterday"),
+                (Word: "Kintsugi", Meta: "Japanese · Noun", Translation: "Golden repair", Added: "Added Yesterday")
+            })
+            {
+                <div class="flex items-center justify-between p-6 bg-surface-container-low hover:bg-surface-container-high rounded-lg group transition-all">
+                    <div class="flex items-center gap-6">
+                        <div class="w-12 h-12 rounded-md bg-surface-container-highest flex items-center justify-center text-primary-fixed">
+                            <span class="material-symbols-outlined">volume_up</span>
+                        </div>
+                        <div>
+                            <h5 class="text-xl font-bold text-on-surface">@item.Word</h5>
+                            <p class="text-on-surface-variant font-medium">@item.Meta</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-bold text-primary italic">@item.Translation</p>
+                        <p class="text-xs text-on-surface-variant/60">@item.Added</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
