@@ -1,0 +1,179 @@
+@{ Layout = "~/Views/Shared/_AppLayout.cshtml"; ViewData["Title"] = "Quiz Configuration"; ViewData["ActiveNav"] = "quizzes"; }
+
+@section Styles {
+<style>
+    .main-content { margin-left: 0; flex: 1; padding: 48px; overflow-y: auto; height: 100vh; }
+
+    .page-header { margin-bottom: 48px; max-width: 960px; margin-left: auto; margin-right: auto; }
+    .config-badge { display: inline-block; background: var(--surface-highest); color: var(--primary); font-size: 10px; padding: 4px 12px; border-radius: 9999px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+    .page-title { font-size: 48px; font-weight: 900; letter-spacing: -0.04em; line-height: 1.1; }
+    .page-subtitle { color: var(--on-surface-var); font-size: 18px; margin-top: 8px; }
+
+    .config-grid { max-width: 960px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 32px; }
+    .config-main { display: flex; flex-direction: column; gap: 32px; }
+    .config-side { display: flex; flex-direction: column; gap: 32px; }
+
+    .section-card { background: var(--surface); border-radius: 16px; padding: 32px; box-shadow: 0 25px 60px rgba(1,14,36,0.3); }
+    .section-card-low { background: var(--surface-low); border-radius: 16px; padding: 32px; }
+    .section-card-high { background: var(--surface-high); border-radius: 16px; padding: 32px; position: relative; overflow: hidden; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .section-header-left h2 { font-size: 20px; font-weight: 700; }
+    .section-header-left p { color: var(--on-surface-var); font-size: 14px; margin-top: 2px; }
+    .section-header .material-symbols-outlined { color: var(--primary); }
+
+    .length-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .btn-length { padding: 24px; border-radius: 8px; background: var(--surface-low); border: 1px solid rgba(61,74,61,0.15); display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: background 0.3s, color 0.3s; }
+    .btn-length:hover { background: var(--surface-highest); }
+    .btn-length .num { font-size: 28px; font-weight: 900; color: var(--on-surface); }
+    .btn-length .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--on-surface-var); }
+    .btn-length:hover .num { color: var(--primary); }
+    .btn-length.active { background: var(--primary-container); color: var(--on-primary-container); border-color: transparent; outline: 4px solid rgba(29,185,84,0.2); }
+    .btn-length.active .num { color: var(--on-primary-container); }
+    .btn-length.active .label { color: rgba(0,65,24,0.8); }
+
+    .mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .mode-label { cursor: pointer; }
+    .mode-label input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .mode-card { padding: 24px; background: var(--surface-low); border-radius: 12px; border: 1px solid transparent; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; transition: background 0.2s, border-color 0.2s; }
+    .mode-card .material-symbols-outlined { font-size: 36px; color: var(--on-surface-var); }
+    .mode-card .mode-name { font-weight: 700; }
+    .mode-label input[type="radio"]:checked + .mode-card { background: var(--surface-highest); border-color: rgba(83,224,118,0.3); }
+    .mode-label input[type="radio"]:checked + .mode-card .material-symbols-outlined { color: var(--primary); }
+
+    .difficulty-chips { display: flex; flex-wrap: wrap; gap: 16px; }
+    .btn-chip { padding: 12px 32px; border-radius: 9999px; background: var(--surface-highest); color: var(--on-surface); font-weight: 700; border: none; cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .btn-chip:hover { background: var(--primary-container); color: var(--on-primary-container); }
+    .btn-chip.active { background: var(--primary-container); color: var(--on-primary-container); box-shadow: 0 4px 15px rgba(29,185,84,0.1); }
+
+    .glow-accent { position: absolute; top: 0; right: 0; width: 128px; height: 128px; background: rgba(29,185,84,0.1); filter: blur(48px); margin: -64px -64px 0 0; }
+    .focus-title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 24px; position: relative; }
+    .focus-title .material-symbols-outlined { color: var(--primary); }
+    .focus-list { display: flex; flex-direction: column; gap: 16px; }
+    .focus-item { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-radius: 8px; background: var(--surface); cursor: pointer; transition: background 0.2s; }
+    .focus-item:hover { background: var(--surface-highest); }
+    .focus-item-label { font-weight: 500; }
+    .focus-checkbox { width: 24px; height: 24px; border-radius: 4px; border: 2px solid var(--outline-var); display: flex; align-items: center; justify-content: center; transition: border-color 0.2s; flex-shrink: 0; }
+    .focus-item:hover .focus-checkbox { border-color: var(--primary); }
+    .focus-checkbox input[type="checkbox"] { display: none; }
+    .focus-checkbox .material-symbols-outlined { font-size: 14px; color: var(--primary); display: none; }
+    .focus-checkbox input[type="checkbox"]:checked ~ .material-symbols-outlined { display: block; }
+
+    .cta-section { display: flex; flex-direction: column; gap: 16px; }
+    .btn-start { width: 100%; padding: 32px; background: var(--primary-container); color: var(--on-primary-container); border-radius: 12px; font-size: 24px; font-weight: 800; display: flex; flex-direction: column; align-items: center; gap: 4px; border: none; cursor: pointer; transition: transform 0.2s; box-shadow: 0 25px 60px rgba(83,224,118,0.2); }
+    .btn-start:hover { transform: scale(1.02); }
+    .btn-start:active { transform: scale(0.95); }
+    .btn-start .material-symbols-outlined { font-size: 40px; margin-bottom: 8px; }
+    .btn-start .eta { font-size: 12px; font-weight: 500; opacity: 0.7; }
+    .cta-legal { text-align: center; color: var(--on-surface-var); font-size: 12px; }
+
+    @@media (min-width: 1024px) { .config-grid { grid-template-columns: 2fr 1fr; } }
+</style>
+}
+
+<main class="main-content">
+    <header class="page-header">
+        <span class="config-badge">Configuration</span>
+        <h1 class="page-title">Configure Your Session</h1>
+        <p class="page-subtitle">Tailor your study session to your current focus.</p>
+    </header>
+
+    <div class="config-grid">
+        <div class="config-main">
+            <section class="section-card">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <h2>Session Length</h2>
+                        <p>Choose how many words to review</p>
+                    </div>
+                    <span class="material-symbols-outlined">timer</span>
+                </div>
+                <div class="length-grid">
+                    <button class="btn-length"><span class="num">10</span><span class="label">Words</span></button>
+                    <button class="btn-length active"><span class="num">20</span><span class="label">Words</span></button>
+                    <button class="btn-length"><span class="num">50</span><span class="label">Words</span></button>
+                </div>
+            </section>
+
+            <section class="section-card">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <h2>Quiz Mode</h2>
+                        <p>Select your preferred interaction type</p>
+                    </div>
+                    <span class="material-symbols-outlined">psychology</span>
+                </div>
+                <div class="mode-grid">
+                    <label class="mode-label">
+                        <input type="radio" name="quiz_mode" checked />
+                        <div class="mode-card">
+                            <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">style</span>
+                            <span class="mode-name">Flashcards</span>
+                        </div>
+                    </label>
+                    <label class="mode-label">
+                        <input type="radio" name="quiz_mode" />
+                        <div class="mode-card">
+                            <span class="material-symbols-outlined">keyboard</span>
+                            <span class="mode-name">Typing Mastery</span>
+                        </div>
+                    </label>
+                    <label class="mode-label">
+                        <input type="radio" name="quiz_mode" />
+                        <div class="mode-card">
+                            <span class="material-symbols-outlined">hearing</span>
+                            <span class="mode-name">Listening</span>
+                        </div>
+                    </label>
+                </div>
+            </section>
+
+            <section class="section-card-low">
+                <h2 style="font-size:20px;font-weight:700;margin-bottom:24px;">Difficulty Level</h2>
+                <div class="difficulty-chips">
+                    <button class="btn-chip">Beginner</button>
+                    <button class="btn-chip active">Intermediate</button>
+                    <button class="btn-chip">Advanced</button>
+                </div>
+            </section>
+        </div>
+
+        <div class="config-side">
+            <section class="section-card-high">
+                <div class="glow-accent"></div>
+                <h2 class="focus-title"><span class="material-symbols-outlined">target</span>Focus Areas</h2>
+                <div class="focus-list">
+                    <label class="focus-item">
+                        <span class="focus-item-label">Verbs &amp; Conjugation</span>
+                        <div class="focus-checkbox">
+                            <input type="checkbox" checked />
+                            <span class="material-symbols-outlined">check</span>
+                        </div>
+                    </label>
+                    <label class="focus-item">
+                        <span class="focus-item-label">Travel Vocabulary</span>
+                        <div class="focus-checkbox">
+                            <input type="checkbox" />
+                            <span class="material-symbols-outlined">check</span>
+                        </div>
+                    </label>
+                    <label class="focus-item">
+                        <span class="focus-item-label">Idiomatic Expressions</span>
+                        <div class="focus-checkbox">
+                            <input type="checkbox" checked />
+                            <span class="material-symbols-outlined">check</span>
+                        </div>
+                    </label>
+                </div>
+            </section>
+
+            <div class="cta-section">
+                <button class="btn-start">
+                    <span class="material-symbols-outlined">play_circle</span>
+                    Start Learning
+                    <span class="eta">ETA: 12 Minutes</span>
+                </button>
+                <p class="cta-legal">Tailor settings above before starting.</p>
+            </div>
+        </div>
+    </div>
+</main>

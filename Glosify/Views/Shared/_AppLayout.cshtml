@@ -5,12 +5,20 @@
     bool IsActive(string controller, string action) =>
         CurrentController == controller.ToLowerInvariant() && CurrentAction == action.ToLowerInvariant();
 
+    bool IsQuizzesActive() => CurrentController == "quiz" || CurrentController == "quizzes";
+
     string NavClass(string controller, string action = "Index") => IsActive(controller, action)
         ? "text-[#1DB954] font-bold border-l-4 border-[#1DB954] pl-4 flex items-center gap-x-4 transition-colors duration-300"
         : "text-slate-400 font-medium pl-4 hover:text-white flex items-center gap-x-4 transition-colors duration-300";
 
     string IconStyle(string controller, string action = "Index") =>
         IsActive(controller, action) ? "font-variation-settings: 'FILL' 1;" : "";
+
+    string QuizzesNavClass() => IsQuizzesActive()
+        ? "text-[#1DB954] font-bold border-l-4 border-[#1DB954] pl-4 flex items-center gap-x-4 transition-colors duration-300"
+        : "text-slate-400 font-medium pl-4 hover:text-white flex items-center gap-x-4 transition-colors duration-300";
+
+    string QuizzesIconStyle() => IsQuizzesActive() ? "font-variation-settings: 'FILL' 1;" : "";
 }
 <!DOCTYPE html>
 <html class="dark" lang="en">
@@ -91,6 +99,23 @@
         }
     </script>
     <style>
+        :root {
+            --bg: #041329;
+            --surface-lowest: #010e24;
+            --surface-low: #0d1c32;
+            --surface: #112036;
+            --surface-high: #1c2a41;
+            --surface-highest: #27354c;
+            --surface-bright: #2c3951;
+            --on-surface: #d6e3ff;
+            --on-surface-var: #bccbb9;
+            --primary: #53e076;
+            --primary-container: #1db954;
+            --on-primary: #003914;
+            --on-primary-container: #004118;
+            --error: #ffb4ab;
+            --outline-var: #3d4a3d;
+        }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #041329;
@@ -103,6 +128,7 @@
             backdrop-filter: blur(40px);
         }
     </style>
+    @await RenderSectionAsync("Styles", required: false)
     @await RenderSectionAsync("Head", required: false)
 </head>
 <body class="text-on-surface selection:bg-primary selection:text-on-primary overflow-hidden">
@@ -138,8 +164,8 @@
                     <span class="material-symbols-outlined" style="@IconStyle("Library")">subscriptions</span>
                     Library
                 </a>
-                <a class="@NavClass("Quizzes")" asp-controller="Quizzes" asp-action="Index">
-                    <span class="material-symbols-outlined" style="@IconStyle("Quizzes")">quiz</span>
+                <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
+                    <span class="material-symbols-outlined" style="@QuizzesIconStyle()">quiz</span>
                     Quizzes
                 </a>
             </nav>
