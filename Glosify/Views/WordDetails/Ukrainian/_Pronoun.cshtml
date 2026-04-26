@@ -1,0 +1,39 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">person</span>Pronoun · Займенник</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Type</span>
+            <span class="fact-value">@ValueOrFallback("type", "subtype", "Personal (я, ти, він, вона, воно, ми, ви, вони), reflexive (себе), possessive (мій, твій, наш, ваш, свій), demonstrative (цей, той), interrogative / relative (хто, що, який, чий), negative (ніхто, ніщо), or indefinite (хтось, дехто).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Person &amp; Number</span>
+            <span class="fact-value">@ValueOrFallback("person", "osoba", "First, second, and third person; ви is used as the polite singular as well as plural.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Case Forms</span>
+            <span class="fact-value">@ValueOrFallback("case", "declension", "Pronouns inflect in all seven cases; personal pronoun paradigms are largely suppletive (я → мене → мені).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Initial н-</span>
+            <span class="fact-value">@ValueOrFallback("n_initial", "prefix_n", "Third-person pronouns gain н- after a preposition (у нього, з нею, до них).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Reflexive себе</span>
+            <span class="fact-value">@ValueOrFallback("reflexive", "sebe", "Себе has no nominative and refers back to the clause subject regardless of person.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Animacy</span>
+            <span class="fact-value">@ValueOrFallback("animacy", "istota", "Хто (animate) vs що (inanimate); accusative of третьоособових pronouns shows the same animate/inanimate split as nouns.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

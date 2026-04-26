@@ -1,0 +1,39 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">palette</span>Adjective · Przymiotnik</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Agreement</span>
+            <span class="fact-value">Adjectives agree with their noun in gender, number, and case. In the plural the masculine personal vs non-personal split applies (dobrzy chłopcy vs dobre psy / kobiety / miasta).</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Stem Type</span>
+            <span class="fact-value">@ValueOrFallback("stem", "twardość", "Hard stem (-y / -a / -e: dobry, dobra, dobre) or soft stem (-i / -ia / -ie: tani, tania, tanie); palatalisation appears before some endings (drogi → drodzy).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Comparative</span>
+            <span class="fact-value">@ValueOrFallback("comparative", "stopień_wyższy", "Synthetic with -szy / -ejszy (nowszy, ładniejszy) or analytic with bardziej (bardziej znany); a few are suppletive (dobry → lepszy, zły → gorszy, mały → mniejszy).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Superlative</span>
+            <span class="fact-value">@ValueOrFallback("superlative", "stopień_najwyższy", "Add the prefix naj- to the comparative (najnowszy, najlepszy); analytic with najbardziej (najbardziej znany).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Predicative Use</span>
+            <span class="fact-value">@ValueOrFallback("predicative", "orzecznik", "After być the adjective normally agrees in case as well: short copular form is nominative (jest dobry); after some verbs the instrumental is used (został szczęśliwy → został szczęśliwym; with nouns more common: został lekarzem).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Possessive</span>
+            <span class="fact-value">@ValueOrFallback("possessive", "dzierżawczy", "Possessive adjectives in -ów / -in (ojcowski, mamin, siostrzany) decline like full adjectives.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

@@ -1,0 +1,35 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">person</span>Pronoun · Asesõna</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Type</span>
+            <span class="fact-value">@ValueOrFallback("type", "subtype", "Personal, possessive, demonstrative, reflexive, reciprocal, interrogative, relative, or indefinite.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Person &amp; Number</span>
+            <span class="fact-value">@ValueOrFallback("person", "number", "Personal pronouns: mina/ma, sina/sa, tema/ta, meie/me, teie/te, nemad/nad — short and long forms differ in emphasis.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Case Forms</span>
+            <span class="fact-value">@ValueOrFallback("case", "declension", "Pronouns inflect in all 14 cases — paradigms are often suppletive (mina → minu → mind).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Possessive</span>
+            <span class="fact-value">@ValueOrFallback("possessive", "ownership", "Possession uses the genitive of personal pronouns (minu, sinu, tema, meie, teie, nende).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Animacy</span>
+            <span class="fact-value">@ValueOrFallback("animacy", "reference", "Estonian distinguishes kes (who, animate) and mis (what, inanimate) for interrogatives and relatives.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

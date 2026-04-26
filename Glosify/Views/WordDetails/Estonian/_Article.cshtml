@@ -1,0 +1,27 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">view_column</span>Article · Artikkel</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">No Articles</span>
+            <span class="fact-value">Estonian has no definite or indefinite articles. Definiteness is signalled by word order, demonstratives (see, too), or the case of the object.</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Definiteness Cues</span>
+            <span class="fact-value">@ValueOrFallback("definiteness", "cues", "Use see / too / üks for emphasis when needed; otherwise context decides.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Object Case</span>
+            <span class="fact-value">@ValueOrFallback("object_case", "case_choice", "Total objects (genitive/nominative) often imply definiteness; partitive objects often imply indefiniteness or partial scope.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

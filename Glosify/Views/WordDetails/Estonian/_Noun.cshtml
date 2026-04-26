@@ -1,0 +1,39 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">title</span>Noun · Nimisõna</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Gender</span>
+            <span class="fact-value">Estonian nouns have no grammatical gender.</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Cases</span>
+            <span class="fact-value">@ValueOrFallback("case", "declension", "Estonian uses 14 cases (nominative, genitive, partitive, illative, inessive, elative, allative, adessive, ablative, translative, terminative, essive, abessive, comitative).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Genitive Stem</span>
+            <span class="fact-value">@ValueOrFallback("genitive", "stem", "Most cases attach endings to the singular genitive stem.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Partitive</span>
+            <span class="fact-value">@ValueOrFallback("partitive", "object_case", "Used for partial objects, after numerals over one, and many quantifiers.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Plural</span>
+            <span class="fact-value">@ValueOrFallback("plural", "number", "Plural is formed with -d (nominative) or -de- / -te- (oblique cases).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Grade Alternation</span>
+            <span class="fact-value">@ValueOrFallback("grade", "astmevaheldus", "Watch for strong/weak grade alternation in the stem (e.g. tuba ↔ toa).")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

@@ -1,0 +1,47 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">directions_run</span>Verb · Tegusõna</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">ma-Infinitive</span>
+            <span class="fact-value">@ValueOrFallback("ma_infinitive", "infinitive", "Dictionary form ending in -ma (e.g. minema, sööma).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">da-Infinitive</span>
+            <span class="fact-value">@ValueOrFallback("da_infinitive", "supine", "Used after many verbs and modals (e.g. minna, süüa).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Present Stem</span>
+            <span class="fact-value">@ValueOrFallback("present", "present_stem", "Personal endings -n, -d, -b, -me, -te, -vad attach to the present stem.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Past Tense</span>
+            <span class="fact-value">@ValueOrFallback("past", "past_tense", "Simple past uses -si- / -i- in the personal forms (e.g. tegin, tegid, tegi).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Past Participle</span>
+            <span class="fact-value">@ValueOrFallback("past_participle", "nud_form", "Active -nud and impersonal -tud / -dud forms feed the perfect tenses.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Mood</span>
+            <span class="fact-value">@ValueOrFallback("mood", "moods", "Indicative, conditional (-ksi-), imperative (-ge-), quotative (-vat), jussive.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Voice</span>
+            <span class="fact-value">@ValueOrFallback("voice", "impersonal", "Estonian distinguishes personal and impersonal (passive) voice.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Object Case</span>
+            <span class="fact-value">@ValueOrFallback("object_case", "rection", "Choose between partitive and total (genitive/nominative) object based on aspect.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

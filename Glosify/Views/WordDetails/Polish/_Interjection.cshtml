@@ -1,0 +1,35 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">campaign</span>Interjection · Wykrzyknik</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Expression</span>
+            <span class="fact-value">Interjections express emotion, reaction, greeting, or imitation and stand outside normal sentence structure.</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Tone</span>
+            <span class="fact-value">@ValueOrFallback("tone", "emocja", "Track surprise (o, ojej, ach), pain (au, ojej), agreement (no, aha), hesitation (no, eee), greeting (cześć, dzień dobry), or sound imitation (bach, puk-puk, miau).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Register</span>
+            <span class="fact-value">@ValueOrFallback("register", "rejestr", "Mark colloquial, neutral, or formal — many interjections are markedly informal or expressive.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Inflection</span>
+            <span class="fact-value">@ValueOrFallback("inflection", "odmiana", "Interjections do not inflect.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Punctuation</span>
+            <span class="fact-value">@ValueOrFallback("punctuation", "interpunkcja", "Usually set off by a comma or exclamation mark (O, jak ładnie! / Hej! Tutaj!).")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

@@ -1,0 +1,51 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">directions_run</span>Verb · Czasownik</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Aspect</span>
+            <span class="fact-value">@ValueOrFallback("aspect", "aspekt", "Every verb is imperfective (niedokonany — process) or perfective (dokonany — completed event); most exist as aspect pairs (pisać / napisać, robić / zrobić).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Conjugation Class</span>
+            <span class="fact-value">@ValueOrFallback("conjugation", "koniugacja", "Four classes by present-tense theme: -ę/-esz (I), -ę/-isz/-ysz (II), -m/-sz (III), -m/-sz with -em/-eś in 1./2. sg (IV — umieć, jeść, wiedzieć, dać, mieć).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Present / Future</span>
+            <span class="fact-value">@ValueOrFallback("present", "future", "Imperfective verbs use synthetic non-past for present (robię); perfective verbs use the same forms with future meaning (zrobię). Imperfective future is analytic: będę + infinitive or będę + l-participle (będę robić / będę robił).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Past Tense</span>
+            <span class="fact-value">@ValueOrFallback("past", "czas_przeszły", "Built on the l-participle, which agrees in gender and number; movable person endings -m, -ś, -śmy, -ście can attach to the verb or to another word in the clause (robiłem / jam robił).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Mood</span>
+            <span class="fact-value">@ValueOrFallback("mood", "tryb", "Indicative, imperative (rób, róbcie), and conditional with -by + person endings (robiłbym, zrobiłabyś).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Reflexive się</span>
+            <span class="fact-value">@ValueOrFallback("reflexive", "się", "The clitic się forms reflexives, reciprocals, impersonal/passive constructions, and many lexicalised verbs (uczyć się, śmiać się); it is mobile within the clause.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Government</span>
+            <span class="fact-value">@ValueOrFallback("rection", "rekcja", "Verbs select case: most transitives take accusative; many take genitive (szukać, używać, brakować), dative (pomagać, dziękować), or instrumental (zostać, kierować, bawić się).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Negation</span>
+            <span class="fact-value">@ValueOrFallback("negation", "dopełniacz_negacji", "Negated transitive verbs flip the direct object from accusative to genitive (mam książkę → nie mam książki).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Participles &amp; Verbal Adverbs</span>
+            <span class="fact-value">@ValueOrFallback("participle", "imiesłów", "Active adjectival -ący / -ąca (idący), passive -ny / -ty (zrobiony, otwarty); adverbial imperfective -ąc (robiąc) and perfective -łszy / -wszy (zrobiwszy).")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

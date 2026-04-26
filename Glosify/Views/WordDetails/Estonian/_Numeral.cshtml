@@ -1,0 +1,35 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">pin</span>Numeral · Arvsõna</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Kind</span>
+            <span class="fact-value">@ValueOrFallback("type", "kind", "Cardinal (üks, kaks, kolm) or ordinal (esimene, teine, kolmas).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Value</span>
+            <span class="fact-value">@ValueOrFallback("value", "quantity", "Add the numeric value when useful.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Counted Noun Case</span>
+            <span class="fact-value">@ValueOrFallback("counted_case", "noun_case", "Cardinals from kaks upward take the singular partitive (kaks raamatut, kümme inimest) — only üks takes the nominative.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Inflection</span>
+            <span class="fact-value">@ValueOrFallback("inflection", "declension", "Both numerals and the counted noun decline together in oblique cases (kahe raamatuga).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Ordinal</span>
+            <span class="fact-value">@ValueOrFallback("ordinal", "form", "Ordinals end in -s (esimene, teine, kolmas, neljas) and decline like adjectives.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

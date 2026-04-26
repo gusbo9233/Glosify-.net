@@ -1,0 +1,31 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">conversion_path</span>Adposition · Kaassõna</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Position</span>
+            <span class="fact-value">@ValueOrFallback("position", "type", "Most Estonian adpositions are postpositions (laua all, sõbra juures); a small set are prepositions (enne tundi, ilma rahata).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Governs Case</span>
+            <span class="fact-value">@ValueOrFallback("governs_case", "case", "Postpositions usually take the genitive; some prepositions take partitive (mööda) or other cases (ilma + abessive).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Relationship</span>
+            <span class="fact-value">@ValueOrFallback("relationship", "meaning_type", "Track place (peal, all, kõrval), time (enne, pärast), cause (tõttu), or comparison (võrra).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Local Case Pair</span>
+            <span class="fact-value">@ValueOrFallback("series", "case_series", "Many adpositions form triplets matching where to / at / from (peale / peal / pealt; juurde / juures / juurest).")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

@@ -1,0 +1,47 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">pin</span>Numeral · Liczebnik</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Kind</span>
+            <span class="fact-value">@ValueOrFallback("type", "kind", "Cardinal (jeden, dwa, trzy), ordinal (pierwszy, drugi, trzeci), collective (dwoje, troje, czworo), fractional (jedna druga), or multiplicative (dwukrotny, podwójny).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Value</span>
+            <span class="fact-value">@ValueOrFallback("value", "wartość", "Add the numeric value when useful.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Counted Noun Case</span>
+            <span class="fact-value">@ValueOrFallback("counted_case", "rekcja", "After 1 → nominative singular (jeden stół); after 2, 3, 4 → nominative plural (dwa stoły, trzy koty); after 5+ and 0 → genitive plural with singular verb agreement (pięć stołów stoi). Compounds follow the last digit (dwadzieścia jeden stół, dwadzieścia pięć stołów).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Masculine Personal Forms</span>
+            <span class="fact-value">@ValueOrFallback("virile_numeral", "męskoosobowy", "With masculine personal nouns, cardinals 2–4 take dwóch / trzech / czterech + genitive plural (dwóch panów było), and 5+ take dedicated -u forms (pięciu studentów); the verb is singular neuter (było pięciu studentów).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Inflection</span>
+            <span class="fact-value">@ValueOrFallback("inflection", "deklinacja", "Cardinals decline in all seven cases; in oblique cases the numeral and noun share the case (z dwoma stołami, pięciu studentom).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Jeden Agreement</span>
+            <span class="fact-value">@ValueOrFallback("jeden_agreement", "rod_liczba", "Jeden agrees with its noun in gender and number (jeden dzień, jedna noc, jedno miasto, jedne drzwi).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Collective</span>
+            <span class="fact-value">@ValueOrFallback("collective", "zbiorowe", "Collective numerals (dwoje, troje, czworo, pięcioro) are required for mixed-gender groups, groups of children/young animals, and pluralia tantum (dwoje dzieci, troje drzwi).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Ordinal</span>
+            <span class="fact-value">@ValueOrFallback("ordinal", "porządkowy", "Ordinals decline like adjectives and agree fully with their noun (pierwszy dzień, na trzecim piętrze, w tysiąc dziewięćset osiemdziesiątym dziewiątym roku).")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

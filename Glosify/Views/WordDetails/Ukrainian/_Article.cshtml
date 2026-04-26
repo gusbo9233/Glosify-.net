@@ -1,0 +1,27 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">view_column</span>Article · Артикль</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">No Articles</span>
+            <span class="fact-value">Ukrainian has no definite or indefinite articles. Definiteness is signalled by word order, demonstratives (цей, той), or quantifiers (один, якийсь).</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Definiteness Cues</span>
+            <span class="fact-value">@ValueOrFallback("definiteness", "cues", "Топік-focus word order, the demonstrative цей / той for emphasis, and indefinite один / якийсь / -сь forms cover the work English articles do.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Information Structure</span>
+            <span class="fact-value">@ValueOrFallback("information_structure", "tema_rema", "Old (definite) information tends to come first; new (indefinite) information later — Книга на столі (the book is on the table) vs На столі книга (there is a book on the table).")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

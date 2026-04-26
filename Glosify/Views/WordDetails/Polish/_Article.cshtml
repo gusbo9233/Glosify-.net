@@ -1,0 +1,31 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">view_column</span>Article · Przedimek</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">No Articles</span>
+            <span class="fact-value">Polish has no definite or indefinite articles. Definiteness is signalled by word order, demonstratives (ten, tamten), or quantifiers (jeden, pewien, jakiś).</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Definiteness Cues</span>
+            <span class="fact-value">@ValueOrFallback("definiteness", "cues", "Topic-focus word order, the demonstrative ten / ta / to for emphasis, and indefinite jeden / pewien / jakiś / -ś forms cover the work English articles do.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Information Structure</span>
+            <span class="fact-value">@ValueOrFallback("information_structure", "temat_remat", "Old (definite) information tends to come first; new (indefinite) information later — Książka leży na stole (the book is on the table) vs Na stole leży książka (there is a book on the table).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Object Case</span>
+            <span class="fact-value">@ValueOrFallback("object_case", "przypadek_dopełnienia", "Aspect and case of the object can imply definiteness: a perfective verb with an accusative object often reads as a complete, specific action (zjadłem ciastko = I ate the cake).")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

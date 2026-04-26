@@ -1,5 +1,11 @@
 @model IEnumerable<Glosify.Models.Quiz>
-@{ Layout = "~/Views/Shared/_AppLayout.cshtml"; ViewData["Title"] = "Select Quiz"; ViewData["ActiveNav"] = "quizzes"; }
+@inject Glosify.Services.ILanguageContext LangContext
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "Select Quiz";
+    ViewData["ActiveNav"] = "quizzes";
+    var currentLanguage = LangContext.CurrentLanguage ?? "";
+}
 
 @section Styles {
 <style>
@@ -274,9 +280,9 @@
 <section class="select-quiz-page">
     <header class="select-header">
         <div>
-            <p class="select-kicker">Quiz Library</p>
+            <p class="select-kicker">Quiz Library · @currentLanguage</p>
             <h1 class="select-title">Select a quiz</h1>
-            <p class="select-subtitle">Open an existing quiz workspace or create a new one.</p>
+            <p class="select-subtitle">Showing your @currentLanguage quizzes. <a asp-controller="Languages" asp-action="Index" style="color:var(--primary);text-decoration:none;font-weight:700;">Change language</a></p>
         </div>
         <button class="btn-new-quiz" type="button" onclick="document.getElementById('createModal').classList.add('open')">
             <span class="material-symbols-outlined">add</span>
@@ -339,13 +345,11 @@
             </div>
             <div class="form-group">
                 <label class="form-label">Target Language</label>
-                <select class="select-input" name="TargetLanguage" required>
-                    <option value="">Select language...</option>
-                    <option>German</option>
-                    <option>Polish</option>
-                    <option>Ukrainian</option>
-                    <option>Estonian</option>
-                </select>
+                <input type="hidden" name="TargetLanguage" value="@currentLanguage" />
+                <div class="form-input" style="display:flex;align-items:center;justify-content:space-between;cursor:default;">
+                    <span>@currentLanguage</span>
+                    <a asp-controller="Languages" asp-action="Index" style="color:var(--primary);text-decoration:none;font-size:12px;font-weight:700;">Change</a>
+                </div>
             </div>
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" onclick="document.getElementById('createModal').classList.remove('open')">Cancel</button>

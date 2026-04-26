@@ -241,18 +241,32 @@ namespace Glosify.Controllers
             return _context.WordDetails.Any(e => e.Id == id);
         }
 
+        private static readonly Dictionary<string, string[]> SupportedDictionaryLanguages = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["de"] = new[] { "de", "german", "deutsch" },
+            ["et"] = new[] { "et", "estonian", "eesti" },
+            ["uk"] = new[] { "uk", "ukrainian", "ukrainisch", "українська", "українська мова" },
+            ["pl"] = new[] { "pl", "polish", "polski", "polnisch" }
+        };
+
         private async Task<DictionaryEntry?> FindDictionaryMatchAsync(
             WordDetail wordDetail,
             Word? word,
             Quiz quiz,
             IReadOnlyList<KeyValuePair<string, string>> detailProperties)
         {
-            if (word == null || !IsGermanLanguage(wordDetail.Language, quiz.TargetLanguage, quiz.Language))
+            if (word == null)
             {
                 return null;
             }
 
-            var candidates = GetDictionaryWordCandidates(GetGermanLookupTerms(word, wordDetail, quiz));
+            var langCode = ResolveSupportedLangCode(wordDetail, quiz);
+            if (langCode == null)
+            {
+                return null;
+            }
+
+            var candidates = GetDictionaryWordCandidates(langCode, GetLookupTerms(langCode, word, wordDetail, quiz));
             if (candidates.Count == 0)
             {
                 return null;
@@ -260,7 +274,7 @@ namespace Glosify.Controllers
 
             var matches = await _context.DictionaryEntries
                 .AsNoTracking()
-                .Where(entry => entry.LangCode == "de" && candidates.Contains(entry.Word))
+                .Where(entry => entry.LangCode == langCode && candidates.Contains(entry.Word))
                 .ToListAsync();
 
             if (matches.Count == 0)
@@ -340,14 +354,53 @@ namespace Glosify.Controllers
             return string.Equals(entry.PartOfSpeech, selectedPartOfSpeech, StringComparison.OrdinalIgnoreCase) ? 0 : 1;
         }
 
-        private static IEnumerable<string> GetGermanLookupTerms(Word word, WordDetail wordDetail, Quiz quiz)
+        private static string? ResolveSupportedLangCode(WordDetail wordDetail, Quiz quiz)
         {
-            if (IsGermanLanguage(quiz.TargetLanguage, wordDetail.Language, quiz.Language))
+            string?[] languages = { wordDetail.Language, quiz.TargetLanguage, quiz.Language, quiz.SourceLanguage };
+            foreach (var language in languages)
+            {
+                var code = MatchSupportedLangCode(language);
+                if (code != null)
+                {
+                    return code;
+                }
+            }
+
+            return null;
+        }
+
+        private static string? MatchSupportedLangCode(string? language)
+        {
+            if (string.IsNullOrWhiteSpace(language))
+            {
+                return null;
+            }
+
+            foreach (var (code, markers) in SupportedDictionaryLanguages)
+            {
+                foreach (var marker in markers)
+                {
+                    if (language.Equals(marker, StringComparison.OrdinalIgnoreCase)
+                        || language.Contains(marker, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return code;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static IEnumerable<string> GetLookupTerms(string langCode, Word word, WordDetail wordDetail, Quiz quiz)
+        {
+            if (MatchSupportedLangCode(quiz.TargetLanguage) == langCode
+                || MatchSupportedLangCode(wordDetail.Language) == langCode
+                || MatchSupportedLangCode(quiz.Language) == langCode)
             {
                 yield return word.Translation;
             }
 
-            if (IsGermanLanguage(quiz.SourceLanguage))
+            if (MatchSupportedLangCode(quiz.SourceLanguage) == langCode)
             {
                 yield return word.Lemma;
             }
@@ -356,7 +409,7 @@ namespace Glosify.Controllers
             yield return word.Lemma;
         }
 
-        private static List<string> GetDictionaryWordCandidates(IEnumerable<string> lookupTerms)
+        private static List<string> GetDictionaryWordCandidates(string langCode, IEnumerable<string> lookupTerms)
         {
             var candidates = new List<string>();
             foreach (var lookupTerm in lookupTerms)
@@ -369,13 +422,16 @@ namespace Glosify.Controllers
 
                 AddCandidateWithCaseVariants(candidates, trimmed);
 
-                var articlePrefixes = new[] { "der ", "die ", "das ", "ein ", "eine ", "einen ", "einem ", "einer " };
-                foreach (var prefix in articlePrefixes)
+                if (langCode == "de")
                 {
-                    if (trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    var articlePrefixes = new[] { "der ", "die ", "das ", "ein ", "eine ", "einen ", "einem ", "einer " };
+                    foreach (var prefix in articlePrefixes)
                     {
-                        AddCandidateWithCaseVariants(candidates, trimmed[prefix.Length..].Trim());
-                        break;
+                        if (trimmed.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                        {
+                            AddCandidateWithCaseVariants(candidates, trimmed[prefix.Length..].Trim());
+                            break;
+                        }
                     }
                 }
             }
@@ -401,15 +457,6 @@ namespace Glosify.Controllers
             {
                 candidates.Add(value);
             }
-        }
-
-        private static bool IsGermanLanguage(params string[] languages)
-        {
-            return languages.Any(language =>
-                !string.IsNullOrWhiteSpace(language)
-                && (language.Equals("de", StringComparison.OrdinalIgnoreCase)
-                    || language.Contains("german", StringComparison.OrdinalIgnoreCase)
-                    || language.Contains("deutsch", StringComparison.OrdinalIgnoreCase)));
         }
 
         private static JsonObject ReadPropertiesObject(string? json)

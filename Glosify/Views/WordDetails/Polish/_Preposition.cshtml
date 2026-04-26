@@ -1,0 +1,39 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">conversion_path</span>Preposition · Przyimek</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Governs Case</span>
+            <span class="fact-value">@ValueOrFallback("governs_case", "rekcja", "Each preposition selects one or more cases: genitive (bez, dla, do, od, u), dative (dzięki, przeciw, ku), accusative (przez, na — w with motion), instrumental (z = with, nad, pod, przed, między — static or with motion), locative (w, na, o, po, przy — only with locative).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Direction vs Location</span>
+            <span class="fact-value">@ValueOrFallback("direction", "kierunek", "W / na / pod / nad / przed / między take the accusative for motion toward (idę na uniwersytet) and the locative or instrumental for static location (jestem na uniwersytecie, leży pod stołem).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Variant Forms</span>
+            <span class="fact-value">@ValueOrFallback("variants", "warianty", "Many prepositions have a -e form before consonant clusters: w → we (we Wrocławiu), z → ze (ze mną), od → ode, przed → przede.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Z: with vs from</span>
+            <span class="fact-value">@ValueOrFallback("z_meaning", "z_with_from", "Z + instrumental = with (z bratem); z + genitive = from / out of (z domu, z Polski). Different cases, different meanings.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Triggers n- in Pronouns</span>
+            <span class="fact-value">@ValueOrFallback("n_initial", "prefiks_n", "After a preposition, third-person pronouns add n- (do niego, z nią, przy nich).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Relationship</span>
+            <span class="fact-value">@ValueOrFallback("relationship", "meaning_type", "Track place, time, cause, purpose, manner, comparison, or quantity.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

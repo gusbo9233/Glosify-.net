@@ -1,0 +1,35 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">schedule</span>Adverb · Przysłówek</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Function</span>
+            <span class="fact-value">Adverbs modify verbs, adjectives, and other adverbs and are normally invariable.</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Semantic Type</span>
+            <span class="fact-value">@ValueOrFallback("type", "semantic_type", "Track manner (szybko, dobrze), time (wczoraj, potem), place (tu, daleko), degree (bardzo, zbyt), or cause (dlatego).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Origin</span>
+            <span class="fact-value">@ValueOrFallback("origin", "derywacja", "Most are derived from adjectives in -o (szybki → szybko) or -e (dobry → dobrze, polski → po polsku); others are frozen case forms (wieczorem, latem).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Comparison</span>
+            <span class="fact-value">@ValueOrFallback("comparison", "stopniowanie", "Qualitative adverbs accept -ej (szybciej, ładniej) and superlative with naj- (najszybciej); irregular: dobrze → lepiej → najlepiej, źle → gorzej → najgorzej.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Predicative</span>
+            <span class="fact-value">@ValueOrFallback("predicative", "orzecznik", "Predicative adverbs (zimno mi, trzeba, można, wolno) head impersonal sentences with a dative experiencer.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

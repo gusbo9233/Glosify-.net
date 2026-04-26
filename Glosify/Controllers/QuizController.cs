@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Glosify.Data;
 using Glosify.Models;
+using Glosify.Services;
 using System.Security.Claims;
 
 namespace Glosify.Controllers
@@ -11,10 +12,12 @@ namespace Glosify.Controllers
     public class QuizController : Controller
     {
         private readonly GlosifyContext _context;
+        private readonly ILanguageContext _languageContext;
 
-        public QuizController(GlosifyContext context)
+        public QuizController(GlosifyContext context, ILanguageContext languageContext)
         {
             _context = context;
+            _languageContext = languageContext;
         }
 
         /// <summary>
@@ -26,8 +29,12 @@ namespace Glosify.Controllers
             if (string.IsNullOrEmpty(userId))
                 return RedirectToAction("Login", "Account");
 
+            var language = _languageContext.CurrentLanguage;
+            if (language == null)
+                return RedirectToAction("Index", "Languages");
+
             var quizzes = await _context.Quizzes
-                .Where(q => q.UserId.ToString() == userId)
+                .Where(q => q.UserId.ToString() == userId && q.TargetLanguage == language)
                 .ToListAsync();
 
             return View("select-quiz", quizzes);
@@ -47,6 +54,12 @@ namespace Glosify.Controllers
                 .FirstOrDefaultAsync(q => q.Id == id && q.UserId.ToString() == userId);
 
             if (selectedQuiz == null)
+                return RedirectToAction("Index");
+
+            var language = _languageContext.CurrentLanguage;
+            if (language == null)
+                return RedirectToAction("Index", "Languages");
+            if (!string.Equals(selectedQuiz.TargetLanguage, language, StringComparison.OrdinalIgnoreCase))
                 return RedirectToAction("Index");
 
             var words = await _context.Words
@@ -108,14 +121,18 @@ namespace Glosify.Controllers
             if (string.IsNullOrEmpty(userId))
                 return RedirectToAction("Login", "Account");
 
+            var language = _languageContext.CurrentLanguage;
+            if (language == null)
+                return RedirectToAction("Index", "Languages");
+
             var quiz = new Quiz
             {
                 Id = Guid.NewGuid(),
                 Name = Name,
                 UserId = Guid.Parse(userId),
                 SourceLanguage = SourceLanguage,
-                TargetLanguage = TargetLanguage,
-                Language = TargetLanguage,
+                TargetLanguage = language,
+                Language = language,
                 CreatedAt = DateTimeOffset.UtcNow,
                 ProcessingStatus = "Ready"
             };

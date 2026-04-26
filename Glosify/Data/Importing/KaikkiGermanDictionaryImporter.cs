@@ -165,6 +165,8 @@ public sealed class KaikkiGermanDictionaryImporter
 
         var existingSet = existing.ToHashSet(StringComparer.Ordinal);
         var newEntries = batch
+            .GroupBy(entry => entry.SourceHash, StringComparer.Ordinal)
+            .Select(group => group.First())
             .Where(entry => !existingSet.Contains(entry.SourceHash))
             .ToArray();
 

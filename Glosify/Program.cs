@@ -3,6 +3,7 @@ using Glosify.Data.Importing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Glosify.Models;
+using Glosify.Services;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,6 +32,9 @@ builder.Services.AddAuthentication()
     });
 
 builder.Services.AddRazorPages();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ILanguageContext, CookieLanguageContext>();
 
 // Configure Azure SQL Database
 builder.Services.AddDbContext<GlosifyContext>(options =>

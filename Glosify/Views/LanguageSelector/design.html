@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Language Selector - Sonic Polyglot</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary": "#003914",
+                    "surface-container-lowest": "#010e24",
+                    "surface": "#041329",
+                    "tertiary-fixed": "#ffdad9",
+                    "outline-variant": "#3d4a3d",
+                    "on-tertiary-fixed-variant": "#881d28",
+                    "on-error": "#690005",
+                    "tertiary": "#ffb3b3",
+                    "surface-tint": "#53e076",
+                    "surface-bright": "#2c3951",
+                    "surface-container-highest": "#27354c",
+                    "inverse-surface": "#d6e3ff",
+                    "tertiary-fixed-dim": "#ffb3b3",
+                    "secondary-fixed-dim": "#99d59d",
+                    "primary-fixed-dim": "#53e076",
+                    "surface-dim": "#041329",
+                    "on-secondary-fixed-variant": "#195127",
+                    "outline": "#869585",
+                    "on-background": "#d6e3ff",
+                    "primary-fixed": "#72fe8f",
+                    "error-container": "#93000a",
+                    "surface-variant": "#27354c",
+                    "secondary": "#99d59d",
+                    "on-primary-fixed-variant": "#005320",
+                    "tertiary-container": "#ff767b",
+                    "surface-container-high": "#1c2a41",
+                    "surface-container": "#112036",
+                    "background": "#041329",
+                    "on-secondary-fixed": "#002108",
+                    "on-secondary": "#003914",
+                    "on-primary-container": "#004118",
+                    "on-surface-variant": "#bccbb9",
+                    "secondary-container": "#1c5329",
+                    "inverse-primary": "#006e2d",
+                    "primary-container": "#1db954",
+                    "on-tertiary-fixed": "#400009",
+                    "on-tertiary-container": "#730a1b",
+                    "error": "#ffb4ab",
+                    "secondary-fixed": "#b5f1b8",
+                    "on-primary-fixed": "#002108",
+                    "on-tertiary": "#680114",
+                    "surface-container-low": "#0d1c32",
+                    "on-secondary-container": "#8cc690",
+                    "on-error-container": "#ffdad6",
+                    "inverse-on-surface": "#233148",
+                    "on-surface": "#d6e3ff",
+                    "primary": "#53e076"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "display": ["Plus Jakarta Sans"],
+                    "body": ["Plus Jakarta Sans"],
+                    "label": ["Plus Jakarta Sans"]
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-card {
+            background: linear-gradient(135deg, rgba(44, 57, 81, 0.6) 0%, rgba(17, 32, 54, 0.6) 100%);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col items-center justify-center overflow-x-hidden">
+    <main class="w-full max-w-7xl mx-auto px-8 py-12">
+        <!-- Hero Header Section -->
+        <section class="mb-16 text-center">
+            <div class="inline-flex items-center gap-2 mb-6">
+                <h1 class="text-3xl font-bold tracking-tighter text-[#1DB954]">Sonic Polyglot</h1>
+            </div>
+            <h2 class="text-5xl font-extrabold tracking-tighter text-on-surface mb-6 leading-tight">Where would you like to <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary-container">resonate</span> today?</h2>
+        </section>
+        <!-- Language Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- Estonian Card -->
+            <a class="glass-card group p-8 rounded-xl flex flex-col items-center justify-center gap-6 hover:scale-[1.05] transition-all duration-300 shadow-xl border border-white/10 hover:border-primary/30" href="#">
+                <div class="w-24 h-16 rounded-md overflow-hidden shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                    <img class="w-full h-full object-cover" data-alt="vibrant blue, black and white horizontal stripes of the Estonian flag texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZ2sQ-Gm0IFAy_DytV0O7H5FrnB-55daQEwrkBPYvv24X3Ghb-hDg2DxqgvmdjJH3P4bmjMp7ahJihICv_uyX2ixNRA035qSM7IkZXYf-DQdQ3rfK5Q1fClDrqmCN1CtP6oRNXEPDpHy4GNj511IVdZB-Oe-g8qiKY0YjE5ZXG55CgQVPqLYfjHz0adxYPwhFQo4w-CoIv5B79GSaOqvbqNRjKiAD8Zdn4W_04EtqiRokkqK1PhCTN3Syoq4c-J3s6j6SyNq10DOul" />
+                </div>
+                <h3 class="text-2xl font-bold text-on-surface group-hover:text-primary transition-colors">Estonian</h3>
+            </a>
+            <!-- German Card -->
+            <a class="glass-card group p-8 rounded-xl flex flex-col items-center justify-center gap-6 hover:scale-[1.05] transition-all duration-300 shadow-xl border border-white/10 hover:border-primary/30" href="#">
+                <div class="w-24 h-16 rounded-md overflow-hidden shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                    <img class="w-full h-full object-cover" data-alt="black, red and gold horizontal stripes of the German flag" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtTcg-PhZP3mjyCresEL0CRqfXzICDSN3flFNVzt_jnZgFZM_dQegDgkoXrDS-cVFpESLt4ZLa1lH3A-aRlQV63lDpWiUBAS7WIIgxFPHk0sh6hQ-5EMl021f3gbQxbeTSjyDIoax0-jeJ2OCi-zEqxMmEJc8zV76APRiPCyti-IwVi-w7ephZUCOWHtXKiXYY4Z_oYUvMFIRQSVoJRW59SRdNa4vrNYsZuEJqFMEmitdI-XJAqSRllZ73eYBmNs4ONl-FjeaLPp8P" />
+                </div>
+                <h3 class="text-2xl font-bold text-on-surface group-hover:text-primary transition-colors">German</h3>
+            </a>
+            <!-- Polish Card -->
+            <a class="glass-card group p-8 rounded-xl flex flex-col items-center justify-center gap-6 hover:scale-[1.05] transition-all duration-300 shadow-xl border border-white/10 hover:border-primary/30" href="#">
+                <div class="w-24 h-16 rounded-md overflow-hidden shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                    <img class="w-full h-full object-cover" data-alt="white and red horizontal stripes of the Polish flag" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhSKPE5hg1m8thMS3lJIlTH9hK3CiwNKxshTwXSU4L4ArDh3nnBw-joJjK7k5Cjh7nBpFP7J-BgkJSO3ZAkbtupZ2nZeTJdQX_oeEIeRU03Q1nnhG_QLYD3gmU-57Cv3ZdJ9Fwy6LYDJRl8fn2TBsR8NcFk4IWBu90BstA3vjgJ5vMRSV0ACVo47T-UCbsg8ys1GmI_nltEws2wo1xvDBwJYYA9dpIpyIKqLSVhL2bPxAgbalVXXccy-dcBWr5R334AqL20MrQIWW4" />
+                </div>
+                <h3 class="text-2xl font-bold text-on-surface group-hover:text-primary transition-colors">Polish</h3>
+            </a>
+            <!-- Ukrainian Card -->
+            <a class="glass-card group p-8 rounded-xl flex flex-col items-center justify-center gap-6 hover:scale-[1.05] transition-all duration-300 shadow-xl border border-white/10 hover:border-primary/30" href="#">
+                <div class="w-24 h-16 rounded-md overflow-hidden shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                    <img class="w-full h-full object-cover" data-alt="sky blue and golden yellow horizontal stripes of the Ukrainian flag" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdOsmd3zj5tZdV32BI88ypYhlafAHYVkqwNu_TH7_16pScbeMKPoHBvm5NZo50NlrmN6eCdKcIg5hvo0rzDO_d-fBnMXbp2ku1LinQyH7Mx6La2hKUG5bsdo4LrSo3c7jjQ6JIh1jQwzInQ1Z4G0wFDYefa_hkAFRtuoZHsqmM7zBQ_TnoVzU_QHG8mkOVeXDcCQQ0AMTtm8UJ6ZwKoGBvn1-KOd6DpH7Sew-dCKRnLsVmww58Xj9-cCD3UHepoKeLS8eIvHK9X-Su" />
+                </div>
+                <h3 class="text-2xl font-bold text-on-surface group-hover:text-primary transition-colors">Ukrainian</h3>
+            </a>
+        </div>
+    </main>
+</body>
+</html>

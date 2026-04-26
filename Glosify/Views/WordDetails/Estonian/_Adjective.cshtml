@@ -1,0 +1,35 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">palette</span>Adjective · Omadussõna</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Agreement</span>
+            <span class="fact-value">Adjectives agree with their noun in case and number (except in the terminative, essive, abessive, and comitative, where they stay in the genitive).</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Comparative</span>
+            <span class="fact-value">@ValueOrFallback("comparative", "keskvõrre", "Form with the suffix -m (e.g. suurem, parem).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Superlative</span>
+            <span class="fact-value">@ValueOrFallback("superlative", "ülivõrre", "Analytic kõige + comparative, or synthetic -im (e.g. kõige suurem, suurim).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Predicative Use</span>
+            <span class="fact-value">@ValueOrFallback("predicative", "usage", "After olema the adjective normally appears in the nominative (Auto on punane).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Grade Alternation</span>
+            <span class="fact-value">@ValueOrFallback("grade", "astmevaheldus", "Many adjective stems alternate in grade between forms (e.g. lühike ↔ lühema).")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

@@ -1,0 +1,43 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">pin</span>Numeral · Числівник</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Kind</span>
+            <span class="fact-value">@ValueOrFallback("type", "kind", "Cardinal (один, два, три), ordinal (перший, другий), collective (двоє, троє, четверо), or fractional (одна друга).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Value</span>
+            <span class="fact-value">@ValueOrFallback("value", "quantity", "Add the numeric value when useful.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Counted Noun Case</span>
+            <span class="fact-value">@ValueOrFallback("counted_case", "noun_case", "After 1 → nominative singular (один стіл); after 2, 3, 4 → nominative plural (два столи); after 5+ and 0 → genitive plural (п'ять столів). Compounds follow the last digit (двадцять один стіл, двадцять п'ять столів).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Inflection</span>
+            <span class="fact-value">@ValueOrFallback("inflection", "declension", "Cardinals decline in all seven cases; in oblique cases the numeral and noun share the case (двома столами, п'яти студентам).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Один Agreement</span>
+            <span class="fact-value">@ValueOrFallback("odyn_agreement", "rid_chyslo", "Один agrees with its noun in gender and number (один день, одна ніч, одне місто, одні двері).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Collective</span>
+            <span class="fact-value">@ValueOrFallback("collective", "zbirni", "Collective numerals (двоє, троє, четверо) are used with masculine personal nouns and pluralia tantum (двоє хлопців, троє дверей).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Ordinal</span>
+            <span class="fact-value">@ValueOrFallback("ordinal", "poriadkovyi", "Ordinals decline like adjectives and agree with their noun (перший день, на третьому поверсі).")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

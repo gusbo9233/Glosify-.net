@@ -1,3 +1,4 @@
+@inject Glosify.Services.ILanguageContext LangContext
 @functions {
     string CurrentController => (ViewContext.RouteData.Values["controller"] as string ?? "").ToLowerInvariant();
     string CurrentAction => (ViewContext.RouteData.Values["action"] as string ?? "").ToLowerInvariant();
@@ -138,6 +139,24 @@
             <div class="mb-8">
                 <span class="text-2xl font-bold tracking-tighter text-[#1DB954]">Sonic Polyglot</span>
                 <p class="text-slate-400 text-xs mt-1">Premium Learner</p>
+                @if (!string.IsNullOrEmpty(LangContext.CurrentLanguage))
+                {
+                    <a asp-controller="Languages" asp-action="Index"
+                       class="inline-flex items-center gap-x-2 mt-3 px-3 py-1.5 rounded-full text-xs font-bold"
+                       style="background:rgba(83,224,118,0.12);color:#53e076;text-decoration:none;">
+                        <span class="material-symbols-outlined" style="font-size:14px;">translate</span>
+                        @LangContext.CurrentLanguage
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Languages" asp-action="Index"
+                       class="inline-flex items-center gap-x-2 mt-3 px-3 py-1.5 rounded-full text-xs font-bold"
+                       style="background:rgba(255,180,171,0.14);color:#ffb4ab;text-decoration:none;">
+                        <span class="material-symbols-outlined" style="font-size:14px;">translate</span>
+                        Pick a language
+                    </a>
+                }
             </div>
             <nav class="flex flex-col gap-y-4">
                 <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">

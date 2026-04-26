@@ -1,0 +1,35 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">lan</span>Conjunction · Сполучник</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Clause Role</span>
+            <span class="fact-value">@ValueOrFallback("type", "clause_type", "Coordinating (і / й, та, а, але, проте, або, чи) or subordinating (що, щоб, бо, якщо, коли, хоча, поки).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Word Order</span>
+            <span class="fact-value">@ValueOrFallback("word_order", "poriadok_sliv", "Word order is flexible (free) and information-driven; conjunctions do not force the verb to a fixed position.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Connects</span>
+            <span class="fact-value">@ValueOrFallback("connects", "scope", "Connects words, phrases, clauses, or full sentences.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Punctuation</span>
+            <span class="fact-value">@ValueOrFallback("punctuation", "comma", "Subordinate clauses are always set off by a comma; і / та joining only two items take no comma, but repeated і…і… does (і він, і вона).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">і vs й</span>
+            <span class="fact-value">@ValueOrFallback("i_vs_y", "evfoniya", "Use й after a vowel and before a consonant for euphony (вона й він), і elsewhere — same rule applies to у/в.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

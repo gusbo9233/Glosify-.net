@@ -1,0 +1,39 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">palette</span>Adjective · Прикметник</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Agreement</span>
+            <span class="fact-value">Adjectives agree with their noun in gender, number, and case (новий стіл, нова книга, нове вікно, нові двері).</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Stem Type</span>
+            <span class="fact-value">@ValueOrFallback("stem", "tverdist", "Hard stem (-ий, -а, -е, -і) like новий, or soft stem (-ій, -я, -є, -і) like синій.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Comparative</span>
+            <span class="fact-value">@ValueOrFallback("comparative", "vyshchyi_stupin", "Synthetic with -ший / -іший (новіший, кращий) or analytic with більш + adjective (більш новий).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Superlative</span>
+            <span class="fact-value">@ValueOrFallback("superlative", "naivyshchyi_stupin", "Add the prefix най- to the comparative (найновіший, найкращий); analytic with найбільш also exists.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Short Form</span>
+            <span class="fact-value">@ValueOrFallback("short_form", "korotka_forma", "A handful of adjectives keep predicative short forms (рад, винен, повен, годен, ласкав).")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Possessive</span>
+            <span class="fact-value">@ValueOrFallback("possessive", "prysviynyi", "Possessive adjectives in -ів / -ин (батьків, мамин) decline with mixed noun-adjective endings.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}
