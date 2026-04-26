@@ -4,7 +4,12 @@ using Microsoft.EntityFrameworkCore;
 using Glosify.Data;
 using Glosify.Models;
 using Glosify.Services;
+using Google.GenAI;
+using Google.GenAI.Types;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace Glosify.Controllers
 {
@@ -66,11 +71,28 @@ namespace Glosify.Controllers
                 .Where(w => w.QuizId == selectedQuiz.Id)
                 .OrderBy(w => w.Lemma)
                 .ToListAsync();
+            var wordDetails = await _context.WordDetails
+                .Where(detail => detail.QuizId == selectedQuiz.Id)
+                .ToListAsync();
+            var sentences = wordDetails
+                .Where(detail => !string.IsNullOrWhiteSpace(detail.ExampleSentence))
+                .GroupBy(detail => detail.ExampleSentence.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(group => new QuizSentenceViewModel
+                {
+                    Text = group.Key,
+                    Translation = group
+                        .Select(detail => detail.Explanation.Trim())
+                        .FirstOrDefault(translation => !string.IsNullOrWhiteSpace(translation)) ?? string.Empty,
+                    WordCount = group.Count()
+                })
+                .OrderBy(sentence => sentence.Text)
+                .ToList();
 
             return View("quiz-view", new QuizWorkspaceViewModel
             {
                 SelectedQuiz = selectedQuiz,
-                Words = words
+                Words = words,
+                Sentences = sentences
             });
         }
 
@@ -111,6 +133,165 @@ namespace Glosify.Controllers
             }
 
             return RedirectToAction("Details", new { id = quizId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateWords(Guid quizId, string input)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return RedirectToAction("Login", "Account");
+
+            var quiz = await _context.Quizzes
+                .FirstOrDefaultAsync(q => q.Id == quizId && q.UserId.ToString() == userId);
+
+            if (quiz == null)
+                return RedirectToAction("Index");
+
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                TempData["AiError"] = "Paste some text first so the assistant has vocabulary to extract.";
+                return RedirectToAction("Details", new { id = quizId });
+            }
+
+            var sourceText = input.Trim();
+            var json = await GenerateWordsWithAssistant(sourceText, quiz.SourceLanguage, quiz.TargetLanguage);
+            if (!ValidateGeneratedWordsResponse(json))
+            {
+                TempData["AiError"] = "The assistant returned an unexpected response. Try a shorter text sample.";
+                return RedirectToAction("Details", new { id = quizId });
+            }
+
+            var generatedWords = JsonSerializer.Deserialize<Dictionary<string, GeneratedWord>>(json) ?? [];
+            var sourceSentences = ExtractSourceSentences(sourceText);
+            var shouldUseSourceSentences = ShouldUseSourceSentences(sourceSentences);
+            var existingWords = await _context.Words
+                .Where(w => w.QuizId == quizId)
+                .Select(w => w.Lemma)
+                .ToListAsync();
+            var existing = new HashSet<string>(existingWords, StringComparer.OrdinalIgnoreCase);
+            var added = 0;
+
+            foreach (var (lemma, generatedWord) in generatedWords)
+            {
+                var trimmedLemma = lemma.Trim();
+                var translation = generatedWord.Translation?.Trim();
+
+                if (string.IsNullOrWhiteSpace(trimmedLemma)
+                    || string.IsNullOrWhiteSpace(translation)
+                    || existing.Contains(trimmedLemma))
+                {
+                    continue;
+                }
+
+                var wordDetailId = Guid.NewGuid().ToString("N");
+                _context.WordDetails.Add(new WordDetail
+                {
+                    Id = wordDetailId,
+                    QuizId = quizId,
+                    Language = quiz.TargetLanguage,
+                    ExampleSentence = ResolveExampleSentence(trimmedLemma, generatedWord, sourceSentences, shouldUseSourceSentences),
+                    Explanation = generatedWord.ExampleSentenceTranslation?.Trim() ?? string.Empty
+                });
+
+                _context.Words.Add(new Word
+                {
+                    Id = Guid.NewGuid().ToString("N"),
+                    QuizId = quizId,
+                    Lemma = trimmedLemma,
+                    Translation = translation,
+                    WordDetailId = wordDetailId
+                });
+
+                existing.Add(trimmedLemma);
+                added++;
+            }
+
+            if (added > 0)
+            {
+                await _context.SaveChangesAsync();
+                TempData["AiMessage"] = $"Added {added} generated {(added == 1 ? "word" : "words")}.";
+            }
+            else
+            {
+                TempData["AiMessage"] = "No new words were added. The generated words may already be in this quiz.";
+            }
+
+            return RedirectToAction("Details", new { id = quizId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteWord(string id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return RedirectToAction("Login", "Account");
+
+            if (string.IsNullOrWhiteSpace(id))
+                return RedirectToAction("Index");
+
+            var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == id);
+            if (word == null)
+                return RedirectToAction("Index");
+
+            var quiz = await _context.Quizzes
+                .FirstOrDefaultAsync(q => q.Id == word.QuizId && q.UserId.ToString() == userId);
+
+            if (quiz == null)
+                return RedirectToAction("Index");
+
+            var wordDetail = await _context.WordDetails
+                .FirstOrDefaultAsync(detail => detail.Id == word.WordDetailId && detail.QuizId == quiz.Id);
+
+            _context.Words.Remove(word);
+            await _context.SaveChangesAsync();
+
+            if (wordDetail != null)
+            {
+                _context.WordDetails.Remove(wordDetail);
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["QuizMessage"] = $"Deleted {word.Lemma}.";
+
+            return RedirectToAction("Details", new { id = quiz.Id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteQuiz(Guid id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return RedirectToAction("Login", "Account");
+
+            var quiz = await _context.Quizzes
+                .FirstOrDefaultAsync(q => q.Id == id && q.UserId.ToString() == userId);
+
+            if (quiz == null)
+                return RedirectToAction("Index");
+
+            var words = await _context.Words
+                .Where(word => word.QuizId == quiz.Id)
+                .ToListAsync();
+            var wordDetails = await _context.WordDetails
+                .Where(detail => detail.QuizId == quiz.Id)
+                .ToListAsync();
+
+            _context.Words.RemoveRange(words);
+            await _context.SaveChangesAsync();
+
+            _context.WordDetails.RemoveRange(wordDetails);
+            await _context.SaveChangesAsync();
+
+            _context.Quizzes.Remove(quiz);
+            await _context.SaveChangesAsync();
+
+            TempData["QuizMessage"] = $"Deleted {quiz.Name}.";
+
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
@@ -272,6 +453,163 @@ namespace Glosify.Controllers
             // Case-insensitive comparison with trimming
             return userAnswer.Trim().Equals(correctAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
         }
+
+        private static async Task<string> GenerateWordsWithAssistant(string input, string knownLanguage, string targetLanguage)
+        {
+            var apiKey = LoadGeminiApiKey();
+            var prompt = BuildWordExtractionPrompt(input, knownLanguage, targetLanguage);
+            var client = new Client(apiKey: apiKey);
+            var response = await client.Models.GenerateContentAsync(
+                model: "gemini-2.5-flash-lite",
+                contents: prompt,
+                config: new GenerateContentConfig { ResponseMimeType = "application/json" }
+            );
+
+            return response.Candidates?[0].Content?.Parts?[0].Text ?? string.Empty;
+        }
+
+        private static string BuildWordExtractionPrompt(string input, string knownLanguage, string targetLanguage)
+        {
+            var candidateWords = ExtractCandidateWords(input);
+            var candidates = string.Join("\n", candidateWords.Select(word => $"- {word}"));
+            var extractedSourceSentences = ExtractSourceSentences(input);
+            var useSourceSentences = ShouldUseSourceSentences(extractedSourceSentences);
+            var sourceSentences = string.Join("\n", extractedSourceSentences.Select(sentence => $"- {sentence}"));
+            var exampleSentenceRule = useSourceSentences
+                ? "- \"\"example_sentence\"\": the exact source sentence or phrase from the list below that contains the word"
+                : $"- \"\"example_sentence\"\": a natural example sentence in {targetLanguage} using the word";
+            var exampleSentenceTranslationRule = useSourceSentences
+                ? $"- \"\"example_sentence_translation\"\": the {knownLanguage} translation of that exact source sentence or phrase"
+                : $"- \"\"example_sentence_translation\"\": the {knownLanguage} translation of the example sentence";
+
+            return $@"
+        The user knows {knownLanguage} and is learning {targetLanguage}.
+        Extract vocabulary from the input below and return a JSON object.
+
+        Rules:
+        - Output MUST be valid JSON only. No explanations, no extra text.
+        - Include EVERY distinct candidate word listed below.
+        - Preserve each candidate word exactly as written, including inflected forms.
+        - Include proper nouns for places, countries, languages, and nationalities.
+        - Include short/common words too, such as auxiliaries, prepositions, and adverbs.
+        - Do not merge separate candidate words into phrases.
+        - Each key is one candidate word in {targetLanguage}.
+        - Each value is an object with:
+        - ""translation"": the {knownLanguage} translation of the word
+        {exampleSentenceRule}
+        {exampleSentenceTranslationRule}
+
+        Format:
+        {{
+        ""word1"": {{
+            ""translation"": ""..."",
+            ""example_sentence"": ""..."",
+            ""example_sentence_translation"": ""...""
+        }}
+        }}
+
+        Candidate words:
+        {candidates}
+
+        Source sentences:
+        {sourceSentences}
+
+        Input:
+        {input}";
+        }
+
+        private static IReadOnlyList<string> ExtractCandidateWords(string input)
+        {
+            return Regex.Matches(input, @"[\p{L}\p{M}]+(?:['’][\p{L}\p{M}]+)?")
+                .Select(match => match.Value.Trim())
+                .Where(word => !string.IsNullOrWhiteSpace(word))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static IReadOnlyList<string> ExtractSourceSentences(string input)
+        {
+            return Regex.Split(input, @"(?<=[.!?])\s+|\r?\n+")
+                .Select(sentence => sentence.Trim())
+                .Where(sentence => !string.IsNullOrWhiteSpace(sentence))
+                .ToList();
+        }
+
+        private static bool ShouldUseSourceSentences(IReadOnlyList<string> sourceSentences)
+        {
+            if (sourceSentences.Count == 0)
+            {
+                return false;
+            }
+
+            return sourceSentences.Any(sentence => ExtractCandidateWords(sentence).Count > 2);
+        }
+
+        private static string ResolveExampleSentence(
+            string word,
+            GeneratedWord generatedWord,
+            IReadOnlyList<string> sourceSentences,
+            bool shouldUseSourceSentences)
+        {
+            if (shouldUseSourceSentences)
+            {
+                var sourceSentence = FindSourceSentence(word, sourceSentences);
+                if (!string.IsNullOrWhiteSpace(sourceSentence))
+                {
+                    return sourceSentence;
+                }
+            }
+
+            return generatedWord.ExampleSentence?.Trim() ?? string.Empty;
+        }
+
+        private static string? FindSourceSentence(string word, IReadOnlyList<string> sourceSentences)
+        {
+            var pattern = $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(word)}(?![\p{{L}}\p{{M}}])";
+            return sourceSentences.FirstOrDefault(sentence => Regex.IsMatch(sentence, pattern, RegexOptions.IgnoreCase));
+        }
+
+        private static bool ValidateGeneratedWordsResponse(string json)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.ValueKind != JsonValueKind.Object) return false;
+
+                foreach (var entry in doc.RootElement.EnumerateObject())
+                {
+                    var val = entry.Value;
+                    if (val.ValueKind != JsonValueKind.Object) return false;
+                    if (!val.TryGetProperty("translation", out var translation) || translation.ValueKind != JsonValueKind.String) return false;
+                    if (!val.TryGetProperty("example_sentence", out var example) || example.ValueKind != JsonValueKind.String) return false;
+                    if (!val.TryGetProperty("example_sentence_translation", out var exampleTranslation) || exampleTranslation.ValueKind != JsonValueKind.String) return false;
+                }
+
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static string LoadGeminiApiKey()
+        {
+            var envFile = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env");
+            if (System.IO.File.Exists(envFile))
+            {
+                foreach (var line in System.IO.File.ReadAllLines(envFile))
+                {
+                    var parts = line.Split('=', 2);
+                    if (parts.Length == 2)
+                    {
+                        System.Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
+                    }
+                }
+            }
+
+            return System.Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? string.Empty;
+        }
     }
 
     // DTO Classes for API requests
@@ -311,5 +649,17 @@ namespace Glosify.Controllers
         public int CorrectAnswers { get; set; }
         public int IncorrectAnswers { get; set; }
         public TimeSpan Duration { get; set; }
+    }
+
+    public class GeneratedWord
+    {
+        [JsonPropertyName("translation")]
+        public string? Translation { get; set; }
+
+        [JsonPropertyName("example_sentence")]
+        public string? ExampleSentence { get; set; }
+
+        [JsonPropertyName("example_sentence_translation")]
+        public string? ExampleSentenceTranslation { get; set; }
     }
 }
