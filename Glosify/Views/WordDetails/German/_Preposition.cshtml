@@ -1,0 +1,31 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">conversion_path</span>Preposition · Präposition / Verhältniswort</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Governs Case</span>
+            <span class="fact-value">@ValueOrFallback("governs_case", "case", "Add accusative, dative, genitive, or two-way behavior.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Relationship</span>
+            <span class="fact-value">@ValueOrFallback("relationship", "meaning_type", "Track place, time, cause, manner, or direction.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Two-Way Rule</span>
+            <span class="fact-value">@ValueOrFallback("wechselpraeposition", "two_way", "Two-way prepositions use accusative for motion and dative for location.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Contractions</span>
+            <span class="fact-value">@ValueOrFallback("contractions", "contracted_forms", "Track forms like im, am, ins, zum, zur.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

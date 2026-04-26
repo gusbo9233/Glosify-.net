@@ -1,0 +1,31 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">palette</span>Adjective · Adjektiv / Eigenschaftswort</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Description</span>
+            <span class="fact-value">Adjectives describe nouns and often decline before them.</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Comparison</span>
+            <span class="fact-value">@ValueOrFallback("comparison", "degree", "Track positive, comparative, and superlative.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Declension</span>
+            <span class="fact-value">@ValueOrFallback("declension", "ending_pattern", "Mark strong, weak, or mixed endings when useful.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Predicative Use</span>
+            <span class="fact-value">@ValueOrFallback("predicative", "usage", "Predicative adjectives do not take endings.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

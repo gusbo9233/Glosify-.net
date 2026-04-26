@@ -1,0 +1,467 @@
+@model Glosify.Models.WordDetailViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    var displayWord = Model.Word?.Lemma ?? "Word details";
+    var germanPartial = GermanPartialName(Model);
+    ViewData["Title"] = displayWord;
+    ViewData["ActiveNav"] = "quizzes";
+}
+
+@section Styles {
+<style>
+    .detail-page {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        padding-bottom: 48px;
+    }
+
+    .detail-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+    }
+
+    .back-link,
+    .edit-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 42px;
+        border-radius: 9999px;
+        font-size: 14px;
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .back-link {
+        color: var(--on-surface-var);
+    }
+
+    .back-link:hover {
+        color: var(--primary);
+    }
+
+    .edit-link {
+        padding: 0 18px;
+        background: var(--primary-container);
+        color: var(--on-primary);
+    }
+
+    .detail-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.6fr);
+        gap: 24px;
+        align-items: stretch;
+    }
+
+    .hero-panel,
+    .meta-panel,
+    .detail-section {
+        border: 1px solid rgba(61, 74, 61, 0.28);
+        border-radius: 8px;
+        background: var(--surface-low);
+    }
+
+    .hero-panel {
+        padding: 36px;
+    }
+
+    .detail-label {
+        color: var(--primary);
+        font-size: 11px;
+        font-weight: 850;
+        letter-spacing: 0.14em;
+        margin: 0 0 10px;
+        text-transform: uppercase;
+    }
+
+    .detail-title {
+        font-size: 44px;
+        font-weight: 900;
+        line-height: 1.05;
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .detail-translation {
+        color: var(--on-surface-var);
+        font-size: 20px;
+        font-weight: 750;
+        margin: 14px 0 0;
+        overflow-wrap: anywhere;
+    }
+
+    .meta-panel {
+        display: grid;
+        gap: 14px;
+        padding: 24px;
+    }
+
+    .meta-item {
+        display: grid;
+        gap: 4px;
+    }
+
+    .meta-key {
+        color: var(--on-surface-var);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .meta-value {
+        color: var(--on-surface);
+        font-size: 15px;
+        font-weight: 750;
+        overflow-wrap: anywhere;
+    }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+    }
+
+    .detail-section {
+        padding: 24px;
+    }
+
+    .detail-section.wide {
+        grid-column: 1 / -1;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 850;
+        margin: 0 0 14px;
+    }
+
+    .section-title .material-symbols-outlined {
+        color: var(--primary);
+    }
+
+    .fact-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+    }
+
+    .property-toolbar {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .property-form {
+        display: grid;
+        gap: 8px;
+        min-width: min(100%, 280px);
+    }
+
+    .property-select {
+        width: 100%;
+        min-height: 44px;
+        border: 1px solid rgba(83, 224, 118, 0.28);
+        border-radius: 8px;
+        background: var(--surface-lowest);
+        color: var(--on-surface);
+        font: inherit;
+        font-weight: 750;
+        padding: 0 14px;
+        outline: none;
+    }
+
+    .property-select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(83, 224, 118, 0.16);
+    }
+
+    .fact-item {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+        border-radius: 8px;
+        background: var(--surface-lowest);
+        padding: 14px;
+    }
+
+    .fact-key {
+        color: var(--on-surface-var);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .fact-value {
+        color: var(--on-surface);
+        font-size: 15px;
+        font-weight: 750;
+        overflow-wrap: anywhere;
+    }
+
+    .variant-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .variant-row {
+        display: grid;
+        grid-template-columns: minmax(110px, 0.4fr) minmax(0, 1fr);
+        gap: 14px;
+        align-items: center;
+        border-radius: 8px;
+        background: var(--surface-lowest);
+        padding: 12px 14px;
+    }
+
+    .variant-form {
+        color: var(--on-surface);
+        font-size: 17px;
+        font-weight: 850;
+        overflow-wrap: anywhere;
+    }
+
+    .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .tag {
+        border: 1px solid rgba(83, 224, 118, 0.28);
+        border-radius: 9999px;
+        color: var(--on-surface-var);
+        font-size: 12px;
+        font-weight: 750;
+        padding: 4px 9px;
+    }
+
+    .section-copy,
+    .code-block {
+        color: var(--on-surface-var);
+        font-size: 15px;
+        line-height: 1.7;
+        margin: 0;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+    }
+
+    .empty-copy {
+        color: rgba(188, 203, 185, 0.68);
+        font-style: italic;
+    }
+
+    .code-block {
+        background: var(--surface-lowest);
+        border-radius: 8px;
+        padding: 16px;
+        font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+        font-size: 13px;
+    }
+
+    @@media (max-width: 900px) {
+        .detail-hero,
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-title {
+            font-size: 36px;
+        }
+
+        .variant-row {
+            grid-template-columns: 1fr;
+        }
+
+        .property-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+    }
+</style>
+}
+
+<section class="detail-page">
+    <div class="detail-topbar">
+        <a class="back-link" asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.Quiz.Id">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Back to quiz
+        </a>
+        <a class="edit-link" asp-action="Edit" asp-route-id="@Model.Detail.Id">
+            <span class="material-symbols-outlined">edit</span>
+            Edit
+        </a>
+    </div>
+
+    <section class="detail-hero">
+        <div class="hero-panel">
+            <p class="detail-label">@Model.Quiz.SourceLanguage &rarr; @Model.Quiz.TargetLanguage</p>
+            <h1 class="detail-title">@displayWord</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Word?.Translation))
+            {
+                <p class="detail-translation">@Model.Word.Translation</p>
+            }
+        </div>
+
+        <aside class="meta-panel">
+            <div class="meta-item">
+                <span class="meta-key">Quiz</span>
+                <span class="meta-value">@Model.Quiz.Name</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-key">Language</span>
+                <span class="meta-value">@(string.IsNullOrWhiteSpace(Model.Detail.Language) ? Model.Quiz.TargetLanguage : Model.Detail.Language)</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-key">Status</span>
+                <span class="meta-value">@Model.Quiz.ProcessingStatus</span>
+            </div>
+            @if (Model.HasDictionaryMatch)
+            {
+                <div class="meta-item">
+                    <span class="meta-key">Dictionary</span>
+                    <span class="meta-value">@Model.DictionaryMatch!.Source · @Model.DictionaryMatch.Word</span>
+                </div>
+            }
+        </aside>
+    </section>
+
+    <section class="detail-grid">
+        <article class="detail-section wide">
+            <div class="property-toolbar">
+                <h2 class="section-title"><span class="material-symbols-outlined">category</span>Properties</h2>
+                <form class="property-form" method="post" asp-action="UpdatePartOfSpeech" asp-route-id="@Model.Detail.Id">
+                    @Html.AntiForgeryToken()
+                    <label class="fact-key" for="partOfSpeech">Word Class</label>
+                    <select class="property-select" id="partOfSpeech" name="partOfSpeech" onchange="this.form.submit()">
+                        <option value="" selected="@string.IsNullOrWhiteSpace(Model.PartOfSpeech)">Unclassified</option>
+                        <option value="noun" selected="@IsSelected("noun")">Noun / Nomen</option>
+                        <option value="verb" selected="@IsSelected("verb")">Verb / Verb</option>
+                        <option value="article" selected="@IsSelected("article")">Article / Artikel</option>
+                        <option value="adjective" selected="@IsSelected("adjective")">Adjective / Adjektiv</option>
+                        <option value="pronoun" selected="@IsSelected("pronoun")">Pronoun / Pronomen</option>
+                        <option value="adverb" selected="@IsSelected("adverb")">Adverb / Adverb</option>
+                        <option value="preposition" selected="@IsSelected("preposition")">Preposition / Präposition</option>
+                        <option value="conjunction" selected="@IsSelected("conjunction")">Conjunction / Konjunktion</option>
+                        <option value="numeral" selected="@IsSelected("numeral")">Numeral / Numerale</option>
+                        <option value="interjection" selected="@IsSelected("interjection")">Interjection / Interjektion</option>
+                    </select>
+                </form>
+            </div>
+            @if (!Model.Properties.Any())
+            {
+                <p class="section-copy empty-copy">No grammatical properties have been added yet.</p>
+            }
+            else
+            {
+                <div class="fact-grid">
+                    @foreach (var property in Model.Properties)
+                    {
+                        <div class="fact-item">
+                            <span class="fact-key">@Humanize(property.Key)</span>
+                            <span class="fact-value">@Humanize(property.Value)</span>
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+
+        @if (!string.IsNullOrWhiteSpace(germanPartial))
+        {
+            <partial name="@germanPartial" model="Model" />
+        }
+
+        <article class="detail-section wide">
+            <h2 class="section-title"><span class="material-symbols-outlined">notes</span>Explanation</h2>
+            @if (string.IsNullOrWhiteSpace(Model.Explanation))
+            {
+                <p class="section-copy empty-copy">No explanation has been added yet.</p>
+            }
+            else
+            {
+                <p class="section-copy">@Model.Explanation</p>
+            }
+        </article>
+
+        <article class="detail-section">
+            <h2 class="section-title"><span class="material-symbols-outlined">format_quote</span>Example</h2>
+            @if (string.IsNullOrWhiteSpace(Model.ExampleSentence))
+            {
+                <p class="section-copy empty-copy">No example sentence has been added yet.</p>
+            }
+            else
+            {
+                <p class="section-copy">@Model.ExampleSentence</p>
+            }
+        </article>
+
+        <article class="detail-section">
+            <h2 class="section-title"><span class="material-symbols-outlined">schema</span>Variants</h2>
+            @if (!Model.Variants.Any())
+            {
+                <p class="section-copy empty-copy">No variants have been added yet.</p>
+            }
+            else
+            {
+                <div class="variant-list">
+                    @foreach (var variant in Model.Variants)
+                    {
+                        <div class="variant-row">
+                            <span class="variant-form">@variant.Form</span>
+                            <span class="tag-list">
+                                @foreach (var tag in variant.Tags)
+                                {
+                                    <span class="tag">@Humanize(tag)</span>
+                                }
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+        </article>
+    </section>
+</section>
+
+@functions {
+    private static string GermanPartialName(Glosify.Models.WordDetailViewModel model)
+    {
+        var language = string.IsNullOrWhiteSpace(model.Detail.Language) ? model.Quiz.TargetLanguage : model.Detail.Language;
+        if (!language.Contains("german", StringComparison.OrdinalIgnoreCase)
+            && !language.Contains("deutsch", StringComparison.OrdinalIgnoreCase))
+        {
+            return string.Empty;
+        }
+
+        return model.PartOfSpeech.ToLowerInvariant() switch
+        {
+            "noun" or "nomen" or "hauptwort" or "substantiv" => "German/_Noun",
+            "verb" or "verben" or "zeitwort" => "German/_Verb",
+            "article" or "artikel" or "geschlechtswort" => "German/_Article",
+            "adjective" or "adjektiv" or "eigenschaftswort" => "German/_Adjective",
+            "pronoun" or "pronomen" or "fuerwort" or "fürwort" => "German/_Pronoun",
+            "adverb" or "adverbien" or "umstandswort" => "German/_Adverb",
+            "preposition" or "präposition" or "praeposition" or "verhältniswort" or "verhaeltniswort" => "German/_Preposition",
+            "conjunction" or "konjunktion" or "bindewort" => "German/_Conjunction",
+            "numeral" or "numerale" or "zahlwort" => "German/_Numeral",
+            "interjection" or "interjektion" or "einwurf" => "German/_Interjection",
+            _ => string.Empty
+        };
+    }
+
+    private static string Humanize(string value) => Glosify.Models.WordDetailViewModel.Humanize(value);
+
+    private bool IsSelected(string partOfSpeech)
+    {
+        return string.Equals(Model.PartOfSpeech, partOfSpeech, StringComparison.OrdinalIgnoreCase);
+    }
+}

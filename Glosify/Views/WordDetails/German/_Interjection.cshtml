@@ -1,0 +1,31 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">campaign</span>Interjection · Interjektion / Einwurf</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Expression</span>
+            <span class="fact-value">Interjections express emotion, reaction, greeting, or emphasis.</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Tone</span>
+            <span class="fact-value">@ValueOrFallback("tone", "emotion", "Track surprise, frustration, greeting, agreement, or hesitation.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Register</span>
+            <span class="fact-value">@ValueOrFallback("register", "style", "Mark colloquial, formal, slang, or neutral.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Inflection</span>
+            <span class="fact-value">@ValueOrFallback("inflection", "declension", "Interjections are normally invariable.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

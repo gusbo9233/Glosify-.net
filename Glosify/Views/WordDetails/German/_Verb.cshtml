@@ -1,0 +1,31 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">directions_run</span>Verb · Verb / Zeitwort</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Action / State</span>
+            <span class="fact-value">Use variants for subject, tense, mood, and number forms.</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Auxiliary</span>
+            <span class="fact-value">@ValueOrFallback("auxiliary", "hilfsverb", "Add haben or sein when known.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Past Participle</span>
+            <span class="fact-value">@ValueOrFallback("past_participle", "participle", "Add the Partizip II form when known.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Separable Prefix</span>
+            <span class="fact-value">@ValueOrFallback("separable_prefix", "prefix", "Mark separable prefixes such as an-, auf-, mit-.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}

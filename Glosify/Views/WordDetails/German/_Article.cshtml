@@ -1,0 +1,31 @@
+@model Glosify.Models.WordDetailViewModel
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">view_column</span>Article · Artikel / Geschlechtswort</h2>
+    <div class="fact-grid">
+        <div class="fact-item">
+            <span class="fact-key">Definiteness</span>
+            <span class="fact-value">@ValueOrFallback("definiteness", "type", "Mark definite or indefinite.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Gender</span>
+            <span class="fact-value">@ValueOrFallback("gender", "genus", "Track masculine, feminine, neuter, or plural.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Case</span>
+            <span class="fact-value">@ValueOrFallback("case", "kasus", "Use variants for nominative, accusative, dative, and genitive.")</span>
+        </div>
+        <div class="fact-item">
+            <span class="fact-key">Number</span>
+            <span class="fact-value">@ValueOrFallback("number", "numerus", "Mark singular or plural.")</span>
+        </div>
+    </div>
+</article>
+
+@functions {
+    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    {
+        var first = Model.GetProperty(firstKey);
+        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+}
