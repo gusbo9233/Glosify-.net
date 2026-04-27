@@ -1,4 +1,5 @@
 using Glosify.Models;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,17 +9,22 @@ public class AccountController : Controller
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IAuthenticationSchemeProvider _schemeProvider;
 
-    public AccountController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager)
+    public AccountController(
+        SignInManager<ApplicationUser> signInManager,
+        UserManager<ApplicationUser> userManager,
+        IAuthenticationSchemeProvider schemeProvider)
     {
         _signInManager = signInManager;
         _userManager = userManager;
+        _schemeProvider = schemeProvider;
     }
 
     [HttpGet]
-    public IActionResult Login(string? returnUrl = null)
+    public async Task<IActionResult> Login(string? returnUrl = null)
     {
-        ViewData["ReturnUrl"] = returnUrl;
+        await SetLoginViewDataAsync(returnUrl);
         return View();
     }
 
@@ -26,7 +32,7 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
     {
-        ViewData["ReturnUrl"] = returnUrl;
+        await SetLoginViewDataAsync(returnUrl);
         if (!ModelState.IsValid)
             return View(model);
 
@@ -83,8 +89,15 @@ public class AccountController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult ExternalLogin(string provider, string? returnUrl = null)
+    public async Task<IActionResult> ExternalLogin(string provider, string? returnUrl = null)
     {
+        if (!await IsExternalLoginProviderConfigured(provider))
+        {
+            ModelState.AddModelError(string.Empty, $"{provider} login is not configured.");
+            await SetLoginViewDataAsync(returnUrl);
+            return View("Login", new LoginViewModel());
+        }
+
         var redirectUrl = Url.Action("ExternalLoginCallback", "Account", new { returnUrl });
         var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
         return Challenge(properties, provider);
@@ -122,5 +135,17 @@ public class AccountController : Controller
     public IActionResult ForgotPassword()
     {
         return View();
+    }
+
+    private async Task SetLoginViewDataAsync(string? returnUrl)
+    {
+        ViewData["ReturnUrl"] = returnUrl;
+        ViewData["GoogleLoginEnabled"] = await IsExternalLoginProviderConfigured("Google");
+    }
+
+    private async Task<bool> IsExternalLoginProviderConfigured(string provider)
+    {
+        var schemes = await _schemeProvider.GetAllSchemesAsync();
+        return schemes.Any(scheme => string.Equals(scheme.Name, provider, StringComparison.OrdinalIgnoreCase));
     }
 }
