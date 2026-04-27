@@ -1,35 +1,57 @@
 @model Glosify.Models.WordDetailViewModel
 
 <article class="detail-section wide">
-    <h2 class="section-title"><span class="material-symbols-outlined">palette</span>Adjective · Omadussõna</h2>
-    <div class="fact-grid">
-        <div class="fact-item">
-            <span class="fact-key">Agreement</span>
-            <span class="fact-value">Adjectives agree with their noun in case and number (except in the terminative, essive, abessive, and comitative, where they stay in the genitive).</span>
+    <h2 class="section-title"><span class="material-symbols-outlined">palette</span>Adjective / Omadussona</h2>
+    <div class="slot-grid">
+        <div class="slot-group">
+            <h3 class="slot-heading">Degree</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>positive</th><td>@FormOrWord("positive")</td></tr>
+                    <tr><th>comparative</th><td>@Form("comparative")</td></tr>
+                    <tr><th>superlative</th><td>@Form("superlative")</td></tr>
+                </tbody>
+            </table>
         </div>
-        <div class="fact-item">
-            <span class="fact-key">Comparative</span>
-            <span class="fact-value">@ValueOrFallback("comparative", "keskvõrre", "Form with the suffix -m (e.g. suurem, parem).")</span>
+
+        <div class="slot-group">
+            <h3 class="slot-heading">Core Cases</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>nominative</th><td>@Form("nominative", "singular")</td></tr>
+                    <tr><th>genitive</th><td>@Form("genitive")</td></tr>
+                    <tr><th>partitive</th><td>@Form("partitive")</td></tr>
+                    <tr><th>plural nominative</th><td>@Form("nominative", "plural")</td></tr>
+                </tbody>
+            </table>
         </div>
-        <div class="fact-item">
-            <span class="fact-key">Superlative</span>
-            <span class="fact-value">@ValueOrFallback("superlative", "ülivõrre", "Analytic kõige + comparative, or synthetic -im (e.g. kõige suurem, suurim).")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Predicative Use</span>
-            <span class="fact-value">@ValueOrFallback("predicative", "usage", "After olema the adjective normally appears in the nominative (Auto on punane).")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Grade Alternation</span>
-            <span class="fact-value">@ValueOrFallback("grade", "astmevaheldus", "Many adjective stems alternate in grade between forms (e.g. lühike ↔ lühema).")</span>
+
+        <div class="slot-group">
+            <h3 class="slot-heading">Agreement Notes</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>noun agreement</th><td>case and number</td></tr>
+                    <tr><th>fixed cases</th><td>terminative, essive, abessive, comitative often keep the genitive adjective form</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </article>
 
 @functions {
-    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    private string FormOrWord(params string[] tags)
     {
-        var first = Model.GetProperty(firstKey);
-        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+        var form = Form(tags);
+        return form == "-" ? Model.Word?.Lemma ?? "-" : form;
+    }
+
+    private string Form(params string[] tags)
+    {
+        return Model.Variants
+            .Where(variant => !string.IsNullOrWhiteSpace(variant.Form) && variant.Form != "-")
+            .Where(variant => tags.All(tag => variant.HasAnyTag(tag)))
+            .OrderBy(variant => variant.Tags.Count)
+            .Select(variant => variant.Form)
+            .FirstOrDefault() ?? "-";
     }
 }

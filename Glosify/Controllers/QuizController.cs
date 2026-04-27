@@ -113,11 +113,16 @@ namespace Glosify.Controllers
             if (!string.IsNullOrWhiteSpace(word) && !string.IsNullOrWhiteSpace(translation))
             {
                 var wordDetailId = Guid.NewGuid().ToString("N");
+                var dictionaryMatch = await FindManualDictionaryMatchAsync(quiz.TargetLanguage, word);
                 _context.WordDetails.Add(new WordDetail
                 {
                     Id = wordDetailId,
                     QuizId = quizId,
-                    Language = quiz.TargetLanguage
+                    Language = quiz.TargetLanguage,
+                    Properties = dictionaryMatch?.Properties ?? "{}",
+                    Variants = dictionaryMatch?.Variants ?? "[]",
+                    Explanation = dictionaryMatch?.Description ?? string.Empty,
+                    ExampleSentence = dictionaryMatch?.ExampleSentence ?? string.Empty
                 });
 
                 _context.Words.Add(new Word
@@ -452,6 +457,202 @@ namespace Glosify.Controllers
         {
             // Case-insensitive comparison with trimming
             return userAnswer.Trim().Equals(correctAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
+        }
+
+        private async Task<DictionaryEntry?> FindManualDictionaryMatchAsync(string language, string word)
+        {
+            var langCode = MatchSupportedLangCode(language);
+            if (langCode == null || string.IsNullOrWhiteSpace(word))
+            {
+                return null;
+            }
+
+            var candidates = GetManualDictionaryCandidates(word);
+            var matches = await _context.DictionaryEntries
+                .AsNoTracking()
+                .Where(entry => entry.LangCode == langCode && candidates.Contains(entry.Word))
+                .ToListAsync();
+
+            var headwordMatch = matches
+                .OrderBy(entry => CandidateRank(candidates, entry.Word))
+                .ThenByDescending(entry => !string.IsNullOrWhiteSpace(entry.Description))
+                .ThenByDescending(entry => !string.IsNullOrWhiteSpace(entry.ExampleSentence))
+                .ThenBy(entry => entry.Word.Length)
+                .FirstOrDefault();
+
+            var variantMatch = await FindManualDictionaryVariantMatchAsync(langCode, candidates);
+            return PreferVariantParent(headwordMatch, variantMatch);
+        }
+
+        private async Task<DictionaryEntry?> FindManualDictionaryVariantMatchAsync(string langCode, IReadOnlyList<string> candidates)
+        {
+            foreach (var candidate in candidates)
+            {
+                var matches = await _context.DictionaryEntries
+                    .FromSqlInterpolated($"""
+                        SELECT TOP (20) de.*
+                        FROM dbo.dictionary_entries de
+                        CROSS APPLY OPENJSON(de.variants) variant
+                        WHERE de.lang_code = {langCode}
+                            AND JSON_VALUE(variant.value, '$.form') = {candidate}
+                        ORDER BY
+                            CASE WHEN JSON_QUERY(variant.value, '$.tags') LIKE '%"singular"%' THEN 0 ELSE 1 END,
+                            CASE WHEN JSON_QUERY(variant.value, '$.tags') LIKE '%"plural"%' THEN 1 ELSE 0 END,
+                            LEN(de.word)
+                        """)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                var match = matches
+                    .OrderBy(entry => VariantMatchRank(entry, candidate))
+                    .ThenByDescending(entry => !string.IsNullOrWhiteSpace(entry.Description))
+                    .ThenByDescending(entry => !string.IsNullOrWhiteSpace(entry.ExampleSentence))
+                    .ThenBy(entry => entry.Word.Length)
+                    .FirstOrDefault();
+
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return null;
+        }
+
+        private static int VariantMatchRank(DictionaryEntry entry, string form)
+        {
+            var variants = WordDetailViewModel.ReadVariants(entry.Variants)
+                .Where(variant => string.Equals(variant.Form, form, StringComparison.Ordinal))
+                .ToList();
+
+            if (variants.Any(variant => variant.HasAnyTag("singular")))
+            {
+                return 0;
+            }
+
+            if (variants.Any(variant => !variant.HasAnyTag("plural")))
+            {
+                return 1;
+            }
+
+            return 2;
+        }
+
+        private static DictionaryEntry? PreferVariantParent(DictionaryEntry? headwordMatch, DictionaryEntry? variantMatch)
+        {
+            if (headwordMatch == null)
+            {
+                return variantMatch;
+            }
+
+            if (variantMatch == null)
+            {
+                return headwordMatch;
+            }
+
+            return IsInflectionStub(headwordMatch) && !IsInflectionStub(variantMatch)
+                ? variantMatch
+                : headwordMatch;
+        }
+
+        private static bool IsInflectionStub(DictionaryEntry entry)
+        {
+            var properties = WordDetailViewModel.ReadProperties(entry.Properties);
+            var tags = properties
+                .Where(property => string.Equals(property.Key, "tags", StringComparison.OrdinalIgnoreCase))
+                .Select(property => property.Value)
+                .FirstOrDefault() ?? string.Empty;
+
+            return tags.Contains("form of", StringComparison.OrdinalIgnoreCase)
+                || (entry.Description?.Contains(" of ", StringComparison.OrdinalIgnoreCase) == true
+                    && (entry.Description.Contains("inflection", StringComparison.OrdinalIgnoreCase)
+                        || entry.Description.Contains("participle of", StringComparison.OrdinalIgnoreCase)
+                        || entry.Description.Contains("connegative of", StringComparison.OrdinalIgnoreCase)));
+        }
+
+        private static string? MatchSupportedLangCode(string? language)
+        {
+            if (string.IsNullOrWhiteSpace(language))
+            {
+                return null;
+            }
+
+            if (language.Equals("de", StringComparison.OrdinalIgnoreCase)
+                || language.Contains("german", StringComparison.OrdinalIgnoreCase)
+                || language.Contains("deutsch", StringComparison.OrdinalIgnoreCase))
+            {
+                return "de";
+            }
+
+            if (language.Equals("et", StringComparison.OrdinalIgnoreCase)
+                || language.Contains("estonian", StringComparison.OrdinalIgnoreCase)
+                || language.Contains("eesti", StringComparison.OrdinalIgnoreCase))
+            {
+                return "et";
+            }
+
+            if (language.Equals("uk", StringComparison.OrdinalIgnoreCase)
+                || language.Contains("ukrainian", StringComparison.OrdinalIgnoreCase)
+                || language.Contains("ukrainisch", StringComparison.OrdinalIgnoreCase)
+                || language.Contains("українськ", StringComparison.OrdinalIgnoreCase))
+            {
+                return "uk";
+            }
+
+            if (language.Equals("pl", StringComparison.OrdinalIgnoreCase)
+                || language.Contains("polish", StringComparison.OrdinalIgnoreCase)
+                || language.Contains("polski", StringComparison.OrdinalIgnoreCase)
+                || language.Contains("polnisch", StringComparison.OrdinalIgnoreCase))
+            {
+                return "pl";
+            }
+
+            return null;
+        }
+
+        private static IReadOnlyList<string> GetManualDictionaryCandidates(string word)
+        {
+            var candidates = new List<string>();
+            AddManualDictionaryCandidate(candidates, word.Trim());
+
+            if (!string.IsNullOrWhiteSpace(word))
+            {
+                var trimmed = word.Trim();
+                AddManualDictionaryCandidate(candidates, string.Concat(char.ToUpperInvariant(trimmed[0]).ToString(), trimmed[1..]));
+                AddManualDictionaryCandidate(candidates, string.Concat(char.ToLowerInvariant(trimmed[0]).ToString(), trimmed[1..]));
+            }
+
+            return candidates;
+        }
+
+        private static void AddManualDictionaryCandidate(List<string> candidates, string value)
+        {
+            if (!string.IsNullOrWhiteSpace(value)
+                && !candidates.Any(candidate => string.Equals(candidate, value, StringComparison.Ordinal)))
+            {
+                candidates.Add(value);
+            }
+        }
+
+        private static int CandidateRank(IReadOnlyList<string> candidates, string word)
+        {
+            for (var index = 0; index < candidates.Count; index++)
+            {
+                if (string.Equals(candidates[index], word, StringComparison.Ordinal))
+                {
+                    return index * 2;
+                }
+            }
+
+            for (var index = 0; index < candidates.Count; index++)
+            {
+                if (string.Equals(candidates[index], word, StringComparison.OrdinalIgnoreCase))
+                {
+                    return (index * 2) + 1;
+                }
+            }
+
+            return candidates.Count * 2;
         }
 
         private static async Task<string> GenerateWordsWithAssistant(string input, string knownLanguage, string targetLanguage)

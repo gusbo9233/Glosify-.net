@@ -1,35 +1,48 @@
 @model Glosify.Models.WordDetailViewModel
 
 <article class="detail-section wide">
-    <h2 class="section-title"><span class="material-symbols-outlined">pin</span>Numeral · Arvsõna</h2>
-    <div class="fact-grid">
-        <div class="fact-item">
-            <span class="fact-key">Kind</span>
-            <span class="fact-value">@ValueOrFallback("type", "kind", "Cardinal (üks, kaks, kolm) or ordinal (esimene, teine, kolmas).")</span>
+    <h2 class="section-title"><span class="material-symbols-outlined">pin</span>Numeral / Arvsona</h2>
+    <div class="slot-grid">
+        <div class="slot-group">
+            <h3 class="slot-heading">Value</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>form</th><td>@(Model.Word?.Lemma ?? "-")</td></tr>
+                    <tr><th>kind</th><td>@Property("type", "kind", "cardinal or ordinal")</td></tr>
+                    <tr><th>numeric value</th><td>@Property("value", "quantity", "-")</td></tr>
+                    <tr><th>counted noun</th><td>@Property("counted_case", "noun_case", "cardinals from two upward take singular partitive")</td></tr>
+                </tbody>
+            </table>
         </div>
-        <div class="fact-item">
-            <span class="fact-key">Value</span>
-            <span class="fact-value">@ValueOrFallback("value", "quantity", "Add the numeric value when useful.")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Counted Noun Case</span>
-            <span class="fact-value">@ValueOrFallback("counted_case", "noun_case", "Cardinals from kaks upward take the singular partitive (kaks raamatut, kümme inimest) — only üks takes the nominative.")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Inflection</span>
-            <span class="fact-value">@ValueOrFallback("inflection", "declension", "Both numerals and the counted noun decline together in oblique cases (kahe raamatuga).")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Ordinal</span>
-            <span class="fact-value">@ValueOrFallback("ordinal", "form", "Ordinals end in -s (esimene, teine, kolmas, neljas) and decline like adjectives.")</span>
+
+        <div class="slot-group">
+            <h3 class="slot-heading">Inflection</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>nominative</th><td>@Form("nominative", "singular")</td></tr>
+                    <tr><th>genitive</th><td>@Form("genitive")</td></tr>
+                    <tr><th>partitive</th><td>@Form("partitive")</td></tr>
+                    <tr><th>ordinal</th><td>@Property("ordinal", "form", "ordinals decline like adjectives")</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </article>
 
 @functions {
-    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    private string Property(string firstKey, string secondKey, string fallback)
     {
         var first = Model.GetProperty(firstKey);
         return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+
+    private string Form(params string[] tags)
+    {
+        return Model.Variants
+            .Where(variant => !string.IsNullOrWhiteSpace(variant.Form) && variant.Form != "-")
+            .Where(variant => tags.All(tag => variant.HasAnyTag(tag)))
+            .OrderBy(variant => variant.Tags.Count)
+            .Select(variant => variant.Form)
+            .FirstOrDefault() ?? "-";
     }
 }

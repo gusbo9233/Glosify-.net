@@ -1,39 +1,57 @@
 @model Glosify.Models.WordDetailViewModel
 
 <article class="detail-section wide">
-    <h2 class="section-title"><span class="material-symbols-outlined">title</span>Noun · Nimisõna</h2>
-    <div class="fact-grid">
-        <div class="fact-item">
-            <span class="fact-key">Gender</span>
-            <span class="fact-value">Estonian nouns have no grammatical gender.</span>
+    <h2 class="section-title"><span class="material-symbols-outlined">title</span>Noun / Nimisona</h2>
+    <div class="slot-grid">
+        <div class="slot-group">
+            <h3 class="slot-heading">Core Forms</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>nominative</th><td>@Form("nominative", "singular")</td></tr>
+                    <tr><th>genitive</th><td>@Form("genitive")</td></tr>
+                    <tr><th>partitive</th><td>@Form("partitive")</td></tr>
+                    <tr><th>plural nominative</th><td>@Form("nominative", "plural")</td></tr>
+                </tbody>
+            </table>
         </div>
-        <div class="fact-item">
-            <span class="fact-key">Cases</span>
-            <span class="fact-value">@ValueOrFallback("case", "declension", "Estonian uses 14 cases (nominative, genitive, partitive, illative, inessive, elative, allative, adessive, ablative, translative, terminative, essive, abessive, comitative).")</span>
+
+        <div class="slot-group">
+            <h3 class="slot-heading">Local Cases</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>illative</th><td>@Form("illative", "singular")</td></tr>
+                    <tr><th>inessive</th><td>@Form("inessive", "singular")</td></tr>
+                    <tr><th>elative</th><td>@Form("elative", "singular")</td></tr>
+                    <tr><th>allative</th><td>@Form("allative", "singular")</td></tr>
+                    <tr><th>adessive</th><td>@Form("adessive", "singular")</td></tr>
+                    <tr><th>ablative</th><td>@Form("ablative", "singular")</td></tr>
+                </tbody>
+            </table>
         </div>
-        <div class="fact-item">
-            <span class="fact-key">Genitive Stem</span>
-            <span class="fact-value">@ValueOrFallback("genitive", "stem", "Most cases attach endings to the singular genitive stem.")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Partitive</span>
-            <span class="fact-value">@ValueOrFallback("partitive", "object_case", "Used for partial objects, after numerals over one, and many quantifiers.")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Plural</span>
-            <span class="fact-value">@ValueOrFallback("plural", "number", "Plural is formed with -d (nominative) or -de- / -te- (oblique cases).")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Grade Alternation</span>
-            <span class="fact-value">@ValueOrFallback("grade", "astmevaheldus", "Watch for strong/weak grade alternation in the stem (e.g. tuba ↔ toa).")</span>
+
+        <div class="slot-group">
+            <h3 class="slot-heading">Other Cases</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>translative</th><td>@Form("translative", "singular")</td></tr>
+                    <tr><th>terminative</th><td>@Form("terminative", "singular")</td></tr>
+                    <tr><th>essive</th><td>@Form("essive", "singular")</td></tr>
+                    <tr><th>abessive</th><td>@Form("abessive", "singular")</td></tr>
+                    <tr><th>comitative</th><td>@Form("comitative", "singular")</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </article>
 
 @functions {
-    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    private string Form(params string[] tags)
     {
-        var first = Model.GetProperty(firstKey);
-        return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+        return Model.Variants
+            .Where(variant => !string.IsNullOrWhiteSpace(variant.Form) && variant.Form != "-")
+            .Where(variant => tags.All(tag => variant.HasAnyTag(tag)))
+            .OrderBy(variant => variant.Tags.Count)
+            .Select(variant => variant.Form)
+            .FirstOrDefault() ?? "-";
     }
 }

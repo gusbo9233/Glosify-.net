@@ -1,35 +1,46 @@
 @model Glosify.Models.WordDetailViewModel
 
 <article class="detail-section wide">
-    <h2 class="section-title"><span class="material-symbols-outlined">schedule</span>Adverb · Määrsõna</h2>
-    <div class="fact-grid">
-        <div class="fact-item">
-            <span class="fact-key">Function</span>
-            <span class="fact-value">Adverbs modify verbs, adjectives, or other adverbs and are usually invariable.</span>
+    <h2 class="section-title"><span class="material-symbols-outlined">schedule</span>Adverb / Maarsona</h2>
+    <div class="slot-grid">
+        <div class="slot-group">
+            <h3 class="slot-heading">Function</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>base form</th><td>@(Model.Word?.Lemma ?? "-")</td></tr>
+                    <tr><th>semantic type</th><td>@Property("type", "semantic_type", "time, place, manner, degree, or discourse")</td></tr>
+                    <tr><th>inflection</th><td>usually invariable</td></tr>
+                </tbody>
+            </table>
         </div>
-        <div class="fact-item">
-            <span class="fact-key">Semantic Type</span>
-            <span class="fact-value">@ValueOrFallback("type", "semantic_type", "Track time (siis, eile), place (siin, kodus), manner (kiiresti), or degree (väga).")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Origin</span>
-            <span class="fact-value">@ValueOrFallback("origin", "derivation", "Many adverbs are frozen case forms of nouns or adjectives (e.g. kodus = inessive of kodu).")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Comparison</span>
-            <span class="fact-value">@ValueOrFallback("comparison", "degree", "Some adverbs accept comparative -mini and superlative kõige … -mini.")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Position</span>
-            <span class="fact-value">@ValueOrFallback("position", "word_order", "Word order is flexible; topic and focus shift adverb placement.")</span>
+
+        <div class="slot-group">
+            <h3 class="slot-heading">Comparison</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>comparative</th><td>@Form("comparative")</td></tr>
+                    <tr><th>superlative</th><td>@Form("superlative")</td></tr>
+                    <tr><th>derived from</th><td>@Property("origin", "derivation", "often a frozen case form")</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </article>
 
 @functions {
-    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    private string Property(string firstKey, string secondKey, string fallback)
     {
         var first = Model.GetProperty(firstKey);
         return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
+    }
+
+    private string Form(params string[] tags)
+    {
+        return Model.Variants
+            .Where(variant => !string.IsNullOrWhiteSpace(variant.Form) && variant.Form != "-")
+            .Where(variant => tags.All(tag => variant.HasAnyTag(tag)))
+            .OrderBy(variant => variant.Tags.Count)
+            .Select(variant => variant.Form)
+            .FirstOrDefault() ?? "-";
     }
 }

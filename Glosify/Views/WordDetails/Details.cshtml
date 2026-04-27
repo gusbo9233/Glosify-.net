@@ -246,6 +246,63 @@
         padding: 4px 9px;
     }
 
+    .slot-grid {
+        display: grid;
+        gap: 18px;
+    }
+
+    .slot-group {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .slot-heading {
+        color: var(--on-surface);
+        font-size: 13px;
+        font-weight: 850;
+        margin: 0;
+        text-transform: uppercase;
+    }
+
+    .slot-table {
+        border: 1px solid rgba(61, 74, 61, 0.28);
+        border-radius: 8px;
+        border-spacing: 0;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .slot-table th,
+    .slot-table td {
+        border-bottom: 1px solid rgba(61, 74, 61, 0.22);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    .slot-table tr:last-child th,
+    .slot-table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .slot-table th {
+        background: var(--surface-lowest);
+        color: var(--on-surface-var);
+        font-size: 11px;
+        font-weight: 850;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        width: 34%;
+    }
+
+    .slot-table td {
+        color: var(--on-surface);
+        font-size: 15px;
+        font-weight: 750;
+        overflow-wrap: anywhere;
+    }
+
     .section-copy,
     .code-block {
         color: var(--on-surface-var);
@@ -405,30 +462,33 @@
             }
         </article>
 
-        <article class="detail-section">
-            <h2 class="section-title"><span class="material-symbols-outlined">schema</span>Variants</h2>
-            @if (!Model.Variants.Any())
-            {
-                <p class="section-copy empty-copy">No variants have been added yet.</p>
-            }
-            else
-            {
-                <div class="variant-list">
-                    @foreach (var variant in Model.Variants)
-                    {
-                        <div class="variant-row">
-                            <span class="variant-form">@variant.Form</span>
-                            <span class="tag-list">
-                                @foreach (var tag in variant.Tags)
-                                {
-                                    <span class="tag">@Humanize(tag)</span>
-                                }
-                            </span>
-                        </div>
-                    }
-                </div>
-            }
-        </article>
+        @if (ShouldShowGenericVariants(Model))
+        {
+            <article class="detail-section">
+                <h2 class="section-title"><span class="material-symbols-outlined">schema</span>Variants</h2>
+                @if (!Model.Variants.Any())
+                {
+                    <p class="section-copy empty-copy">No variants have been added yet.</p>
+                }
+                else
+                {
+                    <div class="variant-list">
+                        @foreach (var variant in Model.Variants)
+                        {
+                            <div class="variant-row">
+                                <span class="variant-form">@variant.Form</span>
+                                <span class="tag-list">
+                                    @foreach (var tag in variant.Tags)
+                                    {
+                                        <span class="tag">@Humanize(tag)</span>
+                                    }
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            </article>
+        }
     </section>
 </section>
 
@@ -511,6 +571,14 @@
     }
 
     private static string Humanize(string value) => Glosify.Models.WordDetailViewModel.Humanize(value);
+
+    private static bool ShouldShowGenericVariants(Glosify.Models.WordDetailViewModel model)
+    {
+        var language = string.IsNullOrWhiteSpace(model.Detail.Language) ? model.Quiz.TargetLanguage : model.Detail.Language;
+        var folder = ResolveLanguageFolder(language);
+        var partOfSpeech = NormalizePartOfSpeech(model.PartOfSpeech);
+        return folder != "Estonian";
+    }
 
     private bool IsSelected(string partOfSpeech)
     {

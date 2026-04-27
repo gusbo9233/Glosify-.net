@@ -277,22 +277,108 @@ namespace Glosify.Controllers
                 .Where(entry => entry.LangCode == langCode && candidates.Contains(entry.Word))
                 .ToListAsync();
 
-            if (matches.Count == 0)
-            {
-                return null;
-            }
-
             var selectedPartOfSpeech = GetPropertyValue(detailProperties, "pos");
-
-            return matches
+            var headwordMatch = matches
                 .OrderBy(entry => CandidateRank(candidates, entry.Word))
                 .ThenBy(entry => PartOfSpeechRank(entry, selectedPartOfSpeech))
                 .ThenByDescending(entry => !string.IsNullOrWhiteSpace(entry.Description))
                 .ThenByDescending(entry => !string.IsNullOrWhiteSpace(entry.ExampleSentence))
                 .ThenBy(entry => entry.Word.Length)
                 .FirstOrDefault();
+
+            var variantMatch = await FindDictionaryVariantMatchAsync(langCode, candidates, selectedPartOfSpeech);
+            return PreferVariantParent(headwordMatch, variantMatch);
         }
 
+        private async Task<DictionaryEntry?> FindDictionaryVariantMatchAsync(
+            string langCode,
+            IReadOnlyList<string> candidates,
+            string selectedPartOfSpeech)
+        {
+            foreach (var candidate in candidates)
+            {
+                var matches = await _context.DictionaryEntries
+                    .FromSqlInterpolated($"""
+                        SELECT TOP (20) de.*
+                        FROM dbo.dictionary_entries de
+                        CROSS APPLY OPENJSON(de.variants) variant
+                        WHERE de.lang_code = {langCode}
+                            AND JSON_VALUE(variant.value, '$.form') = {candidate}
+                        ORDER BY
+                            CASE WHEN JSON_QUERY(variant.value, '$.tags') LIKE '%"singular"%' THEN 0 ELSE 1 END,
+                            CASE WHEN JSON_QUERY(variant.value, '$.tags') LIKE '%"plural"%' THEN 1 ELSE 0 END,
+                            LEN(de.word)
+                        """)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                var match = matches
+                    .OrderBy(entry => VariantMatchRank(entry, candidate))
+                    .ThenBy(entry => PartOfSpeechRank(entry, selectedPartOfSpeech))
+                    .ThenByDescending(entry => !string.IsNullOrWhiteSpace(entry.Description))
+                    .ThenByDescending(entry => !string.IsNullOrWhiteSpace(entry.ExampleSentence))
+                    .ThenBy(entry => entry.Word.Length)
+                    .FirstOrDefault();
+
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return null;
+        }
+
+        private static int VariantMatchRank(DictionaryEntry entry, string form)
+        {
+            var variants = WordDetailViewModel.ReadVariants(entry.Variants)
+                .Where(variant => string.Equals(variant.Form, form, StringComparison.Ordinal))
+                .ToList();
+
+            if (variants.Any(variant => variant.HasAnyTag("singular")))
+            {
+                return 0;
+            }
+
+            if (variants.Any(variant => !variant.HasAnyTag("plural")))
+            {
+                return 1;
+            }
+
+            return 2;
+        }
+
+        private static DictionaryEntry? PreferVariantParent(DictionaryEntry? headwordMatch, DictionaryEntry? variantMatch)
+        {
+            if (headwordMatch == null)
+            {
+                return variantMatch;
+            }
+
+            if (variantMatch == null)
+            {
+                return headwordMatch;
+            }
+
+            return IsInflectionStub(headwordMatch) && !IsInflectionStub(variantMatch)
+                ? variantMatch
+                : headwordMatch;
+        }
+
+        private static bool IsInflectionStub(DictionaryEntry entry)
+        {
+            var properties = WordDetailViewModel.ReadProperties(entry.Properties);
+            var tags = properties
+                .Where(property => string.Equals(property.Key, "tags", StringComparison.OrdinalIgnoreCase))
+                .Select(property => property.Value)
+                .FirstOrDefault() ?? string.Empty;
+
+            return tags.Contains("form of", StringComparison.OrdinalIgnoreCase)
+                || (entry.Description?.Contains(" of ", StringComparison.OrdinalIgnoreCase) == true
+                    && (entry.Description.Contains("inflection", StringComparison.OrdinalIgnoreCase)
+                        || entry.Description.Contains("participle of", StringComparison.OrdinalIgnoreCase)
+                        || entry.Description.Contains("connegative of", StringComparison.OrdinalIgnoreCase)));
+        }
         private static IReadOnlyList<KeyValuePair<string, string>> MergeProperties(
             IReadOnlyList<KeyValuePair<string, string>> dictionaryProperties,
             IReadOnlyList<KeyValuePair<string, string>> detailProperties)
@@ -397,16 +483,16 @@ namespace Glosify.Controllers
                 || MatchSupportedLangCode(wordDetail.Language) == langCode
                 || MatchSupportedLangCode(quiz.Language) == langCode)
             {
-                yield return word.Translation;
+                yield return word.Lemma;
             }
 
             if (MatchSupportedLangCode(quiz.SourceLanguage) == langCode)
             {
-                yield return word.Lemma;
+                yield return word.Translation;
             }
 
-            yield return word.Translation;
             yield return word.Lemma;
+            yield return word.Translation;
         }
 
         private static List<string> GetDictionaryWordCandidates(string langCode, IEnumerable<string> lookupTerms)

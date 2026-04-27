@@ -1,29 +1,35 @@
 @model Glosify.Models.WordDetailViewModel
 
 <article class="detail-section wide">
-    <h2 class="section-title"><span class="material-symbols-outlined">conversion_path</span>Adposition · Kaassõna</h2>
-    <div class="fact-grid">
-        <div class="fact-item">
-            <span class="fact-key">Position</span>
-            <span class="fact-value">@ValueOrFallback("position", "type", "Most Estonian adpositions are postpositions (laua all, sõbra juures); a small set are prepositions (enne tundi, ilma rahata).")</span>
+    <h2 class="section-title"><span class="material-symbols-outlined">conversion_path</span>Adposition / Kaassona</h2>
+    <div class="slot-grid">
+        <div class="slot-group">
+            <h3 class="slot-heading">Government</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>form</th><td>@(Model.Word?.Lemma ?? "-")</td></tr>
+                    <tr><th>position</th><td>@Property("position", "type", "mostly postposition; some prepositions")</td></tr>
+                    <tr><th>governs case</th><td>@Property("governs_case", "case", "usually genitive for postpositions")</td></tr>
+                    <tr><th>relationship</th><td>@Property("relationship", "meaning_type", "place, time, cause, comparison, or manner")</td></tr>
+                </tbody>
+            </table>
         </div>
-        <div class="fact-item">
-            <span class="fact-key">Governs Case</span>
-            <span class="fact-value">@ValueOrFallback("governs_case", "case", "Postpositions usually take the genitive; some prepositions take partitive (mööda) or other cases (ilma + abessive).")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Relationship</span>
-            <span class="fact-value">@ValueOrFallback("relationship", "meaning_type", "Track place (peal, all, kõrval), time (enne, pärast), cause (tõttu), or comparison (võrra).")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Local Case Pair</span>
-            <span class="fact-value">@ValueOrFallback("series", "case_series", "Many adpositions form triplets matching where to / at / from (peale / peal / pealt; juurde / juures / juurest).")</span>
+
+        <div class="slot-group">
+            <h3 class="slot-heading">Local Series</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>to</th><td>@Property("to_form", "allative", "-")</td></tr>
+                    <tr><th>at</th><td>@Property("at_form", "adessive", "-")</td></tr>
+                    <tr><th>from</th><td>@Property("from_form", "ablative", "-")</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </article>
 
 @functions {
-    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    private string Property(string firstKey, string secondKey, string fallback)
     {
         var first = Model.GetProperty(firstKey);
         return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;

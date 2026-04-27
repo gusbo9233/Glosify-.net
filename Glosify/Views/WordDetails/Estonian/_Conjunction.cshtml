@@ -1,29 +1,24 @@
 @model Glosify.Models.WordDetailViewModel
 
 <article class="detail-section wide">
-    <h2 class="section-title"><span class="material-symbols-outlined">lan</span>Conjunction · Sidesõna</h2>
-    <div class="fact-grid">
-        <div class="fact-item">
-            <span class="fact-key">Clause Role</span>
-            <span class="fact-value">@ValueOrFallback("type", "clause_type", "Mark coordinating (ja, ning, ega, vaid, kuid, aga, või) or subordinating (et, kui, sest, kuigi, justkui).")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Word Order</span>
-            <span class="fact-value">@ValueOrFallback("word_order", "verb_position", "Estonian keeps verb-second order in main clauses; subordinate clauses keep SVO but the verb does not move to the end as in German.")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Connects</span>
-            <span class="fact-value">@ValueOrFallback("connects", "scope", "Connects words, phrases, clauses, or full sentences.")</span>
-        </div>
-        <div class="fact-item">
-            <span class="fact-key">Punctuation</span>
-            <span class="fact-value">@ValueOrFallback("punctuation", "comma", "Subordinate clauses are separated by a comma; ja and ning normally take no comma when joining only two items.")</span>
+    <h2 class="section-title"><span class="material-symbols-outlined">lan</span>Conjunction / Sidesona</h2>
+    <div class="slot-grid">
+        <div class="slot-group">
+            <h3 class="slot-heading">Clause Role</h3>
+            <table class="slot-table">
+                <tbody>
+                    <tr><th>form</th><td>@(Model.Word?.Lemma ?? "-")</td></tr>
+                    <tr><th>type</th><td>@Property("type", "clause_type", "coordinating or subordinating")</td></tr>
+                    <tr><th>connects</th><td>@Property("connects", "scope", "words, phrases, clauses, or sentences")</td></tr>
+                    <tr><th>punctuation</th><td>@Property("punctuation", "comma", "subordinate clauses usually take a comma")</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </article>
 
 @functions {
-    private string ValueOrFallback(string firstKey, string secondKey, string fallback)
+    private string Property(string firstKey, string secondKey, string fallback)
     {
         var first = Model.GetProperty(firstKey);
         return string.IsNullOrWhiteSpace(first) ? (Model.GetProperty(secondKey) is var second && !string.IsNullOrWhiteSpace(second) ? second : fallback) : first;
