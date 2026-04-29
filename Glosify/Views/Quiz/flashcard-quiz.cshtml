@@ -1,127 +1,66 @@
-@{ Layout = "~/Views/Shared/_AppLayout.cshtml"; ViewData["Title"] = "Flashcard Quiz"; ViewData["ActiveNav"] = "quizzes"; }
+@model Glosify.Models.FlashcardQuizViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "Flashcard Quiz";
+    ViewData["ActiveNav"] = "quizzes";
 
-@section Styles {
-<style>
-    .main-content {
-        flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
-    }
-
-    /* ── Topbar ── */
-    .topbar {
-        position: sticky; top: 0; z-index: 40; height: 80px;
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 0 32px;
-        background: rgba(4,19,41,0.8);
-        backdrop-filter: blur(30px);
-    }
-    .topbar-title { font-size: 18px; font-weight: 500; }
-    .topbar-right { display: flex; align-items: center; gap: 24px; }
-    .btn-icon { background: none; border: none; cursor: pointer; color: var(--on-surface-var); transition: opacity 0.2s; }
-    .btn-icon:hover { opacity: 0.8; }
-    .topbar-avatar { width: 40px; height: 40px; border-radius: 9999px; overflow: hidden; background: var(--surface-highest); }
-    .topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-    /* ── Main ── */
-    main { flex: 1; padding: 48px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
-
-    /* ── Progress ── */
-    .progress-section { width: 100%; max-width: 768px; margin-bottom: 64px; }
-    .progress-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
-    .progress-title { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
-    .progress-subtitle { color: var(--on-surface-var); font-size: 14px; margin-top: 4px; }
-    .progress-count { text-align: right; }
-    .progress-count .num { color: var(--primary); font-weight: 700; font-size: 24px; }
-    .progress-count .denom { color: rgba(188,203,185,0.6); font-weight: 500; }
-    .progress-bar-track { height: 12px; width: 100%; background: var(--surface-highest); border-radius: 9999px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; width: 40%; background: linear-gradient(to right, var(--primary), var(--primary-container)); border-radius: 9999px; box-shadow: 0 0 15px rgba(29,185,84,0.3); }
-
-    /* ── Flashcard ── */
-    .flashcard-area { width: 100%; max-width: 672px; margin-bottom: 48px; aspect-ratio: 1.6; position: relative; }
-    .flashcard {
-        position: absolute; inset: 0;
-        background: rgba(44,57,81,0.6); backdrop-filter: blur(20px);
-        border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: 48px; text-align: center; cursor: pointer;
-        border: 1px solid rgba(61,74,61,0.15);
-        box-shadow: 0 25px 60px rgba(0,0,0,0.4);
-    }
-    .card-level { position: absolute; top: 32px; left: 32px; padding: 4px 12px; border-radius: 9999px; background: var(--surface-highest); color: var(--primary); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
-    .card-info { position: absolute; bottom: 32px; right: 32px; color: rgba(188,203,185,0.3); }
-    .card-sound { margin-bottom: 24px; color: var(--primary); }
-    .card-sound .material-symbols-outlined { font-size: 36px; }
-    .card-word { font-size: 72px; font-weight: 800; letter-spacing: -0.05em; margin-bottom: 8px; }
-    .card-phonetic { color: rgba(188,203,185,0.6); font-size: 18px; font-weight: 500; letter-spacing: 0.05em; }
-
-    /* ── Controls ── */
-    .controls { width: 100%; max-width: 672px; display: flex; flex-direction: column; align-items: center; gap: 32px; }
-    .btn-show-answer { width: 100%; padding: 24px; border-radius: 12px; background: var(--primary-container); color: var(--on-primary); font-size: 20px; font-weight: 800; border: none; cursor: pointer; box-shadow: 0 10px 30px rgba(83,224,118,0.1); transition: transform 0.3s; }
-    .btn-show-answer:hover { transform: scale(1.02); }
-    .btn-show-answer:active { transform: scale(0.98); }
-    .secondary-controls { display: flex; align-items: center; gap: 24px; width: 100%; }
-    .btn-skip { flex: 1; padding: 16px; border-radius: 8px; background: var(--surface-high); color: var(--on-surface-var); font-weight: 600; border: none; cursor: pointer; transition: background 0.2s; }
-    .btn-skip:hover { background: var(--surface-highest); }
-    .divider { width: 1px; height: 32px; background: rgba(61,74,61,0.2); flex-shrink: 0; }
-    .rating-buttons { flex: 3; display: flex; gap: 12px; }
-    .btn-rating { flex: 1; padding: 16px; border-radius: 8px; background: var(--surface); font-weight: 700; font-size: 14px; border: none; cursor: pointer; transition: background 0.2s; }
-    .btn-rating span { display: block; font-size: 10px; opacity: 0.6; font-weight: 500; margin-top: 2px; }
-    .btn-rating.again { color: var(--error); border: 1px solid rgba(255,180,171,0.1); }
-    .btn-rating.again:hover { background: rgba(255,180,171,0.1); }
-    .btn-rating.good { color: var(--on-surface); border: 1px solid rgba(61,74,61,0.2); }
-    .btn-rating.good:hover { background: var(--surface-highest); }
-    .btn-rating.easy { color: var(--primary); border: 1px solid rgba(83,224,118,0.1); }
-    .btn-rating.easy:hover { background: rgba(83,224,118,0.1); }
-</style>
+    var quizName = Model.SelectedQuiz?.Name ?? "Flashcard Quiz";
 }
 
-<div class="main-content">
-    <header class="topbar">
-        <span class="topbar-title">Daily Quiz Session</span>
-        <div class="topbar-right">
-            <button class="btn-icon"><span class="material-symbols-outlined">notifications</span></button>
-            <div class="topbar-avatar">
-                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPUeC2mIfNCwgga3c6sPHQOsJ_hbZBBmDAVReSJPt7-_C93G6EwhR0e01fLq9HANP_B0nvL9Sku0m76ZZoXRe8bPt28Z0d3JR_zBWzXcHIMm2GikxwZtajpGimN1RC-f980ybCr3Lkjzgfvc_ljUGDoCTztv2JTvVaj1VEfDTLrNEIcK3LnWpg7YYPbdHZ9R9See-4S4YuEDqbxU4tHDR2uPnp-64ZCRtaa6db4QFENxb62wtXTF5x3ByvanpQ5c1S_8uCtrYqchZ4" alt="User" />
-            </div>
+<section class="flash-shell" data-flashcard-quiz>
+    <header class="flash-header">
+        <div>
+            <p class="flash-kicker">@Model.SelectedQuiz?.SourceLanguage &rarr; @Model.SelectedQuiz?.TargetLanguage</p>
+            <h1 class="flash-title">@quizName</h1>
+            <p class="flash-subtitle">Reveal the answer, rate recall, and keep moving.</p>
         </div>
+        @if (Model.SelectedQuiz != null)
+        {
+            <a asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">Back to words</a>
+        }
     </header>
 
-    <main>
-        <div class="progress-section">
-            <div class="progress-header">
-                <div>
-                    <h1 class="progress-title">Vocabulary Mastery</h1>
-                    <p class="progress-subtitle">Japanese Philosophy Collection</p>
-                </div>
-                <div class="progress-count">
-                    <span class="num">8</span>
-                    <span class="denom"> of 20 words</span>
-                </div>
-            </div>
-            <div class="progress-bar-track">
-                <div class="progress-bar-fill"></div>
-            </div>
-        </div>
+    <div id="flashcardSession" data-flashcard-session>
+        @await Html.PartialAsync("~/Views/Quiz/_FlashcardSession.cshtml", Model)
+    </div>
+</section>
 
-        <div class="flashcard-area">
-            <div class="flashcard">
-                <span class="card-level">Level 4</span>
-                <div class="card-sound"><span class="material-symbols-outlined">volume_up</span></div>
-                <h2 class="card-word">Kintsugi</h2>
-                <p class="card-phonetic">きんつぎ</p>
-                <span class="card-info"><span class="material-symbols-outlined">info</span></span>
-            </div>
-        </div>
+@section Scripts {
+<script>
+    (() => {
+        const container = document.querySelector('[data-flashcard-session]');
+        if (!container) {
+            return;
+        }
 
-        <div class="controls">
-            <button class="btn-show-answer">Show Answer</button>
-            <div class="secondary-controls">
-                <button class="btn-skip">Skip</button>
-                <div class="divider"></div>
-                <div class="rating-buttons">
-                    <button class="btn-rating again">Again<span>1m</span></button>
-                    <button class="btn-rating good">Good<span>1d</span></button>
-                    <button class="btn-rating easy">Easy<span>4d</span></button>
-                </div>
-            </div>
-        </div>
-    </main>
-</div>
+        container.addEventListener('submit', async event => {
+            const form = event.target.closest('[data-flashcard-form]');
+            if (!form) {
+                return;
+            }
+
+            event.preventDefault();
+            const submitter = event.submitter;
+            const body = new FormData(form);
+            if (submitter?.name) {
+                body.set(submitter.name, submitter.value);
+            }
+
+            const response = await fetch(form.action, {
+                method: form.method || 'post',
+                body,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+
+            if (response.ok) {
+                container.innerHTML = await response.text();
+            }
+        });
+    })();
+</script>
+}

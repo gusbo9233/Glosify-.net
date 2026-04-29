@@ -1,5 +1,6 @@
 @inject Glosify.Services.ILanguageContext LangContext
 @using System.Security.Claims
+@using Microsoft.AspNetCore.Html
 @functions {
     string CurrentController => (ViewContext.RouteData.Values["controller"] as string ?? "").ToLowerInvariant();
     string CurrentAction => (ViewContext.RouteData.Values["action"] as string ?? "").ToLowerInvariant();
@@ -10,20 +11,77 @@
     bool IsActive(string controller, string action) =>
         CurrentController == controller.ToLowerInvariant() && CurrentAction == action.ToLowerInvariant();
 
-    bool IsQuizzesActive() => CurrentController == "quiz" || CurrentController == "quizzes";
+    bool IsQuizzesActive() =>
+        CurrentController == "quiz"
+        || CurrentController == "quizzes"
+        || CurrentController == "flashcardquiz";
 
     string NavClass(string controller, string action = "Index") => IsActive(controller, action)
         ? "text-[#1DB954] font-bold border-l-4 border-[#1DB954] pl-4 flex items-center gap-x-4 transition-colors duration-300"
         : "text-slate-400 font-medium pl-4 hover:text-white flex items-center gap-x-4 transition-colors duration-300";
 
-    string IconStyle(string controller, string action = "Index") =>
-        IsActive(controller, action) ? "font-variation-settings: 'FILL' 1;" : "";
+    string IconClass(string controller, string action = "Index") =>
+        IsActive(controller, action) ? " material-symbols-filled" : "";
 
     string QuizzesNavClass() => IsQuizzesActive()
         ? "text-[#1DB954] font-bold border-l-4 border-[#1DB954] pl-4 flex items-center gap-x-4 transition-colors duration-300"
         : "text-slate-400 font-medium pl-4 hover:text-white flex items-center gap-x-4 transition-colors duration-300";
 
-    string QuizzesIconStyle() => IsQuizzesActive() ? "font-variation-settings: 'FILL' 1;" : "";
+    string QuizzesIconClass() => IsQuizzesActive() ? " material-symbols-filled" : "";
+
+    IHtmlContent NavIcon(string name)
+    {
+        var paths = name switch
+        {
+            "language" => """
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M3 12h18"></path>
+                <path d="M12 3a13 13 0 0 1 0 18"></path>
+                <path d="M12 3a13 13 0 0 0 0 18"></path>
+                """,
+            "home" => """
+                <path d="M3 10.5 12 3l9 7.5"></path>
+                <path d="M5 9.5V21h14V9.5"></path>
+                <path d="M9 21v-6h6v6"></path>
+                """,
+            "explore" => """
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8 4.8-2.2Z"></path>
+                """,
+            "menu_book" => """
+                <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H7a3 3 0 0 0-3 3V5.5Z"></path>
+                <path d="M4 5.5V22"></path>
+                <path d="M8 7h8"></path>
+                <path d="M8 11h7"></path>
+                """,
+            "fitness_center" => """
+                <path d="M6.5 6.5 17.5 17.5"></path>
+                <path d="m4 9 5-5"></path>
+                <path d="m15 20 5-5"></path>
+                <path d="M2.5 6.5 6.5 2.5"></path>
+                <path d="m17.5 21.5 4-4"></path>
+                """,
+            "subscriptions" => """
+                <rect x="4" y="7" width="16" height="12" rx="2"></rect>
+                <path d="M8 3h8"></path>
+                <path d="m10 11 5 2.5-5 2.5v-5Z"></path>
+                """,
+            "quiz" => """
+                <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14l-4-3H6a2 2 0 0 1-2-2V5Z"></path>
+                <path d="M9.5 8.5a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4"></path>
+                <path d="M12 16h.01"></path>
+                """,
+            _ => """
+                <circle cx="12" cy="12" r="9"></circle>
+                """
+        };
+
+        return new HtmlString($"""
+            <svg class="nav-svg-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                {paths}
+            </svg>
+            """);
+    }
 }
 <!DOCTYPE html>
 <html class="dark" lang="en">
@@ -34,6 +92,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <script>
         tailwind.config = {
             darkMode: "class",
@@ -104,39 +163,42 @@
         }
     </script>
     <style>
-        :root {
-            --bg: #041329;
-            --surface-lowest: #010e24;
-            --surface-low: #0d1c32;
-            --surface: #112036;
-            --surface-high: #1c2a41;
-            --surface-highest: #27354c;
-            --surface-bright: #2c3951;
-            --on-surface: #d6e3ff;
-            --on-surface-var: #bccbb9;
-            --primary: #53e076;
-            --primary-container: #1db954;
-            --on-primary: #003914;
-            --on-primary-container: #004118;
-            --error: #ffb4ab;
-            --outline-var: #3d4a3d;
-        }
-        body {
+        body.app-layout-body {
+            display: block;
+            margin: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #041329;
         }
-        .material-symbols-outlined {
+
+        .app-layout-body .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+            font-feature-settings: 'liga';
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
-        .glass-player {
-            background: rgba(17, 32, 54, 0.9);
-            backdrop-filter: blur(40px);
+
+        .app-layout-body .nav-svg-icon {
+            width: 24px;
+            height: 24px;
+            flex: 0 0 24px;
         }
     </style>
     @await RenderSectionAsync("Styles", required: false)
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body class="text-on-surface selection:bg-primary selection:text-on-primary overflow-x-hidden">
+<body class="app-layout-body text-on-surface selection:bg-primary selection:text-on-primary overflow-x-hidden">
     <!-- SideNavBar -->
     <aside class="h-full w-64 fixed left-0 top-0 hidden md:flex flex-col bg-[#041329] dark:bg-[#041329] font-['Plus_Jakarta_Sans'] text-sm tracking-tight z-50">
         <div class="flex flex-col gap-y-6 py-8 px-6 h-full">
@@ -146,49 +208,47 @@
                 @if (!string.IsNullOrEmpty(LangContext.CurrentLanguage))
                 {
                     <a asp-controller="Languages" asp-action="Index"
-                       class="inline-flex items-center gap-x-2 mt-3 px-3 py-1.5 rounded-full text-xs font-bold"
-                       style="background:rgba(83,224,118,0.12);color:#53e076;text-decoration:none;">
-                        <span class="material-symbols-outlined" style="font-size:14px;">translate</span>
+                       class="language-context-pill language-context-pill-active inline-flex items-center gap-x-2 mt-3 px-3 py-1.5 rounded-full text-xs font-bold">
+                        <span class="material-symbols-outlined language-context-icon">translate</span>
                         @LangContext.CurrentLanguage
                     </a>
                 }
                 else
                 {
                     <a asp-controller="Languages" asp-action="Index"
-                       class="inline-flex items-center gap-x-2 mt-3 px-3 py-1.5 rounded-full text-xs font-bold"
-                       style="background:rgba(255,180,171,0.14);color:#ffb4ab;text-decoration:none;">
-                        <span class="material-symbols-outlined" style="font-size:14px;">translate</span>
+                       class="language-context-pill language-context-pill-empty inline-flex items-center gap-x-2 mt-3 px-3 py-1.5 rounded-full text-xs font-bold">
+                        <span class="material-symbols-outlined language-context-icon">translate</span>
                         Pick a language
                     </a>
                 }
             </div>
             <nav class="flex flex-col gap-y-4">
                 <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
-                    <span class="material-symbols-outlined" style="@IconStyle("Languages")">language</span>
+                    @NavIcon("language")
                     Language selector
                 </a>
                 <a class="@NavClass("Home")" asp-controller="Home" asp-action="Index">
-                    <span class="material-symbols-outlined" style="@IconStyle("Home")">home</span>
+                    @NavIcon("home")
                     Home
                 </a>
                 <a class="@NavClass("Explore")" asp-controller="Explore" asp-action="Index">
-                    <span class="material-symbols-outlined" style="@IconStyle("Explore")">explore</span>
+                    @NavIcon("explore")
                     Explore
                 </a>
                 <a class="@NavClass("Dictionary")" asp-controller="Dictionary" asp-action="Index">
-                    <span class="material-symbols-outlined" style="@IconStyle("Dictionary")">menu_book</span>
+                    @NavIcon("menu_book")
                     Dictionary
                 </a>
                 <a class="@NavClass("Practice")" asp-controller="Practice" asp-action="Index">
-                    <span class="material-symbols-outlined" style="@IconStyle("Practice")">fitness_center</span>
+                    @NavIcon("fitness_center")
                     Practice
                 </a>
                 <a class="@NavClass("Library")" asp-controller="Library" asp-action="Index">
-                    <span class="material-symbols-outlined" style="@IconStyle("Library")">subscriptions</span>
+                    @NavIcon("subscriptions")
                     Library
                 </a>
                 <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
-                    <span class="material-symbols-outlined" style="@QuizzesIconStyle()">quiz</span>
+                    @NavIcon("quiz")
                     Quizzes
                 </a>
             </nav>

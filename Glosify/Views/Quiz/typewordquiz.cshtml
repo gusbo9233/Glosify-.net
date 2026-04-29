@@ -1,69 +1,6 @@
 @{ Layout = "~/Views/Shared/_AppLayout.cshtml"; ViewData["Title"] = "Typing Quiz"; ViewData["ActiveNav"] = "quizzes"; }
 
-@section Styles {
-<style>
-    .main-content { flex: 1; display: flex; flex-direction: column; position: relative; overflow-y: auto; height: 100vh; }
 
-    /* ── Topbar ── */
-    .topbar { position: sticky; top: 0; width: 100%; z-index: 40; background: rgba(4,19,41,0.8); backdrop-filter: blur(30px); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 80px; }
-    .topbar-left { display: flex; align-items: center; gap: 32px; }
-    .topbar-logo { font-size: 22px; font-weight: 900; color: var(--primary-container); letter-spacing: -0.05em; }
-    .topbar-right { display: flex; align-items: center; gap: 24px; }
-    .btn-icon { background: none; border: none; cursor: pointer; color: #94a3b8; transition: color 0.3s; }
-    .btn-icon:hover { color: white; }
-    .topbar-avatar { width: 40px; height: 40px; border-radius: 9999px; overflow: hidden; border: 2px solid var(--primary-container); }
-    .topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-    /* ── Quiz section ── */
-    .quiz-section { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 48px 32px; }
-
-    .progress-wrap { width: 100%; max-width: 896px; margin-bottom: 48px; }
-    .progress-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px; }
-    .progress-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--primary); font-weight: 700; }
-    .progress-title { font-size: 20px; font-weight: 800; color: white; }
-    .progress-count { color: #94a3b8; font-weight: 700; }
-    .progress-track { height: 8px; width: 100%; background: var(--surface-highest); border-radius: 9999px; overflow: hidden; }
-    .progress-fill { height: 100%; width: 70%; background: linear-gradient(to right, var(--primary), var(--primary-container)); border-radius: 9999px; transition: width 0.5s; }
-
-    .quiz-card { width: 100%; max-width: 672px; background: var(--surface); border-radius: 16px; padding: 48px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; box-shadow: 0 40px 80px rgba(1,14,36,0.3); }
-    .card-glow-tr { position: absolute; top: -96px; right: -96px; width: 256px; height: 256px; background: rgba(29,185,84,0.05); border-radius: 9999px; filter: blur(48px); }
-    .card-glow-bl { position: absolute; bottom: -96px; left: -96px; width: 256px; height: 256px; background: rgba(83,224,118,0.05); border-radius: 9999px; filter: blur(48px); }
-
-    .prompt { text-align: center; margin-bottom: 40px; position: relative; z-index: 1; }
-    .prompt-badge { display: inline-block; background: rgba(29,185,84,0.1); color: var(--primary-container); padding: 4px 16px; border-radius: 9999px; font-size: 10px; text-transform: uppercase; letter-spacing: -0.03em; font-weight: 900; margin-bottom: 16px; }
-    .prompt-word { font-size: 36px; font-weight: 800; color: white; line-height: 1.2; }
-    .prompt-hint { color: #94a3b8; margin-top: 8px; font-size: 14px; font-style: italic; }
-
-    .action-bar { display: flex; gap: 16px; margin-bottom: 32px; position: relative; z-index: 1; }
-    .btn-action { width: 48px; height: 48px; border-radius: 9999px; background: var(--surface-highest); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: transform 0.2s; }
-    .btn-action.primary { color: var(--primary); }
-    .btn-action.muted { color: #94a3b8; }
-    .btn-action:hover { transform: scale(1.1); }
-    .btn-action:active { transform: scale(0.95); }
-
-    .answer-input-wrap { width: 100%; margin-bottom: 32px; position: relative; z-index: 1; }
-    .answer-input { width: 100%; background: var(--surface-low); border: none; border-radius: 12px; padding: 24px 32px; font-size: 24px; font-weight: 500; color: white; font-family: inherit; text-align: center; outline: none; transition: box-shadow 0.2s; }
-    .answer-input::placeholder { color: #475569; }
-    .answer-input:focus { box-shadow: 0 0 0 2px rgba(29,185,84,0.5); }
-
-    .btn-check { width: 100%; padding: 20px; background: var(--primary-container); color: var(--on-primary); font-weight: 900; font-size: 18px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; gap: 12px; border: none; cursor: pointer; position: relative; z-index: 1; box-shadow: 0 10px 30px rgba(29,185,84,0.4); transition: transform 0.2s; }
-    .btn-check:hover { transform: scale(1.02); }
-    .btn-check:active { transform: scale(0.95); }
-
-    .stats-grid { width: 100%; max-width: 896px; margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-    .stat-card { background: var(--surface-low); padding: 24px; border-radius: 8px; display: flex; align-items: center; gap: 16px; }
-    .stat-card.highlight { border-left: 4px solid var(--primary); }
-    .stat-icon { width: 48px; height: 48px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .stat-icon.primary-bg { background: rgba(83,224,118,0.1); color: var(--primary); }
-    .stat-icon.muted-bg { background: var(--surface-highest); color: #94a3b8; }
-    .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
-    .stat-value { font-size: 24px; font-weight: 900; color: white; margin-top: 2px; }
-
-    @@media (max-width: 768px) {
-        .stats-grid { grid-template-columns: 1fr; }
-    }
-</style>
-}
 
 <main class="main-content">
     <header class="topbar">

@@ -333,33 +333,62 @@ namespace Glosify.Controllers
         /// Display quiz settings/configuration before starting
         /// </summary>
         [HttpGet]
-        public IActionResult Settings(Guid? id)
+        public async Task<IActionResult> Settings(Guid? id)
         {
-            // If an ID is provided, you might load specific quiz settings
-            // For now, this displays the settings form
-            return View();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return RedirectToAction("Login", "Account");
+
+            Quiz? selectedQuiz = null;
+            if (id.HasValue)
+            {
+                selectedQuiz = await _context.Quizzes
+                    .FirstOrDefaultAsync(q => q.Id == id.Value && q.UserId.ToString() == userId);
+
+                if (selectedQuiz == null)
+                    return RedirectToAction("Index");
+            }
+
+            var availableWordCount = selectedQuiz == null
+                ? 0
+                : await _context.Words.CountAsync(word => word.QuizId == selectedQuiz.Id);
+
+            return View("start-quiz-settings", new QuizSettingsViewModel
+            {
+                SelectedQuiz = selectedQuiz,
+                AvailableWordCount = availableWordCount,
+                SelectedWordCount = Math.Min(Math.Max(availableWordCount, 1), 20)
+            });
         }
 
         /// <summary>
         /// Start a quiz session with user-selected settings
         /// </summary>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Start(QuizSessionSettings settings)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
                 return RedirectToAction("Login", "Account");
 
-            // Validate settings
             if (settings == null || settings.WordCount <= 0)
                 return RedirectToAction("Settings");
 
-            // Redirect to appropriate quiz type view based on quiz type
-            return settings.QuizType switch
+            if (settings.QuizId.HasValue)
             {
-                "flashcard" => RedirectToAction("Flashcard"),
-                "typing" => RedirectToAction("Type"),
-                "multiple-choice" => RedirectToAction("MultipleChoice"),
+                var ownsQuiz = await _context.Quizzes
+                    .AnyAsync(q => q.Id == settings.QuizId.Value && q.UserId.ToString() == userId);
+
+                if (!ownsQuiz)
+                    return RedirectToAction("Index");
+            }
+
+            return settings.Mode switch
+            {
+                "flashcards" => RedirectToAction("Flashcard", new { id = settings.QuizId, wordCount = settings.WordCount }),
+                "typing" => RedirectToAction("Type", new { id = settings.QuizId, wordCount = settings.WordCount }),
+                "multiple-choice" => RedirectToAction("MultipleChoice", new { id = settings.QuizId, wordCount = settings.WordCount }),
                 _ => RedirectToAction("Settings")
             };
         }
@@ -368,9 +397,9 @@ namespace Glosify.Controllers
         /// Display flashcard quiz interface
         /// </summary>
         [HttpGet]
-        public IActionResult Flashcard()
+        public IActionResult Flashcard(Guid? id, int wordCount = 20)
         {
-            return View();
+            return RedirectToAction("Index", "FlashcardQuiz", new { id, wordCount });
         }
 
         /// <summary>
@@ -816,8 +845,14 @@ namespace Glosify.Controllers
     // DTO Classes for API requests
     public class QuizSessionSettings
     {
+        public Guid? QuizId { get; set; }
         public int WordCount { get; set; }
-        public string QuizType { get; set; } // flashcard, typing, multiple-choice
+        public string Mode { get; set; } = "flashcards";
+        public string QuizType
+        {
+            get => Mode;
+            set => Mode = value;
+        }
         public string? Language { get; set; }
         public int? Difficulty { get; set; }
     }

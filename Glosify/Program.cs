@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
 
 // Add Identity
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>

@@ -1,0 +1,90 @@
+@model Glosify.Models.FlashcardQuizViewModel
+
+<div class="progress-wrap">
+    <div class="progress-meta">
+        <span class="progress-count">@Model.CompletedCards of @Model.TotalCards cards</span>
+        <span class="progress-count">@Model.RememberedCount remembered</span>
+    </div>
+    <div class="progress-track" aria-hidden="true">
+        <div class="progress-fill" style="width:@Model.ProgressPercent%"></div>
+    </div>
+</div>
+
+<div class="card-stage">
+    @if (Model.IsComplete)
+    {
+        <section class="results visible" aria-live="polite">
+            <div class="result-score">@Model.ScorePercent%</div>
+            <h2 class="flash-title">Session Complete</h2>
+            <div class="result-grid">
+                <div class="result-stat"><span>Remembered</span><span>@Model.RememberedCount</span></div>
+                <div class="result-stat"><span>Review Again</span><span>@Model.AgainCount</span></div>
+                <div class="result-stat"><span>Skipped</span><span>@Model.SkippedCount</span></div>
+            </div>
+            <form method="post" asp-controller="FlashcardQuiz" asp-action="Restart">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="quizId" value="@Model.QuizId" />
+                <input type="hidden" name="wordCount" value="@Model.WordCount" />
+                <button class="btn-main" type="submit">Restart Session</button>
+            </form>
+        </section>
+    }
+    else if (Model.CurrentCard != null)
+    {
+        <article class="flashcard" aria-live="polite">
+            <span class="card-label">Card @Model.CurrentCardNumber</span>
+            <h2 class="card-word">@Model.CurrentCard.Lemma</h2>
+            @if (Model.IsAnswerRevealed)
+            {
+                <div class="card-answer revealed">
+                    <div class="translation">@Model.CurrentCard.Translation</div>
+                    @if (!string.IsNullOrWhiteSpace(Model.CurrentCard.ExampleSentence))
+                    {
+                        <div class="example">@Model.CurrentCard.ExampleSentence</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.CurrentCard.ExampleTranslation))
+                    {
+                        <div class="example">@Model.CurrentCard.ExampleTranslation</div>
+                    }
+                </div>
+            }
+        </article>
+
+        @if (Model.IsAnswerRevealed)
+        {
+            <form class="controls" method="post" asp-controller="FlashcardQuiz" asp-action="Rate" data-flashcard-form>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                <div class="rating-row revealed">
+                    <button class="btn-rating again" type="submit" name="rating" value="again">Again</button>
+                    <button class="btn-rating" type="submit" name="rating" value="good">Good</button>
+                    <button class="btn-rating easy" type="submit" name="rating" value="easy">Easy</button>
+                </div>
+                <button class="btn-linkish" type="submit" name="rating" value="skip">Skip</button>
+            </form>
+        }
+        else
+        {
+            <div class="controls">
+                <form method="post" asp-controller="FlashcardQuiz" asp-action="Reveal" data-flashcard-form>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                    <button class="btn-main" type="submit">Show Answer</button>
+                </form>
+                <form method="post" asp-controller="FlashcardQuiz" asp-action="Rate" data-flashcard-form>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                    <button class="btn-linkish" type="submit" name="rating" value="skip">Skip</button>
+                </form>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <h2 class="flash-title">No cards yet</h2>
+            <p class="flash-subtitle">Add words to a quiz, then start a flashcard session from that quiz.</p>
+            <button class="btn-main" type="button" disabled>Show Answer</button>
+        </div>
+    }
+</div>
