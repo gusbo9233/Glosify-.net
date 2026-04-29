@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Glosify.Models.LanguageConfig;
 
 namespace Glosify.Models
 {
@@ -10,6 +11,7 @@ namespace Glosify.Models
         public DictionaryEntry? DictionaryMatch { get; set; }
         public IReadOnlyList<KeyValuePair<string, string>> Properties { get; set; } = [];
         public IReadOnlyList<WordDetailVariantViewModel> Variants { get; set; } = [];
+        public WordClassConfig? WordClassConfig { get; set; }
 
         public string PartOfSpeech => GetProperty("pos");
         public bool HasDictionaryMatch => DictionaryMatch is not null;
@@ -49,6 +51,40 @@ namespace Glosify.Models
             {
                 return [];
             }
+        }
+
+        public static IReadOnlyList<WordDetailVariantViewModel> FilterByTags(
+            IReadOnlyList<WordDetailVariantViewModel> variants, IReadOnlyList<string> requiredTags)
+        {
+            if (variants.Count == 0 || requiredTags.Count == 0)
+                return variants;
+
+            return variants
+                .Where(v => requiredTags.All(tag => v.HasAnyTag(tag)))
+                .ToList();
+        }
+
+        public static IReadOnlyList<WordDetailVariantViewModel> FilterPronounParadigm(
+            IReadOnlyList<WordDetailVariantViewModel> variants, string? lemma)
+        {
+            if (variants.Count == 0 || string.IsNullOrWhiteSpace(lemma))
+                return variants;
+
+            var identityTags = variants
+                .Where(v => string.Equals(v.Form, lemma, StringComparison.OrdinalIgnoreCase))
+                .SelectMany(v => v.Tags)
+                .Where(IsPronounIdentityTag)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (identityTags.Length == 0)
+                return variants;
+
+            var filtered = variants
+                .Where(v => identityTags.All(tag => v.HasAnyTag(tag)))
+                .ToList();
+
+            return filtered.Count == 0 ? variants : filtered;
         }
 
         public static IReadOnlyList<WordDetailVariantViewModel> ReadVariants(string? json)
@@ -107,6 +143,19 @@ namespace Glosify.Models
         public static string Humanize(string value)
         {
             return value.Replace("_", " ").Replace("-", " ");
+        }
+
+        private static bool IsPronounIdentityTag(string tag)
+        {
+            return tag.Equals("first-person", StringComparison.OrdinalIgnoreCase)
+                || tag.Equals("second-person", StringComparison.OrdinalIgnoreCase)
+                || tag.Equals("third-person", StringComparison.OrdinalIgnoreCase)
+                || tag.Equals("singular", StringComparison.OrdinalIgnoreCase)
+                || tag.Equals("plural", StringComparison.OrdinalIgnoreCase)
+                || tag.Equals("masculine", StringComparison.OrdinalIgnoreCase)
+                || tag.Equals("feminine", StringComparison.OrdinalIgnoreCase)
+                || tag.Equals("neuter", StringComparison.OrdinalIgnoreCase)
+                || tag.Equals("reflexive", StringComparison.OrdinalIgnoreCase);
         }
     }
 

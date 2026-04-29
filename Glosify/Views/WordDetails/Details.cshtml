@@ -2,7 +2,6 @@
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     var displayWord = Model.Word?.Lemma ?? "Word details";
-    var grammarPartial = GrammarPartialName(Model);
     ViewData["Title"] = displayWord;
     ViewData["ActiveNav"] = "quizzes";
 }
@@ -94,9 +93,9 @@
             }
         </article>
 
-        @if (!string.IsNullOrWhiteSpace(grammarPartial))
+        @if (Model.WordClassConfig != null)
         {
-            <partial name="@grammarPartial" model="Model" />
+            <partial name="_Grammar" model="Model" />
         }
 
         <article class="detail-section wide">
@@ -154,91 +153,11 @@
 </section>
 
 @functions {
-    private static string GrammarPartialName(Glosify.Models.WordDetailViewModel model)
-    {
-        var language = string.IsNullOrWhiteSpace(model.Detail.Language) ? model.Quiz.TargetLanguage : model.Detail.Language;
-        var folder = ResolveLanguageFolder(language);
-        if (string.IsNullOrEmpty(folder))
-        {
-            return string.Empty;
-        }
-
-        var partOfSpeech = NormalizePartOfSpeech(model.PartOfSpeech);
-        if (string.IsNullOrEmpty(partOfSpeech))
-        {
-            return string.Empty;
-        }
-
-        return $"{folder}/_{partOfSpeech}";
-    }
-
-    private static string ResolveLanguageFolder(string language)
-    {
-        if (string.IsNullOrWhiteSpace(language))
-        {
-            return string.Empty;
-        }
-
-        if (language.Equals("de", StringComparison.OrdinalIgnoreCase)
-            || language.Contains("german", StringComparison.OrdinalIgnoreCase)
-            || language.Contains("deutsch", StringComparison.OrdinalIgnoreCase))
-        {
-            return "German";
-        }
-
-        if (language.Equals("et", StringComparison.OrdinalIgnoreCase)
-            || language.Contains("estonian", StringComparison.OrdinalIgnoreCase)
-            || language.Contains("eesti", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Estonian";
-        }
-
-        if (language.Equals("uk", StringComparison.OrdinalIgnoreCase)
-            || language.Contains("ukrainian", StringComparison.OrdinalIgnoreCase)
-            || language.Contains("ukrainisch", StringComparison.OrdinalIgnoreCase)
-            || language.Contains("українськ", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Ukrainian";
-        }
-
-        if (language.Equals("pl", StringComparison.OrdinalIgnoreCase)
-            || language.Contains("polish", StringComparison.OrdinalIgnoreCase)
-            || language.Contains("polski", StringComparison.OrdinalIgnoreCase)
-            || language.Contains("polnisch", StringComparison.OrdinalIgnoreCase))
-        {
-            return "Polish";
-        }
-
-        return string.Empty;
-    }
-
-    private static string NormalizePartOfSpeech(string partOfSpeech)
-    {
-        return partOfSpeech.ToLowerInvariant() switch
-        {
-            "noun" or "nomen" or "hauptwort" or "substantiv" or "nimisõna" or "nimisona" or "іменник" or "rzeczownik" => "Noun",
-            "verb" or "verben" or "zeitwort" or "tegusõna" or "tegusona" or "дієслово" or "czasownik" => "Verb",
-            "article" or "artikel" or "geschlechtswort" or "artikkel" or "артикль" or "przedimek" or "rodzajnik" => "Article",
-            "adjective" or "adjektiv" or "eigenschaftswort" or "omadussõna" or "omadussona" or "прикметник" or "przymiotnik" => "Adjective",
-            "pronoun" or "pronomen" or "fuerwort" or "fürwort" or "asesõna" or "asesona" or "займенник" or "zaimek" => "Pronoun",
-            "adverb" or "adverbien" or "umstandswort" or "määrsõna" or "maarsona" or "прислівник" or "przysłówek" or "przyslowek" => "Adverb",
-            "preposition" or "präposition" or "praeposition" or "verhältniswort" or "verhaeltniswort"
-                or "postposition" or "adposition" or "kaassõna" or "kaassona" or "прийменник" or "przyimek" => "Preposition",
-            "conjunction" or "konjunktion" or "bindewort" or "sidesõna" or "sidesona" or "сполучник" or "spójnik" or "spojnik" => "Conjunction",
-            "numeral" or "numerale" or "zahlwort" or "arvsõna" or "arvsona" or "числівник" or "liczebnik" => "Numeral",
-            "interjection" or "interjektion" or "einwurf" or "hüüdsõna" or "huudsona" or "вигук" or "wykrzyknik" => "Interjection",
-            _ => string.Empty
-        };
-    }
-
     private static string Humanize(string value) => Glosify.Models.WordDetailViewModel.Humanize(value);
 
     private static bool ShouldShowGenericVariants(Glosify.Models.WordDetailViewModel model)
     {
-        var language = string.IsNullOrWhiteSpace(model.Detail.Language) ? model.Quiz.TargetLanguage : model.Detail.Language;
-        var folder = ResolveLanguageFolder(language);
-        var partOfSpeech = NormalizePartOfSpeech(model.PartOfSpeech);
-        return folder != "Estonian";
+        return model.WordClassConfig == null || model.WordClassConfig.SlotGroups.Length == 0;
     }
 
     private bool IsSelected(string partOfSpeech)

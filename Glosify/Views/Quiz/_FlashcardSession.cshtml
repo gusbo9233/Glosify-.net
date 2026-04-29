@@ -31,11 +31,11 @@
     }
     else if (Model.CurrentCard != null)
     {
-        <article class="flashcard" aria-live="polite">
-            <span class="card-label">Card @Model.CurrentCardNumber</span>
-            <h2 class="card-word">@Model.CurrentCard.Lemma</h2>
-            @if (Model.IsAnswerRevealed)
-            {
+        @if (Model.IsAnswerRevealed)
+        {
+            <article class="flashcard is-revealed" aria-live="polite">
+                <span class="card-label">Card @Model.CurrentCardNumber</span>
+                <h2 class="card-word">@Model.CurrentCard.Lemma</h2>
                 <div class="card-answer revealed">
                     <div class="translation">@Model.CurrentCard.Translation</div>
                     @if (!string.IsNullOrWhiteSpace(Model.CurrentCard.ExampleSentence))
@@ -47,8 +47,19 @@
                         <div class="example">@Model.CurrentCard.ExampleTranslation</div>
                     }
                 </div>
-            }
-        </article>
+            </article>
+        }
+        else
+        {
+            <form class="card-reveal-form" method="post" asp-controller="FlashcardQuiz" asp-action="Reveal" data-flashcard-form data-card-reveal-form>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                <button class="flashcard flashcard-clickable" type="submit" aria-label="Reveal answer for @Model.CurrentCard.Lemma">
+                    <span class="card-label">Card @Model.CurrentCardNumber</span>
+                    <span class="card-word">@Model.CurrentCard.Lemma</span>
+                </button>
+            </form>
+        }
 
         @if (Model.IsAnswerRevealed)
         {

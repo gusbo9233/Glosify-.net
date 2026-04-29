@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
@@ -11,6 +13,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Glosify.Data;
 using Glosify.Models;
+using Glosify.Models.LanguageConfig;
 
 namespace Glosify.Controllers
 {
@@ -18,6 +21,14 @@ namespace Glosify.Controllers
     public class WordDetailsController : Controller
     {
         private readonly GlosifyContext _context;
+
+        private static readonly Dictionary<string, ILanguageDictionaryConfig> LanguageConfigs = new()
+        {
+            ["uk"] = new UkrainianDictionaryConfig(),
+            ["de"] = new GermanDictionaryConfig(),
+            ["pl"] = new PolishDictionaryConfig(),
+            ["et"] = new EstonianDictionaryConfig(),
+        };
 
         public WordDetailsController(GlosifyContext context)
         {
@@ -72,10 +83,34 @@ namespace Glosify.Controllers
                 .FirstOrDefaultAsync(w => w.WordDetailId == wordDetail.Id && w.QuizId == wordDetail.QuizId);
 
             var detailProperties = WordDetailViewModel.ReadProperties(wordDetail.Properties);
-            var dictionaryMatch = await FindDictionaryMatchAsync(wordDetail, word, quiz, detailProperties);
+            var hasStoredDictionaryData = wordDetail.Properties != "{}" || wordDetail.Variants != "[]";
+            var dictionaryMatch = hasStoredDictionaryData
+                ? null
+                : await FindDictionaryMatchAsync(wordDetail, word, quiz, detailProperties);
             var dictionaryProperties = WordDetailViewModel.ReadProperties(dictionaryMatch?.Properties);
             var detailVariants = WordDetailViewModel.ReadVariants(wordDetail.Variants);
             var dictionaryVariants = WordDetailViewModel.ReadVariants(dictionaryMatch?.Variants);
+            var rawVariants = detailVariants.Any() ? detailVariants : dictionaryVariants;
+
+            var detailLanguage = string.IsNullOrWhiteSpace(wordDetail.Language) ? quiz.TargetLanguage : wordDetail.Language;
+            var langCode = LanguageResolver.ResolveLangCode(detailLanguage);
+            var pos = LanguageResolver.NormalizePartOfSpeech(WordDetailViewModel.ReadProperties(wordDetail.Properties)
+                .FirstOrDefault(p => string.Equals(p.Key, "pos", StringComparison.OrdinalIgnoreCase)).Value);
+
+            WordClassConfig? wordClassConfig = null;
+            if (langCode != null && LanguageConfigs.TryGetValue(langCode, out var languageConfig) && !string.IsNullOrEmpty(pos))
+            {
+                wordClassConfig = languageConfig.GetWordClass(pos);
+            }
+
+            var filteredVariants = wordClassConfig != null
+                ? WordDetailViewModel.FilterByTags(rawVariants, wordClassConfig.VariantTagFilters)
+                : rawVariants;
+            if (pos == "Pronoun")
+            {
+                filteredVariants = WordDetailViewModel.FilterPronounParadigm(
+                    filteredVariants, word?.Lemma ?? dictionaryMatch?.Word);
+            }
 
             return View(new WordDetailViewModel
             {
@@ -84,7 +119,8 @@ namespace Glosify.Controllers
                 Quiz = quiz,
                 DictionaryMatch = dictionaryMatch,
                 Properties = MergeProperties(dictionaryProperties, detailProperties),
-                Variants = detailVariants.Any() ? detailVariants : dictionaryVariants
+                Variants = filteredVariants,
+                WordClassConfig = wordClassConfig
             });
         }
 
@@ -295,24 +331,21 @@ namespace Glosify.Controllers
             IReadOnlyList<string> candidates,
             string selectedPartOfSpeech)
         {
+            if (candidates.Count == 0)
+            {
+                return null;
+            }
+
+            var allMatches = await _context.DictionaryEntries
+                .FromSqlInterpolated(CreateVariantQuery(langCode, candidates))
+                .AsNoTracking()
+                .ToListAsync();
+
             foreach (var candidate in candidates)
             {
-                var matches = await _context.DictionaryEntries
-                    .FromSqlInterpolated($"""
-                        SELECT TOP (20) de.*
-                        FROM dbo.dictionary_entries de
-                        CROSS APPLY OPENJSON(de.variants) variant
-                        WHERE de.lang_code = {langCode}
-                            AND JSON_VALUE(variant.value, '$.form') = {candidate}
-                        ORDER BY
-                            CASE WHEN JSON_QUERY(variant.value, '$.tags') LIKE '%"singular"%' THEN 0 ELSE 1 END,
-                            CASE WHEN JSON_QUERY(variant.value, '$.tags') LIKE '%"plural"%' THEN 1 ELSE 0 END,
-                            LEN(de.word)
-                        """)
-                    .AsNoTracking()
-                    .ToListAsync();
-
-                var match = matches
+                var match = allMatches
+                    .Where(entry => WordDetailViewModel.ReadVariants(entry.Variants)
+                        .Any(v => VariantFormEquals(v.Form, candidate)))
                     .OrderBy(entry => VariantMatchRank(entry, candidate))
                     .ThenBy(entry => PartOfSpeechRank(entry, selectedPartOfSpeech))
                     .ThenByDescending(entry => !string.IsNullOrWhiteSpace(entry.Description))
@@ -329,10 +362,49 @@ namespace Glosify.Controllers
             return null;
         }
 
+        private static FormattableString CreateVariantQuery(string langCode, IReadOnlyList<string> candidates)
+        {
+            return candidates.Count switch
+            {
+                1 => $"""
+                        SELECT TOP (20) de.*
+                        FROM dbo.dictionary_entries de
+                        CROSS APPLY OPENJSON(de.variants) variant
+                        WHERE de.lang_code = {langCode}
+                        AND JSON_VALUE(variant.value, '$.form') COLLATE Latin1_General_100_CI_AI IN ({candidates[0]})
+                    ORDER BY LEN(de.word)
+                    """,
+                2 => $"""
+                    SELECT TOP (20) de.*
+                    FROM dbo.dictionary_entries de
+                    CROSS APPLY OPENJSON(de.variants) variant
+                    WHERE de.lang_code = {langCode}
+                        AND JSON_VALUE(variant.value, '$.form') COLLATE Latin1_General_100_CI_AI IN ({candidates[0]}, {candidates[1]})
+                    ORDER BY LEN(de.word)
+                    """,
+                3 => $"""
+                    SELECT TOP (20) de.*
+                    FROM dbo.dictionary_entries de
+                    CROSS APPLY OPENJSON(de.variants) variant
+                    WHERE de.lang_code = {langCode}
+                        AND JSON_VALUE(variant.value, '$.form') COLLATE Latin1_General_100_CI_AI IN ({candidates[0]}, {candidates[1]}, {candidates[2]})
+                    ORDER BY LEN(de.word)
+                    """,
+                _ => $"""
+                    SELECT TOP (20) de.*
+                    FROM dbo.dictionary_entries de
+                    CROSS APPLY OPENJSON(de.variants) variant
+                    WHERE de.lang_code = {langCode}
+                        AND JSON_VALUE(variant.value, '$.form') COLLATE Latin1_General_100_CI_AI IN ({candidates[0]}, {candidates[1]}, {candidates[2]}, {candidates[3]})
+                    ORDER BY LEN(de.word)
+                    """,
+            };
+        }
+
         private static int VariantMatchRank(DictionaryEntry entry, string form)
         {
             var variants = WordDetailViewModel.ReadVariants(entry.Variants)
-                .Where(variant => string.Equals(variant.Form, form, StringComparison.Ordinal))
+                .Where(variant => VariantFormEquals(variant.Form, form))
                 .ToList();
 
             if (variants.Any(variant => variant.HasAnyTag("singular")))
@@ -346,6 +418,30 @@ namespace Glosify.Controllers
             }
 
             return 2;
+        }
+
+        private static bool VariantFormEquals(string left, string right)
+        {
+            return string.Equals(left, right, StringComparison.Ordinal)
+                || string.Equals(
+                    StripCombiningMarks(left),
+                    StripCombiningMarks(right),
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string StripCombiningMarks(string value)
+        {
+            var normalized = value.Normalize(NormalizationForm.FormD);
+            var builder = new StringBuilder(normalized.Length);
+            foreach (var ch in normalized)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+                {
+                    builder.Append(ch);
+                }
+            }
+
+            return builder.ToString().Normalize(NormalizationForm.FormC);
         }
 
         private static DictionaryEntry? PreferVariantParent(DictionaryEntry? headwordMatch, DictionaryEntry? variantMatch)

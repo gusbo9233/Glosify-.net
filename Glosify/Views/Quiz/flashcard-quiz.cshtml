@@ -41,9 +41,16 @@
 
             event.preventDefault();
             const submitter = event.submitter;
+            const clickableCard = form.querySelector('.flashcard-clickable');
+            clickableCard?.classList.add('is-flipping');
+
             const body = new FormData(form);
             if (submitter?.name) {
                 body.set(submitter.name, submitter.value);
+            }
+
+            if (clickableCard && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                await new Promise(resolve => window.setTimeout(resolve, 180));
             }
 
             const response = await fetch(form.action, {

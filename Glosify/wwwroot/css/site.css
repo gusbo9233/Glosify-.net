@@ -297,9 +297,15 @@ body {
         display: grid;
         justify-items: center;
         gap: 24px;
+        perspective: 1200px;
+    }
+
+    .card-reveal-form {
+        width: min(100%, 720px);
     }
 
     .flashcard {
+        --flashcard-flip-ease: cubic-bezier(0.22, 1, 0.36, 1);
         width: min(100%, 720px);
         min-height: 360px;
         display: grid;
@@ -309,8 +315,64 @@ body {
         border-radius: 8px;
         background: var(--surface);
         box-shadow: 0 28px 70px rgba(1, 14, 36, 0.34);
+        color: var(--on-surface);
+        font: inherit;
         padding: 44px;
         text-align: center;
+        backface-visibility: hidden;
+        transform-style: preserve-3d;
+        transition:
+            transform 0.36s var(--flashcard-flip-ease),
+            box-shadow 0.24s ease,
+            border-color 0.24s ease;
+        will-change: transform;
+    }
+
+    .card-reveal-form .flashcard {
+        width: 100%;
+    }
+
+    .flashcard-clickable {
+        cursor: pointer;
+    }
+
+    .flashcard-clickable:hover,
+    .flashcard-clickable:focus-visible {
+        border-color: rgba(83, 224, 118, 0.54);
+        box-shadow: 0 32px 78px rgba(1, 14, 36, 0.4);
+        outline: none;
+        transform: translateY(-3px) rotateY(-3deg);
+    }
+
+    .flashcard-clickable.is-flipping {
+        pointer-events: none;
+        transform: rotateY(88deg) scale(0.98);
+    }
+
+    .flashcard.is-revealed {
+        animation: flashcard-flip-in 0.42s var(--flashcard-flip-ease) both;
+    }
+
+    @keyframes flashcard-flip-in {
+        from {
+            opacity: 0.92;
+            transform: rotateY(-88deg) scale(0.98);
+        }
+
+        to {
+            opacity: 1;
+            transform: rotateY(0);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .flashcard {
+            transition: none;
+        }
+
+        .flashcard.is-revealed {
+            animation: none;
+        }
     }
 
     .card-label {
@@ -783,6 +845,19 @@ body {
         transform: translateY(-2px);
         border-color: rgba(83, 224, 118, 0.52);
         background: var(--surface);
+    }
+
+    .word-card.loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .word-card.loading .word-icon {
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 
     .word-card-link {
@@ -1982,4 +2057,3 @@ body {
             flex-direction: column;
         }
     }
-

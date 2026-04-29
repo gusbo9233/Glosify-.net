@@ -1,0 +1,82 @@
+@model Glosify.Models.WordDetailViewModel
+@{
+    var config = Model.WordClassConfig;
+    if (config == null)
+    {
+        return;
+    }
+}
+
+<article class="detail-section wide">
+    <h2 class="section-title"><span class="material-symbols-outlined">@config.Icon</span>@config.Title</h2>
+
+    @if (config.Facts.Length > 0)
+    {
+        var facts = config.Facts
+            .Select(f => new { f.Label, Value = LookupValue(f.PropertyKeys) })
+            .Where(f => !string.IsNullOrWhiteSpace(f.Value))
+            .ToList();
+
+        if (facts.Any())
+        {
+            <div class="fact-grid">
+                @foreach (var fact in facts)
+                {
+                    <div class="fact-item">
+                        <span class="fact-key">@fact.Label</span>
+                        <span class="fact-value">@fact.Value</span>
+                    </div>
+                }
+            </div>
+        }
+    }
+
+    @if (config.SlotGroups.Length > 0)
+    {
+        <div class="slot-grid">
+            @foreach (var group in config.SlotGroups)
+            {
+                <div class="slot-group">
+                    <h3 class="slot-heading">@group.Heading</h3>
+                    <table class="slot-table">
+                        <tbody>
+                            @foreach (var slot in group.Slots)
+                            {
+                                <tr>
+                                    <th>@slot.Label</th>
+                                    <td>@FindForms(slot.Tags)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    }
+</article>
+
+@functions {
+    private string? LookupValue(string[] keys)
+    {
+        foreach (var key in keys)
+        {
+            var val = Model.GetProperty(key);
+            if (!string.IsNullOrWhiteSpace(val)) return val;
+        }
+        return null;
+    }
+
+    private string FindForms(string[] tags)
+    {
+        var forms = Model.Variants
+            .Where(variant => !string.IsNullOrWhiteSpace(variant.Form) && variant.Form != "-")
+            .Where(variant => tags.All(tag => variant.HasAnyTag(tag)))
+            .OrderBy(variant => variant.Tags.Count)
+            .Select(variant => variant.Form)
+            .Distinct()
+            .Take(6)
+            .ToList();
+
+        return forms.Count == 0 ? "-" : string.Join(", ", forms);
+    }
+}

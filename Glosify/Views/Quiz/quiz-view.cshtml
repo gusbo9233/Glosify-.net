@@ -139,6 +139,41 @@
 
 @section Scripts {
 <script>
+    const resetWordLoadingState = () => {
+        document.querySelectorAll('.word-card.loading').forEach(card => {
+            card.classList.remove('loading');
+            const icon = card.querySelector('.word-icon .material-symbols-outlined');
+            if (icon) icon.textContent = icon.dataset.defaultIcon || 'translate';
+        });
+    };
+
+    document.querySelectorAll('.word-card-link, .word-date').forEach(link => {
+        link.addEventListener('click', event => {
+            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+            }
+
+            const card = link.closest('.word-card');
+            if (!card) return;
+
+            card.classList.add('loading');
+            const icon = card.querySelector('.word-icon .material-symbols-outlined');
+            if (icon) {
+                icon.dataset.defaultIcon ||= icon.textContent.trim() || 'translate';
+                icon.textContent = 'progress_activity';
+            }
+
+            window.setTimeout(() => {
+                if (document.visibilityState === 'visible') {
+                    card.classList.remove('loading');
+                    if (icon) icon.textContent = icon.dataset.defaultIcon || 'translate';
+                }
+            }, 12000);
+        });
+    });
+
+    window.addEventListener('pageshow', resetWordLoadingState);
+
     (() => {
         const tabs = document.querySelectorAll('[data-tab]');
         const panels = {
