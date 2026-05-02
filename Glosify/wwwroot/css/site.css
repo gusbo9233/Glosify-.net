@@ -412,6 +412,11 @@ body {
         overflow-wrap: anywhere;
     }
 
+    .card-answer .translation {
+        font-size: clamp(36px, 7vw, 58px);
+        line-height: 1.08;
+    }
+
     .example {
         color: var(--on-surface-var);
         font-size: 15px;
