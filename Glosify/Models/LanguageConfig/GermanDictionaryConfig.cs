@@ -1,10 +1,12 @@
 namespace Glosify.Models.LanguageConfig
 {
-    public sealed class GermanDictionaryConfig : ILanguageDictionaryConfig
+    public sealed class GermanDictionaryConfig : LanguageDictionaryConfigBase
     {
-        public string LangCode => "de";
+        public override string LangCode => "de";
 
-        public WordClassConfig? GetWordClass(string pos) => pos switch
+        public override IReadOnlyList<string> Aliases => new[] { "de", "german", "deutsch" };
+
+        public override WordClassConfig? GetWordClass(string pos) => pos switch
         {
             "Noun" => WordClassConfig.FromSlots("Noun · Nomen", "title",
                 new SlotGroup("Singular", [

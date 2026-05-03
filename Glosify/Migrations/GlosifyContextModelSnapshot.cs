@@ -22,7 +22,7 @@ namespace Glosify.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Glosify.Models.ApplicationUser", b =>
+            modelBuilder.Entity("Glosify.Models.Entities.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -87,7 +87,7 @@ namespace Glosify.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("Glosify.Models.DictionaryEntry", b =>
+            modelBuilder.Entity("Glosify.Models.Entities.DictionaryEntry", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -162,7 +162,7 @@ namespace Glosify.Migrations
                     b.ToTable("dictionary_entries");
                 });
 
-            modelBuilder.Entity("Glosify.Models.Quiz", b =>
+            modelBuilder.Entity("Glosify.Models.Entities.Quiz", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -229,7 +229,7 @@ namespace Glosify.Migrations
                     b.ToTable("Quizzes");
                 });
 
-            modelBuilder.Entity("Glosify.Models.Word", b =>
+            modelBuilder.Entity("Glosify.Models.Entities.Word", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)")
@@ -251,19 +251,26 @@ namespace Glosify.Migrations
 
                     b.Property<string>("WordDetailId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
                         .HasColumnName("word_detail_id");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("WordDetailId");
+
                     b.ToTable("words");
                 });
 
-            modelBuilder.Entity("Glosify.Models.WordDetail", b =>
+            modelBuilder.Entity("Glosify.Models.Entities.WordDetail", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("created_at");
 
                     b.Property<string>("ExampleSentence")
                         .IsRequired()
@@ -280,21 +287,72 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("language");
 
+                    b.Property<string>("NormalizedTranslation")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)")
+                        .HasColumnName("normalized_translation");
+
+                    b.Property<string>("NormalizedTranslationHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("normalized_translation_hash");
+
+                    b.Property<string>("NormalizedWord")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)")
+                        .HasColumnName("normalized_word");
+
+                    b.Property<string>("NormalizedWordHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("normalized_word_hash");
+
                     b.Property<string>("Properties")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("properties");
 
-                    b.Property<Guid>("QuizId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("quiz_id");
+                    b.Property<string>("SourceLanguage")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("source_language");
+
+                    b.Property<string>("TargetLanguage")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("target_language");
+
+                    b.Property<string>("Translation")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)")
+                        .HasColumnName("translation");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("updated_at");
 
                     b.Property<string>("Variants")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("variants");
 
+                    b.Property<string>("Word")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasColumnName("word");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("SourceLanguage", "TargetLanguage", "NormalizedWordHash", "NormalizedTranslationHash")
+                        .IsUnique();
 
                     b.ToTable("word_details");
                 });
@@ -447,7 +505,7 @@ namespace Glosify.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("Glosify.Models.ApplicationUser", null)
+                    b.HasOne("Glosify.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -456,7 +514,7 @@ namespace Glosify.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("Glosify.Models.ApplicationUser", null)
+                    b.HasOne("Glosify.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -471,7 +529,7 @@ namespace Glosify.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Glosify.Models.ApplicationUser", null)
+                    b.HasOne("Glosify.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -480,10 +538,20 @@ namespace Glosify.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("Glosify.Models.ApplicationUser", null)
+                    b.HasOne("Glosify.Models.Entities.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.Word", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.WordDetail", null)
+                        .WithMany()
+                        .HasForeignKey("WordDetailId")
+                        .HasConstraintName("FK_words_word_details")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 #pragma warning restore 612, 618

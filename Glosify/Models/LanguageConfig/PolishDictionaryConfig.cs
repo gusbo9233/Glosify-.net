@@ -1,10 +1,14 @@
 namespace Glosify.Models.LanguageConfig
 {
-    public sealed class PolishDictionaryConfig : ILanguageDictionaryConfig
+    public sealed class PolishDictionaryConfig : LanguageDictionaryConfigBase
     {
-        public string LangCode => "pl";
+        public override string LangCode => "pl";
 
-        public WordClassConfig? GetWordClass(string pos) => pos switch
+        public override IReadOnlyList<string> Aliases => new[] { "pl", "polish", "polski", "polnisch" };
+
+        public override bool BundlesPronounParadigm => true;
+
+        public override WordClassConfig? GetWordClass(string pos) => pos switch
         {
             "Noun" => WordClassConfig.FromSlots("Noun · Rzeczownik", "title",
                 new SlotGroup("Singular", [

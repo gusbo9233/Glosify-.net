@@ -1,10 +1,29 @@
 namespace Glosify.Models.LanguageConfig
 {
-    public sealed class UkrainianDictionaryConfig : ILanguageDictionaryConfig
+    public sealed class UkrainianDictionaryConfig : LanguageDictionaryConfigBase
     {
-        public string LangCode => "uk";
+        private static readonly System.Text.RegularExpressions.Regex RomanizationTail =
+            new(@"\s*\([^)]*\)\s*$", System.Text.RegularExpressions.RegexOptions.Compiled);
 
-        public WordClassConfig? GetWordClass(string pos) => pos switch
+        public override string LangCode => "uk";
+
+        public override IReadOnlyList<string> Aliases => new[] { "uk", "ukrainian", "ukrainisch", "українськ" };
+
+        public override bool BundlesPronounParadigm => true;
+
+        // Kaikki Ukrainian variants often store the form with a stress-romanization tail baked in,
+        // e.g. "мéне (mené, méne*)". Strip that for display so slot cells aren't littered with parens.
+        public override string CleanForm(string form)
+        {
+            if (string.IsNullOrEmpty(form))
+            {
+                return form;
+            }
+            var stripped = RomanizationTail.Replace(form, string.Empty);
+            return stripped.Length == 0 ? form : stripped;
+        }
+
+        public override WordClassConfig? GetWordClass(string pos) => pos switch
         {
             "Noun" => WordClassConfig.FromSlots("Noun · Іменник", "title",
                 new SlotGroup("Singular", [

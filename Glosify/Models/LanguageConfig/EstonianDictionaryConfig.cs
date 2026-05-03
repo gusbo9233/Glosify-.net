@@ -1,10 +1,12 @@
 namespace Glosify.Models.LanguageConfig
 {
-    public sealed class EstonianDictionaryConfig : ILanguageDictionaryConfig
+    public sealed class EstonianDictionaryConfig : LanguageDictionaryConfigBase
     {
-        public string LangCode => "et";
+        public override string LangCode => "et";
 
-        public WordClassConfig? GetWordClass(string pos) => pos switch
+        public override IReadOnlyList<string> Aliases => new[] { "et", "estonian", "eesti" };
+
+        public override WordClassConfig? GetWordClass(string pos) => pos switch
         {
             "Noun" => WordClassConfig.FromSlots("Noun / Nimisona", "title",
                 new("Core Forms", [

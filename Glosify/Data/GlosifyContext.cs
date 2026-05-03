@@ -27,11 +27,38 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Word>()
-            .HasKey(w => w.Id);
+        modelBuilder.Entity<Word>(entity =>
+        {
+            entity.HasKey(w => w.Id);
+            entity.Property(w => w.WordDetailId).HasMaxLength(450);
+            entity.HasIndex(w => w.WordDetailId);
+            entity.HasOne<WordDetail>()
+                .WithMany()
+                .HasForeignKey(w => w.WordDetailId)
+                .HasConstraintName("FK_words_word_details")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
-        modelBuilder.Entity<WordDetail>()
-            .HasKey(w => w.Id);
+        modelBuilder.Entity<WordDetail>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new
+            {
+                e.SourceLanguage,
+                e.TargetLanguage,
+                e.NormalizedWordHash,
+                e.NormalizedTranslationHash
+            }).IsUnique();
+
+            entity.Property(e => e.SourceLanguage).HasMaxLength(64);
+            entity.Property(e => e.TargetLanguage).HasMaxLength(64);
+            entity.Property(e => e.Word).HasMaxLength(256);
+            entity.Property(e => e.Translation).HasMaxLength(512);
+            entity.Property(e => e.NormalizedWord).HasMaxLength(1024);
+            entity.Property(e => e.NormalizedTranslation).HasMaxLength(1024);
+            entity.Property(e => e.NormalizedWordHash).HasMaxLength(64);
+            entity.Property(e => e.NormalizedTranslationHash).HasMaxLength(64);
+        });
 
         modelBuilder.Entity<DictionaryEntry>(entity =>
         {

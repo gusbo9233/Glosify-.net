@@ -16,18 +16,11 @@
         || CurrentController == "quizzes"
         || CurrentController == "flashcardquiz";
 
-    string NavClass(string controller, string action = "Index") => IsActive(controller, action)
-        ? "text-[#1DB954] font-bold border-l-4 border-[#1DB954] pl-4 flex items-center gap-x-4 transition-colors duration-300"
-        : "text-slate-400 font-medium pl-4 hover:text-white flex items-center gap-x-4 transition-colors duration-300";
+    string NavClass(string controller, string action = "Index") =>
+        IsActive(controller, action) ? "app-nav-item is-active" : "app-nav-item";
 
-    string IconClass(string controller, string action = "Index") =>
-        IsActive(controller, action) ? " material-symbols-filled" : "";
-
-    string QuizzesNavClass() => IsQuizzesActive()
-        ? "text-[#1DB954] font-bold border-l-4 border-[#1DB954] pl-4 flex items-center gap-x-4 transition-colors duration-300"
-        : "text-slate-400 font-medium pl-4 hover:text-white flex items-center gap-x-4 transition-colors duration-300";
-
-    string QuizzesIconClass() => IsQuizzesActive() ? " material-symbols-filled" : "";
+    string QuizzesNavClass() =>
+        IsQuizzesActive() ? "app-nav-item is-active" : "app-nav-item";
 
     IHtmlContent NavIcon(string name)
     {
@@ -84,131 +77,27 @@
     }
 }
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>@ViewData["Title"] - Glosify</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,400..800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "on-tertiary-fixed-variant": "#881d28",
-                        "on-tertiary-fixed": "#400009",
-                        "error-container": "#93000a",
-                        "on-error-container": "#ffdad6",
-                        "surface-container-highest": "#27354c",
-                        "surface-dim": "#041329",
-                        "outline-variant": "#3d4a3d",
-                        "primary-fixed-dim": "#53e076",
-                        "outline": "#869585",
-                        "tertiary-fixed": "#ffdad9",
-                        "on-tertiary": "#680114",
-                        "on-primary-fixed-variant": "#005320",
-                        "surface-container-lowest": "#010e24",
-                        "secondary-fixed-dim": "#99d59d",
-                        "surface-bright": "#2c3951",
-                        "primary": "#53e076",
-                        "error": "#ffb4ab",
-                        "surface-container-low": "#0d1c32",
-                        "on-primary-fixed": "#002108",
-                        "on-secondary-fixed": "#002108",
-                        "tertiary-container": "#ff767b",
-                        "on-secondary-fixed-variant": "#195127",
-                        "primary-container": "#1db954",
-                        "surface-container-high": "#1c2a41",
-                        "on-secondary-container": "#8cc690",
-                        "background": "#041329",
-                        "on-surface": "#d6e3ff",
-                        "inverse-on-surface": "#233148",
-                        "secondary-container": "#1c5329",
-                        "on-primary": "#003914",
-                        "primary-fixed": "#72fe8f",
-                        "surface-tint": "#53e076",
-                        "secondary": "#99d59d",
-                        "surface-container": "#112036",
-                        "surface": "#041329",
-                        "on-background": "#d6e3ff",
-                        "tertiary-fixed-dim": "#ffb3b3",
-                        "inverse-primary": "#006e2d",
-                        "on-primary-container": "#004118",
-                        "inverse-surface": "#d6e3ff",
-                        "on-error": "#690005",
-                        "on-surface-variant": "#bccbb9",
-                        "surface-variant": "#27354c",
-                        "on-secondary": "#003914",
-                        "secondary-fixed": "#b5f1b8",
-                        "tertiary": "#ffb3b3",
-                        "on-tertiary-container": "#730a1b"
-                    },
-                    borderRadius: {
-                        "DEFAULT": "1rem",
-                        "lg": "2rem",
-                        "xl": "3rem",
-                        "full": "9999px"
-                    },
-                    fontFamily: {
-                        "headline": ["Plus Jakarta Sans"],
-                        "body": ["Plus Jakarta Sans"],
-                        "label": ["Plus Jakarta Sans"]
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body.app-layout-body {
-            display: block;
-            margin: 0;
-            overflow-x: hidden;
-            overflow-y: auto;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #041329;
-        }
-
-        .app-layout-body .material-symbols-outlined {
-            font-family: 'Material Symbols Outlined';
-            font-weight: normal;
-            font-style: normal;
-            line-height: 1;
-            letter-spacing: normal;
-            text-transform: none;
-            display: inline-block;
-            white-space: nowrap;
-            word-wrap: normal;
-            direction: ltr;
-            -webkit-font-feature-settings: 'liga';
-            -webkit-font-smoothing: antialiased;
-            font-feature-settings: 'liga';
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-
-        .app-layout-body .nav-svg-icon {
-            width: 24px;
-            height: 24px;
-            flex: 0 0 24px;
-        }
-    </style>
     @await RenderSectionAsync("Styles", required: false)
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body class="app-layout-body text-on-surface selection:bg-primary selection:text-on-primary overflow-x-hidden">
-    <!-- SideNavBar -->
-    <aside class="h-full w-64 fixed left-0 top-0 hidden md:flex flex-col bg-[#041329] dark:bg-[#041329] font-['Plus_Jakarta_Sans'] text-sm tracking-tight z-50">
-        <div class="flex flex-col gap-y-6 py-8 px-6 h-full">
-            <div class="mb-8">
-                <span class="text-2xl font-bold tracking-tighter text-[#1DB954]">Sonic Polyglot</span>
-                <p class="text-slate-400 text-xs mt-1">Premium Learner</p>
+<body class="app-body">
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <div class="app-sidebar-brand">
+                <h1 class="wordmark">Sonic Polyglot</h1>
+                <p class="brand-tier">Premium Learner</p>
                 @if (!string.IsNullOrEmpty(LangContext.CurrentLanguage))
                 {
                     <a asp-controller="Languages" asp-action="Index"
-                       class="language-context-pill language-context-pill-active inline-flex items-center gap-x-2 mt-3 px-3 py-1.5 rounded-full text-xs font-bold">
+                       class="language-context-pill language-context-pill-active">
                         <span class="material-symbols-outlined language-context-icon">translate</span>
                         @LangContext.CurrentLanguage
                     </a>
@@ -216,13 +105,14 @@
                 else
                 {
                     <a asp-controller="Languages" asp-action="Index"
-                       class="language-context-pill language-context-pill-empty inline-flex items-center gap-x-2 mt-3 px-3 py-1.5 rounded-full text-xs font-bold">
+                       class="language-context-pill language-context-pill-empty">
                         <span class="material-symbols-outlined language-context-icon">translate</span>
                         Pick a language
                     </a>
                 }
             </div>
-            <nav class="flex flex-col gap-y-4">
+
+            <nav class="app-nav">
                 <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
                     @NavIcon("language")
                     Language selector
@@ -252,68 +142,56 @@
                     Quizzes
                 </a>
             </nav>
-            <div class="mt-auto">
-                <button class="w-full py-4 bg-primary-container text-on-primary font-bold rounded-full hover:scale-105 transition-transform">
-                    Start New Unit
-                </button>
-            </div>
-        </div>
-    </aside>
-    <!-- Main Content Area -->
-    <main class="md:ml-64 min-h-screen">
-        <!-- TopNavBar -->
-        <header class="fixed top-0 right-0 w-full md:w-[calc(100%-16rem)] z-40 bg-[#041329]/80 dark:bg-[#041329]/80 backdrop-blur-xl font-['Plus_Jakarta_Sans'] font-semibold">
-            <div class="flex justify-between items-center px-8 h-16">
-                <div class="flex items-center gap-x-4 flex-1">
-                    <div class="bg-surface-container-high rounded-full px-4 py-2 flex items-center gap-x-3 w-full max-w-md">
-                        <span class="material-symbols-outlined text-slate-400">search</span>
-                        <input class="bg-transparent border-none focus:ring-0 text-sm text-on-surface w-full" placeholder="What do you want to learn?" type="text" />
-                    </div>
+
+            <button type="button" class="app-sidebar-cta">Start New Unit</button>
+        </aside>
+
+        <main class="app-main">
+            <header class="app-topbar">
+                <div class="app-search">
+                    <span class="material-symbols-outlined">search</span>
+                    <input placeholder="What do you want to learn?" type="text" />
                 </div>
-                <div class="flex items-center gap-x-4">
-                    <button class="hover:bg-[#112036] rounded-full p-2 transition-all active:scale-95">
-                        <span class="material-symbols-outlined text-slate-300">notifications</span>
+                <div class="app-topbar-right">
+                    <button type="button" class="icon-button" aria-label="Notifications">
+                        <span class="material-symbols-outlined">notifications</span>
                     </button>
-                    <button class="hover:bg-[#112036] rounded-full p-2 transition-all active:scale-95">
-                        <span class="material-symbols-outlined text-slate-300">settings</span>
+                    <button type="button" class="icon-button" aria-label="Settings">
+                        <span class="material-symbols-outlined">settings</span>
                     </button>
                     @if (User.Identity?.IsAuthenticated == true)
                     {
-                        <div class="flex items-center gap-x-3 min-w-0">
-                            <div class="hidden lg:flex flex-col items-end min-w-0">
-                                <span class="text-xs uppercase tracking-widest text-slate-500">Signed in as</span>
-                                <span class="text-sm text-on-surface max-w-56 truncate">@DisplayAccount</span>
+                        <div class="account-block">
+                            <div class="account-meta">
+                                <span class="account-meta-eyebrow">Signed in as</span>
+                                <span class="account-meta-email">@DisplayAccount</span>
                             </div>
-                            <div class="w-9 h-9 rounded-full bg-surface-container-highest text-primary flex items-center justify-center shrink-0" title="@DisplayAccount">
-                                <span class="material-symbols-outlined text-xl">account_circle</span>
+                            <div class="account-avatar" title="@DisplayAccount">
+                                <span class="material-symbols-outlined">account_circle</span>
                             </div>
-                            <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="btn-social-form">
                                 @Html.AntiForgeryToken()
-                                <button type="submit"
-                                        class="inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-[#112036] transition-all active:scale-95"
-                                        title="Log out"
-                                        aria-label="Log out">
-                                    <span class="material-symbols-outlined text-slate-300 text-xl">logout</span>
+                                <button type="submit" class="icon-button" title="Log out" aria-label="Log out">
+                                    <span class="material-symbols-outlined">logout</span>
                                 </button>
                             </form>
                         </div>
                     }
                     else
                     {
-                        <a asp-controller="Account" asp-action="Login"
-                           class="inline-flex items-center gap-x-2 px-4 py-2 rounded-full bg-primary-container text-on-primary text-sm font-bold no-underline">
-                            <span class="material-symbols-outlined text-xl">login</span>
+                        <a asp-controller="Account" asp-action="Login" class="btn-login">
+                            <span class="material-symbols-outlined">login</span>
                             Log in
                         </a>
                     }
                 </div>
+            </header>
+
+            <div class="app-canvas">
+                @RenderBody()
             </div>
-        </header>
-        <!-- Canvas -->
-        <div class="pt-24 px-8 max-w-7xl mx-auto">
-            @RenderBody()
-        </div>
-    </main>
+        </main>
+    </div>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

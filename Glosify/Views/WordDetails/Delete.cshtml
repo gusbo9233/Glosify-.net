@@ -1,4 +1,4 @@
-﻿@model Glosify.Models.WordDetail
+﻿@model WordDetail
 
 @{
     ViewData["Title"] = "Delete";
@@ -12,10 +12,16 @@
     <hr />
     <dl class="row">
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.QuizId)
+            @Html.DisplayNameFor(model => model.Word)
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.QuizId)
+            @Html.DisplayFor(model => model.Word)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Translation)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Translation)
         </dd>
         <dt class = "col-sm-2">
             @Html.DisplayNameFor(model => model.Properties)

@@ -1,77 +1,307 @@
-@{ Layout = "~/Views/Shared/_AppLayout.cshtml"; ViewData["Title"] = "Typing Quiz"; ViewData["ActiveNav"] = "quizzes"; }
+@model TypingQuizViewModel
+@using System.Text.Json
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "Typing Quiz";
+    ViewData["ActiveNav"] = "quizzes";
 
+    var quizName = Model.SelectedQuiz?.Name ?? "Typing Quiz";
+    var wordsJson = JsonSerializer.Serialize(Model.Words.Select(word => new
+    {
+        id = word.Id,
+        prompt = word.Prompt,
+        answer = word.Answer,
+        exampleSentence = word.ExampleSentence,
+        exampleTranslation = word.ExampleTranslation
+    }));
+}
 
-
-<main class="main-content">
-    <header class="topbar">
-        <div class="topbar-left">
-            <span class="topbar-logo">Glosify</span>
+<section class="typing-shell" data-typing-quiz data-words="@wordsJson" data-show-ukrainian-keyboard="@Model.ShowsUkrainianKeyboard.ToString().ToLowerInvariant()">
+    <header class="flash-header">
+        <div>
+            <p class="flash-kicker">@Model.SelectedQuiz?.SourceLanguage &rarr; @Model.SelectedQuiz?.TargetLanguage</p>
+            <h1 class="flash-title">@quizName</h1>
+            <p class="flash-subtitle">Type the target-language word from the translation prompt.</p>
         </div>
-        <div class="topbar-right">
-            <button class="btn-icon"><span class="material-symbols-outlined">notifications</span></button>
-            <button class="btn-icon"><span class="material-symbols-outlined">settings</span></button>
-            <div class="topbar-avatar">
-                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrMm7AlzmF7U9OfQQuzBe6dvmO4n5vGiBbGn7iGMVnAoAnxrzD1IuzbNfXAD2pXlNOKt2SQtvoohR3Py-pu8CbIbjxrhiJ5MfkUwYVWC2A5nRVz2TBCCV_9S1wZ_BNEreCtm_JHVYvPBN1BUS8tMkUffK-po5rJHZx5AdBT9cqAj_AIxlxxR_m87sXn3CV_ZrG6_r6vOHTdl38KAGAYAJEvG0pbZxiuSD1rcsw1y4g1_oEwvQQv_-6nrhfElNNtEokhwehNrG3wlDG" alt="User" />
-            </div>
-        </div>
+        @if (Model.SelectedQuiz != null)
+        {
+            <a asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">Back to words</a>
+        }
     </header>
 
-    <section class="quiz-section">
+    @if (!Model.Words.Any())
+    {
+        <div class="empty-state">
+            <h2 class="flash-title">No words yet</h2>
+            <p class="flash-subtitle">Add words to a quiz, then start a typing session from that quiz.</p>
+            <button class="btn-main" type="button" disabled>Check Answer</button>
+        </div>
+    }
+    else
+    {
         <div class="progress-wrap">
-            <div class="progress-header">
-                <div>
-                    <p class="progress-label">Session Progress</p>
-                    <h2 class="progress-title">Typing Mastery</h2>
-                </div>
-                <span class="progress-count">14 / 20</span>
+            <div class="progress-meta">
+                <span class="progress-count" data-progress-count>1 of @Model.Words.Count words</span>
+                <span class="progress-count" data-accuracy>0 correct</span>
             </div>
-            <div class="progress-track">
-                <div class="progress-fill"></div>
+            <div class="progress-track" aria-hidden="true">
+                <div class="progress-fill" data-progress-fill style="width:0"></div>
             </div>
         </div>
 
-        <div class="quiz-card">
-            <div class="card-glow-tr"></div>
-            <div class="card-glow-bl"></div>
-            <div class="prompt">
-                <span class="prompt-badge">Translate</span>
-                <h3 class="prompt-word">"The library"</h3>
-                <p class="prompt-hint">Type the translation in the target language.</p>
-            </div>
-            <div class="action-bar">
-                <button class="btn-action primary"><span class="material-symbols-outlined">volume_up</span></button>
-                <button class="btn-action muted"><span class="material-symbols-outlined">lightbulb</span></button>
-            </div>
-            <div class="answer-input-wrap">
-                <input class="answer-input" type="text" placeholder="Type your answer..." />
-            </div>
-            <button class="btn-check">
-                Check Answer <span class="material-symbols-outlined">arrow_forward</span>
-            </button>
+        <div class="typing-stage">
+            <article class="typing-card" data-card>
+                <span class="card-label" data-card-label>Word 1</span>
+                <p class="typing-prompt-label">Translate</p>
+                <h2 class="typing-prompt" data-prompt></h2>
+                <p class="typing-feedback" data-feedback aria-live="polite"></p>
+
+                <form class="typing-form" data-typing-form autocomplete="off">
+                    <label class="visually-hidden" for="typingAnswer">Answer</label>
+                    <input class="answer-input" id="typingAnswer" data-answer-input type="text" placeholder="Type your answer..." autocomplete="off" />
+                    <button class="btn-check" type="submit" data-check-button>
+                        Check Answer <span class="material-symbols-outlined">arrow_forward</span>
+                    </button>
+                </form>
+
+                <div class="typing-reveal" data-reveal hidden>
+                    <span>Correct answer</span>
+                    <strong data-correct-answer></strong>
+                    <p data-example></p>
+                </div>
+            </article>
+
+            @if (Model.ShowsUkrainianKeyboard)
+            {
+                <section class="ukrainian-keyboard" aria-label="Ukrainian virtual keyboard" data-ukrainian-keyboard>
+                    <div class="keyboard-row">
+                        @foreach (var key in new[] { "й", "ц", "у", "к", "е", "н", "г", "ш", "щ", "з", "х", "ї" })
+                        {
+                            <button type="button" class="keyboard-key" data-key-value="@key">@key</button>
+                        }
+                    </div>
+                    <div class="keyboard-row">
+                        @foreach (var key in new[] { "ф", "і", "в", "а", "п", "р", "о", "л", "д", "ж", "є" })
+                        {
+                            <button type="button" class="keyboard-key" data-key-value="@key">@key</button>
+                        }
+                    </div>
+                    <div class="keyboard-row">
+                        @foreach (var key in new[] { "ґ", "я", "ч", "с", "м", "и", "т", "ь", "б", "ю", "'" })
+                        {
+                            <button type="button" class="keyboard-key" data-key-value="@key">@key</button>
+                        }
+                    </div>
+                    <div class="keyboard-row keyboard-row-actions">
+                        <button type="button" class="keyboard-key keyboard-key-wide" data-key-value=" ">Space</button>
+                        <button type="button" class="keyboard-key keyboard-key-wide" data-key-action="backspace">
+                            <span class="material-symbols-outlined">backspace</span>
+                        </button>
+                    </div>
+                </section>
+            }
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card highlight">
-                <div class="stat-icon primary-bg"><span class="material-symbols-outlined">bolt</span></div>
-                <div>
-                    <p class="stat-label">Current Streak</p>
-                    <p class="stat-value">12 Words</p>
-                </div>
+        <section class="results" data-results hidden aria-live="polite">
+            <div class="result-score" data-result-score>0%</div>
+            <h2 class="flash-title">Typing Complete</h2>
+            <div class="result-grid">
+                <div class="result-stat"><span>Correct</span><span data-result-correct>0</span></div>
+                <div class="result-stat"><span>Incorrect</span><span data-result-incorrect>0</span></div>
+                <div class="result-stat"><span>Words</span><span>@Model.Words.Count</span></div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon muted-bg"><span class="material-symbols-outlined">timer</span></div>
-                <div>
-                    <p class="stat-label">Session Time</p>
-                    <p class="stat-value">04:22</p>
-                </div>
+            <div class="typing-result-actions">
+                <button class="btn-main" type="button" data-restart>Restart Session</button>
+                @if (Model.SelectedQuiz != null)
+                {
+                    <a asp-controller="Quiz" asp-action="Settings" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">Change settings</a>
+                }
             </div>
-            <div class="stat-card">
-                <div class="stat-icon muted-bg"><span class="material-symbols-outlined">track_changes</span></div>
-                <div>
-                    <p class="stat-label">Accuracy</p>
-                    <p class="stat-value">98%</p>
-                </div>
-            </div>
-        </div>
-    </section>
-</main>
+        </section>
+    }
+</section>
+
+@section Scripts {
+<script>
+    (() => {
+        const shell = document.querySelector('[data-typing-quiz]');
+        if (!shell) return;
+
+        const words = JSON.parse(shell.dataset.words || '[]');
+        if (!words.length) return;
+
+        const state = {
+            index: 0,
+            correct: 0,
+            incorrect: 0,
+            checked: false
+        };
+
+        const form = shell.querySelector('[data-typing-form]');
+        const input = shell.querySelector('[data-answer-input]');
+        const prompt = shell.querySelector('[data-prompt]');
+        const feedback = shell.querySelector('[data-feedback]');
+        const progressCount = shell.querySelector('[data-progress-count]');
+        const accuracy = shell.querySelector('[data-accuracy]');
+        const progressFill = shell.querySelector('[data-progress-fill]');
+        const checkButton = shell.querySelector('[data-check-button]');
+        const cardLabel = shell.querySelector('[data-card-label]');
+        const reveal = shell.querySelector('[data-reveal]');
+        const correctAnswer = shell.querySelector('[data-correct-answer]');
+        const example = shell.querySelector('[data-example]');
+        const card = shell.querySelector('[data-card]');
+        const results = shell.querySelector('[data-results]');
+
+        const normalize = value => value
+            .trim()
+            .toLocaleLowerCase('uk-UA')
+            .replace(/[’ʼ`]/g, "'")
+            .replace(/\s+/g, ' ');
+
+        const currentWord = () => words[state.index];
+
+        const updateProgress = () => {
+            const completed = state.correct + state.incorrect;
+            progressCount.textContent = `${Math.min(state.index + 1, words.length)} of ${words.length} words`;
+            accuracy.textContent = `${state.correct} correct`;
+            progressFill.style.width = `${Math.round(completed * 100 / words.length)}%`;
+        };
+
+        const renderWord = () => {
+            const word = currentWord();
+            state.checked = false;
+            input.value = '';
+            input.disabled = false;
+            input.focus();
+            prompt.textContent = word.prompt;
+            feedback.textContent = '';
+            feedback.className = 'typing-feedback';
+            cardLabel.textContent = `Word ${state.index + 1}`;
+            checkButton.innerHTML = 'Check Answer <span class="material-symbols-outlined">arrow_forward</span>';
+            reveal.hidden = true;
+            card.classList.remove('is-correct', 'is-incorrect');
+            updateProgress();
+        };
+
+        const showResults = () => {
+            card.hidden = true;
+            shell.querySelector('[data-ukrainian-keyboard]')?.setAttribute('hidden', '');
+            results.hidden = false;
+            const score = Math.round(state.correct * 100 / words.length);
+            shell.querySelector('[data-result-score]').textContent = `${score}%`;
+            shell.querySelector('[data-result-correct]').textContent = state.correct;
+            shell.querySelector('[data-result-incorrect]').textContent = state.incorrect;
+            progressFill.style.width = '100%';
+        };
+
+        const checkAnswer = () => {
+            const word = currentWord();
+            const isCorrect = normalize(input.value) === normalize(word.answer);
+            state.checked = true;
+            input.disabled = true;
+            if (isCorrect) {
+                state.correct++;
+                feedback.textContent = 'Correct';
+                feedback.classList.add('is-correct');
+                card.classList.add('is-correct');
+            } else {
+                state.incorrect++;
+                feedback.textContent = 'Not quite';
+                feedback.classList.add('is-incorrect');
+                card.classList.add('is-incorrect');
+            }
+
+            correctAnswer.textContent = word.answer;
+            const exampleText = [word.exampleSentence, word.exampleTranslation].filter(Boolean).join(' ');
+            example.textContent = exampleText;
+            example.hidden = !exampleText;
+            reveal.hidden = false;
+            checkButton.innerHTML = state.index + 1 >= words.length
+                ? 'Show Results <span class="material-symbols-outlined">flag</span>'
+                : 'Next Word <span class="material-symbols-outlined">arrow_forward</span>';
+            updateProgress();
+        };
+
+        const nextWord = () => {
+            state.index++;
+            if (state.index >= words.length) {
+                showResults();
+                return;
+            }
+
+            renderWord();
+        };
+
+        if (shell.dataset.showUkrainianKeyboard === 'true') {
+            const qwertyToUkrainian = {
+                'q':'й','w':'ц','e':'у','r':'к','t':'е','y':'н','u':'г','i':'ш','o':'щ','p':'з','[':'х',']':'ї',
+                'a':'ф','s':'і','d':'в','f':'а','g':'п','h':'р','j':'о','k':'л','l':'д',';':'ж',"'":'є',
+                '\\':'ґ','z':'я','x':'ч','c':'с','v':'м','b':'и','n':'т','m':'ь',',':'б','.':'ю','/':"'"
+            };
+
+            input.addEventListener('keydown', event => {
+                if (event.ctrlKey || event.metaKey || event.altKey) return;
+                if (event.key.length !== 1) return;
+
+                const lower = event.key.toLowerCase();
+                const mapped = qwertyToUkrainian[lower];
+                if (!mapped) return;
+
+                event.preventDefault();
+                const value = event.shiftKey ? mapped.toLocaleUpperCase('uk-UA') : mapped;
+                const start = input.selectionStart ?? input.value.length;
+                const end = input.selectionEnd ?? input.value.length;
+                input.value = input.value.slice(0, start) + value + input.value.slice(end);
+                const cursor = start + value.length;
+                input.setSelectionRange(cursor, cursor);
+            });
+        }
+
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            if (state.checked) {
+                nextWord();
+            } else {
+                checkAnswer();
+            }
+        });
+
+        shell.querySelector('[data-restart]')?.addEventListener('click', () => {
+            state.index = 0;
+            state.correct = 0;
+            state.incorrect = 0;
+            results.hidden = true;
+            card.hidden = false;
+            shell.querySelector('[data-ukrainian-keyboard]')?.removeAttribute('hidden');
+            renderWord();
+        });
+
+        shell.querySelector('[data-ukrainian-keyboard]')?.addEventListener('click', event => {
+            const key = event.target.closest('[data-key-value], [data-key-action]');
+            if (!key || input.disabled) return;
+
+            input.focus();
+            const start = input.selectionStart ?? input.value.length;
+            const end = input.selectionEnd ?? input.value.length;
+
+            if (key.dataset.keyAction === 'backspace') {
+                if (start === end && start > 0) {
+                    input.value = input.value.slice(0, start - 1) + input.value.slice(end);
+                    input.setSelectionRange(start - 1, start - 1);
+                } else {
+                    input.value = input.value.slice(0, start) + input.value.slice(end);
+                    input.setSelectionRange(start, start);
+                }
+                return;
+            }
+
+            const value = key.dataset.keyValue || '';
+            input.value = input.value.slice(0, start) + value + input.value.slice(end);
+            const cursor = start + value.length;
+            input.setSelectionRange(cursor, cursor);
+        });
+
+        renderWord();
+    })();
+</script>
+}

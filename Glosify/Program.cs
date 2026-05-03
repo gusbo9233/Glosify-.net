@@ -3,6 +3,7 @@ using Glosify.Data.Importing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Glosify.Models;
+using Glosify.Models.LanguageConfig;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -43,6 +44,25 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ILanguageContext, CookieLanguageContext>();
 
+// Register application services
+builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<IWordService, WordService>();
+builder.Services.AddScoped<IDictionaryService, DictionaryService>();
+builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
+builder.Services.AddScoped<ITypingQuizService, TypingQuizService>();
+builder.Services.AddScoped<IAiWordGenerationService, AiWordGenerationService>();
+builder.Services.AddScoped<IGeneratedVocabularyService, GeneratedVocabularyService>();
+builder.Services.AddScoped<IWordDetailEnrichmentService, WordDetailEnrichmentService>();
+builder.Services.AddScoped<IWordDetailViewModelService, WordDetailViewModelService>();
+
+builder.Services.AddSingleton<IDictionaryEnrichmentQueue, DictionaryEnrichmentQueue>();
+builder.Services.AddHostedService<DictionaryEnrichmentBackgroundService>();
+
+builder.Services.AddSingleton<ILanguageDictionaryConfig, GermanDictionaryConfig>();
+builder.Services.AddSingleton<ILanguageDictionaryConfig, EstonianDictionaryConfig>();
+builder.Services.AddSingleton<ILanguageDictionaryConfig, UkrainianDictionaryConfig>();
+builder.Services.AddSingleton<ILanguageDictionaryConfig, PolishDictionaryConfig>();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))
 {
@@ -56,8 +76,12 @@ builder.Services.AddDbContext<GlosifyContext>(options =>
         connectionString,
         sqlOptions =>
         {
-            sqlOptions.CommandTimeout(30);
-            sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+            // Azure SQL serverless cold-starts can take 60s+; first query after auto-pause must wait it out.
+            sqlOptions.CommandTimeout(120);
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 10,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null);
         }
     )
     .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
@@ -65,14 +89,9 @@ builder.Services.AddDbContext<GlosifyContext>(options =>
 
 var app = builder.Build();
 
-if (args.FirstOrDefault()?.Equals("import-kaikki-german", StringComparison.OrdinalIgnoreCase) == true)
+if (KaikkiImportCommand.IsRequested(args))
 {
-    var importOptions = ReadKaikkiImportOptions(args.Skip(1).ToArray());
-    using var scope = app.Services.CreateScope();
-    var importer = new KaikkiGermanDictionaryImporter(scope.ServiceProvider.GetRequiredService<GlosifyContext>());
-    var result = await importer.ImportAsync(importOptions);
-    Console.WriteLine($"Done. Read {result.LinesRead:n0}, parsed {result.Parsed:n0}, inserted {result.Inserted:n0}, skipped {result.Skipped:n0}.");
-    return;
+    return await KaikkiImportCommand.RunAsync(app.Services, args);
 }
 
 // Configure the HTTP request pipeline.
@@ -110,61 +129,6 @@ app.MapRazorPages();
 
 
 app.Run();
-
-static KaikkiImportOptions ReadKaikkiImportOptions(string[] args)
-{
-    var path = args.FirstOrDefault(arg => !arg.StartsWith("--", StringComparison.Ordinal)) ?? "kaikki.org-dictionary-German.jsonl";
-    if (!File.Exists(path) && File.Exists(Path.Combine("Glosify", path)))
-    {
-        path = Path.Combine("Glosify", path);
-    }
-
-    var dryRun = args.Contains("--dry-run", StringComparer.OrdinalIgnoreCase);
-    var migrate = args.Contains("--migrate", StringComparer.OrdinalIgnoreCase);
-    var resume = args.Contains("--resume", StringComparer.OrdinalIgnoreCase);
-    var batchSize = ReadIntOption(args, "--batch-size") ?? 500;
-    var limit = ReadIntOption(args, "--limit");
-    var checkpointPath = ReadStringOption(args, "--checkpoint");
-
-    return new KaikkiImportOptions(path, dryRun, migrate, batchSize, limit, checkpointPath, resume);
-}
-
-static int? ReadIntOption(string[] args, string name)
-{
-    for (var i = 0; i < args.Length; i++)
-    {
-        if (args[i].Equals(name, StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length && int.TryParse(args[i + 1], out var value))
-        {
-            return value;
-        }
-
-        var prefix = $"{name}=";
-        if (args[i].StartsWith(prefix, StringComparison.OrdinalIgnoreCase) && int.TryParse(args[i][prefix.Length..], out value))
-        {
-            return value;
-        }
-    }
-
-    return null;
-}
-
-static string? ReadStringOption(string[] args, string name)
-{
-    for (var i = 0; i < args.Length; i++)
-    {
-        if (args[i].Equals(name, StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
-        {
-            return args[i + 1];
-        }
-
-        var prefix = $"{name}=";
-        if (args[i].StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-        {
-            return args[i][prefix.Length..];
-        }
-    }
-
-    return null;
-}
+return 0;
 
 public partial class Program { }

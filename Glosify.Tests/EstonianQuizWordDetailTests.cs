@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Glosify.Controllers;
 using Glosify.Data;
 using Glosify.Models;
+using Glosify.Models.LanguageConfig;
 using Glosify.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -81,7 +82,18 @@ public class EstonianQuizWordDetailTests
             context.Quizzes.Add(quiz);
             await context.SaveChangesAsync();
 
-            var quizController = WithUser(new QuizController(context, new FixedLanguageContext("Estonian")));
+            var dictionary = new DictionaryService(context, LanguageConfigsFixture.All);
+            var enrichment = new SynchronousEnrichmentQueue(context, dictionary);
+            var quizService = new QuizService(context, new FixedLanguageContext("Estonian"));
+            var wordService = new WordService(context, enrichment);
+            var aiService = new AiWordGenerationService();
+            var generatedVocabulary = new GeneratedVocabularyService(context, quizService, aiService, enrichment);
+            var quizController = WithUser(new QuizController(
+                context,
+                quizService,
+                wordService,
+                generatedVocabulary,
+                new FixedLanguageContext("Estonian")));
 
             foreach (var term in terms)
             {
@@ -93,7 +105,12 @@ public class EstonianQuizWordDetailTests
                 .OrderBy(word => word.Lemma)
                 .ToListAsync();
             var wordDetails = await context.WordDetails
-                .Where(detail => detail.QuizId == quiz.Id)
+                .Join(
+                    context.Words.Where(word => word.QuizId == quiz.Id),
+                    detail => detail.Id,
+                    word => word.WordDetailId,
+                    (detail, _) => detail)
+                .Distinct()
                 .ToListAsync();
 
             Assert.Equal(terms.Count, words.Count);
@@ -106,7 +123,8 @@ public class EstonianQuizWordDetailTests
             Assert.All(wordDetails, detail => Assert.False(string.IsNullOrWhiteSpace(detail.Explanation)));
             Assert.All(wordDetails, detail => Assert.False(string.IsNullOrWhiteSpace(detail.ExampleSentence)));
 
-            var detailsController = WithUser(new WordDetailsController(context));
+            var viewModelService = new WordDetailViewModelService(context, dictionary, LanguageConfigsFixture.All);
+            var detailsController = WithUser(new WordDetailsController(context, viewModelService));
             foreach (var word in words)
             {
                 var result = await detailsController.Details(word.WordDetailId);
@@ -175,18 +193,30 @@ public class EstonianQuizWordDetailTests
             context.Quizzes.Add(quiz);
             await context.SaveChangesAsync();
 
-            var quizController = WithUser(new QuizController(context, new FixedLanguageContext("Estonian")));
+            var dictionary = new DictionaryService(context, LanguageConfigsFixture.All);
+            var enrichment = new SynchronousEnrichmentQueue(context, dictionary);
+            var quizService = new QuizService(context, new FixedLanguageContext("Estonian"));
+            var wordService = new WordService(context, enrichment);
+            var aiService = new AiWordGenerationService();
+            var generatedVocabulary = new GeneratedVocabularyService(context, quizService, aiService, enrichment);
+            var quizController = WithUser(new QuizController(
+                context,
+                quizService,
+                wordService,
+                generatedVocabulary,
+                new FixedLanguageContext("Estonian")));
             await quizController.AddWord(quiz.Id, word, translation);
 
             var savedWord = await context.Words.SingleAsync(word => word.QuizId == quiz.Id);
-            var detail = await context.WordDetails.SingleAsync(detail => detail.QuizId == quiz.Id);
+            var detail = await context.WordDetails.SingleAsync(detail => detail.Id == savedWord.WordDetailId);
 
             Assert.Equal(word, savedWord.Lemma);
             Assert.NotEqual("{}", detail.Properties);
             Assert.NotEqual("[]", detail.Variants);
             Assert.False(string.IsNullOrWhiteSpace(detail.Explanation));
 
-            var detailsController = WithUser(new WordDetailsController(context));
+            var viewModelService = new WordDetailViewModelService(context, dictionary, LanguageConfigsFixture.All);
+            var detailsController = WithUser(new WordDetailsController(context, viewModelService));
             var result = await detailsController.Details(savedWord.WordDetailId);
             var view = Assert.IsType<ViewResult>(result);
             var model = Assert.IsType<WordDetailViewModel>(view.Model);
@@ -270,12 +300,20 @@ public class EstonianQuizWordDetailTests
 
     private static async Task CleanupAsync(GlosifyContext context, Guid quizId)
     {
+        var detailIds = await context.Words
+            .Where(word => word.QuizId == quizId)
+            .Select(word => word.WordDetailId)
+            .ToListAsync();
+
         await context.Words
             .Where(word => word.QuizId == quizId)
             .ExecuteDeleteAsync();
-        await context.WordDetails
-            .Where(detail => detail.QuizId == quizId)
-            .ExecuteDeleteAsync();
+        if (detailIds.Count > 0)
+        {
+            await context.WordDetails
+                .Where(detail => detailIds.Contains(detail.Id))
+                .ExecuteDeleteAsync();
+        }
         await context.Quizzes
             .Where(quiz => quiz.Id == quizId)
             .ExecuteDeleteAsync();
@@ -290,12 +328,21 @@ public class EstonianQuizWordDetailTests
 
         if (staleQuizIds.Count > 0)
         {
+            var staleDetailIds = await context.Words
+                .Where(word => staleQuizIds.Contains(word.QuizId))
+                .Select(word => word.WordDetailId)
+                .ToListAsync();
+
             await context.Words
                 .Where(word => staleQuizIds.Contains(word.QuizId))
                 .ExecuteDeleteAsync();
-            await context.WordDetails
-                .Where(detail => staleQuizIds.Contains(detail.QuizId))
-                .ExecuteDeleteAsync();
+
+            if (staleDetailIds.Count > 0)
+            {
+                await context.WordDetails
+                    .Where(detail => staleDetailIds.Contains(detail.Id))
+                    .ExecuteDeleteAsync();
+            }
             await context.Quizzes
                 .Where(quiz => staleQuizIds.Contains(quiz.Id))
                 .ExecuteDeleteAsync();

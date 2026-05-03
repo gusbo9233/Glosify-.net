@@ -1,4 +1,4 @@
-@model Glosify.Models.WordDetailViewModel
+@model WordDetailViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     var displayWord = Model.Word?.Lemma ?? "Word details";
@@ -153,9 +153,9 @@
 </section>
 
 @functions {
-    private static string Humanize(string value) => Glosify.Models.WordDetailViewModel.Humanize(value);
+    private static string Humanize(string value) => Glosify.Models.WordDetailJsonReader.Humanize(value);
 
-    private static bool ShouldShowGenericVariants(Glosify.Models.WordDetailViewModel model)
+    private static bool ShouldShowGenericVariants(WordDetailViewModel model)
     {
         return model.WordClassConfig == null || model.WordClassConfig.SlotGroups.Length == 0;
     }

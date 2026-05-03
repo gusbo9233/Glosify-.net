@@ -1,4 +1,4 @@
-﻿@model Glosify.Models.WordDetail
+﻿@model WordDetail
 
 @{
     ViewData["Title"] = "Edit";
@@ -12,12 +12,15 @@
     <div class="col-md-4">
         <form asp-action="Edit">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="QuizId" class="control-label"></label>
-                <input asp-for="QuizId" class="form-control" />
-                <span asp-validation-for="QuizId" class="text-danger"></span>
-            </div>
             <input type="hidden" asp-for="Id" />
+            <div class="form-group">
+                <label asp-for="Word" class="control-label"></label>
+                <input asp-for="Word" class="form-control" disabled />
+            </div>
+            <div class="form-group">
+                <label asp-for="Translation" class="control-label"></label>
+                <input asp-for="Translation" class="form-control" disabled />
+            </div>
             <div class="form-group">
                 <label asp-for="Properties" class="control-label"></label>
                 <input asp-for="Properties" class="form-control" />

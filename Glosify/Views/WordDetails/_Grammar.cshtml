@@ -1,4 +1,4 @@
-@model Glosify.Models.WordDetailViewModel
+@model WordDetailViewModel
 @{
     var config = Model.WordClassConfig;
     if (config == null)
@@ -68,13 +68,16 @@
 
     private string FindForms(string[] tags)
     {
+        // Show the most-canonical (fewest extra tags) form first; fall back to a couple of
+        // distinct alternatives. Limiting to 2 prevents the "all six personal pronouns piled
+        // into the nominative cell" soup that happens when source data lumps a paradigm.
         var forms = Model.Variants
             .Where(variant => !string.IsNullOrWhiteSpace(variant.Form) && variant.Form != "-")
             .Where(variant => tags.All(tag => variant.HasAnyTag(tag)))
             .OrderBy(variant => variant.Tags.Count)
             .Select(variant => variant.Form)
             .Distinct()
-            .Take(6)
+            .Take(2)
             .ToList();
 
         return forms.Count == 0 ? "-" : string.Join(", ", forms);

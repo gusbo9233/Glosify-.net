@@ -1,4 +1,4 @@
-@model Glosify.Models.QuizSettingsViewModel
+@model QuizSettingsViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = "Quiz Configuration";
@@ -54,7 +54,7 @@
                 <div class="section-header">
                     <div>
                         <h2 class="section-title">Quiz Mode</h2>
-                        <p class="section-note">Flashcards are ready now; typing can still be opened from this route.</p>
+                        <p class="section-note">Choose flashcards for recall or typing for active spelling practice.</p>
                     </div>
                     <span class="material-symbols-outlined">psychology</span>
                 </div>
@@ -91,7 +91,7 @@
             }
             <div class="stat-row"><span>Quiz</span><span>@quizName</span></div>
             <div class="stat-row"><span>Words</span><span>@availableWords</span></div>
-            <div class="stat-row"><span>Mode</span><span>Flashcards</span></div>
+            <div class="stat-row"><span>Mode</span><span data-selected-mode>Flashcards</span></div>
             <button class="btn-start" type="submit" @(availableWords == 0 ? "disabled" : "")>
                 <span class="material-symbols-outlined">play_circle</span>
                 Start Quiz
@@ -99,3 +99,27 @@
         </aside>
     </div>
 </form>
+
+@section Scripts {
+<script>
+    (() => {
+        const modeLabel = document.querySelector('[data-selected-mode]');
+        const modes = document.querySelectorAll('input[name="Mode"]');
+        if (!modeLabel || !modes.length) return;
+
+        const labels = {
+            flashcards: 'Flashcards',
+            typing: 'Typing',
+            'multiple-choice': 'Choices'
+        };
+
+        modes.forEach(mode => {
+            mode.addEventListener('change', () => {
+                if (mode.checked) {
+                    modeLabel.textContent = labels[mode.value] || mode.value;
+                }
+            });
+        });
+    })();
+</script>
+}

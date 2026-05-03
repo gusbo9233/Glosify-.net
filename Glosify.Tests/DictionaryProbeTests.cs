@@ -46,10 +46,10 @@ public class DictionaryProbeTests
         var entry = await FindEntryAsync(ctx, config.LangCode, word, pos);
         Assert.NotNull(entry);
 
-        var variants = WordDetailViewModel.ReadVariants(entry.Variants);
+        var variants = WordDetailJsonReader.ReadVariants(entry.Variants);
         if (pos == "Pronoun")
         {
-            variants = WordDetailViewModel.FilterPronounParadigm(variants, word);
+            variants = WordDetailJsonReader.FilterPronounParadigm(variants, word);
         }
         var wordClass = config.GetWordClass(pos);
         Assert.NotNull(wordClass);
@@ -89,7 +89,7 @@ public class DictionaryProbeTests
             .ToListAsync();
 
         return entries.FirstOrDefault(e =>
-            WordDetailViewModel.ReadProperties(e.Properties)
+            WordDetailJsonReader.ReadProperties(e.Properties)
                 .Any(p => string.Equals(p.Key, "pos", StringComparison.OrdinalIgnoreCase)
                     && string.Equals(p.Value, expectedPos, StringComparison.OrdinalIgnoreCase)))
             ?? entries.FirstOrDefault();
