@@ -18,7 +18,7 @@ public class QuizService : IQuizService
     public async Task<Quiz?> FindQuizAsync(string userId, Guid? quizId)
     {
         var language = _languageContext.CurrentLanguage;
-        var query = _context.Quizzes.Where(q => q.UserId.ToString() == userId);
+        var query = _context.Quizzes.Where(q => q.UserId == userId);
         if (!string.IsNullOrWhiteSpace(language))
         {
             query = query.Where(q => q.TargetLanguage == language);
@@ -32,13 +32,13 @@ public class QuizService : IQuizService
     public async Task<Quiz?> GetQuizByIdAsync(Guid id, string userId)
     {
         return await _context.Quizzes
-            .FirstOrDefaultAsync(q => q.Id == id && q.UserId.ToString() == userId);
+            .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId);
     }
 
     public async Task<IReadOnlyList<Quiz>> GetUserQuizzesAsync(string userId)
     {
         var language = _languageContext.CurrentLanguage;
-        var query = _context.Quizzes.Where(q => q.UserId.ToString() == userId);
+        var query = _context.Quizzes.Where(q => q.UserId == userId);
         if (!string.IsNullOrWhiteSpace(language))
         {
             query = query.Where(q => q.TargetLanguage == language);
@@ -53,7 +53,7 @@ public class QuizService : IQuizService
         {
             Id = Guid.NewGuid(),
             Name = name,
-            UserId = Guid.Parse(userId),
+            UserId = userId,
             SourceLanguage = sourceLanguage,
             TargetLanguage = targetLanguage,
             Language = targetLanguage,
@@ -70,7 +70,7 @@ public class QuizService : IQuizService
     public async Task<bool> DeleteQuizAsync(Guid id, string userId)
     {
         var quiz = await _context.Quizzes
-            .FirstOrDefaultAsync(q => q.Id == id && q.UserId.ToString() == userId);
+            .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId);
 
         if (quiz == null)
             return false;

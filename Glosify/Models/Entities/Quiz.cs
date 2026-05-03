@@ -4,7 +4,7 @@
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
-        public Guid UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
         public Guid? FolderId { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public bool IsSongQuiz { get; set; }

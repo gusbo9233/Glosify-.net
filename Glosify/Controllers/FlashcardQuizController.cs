@@ -58,7 +58,6 @@ public class FlashcardQuizController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public IActionResult Reveal(string sessionId)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -73,7 +72,6 @@ public class FlashcardQuizController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public IActionResult Rate(string sessionId, string rating)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -88,7 +86,6 @@ public class FlashcardQuizController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public IActionResult Restart(Guid quizId, int wordCount)
     {
         return RedirectToAction("Index", new { id = quizId, wordCount });

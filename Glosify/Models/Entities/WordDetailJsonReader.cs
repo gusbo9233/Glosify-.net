@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Glosify.Models;
+namespace Glosify.Models.Entities;
 
 public static class WordDetailJsonReader
 {
@@ -48,17 +48,6 @@ public static class WordDetailJsonReader
         {
             return [];
         }
-    }
-
-    public static IReadOnlyList<WordDetailVariantViewModel> FilterByTags(
-        IReadOnlyList<WordDetailVariantViewModel> variants, IReadOnlyList<string> requiredTags)
-    {
-        if (variants.Count == 0 || requiredTags.Count == 0)
-            return variants;
-
-        return variants
-            .Where(v => requiredTags.All(tag => v.HasAnyTag(tag)))
-            .ToList();
     }
 
     public static IReadOnlyList<WordDetailVariantViewModel> FilterPronounParadigm(

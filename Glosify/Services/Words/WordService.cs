@@ -7,9 +7,9 @@ namespace Glosify.Services;
 public class WordService : IWordService
 {
     private readonly GlosifyContext _context;
-    private readonly IDictionaryEnrichmentQueue _enrichmentQueue;
+    private readonly IAiEnrichmentQueue _enrichmentQueue;
 
-    public WordService(GlosifyContext context, IDictionaryEnrichmentQueue enrichmentQueue)
+    public WordService(GlosifyContext context, IAiEnrichmentQueue enrichmentQueue)
     {
         _context = context;
         _enrichmentQueue = enrichmentQueue;
@@ -129,7 +129,7 @@ public class WordService : IWordService
 
         await _context.SaveChangesAsync();
 
-        _enrichmentQueue.Enqueue(new DictionaryEnrichmentJob(wordDetail.Id, targetLanguage, lemma));
+        _enrichmentQueue.Enqueue(new AiEnrichmentJob(wordDetail.Id, targetLanguage, lemma));
         return true;
     }
 
@@ -143,7 +143,7 @@ public class WordService : IWordService
             return false;
 
         var quiz = await _context.Quizzes
-            .FirstOrDefaultAsync(q => q.Id == word.QuizId && q.UserId.ToString() == userId);
+            .FirstOrDefaultAsync(q => q.Id == word.QuizId && q.UserId == userId);
 
         if (quiz == null)
             return false;

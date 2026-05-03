@@ -24,14 +24,10 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("/Home")]
     [InlineData("/Home/Index")]
     [InlineData("/Home/Privacy")]
-    [InlineData("/Login")]
-    [InlineData("/Login/Index")]
-    [InlineData("/Quizzes")]
-    [InlineData("/Quizzes/Index")]
-    [InlineData("/Quizzes/Settings")]
-    [InlineData("/Quizzes/Flashcard")]
-    [InlineData("/Quizzes/Type")]
-    public async Task Get_NavigableRoute_ReturnsSuccess(string url)
+    [InlineData("/login")]
+    [InlineData("/Account/Login")]
+    [InlineData("/Account/Register")]
+    public async Task Get_AnonymousRoute_ReturnsHtml(string url)
     {
         var client = CreateClient();
 
@@ -41,158 +37,80 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType?.ToString());
     }
 
-    [Fact]
-    public async Task Home_RendersSidebarWithExpectedLinks()
+    [Theory]
+    [InlineData("/Quizzes")]
+    [InlineData("/Quizzes/Index")]
+    [InlineData("/Quizzes/Settings")]
+    [InlineData("/Languages")]
+    [InlineData("/WordDetails")]
+    [InlineData("/FlashcardQuiz")]
+    [InlineData("/TypingQuiz")]
+    public async Task Get_AuthorizedRoute_RedirectsToLoginWhenAnonymous(string url)
     {
         var client = CreateClient();
 
-        var document = await GetDocumentAsync(client, "/Home/Index");
+        var response = await client.GetAsync(url);
 
-        var aside = document.QuerySelector("aside");
-        Assert.NotNull(aside);
-
-        var hrefs = aside!.QuerySelectorAll("a")
-            .Select(a => a.GetAttribute("href"))
-            .Where(h => !string.IsNullOrEmpty(h))
-            .ToArray();
-
-        Assert.Contains(hrefs, h => h == "/" || h!.Contains("/Home", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(System.Net.HttpStatusCode.Redirect, response.StatusCode);
+        var location = response.Headers.Location ?? throw new Xunit.Sdk.XunitException("No redirect location");
+        var path = location.IsAbsoluteUri ? location.AbsolutePath : location.OriginalString.Split('?')[0];
+        var query = location.IsAbsoluteUri ? location.Query : (location.OriginalString.Contains('?') ? location.OriginalString[location.OriginalString.IndexOf('?')..] : string.Empty);
+        Assert.Equal("/login", path, ignoreCase: true);
+        Assert.Contains("ReturnUrl", query, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task Home_MarksHomeLinkAsActive()
+    public async Task Login_RendersFormBoundToLoginViewModel()
     {
         var client = CreateClient();
 
-        var document = await GetDocumentAsync(client, "/Home/Index");
+        var document = await GetDocumentAsync(client, "/login");
 
-        var activeLinks = document.QuerySelectorAll("aside a")
-            .Where(a => (a.GetAttribute("class") ?? "").Contains("border-l-4"))
-            .ToArray();
-
-        Assert.Single(activeLinks);
-        Assert.Contains("Home", activeLinks[0].TextContent);
-    }
-
-    [Fact]
-    public async Task Login_FormSubmitsToHomeIndex()
-    {
-        var client = CreateClient();
-
-        var document = await GetDocumentAsync(client, "/Login");
-
-        var form = document.QuerySelector("form[method='get']") as IHtmlFormElement;
+        var form = document.QuerySelector("form[method='post']") as IHtmlFormElement;
         Assert.NotNull(form);
 
-        var action = form!.GetAttribute("action") ?? "";
-        Assert.True(action == "/" || action.Contains("/Home", StringComparison.OrdinalIgnoreCase),
-            $"Expected form action to point to Home, got '{action}'");
+        var action = form!.GetAttribute("action") ?? string.Empty;
+        // The named "login" route maps `/login` to AccountController.Login, so the URL helper
+        // should emit a path that resolves to the same place — either `/login` or `/Account/Login`.
+        Assert.True(
+            action.Contains("/login", StringComparison.OrdinalIgnoreCase)
+            || action.Contains("/Account/Login", StringComparison.OrdinalIgnoreCase),
+            $"Login form action does not point at the login endpoint: '{action}'");
+        Assert.NotNull(document.QuerySelector("input[name='Email']"));
+        Assert.NotNull(document.QuerySelector("input[name='Password']"));
+        Assert.NotNull(document.QuerySelector("input[name='__RequestVerificationToken']"));
     }
 
     [Fact]
-    public async Task Login_SubmittingLoginForm_NavigatesToHome()
+    public async Task Post_WithoutAntiForgeryToken_IsRejected()
     {
         var client = CreateClient();
-        var document = await GetDocumentAsync(client, "/Login");
-        var form = (IHtmlFormElement)document.QuerySelector("form[method='get']")!;
 
-        var submitUrl = form.GetAttribute("action") ?? "/Home/Index";
-        var response = await client.GetAsync(submitUrl + "?Email=test@test.com&Password=whatever");
+        var content = new FormUrlEncodedContent(new[]
+        {
+            new KeyValuePair<string, string>("Email", "user@example.test"),
+            new KeyValuePair<string, string>("Password", "irrelevant")
+        });
 
-        response.EnsureSuccessStatusCode();
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Sonic Polyglot", body);
+        var response = await client.PostAsync("/Account/Login", content);
+
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
-    public async Task Home_SidebarContainsAllExpectedNavItems()
+    public async Task Home_RendersSidebarWithExpectedNavLinks()
     {
         var client = CreateClient();
         var document = await GetDocumentAsync(client, "/");
 
-        var linkTexts = document.QuerySelectorAll("aside a")
-            .Select(a => a.TextContent.Trim())
+        var hrefs = document.QuerySelectorAll("aside a")
+            .Select(a => a.GetAttribute("href") ?? string.Empty)
+            .Where(h => h.Length > 0)
             .ToArray();
 
-        string[] expected =
-        {
-            "Language selector",
-            "Home",
-            "Explore",
-            "Dictionary",
-            "Practice",
-            "Library",
-            "Quizzes"
-        };
-
-        foreach (var item in expected)
-        {
-            Assert.Contains(linkTexts, t => t.Contains(item));
-        }
-    }
-
-    [Fact]
-    public async Task Quizzes_Index_LinksToSettings()
-    {
-        var client = CreateClient();
-        var document = await GetDocumentAsync(client, "/Quizzes");
-
-        var hrefs = document.QuerySelectorAll("a")
-            .Select(a => a.GetAttribute("href") ?? "")
-            .ToArray();
-
-        Assert.Contains(hrefs, h => h.Contains("/Quizzes/Settings", StringComparison.OrdinalIgnoreCase));
-    }
-
-    [Fact]
-    public async Task Quizzes_Settings_FormPostsToStart()
-    {
-        var client = CreateClient();
-        var document = await GetDocumentAsync(client, "/Quizzes/Settings");
-
-        var form = (IHtmlFormElement?)document.QuerySelector("form[method='post']");
-        Assert.NotNull(form);
-        Assert.Contains("/Quizzes/Start", form!.GetAttribute("action") ?? "", StringComparison.OrdinalIgnoreCase);
-
-        Assert.NotNull(document.QuerySelector("input[name='mode'][value='flashcards']"));
-        Assert.NotNull(document.QuerySelector("input[name='mode'][value='typing']"));
-    }
-
-    [Theory]
-    [InlineData("flashcards", "/Quizzes/Flashcard")]
-    [InlineData("typing", "/Quizzes/Type")]
-    public async Task Quizzes_Start_RedirectsToSelectedMode(string mode, string expectedLocation)
-    {
-        var client = CreateClient();
-        var tokens = await AntiForgeryAsync(client, "/Quizzes/Settings");
-
-        var content = new FormUrlEncodedContent(new[]
-        {
-            new KeyValuePair<string, string>("mode", mode),
-            new KeyValuePair<string, string>("__RequestVerificationToken", tokens.form)
-        });
-        var request = new HttpRequestMessage(HttpMethod.Post, "/Quizzes/Start") { Content = content };
-        request.Headers.Add("Cookie", tokens.cookie);
-
-        var response = await client.SendAsync(request);
-        Assert.Equal(System.Net.HttpStatusCode.Redirect, response.StatusCode);
-        Assert.Equal(expectedLocation, response.Headers.Location?.ToString());
-    }
-
-    [Fact]
-    public async Task Quizzes_Flashcard_RendersShowAnswerButton()
-    {
-        var client = CreateClient();
-        var document = await GetDocumentAsync(client, "/Quizzes/Flashcard");
-        Assert.Contains(document.QuerySelectorAll("button"), b => b.TextContent.Contains("Show Answer"));
-    }
-
-    [Fact]
-    public async Task Quizzes_Type_RendersAnswerInput()
-    {
-        var client = CreateClient();
-        var document = await GetDocumentAsync(client, "/Quizzes/Type");
-        Assert.NotNull(document.QuerySelector("input[name='answer']"));
+        Assert.Contains(hrefs, h => h.Equals("/", StringComparison.Ordinal) || h.Contains("/Home", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(hrefs, h => h.Contains("/Languages", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(hrefs, h => h.Contains("/Quiz", StringComparison.OrdinalIgnoreCase));
     }
 
     private static async Task<(string form, string cookie)> AntiForgeryAsync(HttpClient client, string url)

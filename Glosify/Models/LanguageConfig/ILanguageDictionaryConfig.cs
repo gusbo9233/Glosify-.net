@@ -81,14 +81,13 @@ namespace Glosify.Models.LanguageConfig
         string Title,
         string Icon,
         FactDefinition[] Facts,
-        SlotGroup[] SlotGroups,
-        string[] VariantTagFilters
+        SlotGroup[] SlotGroups
     )
     {
         public static WordClassConfig FromFacts(string title, string icon, params FactDefinition[] facts)
-            => new(title, icon, facts, [], []);
+            => new(title, icon, facts, []);
 
         public static WordClassConfig FromSlots(string title, string icon, params SlotGroup[] groups)
-            => new(title, icon, [], groups, []);
+            => new(title, icon, [], groups);
     }
 }

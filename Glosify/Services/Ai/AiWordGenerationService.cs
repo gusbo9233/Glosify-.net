@@ -1,6 +1,8 @@
 using Glosify.Models;
 using Google.GenAI;
 using Google.GenAI.Types;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -10,10 +12,22 @@ public class AiWordGenerationService : IAiWordGenerationService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly string _apiKey;
+    private readonly string _model;
+    private readonly ILogger<AiWordGenerationService> _logger;
 
-    public AiWordGenerationService()
+    public AiWordGenerationService(
+        IOptions<GeminiOptions> options,
+        ILogger<AiWordGenerationService> logger)
     {
-        _apiKey = LoadGeminiApiKey();
+        var settings = options.Value;
+        if (string.IsNullOrWhiteSpace(settings.ApiKey))
+        {
+            throw new InvalidOperationException(
+                "Gemini API key is not configured. Set Gemini:ApiKey via configuration, user secrets, or the Gemini__ApiKey environment variable.");
+        }
+        _apiKey = settings.ApiKey;
+        _model = settings.Model;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyDictionary<string, GeneratedWord>> GenerateWordsFromTextAsync(
@@ -24,6 +38,7 @@ public class AiWordGenerationService : IAiWordGenerationService
         var json = await GenerateWordsWithAssistant(input, knownLanguage, targetLanguage);
         if (!ValidateResponse(json))
         {
+            _logger.LogWarning("Gemini word-extraction response failed validation for {KnownLanguage}->{TargetLanguage}", knownLanguage, targetLanguage);
             throw new InvalidOperationException("The AI assistant returned an unexpected response format.");
         }
 
@@ -49,6 +64,7 @@ public class AiWordGenerationService : IAiWordGenerationService
 
         if (!ValidateWordDetailResponse(json))
         {
+            _logger.LogWarning("Gemini word-detail response failed validation for word {Word} ({KnownLanguage}->{TargetLanguage})", word, knownLanguage, targetLanguage);
             throw new InvalidOperationException("The AI assistant returned an unexpected word detail response format.");
         }
 
@@ -68,6 +84,7 @@ public class AiWordGenerationService : IAiWordGenerationService
             sourceSentences);
         if (!ValidateResponse(json))
         {
+            _logger.LogWarning("Gemini word-extraction response failed validation for {KnownLanguage}->{TargetLanguage} with {SentenceCount} source sentences", knownLanguage, targetLanguage, sourceSentences.Count);
             throw new InvalidOperationException("The AI assistant returned an unexpected response format.");
         }
 
@@ -103,7 +120,7 @@ public class AiWordGenerationService : IAiWordGenerationService
         var prompt = BuildWordExtractionPrompt(input, knownLanguage, targetLanguage);
         var client = new Client(apiKey: _apiKey);
         var response = await client.Models.GenerateContentAsync(
-            model: "gemini-2.5-flash-lite",
+            model: _model,
             contents: prompt,
             config: new GenerateContentConfig { ResponseMimeType = "application/json" }
         );
@@ -120,7 +137,7 @@ public class AiWordGenerationService : IAiWordGenerationService
         var prompt = BuildWordDetailPrompt(word, translation, knownLanguage, targetLanguage);
         var client = new Client(apiKey: _apiKey);
         var response = await client.Models.GenerateContentAsync(
-            model: "gemini-2.5-flash-lite",
+            model: _model,
             contents: prompt,
             config: new GenerateContentConfig { ResponseMimeType = "application/json" }
         );
@@ -137,7 +154,7 @@ public class AiWordGenerationService : IAiWordGenerationService
         var prompt = BuildWordExtractionPrompt(input, knownLanguage, targetLanguage, sourceSentences);
         var client = new Client(apiKey: _apiKey);
         var response = await client.Models.GenerateContentAsync(
-            model: "gemini-2.5-flash-lite",
+            model: _model,
             contents: prompt,
             config: new GenerateContentConfig { ResponseMimeType = "application/json" }
         );
@@ -345,21 +362,4 @@ Input:
         }
     }
 
-    private static string LoadGeminiApiKey()
-    {
-        var envFile = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".env");
-        if (System.IO.File.Exists(envFile))
-        {
-            foreach (var line in System.IO.File.ReadAllLines(envFile))
-            {
-                var parts = line.Split('=', 2);
-                if (parts.Length == 2)
-                {
-                    System.Environment.SetEnvironmentVariable(parts[0].Trim(), parts[1].Trim());
-                }
-            }
-        }
-
-        return System.Environment.GetEnvironmentVariable("GEMINI_API_KEY") ?? string.Empty;
-    }
 }

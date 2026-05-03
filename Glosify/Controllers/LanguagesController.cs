@@ -20,7 +20,6 @@ namespace Glosify.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Select(string language)
         {
             if (!_languageContext.TrySetLanguage(language))
@@ -32,7 +31,6 @@ namespace Glosify.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public IActionResult Clear()
         {
             _languageContext.Clear();

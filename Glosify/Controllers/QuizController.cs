@@ -17,19 +17,22 @@ public class QuizController : Controller
     private readonly IWordService _wordService;
     private readonly IGeneratedVocabularyService _generatedVocabularyService;
     private readonly ILanguageContext _languageContext;
+    private readonly ILogger<QuizController> _logger;
 
     public QuizController(
         GlosifyContext context,
         IQuizService quizService,
         IWordService wordService,
         IGeneratedVocabularyService generatedVocabularyService,
-        ILanguageContext languageContext)
+        ILanguageContext languageContext,
+        ILogger<QuizController> logger)
     {
         _context = context;
         _quizService = quizService;
         _wordService = wordService;
         _generatedVocabularyService = generatedVocabularyService;
         _languageContext = languageContext;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index()
@@ -75,31 +78,41 @@ public class QuizController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddWord(Guid quizId, string word, string translation)
+    public async Task<IActionResult> AddWord(AddWordInput input)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
 
-        var quiz = await _quizService.GetQuizByIdAsync(quizId, userId);
+        if (!ModelState.IsValid)
+        {
+            TempData["QuizMessage"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            return RedirectToAction("Details", new { id = input.QuizId });
+        }
+
+        var quiz = await _quizService.GetQuizByIdAsync(input.QuizId, userId);
         if (quiz == null)
             return RedirectToAction("Index");
 
-        await _wordService.AddWordAsync(quizId, word, translation, quiz.SourceLanguage, quiz.TargetLanguage);
+        await _wordService.AddWordAsync(input.QuizId, input.Word, input.Translation, quiz.SourceLanguage, quiz.TargetLanguage);
 
-        return RedirectToAction("Details", new { id = quizId });
+        return RedirectToAction("Details", new { id = input.QuizId });
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> GenerateWords(Guid quizId, string input)
+    public async Task<IActionResult> GenerateWords(GenerateWordsInput model)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
 
-        var result = await _generatedVocabularyService.GenerateAndAddWordsAsync(quizId, userId, input);
+        if (!ModelState.IsValid)
+        {
+            TempData["AiError"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            return RedirectToAction("Details", new { id = model.QuizId });
+        }
+
+        var result = await _generatedVocabularyService.GenerateAndAddWordsAsync(model.QuizId, userId, model.Input);
 
         if (result.Error != null)
         {
@@ -110,11 +123,10 @@ public class QuizController : Controller
             TempData["AiMessage"] = result.Message;
         }
 
-        return RedirectToAction("Details", new { id = quizId });
+        return RedirectToAction("Details", new { id = model.QuizId });
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteWord(string id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -140,7 +152,6 @@ public class QuizController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteQuiz(Guid id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -163,8 +174,7 @@ public class QuizController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(string Name, string SourceLanguage, string TargetLanguage)
+    public async Task<IActionResult> Create(CreateQuizInput input)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
@@ -174,7 +184,13 @@ public class QuizController : Controller
         if (language == null)
             return RedirectToAction("Index", "Languages");
 
-        var quiz = await _quizService.CreateQuizAsync(Name, SourceLanguage, language, userId);
+        if (!ModelState.IsValid)
+        {
+            TempData["QuizMessage"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            return RedirectToAction("Index");
+        }
+
+        var quiz = await _quizService.CreateQuizAsync(input.Name, input.SourceLanguage, language, userId);
         return RedirectToAction("Details", new { id = quiz.Id });
     }
 
@@ -206,20 +222,19 @@ public class QuizController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Start(QuizSessionSettings settings)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
             return RedirectToAction("Login", "Account");
 
-        if (settings == null || settings.WordCount <= 0)
+        if (settings == null || !ModelState.IsValid)
             return RedirectToAction("Settings");
 
         if (settings.QuizId.HasValue)
         {
             var ownsQuiz = await _context.Quizzes
-                .AnyAsync(q => q.Id == settings.QuizId.Value && q.UserId.ToString() == userId);
+                .AnyAsync(q => q.Id == settings.QuizId.Value && q.UserId == userId);
 
             if (!ownsQuiz)
                 return RedirectToAction("Index");

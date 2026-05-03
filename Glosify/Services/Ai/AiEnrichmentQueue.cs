@@ -2,12 +2,12 @@ using System.Threading.Channels;
 
 namespace Glosify.Services;
 
-public sealed class DictionaryEnrichmentQueue : IDictionaryEnrichmentQueue
+public sealed class AiEnrichmentQueue : IAiEnrichmentQueue
 {
     // Bounded so a runaway producer can't OOM the host. DropOldest is fine for an
     // enrichment queue: if we drop a job, WordDetailsController.Details still has
     // the on-demand fallback that asks Gemini on first view.
-    private readonly Channel<DictionaryEnrichmentJob> _channel = Channel.CreateBounded<DictionaryEnrichmentJob>(
+    private readonly Channel<AiEnrichmentJob> _channel = Channel.CreateBounded<AiEnrichmentJob>(
         new BoundedChannelOptions(1024)
         {
             FullMode = BoundedChannelFullMode.DropOldest,
@@ -15,11 +15,11 @@ public sealed class DictionaryEnrichmentQueue : IDictionaryEnrichmentQueue
             SingleWriter = false,
         });
 
-    public void Enqueue(DictionaryEnrichmentJob job)
+    public void Enqueue(AiEnrichmentJob job)
     {
         _channel.Writer.TryWrite(job);
     }
 
-    public IAsyncEnumerable<DictionaryEnrichmentJob> ReadAllAsync(CancellationToken cancellationToken)
+    public IAsyncEnumerable<AiEnrichmentJob> ReadAllAsync(CancellationToken cancellationToken)
         => _channel.Reader.ReadAllAsync(cancellationToken);
 }

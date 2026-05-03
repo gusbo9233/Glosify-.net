@@ -6,12 +6,16 @@ using Glosify.Models;
 using Glosify.Models.LanguageConfig;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
 builder.Services.AddMemoryCache();
 
 // Add Identity
@@ -44,10 +48,11 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ILanguageContext, CookieLanguageContext>();
 
+builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
+
 // Register application services
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IWordService, WordService>();
-builder.Services.AddScoped<IDictionaryService, DictionaryService>();
 builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
 builder.Services.AddScoped<ITypingQuizService, TypingQuizService>();
 builder.Services.AddScoped<IAiWordGenerationService, AiWordGenerationService>();
@@ -55,8 +60,8 @@ builder.Services.AddScoped<IGeneratedVocabularyService, GeneratedVocabularyServi
 builder.Services.AddScoped<IWordDetailEnrichmentService, WordDetailEnrichmentService>();
 builder.Services.AddScoped<IWordDetailViewModelService, WordDetailViewModelService>();
 
-builder.Services.AddSingleton<IDictionaryEnrichmentQueue, DictionaryEnrichmentQueue>();
-builder.Services.AddHostedService<DictionaryEnrichmentBackgroundService>();
+builder.Services.AddSingleton<IAiEnrichmentQueue, AiEnrichmentQueue>();
+builder.Services.AddHostedService<AiEnrichmentBackgroundService>();
 
 builder.Services.AddSingleton<ILanguageDictionaryConfig, GermanDictionaryConfig>();
 builder.Services.AddSingleton<ILanguageDictionaryConfig, EstonianDictionaryConfig>();

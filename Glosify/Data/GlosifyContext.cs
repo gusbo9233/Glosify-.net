@@ -27,6 +27,18 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<Quiz>(entity =>
+        {
+            entity.HasKey(q => q.Id);
+            entity.Property(q => q.UserId).HasMaxLength(450).IsRequired();
+            entity.HasIndex(q => q.UserId);
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(q => q.UserId)
+                .HasConstraintName("FK_Quizzes_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<Word>(entity =>
         {
             entity.HasKey(w => w.Id);

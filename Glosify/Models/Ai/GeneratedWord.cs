@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Glosify.Models;
+namespace Glosify.Models.Ai;
 
 public class GeneratedWord
 {

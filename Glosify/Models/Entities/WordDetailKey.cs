@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Glosify.Models;
+namespace Glosify.Models.Entities;
 
 public sealed record WordDetailKey(
     string SourceLanguage,

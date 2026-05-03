@@ -10,18 +10,21 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
     private readonly GlosifyContext _context;
     private readonly IQuizService _quizService;
     private readonly IAiWordGenerationService _aiWordGenerationService;
-    private readonly IDictionaryEnrichmentQueue _enrichmentQueue;
+    private readonly IAiEnrichmentQueue _enrichmentQueue;
+    private readonly ILogger<GeneratedVocabularyService> _logger;
 
     public GeneratedVocabularyService(
         GlosifyContext context,
         IQuizService quizService,
         IAiWordGenerationService aiWordGenerationService,
-        IDictionaryEnrichmentQueue enrichmentQueue)
+        IAiEnrichmentQueue enrichmentQueue,
+        ILogger<GeneratedVocabularyService> logger)
     {
         _context = context;
         _quizService = quizService;
         _aiWordGenerationService = aiWordGenerationService;
         _enrichmentQueue = enrichmentQueue;
+        _logger = logger;
     }
 
     public async Task<GeneratedVocabularyResult> GenerateAndAddWordsAsync(Guid quizId, string userId, string input)
@@ -48,8 +51,9 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
                 quiz.TargetLanguage,
                 sourceSentences);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
+            _logger.LogWarning(ex, "AI vocabulary generation returned an unexpected response for quiz {QuizId}", quizId);
             return GeneratedVocabularyResult.Failure("The assistant returned an unexpected response. Try a shorter text sample.");
         }
 
@@ -60,7 +64,7 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         var existing = new HashSet<string>(existingWords, StringComparer.OrdinalIgnoreCase);
 
         var added = 0;
-        var enqueued = new List<DictionaryEnrichmentJob>();
+        var enqueued = new List<AiEnrichmentJob>();
 
         foreach (var (lemma, generatedWord) in generatedWords)
         {
@@ -102,7 +106,7 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
                 WordDetailId = wordDetail.Id
             });
 
-            enqueued.Add(new DictionaryEnrichmentJob(wordDetail.Id, quiz.TargetLanguage, trimmedLemma));
+            enqueued.Add(new AiEnrichmentJob(wordDetail.Id, quiz.TargetLanguage, trimmedLemma));
             existing.Add(trimmedLemma);
             added++;
         }

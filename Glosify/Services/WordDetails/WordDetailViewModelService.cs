@@ -8,18 +8,15 @@ namespace Glosify.Services;
 public class WordDetailViewModelService : IWordDetailViewModelService
 {
     private readonly GlosifyContext _context;
-    private readonly IDictionaryService _dictionaryService;
     private readonly IReadOnlyDictionary<string, ILanguageDictionaryConfig> _languageConfigs;
     private readonly IWordDetailEnrichmentService? _enrichmentService;
 
     public WordDetailViewModelService(
         GlosifyContext context,
-        IDictionaryService dictionaryService,
         IEnumerable<ILanguageDictionaryConfig> languageConfigs,
         IWordDetailEnrichmentService? enrichmentService = null)
     {
         _context = context;
-        _dictionaryService = dictionaryService;
         _languageConfigs = languageConfigs.ToDictionary(c => c.LangCode, StringComparer.OrdinalIgnoreCase);
         _enrichmentService = enrichmentService;
     }
@@ -35,10 +32,7 @@ public class WordDetailViewModelService : IWordDetailViewModelService
 
         await TryEnrichAsync(wordDetail, word, quiz);
 
-        var detailProperties = WordDetailJsonReader.ReadProperties(wordDetail.Properties);
-        var dictionaryMatch = await ResolveDictionaryMatchAsync(wordDetail, word, quiz, null);
-        var dictionaryProperties = WordDetailJsonReader.ReadProperties(dictionaryMatch?.Properties);
-        var properties = MergeProperties(dictionaryProperties, detailProperties);
+        var properties = WordDetailJsonReader.ReadProperties(wordDetail.Properties);
         var pos = LanguageResolver.NormalizePartOfSpeech(
             properties.FirstOrDefault(p => string.Equals(p.Key, "pos", StringComparison.OrdinalIgnoreCase)).Value);
 
@@ -56,32 +50,20 @@ public class WordDetailViewModelService : IWordDetailViewModelService
             }
         }
 
-        if (dictionaryMatch != null && !string.IsNullOrWhiteSpace(pos))
-        {
-            dictionaryMatch = await ResolveDictionaryMatchAsync(wordDetail, word, quiz, pos) ?? dictionaryMatch;
-        }
-
-        var detailVariants = WordDetailJsonReader.ReadVariants(wordDetail.Variants);
-        var dictionaryVariants = WordDetailJsonReader.ReadVariants(dictionaryMatch?.Variants);
-        var rawVariants = detailVariants.Any() ? detailVariants : dictionaryVariants;
-
-        // Filter junk header rows / class markers and clean per-language quirks (e.g. strip
-        // Ukrainian's parenthesized romanization tail) before any further filtering.
+        var rawVariants = WordDetailJsonReader.ReadVariants(wordDetail.Variants);
         if (languageConfig != null)
         {
+            // Defensive cleanup carried over from the prior dictionary path; harmless on Gemini output.
             rawVariants = rawVariants
                 .Where(v => !languageConfig.IsJunkVariant(v))
                 .Select(v => v with { Form = languageConfig.CleanForm(v.Form) })
                 .ToList();
         }
 
-        var filteredVariants = wordClassConfig != null
-            ? WordDetailJsonReader.FilterByTags(rawVariants, wordClassConfig.VariantTagFilters)
-            : rawVariants;
+        var filteredVariants = rawVariants;
         if (pos == "Pronoun" && languageConfig?.BundlesPronounParadigm == true)
         {
-            filteredVariants = WordDetailJsonReader.FilterPronounParadigm(
-                filteredVariants, word?.Lemma ?? dictionaryMatch?.Word);
+            filteredVariants = WordDetailJsonReader.FilterPronounParadigm(filteredVariants, word?.Lemma);
         }
 
         return new WordDetailViewModel
@@ -89,7 +71,6 @@ public class WordDetailViewModelService : IWordDetailViewModelService
             Detail = wordDetail,
             Word = word,
             Quiz = quiz,
-            DictionaryMatch = dictionaryMatch,
             Properties = properties,
             Variants = filteredVariants,
             WordClassConfig = wordClassConfig,
@@ -102,7 +83,7 @@ public class WordDetailViewModelService : IWordDetailViewModelService
             from word in _context.Words
             join quiz in _context.Quizzes on word.QuizId equals quiz.Id
             join detail in _context.WordDetails on word.WordDetailId equals detail.Id
-            where detail.Id == id && quiz.UserId.ToString() == userId
+            where detail.Id == id && quiz.UserId == userId
             select new { detail, word, quiz }).FirstOrDefaultAsync();
 
         return pair == null ? null : (pair.detail, pair.word, pair.quiz);
@@ -130,74 +111,15 @@ public class WordDetailViewModelService : IWordDetailViewModelService
                 wordDetail,
                 word,
                 quiz,
-            word.Lemma,
-            wordDetail.TargetLanguage))
-        {
-            await _context.SaveChangesAsync();
-        }
+                word.Lemma,
+                wordDetail.TargetLanguage))
+            {
+                await _context.SaveChangesAsync();
+            }
         }
         catch (Exception)
         {
             // Details remain editable even if enrichment is unavailable or returns malformed JSON.
         }
-    }
-
-    private async Task<DictionaryEntry?> ResolveDictionaryMatchAsync(
-        WordDetail wordDetail, Word? word, Quiz quiz, string? selectedPartOfSpeech)
-    {
-        if (word == null)
-        {
-            return null;
-        }
-
-        // Try detail language first, then quiz target language. Ukrainian/German/etc. resolve
-        // through the configured aliases inside DictionaryService.
-        var languageCandidates = new[]
-        {
-            wordDetail.Language,
-            wordDetail.TargetLanguage,
-            quiz.TargetLanguage,
-            quiz.Language,
-            quiz.SourceLanguage,
-        };
-
-        foreach (var language in languageCandidates)
-        {
-            if (string.IsNullOrWhiteSpace(language))
-            {
-                continue;
-            }
-
-            var match = await _dictionaryService.FindBestDictionaryMatchAsync(language, word.Lemma, selectedPartOfSpeech);
-            if (match != null)
-            {
-                return match;
-            }
-        }
-
-        return null;
-    }
-
-    private static IReadOnlyList<KeyValuePair<string, string>> MergeProperties(
-        IReadOnlyList<KeyValuePair<string, string>> dictionaryProperties,
-        IReadOnlyList<KeyValuePair<string, string>> detailProperties)
-    {
-        if (dictionaryProperties.Count == 0)
-        {
-            return detailProperties;
-        }
-
-        if (detailProperties.Count == 0)
-        {
-            return dictionaryProperties;
-        }
-
-        var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var property in dictionaryProperties.Concat(detailProperties))
-        {
-            merged[property.Key] = property.Value;
-        }
-
-        return merged.Select(property => new KeyValuePair<string, string>(property.Key, property.Value)).ToList();
     }
 }

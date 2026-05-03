@@ -3,16 +3,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services;
 
-public sealed class DictionaryEnrichmentBackgroundService : BackgroundService
+public sealed class AiEnrichmentBackgroundService : BackgroundService
 {
-    private readonly IDictionaryEnrichmentQueue _queue;
+    private readonly IAiEnrichmentQueue _queue;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly ILogger<DictionaryEnrichmentBackgroundService> _logger;
+    private readonly ILogger<AiEnrichmentBackgroundService> _logger;
 
-    public DictionaryEnrichmentBackgroundService(
-        IDictionaryEnrichmentQueue queue,
+    public AiEnrichmentBackgroundService(
+        IAiEnrichmentQueue queue,
         IServiceScopeFactory scopeFactory,
-        ILogger<DictionaryEnrichmentBackgroundService> logger)
+        ILogger<AiEnrichmentBackgroundService> logger)
     {
         _queue = queue;
         _scopeFactory = scopeFactory;
@@ -41,7 +41,7 @@ public sealed class DictionaryEnrichmentBackgroundService : BackgroundService
         }
     }
 
-    private async Task ProcessAsync(DictionaryEnrichmentJob job, CancellationToken cancellationToken)
+    private async Task ProcessAsync(AiEnrichmentJob job, CancellationToken cancellationToken)
     {
         await using var scope = _scopeFactory.CreateAsyncScope();
         var enrichment = scope.ServiceProvider.GetRequiredService<IWordDetailEnrichmentService>();

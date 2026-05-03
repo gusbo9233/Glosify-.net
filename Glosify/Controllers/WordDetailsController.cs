@@ -34,7 +34,7 @@ namespace Glosify.Controllers
             var wordDetails = await _context.WordDetails
                 .Join(
                     _context.Words.Join(
-                        _context.Quizzes.Where(q => q.UserId.ToString() == userId),
+                        _context.Quizzes.Where(q => q.UserId == userId),
                         word => word.QuizId,
                         quiz => quiz.Id,
                         (word, _) => word.WordDetailId),
@@ -75,7 +75,6 @@ namespace Glosify.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdatePartOfSpeech(string id, string? partOfSpeech)
         {
             if (string.IsNullOrWhiteSpace(id))
@@ -113,7 +112,6 @@ namespace Glosify.Controllers
         // POST: WordDetails/Create
         // Word details are shared cache rows keyed by language pair, word and translation.
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("SourceLanguage,TargetLanguage,Word,Translation,Properties,ExampleSentence,Explanation,Variants,Language")] WordDetail wordDetail)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -186,7 +184,6 @@ namespace Glosify.Controllers
         // The existing entity is loaded fresh and only allowlisted fields are copied —
         // never trust the posted QuizId.
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(string id, [Bind("Id,Properties,ExampleSentence,Explanation,Variants,Language")] WordDetail posted)
         {
             if (id != posted.Id)
@@ -255,7 +252,6 @@ namespace Glosify.Controllers
 
         // POST: WordDetails/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -290,7 +286,7 @@ namespace Glosify.Controllers
                 from word in _context.Words
                 join quiz in _context.Quizzes on word.QuizId equals quiz.Id
                 join detail in _context.WordDetails on word.WordDetailId equals detail.Id
-                where detail.Id == id && quiz.UserId.ToString() == userId
+                where detail.Id == id && quiz.UserId == userId
                 select new { detail, quiz }).FirstOrDefaultAsync();
 
             return pair == null ? null : (pair.detail, pair.quiz);
