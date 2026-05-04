@@ -49,6 +49,20 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ILanguageContext, CookieLanguageContext>();
 
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
+builder.Services.Configure<GeminiOptions>(options =>
+{
+    var apiKey = builder.Configuration["GEMINI_API_KEY"];
+    if (!string.IsNullOrWhiteSpace(apiKey))
+    {
+        options.ApiKey = apiKey;
+    }
+
+    var model = builder.Configuration["GEMINI_MODEL"];
+    if (!string.IsNullOrWhiteSpace(model))
+    {
+        options.Model = model;
+    }
+});
 
 // Register application services
 builder.Services.AddScoped<IQuizService, QuizService>();

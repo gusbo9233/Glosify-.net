@@ -21,11 +21,6 @@ public class AiWordGenerationService : IAiWordGenerationService
         ILogger<AiWordGenerationService> logger)
     {
         var settings = options.Value;
-        if (string.IsNullOrWhiteSpace(settings.ApiKey))
-        {
-            throw new InvalidOperationException(
-                "Gemini API key is not configured. Set Gemini:ApiKey via configuration, user secrets, or the Gemini__ApiKey environment variable.");
-        }
         _apiKey = settings.ApiKey;
         _model = settings.Model;
         _logger = logger;
@@ -118,6 +113,8 @@ public class AiWordGenerationService : IAiWordGenerationService
 
     private async Task<string> GenerateWordsWithAssistant(string input, string knownLanguage, string targetLanguage)
     {
+        EnsureConfigured();
+
         var prompt = BuildWordExtractionPrompt(input, knownLanguage, targetLanguage);
         var client = new Client(apiKey: _apiKey);
         var response = await client.Models.GenerateContentAsync(
@@ -135,6 +132,8 @@ public class AiWordGenerationService : IAiWordGenerationService
         string knownLanguage,
         string targetLanguage)
     {
+        EnsureConfigured();
+
         var prompt = BuildWordDetailPrompt(word, translation, knownLanguage, targetLanguage);
         var client = new Client(apiKey: _apiKey);
         var response = await client.Models.GenerateContentAsync(
@@ -152,6 +151,8 @@ public class AiWordGenerationService : IAiWordGenerationService
         string targetLanguage,
         IReadOnlyList<string> sourceSentences)
     {
+        EnsureConfigured();
+
         var prompt = BuildWordExtractionPrompt(input, knownLanguage, targetLanguage, sourceSentences);
         var client = new Client(apiKey: _apiKey);
         var response = await client.Models.GenerateContentAsync(
@@ -161,6 +162,15 @@ public class AiWordGenerationService : IAiWordGenerationService
         );
 
         return response.Candidates?[0].Content?.Parts?[0].Text ?? string.Empty;
+    }
+
+    private void EnsureConfigured()
+    {
+        if (string.IsNullOrWhiteSpace(_apiKey))
+        {
+            throw new InvalidOperationException(
+                "Gemini API key is not configured. Set Gemini:ApiKey via configuration, user secrets, Gemini__ApiKey, or GEMINI_API_KEY.");
+        }
     }
 
     private string BuildWordExtractionPrompt(string input, string knownLanguage, string targetLanguage)
