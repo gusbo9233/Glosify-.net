@@ -9,10 +9,8 @@ namespace Glosify.Models.LanguageConfig
 
         public override IReadOnlyList<string> Aliases => new[] { "uk", "ukrainian", "ukrainisch", "українськ" };
 
-        public override bool BundlesPronounParadigm => true;
-
-        // Kaikki Ukrainian variants often store the form with a stress-romanization tail baked in,
-        // e.g. "мéне (mené, méne*)". Strip that for display so slot cells aren't littered with parens.
+        // Older imported Ukrainian variants may include a romanization tail. Gemini output should not,
+        // but keeping the cleanup lets existing cached rows render cleanly.
         public override string CleanForm(string form)
         {
             if (string.IsNullOrEmpty(form))
@@ -25,7 +23,7 @@ namespace Glosify.Models.LanguageConfig
 
         public override WordClassConfig? GetWordClass(string pos) => pos switch
         {
-            "Noun" => WordClassConfig.FromSlots("Noun · Іменник", "title",
+            "Noun" => WordClassConfig.FromSlots("Noun Cases", "title",
                 new SlotGroup("Singular", [
                     new("nominative", ["nominative", "singular"]),
                     new("genitive", ["genitive", "singular"]),
@@ -45,21 +43,19 @@ namespace Glosify.Models.LanguageConfig
                     new("vocative", ["vocative", "plural"]),
                 ])),
 
-            "Verb" => WordClassConfig.FromSlots("Verb · Дієслово", "directions_run",
-                new SlotGroup("Infinitive & Participles", [
+            "Verb" => WordClassConfig.FromSlots("Verb Forms", "directions_run",
+                new SlotGroup("Principal Forms", [
                     new("infinitive", ["infinitive"]),
-                    new("present active participle", ["participle", "present", "active"]),
-                    new("past active participle", ["participle", "past", "active"]),
-                    new("past passive participle", ["participle", "past", "passive"]),
-                    new("verbal adverb", ["adverbial"]),
+                    new("imperfective", ["imperfective"]),
+                    new("perfective", ["perfective"]),
                 ]),
                 new SlotGroup("Present / Future", [
-                    new("я", ["first-person", "singular", "present"]),
-                    new("ти", ["second-person", "singular", "present"]),
-                    new("він/вона", ["third-person", "singular", "present"]),
-                    new("ми", ["first-person", "plural", "present"]),
-                    new("ви", ["second-person", "plural", "present"]),
-                    new("вони", ["third-person", "plural", "present"]),
+                    new("я", ["non-past", "first-person", "singular"]),
+                    new("ти", ["non-past", "second-person", "singular"]),
+                    new("він/вона", ["non-past", "third-person", "singular"]),
+                    new("ми", ["non-past", "first-person", "plural"]),
+                    new("ви", ["non-past", "second-person", "plural"]),
+                    new("вони", ["non-past", "third-person", "plural"]),
                 ]),
                 new SlotGroup("Past Tense", [
                     new("masculine", ["past", "masculine", "singular"]),
@@ -73,21 +69,22 @@ namespace Glosify.Models.LanguageConfig
                     new("ви", ["imperative", "second-person", "plural"]),
                 ])),
 
-            "Adjective" => WordClassConfig.FromSlots("Adjective · Прикметник", "palette",
-                new SlotGroup("Singular", [
-                    new("masculine", ["masculine", "singular", "nominative"]),
-                    new("feminine", ["feminine", "singular", "nominative"]),
-                    new("neuter", ["neuter", "singular", "nominative"]),
+            "Adjective" => WordClassConfig.FromSlots("Adjective Forms", "palette",
+                new SlotGroup("Nominative Singular", [
+                    new("masculine", ["nominative", "masculine", "singular"]),
+                    new("feminine", ["nominative", "feminine", "singular"]),
+                    new("neuter", ["nominative", "neuter", "singular"]),
                 ]),
-                new SlotGroup("Plural", [
-                    new("nominative", ["plural", "nominative"]),
+                new SlotGroup("Nominative Plural", [
+                    new("plural", ["nominative", "plural"]),
                 ]),
                 new SlotGroup("Degree", [
+                    new("positive", ["positive"]),
                     new("comparative", ["comparative"]),
                     new("superlative", ["superlative"]),
                 ])),
 
-            "Pronoun" => WordClassConfig.FromSlots("Pronoun · Займенник", "person",
+            "Pronoun" => WordClassConfig.FromSlots("Pronoun Cases", "person",
                 new SlotGroup("Case Forms", [
                     new("nominative", ["nominative"]),
                     new("genitive", ["genitive"]),
@@ -97,7 +94,7 @@ namespace Glosify.Models.LanguageConfig
                     new("locative", ["locative"]),
                 ])),
 
-            "Numeral" => WordClassConfig.FromSlots("Numeral · Числівник", "pin",
+            "Numeral" => WordClassConfig.FromSlots("Numeral Cases", "pin",
                 new SlotGroup("Cases", [
                     new("nominative", ["nominative"]),
                     new("genitive", ["genitive"]),
@@ -107,16 +104,21 @@ namespace Glosify.Models.LanguageConfig
                     new("locative", ["locative"]),
                 ])),
 
-            "Adverb" => WordClassConfig.FromSlots("Adverb · Прислівник", "schedule",
+            "Adverb" => WordClassConfig.FromSlots("Adverb Comparison", "schedule",
                 new SlotGroup("Comparison", [
                     new("comparative", ["comparative"]),
                     new("superlative", ["superlative"]),
                 ])),
 
-            "Preposition" => null,
-            "Conjunction" => null,
+            "Preposition" => WordClassConfig.FromFacts("Preposition", "conversion_path",
+                new("Governs Case", ["governs_case", "case"]),
+                new("Meaning", ["relationship", "meaning_type"])),
+            "Conjunction" => WordClassConfig.FromFacts("Conjunction", "lan",
+                new FactDefinition("Type", ["type", "clause_type"])),
             "Article" => null,
-            "Interjection" => null,
+            "Interjection" => WordClassConfig.FromFacts("Interjection", "campaign",
+                new("Tone", ["tone", "emotion"]),
+                new("Register", ["register", "style"])),
 
             _ => null
         };

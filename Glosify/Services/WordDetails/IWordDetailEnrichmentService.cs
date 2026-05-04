@@ -10,5 +10,6 @@ public interface IWordDetailEnrichmentService
         Quiz? quiz,
         string fallbackWord,
         string fallbackTargetLanguage,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        bool force = false);
 }

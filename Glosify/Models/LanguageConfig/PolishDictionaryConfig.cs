@@ -6,11 +6,9 @@ namespace Glosify.Models.LanguageConfig
 
         public override IReadOnlyList<string> Aliases => new[] { "pl", "polish", "polski", "polnisch" };
 
-        public override bool BundlesPronounParadigm => true;
-
         public override WordClassConfig? GetWordClass(string pos) => pos switch
         {
-            "Noun" => WordClassConfig.FromSlots("Noun · Rzeczownik", "title",
+            "Noun" => WordClassConfig.FromSlots("Noun Cases", "title",
                 new SlotGroup("Singular", [
                     new("nominative", ["nominative", "singular"]),
                     new("genitive", ["genitive", "singular"]),
@@ -30,61 +28,51 @@ namespace Glosify.Models.LanguageConfig
                     new("vocative", ["vocative", "plural"]),
                 ])),
 
-            "Verb" => WordClassConfig.FromSlots("Verb · Czasownik", "directions_run",
-                new SlotGroup("Infinitive & Participles", [
+            "Verb" => WordClassConfig.FromSlots("Verb Forms", "directions_run",
+                new SlotGroup("Principal Forms", [
                     new("infinitive", ["infinitive"]),
-                    new("active adjectival", ["participle", "active", "adjectival"]),
-                    new("passive adjectival", ["participle", "passive", "adjectival"]),
-                    new("contemporary", ["participle", "contemporary"]),
-                    new("verbal noun", ["noun-from-verb"]),
+                    new("imperfective", ["imperfective"]),
+                    new("perfective", ["perfective"]),
                 ]),
-                new SlotGroup("Present", [
-                    new("singular", ["singular", "present"]),
-                    new("plural", ["plural", "present"]),
-                    new("third-person singular", ["third-person", "singular", "present"]),
-                    new("third-person plural", ["third-person", "plural", "present"]),
-                    new("impersonal", ["impersonal", "present"]),
+                new SlotGroup("Present / Future", [
+                    new("first-person singular", ["non-past", "first-person", "singular"]),
+                    new("second-person singular", ["non-past", "second-person", "singular"]),
+                    new("third-person singular", ["non-past", "third-person", "singular"]),
+                    new("first-person plural", ["non-past", "first-person", "plural"]),
+                    new("second-person plural", ["non-past", "second-person", "plural"]),
+                    new("third-person plural", ["non-past", "third-person", "plural"]),
                 ]),
-                new SlotGroup("Past Tense (singular)", [
+                new SlotGroup("Past Singular", [
                     new("masculine", ["past", "masculine", "singular"]),
                     new("feminine", ["past", "feminine", "singular"]),
                     new("neuter", ["past", "neuter", "singular"]),
                 ]),
-                new SlotGroup("Past Tense (plural)", [
-                    new("masculine personal", ["past", "plural", "virile"]),
-                    new("non-masculine personal", ["past", "plural", "nonvirile"]),
-                ]),
-                new SlotGroup("Future", [
-                    new("singular masculine", ["future", "masculine", "singular"]),
-                    new("singular feminine", ["future", "feminine", "singular"]),
-                    new("singular neuter", ["future", "neuter", "singular"]),
-                    new("plural virile", ["future", "plural", "virile"]),
-                    new("plural nonvirile", ["future", "plural", "nonvirile"]),
-                    new("impersonal", ["future", "impersonal"]),
+                new SlotGroup("Past Plural", [
+                    new("masculine personal", ["past", "plural", "masculine-personal"]),
+                    new("non-masculine personal", ["past", "plural", "non-masculine-personal"]),
                 ]),
                 new SlotGroup("Imperative", [
-                    new("singular", ["imperative", "singular"]),
-                    new("plural", ["imperative", "plural"]),
-                    new("third-person singular", ["imperative", "third-person", "singular"]),
-                    new("third-person plural", ["imperative", "third-person", "plural"]),
+                    new("second-person singular", ["imperative", "second-person", "singular"]),
+                    new("second-person plural", ["imperative", "second-person", "plural"]),
                 ])),
 
-            "Adjective" => WordClassConfig.FromSlots("Adjective · Przymiotnik", "palette",
-                new SlotGroup("Singular", [
-                    new("masculine", ["masculine", "singular"]),
-                    new("feminine", ["feminine", "singular"]),
-                    new("neuter", ["neuter", "singular"]),
+            "Adjective" => WordClassConfig.FromSlots("Adjective Forms", "palette",
+                new SlotGroup("Nominative Singular", [
+                    new("masculine", ["nominative", "masculine", "singular"]),
+                    new("feminine", ["nominative", "feminine", "singular"]),
+                    new("neuter", ["nominative", "neuter", "singular"]),
                 ]),
-                new SlotGroup("Plural", [
-                    new("masculine personal", ["plural", "virile"]),
-                    new("non-masculine personal", ["plural"]),
+                new SlotGroup("Nominative Plural", [
+                    new("masculine personal", ["nominative", "plural", "masculine-personal"]),
+                    new("non-masculine personal", ["nominative", "plural", "non-masculine-personal"]),
                 ]),
                 new SlotGroup("Degree", [
+                    new("positive", ["positive"]),
                     new("comparative", ["comparative"]),
                     new("superlative", ["superlative"]),
                 ])),
 
-            "Pronoun" => WordClassConfig.FromSlots("Pronoun · Zaimek", "person",
+            "Pronoun" => WordClassConfig.FromSlots("Pronoun Cases", "person",
                 new SlotGroup("Case Forms", [
                     new("nominative", ["nominative"]),
                     new("genitive", ["genitive"]),
@@ -94,7 +82,7 @@ namespace Glosify.Models.LanguageConfig
                     new("locative", ["locative"]),
                 ])),
 
-            "Numeral" => WordClassConfig.FromSlots("Numeral · Liczebnik", "pin",
+            "Numeral" => WordClassConfig.FromSlots("Numeral Cases", "pin",
                 new SlotGroup("Cases", [
                     new("nominative", ["nominative"]),
                     new("genitive", ["genitive"]),
@@ -104,16 +92,21 @@ namespace Glosify.Models.LanguageConfig
                     new("locative", ["locative"]),
                 ])),
 
-            "Adverb" => WordClassConfig.FromSlots("Adverb · Przysłówek", "schedule",
+            "Adverb" => WordClassConfig.FromSlots("Adverb Comparison", "schedule",
                 new SlotGroup("Comparison", [
                     new("comparative", ["comparative"]),
                     new("superlative", ["superlative"]),
                 ])),
 
-            "Preposition" => null,
-            "Conjunction" => null,
+            "Preposition" => WordClassConfig.FromFacts("Preposition", "conversion_path",
+                new("Governs Case", ["governs_case", "case"]),
+                new("Meaning", ["relationship", "meaning_type"])),
+            "Conjunction" => WordClassConfig.FromFacts("Conjunction", "lan",
+                new FactDefinition("Type", ["type", "clause_type"])),
             "Article" => null,
-            "Interjection" => null,
+            "Interjection" => WordClassConfig.FromFacts("Interjection", "campaign",
+                new("Tone", ["tone", "emotion"]),
+                new("Register", ["register", "style"])),
 
             _ => null
         };

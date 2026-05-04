@@ -96,8 +96,8 @@ public class WordDetailViewModelService : IWordDetailViewModelService
             return;
         }
 
-        var shouldGenerate = wordDetail.Properties == "{}"
-            || wordDetail.Variants == "[]"
+        var shouldGenerate = !WordDetailJsonReader.ReadProperties(wordDetail.Properties).Any()
+            || !WordDetailJsonReader.ReadVariants(wordDetail.Variants).Any()
             || string.IsNullOrWhiteSpace(wordDetail.Explanation)
             || string.IsNullOrWhiteSpace(wordDetail.ExampleSentence);
         if (!shouldGenerate)

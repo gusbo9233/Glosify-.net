@@ -14,11 +14,25 @@
             <span class="material-symbols-outlined">arrow_back</span>
             Back to quiz
         </a>
-        <a class="edit-link" asp-action="Edit" asp-route-id="@Model.Detail.Id">
-            <span class="material-symbols-outlined">edit</span>
-            Edit
-        </a>
+        <div class="detail-actions">
+            <form method="post" asp-action="Regenerate" asp-route-id="@Model.Detail.Id">
+                @Html.AntiForgeryToken()
+                <button class="edit-link regenerate-button" type="submit">
+                    <span class="material-symbols-outlined">sync</span>
+                    Regenerate
+                </button>
+            </form>
+            <a class="edit-link" asp-action="Edit" asp-route-id="@Model.Detail.Id">
+                <span class="material-symbols-outlined">edit</span>
+                Edit
+            </a>
+        </div>
     </div>
+
+    @if (TempData["WordDetailMessage"] is string message)
+    {
+        <p class="detail-message">@message</p>
+    }
 
     <section class="detail-hero">
         <div class="hero-panel">
@@ -50,23 +64,6 @@
         <article class="detail-section wide">
             <div class="property-toolbar">
                 <h2 class="section-title"><span class="material-symbols-outlined">category</span>Properties</h2>
-                <form class="property-form" method="post" asp-action="UpdatePartOfSpeech" asp-route-id="@Model.Detail.Id">
-                    @Html.AntiForgeryToken()
-                    <label class="fact-key" for="partOfSpeech">Word Class</label>
-                    <select class="property-select" id="partOfSpeech" name="partOfSpeech" onchange="this.form.submit()">
-                        <option value="" selected="@string.IsNullOrWhiteSpace(Model.PartOfSpeech)">Unclassified</option>
-                        <option value="noun" selected="@IsSelected("noun")">Noun / Nomen</option>
-                        <option value="verb" selected="@IsSelected("verb")">Verb / Verb</option>
-                        <option value="article" selected="@IsSelected("article")">Article / Artikel</option>
-                        <option value="adjective" selected="@IsSelected("adjective")">Adjective / Adjektiv</option>
-                        <option value="pronoun" selected="@IsSelected("pronoun")">Pronoun / Pronomen</option>
-                        <option value="adverb" selected="@IsSelected("adverb")">Adverb / Adverb</option>
-                        <option value="preposition" selected="@IsSelected("preposition")">Preposition / Präposition</option>
-                        <option value="conjunction" selected="@IsSelected("conjunction")">Conjunction / Konjunktion</option>
-                        <option value="numeral" selected="@IsSelected("numeral")">Numeral / Numerale</option>
-                        <option value="interjection" selected="@IsSelected("interjection")">Interjection / Interjektion</option>
-                    </select>
-                </form>
             </div>
             @if (!Model.Properties.Any())
             {
@@ -151,10 +148,5 @@
     private static bool ShouldShowGenericVariants(WordDetailViewModel model)
     {
         return model.WordClassConfig == null || model.WordClassConfig.SlotGroups.Length == 0;
-    }
-
-    private bool IsSelected(string partOfSpeech)
-    {
-        return string.Equals(Model.PartOfSpeech, partOfSpeech, StringComparison.OrdinalIgnoreCase);
     }
 }

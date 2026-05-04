@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,13 +13,16 @@ namespace Glosify.Controllers
     {
         private readonly GlosifyContext _context;
         private readonly IWordDetailViewModelService _viewModelService;
+        private readonly IWordDetailEnrichmentService _enrichmentService;
 
         public WordDetailsController(
             GlosifyContext context,
-            IWordDetailViewModelService viewModelService)
+            IWordDetailViewModelService viewModelService,
+            IWordDetailEnrichmentService enrichmentService)
         {
             _context = context;
             _viewModelService = viewModelService;
+            _enrichmentService = enrichmentService;
         }
 
         // GET: WordDetails
@@ -75,7 +76,7 @@ namespace Glosify.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdatePartOfSpeech(string id, string? partOfSpeech)
+        public async Task<IActionResult> Regenerate(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -86,25 +87,31 @@ namespace Glosify.Controllers
             if (string.IsNullOrEmpty(userId))
                 return RedirectToAction("Login", "Account");
 
-            var owned = await LoadOwnedWordDetailAsync(id, userId);
+            var owned = await LoadOwnedWordDetailWithWordAsync(id, userId);
             if (owned == null)
             {
                 return NotFound();
             }
-            var wordDetail = owned.Value.Detail;
 
-            var properties = ReadPropertiesObject(wordDetail.Properties);
-            if (string.IsNullOrWhiteSpace(partOfSpeech))
+            var changed = await _enrichmentService.EnrichAsync(
+                owned.Value.Detail,
+                owned.Value.Word,
+                owned.Value.Quiz,
+                string.IsNullOrWhiteSpace(owned.Value.Detail.Word) ? owned.Value.Word.Lemma : owned.Value.Detail.Word,
+                string.IsNullOrWhiteSpace(owned.Value.Detail.TargetLanguage)
+                    ? owned.Value.Quiz.TargetLanguage
+                    : owned.Value.Detail.TargetLanguage,
+                force: true);
+
+            if (changed)
             {
-                properties.Remove("pos");
+                await _context.SaveChangesAsync();
+                TempData["WordDetailMessage"] = "Word details regenerated.";
             }
             else
             {
-                properties["pos"] = partOfSpeech.Trim();
+                TempData["WordDetailMessage"] = "No regenerated details were returned.";
             }
-
-            wordDetail.Properties = properties.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
-            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id });
         }
@@ -112,7 +119,7 @@ namespace Glosify.Controllers
         // POST: WordDetails/Create
         // Word details are shared cache rows keyed by language pair, word and translation.
         [HttpPost]
-        public async Task<IActionResult> Create([Bind("SourceLanguage,TargetLanguage,Word,Translation,Properties,ExampleSentence,Explanation,Variants,Language")] WordDetail wordDetail)
+        public async Task<IActionResult> Create([Bind("SourceLanguage,TargetLanguage,Word,Translation,ExampleSentence,Explanation,Variants,Language")] WordDetail wordDetail)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
@@ -145,6 +152,10 @@ namespace Glosify.Controllers
                 wordDetail.Language = string.IsNullOrWhiteSpace(wordDetail.Language)
                     ? key.TargetLanguage
                     : wordDetail.Language.Trim();
+                wordDetail.Properties = "{}";
+                wordDetail.Variants = string.IsNullOrWhiteSpace(wordDetail.Variants)
+                    ? "[]"
+                    : wordDetail.Variants;
                 wordDetail.CreatedAt = DateTimeOffset.UtcNow;
                 wordDetail.UpdatedAt = wordDetail.CreatedAt;
 
@@ -184,7 +195,7 @@ namespace Glosify.Controllers
         // The existing entity is loaded fresh and only allowlisted fields are copied —
         // never trust the posted QuizId.
         [HttpPost]
-        public async Task<IActionResult> Edit(string id, [Bind("Id,Properties,ExampleSentence,Explanation,Variants,Language")] WordDetail posted)
+        public async Task<IActionResult> Edit(string id, [Bind("Id,ExampleSentence,Explanation,Variants,Language")] WordDetail posted)
         {
             if (id != posted.Id)
             {
@@ -207,7 +218,6 @@ namespace Glosify.Controllers
                 return View(posted);
             }
 
-            existing.Properties = posted.Properties;
             existing.ExampleSentence = posted.ExampleSentence;
             existing.Explanation = posted.Explanation;
             existing.Variants = posted.Variants;
@@ -292,22 +302,16 @@ namespace Glosify.Controllers
             return pair == null ? null : (pair.detail, pair.quiz);
         }
 
-        private static JsonObject ReadPropertiesObject(string? json)
+        private async Task<(WordDetail Detail, Word Word, Quiz Quiz)?> LoadOwnedWordDetailWithWordAsync(string id, string userId)
         {
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                return [];
-            }
+            var pair = await (
+                from word in _context.Words
+                join quiz in _context.Quizzes on word.QuizId equals quiz.Id
+                join detail in _context.WordDetails on word.WordDetailId equals detail.Id
+                where detail.Id == id && quiz.UserId == userId
+                select new { detail, word, quiz }).FirstOrDefaultAsync();
 
-            try
-            {
-                var node = JsonNode.Parse(json);
-                return node as JsonObject ?? [];
-            }
-            catch (JsonException)
-            {
-                return [];
-            }
+            return pair == null ? null : (pair.detail, pair.word, pair.quiz);
         }
     }
 }

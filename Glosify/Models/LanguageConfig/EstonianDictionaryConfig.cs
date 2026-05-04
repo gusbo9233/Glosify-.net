@@ -8,12 +8,16 @@ namespace Glosify.Models.LanguageConfig
 
         public override WordClassConfig? GetWordClass(string pos) => pos switch
         {
-            "Noun" => WordClassConfig.FromSlots("Noun / Nimisona", "title",
-                new("Core Forms", [
+            "Noun" => WordClassConfig.FromSlots("Noun Cases", "title",
+                new("Core Singular", [
                     new("nominative", ["nominative", "singular"]),
-                    new("genitive", ["genitive"]),
-                    new("partitive", ["partitive"]),
+                    new("genitive", ["genitive", "singular"]),
+                    new("partitive", ["partitive", "singular"]),
+                ]),
+                new("Core Plural", [
                     new("plural nominative", ["nominative", "plural"]),
+                    new("plural genitive", ["genitive", "plural"]),
+                    new("plural partitive", ["partitive", "plural"]),
                 ]),
                 new("Local Cases", [
                     new("illative", ["illative", "singular"]),
@@ -31,10 +35,10 @@ namespace Glosify.Models.LanguageConfig
                     new("comitative", ["comitative", "singular"]),
                 ])),
 
-            "Verb" => WordClassConfig.FromSlots("Verb / Tegusona", "directions_run",
+            "Verb" => WordClassConfig.FromSlots("Verb Forms", "directions_run",
                 new("Principal Forms", [
-                    new("ma-infinitive", ["infinitive", "infinitive-ma"]),
-                    new("da-infinitive", ["infinitive", "infinitive-da"]),
+                    new("ma-infinitive", ["ma-infinitive"]),
+                    new("da-infinitive", ["da-infinitive"]),
                     new("Present participle", ["participle", "present", "active"]),
                     new("Past participle", ["participle", "past", "active"]),
                     new("Impersonal participle", ["participle", "past", "passive"]),
@@ -66,52 +70,59 @@ namespace Glosify.Models.LanguageConfig
                     new("impersonal past", ["impersonal", "indicative", "past"]),
                 ])),
 
-            "Adjective" => WordClassConfig.FromSlots("Adjective / Omadussona", "palette",
+            "Adjective" => WordClassConfig.FromSlots("Adjective Forms", "palette",
                 new("Degree", [
                     new("positive", ["positive"]),
                     new("comparative", ["comparative"]),
                     new("superlative", ["superlative"]),
                 ]),
-                new("Core Cases", [
+                new("Core Singular", [
                     new("nominative", ["nominative", "singular"]),
-                    new("genitive", ["genitive"]),
-                    new("partitive", ["partitive"]),
+                    new("genitive", ["genitive", "singular"]),
+                    new("partitive", ["partitive", "singular"]),
+                ]),
+                new("Core Plural", [
                     new("plural nominative", ["nominative", "plural"]),
+                    new("plural genitive", ["genitive", "plural"]),
+                    new("plural partitive", ["partitive", "plural"]),
                 ])),
 
-            "Pronoun" => WordClassConfig.FromSlots("Pronoun / Asesona", "person",
+            "Pronoun" => WordClassConfig.FromSlots("Pronoun Cases", "person",
                 new SlotGroup("Case Forms", [
                     new("nominative", ["nominative", "singular"]),
-                    new("genitive", ["genitive"]),
-                    new("partitive", ["partitive"]),
+                    new("genitive", ["genitive", "singular"]),
+                    new("partitive", ["partitive", "singular"]),
+                    new("illative", ["illative", "singular"]),
+                    new("inessive", ["inessive", "singular"]),
+                    new("elative", ["elative", "singular"]),
                 ])),
 
-            "Numeral" => WordClassConfig.FromSlots("Numeral / Arvsona", "pin",
+            "Numeral" => WordClassConfig.FromSlots("Numeral Cases", "pin",
                 new SlotGroup("Inflection", [
                     new("nominative", ["nominative", "singular"]),
-                    new("genitive", ["genitive"]),
-                    new("partitive", ["partitive"]),
+                    new("genitive", ["genitive", "singular"]),
+                    new("partitive", ["partitive", "singular"]),
                 ])),
 
-            "Adverb" => WordClassConfig.FromFacts("Adverb / Maarsona", "schedule",
+            "Adverb" => WordClassConfig.FromFacts("Adverb", "schedule",
                 new("Semantic Type", ["type", "semantic_type"]),
                 new("Origin", ["origin", "derivation"])),
 
-            "Preposition" => WordClassConfig.FromFacts("Adposition / Kaassona", "conversion_path",
+            "Preposition" => WordClassConfig.FromFacts("Adposition", "conversion_path",
                 new("Position", ["position", "type"]),
                 new("Governs Case", ["governs_case", "case"]),
                 new("Relationship", ["relationship", "meaning_type"])),
 
-            "Conjunction" => WordClassConfig.FromFacts("Conjunction / Sidesona", "lan",
+            "Conjunction" => WordClassConfig.FromFacts("Conjunction", "lan",
                 new("Type", ["type", "clause_type"]),
                 new("Connects", ["connects", "scope"]),
                 new("Punctuation", ["punctuation", "comma"])),
 
-            "Interjection" => WordClassConfig.FromFacts("Interjection / Huudsona", "campaign",
+            "Interjection" => WordClassConfig.FromFacts("Interjection", "campaign",
                 new("Tone", ["tone", "emotion"]),
                 new("Register", ["register", "style"])),
 
-            "Article" => WordClassConfig.FromFacts("Article / Artikkel", "view_column",
+            "Article" => WordClassConfig.FromFacts("Article", "view_column",
                 new FactDefinition("Definiteness Cues", ["definiteness", "cues"])),
 
             _ => null

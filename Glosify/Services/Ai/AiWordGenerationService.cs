@@ -1,4 +1,5 @@
 using Glosify.Models;
+using Glosify.Models.LanguageConfig;
 using Google.GenAI;
 using Google.GenAI.Types;
 using Microsoft.Extensions.Logging;
@@ -192,6 +193,8 @@ Rules:
 - ""translation"": the {knownLanguage} translation of the word
 {exampleSentenceRule}
 {exampleSentenceTranslationRule}
+- ""example_sentence"" MUST be a complete {targetLanguage} sentence or natural phrase with at least two words. It must not be a definition or explanation.
+- ""example_sentence_translation"" MUST translate the example sentence. It must not be copied into ""example_sentence"".
 
 Format:
 {{
@@ -218,6 +221,8 @@ Input:
         string knownLanguage,
         string targetLanguage)
     {
+        var grammarGuidance = BuildGrammarGuidance(targetLanguage);
+
         return $@"
 The user knows {knownLanguage} and is learning {targetLanguage}.
 Create grammatical word detail for this vocabulary item and return a JSON object.
@@ -233,10 +238,14 @@ Rules:
 - ""properties"" MUST be an object. Include ""pos"" using one of: noun, verb, article, adjective, pronoun, adverb, preposition, conjunction, numeral, interjection.
 - Add useful grammatical properties when relevant, such as gender, number, case, tense, aspect, mood, person, comparative, superlative, tags.
 - ""variants"" MUST be an array of objects with ""form"" and ""tags"".
-- Variant tags should be lowercase grammar tags such as nominative, genitive, singular, plural, infinitive, present, past, first-person.
-- Include only forms you are confident are correct. Use an empty array if no variants are useful.
+- Variant tags MUST be separate lowercase grammar tags, not combined labels. Use tags such as nominative, genitive, dative, accusative, singular, plural, infinitive, present, past, first-person, second-person, third-person, indicative, imperative, participle.
+- Include the canonical form itself as a variant when it has meaningful tags.
+- For inflected nouns, verbs, adjectives, pronouns, articles, and numerals, include the common learner forms you are confident are correct. Use an empty array only if no variants are genuinely useful.
+{grammarGuidance}
 - ""explanation"" MUST be a concise {knownLanguage} explanation of the word and its usage.
-- ""example_sentence"" MUST be a natural {targetLanguage} sentence using the word.
+- ""example_sentence"" MUST be a natural {targetLanguage} sentence using the word, with at least two words.
+- ""example_sentence"" MUST NOT be the explanation, translation, a definition, or a one-word answer.
+- ""explanation"" and ""example_sentence"" MUST be different strings in different languages.
 
 Format:
 {{
@@ -252,6 +261,30 @@ Format:
   ""explanation"": ""..."",
   ""example_sentence"": ""...""
 }}";
+    }
+
+    private static string BuildGrammarGuidance(string targetLanguage)
+    {
+        return LanguageResolver.ResolveLangCode(targetLanguage) switch
+        {
+            "de" => @"- German nouns: include nominative, genitive, dative, and accusative forms for singular and plural when applicable. Tag each with the case plus singular or plural.
+- German articles: include masculine, feminine, neuter, and plural case forms. Tag each with the case, gender when singular, and singular or plural.
+- German verbs: include infinitive, present indicative, simple past indicative, past participle, present participle, and common imperative forms. Use tags like present, past, indicative, participle, imperative, first-person, second-person, third-person, singular, plural.",
+
+            "et" => @"- Estonian nouns and adjectives: include nominative, genitive, partitive, illative, inessive, elative, allative, adessive, ablative, translative, terminative, essive, abessive, and comitative singular forms when applicable. Also include plural nominative, plural genitive, and plural partitive when confident.
+- Estonian verbs: include ma-infinitive and da-infinitive as tags exactly named ma-infinitive and da-infinitive. Include present and past indicative person/number forms plus common participles, conditional, imperative, quotative, and impersonal forms when confident.",
+
+            "pl" => @"- Polish nouns: include nominative, genitive, dative, accusative, instrumental, locative, and vocative forms for singular and plural when applicable. Tag each with the case plus singular or plural.
+- Polish adjectives: include nominative masculine, feminine, and neuter singular; nominative masculine-personal and non-masculine-personal plural; comparative and superlative when applicable.
+- Polish verbs: include infinitive and aspect tags imperfective or perfective. For present or future person forms, include the tag non-past plus person and number. For past forms, include past with masculine, feminine, neuter, masculine-personal, or non-masculine-personal as applicable.",
+
+            "uk" => @"- Ukrainian nouns: include nominative, genitive, dative, accusative, instrumental, locative, and vocative forms for singular and plural when applicable. Tag each with the case plus singular or plural.
+- Ukrainian adjectives: include nominative masculine, feminine, and neuter singular; nominative plural; comparative and superlative when applicable.
+- Ukrainian pronouns: if the vocabulary word is an oblique or possessive pronoun form such as його, її, йому, ним, мені, тебе, or нас, infer the base pronoun/paradigm and include its common nominative, genitive, dative, accusative, instrumental, and locative forms. Tag each variant with its case, and add person, number, gender, and possessive tags when useful. It is acceptable for the original surface form to appear in multiple cases when Ukrainian uses the same form.
+- Ukrainian verbs: include infinitive and aspect tags imperfective or perfective. For present or future person forms, include the tag non-past plus person and number. For past forms, include past with masculine, feminine, neuter, or plural as applicable. Include common imperative forms when confident.",
+
+            _ => @"- For case-based languages, include common noun, pronoun, article, adjective, and numeral case forms. Tag each variant with separate case, number, gender, person, tense, mood, aspect, and degree tags as applicable."
+        };
     }
 
     private string BuildWordExtractionPrompt(
@@ -287,6 +320,8 @@ Rules:
 - ""translation"": the {knownLanguage} translation of the word
 {exampleSentenceRule}
 {exampleSentenceTranslationRule}
+- ""example_sentence"" MUST be a complete {targetLanguage} sentence or natural phrase with at least two words. It must not be a definition or explanation.
+- ""example_sentence_translation"" MUST translate the example sentence. It must not be copied into ""example_sentence"".
 
 Format:
 {{

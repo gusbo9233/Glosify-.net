@@ -8,8 +8,8 @@ namespace Glosify.Models.LanguageConfig
         // The 2-letter code matches by equality; longer aliases match by Contains.
         IReadOnlyList<string> Aliases { get; }
 
-        // True for languages whose pronoun entries bundle every personal pronoun's paradigm into a
-        // single entry's variants array (Ukrainian, Polish). Drives view-side paradigm filtering.
+        // True only for legacy dictionary data whose pronoun entries bundle every personal pronoun's
+        // paradigm into a single variants array. Gemini-generated details should leave this false.
         bool BundlesPronounParadigm { get; }
 
         WordClassConfig? GetWordClass(string normalizedPartOfSpeech);

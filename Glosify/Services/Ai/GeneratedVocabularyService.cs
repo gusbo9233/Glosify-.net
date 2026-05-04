@@ -7,6 +7,8 @@ namespace Glosify.Services;
 
 public class GeneratedVocabularyService : IGeneratedVocabularyService
 {
+    private static readonly Regex WordPattern = new(@"[\p{L}\p{M}\p{N}]+", RegexOptions.Compiled);
+
     private readonly GlosifyContext _context;
     private readonly IQuizService _quizService;
     private readonly IAiWordGenerationService _aiWordGenerationService;
@@ -80,6 +82,10 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
 
             var aiExampleSentence = ResolveExampleSentence(trimmedLemma, generatedWord, sourceSentences);
             var aiExplanation = generatedWord.ExampleSentenceTranslation?.Trim() ?? string.Empty;
+            if (!IsUsefulExampleSentence(aiExampleSentence, aiExplanation))
+            {
+                aiExampleSentence = string.Empty;
+            }
 
             var wordDetail = await GetOrCreateWordDetailAsync(
                 quiz.SourceLanguage,
@@ -145,7 +151,26 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
     private static string? FindSourceSentence(string word, IReadOnlyList<string> sourceSentences)
     {
         var pattern = $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(word)}(?![\p{{L}}\p{{M}}])";
-        return sourceSentences.FirstOrDefault(sentence => Regex.IsMatch(sentence, pattern, RegexOptions.IgnoreCase));
+        return sourceSentences
+            .Where(sentence => WordPattern.Matches(sentence).Count >= 2)
+            .FirstOrDefault(sentence => Regex.IsMatch(sentence, pattern, RegexOptions.IgnoreCase));
+    }
+
+    private static bool IsUsefulExampleSentence(string? exampleSentence, string? explanation)
+    {
+        if (string.IsNullOrWhiteSpace(exampleSentence))
+        {
+            return false;
+        }
+
+        var trimmed = exampleSentence.Trim();
+        if (WordPattern.Matches(trimmed).Count < 2)
+        {
+            return false;
+        }
+
+        return string.IsNullOrWhiteSpace(explanation)
+            || !string.Equals(trimmed, explanation.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<WordDetail> GetOrCreateWordDetailAsync(
