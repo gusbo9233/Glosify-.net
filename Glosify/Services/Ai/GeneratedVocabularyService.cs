@@ -46,9 +46,10 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         IReadOnlyList<string> sourceSentences;
         try
         {
-            sourceSentences = ExtractSourceSentences(input);
+            var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
+            sourceSentences = ExtractSourceSentences(cleanedInput);
             generatedWords = await _aiWordGenerationService.GenerateWordsFromTextAsync(
-                input,
+                cleanedInput,
                 quiz.SourceLanguage,
                 quiz.TargetLanguage,
                 sourceSentences);
@@ -134,7 +135,7 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
 
     private static IReadOnlyList<string> ExtractSourceSentences(string input)
     {
-        return Regex.Split(input, @"(?<=[.!?])\s+|\r?\n+")
+        return Regex.Split(VocabularyInputCleaner.CleanForVocabulary(input), @"(?<=[.!?])\s+|\r?\n+")
             .Select(sentence => sentence.Trim())
             .Where(sentence => !string.IsNullOrWhiteSpace(sentence))
             .ToList();

@@ -12,17 +12,11 @@ namespace Glosify.Services;
 public class AiWordGenerationService : IAiWordGenerationService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private static readonly string[] PronunciationMarkers =
-    [
-        "pronunciation",
-        "pronounciation",
-        "pronounced",
-        "pronounce",
-        "sounds like",
-        "say it like",
-        "phonetic",
-        "ipa"
-    ];
+    private const string SystemInstruction = """
+You are a computational linguistics expert generating structured language-learning data.
+You are careful with messy learner notes: distinguish the actual target-language material from UI labels, translations, pronunciation aids, grammar labels, gender markers, language codes, and formatting artifacts.
+Return only clean, learner-facing JSON. Never include markdown, explanations outside JSON, or note artifacts in vocabulary items.
+""";
 
     private static readonly HashSet<string> AppActionWords = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -50,14 +44,15 @@ public class AiWordGenerationService : IAiWordGenerationService
         string knownLanguage,
         string targetLanguage)
     {
-        var json = await GenerateWordsWithAssistant(input, knownLanguage, targetLanguage);
+        var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
+        var json = await GenerateWordsWithAssistant(cleanedInput, knownLanguage, targetLanguage);
         if (!ValidateResponse(json))
         {
             _logger.LogWarning("Gemini word-extraction response failed validation for {KnownLanguage}->{TargetLanguage}", knownLanguage, targetLanguage);
             throw new InvalidOperationException("The AI assistant returned an unexpected response format.");
         }
 
-        return JsonSerializer.Deserialize<Dictionary<string, GeneratedWord>>(json) ?? [];
+        return NormalizeGeneratedWords(json, cleanedInput);
     }
 
     public async Task<GeneratedWordDetail?> GenerateWordDetailAsync(
@@ -92,18 +87,20 @@ public class AiWordGenerationService : IAiWordGenerationService
         string targetLanguage,
         IReadOnlyList<string> sourceSentences)
     {
+        var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
+        var cleanedSourceSentences = VocabularyInputCleaner.CleanSourceSentences(sourceSentences);
         var json = await GenerateWordsWithAssistant(
-            input,
+            cleanedInput,
             knownLanguage,
             targetLanguage,
-            sourceSentences);
+            cleanedSourceSentences);
         if (!ValidateResponse(json))
         {
             _logger.LogWarning("Gemini word-extraction response failed validation for {KnownLanguage}->{TargetLanguage} with {SentenceCount} source sentences", knownLanguage, targetLanguage, sourceSentences.Count);
             throw new InvalidOperationException("The AI assistant returned an unexpected response format.");
         }
 
-        return JsonSerializer.Deserialize<Dictionary<string, GeneratedWord>>(json) ?? [];
+        return NormalizeGeneratedWords(json, cleanedInput);
     }
 
     public bool ValidateResponse(string json)
@@ -120,6 +117,9 @@ public class AiWordGenerationService : IAiWordGenerationService
                 if (!val.TryGetProperty("translation", out var translation) || translation.ValueKind != JsonValueKind.String) return false;
                 if (!val.TryGetProperty("example_sentence", out var example) || example.ValueKind != JsonValueKind.String) return false;
                 if (!val.TryGetProperty("example_sentence_translation", out var exampleTranslation) || exampleTranslation.ValueKind != JsonValueKind.String) return false;
+                if (!IsCleanVocabularyKey(entry.Name)) return false;
+                if (!IsCleanTranslation(translation.GetString())) return false;
+                if (!IsCleanExampleSentence(example.GetString())) return false;
             }
 
             return true;
@@ -139,7 +139,7 @@ public class AiWordGenerationService : IAiWordGenerationService
         var response = await client.Models.GenerateContentAsync(
             model: _model,
             contents: prompt,
-            config: new GenerateContentConfig { ResponseMimeType = "application/json" }
+            config: CreateJsonConfig(4_000)
         );
 
         return response.Candidates?[0].Content?.Parts?[0].Text ?? string.Empty;
@@ -158,7 +158,7 @@ public class AiWordGenerationService : IAiWordGenerationService
         var response = await client.Models.GenerateContentAsync(
             model: _model,
             contents: prompt,
-            config: new GenerateContentConfig { ResponseMimeType = "application/json" }
+            config: CreateJsonConfig(8_000)
         );
 
         return response.Candidates?[0].Content?.Parts?[0].Text ?? string.Empty;
@@ -177,7 +177,7 @@ public class AiWordGenerationService : IAiWordGenerationService
         var response = await client.Models.GenerateContentAsync(
             model: _model,
             contents: prompt,
-            config: new GenerateContentConfig { ResponseMimeType = "application/json" }
+            config: CreateJsonConfig(4_000)
         );
 
         return response.Candidates?[0].Content?.Parts?[0].Text ?? string.Empty;
@@ -192,11 +192,26 @@ public class AiWordGenerationService : IAiWordGenerationService
         }
     }
 
+    private static GenerateContentConfig CreateJsonConfig(int maxOutputTokens)
+    {
+        return new GenerateContentConfig
+        {
+            SystemInstruction = new Content
+            {
+                Parts = [new Part { Text = SystemInstruction }]
+            },
+            ResponseMimeType = "application/json",
+            Temperature = 0.2f,
+            MaxOutputTokens = maxOutputTokens
+        };
+    }
+
     private string BuildWordExtractionPrompt(string input, string knownLanguage, string targetLanguage)
     {
-        var candidateWords = ExtractCandidateWords(input);
+        var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
+        var candidateWords = ExtractCandidateWords(cleanedInput);
         var candidates = string.Join("\n", candidateWords.Select(word => $"- {word}"));
-        var extractedSourceSentences = ExtractSourceSentences(input);
+        var extractedSourceSentences = ExtractSourceSentences(cleanedInput);
         var useSourceSentences = ShouldUseSourceSentences(extractedSourceSentences);
         var sourceSentences = string.Join("\n", extractedSourceSentences.Select(sentence => $"- {sentence}"));
         var exampleSentenceRule = useSourceSentences
@@ -213,15 +228,17 @@ Extract vocabulary from the input below and return a JSON object.
 Rules:
 - Output MUST be valid JSON only. No explanations, no extra text.
 - Extract only vocabulary items that are actually written in {targetLanguage}.
-- The candidate list is a hint list, not a command to include everything.
-- Ignore words from {knownLanguage}, UI labels, buttons, menu text, metadata, and helper text.
-- Ignore pronunciation notes and phonetic hints. Do not extract words from phrases such as ""pronunciation of"", ""pronounced"", ""sounds like"", ""say it like"", ""IPA"", or romanization notes.
-- If a line pairs a word with a pronunciation hint, include only the real {targetLanguage} vocabulary word, never the pronunciation helper words.
+- Use the TOKENS list as the authoritative list of possible surface forms. Do not invent words outside TOKENS.
+- Keep keys as surface tokens only. Do not convert them to dictionary/headword/base forms during extraction.
+- Treat the input as messy learner notes. First identify the clean {targetLanguage} text, then extract vocabulary from that clean text only.
+- Ignore anything that functions as annotation, UI text, metadata, labels, grammar notes, gender notes, language names/codes, translations, pronunciation help, romanization, phonetic spelling, formatting symbols, or copy/paste artifacts.
+- Do not copy wrappers or note markers into output. Words and example sentences must be clean learner-facing {targetLanguage}, without parentheses, brackets, slash labels, gender labels, language labels, or helper symbols unless the symbol is genuinely part of the target-language spelling.
+- If a token could be either real {targetLanguage} vocabulary or surrounding annotation, include it only when the surrounding text clearly uses it as {targetLanguage}.
 - Preserve included candidate words exactly as written, including inflected forms.
 - Include proper nouns for places, countries, languages, and nationalities only when they are in {targetLanguage}.
 - Include short/common words only when they are real {targetLanguage} vocabulary in the pasted material, not UI or helper text.
 - Do not merge separate candidate words into phrases.
-- Each key is one included candidate word in {targetLanguage}.
+- Each key is one included token in {targetLanguage}, copied exactly from TOKENS.
 - Each value is an object with:
 - ""translation"": the {knownLanguage} translation of the word
 {exampleSentenceRule}
@@ -238,14 +255,14 @@ Format:
 }}
 }}
 
-Possible candidate words:
+TOKENS:
 {candidates}
 
 Source sentences:
 {sourceSentences}
 
 Input:
-{input}";
+{cleanedInput}";
     }
 
     private static string BuildWordDetailPrompt(
@@ -266,6 +283,8 @@ Vocabulary:
 
 Rules:
 - Output MUST be valid JSON only. No explanations, no extra text.
+- Generate this from your language knowledge. Do not assume a dictionary lookup has already happened.
+- Treat the given word as the learner's surface vocabulary item. Include its base/dictionary form in variants or properties only when helpful; do not replace the requested word.
 - Do not invent rare or archaic forms unless they are central to normal use.
 - Keep values concise and learner-friendly.
 - ""properties"" MUST be an object. Include ""pos"" using one of: noun, verb, article, adjective, pronoun, adverb, preposition, conjunction, numeral, interjection.
@@ -273,12 +292,14 @@ Rules:
 - ""variants"" MUST be an array of objects with ""form"" and ""tags"".
 - Variant tags MUST be separate lowercase grammar tags, not combined labels. Use tags such as nominative, genitive, dative, accusative, singular, plural, infinitive, present, past, first-person, second-person, third-person, indicative, imperative, participle.
 - Include the canonical form itself as a variant when it has meaningful tags.
+- MUST include the requested surface word itself as a variant when variants are useful.
 - For inflected nouns, verbs, adjectives, pronouns, articles, and numerals, include the common learner forms you are confident are correct. Use an empty array only if no variants are genuinely useful.
 {grammarGuidance}
 - ""explanation"" MUST be a concise {knownLanguage} explanation of the word and its usage.
 - ""example_sentence"" MUST be a natural {targetLanguage} sentence using the word, with at least two words.
 - ""example_sentence"" MUST NOT be the explanation, translation, a definition, or a one-word answer.
 - ""explanation"" and ""example_sentence"" MUST be different strings in different languages.
+- Do not include learner-note wrappers or artifacts such as parentheses, brackets, slash labels, gender labels, language labels, pronunciation notes, or romanization unless they are genuinely part of the target-language spelling.
 
 Format:
 {{
@@ -326,10 +347,12 @@ Format:
         string targetLanguage,
         IReadOnlyList<string> sourceSentences)
     {
-        var candidateWords = ExtractCandidateWords(input);
+        var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
+        var cleanedSourceSentences = VocabularyInputCleaner.CleanSourceSentences(sourceSentences);
+        var candidateWords = ExtractCandidateWords(cleanedInput);
         var candidates = string.Join("\n", candidateWords.Select(word => $"- {word}"));
-        var sentences = string.Join("\n", sourceSentences.Select(sentence => $"- {sentence}"));
-        var useSourceSentences = ShouldUseSourceSentences(sourceSentences);
+        var sentences = string.Join("\n", cleanedSourceSentences.Select(sentence => $"- {sentence}"));
+        var useSourceSentences = ShouldUseSourceSentences(cleanedSourceSentences);
         var exampleSentenceRule = useSourceSentences
             ? "- \"example_sentence\": the exact source sentence or phrase from the list below that contains the word"
             : $"- \"example_sentence\": a natural example sentence in {targetLanguage} using the word";
@@ -344,15 +367,17 @@ Extract vocabulary from the input below and return a JSON object.
 Rules:
 - Output MUST be valid JSON only. No explanations, no extra text.
 - Extract only vocabulary items that are actually written in {targetLanguage}.
-- The candidate list is a hint list, not a command to include everything.
-- Ignore words from {knownLanguage}, UI labels, buttons, menu text, metadata, and helper text.
-- Ignore pronunciation notes and phonetic hints. Do not extract words from phrases such as ""pronunciation of"", ""pronounced"", ""sounds like"", ""say it like"", ""IPA"", or romanization notes.
-- If a line pairs a word with a pronunciation hint, include only the real {targetLanguage} vocabulary word, never the pronunciation helper words.
+- Use the TOKENS list as the authoritative list of possible surface forms. Do not invent words outside TOKENS.
+- Keep keys as surface tokens only. Do not convert them to dictionary/headword/base forms during extraction.
+- Treat the input as messy learner notes. First identify the clean {targetLanguage} text, then extract vocabulary from that clean text only.
+- Ignore anything that functions as annotation, UI text, metadata, labels, grammar notes, gender notes, language names/codes, translations, pronunciation help, romanization, phonetic spelling, formatting symbols, or copy/paste artifacts.
+- Do not copy wrappers or note markers into output. Words and example sentences must be clean learner-facing {targetLanguage}, without parentheses, brackets, slash labels, gender labels, language labels, or helper symbols unless the symbol is genuinely part of the target-language spelling.
+- If a token could be either real {targetLanguage} vocabulary or surrounding annotation, include it only when the surrounding text clearly uses it as {targetLanguage}.
 - Preserve included candidate words exactly as written, including inflected forms.
 - Include proper nouns for places, countries, languages, and nationalities only when they are in {targetLanguage}.
 - Include short/common words only when they are real {targetLanguage} vocabulary in the pasted material, not UI or helper text.
 - Do not merge separate candidate words into phrases.
-- Each key is one included candidate word in {targetLanguage}.
+- Each key is one included token in {targetLanguage}, copied exactly from TOKENS.
 - Each value is an object with:
 - ""translation"": the {knownLanguage} translation of the word
 {exampleSentenceRule}
@@ -369,58 +394,72 @@ Format:
 }}
 }}
 
-Possible candidate words:
+TOKENS:
 {candidates}
 
 Source sentences:
 {sentences}
 
 Input:
-{input}";
+{cleanedInput}";
     }
 
     private static IReadOnlyList<string> ExtractCandidateWords(string input)
     {
-        return Regex.Matches(RemovePronunciationNotes(input), @"[\p{L}\p{M}]+(?:[''][\p{L}\p{M}]+)?")
+        return Regex.Matches(VocabularyInputCleaner.CleanForVocabulary(input), @"[\p{L}\p{M}]+(?:[''][\p{L}\p{M}]+)?")
             .Select(match => match.Value.Trim())
             .Where(word => !string.IsNullOrWhiteSpace(word) && !AppActionWords.Contains(word))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
-    private static string RemovePronunciationNotes(string input)
-    {
-        var lines = Regex.Split(input, @"\r?\n");
-        var cleanedLines = lines.Select(line =>
-        {
-            var markerIndex = FindFirstPronunciationMarker(line);
-            return markerIndex < 0 ? line : line[..markerIndex];
-        });
-
-        return string.Join("\n", cleanedLines);
-    }
-
-    private static int FindFirstPronunciationMarker(string line)
-    {
-        var firstIndex = -1;
-        foreach (var marker in PronunciationMarkers)
-        {
-            var match = Regex.Match(line, $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(marker)}(?![\p{{L}}\p{{M}}])", RegexOptions.IgnoreCase);
-            if (match.Success && (firstIndex < 0 || match.Index < firstIndex))
-            {
-                firstIndex = match.Index;
-            }
-        }
-
-        return firstIndex;
-    }
-
     private static IReadOnlyList<string> ExtractSourceSentences(string input)
     {
-        return Regex.Split(input, @"(?<=[.!?])\s+|\r?\n+")
+        return Regex.Split(VocabularyInputCleaner.CleanForVocabulary(input), @"(?<=[.!?])\s+|\r?\n+")
             .Select(sentence => sentence.Trim())
             .Where(sentence => !string.IsNullOrWhiteSpace(sentence))
             .ToList();
+    }
+
+    private static IReadOnlyDictionary<string, GeneratedWord> NormalizeGeneratedWords(string json, string input)
+    {
+        var generated = JsonSerializer.Deserialize<Dictionary<string, GeneratedWord>>(json) ?? [];
+        var tokens = new HashSet<string>(ExtractCandidateWords(input), StringComparer.OrdinalIgnoreCase);
+        var normalized = new Dictionary<string, GeneratedWord>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (word, generatedWord) in generated)
+        {
+            var trimmedWord = word.Trim();
+            if (!tokens.Contains(trimmedWord)
+                || !IsCleanVocabularyKey(trimmedWord)
+                || !IsCleanTranslation(generatedWord.Translation)
+                || !IsCleanExampleSentence(generatedWord.ExampleSentence))
+            {
+                continue;
+            }
+
+            normalized[trimmedWord] = generatedWord;
+        }
+
+        return normalized;
+    }
+
+    private static bool IsCleanVocabularyKey(string? value)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && !Regex.IsMatch(value, @"[0-9()[\]{}\\/|]");
+    }
+
+    private static bool IsCleanTranslation(string? value)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && !Regex.IsMatch(value, @"[()[\]{}\\/|]");
+    }
+
+    private static bool IsCleanExampleSentence(string? value)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && !Regex.IsMatch(value, @"[()[\]{}\\/|]");
     }
 
     private static bool ShouldUseSourceSentences(IReadOnlyList<string> sourceSentences)
