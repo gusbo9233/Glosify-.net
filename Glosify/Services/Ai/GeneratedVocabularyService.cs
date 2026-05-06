@@ -75,6 +75,7 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
 
             if (string.IsNullOrWhiteSpace(trimmedLemma)
                 || string.IsNullOrWhiteSpace(translation)
+                || IsPronunciationHint(translation)
                 || existing.Contains(trimmedLemma))
             {
                 continue;
@@ -171,6 +172,14 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
 
         return string.IsNullOrWhiteSpace(explanation)
             || !string.Equals(trimmed, explanation.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPronunciationHint(string translation)
+    {
+        return Regex.IsMatch(
+            translation,
+            @"(?<![\p{L}\p{M}])(pronunciation|pronounciation|pronounced|pronounce|sounds like|say it like|phonetic|ipa)(?![\p{L}\p{M}])",
+            RegexOptions.IgnoreCase);
     }
 
     private async Task<WordDetail> GetOrCreateWordDetailAsync(

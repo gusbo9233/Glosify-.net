@@ -12,6 +12,25 @@ namespace Glosify.Services;
 public class AiWordGenerationService : IAiWordGenerationService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly string[] PronunciationMarkers =
+    [
+        "pronunciation",
+        "pronounciation",
+        "pronounced",
+        "pronounce",
+        "sounds like",
+        "say it like",
+        "phonetic",
+        "ipa"
+    ];
+
+    private static readonly HashSet<string> AppActionWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "open",
+        "delete",
+        "translate"
+    };
+
     private readonly string _apiKey;
     private readonly string _model;
     private readonly ILogger<AiWordGenerationService> _logger;
@@ -193,12 +212,16 @@ Extract vocabulary from the input below and return a JSON object.
 
 Rules:
 - Output MUST be valid JSON only. No explanations, no extra text.
-- Include EVERY distinct candidate word listed below.
-- Preserve each candidate word exactly as written, including inflected forms.
-- Include proper nouns for places, countries, languages, and nationalities.
-- Include short/common words too, such as auxiliaries, prepositions, and adverbs.
+- Extract only vocabulary items that are actually written in {targetLanguage}.
+- The candidate list is a hint list, not a command to include everything.
+- Ignore words from {knownLanguage}, UI labels, buttons, menu text, metadata, and helper text.
+- Ignore pronunciation notes and phonetic hints. Do not extract words from phrases such as ""pronunciation of"", ""pronounced"", ""sounds like"", ""say it like"", ""IPA"", or romanization notes.
+- If a line pairs a word with a pronunciation hint, include only the real {targetLanguage} vocabulary word, never the pronunciation helper words.
+- Preserve included candidate words exactly as written, including inflected forms.
+- Include proper nouns for places, countries, languages, and nationalities only when they are in {targetLanguage}.
+- Include short/common words only when they are real {targetLanguage} vocabulary in the pasted material, not UI or helper text.
 - Do not merge separate candidate words into phrases.
-- Each key is one candidate word in {targetLanguage}.
+- Each key is one included candidate word in {targetLanguage}.
 - Each value is an object with:
 - ""translation"": the {knownLanguage} translation of the word
 {exampleSentenceRule}
@@ -215,7 +238,7 @@ Format:
 }}
 }}
 
-Candidate words:
+Possible candidate words:
 {candidates}
 
 Source sentences:
@@ -320,12 +343,16 @@ Extract vocabulary from the input below and return a JSON object.
 
 Rules:
 - Output MUST be valid JSON only. No explanations, no extra text.
-- Include EVERY distinct candidate word listed below.
-- Preserve each candidate word exactly as written, including inflected forms.
-- Include proper nouns for places, countries, languages, and nationalities.
-- Include short/common words too, such as auxiliaries, prepositions, and adverbs.
+- Extract only vocabulary items that are actually written in {targetLanguage}.
+- The candidate list is a hint list, not a command to include everything.
+- Ignore words from {knownLanguage}, UI labels, buttons, menu text, metadata, and helper text.
+- Ignore pronunciation notes and phonetic hints. Do not extract words from phrases such as ""pronunciation of"", ""pronounced"", ""sounds like"", ""say it like"", ""IPA"", or romanization notes.
+- If a line pairs a word with a pronunciation hint, include only the real {targetLanguage} vocabulary word, never the pronunciation helper words.
+- Preserve included candidate words exactly as written, including inflected forms.
+- Include proper nouns for places, countries, languages, and nationalities only when they are in {targetLanguage}.
+- Include short/common words only when they are real {targetLanguage} vocabulary in the pasted material, not UI or helper text.
 - Do not merge separate candidate words into phrases.
-- Each key is one candidate word in {targetLanguage}.
+- Each key is one included candidate word in {targetLanguage}.
 - Each value is an object with:
 - ""translation"": the {knownLanguage} translation of the word
 {exampleSentenceRule}
@@ -342,7 +369,7 @@ Format:
 }}
 }}
 
-Candidate words:
+Possible candidate words:
 {candidates}
 
 Source sentences:
@@ -354,11 +381,38 @@ Input:
 
     private static IReadOnlyList<string> ExtractCandidateWords(string input)
     {
-        return Regex.Matches(input, @"[\p{L}\p{M}]+(?:[''][\p{L}\p{M}]+)?")
+        return Regex.Matches(RemovePronunciationNotes(input), @"[\p{L}\p{M}]+(?:[''][\p{L}\p{M}]+)?")
             .Select(match => match.Value.Trim())
-            .Where(word => !string.IsNullOrWhiteSpace(word))
+            .Where(word => !string.IsNullOrWhiteSpace(word) && !AppActionWords.Contains(word))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static string RemovePronunciationNotes(string input)
+    {
+        var lines = Regex.Split(input, @"\r?\n");
+        var cleanedLines = lines.Select(line =>
+        {
+            var markerIndex = FindFirstPronunciationMarker(line);
+            return markerIndex < 0 ? line : line[..markerIndex];
+        });
+
+        return string.Join("\n", cleanedLines);
+    }
+
+    private static int FindFirstPronunciationMarker(string line)
+    {
+        var firstIndex = -1;
+        foreach (var marker in PronunciationMarkers)
+        {
+            var match = Regex.Match(line, $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(marker)}(?![\p{{L}}\p{{M}}])", RegexOptions.IgnoreCase);
+            if (match.Success && (firstIndex < 0 || match.Index < firstIndex))
+            {
+                firstIndex = match.Index;
+            }
+        }
+
+        return firstIndex;
     }
 
     private static IReadOnlyList<string> ExtractSourceSentences(string input)
