@@ -718,8 +718,8 @@ body {
         position: absolute;
         inset: 0;
         background:
-            linear-gradient(90deg, rgba(4, 19, 41, 0.96), rgba(4, 19, 41, 0.68), rgba(4, 19, 41, 0.28)),
-            url("https://lh3.googleusercontent.com/aida-public/AB6AXuD9ss3rayFXW6xbDfKwaWBT4tK6nB7OYhS-_oAQ5EUQg0LV37lAgcAP0BfOGQjIP0OUbut82CxKStIFZxhrIXMToHIrYGohkAar3phWh2_YkdFuYTZD2EyHJAqdz9X0ygdDjHTzQMns53BMNCvUs17_ySAgafcimd1KyITVfwOJsxh_AIQVAvn8H3vAFgjRS-HirR_bhEEFTX4B0vbAxC-Uf2m3uv0JbgFoTnvNJKNHLZOWu1XmnMRfBZAUCY8S1gr4YTaV25E58IrV") center/cover;
+            linear-gradient(90deg, rgba(4, 19, 41, 0.98), rgba(4, 19, 41, 0.78), rgba(4, 19, 41, 0.38)),
+            url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1600&q=80") center/cover;
     }
 
     .workspace-hero-content {
@@ -844,6 +844,62 @@ body {
         letter-spacing: 0.08em;
         text-transform: uppercase;
         margin-bottom: 8px;
+    }
+
+    .visually-hidden {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+    }
+
+    .scan-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+    .btn-scan-text {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 42px;
+        border: 1px solid rgba(83, 224, 118, 0.28);
+        border-radius: 9999px;
+        background: rgba(83, 224, 118, 0.10);
+        color: var(--primary);
+        cursor: pointer;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 850;
+        padding: 0 16px;
+    }
+
+    .btn-scan-text:disabled {
+        cursor: wait;
+        opacity: 0.62;
+    }
+
+    .btn-scan-text .material-symbols-outlined {
+        font-size: 20px;
+    }
+
+    .scan-status {
+        color: var(--on-surface-var);
+        font-size: 12px;
+        font-weight: 750;
+        line-height: 1.35;
+    }
+
+    .scan-status.is-error {
+        color: var(--error);
     }
 
     .form-input,
@@ -2726,8 +2782,83 @@ body { margin: 0; }
 .back-to-login .material-symbols-outlined { font-size: 18px; }
 
 @media (max-width: 540px) {
-    .glass-card { padding: 32px 24px; }
-    .legal-links { gap: 18px; }
+    .auth-body {
+        align-items: flex-start;
+        padding: 16px 14px;
+    }
+
+    .brand-stack {
+        margin-bottom: 20px;
+    }
+
+    .brand-orb {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 14px;
+    }
+
+    .brand-orb .material-symbols-outlined {
+        font-size: 30px;
+    }
+
+    .brand-stack h1 {
+        font-size: 30px;
+    }
+
+    .glass-card {
+        border-radius: 18px;
+        padding: 26px 20px;
+    }
+
+    .auth-card-header {
+        margin-bottom: 22px;
+    }
+
+    .auth-card-header h2 {
+        font-size: 22px;
+    }
+
+    .auth-form {
+        gap: 16px;
+    }
+
+    .field-input {
+        padding: 14px 16px;
+    }
+
+    .btn-primary-pill,
+    .btn-social {
+        min-height: 48px;
+        padding: 13px 16px;
+    }
+
+    .auth-divider {
+        margin: 22px 0;
+    }
+
+    .auth-footer {
+        margin-top: 22px;
+    }
+
+    .legal-links {
+        flex-wrap: wrap;
+        gap: 12px 18px;
+        margin-top: 24px;
+    }
+}
+
+@media (max-width: 380px) {
+    .auth-body {
+        padding-inline: 10px;
+    }
+
+    .glass-card {
+        padding: 22px 16px;
+    }
+
+    .auth-divider span {
+        padding-inline: 10px;
+    }
 }
 
 /* =============================================================
@@ -2998,14 +3129,336 @@ body { margin: 0; }
     width: 100%;
 }
 
+.app-mobile-brand,
+.app-mobile-nav {
+    display: none;
+}
+
 @media (max-width: 900px) {
+    .app-body {
+        padding-bottom: calc(76px + env(safe-area-inset-bottom));
+    }
+
     .app-sidebar {
         position: fixed;
         transform: translateX(-100%);
         transition: transform var(--dur-base) var(--ease-standard);
     }
 
-    .app-canvas { padding: 24px 18px 64px; }
+    .app-mobile-brand {
+        display: inline-flex;
+        color: var(--primary);
+        font-family: var(--font-display);
+        font-size: 18px;
+        font-style: italic;
+        font-weight: 850;
+        letter-spacing: 0;
+        line-height: 1;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .app-canvas { padding: 24px 18px 32px; }
 
     .app-topbar { padding: 12px 18px; }
+
+    .app-search {
+        max-width: none;
+        min-width: 0;
+    }
+
+    .app-topbar-right {
+        flex-shrink: 0;
+    }
+
+    .app-mobile-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 80;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+        padding: 8px max(10px, env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right));
+        border-top: 1px solid rgba(61, 74, 61, 0.42);
+        background: rgba(4, 19, 41, 0.94);
+        backdrop-filter: blur(22px);
+        -webkit-backdrop-filter: blur(22px);
+    }
+
+    .app-mobile-nav a,
+    .app-mobile-nav .app-nav-item {
+        min-width: 0;
+        min-height: 56px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        border-radius: 8px;
+        color: var(--on-surface-var);
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.1;
+        padding: 6px;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    .app-mobile-nav a.is-active,
+    .app-mobile-nav .app-nav-item.is-active {
+        background: rgba(83, 224, 118, 0.12);
+        color: var(--primary);
+    }
+
+    .app-mobile-nav .nav-svg-icon,
+    .app-mobile-nav .material-symbols-outlined {
+        width: 22px;
+        height: 22px;
+        flex: 0 0 auto;
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 700px) {
+    .app-topbar {
+        gap: 12px;
+    }
+
+    .app-search,
+    .app-topbar-right .icon-button:not([title="Log out"]) {
+        display: none;
+    }
+
+    .app-topbar .account-avatar,
+    .app-topbar .btn-social-form {
+        display: none;
+    }
+
+    .btn-login {
+        min-height: 38px;
+        padding: 8px 12px;
+    }
+
+    .language-page {
+        gap: 32px;
+        padding-bottom: 28px;
+    }
+
+    .language-tagline {
+        font-size: 30px;
+    }
+
+    .language-card {
+        gap: 16px;
+        padding: 26px 18px;
+    }
+
+    .workspace,
+    .select-quiz-page,
+    .settings-shell,
+    .flash-shell,
+    .typing-shell,
+    .detail-page {
+        gap: 22px;
+        padding-bottom: 28px;
+    }
+
+    .workspace-hero {
+        min-height: 0;
+        padding: 28px 20px;
+    }
+
+    .hero-title,
+    .select-title,
+    .page-title,
+    .flash-title {
+        font-size: 30px;
+        letter-spacing: 0;
+    }
+
+    .hero-actions {
+        display: grid;
+        gap: 10px;
+    }
+
+    .scan-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .btn-scan-text {
+        width: 100%;
+    }
+
+    .btn-hero,
+    .btn-submit,
+    .btn-start,
+    .btn-main,
+    .btn-check {
+        width: 100%;
+        min-height: 48px;
+        padding-inline: 16px;
+    }
+
+    .panel,
+    .settings-panel,
+    .start-panel,
+    .modal,
+    .detail-section,
+    .meta-panel {
+        padding: 20px;
+    }
+
+    .collection-header,
+    .select-header,
+    .detail-topbar,
+    .progress-meta {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .tab-group,
+    .detail-actions,
+    .modal-actions {
+        width: 100%;
+    }
+
+    .tab {
+        flex: 1;
+        padding-inline: 12px;
+    }
+
+    .word-grid,
+    .sentence-grid,
+    .quiz-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .word-card {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 14px;
+        padding: 18px;
+    }
+
+    .word-actions {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .sentence-card-top {
+        gap: 12px;
+    }
+
+    .detail-hero,
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero-panel {
+        padding: 24px 20px;
+    }
+
+    .detail-title {
+        font-size: 34px;
+    }
+
+    .variant-row {
+        grid-template-columns: 1fr;
+    }
+
+    .slot-table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    .flashcard {
+        min-height: 260px;
+        padding: 24px 18px;
+    }
+
+    .typing-card {
+        padding: 24px 16px;
+    }
+
+    .answer-input {
+        font-size: 18px;
+        padding: 18px 16px;
+    }
+
+    .table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .row {
+        display: block;
+    }
+
+    [class*="col-"] {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
+@media (max-width: 430px) {
+    .app-canvas {
+        padding-inline: 12px;
+    }
+
+    .app-topbar {
+        padding-inline: 12px;
+    }
+
+    .app-mobile-brand {
+        font-size: 16px;
+    }
+
+    .btn-login span {
+        display: none;
+    }
+
+    .language-brand {
+        font-size: 22px;
+    }
+
+    .language-tagline {
+        font-size: 26px;
+    }
+
+    .workspace-hero,
+    .panel,
+    .settings-panel,
+    .start-panel,
+    .modal,
+    .detail-section,
+    .meta-panel,
+    .hero-panel {
+        padding: 18px;
+    }
+
+    .modal-backdrop {
+        align-items: flex-end;
+        padding: 12px;
+    }
+
+    .modal-actions {
+        flex-direction: column-reverse;
+    }
+
+    .btn-cancel,
+    .btn-create,
+    .edit-link {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .result-grid {
+        grid-template-columns: 1fr;
+    }
 }

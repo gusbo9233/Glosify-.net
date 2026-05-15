@@ -148,6 +148,9 @@
 
         <main class="app-main">
             <header class="app-topbar">
+                <a class="app-mobile-brand" asp-controller="Home" asp-action="Index" aria-label="Glosify home">
+                    Sonic Polyglot
+                </a>
                 <div class="app-search">
                     <span class="material-symbols-outlined">search</span>
                     <input placeholder="What do you want to learn?" type="text" />
@@ -192,6 +195,34 @@
             </div>
         </main>
     </div>
+    <nav class="app-mobile-nav" aria-label="Primary navigation">
+        <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
+            @NavIcon("language")
+            <span>Language</span>
+        </a>
+        <a class="@NavClass("Home")" asp-controller="Home" asp-action="Index">
+            @NavIcon("home")
+            <span>Home</span>
+        </a>
+        <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
+            @NavIcon("quiz")
+            <span>Quizzes</span>
+        </a>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a class="@NavClass("Account")" asp-controller="Account" asp-action="Login">
+                <span class="material-symbols-outlined">account_circle</span>
+                <span>Account</span>
+            </a>
+        }
+        else
+        {
+            <a class="@NavClass("Account", "Login")" asp-controller="Account" asp-action="Login">
+                <span class="material-symbols-outlined">login</span>
+                <span>Log in</span>
+            </a>
+        }
+    </nav>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

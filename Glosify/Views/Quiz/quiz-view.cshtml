@@ -57,7 +57,23 @@
                 <input type="hidden" name="quizId" value="@Model.SelectedQuiz.Id" />
                 <div class="form-group">
                     <label class="form-label">Source Text</label>
-                    <textarea class="form-textarea" name="input" placeholder="Paste an article, lyrics, or transcript here to extract key vocabulary automatically..." required></textarea>
+                    <div class="scan-toolbar">
+                        <button class="btn-scan-text"
+                                type="button"
+                                data-scan-text-button
+                                data-extract-url="@Url.Action("ExtractTextFromImage", "Quiz")"
+                                data-quiz-id="@Model.SelectedQuiz.Id">
+                            <span class="material-symbols-outlined">photo_camera</span>
+                            Scan text
+                        </button>
+                        <span class="scan-status" data-scan-status aria-live="polite"></span>
+                    </div>
+                    <input class="visually-hidden"
+                           type="file"
+                           accept="image/*"
+                           capture="environment"
+                           data-image-text-input />
+                    <textarea class="form-textarea" id="aiSourceText" name="input" data-source-textarea placeholder="Paste an article, lyrics, or transcript here to extract key vocabulary automatically..." required></textarea>
                 </div>
                 <button class="btn-submit" type="submit">
                     Generate Words <span class="material-symbols-outlined">auto_awesome</span>
@@ -173,6 +189,71 @@
     });
 
     window.addEventListener('pageshow', resetWordLoadingState);
+
+    (() => {
+        const scanButton = document.querySelector('[data-scan-text-button]');
+        const imageInput = document.querySelector('[data-image-text-input]');
+        const textarea = document.querySelector('[data-source-textarea]');
+        const status = document.querySelector('[data-scan-status]');
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+
+        if (!scanButton || !imageInput || !textarea || !status) return;
+
+        const setStatus = (message, isError = false) => {
+            status.textContent = message;
+            status.classList.toggle('is-error', isError);
+        };
+
+        scanButton.addEventListener('click', () => {
+            imageInput.click();
+        });
+
+        imageInput.addEventListener('change', async () => {
+            const file = imageInput.files?.[0];
+            if (!file) return;
+
+            const body = new FormData();
+            body.append('quizId', scanButton.dataset.quizId || '');
+            body.append('image', file);
+
+            scanButton.disabled = true;
+            setStatus('Reading image...');
+
+            try {
+                const response = await fetch(scanButton.dataset.extractUrl || '', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'RequestVerificationToken': tokenInput?.value ?? ''
+                    },
+                    body
+                });
+
+                const data = await response.json().catch(() => null);
+                if (!response.ok) {
+                    setStatus(data?.error || 'Could not read that image.', true);
+                    return;
+                }
+
+                const extractedText = (data?.text || '').trim();
+                if (!extractedText) {
+                    setStatus('No readable text found.', true);
+                    return;
+                }
+
+                textarea.value = textarea.value.trim()
+                    ? `${textarea.value.trim()}\n\n${extractedText}`
+                    : extractedText;
+                textarea.focus();
+                setStatus('Text added. Review it, then generate words.');
+            } catch {
+                setStatus('Could not upload the image.', true);
+            } finally {
+                scanButton.disabled = false;
+                imageInput.value = '';
+            }
+        });
+    })();
 
     (() => {
         const tabs = document.querySelectorAll('[data-tab]');

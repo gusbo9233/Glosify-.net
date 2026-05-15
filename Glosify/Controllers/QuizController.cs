@@ -16,6 +16,7 @@ public class QuizController : Controller
     private readonly IQuizService _quizService;
     private readonly IWordService _wordService;
     private readonly IGeneratedVocabularyService _generatedVocabularyService;
+    private readonly IImageTextExtractionService _imageTextExtractionService;
     private readonly ILanguageContext _languageContext;
     private readonly ILogger<QuizController> _logger;
 
@@ -24,6 +25,7 @@ public class QuizController : Controller
         IQuizService quizService,
         IWordService wordService,
         IGeneratedVocabularyService generatedVocabularyService,
+        IImageTextExtractionService imageTextExtractionService,
         ILanguageContext languageContext,
         ILogger<QuizController> logger)
     {
@@ -31,6 +33,7 @@ public class QuizController : Controller
         _quizService = quizService;
         _wordService = wordService;
         _generatedVocabularyService = generatedVocabularyService;
+        _imageTextExtractionService = imageTextExtractionService;
         _languageContext = languageContext;
         _logger = logger;
     }
@@ -124,6 +127,49 @@ public class QuizController : Controller
         }
 
         return RedirectToAction("Details", new { id = model.QuizId });
+    }
+
+    [HttpPost]
+    [RequestSizeLimit(8 * 1024 * 1024)]
+    public async Task<IActionResult> ExtractTextFromImage(Guid quizId, IFormFile? image, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized(new { error = "Sign in before scanning text." });
+
+        var quiz = await _quizService.GetQuizByIdAsync(quizId, userId);
+        if (quiz == null)
+            return NotFound(new { error = "Quiz not found." });
+
+        if (image == null || image.Length == 0)
+            return BadRequest(new { error = "Take or choose a photo first." });
+
+        if (image.Length > 8 * 1024 * 1024)
+            return BadRequest(new { error = "Choose an image under 8 MB." });
+
+        if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { error = "Choose an image file." });
+
+        try
+        {
+            await using var stream = image.OpenReadStream();
+            var text = await _imageTextExtractionService.ExtractTextAsync(
+                stream,
+                image.ContentType,
+                quiz.SourceLanguage,
+                quiz.TargetLanguage,
+                cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(text))
+                return UnprocessableEntity(new { error = "No readable text was found in that image." });
+
+            return Json(new { text });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Image text extraction failed for quiz {QuizId}", quizId);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Image text extraction is not configured yet." });
+        }
     }
 
     [HttpPost]

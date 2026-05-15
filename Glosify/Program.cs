@@ -71,6 +71,7 @@ builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
 builder.Services.AddScoped<ITypingQuizService, TypingQuizService>();
 builder.Services.AddScoped<IAiWordGenerationService, AiWordGenerationService>();
 builder.Services.AddScoped<IGeneratedVocabularyService, GeneratedVocabularyService>();
+builder.Services.AddScoped<IImageTextExtractionService, ImageTextExtractionService>();
 builder.Services.AddScoped<IWordDetailEnrichmentService, WordDetailEnrichmentService>();
 builder.Services.AddScoped<IWordDetailViewModelService, WordDetailViewModelService>();
 
