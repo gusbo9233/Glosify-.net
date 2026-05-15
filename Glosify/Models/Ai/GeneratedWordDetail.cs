@@ -16,6 +16,9 @@ public class GeneratedWordDetail
 
     [JsonPropertyName("example_sentence")]
     public string? ExampleSentence { get; set; }
+
+    [JsonPropertyName("example_sentence_translation")]
+    public string? ExampleSentenceTranslation { get; set; }
 }
 
 public class GeneratedWordVariant

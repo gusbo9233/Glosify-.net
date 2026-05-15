@@ -75,6 +75,50 @@ namespace Glosify.Controllers
             return View();
         }
 
+        // POST: WordDetails/Generate/{id}
+        // JSON endpoint used by the quiz-view bulk Generate button. Skips work for
+        // already-enriched details (force:false) so re-runs are cheap.
+        [HttpPost]
+        public async Task<IActionResult> Generate(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return NotFound();
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var owned = await LoadOwnedWordDetailWithWordAsync(id, userId);
+            if (owned == null)
+            {
+                return NotFound();
+            }
+
+            var (detail, word, quiz) = owned.Value;
+            var changed = await _enrichmentService.EnrichAsync(
+                detail,
+                word,
+                quiz,
+                string.IsNullOrWhiteSpace(detail.Word) ? word.Lemma : detail.Word,
+                string.IsNullOrWhiteSpace(detail.TargetLanguage) ? quiz.TargetLanguage : detail.TargetLanguage);
+
+            if (changed)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            var isEnriched = !string.IsNullOrWhiteSpace(detail.Explanation)
+                && !string.IsNullOrWhiteSpace(detail.ExampleSentence)
+                && detail.Properties != "{}"
+                && detail.Variants != "[]";
+
+            return Json(new { ok = true, lemma = word.Lemma, isEnriched });
+        }
+
         [HttpPost]
         public async Task<IActionResult> Regenerate(string id)
         {
@@ -119,7 +163,7 @@ namespace Glosify.Controllers
         // POST: WordDetails/Create
         // Word details are shared cache rows keyed by language pair, word and translation.
         [HttpPost]
-        public async Task<IActionResult> Create([Bind("SourceLanguage,TargetLanguage,Word,Translation,ExampleSentence,Explanation,Variants,Language")] WordDetail wordDetail)
+        public async Task<IActionResult> Create([Bind("SourceLanguage,TargetLanguage,Word,Translation,ExampleSentence,ExampleSentenceTranslation,Explanation,Variants,Language")] WordDetail wordDetail)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
@@ -195,7 +239,7 @@ namespace Glosify.Controllers
         // The existing entity is loaded fresh and only allowlisted fields are copied —
         // never trust the posted QuizId.
         [HttpPost]
-        public async Task<IActionResult> Edit(string id, [Bind("Id,ExampleSentence,Explanation,Variants,Language")] WordDetail posted)
+        public async Task<IActionResult> Edit(string id, [Bind("Id,ExampleSentence,ExampleSentenceTranslation,Explanation,Variants,Language")] WordDetail posted)
         {
             if (id != posted.Id)
             {
@@ -219,6 +263,7 @@ namespace Glosify.Controllers
             }
 
             existing.ExampleSentence = posted.ExampleSentence;
+            existing.ExampleSentenceTranslation = posted.ExampleSentenceTranslation;
             existing.Explanation = posted.Explanation;
             existing.Variants = posted.Variants;
             existing.Language = posted.Language;

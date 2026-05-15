@@ -75,9 +75,6 @@ builder.Services.AddScoped<IImageTextExtractionService, ImageTextExtractionServi
 builder.Services.AddScoped<IWordDetailEnrichmentService, WordDetailEnrichmentService>();
 builder.Services.AddScoped<IWordDetailViewModelService, WordDetailViewModelService>();
 
-builder.Services.AddSingleton<IAiEnrichmentQueue, AiEnrichmentQueue>();
-builder.Services.AddHostedService<AiEnrichmentBackgroundService>();
-
 builder.Services.AddSingleton<ILanguageDictionaryConfig, GermanDictionaryConfig>();
 builder.Services.AddSingleton<ILanguageDictionaryConfig, EstonianDictionaryConfig>();
 builder.Services.AddSingleton<ILanguageDictionaryConfig, UkrainianDictionaryConfig>();

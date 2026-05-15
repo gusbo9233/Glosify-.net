@@ -12,20 +12,17 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
     private readonly GlosifyContext _context;
     private readonly IQuizService _quizService;
     private readonly IAiWordGenerationService _aiWordGenerationService;
-    private readonly IAiEnrichmentQueue _enrichmentQueue;
     private readonly ILogger<GeneratedVocabularyService> _logger;
 
     public GeneratedVocabularyService(
         GlosifyContext context,
         IQuizService quizService,
         IAiWordGenerationService aiWordGenerationService,
-        IAiEnrichmentQueue enrichmentQueue,
         ILogger<GeneratedVocabularyService> logger)
     {
         _context = context;
         _quizService = quizService;
         _aiWordGenerationService = aiWordGenerationService;
-        _enrichmentQueue = enrichmentQueue;
         _logger = logger;
     }
 
@@ -67,7 +64,6 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         var existing = new HashSet<string>(existingWords, StringComparer.OrdinalIgnoreCase);
 
         var added = 0;
-        var enqueued = new List<AiEnrichmentJob>();
 
         foreach (var (lemma, generatedWord) in generatedWords)
         {
@@ -82,11 +78,12 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
                 continue;
             }
 
-            var aiExampleSentence = ResolveExampleSentence(trimmedLemma, generatedWord, sourceSentences);
-            var aiExplanation = generatedWord.ExampleSentenceTranslation?.Trim() ?? string.Empty;
-            if (!IsUsefulExampleSentence(aiExampleSentence, aiExplanation))
+            var aiExampleSentence = ResolveExampleSentence(trimmedLemma, translation, generatedWord, sourceSentences);
+            var aiExampleSentenceTranslation = generatedWord.ExampleSentenceTranslation?.Trim() ?? string.Empty;
+            if (!IsUsefulExampleSentence(trimmedLemma, translation, aiExampleSentence, aiExampleSentenceTranslation))
             {
                 aiExampleSentence = string.Empty;
+                aiExampleSentenceTranslation = string.Empty;
             }
 
             var wordDetail = await GetOrCreateWordDetailAsync(
@@ -99,9 +96,9 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
                 wordDetail.ExampleSentence = aiExampleSentence;
                 wordDetail.UpdatedAt = DateTimeOffset.UtcNow;
             }
-            if (string.IsNullOrWhiteSpace(wordDetail.Explanation) && !string.IsNullOrWhiteSpace(aiExplanation))
+            if (string.IsNullOrWhiteSpace(wordDetail.ExampleSentenceTranslation) && !string.IsNullOrWhiteSpace(aiExampleSentenceTranslation))
             {
-                wordDetail.Explanation = aiExplanation;
+                wordDetail.ExampleSentenceTranslation = aiExampleSentenceTranslation;
                 wordDetail.UpdatedAt = DateTimeOffset.UtcNow;
             }
 
@@ -114,7 +111,6 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
                 WordDetailId = wordDetail.Id
             });
 
-            enqueued.Add(new AiEnrichmentJob(wordDetail.Id, quiz.TargetLanguage, trimmedLemma));
             existing.Add(trimmedLemma);
             added++;
         }
@@ -125,11 +121,6 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         }
 
         await _context.SaveChangesAsync();
-        foreach (var job in enqueued)
-        {
-            _enrichmentQueue.Enqueue(job);
-        }
-
         return GeneratedVocabularyResult.Success(added, $"Added {added} generated {(added == 1 ? "word" : "words")}.");
     }
 
@@ -143,22 +134,24 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
 
     private static string ResolveExampleSentence(
         string word,
+        string translation,
         GeneratedWord generatedWord,
         IReadOnlyList<string> sourceSentences)
     {
-        var sourceSentence = FindSourceSentence(word, sourceSentences);
+        var sourceSentence = FindSourceSentence(word, translation, sourceSentences);
         return !string.IsNullOrWhiteSpace(sourceSentence) ? sourceSentence : generatedWord.ExampleSentence?.Trim() ?? string.Empty;
     }
 
-    private static string? FindSourceSentence(string word, IReadOnlyList<string> sourceSentences)
+    private static string? FindSourceSentence(string word, string translation, IReadOnlyList<string> sourceSentences)
     {
         var pattern = $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(word)}(?![\p{{L}}\p{{M}}])";
         return sourceSentences
             .Where(sentence => WordPattern.Matches(sentence).Count >= 2)
+            .Where(sentence => !LooksLikeGlossLine(word, translation, sentence))
             .FirstOrDefault(sentence => Regex.IsMatch(sentence, pattern, RegexOptions.IgnoreCase));
     }
 
-    private static bool IsUsefulExampleSentence(string? exampleSentence, string? explanation)
+    private static bool IsUsefulExampleSentence(string word, string translation, string? exampleSentence, string? exampleSentenceTranslation)
     {
         if (string.IsNullOrWhiteSpace(exampleSentence))
         {
@@ -171,8 +164,52 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
             return false;
         }
 
-        return string.IsNullOrWhiteSpace(explanation)
-            || !string.Equals(trimmed, explanation.Trim(), StringComparison.OrdinalIgnoreCase);
+        return ContainsWord(trimmed, word)
+            && !LooksLikeGlossLine(word, translation, trimmed)
+            && (string.IsNullOrWhiteSpace(exampleSentenceTranslation)
+                || !string.Equals(trimmed, exampleSentenceTranslation.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool ContainsWord(string sentence, string word)
+    {
+        if (string.IsNullOrWhiteSpace(word))
+        {
+            return false;
+        }
+
+        var pattern = $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(word.Trim())}(?![\p{{L}}\p{{M}}])";
+        return Regex.IsMatch(sentence, pattern, RegexOptions.IgnoreCase);
+    }
+
+    private static bool LooksLikeGlossLine(string word, string translation, string sentence)
+    {
+        var sentenceTokens = WordPattern.Matches(sentence)
+            .Select(match => match.Value)
+            .ToList();
+        var translationTokens = WordPattern.Matches(translation)
+            .Select(match => match.Value)
+            .Where(token => !string.Equals(token, word, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (sentenceTokens.Count < 3 || translationTokens.Count == 0 || !ContainsWord(sentence, word))
+        {
+            return false;
+        }
+
+        var overlap = translationTokens.Count(token =>
+            sentenceTokens.Contains(token, StringComparer.OrdinalIgnoreCase));
+        if (overlap >= 2)
+        {
+            return true;
+        }
+
+        var wordIndex = sentenceTokens.FindIndex(token =>
+            string.Equals(token, word, StringComparison.OrdinalIgnoreCase));
+        return overlap == 1
+            && wordIndex > 0
+            && !Regex.IsMatch(sentence.Trim(), @"[.!?]$")
+            && sentenceTokens.Count <= translationTokens.Count + 3;
     }
 
     private static bool IsPronunciationHint(string translation)
@@ -213,6 +250,7 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
             Variants = "[]",
             Explanation = string.Empty,
             ExampleSentence = string.Empty,
+            ExampleSentenceTranslation = string.Empty,
             CreatedAt = now,
             UpdatedAt = now
         };

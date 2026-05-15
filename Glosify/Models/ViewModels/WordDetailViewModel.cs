@@ -14,6 +14,7 @@ namespace Glosify.Models.ViewModels
         public string PartOfSpeech => GetProperty("pos");
         public string Explanation => Detail.Explanation ?? string.Empty;
         public string ExampleSentence => Detail.ExampleSentence ?? string.Empty;
+        public string ExampleSentenceTranslation => Detail.ExampleSentenceTranslation ?? string.Empty;
 
         public string GetProperty(string key)
         {

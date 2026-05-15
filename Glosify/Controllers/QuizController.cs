@@ -70,12 +70,14 @@ public class QuizController : Controller
             return RedirectToAction("Index");
 
         var words = await _wordService.GetWordsAsync(selectedQuiz.Id);
+        var enriched = await _wordService.GetEnrichedWordDetailIdsAsync(selectedQuiz.Id);
         var sentences = await _wordService.GetSentencesAsync(selectedQuiz.Id);
 
         return View("quiz-view", new QuizWorkspaceViewModel
         {
             SelectedQuiz = selectedQuiz,
             Words = words,
+            EnrichedWordDetailIds = enriched,
             Sentences = sentences
         });
     }

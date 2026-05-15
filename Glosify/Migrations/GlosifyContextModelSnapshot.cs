@@ -281,6 +281,11 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("example_sentence");
 
+                    b.Property<string>("ExampleSentenceTranslation")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("example_sentence_translation");
+
                     b.Property<string>("Explanation")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")

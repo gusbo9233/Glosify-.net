@@ -4,6 +4,11 @@
     var displayWord = Model.Word?.Lemma ?? "Word details";
     ViewData["Title"] = displayWord;
     ViewData["ActiveNav"] = "quizzes";
+
+    var isEnriched = Model.Properties.Any()
+        && Model.Variants.Any()
+        && !string.IsNullOrWhiteSpace(Model.Detail.Explanation)
+        && !string.IsNullOrWhiteSpace(Model.Detail.ExampleSentence);
 }
 
 
@@ -17,10 +22,20 @@
         <div class="detail-actions">
             <form method="post" asp-action="Regenerate" asp-route-id="@Model.Detail.Id">
                 @Html.AntiForgeryToken()
-                <button class="edit-link regenerate-button" type="submit">
-                    <span class="material-symbols-outlined">sync</span>
-                    Regenerate
-                </button>
+                @if (isEnriched)
+                {
+                    <button class="edit-link regenerate-button" type="submit">
+                        <span class="material-symbols-outlined">sync</span>
+                        Regenerate
+                    </button>
+                }
+                else
+                {
+                    <button class="edit-link generate-button" type="submit">
+                        <span class="material-symbols-outlined">auto_awesome</span>
+                        Generate details
+                    </button>
+                }
             </form>
             <a class="edit-link" asp-action="Edit" asp-route-id="@Model.Detail.Id">
                 <span class="material-symbols-outlined">edit</span>
@@ -109,6 +124,10 @@
             else
             {
                 <p class="section-copy">@Model.ExampleSentence</p>
+                @if (!string.IsNullOrWhiteSpace(Model.ExampleSentenceTranslation))
+                {
+                    <p class="section-copy example-translation">@Model.ExampleSentenceTranslation</p>
+                }
             }
         </article>
 

@@ -113,6 +113,33 @@ public class GeminiLanguageConfigTests
     }
 
     [Fact]
+    public void PolishPastVerbSlotsPreservePersonAndPluralGender()
+    {
+        var wordClass = new PolishDictionaryConfig().GetWordClass("Verb");
+        var variants = new[]
+        {
+            V("byłem", "past", "first-person", "singular", "masculine"),
+            V("byłam", "past", "first-person", "singular", "feminine"),
+            V("byłeś", "past", "second-person", "singular", "masculine"),
+            V("byłaś", "past", "second-person", "singular", "feminine"),
+            V("był", "past", "third-person", "singular", "masculine"),
+            V("była", "past", "third-person", "singular", "feminine"),
+            V("było", "past", "third-person", "singular", "neuter"),
+            V("byliśmy", "past", "first-person", "plural", "masculine-personal"),
+            V("byłyśmy", "past", "first-person", "plural", "non-masculine-personal"),
+            V("byliście", "past", "second-person", "plural", "masculine-personal"),
+            V("byłyście", "past", "second-person", "plural", "non-masculine-personal"),
+            V("byli", "past", "third-person", "plural", "masculine-personal"),
+            V("były", "past", "third-person", "plural", "non-masculine-personal"),
+        };
+
+        Assert.NotNull(wordClass);
+        Assert.DoesNotContain(
+            FindEmptySlots(wordClass!, variants),
+            slot => slot.StartsWith("Past ", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void UkrainianPronounCasesMatchGeminiParadigmForObliqueSurfaceForm()
     {
         var wordClass = new UkrainianDictionaryConfig().GetWordClass("Pronoun");

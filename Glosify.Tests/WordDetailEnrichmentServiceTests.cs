@@ -210,6 +210,7 @@ public class WordDetailEnrichmentServiceTests
             [
                 new GeneratedWordVariant { Form = "robie", Tags = ["non past first person singular"] },
                 new GeneratedWordVariant { Form = "robili", Tags = ["past masculine personal plural"] },
+                new GeneratedWordVariant { Form = "były", Tags = ["past female plural third person"] },
             ],
             Explanation = "A common Polish verb meaning to do or make.",
             ExampleSentence = "Robie kawe."
@@ -234,6 +235,12 @@ public class WordDetailEnrichmentServiceTests
             && variant.Tags.Contains("past")
             && variant.Tags.Contains("masculine-personal")
             && variant.Tags.Contains("plural"));
+        Assert.Contains(variants, variant =>
+            variant.Form == "były"
+            && variant.Tags.Contains("past")
+            && variant.Tags.Contains("non-masculine-personal")
+            && variant.Tags.Contains("plural")
+            && variant.Tags.Contains("third-person"));
     }
 
     private static WordDetailEnrichmentService CreateService(GeneratedWordDetail generated)

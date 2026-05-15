@@ -9,16 +9,13 @@ public class WordDetailViewModelService : IWordDetailViewModelService
 {
     private readonly GlosifyContext _context;
     private readonly IReadOnlyDictionary<string, ILanguageDictionaryConfig> _languageConfigs;
-    private readonly IWordDetailEnrichmentService? _enrichmentService;
 
     public WordDetailViewModelService(
         GlosifyContext context,
-        IEnumerable<ILanguageDictionaryConfig> languageConfigs,
-        IWordDetailEnrichmentService? enrichmentService = null)
+        IEnumerable<ILanguageDictionaryConfig> languageConfigs)
     {
         _context = context;
         _languageConfigs = languageConfigs.ToDictionary(c => c.LangCode, StringComparer.OrdinalIgnoreCase);
-        _enrichmentService = enrichmentService;
     }
 
     public async Task<WordDetailViewModel?> BuildAsync(string wordDetailId, string userId)
@@ -29,8 +26,6 @@ public class WordDetailViewModelService : IWordDetailViewModelService
             return null;
         }
         var (wordDetail, word, quiz) = owned.Value;
-
-        await TryEnrichAsync(wordDetail, word, quiz);
 
         var properties = WordDetailJsonReader.ReadProperties(wordDetail.Properties);
         var pos = LanguageResolver.NormalizePartOfSpeech(
@@ -87,39 +82,5 @@ public class WordDetailViewModelService : IWordDetailViewModelService
             select new { detail, word, quiz }).FirstOrDefaultAsync();
 
         return pair == null ? null : (pair.detail, pair.word, pair.quiz);
-    }
-
-    private async Task TryEnrichAsync(WordDetail wordDetail, Word? word, Quiz quiz)
-    {
-        if (_enrichmentService == null || word == null)
-        {
-            return;
-        }
-
-        var shouldGenerate = !WordDetailJsonReader.ReadProperties(wordDetail.Properties).Any()
-            || !WordDetailJsonReader.ReadVariants(wordDetail.Variants).Any()
-            || string.IsNullOrWhiteSpace(wordDetail.Explanation)
-            || string.IsNullOrWhiteSpace(wordDetail.ExampleSentence);
-        if (!shouldGenerate)
-        {
-            return;
-        }
-
-        try
-        {
-            if (await _enrichmentService.EnrichAsync(
-                wordDetail,
-                word,
-                quiz,
-                word.Lemma,
-                wordDetail.TargetLanguage))
-            {
-                await _context.SaveChangesAsync();
-            }
-        }
-        catch (Exception)
-        {
-            // Details remain editable even if enrichment is unavailable or returns malformed JSON.
-        }
     }
 }

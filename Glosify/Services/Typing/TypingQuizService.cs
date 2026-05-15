@@ -64,7 +64,7 @@ public class TypingQuizService : ITypingQuizService
                 Prompt = item.Word.Translation,
                 Answer = item.Word.Lemma,
                 ExampleSentence = item.Detail == null ? string.Empty : item.Detail.ExampleSentence,
-                ExampleTranslation = item.Detail == null ? string.Empty : item.Detail.Explanation
+                ExampleTranslation = item.Detail == null ? string.Empty : item.Detail.ExampleSentenceTranslation
             })
             .ToListAsync();
     }

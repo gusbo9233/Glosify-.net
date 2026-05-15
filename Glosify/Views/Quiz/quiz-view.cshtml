@@ -1,5 +1,11 @@
 @model QuizWorkspaceViewModel
-@{ Layout = "~/Views/Shared/_AppLayout.cshtml"; ViewData["Title"] = Model.SelectedQuiz.Name; ViewData["ActiveNav"] = "quizzes"; }
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Model.SelectedQuiz.Name;
+    ViewData["ActiveNav"] = "quizzes";
+
+    var pendingGenerationCount = Model.Words.Count(w => !Model.EnrichedWordDetailIds.Contains(w.WordDetailId));
+}
 
 
 
@@ -8,11 +14,22 @@
         <div class="workspace-hero-content">
             <p class="hero-label">@Model.SelectedQuiz.SourceLanguage &rarr; @Model.SelectedQuiz.TargetLanguage</p>
             <h1 class="hero-title">@Model.SelectedQuiz.Name</h1>
-            <a asp-controller="Quiz" asp-action="Settings" asp-route-id="@Model.SelectedQuiz.Id" class="btn-hero">
-                Start Quiz <span class="material-symbols-outlined">play_circle</span>
-            </a>
+            <div class="hero-actions">
+                <a asp-controller="Quiz" asp-action="Settings" asp-route-id="@Model.SelectedQuiz.Id" class="btn-hero">
+                    Start Quiz <span class="material-symbols-outlined">play_circle</span>
+                </a>
+                <button id="bulkGenerateButton"
+                        type="button"
+                        class="btn-hero btn-hero-secondary"
+                        data-pending-count="@pendingGenerationCount"
+                        @(pendingGenerationCount == 0 ? "hidden" : "")>
+                    <span class="bulk-generate-label">Generate word details (@pendingGenerationCount)</span>
+                    <span class="material-symbols-outlined">auto_awesome</span>
+                </button>
+            </div>
         </div>
     </section>
+    @Html.AntiForgeryToken()
 
     <div class="tool-grid">
         <section class="panel">
@@ -98,7 +115,10 @@
             <div class="word-grid">
                 @foreach (var word in Model.Words)
                 {
-                    <article class="word-card">
+                    var needsGeneration = !Model.EnrichedWordDetailIds.Contains(word.WordDetailId);
+                    <article class="word-card"
+                             data-word-detail-id="@word.WordDetailId"
+                             data-needs-generation="@(needsGeneration ? "true" : "false")">
                         <a class="word-card-link" asp-controller="WordDetails" asp-action="Details" asp-route-id="@word.WordDetailId" aria-label="Open details for @word.Lemma">
                             <div class="word-card-left">
                                 <div class="word-icon"><span class="material-symbols-outlined">translate</span></div>
@@ -252,6 +272,96 @@
                 scanButton.disabled = false;
                 imageInput.value = '';
             }
+        });
+    })();
+
+    (() => {
+        const button = document.getElementById('bulkGenerateButton');
+        if (!button) return;
+
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        const generateUrl = '@Url.Action("Generate", "WordDetails")';
+        const concurrency = 3;
+
+        const setCardLoading = (card, loading) => {
+            card.classList.toggle('loading', loading);
+            const icon = card.querySelector('.word-icon .material-symbols-outlined');
+            if (!icon) return;
+            if (loading) {
+                icon.dataset.defaultIcon ||= icon.textContent.trim() || 'translate';
+                icon.textContent = 'progress_activity';
+            } else {
+                icon.textContent = icon.dataset.defaultIcon || 'translate';
+            }
+        };
+
+        const generateOne = async (card) => {
+            const id = card.dataset.wordDetailId;
+            if (!id) return;
+            setCardLoading(card, true);
+            try {
+                const response = await fetch(`${generateUrl}/${encodeURIComponent(id)}`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'RequestVerificationToken': tokenInput?.value ?? ''
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json().catch(() => null);
+                    if (data?.isEnriched) {
+                        card.dataset.needsGeneration = 'false';
+                    }
+                }
+            } catch {
+                // Best-effort: leave the card as needs-generation so the user can retry.
+            } finally {
+                setCardLoading(card, false);
+            }
+        };
+
+        const runQueue = async (cards) => {
+            const queue = cards.slice();
+            const updateLabel = () => {
+                // needs-generation=true covers both queued and currently-loading cards;
+                // failed cards stay flagged so they're still counted as remaining work.
+                const remaining = document.querySelectorAll('.word-card[data-needs-generation="true"]').length;
+                const inFlight = document.querySelectorAll('.word-card.loading').length;
+                const label = button.querySelector('.bulk-generate-label');
+                if (label) {
+                    label.textContent = inFlight > 0
+                        ? `Generating… (${remaining} left)`
+                        : `Generate word details (${remaining})`;
+                }
+                if (remaining === 0 && inFlight === 0) {
+                    button.hidden = true;
+                }
+            };
+
+            const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+                while (queue.length > 0) {
+                    const card = queue.shift();
+                    if (card) {
+                        await generateOne(card);
+                        updateLabel();
+                    }
+                }
+            });
+            await Promise.all(workers);
+            button.disabled = false;
+            updateLabel();
+        };
+
+        button.addEventListener('click', () => {
+            const cards = Array.from(document.querySelectorAll('.word-card[data-needs-generation="true"]'));
+            if (cards.length === 0) {
+                button.hidden = true;
+                return;
+            }
+            button.disabled = true;
+            const label = button.querySelector('.bulk-generate-label');
+            if (label) label.textContent = `Generating… (${cards.length} left)`;
+            runQueue(cards);
         });
     })();
 

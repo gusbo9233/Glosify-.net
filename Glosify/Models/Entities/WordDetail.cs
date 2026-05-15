@@ -38,6 +38,9 @@ namespace Glosify.Models.Entities
         [Column("example_sentence")]
         public string ExampleSentence { get; set; } = string.Empty;
 
+        [Column("example_sentence_translation")]
+        public string ExampleSentenceTranslation { get; set; } = string.Empty;
+
         [Column("explanation")]
         public string Explanation { get; set; } = string.Empty;
 

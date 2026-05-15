@@ -7,12 +7,10 @@ namespace Glosify.Services;
 public class WordService : IWordService
 {
     private readonly GlosifyContext _context;
-    private readonly IAiEnrichmentQueue _enrichmentQueue;
 
-    public WordService(GlosifyContext context, IAiEnrichmentQueue enrichmentQueue)
+    public WordService(GlosifyContext context)
     {
         _context = context;
-        _enrichmentQueue = enrichmentQueue;
     }
 
     public async Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId)
@@ -21,6 +19,28 @@ public class WordService : IWordService
             .Where(w => w.QuizId == quizId)
             .OrderBy(w => w.Lemma)
             .ToListAsync();
+    }
+
+    public async Task<IReadOnlySet<string>> GetEnrichedWordDetailIdsAsync(Guid quizId)
+    {
+        var ids = await _context.Words
+            .Where(word => word.QuizId == quizId)
+            .Join(
+                _context.WordDetails,
+                word => word.WordDetailId,
+                detail => detail.Id,
+                (_, detail) => detail)
+            .Where(detail =>
+                detail.Properties != "{}"
+                && detail.Variants != "[]"
+                && detail.Explanation != null
+                && detail.Explanation != ""
+                && detail.ExampleSentence != null
+                && detail.ExampleSentence != "")
+            .Select(detail => detail.Id)
+            .ToListAsync();
+
+        return new HashSet<string>(ids, StringComparer.Ordinal);
     }
 
     public async Task<IReadOnlyList<WordDetail>> GetWordDetailsAsync(Guid quizId)
@@ -54,7 +74,7 @@ public class WordService : IWordService
                 Prompt = item.Word.Translation,
                 Answer = item.Word.Lemma,
                 ExampleSentence = item.Detail == null ? string.Empty : item.Detail.ExampleSentence,
-                ExampleTranslation = item.Detail == null ? string.Empty : item.Detail.Explanation
+                ExampleTranslation = item.Detail == null ? string.Empty : item.Detail.ExampleSentenceTranslation
             })
             .ToListAsync();
     }
@@ -78,7 +98,7 @@ public class WordService : IWordService
                 Lemma = item.Word.Lemma,
                 Translation = item.Word.Translation,
                 ExampleSentence = item.Detail == null ? string.Empty : item.Detail.ExampleSentence,
-                ExampleTranslation = item.Detail == null ? string.Empty : item.Detail.Explanation
+                ExampleTranslation = item.Detail == null ? string.Empty : item.Detail.ExampleSentenceTranslation
             })
             .ToListAsync();
     }
@@ -101,7 +121,7 @@ public class WordService : IWordService
             {
                 Text = group.Key,
                 Translation = group
-                    .Select(detail => detail.Explanation.Trim())
+                    .Select(detail => detail.ExampleSentenceTranslation.Trim())
                     .FirstOrDefault(translation => !string.IsNullOrWhiteSpace(translation)) ?? string.Empty,
                 WordCount = group.Count()
             })
@@ -128,8 +148,6 @@ public class WordService : IWordService
         });
 
         await _context.SaveChangesAsync();
-
-        _enrichmentQueue.Enqueue(new AiEnrichmentJob(wordDetail.Id, targetLanguage, lemma));
         return true;
     }
 
@@ -190,6 +208,7 @@ public class WordService : IWordService
             Variants = "[]",
             Explanation = string.Empty,
             ExampleSentence = string.Empty,
+            ExampleSentenceTranslation = string.Empty,
             CreatedAt = now,
             UpdatedAt = now
         };

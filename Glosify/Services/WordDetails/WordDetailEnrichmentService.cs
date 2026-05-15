@@ -60,8 +60,9 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
         var variants = SerializeVariants(generated.Variants);
         var explanation = generated.Explanation?.Trim() ?? string.Empty;
         var exampleSentence = generated.ExampleSentence?.Trim() ?? string.Empty;
+        var exampleSentenceTranslation = generated.ExampleSentenceTranslation?.Trim() ?? string.Empty;
 
-        return ApplyGenerated(detail, properties, variants, explanation, exampleSentence, force);
+        return ApplyGenerated(detail, properties, variants, explanation, exampleSentence, exampleSentenceTranslation, force);
     }
 
     private static bool NeedsEnrichment(WordDetail detail)
@@ -78,6 +79,7 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
         string variants,
         string explanation,
         string exampleSentence,
+        string exampleSentenceTranslation,
         bool force)
     {
         var changed = false;
@@ -106,6 +108,7 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
         if (!IsUsefulExampleSentence(exampleSentence, explanation))
         {
             exampleSentence = string.Empty;
+            exampleSentenceTranslation = string.Empty;
         }
 
         if ((force || string.IsNullOrWhiteSpace(detail.ExampleSentence))
@@ -113,6 +116,14 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
             && !string.Equals(detail.ExampleSentence?.Trim(), exampleSentence, StringComparison.Ordinal))
         {
             detail.ExampleSentence = exampleSentence;
+            detail.UpdatedAt = DateTimeOffset.UtcNow;
+            changed = true;
+        }
+        if ((force || string.IsNullOrWhiteSpace(detail.ExampleSentenceTranslation))
+            && !string.IsNullOrWhiteSpace(exampleSentenceTranslation)
+            && !string.Equals(detail.ExampleSentenceTranslation?.Trim(), exampleSentenceTranslation, StringComparison.Ordinal))
+        {
+            detail.ExampleSentenceTranslation = exampleSentenceTranslation;
             detail.UpdatedAt = DateTimeOffset.UtcNow;
             changed = true;
         }
@@ -182,11 +193,22 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
 
         var normalized = Whitespace.Replace(tag.Trim().ToLowerInvariant().Replace("_", " "), " ");
         normalized = normalized
+            .Replace("non male personal", "non-masculine-personal")
+            .Replace("non-male personal", "non-masculine-personal")
             .Replace("non masculine personal", "non-masculine-personal")
             .Replace("non-masculine personal", "non-masculine-personal")
+            .Replace("non masculine-personal", "non-masculine-personal")
             .Replace("nonvirile", "non-masculine-personal")
             .Replace("virile", "masculine-personal")
+            .Replace("male personal", "masculine-personal")
+            .Replace("male-personal", "masculine-personal")
             .Replace("masculine personal", "masculine-personal")
+            .Replace("masculine-personal plural", "masculine-personal plural")
+            .Replace("female personal", "non-masculine-personal")
+            .Replace("female-personal", "non-masculine-personal")
+            .Replace("female group", "non-masculine-personal")
+            .Replace("female plural", "non-masculine-personal plural")
+            .Replace("feminine plural", "non-masculine-personal plural")
             .Replace("non past", "non-past")
             .Replace("ma infinitive", "ma-infinitive")
             .Replace("da infinitive", "da-infinitive")
