@@ -8,7 +8,8 @@ public sealed class ImageTextExtractionService : IImageTextExtractionService
 {
     private const string SystemInstruction = """
 You extract text from learner-provided photos for language study.
-Return only the visible text. Preserve line breaks when useful.
+Return all visible text from the whole image, working from top to bottom.
+Preserve line breaks when useful.
 Do not describe the image, add commentary, translate, summarize, or wrap the result in markdown.
 """;
 
@@ -41,7 +42,9 @@ Do not describe the image, add commentary, translate, summarize, or wrap the res
         }
 
         var prompt = $"""
-Extract all readable text from this image.
+Extract all readable text from the entire image.
+Read the page from top to bottom and do not stop after the first section.
+If the image contains columns, sidebars, captions, or footnotes, include them in a sensible reading order.
 
 Context:
 - The learner knows {sourceLanguage}.
@@ -75,11 +78,18 @@ Context:
                     Parts = [new Part { Text = SystemInstruction }]
                 },
                 Temperature = 0.1f,
-                MaxOutputTokens = 2_000
+                MaxOutputTokens = 8_000
             },
             cancellationToken: cancellationToken);
 
-        return CleanExtractedText(response.Candidates?[0].Content?.Parts?[0].Text ?? string.Empty);
+        var text = string.Join(
+            "\n",
+            response.Candidates?[0].Content?.Parts?
+                .Select(part => part.Text)
+                .Where(partText => !string.IsNullOrWhiteSpace(partText))
+            ?? []);
+
+        return CleanExtractedText(text);
     }
 
     private void EnsureConfigured()
