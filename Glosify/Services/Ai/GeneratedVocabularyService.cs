@@ -12,21 +12,24 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
     private readonly GlosifyContext _context;
     private readonly IQuizService _quizService;
     private readonly IAiWordGenerationService _aiWordGenerationService;
+    private readonly IOpenAiVocabularyGenerationService _openAiVocabularyGenerationService;
     private readonly ILogger<GeneratedVocabularyService> _logger;
 
     public GeneratedVocabularyService(
         GlosifyContext context,
         IQuizService quizService,
         IAiWordGenerationService aiWordGenerationService,
+        IOpenAiVocabularyGenerationService openAiVocabularyGenerationService,
         ILogger<GeneratedVocabularyService> logger)
     {
         _context = context;
         _quizService = quizService;
         _aiWordGenerationService = aiWordGenerationService;
+        _openAiVocabularyGenerationService = openAiVocabularyGenerationService;
         _logger = logger;
     }
 
-    public async Task<GeneratedVocabularyResult> GenerateAndAddWordsAsync(Guid quizId, string userId, string input)
+    public async Task<GeneratedVocabularyResult> GenerateAndAddWordsAsync(Guid quizId, string userId, string input, string? aiProvider = null)
     {
         var quiz = await _quizService.GetQuizByIdAsync(quizId, userId);
         if (quiz == null)
@@ -45,14 +48,21 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         {
             var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
             sourceSentences = ExtractSourceSentences(cleanedInput);
-            generatedWords = await _aiWordGenerationService.GenerateWordsFromTextAsync(
-                cleanedInput,
-                quiz.SourceLanguage,
-                quiz.TargetLanguage,
-                sourceSentences);
+            generatedWords = string.Equals(aiProvider, "openai", StringComparison.OrdinalIgnoreCase)
+                ? await _openAiVocabularyGenerationService.GenerateWordsFromTextAsync(
+                    cleanedInput,
+                    quiz.SourceLanguage,
+                    quiz.TargetLanguage,
+                    sourceSentences)
+                : await _aiWordGenerationService.GenerateWordsFromTextAsync(
+                    cleanedInput,
+                    quiz.SourceLanguage,
+                    quiz.TargetLanguage,
+                    sourceSentences);
             _logger.LogInformation(
-                "Generated vocabulary for quiz {QuizId}: cleaned length {CleanedLength}, source sentence count {SourceSentenceCount}, AI item count {GeneratedCount}",
+                "Generated vocabulary for quiz {QuizId}: provider {AiProvider}, cleaned length {CleanedLength}, source sentence count {SourceSentenceCount}, AI item count {GeneratedCount}",
                 quizId,
+                string.Equals(aiProvider, "openai", StringComparison.OrdinalIgnoreCase) ? "openai" : "gemini",
                 cleanedInput.Length,
                 sourceSentences.Count,
                 generatedWords.Count);

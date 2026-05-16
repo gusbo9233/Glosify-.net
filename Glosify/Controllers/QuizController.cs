@@ -117,7 +117,7 @@ public class QuizController : Controller
             return RedirectToAction("Details", new { id = model.QuizId });
         }
 
-        var result = await _generatedVocabularyService.GenerateAndAddWordsAsync(model.QuizId, userId, model.Input);
+        var result = await _generatedVocabularyService.GenerateAndAddWordsAsync(model.QuizId, userId, model.Input, model.AiProvider);
 
         if (result.Error != null)
         {

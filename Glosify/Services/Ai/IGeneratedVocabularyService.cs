@@ -2,7 +2,7 @@ namespace Glosify.Services;
 
 public interface IGeneratedVocabularyService
 {
-    Task<GeneratedVocabularyResult> GenerateAndAddWordsAsync(Guid quizId, string userId, string input);
+    Task<GeneratedVocabularyResult> GenerateAndAddWordsAsync(Guid quizId, string userId, string input, string? aiProvider = null);
 }
 
 public sealed record GeneratedVocabularyResult(int AddedCount, string? Error, string? Message)
