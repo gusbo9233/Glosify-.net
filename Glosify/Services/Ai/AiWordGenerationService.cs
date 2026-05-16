@@ -45,6 +45,7 @@ Return only clean, learner-facing JSON. Never include markdown, explanations out
         string targetLanguage)
     {
         var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
+        var candidateWords = ExtractCandidateWords(cleanedInput);
         var json = await GenerateWordsWithAssistant(cleanedInput, knownLanguage, targetLanguage);
         if (!ValidateResponse(json))
         {
@@ -55,6 +56,12 @@ Return only clean, learner-facing JSON. Never include markdown, explanations out
         }
 
         var generatedWords = NormalizeGeneratedWords(json, cleanedInput);
+        generatedWords = await ExpandUnderGeneratedWordsAsync(
+            cleanedInput,
+            knownLanguage,
+            targetLanguage,
+            candidateWords,
+            generatedWords);
         if (generatedWords.Count == 0)
         {
             _logger.LogWarning("Gemini word-extraction response failed validation for {KnownLanguage}->{TargetLanguage}", knownLanguage, targetLanguage);
@@ -112,6 +119,7 @@ Return only clean, learner-facing JSON. Never include markdown, explanations out
     {
         var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
         var cleanedSourceSentences = VocabularyInputCleaner.CleanSourceSentences(sourceSentences);
+        var candidateWords = ExtractCandidateWords(cleanedInput);
         var json = await GenerateWordsWithAssistant(
             cleanedInput,
             knownLanguage,
@@ -126,6 +134,12 @@ Return only clean, learner-facing JSON. Never include markdown, explanations out
         }
 
         var generatedWords = NormalizeGeneratedWords(json, cleanedInput);
+        generatedWords = await ExpandUnderGeneratedWordsAsync(
+            cleanedInput,
+            knownLanguage,
+            targetLanguage,
+            candidateWords,
+            generatedWords);
         if (generatedWords.Count == 0)
         {
             _logger.LogWarning("Gemini word-extraction response failed validation for {KnownLanguage}->{TargetLanguage} with {SentenceCount} source sentences", knownLanguage, targetLanguage, sourceSentences.Count);
@@ -221,6 +235,67 @@ Previous response:
         return response.Candidates?[0].Content?.Parts?[0].Text ?? string.Empty;
     }
 
+    private async Task<IReadOnlyDictionary<string, GeneratedWord>> ExpandUnderGeneratedWordsAsync(
+        string cleanedInput,
+        string knownLanguage,
+        string targetLanguage,
+        IReadOnlyList<string> candidateWords,
+        IReadOnlyDictionary<string, GeneratedWord> generatedWords)
+    {
+        if (!ShouldExpandCoverage(candidateWords.Count, generatedWords.Count))
+        {
+            return generatedWords;
+        }
+
+        var missingCandidates = SelectMissingCoverageCandidates(candidateWords, generatedWords);
+        if (missingCandidates.Count == 0)
+        {
+            return generatedWords;
+        }
+
+        var prompt = BuildCoverageExpansionPrompt(
+            cleanedInput,
+            knownLanguage,
+            targetLanguage,
+            missingCandidates);
+        var client = new Client(apiKey: _apiKey);
+        var response = await client.Models.GenerateContentAsync(
+            model: _model,
+            contents: prompt,
+            config: CreateJsonConfig(8_000)
+        );
+
+        var json = response.Candidates?[0].Content?.Parts?[0].Text ?? string.Empty;
+        var expandedWords = NormalizeGeneratedWords(json, cleanedInput);
+        if (expandedWords.Count == 0)
+        {
+            _logger.LogInformation(
+                "Gemini coverage expansion returned no usable items for {KnownLanguage}->{TargetLanguage}; initial count {GeneratedCount}, candidate count {CandidateCount}",
+                knownLanguage,
+                targetLanguage,
+                generatedWords.Count,
+                candidateWords.Count);
+            return generatedWords;
+        }
+
+        var merged = new Dictionary<string, GeneratedWord>(generatedWords, StringComparer.OrdinalIgnoreCase);
+        foreach (var (word, generatedWord) in expandedWords)
+        {
+            merged.TryAdd(word, generatedWord);
+        }
+
+        _logger.LogInformation(
+            "Gemini coverage expansion for {KnownLanguage}->{TargetLanguage}: initial count {GeneratedCount}, expanded usable count {ExpandedCount}, merged count {MergedCount}, candidate count {CandidateCount}",
+            knownLanguage,
+            targetLanguage,
+            generatedWords.Count,
+            expandedWords.Count,
+            merged.Count,
+            candidateWords.Count);
+
+        return merged;
+    }
+
     private void EnsureConfigured()
     {
         if (string.IsNullOrWhiteSpace(_apiKey))
@@ -249,6 +324,7 @@ Previous response:
         var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
         var candidateWords = ExtractCandidateWords(cleanedInput);
         var candidates = string.Join("\n", candidateWords.Select(word => $"- {word}"));
+        var coverageRule = BuildCoverageRule(candidateWords.Count, targetLanguage);
         var extractedSourceSentences = ExtractSourceSentences(cleanedInput);
         var useSourceSentences = ShouldUseSourceSentences(extractedSourceSentences);
         var sourceSentences = string.Join("\n", extractedSourceSentences.Select(sentence => $"- {sentence}"));
@@ -267,11 +343,14 @@ Rules:
 - Output MUST be valid JSON only. No explanations, no extra text.
 - Extract only vocabulary items that are actually written in {targetLanguage}.
 - Use the TOKENS list as the authoritative list of possible surface forms. Do not invent words outside TOKENS.
+- {coverageRule}
 - Keep keys as surface tokens only. Do not convert them to dictionary/headword/base forms during extraction.
+- Every JSON key MUST exactly match one line from TOKENS, character-for-character. Never use dictionary forms, lowercase rewrites, translations, or cleaned variants as keys.
 - Treat the input as messy learner notes. First identify the clean {targetLanguage} text, then extract vocabulary from that clean text only.
 - Ignore anything that functions as annotation, UI text, metadata, labels, grammar notes, gender notes, language names/codes, translations, pronunciation help, romanization, phonetic spelling, formatting symbols, or copy/paste artifacts.
 - Do not treat glossary lines that combine {knownLanguage} translation, {targetLanguage} word, and pronunciation hint as example sentences.
 - Do not copy wrappers or note markers into output. Words and example sentences must be clean learner-facing {targetLanguage}, without parentheses, brackets, slash labels, gender labels, language labels, or helper symbols unless the symbol is genuinely part of the target-language spelling.
+- If the source text contains alternatives, optional words, gender markers, split lines, or OCR-style phrasebook fragments, lightly rewrite them into clear natural {targetLanguage} sentences. For slash alternatives such as pan/pani, use one clean version at a time; never merge both alternatives into one sentence.
 - If a token could be either real {targetLanguage} vocabulary or surrounding annotation, include it only when the surrounding text clearly uses it as {targetLanguage}.
 - Preserve included candidate words exactly as written, including inflected forms.
 - Include proper nouns for places, countries, languages, and nationalities only when they are in {targetLanguage}.
@@ -283,7 +362,9 @@ Rules:
 {exampleSentenceRule}
 {exampleSentenceTranslationRule}
 - ""example_sentence"" MUST be a complete {targetLanguage} sentence or natural phrase with at least two words. It must not be a definition or explanation.
+- ""example_sentence"" MUST be clean and natural: no parentheses, slash alternatives, gender labels, language labels, romanization, or copied source-language prompt text.
 - ""example_sentence_translation"" MUST translate the example sentence. It must not be copied into ""example_sentence"".
+- Never use an unrelated stock translation such as ""Is that true?"" unless the example sentence actually means that.
 
 Format:
 {{
@@ -425,6 +506,7 @@ No parentheses, brackets, slash labels, pronunciation notes, markdown, or prose 
         var cleanedSourceSentences = VocabularyInputCleaner.CleanSourceSentences(sourceSentences);
         var candidateWords = ExtractCandidateWords(cleanedInput);
         var candidates = string.Join("\n", candidateWords.Select(word => $"- {word}"));
+        var coverageRule = BuildCoverageRule(candidateWords.Count, targetLanguage);
         var sentences = string.Join("\n", cleanedSourceSentences.Select(sentence => $"- {sentence}"));
         var useSourceSentences = ShouldUseSourceSentences(cleanedSourceSentences);
         var exampleSentenceRule = useSourceSentences
@@ -442,11 +524,14 @@ Rules:
 - Output MUST be valid JSON only. No explanations, no extra text.
 - Extract only vocabulary items that are actually written in {targetLanguage}.
 - Use the TOKENS list as the authoritative list of possible surface forms. Do not invent words outside TOKENS.
+- {coverageRule}
 - Keep keys as surface tokens only. Do not convert them to dictionary/headword/base forms during extraction.
+- Every JSON key MUST exactly match one line from TOKENS, character-for-character. Never use dictionary forms, lowercase rewrites, translations, or cleaned variants as keys.
 - Treat the input as messy learner notes. First identify the clean {targetLanguage} text, then extract vocabulary from that clean text only.
 - Ignore anything that functions as annotation, UI text, metadata, labels, grammar notes, gender notes, language names/codes, translations, pronunciation help, romanization, phonetic spelling, formatting symbols, or copy/paste artifacts.
 - Do not treat glossary lines that combine {knownLanguage} translation, {targetLanguage} word, and pronunciation hint as example sentences.
 - Do not copy wrappers or note markers into output. Words and example sentences must be clean learner-facing {targetLanguage}, without parentheses, brackets, slash labels, gender labels, language labels, or helper symbols unless the symbol is genuinely part of the target-language spelling.
+- If the source text contains alternatives, optional words, gender markers, split lines, or OCR-style phrasebook fragments, lightly rewrite them into clear natural {targetLanguage} sentences. For slash alternatives such as pan/pani, use one clean version at a time; never merge both alternatives into one sentence.
 - If a token could be either real {targetLanguage} vocabulary or surrounding annotation, include it only when the surrounding text clearly uses it as {targetLanguage}.
 - Preserve included candidate words exactly as written, including inflected forms.
 - Include proper nouns for places, countries, languages, and nationalities only when they are in {targetLanguage}.
@@ -458,7 +543,9 @@ Rules:
 {exampleSentenceRule}
 {exampleSentenceTranslationRule}
 - ""example_sentence"" MUST be a complete {targetLanguage} sentence or natural phrase with at least two words. It must not be a definition or explanation.
+- ""example_sentence"" MUST be clean and natural: no parentheses, slash alternatives, gender labels, language labels, romanization, or copied source-language prompt text.
 - ""example_sentence_translation"" MUST translate the example sentence. It must not be copied into ""example_sentence"".
+- Never use an unrelated stock translation such as ""Is that true?"" unless the example sentence actually means that.
 
 Format:
 {{
@@ -486,6 +573,66 @@ Input:
             .Where(word => !string.IsNullOrWhiteSpace(word) && !AppActionWords.Contains(word))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static string BuildCoverageRule(int candidateCount, string targetLanguage)
+    {
+        if (candidateCount >= 10)
+        {
+            var targetCount = Math.Min(candidateCount, 24);
+            var minimumCount = Math.Min(candidateCount, 12);
+            return $"Return broad coverage: include every useful {targetLanguage} vocabulary token from TOKENS, not just a small representative subset. TARGET_COUNT: return about {targetCount} entries, and at minimum {minimumCount} entries if that many TOKENS are valid {targetLanguage}. For phrasebook snippets, this should usually be many entries; do not stop after 3 items when more valid target-language tokens are available.";
+        }
+
+        return $"Return every useful {targetLanguage} vocabulary token from TOKENS.";
+    }
+
+    private static bool ShouldExpandCoverage(int candidateCount, int generatedCount)
+    {
+        return candidateCount >= 10 && generatedCount < Math.Min(10, candidateCount / 2);
+    }
+
+    private static IReadOnlyList<string> SelectMissingCoverageCandidates(
+        IReadOnlyList<string> candidateWords,
+        IReadOnlyDictionary<string, GeneratedWord> generatedWords)
+    {
+        return candidateWords
+            .Where(candidate => !generatedWords.ContainsKey(candidate))
+            .Take(32)
+            .ToList();
+    }
+
+    private static string BuildCoverageExpansionPrompt(
+        string cleanedInput,
+        string knownLanguage,
+        string targetLanguage,
+        IReadOnlyList<string> missingCandidates)
+    {
+        var candidates = string.Join("\n", missingCandidates.Select(word => $"- {word}"));
+
+        return $@"
+The previous vocabulary extraction returned too few items.
+Translate the missing {targetLanguage} vocabulary TOKENS below into {knownLanguage}.
+
+Rules:
+- Output valid JSON only.
+- Return one entry for every TOKEN that is real {targetLanguage} vocabulary.
+- Every JSON key MUST exactly match one line from TOKENS, character-for-character.
+- Do not invent words outside TOKENS.
+- Do not convert tokens to dictionary/headword/base forms.
+- Do not include pronunciation, romanization, English prompt text, labels, or explanations as keys.
+- Each value is an object with:
+- ""translation"": concise {knownLanguage} translation of the token
+- ""example_sentence"": a clean {targetLanguage} phrase or sentence from the CLEAN INPUT below that contains the token; if no clean source phrase fits, write a natural short {targetLanguage} example using the token
+- ""example_sentence_translation"": the {knownLanguage} translation of example_sentence
+- If the clean input still looks fragmented, lightly rewrite it into a natural {targetLanguage} sentence. For alternatives such as pan/pani, use one clean version at a time; never merge both alternatives into one sentence.
+- Never use an unrelated stock translation such as ""Is that true?"" unless the example sentence actually means that.
+
+TOKENS:
+{candidates}
+
+CLEAN INPUT:
+{cleanedInput}";
     }
 
     private static IReadOnlyList<string> ExtractSourceSentences(string input)

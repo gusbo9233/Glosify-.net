@@ -59,7 +59,7 @@ public class WordService : IWordService
     {
         var take = Math.Clamp(wordCount, 1, 100);
 
-        return await _context.Words
+        var words = await _context.Words
             .Where(word => word.QuizId == quizId)
             .GroupJoin(
                 _context.WordDetails,
@@ -68,22 +68,25 @@ public class WordService : IWordService
                 (word, details) => new { Word = word, Detail = details.FirstOrDefault() })
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
+            .ToListAsync();
+
+        return words
             .Select(item => new TypingQuizWordViewModel
             {
                 Id = item.Word.Id,
                 Prompt = item.Word.Translation,
                 Answer = item.Word.Lemma,
-                ExampleSentence = item.Detail == null ? string.Empty : item.Detail.ExampleSentence,
+                ExampleSentence = item.Detail == null ? string.Empty : CleanExampleForDisplay(item.Detail.ExampleSentence),
                 ExampleTranslation = item.Detail == null ? string.Empty : item.Detail.ExampleSentenceTranslation
             })
-            .ToListAsync();
+            .ToList();
     }
 
     public async Task<IReadOnlyList<FlashcardWordViewModel>> LoadCardsAsync(Guid quizId, int wordCount)
     {
         var take = Math.Clamp(wordCount, 1, 100);
 
-        return await _context.Words
+        var cards = await _context.Words
             .Where(word => word.QuizId == quizId)
             .GroupJoin(
                 _context.WordDetails,
@@ -92,15 +95,18 @@ public class WordService : IWordService
                 (word, details) => new { Word = word, Detail = details.FirstOrDefault() })
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
+            .ToListAsync();
+
+        return cards
             .Select(item => new FlashcardWordViewModel
             {
                 Id = item.Word.Id,
                 Lemma = item.Word.Lemma,
                 Translation = item.Word.Translation,
-                ExampleSentence = item.Detail == null ? string.Empty : item.Detail.ExampleSentence,
+                ExampleSentence = item.Detail == null ? string.Empty : CleanExampleForDisplay(item.Detail.ExampleSentence),
                 ExampleTranslation = item.Detail == null ? string.Empty : item.Detail.ExampleSentenceTranslation
             })
-            .ToListAsync();
+            .ToList();
     }
 
     public async Task<IReadOnlyList<QuizSentenceViewModel>> GetSentencesAsync(Guid quizId)
@@ -116,7 +122,13 @@ public class WordService : IWordService
 
         return wordDetails
             .Where(detail => !string.IsNullOrWhiteSpace(detail.ExampleSentence))
-            .GroupBy(detail => detail.ExampleSentence.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(detail => new
+            {
+                ExampleSentence = CleanExampleForDisplay(detail.ExampleSentence),
+                detail.ExampleSentenceTranslation
+            })
+            .Where(detail => !string.IsNullOrWhiteSpace(detail.ExampleSentence))
+            .GroupBy(detail => detail.ExampleSentence, StringComparer.OrdinalIgnoreCase)
             .Select(group => new QuizSentenceViewModel
             {
                 Text = group.Key,
@@ -127,6 +139,13 @@ public class WordService : IWordService
             })
             .OrderBy(sentence => sentence.Text)
             .ToList();
+    }
+
+    private static string CleanExampleForDisplay(string? exampleSentence)
+    {
+        return string.IsNullOrWhiteSpace(exampleSentence)
+            ? string.Empty
+            : VocabularyInputCleaner.CleanForVocabulary(exampleSentence).Trim();
     }
 
     public async Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage)
