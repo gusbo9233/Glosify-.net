@@ -32,13 +32,13 @@ public sealed class AssistantTools : IAssistantTools
 
         new(
             "add_word",
-            "Propose adding a new word to the quiz. The change is queued; it is only saved when the user clicks Apply.",
+            "Propose adding a new word to the quiz. Include a natural full example sentence and translation when possible. The change is queued; it is only saved when the user clicks Apply.",
             BuildSchema(new Dictionary<string, object>
             {
                 ["lemma"] = StringProp("Dictionary form of the word in the target language."),
                 ["translation"] = StringProp("Translation in the user's source language."),
-                ["example_sentence"] = StringProp("Optional. Sentence using the word in the target language."),
-                ["example_sentence_translation"] = StringProp("Optional. Translation of the example sentence."),
+                ["example_sentence"] = StringProp("Optional. Natural full sentence in the target language using the word's lemma or an inflected form. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
+                ["example_sentence_translation"] = StringProp("Optional. Natural source-language translation of the example sentence."),
             }, required: ["lemma", "translation"])),
 
         new(
@@ -61,23 +61,23 @@ public sealed class AssistantTools : IAssistantTools
 
         new(
             "set_word_detail",
-            "Propose updating the explanation and/or example sentence of a word. Queued until the user clicks Apply.",
+            "Propose updating the explanation and/or example sentence of a word. Use this when the user asks to generate sentences for existing quiz words. Queued until the user clicks Apply.",
             BuildSchema(new Dictionary<string, object>
             {
                 ["word_id"] = StringProp("Id of the word whose detail to update."),
                 ["explanation"] = StringProp("Optional. New short explanation in the user's source language."),
-                ["example_sentence"] = StringProp("Optional. New example sentence in the target language."),
-                ["example_sentence_translation"] = StringProp("Optional. Translation of the new example sentence."),
+                ["example_sentence"] = StringProp("Optional. Natural full sentence in the target language using this word's lemma or an inflected form. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
+                ["example_sentence_translation"] = StringProp("Optional. Natural source-language translation of the new example sentence."),
             }, required: ["word_id"])),
 
         new(
             "repair_sentence",
-            "Propose replacing all occurrences of an example sentence (across word_details) with a corrected version. Queued until Apply.",
+            "Propose replacing all occurrences of an example sentence (across word_details) with a corrected natural full sentence. Queued until Apply.",
             BuildSchema(new Dictionary<string, object>
             {
                 ["original_text"] = StringProp("The current sentence text to replace."),
-                ["new_text"] = StringProp("The corrected sentence in the target language."),
-                ["new_translation"] = StringProp("The corrected translation in the source language."),
+                ["new_text"] = StringProp("The corrected natural full sentence in the target language. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
+                ["new_translation"] = StringProp("The corrected natural translation in the source language."),
             }, required: ["original_text", "new_text", "new_translation"])),
     ];
 

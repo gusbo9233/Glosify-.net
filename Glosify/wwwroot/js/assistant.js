@@ -11,6 +11,8 @@
     const form = panel.querySelector('[data-assistant-form]');
     const textarea = panel.querySelector('[data-assistant-textarea]');
     const submit = panel.querySelector('[data-assistant-submit]');
+    const imageInput = panel.querySelector('[data-assistant-image-input]');
+    const scanStatus = panel.querySelector('[data-assistant-scan-status]');
     const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
 
     const escapeHtml = (text) => {
@@ -29,6 +31,21 @@
         status.hidden = false;
         status.textContent = message;
         status.classList.toggle('is-error', isError);
+    };
+
+    const setScanStatus = (message, isError = false) => {
+        if (!scanStatus) {
+            return;
+        }
+        if (!message) {
+            scanStatus.hidden = true;
+            scanStatus.textContent = '';
+            scanStatus.classList.remove('is-error');
+            return;
+        }
+        scanStatus.hidden = false;
+        scanStatus.textContent = message;
+        scanStatus.classList.toggle('is-error', isError);
     };
 
     const renderMessage = (message) => {
@@ -246,6 +263,47 @@
         } finally {
             submit.disabled = false;
             textarea.focus();
+        }
+    });
+
+    imageInput?.addEventListener('change', async () => {
+        const image = imageInput.files?.[0];
+        if (!image) {
+            return;
+        }
+
+        const body = new FormData();
+        body.append('quizId', quizId);
+        body.append('image', image);
+
+        imageInput.disabled = true;
+        setScanStatus('Reading picture…');
+        try {
+            const response = await fetch(imageInput.dataset.extractUrl || '/Quiz/ExtractTextFromImage', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'RequestVerificationToken': tokenInput?.value ?? '',
+                },
+                body,
+            });
+            const data = await response.json().catch(() => null);
+            if (!response.ok || !data?.text) {
+                setScanStatus(data?.error || 'Could not read text from that picture.', true);
+                return;
+            }
+
+            const prompt = `Add useful vocabulary from this text:\n\n${data.text.trim()}`;
+            textarea.value = textarea.value.trim()
+                ? `${textarea.value.trim()}\n\n${prompt}`
+                : prompt;
+            textarea.focus();
+            setScanStatus('Text added.');
+        } catch (err) {
+            setScanStatus('Network error reading picture.', true);
+        } finally {
+            imageInput.value = '';
+            imageInput.disabled = false;
         }
     });
 

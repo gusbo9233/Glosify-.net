@@ -12,4 +12,7 @@ public class GeneratedWord
 
     [JsonPropertyName("example_sentence_translation")]
     public string? ExampleSentenceTranslation { get; set; }
+
+    [JsonPropertyName("example_sentence_word")]
+    public string? ExampleSentenceWord { get; set; }
 }

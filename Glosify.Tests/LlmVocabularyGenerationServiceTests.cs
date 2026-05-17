@@ -40,6 +40,52 @@ public class LlmVocabularyGenerationServiceTests
     }
 
     [Fact]
+    public async Task GenerateWordsFromTextAsync_PrefersWordScopedSentenceForInflectedUsage()
+    {
+        var gemini = new FakeGeminiClient
+        {
+            JsonResponse = """
+            {
+              "words": [
+                {
+                  "lemma": "mówić",
+                  "translation": "to speak",
+                  "example_sentence": "Ona mówi po polsku.",
+                  "example_sentence_translation": "She speaks Polish.",
+                  "example_sentence_word": "mówi"
+                }
+              ],
+              "sentences": [
+                { "text": "Mówić jest ważne.", "translation": "Speaking is important." }
+              ]
+            }
+            """
+        };
+        var service = new LlmVocabularyGenerationService(gemini, NullLogger<LlmVocabularyGenerationService>.Instance);
+
+        var result = await service.GenerateWordsFromTextAsync("Ona mówi po polsku.", "English", "Polish", null);
+
+        Assert.Single(result);
+        Assert.Equal("Ona mówi po polsku.", result["mówić"].ExampleSentence);
+        Assert.Equal("She speaks Polish.", result["mówić"].ExampleSentenceTranslation);
+        Assert.Equal("mówi", result["mówić"].ExampleSentenceWord);
+    }
+
+    [Fact]
+    public async Task GenerateWordsFromTextAsync_AsksForWordScopedExampleSentences()
+    {
+        var gemini = new FakeGeminiClient { JsonResponse = """{ "words": [{ "lemma": "Hund", "translation": "dog" }], "sentences": [] }""" };
+        var service = new LlmVocabularyGenerationService(gemini, NullLogger<LlmVocabularyGenerationService>.Instance);
+
+        await service.GenerateWordsFromTextAsync("Der Hund schläft.", "English", "German", null);
+
+        Assert.Contains("\"example_sentence\"", gemini.LastPrompt);
+        Assert.Contains("\"example_sentence_word\"", gemini.LastPrompt);
+        Assert.Contains("uses that lemma or a natural inflected form", gemini.LastPrompt);
+        Assert.Contains("no pronunciation hints", gemini.LastPrompt);
+    }
+
+    [Fact]
     public async Task GenerateWordsFromTextAsync_StripsMarkdownFences()
     {
         var gemini = new FakeGeminiClient
@@ -104,9 +150,13 @@ public class LlmVocabularyGenerationServiceTests
     {
         public string JsonResponse { get; set; } = string.Empty;
         public string ImageResponse { get; set; } = string.Empty;
+        public string LastPrompt { get; private set; } = string.Empty;
 
         public Task<string> GenerateJsonAsync(string prompt, string? model = null, CancellationToken cancellationToken = default)
-            => Task.FromResult(JsonResponse);
+        {
+            LastPrompt = prompt;
+            return Task.FromResult(JsonResponse);
+        }
 
         public Task<string> ExtractTextFromImageAsync(byte[] imageBytes, string contentType, string prompt, CancellationToken cancellationToken = default)
             => Task.FromResult(ImageResponse);

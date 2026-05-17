@@ -47,6 +47,17 @@ public class GeneratedVocabularyServiceTests
     }
 
     [Fact]
+    public void IsUsefulExampleSentence_AcceptsInflectedSentenceWhenUsedFormIsProvided()
+    {
+        Assert.True(IsUsefulExampleSentence(
+            "mówić",
+            "to speak",
+            "Ona mówi po polsku.",
+            "She speaks Polish.",
+            "mówi"));
+    }
+
+    [Fact]
     public void IsUsefulExampleSentence_RejectsUnrelatedStockTranslation()
     {
         Assert.False(IsUsefulExampleSentence(
@@ -107,19 +118,19 @@ public class GeneratedVocabularyServiceTests
         string word,
         string translation,
         string exampleSentence,
-        string exampleSentenceTranslation)
+        string exampleSentenceTranslation,
+        string? exampleSentenceWord = null)
     {
         var method = typeof(GeneratedVocabularyService).GetMethod(
-            "IsUsefulExampleSentence",
+            string.IsNullOrWhiteSpace(exampleSentenceWord) ? "IsUsefulExampleSentence" : "IsUsefulExampleSentenceCore",
             BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(method);
 
-        return Assert.IsType<bool>(method.Invoke(null, [
-            word,
-            translation,
-            exampleSentence,
-            exampleSentenceTranslation
-        ]));
+        object?[] args = string.IsNullOrWhiteSpace(exampleSentenceWord)
+            ? [word, translation, exampleSentence, exampleSentenceTranslation]
+            : [word, translation, exampleSentence, exampleSentenceTranslation, exampleSentenceWord];
+
+        return Assert.IsType<bool>(method.Invoke(null, args));
     }
 
     private static bool ShouldReplaceExampleSentence(

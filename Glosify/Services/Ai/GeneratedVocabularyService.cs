@@ -156,7 +156,12 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
 
             var aiExampleSentence = ResolveExampleSentence(trimmedLemma, translation, generatedWord, sourceSentences);
             var aiExampleSentenceTranslation = generatedWord.ExampleSentenceTranslation?.Trim() ?? string.Empty;
-            if (!IsUsefulExampleSentence(trimmedLemma, translation, aiExampleSentence, aiExampleSentenceTranslation))
+            if (!IsUsefulExampleSentenceCore(
+                trimmedLemma,
+                translation,
+                aiExampleSentence,
+                aiExampleSentenceTranslation,
+                generatedWord.ExampleSentenceWord))
             {
                 aiExampleSentence = string.Empty;
                 aiExampleSentenceTranslation = string.Empty;
@@ -270,7 +275,12 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
     {
         var exampleSentence = ResolveExampleSentence(word, translation, generatedWord, sourceSentences);
         var exampleSentenceTranslation = generatedWord.ExampleSentenceTranslation?.Trim() ?? string.Empty;
-        if (!IsUsefulExampleSentence(word, translation, exampleSentence, exampleSentenceTranslation))
+        if (!IsUsefulExampleSentenceCore(
+            word,
+            translation,
+            exampleSentence,
+            exampleSentenceTranslation,
+            generatedWord.ExampleSentenceWord))
         {
             return false;
         }
@@ -312,6 +322,16 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
 
     private static bool IsUsefulExampleSentence(string word, string translation, string? exampleSentence, string? exampleSentenceTranslation)
     {
+        return IsUsefulExampleSentenceCore(word, translation, exampleSentence, exampleSentenceTranslation, null);
+    }
+
+    private static bool IsUsefulExampleSentenceCore(
+        string word,
+        string translation,
+        string? exampleSentence,
+        string? exampleSentenceTranslation,
+        string? exampleSentenceWord)
+    {
         if (string.IsNullOrWhiteSpace(exampleSentence))
         {
             return false;
@@ -323,9 +343,15 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
             return false;
         }
 
-        return ContainsWord(trimmed, word)
+        var matchingWord = ContainsWord(trimmed, word)
+            ? word
+            : !string.IsNullOrWhiteSpace(exampleSentenceWord) && ContainsWord(trimmed, exampleSentenceWord)
+                ? exampleSentenceWord
+                : string.Empty;
+
+        return !string.IsNullOrWhiteSpace(matchingWord)
             && !HasLearnerNoteArtifacts(trimmed)
-            && !LooksLikeGlossLine(word, translation, trimmed)
+            && !LooksLikeGlossLine(matchingWord, translation, trimmed)
             && !LooksLikeUnrelatedStockTranslation(trimmed, exampleSentenceTranslation)
             && (string.IsNullOrWhiteSpace(exampleSentenceTranslation)
                 || !string.Equals(trimmed, exampleSentenceTranslation.Trim(), StringComparison.OrdinalIgnoreCase));

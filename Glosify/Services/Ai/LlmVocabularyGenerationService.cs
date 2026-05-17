@@ -57,8 +57,13 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
             normalized[lemma] = new GeneratedWord
             {
                 Translation = translation,
-                ExampleSentence = CleanText(sentence?.Text ?? word.ExampleSentence),
-                ExampleSentenceTranslation = CleanText(sentence?.Translation ?? word.ExampleSentenceTranslation),
+                ExampleSentence = CleanText(word.ExampleSentence) is { Length: > 0 } exampleSentence
+                    ? exampleSentence
+                    : CleanText(sentence?.Text),
+                ExampleSentenceTranslation = CleanText(word.ExampleSentenceTranslation) is { Length: > 0 } exampleTranslation
+                    ? exampleTranslation
+                    : CleanText(sentence?.Translation),
+                ExampleSentenceWord = CleanText(word.ExampleSentenceWord),
             };
         }
 
@@ -144,14 +149,24 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         - The "lemma" is the dictionary form in {{targetLanguage}}.
         - The "translation" is a concise {{sourceLanguage}} gloss. Use the most natural meaning, not a pronunciation hint.
         - Skip closed-class words (articles, common prepositions, basic pronouns) unless they are central to the text.
-        - One example sentence per distinct lemma, taken from or inspired by the input text. Keep sentences in {{targetLanguage}}, plus a {{sourceLanguage}} translation.
+        - For every word, include one natural full example sentence in {{targetLanguage}} that uses that lemma or a natural inflected form of it.
+        - For every word, set "example_sentence_word" to the exact word form from the example sentence that corresponds to the lemma.
+        - Prefer sentences taken from the input text when they are already grammatical and complete; otherwise write a short sentence inspired by the input.
+        - Each example sentence must be useful to a learner: no pronunciation hints, gender notes, slash-separated alternatives, dictionary glosses, fragments, or markup.
+        - Translate each example sentence into natural {{sourceLanguage}}.
         - Do not include grammatical notes, parts of speech, or markup in the lemma or translation.
         - Output strictly the JSON object described below. No commentary, no markdown fences.
 
         Output schema:
         {
           "words": [
-            { "lemma": "string ({{targetLanguage}})", "translation": "string ({{sourceLanguage}})" }
+            {
+              "lemma": "string ({{targetLanguage}})",
+              "translation": "string ({{sourceLanguage}})",
+              "example_sentence": "string ({{targetLanguage}})",
+              "example_sentence_translation": "string ({{sourceLanguage}})",
+              "example_sentence_word": "string (the exact target-language word form used in example_sentence for this lemma)"
+            }
           ],
           "sentences": [
             { "text": "string ({{targetLanguage}})", "translation": "string ({{sourceLanguage}})" }
@@ -177,8 +192,9 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         - "properties" is a flat map of grammatical info (e.g. "pos", "gender", "aspect", "transitivity"). Keys are lowercase snake_case. Values are short strings.
         - "variants" lists inflected forms (declensions, conjugations). Each has a "form" (the inflected word in {{targetLanguage}}) and a "tags" list (e.g. ["nominative","singular"], ["past","3rd-person","plural"]).
         - "explanation" is one or two sentences in {{sourceLanguage}} explaining nuance, register, or common collocations.
-        - "example_sentence" is one natural sentence in {{targetLanguage}} using the lemma in context.
-        - "example_sentence_translation" is the {{sourceLanguage}} translation of that sentence.
+        - "example_sentence" is one natural full sentence in {{targetLanguage}} using the lemma or a natural inflected form in context.
+        - "example_sentence" must not contain learner notes, pronunciation hints, slash-separated alternatives, dictionary glosses, fragments, or markup.
+        - "example_sentence_translation" is a natural {{sourceLanguage}} translation of that sentence.
         - Output strictly the JSON object below. No commentary, no markdown fences.
 
         Output schema:
@@ -201,7 +217,9 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         Rules for the repaired output:
         - Keep every word's "id" stable. Do not invent or drop words.
         - Fix obvious lemma/translation typos. Lemmas stay in {{quizData.Quiz.TargetLanguage}}; translations stay in {{quizData.Quiz.SourceLanguage}}.
-        - Ensure each example_sentence is a natural full sentence in {{quizData.Quiz.TargetLanguage}}, with a {{quizData.Quiz.SourceLanguage}} translation.
+        - Ensure each example_sentence is a natural full sentence in {{quizData.Quiz.TargetLanguage}}, with a natural {{quizData.Quiz.SourceLanguage}} translation.
+        - Example sentences must exercise the relevant quiz word using the lemma or a natural inflected form.
+        - Remove learner notes, pronunciation hints, slash-separated alternatives, dictionary glosses, fragments, and markup from example_sentence fields.
         - Fill missing word_details (properties, variants, explanation) where they are empty.
         - Preserve all "id" fields exactly as given. Use snake_case keys as in the input.
         - Output strictly a JSON object matching the same shape as the input. No commentary, no markdown fences.
@@ -223,6 +241,8 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         - Keep the word's "id" exactly as given.
         - Fix lemma/translation typos. The lemma stays in {{quizData.Quiz.TargetLanguage}}; the translation stays in {{quizData.Quiz.SourceLanguage}}.
         - Rebuild the associated word_detail (properties, variants, explanation, example_sentence, example_sentence_translation) so it is complete and accurate. Reuse the existing word_detail "id" exactly.
+        - The example_sentence must be a natural full {{quizData.Quiz.TargetLanguage}} sentence that uses this word's lemma or a natural inflected form.
+        - Do not put learner notes, pronunciation hints, slash-separated alternatives, dictionary glosses, fragments, or markup in example_sentence.
         - Output strictly a JSON object with the shape below. No commentary, no markdown fences.
 
         Output schema:
@@ -256,8 +276,10 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         ---
 
         Rules:
-        - Produce a natural, grammatical sentence in {{quizData.Quiz.TargetLanguage}} that exercises one or more words from the quiz.
-        - Provide the {{quizData.Quiz.SourceLanguage}} translation.
+        - Produce a natural, grammatical full sentence in {{quizData.Quiz.TargetLanguage}} that exercises one or more words from the quiz.
+        - Preserve the learning purpose of the original sentence: keep the same quiz word(s) when possible, using natural inflected forms if needed.
+        - Do not output learner notes, pronunciation hints, slash-separated alternatives, dictionary glosses, fragments, or markup.
+        - Provide a natural {{quizData.Quiz.SourceLanguage}} translation of the sentence.
         - Output strictly the JSON object below. No commentary, no markdown fences.
 
         Output schema:
@@ -369,6 +391,8 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         public string ExampleSentence { get; set; } = string.Empty;
         [JsonPropertyName("example_sentence_translation")]
         public string ExampleSentenceTranslation { get; set; } = string.Empty;
+        [JsonPropertyName("example_sentence_word")]
+        public string ExampleSentenceWord { get; set; } = string.Empty;
     }
 
     private sealed class LlmSentence

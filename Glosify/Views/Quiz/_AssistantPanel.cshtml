@@ -14,6 +14,21 @@
     <div class="assistant-status" data-assistant-status hidden></div>
 
     <form class="assistant-input" data-assistant-form>
+        <div class="scan-toolbar">
+            <label class="btn-scan-text" for="assistantImageInput">
+                <span class="material-symbols-outlined" aria-hidden="true">photo_camera</span>
+                Take picture
+            </label>
+            <input
+                id="assistantImageInput"
+                class="visually-hidden"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                data-assistant-image-input
+                data-extract-url="@Url.Action("ExtractTextFromImage", "Quiz", new { quizId = Model.SelectedQuiz.Id })" />
+            <span class="scan-status" data-assistant-scan-status hidden></span>
+        </div>
         <textarea
             class="form-textarea"
             data-assistant-textarea
