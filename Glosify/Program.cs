@@ -64,21 +64,6 @@ builder.Services.Configure<GeminiOptions>(options =>
         options.Model = model;
     }
 });
-builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAI"));
-builder.Services.Configure<OpenAiOptions>(options =>
-{
-    var apiKey = builder.Configuration["OPENAI_API_KEY"];
-    if (!string.IsNullOrWhiteSpace(apiKey))
-    {
-        options.ApiKey = apiKey;
-    }
-
-    var model = builder.Configuration["OPENAI_MODEL"];
-    if (!string.IsNullOrWhiteSpace(model))
-    {
-        options.Model = model;
-    }
-});
 builder.Services.Configure<QuizServerOptions>(builder.Configuration.GetSection("QuizServer"));
 builder.Services.Configure<QuizServerOptions>(options =>
 {
@@ -100,9 +85,6 @@ builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IWordService, WordService>();
 builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
 builder.Services.AddScoped<ITypingQuizService, TypingQuizService>();
-builder.Services.AddScoped<AiWordGenerationService>();
-builder.Services.AddScoped<IAiWordGenerationService, SimpleAiWordGenerationService>();
-builder.Services.AddHttpClient<IOpenAiVocabularyGenerationService, OpenAiVocabularyGenerationService>();
 builder.Services.AddHttpClient<IQuizServerVocabularyGenerationService, QuizServerVocabularyGenerationService>((serviceProvider, client) =>
 {
     var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<QuizServerOptions>>().Value;

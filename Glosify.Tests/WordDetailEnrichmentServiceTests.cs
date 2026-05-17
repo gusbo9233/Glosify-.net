@@ -64,7 +64,7 @@ public class WordDetailEnrichmentServiceTests
             Language = "German",
             TargetLanguage = "German"
         };
-        var ai = new FakeAiWordGenerationService
+        var quizServer = new FakeQuizServerVocabularyGenerationService
         {
             WordDetail = new GeneratedWordDetail
             {
@@ -73,7 +73,7 @@ public class WordDetailEnrichmentServiceTests
                 ExampleSentence = "Generated example."
             }
         };
-        var service = new WordDetailEnrichmentService(null!, ai);
+        var service = new WordDetailEnrichmentService(null!, quizServer);
 
         var changed = await service.EnrichAsync(
             detail,
@@ -83,7 +83,7 @@ public class WordDetailEnrichmentServiceTests
             "German");
 
         Assert.False(changed);
-        Assert.False(ai.WasCalled);
+        Assert.False(quizServer.WasCalled);
         Assert.Equal("""{"pos":"noun"}""", detail.Properties);
         Assert.Equal("Manual explanation.", detail.Explanation);
         Assert.Equal("Manual example.", detail.ExampleSentence);
@@ -244,7 +244,7 @@ public class WordDetailEnrichmentServiceTests
     }
 
     private static WordDetailEnrichmentService CreateService(GeneratedWordDetail generated)
-        => new(null!, new FakeAiWordGenerationService { WordDetail = generated });
+        => new(null!, new FakeQuizServerVocabularyGenerationService { WordDetail = generated });
 
     private static Dictionary<string, System.Text.Json.JsonElement> JsonProperties(string json)
     {
@@ -254,34 +254,28 @@ public class WordDetailEnrichmentServiceTests
             .ToDictionary(property => property.Name, property => property.Value.Clone());
     }
 
-    private sealed class FakeAiWordGenerationService : IAiWordGenerationService
+    private sealed class FakeQuizServerVocabularyGenerationService : IQuizServerVocabularyGenerationService
     {
         public GeneratedWordDetail? WordDetail { get; init; }
         public bool WasCalled { get; private set; }
 
         public Task<IReadOnlyDictionary<string, GeneratedWord>> GenerateWordsFromTextAsync(
             string input,
-            string knownLanguage,
-            string targetLanguage)
-            => throw new NotSupportedException();
-
-        public Task<IReadOnlyDictionary<string, GeneratedWord>> GenerateWordsFromTextAsync(
-            string input,
-            string knownLanguage,
+            string sourceLanguage,
             string targetLanguage,
-            IReadOnlyList<string> sourceSentences)
+            string? quizName,
+            CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
         public Task<GeneratedWordDetail?> GenerateWordDetailAsync(
             string word,
             string translation,
-            string knownLanguage,
-            string targetLanguage)
+            string sourceLanguage,
+            string targetLanguage,
+            CancellationToken cancellationToken = default)
         {
             WasCalled = true;
             return Task.FromResult(WordDetail);
         }
-
-        public bool ValidateResponse(string json) => true;
     }
 }

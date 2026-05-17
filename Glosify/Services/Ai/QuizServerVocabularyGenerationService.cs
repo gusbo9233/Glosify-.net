@@ -87,6 +87,57 @@ public sealed class QuizServerVocabularyGenerationService : IQuizServerVocabular
         return merged;
     }
 
+    public async Task<GeneratedWordDetail?> GenerateWordDetailAsync(
+        string word,
+        string translation,
+        string sourceLanguage,
+        string targetLanguage,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new QuizServerRequest(
+            word,
+            sourceLanguage,
+            targetLanguage,
+            null,
+            "gemini",
+            false);
+
+        using var response = await _httpClient.PostAsJsonAsync("quizzes", request, JsonOptions, cancellationToken);
+        var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning(
+                "Quiz server word-detail generation failed with status {StatusCode}: {Response}",
+                (int)response.StatusCode,
+                responseText);
+            return null;
+        }
+
+        var serverResponse = DeserializeResponse(responseText);
+        if (serverResponse == null)
+        {
+            _logger.LogWarning("Quiz server word-detail generation returned an unreadable response.");
+            return null;
+        }
+
+        var serverWord = FindServerWord(word, translation, serverResponse.Words);
+        var detail = FindServerWordDetail(serverWord?.WordDetailId, word, serverResponse.WordDetails);
+        if (detail == null)
+        {
+            _logger.LogWarning("Quiz server word-detail generation returned no matching detail for {Word}.", word);
+            return null;
+        }
+
+        return new GeneratedWordDetail
+        {
+            Properties = NormalizeProperties(detail.Properties),
+            Variants = NormalizeVariants(detail.Variants),
+            Explanation = CleanText(detail.Explanation),
+            ExampleSentence = CleanText(detail.ExampleSentence),
+            ExampleSentenceTranslation = FindSentenceTranslation(detail.ExampleSentence, serverResponse.Sentences)
+        };
+    }
+
     private async Task<IReadOnlyDictionary<string, GeneratedWord>> GenerateChunkAsync(
         string input,
         string sourceLanguage,
@@ -180,7 +231,7 @@ public sealed class QuizServerVocabularyGenerationService : IQuizServerVocabular
 
         try
         {
-            var serverResponse = JsonSerializer.Deserialize<QuizServerResponse>(json, JsonOptions);
+            var serverResponse = DeserializeResponse(json);
             if (serverResponse?.Words is not { Count: > 0 } serverWords)
             {
                 return new Dictionary<string, GeneratedWord>(StringComparer.OrdinalIgnoreCase);
@@ -214,6 +265,100 @@ public sealed class QuizServerVocabularyGenerationService : IQuizServerVocabular
         }
     }
 
+    private static QuizServerResponse? DeserializeResponse(string json)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<QuizServerResponse>(json, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static QuizServerWord? FindServerWord(
+        string word,
+        string translation,
+        IReadOnlyList<QuizServerWord> words)
+    {
+        var cleanedWord = CleanText(word);
+        var cleanedTranslation = CleanText(translation);
+
+        return words.FirstOrDefault(candidate =>
+                string.Equals(CleanText(candidate.Lemma), cleanedWord, StringComparison.OrdinalIgnoreCase)
+                && (string.IsNullOrWhiteSpace(cleanedTranslation)
+                    || string.Equals(CleanText(candidate.Translation), cleanedTranslation, StringComparison.OrdinalIgnoreCase)))
+            ?? words.FirstOrDefault(candidate =>
+                string.Equals(CleanText(candidate.Lemma), cleanedWord, StringComparison.OrdinalIgnoreCase))
+            ?? words.FirstOrDefault();
+    }
+
+    private static QuizServerWordDetail? FindServerWordDetail(
+        string? wordDetailId,
+        string word,
+        IReadOnlyList<QuizServerWordDetail> details)
+    {
+        if (!string.IsNullOrWhiteSpace(wordDetailId))
+        {
+            var byId = details.FirstOrDefault(detail =>
+                string.Equals(CleanText(detail.Id), CleanText(wordDetailId), StringComparison.OrdinalIgnoreCase));
+            if (byId != null)
+            {
+                return byId;
+            }
+        }
+
+        return details.FirstOrDefault(detail =>
+                string.Equals(CleanText(detail.Id), CleanText(word), StringComparison.OrdinalIgnoreCase))
+            ?? details.FirstOrDefault();
+    }
+
+    private static Dictionary<string, JsonElement> NormalizeProperties(Dictionary<string, JsonElement>? properties)
+    {
+        if (properties == null || properties.Count == 0)
+        {
+            return [];
+        }
+
+        return properties
+            .Where(property => property.Value.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
+            .ToDictionary(property => property.Key, property => property.Value.Clone(), StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static List<GeneratedWordVariant> NormalizeVariants(IReadOnlyList<QuizServerWordDetailVariant>? variants)
+    {
+        if (variants == null || variants.Count == 0)
+        {
+            return [];
+        }
+
+        return variants
+            .Select(variant => new GeneratedWordVariant
+            {
+                Form = CleanText(variant.Form),
+                Tags = variant.Tags?
+                    .Select(CleanText)
+                    .Where(tag => !string.IsNullOrWhiteSpace(tag))
+                    .ToList() ?? []
+            })
+            .Where(variant => !string.IsNullOrWhiteSpace(variant.Form))
+            .ToList();
+    }
+
+    private static string FindSentenceTranslation(
+        string? exampleSentence,
+        IReadOnlyList<QuizServerSentence> sentences)
+    {
+        if (string.IsNullOrWhiteSpace(exampleSentence))
+        {
+            return string.Empty;
+        }
+
+        return CleanText(sentences.FirstOrDefault(sentence =>
+            string.Equals(CleanText(sentence.Text), CleanText(exampleSentence), StringComparison.OrdinalIgnoreCase))?.Translation);
+    }
+
     private static QuizServerSentence? FindSentenceForWord(
         string lemma,
         IReadOnlyList<QuizServerSentence> sentences)
@@ -239,6 +384,8 @@ public sealed class QuizServerVocabularyGenerationService : IQuizServerVocabular
     private sealed class QuizServerResponse
     {
         public List<QuizServerWord> Words { get; set; } = [];
+        [JsonPropertyName("word_details")]
+        public List<QuizServerWordDetail> WordDetails { get; set; } = [];
         public List<QuizServerSentence> Sentences { get; set; } = [];
     }
 
@@ -246,6 +393,24 @@ public sealed class QuizServerVocabularyGenerationService : IQuizServerVocabular
     {
         public string Lemma { get; set; } = string.Empty;
         public string Translation { get; set; } = string.Empty;
+        [JsonPropertyName("word_detail_id")]
+        public string WordDetailId { get; set; } = string.Empty;
+    }
+
+    private sealed class QuizServerWordDetail
+    {
+        public string Id { get; set; } = string.Empty;
+        public Dictionary<string, JsonElement> Properties { get; set; } = [];
+        [JsonPropertyName("example_sentence")]
+        public string ExampleSentence { get; set; } = string.Empty;
+        public string Explanation { get; set; } = string.Empty;
+        public List<QuizServerWordDetailVariant> Variants { get; set; } = [];
+    }
+
+    private sealed class QuizServerWordDetailVariant
+    {
+        public string Form { get; set; } = string.Empty;
+        public List<string> Tags { get; set; } = [];
     }
 
     private sealed class QuizServerSentence

@@ -8,4 +8,11 @@ public interface IQuizServerVocabularyGenerationService
         string targetLanguage,
         string? quizName,
         CancellationToken cancellationToken = default);
+
+    Task<GeneratedWordDetail?> GenerateWordDetailAsync(
+        string word,
+        string translation,
+        string sourceLanguage,
+        string targetLanguage,
+        CancellationToken cancellationToken = default);
 }
