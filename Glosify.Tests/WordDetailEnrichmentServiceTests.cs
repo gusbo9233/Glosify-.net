@@ -73,7 +73,7 @@ public class WordDetailEnrichmentServiceTests
                 ExampleSentence = "Generated example."
             }
         };
-        var service = new WordDetailEnrichmentService(null!, quizServer);
+        var service = new WordDetailEnrichmentService(quizServer);
 
         var changed = await service.EnrichAsync(
             detail,
@@ -244,7 +244,7 @@ public class WordDetailEnrichmentServiceTests
     }
 
     private static WordDetailEnrichmentService CreateService(GeneratedWordDetail generated)
-        => new(null!, new FakeQuizServerVocabularyGenerationService { WordDetail = generated });
+        => new(new FakeQuizServerVocabularyGenerationService { WordDetail = generated });
 
     private static Dictionary<string, System.Text.Json.JsonElement> JsonProperties(string json)
     {

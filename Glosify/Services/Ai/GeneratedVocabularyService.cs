@@ -26,7 +26,7 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         _logger = logger;
     }
 
-    public async Task<GeneratedVocabularyResult> GenerateAndAddWordsAsync(Guid quizId, string userId, string input, string? aiProvider = null)
+    public async Task<GeneratedVocabularyResult> GenerateAndAddWordsAsync(Guid quizId, string userId, string input)
     {
         Quiz? quiz;
         try
@@ -61,7 +61,7 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
                 quiz.TargetLanguage,
                 quiz.Name);
             _logger.LogInformation(
-                "Generated vocabulary for quiz {QuizId}: provider gemini via quiz server, cleaned length {CleanedLength}, source sentence count {SourceSentenceCount}, AI item count {GeneratedCount}",
+                "Generated vocabulary for quiz {QuizId}: quiz server, cleaned length {CleanedLength}, source sentence count {SourceSentenceCount}, generated item count {GeneratedCount}",
                 quizId,
                 cleanedInput.Length,
                 sourceSentences.Count,
@@ -70,7 +70,9 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "AI vocabulary generation returned an unexpected response for quiz {QuizId}", quizId);
-            if (ex.Message.Contains("could not find", StringComparison.OrdinalIgnoreCase))
+            if (ex.Message.StartsWith("The quiz server", StringComparison.OrdinalIgnoreCase)
+                || ex.Message.Contains("could not find", StringComparison.OrdinalIgnoreCase)
+                || ex.Message.Contains("No useful vocabulary", StringComparison.OrdinalIgnoreCase))
             {
                 return GeneratedVocabularyResult.Failure(ex.Message);
             }

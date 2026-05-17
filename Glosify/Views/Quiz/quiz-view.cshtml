@@ -93,7 +93,6 @@
                   data-details-url="@Url.Action("Details", "Quiz", new { id = Model.SelectedQuiz.Id })">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="quizId" value="@Model.SelectedQuiz.Id" />
-                <input type="hidden" name="aiProvider" value="gemini" />
                 <div class="form-group">
                     <label class="form-label">Source Text</label>
                     <div class="scan-toolbar">

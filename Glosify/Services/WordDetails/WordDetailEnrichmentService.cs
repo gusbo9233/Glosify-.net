@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Glosify.Data;
 using Glosify.Models;
 
 namespace Glosify.Services;
@@ -15,7 +14,7 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
 
     private readonly IQuizServerVocabularyGenerationService _quizServer;
 
-    public WordDetailEnrichmentService(GlosifyContext context, IQuizServerVocabularyGenerationService quizServer)
+    public WordDetailEnrichmentService(IQuizServerVocabularyGenerationService quizServer)
     {
         _quizServer = quizServer;
     }

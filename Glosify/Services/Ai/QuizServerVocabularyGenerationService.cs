@@ -99,7 +99,6 @@ public sealed class QuizServerVocabularyGenerationService : IQuizServerVocabular
             sourceLanguage,
             targetLanguage,
             null,
-            "gemini",
             false);
 
         using var response = await _httpClient.PostAsJsonAsync("quizzes", request, JsonOptions, cancellationToken);
@@ -210,18 +209,18 @@ public sealed class QuizServerVocabularyGenerationService : IQuizServerVocabular
             sourceLanguage,
             targetLanguage,
             string.IsNullOrWhiteSpace(quizName) ? null : quizName,
-            "gemini",
             true);
 
         using var response = await _httpClient.PostAsJsonAsync("quizzes", request, JsonOptions, cancellationToken);
         var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
+            var serverMessage = ExtractServerError(responseText);
             _logger.LogWarning(
                 "Quiz server vocabulary generation failed with status {StatusCode}: {Response}",
                 (int)response.StatusCode,
                 responseText);
-            throw new QuizServerChunkException($"The quiz server returned HTTP {(int)response.StatusCode}.", response.StatusCode, responseText);
+            throw new QuizServerChunkException(serverMessage, response.StatusCode, responseText);
         }
 
         var words = NormalizeGeneratedWords(responseText);
@@ -433,12 +432,33 @@ public sealed class QuizServerVocabularyGenerationService : IQuizServerVocabular
         return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
     }
 
+    private static string ExtractServerError(string responseText)
+    {
+        if (!string.IsNullOrWhiteSpace(responseText))
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(responseText);
+                if (document.RootElement.TryGetProperty("detail", out var detail)
+                    && detail.ValueKind == JsonValueKind.String
+                    && !string.IsNullOrWhiteSpace(detail.GetString()))
+                {
+                    return detail.GetString()!;
+                }
+            }
+            catch (JsonException)
+            {
+            }
+        }
+
+        return "The quiz server could not generate vocabulary from that input.";
+    }
+
     private sealed record QuizServerRequest(
         [property: JsonPropertyName("input_text")] string InputText,
         [property: JsonPropertyName("source_language")] string SourceLanguage,
         [property: JsonPropertyName("target_language")] string TargetLanguage,
         [property: JsonPropertyName("quiz_name")] string? QuizName,
-        [property: JsonPropertyName("llm_provider")] string LlmProvider,
         [property: JsonPropertyName("skip_details")] bool SkipDetails);
 
     private sealed class QuizServerResponse

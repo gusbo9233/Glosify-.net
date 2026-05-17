@@ -195,7 +195,7 @@ public class QuizController : Controller
         GeneratedVocabularyResult result;
         try
         {
-            result = await _generatedVocabularyService.GenerateAndAddWordsAsync(model.QuizId, userId, model.Input, model.AiProvider);
+            result = await _generatedVocabularyService.GenerateAndAddWordsAsync(model.QuizId, userId, model.Input);
         }
         catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex) || ServiceWarmupMessage.IsQuizServerWarmupFailure(ex))
         {
