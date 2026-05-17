@@ -277,5 +277,22 @@ public class WordDetailEnrichmentServiceTests
             WasCalled = true;
             return Task.FromResult(WordDetail);
         }
+
+        public Task<QuizServerRepairQuizResult?> RepairQuizAsync(
+            QuizServerRepairQuizData quizData,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<QuizServerRepairWordResult?> RepairWordAsync(
+            QuizServerRepairQuizData quizData,
+            string wordId,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<QuizServerRepairSentenceResult?> RepairSentenceAsync(
+            QuizServerRepairQuizData quizData,
+            string sentenceText,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
     }
 }

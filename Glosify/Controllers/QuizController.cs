@@ -16,6 +16,7 @@ public class QuizController : Controller
     private readonly IQuizService _quizService;
     private readonly IWordService _wordService;
     private readonly IGeneratedVocabularyService _generatedVocabularyService;
+    private readonly IQuizServerVocabularyGenerationService _quizServerVocabularyGenerationService;
     private readonly IImageTextExtractionService _imageTextExtractionService;
     private readonly ILanguageContext _languageContext;
     private readonly ILogger<QuizController> _logger;
@@ -25,6 +26,7 @@ public class QuizController : Controller
         IQuizService quizService,
         IWordService wordService,
         IGeneratedVocabularyService generatedVocabularyService,
+        IQuizServerVocabularyGenerationService quizServerVocabularyGenerationService,
         IImageTextExtractionService imageTextExtractionService,
         ILanguageContext languageContext,
         ILogger<QuizController> logger)
@@ -33,6 +35,7 @@ public class QuizController : Controller
         _quizService = quizService;
         _wordService = wordService;
         _generatedVocabularyService = generatedVocabularyService;
+        _quizServerVocabularyGenerationService = quizServerVocabularyGenerationService;
         _imageTextExtractionService = imageTextExtractionService;
         _languageContext = languageContext;
         _logger = logger;
@@ -80,6 +83,70 @@ public class QuizController : Controller
             EnrichedWordDetailIds = enriched,
             Sentences = sentences
         });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RepairQuiz(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized(new { error = "Sign in before repairing a quiz." });
+
+        var repairData = await BuildRepairQuizDataAsync(id, userId);
+        if (repairData == null)
+            return NotFound(new { error = "Quiz not found." });
+
+        var result = await _quizServerVocabularyGenerationService.RepairQuizAsync(repairData, cancellationToken);
+        if (result?.QuizData == null)
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.QuizServer });
+
+        await ApplyRepairedQuizAsync(id, result.QuizData);
+        return Json(new { message = "Quiz repaired." });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RepairWord(string id, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized(new { error = "Sign in before repairing a word." });
+
+        var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+        if (word == null)
+            return NotFound(new { error = "Word not found." });
+
+        var repairData = await BuildRepairQuizDataAsync(word.QuizId, userId);
+        if (repairData == null)
+            return NotFound(new { error = "Quiz not found." });
+
+        var result = await _quizServerVocabularyGenerationService.RepairWordAsync(repairData, id, cancellationToken);
+        if (result?.Word == null || string.IsNullOrWhiteSpace(result.Word.Id))
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.QuizServer });
+
+        await ApplyRepairedWordAsync(result);
+        return Json(new { message = $"Repaired {word.Lemma}." });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> RepairSentence(Guid quizId, string text, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized(new { error = "Sign in before repairing a sentence." });
+
+        if (string.IsNullOrWhiteSpace(text))
+            return BadRequest(new { error = "Choose a sentence to repair." });
+
+        var repairData = await BuildRepairQuizDataAsync(quizId, userId);
+        if (repairData == null)
+            return NotFound(new { error = "Quiz not found." });
+
+        var result = await _quizServerVocabularyGenerationService.RepairSentenceAsync(repairData, text, cancellationToken);
+        if (result?.Sentence == null || string.IsNullOrWhiteSpace(result.Sentence.Text))
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.QuizServer });
+
+        var updatedCount = await ApplyRepairedSentenceAsync(quizId, text, result.Sentence, cancellationToken);
+        return Json(new { message = updatedCount == 1 ? "Sentence repaired." : $"Sentence repaired in {updatedCount} word details." });
     }
 
     [HttpPost]
@@ -174,6 +241,255 @@ public class QuizController : Controller
             || string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
     }
 
+    private async Task<QuizServerRepairQuizData?> BuildRepairQuizDataAsync(Guid quizId, string userId)
+    {
+        var quiz = await _quizService.GetQuizByIdAsync(quizId, userId);
+        if (quiz == null)
+        {
+            return null;
+        }
+
+        var rows = await _context.Words
+            .Where(word => word.QuizId == quizId)
+            .GroupJoin(
+                _context.WordDetails,
+                word => word.WordDetailId,
+                detail => detail.Id,
+                (word, details) => new { Word = word, Detail = details.FirstOrDefault() })
+            .OrderBy(row => row.Word.Lemma)
+            .ToListAsync();
+
+        var details = rows
+            .Select(row => row.Detail)
+            .OfType<WordDetail>()
+            .GroupBy(detail => detail.Id, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToList();
+
+        var sentences = details
+            .Where(detail => !string.IsNullOrWhiteSpace(detail.ExampleSentence))
+            .GroupBy(detail => detail.ExampleSentence.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select((group, index) => new QuizServerRepairSentence
+            {
+                Id = $"s{index + 1:000}",
+                Text = group.Key,
+                Translation = group
+                    .Select(detail => detail.ExampleSentenceTranslation.Trim())
+                    .FirstOrDefault(translation => !string.IsNullOrWhiteSpace(translation)) ?? string.Empty,
+                QuizId = quiz.Id.ToString()
+            })
+            .ToList();
+
+        return new QuizServerRepairQuizData
+        {
+            Quiz = new QuizServerRepairQuiz
+            {
+                Id = quiz.Id.ToString(),
+                Name = quiz.Name,
+                SourceLanguage = quiz.SourceLanguage,
+                TargetLanguage = quiz.TargetLanguage,
+                Language = string.IsNullOrWhiteSpace(quiz.Language)
+                    ? quiz.TargetLanguage.ToLowerInvariant()
+                    : quiz.Language.ToLowerInvariant(),
+                ProcessingStatus = quiz.ProcessingStatus,
+                ProcessingMessage = quiz.ProcessingMessage
+            },
+            Words = rows
+                .Select(row => new QuizServerRepairWord
+                {
+                    Id = row.Word.Id,
+                    Lemma = row.Word.Lemma,
+                    Translation = row.Word.Translation,
+                    WordDetailId = row.Word.WordDetailId,
+                    QuizId = row.Word.QuizId.ToString()
+                })
+                .ToList(),
+            WordDetails = details
+                .Select(ToRepairWordDetail)
+                .ToList(),
+            Sentences = sentences
+        };
+    }
+
+    private async Task ApplyRepairedQuizAsync(Guid quizId, QuizServerRepairQuizData repaired)
+    {
+        var wordsById = await _context.Words
+            .Where(word => word.QuizId == quizId)
+            .ToDictionaryAsync(word => word.Id);
+        var detailsById = await _context.WordDetails
+            .Where(detail => wordsById.Values.Select(word => word.WordDetailId).Contains(detail.Id))
+            .ToDictionaryAsync(detail => detail.Id);
+
+        foreach (var repairedWord in repaired.Words)
+        {
+            if (!wordsById.TryGetValue(repairedWord.Id, out var word))
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(repairedWord.Lemma))
+            {
+                word.Lemma = repairedWord.Lemma.Trim();
+            }
+            if (!string.IsNullOrWhiteSpace(repairedWord.Translation))
+            {
+                word.Translation = repairedWord.Translation.Trim();
+            }
+        }
+
+        foreach (var repairedDetail in repaired.WordDetails)
+        {
+            if (detailsById.TryGetValue(repairedDetail.Id, out var detail))
+            {
+                ApplyRepairedWordDetail(detail, repairedDetail);
+            }
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task ApplyRepairedWordAsync(QuizServerRepairWordResult result)
+    {
+        var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == result.Word.Id);
+        if (word == null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.Word.Lemma))
+        {
+            word.Lemma = result.Word.Lemma.Trim();
+        }
+        if (!string.IsNullOrWhiteSpace(result.Word.Translation))
+        {
+            word.Translation = result.Word.Translation.Trim();
+        }
+
+        var detail = await _context.WordDetails.FirstOrDefaultAsync(d => d.Id == word.WordDetailId);
+        if (detail != null)
+        {
+            result.WordDetail.Id = detail.Id;
+            ApplyRepairedWordDetail(detail, result.WordDetail);
+        }
+
+        await _context.SaveChangesAsync();
+    }
+
+    private async Task<int> ApplyRepairedSentenceAsync(
+        Guid quizId,
+        string originalText,
+        QuizServerRepairSentence repaired,
+        CancellationToken cancellationToken)
+    {
+        var normalizedOriginal = VocabularyInputCleaner.CleanForVocabulary(originalText).Trim();
+        var candidateDetails = await _context.Words
+            .Where(word => word.QuizId == quizId)
+            .Join(
+                _context.WordDetails,
+                word => word.WordDetailId,
+                detail => detail.Id,
+                (_, detail) => detail)
+            .ToListAsync(cancellationToken);
+        var details = candidateDetails
+            .Where(detail => string.Equals(
+                VocabularyInputCleaner.CleanForVocabulary(detail.ExampleSentence).Trim(),
+                normalizedOriginal,
+                StringComparison.OrdinalIgnoreCase))
+            .GroupBy(detail => detail.Id, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToList();
+
+        foreach (var detail in details)
+        {
+            detail.ExampleSentence = repaired.Text.Trim();
+            detail.ExampleSentenceTranslation = repaired.Translation.Trim();
+            detail.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return details.Count;
+    }
+
+    private static QuizServerRepairWordDetail ToRepairWordDetail(WordDetail detail)
+    {
+        return new QuizServerRepairWordDetail
+        {
+            Id = detail.Id,
+            Properties = ParseJsonObject(detail.Properties),
+            ExampleSentence = detail.ExampleSentence,
+            ExampleSentenceTranslation = detail.ExampleSentenceTranslation,
+            Explanation = detail.Explanation,
+            Variants = ParseVariants(detail.Variants),
+            Language = string.IsNullOrWhiteSpace(detail.Language)
+                ? detail.TargetLanguage.ToLowerInvariant()
+                : detail.Language.ToLowerInvariant()
+        };
+    }
+
+    private static void ApplyRepairedWordDetail(WordDetail detail, QuizServerRepairWordDetail repaired)
+    {
+        if (repaired.Properties.Count > 0)
+        {
+            detail.Properties = JsonSerializer.Serialize(repaired.Properties);
+        }
+        if (repaired.Variants.Count > 0)
+        {
+            detail.Variants = JsonSerializer.Serialize(repaired.Variants);
+        }
+        if (!string.IsNullOrWhiteSpace(repaired.Explanation))
+        {
+            detail.Explanation = repaired.Explanation.Trim();
+        }
+        if (!string.IsNullOrWhiteSpace(repaired.ExampleSentence))
+        {
+            detail.ExampleSentence = repaired.ExampleSentence.Trim();
+        }
+        if (!string.IsNullOrWhiteSpace(repaired.ExampleSentenceTranslation))
+        {
+            detail.ExampleSentenceTranslation = repaired.ExampleSentenceTranslation.Trim();
+        }
+        if (!string.IsNullOrWhiteSpace(repaired.Language))
+        {
+            detail.Language = repaired.Language.Trim();
+        }
+
+        detail.UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    private static Dictionary<string, JsonElement> ParseJsonObject(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json) || json.Trim() == "{}")
+        {
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    private static List<GeneratedWordVariant> ParseVariants(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json) || json.Trim() == "[]")
+        {
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<List<GeneratedWordVariant>>(json) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
     [HttpPost]
     [RequestSizeLimit(8 * 1024 * 1024)]
     public async Task<IActionResult> ExtractTextFromImage(Guid quizId, IFormFile? image, CancellationToken cancellationToken)
@@ -210,10 +526,10 @@ public class QuizController : Controller
 
             return Json(new { text });
         }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ServiceWarmupMessage.IsQuizServerWarmupFailure(ex) || ex is HttpRequestException)
         {
             _logger.LogWarning(ex, "Image text extraction failed for quiz {QuizId}", quizId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Image text extraction is not configured yet." });
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.QuizServer });
         }
     }
 

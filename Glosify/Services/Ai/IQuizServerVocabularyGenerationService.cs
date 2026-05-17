@@ -15,4 +15,18 @@ public interface IQuizServerVocabularyGenerationService
         string sourceLanguage,
         string targetLanguage,
         CancellationToken cancellationToken = default);
+
+    Task<QuizServerRepairQuizResult?> RepairQuizAsync(
+        QuizServerRepairQuizData quizData,
+        CancellationToken cancellationToken = default);
+
+    Task<QuizServerRepairWordResult?> RepairWordAsync(
+        QuizServerRepairQuizData quizData,
+        string wordId,
+        CancellationToken cancellationToken = default);
+
+    Task<QuizServerRepairSentenceResult?> RepairSentenceAsync(
+        QuizServerRepairQuizData quizData,
+        string sentenceText,
+        CancellationToken cancellationToken = default);
 }

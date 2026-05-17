@@ -138,6 +138,66 @@ public sealed class QuizServerVocabularyGenerationService : IQuizServerVocabular
         };
     }
 
+    public async Task<QuizServerRepairQuizResult?> RepairQuizAsync(
+        QuizServerRepairQuizData quizData,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostRepairAsync<QuizServerRepairQuizResult>(
+            "repairs/quiz",
+            new { quiz_data = quizData },
+            cancellationToken);
+    }
+
+    public async Task<QuizServerRepairWordResult?> RepairWordAsync(
+        QuizServerRepairQuizData quizData,
+        string wordId,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostRepairAsync<QuizServerRepairWordResult>(
+            "repairs/word",
+            new { quiz_data = quizData, word_id = wordId },
+            cancellationToken);
+    }
+
+    public async Task<QuizServerRepairSentenceResult?> RepairSentenceAsync(
+        QuizServerRepairQuizData quizData,
+        string sentenceText,
+        CancellationToken cancellationToken = default)
+    {
+        return await PostRepairAsync<QuizServerRepairSentenceResult>(
+            "repairs/sentence",
+            new { quiz_data = quizData, sentence_text = sentenceText },
+            cancellationToken);
+    }
+
+    private async Task<T?> PostRepairAsync<T>(
+        string path,
+        object request,
+        CancellationToken cancellationToken)
+    {
+        using var response = await _httpClient.PostAsJsonAsync(path, request, JsonOptions, cancellationToken);
+        var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning(
+                "Quiz server repair request to {Path} failed with status {StatusCode}: {Response}",
+                path,
+                (int)response.StatusCode,
+                responseText);
+            return default;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(responseText, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Quiz server repair request to {Path} returned unreadable JSON.", path);
+            return default;
+        }
+    }
+
     private async Task<IReadOnlyDictionary<string, GeneratedWord>> GenerateChunkAsync(
         string input,
         string sourceLanguage,

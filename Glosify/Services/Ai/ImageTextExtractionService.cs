@@ -1,26 +1,15 @@
-using Google.GenAI;
-using Google.GenAI.Types;
-using Microsoft.Extensions.Options;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 
 namespace Glosify.Services;
 
 public sealed class ImageTextExtractionService : IImageTextExtractionService
 {
-    private const string SystemInstruction = """
-You extract text from learner-provided photos for language study.
-Return all visible text from the whole image, working from top to bottom.
-Preserve line breaks when useful.
-Do not describe the image, add commentary, translate, summarize, or wrap the result in markdown.
-""";
+    private readonly HttpClient _httpClient;
 
-    private readonly string _apiKey;
-    private readonly string _model;
-
-    public ImageTextExtractionService(IOptions<GeminiOptions> options)
+    public ImageTextExtractionService(HttpClient httpClient)
     {
-        var settings = options.Value;
-        _apiKey = settings.ApiKey;
-        _model = settings.Model;
+        _httpClient = httpClient;
     }
 
     public async Task<string> ExtractTextAsync(
@@ -30,8 +19,6 @@ Do not describe the image, add commentary, translate, summarize, or wrap the res
         string targetLanguage,
         CancellationToken cancellationToken = default)
     {
-        EnsureConfigured();
-
         using var memory = new MemoryStream();
         await imageStream.CopyToAsync(memory, cancellationToken);
         var imageBytes = memory.ToArray();
@@ -41,64 +28,19 @@ Do not describe the image, add commentary, translate, summarize, or wrap the res
             return string.Empty;
         }
 
-        var prompt = $"""
-Extract all readable text from the entire image.
-Read the page from top to bottom and do not stop after the first section.
-If the image contains columns, sidebars, captions, or footnotes, include them in a sensible reading order.
-
-Context:
-- The learner knows {sourceLanguage}.
-- The learner is studying {targetLanguage}.
-- Prefer the original visible text exactly as written, especially {targetLanguage} text.
-- Ignore navigation chrome, camera UI, timestamps, and decorative labels unless they are part of the photographed material.
-""";
-
-        var client = new Client(apiKey: _apiKey);
-        var response = await client.Models.GenerateContentAsync(
-            model: _model,
-            contents: new Content
-            {
-                Parts =
-                [
-                    new Part { Text = prompt },
-                    new Part
-                    {
-                        InlineData = new Blob
-                        {
-                            Data = imageBytes,
-                            MimeType = contentType
-                        }
-                    }
-                ]
-            },
-            config: new GenerateContentConfig
-            {
-                SystemInstruction = new Content
-                {
-                    Parts = [new Part { Text = SystemInstruction }]
-                },
-                Temperature = 0.1f,
-                MaxOutputTokens = 8_000
-            },
-            cancellationToken: cancellationToken);
-
-        var text = string.Join(
-            "\n",
-            response.Candidates?[0].Content?.Parts?
-                .Select(part => part.Text)
-                .Where(partText => !string.IsNullOrWhiteSpace(partText))
-            ?? []);
-
-        return CleanExtractedText(text);
-    }
-
-    private void EnsureConfigured()
-    {
-        if (string.IsNullOrWhiteSpace(_apiKey))
+        var request = new ImageTextExtractionRequest(
+            Convert.ToBase64String(imageBytes),
+            contentType,
+            sourceLanguage,
+            targetLanguage);
+        using var response = await _httpClient.PostAsJsonAsync("images/extract-text", request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
         {
-            throw new InvalidOperationException(
-                "Gemini API key is not configured. Set Gemini:ApiKey via configuration, user secrets, Gemini__ApiKey, or GEMINI_API_KEY.");
+            throw new HttpRequestException($"Quiz server image text extraction failed with HTTP {(int)response.StatusCode}.");
         }
+
+        var result = await response.Content.ReadFromJsonAsync<ImageTextExtractionResponse>(cancellationToken);
+        return CleanExtractedText(result?.Text ?? string.Empty);
     }
 
     private static string CleanExtractedText(string text)
@@ -108,4 +50,12 @@ Context:
             .Replace("```", "")
             .Trim();
     }
+
+    private sealed record ImageTextExtractionRequest(
+        [property: JsonPropertyName("image_base64")] string ImageBase64,
+        [property: JsonPropertyName("content_type")] string ContentType,
+        [property: JsonPropertyName("source_language")] string SourceLanguage,
+        [property: JsonPropertyName("target_language")] string TargetLanguage);
+
+    private sealed record ImageTextExtractionResponse(string Text);
 }

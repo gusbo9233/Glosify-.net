@@ -49,21 +49,6 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ILanguageContext, CookieLanguageContext>();
 
-builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
-builder.Services.Configure<GeminiOptions>(options =>
-{
-    var apiKey = builder.Configuration["GEMINI_API_KEY"];
-    if (!string.IsNullOrWhiteSpace(apiKey))
-    {
-        options.ApiKey = apiKey;
-    }
-
-    var model = builder.Configuration["GEMINI_MODEL"];
-    if (!string.IsNullOrWhiteSpace(model))
-    {
-        options.Model = model;
-    }
-});
 builder.Services.Configure<QuizServerOptions>(builder.Configuration.GetSection("QuizServer"));
 builder.Services.Configure<QuizServerOptions>(options =>
 {
@@ -96,8 +81,18 @@ builder.Services.AddHttpClient<IQuizServerVocabularyGenerationService, QuizServe
     client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
     client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
 });
+builder.Services.AddHttpClient<IImageTextExtractionService, ImageTextExtractionService>((serviceProvider, client) =>
+{
+    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<QuizServerOptions>>().Value;
+    if (string.IsNullOrWhiteSpace(options.BaseUrl))
+    {
+        throw new InvalidOperationException("Quiz server base URL is not configured. Set QuizServer:BaseUrl or QUIZ_SERVER_BASE_URL.");
+    }
+
+    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+});
 builder.Services.AddScoped<IGeneratedVocabularyService, GeneratedVocabularyService>();
-builder.Services.AddScoped<IImageTextExtractionService, ImageTextExtractionService>();
 builder.Services.AddScoped<IWordDetailEnrichmentService, WordDetailEnrichmentService>();
 builder.Services.AddScoped<IWordDetailViewModelService, WordDetailViewModelService>();
 
