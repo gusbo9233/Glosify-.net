@@ -107,28 +107,71 @@ public class QuizController : Controller
     [HttpPost]
     public async Task<IActionResult> GenerateWords(GenerateWordsInput model)
     {
+        var wantsJson = WantsJsonResponse();
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
+        {
+            if (wantsJson)
+                return Unauthorized(new { error = "Sign in before generating words." });
             return RedirectToAction("Login", "Account");
+        }
 
         if (!ModelState.IsValid)
         {
-            TempData["AiError"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            var error = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            if (wantsJson)
+                return BadRequest(new { error });
+            TempData["AiError"] = error;
             return RedirectToAction("Details", new { id = model.QuizId });
         }
 
-        var result = await _generatedVocabularyService.GenerateAndAddWordsAsync(model.QuizId, userId, model.Input, model.AiProvider);
+        GeneratedVocabularyResult result;
+        try
+        {
+            result = await _generatedVocabularyService.GenerateAndAddWordsAsync(model.QuizId, userId, model.Input, model.AiProvider);
+        }
+        catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex) || ServiceWarmupMessage.IsQuizServerWarmupFailure(ex))
+        {
+            _logger.LogWarning(ex, "Dependency warm-up interrupted vocabulary generation for quiz {QuizId}", model.QuizId);
+            var error = ServiceWarmupMessage.Dependencies;
+            if (wantsJson)
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error });
+            TempData["AiError"] = error;
+            return RedirectToAction("Details", new { id = model.QuizId });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected vocabulary generation failure for quiz {QuizId}", model.QuizId);
+            var error = "Something went wrong while generating words. Please try again in a moment.";
+            if (wantsJson)
+                return StatusCode(StatusCodes.Status500InternalServerError, new { error });
+            TempData["AiError"] = error;
+            return RedirectToAction("Details", new { id = model.QuizId });
+        }
 
         if (result.Error != null)
         {
+            if (wantsJson)
+                return UnprocessableEntity(new { error = result.Error });
             TempData["AiError"] = result.Error;
         }
         else if (result.Message != null)
         {
+            if (wantsJson)
+                return Json(new { message = result.Message, addedCount = result.AddedCount });
             TempData["AiMessage"] = result.Message;
         }
 
+        if (wantsJson)
+            return Json(new { message = "Generation finished.", addedCount = result.AddedCount });
+
         return RedirectToAction("Details", new { id = model.QuizId });
+    }
+
+    private bool WantsJsonResponse()
+    {
+        return Request.Headers.Accept.Any(value => value?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
+            || string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
     }
 
     [HttpPost]

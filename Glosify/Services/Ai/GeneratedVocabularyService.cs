@@ -11,27 +11,34 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
 
     private readonly GlosifyContext _context;
     private readonly IQuizService _quizService;
-    private readonly IAiWordGenerationService _aiWordGenerationService;
-    private readonly IOpenAiVocabularyGenerationService _openAiVocabularyGenerationService;
+    private readonly IQuizServerVocabularyGenerationService _quizServerVocabularyGenerationService;
     private readonly ILogger<GeneratedVocabularyService> _logger;
 
     public GeneratedVocabularyService(
         GlosifyContext context,
         IQuizService quizService,
-        IAiWordGenerationService aiWordGenerationService,
-        IOpenAiVocabularyGenerationService openAiVocabularyGenerationService,
+        IQuizServerVocabularyGenerationService quizServerVocabularyGenerationService,
         ILogger<GeneratedVocabularyService> logger)
     {
         _context = context;
         _quizService = quizService;
-        _aiWordGenerationService = aiWordGenerationService;
-        _openAiVocabularyGenerationService = openAiVocabularyGenerationService;
+        _quizServerVocabularyGenerationService = quizServerVocabularyGenerationService;
         _logger = logger;
     }
 
     public async Task<GeneratedVocabularyResult> GenerateAndAddWordsAsync(Guid quizId, string userId, string input, string? aiProvider = null)
     {
-        var quiz = await _quizService.GetQuizByIdAsync(quizId, userId);
+        Quiz? quiz;
+        try
+        {
+            quiz = await _quizService.GetQuizByIdAsync(quizId, userId);
+        }
+        catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex))
+        {
+            _logger.LogWarning(ex, "Database was not ready while loading quiz {QuizId}", quizId);
+            return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.Database);
+        }
+
         if (quiz == null)
         {
             return GeneratedVocabularyResult.Failure("Quiz not found.");
@@ -48,21 +55,14 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         {
             var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
             sourceSentences = ExtractSourceSentences(cleanedInput);
-            generatedWords = string.Equals(aiProvider, "openai", StringComparison.OrdinalIgnoreCase)
-                ? await _openAiVocabularyGenerationService.GenerateWordsFromTextAsync(
-                    cleanedInput,
-                    quiz.SourceLanguage,
-                    quiz.TargetLanguage,
-                    sourceSentences)
-                : await _aiWordGenerationService.GenerateWordsFromTextAsync(
-                    cleanedInput,
-                    quiz.SourceLanguage,
-                    quiz.TargetLanguage,
-                    sourceSentences);
+            generatedWords = await _quizServerVocabularyGenerationService.GenerateWordsFromTextAsync(
+                cleanedInput,
+                quiz.SourceLanguage,
+                quiz.TargetLanguage,
+                quiz.Name);
             _logger.LogInformation(
-                "Generated vocabulary for quiz {QuizId}: provider {AiProvider}, cleaned length {CleanedLength}, source sentence count {SourceSentenceCount}, AI item count {GeneratedCount}",
+                "Generated vocabulary for quiz {QuizId}: provider gemini via quiz server, cleaned length {CleanedLength}, source sentence count {SourceSentenceCount}, AI item count {GeneratedCount}",
                 quizId,
-                string.Equals(aiProvider, "openai", StringComparison.OrdinalIgnoreCase) ? "openai" : "gemini",
                 cleanedInput.Length,
                 sourceSentences.Count,
                 generatedWords.Count);
@@ -70,17 +70,44 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "AI vocabulary generation returned an unexpected response for quiz {QuizId}", quizId);
+            if (ex.Message.Contains("could not find", StringComparison.OrdinalIgnoreCase))
+            {
+                return GeneratedVocabularyResult.Failure(ex.Message);
+            }
+
             return GeneratedVocabularyResult.Failure("The assistant returned an unexpected response. Try a shorter text sample.");
         }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogWarning(ex, "Quiz server request failed for quiz {QuizId}", quizId);
+            return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.QuizServer);
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogWarning(ex, "Quiz server request timed out for quiz {QuizId}", quizId);
+            return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.QuizServer);
+        }
 
-        var existingWordRows = await _context.Words
-            .Where(w => w.QuizId == quizId)
-            .Select(w => new { w.Lemma, w.WordDetailId })
-            .ToListAsync();
+        List<ExistingWordRow> existingWordRows;
+        Dictionary<string, WordDetail> existingWordDetails;
+        try
+        {
+            existingWordRows = await _context.Words
+                .Where(w => w.QuizId == quizId)
+                .Select(w => new ExistingWordRow(w.Lemma, w.WordDetailId))
+                .ToListAsync();
+            var existingWordDetailIds = existingWordRows.Select(word => word.WordDetailId);
+            existingWordDetails = await _context.WordDetails
+                .Where(detail => existingWordDetailIds.Contains(detail.Id))
+                .ToDictionaryAsync(detail => detail.Id);
+        }
+        catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex))
+        {
+            _logger.LogWarning(ex, "Database was not ready while loading existing words for quiz {QuizId}", quizId);
+            return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.Database);
+        }
+
         var existing = new HashSet<string>(existingWordRows.Select(word => word.Lemma), StringComparer.OrdinalIgnoreCase);
-        var existingWordDetails = await _context.WordDetails
-            .Where(detail => existingWordRows.Select(word => word.WordDetailId).Contains(detail.Id))
-            .ToDictionaryAsync(detail => detail.Id);
 
         var added = 0;
         var repairedExisting = 0;
@@ -134,11 +161,20 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
                 skippedExample++;
             }
 
-            var wordDetail = await GetOrCreateWordDetailAsync(
-                quiz.SourceLanguage,
-                quiz.TargetLanguage,
-                trimmedLemma,
-                translation);
+            WordDetail wordDetail;
+            try
+            {
+                wordDetail = await GetOrCreateWordDetailAsync(
+                    quiz.SourceLanguage,
+                    quiz.TargetLanguage,
+                    trimmedLemma,
+                    translation);
+            }
+            catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex))
+            {
+                _logger.LogWarning(ex, "Database was not ready while preparing generated word detail for quiz {QuizId}", quizId);
+                return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.Database);
+            }
             var shouldReplaceExampleSentence = ShouldReplaceExampleSentence(
                 trimmedLemma,
                 translation,
@@ -185,7 +221,15 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
             return GeneratedVocabularyResult.Success(0, "No new words were added. The generated words may already be in this quiz.");
         }
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex))
+        {
+            _logger.LogWarning(ex, "Database was not ready while saving generated words for quiz {QuizId}", quizId);
+            return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.Database);
+        }
         if (added == 0)
         {
             return GeneratedVocabularyResult.Success(0, $"Updated {repairedExisting} existing example {(repairedExisting == 1 ? "sentence" : "sentences")}.");
@@ -193,6 +237,8 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
 
         return GeneratedVocabularyResult.Success(added, $"Added {added} generated {(added == 1 ? "word" : "words")}.");
     }
+
+    private sealed record ExistingWordRow(string Lemma, string WordDetailId);
 
     private static IReadOnlyList<string> ExtractSourceSentences(string input)
     {

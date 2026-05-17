@@ -1,7 +1,8 @@
 using Glosify.Data;
 using Glosify.Models;
+using Glosify.Services;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 namespace Glosify.Controllers
 {
@@ -32,6 +33,20 @@ namespace Glosify.Controllers
         public IActionResult Error()
 
         {
+            var exceptionFeature = HttpContext.Features.Get<IExceptionHandlerPathFeature>();
+            if (exceptionFeature?.Error != null && ServiceWarmupMessage.IsDatabaseWarmupFailure(exceptionFeature.Error))
+            {
+                Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                return View(new ErrorViewModel
+                {
+                    RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                    Title = "Services are warming up",
+                    Message = ServiceWarmupMessage.Dependencies,
+                    ReturnPath = exceptionFeature.Path,
+                    IsServiceWarmup = true
+                });
+            }
+
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
