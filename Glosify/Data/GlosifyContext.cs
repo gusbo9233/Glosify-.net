@@ -20,8 +20,8 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<Word> Words { get; set; }
     public DbSet<WordDetail> WordDetails { get; set; }
     public DbSet<DictionaryEntry> DictionaryEntries { get; set; }
-    // public DbSet<User> Users { get; set; }
-    // public DbSet<FlashCard> FlashCards { get; set; }
+    public DbSet<AssistantThread> AssistantThreads { get; set; }
+    public DbSet<AssistantMessage> AssistantMessages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -84,6 +84,37 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.LangCode).HasMaxLength(16);
             entity.Property(e => e.PartOfSpeech).HasMaxLength(32);
             entity.Property(e => e.Source).HasMaxLength(64);
+        });
+
+        modelBuilder.Entity<AssistantThread>(entity =>
+        {
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(t => t.Title).HasMaxLength(256);
+            entity.HasIndex(t => new { t.QuizId, t.UserId });
+            entity.HasOne<Quiz>()
+                .WithMany()
+                .HasForeignKey(t => t.QuizId)
+                .HasConstraintName("FK_AssistantThreads_Quizzes_QuizId")
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
+                .HasConstraintName("FK_AssistantThreads_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<AssistantMessage>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.Role).HasMaxLength(16).IsRequired();
+            entity.Property(m => m.Status).HasMaxLength(16).IsRequired();
+            entity.HasIndex(m => new { m.ThreadId, m.Sequence }).IsUnique();
+            entity.HasOne<AssistantThread>()
+                .WithMany()
+                .HasForeignKey(m => m.ThreadId)
+                .HasConstraintName("FK_AssistantMessages_AssistantThreads_ThreadId")
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

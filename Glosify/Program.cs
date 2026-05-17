@@ -49,16 +49,16 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ILanguageContext, CookieLanguageContext>();
 
-builder.Services.Configure<QuizServerOptions>(builder.Configuration.GetSection("QuizServer"));
-builder.Services.Configure<QuizServerOptions>(options =>
+builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
+builder.Services.Configure<GeminiOptions>(options =>
 {
-    var baseUrl = builder.Configuration["QUIZ_SERVER_BASE_URL"];
-    if (!string.IsNullOrWhiteSpace(baseUrl))
+    var apiKey = builder.Configuration["GEMINI_API_KEY"];
+    if (!string.IsNullOrWhiteSpace(apiKey))
     {
-        options.BaseUrl = baseUrl;
+        options.ApiKey = apiKey;
     }
 
-    var timeoutSeconds = builder.Configuration["QUIZ_SERVER_TIMEOUT_SECONDS"];
+    var timeoutSeconds = builder.Configuration["GEMINI_TIMEOUT_SECONDS"];
     if (int.TryParse(timeoutSeconds, out var parsedTimeoutSeconds) && parsedTimeoutSeconds > 0)
     {
         options.TimeoutSeconds = parsedTimeoutSeconds;
@@ -70,31 +70,15 @@ builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<IWordService, WordService>();
 builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
 builder.Services.AddScoped<ITypingQuizService, TypingQuizService>();
-builder.Services.AddHttpClient<IQuizServerVocabularyGenerationService, QuizServerVocabularyGenerationService>((serviceProvider, client) =>
-{
-    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<QuizServerOptions>>().Value;
-    if (string.IsNullOrWhiteSpace(options.BaseUrl))
-    {
-        throw new InvalidOperationException("Quiz server base URL is not configured. Set QuizServer:BaseUrl or QUIZ_SERVER_BASE_URL.");
-    }
-
-    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
-    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-});
-builder.Services.AddHttpClient<IImageTextExtractionService, ImageTextExtractionService>((serviceProvider, client) =>
-{
-    var options = serviceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<QuizServerOptions>>().Value;
-    if (string.IsNullOrWhiteSpace(options.BaseUrl))
-    {
-        throw new InvalidOperationException("Quiz server base URL is not configured. Set QuizServer:BaseUrl or QUIZ_SERVER_BASE_URL.");
-    }
-
-    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
-    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-});
+builder.Services.AddSingleton<IGeminiClient, GeminiClient>();
+builder.Services.AddScoped<IVocabularyGenerationService, LlmVocabularyGenerationService>();
+builder.Services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();
 builder.Services.AddScoped<IGeneratedVocabularyService, GeneratedVocabularyService>();
 builder.Services.AddScoped<IWordDetailEnrichmentService, WordDetailEnrichmentService>();
 builder.Services.AddScoped<IWordDetailViewModelService, WordDetailViewModelService>();
+builder.Services.AddScoped<IAssistantTools, AssistantTools>();
+builder.Services.AddScoped<IChangeApplier, ChangeApplier>();
+builder.Services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
 
 builder.Services.AddSingleton<ILanguageDictionaryConfig, GermanDictionaryConfig>();
 builder.Services.AddSingleton<ILanguageDictionaryConfig, EstonianDictionaryConfig>();

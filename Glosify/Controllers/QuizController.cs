@@ -16,7 +16,7 @@ public class QuizController : Controller
     private readonly IQuizService _quizService;
     private readonly IWordService _wordService;
     private readonly IGeneratedVocabularyService _generatedVocabularyService;
-    private readonly IQuizServerVocabularyGenerationService _quizServerVocabularyGenerationService;
+    private readonly IVocabularyGenerationService _vocabularyGenerator;
     private readonly IImageTextExtractionService _imageTextExtractionService;
     private readonly ILanguageContext _languageContext;
     private readonly ILogger<QuizController> _logger;
@@ -26,7 +26,7 @@ public class QuizController : Controller
         IQuizService quizService,
         IWordService wordService,
         IGeneratedVocabularyService generatedVocabularyService,
-        IQuizServerVocabularyGenerationService quizServerVocabularyGenerationService,
+        IVocabularyGenerationService vocabularyGenerator,
         IImageTextExtractionService imageTextExtractionService,
         ILanguageContext languageContext,
         ILogger<QuizController> logger)
@@ -35,7 +35,7 @@ public class QuizController : Controller
         _quizService = quizService;
         _wordService = wordService;
         _generatedVocabularyService = generatedVocabularyService;
-        _quizServerVocabularyGenerationService = quizServerVocabularyGenerationService;
+        _vocabularyGenerator = vocabularyGenerator;
         _imageTextExtractionService = imageTextExtractionService;
         _languageContext = languageContext;
         _logger = logger;
@@ -96,9 +96,9 @@ public class QuizController : Controller
         if (repairData == null)
             return NotFound(new { error = "Quiz not found." });
 
-        var result = await _quizServerVocabularyGenerationService.RepairQuizAsync(repairData, cancellationToken);
+        var result = await _vocabularyGenerator.RepairQuizAsync(repairData, cancellationToken);
         if (result?.QuizData == null)
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.QuizServer });
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant });
 
         await ApplyRepairedQuizAsync(id, result.QuizData);
         return Json(new { message = "Quiz repaired." });
@@ -119,9 +119,9 @@ public class QuizController : Controller
         if (repairData == null)
             return NotFound(new { error = "Quiz not found." });
 
-        var result = await _quizServerVocabularyGenerationService.RepairWordAsync(repairData, id, cancellationToken);
+        var result = await _vocabularyGenerator.RepairWordAsync(repairData, id, cancellationToken);
         if (result?.Word == null || string.IsNullOrWhiteSpace(result.Word.Id))
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.QuizServer });
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant });
 
         await ApplyRepairedWordAsync(result);
         return Json(new { message = $"Repaired {word.Lemma}." });
@@ -141,9 +141,9 @@ public class QuizController : Controller
         if (repairData == null)
             return NotFound(new { error = "Quiz not found." });
 
-        var result = await _quizServerVocabularyGenerationService.RepairSentenceAsync(repairData, text, cancellationToken);
+        var result = await _vocabularyGenerator.RepairSentenceAsync(repairData, text, cancellationToken);
         if (result?.Sentence == null || string.IsNullOrWhiteSpace(result.Sentence.Text))
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.QuizServer });
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant });
 
         var updatedCount = await ApplyRepairedSentenceAsync(quizId, text, result.Sentence, cancellationToken);
         return Json(new { message = updatedCount == 1 ? "Sentence repaired." : $"Sentence repaired in {updatedCount} word details." });
@@ -197,7 +197,7 @@ public class QuizController : Controller
         {
             result = await _generatedVocabularyService.GenerateAndAddWordsAsync(model.QuizId, userId, model.Input);
         }
-        catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex) || ServiceWarmupMessage.IsQuizServerWarmupFailure(ex))
+        catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex) || ServiceWarmupMessage.IsLlmWarmupFailure(ex))
         {
             _logger.LogWarning(ex, "Dependency warm-up interrupted vocabulary generation for quiz {QuizId}", model.QuizId);
             var error = ServiceWarmupMessage.Dependencies;
@@ -241,7 +241,7 @@ public class QuizController : Controller
             || string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
     }
 
-    private async Task<QuizServerRepairQuizData?> BuildRepairQuizDataAsync(Guid quizId, string userId)
+    private async Task<RepairQuizData?> BuildRepairQuizDataAsync(Guid quizId, string userId)
     {
         var quiz = await _quizService.GetQuizByIdAsync(quizId, userId);
         if (quiz == null)
@@ -269,7 +269,7 @@ public class QuizController : Controller
         var sentences = details
             .Where(detail => !string.IsNullOrWhiteSpace(detail.ExampleSentence))
             .GroupBy(detail => detail.ExampleSentence.Trim(), StringComparer.OrdinalIgnoreCase)
-            .Select((group, index) => new QuizServerRepairSentence
+            .Select((group, index) => new RepairSentence
             {
                 Id = $"s{index + 1:000}",
                 Text = group.Key,
@@ -280,9 +280,9 @@ public class QuizController : Controller
             })
             .ToList();
 
-        return new QuizServerRepairQuizData
+        return new RepairQuizData
         {
-            Quiz = new QuizServerRepairQuiz
+            Quiz = new RepairQuiz
             {
                 Id = quiz.Id.ToString(),
                 Name = quiz.Name,
@@ -295,7 +295,7 @@ public class QuizController : Controller
                 ProcessingMessage = quiz.ProcessingMessage
             },
             Words = rows
-                .Select(row => new QuizServerRepairWord
+                .Select(row => new RepairWord
                 {
                     Id = row.Word.Id,
                     Lemma = row.Word.Lemma,
@@ -311,7 +311,7 @@ public class QuizController : Controller
         };
     }
 
-    private async Task ApplyRepairedQuizAsync(Guid quizId, QuizServerRepairQuizData repaired)
+    private async Task ApplyRepairedQuizAsync(Guid quizId, RepairQuizData repaired)
     {
         var wordsById = await _context.Words
             .Where(word => word.QuizId == quizId)
@@ -348,7 +348,7 @@ public class QuizController : Controller
         await _context.SaveChangesAsync();
     }
 
-    private async Task ApplyRepairedWordAsync(QuizServerRepairWordResult result)
+    private async Task ApplyRepairedWordAsync(RepairWordResult result)
     {
         var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == result.Word.Id);
         if (word == null)
@@ -378,7 +378,7 @@ public class QuizController : Controller
     private async Task<int> ApplyRepairedSentenceAsync(
         Guid quizId,
         string originalText,
-        QuizServerRepairSentence repaired,
+        RepairSentence repaired,
         CancellationToken cancellationToken)
     {
         var normalizedOriginal = VocabularyInputCleaner.CleanForVocabulary(originalText).Trim();
@@ -410,9 +410,9 @@ public class QuizController : Controller
         return details.Count;
     }
 
-    private static QuizServerRepairWordDetail ToRepairWordDetail(WordDetail detail)
+    private static RepairWordDetail ToRepairWordDetail(WordDetail detail)
     {
-        return new QuizServerRepairWordDetail
+        return new RepairWordDetail
         {
             Id = detail.Id,
             Properties = ParseJsonObject(detail.Properties),
@@ -426,7 +426,7 @@ public class QuizController : Controller
         };
     }
 
-    private static void ApplyRepairedWordDetail(WordDetail detail, QuizServerRepairWordDetail repaired)
+    private static void ApplyRepairedWordDetail(WordDetail detail, RepairWordDetail repaired)
     {
         if (repaired.Properties.Count > 0)
         {
@@ -526,10 +526,10 @@ public class QuizController : Controller
 
             return Json(new { text });
         }
-        catch (Exception ex) when (ServiceWarmupMessage.IsQuizServerWarmupFailure(ex) || ex is HttpRequestException)
+        catch (Exception ex) when (ServiceWarmupMessage.IsLlmWarmupFailure(ex) || ex is HttpRequestException)
         {
             _logger.LogWarning(ex, "Image text extraction failed for quiz {QuizId}", quizId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.QuizServer });
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant });
         }
     }
 

@@ -64,7 +64,7 @@ public class WordDetailEnrichmentServiceTests
             Language = "German",
             TargetLanguage = "German"
         };
-        var quizServer = new FakeQuizServerVocabularyGenerationService
+        var vocabularyGenerator = new FakeVocabularyGenerationService
         {
             WordDetail = new GeneratedWordDetail
             {
@@ -73,7 +73,7 @@ public class WordDetailEnrichmentServiceTests
                 ExampleSentence = "Generated example."
             }
         };
-        var service = new WordDetailEnrichmentService(quizServer);
+        var service = new WordDetailEnrichmentService(vocabularyGenerator);
 
         var changed = await service.EnrichAsync(
             detail,
@@ -83,7 +83,7 @@ public class WordDetailEnrichmentServiceTests
             "German");
 
         Assert.False(changed);
-        Assert.False(quizServer.WasCalled);
+        Assert.False(vocabularyGenerator.WasCalled);
         Assert.Equal("""{"pos":"noun"}""", detail.Properties);
         Assert.Equal("Manual explanation.", detail.Explanation);
         Assert.Equal("Manual example.", detail.ExampleSentence);
@@ -244,7 +244,7 @@ public class WordDetailEnrichmentServiceTests
     }
 
     private static WordDetailEnrichmentService CreateService(GeneratedWordDetail generated)
-        => new(new FakeQuizServerVocabularyGenerationService { WordDetail = generated });
+        => new(new FakeVocabularyGenerationService { WordDetail = generated });
 
     private static Dictionary<string, System.Text.Json.JsonElement> JsonProperties(string json)
     {
@@ -254,7 +254,7 @@ public class WordDetailEnrichmentServiceTests
             .ToDictionary(property => property.Name, property => property.Value.Clone());
     }
 
-    private sealed class FakeQuizServerVocabularyGenerationService : IQuizServerVocabularyGenerationService
+    private sealed class FakeVocabularyGenerationService : IVocabularyGenerationService
     {
         public GeneratedWordDetail? WordDetail { get; init; }
         public bool WasCalled { get; private set; }
@@ -278,19 +278,19 @@ public class WordDetailEnrichmentServiceTests
             return Task.FromResult(WordDetail);
         }
 
-        public Task<QuizServerRepairQuizResult?> RepairQuizAsync(
-            QuizServerRepairQuizData quizData,
+        public Task<RepairQuizResult?> RepairQuizAsync(
+            RepairQuizData quizData,
             CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
-        public Task<QuizServerRepairWordResult?> RepairWordAsync(
-            QuizServerRepairQuizData quizData,
+        public Task<RepairWordResult?> RepairWordAsync(
+            RepairQuizData quizData,
             string wordId,
             CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
-        public Task<QuizServerRepairSentenceResult?> RepairSentenceAsync(
-            QuizServerRepairQuizData quizData,
+        public Task<RepairSentenceResult?> RepairSentenceAsync(
+            RepairQuizData quizData,
             string sentenceText,
             CancellationToken cancellationToken = default)
             => throw new NotSupportedException();

@@ -1,6 +1,6 @@
 namespace Glosify.Services;
 
-public interface IQuizServerVocabularyGenerationService
+public interface IVocabularyGenerationService
 {
     Task<IReadOnlyDictionary<string, GeneratedWord>> GenerateWordsFromTextAsync(
         string input,
@@ -16,17 +16,17 @@ public interface IQuizServerVocabularyGenerationService
         string targetLanguage,
         CancellationToken cancellationToken = default);
 
-    Task<QuizServerRepairQuizResult?> RepairQuizAsync(
-        QuizServerRepairQuizData quizData,
+    Task<RepairQuizResult?> RepairQuizAsync(
+        RepairQuizData quizData,
         CancellationToken cancellationToken = default);
 
-    Task<QuizServerRepairWordResult?> RepairWordAsync(
-        QuizServerRepairQuizData quizData,
+    Task<RepairWordResult?> RepairWordAsync(
+        RepairQuizData quizData,
         string wordId,
         CancellationToken cancellationToken = default);
 
-    Task<QuizServerRepairSentenceResult?> RepairSentenceAsync(
-        QuizServerRepairQuizData quizData,
+    Task<RepairSentenceResult?> RepairSentenceAsync(
+        RepairQuizData quizData,
         string sentenceText,
         CancellationToken cancellationToken = default);
 }

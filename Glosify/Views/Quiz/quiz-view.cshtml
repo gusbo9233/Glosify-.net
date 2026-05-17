@@ -26,12 +26,6 @@
                     <span class="bulk-generate-label">Generate word details (@pendingGenerationCount)</span>
                     <span class="material-symbols-outlined">auto_awesome</span>
                 </button>
-                <button type="button"
-                        class="btn-hero btn-hero-secondary"
-                        data-repair-quiz-button
-                        data-repair-url="@Url.Action("RepairQuiz", "Quiz", new { id = Model.SelectedQuiz.Id })">
-                    Repair quiz <span class="material-symbols-outlined">build</span>
-                </button>
             </div>
         </div>
     </section>
@@ -58,67 +52,13 @@
             </form>
         </section>
 
-        <section class="panel">
-            <div class="panel-header">
-                <div class="panel-icon"><span class="material-symbols-outlined">auto_awesome</span></div>
-                <h2 class="panel-title">AI Assistant</h2>
-            </div>
-            @if (TempData["AiMessage"] is string aiMessage)
-            {
-                <div class="panel-message success">@aiMessage</div>
-            }
-            @if (TempData["AiError"] is string aiError)
-            {
-                <div class="panel-message error">@aiError</div>
-            }
-            @if (TempData["QuizMessage"] is string quizMessage)
-            {
-                <div class="panel-message success">@quizMessage</div>
-            }
-            <div data-ai-message-host></div>
-            <div class="generation-progress" data-generation-progress hidden>
-                <div class="generation-progress-top">
-                    <span class="generation-spinner material-symbols-outlined" aria-hidden="true">progress_activity</span>
-                    <span data-generation-status>Preparing generation...</span>
-                </div>
-                <div class="generation-progress-track" aria-hidden="true">
-                    <div class="generation-progress-fill"></div>
-                </div>
-                <div class="generation-progress-meta" data-generation-meta>The quiz server usually takes a little while.</div>
-            </div>
-            <form method="post"
-                  asp-controller="Quiz"
-                  asp-action="GenerateWords"
-                  data-generate-words-form
-                  data-details-url="@Url.Action("Details", "Quiz", new { id = Model.SelectedQuiz.Id })">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="quizId" value="@Model.SelectedQuiz.Id" />
-                <div class="form-group">
-                    <label class="form-label">Source Text</label>
-                    <div class="scan-toolbar">
-                        <button class="btn-scan-text"
-                                type="button"
-                                data-scan-text-button
-                                data-extract-url="@Url.Action("ExtractTextFromImage", "Quiz")"
-                                data-quiz-id="@Model.SelectedQuiz.Id">
-                            <span class="material-symbols-outlined">photo_camera</span>
-                            Scan text
-                        </button>
-                        <span class="scan-status" data-scan-status aria-live="polite"></span>
-                    </div>
-                    <input class="visually-hidden"
-                           type="file"
-                           accept="image/*"
-                           capture="environment"
-                           data-image-text-input />
-                    <textarea class="form-textarea" id="aiSourceText" name="input" data-source-textarea placeholder="Paste an article, lyrics, or transcript here to extract key vocabulary automatically..." required></textarea>
-                </div>
-                <button class="btn-submit" type="submit" data-generate-submit>
-                    Generate Words <span class="material-symbols-outlined">auto_awesome</span>
-                </button>
-            </form>
-        </section>
+        @await Html.PartialAsync("_AssistantPanel", Model)
     </div>
+
+    @if (TempData["QuizMessage"] is string quizMessage)
+    {
+        <div class="panel-message success">@quizMessage</div>
+    }
 
     <section>
         <div class="collection-header">
@@ -214,6 +154,7 @@
 </section>
 
 @section Scripts {
+<script src="~/js/assistant.js"></script>
 <script>
     const resetWordLoadingState = () => {
         document.querySelectorAll('.word-card.loading').forEach(card => {
@@ -249,212 +190,6 @@
     });
 
     window.addEventListener('pageshow', resetWordLoadingState);
-
-    (() => {
-        const scanButton = document.querySelector('[data-scan-text-button]');
-        const imageInput = document.querySelector('[data-image-text-input]');
-        const textarea = document.querySelector('[data-source-textarea]');
-        const status = document.querySelector('[data-scan-status]');
-        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-
-        if (!scanButton || !imageInput || !textarea || !status) return;
-
-        const setStatus = (message, isError = false) => {
-            status.textContent = message;
-            status.classList.toggle('is-error', isError);
-        };
-
-        scanButton.addEventListener('click', () => {
-            imageInput.click();
-        });
-
-        imageInput.addEventListener('change', async () => {
-            const file = imageInput.files?.[0];
-            if (!file) return;
-
-            const body = new FormData();
-            body.append('quizId', scanButton.dataset.quizId || '');
-            body.append('image', file);
-
-            scanButton.disabled = true;
-            setStatus('Reading image...');
-
-            try {
-                const response = await fetch(scanButton.dataset.extractUrl || '', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'RequestVerificationToken': tokenInput?.value ?? ''
-                    },
-                    body
-                });
-
-                const data = await response.json().catch(() => null);
-                if (!response.ok) {
-                    setStatus(data?.error || 'Could not read that image.', true);
-                    return;
-                }
-
-                const extractedText = (data?.text || '').trim();
-                if (!extractedText) {
-                    setStatus('No readable text found.', true);
-                    return;
-                }
-
-                textarea.value = textarea.value.trim()
-                    ? `${textarea.value.trim()}\n\n${extractedText}`
-                    : extractedText;
-                textarea.focus();
-                setStatus('Text added. Review it, then generate words.');
-            } catch {
-                setStatus('Could not upload the image.', true);
-            } finally {
-                scanButton.disabled = false;
-                imageInput.value = '';
-            }
-        });
-    })();
-
-    (() => {
-        const form = document.querySelector('[data-generate-words-form]');
-        if (!form) return;
-
-        const submitButton = form.querySelector('[data-generate-submit]');
-        const textarea = form.querySelector('[data-source-textarea]');
-        const progress = document.querySelector('[data-generation-progress]');
-        const status = document.querySelector('[data-generation-status]');
-        const meta = document.querySelector('[data-generation-meta]');
-        const messageHost = document.querySelector('[data-ai-message-host]');
-        const collectionSubtitle = document.getElementById('collectionSubtitle');
-        const wordsPanel = document.getElementById('wordsPanel');
-        const sentencesPanel = document.getElementById('sentencesPanel');
-
-        let elapsedTimer = null;
-        let stageTimer = null;
-        let startedAt = 0;
-
-        const messages = [
-            'Waiting for the database and quiz server to wake up...',
-            'Sending text to the quiz server...',
-            'The quiz server is extracting useful words...',
-            'Building example sentences...',
-            'Checking the generated quiz...',
-            'Saving new words...'
-        ];
-
-        const setMessage = (text, kind = 'success') => {
-            if (!messageHost) return;
-            messageHost.innerHTML = '';
-            const message = document.createElement('div');
-            message.className = `panel-message ${kind}`;
-            message.textContent = text;
-            messageHost.appendChild(message);
-        };
-
-        const clearExistingMessages = () => {
-            document.querySelectorAll('.panel > .panel-message').forEach(message => message.remove());
-            if (messageHost) messageHost.innerHTML = '';
-        };
-
-        const startProgress = () => {
-            clearExistingMessages();
-            startedAt = Date.now();
-            let stageIndex = 0;
-            if (progress) progress.hidden = false;
-            if (status) status.textContent = messages[stageIndex];
-            if (meta) meta.textContent = 'Elapsed: 0s';
-
-            elapsedTimer = window.setInterval(() => {
-                const seconds = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
-                if (meta) meta.textContent = `Elapsed: ${seconds}s`;
-            }, 1000);
-
-            stageTimer = window.setInterval(() => {
-                stageIndex = Math.min(stageIndex + 1, messages.length - 1);
-                if (status) status.textContent = messages[stageIndex];
-            }, 9000);
-        };
-
-        const stopProgress = () => {
-            if (elapsedTimer) window.clearInterval(elapsedTimer);
-            if (stageTimer) window.clearInterval(stageTimer);
-            elapsedTimer = null;
-            stageTimer = null;
-            if (progress) progress.hidden = true;
-        };
-
-        const setBusy = (busy) => {
-            if (submitButton) {
-                submitButton.disabled = busy;
-                submitButton.innerHTML = busy
-                    ? 'Generating <span class="material-symbols-outlined">progress_activity</span>'
-                    : 'Generate Words <span class="material-symbols-outlined">auto_awesome</span>';
-            }
-            if (textarea) textarea.readOnly = busy;
-            form.classList.toggle('is-generating', busy);
-        };
-
-        const replaceCollectionFromDocument = (doc) => {
-            const nextWordsPanel = doc.getElementById('wordsPanel');
-            const nextSentencesPanel = doc.getElementById('sentencesPanel');
-            const nextSubtitle = doc.getElementById('collectionSubtitle');
-
-            if (nextWordsPanel && wordsPanel) {
-                wordsPanel.innerHTML = nextWordsPanel.innerHTML;
-                wordsPanel.dataset.subtitle = nextWordsPanel.dataset.subtitle || '';
-            }
-
-            if (nextSentencesPanel && sentencesPanel) {
-                sentencesPanel.innerHTML = nextSentencesPanel.innerHTML;
-                sentencesPanel.dataset.subtitle = nextSentencesPanel.dataset.subtitle || '';
-            }
-
-            const activePanel = document.querySelector('.tab-panel:not([hidden])');
-            if (collectionSubtitle && activePanel) {
-                collectionSubtitle.textContent = activePanel.dataset.subtitle || nextSubtitle?.textContent || '';
-            }
-        };
-
-        form.addEventListener('submit', async event => {
-            event.preventDefault();
-            if (form.classList.contains('is-generating')) return;
-
-            setBusy(true);
-            startProgress();
-
-            try {
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: new FormData(form)
-                });
-
-                const data = await response.json().catch(() => null);
-                if (!response.ok) {
-                    setMessage(data?.error || 'Generation failed. Please try again.', 'error');
-                    return;
-                }
-
-                if (status) status.textContent = 'Refreshing the word list...';
-                const page = await fetch(form.dataset.detailsUrl || window.location.href, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                const html = await page.text();
-                const doc = new DOMParser().parseFromString(html, 'text/html');
-                replaceCollectionFromDocument(doc);
-                textarea.value = '';
-                setMessage(data?.message || 'Generation finished.');
-            } catch {
-                setMessage('The background request stopped unexpectedly. Please try again.', 'error');
-            } finally {
-                stopProgress();
-                setBusy(false);
-            }
-        });
-    })();
 
     (() => {
         const button = document.getElementById('bulkGenerateButton');

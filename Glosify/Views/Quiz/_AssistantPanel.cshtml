@@ -1,0 +1,29 @@
+@model Glosify.Models.ViewModels.QuizWorkspaceViewModel
+
+<section class="panel assistant-panel" data-assistant-panel data-quiz-id="@Model.SelectedQuiz.Id">
+    <div class="panel-header">
+        <div class="panel-icon"><span class="material-symbols-outlined">smart_toy</span></div>
+        <h2 class="panel-title">Assistant</h2>
+    </div>
+    <p class="assistant-hint">Ask the assistant to add vocabulary, edit words, or repair sentences. Changes are queued — you review and apply.</p>
+
+    <div class="assistant-transcript" data-assistant-transcript>
+        <div class="assistant-empty" data-assistant-empty>Start a conversation. For example: "Add the words from this paragraph: …"</div>
+    </div>
+
+    <div class="assistant-status" data-assistant-status hidden></div>
+
+    <form class="assistant-input" data-assistant-form>
+        <textarea
+            class="form-textarea"
+            data-assistant-textarea
+            placeholder="Ask the assistant…"
+            rows="3"
+            required></textarea>
+        <div class="assistant-input-actions">
+            <button class="btn-submit" type="submit" data-assistant-submit>
+                Send <span class="material-symbols-outlined">send</span>
+            </button>
+        </div>
+    </form>
+</section>

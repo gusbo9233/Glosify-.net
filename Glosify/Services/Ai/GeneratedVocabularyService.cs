@@ -11,18 +11,18 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
 
     private readonly GlosifyContext _context;
     private readonly IQuizService _quizService;
-    private readonly IQuizServerVocabularyGenerationService _quizServerVocabularyGenerationService;
+    private readonly IVocabularyGenerationService _vocabularyGenerator;
     private readonly ILogger<GeneratedVocabularyService> _logger;
 
     public GeneratedVocabularyService(
         GlosifyContext context,
         IQuizService quizService,
-        IQuizServerVocabularyGenerationService quizServerVocabularyGenerationService,
+        IVocabularyGenerationService vocabularyGenerator,
         ILogger<GeneratedVocabularyService> logger)
     {
         _context = context;
         _quizService = quizService;
-        _quizServerVocabularyGenerationService = quizServerVocabularyGenerationService;
+        _vocabularyGenerator = vocabularyGenerator;
         _logger = logger;
     }
 
@@ -55,13 +55,13 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         {
             var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
             sourceSentences = ExtractSourceSentences(cleanedInput);
-            generatedWords = await _quizServerVocabularyGenerationService.GenerateWordsFromTextAsync(
+            generatedWords = await _vocabularyGenerator.GenerateWordsFromTextAsync(
                 cleanedInput,
                 quiz.SourceLanguage,
                 quiz.TargetLanguage,
                 quiz.Name);
             _logger.LogInformation(
-                "Generated vocabulary for quiz {QuizId}: quiz server, cleaned length {CleanedLength}, source sentence count {SourceSentenceCount}, generated item count {GeneratedCount}",
+                "Generated vocabulary for quiz {QuizId}: cleaned length {CleanedLength}, source sentence count {SourceSentenceCount}, generated item count {GeneratedCount}",
                 quizId,
                 cleanedInput.Length,
                 sourceSentences.Count,
@@ -70,7 +70,7 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "AI vocabulary generation returned an unexpected response for quiz {QuizId}", quizId);
-            if (ex.Message.StartsWith("The quiz server", StringComparison.OrdinalIgnoreCase)
+            if (ex.Message.StartsWith("The assistant", StringComparison.OrdinalIgnoreCase)
                 || ex.Message.Contains("could not find", StringComparison.OrdinalIgnoreCase)
                 || ex.Message.Contains("No useful vocabulary", StringComparison.OrdinalIgnoreCase))
             {
@@ -81,13 +81,13 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogWarning(ex, "Quiz server request failed for quiz {QuizId}", quizId);
-            return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.QuizServer);
+            _logger.LogWarning(ex, "Gemini request failed for quiz {QuizId}", quizId);
+            return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.LlmAssistant);
         }
         catch (TaskCanceledException ex)
         {
-            _logger.LogWarning(ex, "Quiz server request timed out for quiz {QuizId}", quizId);
-            return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.QuizServer);
+            _logger.LogWarning(ex, "Gemini request timed out for quiz {QuizId}", quizId);
+            return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.LlmAssistant);
         }
 
         List<ExistingWordRow> existingWordRows;

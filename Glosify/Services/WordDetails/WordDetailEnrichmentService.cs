@@ -12,11 +12,11 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
     private static readonly Regex Whitespace = new(@"\s+", RegexOptions.Compiled);
     private static readonly Regex WordPattern = new(@"[\p{L}\p{M}\p{N}]+", RegexOptions.Compiled);
 
-    private readonly IQuizServerVocabularyGenerationService _quizServer;
+    private readonly IVocabularyGenerationService _vocabularyGenerator;
 
-    public WordDetailEnrichmentService(IQuizServerVocabularyGenerationService quizServer)
+    public WordDetailEnrichmentService(IVocabularyGenerationService vocabularyGenerator)
     {
-        _quizServer = quizServer;
+        _vocabularyGenerator = vocabularyGenerator;
     }
 
     public async Task<bool> EnrichAsync(
@@ -45,7 +45,7 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
             return false;
         }
 
-        var generated = await _quizServer.GenerateWordDetailAsync(
+        var generated = await _vocabularyGenerator.GenerateWordDetailAsync(
             lookupWord,
             translation,
             sourceLanguage,

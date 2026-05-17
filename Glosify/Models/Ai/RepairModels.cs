@@ -3,16 +3,16 @@ using System.Text.Json.Serialization;
 
 namespace Glosify.Models.Ai;
 
-public sealed class QuizServerRepairQuizData
+public sealed class RepairQuizData
 {
-    public QuizServerRepairQuiz Quiz { get; set; } = new();
-    public List<QuizServerRepairWord> Words { get; set; } = [];
+    public RepairQuiz Quiz { get; set; } = new();
+    public List<RepairWord> Words { get; set; } = [];
     [JsonPropertyName("word_details")]
-    public List<QuizServerRepairWordDetail> WordDetails { get; set; } = [];
-    public List<QuizServerRepairSentence> Sentences { get; set; } = [];
+    public List<RepairWordDetail> WordDetails { get; set; } = [];
+    public List<RepairSentence> Sentences { get; set; } = [];
 }
 
-public sealed class QuizServerRepairQuiz
+public sealed class RepairQuiz
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
@@ -27,7 +27,7 @@ public sealed class QuizServerRepairQuiz
     public string? ProcessingMessage { get; set; }
 }
 
-public sealed class QuizServerRepairWord
+public sealed class RepairWord
 {
     public string Id { get; set; } = string.Empty;
     public string Lemma { get; set; } = string.Empty;
@@ -38,7 +38,7 @@ public sealed class QuizServerRepairWord
     public string QuizId { get; set; } = string.Empty;
 }
 
-public sealed class QuizServerRepairWordDetail
+public sealed class RepairWordDetail
 {
     public string Id { get; set; } = string.Empty;
     public Dictionary<string, JsonElement> Properties { get; set; } = [];
@@ -51,7 +51,7 @@ public sealed class QuizServerRepairWordDetail
     public string Language { get; set; } = string.Empty;
 }
 
-public sealed class QuizServerRepairSentence
+public sealed class RepairSentence
 {
     public string Id { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
@@ -60,20 +60,20 @@ public sealed class QuizServerRepairSentence
     public string QuizId { get; set; } = string.Empty;
 }
 
-public sealed class QuizServerRepairQuizResult
+public sealed class RepairQuizResult
 {
     [JsonPropertyName("quiz_data")]
-    public QuizServerRepairQuizData QuizData { get; set; } = new();
+    public RepairQuizData QuizData { get; set; } = new();
 }
 
-public sealed class QuizServerRepairWordResult
+public sealed class RepairWordResult
 {
-    public QuizServerRepairWord Word { get; set; } = new();
+    public RepairWord Word { get; set; } = new();
     [JsonPropertyName("word_detail")]
-    public QuizServerRepairWordDetail WordDetail { get; set; } = new();
+    public RepairWordDetail WordDetail { get; set; } = new();
 }
 
-public sealed class QuizServerRepairSentenceResult
+public sealed class RepairSentenceResult
 {
-    public QuizServerRepairSentence Sentence { get; set; } = new();
+    public RepairSentence Sentence { get; set; } = new();
 }
