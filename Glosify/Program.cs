@@ -58,6 +58,30 @@ builder.Services.Configure<GeminiOptions>(options =>
         options.ApiKey = apiKey;
     }
 
+    var structuredModel = builder.Configuration["GEMINI_STRUCTURED_MODEL"];
+    if (!string.IsNullOrWhiteSpace(structuredModel))
+    {
+        options.StructuredModel = structuredModel;
+    }
+
+    var assistantModel = builder.Configuration["GEMINI_ASSISTANT_MODEL"];
+    if (!string.IsNullOrWhiteSpace(assistantModel))
+    {
+        options.AssistantModel = assistantModel;
+    }
+
+    var visionModel = builder.Configuration["GEMINI_VISION_MODEL"];
+    if (!string.IsNullOrWhiteSpace(visionModel))
+    {
+        options.VisionModel = visionModel;
+    }
+
+    var thinkingLevel = builder.Configuration["GEMINI_THINKING_LEVEL"];
+    if (!string.IsNullOrWhiteSpace(thinkingLevel))
+    {
+        options.ThinkingLevel = thinkingLevel;
+    }
+
     var timeoutSeconds = builder.Configuration["GEMINI_TIMEOUT_SECONDS"];
     if (int.TryParse(timeoutSeconds, out var parsedTimeoutSeconds) && parsedTimeoutSeconds > 0)
     {

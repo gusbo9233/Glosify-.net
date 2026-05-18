@@ -38,16 +38,13 @@ public sealed class GeminiClient : IGeminiClient
         var selectedModel = string.IsNullOrWhiteSpace(model) ? _options.StructuredModel : model;
         var generativeModel = GetModel(selectedModel, jsonMode: true);
 
-        var generationConfig = new GenerationConfig
-        {
-            ResponseMimeType = "application/json",
-            Temperature = 0.2f,
-        };
+        var generationConfig = CreateGenerationConfig(selectedModel, 0.2f, responseMimeType: "application/json");
 
         var response = await generativeModel.GenerateContent(
             prompt,
             generationConfig: generationConfig,
             cancellationToken: cancellationToken);
+        LogUsage("json", selectedModel, response);
 
         var text = response?.Text ?? string.Empty;
         if (string.IsNullOrWhiteSpace(text))
@@ -83,15 +80,13 @@ public sealed class GeminiClient : IGeminiClient
             }
         };
 
-        var generationConfig = new GenerationConfig
-        {
-            Temperature = 0.1f,
-        };
+        var generationConfig = CreateGenerationConfig(_options.VisionModel, 0.1f);
 
         var response = await generativeModel.GenerateContent(
             parts,
             generationConfig: generationConfig,
             cancellationToken: cancellationToken);
+        LogUsage("image-text-extraction", _options.VisionModel, response);
 
         return response?.Text ?? string.Empty;
     }
@@ -100,7 +95,10 @@ public sealed class GeminiClient : IGeminiClient
         AgentRequest request,
         CancellationToken cancellationToken = default)
     {
-        var generativeModel = GetModel(_options.StructuredModel, jsonMode: false);
+        var assistantModel = string.IsNullOrWhiteSpace(_options.AssistantModel)
+            ? _options.StructuredModel
+            : _options.AssistantModel;
+        var generativeModel = GetModel(assistantModel, jsonMode: false);
 
         var contents = request.History.Select(BuildContent).ToList();
         var tools = request.Tools.Count == 0 ? null : BuildTools(request.Tools);
@@ -113,10 +111,11 @@ public sealed class GeminiClient : IGeminiClient
             Contents = contents,
             Tools = tools,
             SystemInstruction = systemInstruction,
-            GenerationConfig = new GenerationConfig { Temperature = 0.3f },
+            GenerationConfig = CreateGenerationConfig(assistantModel, 0.3f),
         };
 
         var response = await generativeModel.GenerateContent(apiRequest, cancellationToken: cancellationToken);
+        LogUsage("agent-turn", assistantModel, response);
 
         var text = response?.Text ?? string.Empty;
         var functionCalls = new List<AgentFunctionCall>();
@@ -241,6 +240,64 @@ public sealed class GeminiClient : IGeminiClient
             }
             return model;
         });
+    }
+
+    private GenerationConfig CreateGenerationConfig(
+        string modelName,
+        float temperature,
+        string? responseMimeType = null)
+    {
+        var config = new GenerationConfig
+        {
+            ResponseMimeType = responseMimeType,
+            Temperature = temperature,
+        };
+
+        if (SupportsThinkingLevel(modelName) && TryGetThinkingLevel(out var thinkingLevel))
+        {
+            config.ThinkingLevel = thinkingLevel;
+        }
+
+        return config;
+    }
+
+    private static bool SupportsThinkingLevel(string modelName)
+    {
+        return modelName.Contains("gemini-3", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool TryGetThinkingLevel(out ThinkingLevel thinkingLevel)
+    {
+        thinkingLevel = _options.ThinkingLevel.Trim().ToLowerInvariant() switch
+        {
+            "minimal" => ThinkingLevel.Minimal,
+            "low" => ThinkingLevel.Low,
+            "medium" => ThinkingLevel.Medium,
+            "high" => ThinkingLevel.High,
+            _ => ThinkingLevel.ThinkingLevelUnspecified,
+        };
+
+        return thinkingLevel != ThinkingLevel.ThinkingLevelUnspecified;
+    }
+
+    private void LogUsage(string operation, string modelName, GenerateContentResponse? response)
+    {
+        var usage = response?.UsageMetadata;
+        if (usage == null)
+        {
+            _logger.LogDebug("Gemini usage metadata was unavailable for {Operation} request (model {Model}).", operation, modelName);
+            return;
+        }
+
+        _logger.LogInformation(
+            "Gemini usage for {Operation} (model {Model}): prompt {PromptTokens}, candidates {CandidateTokens}, thoughts {ThoughtTokens}, tool prompt {ToolUsePromptTokens}, total {TotalTokens}.",
+            operation,
+            modelName,
+            usage.PromptTokenCount,
+            usage.CandidatesTokenCount,
+            usage.ThoughtsTokenCount,
+            usage.ToolUsePromptTokenCount,
+            usage.TotalTokenCount);
     }
 
     private sealed class StoredContent
