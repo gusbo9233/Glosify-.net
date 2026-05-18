@@ -37,7 +37,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     {
         var quiz = await _context.Quizzes
             .FirstOrDefaultAsync(q => q.Id == quizId && q.UserId == userId, cancellationToken)
-            ?? throw new InvalidOperationException("Quiz not found or not owned by this user.");
+            ?? throw new QuizNotFoundException();
 
         var thread = await GetOrCreateThreadAsync(quizId, userId, cancellationToken);
 

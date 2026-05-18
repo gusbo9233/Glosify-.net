@@ -22,7 +22,7 @@ public sealed class ChangeApplier : IChangeApplier
         CancellationToken cancellationToken)
     {
         var quiz = await _context.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId && q.UserId == userId, cancellationToken)
-            ?? throw new InvalidOperationException("Quiz not found.");
+            ?? throw new QuizNotFoundException();
 
         var applied = 0;
         foreach (var change in changes)

@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Glosify.Models;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -26,13 +25,11 @@ public class FlashcardQuizController : Controller
     [HttpGet]
     public async Task<IActionResult> Index(Guid? id, int wordCount = 20)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-            return RedirectToAction("Login", "Account");
+        var userId = User.GetUserId();
 
         var selectedQuiz = await _quizService.FindQuizAsync(userId, id);
         if (selectedQuiz == null)
-            return View("~/Views/Quiz/flashcard-quiz.cshtml", FlashcardQuizViewModel.Empty());
+            return View(FlashcardQuizViewModel.Empty());
 
         var cards = await _wordService.LoadCardsAsync(selectedQuiz.Id, wordCount);
         var cardData = cards.Select(c => new FlashcardCardData
@@ -54,16 +51,16 @@ public class FlashcardQuizController : Controller
             cardData);
         _sessionService.SaveSession(session);
 
-        return View("~/Views/Quiz/flashcard-quiz.cshtml", BuildViewModel(session, selectedQuiz));
+        return View(BuildViewModel(session, selectedQuiz));
     }
 
     [HttpPost]
     public IActionResult Reveal(string sessionId)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.GetUserId();
         var session = _sessionService.FindSession(sessionId, userId);
         if (session == null)
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Index));
 
         _sessionService.RevealAnswer(session);
         _sessionService.SaveSession(session);
@@ -74,10 +71,10 @@ public class FlashcardQuizController : Controller
     [HttpPost]
     public IActionResult Rate(string sessionId, string rating)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = User.GetUserId();
         var session = _sessionService.FindSession(sessionId, userId);
         if (session == null)
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Index));
 
         _sessionService.ApplyRating(session, rating);
         _sessionService.SaveSession(session);
@@ -88,7 +85,7 @@ public class FlashcardQuizController : Controller
     [HttpPost]
     public IActionResult Restart(Guid quizId, int wordCount)
     {
-        return RedirectToAction("Index", new { id = quizId, wordCount });
+        return RedirectToAction(nameof(Index), new { id = quizId, wordCount });
     }
 
     private IActionResult FlashcardResponse(FlashcardSessionData session)
@@ -104,8 +101,8 @@ public class FlashcardQuizController : Controller
         };
         var model = BuildViewModel(session, quiz);
         return Request.Headers.XRequestedWith == "XMLHttpRequest"
-            ? PartialView("~/Views/Quiz/_FlashcardSession.cshtml", model)
-            : View("~/Views/Quiz/flashcard-quiz.cshtml", model);
+            ? PartialView("_FlashcardSession", model)
+            : View("Index", model);
     }
 
     private static FlashcardQuizViewModel BuildViewModel(FlashcardSessionData session, Quiz quiz)

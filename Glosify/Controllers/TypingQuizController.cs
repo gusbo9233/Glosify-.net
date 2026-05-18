@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Glosify.Models;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -26,18 +25,16 @@ public class TypingQuizController : Controller
     [HttpGet]
     public async Task<IActionResult> Index(Guid? id, int wordCount = 20)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-            return RedirectToAction("Login", "Account");
+        var userId = User.GetUserId();
 
         var selectedQuiz = await _quizService.FindQuizAsync(userId, id);
         if (selectedQuiz == null)
-            return View("~/Views/Quiz/typewordquiz.cshtml", TypingQuizViewModel.Empty());
+            return View(TypingQuizViewModel.Empty());
 
         var data = await _typingQuizService.GetQuizDataAsync(selectedQuiz.Id, wordCount);
         var showsUkrainianKeyboard = _languageContext.CurrentLanguage == "Ukrainian";
 
-        return View("~/Views/Quiz/typewordquiz.cshtml", BuildViewModel(data, wordCount, showsUkrainianKeyboard));
+        return View(BuildViewModel(data, wordCount, showsUkrainianKeyboard));
     }
 
     [HttpPost]

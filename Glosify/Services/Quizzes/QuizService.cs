@@ -67,13 +67,13 @@ public class QuizService : IQuizService
         return quiz;
     }
 
-    public async Task<bool> DeleteQuizAsync(Guid id, string userId)
+    public async Task<Quiz?> DeleteQuizAsync(Guid id, string userId)
     {
         var quiz = await _context.Quizzes
             .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId);
 
         if (quiz == null)
-            return false;
+            return null;
 
         var words = await _context.Words
             .Where(word => word.QuizId == quiz.Id)
@@ -85,7 +85,12 @@ public class QuizService : IQuizService
         _context.Quizzes.Remove(quiz);
         await _context.SaveChangesAsync();
 
-        return true;
+        return quiz;
+    }
+
+    public async Task<bool> UserOwnsQuizAsync(Guid quizId, string userId)
+    {
+        return await _context.Quizzes.AnyAsync(q => q.Id == quizId && q.UserId == userId);
     }
 
     public async Task<int> GetAvailableWordCountAsync(Guid quizId)

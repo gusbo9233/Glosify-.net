@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,8 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace Glosify.Controllers;
 
 [Authorize]
+[ApiController]
 [Route("Quiz/{quizId:guid}/Assistant")]
-public class AssistantController : Controller
+public class AssistantController : ControllerBase
 {
     private readonly IAssistantOrchestrator _orchestrator;
     private readonly ILogger<AssistantController> _logger;
@@ -23,24 +23,15 @@ public class AssistantController : Controller
     [HttpGet("History")]
     public async Task<IActionResult> History(Guid quizId, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
-
+        var userId = User.GetUserId();
         var history = await _orchestrator.GetHistoryAsync(quizId, userId, cancellationToken);
-        return Json(history);
+        return Ok(history);
     }
 
     [HttpPost("Send")]
     public async Task<IActionResult> Send(Guid quizId, [FromBody] SendMessageInput input, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
+        var userId = User.GetUserId();
 
         if (string.IsNullOrWhiteSpace(input?.Message))
         {
@@ -50,9 +41,9 @@ public class AssistantController : Controller
         try
         {
             var response = await _orchestrator.SendMessageAsync(quizId, userId, input.Message, cancellationToken);
-            return Json(response);
+            return Ok(response);
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("Quiz not found"))
+        catch (QuizNotFoundException ex)
         {
             return NotFound(new { error = ex.Message });
         }
@@ -64,28 +55,27 @@ public class AssistantController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Assistant turn failed for quiz {QuizId}", quizId);
-            var detail = $"{ex.GetType().Name}: {ex.Message}";
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = detail });
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"{ex.GetType().Name}: {ex.Message}" });
         }
     }
 
     [HttpPost("Apply/{messageId:guid}")]
     public async Task<IActionResult> Apply(Guid quizId, Guid messageId, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
+        var userId = User.GetUserId();
 
         try
         {
             var applied = await _orchestrator.ApplyPendingChangesAsync(messageId, userId, cancellationToken);
-            return Json(new { applied });
+            return Ok(new { applied });
         }
         catch (UnauthorizedAccessException)
         {
             return Forbid();
+        }
+        catch (QuizNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
@@ -96,11 +86,7 @@ public class AssistantController : Controller
     [HttpPost("Reject/{messageId:guid}")]
     public async Task<IActionResult> Reject(Guid quizId, Guid messageId, CancellationToken cancellationToken)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userId))
-        {
-            return Unauthorized();
-        }
+        var userId = User.GetUserId();
 
         try
         {

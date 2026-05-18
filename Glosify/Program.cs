@@ -6,6 +6,7 @@ using Glosify.Models;
 using Glosify.Models.LanguageConfig;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -16,6 +17,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
 });
 builder.Services.AddMemoryCache();
 
@@ -76,12 +84,6 @@ builder.Services.Configure<GeminiOptions>(options =>
         options.VisionModel = visionModel;
     }
 
-    var thinkingLevel = builder.Configuration["GEMINI_THINKING_LEVEL"];
-    if (!string.IsNullOrWhiteSpace(thinkingLevel))
-    {
-        options.ThinkingLevel = thinkingLevel;
-    }
-
     var timeoutSeconds = builder.Configuration["GEMINI_TIMEOUT_SECONDS"];
     if (int.TryParse(timeoutSeconds, out var parsedTimeoutSeconds) && parsedTimeoutSeconds > 0)
     {
@@ -91,6 +93,7 @@ builder.Services.Configure<GeminiOptions>(options =>
 
 // Register application services
 builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<IQuizRepairService, QuizRepairService>();
 builder.Services.AddScoped<IWordService, WordService>();
 builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
 builder.Services.AddScoped<ITypingQuizService, TypingQuizService>();
@@ -100,6 +103,7 @@ builder.Services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionSe
 builder.Services.AddScoped<IGeneratedVocabularyService, GeneratedVocabularyService>();
 builder.Services.AddScoped<IWordDetailEnrichmentService, WordDetailEnrichmentService>();
 builder.Services.AddScoped<IWordDetailViewModelService, WordDetailViewModelService>();
+builder.Services.AddScoped<IWordDetailService, WordDetailService>();
 builder.Services.AddScoped<IAssistantTools, AssistantTools>();
 builder.Services.AddScoped<IChangeApplier, ChangeApplier>();
 builder.Services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
@@ -155,7 +159,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
+app.MapStaticAssets().AllowAnonymous();
 
 app.MapControllerRoute(
     name: "login",
@@ -172,7 +176,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.MapRazorPages();
+app.MapRazorPages().AllowAnonymous();
 
 
 app.Run();

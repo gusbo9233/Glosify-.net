@@ -253,31 +253,7 @@ public sealed class GeminiClient : IGeminiClient
             Temperature = temperature,
         };
 
-        if (SupportsThinkingLevel(modelName) && TryGetThinkingLevel(out var thinkingLevel))
-        {
-            config.ThinkingLevel = thinkingLevel;
-        }
-
         return config;
-    }
-
-    private static bool SupportsThinkingLevel(string modelName)
-    {
-        return modelName.Contains("gemini-3", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private bool TryGetThinkingLevel(out ThinkingLevel thinkingLevel)
-    {
-        thinkingLevel = _options.ThinkingLevel.Trim().ToLowerInvariant() switch
-        {
-            "minimal" => ThinkingLevel.Minimal,
-            "low" => ThinkingLevel.Low,
-            "medium" => ThinkingLevel.Medium,
-            "high" => ThinkingLevel.High,
-            _ => ThinkingLevel.ThinkingLevelUnspecified,
-        };
-
-        return thinkingLevel != ThinkingLevel.ThinkingLevelUnspecified;
     }
 
     private void LogUsage(string operation, string modelName, GenerateContentResponse? response)

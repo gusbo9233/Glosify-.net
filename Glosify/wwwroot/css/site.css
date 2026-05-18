@@ -682,15 +682,41 @@ body {
             flex-direction: column;
         }
 
+        .flash-header .flash-subtitle {
+            display: none;
+        }
+
         .flashcard {
-            min-height: 300px;
-            padding: 28px;
+            min-height: 220px;
+            padding: 24px 18px;
+        }
+
+        .card-stage {
+            gap: 16px;
+        }
+
+        .controls {
+            gap: 10px;
+        }
+
+        .result-grid {
+            grid-template-columns: 1fr;
         }
 
         .rating-row,
-        .rating-row.revealed,
-        .result-grid {
-            grid-template-columns: 1fr;
+        .rating-row.revealed {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .btn-rating {
+            min-height: 50px;
+            padding: 12px 8px;
+            font-size: 14px;
+        }
+
+        .btn-linkish {
+            padding: 6px 10px;
         }
     }
 
@@ -1219,6 +1245,12 @@ body {
         align-items: center;
         gap: 18px;
         min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .word-card-left > div {
+        min-width: 0;
+        flex: 1 1 auto;
     }
 
     .word-icon {
@@ -1236,15 +1268,17 @@ body {
     .word {
         font-size: 18px;
         font-weight: 850;
-        overflow-wrap: anywhere;
+        overflow-wrap: break-word;
+        word-break: normal;
     }
 
-    .translation {
+    .word-card .translation {
         color: var(--on-surface-var);
         font-size: 14px;
         font-weight: 650;
         margin-top: 3px;
-        overflow-wrap: anywhere;
+        overflow-wrap: break-word;
+        word-break: normal;
     }
 
     .word-date {
@@ -1257,6 +1291,7 @@ body {
     .word-actions {
         display: flex;
         align-items: center;
+        flex-direction: column;
         gap: 10px;
         flex-shrink: 0;
     }
@@ -3523,7 +3558,7 @@ body { margin: 0; }
     }
 
     .flashcard {
-        min-height: 260px;
+        min-height: 220px;
         padding: 24px 18px;
     }
 

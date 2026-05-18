@@ -2,39 +2,35 @@ using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Glosify.Controllers
+namespace Glosify.Controllers;
+
+[Authorize]
+public class LanguagesController : Controller
 {
-    [Authorize]
-    public class LanguagesController : Controller
+    private readonly ILanguageContext _languageContext;
+
+    public LanguagesController(ILanguageContext languageContext)
     {
-        private readonly ILanguageContext _languageContext;
+        _languageContext = languageContext;
+    }
 
-        public LanguagesController(ILanguageContext languageContext)
+    public IActionResult Index() => View();
+
+    [HttpPost]
+    public IActionResult Select(string language)
+    {
+        if (!_languageContext.TrySetLanguage(language))
         {
-            _languageContext = languageContext;
-        }
-
-        public IActionResult Index()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public IActionResult Select(string language)
-        {
-            if (!_languageContext.TrySetLanguage(language))
-            {
-                return RedirectToAction(nameof(Index));
-            }
-
-            return RedirectToAction("Index", "Home");
-        }
-
-        [HttpPost]
-        public IActionResult Clear()
-        {
-            _languageContext.Clear();
             return RedirectToAction(nameof(Index));
         }
+
+        return RedirectToAction("Index", "Home");
+    }
+
+    [HttpPost]
+    public IActionResult Clear()
+    {
+        _languageContext.Clear();
+        return RedirectToAction(nameof(Index));
     }
 }
