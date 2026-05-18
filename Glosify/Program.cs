@@ -1,5 +1,4 @@
 using Glosify.Data;
-using Glosify.Data.Importing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Glosify.Models;
@@ -139,11 +138,6 @@ builder.Services.AddDbContext<GlosifyContext>(options =>
 );
 
 var app = builder.Build();
-
-if (KaikkiImportCommand.IsRequested(args))
-{
-    return await KaikkiImportCommand.RunAsync(app.Services, args);
-}
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler("/Home/Error");
