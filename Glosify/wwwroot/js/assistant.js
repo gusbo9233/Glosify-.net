@@ -49,6 +49,11 @@
     };
 
     const renderMessage = (message) => {
+        const hasPendingChanges = Array.isArray(message.pendingChanges) && message.pendingChanges.length > 0;
+        if (!message.text && !hasPendingChanges) {
+            return;
+        }
+
         if (empty) empty.remove();
 
         const row = document.createElement('article');
@@ -62,19 +67,7 @@
             row.appendChild(body);
         }
 
-        if (Array.isArray(message.toolEvents) && message.toolEvents.length > 0) {
-            const list = document.createElement('ul');
-            list.className = 'assistant-tool-list';
-            for (const ev of message.toolEvents) {
-                const li = document.createElement('li');
-                li.className = 'assistant-tool';
-                li.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">build</span><span class="assistant-tool-name">${escapeHtml(ev.name)}</span>`;
-                list.appendChild(li);
-            }
-            row.appendChild(list);
-        }
-
-        if (Array.isArray(message.pendingChanges) && message.pendingChanges.length > 0) {
+        if (hasPendingChanges) {
             const card = renderPendingChanges(message);
             row.appendChild(card);
         }
@@ -87,10 +80,13 @@
         const card = document.createElement('div');
         card.className = 'assistant-pending-card';
         card.dataset.messageId = message.id;
+        const isSentenceFix = message.pendingChanges.every(change =>
+            change.kind === 'set_word_detail' || change.kind === 'repair_sentence');
+        const headingText = isSentenceFix ? 'Review sentence fixes' : 'Review proposed changes';
 
         const heading = document.createElement('div');
         heading.className = 'assistant-pending-heading';
-        heading.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">edit_note</span>Proposed changes (${message.pendingChanges.length})`;
+        heading.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">edit_note</span>${headingText} (${message.pendingChanges.length})`;
         card.appendChild(heading);
 
         const list = document.createElement('ul');
@@ -119,7 +115,7 @@
             const apply = document.createElement('button');
             apply.type = 'button';
             apply.className = 'btn-submit';
-            apply.textContent = 'Apply';
+            apply.textContent = isSentenceFix ? 'Apply fixes' : 'Apply';
             apply.addEventListener('click', () => applyChanges(message.id, card, apply, reject));
 
             const reject = document.createElement('button');

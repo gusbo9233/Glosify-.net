@@ -154,7 +154,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         }
 
         var finalText = finalTurn?.Text ?? "I hit my tool-call limit before finishing. Please try a smaller request.";
-        var pendingChangeViews = toolContext.PendingChanges.Select(MapPendingView).ToList();
+        var wordLabels = await LoadWordLabelsAsync(quizId, toolContext.PendingChanges, cancellationToken);
+        var pendingChangeViews = toolContext.PendingChanges.Select(change => MapPendingView(change, wordLabels)).ToList();
         var pendingChangesJson = toolContext.PendingChanges.Count == 0
             ? null
             : JsonSerializer.Serialize(toolContext.PendingChanges, JsonOptions);
@@ -205,14 +206,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         {
             var stored = JsonSerializer.Deserialize<StoredContent>(msg.ContentJson, JsonOptions) ?? new StoredContent();
             var text = string.Concat((stored.Parts ?? []).Where(p => p.Kind == "text").Select(p => p.Text ?? ""));
-            var toolEvents = (stored.Parts ?? [])
-                .Where(p => p.Kind == "function_call")
-                .Select(p => new AssistantToolEvent(p.Name ?? "", p.ArgsJson ?? "{}", "queued"))
-                .ToList();
+            var pendingChanges = ParseStoredChanges(msg.PendingChangesJson);
+            var wordLabels = await LoadWordLabelsAsync(thread.QuizId, pendingChanges, cancellationToken);
+            var pendingChangeViews = pendingChanges.Select(change => MapPendingView(change, wordLabels)).ToList();
 
-            var pendingChanges = ParsePendingChanges(msg.PendingChangesJson);
-
-            if (string.IsNullOrEmpty(text) && toolEvents.Count == 0 && pendingChanges.Count == 0)
+            if (string.IsNullOrEmpty(text) && pendingChangeViews.Count == 0)
             {
                 continue;
             }
@@ -221,8 +219,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                 msg.Id,
                 msg.Role,
                 text,
-                toolEvents,
-                pendingChanges,
+                [],
+                pendingChangeViews,
                 msg.Status,
                 msg.CreatedAt));
         }
@@ -319,7 +317,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - Good example sentences are short, grammatical, and context-rich. Do not write pronunciation hints, gender notes, slash-separated alternatives, dictionary glosses, fragments, or markup as example sentences.
         - For sentence repair, keep the same learning target where possible and use natural inflection instead of forcing the exact dictionary form.
         - Use list_words first if you need to check what is already in the quiz before proposing edits or deletions.
-        - Keep your final response concise: one or two sentences summarising what you queued.
+        - Keep your final response concise and user-facing: one or two sentences summarising what you queued.
+        - Do not mention internal tool names, tool calls, word ids, JSON, or implementation details in your final response.
         - All lemmas stay in {quiz.TargetLanguage}; all translations stay in {quiz.SourceLanguage}.
         """;
     }
@@ -340,22 +339,48 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         return json.Length > 240 ? json[..240] + "…" : json;
     }
 
-    private static AssistantPendingChangeView MapPendingView(PendingChange change)
+    private static AssistantPendingChangeView MapPendingView(
+        PendingChange change,
+        IReadOnlyDictionary<string, WordLabel> wordLabels)
     {
-        return new AssistantPendingChangeView(change.Kind, BuildSummary(change), change.Payload.GetRawText());
+        return new AssistantPendingChangeView(change.Kind, BuildSummary(change, wordLabels), change.Payload.GetRawText());
     }
 
-    private static string BuildSummary(PendingChange change)
+    private async Task<IReadOnlyDictionary<string, WordLabel>> LoadWordLabelsAsync(
+        Guid quizId,
+        IEnumerable<PendingChange> changes,
+        CancellationToken cancellationToken)
+    {
+        var wordIds = changes
+            .Select(change => GetString(change.Payload, "word_id"))
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+
+        if (wordIds.Count == 0)
+        {
+            return new Dictionary<string, WordLabel>();
+        }
+
+        return await _context.Words
+            .Where(word => word.QuizId == quizId && wordIds.Contains(word.Id))
+            .Select(word => new WordLabel(word.Id, word.Lemma, word.Translation))
+            .ToDictionaryAsync(word => word.Id, cancellationToken);
+    }
+
+    private static string BuildSummary(
+        PendingChange change,
+        IReadOnlyDictionary<string, WordLabel> wordLabels)
     {
         try
         {
             return change.Kind switch
             {
-                PendingChangeKinds.AddWord => $"Add word: {GetString(change.Payload, "lemma")} → {GetString(change.Payload, "translation")}",
-                PendingChangeKinds.EditWord => $"Edit word {GetString(change.Payload, "word_id")}",
-                PendingChangeKinds.DeleteWord => $"Delete word {GetString(change.Payload, "word_id")}",
-                PendingChangeKinds.SetWordDetail => $"Update detail for word {GetString(change.Payload, "word_id")}",
-                PendingChangeKinds.RepairSentence => $"Repair sentence: {Truncate(GetString(change.Payload, "original_text"), 60)}",
+                PendingChangeKinds.AddWord => BuildAddWordSummary(change.Payload),
+                PendingChangeKinds.EditWord => $"Edit {GetWordDisplay(change.Payload, wordLabels)}",
+                PendingChangeKinds.DeleteWord => $"Remove {GetWordDisplay(change.Payload, wordLabels)}",
+                PendingChangeKinds.SetWordDetail => BuildSetWordDetailSummary(change.Payload, wordLabels),
+                PendingChangeKinds.RepairSentence => BuildRepairSentenceSummary(change.Payload),
                 _ => change.Kind,
             };
         }
@@ -363,6 +388,56 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         {
             return change.Kind;
         }
+    }
+
+    private static string BuildAddWordSummary(JsonElement payload)
+    {
+        var summary = $"Add {GetString(payload, "lemma")} -> {GetString(payload, "translation")}";
+        var sentence = GetString(payload, "example_sentence");
+        return string.IsNullOrWhiteSpace(sentence)
+            ? summary
+            : $"{summary}: \"{Truncate(sentence, 90)}\"";
+    }
+
+    private static string BuildSetWordDetailSummary(
+        JsonElement payload,
+        IReadOnlyDictionary<string, WordLabel> wordLabels)
+    {
+        var display = GetWordDisplay(payload, wordLabels);
+        var sentence = GetString(payload, "example_sentence");
+        var translation = GetString(payload, "example_sentence_translation");
+
+        if (!string.IsNullOrWhiteSpace(sentence) && !string.IsNullOrWhiteSpace(translation))
+        {
+            return $"{display}: \"{Truncate(sentence, 90)}\" ({Truncate(translation, 90)})";
+        }
+
+        if (!string.IsNullOrWhiteSpace(sentence))
+        {
+            return $"{display}: \"{Truncate(sentence, 90)}\"";
+        }
+
+        return $"Update {display}";
+    }
+
+    private static string BuildRepairSentenceSummary(JsonElement payload)
+    {
+        var original = Truncate(GetString(payload, "original_text"), 70);
+        var replacement = Truncate(GetString(payload, "new_text"), 70);
+        return $"Replace \"{original}\" with \"{replacement}\"";
+    }
+
+    private static string GetWordDisplay(
+        JsonElement payload,
+        IReadOnlyDictionary<string, WordLabel> wordLabels)
+    {
+        var wordId = GetString(payload, "word_id");
+        if (!string.IsNullOrWhiteSpace(wordId) && wordLabels.TryGetValue(wordId, out var label))
+        {
+            return $"{label.Lemma} -> {label.Translation}";
+        }
+
+        return "this word";
     }
 
     private static string Truncate(string? value, int max)
@@ -378,25 +453,12 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             : string.Empty;
     }
 
-    private static IReadOnlyList<AssistantPendingChangeView> ParsePendingChanges(string? json)
+    private static IReadOnlyList<PendingChange> ParseStoredChanges(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
             return [];
         }
-        try
-        {
-            var changes = JsonSerializer.Deserialize<List<PendingChange>>(json, JsonOptions) ?? [];
-            return changes.Select(MapPendingView).ToList();
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
-    }
-
-    private static IReadOnlyList<PendingChange> ParseStoredChanges(string json)
-    {
         try
         {
             return JsonSerializer.Deserialize<List<PendingChange>>(json, JsonOptions) ?? [];
@@ -421,4 +483,6 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         public string? ResponseJson { get; set; }
         public string? ThoughtSignature { get; set; }
     }
+
+    private sealed record WordLabel(string Id, string Lemma, string Translation);
 }
