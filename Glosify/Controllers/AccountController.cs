@@ -24,8 +24,15 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Login(string? returnUrl = null)
+    public async Task<IActionResult> Login(string? returnUrl = null, string? externalLoginError = null)
     {
+        if (!string.IsNullOrWhiteSpace(externalLoginError))
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                "Google login failed. Check the local Google OAuth client ID and client secret, then try again.");
+        }
+
         await SetLoginViewDataAsync(returnUrl);
         return View();
     }

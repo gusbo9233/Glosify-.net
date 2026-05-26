@@ -5,6 +5,10 @@
     }
 
     const quizId = panel.dataset.quizId;
+    const focusedWordId = panel.dataset.focusedWordId || null;
+    const toggle = panel.querySelector('[data-assistant-toggle]');
+    const close = panel.querySelector('[data-assistant-close]');
+    const windowEl = panel.querySelector('[data-assistant-window]');
     const transcript = panel.querySelector('[data-assistant-transcript]');
     const empty = panel.querySelector('[data-assistant-empty]');
     const status = panel.querySelector('[data-assistant-status]');
@@ -13,7 +17,9 @@
     const submit = panel.querySelector('[data-assistant-submit]');
     const imageInput = panel.querySelector('[data-assistant-image-input]');
     const scanStatus = panel.querySelector('[data-assistant-scan-status]');
-    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+    const tokenInput = panel.querySelector('input[name="__RequestVerificationToken"]')
+        || document.querySelector('input[name="__RequestVerificationToken"]');
+    let historyLoaded = false;
 
     const escapeHtml = (text) => {
         const div = document.createElement('div');
@@ -46,6 +52,32 @@
         scanStatus.hidden = false;
         scanStatus.textContent = message;
         scanStatus.classList.toggle('is-error', isError);
+    };
+
+    const openAssistant = () => {
+        if (!windowEl || !toggle) {
+            return;
+        }
+
+        windowEl.hidden = false;
+        panel.classList.add('is-open');
+        toggle.setAttribute('aria-expanded', 'true');
+        if (!historyLoaded) {
+            loadHistory();
+            historyLoaded = true;
+        }
+        window.requestAnimationFrame(() => textarea?.focus());
+    };
+
+    const closeAssistant = () => {
+        if (!windowEl || !toggle) {
+            return;
+        }
+
+        windowEl.hidden = true;
+        panel.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.focus();
     };
 
     const renderMessage = (message) => {
@@ -212,6 +244,22 @@
         }
     };
 
+    toggle?.addEventListener('click', () => {
+        if (windowEl?.hidden) {
+            openAssistant();
+        } else {
+            closeAssistant();
+        }
+    });
+
+    close?.addEventListener('click', closeAssistant);
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !windowEl?.hidden) {
+            closeAssistant();
+        }
+    });
+
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         const message = textarea.value.trim();
@@ -237,7 +285,7 @@
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': tokenInput?.value ?? '',
                 },
-                body: JSON.stringify({ message }),
+                body: JSON.stringify({ message, focusedWordId }),
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {
@@ -302,6 +350,4 @@
             imageInput.disabled = false;
         }
     });
-
-    loadHistory();
 })();

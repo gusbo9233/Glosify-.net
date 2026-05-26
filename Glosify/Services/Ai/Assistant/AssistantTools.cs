@@ -61,10 +61,12 @@ public sealed class AssistantTools : IAssistantTools
 
         new(
             "set_word_detail",
-            "Propose updating the explanation and/or example sentence of a word. Use this when the user asks to generate sentences for existing quiz words. Queued until the user clicks Apply.",
+            "Propose updating the grammar details, explanation, and/or example sentence of a word. Use this when the user asks to generate variants, properties, grammar forms, explanations, or sentences for existing quiz words. Queued until the user clicks Apply.",
             BuildSchema(new Dictionary<string, object>
             {
                 ["word_id"] = StringProp("Id of the word whose detail to update."),
+                ["properties"] = ObjectProp("Optional. Grammar property map, such as {\"pos\":\"noun\",\"gender\":\"neuter\"}. Use snake_case keys; keep values concise."),
+                ["variants"] = VariantsProp("Optional. Inflected forms to show on the word detail page. Each variant needs a form plus the label/group the user should see, such as group \"Past Plural\" and label \"1st masculine personal\". Tags are optional metadata for compatibility."),
                 ["explanation"] = StringProp("Optional. New short explanation in the user's source language."),
                 ["example_sentence"] = StringProp("Optional. Natural full sentence in the target language using this word's lemma or an inflected form. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
                 ["example_sentence_translation"] = StringProp("Optional. Natural source-language translation of the new example sentence."),
@@ -169,6 +171,10 @@ public sealed class AssistantTools : IAssistantTools
         {
             return new { error = "word_id is required." };
         }
+        if (IsOutsideFocusedWord(wordId, context))
+        {
+            return FocusError(context);
+        }
 
         var payload = JsonSerializer.SerializeToElement(new
         {
@@ -189,6 +195,10 @@ public sealed class AssistantTools : IAssistantTools
         {
             return new { error = "word_id is required." };
         }
+        if (IsOutsideFocusedWord(wordId, context))
+        {
+            return FocusError(context);
+        }
 
         var payload = JsonSerializer.SerializeToElement(new
         {
@@ -207,11 +217,17 @@ public sealed class AssistantTools : IAssistantTools
         {
             return new { error = "word_id is required." };
         }
+        if (IsOutsideFocusedWord(wordId, context))
+        {
+            return FocusError(context);
+        }
 
         var payload = JsonSerializer.SerializeToElement(new
         {
             kind = PendingChangeKinds.SetWordDetail,
             word_id = wordId,
+            properties = GetElementOrNull(args, "properties"),
+            variants = GetElementOrNull(args, "variants"),
             explanation = GetString(args, "explanation")?.Trim(),
             example_sentence = GetString(args, "example_sentence")?.Trim(),
             example_sentence_translation = GetString(args, "example_sentence_translation")?.Trim(),
@@ -234,6 +250,7 @@ public sealed class AssistantTools : IAssistantTools
         var payload = JsonSerializer.SerializeToElement(new
         {
             kind = PendingChangeKinds.RepairSentence,
+            word_id = context.FocusedWordId,
             original_text = original.Trim(),
             new_text = newText.Trim(),
             new_translation = newTranslation.Trim(),
@@ -268,6 +285,33 @@ public sealed class AssistantTools : IAssistantTools
         return value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     }
 
+    private static JsonElement? GetElementOrNull(JsonElement element, string property)
+    {
+        if (!element.TryGetProperty(property, out var value))
+        {
+            return null;
+        }
+
+        return value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined
+            ? null
+            : value.Clone();
+    }
+
+    private static bool IsOutsideFocusedWord(string wordId, AgentToolContext context)
+    {
+        return !string.IsNullOrWhiteSpace(context.FocusedWordId)
+            && !string.Equals(wordId, context.FocusedWordId, StringComparison.Ordinal);
+    }
+
+    private static object FocusError(AgentToolContext context)
+    {
+        return new
+        {
+            error = $"This assistant session is focused on {context.FocusedWordLabel ?? "the current word"}. Use that word only for mutating changes.",
+            focused_word_id = context.FocusedWordId,
+        };
+    }
+
     private static object BuildSchema(Dictionary<string, object> properties, IReadOnlyList<string>? required = null)
     {
         var schema = new Dictionary<string, object>
@@ -287,5 +331,36 @@ public sealed class AssistantTools : IAssistantTools
         {
             ["type"] = "string",
             ["description"] = description,
+        };
+
+    private static object ObjectProp(string description) =>
+        new Dictionary<string, object>
+        {
+            ["type"] = "object",
+            ["description"] = description,
+            ["additionalProperties"] = true,
+        };
+
+    private static object VariantsProp(string description) =>
+        new Dictionary<string, object>
+        {
+            ["type"] = "array",
+            ["description"] = description,
+            ["items"] = new Dictionary<string, object>
+            {
+                ["type"] = "object",
+                ["properties"] = new Dictionary<string, object>
+                {
+                    ["form"] = StringProp("Inflected form."),
+                    ["label"] = StringProp("Display label for this form, for example \"1st masculine personal\"."),
+                    ["group"] = StringProp("Optional display group, for example \"Past Plural\" or \"Imperative\"."),
+                    ["tags"] = new Dictionary<string, object>
+                    {
+                        ["type"] = "array",
+                        ["items"] = StringProp("Single grammar tag."),
+                    },
+                },
+                ["required"] = new[] { "form" },
+            },
         };
 }

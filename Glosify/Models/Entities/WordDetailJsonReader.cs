@@ -106,11 +106,19 @@ public static class WordDetailJsonReader
             ? ReadElement(formElement)
             : string.Empty;
 
+        var label = element.TryGetProperty("label", out var labelElement)
+            ? ReadElement(labelElement)
+            : string.Empty;
+
+        var group = element.TryGetProperty("group", out var groupElement)
+            ? ReadElement(groupElement)
+            : string.Empty;
+
         var tags = element.TryGetProperty("tags", out var tagsElement) && tagsElement.ValueKind == JsonValueKind.Array
             ? tagsElement.EnumerateArray().Select(ReadElement).Where(tag => !string.IsNullOrWhiteSpace(tag)).ToArray()
             : [];
 
-        return new WordDetailVariantViewModel(form, tags);
+        return new WordDetailVariantViewModel(form, tags, label, group);
     }
 
     private static string ReadElement(JsonElement element)
@@ -141,7 +149,11 @@ public static class WordDetailJsonReader
     }
 }
 
-public sealed record WordDetailVariantViewModel(string Form, IReadOnlyList<string> Tags)
+public sealed record WordDetailVariantViewModel(
+    string Form,
+    IReadOnlyList<string> Tags,
+    string Label = "",
+    string Group = "")
 {
     public bool HasAnyTag(params string[] tags)
     {

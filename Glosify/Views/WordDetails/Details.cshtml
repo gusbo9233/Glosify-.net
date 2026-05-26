@@ -147,9 +147,16 @@
                             <div class="variant-row">
                                 <span class="variant-form">@variant.Form</span>
                                 <span class="tag-list">
-                                    @foreach (var tag in variant.Tags)
+                                    @if (!string.IsNullOrWhiteSpace(variant.Label))
                                     {
-                                        <span class="tag">@Humanize(tag)</span>
+                                        <span class="tag">@Humanize(variant.Label)</span>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var tag in variant.Tags)
+                                        {
+                                            <span class="tag">@Humanize(tag)</span>
+                                        }
                                     }
                                 </span>
                             </div>
@@ -160,6 +167,19 @@
         }
     </section>
 </section>
+
+@await Html.PartialAsync("~/Views/Quiz/_AssistantPanel.cshtml", new AssistantPanelViewModel
+{
+    QuizId = Model.Quiz.Id,
+    FocusedWordId = Model.Word?.Id,
+    ContextLabel = displayWord,
+    EmptyText = "Ask about this word or request changes.",
+    Placeholder = $"Ask about {displayWord}..."
+})
+
+@section Scripts {
+<script src="~/js/assistant.js"></script>
+}
 
 @functions {
     private static string Humanize(string value) => WordDetailJsonReader.Humanize(value);

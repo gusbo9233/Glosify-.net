@@ -6,6 +6,8 @@ namespace Glosify.Services;
 
 public sealed class ChangeApplier : IChangeApplier
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     private readonly GlosifyContext _context;
     private readonly ILogger<ChangeApplier> _logger;
 
@@ -141,8 +143,20 @@ public sealed class ChangeApplier : IChangeApplier
         var explanation = GetString(payload, "explanation");
         var exampleSentence = GetString(payload, "example_sentence");
         var exampleSentenceTranslation = GetString(payload, "example_sentence_translation");
+        var properties = NormalizeProperties(payload);
+        var variants = NormalizeVariants(payload);
         var changed = false;
 
+        if (!string.IsNullOrWhiteSpace(properties) && !IsEmptyJsonObject(properties))
+        {
+            detail.Properties = properties;
+            changed = true;
+        }
+        if (!string.IsNullOrWhiteSpace(variants) && !IsEmptyJsonArray(variants))
+        {
+            detail.Variants = variants;
+            changed = true;
+        }
         if (!string.IsNullOrWhiteSpace(explanation))
         {
             detail.Explanation = explanation;
@@ -171,13 +185,19 @@ public sealed class ChangeApplier : IChangeApplier
         var original = GetString(payload, "original_text");
         var newText = GetString(payload, "new_text");
         var newTranslation = GetString(payload, "new_translation");
+        var focusedWordId = GetString(payload, "word_id");
         if (string.IsNullOrWhiteSpace(original) || string.IsNullOrWhiteSpace(newText))
         {
             return 0;
         }
 
-        var details = await _context.Words
-            .Where(w => w.QuizId == quiz.Id)
+        var words = _context.Words.Where(w => w.QuizId == quiz.Id);
+        if (!string.IsNullOrWhiteSpace(focusedWordId))
+        {
+            words = words.Where(w => w.Id == focusedWordId);
+        }
+
+        var details = await words
             .Join(_context.WordDetails, w => w.WordDetailId, d => d.Id, (_, d) => d)
             .Where(d => d.ExampleSentence == original)
             .Distinct()
@@ -231,4 +251,145 @@ public sealed class ChangeApplier : IChangeApplier
         if (!element.TryGetProperty(property, out var p)) return string.Empty;
         return p.ValueKind == JsonValueKind.String ? p.GetString() ?? string.Empty : string.Empty;
     }
+
+    private static string NormalizeProperties(JsonElement payload)
+    {
+        var properties = GetJsonArgument(payload, "properties", "properties_json");
+        if (properties == null || properties.Value.ValueKind != JsonValueKind.Object)
+        {
+            return string.Empty;
+        }
+
+        var normalized = new Dictionary<string, JsonElement>();
+        foreach (var property in properties.Value.EnumerateObject())
+        {
+            if (property.Value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+            {
+                continue;
+            }
+
+            var key = NormalizePropertyKey(property.Name);
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                normalized[key] = property.Value.Clone();
+            }
+        }
+
+        return normalized.Count == 0 ? string.Empty : JsonSerializer.Serialize(normalized, JsonOptions);
+    }
+
+    private static string NormalizeVariants(JsonElement payload)
+    {
+        var variants = GetJsonArgument(payload, "variants", "variants_json");
+        if (variants == null || variants.Value.ValueKind != JsonValueKind.Array)
+        {
+            return string.Empty;
+        }
+
+        var normalized = new List<GeneratedWordVariant>();
+        foreach (var item in variants.Value.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var form = item.TryGetProperty("form", out var formElement) && formElement.ValueKind == JsonValueKind.String
+                ? formElement.GetString()?.Trim()
+                : string.Empty;
+            if (string.IsNullOrWhiteSpace(form))
+            {
+                continue;
+            }
+
+            var tags = item.TryGetProperty("tags", out var tagsElement)
+                ? NormalizeTags(tagsElement)
+                : [];
+            normalized.Add(new GeneratedWordVariant
+            {
+                Form = form,
+                Label = GetString(item, "label").Trim(),
+                Group = GetString(item, "group").Trim(),
+                Tags = tags,
+            });
+        }
+
+        return normalized.Count == 0 ? string.Empty : JsonSerializer.Serialize(normalized, JsonOptions);
+    }
+
+    private static JsonElement? GetJsonArgument(JsonElement payload, string propertyName, string jsonStringName)
+    {
+        if (payload.TryGetProperty(propertyName, out var structured)
+            && structured.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
+        {
+            return structured;
+        }
+
+        var rawJson = GetString(payload, jsonStringName);
+        if (string.IsNullOrWhiteSpace(rawJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(rawJson);
+            return document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static List<string> NormalizeTags(JsonElement tagsElement)
+    {
+        var tags = new List<string>();
+        if (tagsElement.ValueKind == JsonValueKind.String)
+        {
+            AddTag(tags, tagsElement.GetString()?.Trim());
+            return tags;
+        }
+
+        if (tagsElement.ValueKind != JsonValueKind.Array)
+        {
+            return tags;
+        }
+
+        foreach (var tagElement in tagsElement.EnumerateArray())
+        {
+            if (tagElement.ValueKind == JsonValueKind.String)
+            {
+                AddTag(tags, tagElement.GetString()?.Trim());
+            }
+        }
+
+        return tags;
+    }
+
+    private static void AddTag(List<string> tags, string? tag)
+    {
+        if (!string.IsNullOrWhiteSpace(tag)
+            && !tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+        {
+            tags.Add(tag);
+        }
+    }
+
+    private static string NormalizePropertyKey(string key)
+    {
+        var normalized = key.Trim().ToLowerInvariant().Replace("-", "_").Replace(" ", "_");
+        var compact = normalized.Replace("_", string.Empty);
+
+        return compact switch
+        {
+            "pos" or "partofspeech" or "wordclass" => "pos",
+            "grammaticalgender" => "gender",
+            _ => normalized.Trim('_')
+        };
+    }
+
+    private static bool IsEmptyJsonObject(string json) => !WordDetailJsonReader.ReadProperties(json).Any();
+
+    private static bool IsEmptyJsonArray(string json) => !WordDetailJsonReader.ReadVariants(json).Any();
 }

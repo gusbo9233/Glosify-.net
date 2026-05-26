@@ -33,11 +33,14 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         Guid quizId,
         string userId,
         string userMessage,
+        string? focusedWordId = null,
         CancellationToken cancellationToken = default)
     {
         var quiz = await _context.Quizzes
             .FirstOrDefaultAsync(q => q.Id == quizId && q.UserId == userId, cancellationToken)
             ?? throw new QuizNotFoundException();
+
+        var focusedWord = await LoadFocusedWordAsync(quizId, focusedWordId, cancellationToken);
 
         var thread = await GetOrCreateThreadAsync(quizId, userId, cancellationToken);
 
@@ -67,9 +70,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             QuizId = quizId,
             UserId = userId,
             Quiz = quiz,
+            FocusedWordId = focusedWord?.Id,
+            FocusedWordLabel = focusedWord == null ? null : $"{focusedWord.Lemma} -> {focusedWord.Translation}",
         };
 
-        var systemInstruction = BuildSystemInstruction(quiz);
+        var systemInstruction = BuildSystemInstruction(quiz, focusedWord);
         var toolEvents = new List<AssistantToolEvent>();
 
         AgentTurnResult? finalTurn = null;
@@ -303,10 +308,32 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         return thread;
     }
 
-    private static string BuildSystemInstruction(Quiz quiz)
+    private async Task<Word?> LoadFocusedWordAsync(Guid quizId, string? focusedWordId, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(focusedWordId))
+        {
+            return null;
+        }
+
+        return await _context.Words
+            .FirstOrDefaultAsync(word => word.Id == focusedWordId && word.QuizId == quizId, ct);
+    }
+
+    private static string BuildSystemInstruction(Quiz quiz, Word? focusedWord)
+    {
+        var focusInstruction = focusedWord == null
+            ? string.Empty
+            : $"""
+
+        Current page context:
+        - The assistant is opened from the word detail page for "{focusedWord.Lemma}" -> "{focusedWord.Translation}".
+        - Treat this as a focused word-detail session. Any mutating tool call that edits, deletes, repairs, or updates word details must target only this word id: {focusedWord.Id}.
+        - Do not propose changes to other words or other word details unless the user leaves this page and opens the assistant elsewhere.
+        """;
+
         return $"""
         You are Glosify's language-learning assistant. You help the user manage a quiz that teaches "{quiz.TargetLanguage}" to a speaker of "{quiz.SourceLanguage}". The current quiz is named "{quiz.Name}".
+        {focusInstruction}
 
         Rules:
         - Read-only tools (list_words, get_word) execute immediately. Their results are returned to you.
@@ -314,6 +341,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - When the user gives you text to extract vocabulary from, extract meaningful words yourself and call add_word once per word. Skip closed-class words (articles, basic prepositions) unless they are central to the text.
         - When adding words, include a natural full example sentence and translation whenever you can. The sentence must use the new word's lemma or a natural inflected form.
         - When the user asks for sentences, call list_words first, then use set_word_detail for specific existing words instead of inventing disconnected standalone sentences.
+        - When the user asks for grammar details, properties, conjugations, declensions, cases, forms, or variants for existing words, call get_word or list_words first, then use set_word_detail with structured properties and variants. For each variant, provide the exact display label and optional display group that should appear on the word detail page. Tags are optional compatibility metadata; when present, keep them separate and normalized, such as "nominative", "singular", "present", "first-person", "masculine-personal", or "plural".
         - Good example sentences are short, grammatical, and context-rich. Do not write pronunciation hints, gender notes, slash-separated alternatives, dictionary glosses, fragments, or markup as example sentences.
         - For sentence repair, keep the same learning target where possible and use natural inflection instead of forcing the exact dictionary form.
         - Use list_words first if you need to check what is already in the quiz before proposing edits or deletions.
@@ -406,15 +434,23 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var display = GetWordDisplay(payload, wordLabels);
         var sentence = GetString(payload, "example_sentence");
         var translation = GetString(payload, "example_sentence_translation");
+        var hasGrammarDetails = HasObject(payload, "properties") || HasArray(payload, "variants");
 
         if (!string.IsNullOrWhiteSpace(sentence) && !string.IsNullOrWhiteSpace(translation))
         {
-            return $"{display}: \"{Truncate(sentence, 90)}\" ({Truncate(translation, 90)})";
+            var prefix = hasGrammarDetails ? $"Update grammar details for {display}" : display;
+            return $"{prefix}: \"{Truncate(sentence, 90)}\" ({Truncate(translation, 90)})";
         }
 
         if (!string.IsNullOrWhiteSpace(sentence))
         {
-            return $"{display}: \"{Truncate(sentence, 90)}\"";
+            var prefix = hasGrammarDetails ? $"Update grammar details for {display}" : display;
+            return $"{prefix}: \"{Truncate(sentence, 90)}\"";
+        }
+
+        if (hasGrammarDetails)
+        {
+            return $"Update grammar details for {display}";
         }
 
         return $"Update {display}";
@@ -451,6 +487,16 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         return element.TryGetProperty(property, out var p) && p.ValueKind == JsonValueKind.String
             ? p.GetString() ?? string.Empty
             : string.Empty;
+    }
+
+    private static bool HasObject(JsonElement element, string property)
+    {
+        return element.TryGetProperty(property, out var p) && p.ValueKind == JsonValueKind.Object && p.EnumerateObject().Any();
+    }
+
+    private static bool HasArray(JsonElement element, string property)
+    {
+        return element.TryGetProperty(property, out var p) && p.ValueKind == JsonValueKind.Array && p.GetArrayLength() > 0;
     }
 
     private static IReadOnlyList<PendingChange> ParseStoredChanges(string? json)

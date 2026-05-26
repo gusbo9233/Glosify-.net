@@ -48,6 +48,17 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
     {
         options.ClientId = googleClientId;
         options.ClientSecret = googleClientSecret;
+        options.Events.OnRemoteFailure = context =>
+        {
+            var logger = context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("GoogleAuthentication");
+            logger.LogWarning(context.Failure, "Google external login failed.");
+
+            context.HandleResponse();
+            context.Response.Redirect("/login?externalLoginError=Google");
+            return Task.CompletedTask;
+        };
     });
 }
 

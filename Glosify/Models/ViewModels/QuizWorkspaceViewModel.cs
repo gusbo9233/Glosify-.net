@@ -15,6 +15,16 @@ namespace Glosify.Models.ViewModels
         public int WordCount { get; set; }
     }
 
+    public class AssistantPanelViewModel
+    {
+        public Guid QuizId { get; set; }
+        public string? FocusedWordId { get; set; }
+        public string Title { get; set; } = "Assistant";
+        public string ContextLabel { get; set; } = string.Empty;
+        public string EmptyText { get; set; } = "Start a conversation.";
+        public string Placeholder { get; set; } = "Ask the assistant...";
+    }
+
     public class QuizSettingsViewModel
     {
         public Quiz? SelectedQuiz { get; set; }

@@ -26,6 +26,8 @@ public class WordDetailEnrichmentServiceTests
                 new GeneratedWordVariant
                 {
                     Form = "Haus",
+                    Label = "nominative singular",
+                    Group = "Singular",
                     Tags = ["nominative singular"]
                 }
             ],
@@ -48,8 +50,9 @@ public class WordDetailEnrichmentServiceTests
 
         var variant = Assert.Single(WordDetailJsonReader.ReadVariants(detail.Variants));
         Assert.Equal("Haus", variant.Form);
-        Assert.Contains("nominative", variant.Tags);
-        Assert.Contains("singular", variant.Tags);
+        Assert.Equal("nominative singular", variant.Label);
+        Assert.Equal("Singular", variant.Group);
+        Assert.Contains("nominative singular", variant.Tags);
     }
 
     [Fact]
@@ -194,7 +197,7 @@ public class WordDetailEnrichmentServiceTests
     }
 
     [Fact]
-    public async Task EnrichAsync_NormalizesGeminiCompoundTags()
+    public async Task EnrichAsync_PreservesAiVariantLabelsAndGroups()
     {
         var detail = new WordDetail
         {
@@ -208,9 +211,28 @@ public class WordDetailEnrichmentServiceTests
             Properties = JsonProperties("""{"pos":"verb"}"""),
             Variants =
             [
-                new GeneratedWordVariant { Form = "robie", Tags = ["non past first person singular"] },
-                new GeneratedWordVariant { Form = "robili", Tags = ["past masculine personal plural"] },
+                new GeneratedWordVariant
+                {
+                    Form = "robie",
+                    Label = "first-person singular",
+                    Group = "Present",
+                    Tags = ["non past first person singular"]
+                },
+                new GeneratedWordVariant
+                {
+                    Form = "robili",
+                    Label = "3rd masculine personal",
+                    Group = "Past Plural",
+                    Tags = ["past masculine personal plural"]
+                },
                 new GeneratedWordVariant { Form = "były", Tags = ["past female plural third person"] },
+                new GeneratedWordVariant
+                {
+                    Form = "byÅ‚y",
+                    Label = "3rd non-masculine personal",
+                    Group = "Past Plural",
+                    Tags = ["past female plural third person"]
+                },
             ],
             Explanation = "A common Polish verb meaning to do or make.",
             ExampleSentence = "Robie kawe."
@@ -227,20 +249,17 @@ public class WordDetailEnrichmentServiceTests
         var variants = WordDetailJsonReader.ReadVariants(detail.Variants);
         Assert.Contains(variants, variant =>
             variant.Form == "robie"
-            && variant.Tags.Contains("non-past")
-            && variant.Tags.Contains("first-person")
-            && variant.Tags.Contains("singular"));
+            && variant.Label == "first-person singular"
+            && variant.Group == "Present"
+            && variant.Tags.Contains("non past first person singular"));
         Assert.Contains(variants, variant =>
             variant.Form == "robili"
-            && variant.Tags.Contains("past")
-            && variant.Tags.Contains("masculine-personal")
-            && variant.Tags.Contains("plural"));
+            && variant.Label == "3rd masculine personal"
+            && variant.Group == "Past Plural"
+            && variant.Tags.Contains("past masculine personal plural"));
         Assert.Contains(variants, variant =>
-            variant.Form == "były"
-            && variant.Tags.Contains("past")
-            && variant.Tags.Contains("non-masculine-personal")
-            && variant.Tags.Contains("plural")
-            && variant.Tags.Contains("third-person"));
+            variant.Label == "3rd non-masculine personal"
+            && variant.Group == "Past Plural");
     }
 
     private static WordDetailEnrichmentService CreateService(GeneratedWordDetail generated)

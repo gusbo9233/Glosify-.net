@@ -7,9 +7,7 @@ namespace Glosify.Services;
 public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private static readonly Regex TagSeparator = new(@"[,;/]+", RegexOptions.Compiled);
     private static readonly Regex PropertySeparator = new(@"[\s-]+", RegexOptions.Compiled);
-    private static readonly Regex Whitespace = new(@"\s+", RegexOptions.Compiled);
     private static readonly Regex WordPattern = new(@"[\p{L}\p{M}\p{N}]+", RegexOptions.Compiled);
 
     private readonly IVocabularyGenerationService _vocabularyGenerator;
@@ -158,9 +156,11 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
             .Select(variant => new GeneratedWordVariant
             {
                 Form = variant.Form?.Trim(),
+                Label = variant.Label?.Trim(),
+                Group = variant.Group?.Trim(),
                 Tags = NormalizeTags(variant.Tags)
             })
-            .Where(variant => !string.IsNullOrWhiteSpace(variant.Form) && variant.Tags.Count > 0)
+            .Where(variant => !string.IsNullOrWhiteSpace(variant.Form))
             .ToList();
 
         return normalized.Count == 0 ? "[]" : JsonSerializer.Serialize(normalized, JsonOptions);
@@ -172,89 +172,15 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
 
         foreach (var tag in tags)
         {
-            foreach (var token in ExpandTag(tag))
+            var token = tag?.Trim();
+            if (!string.IsNullOrWhiteSpace(token)
+                && !normalized.Contains(token, StringComparer.OrdinalIgnoreCase))
             {
-                if (!normalized.Contains(token, StringComparer.OrdinalIgnoreCase))
-                {
-                    normalized.Add(token);
-                }
+                normalized.Add(token);
             }
         }
 
         return normalized;
-    }
-
-    private static IEnumerable<string> ExpandTag(string? tag)
-    {
-        if (string.IsNullOrWhiteSpace(tag))
-        {
-            yield break;
-        }
-
-        var normalized = Whitespace.Replace(tag.Trim().ToLowerInvariant().Replace("_", " "), " ");
-        normalized = normalized
-            .Replace("non male personal", "non-masculine-personal")
-            .Replace("non-male personal", "non-masculine-personal")
-            .Replace("non masculine personal", "non-masculine-personal")
-            .Replace("non-masculine personal", "non-masculine-personal")
-            .Replace("non masculine-personal", "non-masculine-personal")
-            .Replace("nonvirile", "non-masculine-personal")
-            .Replace("virile", "masculine-personal")
-            .Replace("male personal", "masculine-personal")
-            .Replace("male-personal", "masculine-personal")
-            .Replace("masculine personal", "masculine-personal")
-            .Replace("masculine-personal plural", "masculine-personal plural")
-            .Replace("female personal", "non-masculine-personal")
-            .Replace("female-personal", "non-masculine-personal")
-            .Replace("female group", "non-masculine-personal")
-            .Replace("female plural", "non-masculine-personal plural")
-            .Replace("feminine plural", "non-masculine-personal plural")
-            .Replace("non past", "non-past")
-            .Replace("ma infinitive", "ma-infinitive")
-            .Replace("da infinitive", "da-infinitive")
-            .Replace("1st person", "first-person")
-            .Replace("2nd person", "second-person")
-            .Replace("3rd person", "third-person")
-            .Replace("first person", "first-person")
-            .Replace("second person", "second-person")
-            .Replace("third person", "third-person");
-
-        foreach (var part in TagSeparator.Split(normalized))
-        {
-            foreach (var token in Whitespace.Split(part.Trim()))
-            {
-                var mapped = MapTagToken(token);
-                if (!string.IsNullOrWhiteSpace(mapped))
-                {
-                    yield return mapped;
-                }
-            }
-        }
-    }
-
-    private static string MapTagToken(string token)
-    {
-        return token.Trim('-', '.', ':') switch
-        {
-            "" or "tense" or "case" or "form" or "forms" => string.Empty,
-            "nom" or "nom." => "nominative",
-            "gen" or "gen." => "genitive",
-            "dat" or "dat." => "dative",
-            "acc" or "acc." => "accusative",
-            "instr" or "inst" or "ins" => "instrumental",
-            "loc" or "loc." => "locative",
-            "voc" or "voc." => "vocative",
-            "part" or "part." => "partitive",
-            "sg" or "sing" or "sing." => "singular",
-            "pl" or "plur" or "plur." => "plural",
-            "masc" or "masc." => "masculine",
-            "fem" or "fem." => "feminine",
-            "neut" or "neut." => "neuter",
-            "1" or "1st" => "first-person",
-            "2" or "2nd" => "second-person",
-            "3" or "3rd" => "third-person",
-            _ => token.Replace(" ", "-")
-        };
     }
 
     private static string NormalizePropertyKey(string key)

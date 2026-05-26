@@ -190,7 +190,8 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
 
         Rules:
         - "properties" is a flat map of grammatical info (e.g. "pos", "gender", "aspect", "transitivity"). Keys are lowercase snake_case. Values are short strings.
-        - "variants" lists inflected forms (declensions, conjugations). Each has a "form" (the inflected word in {{targetLanguage}}) and a "tags" list (e.g. ["nominative","singular"], ["past","3rd-person","plural"]).
+        - "variants" lists inflected forms (declensions, conjugations). Each has a "form" (the inflected word in {{targetLanguage}}), a learner-facing "label", an optional learner-facing "group", and optional "tags" metadata.
+        - Do not invent empty paradigm slots. Return only forms that are useful and known for this word.
         - "explanation" is one or two sentences in {{sourceLanguage}} explaining nuance, register, or common collocations.
         - "example_sentence" is one natural full sentence in {{targetLanguage}} using the lemma or a natural inflected form in context.
         - "example_sentence" must not contain learner notes, pronunciation hints, slash-separated alternatives, dictionary glosses, fragments, or markup.
@@ -200,7 +201,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         Output schema:
         {
           "properties": { "key": "value" },
-          "variants": [{ "form": "string ({{targetLanguage}})", "tags": ["string"] }],
+          "variants": [{ "form": "string ({{targetLanguage}})", "label": "string", "group": "string", "tags": ["string"] }],
           "explanation": "string ({{sourceLanguage}})",
           "example_sentence": "string ({{targetLanguage}})",
           "example_sentence_translation": "string ({{sourceLanguage}})"
@@ -220,7 +221,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         - Ensure each example_sentence is a natural full sentence in {{quizData.Quiz.TargetLanguage}}, with a natural {{quizData.Quiz.SourceLanguage}} translation.
         - Example sentences must exercise the relevant quiz word using the lemma or a natural inflected form.
         - Remove learner notes, pronunciation hints, slash-separated alternatives, dictionary glosses, fragments, and markup from example_sentence fields.
-        - Fill missing word_details (properties, variants, explanation) where they are empty.
+        - Fill missing word_details (properties, variants, explanation) where they are empty. For variants, return only actual forms with their own display labels/groups; do not emit empty paradigm slots.
         - Preserve all "id" fields exactly as given. Use snake_case keys as in the input.
         - Output strictly a JSON object matching the same shape as the input. No commentary, no markdown fences.
 
@@ -254,7 +255,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
             "example_sentence": "string",
             "example_sentence_translation": "string",
             "explanation": "string",
-            "variants": [{ "form": "string", "tags": ["string"] }],
+            "variants": [{ "form": "string", "label": "string", "group": "string", "tags": ["string"] }],
             "language": "string"
           }
         }
@@ -356,6 +357,8 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
             .Select(variant => new GeneratedWordVariant
             {
                 Form = CleanText(variant.Form),
+                Label = CleanText(variant.Label),
+                Group = CleanText(variant.Group),
                 Tags = variant.Tags?
                     .Select(CleanText)
                     .Where(tag => !string.IsNullOrWhiteSpace(tag))
@@ -415,6 +418,8 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
     private sealed class LlmVariant
     {
         public string Form { get; set; } = string.Empty;
+        public string Label { get; set; } = string.Empty;
+        public string Group { get; set; } = string.Empty;
         public List<string> Tags { get; set; } = [];
     }
 }

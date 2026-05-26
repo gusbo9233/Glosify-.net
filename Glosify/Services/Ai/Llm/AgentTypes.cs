@@ -18,8 +18,3 @@ public sealed record AgentTurnResult(
 
 public sealed record AgentFunctionCall(string Name, string ArgsJson, string? ThoughtSignature = null);
 
-public static class AgentRoles
-{
-    public const string User = "user";
-    public const string Model = "model";
-}

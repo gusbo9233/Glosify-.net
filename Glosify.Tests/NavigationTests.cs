@@ -82,6 +82,18 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task Login_WithExternalLoginError_RendersUsefulMessage()
+    {
+        var client = CreateClient();
+
+        var document = await GetDocumentAsync(client, "/login?externalLoginError=Google");
+
+        Assert.Contains(
+            "Google login failed. Check the local Google OAuth client ID and client secret, then try again.",
+            document.Body?.TextContent ?? string.Empty);
+    }
+
+    [Fact]
     public async Task Post_WithoutAntiForgeryToken_IsRejected()
     {
         var client = CreateClient();

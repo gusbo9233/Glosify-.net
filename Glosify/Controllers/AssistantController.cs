@@ -40,7 +40,12 @@ public class AssistantController : ControllerBase
 
         try
         {
-            var response = await _orchestrator.SendMessageAsync(quizId, userId, input.Message, cancellationToken);
+            var response = await _orchestrator.SendMessageAsync(
+                quizId,
+                userId,
+                input.Message,
+                input.FocusedWordId,
+                cancellationToken);
             return Ok(response);
         }
         catch (QuizNotFoundException ex)
@@ -106,5 +111,6 @@ public class AssistantController : ControllerBase
     public sealed class SendMessageInput
     {
         public string Message { get; set; } = string.Empty;
+        public string? FocusedWordId { get; set; }
     }
 }

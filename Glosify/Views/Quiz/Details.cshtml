@@ -31,7 +31,7 @@
     </section>
     @Html.AntiForgeryToken()
 
-    <div class="tool-grid">
+    <div class="tool-grid tool-grid-single">
         <section class="panel">
             <div class="panel-header">
                 <div class="panel-icon"><span class="material-symbols-outlined">add_circle</span></div>
@@ -52,7 +52,6 @@
             </form>
         </section>
 
-        @await Html.PartialAsync("_AssistantPanel", Model)
     </div>
 
     @if (TempData["QuizMessage"] is string quizMessage)
@@ -151,6 +150,14 @@
         </div>
     </section>
 </section>
+
+@await Html.PartialAsync("_AssistantPanel", new AssistantPanelViewModel
+{
+    QuizId = Model.SelectedQuiz.Id,
+    ContextLabel = Model.SelectedQuiz.Name,
+    EmptyText = "Start a conversation about this quiz.",
+    Placeholder = "Ask about this quiz..."
+})
 
 @section Scripts {
 <script src="~/js/assistant.js"></script>

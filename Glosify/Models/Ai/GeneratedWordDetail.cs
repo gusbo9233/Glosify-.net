@@ -26,6 +26,12 @@ public class GeneratedWordVariant
     [JsonPropertyName("form")]
     public string? Form { get; set; }
 
+    [JsonPropertyName("label")]
+    public string? Label { get; set; }
+
+    [JsonPropertyName("group")]
+    public string? Group { get; set; }
+
     [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = [];
 }
