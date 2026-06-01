@@ -30,7 +30,17 @@ public sealed class RepairQuiz
 public sealed class RepairWord
 {
     public string Id { get; set; } = string.Empty;
-    public string Lemma { get; set; } = string.Empty;
+    [JsonPropertyName("word")]
+    public string Word { get; set; } = string.Empty;
+    [JsonPropertyName("lemma")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LegacyLemma { get; set; }
+    [JsonIgnore]
+    public string Lemma
+    {
+        get => string.IsNullOrWhiteSpace(Word) ? LegacyLemma ?? string.Empty : Word;
+        set => Word = value;
+    }
     public string Translation { get; set; } = string.Empty;
     [JsonPropertyName("word_detail_id")]
     public string WordDetailId { get; set; } = string.Empty;

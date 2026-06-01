@@ -339,7 +339,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - Read-only tools (list_words, get_word) execute immediately. Their results are returned to you.
         - Mutating tools (add_word, edit_word, delete_word, set_word_detail, repair_sentence) propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool.
         - When the user gives you text to extract vocabulary from, extract meaningful words yourself and call add_word once per word. Skip closed-class words (articles, basic prepositions) unless they are central to the text.
-        - When adding words, include a natural full example sentence and translation whenever you can. The sentence must use the new word's lemma or a natural inflected form.
+        - When adding words, include a natural full example sentence and translation whenever you can. The sentence must use the new word or a natural inflected form.
         - When the user asks for sentences, call list_words first, then use set_word_detail for specific existing words instead of inventing disconnected standalone sentences.
         - When the user asks for grammar details, properties, conjugations, declensions, cases, forms, or variants for existing words, call get_word or list_words first, then use set_word_detail with structured properties and variants. For each variant, provide the exact display label and optional display group that should appear on the word detail page. Tags are optional compatibility metadata; when present, keep them separate and normalized, such as "nominative", "singular", "present", "first-person", "masculine-personal", or "plural".
         - Good example sentences are short, grammatical, and context-rich. Do not write pronunciation hints, gender notes, slash-separated alternatives, dictionary glosses, fragments, or markup as example sentences.
@@ -347,7 +347,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - Use list_words first if you need to check what is already in the quiz before proposing edits or deletions.
         - Keep your final response concise and user-facing: one or two sentences summarising what you queued.
         - Do not mention internal tool names, tool calls, word ids, JSON, or implementation details in your final response.
-        - All lemmas stay in {quiz.TargetLanguage}; all translations stay in {quiz.SourceLanguage}.
+        - All words stay in {quiz.TargetLanguage}; all translations stay in {quiz.SourceLanguage}.
         """;
     }
 
@@ -420,7 +420,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
     private static string BuildAddWordSummary(JsonElement payload)
     {
-        var summary = $"Add {GetString(payload, "lemma")} -> {GetString(payload, "translation")}";
+        var summary = $"Add {GetString(payload, "word", "lemma")} -> {GetString(payload, "translation")}";
         var sentence = GetString(payload, "example_sentence");
         return string.IsNullOrWhiteSpace(sentence)
             ? summary
@@ -470,7 +470,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var wordId = GetString(payload, "word_id");
         if (!string.IsNullOrWhiteSpace(wordId) && wordLabels.TryGetValue(wordId, out var label))
         {
-            return $"{label.Lemma} -> {label.Translation}";
+            return $"{label.Word} -> {label.Translation}";
         }
 
         return "this word";
@@ -487,6 +487,12 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         return element.TryGetProperty(property, out var p) && p.ValueKind == JsonValueKind.String
             ? p.GetString() ?? string.Empty
             : string.Empty;
+    }
+
+    private static string GetString(JsonElement element, string preferredProperty, string legacyProperty)
+    {
+        var preferred = GetString(element, preferredProperty);
+        return string.IsNullOrWhiteSpace(preferred) ? GetString(element, legacyProperty) : preferred;
     }
 
     private static bool HasObject(JsonElement element, string property)
@@ -530,5 +536,5 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         public string? ThoughtSignature { get; set; }
     }
 
-    private sealed record WordLabel(string Id, string Lemma, string Translation);
+    private sealed record WordLabel(string Id, string Word, string Translation);
 }

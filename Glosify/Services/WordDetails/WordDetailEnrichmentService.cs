@@ -54,6 +54,11 @@ public sealed class WordDetailEnrichmentService : IWordDetailEnrichmentService
             return false;
         }
 
+        return ApplyGenerated(detail, generated, force);
+    }
+
+    public bool ApplyGenerated(WordDetail detail, GeneratedWordDetail generated, bool force = false)
+    {
         var properties = SerializeProperties(generated.Properties);
         var variants = SerializeVariants(generated.Variants);
         var explanation = generated.Explanation?.Trim() ?? string.Empty;

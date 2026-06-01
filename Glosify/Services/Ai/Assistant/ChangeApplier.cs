@@ -9,11 +9,16 @@ public sealed class ChangeApplier : IChangeApplier
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly GlosifyContext _context;
+    private readonly IWordDetailService _wordDetailService;
     private readonly ILogger<ChangeApplier> _logger;
 
-    public ChangeApplier(GlosifyContext context, ILogger<ChangeApplier> logger)
+    public ChangeApplier(
+        GlosifyContext context,
+        IWordDetailService wordDetailService,
+        ILogger<ChangeApplier> logger)
     {
         _context = context;
+        _wordDetailService = wordDetailService;
         _logger = logger;
     }
 
@@ -58,39 +63,40 @@ public sealed class ChangeApplier : IChangeApplier
 
     private async Task<bool> ApplyAddWordAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
     {
-        var lemma = GetString(payload, "lemma");
+        var newWord = GetString(payload, "word", "lemma");
         var translation = GetString(payload, "translation");
-        if (string.IsNullOrWhiteSpace(lemma) || string.IsNullOrWhiteSpace(translation))
+        if (string.IsNullOrWhiteSpace(newWord) || string.IsNullOrWhiteSpace(translation))
         {
             return false;
         }
 
         var exists = await _context.Words
-            .AnyAsync(w => w.QuizId == quiz.Id && w.Lemma == lemma, ct);
+            .AnyAsync(w => w.QuizId == quiz.Id && w.Lemma == newWord, ct);
         if (exists)
         {
             return false;
         }
 
-        var wordDetail = await GetOrCreateWordDetailAsync(quiz, lemma, translation, ct);
-
-        var exampleSentence = GetString(payload, "example_sentence");
-        var exampleSentenceTranslation = GetString(payload, "example_sentence_translation");
-        if (!string.IsNullOrWhiteSpace(exampleSentence) && string.IsNullOrWhiteSpace(wordDetail.ExampleSentence))
-        {
-            wordDetail.ExampleSentence = exampleSentence;
-            wordDetail.ExampleSentenceTranslation = exampleSentenceTranslation;
-            wordDetail.UpdatedAt = DateTimeOffset.UtcNow;
-        }
+        var wordDetail = await _wordDetailService.FindCachedAsync(
+            quiz.SourceLanguage,
+            quiz.TargetLanguage,
+            newWord,
+            translation,
+            ct);
 
         _context.Words.Add(new Word
         {
             Id = Guid.NewGuid().ToString("N"),
             QuizId = quiz.Id,
-            Lemma = lemma,
+            Lemma = newWord,
             Translation = translation,
-            WordDetailId = wordDetail.Id,
+            WordDetailId = wordDetail?.Id,
         });
+
+        AddQuizSentence(
+            quiz.Id,
+            GetString(payload, "example_sentence"),
+            GetString(payload, "example_sentence_translation"));
         return true;
     }
 
@@ -108,9 +114,9 @@ public sealed class ChangeApplier : IChangeApplier
             return false;
         }
 
-        var newLemma = GetString(payload, "lemma");
+        var newWord = GetString(payload, "word", "lemma");
         var newTranslation = GetString(payload, "translation");
-        if (!string.IsNullOrWhiteSpace(newLemma)) word.Lemma = newLemma;
+        if (!string.IsNullOrWhiteSpace(newWord)) word.Lemma = newWord;
         if (!string.IsNullOrWhiteSpace(newTranslation)) word.Translation = newTranslation;
         return true;
     }
@@ -185,71 +191,39 @@ public sealed class ChangeApplier : IChangeApplier
         var original = GetString(payload, "original_text");
         var newText = GetString(payload, "new_text");
         var newTranslation = GetString(payload, "new_translation");
-        var focusedWordId = GetString(payload, "word_id");
         if (string.IsNullOrWhiteSpace(original) || string.IsNullOrWhiteSpace(newText))
         {
             return 0;
         }
 
-        var words = _context.Words.Where(w => w.QuizId == quiz.Id);
-        if (!string.IsNullOrWhiteSpace(focusedWordId))
-        {
-            words = words.Where(w => w.Id == focusedWordId);
-        }
-
-        var details = await words
-            .Join(_context.WordDetails, w => w.WordDetailId, d => d.Id, (_, d) => d)
-            .Where(d => d.ExampleSentence == original)
-            .Distinct()
+        var sentences = await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quiz.Id)
             .ToListAsync(ct);
+        var matches = sentences
+            .Where(row => string.Equals(
+                row.Text,
+                original,
+                StringComparison.Ordinal))
+            .ToList();
 
-        foreach (var detail in details)
+        foreach (var sentence in matches)
         {
-            detail.ExampleSentence = newText;
-            detail.ExampleSentenceTranslation = newTranslation;
-            detail.UpdatedAt = DateTimeOffset.UtcNow;
+            sentence.Text = newText;
+            sentence.Translation = newTranslation;
         }
-        return details.Count;
-    }
-
-    private async Task<WordDetail> GetOrCreateWordDetailAsync(Quiz quiz, string lemma, string translation, CancellationToken ct)
-    {
-        var key = WordDetailKey.Create(quiz.SourceLanguage, quiz.TargetLanguage, lemma, translation);
-        var existing = await _context.WordDetails.FirstOrDefaultAsync(d => d.Id == key.Id, ct);
-        if (existing != null)
-        {
-            return existing;
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        var detail = new WordDetail
-        {
-            Id = key.Id,
-            SourceLanguage = key.SourceLanguage,
-            TargetLanguage = key.TargetLanguage,
-            Word = key.Word,
-            Translation = key.Translation,
-            NormalizedWord = key.NormalizedWord,
-            NormalizedTranslation = key.NormalizedTranslation,
-            NormalizedWordHash = key.NormalizedWordHash,
-            NormalizedTranslationHash = key.NormalizedTranslationHash,
-            Language = key.TargetLanguage,
-            Properties = "{}",
-            Variants = "[]",
-            Explanation = string.Empty,
-            ExampleSentence = string.Empty,
-            ExampleSentenceTranslation = string.Empty,
-            CreatedAt = now,
-            UpdatedAt = now,
-        };
-        _context.WordDetails.Add(detail);
-        return detail;
+        return matches.Count;
     }
 
     private static string GetString(JsonElement element, string property)
     {
         if (!element.TryGetProperty(property, out var p)) return string.Empty;
         return p.ValueKind == JsonValueKind.String ? p.GetString() ?? string.Empty : string.Empty;
+    }
+
+    private static string GetString(JsonElement element, string preferredProperty, string legacyProperty)
+    {
+        var preferred = GetString(element, preferredProperty);
+        return string.IsNullOrWhiteSpace(preferred) ? GetString(element, legacyProperty) : preferred;
     }
 
     private static string NormalizeProperties(JsonElement payload)
@@ -392,4 +366,25 @@ public sealed class ChangeApplier : IChangeApplier
     private static bool IsEmptyJsonObject(string json) => !WordDetailJsonReader.ReadProperties(json).Any();
 
     private static bool IsEmptyJsonArray(string json) => !WordDetailJsonReader.ReadVariants(json).Any();
+
+    private void AddQuizSentence(Guid quizId, string text, string translation)
+    {
+        var cleanText = text.Trim();
+        if (string.IsNullOrWhiteSpace(cleanText)
+            || _context.QuizSentences.Local.Any(sentence =>
+                sentence.QuizId == quizId
+                && string.Equals(sentence.Text, cleanText, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        _context.QuizSentences.Add(new QuizSentence
+        {
+            Id = Guid.NewGuid(),
+            QuizId = quizId,
+            Text = cleanText,
+            Translation = translation.Trim(),
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+    }
 }

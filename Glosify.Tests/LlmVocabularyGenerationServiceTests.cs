@@ -7,19 +7,19 @@ namespace Glosify.Tests;
 public class LlmVocabularyGenerationServiceTests
 {
     [Fact]
-    public async Task GenerateWordsFromTextAsync_ParsesWordsAndAttachesSentences()
+    public async Task GenerateWordsFromTextAsync_ParsesWordsAndStandaloneSentences()
     {
         var gemini = new FakeGeminiClient
         {
             JsonResponse = """
             {
               "words": [
-                { "lemma": "Haus", "translation": "house" },
-                { "lemma": "Garten", "translation": "garden" }
+                { "word": "Haus", "translation": "house" },
+                { "word": "Garten", "translation": "garden" }
               ],
               "sentences": [
                 { "text": "Das Haus ist alt.", "translation": "The house is old." },
-                { "text": "Der Garten ist schön.", "translation": "The garden is pretty." }
+                { "text": "Der Garten ist schoen.", "translation": "The garden is pretty." }
               ]
             }
             """
@@ -32,15 +32,41 @@ public class LlmVocabularyGenerationServiceTests
             targetLanguage: "German",
             quizName: null);
 
-        Assert.Equal(2, result.Count);
-        Assert.Equal("house", result["Haus"].Translation);
-        Assert.Equal("Das Haus ist alt.", result["Haus"].ExampleSentence);
-        Assert.Equal("The house is old.", result["Haus"].ExampleSentenceTranslation);
-        Assert.Equal("Der Garten ist schön.", result["Garten"].ExampleSentence);
+        Assert.Equal(2, result.Words.Count);
+        Assert.Equal("house", result.Words["Haus"].Translation);
+        Assert.Equal(2, result.Sentences.Count);
+        Assert.Contains(result.Sentences, sentence =>
+            sentence.Text == "Das Haus ist alt."
+            && sentence.Translation == "The house is old.");
+        Assert.Contains(result.Sentences, sentence => sentence.Text == "Der Garten ist schoen.");
     }
 
     [Fact]
-    public async Task GenerateWordsFromTextAsync_PrefersWordScopedSentenceForInflectedUsage()
+    public async Task GenerateWordsFromTextAsync_PrefersSurfaceWordOverLegacyLemma()
+    {
+        var gemini = new FakeGeminiClient
+        {
+            JsonResponse = """
+            {
+              "words": [
+                { "word": "mowi", "lemma": "mowic", "translation": "speaks" }
+              ],
+              "sentences": [
+                { "text": "Ona mowi po polsku.", "translation": "She speaks Polish." }
+              ]
+            }
+            """
+        };
+        var service = new LlmVocabularyGenerationService(gemini, NullLogger<LlmVocabularyGenerationService>.Instance);
+
+        var result = await service.GenerateWordsFromTextAsync("Ona mowi po polsku.", "English", "Polish", null);
+
+        Assert.True(result.Words.ContainsKey("mowi"));
+        Assert.False(result.Words.ContainsKey("mowic"));
+    }
+
+    [Fact]
+    public async Task GenerateWordsFromTextAsync_PreservesLegacyWordScopedSentence()
     {
         var gemini = new FakeGeminiClient
         {
@@ -48,40 +74,46 @@ public class LlmVocabularyGenerationServiceTests
             {
               "words": [
                 {
-                  "lemma": "mówić",
+                  "lemma": "mowic",
                   "translation": "to speak",
-                  "example_sentence": "Ona mówi po polsku.",
+                  "example_sentence": "Ona mowi po polsku.",
                   "example_sentence_translation": "She speaks Polish.",
-                  "example_sentence_word": "mówi"
+                  "example_sentence_word": "mowi"
                 }
               ],
               "sentences": [
-                { "text": "Mówić jest ważne.", "translation": "Speaking is important." }
+                { "text": "Mowic jest wazne.", "translation": "Speaking is important." }
               ]
             }
             """
         };
         var service = new LlmVocabularyGenerationService(gemini, NullLogger<LlmVocabularyGenerationService>.Instance);
 
-        var result = await service.GenerateWordsFromTextAsync("Ona mówi po polsku.", "English", "Polish", null);
+        var result = await service.GenerateWordsFromTextAsync("Ona mowi po polsku.", "English", "Polish", null);
 
-        Assert.Single(result);
-        Assert.Equal("Ona mówi po polsku.", result["mówić"].ExampleSentence);
-        Assert.Equal("She speaks Polish.", result["mówić"].ExampleSentenceTranslation);
-        Assert.Equal("mówi", result["mówić"].ExampleSentenceWord);
+        Assert.Single(result.Words);
+        Assert.Equal("to speak", result.Words["mowic"].Translation);
+        Assert.Contains(result.Sentences, sentence =>
+            sentence.Text == "Ona mowi po polsku."
+            && sentence.Translation == "She speaks Polish.");
     }
 
     [Fact]
-    public async Task GenerateWordsFromTextAsync_AsksForWordScopedExampleSentences()
+    public async Task GenerateWordsFromTextAsync_AsksForStandaloneQuizSentences()
     {
         var gemini = new FakeGeminiClient { JsonResponse = """{ "words": [{ "lemma": "Hund", "translation": "dog" }], "sentences": [] }""" };
         var service = new LlmVocabularyGenerationService(gemini, NullLogger<LlmVocabularyGenerationService>.Instance);
 
-        await service.GenerateWordsFromTextAsync("Der Hund schläft.", "English", "German", null);
+        await service.GenerateWordsFromTextAsync("Der Hund schlaeft.", "English", "German", null);
 
-        Assert.Contains("\"example_sentence\"", gemini.LastPrompt);
-        Assert.Contains("\"example_sentence_word\"", gemini.LastPrompt);
-        Assert.Contains("uses that lemma or a natural inflected form", gemini.LastPrompt);
+        Assert.Contains("\"sentences\"", gemini.LastPrompt);
+        Assert.Contains("\"word\"", gemini.LastPrompt);
+        Assert.DoesNotContain("\"lemma\"", gemini.LastPrompt);
+        Assert.Contains("Prefer the surface form from the input text", gemini.LastPrompt);
+        Assert.Contains("Do not convert input words to dictionary/base/infinitive forms", gemini.LastPrompt);
+        Assert.Contains("standalone quiz sentences separately from words", gemini.LastPrompt);
+        Assert.Contains("fewer standalone quiz sentences than words", gemini.LastPrompt);
+        Assert.Contains("Do not write dictionary-style word-detail sentences", gemini.LastPrompt);
         Assert.Contains("no pronunciation hints", gemini.LastPrompt);
     }
 
@@ -103,8 +135,8 @@ public class LlmVocabularyGenerationServiceTests
 
         var result = await service.GenerateWordsFromTextAsync("Der Hund.", "English", "German", null);
 
-        Assert.Single(result);
-        Assert.Equal("dog", result["Hund"].Translation);
+        Assert.Single(result.Words);
+        Assert.Equal("dog", result.Words["Hund"].Translation);
     }
 
     [Fact]

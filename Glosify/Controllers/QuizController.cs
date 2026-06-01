@@ -119,7 +119,7 @@ public class QuizController : Controller
         {
             QuizRepairStatus.NotFound => NotFound(new { error = "Word not found." }),
             QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
-            _ => Json(new { message = $"Repaired {result.Lemma}." })
+            _ => Json(new { message = $"Repaired {result.Word}." })
         };
     }
 

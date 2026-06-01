@@ -1,16 +1,19 @@
 using Glosify.Data;
 using Glosify.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace Glosify.Services;
 
 public class WordService : IWordService
 {
     private readonly GlosifyContext _context;
+    private readonly IWordDetailService _wordDetailService;
 
-    public WordService(GlosifyContext context)
+    public WordService(GlosifyContext context, IWordDetailService wordDetailService)
     {
         _context = context;
+        _wordDetailService = wordDetailService;
     }
 
     public async Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId)
@@ -69,6 +72,10 @@ public class WordService : IWordService
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
             .ToListAsync();
+        var sentences = await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quizId)
+            .OrderBy(sentence => sentence.Text)
+            .ToListAsync();
 
         return cards
             .Select(item => new QuizCardData
@@ -76,41 +83,31 @@ public class WordService : IWordService
                 Id = item.Word.Id,
                 Lemma = item.Word.Lemma,
                 Translation = item.Word.Translation,
-                ExampleSentence = item.Detail == null ? string.Empty : CleanExampleForDisplay(item.Detail.ExampleSentence),
-                ExampleTranslation = item.Detail == null ? string.Empty : item.Detail.ExampleSentenceTranslation
+                ExampleSentence = CleanExampleForDisplay(ChooseSentenceForWord(item.Word.Lemma, sentences)?.Text ?? item.Detail?.ExampleSentence),
+                ExampleTranslation = ChooseSentenceForWord(item.Word.Lemma, sentences)?.Translation ?? item.Detail?.ExampleSentenceTranslation ?? string.Empty
             })
             .ToList();
     }
 
     public async Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId)
     {
-        var wordDetails = await _context.Words
+        var words = await _context.Words
             .Where(word => word.QuizId == quizId)
-            .Join(
-                _context.WordDetails,
-                word => word.WordDetailId,
-                detail => detail.Id,
-                (_, detail) => detail)
+            .Select(word => word.Lemma)
+            .ToListAsync();
+        var sentences = await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quizId)
+            .OrderBy(sentence => sentence.Text)
             .ToListAsync();
 
-        return wordDetails
-            .Where(detail => !string.IsNullOrWhiteSpace(detail.ExampleSentence))
-            .Select(detail => new
+        return sentences
+            .Select(sentence => new QuizSentenceData
             {
-                ExampleSentence = CleanExampleForDisplay(detail.ExampleSentence),
-                detail.ExampleSentenceTranslation
+                Text = CleanExampleForDisplay(sentence.Text),
+                Translation = sentence.Translation.Trim(),
+                WordCount = CountLinkedWords(sentence.Text, words)
             })
-            .Where(detail => !string.IsNullOrWhiteSpace(detail.ExampleSentence))
-            .GroupBy(detail => detail.ExampleSentence, StringComparer.OrdinalIgnoreCase)
-            .Select(group => new QuizSentenceData
-            {
-                Text = group.Key,
-                Translation = group
-                    .Select(detail => detail.ExampleSentenceTranslation.Trim())
-                    .FirstOrDefault(translation => !string.IsNullOrWhiteSpace(translation)) ?? string.Empty,
-                WordCount = group.Count()
-            })
-            .OrderBy(sentence => sentence.Text)
+            .Where(sentence => !string.IsNullOrWhiteSpace(sentence.Text))
             .ToList();
     }
 
@@ -126,17 +123,21 @@ public class WordService : IWordService
         if (string.IsNullOrWhiteSpace(word) || string.IsNullOrWhiteSpace(translation))
             return false;
 
-        var lemma = word.Trim();
+        var trimmedWord = word.Trim();
         var cleanTranslation = translation.Trim();
-        var wordDetail = await GetOrCreateWordDetailAsync(sourceLanguage, targetLanguage, lemma, cleanTranslation);
+        var wordDetail = await _wordDetailService.FindCachedAsync(
+            sourceLanguage,
+            targetLanguage,
+            trimmedWord,
+            cleanTranslation);
 
         _context.Words.Add(new Word
         {
             Id = Guid.NewGuid().ToString("N"),
             QuizId = quizId,
-            Lemma = lemma,
+            Lemma = trimmedWord,
             Translation = cleanTranslation,
-            WordDetailId = wordDetail.Id
+            WordDetailId = wordDetail?.Id
         });
 
         await _context.SaveChangesAsync();
@@ -164,48 +165,33 @@ public class WordService : IWordService
         return word;
     }
 
-    public async Task<bool> WordExistsAsync(Guid quizId, string lemma)
+    public async Task<bool> WordExistsAsync(Guid quizId, string word)
     {
         return await _context.Words
-            .AnyAsync(w => w.QuizId == quizId && w.Lemma == lemma);
+            .AnyAsync(w => w.QuizId == quizId && w.Lemma == word);
     }
 
-    private async Task<WordDetail> GetOrCreateWordDetailAsync(
-        string sourceLanguage,
-        string targetLanguage,
-        string word,
-        string translation)
+    private static QuizSentence? ChooseSentenceForWord(string word, IReadOnlyList<QuizSentence> sentences)
     {
-        var key = WordDetailKey.Create(sourceLanguage, targetLanguage, word, translation);
-        var existing = await _context.WordDetails.FirstOrDefaultAsync(detail => detail.Id == key.Id);
-        if (existing != null)
+        return sentences.FirstOrDefault(sentence => ContainsWord(sentence.Text, word));
+    }
+
+    private static int CountLinkedWords(string sentence, IReadOnlyList<string> words)
+    {
+        return words
+            .Where(word => ContainsWord(sentence, word))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+    }
+
+    private static bool ContainsWord(string sentence, string word)
+    {
+        if (string.IsNullOrWhiteSpace(sentence) || string.IsNullOrWhiteSpace(word))
         {
-            return existing;
+            return false;
         }
 
-        var now = DateTimeOffset.UtcNow;
-        var detail = new WordDetail
-        {
-            Id = key.Id,
-            SourceLanguage = key.SourceLanguage,
-            TargetLanguage = key.TargetLanguage,
-            Word = key.Word,
-            Translation = key.Translation,
-            NormalizedWord = key.NormalizedWord,
-            NormalizedTranslation = key.NormalizedTranslation,
-            NormalizedWordHash = key.NormalizedWordHash,
-            NormalizedTranslationHash = key.NormalizedTranslationHash,
-            Language = key.TargetLanguage,
-            Properties = "{}",
-            Variants = "[]",
-            Explanation = string.Empty,
-            ExampleSentence = string.Empty,
-            ExampleSentenceTranslation = string.Empty,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-
-        _context.WordDetails.Add(detail);
-        return detail;
+        var pattern = $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(word.Trim())}(?![\p{{L}}\p{{M}}])";
+        return Regex.IsMatch(sentence, pattern, RegexOptions.IgnoreCase);
     }
 }

@@ -12,17 +12,20 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
     private readonly GlosifyContext _context;
     private readonly IQuizService _quizService;
     private readonly IVocabularyGenerationService _vocabularyGenerator;
+    private readonly IWordDetailService _wordDetailService;
     private readonly ILogger<GeneratedVocabularyService> _logger;
 
     public GeneratedVocabularyService(
         GlosifyContext context,
         IQuizService quizService,
         IVocabularyGenerationService vocabularyGenerator,
+        IWordDetailService wordDetailService,
         ILogger<GeneratedVocabularyService> logger)
     {
         _context = context;
         _quizService = quizService;
         _vocabularyGenerator = vocabularyGenerator;
+        _wordDetailService = wordDetailService;
         _logger = logger;
     }
 
@@ -49,23 +52,24 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
             return GeneratedVocabularyResult.Failure("Paste some text first so the assistant has vocabulary to extract.");
         }
 
-        IReadOnlyDictionary<string, GeneratedWord> generatedWords;
+        GeneratedVocabularyBatch generatedVocabulary;
         IReadOnlyList<string> sourceSentences;
         try
         {
             var cleanedInput = VocabularyInputCleaner.CleanForVocabulary(input);
             sourceSentences = ExtractSourceSentences(cleanedInput);
-            generatedWords = await _vocabularyGenerator.GenerateWordsFromTextAsync(
+            generatedVocabulary = await _vocabularyGenerator.GenerateWordsFromTextAsync(
                 cleanedInput,
                 quiz.SourceLanguage,
                 quiz.TargetLanguage,
                 quiz.Name);
             _logger.LogInformation(
-                "Generated vocabulary for quiz {QuizId}: cleaned length {CleanedLength}, source sentence count {SourceSentenceCount}, generated item count {GeneratedCount}",
+                "Generated vocabulary for quiz {QuizId}: cleaned length {CleanedLength}, source sentence count {SourceSentenceCount}, generated item count {GeneratedCount}, generated sentence count {GeneratedSentenceCount}",
                 quizId,
                 cleanedInput.Length,
                 sourceSentences.Count,
-                generatedWords.Count);
+                generatedVocabulary.Words.Count,
+                generatedVocabulary.Sentences.Count);
         }
         catch (InvalidOperationException ex)
         {
@@ -90,18 +94,12 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
             return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.LlmAssistant);
         }
 
-        List<ExistingWordRow> existingWordRows;
-        Dictionary<string, WordDetail> existingWordDetails;
+        List<Word> existingWords;
         try
         {
-            existingWordRows = await _context.Words
+            existingWords = await _context.Words
                 .Where(w => w.QuizId == quizId)
-                .Select(w => new ExistingWordRow(w.Lemma, w.WordDetailId))
                 .ToListAsync();
-            var existingWordDetailIds = existingWordRows.Select(word => word.WordDetailId);
-            existingWordDetails = await _context.WordDetails
-                .Where(detail => existingWordDetailIds.Contains(detail.Id))
-                .ToDictionaryAsync(detail => detail.Id);
         }
         catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex))
         {
@@ -109,21 +107,19 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
             return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.Database);
         }
 
-        var existing = new HashSet<string>(existingWordRows.Select(word => word.Lemma), StringComparer.OrdinalIgnoreCase);
+        var existing = new HashSet<string>(existingWords.Select(word => word.Lemma), StringComparer.OrdinalIgnoreCase);
 
         var added = 0;
-        var repairedExisting = 0;
         var skippedBlank = 0;
         var skippedPronunciation = 0;
         var skippedExisting = 0;
-        var skippedExample = 0;
 
-        foreach (var (lemma, generatedWord) in generatedWords)
+        foreach (var (word, generatedWord) in generatedVocabulary.Words)
         {
-            var trimmedLemma = lemma.Trim();
+            var trimmedWord = word.Trim();
             var translation = generatedWord.Translation?.Trim();
 
-            if (string.IsNullOrWhiteSpace(trimmedLemma) || string.IsNullOrWhiteSpace(translation))
+            if (string.IsNullOrWhiteSpace(trimmedWord) || string.IsNullOrWhiteSpace(translation))
             {
                 skippedBlank++;
                 continue;
@@ -135,46 +131,19 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
                 continue;
             }
 
-            if (existing.Contains(trimmedLemma))
+            if (existing.Contains(trimmedWord))
             {
-                if (TryRepairExistingExampleSentence(
-                    trimmedLemma,
-                    translation,
-                    generatedWord,
-                    sourceSentences,
-                    existingWordRows
-                        .Where(word => string.Equals(word.Lemma, trimmedLemma, StringComparison.OrdinalIgnoreCase))
-                        .Select(word => word.WordDetailId),
-                    existingWordDetails))
-                {
-                    repairedExisting++;
-                }
-
                 skippedExisting++;
                 continue;
             }
 
-            var aiExampleSentence = ResolveExampleSentence(trimmedLemma, translation, generatedWord, sourceSentences);
-            var aiExampleSentenceTranslation = generatedWord.ExampleSentenceTranslation?.Trim() ?? string.Empty;
-            if (!IsUsefulExampleSentenceCore(
-                trimmedLemma,
-                translation,
-                aiExampleSentence,
-                aiExampleSentenceTranslation,
-                generatedWord.ExampleSentenceWord))
-            {
-                aiExampleSentence = string.Empty;
-                aiExampleSentenceTranslation = string.Empty;
-                skippedExample++;
-            }
-
-            WordDetail wordDetail;
+            WordDetail? wordDetail;
             try
             {
-                wordDetail = await GetOrCreateWordDetailAsync(
+                wordDetail = await _wordDetailService.FindCachedAsync(
                     quiz.SourceLanguage,
                     quiz.TargetLanguage,
-                    trimmedLemma,
+                    trimmedWord,
                     translation);
             }
             catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex))
@@ -182,48 +151,31 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
                 _logger.LogWarning(ex, "Database was not ready while preparing generated word detail for quiz {QuizId}", quizId);
                 return GeneratedVocabularyResult.Failure(ServiceWarmupMessage.Database);
             }
-            var shouldReplaceExampleSentence = ShouldReplaceExampleSentence(
-                trimmedLemma,
-                translation,
-                wordDetail.ExampleSentence,
-                wordDetail.ExampleSentenceTranslation);
-            if (shouldReplaceExampleSentence && !string.IsNullOrWhiteSpace(aiExampleSentence))
-            {
-                wordDetail.ExampleSentence = aiExampleSentence;
-                wordDetail.UpdatedAt = DateTimeOffset.UtcNow;
-            }
-
-            if ((shouldReplaceExampleSentence || string.IsNullOrWhiteSpace(wordDetail.ExampleSentenceTranslation))
-                && !string.IsNullOrWhiteSpace(aiExampleSentenceTranslation))
-            {
-                wordDetail.ExampleSentenceTranslation = aiExampleSentenceTranslation;
-                wordDetail.UpdatedAt = DateTimeOffset.UtcNow;
-            }
-
             _context.Words.Add(new Word
             {
                 Id = Guid.NewGuid().ToString("N"),
                 QuizId = quizId,
-                Lemma = trimmedLemma,
+                Lemma = trimmedWord,
                 Translation = translation,
-                WordDetailId = wordDetail.Id
+                WordDetailId = wordDetail?.Id
             });
 
-            existing.Add(trimmedLemma);
+            existing.Add(trimmedWord);
             added++;
         }
 
+        var addedSentences = await AddQuizSentencesAsync(quizId, generatedVocabulary.Sentences);
+
         _logger.LogInformation(
-            "Generated vocabulary import for quiz {QuizId}: added {AddedCount}, repaired existing {RepairedExistingCount}, skipped blank {SkippedBlankCount}, pronunciation {SkippedPronunciationCount}, existing {SkippedExistingCount}, example cleanup {SkippedExampleCount}",
+            "Generated vocabulary import for quiz {QuizId}: added {AddedCount}, added sentences {AddedSentenceCount}, skipped blank {SkippedBlankCount}, pronunciation {SkippedPronunciationCount}, existing {SkippedExistingCount}",
             quizId,
             added,
-            repairedExisting,
+            addedSentences,
             skippedBlank,
             skippedPronunciation,
-            skippedExisting,
-            skippedExample);
+            skippedExisting);
 
-        if (added == 0 && repairedExisting == 0)
+        if (added == 0 && addedSentences == 0)
         {
             return GeneratedVocabularyResult.Success(0, "No new words were added. The generated words may already be in this quiz.");
         }
@@ -239,13 +191,14 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
         }
         if (added == 0)
         {
-            return GeneratedVocabularyResult.Success(0, $"Updated {repairedExisting} existing example {(repairedExisting == 1 ? "sentence" : "sentences")}.");
+            return GeneratedVocabularyResult.Success(0, $"Added {addedSentences} quiz {(addedSentences == 1 ? "sentence" : "sentences")}.");
         }
 
-        return GeneratedVocabularyResult.Success(added, $"Added {added} generated {(added == 1 ? "word" : "words")}.");
+        var sentenceMessage = addedSentences > 0
+            ? $" and {addedSentences} quiz {(addedSentences == 1 ? "sentence" : "sentences")}"
+            : string.Empty;
+        return GeneratedVocabularyResult.Success(added, $"Added {added} generated {(added == 1 ? "word" : "words")}{sentenceMessage}.");
     }
-
-    private sealed record ExistingWordRow(string Lemma, string WordDetailId);
 
     private static IReadOnlyList<string> ExtractSourceSentences(string input)
     {
@@ -253,71 +206,6 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
             .Select(sentence => sentence.Trim())
             .Where(sentence => !string.IsNullOrWhiteSpace(sentence))
             .ToList();
-    }
-
-    private static string ResolveExampleSentence(
-        string word,
-        string translation,
-        GeneratedWord generatedWord,
-        IReadOnlyList<string> sourceSentences)
-    {
-        var sourceSentence = FindSourceSentence(word, translation, sourceSentences);
-        return !string.IsNullOrWhiteSpace(sourceSentence) ? sourceSentence : generatedWord.ExampleSentence?.Trim() ?? string.Empty;
-    }
-
-    private static bool TryRepairExistingExampleSentence(
-        string word,
-        string translation,
-        GeneratedWord generatedWord,
-        IReadOnlyList<string> sourceSentences,
-        IEnumerable<string> wordDetailIds,
-        IReadOnlyDictionary<string, WordDetail> wordDetails)
-    {
-        var exampleSentence = ResolveExampleSentence(word, translation, generatedWord, sourceSentences);
-        var exampleSentenceTranslation = generatedWord.ExampleSentenceTranslation?.Trim() ?? string.Empty;
-        if (!IsUsefulExampleSentenceCore(
-            word,
-            translation,
-            exampleSentence,
-            exampleSentenceTranslation,
-            generatedWord.ExampleSentenceWord))
-        {
-            return false;
-        }
-
-        var repaired = false;
-        foreach (var wordDetailId in wordDetailIds)
-        {
-            if (!wordDetails.TryGetValue(wordDetailId, out var wordDetail)
-                || !ShouldReplaceExampleSentence(
-                    word,
-                    translation,
-                    wordDetail.ExampleSentence,
-                    wordDetail.ExampleSentenceTranslation))
-            {
-                continue;
-            }
-
-            wordDetail.ExampleSentence = exampleSentence;
-            if (!string.IsNullOrWhiteSpace(exampleSentenceTranslation))
-            {
-                wordDetail.ExampleSentenceTranslation = exampleSentenceTranslation;
-            }
-
-            wordDetail.UpdatedAt = DateTimeOffset.UtcNow;
-            repaired = true;
-        }
-
-        return repaired;
-    }
-
-    private static string? FindSourceSentence(string word, string translation, IReadOnlyList<string> sourceSentences)
-    {
-        var pattern = $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(word)}(?![\p{{L}}\p{{M}}])";
-        return sourceSentences
-            .Where(sentence => WordPattern.Matches(sentence).Count >= 2)
-            .Where(sentence => !LooksLikeGlossLine(word, translation, sentence))
-            .FirstOrDefault(sentence => Regex.IsMatch(sentence, pattern, RegexOptions.IgnoreCase));
     }
 
     private static bool IsUsefulExampleSentence(string word, string translation, string? exampleSentence, string? exampleSentenceTranslation)
@@ -446,42 +334,45 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
             RegexOptions.IgnoreCase);
     }
 
-    private async Task<WordDetail> GetOrCreateWordDetailAsync(
-        string sourceLanguage,
-        string targetLanguage,
-        string word,
-        string translation)
+    private async Task<int> AddQuizSentencesAsync(Guid quizId, IReadOnlyList<GeneratedSentence> generatedSentences)
     {
-        var key = WordDetailKey.Create(sourceLanguage, targetLanguage, word, translation);
-        var existing = await _context.WordDetails.FirstOrDefaultAsync(detail => detail.Id == key.Id);
-        if (existing != null)
+        if (generatedSentences.Count == 0)
         {
-            return existing;
+            return 0;
         }
 
+        var existingSentences = await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quizId)
+            .Select(sentence => sentence.Text)
+            .ToListAsync();
+        var existing = new HashSet<string>(existingSentences, StringComparer.OrdinalIgnoreCase);
+        var added = 0;
         var now = DateTimeOffset.UtcNow;
-        var detail = new WordDetail
-        {
-            Id = key.Id,
-            SourceLanguage = key.SourceLanguage,
-            TargetLanguage = key.TargetLanguage,
-            Word = key.Word,
-            Translation = key.Translation,
-            NormalizedWord = key.NormalizedWord,
-            NormalizedTranslation = key.NormalizedTranslation,
-            NormalizedWordHash = key.NormalizedWordHash,
-            NormalizedTranslationHash = key.NormalizedTranslationHash,
-            Language = key.TargetLanguage,
-            Properties = "{}",
-            Variants = "[]",
-            Explanation = string.Empty,
-            ExampleSentence = string.Empty,
-            ExampleSentenceTranslation = string.Empty,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
 
-        _context.WordDetails.Add(detail);
-        return detail;
+        foreach (var generated in generatedSentences)
+        {
+            var text = VocabularyInputCleaner.CleanForVocabulary(generated.Text).Trim();
+            var translation = generated.Translation?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(text)
+                || WordPattern.Matches(text).Count < 2
+                || HasLearnerNoteArtifacts(text)
+                || !existing.Add(text))
+            {
+                continue;
+            }
+
+            _context.QuizSentences.Add(new QuizSentence
+            {
+                Id = Guid.NewGuid(),
+                QuizId = quizId,
+                Text = text,
+                Translation = translation,
+                CreatedAt = now
+            });
+            added++;
+        }
+
+        return added;
     }
+
 }

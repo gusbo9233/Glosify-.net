@@ -18,7 +18,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         _logger = logger;
     }
 
-    public async Task<IReadOnlyDictionary<string, GeneratedWord>> GenerateWordsFromTextAsync(
+    public async Task<GeneratedVocabularyBatch> GenerateWordsFromTextAsync(
         string input,
         string sourceLanguage,
         string targetLanguage,
@@ -42,32 +42,27 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
                 $"The assistant could not find {targetLanguage} vocabulary in the submitted text.");
         }
 
-        var sentences = response.Sentences ?? [];
+        var sentences = NormalizeSentences(response.Sentences);
         var normalized = new Dictionary<string, GeneratedWord>(StringComparer.OrdinalIgnoreCase);
         foreach (var word in response.Words)
         {
-            var lemma = CleanText(word.Lemma);
+            var lemma = CleanText(word.Word) is { Length: > 0 } surfaceForm
+                ? surfaceForm
+                : CleanText(word.Lemma);
             var translation = CleanText(word.Translation);
             if (string.IsNullOrWhiteSpace(lemma) || string.IsNullOrWhiteSpace(translation))
             {
                 continue;
             }
 
-            var sentence = FindSentenceForWord(lemma, sentences);
             normalized[lemma] = new GeneratedWord
             {
                 Translation = translation,
-                ExampleSentence = CleanText(word.ExampleSentence) is { Length: > 0 } exampleSentence
-                    ? exampleSentence
-                    : CleanText(sentence?.Text),
-                ExampleSentenceTranslation = CleanText(word.ExampleSentenceTranslation) is { Length: > 0 } exampleTranslation
-                    ? exampleTranslation
-                    : CleanText(sentence?.Translation),
-                ExampleSentenceWord = CleanText(word.ExampleSentenceWord),
             };
         }
 
-        return normalized;
+        AddLegacyWordSentences(response.Words, sentences);
+        return new GeneratedVocabularyBatch(normalized, sentences);
     }
 
     public async Task<GeneratedWordDetail?> GenerateWordDetailAsync(
@@ -93,6 +88,9 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
 
         return new GeneratedWordDetail
         {
+            Word = CleanText(response.Word) is { Length: > 0 } detailWord
+                ? detailWord
+                : word.Trim(),
             Properties = NormalizeProperties(response.Properties),
             Variants = NormalizeVariants(response.Variants),
             Explanation = CleanText(response.Explanation),
@@ -146,26 +144,27 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         You are a language-learning assistant. Extract vocabulary from {{targetLanguage}} text for a learner whose first language is {{sourceLanguage}}.{{nameHint}}
 
         Rules:
-        - The "lemma" is the word in {{targetLanguage}}.
+        - The "word" is the exact quiz vocabulary item in {{targetLanguage}}.
+        - Prefer the surface form from the input text: keep case, tense, number, gender, and other inflection when that is the form the learner saw.
+        - Do not convert input words to dictionary/base/infinitive forms unless the input itself is a dictionary-form word list.
+        - If a short multi-word phrase is the useful vocabulary item, keep the phrase as "word" instead of reducing it to one base form.
         - The "translation" is a concise {{sourceLanguage}} gloss. Use the most natural meaning, not a pronunciation hint.
         - Skip closed-class words (articles, common prepositions, basic pronouns) unless they are central to the text.
-        - For every word, include one natural full example sentence in {{targetLanguage}} that uses that lemma or a natural inflected form of it.
-        - For every word, set "example_sentence_word" to the exact word form from the example sentence that corresponds to the lemma.
-        - Prefer sentences taken from the input text when they are already grammatical and complete; otherwise write a short sentence inspired by the input.
-        - Each example sentence must be useful to a learner: no pronunciation hints, gender notes, slash-separated alternatives, dictionary glosses, fragments, or markup.
-        - Translate each example sentence into natural {{sourceLanguage}}.
-        - Do not include grammatical notes, parts of speech, or markup in the lemma or translation.
+        - Return standalone quiz sentences separately from words.
+        - If the input contains complete {{targetLanguage}} phrases or sentences, include those phrases/sentences in "sentences" with natural {{sourceLanguage}} translations.
+        - If the input is mostly a word list, create fewer standalone quiz sentences than words when possible by using multiple extracted words in the same natural sentence.
+        - Try to cover the useful generated words across the sentence set, but do not force one sentence per word unless the input itself gives one phrase for each word.
+        - Sentences are for this quiz only. Do not write dictionary-style word-detail sentences.
+        - Each sentence must be useful to a learner: no pronunciation hints, gender notes, slash-separated alternatives, dictionary glosses, fragments, or markup.
+        - Do not include grammatical notes, parts of speech, or markup in the word or translation.
         - Output strictly the JSON object described below. No commentary, no markdown fences.
 
         Output schema:
         {
           "words": [
             {
-              "lemma": "string ({{targetLanguage}})",
-              "translation": "string ({{sourceLanguage}})",
-              "example_sentence": "string ({{targetLanguage}})",
-              "example_sentence_translation": "string ({{sourceLanguage}})",
-              "example_sentence_word": "string (the exact target-language word form used in example_sentence for this lemma)"
+              "word": "string ({{targetLanguage}}, surface form from input when available)",
+              "translation": "string ({{sourceLanguage}})"
             }
           ],
           "sentences": [
@@ -185,21 +184,23 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         return $$"""
         You are a language-learning assistant. Build a detailed dictionary entry for a single {{targetLanguage}} word for a learner whose first language is {{sourceLanguage}}.
 
-        Word ({{targetLanguage}}): {{word}}
+        Quiz word ({{targetLanguage}}, possibly inflected): {{word}}
         Translation ({{sourceLanguage}}): {{translation}}
 
         Rules:
+        - "word" is the dictionary/base form for the word detail entry in {{targetLanguage}}.
         - "properties" is a flat map of grammatical info (e.g. "pos", "gender", "aspect", "transitivity"). Keys are lowercase snake_case. Values are short strings.
         - "variants" lists inflected forms (declensions, conjugations). Each has a "form" (the inflected word in {{targetLanguage}}), a learner-facing "label", an optional learner-facing "group", and optional "tags" metadata.
         - Do not invent empty paradigm slots. Return only forms that are useful and known for this word.
         - "explanation" is one or two sentences in {{sourceLanguage}} explaining nuance, register, or common collocations.
-        - "example_sentence" is one natural full sentence in {{targetLanguage}} using the lemma or a natural inflected form in context.
+        - "example_sentence" is one natural full sentence in {{targetLanguage}} using the word or a natural inflected form in context.
         - "example_sentence" must not contain learner notes, pronunciation hints, slash-separated alternatives, dictionary glosses, fragments, or markup.
         - "example_sentence_translation" is a natural {{sourceLanguage}} translation of that sentence.
         - Output strictly the JSON object below. No commentary, no markdown fences.
 
         Output schema:
         {
+          "word": "string ({{targetLanguage}}, dictionary/base form)",
           "properties": { "key": "value" },
           "variants": [{ "form": "string ({{targetLanguage}})", "label": "string", "group": "string", "tags": ["string"] }],
           "explanation": "string ({{sourceLanguage}})",
@@ -217,9 +218,9 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
 
         Rules for the repaired output:
         - Keep every word's "id" stable. Do not invent or drop words.
-        - Fix obvious lemma/translation typos. Lemmas stay in {{quizData.Quiz.TargetLanguage}}; translations stay in {{quizData.Quiz.SourceLanguage}}.
+        - Fix obvious word/translation typos. Words stay in {{quizData.Quiz.TargetLanguage}}; translations stay in {{quizData.Quiz.SourceLanguage}}.
         - Ensure each example_sentence is a natural full sentence in {{quizData.Quiz.TargetLanguage}}, with a natural {{quizData.Quiz.SourceLanguage}} translation.
-        - Example sentences must exercise the relevant quiz word using the lemma or a natural inflected form.
+        - Example sentences must exercise the relevant quiz word or a natural inflected form.
         - Remove learner notes, pronunciation hints, slash-separated alternatives, dictionary glosses, fragments, and markup from example_sentence fields.
         - Fill missing word_details (properties, variants, explanation) where they are empty. For variants, return only actual forms with their own display labels/groups; do not emit empty paradigm slots.
         - Preserve all "id" fields exactly as given. Use snake_case keys as in the input.
@@ -240,15 +241,15 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
 
         Rules:
         - Keep the word's "id" exactly as given.
-        - Fix lemma/translation typos. The lemma stays in {{quizData.Quiz.TargetLanguage}}; the translation stays in {{quizData.Quiz.SourceLanguage}}.
+        - Fix word/translation typos. The word stays in {{quizData.Quiz.TargetLanguage}}; the translation stays in {{quizData.Quiz.SourceLanguage}}.
         - Rebuild the associated word_detail (properties, variants, explanation, example_sentence, example_sentence_translation) so it is complete and accurate. Reuse the existing word_detail "id" exactly.
-        - The example_sentence must be a natural full {{quizData.Quiz.TargetLanguage}} sentence that uses this word's lemma or a natural inflected form.
+        - The example_sentence must be a natural full {{quizData.Quiz.TargetLanguage}} sentence that uses this word or a natural inflected form.
         - Do not put learner notes, pronunciation hints, slash-separated alternatives, dictionary glosses, fragments, or markup in example_sentence.
         - Output strictly a JSON object with the shape below. No commentary, no markdown fences.
 
         Output schema:
         {
-          "word": { "id": "{{wordId}}", "lemma": "string", "translation": "string", "word_detail_id": "string", "quiz_id": "string" },
+          "word": { "id": "{{wordId}}", "word": "string", "translation": "string", "word_detail_id": "string", "quiz_id": "string" },
           "word_detail": {
             "id": "string",
             "properties": { "key": "value" },
@@ -368,11 +369,50 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
             .ToList();
     }
 
-    private static LlmSentence? FindSentenceForWord(string lemma, List<LlmSentence> sentences)
+    private static List<GeneratedSentence> NormalizeSentences(List<LlmSentence>? sentences)
     {
-        return sentences.FirstOrDefault(sentence =>
-            !string.IsNullOrWhiteSpace(sentence.Text)
-            && sentence.Text.Contains(lemma, StringComparison.OrdinalIgnoreCase));
+        if (sentences == null || sentences.Count == 0)
+        {
+            return [];
+        }
+
+        var normalized = new List<GeneratedSentence>();
+        foreach (var sentence in sentences)
+        {
+            var text = CleanText(sentence.Text);
+            if (string.IsNullOrWhiteSpace(text)
+                || normalized.Any(existing => string.Equals(existing.Text, text, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            normalized.Add(new GeneratedSentence
+            {
+                Text = text,
+                Translation = CleanText(sentence.Translation)
+            });
+        }
+
+        return normalized;
+    }
+
+    private static void AddLegacyWordSentences(List<LlmWord> words, List<GeneratedSentence> sentences)
+    {
+        foreach (var word in words)
+        {
+            var text = CleanText(word.ExampleSentence);
+            if (string.IsNullOrWhiteSpace(text)
+                || sentences.Any(existing => string.Equals(existing.Text, text, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            sentences.Add(new GeneratedSentence
+            {
+                Text = text,
+                Translation = CleanText(word.ExampleSentenceTranslation)
+            });
+        }
     }
 
     private static string CleanText(string? value)
@@ -388,6 +428,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
 
     private sealed class LlmWord
     {
+        public string Word { get; set; } = string.Empty;
         public string Lemma { get; set; } = string.Empty;
         public string Translation { get; set; } = string.Empty;
         [JsonPropertyName("example_sentence")]
@@ -406,6 +447,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
 
     private sealed class LlmWordDetailResponse
     {
+        public string Word { get; set; } = string.Empty;
         public Dictionary<string, JsonElement> Properties { get; set; } = [];
         public List<LlmVariant> Variants { get; set; } = [];
         public string Explanation { get; set; } = string.Empty;

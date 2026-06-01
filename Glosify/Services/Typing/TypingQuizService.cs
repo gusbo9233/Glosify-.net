@@ -1,5 +1,6 @@
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace Glosify.Services;
 
@@ -49,7 +50,7 @@ public class TypingQuizService : ITypingQuizService
     {
         var take = Math.Clamp(wordCount, 1, 100);
 
-        return await _context.Words
+        var rows = await _context.Words
             .Where(word => word.QuizId == quizId)
             .GroupJoin(
                 _context.WordDetails,
@@ -58,14 +59,41 @@ public class TypingQuizService : ITypingQuizService
                 (word, details) => new { Word = word, Detail = details.FirstOrDefault() })
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
-            .Select(item => new TypingWordData
-            {
-                Id = item.Word.Id,
-                Prompt = item.Word.Translation,
-                Answer = item.Word.Lemma,
-                ExampleSentence = item.Detail == null ? string.Empty : item.Detail.ExampleSentence,
-                ExampleTranslation = item.Detail == null ? string.Empty : item.Detail.ExampleSentenceTranslation
-            })
             .ToListAsync();
+        var sentences = await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quizId)
+            .OrderBy(sentence => sentence.Text)
+            .ToListAsync();
+
+        return rows
+            .Select(item =>
+            {
+                var sentence = ChooseSentenceForWord(item.Word.Lemma, sentences);
+                return new TypingWordData
+                {
+                    Id = item.Word.Id,
+                    Prompt = item.Word.Translation,
+                    Answer = item.Word.Lemma,
+                    ExampleSentence = sentence?.Text ?? item.Detail?.ExampleSentence ?? string.Empty,
+                    ExampleTranslation = sentence?.Translation ?? item.Detail?.ExampleSentenceTranslation ?? string.Empty
+                };
+            })
+            .ToList();
+    }
+
+    private static QuizSentence? ChooseSentenceForWord(string lemma, IReadOnlyList<QuizSentence> sentences)
+    {
+        return sentences.FirstOrDefault(sentence => ContainsWord(sentence.Text, lemma));
+    }
+
+    private static bool ContainsWord(string sentence, string word)
+    {
+        if (string.IsNullOrWhiteSpace(sentence) || string.IsNullOrWhiteSpace(word))
+        {
+            return false;
+        }
+
+        var pattern = $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(word.Trim())}(?![\p{{L}}\p{{M}}])";
+        return Regex.IsMatch(sentence, pattern, RegexOptions.IgnoreCase);
     }
 }

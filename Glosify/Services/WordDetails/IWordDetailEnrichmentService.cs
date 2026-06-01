@@ -12,4 +12,6 @@ public interface IWordDetailEnrichmentService
         string fallbackTargetLanguage,
         CancellationToken cancellationToken = default,
         bool force = false);
+
+    bool ApplyGenerated(WordDetail detail, GeneratedWordDetail generated, bool force = false);
 }

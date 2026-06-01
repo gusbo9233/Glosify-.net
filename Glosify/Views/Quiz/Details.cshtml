@@ -4,7 +4,9 @@
     ViewData["Title"] = Model.SelectedQuiz.Name;
     ViewData["ActiveNav"] = "quizzes";
 
-    var pendingGenerationCount = Model.Words.Count(w => !Model.EnrichedWordDetailIds.Contains(w.WordDetailId));
+    var pendingGenerationCount = Model.Words.Count(w =>
+        string.IsNullOrWhiteSpace(w.WordDetailId)
+        || !Model.EnrichedWordDetailIds.Contains(w.WordDetailId));
 }
 
 
@@ -75,19 +77,40 @@
             <div class="word-grid" data-word-grid>
                 @foreach (var word in Model.Words)
                 {
-                    var needsGeneration = !Model.EnrichedWordDetailIds.Contains(word.WordDetailId);
+                    var wordDetailId = word.WordDetailId ?? string.Empty;
+                    var hasWordDetail = !string.IsNullOrWhiteSpace(wordDetailId);
+                    var needsGeneration = !hasWordDetail || !Model.EnrichedWordDetailIds.Contains(wordDetailId);
+                    var generateUrl = hasWordDetail
+                        ? Url.Action("Generate", "WordDetails", new { id = wordDetailId })
+                        : Url.Action("GenerateForWord", "WordDetails", new { id = word.Id });
                     <article class="word-card"
-                             data-word-detail-id="@word.WordDetailId"
+                             data-word-detail-id="@wordDetailId"
+                             data-generate-url="@generateUrl"
                              data-needs-generation="@(needsGeneration ? "true" : "false")">
-                        <a class="word-card-link" asp-controller="WordDetails" asp-action="Details" asp-route-id="@word.WordDetailId" aria-label="Open details for @word.Lemma">
-                            <div class="word-card-left">
-                                <div class="word-icon"><span class="material-symbols-outlined">translate</span></div>
-                                <div>
-                                    <div class="word">@word.Lemma</div>
-                                    <div class="translation">@word.Translation</div>
+                        @if (hasWordDetail)
+                        {
+                            <a class="word-card-link" asp-controller="WordDetails" asp-action="Details" asp-route-id="@wordDetailId" aria-label="Open details for @word.Lemma">
+                                <div class="word-card-left">
+                                    <div class="word-icon"><span class="material-symbols-outlined">translate</span></div>
+                                    <div>
+                                        <div class="word">@word.Lemma</div>
+                                        <div class="translation">@word.Translation</div>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="word-card-link" aria-label="Word details not generated for @word.Lemma">
+                                <div class="word-card-left">
+                                    <div class="word-icon"><span class="material-symbols-outlined">translate</span></div>
+                                    <div>
+                                        <div class="word">@word.Lemma</div>
+                                        <div class="translation">@word.Translation</div>
+                                    </div>
                                 </div>
                             </div>
-                        </a>
+                        }
                         <div class="word-actions">
                             <button class="btn-icon-repair"
                                     type="button"
@@ -202,7 +225,6 @@
         if (!button) return;
 
         const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-        const generateUrl = '@Url.Action("Generate", "WordDetails")';
         const concurrency = 3;
 
         const setCardLoading = (card, loading) => {
@@ -217,12 +239,41 @@
             }
         };
 
+        const applyGeneratedDetail = (card, data) => {
+            if (!data) return;
+
+            if (data.wordDetailId) {
+                card.dataset.wordDetailId = data.wordDetailId;
+            }
+
+            if (data.generateUrl) {
+                card.dataset.generateUrl = data.generateUrl;
+            }
+
+            if (data.detailsUrl) {
+                const currentLink = card.querySelector('.word-card-link');
+                if (!currentLink) return;
+
+                if (currentLink.tagName === 'A') {
+                    currentLink.href = data.detailsUrl;
+                    return;
+                }
+
+                const link = document.createElement('a');
+                link.className = currentLink.className;
+                link.href = data.detailsUrl;
+                link.setAttribute('aria-label', currentLink.getAttribute('aria-label') || `Open details for ${data.word || 'word'}`);
+                link.innerHTML = currentLink.innerHTML;
+                currentLink.replaceWith(link);
+            }
+        };
+
         const generateOne = async (card) => {
-            const id = card.dataset.wordDetailId;
-            if (!id) return;
+            const generateUrl = card.dataset.generateUrl;
+            if (!generateUrl) return;
             setCardLoading(card, true);
             try {
-                const response = await fetch(`${generateUrl}/${encodeURIComponent(id)}`, {
+                const response = await fetch(generateUrl, {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
@@ -231,6 +282,7 @@
                 });
                 if (response.ok) {
                     const data = await response.json().catch(() => null);
+                    applyGeneratedDetail(card, data);
                     if (data?.isEnriched) {
                         card.dataset.needsGeneration = 'false';
                     }

@@ -59,7 +59,7 @@ public sealed class QuizRepairService : IQuizRepairService
         }
 
         await ApplyWordAsync(result, cancellationToken);
-        return new QuizRepairResult(QuizRepairStatus.Success, Lemma: word.Lemma);
+        return new QuizRepairResult(QuizRepairStatus.Success, Word: word.Lemma);
     }
 
     public async Task<QuizRepairResult> RepairSentenceAsync(
@@ -109,16 +109,17 @@ public sealed class QuizRepairService : IQuizRepairService
             .Select(group => group.First())
             .ToList();
 
-        var sentences = details
-            .Where(detail => !string.IsNullOrWhiteSpace(detail.ExampleSentence))
-            .GroupBy(detail => detail.ExampleSentence.Trim(), StringComparer.OrdinalIgnoreCase)
+        var sentences = await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quizId)
+            .OrderBy(sentence => sentence.Text)
+            .ToListAsync(cancellationToken);
+
+        var repairSentences = sentences
             .Select((group, index) => new RepairSentence
             {
                 Id = $"s{index + 1:000}",
-                Text = group.Key,
-                Translation = group
-                    .Select(detail => detail.ExampleSentenceTranslation.Trim())
-                    .FirstOrDefault(translation => !string.IsNullOrWhiteSpace(translation)) ?? string.Empty,
+                Text = group.Text,
+                Translation = group.Translation,
                 QuizId = quiz.Id.ToString()
             })
             .ToList();
@@ -141,16 +142,16 @@ public sealed class QuizRepairService : IQuizRepairService
                 .Select(row => new RepairWord
                 {
                     Id = row.Word.Id,
-                    Lemma = row.Word.Lemma,
+                    Word = row.Word.Lemma,
                     Translation = row.Word.Translation,
-                    WordDetailId = row.Word.WordDetailId,
+                    WordDetailId = row.Word.WordDetailId ?? string.Empty,
                     QuizId = row.Word.QuizId.ToString()
                 })
                 .ToList(),
             WordDetails = details
                 .Select(ToRepairWordDetail)
                 .ToList(),
-            Sentences = sentences
+            Sentences = repairSentences
         };
     }
 
@@ -170,9 +171,9 @@ public sealed class QuizRepairService : IQuizRepairService
                 continue;
             }
 
-            if (!string.IsNullOrWhiteSpace(repairedWord.Lemma))
+            if (!string.IsNullOrWhiteSpace(repairedWord.Word))
             {
-                word.Lemma = repairedWord.Lemma.Trim();
+                word.Lemma = repairedWord.Word.Trim();
             }
             if (!string.IsNullOrWhiteSpace(repairedWord.Translation))
             {
@@ -188,6 +189,8 @@ public sealed class QuizRepairService : IQuizRepairService
             }
         }
 
+        await ApplyQuizSentencesAsync(quizId, repaired.Sentences, cancellationToken);
+
         await _context.SaveChangesAsync(cancellationToken);
     }
 
@@ -199,9 +202,9 @@ public sealed class QuizRepairService : IQuizRepairService
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(result.Word.Lemma))
+        if (!string.IsNullOrWhiteSpace(result.Word.Word))
         {
-            word.Lemma = result.Word.Lemma.Trim();
+            word.Lemma = result.Word.Word.Trim();
         }
         if (!string.IsNullOrWhiteSpace(result.Word.Translation))
         {
@@ -225,32 +228,24 @@ public sealed class QuizRepairService : IQuizRepairService
         CancellationToken cancellationToken)
     {
         var normalizedOriginal = VocabularyInputCleaner.CleanForVocabulary(originalText).Trim();
-        var candidateDetails = await _context.Words
-            .Where(word => word.QuizId == quizId)
-            .Join(
-                _context.WordDetails,
-                word => word.WordDetailId,
-                detail => detail.Id,
-                (_, detail) => detail)
+        var sentences = await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quizId)
             .ToListAsync(cancellationToken);
-        var details = candidateDetails
-            .Where(detail => string.Equals(
-                VocabularyInputCleaner.CleanForVocabulary(detail.ExampleSentence).Trim(),
+        var matches = sentences
+            .Where(sentence => string.Equals(
+                VocabularyInputCleaner.CleanForVocabulary(sentence.Text).Trim(),
                 normalizedOriginal,
                 StringComparison.OrdinalIgnoreCase))
-            .GroupBy(detail => detail.Id, StringComparer.Ordinal)
-            .Select(group => group.First())
             .ToList();
 
-        foreach (var detail in details)
+        foreach (var sentence in matches)
         {
-            detail.ExampleSentence = repaired.Text.Trim();
-            detail.ExampleSentenceTranslation = repaired.Translation.Trim();
-            detail.UpdatedAt = DateTimeOffset.UtcNow;
+            sentence.Text = repaired.Text.Trim();
+            sentence.Translation = repaired.Translation.Trim();
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        return details.Count;
+        return matches.Count;
     }
 
     private static RepairWordDetail ToRepairWordDetail(WordDetail detail)
@@ -299,6 +294,50 @@ public sealed class QuizRepairService : IQuizRepairService
         detail.UpdatedAt = DateTimeOffset.UtcNow;
     }
 
+    private async Task ApplyQuizSentencesAsync(
+        Guid quizId,
+        IReadOnlyList<RepairSentence> repairedSentences,
+        CancellationToken cancellationToken)
+    {
+        if (repairedSentences.Count == 0)
+        {
+            return;
+        }
+
+        var existing = await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quizId)
+            .ToListAsync(cancellationToken);
+        var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var now = DateTimeOffset.UtcNow;
+
+        foreach (var repaired in repairedSentences)
+        {
+            var text = repaired.Text.Trim();
+            if (string.IsNullOrWhiteSpace(text) || !used.Add(text))
+            {
+                continue;
+            }
+
+            var sentence = existing.FirstOrDefault(candidate =>
+                string.Equals(candidate.Text.Trim(), text, StringComparison.OrdinalIgnoreCase));
+            if (sentence == null)
+            {
+                _context.QuizSentences.Add(new QuizSentence
+                {
+                    Id = Guid.NewGuid(),
+                    QuizId = quizId,
+                    Text = text,
+                    Translation = repaired.Translation.Trim(),
+                    CreatedAt = now
+                });
+                continue;
+            }
+
+            sentence.Text = text;
+            sentence.Translation = repaired.Translation.Trim();
+        }
+    }
+
     private static Dictionary<string, JsonElement> ParseJsonObject(string? json)
     {
         if (string.IsNullOrWhiteSpace(json) || json.Trim() == "{}")
@@ -332,4 +371,5 @@ public sealed class QuizRepairService : IQuizRepairService
             return [];
         }
     }
+
 }

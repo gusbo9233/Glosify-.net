@@ -2,7 +2,7 @@ namespace Glosify.Services;
 
 public interface IVocabularyGenerationService
 {
-    Task<IReadOnlyDictionary<string, GeneratedWord>> GenerateWordsFromTextAsync(
+    Task<GeneratedVocabularyBatch> GenerateWordsFromTextAsync(
         string input,
         string sourceLanguage,
         string targetLanguage,

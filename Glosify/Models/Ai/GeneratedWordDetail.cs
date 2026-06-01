@@ -5,6 +5,9 @@ namespace Glosify.Models.Ai;
 
 public class GeneratedWordDetail
 {
+    [JsonPropertyName("word")]
+    public string? Word { get; set; }
+
     [JsonPropertyName("properties")]
     public Dictionary<string, JsonElement> Properties { get; set; } = [];
 

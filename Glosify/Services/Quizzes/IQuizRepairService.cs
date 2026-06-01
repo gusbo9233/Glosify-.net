@@ -17,4 +17,4 @@ public enum QuizRepairStatus
 public sealed record QuizRepairResult(
     QuizRepairStatus Status,
     int UpdatedCount = 0,
-    string? Lemma = null);
+    string? Word = null);

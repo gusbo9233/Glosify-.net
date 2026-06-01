@@ -11,15 +11,18 @@ public class WordDetailsController : Controller
     private readonly IWordDetailService _wordDetailService;
     private readonly IWordDetailViewModelService _viewModelService;
     private readonly IWordDetailEnrichmentService _enrichmentService;
+    private readonly IVocabularyGenerationService _vocabularyGenerator;
 
     public WordDetailsController(
         IWordDetailService wordDetailService,
         IWordDetailViewModelService viewModelService,
-        IWordDetailEnrichmentService enrichmentService)
+        IWordDetailEnrichmentService enrichmentService,
+        IVocabularyGenerationService vocabularyGenerator)
     {
         _wordDetailService = wordDetailService;
         _viewModelService = viewModelService;
         _enrichmentService = enrichmentService;
+        _vocabularyGenerator = vocabularyGenerator;
     }
 
     public async Task<IActionResult> Index()
@@ -81,7 +84,80 @@ public class WordDetailsController : Controller
             && detail.Properties != "{}"
             && detail.Variants != "[]";
 
-        return Json(new { ok = true, lemma = owned.Word.Lemma, isEnriched });
+        return Json(new { ok = true, word = owned.Word.Lemma, isEnriched });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> GenerateForWord(string id, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return NotFound();
+        }
+
+        var userId = User.GetUserId();
+        var owned = await _wordDetailService.LoadOwnedWordAsync(id, userId, cancellationToken);
+        if (owned == null)
+        {
+            return NotFound();
+        }
+
+        var cached = await _wordDetailService.FindCachedAsync(
+            owned.Quiz.SourceLanguage,
+            owned.Quiz.TargetLanguage,
+            owned.Word.Lemma,
+            owned.Word.Translation,
+            cancellationToken);
+        if (cached != null)
+        {
+            owned.Word.WordDetailId = cached.Id;
+            await _wordDetailService.SaveChangesAsync(cancellationToken);
+            return Json(new
+            {
+                ok = true,
+                word = owned.Word.Lemma,
+                wordDetailId = cached.Id,
+                detailsUrl = Url.Action(nameof(Details), new { id = cached.Id }),
+                generateUrl = Url.Action(nameof(Generate), new { id = cached.Id }),
+                isEnriched = IsEnriched(cached)
+            });
+        }
+
+        var generated = await _vocabularyGenerator.GenerateWordDetailAsync(
+            owned.Word.Lemma,
+            owned.Word.Translation,
+            owned.Quiz.SourceLanguage,
+            owned.Quiz.TargetLanguage,
+            cancellationToken);
+        if (generated == null)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant });
+        }
+
+        var detailWord = string.IsNullOrWhiteSpace(generated.Word)
+            ? owned.Word.Lemma
+            : generated.Word.Trim();
+        var previousWordDetailId = owned.Word.WordDetailId;
+        var detail = await _wordDetailService.GetOrCreateAndLinkAsync(
+            owned.Word,
+            owned.Quiz,
+            detailWord,
+            cancellationToken);
+        var changed = _enrichmentService.ApplyGenerated(detail, generated);
+        if (changed || !string.Equals(previousWordDetailId, detail.Id, StringComparison.Ordinal))
+        {
+            await _wordDetailService.SaveChangesAsync(cancellationToken);
+        }
+
+        return Json(new
+        {
+            ok = true,
+            word = owned.Word.Lemma,
+            wordDetailId = detail.Id,
+            detailsUrl = Url.Action(nameof(Details), new { id = detail.Id }),
+            generateUrl = Url.Action(nameof(Generate), new { id = detail.Id }),
+            isEnriched = IsEnriched(detail)
+        });
     }
 
     [HttpPost]
@@ -118,6 +194,14 @@ public class WordDetailsController : Controller
         }
 
         return RedirectToAction(nameof(Details), new { id });
+    }
+
+    private static bool IsEnriched(WordDetail detail)
+    {
+        return !string.IsNullOrWhiteSpace(detail.Explanation)
+            && !string.IsNullOrWhiteSpace(detail.ExampleSentence)
+            && detail.Properties != "{}"
+            && detail.Variants != "[]";
     }
 
     [HttpPost]

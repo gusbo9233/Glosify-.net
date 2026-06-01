@@ -4,6 +4,7 @@ using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Glosify.Migrations
 {
     [DbContext(typeof(GlosifyContext))]
-    partial class GlosifyContextModelSnapshot : ModelSnapshot
+    [Migration("20260601174601_AddQuizWordExampleSentences")]
+    partial class AddQuizWordExampleSentences
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -290,43 +293,21 @@ namespace Glosify.Migrations
                     b.ToTable("Quizzes");
                 });
 
-            modelBuilder.Entity("Glosify.Models.Entities.QuizSentence", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("QuizId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("quiz_id");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("text");
-
-                    b.Property<string>("Translation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("translation");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("QuizId");
-
-                    b.ToTable("quiz_sentences");
-                });
-
             modelBuilder.Entity("Glosify.Models.Entities.Word", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("id");
+
+                    b.Property<string>("ExampleSentence")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("example_sentence");
+
+                    b.Property<string>("ExampleSentenceTranslation")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("example_sentence_translation");
 
                     b.Property<string>("Lemma")
                         .IsRequired()
@@ -343,6 +324,7 @@ namespace Glosify.Migrations
                         .HasColumnName("translation");
 
                     b.Property<string>("WordDetailId")
+                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("word_detail_id");
@@ -652,22 +634,13 @@ namespace Glosify.Migrations
                     b.Navigation("Collection");
                 });
 
-            modelBuilder.Entity("Glosify.Models.Entities.QuizSentence", b =>
-                {
-                    b.HasOne("Glosify.Models.Entities.Quiz", null)
-                        .WithMany()
-                        .HasForeignKey("QuizId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_quiz_sentences_quizzes");
-                });
-
             modelBuilder.Entity("Glosify.Models.Entities.Word", b =>
                 {
                     b.HasOne("Glosify.Models.Entities.WordDetail", null)
                         .WithMany()
                         .HasForeignKey("WordDetailId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
                         .HasConstraintName("FK_words_word_details");
                 });
 

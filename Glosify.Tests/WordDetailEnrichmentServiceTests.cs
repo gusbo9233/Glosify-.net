@@ -278,7 +278,7 @@ public class WordDetailEnrichmentServiceTests
         public GeneratedWordDetail? WordDetail { get; init; }
         public bool WasCalled { get; private set; }
 
-        public Task<IReadOnlyDictionary<string, GeneratedWord>> GenerateWordsFromTextAsync(
+        public Task<GeneratedVocabularyBatch> GenerateWordsFromTextAsync(
             string input,
             string sourceLanguage,
             string targetLanguage,

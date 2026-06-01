@@ -19,6 +19,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<Quiz> Quizzes { get; set; }
     public DbSet<Word> Words { get; set; }
     public DbSet<WordDetail> WordDetails { get; set; }
+    public DbSet<QuizSentence> QuizSentences { get; set; }
     public DbSet<AssistantThread> AssistantThreads { get; set; }
     public DbSet<AssistantMessage> AssistantMessages { get; set; }
 
@@ -87,6 +88,19 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.NormalizedTranslation).HasMaxLength(1024);
             entity.Property(e => e.NormalizedWordHash).HasMaxLength(64);
             entity.Property(e => e.NormalizedTranslationHash).HasMaxLength(64);
+        });
+
+        modelBuilder.Entity<QuizSentence>(entity =>
+        {
+            entity.HasKey(sentence => sentence.Id);
+            entity.Property(sentence => sentence.Text).IsRequired();
+            entity.Property(sentence => sentence.Translation).IsRequired();
+            entity.HasIndex(sentence => sentence.QuizId);
+            entity.HasOne<Quiz>()
+                .WithMany()
+                .HasForeignKey(sentence => sentence.QuizId)
+                .HasConstraintName("FK_quiz_sentences_quizzes")
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<AssistantThread>(entity =>

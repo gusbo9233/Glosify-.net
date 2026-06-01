@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace Glosify.Services;
 
@@ -19,12 +20,12 @@ public sealed class AssistantTools : IAssistantTools
     [
         new(
             "list_words",
-            "List every word in the current quiz with its lemma, translation, and id. Use this to see what is already in the quiz before proposing changes.",
+            "List every word in the current quiz with its word text, translation, and id. Use this to see what is already in the quiz before proposing changes.",
             BuildSchema(new Dictionary<string, object>())),
 
         new(
             "get_word",
-            "Get a single word's full detail (translation, example sentence, explanation, properties, variants) by its id.",
+            "Get a single word's quiz data plus shared word detail (translation, quiz example sentence, explanation, properties, variants) by its id.",
             BuildSchema(new Dictionary<string, object>
             {
                 ["word_id"] = StringProp("Id of the word to fetch."),
@@ -32,22 +33,22 @@ public sealed class AssistantTools : IAssistantTools
 
         new(
             "add_word",
-            "Propose adding a new word to the quiz. Include a natural full example sentence and translation when possible. The change is queued; it is only saved when the user clicks Apply.",
+            "Propose adding a new word to the quiz. Include a quiz-specific example sentence and translation when possible. The change is queued; it is only saved when the user clicks Apply.",
             BuildSchema(new Dictionary<string, object>
             {
-                ["lemma"] = StringProp("Word in the target language."),
+                ["word"] = StringProp("Word or short phrase in the target language. Prefer the exact form the learner should practice."),
                 ["translation"] = StringProp("Translation in the user's source language."),
-                ["example_sentence"] = StringProp("Optional. Natural full sentence in the target language using the word's lemma or an inflected form. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
+                ["example_sentence"] = StringProp("Optional. Quiz-specific sentence in the target language using the word or a natural inflected form. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
                 ["example_sentence_translation"] = StringProp("Optional. Natural source-language translation of the example sentence."),
-            }, required: ["lemma", "translation"])),
+            }, required: ["word", "translation"])),
 
         new(
             "edit_word",
-            "Propose changing an existing word's lemma and/or translation. The change is queued until the user clicks Apply.",
+            "Propose changing an existing word and/or translation. The change is queued until the user clicks Apply.",
             BuildSchema(new Dictionary<string, object>
             {
                 ["word_id"] = StringProp("Id of the word to edit."),
-                ["lemma"] = StringProp("Optional. New lemma."),
+                ["word"] = StringProp("Optional. New word or short phrase."),
                 ["translation"] = StringProp("Optional. New translation."),
             }, required: ["word_id"])),
 
@@ -68,13 +69,13 @@ public sealed class AssistantTools : IAssistantTools
                 ["properties"] = ObjectProp("Optional. Grammar property map, such as {\"pos\":\"noun\",\"gender\":\"neuter\"}. Use snake_case keys; keep values concise."),
                 ["variants"] = VariantsProp("Optional. Inflected forms to show on the word detail page. Each variant needs a form plus the label/group the user should see, such as group \"Past Plural\" and label \"1st masculine personal\". Tags are optional metadata for compatibility."),
                 ["explanation"] = StringProp("Optional. New short explanation in the user's source language."),
-                ["example_sentence"] = StringProp("Optional. Natural full sentence in the target language using this word's lemma or an inflected form. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
+                ["example_sentence"] = StringProp("Optional. Natural full sentence in the target language using this word or an inflected form. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
                 ["example_sentence_translation"] = StringProp("Optional. Natural source-language translation of the new example sentence."),
             }, required: ["word_id"])),
 
         new(
             "repair_sentence",
-            "Propose replacing all occurrences of an example sentence (across word_details) with a corrected natural full sentence. Queued until Apply.",
+            "Propose replacing all occurrences of a quiz example sentence with a corrected natural full sentence. Queued until Apply.",
             BuildSchema(new Dictionary<string, object>
             {
                 ["original_text"] = StringProp("The current sentence text to replace."),
@@ -109,7 +110,7 @@ public sealed class AssistantTools : IAssistantTools
         var rows = await _context.Words
             .Where(w => w.QuizId == context.QuizId)
             .OrderBy(w => w.Lemma)
-            .Select(w => new { id = w.Id, lemma = w.Lemma, translation = w.Translation, word_detail_id = w.WordDetailId })
+            .Select(w => new { id = w.Id, word = w.Lemma, translation = w.Translation, word_detail_id = w.WordDetailId })
             .ToListAsync(ct);
         return new { words = rows, count = rows.Count };
     }
@@ -129,14 +130,20 @@ public sealed class AssistantTools : IAssistantTools
         }
 
         var detail = await _context.WordDetails.FirstOrDefaultAsync(d => d.Id == word.WordDetailId, ct);
+        var sentence = await _context.QuizSentences
+            .Where(s => s.QuizId == context.QuizId)
+            .ToListAsync(ct);
+        var quizSentence = sentence.FirstOrDefault(s => ContainsWord(s.Text, word.Lemma));
         return new
         {
             id = word.Id,
-            lemma = word.Lemma,
+            word = word.Lemma,
             translation = word.Translation,
             explanation = detail?.Explanation ?? string.Empty,
-            example_sentence = detail?.ExampleSentence ?? string.Empty,
-            example_sentence_translation = detail?.ExampleSentenceTranslation ?? string.Empty,
+            example_sentence = quizSentence?.Text ?? detail?.ExampleSentence ?? string.Empty,
+            example_sentence_translation = quizSentence?.Translation ?? detail?.ExampleSentenceTranslation ?? string.Empty,
+            word_detail_example_sentence = detail?.ExampleSentence ?? string.Empty,
+            word_detail_example_sentence_translation = detail?.ExampleSentenceTranslation ?? string.Empty,
             properties_json = detail?.Properties ?? "{}",
             variants_json = detail?.Variants ?? "[]",
         };
@@ -144,24 +151,24 @@ public sealed class AssistantTools : IAssistantTools
 
     private static object QueueAddWord(JsonElement args, AgentToolContext context)
     {
-        var lemma = GetString(args, "lemma");
+        var word = GetString(args, "word") ?? GetString(args, "lemma");
         var translation = GetString(args, "translation");
-        if (string.IsNullOrWhiteSpace(lemma) || string.IsNullOrWhiteSpace(translation))
+        if (string.IsNullOrWhiteSpace(word) || string.IsNullOrWhiteSpace(translation))
         {
-            return new { error = "lemma and translation are required." };
+            return new { error = "word and translation are required." };
         }
 
         var payload = JsonSerializer.SerializeToElement(new
         {
             kind = PendingChangeKinds.AddWord,
-            lemma = lemma.Trim(),
+            word = word.Trim(),
             translation = translation.Trim(),
             example_sentence = GetString(args, "example_sentence")?.Trim() ?? string.Empty,
             example_sentence_translation = GetString(args, "example_sentence_translation")?.Trim() ?? string.Empty,
         }, JsonOptions);
 
         context.PendingChanges.Add(new PendingChange(PendingChangeKinds.AddWord, payload));
-        return new { queued = true, kind = PendingChangeKinds.AddWord, lemma };
+        return new { queued = true, kind = PendingChangeKinds.AddWord, word };
     }
 
     private static object QueueEditWord(JsonElement args, AgentToolContext context)
@@ -180,7 +187,7 @@ public sealed class AssistantTools : IAssistantTools
         {
             kind = PendingChangeKinds.EditWord,
             word_id = wordId,
-            lemma = GetString(args, "lemma")?.Trim(),
+            word = (GetString(args, "word") ?? GetString(args, "lemma"))?.Trim(),
             translation = GetString(args, "translation")?.Trim(),
         }, JsonOptions);
 
@@ -310,6 +317,17 @@ public sealed class AssistantTools : IAssistantTools
             error = $"This assistant session is focused on {context.FocusedWordLabel ?? "the current word"}. Use that word only for mutating changes.",
             focused_word_id = context.FocusedWordId,
         };
+    }
+
+    private static bool ContainsWord(string sentence, string word)
+    {
+        if (string.IsNullOrWhiteSpace(sentence) || string.IsNullOrWhiteSpace(word))
+        {
+            return false;
+        }
+
+        var pattern = $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(word.Trim())}(?![\p{{L}}\p{{M}}])";
+        return Regex.IsMatch(sentence, pattern, RegexOptions.IgnoreCase);
     }
 
     private static object BuildSchema(Dictionary<string, object> properties, IReadOnlyList<string>? required = null)

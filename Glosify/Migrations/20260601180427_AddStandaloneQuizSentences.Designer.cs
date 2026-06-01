@@ -4,6 +4,7 @@ using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Glosify.Migrations
 {
     [DbContext(typeof(GlosifyContext))]
-    partial class GlosifyContextModelSnapshot : ModelSnapshot
+    [Migration("20260601180427_AddStandaloneQuizSentences")]
+    partial class AddStandaloneQuizSentences
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -343,6 +346,7 @@ namespace Glosify.Migrations
                         .HasColumnName("translation");
 
                     b.Property<string>("WordDetailId")
+                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("word_detail_id");
@@ -668,6 +672,7 @@ namespace Glosify.Migrations
                         .WithMany()
                         .HasForeignKey("WordDetailId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
                         .HasConstraintName("FK_words_word_details");
                 });
 

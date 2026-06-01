@@ -11,7 +11,7 @@ public interface IWordService
     Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId);
     Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage);
     Task<Word?> DeleteWordAsync(string wordId, string userId);
-    Task<bool> WordExistsAsync(Guid quizId, string lemma);
+    Task<bool> WordExistsAsync(Guid quizId, string word);
 }
 
 public sealed record QuizCardData
