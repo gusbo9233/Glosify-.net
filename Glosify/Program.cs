@@ -2,8 +2,8 @@ using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Glosify.Models;
-using Glosify.Models.LanguageConfig;
 using Glosify.Services;
+using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,6 +42,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 var authenticationBuilder = builder.Services.AddAuthentication();
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"];
+var microsoftClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"];
 if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(googleClientSecret))
 {
     authenticationBuilder.AddGoogle(options =>
@@ -57,6 +59,26 @@ if (!string.IsNullOrWhiteSpace(googleClientId) && !string.IsNullOrWhiteSpace(goo
 
             context.HandleResponse();
             context.Response.Redirect("/login?externalLoginError=Google");
+            return Task.CompletedTask;
+        };
+    });
+}
+
+if (!string.IsNullOrWhiteSpace(microsoftClientId) && !string.IsNullOrWhiteSpace(microsoftClientSecret))
+{
+    authenticationBuilder.AddMicrosoftAccount(options =>
+    {
+        options.ClientId = microsoftClientId;
+        options.ClientSecret = microsoftClientSecret;
+        options.Events.OnRemoteFailure = context =>
+        {
+            var logger = context.HttpContext.RequestServices
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("MicrosoftAuthentication");
+            logger.LogWarning(context.Failure, "Microsoft external login failed.");
+
+            context.HandleResponse();
+            context.Response.Redirect("/login?externalLoginError=Microsoft");
             return Task.CompletedTask;
         };
     });
@@ -103,6 +125,7 @@ builder.Services.Configure<GeminiOptions>(options =>
 
 // Register application services
 builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<ICollectionService, CollectionService>();
 builder.Services.AddScoped<IQuizRepairService, QuizRepairService>();
 builder.Services.AddScoped<IWordService, WordService>();
 builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
@@ -117,11 +140,6 @@ builder.Services.AddScoped<IWordDetailService, WordDetailService>();
 builder.Services.AddScoped<IAssistantTools, AssistantTools>();
 builder.Services.AddScoped<IChangeApplier, ChangeApplier>();
 builder.Services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
-
-builder.Services.AddSingleton<ILanguageDictionaryConfig, GermanDictionaryConfig>();
-builder.Services.AddSingleton<ILanguageDictionaryConfig, EstonianDictionaryConfig>();
-builder.Services.AddSingleton<ILanguageDictionaryConfig, UkrainianDictionaryConfig>();
-builder.Services.AddSingleton<ILanguageDictionaryConfig, PolishDictionaryConfig>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))

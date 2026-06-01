@@ -1,5 +1,3 @@
-using Glosify.Models.LanguageConfig;
-
 namespace Glosify.Models.ViewModels
 {
     public class WordDetailViewModel
@@ -9,7 +7,6 @@ namespace Glosify.Models.ViewModels
         public Quiz Quiz { get; set; } = null!;
         public IReadOnlyList<KeyValuePair<string, string>> Properties { get; set; } = [];
         public IReadOnlyList<WordDetailVariantViewModel> Variants { get; set; } = [];
-        public WordClassConfig? WordClassConfig { get; set; }
 
         public string PartOfSpeech => GetProperty("pos");
         public string Explanation => Detail.Explanation ?? string.Empty;

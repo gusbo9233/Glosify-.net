@@ -98,11 +98,6 @@
             }
         </article>
 
-        @if (Model.WordClassConfig != null)
-        {
-            <partial name="_Grammar" model="Model" />
-        }
-
         <article class="detail-section wide">
             <h2 class="section-title"><span class="material-symbols-outlined">notes</span>Explanation</h2>
             @if (string.IsNullOrWhiteSpace(Model.Explanation))
@@ -131,40 +126,37 @@
             }
         </article>
 
-        @if (ShouldShowGenericVariants(Model))
-        {
-            <article class="detail-section">
-                <h2 class="section-title"><span class="material-symbols-outlined">schema</span>Variants</h2>
-                @if (!Model.Variants.Any())
-                {
-                    <p class="section-copy empty-copy">No variants have been added yet.</p>
-                }
-                else
-                {
-                    <div class="variant-list">
-                        @foreach (var variant in Model.Variants)
-                        {
-                            <div class="variant-row">
-                                <span class="variant-form">@variant.Form</span>
-                                <span class="tag-list">
-                                    @if (!string.IsNullOrWhiteSpace(variant.Label))
+        <article class="detail-section">
+            <h2 class="section-title"><span class="material-symbols-outlined">schema</span>Variants</h2>
+            @if (!Model.Variants.Any())
+            {
+                <p class="section-copy empty-copy">No variants have been added yet.</p>
+            }
+            else
+            {
+                <div class="variant-list">
+                    @foreach (var variant in Model.Variants)
+                    {
+                        <div class="variant-row">
+                            <span class="variant-form">@variant.Form</span>
+                            <span class="tag-list">
+                                @if (!string.IsNullOrWhiteSpace(variant.Label))
+                                {
+                                    <span class="tag">@Humanize(variant.Label)</span>
+                                }
+                                else
+                                {
+                                    @foreach (var tag in variant.Tags)
                                     {
-                                        <span class="tag">@Humanize(variant.Label)</span>
+                                        <span class="tag">@Humanize(tag)</span>
                                     }
-                                    else
-                                    {
-                                        @foreach (var tag in variant.Tags)
-                                        {
-                                            <span class="tag">@Humanize(tag)</span>
-                                        }
-                                    }
-                                </span>
-                            </div>
-                        }
-                    </div>
-                }
-            </article>
-        }
+                                }
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+        </article>
     </section>
 </section>
 
@@ -183,9 +175,4 @@
 
 @functions {
     private static string Humanize(string value) => WordDetailJsonReader.Humanize(value);
-
-    private static bool ShouldShowGenericVariants(WordDetailViewModel model)
-    {
-        return model.WordClassConfig == null || model.WordClassConfig.SlotGroups.Length == 0;
-    }
 }

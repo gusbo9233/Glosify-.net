@@ -5,7 +5,9 @@ namespace Glosify.Models.Entities
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
-        public Guid? FolderId { get; set; }
+        public Guid? CollectionId { get; set; }
+
+        public Collection? Collection { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public bool IsSongQuiz { get; set; }
         public string ProcessingStatus { get; set; } = string.Empty;

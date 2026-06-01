@@ -28,9 +28,13 @@ public class AccountController : Controller
     {
         if (!string.IsNullOrWhiteSpace(externalLoginError))
         {
+            var externalLoginMessage = string.Equals(externalLoginError, "Google", StringComparison.OrdinalIgnoreCase)
+                ? "Google login failed. Check the local Google OAuth client ID and client secret, then try again."
+                : $"{externalLoginError} login failed. Check the local OAuth client ID and client secret, then try again.";
+
             ModelState.AddModelError(
                 string.Empty,
-                "Google login failed. Check the local Google OAuth client ID and client secret, then try again.");
+                externalLoginMessage);
         }
 
         await SetLoginViewDataAsync(returnUrl);
@@ -120,7 +124,31 @@ public class AccountController : Controller
             return LocalRedirect(returnUrl ?? "/");
 
         // First time — create the user
-        var email = info.Principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? string.Empty;
+        var email = GetExternalLoginEmail(info);
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            ModelState.AddModelError(string.Empty, $"{info.ProviderDisplayName ?? info.LoginProvider} did not provide an email address.");
+            await SetLoginViewDataAsync(returnUrl);
+            return View("Login", new LoginViewModel());
+        }
+
+        var existingUser = await _userManager.FindByEmailAsync(email);
+        if (existingUser != null)
+        {
+            var addLoginResult = await _userManager.AddLoginAsync(existingUser, info);
+            if (addLoginResult.Succeeded)
+            {
+                await _signInManager.SignInAsync(existingUser, isPersistent: false);
+                return LocalRedirect(returnUrl ?? "/");
+            }
+
+            foreach (var error in addLoginResult.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+
+            await SetLoginViewDataAsync(returnUrl);
+            return View("Login", new LoginViewModel());
+        }
+
         var user = new ApplicationUser { UserName = email, Email = email };
         var createResult = await _userManager.CreateAsync(user);
         if (createResult.Succeeded)
@@ -133,7 +161,8 @@ public class AccountController : Controller
         foreach (var error in createResult.Errors)
             ModelState.AddModelError(string.Empty, error.Description);
 
-        return RedirectToAction("Login");
+        await SetLoginViewDataAsync(returnUrl);
+        return View("Login", new LoginViewModel());
     }
 
     [HttpGet]
@@ -146,11 +175,21 @@ public class AccountController : Controller
     {
         ViewData["ReturnUrl"] = returnUrl;
         ViewData["GoogleLoginEnabled"] = await IsExternalLoginProviderConfigured("Google");
+        ViewData["MicrosoftLoginEnabled"] = await IsExternalLoginProviderConfigured("Microsoft");
     }
 
     private async Task<bool> IsExternalLoginProviderConfigured(string provider)
     {
         var schemes = await _schemeProvider.GetAllSchemesAsync();
         return schemes.Any(scheme => string.Equals(scheme.Name, provider, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string GetExternalLoginEmail(ExternalLoginInfo info)
+    {
+        return info.Principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+            ?? info.Principal.FindFirst("email")?.Value
+            ?? info.Principal.FindFirst("preferred_username")?.Value
+            ?? info.Principal.FindFirst("upn")?.Value
+            ?? string.Empty;
     }
 }

@@ -47,13 +47,27 @@ public class QuizService : IQuizService
         return await query.ToListAsync();
     }
 
-    public async Task<Quiz> CreateQuizAsync(string name, string sourceLanguage, string targetLanguage, string userId)
+    public async Task<Quiz> CreateQuizAsync(string name, string sourceLanguage, string targetLanguage, string userId, Guid? collectionId = null)
     {
+        if (collectionId.HasValue)
+        {
+            var collectionExists = await _context.Collections.AnyAsync(c =>
+                c.Id == collectionId.Value
+                && c.UserId == userId
+                && c.Language == targetLanguage);
+
+            if (!collectionExists)
+            {
+                throw new InvalidOperationException("Collection not found for this user and language.");
+            }
+        }
+
         var quiz = new Quiz
         {
             Id = Guid.NewGuid(),
             Name = name,
             UserId = userId,
+            CollectionId = collectionId,
             SourceLanguage = sourceLanguage,
             TargetLanguage = targetLanguage,
             Language = targetLanguage,
@@ -87,6 +101,7 @@ public class QuizService : IQuizService
 
         return quiz;
     }
+
 
     public async Task<bool> UserOwnsQuizAsync(Guid quizId, string userId)
     {

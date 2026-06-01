@@ -15,4 +15,6 @@ public sealed class CreateQuizInput
     [Required(ErrorMessage = "Target language is required.")]
     [StringLength(64, MinimumLength = 1)]
     public string TargetLanguage { get; set; } = string.Empty;
+
+    public Guid? CollectionId { get; set; }
 }

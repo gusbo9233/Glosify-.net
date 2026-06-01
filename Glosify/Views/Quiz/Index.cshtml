@@ -1,25 +1,60 @@
-@model IEnumerable<Quiz>
-@inject Glosify.Services.ILanguageContext LangContext
+@model QuizIndexViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = "Select Quiz";
     ViewData["ActiveNav"] = "quizzes";
-    var currentLanguage = LangContext.CurrentLanguage ?? "";
+
+    var currentLanguage = Model.CurrentLanguage;
+    var currentCollection = Model.CurrentCollection;
+    var currentCollectionId = currentCollection?.Id;
+    var childCollections = Model.Collections.Where(collection => collection.ParentCollectionId == currentCollectionId).ToList();
+    var visibleQuizzes = Model.Quizzes.Where(quiz => quiz.CollectionId == currentCollectionId).ToList();
+    var pageTitle = currentCollection?.Name ?? "Select a quiz";
+    var pageSubtitle = currentCollection == null
+        ? $"Showing your {currentLanguage} quizzes."
+        : $"{currentLanguage} collection.";
 }
 
-
-
-<section class="select-quiz-page">
+<section class="select-quiz-page" data-quiz-library data-move-quiz-url="@Url.Action("MoveQuizToCollection", "Quiz")">
     <header class="select-header">
         <div>
-            <p class="select-kicker">Quiz Library · @currentLanguage</p>
-            <h1 class="select-title">Select a quiz</h1>
-            <p class="select-subtitle">Showing your @currentLanguage quizzes. <a class="language-change-link" asp-controller="Languages" asp-action="Index">Change language</a></p>
+            <p class="select-kicker">Quiz Library - @currentLanguage</p>
+            <h1 class="select-title">@pageTitle</h1>
+            <p class="select-subtitle">
+                @pageSubtitle
+                @if (currentCollection == null)
+                {
+                    <a class="language-change-link" asp-controller="Languages" asp-action="Index">Change language</a>
+                }
+            </p>
         </div>
-        <button class="btn-new-quiz" type="button" onclick="document.getElementById('createModal').classList.add('open')">
-            <span class="material-symbols-outlined">add</span>
-            New Quiz
-        </button>
+        <div class="select-actions">
+            @if (currentCollection != null)
+            {
+                if (Model.ParentCollection != null)
+                {
+                    <a class="btn-new-quiz btn-back-library" asp-controller="Quiz" asp-action="Collection" asp-route-id="@Model.ParentCollection.Id">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                        Back
+                    </a>
+                }
+                else
+                {
+                    <a class="btn-new-quiz btn-back-library" asp-controller="Quiz" asp-action="Index">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                        Back
+                    </a>
+                }
+            }
+            <button class="btn-new-quiz btn-secondary-action" type="button" onclick="document.getElementById('createCollectionModal').classList.add('open')">
+                <span class="material-symbols-outlined">create_new_folder</span>
+                New Collection
+            </button>
+            <button class="btn-new-quiz" type="button" onclick="document.getElementById('createModal').classList.add('open')">
+                <span class="material-symbols-outlined">add</span>
+                New Quiz
+            </button>
+        </div>
     </header>
 
     @if (TempData["QuizMessage"] is string quizMessage)
@@ -27,54 +62,230 @@
         <div class="page-message">@quizMessage</div>
     }
 
-    @if (Model.Any())
+    @if (childCollections.Any())
     {
-        <div class="quiz-grid">
-            @foreach (var quiz in Model)
-            {
-                <article class="quiz-card">
-                    <a class="quiz-card-link" asp-controller="Quiz" asp-action="Details" asp-route-id="@quiz.Id">
-                        <div class="quiz-card-top">
-                            <div class="quiz-icon"><span class="material-symbols-outlined">quiz</span></div>
-                            <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
+        <section class="library-section" aria-labelledby="collectionsHeading">
+            <div class="library-section-header">
+                <h2 id="collectionsHeading">Collections</h2>
+                <span>@childCollections.Count</span>
+            </div>
+            <div class="quiz-grid">
+                @foreach (var collection in childCollections)
+                {
+                    var childCollectionCount = Model.Collections.Count(child => child.ParentCollectionId == collection.Id);
+                    var quizCount = Model.Quizzes.Count(quiz => quiz.CollectionId == collection.Id);
+
+                    <article class="quiz-card collection-card"
+                             data-collection-drop-target
+                             data-collection-id="@collection.Id"
+                             aria-label="Drop quizzes into @collection.Name">
+                        <a class="quiz-card-link" asp-controller="Quiz" asp-action="Collection" asp-route-id="@collection.Id">
+                            <div class="quiz-card-top">
+                                <div class="quiz-icon collection-icon"><span class="material-symbols-outlined">folder</span></div>
+                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
+                            </div>
+                            <h2 class="quiz-name">@collection.Name</h2>
+                            <p class="quiz-languages">@collection.Language</p>
+                        </a>
+                        <div class="quiz-meta">
+                            <span>@collection.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="status-pill">@quizCount quizzes / @childCollectionCount nested</span>
                         </div>
-                        <h2 class="quiz-name">@quiz.Name</h2>
-                        <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
-                    </a>
-                    <div class="quiz-meta">
-                        <span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
-                        <span class="status-pill">@quiz.ProcessingStatus</span>
-                    </div>
-                    <form class="delete-form" method="post" asp-controller="Quiz" asp-action="DeleteQuiz" asp-route-id="@quiz.Id" onsubmit="return confirm('Delete this quiz and all of its words?');">
-                        @Html.AntiForgeryToken()
-                        <button class="btn-delete" type="submit" aria-label="Delete @quiz.Name">
-                            <span class="material-symbols-outlined">delete</span>
-                            Delete
-                        </button>
-                    </form>
-                </article>
-            }
-        </div>
+                    </article>
+                }
+            </div>
+        </section>
     }
-    else
+
+    @if (visibleQuizzes.Any())
+    {
+        <section class="library-section" aria-labelledby="quizzesHeading">
+            <div class="library-section-header">
+                <h2 id="quizzesHeading">Quizzes</h2>
+                <span>@visibleQuizzes.Count</span>
+            </div>
+            <div class="quiz-grid">
+                @foreach (var quiz in visibleQuizzes)
+                {
+                    <article class="quiz-card"
+                             draggable="true"
+                             data-quiz-card
+                             data-quiz-id="@quiz.Id">
+                        <a class="quiz-card-link" draggable="false" asp-controller="Quiz" asp-action="Details" asp-route-id="@quiz.Id">
+                            <div class="quiz-card-top">
+                                <div class="quiz-icon"><span class="material-symbols-outlined">quiz</span></div>
+                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
+                            </div>
+                            <h2 class="quiz-name">@quiz.Name</h2>
+                            <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
+                        </a>
+                        <div class="quiz-meta">
+                            <span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="status-pill">@quiz.ProcessingStatus</span>
+                        </div>
+                        <form class="delete-form" method="post" asp-controller="Quiz" asp-action="DeleteQuiz" asp-route-id="@quiz.Id" onsubmit="return confirm('Delete this quiz and all of its words?');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-delete" type="submit" aria-label="Delete @quiz.Name">
+                                <span class="material-symbols-outlined">delete</span>
+                                Delete
+                            </button>
+                        </form>
+                    </article>
+                }
+            </div>
+        </section>
+    }
+    else if (!childCollections.Any())
     {
         <div class="empty-state">
             <div class="empty-icon"><span class="material-symbols-outlined">library_add</span></div>
-            <h2 class="empty-title">No quizzes yet</h2>
-            <p class="empty-copy">Create your first quiz to start building a vocabulary set.</p>
-            <button class="btn-new-quiz" type="button" onclick="document.getElementById('createModal').classList.add('open')">
-                <span class="material-symbols-outlined">add</span>
-                Create Quiz
-            </button>
+            <h2 class="empty-title">No quizzes or collections yet</h2>
+            <p class="empty-copy">Create a collection to organize your vocabulary, or create your first quiz.</p>
+            <div class="empty-actions">
+                <button class="btn-new-quiz btn-secondary-action" type="button" onclick="document.getElementById('createCollectionModal').classList.add('open')">
+                    <span class="material-symbols-outlined">create_new_folder</span>
+                    Create Collection
+                </button>
+                <button class="btn-new-quiz" type="button" onclick="document.getElementById('createModal').classList.add('open')">
+                    <span class="material-symbols-outlined">add</span>
+                    Create Quiz
+                </button>
+            </div>
         </div>
     }
 </section>
+
+<div class="modal-backdrop" id="createCollectionModal" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal">
+        <h2 class="modal-title">Create New Collection</h2>
+        <form method="post" asp-controller="Quiz" asp-action="CreateCollection">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label class="form-label">Collection Name</label>
+                <input class="form-input" type="text" name="Name" placeholder="e.g. Travel phrases" required />
+            </div>
+            <input type="hidden" name="ParentCollectionId" value="@currentCollectionId" />
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('createCollectionModal').classList.remove('open')">Cancel</button>
+                <button type="submit" class="btn-create">Create Collection</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const library = document.querySelector('[data-quiz-library]');
+            if (!library) {
+                return;
+            }
+
+            const moveUrl = library.dataset.moveQuizUrl;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            const quizCards = library.querySelectorAll('[data-quiz-card]');
+            const dropTargets = library.querySelectorAll('[data-collection-drop-target]');
+
+            const createDragImage = (card) => {
+                const title = card.querySelector('.quiz-name')?.textContent?.trim() || 'Quiz';
+                const meta = card.querySelector('.quiz-languages')?.textContent?.trim() || '';
+                const dragImage = document.createElement('div');
+                dragImage.className = 'quiz-drag-preview';
+                dragImage.innerHTML = `
+                    <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
+                    <span class="quiz-drag-preview-text">
+                        <strong></strong>
+                        <small></small>
+                    </span>
+                `;
+                dragImage.querySelector('strong').textContent = title;
+                dragImage.querySelector('small').textContent = meta;
+                document.body.appendChild(dragImage);
+                return dragImage;
+            };
+
+            quizCards.forEach((card) => {
+                card.addEventListener('dragstart', (event) => {
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', card.dataset.quizId);
+                    const dragImage = createDragImage(card);
+                    event.dataTransfer.setDragImage(dragImage, 24, 24);
+                    window.setTimeout(() => dragImage.remove(), 0);
+                    card.classList.add('is-dragging');
+                    library.classList.add('is-dragging-quiz');
+                });
+
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('is-dragging');
+                    library.classList.remove('is-dragging-quiz');
+                    dropTargets.forEach((target) => target.classList.remove('is-drop-target'));
+                });
+            });
+
+            dropTargets.forEach((target) => {
+                target.addEventListener('dragover', (event) => {
+                    if (!Array.from(event.dataTransfer.types).includes('text/plain')) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'move';
+                    target.classList.add('is-drop-target');
+                });
+
+                target.addEventListener('dragleave', () => {
+                    target.classList.remove('is-drop-target');
+                });
+
+                target.addEventListener('drop', async (event) => {
+                    event.preventDefault();
+                    target.classList.remove('is-drop-target');
+
+                    const quizId = event.dataTransfer.getData('text/plain');
+                    const collectionId = target.dataset.collectionId;
+                    if (!quizId || !collectionId || !moveUrl) {
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('quizId', quizId);
+                    formData.append('collectionId', collectionId);
+                    if (token) {
+                        formData.append('__RequestVerificationToken', token);
+                    }
+
+                    target.classList.add('is-drop-saving');
+
+                    const response = await fetch(moveUrl, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (response.ok) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    target.classList.remove('is-drop-saving');
+                    const pageMessage = document.querySelector('.page-message');
+                    if (pageMessage) {
+                        pageMessage.textContent = 'Could not move that quiz.';
+                    }
+                });
+            });
+        })();
+    </script>
+}
 
 <div class="modal-backdrop" id="createModal" onclick="if(event.target===this)this.classList.remove('open')">
     <div class="modal">
         <h2 class="modal-title">Create New Quiz</h2>
         <form method="post" asp-controller="Quiz" asp-action="Create">
             @Html.AntiForgeryToken()
+            <input type="hidden" name="CollectionId" value="@currentCollectionId" />
             <div class="form-group">
                 <label class="form-label">Quiz Name</label>
                 <input class="form-input" type="text" name="Name" placeholder="e.g. French Basics" required />
@@ -92,7 +303,6 @@
                 <input type="hidden" name="TargetLanguage" value="@currentLanguage" />
                 <div class="form-input target-language-display">
                     <span>@currentLanguage</span>
-                    <a class="language-change-link language-change-link-sm" asp-controller="Languages" asp-action="Index">Change</a>
                 </div>
             </div>
             <div class="modal-actions">

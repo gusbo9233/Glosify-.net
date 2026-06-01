@@ -1,5 +1,14 @@
 namespace Glosify.Models.ViewModels
 {
+    public class QuizIndexViewModel
+    {
+        public IReadOnlyList<Quiz> Quizzes { get; set; } = [];
+        public IReadOnlyList<Collection> Collections { get; set; } = [];
+        public Collection? CurrentCollection { get; set; }
+        public Collection? ParentCollection { get; set; }
+        public string CurrentLanguage { get; set; } = string.Empty;
+    }
+
     public class QuizWorkspaceViewModel
     {
         public Quiz SelectedQuiz { get; set; } = null!;

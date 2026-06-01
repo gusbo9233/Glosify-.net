@@ -22,6 +22,8 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<AssistantThread> AssistantThreads { get; set; }
     public DbSet<AssistantMessage> AssistantMessages { get; set; }
 
+    public DbSet<Collection> Collections { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -29,13 +31,29 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Quiz>(entity =>
         {
             entity.HasKey(q => q.Id);
+
+            entity.Property(q => q.Name).HasMaxLength(160).IsRequired();
             entity.Property(q => q.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(q => q.SourceLanguage).HasMaxLength(64).IsRequired();
+            entity.Property(q => q.TargetLanguage).HasMaxLength(64).IsRequired();
+            entity.Property(q => q.Language).HasMaxLength(64);
+            entity.Property(q => q.ProcessingStatus).HasMaxLength(64);
+            entity.Property(q => q.ProcessingMessage).HasMaxLength(512);
+
             entity.HasIndex(q => q.UserId);
+            entity.HasIndex(q => q.CollectionId);
+
             entity.HasOne<ApplicationUser>()
                 .WithMany()
                 .HasForeignKey(q => q.UserId)
                 .HasConstraintName("FK_Quizzes_AspNetUsers_UserId")
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(q => q.Collection)
+                .WithMany(c => c.Quizzes)
+                .HasForeignKey(q => q.CollectionId)
+                .HasConstraintName("FK_Quizzes_Collections_CollectionId")
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Word>(entity =>
@@ -100,6 +118,25 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(m => m.ThreadId)
                 .HasConstraintName("FK_AssistantMessages_AssistantThreads_ThreadId")
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Collection>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(c => c.Name).HasMaxLength(160).IsRequired();
+
+            entity.HasIndex(c => new { c.UserId, c.ParentCollectionId, c.Name });
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(c => c.ParentCollection)
+                .WithMany(c => c.ChildCollections)
+                .HasForeignKey(c => c.ParentCollectionId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

@@ -1,5 +1,6 @@
 using Glosify.Models;
 using Glosify.Services;
+using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,6 +10,7 @@ namespace Glosify.Controllers;
 public class QuizController : Controller
 {
     private readonly IQuizService _quizService;
+    private readonly ICollectionService _collectionService;
     private readonly IWordService _wordService;
     private readonly IQuizRepairService _quizRepairService;
     private readonly IGeneratedVocabularyService _generatedVocabularyService;
@@ -18,6 +20,7 @@ public class QuizController : Controller
 
     public QuizController(
         IQuizService quizService,
+        ICollectionService collectionService,
         IWordService wordService,
         IQuizRepairService quizRepairService,
         IGeneratedVocabularyService generatedVocabularyService,
@@ -26,6 +29,7 @@ public class QuizController : Controller
         ILogger<QuizController> logger)
     {
         _quizService = quizService;
+        _collectionService = collectionService;
         _wordService = wordService;
         _quizRepairService = quizRepairService;
         _generatedVocabularyService = generatedVocabularyService;
@@ -40,8 +44,24 @@ public class QuizController : Controller
         if (_languageContext.CurrentLanguage == null)
             return RedirectToAction("Index", "Languages");
 
-        var quizzes = await _quizService.GetUserQuizzesAsync(userId);
-        return View(quizzes);
+        var language = _languageContext.CurrentLanguage;
+        return View(await BuildQuizIndexViewModelAsync(userId, language, null));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Collection(Guid id)
+    {
+        var userId = User.GetUserId();
+
+        var language = _languageContext.CurrentLanguage;
+        if (language == null)
+            return RedirectToAction("Index", "Languages");
+
+        var collection = await _collectionService.GetCollectionAsync(id, userId);
+        if (collection == null || !string.Equals(collection.Language, language, StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction(nameof(Index));
+
+        return View(nameof(Index), await BuildQuizIndexViewModelAsync(userId, language, collection));
     }
 
     [HttpGet]
@@ -278,11 +298,53 @@ public class QuizController : Controller
         if (!ModelState.IsValid)
         {
             TempData["QuizMessage"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-            return RedirectToAction(nameof(Index));
+            return RedirectToLibrary(input.CollectionId);
         }
 
-        var quiz = await _quizService.CreateQuizAsync(input.Name, input.SourceLanguage, language, userId);
+        var quiz = await _quizService.CreateQuizAsync(input.Name, input.SourceLanguage, language, userId, input.CollectionId);
         return RedirectToAction(nameof(Details), new { id = quiz.Id });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateCollection(CreateCollectionInput input)
+    {
+        var userId = User.GetUserId();
+
+        var language = _languageContext.CurrentLanguage;
+        if (language == null)
+            return RedirectToAction("Index", "Languages");
+
+        if (!ModelState.IsValid)
+        {
+            TempData["QuizMessage"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            return RedirectToLibrary(input.ParentCollectionId);
+        }
+
+        try
+        {
+            var collection = await _collectionService.CreateCollectionAsync(input.Name, language, userId, input.ParentCollectionId);
+            TempData["QuizMessage"] = $"Created collection {collection.Name}.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            TempData["QuizMessage"] = ex.Message;
+        }
+
+        return RedirectToLibrary(input.ParentCollectionId);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> MoveQuizToCollection(Guid quizId, Guid? collectionId)
+    {
+        var userId = User.GetUserId();
+
+        var moved = await _collectionService.MoveQuizToCollectionAsync(quizId, collectionId, userId);
+        if (!moved)
+        {
+            return BadRequest(new { error = "Could not move quiz to that collection." });
+        }
+
+        return Json(new { message = "Quiz moved." });
     }
 
     [HttpGet]
@@ -349,5 +411,33 @@ public class QuizController : Controller
     {
         return Request.Headers.Accept.Any(value => value?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
             || string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<QuizIndexViewModel> BuildQuizIndexViewModelAsync(string userId, string language, Collection? currentCollection)
+    {
+        var quizzes = await _quizService.GetUserQuizzesAsync(userId);
+        var collections = await _collectionService.GetCollectionsAsync(userId, language);
+        Collection? parentCollection = null;
+
+        if (currentCollection?.ParentCollectionId is Guid parentCollectionId)
+        {
+            parentCollection = collections.FirstOrDefault(collection => collection.Id == parentCollectionId);
+        }
+
+        return new QuizIndexViewModel
+        {
+            Quizzes = quizzes,
+            Collections = collections,
+            CurrentCollection = currentCollection,
+            ParentCollection = parentCollection,
+            CurrentLanguage = language
+        };
+    }
+
+    private IActionResult RedirectToLibrary(Guid? collectionId)
+    {
+        return collectionId.HasValue
+            ? RedirectToAction(nameof(Collection), new { id = collectionId.Value })
+            : RedirectToAction(nameof(Index));
     }
 }
