@@ -3857,6 +3857,7 @@ body { margin: 0; }
 .assistant-popover {
     width: min(420px, calc(100vw - 32px));
     max-height: min(680px, calc(100vh - 112px));
+    overflow: hidden;
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
 }
 
@@ -3868,6 +3869,7 @@ body { margin: 0; }
     display: flex;
     flex-direction: column;
     gap: 14px;
+    min-height: 0;
 }
 
 .assistant-popover-header {
@@ -3910,11 +3912,13 @@ body { margin: 0; }
 .assistant-transcript {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
     gap: 14px;
     min-height: 220px;
     max-height: min(360px, calc(100vh - 360px));
     overflow-y: auto;
     padding: 4px;
+    -webkit-overflow-scrolling: touch;
 }
 
 .assistant-empty {
@@ -4042,6 +4046,7 @@ body { margin: 0; }
 
 .assistant-input {
     display: flex;
+    flex: 0 0 auto;
     flex-direction: column;
     gap: 10px;
 }
@@ -4075,7 +4080,7 @@ body { margin: 0; }
 @media (max-width: 720px) {
     .assistant-float {
         right: 16px;
-        bottom: 86px;
+        bottom: calc(86px + env(safe-area-inset-bottom));
     }
 
     .assistant-popover {
@@ -4093,7 +4098,79 @@ body { margin: 0; }
         padding: 0;
     }
 
+    .assistant-float.is-open {
+        top: 64px;
+        right: 12px;
+        bottom: calc(84px + env(safe-area-inset-bottom));
+        left: 12px;
+        align-items: stretch;
+        gap: 0;
+    }
+
+    .assistant-float.is-open .assistant-fab {
+        display: none;
+    }
+
+    .assistant-float.is-open .assistant-popover {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        padding: 16px;
+    }
+
     .assistant-transcript {
+        min-height: 0;
         max-height: calc(100vh - 392px);
+    }
+
+    .assistant-float.is-open .assistant-transcript {
+        max-height: none;
+    }
+
+    .assistant-input {
+        padding-top: 10px;
+        border-top: 1px solid rgba(61, 74, 61, 0.42);
+    }
+
+    .assistant-input .scan-toolbar {
+        margin-bottom: 0;
+    }
+
+    .assistant-input .form-textarea {
+        min-height: 92px;
+        max-height: 24vh;
+        resize: none;
+    }
+
+    .assistant-input-actions .btn-submit {
+        width: 100%;
+    }
+}
+
+@supports (height: 100dvh) {
+    .assistant-popover {
+        max-height: min(680px, calc(100dvh - 112px));
+    }
+
+    .assistant-transcript {
+        max-height: min(360px, calc(100dvh - 360px));
+    }
+
+    @media (max-width: 720px) {
+        .assistant-popover {
+            max-height: calc(100dvh - 132px);
+        }
+
+        .assistant-transcript {
+            max-height: calc(100dvh - 392px);
+        }
+
+        .assistant-float.is-open .assistant-transcript {
+            max-height: none;
+        }
+
+        .assistant-input .form-textarea {
+            max-height: 24dvh;
+        }
     }
 }
