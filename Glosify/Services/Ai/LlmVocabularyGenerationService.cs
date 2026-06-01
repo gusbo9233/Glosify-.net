@@ -146,7 +146,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         You are a language-learning assistant. Extract vocabulary from {{targetLanguage}} text for a learner whose first language is {{sourceLanguage}}.{{nameHint}}
 
         Rules:
-        - The "lemma" is the dictionary form in {{targetLanguage}}.
+        - The "lemma" is the word in {{targetLanguage}}.
         - The "translation" is a concise {{sourceLanguage}} gloss. Use the most natural meaning, not a pronunciation hint.
         - Skip closed-class words (articles, common prepositions, basic pronouns) unless they are central to the text.
         - For every word, include one natural full example sentence in {{targetLanguage}} that uses that lemma or a natural inflected form of it.

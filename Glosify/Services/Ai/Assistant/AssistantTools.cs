@@ -35,7 +35,7 @@ public sealed class AssistantTools : IAssistantTools
             "Propose adding a new word to the quiz. Include a natural full example sentence and translation when possible. The change is queued; it is only saved when the user clicks Apply.",
             BuildSchema(new Dictionary<string, object>
             {
-                ["lemma"] = StringProp("Dictionary form of the word in the target language."),
+                ["lemma"] = StringProp("Word in the target language."),
                 ["translation"] = StringProp("Translation in the user's source language."),
                 ["example_sentence"] = StringProp("Optional. Natural full sentence in the target language using the word's lemma or an inflected form. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
                 ["example_sentence_translation"] = StringProp("Optional. Natural source-language translation of the example sentence."),
