@@ -39,6 +39,9 @@ public sealed class ChangeApplier : IChangeApplier
                 case PendingChangeKinds.AddWord:
                     applied += await ApplyAddWordAsync(change.Payload, quiz, cancellationToken) ? 1 : 0;
                     break;
+                case PendingChangeKinds.AddSentence:
+                    applied += await ApplyAddSentenceAsync(change.Payload, quiz, cancellationToken) ? 1 : 0;
+                    break;
                 case PendingChangeKinds.EditWord:
                     applied += await ApplyEditWordAsync(change.Payload, quiz, cancellationToken) ? 1 : 0;
                     break;
@@ -93,11 +96,19 @@ public sealed class ChangeApplier : IChangeApplier
             WordDetailId = wordDetail?.Id,
         });
 
-        AddQuizSentence(
-            quiz.Id,
-            GetString(payload, "example_sentence"),
-            GetString(payload, "example_sentence_translation"));
         return true;
+    }
+
+    private async Task<bool> ApplyAddSentenceAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
+    {
+        var text = GetString(payload, "text", "sentence");
+        var translation = GetString(payload, "translation");
+        if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(translation))
+        {
+            return false;
+        }
+
+        return await AddQuizSentenceAsync(quiz.Id, text, translation, ct);
     }
 
     private async Task<bool> ApplyEditWordAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
@@ -367,15 +378,19 @@ public sealed class ChangeApplier : IChangeApplier
 
     private static bool IsEmptyJsonArray(string json) => !WordDetailJsonReader.ReadVariants(json).Any();
 
-    private void AddQuizSentence(Guid quizId, string text, string translation)
+    private async Task<bool> AddQuizSentenceAsync(Guid quizId, string text, string translation, CancellationToken ct)
     {
         var cleanText = text.Trim();
         if (string.IsNullOrWhiteSpace(cleanText)
             || _context.QuizSentences.Local.Any(sentence =>
                 sentence.QuizId == quizId
-                && string.Equals(sentence.Text, cleanText, StringComparison.OrdinalIgnoreCase)))
+                && string.Equals(sentence.Text, cleanText, StringComparison.OrdinalIgnoreCase))
+            || await _context.QuizSentences.AnyAsync(sentence =>
+                sentence.QuizId == quizId
+                && sentence.Text == cleanText,
+                ct))
         {
-            return;
+            return false;
         }
 
         _context.QuizSentences.Add(new QuizSentence
@@ -386,5 +401,6 @@ public sealed class ChangeApplier : IChangeApplier
             Translation = translation.Trim(),
             CreatedAt = DateTimeOffset.UtcNow
         });
+        return true;
     }
 }

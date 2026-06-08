@@ -33,14 +33,21 @@ public sealed class AssistantTools : IAssistantTools
 
         new(
             "add_word",
-            "Propose adding a new word to the quiz. Include a quiz-specific example sentence and translation when possible. The change is queued; it is only saved when the user clicks Apply.",
+            "Propose adding a new word or short phrase to the quiz. Do not include example sentences here; use add_sentence for standalone quiz sentences. The change is queued; it is only saved when the user clicks Apply.",
             BuildSchema(new Dictionary<string, object>
             {
                 ["word"] = StringProp("Word or short phrase in the target language. Prefer the exact form the learner should practice."),
                 ["translation"] = StringProp("Translation in the user's source language."),
-                ["example_sentence"] = StringProp("Optional. Quiz-specific sentence in the target language using the word or a natural inflected form. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
-                ["example_sentence_translation"] = StringProp("Optional. Natural source-language translation of the example sentence."),
             }, required: ["word", "translation"])),
+
+        new(
+            "add_sentence",
+            "Propose adding a standalone quiz sentence. Use this only when the user asks for sentences or pasted text already contains natural full sentences. The change is queued; it is only saved when the user clicks Apply.",
+            BuildSchema(new Dictionary<string, object>
+            {
+                ["text"] = StringProp("Natural full sentence in the target language. Do not include notes, glosses, slash alternatives, pronunciation hints, or fragments."),
+                ["translation"] = StringProp("Natural translation in the user's source language."),
+            }, required: ["text", "translation"])),
 
         new(
             "edit_word",
@@ -97,6 +104,7 @@ public sealed class AssistantTools : IAssistantTools
             "list_words" => await ListWordsAsync(context, cancellationToken),
             "get_word" => await GetWordAsync(args, context, cancellationToken),
             "add_word" => QueueAddWord(args, context),
+            "add_sentence" => QueueAddSentence(args, context),
             "edit_word" => QueueEditWord(args, context),
             "delete_word" => QueueDeleteWord(args, context),
             "set_word_detail" => QueueSetWordDetail(args, context),
@@ -163,12 +171,30 @@ public sealed class AssistantTools : IAssistantTools
             kind = PendingChangeKinds.AddWord,
             word = word.Trim(),
             translation = translation.Trim(),
-            example_sentence = GetString(args, "example_sentence")?.Trim() ?? string.Empty,
-            example_sentence_translation = GetString(args, "example_sentence_translation")?.Trim() ?? string.Empty,
         }, JsonOptions);
 
         context.PendingChanges.Add(new PendingChange(PendingChangeKinds.AddWord, payload));
         return new { queued = true, kind = PendingChangeKinds.AddWord, word };
+    }
+
+    private static object QueueAddSentence(JsonElement args, AgentToolContext context)
+    {
+        var text = GetString(args, "text") ?? GetString(args, "sentence");
+        var translation = GetString(args, "translation");
+        if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(translation))
+        {
+            return new { error = "text and translation are required." };
+        }
+
+        var payload = JsonSerializer.SerializeToElement(new
+        {
+            kind = PendingChangeKinds.AddSentence,
+            text = text.Trim(),
+            translation = translation.Trim(),
+        }, JsonOptions);
+
+        context.PendingChanges.Add(new PendingChange(PendingChangeKinds.AddSentence, payload));
+        return new { queued = true, kind = PendingChangeKinds.AddSentence };
     }
 
     private static object QueueEditWord(JsonElement args, AgentToolContext context)
