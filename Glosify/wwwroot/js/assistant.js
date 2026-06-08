@@ -17,9 +17,21 @@
     const submit = panel.querySelector('[data-assistant-submit]');
     const imageInput = panel.querySelector('[data-assistant-image-input]');
     const scanStatus = panel.querySelector('[data-assistant-scan-status]');
+    const modelSelect = panel.querySelector('[data-assistant-model-select]');
     const tokenInput = panel.querySelector('input[name="__RequestVerificationToken"]')
         || document.querySelector('input[name="__RequestVerificationToken"]');
     let historyLoaded = false;
+    const modelStorageKey = 'glosify.assistant.model';
+
+    if (modelSelect) {
+        const storedModel = localStorage.getItem(modelStorageKey);
+        if (storedModel && Array.from(modelSelect.options).some(option => option.value === storedModel)) {
+            modelSelect.value = storedModel;
+        }
+        modelSelect.addEventListener('change', () => {
+            localStorage.setItem(modelStorageKey, modelSelect.value);
+        });
+    }
 
     const escapeHtml = (text) => {
         const div = document.createElement('div');
@@ -285,7 +297,7 @@
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': tokenInput?.value ?? '',
                 },
-                body: JSON.stringify({ message, focusedWordId }),
+                body: JSON.stringify({ message, focusedWordId, model: modelSelect?.value || null }),
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {

@@ -95,9 +95,11 @@ public sealed class GeminiClient : IGeminiClient
         AgentRequest request,
         CancellationToken cancellationToken = default)
     {
-        var assistantModel = string.IsNullOrWhiteSpace(_options.AssistantModel)
-            ? _options.StructuredModel
-            : _options.AssistantModel;
+        var assistantModel = string.IsNullOrWhiteSpace(request.Model)
+            ? string.IsNullOrWhiteSpace(_options.AssistantModel)
+                ? _options.StructuredModel
+                : _options.AssistantModel
+            : request.Model;
         var generativeModel = GetModel(assistantModel, jsonMode: false);
 
         var contents = request.History.Select(BuildContent).ToList();

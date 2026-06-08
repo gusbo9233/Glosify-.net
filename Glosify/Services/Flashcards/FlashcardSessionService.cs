@@ -58,10 +58,13 @@ public class FlashcardSessionService : IFlashcardSessionService
         if (session.CurrentIndex >= session.Cards.Count)
             return;
 
+        var currentCard = session.Cards[session.CurrentIndex];
+
         switch (rating?.Trim().ToLowerInvariant())
         {
             case "again":
                 session.AgainCount++;
+                session.AgainCards.Add(currentCard);
                 break;
             case "skip":
                 session.SkippedCount++;
@@ -81,4 +84,16 @@ public class FlashcardSessionService : IFlashcardSessionService
     }
 
     private static string CacheKey(string sessionId) => $"flashcard-quiz:{sessionId}";
+
+    public FlashcardSessionData RestartWithAgainCards(FlashcardSessionData session)
+    {
+       return StartSession(
+       session.UserId,
+       session.QuizId,
+       session.QuizName,
+       session.SourceLanguage,
+       session.TargetLanguage,
+       session.AgainCards.Count,
+       session.AgainCards);
+    }
 }

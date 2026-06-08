@@ -8,7 +8,8 @@ public sealed record AgentToolDeclaration(
 public sealed record AgentRequest(
     string SystemInstruction,
     IReadOnlyList<AgentTurn> History,
-    IReadOnlyList<AgentToolDeclaration> Tools);
+    IReadOnlyList<AgentToolDeclaration> Tools,
+    string? Model = null);
 
 public sealed record AgentTurn(string Role, string ContentJson);
 

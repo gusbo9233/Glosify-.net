@@ -140,4 +140,26 @@ public class FlashcardQuizController : Controller
             ProgressPercent = totalCards == 0 ? 0 : (int)Math.Round(completedCards * 100d / totalCards)
         };
     }
+
+    public IActionResult RestartAgain(string sessionId)
+    {
+        var userId = User.GetUserId();
+        var session = _sessionService.FindSession(sessionId, userId);
+        if (session == null || session.AgainCards.Count == 0)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        var restarted = _sessionService.StartSession(
+            userId,
+            session.QuizId,
+            session.QuizName,
+            session.SourceLanguage,
+            session.TargetLanguage,
+            session.AgainCards.Count,
+            session.AgainCards);
+
+        _sessionService.SaveSession(restarted);
+        return FlashcardResponse(restarted);
+    }
 }

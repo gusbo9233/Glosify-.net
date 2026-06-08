@@ -24,6 +24,8 @@ public record FlashcardSessionData
     public int SkippedCount { get; set; }
     public bool IsAnswerRevealed { get; set; }
     public IReadOnlyList<FlashcardCardData> Cards { get; init; } = [];
+    public List<FlashcardCardData> AgainCards { get; init; } = [];
+
 }
 
 public record FlashcardCardData

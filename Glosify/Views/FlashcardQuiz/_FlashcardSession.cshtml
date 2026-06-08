@@ -27,6 +27,15 @@
                 <input type="hidden" name="wordCount" value="@Model.WordCount" />
                 <button class="btn-main" type="submit">Restart Session</button>
             </form>
+            @if (Model.AgainCount > 0)
+            {
+                <form method="post" asp-controller="FlashcardQuiz" asp-action="RestartAgain">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                    <button class="btn-main" type="submit">Practice Incorrect Cards</button>
+                </form>
+            }
+            
         </section>
     }
     else if (Model.CurrentCard != null)

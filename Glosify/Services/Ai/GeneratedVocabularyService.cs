@@ -245,15 +245,7 @@ public class GeneratedVocabularyService : IGeneratedVocabularyService
                 || !string.Equals(trimmed, exampleSentenceTranslation.Trim(), StringComparison.OrdinalIgnoreCase));
     }
 
-    private static bool ShouldReplaceExampleSentence(
-        string word,
-        string translation,
-        string? exampleSentence,
-        string? exampleSentenceTranslation)
-    {
-        return string.IsNullOrWhiteSpace(exampleSentence)
-            || !IsUsefulExampleSentence(word, translation, exampleSentence, exampleSentenceTranslation);
-    }
+   
 
     private static bool HasLearnerNoteArtifacts(string value)
     {

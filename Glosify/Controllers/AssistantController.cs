@@ -45,6 +45,7 @@ public class AssistantController : ControllerBase
                 userId,
                 input.Message,
                 input.FocusedWordId,
+                input.Model,
                 cancellationToken);
             return Ok(response);
         }
@@ -112,5 +113,6 @@ public class AssistantController : ControllerBase
     {
         public string Message { get; set; } = string.Empty;
         public string? FocusedWordId { get; set; }
+        public string? Model { get; set; }
     }
 }

@@ -1,7 +1,12 @@
 @model Glosify.Models.ViewModels.AssistantPanelViewModel
+@inject Microsoft.Extensions.Options.IOptions<Glosify.Services.GeminiOptions> GeminiOptions
 @{
     var imageInputId = $"assistantImageInput-{Model.QuizId:N}";
     var popoverId = $"assistantPopover-{Model.QuizId:N}";
+    var currentAssistantModel = string.IsNullOrWhiteSpace(GeminiOptions.Value.AssistantModel)
+        ? GeminiOptions.Value.StructuredModel
+        : GeminiOptions.Value.AssistantModel;
+    var hasGemini35AsCurrent = string.Equals(currentAssistantModel, "gemini-3.5-flash", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="assistant-float"
@@ -47,6 +52,16 @@
                 <label class="btn-scan-text" for="@imageInputId">
                     <span class="material-symbols-outlined" aria-hidden="true">photo_camera</span>
                     Picture
+                </label>
+                <label class="assistant-model-picker">
+                    <span class="visually-hidden">Assistant model</span>
+                    <select data-assistant-model-select aria-label="Assistant model">
+                        <option value="@currentAssistantModel">Current (@currentAssistantModel)</option>
+                        @if (!hasGemini35AsCurrent)
+                        {
+                            <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                        }
+                    </select>
                 </label>
                 <input
                     id="@imageInputId"

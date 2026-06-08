@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Glosify.Services;
 
@@ -11,6 +12,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
     private readonly GlosifyContext _context;
     private readonly IGeminiClient _gemini;
+    private readonly GeminiOptions _geminiOptions;
     private readonly IAssistantTools _tools;
     private readonly IChangeApplier _changeApplier;
     private readonly ILogger<AssistantOrchestrator> _logger;
@@ -18,12 +20,14 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     public AssistantOrchestrator(
         GlosifyContext context,
         IGeminiClient gemini,
+        IOptions<GeminiOptions> geminiOptions,
         IAssistantTools tools,
         IChangeApplier changeApplier,
         ILogger<AssistantOrchestrator> logger)
     {
         _context = context;
         _gemini = gemini;
+        _geminiOptions = geminiOptions.Value;
         _tools = tools;
         _changeApplier = changeApplier;
         _logger = logger;
@@ -34,6 +38,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         string userId,
         string userMessage,
         string? focusedWordId = null,
+        string? model = null,
         CancellationToken cancellationToken = default)
     {
         var quiz = await _context.Quizzes
@@ -75,6 +80,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         };
 
         var systemInstruction = BuildSystemInstruction(quiz, focusedWord);
+        var selectedModel = ResolveAssistantModel(model);
         var toolEvents = new List<AssistantToolEvent>();
 
         AgentTurnResult? finalTurn = null;
@@ -83,7 +89,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             var agentRequest = new AgentRequest(
                 systemInstruction,
                 history.Select(MapToTurn).ToList(),
-                _tools.Declarations);
+                _tools.Declarations,
+                selectedModel);
 
             AgentTurnResult turn;
             try
@@ -187,6 +194,24 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             toolEvents,
             pendingChangeViews,
             finalMessage.Status);
+    }
+
+    private string ResolveAssistantModel(string? requestedModel)
+    {
+        var currentModel = string.IsNullOrWhiteSpace(_geminiOptions.AssistantModel)
+            ? _geminiOptions.StructuredModel
+            : _geminiOptions.AssistantModel;
+
+        if (string.IsNullOrWhiteSpace(requestedModel))
+        {
+            return currentModel;
+        }
+
+        var trimmed = requestedModel.Trim();
+        return string.Equals(trimmed, currentModel, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(trimmed, "gemini-3.5-flash", StringComparison.OrdinalIgnoreCase)
+            ? trimmed
+            : currentModel;
     }
 
     public async Task<AssistantHistory> GetHistoryAsync(

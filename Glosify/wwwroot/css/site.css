@@ -1023,6 +1023,24 @@ body {
         opacity: 0.62;
     }
 
+    .assistant-model-picker {
+        margin-left: auto;
+    }
+
+    .assistant-model-picker select {
+        min-height: 42px;
+        max-width: 210px;
+        border: 1px solid rgba(83, 224, 118, 0.24);
+        border-radius: 9999px;
+        background: var(--surface-highest);
+        color: var(--on-surface);
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        padding: 0 34px 0 14px;
+    }
+
     .btn-icon-repair {
         display: inline-flex;
         align-items: center;

@@ -7,6 +7,7 @@ public interface IAssistantOrchestrator
         string userId,
         string userMessage,
         string? focusedWordId = null,
+        string? model = null,
         CancellationToken cancellationToken = default);
 
     Task<AssistantHistory> GetHistoryAsync(
