@@ -6,9 +6,9 @@
 
 <section class="service-warmup">
     <div class="service-warmup-icon">
-        <span class="material-symbols-outlined" aria-hidden="true">hourglass_top</span>
+        <span class="material-symbols-outlined" aria-hidden="true">@(Model.IsServiceWarmup ? "hourglass_top" : "error")</span>
     </div>
-    <p class="hero-label">Temporary startup delay</p>
+    <p class="hero-label">@(Model.IsServiceWarmup ? "Temporary startup delay" : "Request failed")</p>
     <h1 class="service-warmup-title">@Model.Title</h1>
     <p class="service-warmup-message">@Model.Message</p>
 

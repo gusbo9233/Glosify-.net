@@ -130,6 +130,7 @@ builder.Services.AddScoped<IQuizRepairService, QuizRepairService>();
 builder.Services.AddScoped<IWordService, WordService>();
 builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
 builder.Services.AddScoped<ITypingQuizService, TypingQuizService>();
+builder.Services.AddScoped<ITypingSessionService, TypingSessionService>();
 builder.Services.AddSingleton<IGeminiClient, GeminiClient>();
 builder.Services.AddScoped<IVocabularyGenerationService, LlmVocabularyGenerationService>();
 builder.Services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();

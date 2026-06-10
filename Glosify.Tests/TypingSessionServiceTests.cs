@@ -1,0 +1,74 @@
+using Glosify.Services;
+using Microsoft.Extensions.Caching.Memory;
+using Xunit;
+
+namespace Glosify.Tests;
+
+public class TypingSessionServiceTests
+{
+    [Fact]
+    public void SubmitAnswer_UsesStoredSessionAnswerAndTracksProgress()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var quizService = new StubTypingQuizService();
+        var service = new TypingSessionService(cache, quizService);
+        var words = new[]
+        {
+            new TypingWordData { Id = "1", Prompt = "house", Answer = "casa" },
+            new TypingWordData { Id = "2", Prompt = "cat", Answer = "gato" }
+        };
+        var session = service.StartSession(
+            "user-1",
+            Guid.NewGuid(),
+            "Spanish",
+            "English",
+            "Spanish",
+            2,
+            words);
+
+        service.SaveSession(session);
+
+        var found = service.FindSession(session.SessionId, "user-1");
+        var result = service.SubmitAnswer(found!, "wrong");
+
+        Assert.False(result.IsCorrect);
+        Assert.Equal("casa", result.CorrectAnswer);
+        Assert.Equal("gato", result.NextWord?.Answer);
+        Assert.Equal(1, found!.CurrentIndex);
+        Assert.Equal(0, found.CorrectCount);
+        Assert.Equal(1, found.IncorrectCount);
+        Assert.Single(found.IncorrectWords);
+    }
+
+    [Fact]
+    public void FindSession_DoesNotReturnOtherUsersSession()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = new TypingSessionService(cache, new StubTypingQuizService());
+        var session = service.StartSession(
+            "user-1",
+            Guid.NewGuid(),
+            "Spanish",
+            "English",
+            "Spanish",
+            1,
+            [new TypingWordData { Id = "1", Prompt = "house", Answer = "casa" }]);
+
+        service.SaveSession(session);
+
+        Assert.Null(service.FindSession(session.SessionId, "user-2"));
+    }
+
+    private sealed class StubTypingQuizService : ITypingQuizService
+    {
+        public Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool CheckAnswer(string userAnswer, string correctAnswer)
+        {
+            return userAnswer.Trim().Equals(correctAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
+        }
+    }
+}

@@ -10,15 +10,18 @@ public class TypingQuizController : Controller
 {
     private readonly IQuizService _quizService;
     private readonly ITypingQuizService _typingQuizService;
+    private readonly ITypingSessionService _sessionService;
     private readonly ILanguageContext _languageContext;
 
     public TypingQuizController(
         IQuizService quizService,
         ITypingQuizService typingQuizService,
+        ITypingSessionService sessionService,
         ILanguageContext languageContext)
     {
         _quizService = quizService;
         _typingQuizService = typingQuizService;
+        _sessionService = sessionService;
         _languageContext = languageContext;
     }
 
@@ -32,9 +35,29 @@ public class TypingQuizController : Controller
             return View(TypingQuizViewModel.Empty());
 
         var data = await _typingQuizService.GetQuizDataAsync(selectedQuiz.Id, wordCount);
-        var showsUkrainianKeyboard = _languageContext.CurrentLanguage == "Ukrainian";
+        var session = _sessionService.StartSession(
+            userId,
+            data.QuizId,
+            data.QuizName,
+            data.SourceLanguage,
+            data.TargetLanguage,
+            wordCount,
+            data.Words);
+        _sessionService.SaveSession(session);
 
-        return View(BuildViewModel(data, wordCount, showsUkrainianKeyboard));
+        return RedirectToAction(nameof(Session), new { sessionId = session.SessionId });
+    }
+
+    [HttpGet]
+    public IActionResult Session(string sessionId)
+    {
+        var userId = User.GetUserId();
+        var session = _sessionService.FindSession(sessionId, userId);
+        if (session == null)
+            return RedirectToAction("Index", "Quiz");
+
+        var showsUkrainianKeyboard = _languageContext.CurrentLanguage == "Ukrainian";
+        return View("Index", BuildViewModel(session, showsUkrainianKeyboard));
     }
 
     [HttpPost]
@@ -43,37 +66,116 @@ public class TypingQuizController : Controller
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var isCorrect = _typingQuizService.CheckAnswer(answer.UserAnswer, answer.CorrectAnswer);
+        var userId = User.GetUserId();
+        var session = _sessionService.FindSession(answer.SessionId, userId);
+        if (session == null)
+            return NotFound(new { success = false, message = "Typing session expired." });
 
-        return Ok(new { success = true, isCorrect });
+        var result = _sessionService.SubmitAnswer(session, answer.UserAnswer);
+        _sessionService.SaveSession(session);
+
+        return Ok(new
+        {
+            success = true,
+            result.IsCorrect,
+            result.CorrectAnswer,
+            result.ExampleSentence,
+            result.ExampleTranslation,
+            session.CurrentIndex,
+            currentWordNumber = session.CurrentIndex < session.Words.Count ? session.CurrentIndex + 1 : session.Words.Count,
+            totalWords = session.Words.Count,
+            completedWords = Math.Min(session.CurrentIndex, session.Words.Count),
+            session.CorrectCount,
+            session.IncorrectCount,
+            isComplete = session.Words.Count > 0 && session.CurrentIndex >= session.Words.Count,
+            scorePercent = GetScorePercent(session),
+            progressPercent = GetProgressPercent(session),
+            nextWord = result.NextWord == null
+                ? null
+                : new
+                {
+                    id = result.NextWord.Id,
+                    prompt = result.NextWord.Prompt
+                }
+        });
     }
 
-    private static TypingQuizViewModel BuildViewModel(TypingQuizData data, int wordCount, bool showsUkrainianKeyboard)
+    [HttpPost]
+    public IActionResult Restart(Guid quizId, int wordCount)
     {
-        var words = data.Words.Select(w => new TypingQuizWordViewModel
+        return RedirectToAction(nameof(Index), new { id = quizId, wordCount });
+    }
+
+    [HttpPost]
+    public IActionResult RestartIncorrect(string sessionId)
+    {
+        var userId = User.GetUserId();
+        var session = _sessionService.FindSession(sessionId, userId);
+        if (session == null || session.IncorrectWords.Count == 0)
         {
-            Id = w.Id,
-            Prompt = w.Prompt,
-            Answer = w.Answer,
-            ExampleSentence = w.ExampleSentence,
-            ExampleTranslation = w.ExampleTranslation
-        }).ToList();
+            return RedirectToAction(nameof(Index));
+        }
+
+        var restarted = _sessionService.StartSession(
+            userId,
+            session.QuizId,
+            session.QuizName,
+            session.SourceLanguage,
+            session.TargetLanguage,
+            session.IncorrectWords.Count,
+            session.IncorrectWords);
+
+        _sessionService.SaveSession(restarted);
+
+        return RedirectToAction(nameof(Session), new { sessionId = restarted.SessionId });
+    }
+
+    private static TypingQuizViewModel BuildViewModel(TypingSessionData session, bool showsUkrainianKeyboard)
+    {
+        var totalWords = session.Words.Count;
+        var completedWords = Math.Min(session.CurrentIndex, totalWords);
+        var currentWordData = session.CurrentIndex < totalWords ? session.Words[session.CurrentIndex] : null;
+        var currentWord = currentWordData == null ? null : new TypingQuizWordViewModel
+        {
+            Id = currentWordData.Id,
+            Prompt = currentWordData.Prompt
+        };
 
         return new TypingQuizViewModel
         {
             SelectedQuiz = new Quiz
             {
-                Id = data.QuizId,
-                Name = data.QuizName,
-                SourceLanguage = data.SourceLanguage,
-                TargetLanguage = data.TargetLanguage,
-                Language = data.TargetLanguage,
+                Id = session.QuizId,
+                Name = session.QuizName,
+                SourceLanguage = session.SourceLanguage,
+                TargetLanguage = session.TargetLanguage,
+                Language = session.TargetLanguage,
                 ProcessingStatus = "Ready"
             },
-            QuizId = data.QuizId,
-            WordCount = Math.Clamp(wordCount, 1, 100),
-            Words = words,
-            ShowsUkrainianKeyboard = showsUkrainianKeyboard
+            CurrentWord = currentWord,
+            SessionId = session.SessionId,
+            QuizId = session.QuizId,
+            CurrentWordNumber = currentWord == null ? totalWords : session.CurrentIndex + 1,
+            TotalWords = totalWords,
+            CompletedWords = completedWords,
+            CorrectCount = session.CorrectCount,
+            IncorrectCount = session.IncorrectCount,
+            ScorePercent = GetScorePercent(session),
+            ProgressPercent = GetProgressPercent(session),
+            WordCount = session.WordCount,
+            ShowsUkrainianKeyboard = showsUkrainianKeyboard,
+            IsComplete = totalWords > 0 && currentWord == null
         };
+    }
+
+    private static int GetScorePercent(TypingSessionData session)
+    {
+        var answered = session.CorrectCount + session.IncorrectCount;
+        return answered == 0 ? 0 : (int)Math.Round(session.CorrectCount * 100d / answered);
+    }
+
+    private static int GetProgressPercent(TypingSessionData session)
+    {
+        return session.Words.Count == 0 ? 0 : (int)Math.Round(Math.Min(session.CurrentIndex, session.Words.Count) * 100d / session.Words.Count);
     }
 }

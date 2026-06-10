@@ -1,22 +1,17 @@
 @model TypingQuizViewModel
-@using System.Text.Json
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = "Typing Quiz";
     ViewData["ActiveNav"] = "quizzes";
 
     var quizName = Model.SelectedQuiz?.Name ?? "Typing Quiz";
-    var wordsJson = JsonSerializer.Serialize(Model.Words.Select(word => new
-    {
-        id = word.Id,
-        prompt = word.Prompt,
-        answer = word.Answer,
-        exampleSentence = word.ExampleSentence,
-        exampleTranslation = word.ExampleTranslation
-    }));
 }
 
-<section class="typing-shell" data-typing-quiz data-words="@wordsJson" data-show-ukrainian-keyboard="@Model.ShowsUkrainianKeyboard.ToString().ToLowerInvariant()">
+<section class="typing-shell"
+         data-typing-quiz
+         data-session-id="@Model.SessionId"
+         data-submit-url="@Url.Action("Submit", "TypingQuiz")"
+         data-show-ukrainian-keyboard="@Model.ShowsUkrainianKeyboard.ToString().ToLowerInvariant()">
     <header class="flash-header">
         <div>
             <p class="flash-kicker">@Model.SelectedQuiz?.SourceLanguage &rarr; @Model.SelectedQuiz?.TargetLanguage</p>
@@ -29,7 +24,7 @@
         }
     </header>
 
-    @if (!Model.Words.Any())
+    @if (Model.TotalWords == 0)
     {
         <div class="empty-state">
             <h2 class="flash-title">No words yet</h2>
@@ -41,22 +36,23 @@
     {
         <div class="progress-wrap">
             <div class="progress-meta">
-                <span class="progress-count" data-progress-count>1 of @Model.Words.Count words</span>
-                <span class="progress-count" data-accuracy>0 correct</span>
+                <span class="progress-count" data-progress-count>@Model.CurrentWordNumber of @Model.TotalWords words</span>
+                <span class="progress-count" data-accuracy>@Model.CorrectCount correct</span>
             </div>
             <div class="progress-track" aria-hidden="true">
-                <div class="progress-fill" data-progress-fill style="width:0"></div>
+                <div class="progress-fill" data-progress-fill style="width:@Model.ProgressPercent%"></div>
             </div>
         </div>
 
         <div class="typing-stage">
             <article class="typing-card" data-card>
-                <span class="card-label" data-card-label>Word 1</span>
+                <span class="card-label" data-card-label>Word @Model.CurrentWordNumber</span>
                 <p class="typing-prompt-label">Translate</p>
-                <h2 class="typing-prompt" data-prompt></h2>
+                <h2 class="typing-prompt" data-prompt>@Model.CurrentWord?.Prompt</h2>
                 <p class="typing-feedback" data-feedback aria-live="polite"></p>
 
                 <form class="typing-form" data-typing-form autocomplete="off">
+                    @Html.AntiForgeryToken()
                     <label class="visually-hidden" for="typingAnswer">Answer</label>
                     <input class="answer-input" id="typingAnswer" data-answer-input type="text" placeholder="Type your answer..." autocomplete="off" />
                     <button class="btn-check" type="submit" data-check-button>
@@ -103,15 +99,25 @@
         </div>
 
         <section class="results" data-results hidden aria-live="polite">
-            <div class="result-score" data-result-score>0%</div>
+            <div class="result-score" data-result-score>@Model.ScorePercent%</div>
             <h2 class="flash-title">Typing Complete</h2>
             <div class="result-grid">
-                <div class="result-stat"><span>Correct</span><span data-result-correct>0</span></div>
-                <div class="result-stat"><span>Incorrect</span><span data-result-incorrect>0</span></div>
-                <div class="result-stat"><span>Words</span><span>@Model.Words.Count</span></div>
+                <div class="result-stat"><span>Correct</span><span data-result-correct>@Model.CorrectCount</span></div>
+                <div class="result-stat"><span>Incorrect</span><span data-result-incorrect>@Model.IncorrectCount</span></div>
+                <div class="result-stat"><span>Words</span><span>@Model.TotalWords</span></div>
             </div>
             <div class="typing-result-actions">
-                <button class="btn-main" type="button" data-restart>Restart Session</button>
+                <form method="post" asp-controller="TypingQuiz" asp-action="Restart">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="quizId" value="@Model.QuizId" />
+                    <input type="hidden" name="wordCount" value="@Model.WordCount" />
+                    <button class="btn-main" type="submit">Restart Session</button>
+                </form>
+                <form method="post" asp-controller="TypingQuiz" asp-action="RestartIncorrect" data-practice-incorrect hidden>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="sessionId" value="@Model.SessionId" />
+                    <button class="btn-main" type="submit">Practice Incorrect Words</button>
+                </form>
                 @if (Model.SelectedQuiz != null)
                 {
                     <a asp-controller="Quiz" asp-action="Settings" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">Change settings</a>
@@ -127,14 +133,14 @@
         const shell = document.querySelector('[data-typing-quiz]');
         if (!shell) return;
 
-        const words = JSON.parse(shell.dataset.words || '[]');
-        if (!words.length) return;
-
         const state = {
-            index: 0,
-            correct: 0,
-            incorrect: 0,
-            checked: false
+            index: @Model.CompletedWords,
+            correct: @Model.CorrectCount,
+            incorrect: @Model.IncorrectCount,
+            total: @Model.TotalWords,
+            checked: false,
+            nextWord: null,
+            isComplete: @Model.IsComplete.ToString().ToLowerInvariant()
         };
 
         const form = shell.querySelector('[data-typing-form]');
@@ -151,24 +157,19 @@
         const example = shell.querySelector('[data-example]');
         const card = shell.querySelector('[data-card]');
         const results = shell.querySelector('[data-results]');
-
-        const normalize = value => value
-            .trim()
-            .toLocaleLowerCase('uk-UA')
-            .replace(/[’ʼ`]/g, "'")
-            .replace(/\s+/g, ' ');
-
-        const currentWord = () => words[state.index];
+        const practiceIncorrect = shell.querySelector('[data-practice-incorrect]');
+        const token = form?.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
 
         const updateProgress = () => {
+            if (!state.total) return;
+
             const completed = state.correct + state.incorrect;
-            progressCount.textContent = `${Math.min(state.index + 1, words.length)} of ${words.length} words`;
+            progressCount.textContent = `${Math.min(state.index + 1, state.total)} of ${state.total} words`;
             accuracy.textContent = `${state.correct} correct`;
-            progressFill.style.width = `${Math.round(completed * 100 / words.length)}%`;
+            progressFill.style.width = `${Math.round(completed * 100 / state.total)}%`;
         };
 
-        const renderWord = () => {
-            const word = currentWord();
+        const renderWord = word => {
             state.checked = false;
             input.value = '';
             input.disabled = false;
@@ -187,49 +188,74 @@
             card.hidden = true;
             shell.querySelector('[data-ukrainian-keyboard]')?.setAttribute('hidden', '');
             results.hidden = false;
-            const score = Math.round(state.correct * 100 / words.length);
+            const score = Math.round(state.correct * 100 / state.total);
             shell.querySelector('[data-result-score]').textContent = `${score}%`;
             shell.querySelector('[data-result-correct]').textContent = state.correct;
             shell.querySelector('[data-result-incorrect]').textContent = state.incorrect;
             progressFill.style.width = '100%';
+            if (practiceIncorrect) {
+                practiceIncorrect.hidden = state.incorrect === 0;
+            }
         };
 
-        const checkAnswer = () => {
-            const word = currentWord();
-            const isCorrect = normalize(input.value) === normalize(word.answer);
+        const checkAnswer = async () => {
+            const response = await fetch(shell.dataset.submitUrl, {
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                },
+                body: JSON.stringify({
+                    sessionId: shell.dataset.sessionId,
+                    userAnswer: input.value
+                })
+            });
+
+            if (!response.ok) {
+                feedback.textContent = 'Session expired. Restart the quiz to continue.';
+                feedback.className = 'typing-feedback is-incorrect';
+                input.disabled = true;
+                return;
+            }
+
+            const result = await response.json();
             state.checked = true;
+            state.index = result.currentIndex;
+            state.correct = result.correctCount;
+            state.incorrect = result.incorrectCount;
+            state.total = result.totalWords;
+            state.nextWord = result.nextWord;
+            state.isComplete = result.isComplete;
             input.disabled = true;
-            if (isCorrect) {
-                state.correct++;
+
+            if (result.isCorrect) {
                 feedback.textContent = 'Correct';
                 feedback.classList.add('is-correct');
                 card.classList.add('is-correct');
             } else {
-                state.incorrect++;
                 feedback.textContent = 'Not quite';
                 feedback.classList.add('is-incorrect');
                 card.classList.add('is-incorrect');
             }
 
-            correctAnswer.textContent = word.answer;
-            const exampleText = [word.exampleSentence, word.exampleTranslation].filter(Boolean).join(' ');
+            correctAnswer.textContent = result.correctAnswer;
+            const exampleText = [result.exampleSentence, result.exampleTranslation].filter(Boolean).join(' ');
             example.textContent = exampleText;
             example.hidden = !exampleText;
             reveal.hidden = false;
-            checkButton.innerHTML = state.index + 1 >= words.length
+            checkButton.innerHTML = state.isComplete
                 ? 'Show Results <span class="material-symbols-outlined">flag</span>'
                 : 'Next Word <span class="material-symbols-outlined">arrow_forward</span>';
             updateProgress();
         };
 
         const nextWord = () => {
-            state.index++;
-            if (state.index >= words.length) {
+            if (state.isComplete || !state.nextWord) {
                 showResults();
                 return;
             }
 
-            renderWord();
+            renderWord(state.nextWord);
         };
 
         if (shell.dataset.showUkrainianKeyboard === 'true') {
@@ -257,23 +283,16 @@
             });
         }
 
-        form.addEventListener('submit', event => {
+        form?.addEventListener('submit', event => {
             event.preventDefault();
             if (state.checked) {
                 nextWord();
             } else {
-                checkAnswer();
+                checkAnswer().catch(() => {
+                    feedback.textContent = 'Could not check that answer. Try again.';
+                    feedback.className = 'typing-feedback is-incorrect';
+                });
             }
-        });
-
-        shell.querySelector('[data-restart]')?.addEventListener('click', () => {
-            state.index = 0;
-            state.correct = 0;
-            state.incorrect = 0;
-            results.hidden = true;
-            card.hidden = false;
-            shell.querySelector('[data-ukrainian-keyboard]')?.removeAttribute('hidden');
-            renderWord();
         });
 
         shell.querySelector('[data-ukrainian-keyboard]')?.addEventListener('click', event => {
@@ -301,7 +320,11 @@
             input.setSelectionRange(cursor, cursor);
         });
 
-        renderWord();
+        if (state.isComplete) {
+            showResults();
+        } else {
+            input?.focus();
+        }
     })();
 </script>
 }

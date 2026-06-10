@@ -77,10 +77,19 @@ namespace Glosify.Models.ViewModels
     public class TypingQuizViewModel
     {
         public Quiz? SelectedQuiz { get; set; }
-        public IReadOnlyList<TypingQuizWordViewModel> Words { get; set; } = [];
+        public TypingQuizWordViewModel? CurrentWord { get; set; }
+        public string SessionId { get; set; } = string.Empty;
         public Guid QuizId { get; set; }
+        public int CurrentWordNumber { get; set; }
+        public int TotalWords { get; set; }
+        public int CompletedWords { get; set; }
+        public int CorrectCount { get; set; }
+        public int IncorrectCount { get; set; }
+        public int ScorePercent { get; set; }
+        public int ProgressPercent { get; set; }
         public int WordCount { get; set; }
         public bool ShowsUkrainianKeyboard { get; set; }
+        public bool IsComplete { get; set; }
 
         public static TypingQuizViewModel Empty() => new();
     }
