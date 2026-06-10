@@ -16,8 +16,5 @@ namespace Glosify.Models.Entities
 
         [Column("translation")]
         public string Translation { get; set; } = string.Empty;
-
-        [Column("word_detail_id")]
-        public string? WordDetailId { get; set; }
     }
 }

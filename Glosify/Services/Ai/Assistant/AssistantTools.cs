@@ -25,7 +25,7 @@ public sealed class AssistantTools : IAssistantTools
 
         new(
             "get_word",
-            "Get a single word's quiz data plus shared word detail (translation, quiz example sentence, explanation, properties, variants) by its id.",
+            "Get a single word's quiz data and any matching quiz sentence by its id.",
             BuildSchema(new Dictionary<string, object>
             {
                 ["word_id"] = StringProp("Id of the word to fetch."),
@@ -68,19 +68,6 @@ public sealed class AssistantTools : IAssistantTools
             }, required: ["word_id"])),
 
         new(
-            "set_word_detail",
-            "Propose updating the grammar details, explanation, and/or example sentence of a word. Use this when the user asks to generate variants, properties, grammar forms, explanations, or sentences for existing quiz words. Queued until the user clicks Apply.",
-            BuildSchema(new Dictionary<string, object>
-            {
-                ["word_id"] = StringProp("Id of the word whose detail to update."),
-                ["properties"] = ObjectProp("Optional. Grammar property map, such as {\"pos\":\"noun\",\"gender\":\"neuter\"}. Use snake_case keys; keep values concise."),
-                ["variants"] = VariantsProp("Optional. Inflected forms to show on the word detail page. Each variant needs a form plus the label/group the user should see, such as group \"Past Plural\" and label \"1st masculine personal\". Tags are optional metadata for compatibility."),
-                ["explanation"] = StringProp("Optional. New short explanation in the user's source language."),
-                ["example_sentence"] = StringProp("Optional. Natural full sentence in the target language using this word or an inflected form. Do not include notes, glosses, slash alternatives, or pronunciation hints."),
-                ["example_sentence_translation"] = StringProp("Optional. Natural source-language translation of the new example sentence."),
-            }, required: ["word_id"])),
-
-        new(
             "repair_sentence",
             "Propose replacing all occurrences of a quiz example sentence with a corrected natural full sentence. Queued until Apply.",
             BuildSchema(new Dictionary<string, object>
@@ -107,7 +94,6 @@ public sealed class AssistantTools : IAssistantTools
             "add_sentence" => QueueAddSentence(args, context),
             "edit_word" => QueueEditWord(args, context),
             "delete_word" => QueueDeleteWord(args, context),
-            "set_word_detail" => QueueSetWordDetail(args, context),
             "repair_sentence" => QueueRepairSentence(args, context),
             _ => new { error = $"Unknown tool: {name}" },
         };
@@ -118,7 +104,7 @@ public sealed class AssistantTools : IAssistantTools
         var rows = await _context.Words
             .Where(w => w.QuizId == context.QuizId)
             .OrderBy(w => w.Lemma)
-            .Select(w => new { id = w.Id, word = w.Lemma, translation = w.Translation, word_detail_id = w.WordDetailId })
+            .Select(w => new { id = w.Id, word = w.Lemma, translation = w.Translation })
             .ToListAsync(ct);
         return new { words = rows, count = rows.Count };
     }
@@ -137,7 +123,6 @@ public sealed class AssistantTools : IAssistantTools
             return new { error = $"Word {wordId} not found in this quiz." };
         }
 
-        var detail = await _context.WordDetails.FirstOrDefaultAsync(d => d.Id == word.WordDetailId, ct);
         var sentence = await _context.QuizSentences
             .Where(s => s.QuizId == context.QuizId)
             .ToListAsync(ct);
@@ -147,13 +132,8 @@ public sealed class AssistantTools : IAssistantTools
             id = word.Id,
             word = word.Lemma,
             translation = word.Translation,
-            explanation = detail?.Explanation ?? string.Empty,
-            example_sentence = quizSentence?.Text ?? detail?.ExampleSentence ?? string.Empty,
-            example_sentence_translation = quizSentence?.Translation ?? detail?.ExampleSentenceTranslation ?? string.Empty,
-            word_detail_example_sentence = detail?.ExampleSentence ?? string.Empty,
-            word_detail_example_sentence_translation = detail?.ExampleSentenceTranslation ?? string.Empty,
-            properties_json = detail?.Properties ?? "{}",
-            variants_json = detail?.Variants ?? "[]",
+            example_sentence = quizSentence?.Text ?? string.Empty,
+            example_sentence_translation = quizSentence?.Translation ?? string.Empty,
         };
     }
 
@@ -243,33 +223,6 @@ public sealed class AssistantTools : IAssistantTools
         return new { queued = true, kind = PendingChangeKinds.DeleteWord, word_id = wordId };
     }
 
-    private static object QueueSetWordDetail(JsonElement args, AgentToolContext context)
-    {
-        var wordId = GetString(args, "word_id");
-        if (string.IsNullOrWhiteSpace(wordId))
-        {
-            return new { error = "word_id is required." };
-        }
-        if (IsOutsideFocusedWord(wordId, context))
-        {
-            return FocusError(context);
-        }
-
-        var payload = JsonSerializer.SerializeToElement(new
-        {
-            kind = PendingChangeKinds.SetWordDetail,
-            word_id = wordId,
-            properties = GetElementOrNull(args, "properties"),
-            variants = GetElementOrNull(args, "variants"),
-            explanation = GetString(args, "explanation")?.Trim(),
-            example_sentence = GetString(args, "example_sentence")?.Trim(),
-            example_sentence_translation = GetString(args, "example_sentence_translation")?.Trim(),
-        }, JsonOptions);
-
-        context.PendingChanges.Add(new PendingChange(PendingChangeKinds.SetWordDetail, payload));
-        return new { queued = true, kind = PendingChangeKinds.SetWordDetail, word_id = wordId };
-    }
-
     private static object QueueRepairSentence(JsonElement args, AgentToolContext context)
     {
         var original = GetString(args, "original_text");
@@ -316,18 +269,6 @@ public sealed class AssistantTools : IAssistantTools
             return null;
         }
         return value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-    }
-
-    private static JsonElement? GetElementOrNull(JsonElement element, string property)
-    {
-        if (!element.TryGetProperty(property, out var value))
-        {
-            return null;
-        }
-
-        return value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined
-            ? null
-            : value.Clone();
     }
 
     private static bool IsOutsideFocusedWord(string wordId, AgentToolContext context)
@@ -377,34 +318,4 @@ public sealed class AssistantTools : IAssistantTools
             ["description"] = description,
         };
 
-    private static object ObjectProp(string description) =>
-        new Dictionary<string, object>
-        {
-            ["type"] = "object",
-            ["description"] = description,
-            ["additionalProperties"] = true,
-        };
-
-    private static object VariantsProp(string description) =>
-        new Dictionary<string, object>
-        {
-            ["type"] = "array",
-            ["description"] = description,
-            ["items"] = new Dictionary<string, object>
-            {
-                ["type"] = "object",
-                ["properties"] = new Dictionary<string, object>
-                {
-                    ["form"] = StringProp("Inflected form."),
-                    ["label"] = StringProp("Display label for this form, for example \"1st masculine personal\"."),
-                    ["group"] = StringProp("Optional display group, for example \"Past Plural\" or \"Imperative\"."),
-                    ["tags"] = new Dictionary<string, object>
-                    {
-                        ["type"] = "array",
-                        ["items"] = StringProp("Single grammar tag."),
-                    },
-                },
-                ["required"] = new[] { "form" },
-            },
-        };
 }

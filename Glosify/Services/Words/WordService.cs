@@ -8,12 +8,10 @@ namespace Glosify.Services;
 public class WordService : IWordService
 {
     private readonly GlosifyContext _context;
-    private readonly IWordDetailService _wordDetailService;
 
-    public WordService(GlosifyContext context, IWordDetailService wordDetailService)
+    public WordService(GlosifyContext context)
     {
         _context = context;
-        _wordDetailService = wordDetailService;
     }
 
     public async Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId)
@@ -24,51 +22,12 @@ public class WordService : IWordService
             .ToListAsync();
     }
 
-    public async Task<IReadOnlySet<string>> GetEnrichedWordDetailIdsAsync(Guid quizId)
-    {
-        var ids = await _context.Words
-            .Where(word => word.QuizId == quizId)
-            .Join(
-                _context.WordDetails,
-                word => word.WordDetailId,
-                detail => detail.Id,
-                (_, detail) => detail)
-            .Where(detail =>
-                detail.Properties != "{}"
-                && detail.Variants != "[]"
-                && detail.Explanation != null
-                && detail.Explanation != ""
-                && detail.ExampleSentence != null
-                && detail.ExampleSentence != "")
-            .Select(detail => detail.Id)
-            .ToListAsync();
-
-        return new HashSet<string>(ids, StringComparer.Ordinal);
-    }
-
-    public async Task<IReadOnlyList<WordDetail>> GetWordDetailsAsync(Guid quizId)
-    {
-        return await _context.Words
-            .Where(word => word.QuizId == quizId)
-            .Join(
-                _context.WordDetails,
-                word => word.WordDetailId,
-                detail => detail.Id,
-                (_, detail) => detail)
-            .ToListAsync();
-    }
-
     public async Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount)
     {
         var take = Math.Clamp(wordCount, 1, 100);
 
         var cards = await _context.Words
             .Where(word => word.QuizId == quizId)
-            .GroupJoin(
-                _context.WordDetails,
-                word => word.WordDetailId,
-                detail => detail.Id,
-                (word, details) => new { Word = word, Detail = details.FirstOrDefault() })
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
             .ToListAsync();
@@ -80,11 +39,11 @@ public class WordService : IWordService
         return cards
             .Select(item => new QuizCardData
             {
-                Id = item.Word.Id,
-                Lemma = item.Word.Lemma,
-                Translation = item.Word.Translation,
-                ExampleSentence = CleanExampleForDisplay(ChooseSentenceForWord(item.Word.Lemma, sentences)?.Text ?? item.Detail?.ExampleSentence),
-                ExampleTranslation = ChooseSentenceForWord(item.Word.Lemma, sentences)?.Translation ?? item.Detail?.ExampleSentenceTranslation ?? string.Empty
+                Id = item.Id,
+                Lemma = item.Lemma,
+                Translation = item.Translation,
+                ExampleSentence = CleanExampleForDisplay(ChooseSentenceForWord(item.Lemma, sentences)?.Text),
+                ExampleTranslation = ChooseSentenceForWord(item.Lemma, sentences)?.Translation ?? string.Empty
             })
             .ToList();
     }
@@ -115,7 +74,7 @@ public class WordService : IWordService
     {
         return string.IsNullOrWhiteSpace(exampleSentence)
             ? string.Empty
-            : VocabularyInputCleaner.CleanForVocabulary(exampleSentence).Trim();
+            : exampleSentence.Trim();
     }
 
     public async Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage)
@@ -123,21 +82,12 @@ public class WordService : IWordService
         if (string.IsNullOrWhiteSpace(word) || string.IsNullOrWhiteSpace(translation))
             return false;
 
-        var trimmedWord = word.Trim();
-        var cleanTranslation = translation.Trim();
-        var wordDetail = await _wordDetailService.FindCachedAsync(
-            sourceLanguage,
-            targetLanguage,
-            trimmedWord,
-            cleanTranslation);
-
         _context.Words.Add(new Word
         {
             Id = Guid.NewGuid().ToString("N"),
             QuizId = quizId,
-            Lemma = trimmedWord,
-            Translation = cleanTranslation,
-            WordDetailId = wordDetail?.Id
+            Lemma = word.Trim(),
+            Translation = translation.Trim()
         });
 
         await _context.SaveChangesAsync();

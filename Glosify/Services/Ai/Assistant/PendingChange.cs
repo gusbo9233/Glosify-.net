@@ -10,6 +10,5 @@ public static class PendingChangeKinds
     public const string AddSentence = "add_sentence";
     public const string EditWord = "edit_word";
     public const string DeleteWord = "delete_word";
-    public const string SetWordDetail = "set_word_detail";
     public const string RepairSentence = "repair_sentence";
 }

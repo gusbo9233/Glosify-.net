@@ -351,9 +351,9 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             : $"""
 
         Current page context:
-        - The assistant is opened from the word detail page for "{focusedWord.Lemma}" -> "{focusedWord.Translation}".
-        - Treat this as a focused word-detail session. Any mutating tool call that edits, deletes, repairs, or updates word details must target only this word id: {focusedWord.Id}.
-        - Do not propose changes to other words or other word details unless the user leaves this page and opens the assistant elsewhere.
+        - The assistant is focused on "{focusedWord.Lemma}" -> "{focusedWord.Translation}".
+        - Any mutating tool call that edits, deletes, or repairs content must target only this word id when a word id is required: {focusedWord.Id}.
+        - Do not propose changes to other words unless the user leaves this context.
         """;
 
         return $"""
@@ -362,12 +362,12 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
         Rules:
         - Read-only tools (list_words, get_word) execute immediately. Their results are returned to you.
-        - Mutating tools (add_word, add_sentence, edit_word, delete_word, set_word_detail, repair_sentence) propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool.
+        - Mutating tools (add_word, add_sentence, edit_word, delete_word, repair_sentence) propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool.
         - When the user gives you text to extract vocabulary from, extract meaningful words yourself and call add_word once per word. Skip closed-class words (articles, basic prepositions) unless they are central to the text.
         - Do not add a sentence when the user only asks for words.
         - Do not put sentence text in add_word. If the user asks for standalone quiz sentences, or pasted text already contains natural full sentences, call add_sentence once per sentence.
-        - When the user asks to update example sentences for specific existing word details, call list_words or get_word first, then use set_word_detail for those words.
-        - When the user asks for grammar details, properties, conjugations, declensions, cases, forms, or variants for existing words, call get_word or list_words first, then use set_word_detail with structured properties and variants. For each variant, provide the exact display label and optional display group that should appear on the word detail page. Tags are optional compatibility metadata; when present, keep them separate and normalized, such as "nominative", "singular", "present", "first-person", "masculine-personal", or "plural".
+        - When the user asks for grammar details, properties, conjugations, declensions, cases, forms, or variants, answer conversationally and recommend the Wiktionary link on the word card for dictionary detail.
+        - When the user asks to add or update example sentences, use add_sentence or repair_sentence.
         - Good example sentences are short, grammatical, and context-rich. Do not write pronunciation hints, gender notes, slash-separated alternatives, dictionary glosses, fragments, or markup as example sentences.
         - For sentence repair, keep the same learning target where possible and use natural inflection instead of forcing the exact dictionary form.
         - Use list_words first if you need to check what is already in the quiz before proposing edits or deletions.
@@ -434,7 +434,6 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                 PendingChangeKinds.AddSentence => BuildAddSentenceSummary(change.Payload),
                 PendingChangeKinds.EditWord => $"Edit {GetWordDisplay(change.Payload, wordLabels)}",
                 PendingChangeKinds.DeleteWord => $"Remove {GetWordDisplay(change.Payload, wordLabels)}",
-                PendingChangeKinds.SetWordDetail => BuildSetWordDetailSummary(change.Payload, wordLabels),
                 PendingChangeKinds.RepairSentence => BuildRepairSentenceSummary(change.Payload),
                 _ => change.Kind,
             };
@@ -457,35 +456,6 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         return string.IsNullOrWhiteSpace(translation)
             ? $"Add sentence \"{text}\""
             : $"Add sentence \"{text}\" ({translation})";
-    }
-
-    private static string BuildSetWordDetailSummary(
-        JsonElement payload,
-        IReadOnlyDictionary<string, WordLabel> wordLabels)
-    {
-        var display = GetWordDisplay(payload, wordLabels);
-        var sentence = GetString(payload, "example_sentence");
-        var translation = GetString(payload, "example_sentence_translation");
-        var hasGrammarDetails = HasObject(payload, "properties") || HasArray(payload, "variants");
-
-        if (!string.IsNullOrWhiteSpace(sentence) && !string.IsNullOrWhiteSpace(translation))
-        {
-            var prefix = hasGrammarDetails ? $"Update grammar details for {display}" : display;
-            return $"{prefix}: \"{Truncate(sentence, 90)}\" ({Truncate(translation, 90)})";
-        }
-
-        if (!string.IsNullOrWhiteSpace(sentence))
-        {
-            var prefix = hasGrammarDetails ? $"Update grammar details for {display}" : display;
-            return $"{prefix}: \"{Truncate(sentence, 90)}\"";
-        }
-
-        if (hasGrammarDetails)
-        {
-            return $"Update grammar details for {display}";
-        }
-
-        return $"Update {display}";
     }
 
     private static string BuildRepairSentenceSummary(JsonElement payload)

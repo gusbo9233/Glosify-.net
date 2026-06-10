@@ -342,116 +342,9 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("translation");
 
-                    b.Property<string>("WordDetailId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("word_detail_id");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("WordDetailId");
 
                     b.ToTable("words");
-                });
-
-            modelBuilder.Entity("Glosify.Models.Entities.WordDetail", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("ExampleSentence")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("example_sentence");
-
-                    b.Property<string>("ExampleSentenceTranslation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("example_sentence_translation");
-
-                    b.Property<string>("Explanation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("explanation");
-
-                    b.Property<string>("Language")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("language");
-
-                    b.Property<string>("NormalizedTranslation")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)")
-                        .HasColumnName("normalized_translation");
-
-                    b.Property<string>("NormalizedTranslationHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)")
-                        .HasColumnName("normalized_translation_hash");
-
-                    b.Property<string>("NormalizedWord")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)")
-                        .HasColumnName("normalized_word");
-
-                    b.Property<string>("NormalizedWordHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)")
-                        .HasColumnName("normalized_word_hash");
-
-                    b.Property<string>("Properties")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("properties");
-
-                    b.Property<string>("SourceLanguage")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)")
-                        .HasColumnName("source_language");
-
-                    b.Property<string>("TargetLanguage")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)")
-                        .HasColumnName("target_language");
-
-                    b.Property<string>("Translation")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)")
-                        .HasColumnName("translation");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("datetimeoffset")
-                        .HasColumnName("updated_at");
-
-                    b.Property<string>("Variants")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("variants");
-
-                    b.Property<string>("Word")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)")
-                        .HasColumnName("word");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("SourceLanguage", "TargetLanguage", "NormalizedWordHash", "NormalizedTranslationHash")
-                        .IsUnique();
-
-                    b.ToTable("word_details");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -660,15 +553,6 @@ namespace Glosify.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_quiz_sentences_quizzes");
-                });
-
-            modelBuilder.Entity("Glosify.Models.Entities.Word", b =>
-                {
-                    b.HasOne("Glosify.Models.Entities.WordDetail", null)
-                        .WithMany()
-                        .HasForeignKey("WordDetailId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK_words_word_details");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

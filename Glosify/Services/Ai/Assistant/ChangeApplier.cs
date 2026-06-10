@@ -9,16 +9,13 @@ public sealed class ChangeApplier : IChangeApplier
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly GlosifyContext _context;
-    private readonly IWordDetailService _wordDetailService;
     private readonly ILogger<ChangeApplier> _logger;
 
     public ChangeApplier(
         GlosifyContext context,
-        IWordDetailService wordDetailService,
         ILogger<ChangeApplier> logger)
     {
         _context = context;
-        _wordDetailService = wordDetailService;
         _logger = logger;
     }
 
@@ -47,9 +44,6 @@ public sealed class ChangeApplier : IChangeApplier
                     break;
                 case PendingChangeKinds.DeleteWord:
                     applied += await ApplyDeleteWordAsync(change.Payload, quiz, cancellationToken) ? 1 : 0;
-                    break;
-                case PendingChangeKinds.SetWordDetail:
-                    applied += await ApplySetWordDetailAsync(change.Payload, quiz, cancellationToken) ? 1 : 0;
                     break;
                 case PendingChangeKinds.RepairSentence:
                     applied += await ApplyRepairSentenceAsync(change.Payload, quiz, cancellationToken);
@@ -80,20 +74,12 @@ public sealed class ChangeApplier : IChangeApplier
             return false;
         }
 
-        var wordDetail = await _wordDetailService.FindCachedAsync(
-            quiz.SourceLanguage,
-            quiz.TargetLanguage,
-            newWord,
-            translation,
-            ct);
-
         _context.Words.Add(new Word
         {
             Id = Guid.NewGuid().ToString("N"),
             QuizId = quiz.Id,
             Lemma = newWord,
             Translation = translation,
-            WordDetailId = wordDetail?.Id,
         });
 
         return true;
@@ -145,58 +131,6 @@ public sealed class ChangeApplier : IChangeApplier
         return true;
     }
 
-    private async Task<bool> ApplySetWordDetailAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
-    {
-        var wordId = GetString(payload, "word_id");
-        if (string.IsNullOrWhiteSpace(wordId))
-        {
-            return false;
-        }
-        var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == wordId && w.QuizId == quiz.Id, ct);
-        if (word == null) return false;
-        var detail = await _context.WordDetails.FirstOrDefaultAsync(d => d.Id == word.WordDetailId, ct);
-        if (detail == null) return false;
-
-        var explanation = GetString(payload, "explanation");
-        var exampleSentence = GetString(payload, "example_sentence");
-        var exampleSentenceTranslation = GetString(payload, "example_sentence_translation");
-        var properties = NormalizeProperties(payload);
-        var variants = NormalizeVariants(payload);
-        var changed = false;
-
-        if (!string.IsNullOrWhiteSpace(properties) && !IsEmptyJsonObject(properties))
-        {
-            detail.Properties = properties;
-            changed = true;
-        }
-        if (!string.IsNullOrWhiteSpace(variants) && !IsEmptyJsonArray(variants))
-        {
-            detail.Variants = variants;
-            changed = true;
-        }
-        if (!string.IsNullOrWhiteSpace(explanation))
-        {
-            detail.Explanation = explanation;
-            changed = true;
-        }
-        if (!string.IsNullOrWhiteSpace(exampleSentence))
-        {
-            detail.ExampleSentence = exampleSentence;
-            changed = true;
-        }
-        if (!string.IsNullOrWhiteSpace(exampleSentenceTranslation))
-        {
-            detail.ExampleSentenceTranslation = exampleSentenceTranslation;
-            changed = true;
-        }
-
-        if (changed)
-        {
-            detail.UpdatedAt = DateTimeOffset.UtcNow;
-        }
-        return changed;
-    }
-
     private async Task<int> ApplyRepairSentenceAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
     {
         var original = GetString(payload, "original_text");
@@ -236,147 +170,6 @@ public sealed class ChangeApplier : IChangeApplier
         var preferred = GetString(element, preferredProperty);
         return string.IsNullOrWhiteSpace(preferred) ? GetString(element, legacyProperty) : preferred;
     }
-
-    private static string NormalizeProperties(JsonElement payload)
-    {
-        var properties = GetJsonArgument(payload, "properties", "properties_json");
-        if (properties == null || properties.Value.ValueKind != JsonValueKind.Object)
-        {
-            return string.Empty;
-        }
-
-        var normalized = new Dictionary<string, JsonElement>();
-        foreach (var property in properties.Value.EnumerateObject())
-        {
-            if (property.Value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-            {
-                continue;
-            }
-
-            var key = NormalizePropertyKey(property.Name);
-            if (!string.IsNullOrWhiteSpace(key))
-            {
-                normalized[key] = property.Value.Clone();
-            }
-        }
-
-        return normalized.Count == 0 ? string.Empty : JsonSerializer.Serialize(normalized, JsonOptions);
-    }
-
-    private static string NormalizeVariants(JsonElement payload)
-    {
-        var variants = GetJsonArgument(payload, "variants", "variants_json");
-        if (variants == null || variants.Value.ValueKind != JsonValueKind.Array)
-        {
-            return string.Empty;
-        }
-
-        var normalized = new List<GeneratedWordVariant>();
-        foreach (var item in variants.Value.EnumerateArray())
-        {
-            if (item.ValueKind != JsonValueKind.Object)
-            {
-                continue;
-            }
-
-            var form = item.TryGetProperty("form", out var formElement) && formElement.ValueKind == JsonValueKind.String
-                ? formElement.GetString()?.Trim()
-                : string.Empty;
-            if (string.IsNullOrWhiteSpace(form))
-            {
-                continue;
-            }
-
-            var tags = item.TryGetProperty("tags", out var tagsElement)
-                ? NormalizeTags(tagsElement)
-                : [];
-            normalized.Add(new GeneratedWordVariant
-            {
-                Form = form,
-                Label = GetString(item, "label").Trim(),
-                Group = GetString(item, "group").Trim(),
-                Tags = tags,
-            });
-        }
-
-        return normalized.Count == 0 ? string.Empty : JsonSerializer.Serialize(normalized, JsonOptions);
-    }
-
-    private static JsonElement? GetJsonArgument(JsonElement payload, string propertyName, string jsonStringName)
-    {
-        if (payload.TryGetProperty(propertyName, out var structured)
-            && structured.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined)
-        {
-            return structured;
-        }
-
-        var rawJson = GetString(payload, jsonStringName);
-        if (string.IsNullOrWhiteSpace(rawJson))
-        {
-            return null;
-        }
-
-        try
-        {
-            using var document = JsonDocument.Parse(rawJson);
-            return document.RootElement.Clone();
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private static List<string> NormalizeTags(JsonElement tagsElement)
-    {
-        var tags = new List<string>();
-        if (tagsElement.ValueKind == JsonValueKind.String)
-        {
-            AddTag(tags, tagsElement.GetString()?.Trim());
-            return tags;
-        }
-
-        if (tagsElement.ValueKind != JsonValueKind.Array)
-        {
-            return tags;
-        }
-
-        foreach (var tagElement in tagsElement.EnumerateArray())
-        {
-            if (tagElement.ValueKind == JsonValueKind.String)
-            {
-                AddTag(tags, tagElement.GetString()?.Trim());
-            }
-        }
-
-        return tags;
-    }
-
-    private static void AddTag(List<string> tags, string? tag)
-    {
-        if (!string.IsNullOrWhiteSpace(tag)
-            && !tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
-        {
-            tags.Add(tag);
-        }
-    }
-
-    private static string NormalizePropertyKey(string key)
-    {
-        var normalized = key.Trim().ToLowerInvariant().Replace("-", "_").Replace(" ", "_");
-        var compact = normalized.Replace("_", string.Empty);
-
-        return compact switch
-        {
-            "pos" or "partofspeech" or "wordclass" => "pos",
-            "grammaticalgender" => "gender",
-            _ => normalized.Trim('_')
-        };
-    }
-
-    private static bool IsEmptyJsonObject(string json) => !WordDetailJsonReader.ReadProperties(json).Any();
-
-    private static bool IsEmptyJsonArray(string json) => !WordDetailJsonReader.ReadVariants(json).Any();
 
     private async Task<bool> AddQuizSentenceAsync(Guid quizId, string text, string translation, CancellationToken ct)
     {

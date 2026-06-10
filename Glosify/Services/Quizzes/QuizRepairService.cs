@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,24 +17,6 @@ public sealed class QuizRepairService : IQuizRepairService
         _context = context;
         _quizService = quizService;
         _vocabularyGenerator = vocabularyGenerator;
-    }
-
-    public async Task<QuizRepairResult> RepairQuizAsync(Guid quizId, string userId, CancellationToken cancellationToken)
-    {
-        var repairData = await BuildRepairDataAsync(quizId, userId, cancellationToken);
-        if (repairData == null)
-        {
-            return new QuizRepairResult(QuizRepairStatus.NotFound);
-        }
-
-        var result = await _vocabularyGenerator.RepairQuizAsync(repairData, cancellationToken);
-        if (result?.QuizData == null)
-        {
-            return new QuizRepairResult(QuizRepairStatus.LlmUnavailable);
-        }
-
-        await ApplyQuizAsync(quizId, result.QuizData, cancellationToken);
-        return new QuizRepairResult(QuizRepairStatus.Success);
     }
 
     public async Task<QuizRepairResult> RepairWordAsync(string wordId, string userId, CancellationToken cancellationToken)
@@ -94,20 +75,8 @@ public sealed class QuizRepairService : IQuizRepairService
 
         var rows = await _context.Words
             .Where(word => word.QuizId == quizId)
-            .GroupJoin(
-                _context.WordDetails,
-                word => word.WordDetailId,
-                detail => detail.Id,
-                (word, details) => new { Word = word, Detail = details.FirstOrDefault() })
-            .OrderBy(row => row.Word.Lemma)
+            .OrderBy(word => word.Lemma)
             .ToListAsync(cancellationToken);
-
-        var details = rows
-            .Select(row => row.Detail)
-            .OfType<WordDetail>()
-            .GroupBy(detail => detail.Id, StringComparer.Ordinal)
-            .Select(group => group.First())
-            .ToList();
 
         var sentences = await _context.QuizSentences
             .Where(sentence => sentence.QuizId == quizId)
@@ -139,59 +108,16 @@ public sealed class QuizRepairService : IQuizRepairService
                 ProcessingMessage = quiz.ProcessingMessage
             },
             Words = rows
-                .Select(row => new RepairWord
+                .Select(word => new RepairWord
                 {
-                    Id = row.Word.Id,
-                    Word = row.Word.Lemma,
-                    Translation = row.Word.Translation,
-                    WordDetailId = row.Word.WordDetailId ?? string.Empty,
-                    QuizId = row.Word.QuizId.ToString()
+                    Id = word.Id,
+                    Word = word.Lemma,
+                    Translation = word.Translation,
+                    QuizId = word.QuizId.ToString()
                 })
-                .ToList(),
-            WordDetails = details
-                .Select(ToRepairWordDetail)
                 .ToList(),
             Sentences = repairSentences
         };
-    }
-
-    private async Task ApplyQuizAsync(Guid quizId, RepairQuizData repaired, CancellationToken cancellationToken)
-    {
-        var wordsById = await _context.Words
-            .Where(word => word.QuizId == quizId)
-            .ToDictionaryAsync(word => word.Id, cancellationToken);
-        var detailsById = await _context.WordDetails
-            .Where(detail => wordsById.Values.Select(word => word.WordDetailId).Contains(detail.Id))
-            .ToDictionaryAsync(detail => detail.Id, cancellationToken);
-
-        foreach (var repairedWord in repaired.Words)
-        {
-            if (!wordsById.TryGetValue(repairedWord.Id, out var word))
-            {
-                continue;
-            }
-
-            if (!string.IsNullOrWhiteSpace(repairedWord.Word))
-            {
-                word.Lemma = repairedWord.Word.Trim();
-            }
-            if (!string.IsNullOrWhiteSpace(repairedWord.Translation))
-            {
-                word.Translation = repairedWord.Translation.Trim();
-            }
-        }
-
-        foreach (var repairedDetail in repaired.WordDetails)
-        {
-            if (detailsById.TryGetValue(repairedDetail.Id, out var detail))
-            {
-                ApplyRepairedWordDetail(detail, repairedDetail);
-            }
-        }
-
-        await ApplyQuizSentencesAsync(quizId, repaired.Sentences, cancellationToken);
-
-        await _context.SaveChangesAsync(cancellationToken);
     }
 
     private async Task ApplyWordAsync(RepairWordResult result, CancellationToken cancellationToken)
@@ -211,13 +137,6 @@ public sealed class QuizRepairService : IQuizRepairService
             word.Translation = result.Word.Translation.Trim();
         }
 
-        var detail = await _context.WordDetails.FirstOrDefaultAsync(d => d.Id == word.WordDetailId, cancellationToken);
-        if (detail != null)
-        {
-            result.WordDetail.Id = detail.Id;
-            ApplyRepairedWordDetail(detail, result.WordDetail);
-        }
-
         await _context.SaveChangesAsync(cancellationToken);
     }
 
@@ -227,13 +146,13 @@ public sealed class QuizRepairService : IQuizRepairService
         RepairSentence repaired,
         CancellationToken cancellationToken)
     {
-        var normalizedOriginal = VocabularyInputCleaner.CleanForVocabulary(originalText).Trim();
+        var normalizedOriginal = originalText.Trim();
         var sentences = await _context.QuizSentences
             .Where(sentence => sentence.QuizId == quizId)
             .ToListAsync(cancellationToken);
         var matches = sentences
             .Where(sentence => string.Equals(
-                VocabularyInputCleaner.CleanForVocabulary(sentence.Text).Trim(),
+                sentence.Text.Trim(),
                 normalizedOriginal,
                 StringComparison.OrdinalIgnoreCase))
             .ToList();
@@ -246,130 +165,6 @@ public sealed class QuizRepairService : IQuizRepairService
 
         await _context.SaveChangesAsync(cancellationToken);
         return matches.Count;
-    }
-
-    private static RepairWordDetail ToRepairWordDetail(WordDetail detail)
-    {
-        return new RepairWordDetail
-        {
-            Id = detail.Id,
-            Properties = ParseJsonObject(detail.Properties),
-            ExampleSentence = detail.ExampleSentence,
-            ExampleSentenceTranslation = detail.ExampleSentenceTranslation,
-            Explanation = detail.Explanation,
-            Variants = ParseVariants(detail.Variants),
-            Language = string.IsNullOrWhiteSpace(detail.Language)
-                ? detail.TargetLanguage.ToLowerInvariant()
-                : detail.Language.ToLowerInvariant()
-        };
-    }
-
-    private static void ApplyRepairedWordDetail(WordDetail detail, RepairWordDetail repaired)
-    {
-        if (repaired.Properties.Count > 0)
-        {
-            detail.Properties = JsonSerializer.Serialize(repaired.Properties);
-        }
-        if (repaired.Variants.Count > 0)
-        {
-            detail.Variants = JsonSerializer.Serialize(repaired.Variants);
-        }
-        if (!string.IsNullOrWhiteSpace(repaired.Explanation))
-        {
-            detail.Explanation = repaired.Explanation.Trim();
-        }
-        if (!string.IsNullOrWhiteSpace(repaired.ExampleSentence))
-        {
-            detail.ExampleSentence = repaired.ExampleSentence.Trim();
-        }
-        if (!string.IsNullOrWhiteSpace(repaired.ExampleSentenceTranslation))
-        {
-            detail.ExampleSentenceTranslation = repaired.ExampleSentenceTranslation.Trim();
-        }
-        if (!string.IsNullOrWhiteSpace(repaired.Language))
-        {
-            detail.Language = repaired.Language.Trim();
-        }
-
-        detail.UpdatedAt = DateTimeOffset.UtcNow;
-    }
-
-    private async Task ApplyQuizSentencesAsync(
-        Guid quizId,
-        IReadOnlyList<RepairSentence> repairedSentences,
-        CancellationToken cancellationToken)
-    {
-        if (repairedSentences.Count == 0)
-        {
-            return;
-        }
-
-        var existing = await _context.QuizSentences
-            .Where(sentence => sentence.QuizId == quizId)
-            .ToListAsync(cancellationToken);
-        var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var now = DateTimeOffset.UtcNow;
-
-        foreach (var repaired in repairedSentences)
-        {
-            var text = repaired.Text.Trim();
-            if (string.IsNullOrWhiteSpace(text) || !used.Add(text))
-            {
-                continue;
-            }
-
-            var sentence = existing.FirstOrDefault(candidate =>
-                string.Equals(candidate.Text.Trim(), text, StringComparison.OrdinalIgnoreCase));
-            if (sentence == null)
-            {
-                _context.QuizSentences.Add(new QuizSentence
-                {
-                    Id = Guid.NewGuid(),
-                    QuizId = quizId,
-                    Text = text,
-                    Translation = repaired.Translation.Trim(),
-                    CreatedAt = now
-                });
-                continue;
-            }
-
-            sentence.Text = text;
-            sentence.Translation = repaired.Translation.Trim();
-        }
-    }
-
-    private static Dictionary<string, JsonElement> ParseJsonObject(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json) || json.Trim() == "{}")
-        {
-            return [];
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json) ?? [];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
-    }
-
-    private static List<GeneratedWordVariant> ParseVariants(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json) || json.Trim() == "[]")
-        {
-            return [];
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<List<GeneratedWordVariant>>(json) ?? [];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
     }
 
 }

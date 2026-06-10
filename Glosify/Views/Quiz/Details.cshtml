@@ -3,13 +3,7 @@
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Model.SelectedQuiz.Name;
     ViewData["ActiveNav"] = "quizzes";
-
-    var pendingGenerationCount = Model.Words.Count(w =>
-        string.IsNullOrWhiteSpace(w.WordDetailId)
-        || !Model.EnrichedWordDetailIds.Contains(w.WordDetailId));
 }
-
-
 
 <section class="workspace">
     <section class="workspace-hero">
@@ -20,14 +14,6 @@
                 <a asp-controller="Quiz" asp-action="Settings" asp-route-id="@Model.SelectedQuiz.Id" class="btn-hero">
                     Start Quiz <span class="material-symbols-outlined">play_circle</span>
                 </a>
-                <button id="bulkGenerateButton"
-                        type="button"
-                        class="btn-hero btn-hero-secondary"
-                        data-pending-count="@pendingGenerationCount"
-                        @(pendingGenerationCount == 0 ? "hidden" : "")>
-                    <span class="bulk-generate-label">Generate word details (@pendingGenerationCount)</span>
-                    <span class="material-symbols-outlined">auto_awesome</span>
-                </button>
             </div>
         </div>
     </section>
@@ -53,7 +39,6 @@
                 <button class="btn-submit" type="submit">Add Word</button>
             </form>
         </section>
-
     </div>
 
     @if (TempData["QuizMessage"] is string quizMessage)
@@ -77,40 +62,30 @@
             <div class="word-grid" data-word-grid>
                 @foreach (var word in Model.Words)
                 {
-                    var wordDetailId = word.WordDetailId ?? string.Empty;
-                    var hasWordDetail = !string.IsNullOrWhiteSpace(wordDetailId);
-                    var needsGeneration = !hasWordDetail || !Model.EnrichedWordDetailIds.Contains(wordDetailId);
-                    var generateUrl = hasWordDetail
-                        ? Url.Action("Generate", "WordDetails", new { id = wordDetailId })
-                        : Url.Action("GenerateForWord", "WordDetails", new { id = word.Id });
-                    <article class="word-card"
-                             data-word-detail-id="@wordDetailId"
-                             data-generate-url="@generateUrl"
-                             data-needs-generation="@(needsGeneration ? "true" : "false")">
-                        @if (hasWordDetail)
-                        {
-                            <a class="word-card-link" asp-controller="WordDetails" asp-action="Details" asp-route-id="@wordDetailId" aria-label="Open details for @word.Lemma">
-                                <div class="word-card-left">
-                                    <div class="word-icon"><span class="material-symbols-outlined">translate</span></div>
-                                    <div>
-                                        <div class="word">@word.Lemma</div>
-                                        <div class="translation">@word.Translation</div>
-                                    </div>
-                                </div>
-                            </a>
-                        }
-                        else
-                        {
-                            <div class="word-card-link" aria-label="Word details not generated for @word.Lemma">
-                                <div class="word-card-left">
-                                    <div class="word-icon"><span class="material-symbols-outlined">translate</span></div>
-                                    <div>
-                                        <div class="word">@word.Lemma</div>
-                                        <div class="translation">@word.Translation</div>
-                                    </div>
+                    var wiktionaryUrl = WiktionaryLink.ForWord(Model.SelectedQuiz.TargetLanguage, word.Lemma);
+                    <article class="word-card">
+                        <div class="word-card-main">
+                            @if (wiktionaryUrl != null)
+                            {
+                                <a class="word-icon word-wiktionary-link"
+                                   href="@wiktionaryUrl"
+                                   aria-label="Open @word.Lemma on Wiktionary"
+                                   title="Open @word.Lemma on Wiktionary">
+                                    <span class="material-symbols-outlined">translate</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <div class="word-icon"><span class="material-symbols-outlined">translate</span></div>
+                            }
+
+                            <div class="word-card-link">
+                                <div>
+                                    <div class="word">@word.Lemma</div>
+                                    <div class="translation">@word.Translation</div>
                                 </div>
                             </div>
-                        }
+                        </div>
                         <div class="word-actions">
                             <button class="btn-icon-repair"
                                     type="button"
@@ -167,7 +142,7 @@
                 }
                 @if (!Model.Sentences.Any())
                 {
-                    <div class="empty-state">No sentences yet. Generate words from sentences or phrases to fill this tab.</div>
+                    <div class="empty-state">No sentences yet. Ask the assistant to add sentences or extract them from text.</div>
                 }
             </div>
         </div>
@@ -185,160 +160,6 @@
 @section Scripts {
 <script src="~/js/assistant.js"></script>
 <script>
-    const resetWordLoadingState = () => {
-        document.querySelectorAll('.word-card.loading').forEach(card => {
-            card.classList.remove('loading');
-            const icon = card.querySelector('.word-icon .material-symbols-outlined');
-            if (icon) icon.textContent = icon.dataset.defaultIcon || 'translate';
-        });
-    };
-
-    document.querySelectorAll('.word-card-link, .word-date').forEach(link => {
-        link.addEventListener('click', event => {
-            if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-                return;
-            }
-
-            const card = link.closest('.word-card');
-            if (!card) return;
-
-            card.classList.add('loading');
-            const icon = card.querySelector('.word-icon .material-symbols-outlined');
-            if (icon) {
-                icon.dataset.defaultIcon ||= icon.textContent.trim() || 'translate';
-                icon.textContent = 'progress_activity';
-            }
-
-            window.setTimeout(() => {
-                if (document.visibilityState === 'visible') {
-                    card.classList.remove('loading');
-                    if (icon) icon.textContent = icon.dataset.defaultIcon || 'translate';
-                }
-            }, 12000);
-        });
-    });
-
-    window.addEventListener('pageshow', resetWordLoadingState);
-
-    (() => {
-        const button = document.getElementById('bulkGenerateButton');
-        if (!button) return;
-
-        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-        const concurrency = 3;
-
-        const setCardLoading = (card, loading) => {
-            card.classList.toggle('loading', loading);
-            const icon = card.querySelector('.word-icon .material-symbols-outlined');
-            if (!icon) return;
-            if (loading) {
-                icon.dataset.defaultIcon ||= icon.textContent.trim() || 'translate';
-                icon.textContent = 'progress_activity';
-            } else {
-                icon.textContent = icon.dataset.defaultIcon || 'translate';
-            }
-        };
-
-        const applyGeneratedDetail = (card, data) => {
-            if (!data) return;
-
-            if (data.wordDetailId) {
-                card.dataset.wordDetailId = data.wordDetailId;
-            }
-
-            if (data.generateUrl) {
-                card.dataset.generateUrl = data.generateUrl;
-            }
-
-            if (data.detailsUrl) {
-                const currentLink = card.querySelector('.word-card-link');
-                if (!currentLink) return;
-
-                if (currentLink.tagName === 'A') {
-                    currentLink.href = data.detailsUrl;
-                    return;
-                }
-
-                const link = document.createElement('a');
-                link.className = currentLink.className;
-                link.href = data.detailsUrl;
-                link.setAttribute('aria-label', currentLink.getAttribute('aria-label') || `Open details for ${data.word || 'word'}`);
-                link.innerHTML = currentLink.innerHTML;
-                currentLink.replaceWith(link);
-            }
-        };
-
-        const generateOne = async (card) => {
-            const generateUrl = card.dataset.generateUrl;
-            if (!generateUrl) return;
-            setCardLoading(card, true);
-            try {
-                const response = await fetch(generateUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'RequestVerificationToken': tokenInput?.value ?? ''
-                    }
-                });
-                if (response.ok) {
-                    const data = await response.json().catch(() => null);
-                    applyGeneratedDetail(card, data);
-                    if (data?.isEnriched) {
-                        card.dataset.needsGeneration = 'false';
-                    }
-                }
-            } catch {
-                // Best-effort: leave the card as needs-generation so the user can retry.
-            } finally {
-                setCardLoading(card, false);
-            }
-        };
-
-        const runQueue = async (cards) => {
-            const queue = cards.slice();
-            const updateLabel = () => {
-                // needs-generation=true covers both queued and currently-loading cards;
-                // failed cards stay flagged so they're still counted as remaining work.
-                const remaining = document.querySelectorAll('.word-card[data-needs-generation="true"]').length;
-                const inFlight = document.querySelectorAll('.word-card.loading').length;
-                const label = button.querySelector('.bulk-generate-label');
-                if (label) {
-                    label.textContent = inFlight > 0
-                        ? `Generating… (${remaining} left)`
-                        : `Generate word details (${remaining})`;
-                }
-                if (remaining === 0 && inFlight === 0) {
-                    button.hidden = true;
-                }
-            };
-
-            const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
-                while (queue.length > 0) {
-                    const card = queue.shift();
-                    if (card) {
-                        await generateOne(card);
-                        updateLabel();
-                    }
-                }
-            });
-            await Promise.all(workers);
-            button.disabled = false;
-            updateLabel();
-        };
-
-        button.addEventListener('click', () => {
-            const cards = Array.from(document.querySelectorAll('.word-card[data-needs-generation="true"]'));
-            if (cards.length === 0) {
-                button.hidden = true;
-                return;
-            }
-            button.disabled = true;
-            const label = button.querySelector('.bulk-generate-label');
-            if (label) label.textContent = `Generating… (${cards.length} left)`;
-            runQueue(cards);
-        });
-    })();
-
     (() => {
         const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
         const messageHost = document.querySelector('[data-ai-message-host]');
@@ -382,10 +203,6 @@
                 button.innerHTML = originalHtml;
             }
         };
-
-        document.querySelector('[data-repair-quiz-button]')?.addEventListener('click', event => {
-            postRepair(event.currentTarget, new FormData());
-        });
 
         document.querySelectorAll('[data-repair-word-button]').forEach(button => {
             button.addEventListener('click', event => {

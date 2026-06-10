@@ -52,11 +52,6 @@ public class TypingQuizService : ITypingQuizService
 
         var rows = await _context.Words
             .Where(word => word.QuizId == quizId)
-            .GroupJoin(
-                _context.WordDetails,
-                word => word.WordDetailId,
-                detail => detail.Id,
-                (word, details) => new { Word = word, Detail = details.FirstOrDefault() })
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
             .ToListAsync();
@@ -68,14 +63,14 @@ public class TypingQuizService : ITypingQuizService
         return rows
             .Select(item =>
             {
-                var sentence = ChooseSentenceForWord(item.Word.Lemma, sentences);
+                var sentence = ChooseSentenceForWord(item.Lemma, sentences);
                 return new TypingWordData
                 {
-                    Id = item.Word.Id,
-                    Prompt = item.Word.Translation,
-                    Answer = item.Word.Lemma,
-                    ExampleSentence = sentence?.Text ?? item.Detail?.ExampleSentence ?? string.Empty,
-                    ExampleTranslation = sentence?.Translation ?? item.Detail?.ExampleSentenceTranslation ?? string.Empty
+                    Id = item.Id,
+                    Prompt = item.Translation,
+                    Answer = item.Lemma,
+                    ExampleSentence = sentence?.Text ?? string.Empty,
+                    ExampleTranslation = sentence?.Translation ?? string.Empty
                 };
             })
             .ToList();

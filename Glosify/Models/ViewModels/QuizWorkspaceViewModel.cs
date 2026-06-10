@@ -13,7 +13,6 @@ namespace Glosify.Models.ViewModels
     {
         public Quiz SelectedQuiz { get; set; } = null!;
         public IReadOnlyList<Word> Words { get; set; } = [];
-        public IReadOnlySet<string> EnrichedWordDetailIds { get; set; } = new HashSet<string>();
         public IReadOnlyList<QuizSentenceViewModel> Sentences { get; set; } = [];
     }
 

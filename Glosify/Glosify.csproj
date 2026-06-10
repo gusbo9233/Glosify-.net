@@ -31,8 +31,4 @@
       <PackageReference Include="PdfPig" Version="0.1.14" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Views\WordDetails\German\" />
-  </ItemGroup>
-
 </Project>

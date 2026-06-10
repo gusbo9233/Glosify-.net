@@ -124,8 +124,7 @@
         const card = document.createElement('div');
         card.className = 'assistant-pending-card';
         card.dataset.messageId = message.id;
-        const isSentenceFix = message.pendingChanges.every(change =>
-            change.kind === 'set_word_detail' || change.kind === 'repair_sentence');
+        const isSentenceFix = message.pendingChanges.every(change => change.kind === 'repair_sentence');
         const headingText = isSentenceFix ? 'Review sentence fixes' : 'Review proposed changes';
 
         const heading = document.createElement('div');

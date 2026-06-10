@@ -13,7 +13,6 @@ public class QuizController : Controller
     private readonly ICollectionService _collectionService;
     private readonly IWordService _wordService;
     private readonly IQuizRepairService _quizRepairService;
-    private readonly IGeneratedVocabularyService _generatedVocabularyService;
     private readonly IImageTextExtractionService _imageTextExtractionService;
     private readonly ILanguageContext _languageContext;
     private readonly ILogger<QuizController> _logger;
@@ -23,7 +22,6 @@ public class QuizController : Controller
         ICollectionService collectionService,
         IWordService wordService,
         IQuizRepairService quizRepairService,
-        IGeneratedVocabularyService generatedVocabularyService,
         IImageTextExtractionService imageTextExtractionService,
         ILanguageContext languageContext,
         ILogger<QuizController> logger)
@@ -32,7 +30,6 @@ public class QuizController : Controller
         _collectionService = collectionService;
         _wordService = wordService;
         _quizRepairService = quizRepairService;
-        _generatedVocabularyService = generatedVocabularyService;
         _imageTextExtractionService = imageTextExtractionService;
         _languageContext = languageContext;
         _logger = logger;
@@ -80,14 +77,12 @@ public class QuizController : Controller
             return RedirectToAction(nameof(Index));
 
         var words = await _wordService.GetWordsAsync(selectedQuiz.Id);
-        var enriched = await _wordService.GetEnrichedWordDetailIdsAsync(selectedQuiz.Id);
         var sentences = await _wordService.GetSentencesAsync(selectedQuiz.Id);
 
         return View(new QuizWorkspaceViewModel
         {
             SelectedQuiz = selectedQuiz,
             Words = words,
-            EnrichedWordDetailIds = enriched,
             Sentences = sentences.Select(s => new QuizSentenceViewModel
             {
                 Text = s.Text,
@@ -95,19 +90,6 @@ public class QuizController : Controller
                 WordCount = s.WordCount
             }).ToList()
         });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> RepairQuiz(Guid id, CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-        var result = await _quizRepairService.RepairQuizAsync(id, userId, cancellationToken);
-        return result.Status switch
-        {
-            QuizRepairStatus.NotFound => NotFound(new { error = "Quiz not found." }),
-            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
-            _ => Json(new { message = "Quiz repaired." })
-        };
     }
 
     [HttpPost]
@@ -136,7 +118,7 @@ public class QuizController : Controller
         {
             QuizRepairStatus.NotFound => NotFound(new { error = "Quiz not found." }),
             QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
-            _ => Json(new { message = result.UpdatedCount == 1 ? "Sentence repaired." : $"Sentence repaired in {result.UpdatedCount} word details." })
+            _ => Json(new { message = result.UpdatedCount == 1 ? "Sentence repaired." : $"Sentence repaired in {result.UpdatedCount} places." })
         };
     }
 
@@ -158,64 +140,6 @@ public class QuizController : Controller
         await _wordService.AddWordAsync(input.QuizId, input.Word, input.Translation, quiz.SourceLanguage, quiz.TargetLanguage);
 
         return RedirectToAction(nameof(Details), new { id = input.QuizId });
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> GenerateWords(GenerateWordsInput model)
-    {
-        var wantsJson = WantsJsonResponse();
-        var userId = User.GetUserId();
-
-        if (!ModelState.IsValid)
-        {
-            var error = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-            if (wantsJson)
-                return BadRequest(new { error });
-            TempData["AiError"] = error;
-            return RedirectToAction(nameof(Details), new { id = model.QuizId });
-        }
-
-        GeneratedVocabularyResult result;
-        try
-        {
-            result = await _generatedVocabularyService.GenerateAndAddWordsAsync(model.QuizId, userId, model.Input);
-        }
-        catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex) || ServiceWarmupMessage.IsLlmWarmupFailure(ex))
-        {
-            _logger.LogWarning(ex, "Dependency warm-up interrupted vocabulary generation for quiz {QuizId}", model.QuizId);
-            var error = ServiceWarmupMessage.Dependencies;
-            if (wantsJson)
-                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error });
-            TempData["AiError"] = error;
-            return RedirectToAction(nameof(Details), new { id = model.QuizId });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Unexpected vocabulary generation failure for quiz {QuizId}", model.QuizId);
-            var error = "Something went wrong while generating words. Please try again in a moment.";
-            if (wantsJson)
-                return StatusCode(StatusCodes.Status500InternalServerError, new { error });
-            TempData["AiError"] = error;
-            return RedirectToAction(nameof(Details), new { id = model.QuizId });
-        }
-
-        if (result.Error != null)
-        {
-            if (wantsJson)
-                return UnprocessableEntity(new { error = result.Error });
-            TempData["AiError"] = result.Error;
-        }
-        else if (result.Message != null)
-        {
-            if (wantsJson)
-                return Json(new { message = result.Message, addedCount = result.AddedCount });
-            TempData["AiMessage"] = result.Message;
-        }
-
-        if (wantsJson)
-            return Json(new { message = "Generation finished.", addedCount = result.AddedCount });
-
-        return RedirectToAction(nameof(Details), new { id = model.QuizId });
     }
 
     [HttpPost]

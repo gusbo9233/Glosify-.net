@@ -25,14 +25,6 @@ public class RequestValidationTests
     }
 
     [Fact]
-    public void GenerateWordsInput_RequiresInputText()
-    {
-        var input = new GenerateWordsInput { QuizId = Guid.NewGuid(), Input = "" };
-
-        Assert.Contains(Validate(input), r => r.MemberNames.Contains(nameof(GenerateWordsInput.Input)));
-    }
-
-    [Fact]
     public void CreateQuizInput_RequiresAllNamedFields()
     {
         var input = new CreateQuizInput();

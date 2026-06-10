@@ -5,8 +5,6 @@ namespace Glosify.Services;
 public interface IWordService
 {
     Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId);
-    Task<IReadOnlySet<string>> GetEnrichedWordDetailIdsAsync(Guid quizId);
-    Task<IReadOnlyList<WordDetail>> GetWordDetailsAsync(Guid quizId);
     Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount);
     Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId);
     Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage);
