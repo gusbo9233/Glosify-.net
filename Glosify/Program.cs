@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Glosify.Models;
 using Glosify.Services;
 using Glosify.Services.Quizzes;
+using Glosify.Services.Storage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -124,6 +125,7 @@ builder.Services.Configure<GeminiOptions>(options =>
 });
 
 // Register application services
+builder.Services.Configure<BlobStorageOptions>(builder.Configuration.GetSection("BlobStorage"));
 builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<ICollectionService, CollectionService>();
 builder.Services.AddScoped<IQuizRepairService, QuizRepairService>();
@@ -131,6 +133,7 @@ builder.Services.AddScoped<IWordService, WordService>();
 builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
 builder.Services.AddScoped<ITypingQuizService, TypingQuizService>();
 builder.Services.AddScoped<ITypingSessionService, TypingSessionService>();
+builder.Services.AddSingleton<IBookFileStorage, AzureBlobBookFileStorage>();
 builder.Services.AddSingleton<IGeminiClient, GeminiClient>();
 builder.Services.AddScoped<IVocabularyGenerationService, LlmVocabularyGenerationService>();
 builder.Services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();

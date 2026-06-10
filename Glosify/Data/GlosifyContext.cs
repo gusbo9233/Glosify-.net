@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Glosify.Models;
+using Glosify.Models.Library;
 
 namespace Glosify.Data;
 
@@ -23,6 +24,9 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<AssistantMessage> AssistantMessages { get; set; }
 
     public DbSet<Collection> Collections { get; set; }
+
+    public DbSet<BookDocument> BookDocuments { get; set; }
+    public DbSet<BookPage> BookPages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -110,8 +114,9 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(c => c.Id);
             entity.Property(c => c.UserId).HasMaxLength(450).IsRequired();
             entity.Property(c => c.Name).HasMaxLength(160).IsRequired();
+            entity.Property(c => c.Language).HasMaxLength(64).IsRequired();
 
-            entity.HasIndex(c => new { c.UserId, c.ParentCollectionId, c.Name });
+            entity.HasIndex(c => new { c.UserId, c.Language, c.ParentCollectionId, c.Name });
 
             entity.HasOne<ApplicationUser>()
                 .WithMany()
@@ -122,6 +127,41 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
                 .WithMany(c => c.ChildCollections)
                 .HasForeignKey(c => c.ParentCollectionId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BookDocument>(entity =>
+        {
+            entity.HasKey(b => b.Id);
+            entity.Property(b => b.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(b => b.Title).HasMaxLength(256).IsRequired();
+            entity.Property(b => b.OriginalFileName).HasMaxLength(512).IsRequired();
+            entity.Property(b => b.BlobName).HasMaxLength(1024).IsRequired();
+            entity.Property(b => b.ProcessingStatus).HasMaxLength(64).IsRequired();
+            entity.Property(b => b.ProcessingMessage).HasMaxLength(512);
+
+            entity.HasIndex(b => b.UserId);
+            entity.HasIndex(b => new { b.UserId, b.CreatedAt });
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(b => b.UserId)
+                .HasConstraintName("FK_BookDocuments_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BookPage>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Text).IsRequired();
+            entity.Property(p => p.ExtractionWarning).HasMaxLength(512);
+
+            entity.HasIndex(p => new { p.BookDocumentId, p.PageNumber }).IsUnique();
+
+            entity.HasOne(p => p.BookDocument)
+                .WithMany(b => b.Pages)
+                .HasForeignKey(p => p.BookDocumentId)
+                .HasConstraintName("FK_BookPages_BookDocuments_BookDocumentId")
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
