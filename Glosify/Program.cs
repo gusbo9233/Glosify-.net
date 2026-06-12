@@ -33,7 +33,10 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
     options.SignIn.RequireConfirmedAccount = false;
 })
     .AddEntityFrameworkStores<GlosifyContext>()
-    .AddDefaultTokenProviders();
+    .AddDefaultTokenProviders()
+    // Enables MapIdentityApi (token-based register/login/refresh) for the mobile app,
+    // backed by the same user store as the cookie-based web sign-in.
+    .AddApiEndpoints();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -41,6 +44,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 var authenticationBuilder = builder.Services.AddAuthentication();
+authenticationBuilder.AddBearerToken(IdentityConstants.BearerScheme);
 var googleClientId = builder.Configuration["Authentication:Google:ClientId"];
 var googleClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"];
@@ -200,6 +204,11 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.MapRazorPages().AllowAnonymous();
+
+// Token auth endpoints for the mobile app (/api/auth/login, /register, /refresh, ...).
+// AllowAnonymous is required because of the fallback authorization policy; the /manage
+// endpoints in the group resolve the user from the bearer token and 404 without one.
+app.MapGroup("/api/auth").MapIdentityApi<ApplicationUser>().AllowAnonymous();
 
 
 app.Run();
