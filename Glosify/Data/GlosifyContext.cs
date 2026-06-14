@@ -84,11 +84,18 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.Property(t => t.UserId).HasMaxLength(450).IsRequired();
             entity.Property(t => t.Title).HasMaxLength(256);
             entity.HasIndex(t => new { t.QuizId, t.UserId });
+            entity.HasIndex(t => new { t.UserId, t.QuizId });
+            entity.HasIndex(t => t.ContextQuizId);
             entity.HasOne<Quiz>()
                 .WithMany()
                 .HasForeignKey(t => t.QuizId)
                 .HasConstraintName("FK_AssistantThreads_Quizzes_QuizId")
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Quiz>()
+                .WithMany()
+                .HasForeignKey(t => t.ContextQuizId)
+                .HasConstraintName("FK_AssistantThreads_Quizzes_ContextQuizId")
+                .OnDelete(DeleteBehavior.NoAction);
             entity.HasOne<ApplicationUser>()
                 .WithMany()
                 .HasForeignKey(t => t.UserId)
@@ -102,11 +109,17 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.Property(m => m.Role).HasMaxLength(16).IsRequired();
             entity.Property(m => m.Status).HasMaxLength(16).IsRequired();
             entity.HasIndex(m => new { m.ThreadId, m.Sequence }).IsUnique();
+            entity.HasIndex(m => m.ContextQuizId);
             entity.HasOne<AssistantThread>()
                 .WithMany()
                 .HasForeignKey(m => m.ThreadId)
                 .HasConstraintName("FK_AssistantMessages_AssistantThreads_ThreadId")
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Quiz>()
+                .WithMany()
+                .HasForeignKey(m => m.ContextQuizId)
+                .HasConstraintName("FK_AssistantMessages_Quizzes_ContextQuizId")
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<Collection>(entity =>

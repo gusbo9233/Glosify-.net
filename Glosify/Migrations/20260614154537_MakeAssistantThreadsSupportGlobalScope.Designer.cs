@@ -4,6 +4,7 @@ using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Glosify.Migrations
 {
     [DbContext(typeof(GlosifyContext))]
-    partial class GlosifyContextModelSnapshot : ModelSnapshot
+    [Migration("20260614154537_MakeAssistantThreadsSupportGlobalScope")]
+    partial class MakeAssistantThreadsSupportGlobalScope
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -99,10 +102,6 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("content_json");
 
-                    b.Property<Guid?>("ContextQuizId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("context_quiz_id");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset")
                         .HasColumnName("created_at");
@@ -133,8 +132,6 @@ namespace Glosify.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ContextQuizId");
-
                     b.HasIndex("ThreadId", "Sequence")
                         .IsUnique();
 
@@ -147,10 +144,6 @@ namespace Glosify.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("id");
-
-                    b.Property<Guid?>("ContextQuizId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("context_quiz_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset")
@@ -177,8 +170,6 @@ namespace Glosify.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ContextQuizId");
 
                     b.HasIndex("QuizId", "UserId");
 
@@ -579,12 +570,6 @@ namespace Glosify.Migrations
 
             modelBuilder.Entity("Glosify.Models.Entities.AssistantMessage", b =>
                 {
-                    b.HasOne("Glosify.Models.Entities.Quiz", null)
-                        .WithMany()
-                        .HasForeignKey("ContextQuizId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("FK_AssistantMessages_Quizzes_ContextQuizId");
-
                     b.HasOne("Glosify.Models.Entities.AssistantThread", null)
                         .WithMany()
                         .HasForeignKey("ThreadId")
@@ -595,12 +580,6 @@ namespace Glosify.Migrations
 
             modelBuilder.Entity("Glosify.Models.Entities.AssistantThread", b =>
                 {
-                    b.HasOne("Glosify.Models.Entities.Quiz", null)
-                        .WithMany()
-                        .HasForeignKey("ContextQuizId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .HasConstraintName("FK_AssistantThreads_Quizzes_ContextQuizId");
-
                     b.HasOne("Glosify.Models.Entities.Quiz", null)
                         .WithMany()
                         .HasForeignKey("QuizId")

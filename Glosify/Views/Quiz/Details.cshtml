@@ -3,6 +3,10 @@
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Model.SelectedQuiz.Name;
     ViewData["ActiveNav"] = "quizzes";
+    ViewData["AssistantQuizId"] = Model.SelectedQuiz.Id;
+    ViewData["AssistantContextLabel"] = Model.SelectedQuiz.Name;
+    ViewData["AssistantEmptyText"] = "Start a conversation about this quiz.";
+    ViewData["AssistantPlaceholder"] = "Ask about this quiz...";
 }
 
 <section class="workspace">
@@ -149,16 +153,7 @@
     </section>
 </section>
 
-@await Html.PartialAsync("_AssistantPanel", new AssistantPanelViewModel
-{
-    QuizId = Model.SelectedQuiz.Id,
-    ContextLabel = Model.SelectedQuiz.Name,
-    EmptyText = "Start a conversation about this quiz.",
-    Placeholder = "Ask about this quiz..."
-})
-
 @section Scripts {
-<script src="~/js/assistant.js"></script>
 <script>
     (() => {
         const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');

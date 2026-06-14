@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Glosify.Data;
+using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services;
@@ -9,45 +10,83 @@ public sealed class ChangeApplier : IChangeApplier
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly GlosifyContext _context;
+    private readonly IQuizService _quizService;
+    private readonly ICollectionService _collectionService;
     private readonly ILogger<ChangeApplier> _logger;
 
     public ChangeApplier(
         GlosifyContext context,
+        IQuizService quizService,
+        ICollectionService collectionService,
         ILogger<ChangeApplier> logger)
     {
         _context = context;
+        _quizService = quizService;
+        _collectionService = collectionService;
         _logger = logger;
     }
 
-    public async Task<int> ApplyAsync(
-        Guid quizId,
+    public async Task<AssistantApplyResult> ApplyAsync(
+        Guid? quizId,
         string userId,
         IReadOnlyList<PendingChange> changes,
         CancellationToken cancellationToken)
     {
-        var quiz = await _context.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId && q.UserId == userId, cancellationToken)
-            ?? throw new QuizNotFoundException();
+        Quiz? quiz = null;
+        if (changes.Any(RequiresQuizContext))
+        {
+            if (!quizId.HasValue)
+            {
+                throw new QuizNotFoundException("Choose a quiz before applying quiz content changes.");
+            }
+
+            quiz = await _context.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId.Value && q.UserId == userId, cancellationToken)
+                ?? throw new QuizNotFoundException();
+        }
 
         var applied = 0;
+        Guid? createdQuizId = null;
+        Guid? createdCollectionId = null;
+
         foreach (var change in changes)
         {
             switch (change.Kind)
             {
                 case PendingChangeKinds.AddWord:
-                    applied += await ApplyAddWordAsync(change.Payload, quiz, cancellationToken) ? 1 : 0;
+                    applied += await ApplyAddWordAsync(change.Payload, quiz!, cancellationToken) ? 1 : 0;
                     break;
                 case PendingChangeKinds.AddSentence:
-                    applied += await ApplyAddSentenceAsync(change.Payload, quiz, cancellationToken) ? 1 : 0;
+                    applied += await ApplyAddSentenceAsync(change.Payload, quiz!, cancellationToken) ? 1 : 0;
                     break;
                 case PendingChangeKinds.EditWord:
-                    applied += await ApplyEditWordAsync(change.Payload, quiz, cancellationToken) ? 1 : 0;
+                    applied += await ApplyEditWordAsync(change.Payload, quiz!, cancellationToken) ? 1 : 0;
                     break;
                 case PendingChangeKinds.DeleteWord:
-                    applied += await ApplyDeleteWordAsync(change.Payload, quiz, cancellationToken) ? 1 : 0;
+                    applied += await ApplyDeleteWordAsync(change.Payload, quiz!, cancellationToken) ? 1 : 0;
                     break;
                 case PendingChangeKinds.RepairSentence:
-                    applied += await ApplyRepairSentenceAsync(change.Payload, quiz, cancellationToken);
+                    applied += await ApplyRepairSentenceAsync(change.Payload, quiz!, cancellationToken);
                     break;
+                case PendingChangeKinds.CreateQuiz:
+                {
+                    var created = await ApplyCreateQuizAsync(change.Payload, userId, cancellationToken);
+                    if (created.HasValue)
+                    {
+                        applied++;
+                        createdQuizId ??= created;
+                    }
+                    break;
+                }
+                case PendingChangeKinds.CreateCollection:
+                {
+                    var created = await ApplyCreateCollectionAsync(change.Payload, userId, cancellationToken);
+                    if (created.HasValue)
+                    {
+                        applied++;
+                        createdCollectionId ??= created;
+                    }
+                    break;
+                }
                 default:
                     _logger.LogWarning("Unknown pending change kind {Kind}; skipping.", change.Kind);
                     break;
@@ -55,7 +94,16 @@ public sealed class ChangeApplier : IChangeApplier
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        return applied;
+        return new AssistantApplyResult(applied, createdQuizId, createdCollectionId);
+    }
+
+    private static bool RequiresQuizContext(PendingChange change)
+    {
+        return change.Kind is PendingChangeKinds.AddWord
+            or PendingChangeKinds.AddSentence
+            or PendingChangeKinds.EditWord
+            or PendingChangeKinds.DeleteWord
+            or PendingChangeKinds.RepairSentence;
     }
 
     private async Task<bool> ApplyAddWordAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
@@ -159,6 +207,66 @@ public sealed class ChangeApplier : IChangeApplier
         return matches.Count;
     }
 
+    private async Task<Guid?> ApplyCreateQuizAsync(JsonElement payload, string userId, CancellationToken ct)
+    {
+        var name = GetString(payload, "name");
+        var sourceLanguage = GetString(payload, "source_language");
+        var targetLanguage = GetString(payload, "target_language");
+        var collectionId = GetNullableGuid(payload, "collection_id");
+
+        if (string.IsNullOrWhiteSpace(name)
+            || string.IsNullOrWhiteSpace(sourceLanguage)
+            || string.IsNullOrWhiteSpace(targetLanguage))
+        {
+            return null;
+        }
+
+        try
+        {
+            var quiz = await _quizService.CreateQuizAsync(
+                name.Trim(),
+                sourceLanguage.Trim(),
+                targetLanguage.Trim(),
+                userId,
+                collectionId);
+
+            AddStarterWords(payload, quiz);
+            return quiz.Id;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Assistant could not create quiz {QuizName} for user {UserId}", name, userId);
+            return null;
+        }
+    }
+
+    private async Task<Guid?> ApplyCreateCollectionAsync(JsonElement payload, string userId, CancellationToken ct)
+    {
+        var name = GetString(payload, "name");
+        var language = GetString(payload, "language");
+        var parentCollectionId = GetNullableGuid(payload, "parent_collection_id");
+
+        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(language))
+        {
+            return null;
+        }
+
+        try
+        {
+            var collection = await _collectionService.CreateCollectionAsync(
+                name.Trim(),
+                language.Trim(),
+                userId,
+                parentCollectionId);
+            return collection.Id;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Assistant could not create collection {CollectionName} for user {UserId}", name, userId);
+            return null;
+        }
+    }
+
     private static string GetString(JsonElement element, string property)
     {
         if (!element.TryGetProperty(property, out var p)) return string.Empty;
@@ -169,6 +277,47 @@ public sealed class ChangeApplier : IChangeApplier
     {
         var preferred = GetString(element, preferredProperty);
         return string.IsNullOrWhiteSpace(preferred) ? GetString(element, legacyProperty) : preferred;
+    }
+
+    private static Guid? GetNullableGuid(JsonElement element, string property)
+    {
+        var value = GetString(element, property);
+        return Guid.TryParse(value, out var parsed) ? parsed : null;
+    }
+
+    private void AddStarterWords(JsonElement payload, Quiz quiz)
+    {
+        if (!payload.TryGetProperty("words", out var wordsElement)
+            || wordsElement.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in wordsElement.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var word = GetString(item, "word", "lemma").Trim();
+            var translation = GetString(item, "translation").Trim();
+            if (string.IsNullOrWhiteSpace(word)
+                || string.IsNullOrWhiteSpace(translation)
+                || !seen.Add(word))
+            {
+                continue;
+            }
+
+            _context.Words.Add(new Word
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                QuizId = quiz.Id,
+                Lemma = word,
+                Translation = translation,
+            });
+        }
     }
 
     private async Task<bool> AddQuizSentenceAsync(Guid quizId, string text, string translation, CancellationToken ct)

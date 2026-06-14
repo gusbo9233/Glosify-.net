@@ -22,6 +22,37 @@
     string QuizzesNavClass() =>
         IsQuizzesActive() ? "app-nav-item is-active" : "app-nav-item";
 
+    Guid? AssistantGuid(string key)
+    {
+        var value = ViewData[key];
+        if (value is Guid guid)
+        {
+            return guid;
+        }
+        if (value is string text && Guid.TryParse(text, out var parsed))
+        {
+            return parsed;
+        }
+        return null;
+    }
+
+    int? AssistantInt(string key)
+    {
+        var value = ViewData[key];
+        if (value is int number)
+        {
+            return number;
+        }
+        if (value is string text && int.TryParse(text, out var parsed))
+        {
+            return parsed;
+        }
+        return null;
+    }
+
+    string AssistantText(string key, string fallback) =>
+        ViewData[key] as string ?? fallback;
+
     IHtmlContent NavIcon(string name)
     {
         var paths = name switch
@@ -237,6 +268,21 @@
             </a>
         }
     </nav>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        @await Html.PartialAsync("_AssistantPanel", new AssistantPanelViewModel
+        {
+            QuizId = AssistantGuid("AssistantQuizId"),
+            FocusedWordId = ViewData["AssistantFocusedWordId"] as string,
+            DocumentId = AssistantGuid("AssistantDocumentId"),
+            CurrentPage = AssistantInt("AssistantCurrentPage"),
+            Title = AssistantText("AssistantTitle", "Assistant"),
+            ContextLabel = AssistantText("AssistantContextLabel", "Glosify"),
+            EmptyText = AssistantText("AssistantEmptyText", "Ask for help anywhere in Glosify."),
+            Placeholder = AssistantText("AssistantPlaceholder", "Ask the assistant...")
+        })
+        <script src="~/js/assistant.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

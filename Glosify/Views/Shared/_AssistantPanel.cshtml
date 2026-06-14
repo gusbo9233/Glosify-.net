@@ -1,0 +1,147 @@
+@model Glosify.Models.ViewModels.AssistantPanelViewModel
+@inject Microsoft.Extensions.Options.IOptions<Glosify.Services.GeminiOptions> GeminiOptions
+@inject Glosify.Services.IQuizService QuizService
+@{
+    var panelKey = Model.QuizId?.ToString("N") ?? "global";
+    var imageInputId = $"assistantImageInput-{panelKey}";
+    var popoverId = $"assistantPopover-{panelKey}";
+    var currentAssistantModel = string.IsNullOrWhiteSpace(GeminiOptions.Value.AssistantModel)
+        ? GeminiOptions.Value.StructuredModel
+        : GeminiOptions.Value.AssistantModel;
+    var hasGemini35AsCurrent = string.Equals(currentAssistantModel, "gemini-3.5-flash", StringComparison.OrdinalIgnoreCase);
+    IReadOnlyList<Quiz> contextQuizzes = [];
+    if (User.Identity?.IsAuthenticated == true)
+    {
+        contextQuizzes = await QuizService.GetUserQuizzesAsync(User.GetUserId());
+    }
+}
+
+<div class="assistant-float"
+     data-assistant-panel
+     data-quiz-id="@Model.QuizId"
+     data-context-label="@(string.IsNullOrWhiteSpace(Model.ContextLabel) ? "Glosify" : Model.ContextLabel)"
+     data-focused-word-id="@Model.FocusedWordId"
+     data-document-id="@Model.DocumentId"
+     data-current-page="@Model.CurrentPage">
+    @Html.AntiForgeryToken()
+    <button class="assistant-fab"
+            type="button"
+            aria-label="Open assistant"
+            aria-controls="@popoverId"
+            aria-expanded="false"
+            data-assistant-toggle>
+        <span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span>
+        <span class="assistant-fab-label">@Model.Title</span>
+    </button>
+
+    <section class="assistant-popover assistant-panel" id="@popoverId" hidden data-assistant-window>
+        <header class="assistant-ide-header">
+            <div class="assistant-tabs" aria-label="Assistant workspace">
+                <button class="assistant-tab is-active" type="button" data-assistant-tab="chat">CHAT</button>
+                <button class="assistant-tab" type="button" data-assistant-tab="chats">CHATS</button>
+            </div>
+            <div class="assistant-header-actions">
+                <button class="assistant-reset" type="button" aria-label="New chat" title="New chat" data-assistant-reset>
+                    <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                </button>
+                <button class="assistant-close" type="button" aria-label="Close assistant" data-assistant-close>
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="assistant-pane is-active" data-assistant-pane="chat">
+            <div class="assistant-transcript" data-assistant-transcript>
+                <div class="assistant-empty" data-assistant-empty>
+                    <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
+                    <strong>@Model.Title</strong>
+                    <span>@Model.EmptyText</span>
+                </div>
+            </div>
+
+            <div class="assistant-status" data-assistant-status hidden></div>
+
+            <form class="assistant-input" data-assistant-form>
+                <div class="assistant-context-bar">
+                    <div class="assistant-context-chip">
+                        <span class="material-symbols-outlined" aria-hidden="true">hub</span>
+                        <span data-assistant-context-label>@(string.IsNullOrWhiteSpace(Model.ContextLabel) ? "Glosify" : Model.ContextLabel)</span>
+                    </div>
+                </div>
+                <div class="assistant-composer">
+                    <textarea
+                        class="form-textarea"
+                        data-assistant-textarea
+                        placeholder="@Model.Placeholder"
+                        rows="3"
+                        required></textarea>
+                    <div class="assistant-composer-toolbar">
+                        <div class="assistant-composer-tools">
+                            <label class="assistant-context-picker">
+                                <span class="visually-hidden">Quiz context</span>
+                                <select aria-label="Quiz context" data-assistant-quiz-selector>
+                                    <option value="" data-context-label="Glosify">No quiz selected</option>
+                                    @foreach (var quiz in contextQuizzes)
+                                    {
+                                        if (Model.QuizId == quiz.Id)
+                                        {
+                                            <option value="@quiz.Id" data-context-label="@quiz.Name" selected>
+                                                @quiz.Name (@quiz.SourceLanguage &rarr; @quiz.TargetLanguage)
+                                            </option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@quiz.Id" data-context-label="@quiz.Name">
+                                            @quiz.Name (@quiz.SourceLanguage &rarr; @quiz.TargetLanguage)
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </label>
+                            @if (Model.QuizId.HasValue)
+                            {
+                                <label class="assistant-icon-tool" for="@imageInputId" aria-label="Picture" title="Picture">
+                                    <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                                </label>
+                                <input
+                                    id="@imageInputId"
+                                    class="visually-hidden"
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    data-assistant-image-input
+                                    data-extract-url="@Url.Action("ExtractTextFromImage", "Quiz", new { quizId = Model.QuizId })" />
+                                <span class="scan-status" data-assistant-scan-status hidden></span>
+                            }
+                            <label class="assistant-model-picker">
+                                <span class="visually-hidden">Assistant model</span>
+                                <select data-assistant-model-select aria-label="Assistant model">
+                                    <option value="@currentAssistantModel">Auto</option>
+                                    @if (!hasGemini35AsCurrent)
+                                    {
+                                        <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                                    }
+                                </select>
+                            </label>
+                        </div>
+                        <button class="assistant-send" type="submit" aria-label="Send" data-assistant-submit>
+                            <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="assistant-pane" data-assistant-pane="chats" hidden>
+            <div class="assistant-chat-list-toolbar">
+                <span>Previous chats</span>
+                <button class="assistant-list-action" type="button" aria-label="New chat" title="New chat" data-assistant-new-chat>
+                    <span class="material-symbols-outlined" aria-hidden="true">add</span>
+                </button>
+            </div>
+            <div class="assistant-chat-list" data-assistant-chat-list>
+                <div class="assistant-chat-list-empty">No saved chats yet.</div>
+            </div>
+        </div>
+    </section>
+</div>

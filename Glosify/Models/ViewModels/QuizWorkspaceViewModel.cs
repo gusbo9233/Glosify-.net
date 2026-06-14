@@ -25,7 +25,7 @@ namespace Glosify.Models.ViewModels
 
     public class AssistantPanelViewModel
     {
-        public Guid QuizId { get; set; }
+        public Guid? QuizId { get; set; }
         public string? FocusedWordId { get; set; }
         public Guid? DocumentId { get; set; }
         public int? CurrentPage { get; set; }

@@ -9,7 +9,10 @@ public class AssistantThread
     public Guid Id { get; set; }
 
     [Column("quiz_id")]
-    public Guid QuizId { get; set; }
+    public Guid? QuizId { get; set; }
+
+    [Column("context_quiz_id")]
+    public Guid? ContextQuizId { get; set; }
 
     [Column("user_id")]
     public string UserId { get; set; } = string.Empty;

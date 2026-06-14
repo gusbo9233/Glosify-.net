@@ -3,73 +3,60 @@
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Model.Book.Title;
     var selectedQuiz = Model.Quizzes.FirstOrDefault(quiz => quiz.Id == Model.SelectedQuizId);
+    if (selectedQuiz != null)
+    {
+        ViewData["AssistantQuizId"] = selectedQuiz.Id;
+        ViewData["AssistantDocumentId"] = Model.Book.Id;
+        ViewData["AssistantCurrentPage"] = 1;
+        ViewData["AssistantTitle"] = "Page assistant";
+        ViewData["AssistantContextLabel"] = $"{selectedQuiz.Name} - {Model.Book.Title}";
+        ViewData["AssistantEmptyText"] = "Ask for vocabulary or sentences from this page.";
+        ViewData["AssistantPlaceholder"] = "Make a quiz from this page...";
+    }
 }
 
 <section class="book-reader-page">
-    <header class="reader-toolbar">
-        <div>
-            <p class="hero-label">Reading</p>
-            <h1 class="page-title">@Model.Book.Title</h1>
-        </div>
-        <a class="btn-secondary" asp-controller="Books" asp-action="Index">
-            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-            Books
-        </a>
-    </header>
-
-    <section class="reader-controls panel">
-        <div class="reader-control-group">
-            <label class="form-label" for="targetQuiz">Target quiz</label>
-            <select class="form-input" id="targetQuiz" data-quiz-selector>
-                <option value="">Choose a quiz</option>
-                @foreach (var quiz in Model.Quizzes)
-                {
-                    <option value="@quiz.Id" selected="@(quiz.Id == Model.SelectedQuizId)">
-                        @quiz.Name (@quiz.SourceLanguage &rarr; @quiz.TargetLanguage)
-                    </option>
-                }
-            </select>
-        </div>
-        <div class="reader-page-actions">
-            <button class="btn-secondary" type="button" data-prev-page aria-label="Previous page">
-                <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
-            </button>
-            <span class="reader-page-indicator" data-page-indicator>Page 1 of @Model.Book.PageCount</span>
-            <button class="btn-secondary" type="button" data-next-page aria-label="Next page">
-                <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
-            </button>
-        </div>
-    </section>
-
-    @if (selectedQuiz == null)
-    {
-        <div class="panel-message">Choose a target quiz to enable the assistant for this page.</div>
-    }
-
     <section class="pdf-reader-shell" data-document-id="@Model.Book.Id" data-page-count="@Model.Book.PageCount">
         <div class="pdf-canvas-wrap">
             <canvas data-pdf-canvas></canvas>
         </div>
+
+        <a class="reader-back" asp-controller="Books" asp-action="Index" title="Back to books">
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            Books
+        </a>
+
+        <div class="reader-tools" role="toolbar" aria-label="PDF view controls">
+            <button class="reader-tool" type="button" data-zoom-out aria-label="Zoom out" title="Zoom out">
+                <span class="material-symbols-outlined" aria-hidden="true">remove</span>
+            </button>
+            <button class="reader-tool reader-zoom-value" type="button" data-zoom-reset aria-label="Reset zoom to 100%" title="Reset zoom" data-zoom-value>100%</button>
+            <button class="reader-tool" type="button" data-zoom-in aria-label="Zoom in" title="Zoom in">
+                <span class="material-symbols-outlined" aria-hidden="true">add</span>
+            </button>
+            <span class="reader-tool-divider" aria-hidden="true"></span>
+            <button class="reader-tool" type="button" data-fit-toggle aria-label="Fit to page" title="Fit to page" aria-pressed="false">
+                <span class="material-symbols-outlined" aria-hidden="true">fit_screen</span>
+            </button>
+            <button class="reader-tool" type="button" data-rotate aria-label="Rotate clockwise" title="Rotate clockwise">
+                <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>
+            </button>
+        </div>
+
+        <button class="reader-nav-arrow reader-nav-prev" type="button" data-prev-page aria-label="Previous page" aria-keyshortcuts="ArrowLeft" title="Previous page">
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+        </button>
+        <button class="reader-nav-arrow reader-nav-next" type="button" data-next-page aria-label="Next page" aria-keyshortcuts="ArrowRight" title="Next page">
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </button>
+
+        <div class="reader-page-pill" data-page-indicator>Page 1 of @Model.Book.PageCount</div>
+
         <div class="assistant-status is-error" data-reader-status hidden></div>
     </section>
 </section>
 
-@if (selectedQuiz != null)
-{
-    @await Html.PartialAsync("_AssistantPanel", new AssistantPanelViewModel
-    {
-        QuizId = selectedQuiz.Id,
-        DocumentId = Model.Book.Id,
-        CurrentPage = 1,
-        Title = "Page assistant",
-        ContextLabel = $"{selectedQuiz.Name} - {Model.Book.Title}",
-        EmptyText = "Ask for vocabulary or sentences from this page.",
-        Placeholder = "Make a quiz from this page..."
-    })
-}
-
 @section Scripts {
-<script src="~/js/assistant.js"></script>
 <script type="module">
     const shell = document.querySelector('[data-document-id]');
     const canvas = document.querySelector('[data-pdf-canvas]');
@@ -77,12 +64,41 @@
     const prev = document.querySelector('[data-prev-page]');
     const next = document.querySelector('[data-next-page]');
     const status = document.querySelector('[data-reader-status]');
-    const quizSelector = document.querySelector('[data-quiz-selector]');
     const assistantPanel = document.querySelector('[data-assistant-panel]');
+    const zoomValue = document.querySelector('[data-zoom-value]');
+    const zoomInBtn = document.querySelector('[data-zoom-in]');
+    const zoomOutBtn = document.querySelector('[data-zoom-out]');
+    const zoomResetBtn = document.querySelector('[data-zoom-reset]');
+    const fitToggleBtn = document.querySelector('[data-fit-toggle]');
+    const rotateBtn = document.querySelector('[data-rotate]');
     const documentId = shell?.dataset.documentId;
     let pdf = null;
     let currentPage = 1;
     let rendering = false;
+    let pendingRender = false;
+
+    const ZOOM_MIN = 0.25;
+    const ZOOM_MAX = 5;
+    const ZOOM_STEP = 0.25;
+    let fitMode = 'width'; // 'width' | 'page' | null (custom zoom)
+    let zoomScale = 1;
+    let rotation = 0;
+
+    const isTextInput = (element) => {
+        if (!element) return false;
+        const tagName = element.tagName?.toLowerCase();
+        return tagName === 'input'
+            || tagName === 'textarea'
+            || tagName === 'select'
+            || element.isContentEditable;
+    };
+
+    const goToPage = (pageNumber) => {
+        if (!pdf) return;
+        const boundedPage = Math.min(Math.max(pageNumber, 1), pdf.numPages);
+        if (boundedPage === currentPage || rendering) return;
+        renderPage(boundedPage);
+    };
 
     const setStatus = (message) => {
         if (!status) return;
@@ -96,49 +112,139 @@
         }
     };
 
+    const updateToolbar = () => {
+        if (zoomValue) zoomValue.textContent = `${Math.round(zoomScale * 100)}%`;
+        fitToggleBtn?.classList.toggle('is-active', fitMode === 'page');
+        fitToggleBtn?.setAttribute('aria-pressed', String(fitMode === 'page'));
+        if (zoomOutBtn) zoomOutBtn.disabled = zoomScale <= ZOOM_MIN + 0.001;
+        if (zoomInBtn) zoomInBtn.disabled = zoomScale >= ZOOM_MAX - 0.001;
+    };
+
+    const computeScale = (page, wrap) => {
+        const padding = 48;
+        const base = page.getViewport({ scale: 1, rotation });
+        if (fitMode === 'width') {
+            const availableWidth = Math.max((wrap?.clientWidth || 900) - padding, 320);
+            return availableWidth / base.width;
+        }
+        if (fitMode === 'page') {
+            const availableWidth = Math.max((wrap?.clientWidth || 900) - padding, 320);
+            const availableHeight = Math.max((wrap?.clientHeight || 600) - padding, 320);
+            return Math.min(availableWidth / base.width, availableHeight / base.height);
+        }
+        return zoomScale;
+    };
+
     const renderPage = async (pageNumber) => {
-        if (!pdf || !canvas || rendering) return;
+        if (!pdf || !canvas) return;
+        if (rendering) { pendingRender = true; return; }
         rendering = true;
         try {
             const page = await pdf.getPage(pageNumber);
             const wrap = canvas.closest('.pdf-canvas-wrap');
-            const availableWidth = Math.max((wrap?.clientWidth || 900) - 32, 320);
-            const unscaled = page.getViewport({ scale: 1 });
-            const scale = Math.min(1.6, availableWidth / unscaled.width);
-            const viewport = page.getViewport({ scale });
+            let scale = computeScale(page, wrap);
+            scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, scale));
+            zoomScale = scale;
+            const viewport = page.getViewport({ scale, rotation });
             const context = canvas.getContext('2d');
+            const ratio = Math.min(window.devicePixelRatio || 1, 2);
 
-            canvas.width = Math.floor(viewport.width);
-            canvas.height = Math.floor(viewport.height);
+            canvas.width = Math.floor(viewport.width * ratio);
+            canvas.height = Math.floor(viewport.height * ratio);
             canvas.style.width = `${Math.floor(viewport.width)}px`;
             canvas.style.height = `${Math.floor(viewport.height)}px`;
 
-            await page.render({ canvasContext: context, viewport }).promise;
+            await page.render({
+                canvasContext: context,
+                viewport,
+                transform: ratio !== 1 ? [ratio, 0, 0, ratio, 0, 0] : null
+            }).promise;
             currentPage = pageNumber;
             indicator.textContent = `Page ${currentPage} of ${pdf.numPages}`;
             prev.disabled = currentPage <= 1;
             next.disabled = currentPage >= pdf.numPages;
+            updateToolbar();
             syncAssistantPage();
             setStatus('');
         } catch {
             setStatus('This page could not be rendered.');
         } finally {
             rendering = false;
+            if (pendingRender) {
+                pendingRender = false;
+                renderPage(currentPage);
+            }
         }
     };
 
-    quizSelector?.addEventListener('change', () => {
-        const url = new URL(window.location.href);
-        if (quizSelector.value) {
-            url.searchParams.set('quizId', quizSelector.value);
-        } else {
-            url.searchParams.delete('quizId');
-        }
-        window.location.href = url.toString();
+    const applyZoom = (newScale) => {
+        fitMode = null;
+        zoomScale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, newScale));
+        renderPage(currentPage);
+    };
+
+    prev?.addEventListener('click', () => goToPage(currentPage - 1));
+    next?.addEventListener('click', () => goToPage(currentPage + 1));
+
+    zoomInBtn?.addEventListener('click', () => applyZoom(zoomScale + ZOOM_STEP));
+    zoomOutBtn?.addEventListener('click', () => applyZoom(zoomScale - ZOOM_STEP));
+    zoomResetBtn?.addEventListener('click', () => applyZoom(1));
+    fitToggleBtn?.addEventListener('click', () => {
+        fitMode = fitMode === 'page' ? 'width' : 'page';
+        renderPage(currentPage);
+    });
+    rotateBtn?.addEventListener('click', () => {
+        rotation = (rotation + 90) % 360;
+        renderPage(currentPage);
     });
 
-    prev?.addEventListener('click', () => renderPage(Math.max(1, currentPage - 1)));
-    next?.addEventListener('click', () => renderPage(Math.min(pdf?.numPages || 1, currentPage + 1)));
+    window.addEventListener('keydown', (event) => {
+        if (event.altKey || event.metaKey || event.shiftKey || isTextInput(event.target)) {
+            return;
+        }
+
+        // Ctrl+/- mirrors browser zoom shortcuts; bare keys also work.
+        if (event.key === '+' || event.key === '=') {
+            event.preventDefault();
+            applyZoom(zoomScale + ZOOM_STEP);
+            return;
+        }
+        if (event.key === '-' || event.key === '_') {
+            event.preventDefault();
+            applyZoom(zoomScale - ZOOM_STEP);
+            return;
+        }
+        if (event.key === '0') {
+            event.preventDefault();
+            applyZoom(1);
+            return;
+        }
+
+        if (event.ctrlKey) return;
+
+        if (event.key === 'r' || event.key === 'R') {
+            event.preventDefault();
+            rotation = (rotation + 90) % 360;
+            renderPage(currentPage);
+        }
+
+        if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            goToPage(currentPage - 1);
+        }
+
+        if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            goToPage(currentPage + 1);
+        }
+    });
+
+    canvas?.closest('.pdf-canvas-wrap')?.addEventListener('wheel', (event) => {
+        if (!event.ctrlKey) return;
+        event.preventDefault();
+        applyZoom(zoomScale + (event.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP));
+    }, { passive: false });
+
     window.addEventListener('resize', () => renderPage(currentPage));
 
     try {
