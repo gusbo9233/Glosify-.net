@@ -15,6 +15,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     private readonly GeminiOptions _geminiOptions;
     private readonly IAssistantTools _tools;
     private readonly IChangeApplier _changeApplier;
+    private readonly IBookDocumentService _books;
     private readonly ILogger<AssistantOrchestrator> _logger;
 
     public AssistantOrchestrator(
@@ -23,6 +24,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         IOptions<GeminiOptions> geminiOptions,
         IAssistantTools tools,
         IChangeApplier changeApplier,
+        IBookDocumentService books,
         ILogger<AssistantOrchestrator> logger)
     {
         _context = context;
@@ -30,6 +32,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         _geminiOptions = geminiOptions.Value;
         _tools = tools;
         _changeApplier = changeApplier;
+        _books = books;
         _logger = logger;
     }
 
@@ -39,6 +42,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         string userMessage,
         string? focusedWordId = null,
         string? model = null,
+        AssistantDocumentContext? documentContext = null,
         CancellationToken cancellationToken = default)
     {
         var quiz = await _context.Quizzes
@@ -46,6 +50,9 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             ?? throw new QuizNotFoundException();
 
         var focusedWord = await LoadFocusedWordAsync(quizId, focusedWordId, cancellationToken);
+        var documentPage = documentContext is null
+            ? null
+            : await LoadDocumentPageContextAsync(documentContext, userId, cancellationToken);
 
         var thread = await GetOrCreateThreadAsync(quizId, userId, cancellationToken);
 
@@ -79,7 +86,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             FocusedWordLabel = focusedWord == null ? null : $"{focusedWord.Lemma} -> {focusedWord.Translation}",
         };
 
-        var systemInstruction = BuildSystemInstruction(quiz, focusedWord);
+        var systemInstruction = BuildSystemInstruction(quiz, focusedWord, documentPage);
         var selectedModel = ResolveAssistantModel(model);
         var toolEvents = new List<AssistantToolEvent>();
 
@@ -344,7 +351,35 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             .FirstOrDefaultAsync(word => word.Id == focusedWordId && word.QuizId == quizId, ct);
     }
 
-    private static string BuildSystemInstruction(Quiz quiz, Word? focusedWord)
+    private async Task<DocumentPageContext> LoadDocumentPageContextAsync(
+        AssistantDocumentContext documentContext,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        if (documentContext.PageNumber < 1)
+        {
+            throw new InvalidOperationException("Choose a valid book page.");
+        }
+
+        var page = await _books.GetOwnedPageAsync(
+            documentContext.DocumentId,
+            documentContext.PageNumber,
+            userId,
+            cancellationToken);
+
+        if (page == null)
+        {
+            throw new InvalidOperationException("That book page was not found.");
+        }
+
+        return new DocumentPageContext(
+            page.BookDocument.Title,
+            page.PageNumber,
+            page.Text,
+            page.ExtractionWarning);
+    }
+
+    private static string BuildSystemInstruction(Quiz quiz, Word? focusedWord, DocumentPageContext? documentPage)
     {
         var focusInstruction = focusedWord == null
             ? string.Empty
@@ -355,17 +390,24 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - Any mutating tool call that edits, deletes, or repairs content must target only this word id when a word id is required: {focusedWord.Id}.
         - Do not propose changes to other words unless the user leaves this context.
         """;
+        var documentInstruction = documentPage == null
+            ? string.Empty
+            : BuildDocumentInstruction(documentPage);
 
         return $"""
         You are Glosify's language-learning assistant. You help the user manage a quiz that teaches "{quiz.TargetLanguage}" to a speaker of "{quiz.SourceLanguage}". The current quiz is named "{quiz.Name}".
         {focusInstruction}
+        {documentInstruction}
 
         Rules:
         - Read-only tools (list_words, get_word) execute immediately. Their results are returned to you.
         - Mutating tools (add_word, add_sentence, edit_word, delete_word, repair_sentence) propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool.
         - When the user gives you text to extract vocabulary from, extract meaningful words yourself and call add_word once per word. Skip closed-class words (articles, basic prepositions) unless they are central to the text.
+        - When the user asks to make a quiz from the current book page, extract useful vocabulary from the current page text.
         - Do not add a sentence when the user only asks for words.
         - Do not put sentence text in add_word. If the user asks for standalone quiz sentences, or pasted text already contains natural full sentences, call add_sentence once per sentence.
+        - If current page text is available and the user asks for sentences from it, call add_sentence for natural full sentences from that page.
+        - If the current book page has no selectable text, explain that Glosify cannot read this page in v1 and ask the user to choose another page or paste text.
         - When the user asks for grammar details, properties, conjugations, declensions, cases, forms, or variants, answer conversationally and recommend the Wiktionary link on the word card for dictionary detail.
         - When the user asks to add or update example sentences, use add_sentence or repair_sentence.
         - Good example sentences are short, grammatical, and context-rich. Do not write pronunciation hints, gender notes, slash-separated alternatives, dictionary glosses, fragments, or markup as example sentences.
@@ -374,6 +416,29 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - Keep your final response concise and user-facing: one or two sentences summarising what you queued.
         - Do not mention internal tool names, tool calls, word ids, JSON, or implementation details in your final response.
         - All words stay in {quiz.TargetLanguage}; all translations stay in {quiz.SourceLanguage}.
+        """;
+    }
+
+    private static string BuildDocumentInstruction(DocumentPageContext documentPage)
+    {
+        var pageText = string.IsNullOrWhiteSpace(documentPage.Text)
+            ? $"[{documentPage.Warning ?? "No selectable text found on this page."}]"
+            : documentPage.Text;
+
+        return $"""
+
+        Current book page context:
+        - Document: "{documentPage.Title}"
+        - Page: {documentPage.PageNumber}
+        - The user is reading this page now.
+        - When the user says "this page", "here", "from the book", or "from what I am reading", use this page text.
+        - Use only this page text unless the user asks for something else.
+        - Keep generated words and sentences queued for review.
+
+        Page text:
+        ---
+        {pageText}
+        ---
         """;
     }
 
@@ -539,4 +604,5 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     }
 
     private sealed record WordLabel(string Id, string Word, string Translation);
+    private sealed record DocumentPageContext(string Title, int PageNumber, string Text, string? Warning);
 }

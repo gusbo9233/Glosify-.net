@@ -12,7 +12,9 @@
 <div class="assistant-float"
      data-assistant-panel
      data-quiz-id="@Model.QuizId"
-     data-focused-word-id="@Model.FocusedWordId">
+     data-focused-word-id="@Model.FocusedWordId"
+     data-document-id="@Model.DocumentId"
+     data-current-page="@Model.CurrentPage">
     @Html.AntiForgeryToken()
     <button class="assistant-fab"
             type="button"

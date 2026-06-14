@@ -138,6 +138,8 @@ builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
 builder.Services.AddScoped<ITypingQuizService, TypingQuizService>();
 builder.Services.AddScoped<ITypingSessionService, TypingSessionService>();
 builder.Services.AddSingleton<IBookFileStorage, AzureBlobBookFileStorage>();
+builder.Services.AddScoped<IPdfTextExtractionService, PdfPigTextExtractionService>();
+builder.Services.AddScoped<IBookDocumentService, BookDocumentService>();
 builder.Services.AddSingleton<IGeminiClient, GeminiClient>();
 builder.Services.AddScoped<IVocabularyGenerationService, LlmVocabularyGenerationService>();
 builder.Services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();

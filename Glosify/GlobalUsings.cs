@@ -6,3 +6,4 @@ global using Glosify.Models.ViewModels;
 global using Glosify.Models.Requests;
 global using Glosify.Models.Ai;
 global using Glosify.Extensions;
+global using Glosify.Services.Books;

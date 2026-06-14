@@ -275,6 +275,11 @@
         event.preventDefault();
         const message = textarea.value.trim();
         if (!message) return;
+        const documentId = panel.dataset.documentId || null;
+        const currentPage = Number(panel.dataset.currentPage || 1);
+        const documentContext = documentId
+            ? { documentId, pageNumber: Number.isFinite(currentPage) ? currentPage : 1 }
+            : null;
 
         renderMessage({
             id: `local-${Date.now()}`,
@@ -296,7 +301,12 @@
                     'Content-Type': 'application/json',
                     'RequestVerificationToken': tokenInput?.value ?? '',
                 },
-                body: JSON.stringify({ message, focusedWordId, model: modelSelect?.value || null }),
+                body: JSON.stringify({
+                    message,
+                    focusedWordId,
+                    model: modelSelect?.value || null,
+                    documentContext,
+                }),
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {

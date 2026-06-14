@@ -1,0 +1,69 @@
+@model BookLibraryViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "Books";
+}
+
+<section class="books-page">
+    <section class="books-header">
+        <div>
+            <p class="hero-label">Library</p>
+            <h1 class="page-title">Books</h1>
+        </div>
+    </section>
+
+    @if (TempData["BookMessage"] is string bookMessage)
+    {
+        <div class="panel-message">@bookMessage</div>
+    }
+
+    <div class="tool-grid tool-grid-single">
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-icon"><span class="material-symbols-outlined">upload_file</span></div>
+                <h2 class="panel-title">Upload PDF</h2>
+            </div>
+            <form method="post" asp-controller="Books" asp-action="Upload" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label" for="bookFile">PDF file</label>
+                    <input class="form-input" id="bookFile" name="file" type="file" accept="application/pdf,.pdf" required />
+                </div>
+                <button class="btn-submit" type="submit">
+                    Upload <span class="material-symbols-outlined" aria-hidden="true">cloud_upload</span>
+                </button>
+            </form>
+        </section>
+    </div>
+
+    <section>
+        <div class="collection-header">
+            <div>
+                <h2 class="collection-title">Uploaded Books</h2>
+                <p class="collection-subtitle">@Model.Books.Count @(Model.Books.Count == 1 ? "book" : "books") in your library</p>
+            </div>
+        </div>
+
+        <div class="book-grid">
+            @foreach (var book in Model.Books)
+            {
+                <article class="book-card">
+                    <div class="book-card-main">
+                        <div class="word-icon"><span class="material-symbols-outlined">picture_as_pdf</span></div>
+                        <div>
+                            <h3 class="book-title">@book.Title</h3>
+                            <p class="book-meta">@book.PageCount pages &middot; @book.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</p>
+                        </div>
+                    </div>
+                    <a class="btn-secondary" asp-controller="Books" asp-action="Read" asp-route-id="@book.Id">
+                        Read <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                    </a>
+                </article>
+            }
+            @if (!Model.Books.Any())
+            {
+                <div class="empty-state">No books yet. Upload a text-based PDF to start reading.</div>
+            }
+        </div>
+    </section>
+</section>

@@ -1,0 +1,153 @@
+@model BookReaderViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Model.Book.Title;
+    var selectedQuiz = Model.Quizzes.FirstOrDefault(quiz => quiz.Id == Model.SelectedQuizId);
+}
+
+<section class="book-reader-page">
+    <header class="reader-toolbar">
+        <div>
+            <p class="hero-label">Reading</p>
+            <h1 class="page-title">@Model.Book.Title</h1>
+        </div>
+        <a class="btn-secondary" asp-controller="Books" asp-action="Index">
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+            Books
+        </a>
+    </header>
+
+    <section class="reader-controls panel">
+        <div class="reader-control-group">
+            <label class="form-label" for="targetQuiz">Target quiz</label>
+            <select class="form-input" id="targetQuiz" data-quiz-selector>
+                <option value="">Choose a quiz</option>
+                @foreach (var quiz in Model.Quizzes)
+                {
+                    <option value="@quiz.Id" selected="@(quiz.Id == Model.SelectedQuizId)">
+                        @quiz.Name (@quiz.SourceLanguage &rarr; @quiz.TargetLanguage)
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="reader-page-actions">
+            <button class="btn-secondary" type="button" data-prev-page aria-label="Previous page">
+                <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+            </button>
+            <span class="reader-page-indicator" data-page-indicator>Page 1 of @Model.Book.PageCount</span>
+            <button class="btn-secondary" type="button" data-next-page aria-label="Next page">
+                <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+            </button>
+        </div>
+    </section>
+
+    @if (selectedQuiz == null)
+    {
+        <div class="panel-message">Choose a target quiz to enable the assistant for this page.</div>
+    }
+
+    <section class="pdf-reader-shell" data-document-id="@Model.Book.Id" data-page-count="@Model.Book.PageCount">
+        <div class="pdf-canvas-wrap">
+            <canvas data-pdf-canvas></canvas>
+        </div>
+        <div class="assistant-status is-error" data-reader-status hidden></div>
+    </section>
+</section>
+
+@if (selectedQuiz != null)
+{
+    @await Html.PartialAsync("_AssistantPanel", new AssistantPanelViewModel
+    {
+        QuizId = selectedQuiz.Id,
+        DocumentId = Model.Book.Id,
+        CurrentPage = 1,
+        Title = "Page assistant",
+        ContextLabel = $"{selectedQuiz.Name} - {Model.Book.Title}",
+        EmptyText = "Ask for vocabulary or sentences from this page.",
+        Placeholder = "Make a quiz from this page..."
+    })
+}
+
+@section Scripts {
+<script src="~/js/assistant.js"></script>
+<script type="module">
+    const shell = document.querySelector('[data-document-id]');
+    const canvas = document.querySelector('[data-pdf-canvas]');
+    const indicator = document.querySelector('[data-page-indicator]');
+    const prev = document.querySelector('[data-prev-page]');
+    const next = document.querySelector('[data-next-page]');
+    const status = document.querySelector('[data-reader-status]');
+    const quizSelector = document.querySelector('[data-quiz-selector]');
+    const assistantPanel = document.querySelector('[data-assistant-panel]');
+    const documentId = shell?.dataset.documentId;
+    let pdf = null;
+    let currentPage = 1;
+    let rendering = false;
+
+    const setStatus = (message) => {
+        if (!status) return;
+        status.hidden = !message;
+        status.textContent = message || '';
+    };
+
+    const syncAssistantPage = () => {
+        if (assistantPanel) {
+            assistantPanel.dataset.currentPage = String(currentPage);
+        }
+    };
+
+    const renderPage = async (pageNumber) => {
+        if (!pdf || !canvas || rendering) return;
+        rendering = true;
+        try {
+            const page = await pdf.getPage(pageNumber);
+            const wrap = canvas.closest('.pdf-canvas-wrap');
+            const availableWidth = Math.max((wrap?.clientWidth || 900) - 32, 320);
+            const unscaled = page.getViewport({ scale: 1 });
+            const scale = Math.min(1.6, availableWidth / unscaled.width);
+            const viewport = page.getViewport({ scale });
+            const context = canvas.getContext('2d');
+
+            canvas.width = Math.floor(viewport.width);
+            canvas.height = Math.floor(viewport.height);
+            canvas.style.width = `${Math.floor(viewport.width)}px`;
+            canvas.style.height = `${Math.floor(viewport.height)}px`;
+
+            await page.render({ canvasContext: context, viewport }).promise;
+            currentPage = pageNumber;
+            indicator.textContent = `Page ${currentPage} of ${pdf.numPages}`;
+            prev.disabled = currentPage <= 1;
+            next.disabled = currentPage >= pdf.numPages;
+            syncAssistantPage();
+            setStatus('');
+        } catch {
+            setStatus('This page could not be rendered.');
+        } finally {
+            rendering = false;
+        }
+    };
+
+    quizSelector?.addEventListener('change', () => {
+        const url = new URL(window.location.href);
+        if (quizSelector.value) {
+            url.searchParams.set('quizId', quizSelector.value);
+        } else {
+            url.searchParams.delete('quizId');
+        }
+        window.location.href = url.toString();
+    });
+
+    prev?.addEventListener('click', () => renderPage(Math.max(1, currentPage - 1)));
+    next?.addEventListener('click', () => renderPage(Math.min(pdf?.numPages || 1, currentPage + 1)));
+    window.addEventListener('resize', () => renderPage(currentPage));
+
+    try {
+        const pdfjs = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
+        pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+        pdf = await pdfjs.getDocument(`/Books/File/${documentId}`).promise;
+        await renderPage(1);
+    } catch {
+        setStatus('The PDF could not be loaded.');
+    }
+</script>
+}

@@ -46,12 +46,19 @@ public class AssistantController : ControllerBase
                 input.Message,
                 input.FocusedWordId,
                 input.Model,
+                input.DocumentContext is null
+                    ? null
+                    : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),
                 cancellationToken);
             return Ok(response);
         }
         catch (QuizNotFoundException ex)
         {
             return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
         catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex) || ServiceWarmupMessage.IsLlmWarmupFailure(ex))
         {
@@ -114,5 +121,12 @@ public class AssistantController : ControllerBase
         public string Message { get; set; } = string.Empty;
         public string? FocusedWordId { get; set; }
         public string? Model { get; set; }
+        public DocumentContextInput? DocumentContext { get; set; }
+    }
+
+    public sealed class DocumentContextInput
+    {
+        public Guid DocumentId { get; set; }
+        public int PageNumber { get; set; }
     }
 }

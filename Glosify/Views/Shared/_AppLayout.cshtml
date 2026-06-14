@@ -59,6 +59,12 @@
                 <path d="M8 3h8"></path>
                 <path d="m10 11 5 2.5-5 2.5v-5Z"></path>
                 """,
+            "auto_stories" => """
+                <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5v-16Z"></path>
+                <path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5A2.5 2.5 0 0 1 20 21.5v-16Z"></path>
+                <path d="M8 7h1"></path>
+                <path d="M15 7h1"></path>
+                """,
             "quiz" => """
                 <path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14l-4-3H6a2 2 0 0 1-2-2V5Z"></path>
                 <path d="M9.5 8.5a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4"></path>
@@ -137,6 +143,10 @@
                     @NavIcon("subscriptions")
                     Library
                 </a>
+                <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
+                    @NavIcon("auto_stories")
+                    Books
+                </a>
                 <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
                     @NavIcon("quiz")
                     Quizzes
@@ -207,6 +217,10 @@
         <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
             @NavIcon("quiz")
             <span>Quizzes</span>
+        </a>
+        <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
+            @NavIcon("auto_stories")
+            <span>Books</span>
         </a>
         @if (User.Identity?.IsAuthenticated == true)
         {

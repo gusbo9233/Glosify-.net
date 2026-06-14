@@ -8,6 +8,7 @@ public interface IAssistantOrchestrator
         string userMessage,
         string? focusedWordId = null,
         string? model = null,
+        AssistantDocumentContext? documentContext = null,
         CancellationToken cancellationToken = default);
 
     Task<AssistantHistory> GetHistoryAsync(
@@ -50,3 +51,5 @@ public sealed record AssistantMessageView(
     IReadOnlyList<AssistantPendingChangeView> PendingChanges,
     string Status,
     DateTimeOffset CreatedAt);
+
+public sealed record AssistantDocumentContext(Guid DocumentId, int PageNumber);

@@ -27,6 +27,8 @@ namespace Glosify.Models.ViewModels
     {
         public Guid QuizId { get; set; }
         public string? FocusedWordId { get; set; }
+        public Guid? DocumentId { get; set; }
+        public int? CurrentPage { get; set; }
         public string Title { get; set; } = "Assistant";
         public string ContextLabel { get; set; } = string.Empty;
         public string EmptyText { get; set; } = "Start a conversation.";
