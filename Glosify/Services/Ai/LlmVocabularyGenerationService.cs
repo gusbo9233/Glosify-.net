@@ -16,20 +16,40 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
     public async Task<RepairWordResult?> RepairWordAsync(
         RepairQuizData quizData,
         string wordId,
+        string userId,
         CancellationToken cancellationToken = default)
     {
         var prompt = BuildRepairWordPrompt(quizData, wordId);
-        var responseText = await _gemini.GenerateJsonAsync(prompt, cancellationToken: cancellationToken);
+        var responseText = await _gemini.GenerateJsonAsync(
+            prompt,
+            new AiUsageContext(
+                userId,
+                AiUsageFeatures.Repair,
+                "repair_word",
+                Guid.NewGuid(),
+                "word",
+                wordId),
+            cancellationToken: cancellationToken);
         return TryDeserialize<RepairWordResult>(responseText);
     }
 
     public async Task<RepairSentenceResult?> RepairSentenceAsync(
         RepairQuizData quizData,
         string sentenceText,
+        string userId,
         CancellationToken cancellationToken = default)
     {
         var prompt = BuildRepairSentencePrompt(quizData, sentenceText);
-        var responseText = await _gemini.GenerateJsonAsync(prompt, cancellationToken: cancellationToken);
+        var responseText = await _gemini.GenerateJsonAsync(
+            prompt,
+            new AiUsageContext(
+                userId,
+                AiUsageFeatures.Repair,
+                "repair_sentence",
+                Guid.NewGuid(),
+                "quiz",
+                quizData.Quiz.Id),
+            cancellationToken: cancellationToken);
         return TryDeserialize<RepairSentenceResult>(responseText);
     }
 

@@ -45,6 +45,7 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("/Explore")]
     [InlineData("/FlashcardQuiz")]
     [InlineData("/TypingQuiz")]
+    [InlineData("/Admin/AiCredits")]
     public async Task Get_AuthorizedRoute_RedirectsToLoginWhenAnonymous(string url)
     {
         var client = CreateClient();

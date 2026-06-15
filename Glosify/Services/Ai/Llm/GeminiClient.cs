@@ -11,13 +11,21 @@ public sealed class GeminiClient : IGeminiClient
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly GeminiOptions _options;
+    private readonly AiUsageOptions _aiUsageOptions;
+    private readonly IAiCreditService _credits;
     private readonly ILogger<GeminiClient> _logger;
     private readonly Lazy<GoogleAI> _googleAi;
     private readonly ConcurrentDictionary<(string Model, bool Json), GenerativeModel> _models = new();
 
-    public GeminiClient(IOptions<GeminiOptions> options, ILogger<GeminiClient> logger)
+    public GeminiClient(
+        IOptions<GeminiOptions> options,
+        IOptions<AiUsageOptions> aiUsageOptions,
+        IAiCreditService credits,
+        ILogger<GeminiClient> logger)
     {
         _options = options.Value;
+        _aiUsageOptions = aiUsageOptions.Value;
+        _credits = credits;
         _logger = logger;
         _googleAi = new Lazy<GoogleAI>(() =>
         {
@@ -32,18 +40,32 @@ public sealed class GeminiClient : IGeminiClient
 
     public async Task<string> GenerateJsonAsync(
         string prompt,
+        AiUsageContext usageContext,
         string? model = null,
         CancellationToken cancellationToken = default)
     {
         var selectedModel = string.IsNullOrWhiteSpace(model) ? _options.StructuredModel : model;
         var generativeModel = GetModel(selectedModel, jsonMode: true);
+        var outputTokenReserve = _aiUsageOptions.GetOutputReserve(usageContext.Feature);
+        var generationConfig = CreateGenerationConfig(
+            selectedModel,
+            0.2f,
+            outputTokenReserve,
+            responseMimeType: "application/json");
 
-        var generationConfig = CreateGenerationConfig(selectedModel, 0.2f, responseMimeType: "application/json");
+        var apiRequest = new GenerateContentRequest
+        {
+            Contents = [new Content(prompt, role: "user")],
+            GenerationConfig = generationConfig,
+        };
 
-        var response = await generativeModel.GenerateContent(
-            prompt,
-            generationConfig: generationConfig,
-            cancellationToken: cancellationToken);
+        var response = await GenerateChargedAsync(
+            generativeModel,
+            selectedModel,
+            usageContext,
+            apiRequest,
+            outputTokenReserve,
+            cancellationToken);
         LogUsage("json", selectedModel, response);
 
         var text = response?.Text ?? string.Empty;
@@ -59,6 +81,7 @@ public sealed class GeminiClient : IGeminiClient
         byte[] imageBytes,
         string contentType,
         string prompt,
+        AiUsageContext usageContext,
         CancellationToken cancellationToken = default)
     {
         if (imageBytes.Length == 0)
@@ -80,12 +103,21 @@ public sealed class GeminiClient : IGeminiClient
             }
         };
 
-        var generationConfig = CreateGenerationConfig(_options.VisionModel, 0.1f);
+        var outputTokenReserve = _aiUsageOptions.GetOutputReserve(usageContext.Feature);
+        var generationConfig = CreateGenerationConfig(_options.VisionModel, 0.1f, outputTokenReserve);
+        var apiRequest = new GenerateContentRequest
+        {
+            Contents = [new Content(parts, role: "user")],
+            GenerationConfig = generationConfig,
+        };
 
-        var response = await generativeModel.GenerateContent(
-            parts,
-            generationConfig: generationConfig,
-            cancellationToken: cancellationToken);
+        var response = await GenerateChargedAsync(
+            generativeModel,
+            _options.VisionModel,
+            usageContext,
+            apiRequest,
+            outputTokenReserve,
+            cancellationToken);
         LogUsage("image-text-extraction", _options.VisionModel, response);
 
         return response?.Text ?? string.Empty;
@@ -93,6 +125,7 @@ public sealed class GeminiClient : IGeminiClient
 
     public async Task<AgentTurnResult> RunAgentTurnAsync(
         AgentRequest request,
+        AiUsageContext usageContext,
         CancellationToken cancellationToken = default)
     {
         var assistantModel = string.IsNullOrWhiteSpace(request.Model)
@@ -108,15 +141,22 @@ public sealed class GeminiClient : IGeminiClient
             ? null
             : new Content(request.SystemInstruction, role: "system");
 
+        var outputTokenReserve = _aiUsageOptions.GetOutputReserve(usageContext.Feature);
         var apiRequest = new GenerateContentRequest
         {
             Contents = contents,
             Tools = tools,
             SystemInstruction = systemInstruction,
-            GenerationConfig = CreateGenerationConfig(assistantModel, 0.3f),
+            GenerationConfig = CreateGenerationConfig(assistantModel, 0.3f, outputTokenReserve),
         };
 
-        var response = await generativeModel.GenerateContent(apiRequest, cancellationToken: cancellationToken);
+        var response = await GenerateChargedAsync(
+            generativeModel,
+            assistantModel,
+            usageContext,
+            apiRequest,
+            outputTokenReserve,
+            cancellationToken);
         LogUsage("agent-turn", assistantModel, response);
 
         var text = response?.Text ?? string.Empty;
@@ -247,15 +287,77 @@ public sealed class GeminiClient : IGeminiClient
     private GenerationConfig CreateGenerationConfig(
         string modelName,
         float temperature,
+        int maxOutputTokens,
         string? responseMimeType = null)
     {
         var config = new GenerationConfig
         {
+            MaxOutputTokens = maxOutputTokens,
             ResponseMimeType = responseMimeType,
             Temperature = temperature,
         };
 
         return config;
+    }
+
+    private async Task<GenerateContentResponse?> GenerateChargedAsync(
+        GenerativeModel generativeModel,
+        string modelName,
+        AiUsageContext usageContext,
+        GenerateContentRequest request,
+        int outputTokenReserve,
+        CancellationToken cancellationToken)
+    {
+        var count = await generativeModel.CountTokens(request, cancellationToken: cancellationToken);
+        var promptTokens = Convert.ToInt32(count.TotalTokens);
+        if (promptTokens <= 0)
+        {
+            promptTokens = Convert.ToInt32(count.TokenCount);
+        }
+        var estimatedTokens = Math.Max(1, promptTokens) + Math.Max(0, outputTokenReserve);
+        var reservation = await _credits.ReserveAsync(
+            usageContext,
+            "gemini",
+            modelName,
+            estimatedTokens,
+            cancellationToken);
+
+        try
+        {
+            var response = await generativeModel.GenerateContent(request, cancellationToken: cancellationToken);
+            await _credits.CommitUsageAsync(
+                reservation.ReservationId,
+                ExtractUsage(response, estimatedTokens),
+                cancellationToken);
+            return response;
+        }
+        catch
+        {
+            await _credits.ReleaseAsync(reservation.ReservationId, CancellationToken.None);
+            throw;
+        }
+    }
+
+    private static AiTokenUsage ExtractUsage(GenerateContentResponse? response, int fallbackTotalTokens)
+    {
+        var usage = response?.UsageMetadata;
+        if (usage == null)
+        {
+            return new AiTokenUsage(0, 0, 0, 0, fallbackTotalTokens);
+        }
+
+        var totalTokens = Convert.ToInt32(usage.TotalTokenCount);
+        if (totalTokens <= 0)
+        {
+            totalTokens = fallbackTotalTokens;
+        }
+
+        return new AiTokenUsage(
+            Convert.ToInt32(usage.PromptTokenCount),
+            Convert.ToInt32(usage.CandidatesTokenCount),
+            Convert.ToInt32(usage.ThoughtsTokenCount),
+            Convert.ToInt32(usage.ToolUsePromptTokenCount),
+            totalTokens);
     }
 
     private void LogUsage(string operation, string modelName, GenerateContentResponse? response)

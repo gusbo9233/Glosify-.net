@@ -33,7 +33,7 @@ public sealed class QuizRepairService : IQuizRepairService
             return new QuizRepairResult(QuizRepairStatus.NotFound);
         }
 
-        var result = await _vocabularyGenerator.RepairWordAsync(repairData, wordId, cancellationToken);
+        var result = await _vocabularyGenerator.RepairWordAsync(repairData, wordId, userId, cancellationToken);
         if (result?.Word == null || string.IsNullOrWhiteSpace(result.Word.Id))
         {
             return new QuizRepairResult(QuizRepairStatus.LlmUnavailable);
@@ -55,7 +55,7 @@ public sealed class QuizRepairService : IQuizRepairService
             return new QuizRepairResult(QuizRepairStatus.NotFound);
         }
 
-        var result = await _vocabularyGenerator.RepairSentenceAsync(repairData, sentenceText, cancellationToken);
+        var result = await _vocabularyGenerator.RepairSentenceAsync(repairData, sentenceText, userId, cancellationToken);
         if (result?.Sentence == null || string.IsNullOrWhiteSpace(result.Sentence.Text))
         {
             return new QuizRepairResult(QuizRepairStatus.LlmUnavailable);

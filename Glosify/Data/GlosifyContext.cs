@@ -22,6 +22,8 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<QuizSentence> QuizSentences { get; set; }
     public DbSet<AssistantThread> AssistantThreads { get; set; }
     public DbSet<AssistantMessage> AssistantMessages { get; set; }
+    public DbSet<AiCreditAccount> AiCreditAccounts { get; set; }
+    public DbSet<AiCreditTransaction> AiCreditTransactions { get; set; }
 
     public DbSet<Collection> Collections { get; set; }
 
@@ -120,6 +122,43 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(m => m.ContextQuizId)
                 .HasConstraintName("FK_AssistantMessages_Quizzes_ContextQuizId")
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<AiCreditAccount>(entity =>
+        {
+            entity.HasKey(account => account.UserId);
+            entity.Property(account => account.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(account => account.RowVersion).IsRowVersion();
+            entity.Ignore(account => account.AvailableCredits);
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(account => account.UserId)
+                .HasConstraintName("FK_AiCreditAccounts_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AiCreditTransaction>(entity =>
+        {
+            entity.HasKey(transaction => transaction.Id);
+            entity.Property(transaction => transaction.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(transaction => transaction.Kind).HasMaxLength(32).IsRequired();
+            entity.Property(transaction => transaction.Provider).HasMaxLength(64);
+            entity.Property(transaction => transaction.Model).HasMaxLength(128);
+            entity.Property(transaction => transaction.Feature).HasMaxLength(64);
+            entity.Property(transaction => transaction.Operation).HasMaxLength(128);
+            entity.Property(transaction => transaction.ActorUserId).HasMaxLength(450);
+            entity.Property(transaction => transaction.Note).HasMaxLength(512);
+            entity.Property(transaction => transaction.RelatedEntityType).HasMaxLength(64);
+            entity.Property(transaction => transaction.RelatedEntityId).HasMaxLength(128);
+            entity.HasIndex(transaction => new { transaction.UserId, transaction.CreatedAt });
+            entity.HasIndex(transaction => transaction.ReservationId);
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(transaction => transaction.UserId)
+                .HasConstraintName("FK_AiCreditTransactions_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Collection>(entity =>

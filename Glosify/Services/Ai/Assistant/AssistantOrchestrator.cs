@@ -326,7 +326,16 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             AgentTurnResult turn;
             try
             {
-                turn = await _gemini.RunAgentTurnAsync(agentRequest, cancellationToken);
+                turn = await _gemini.RunAgentTurnAsync(
+                    agentRequest,
+                    new AiUsageContext(
+                        userId,
+                        AiUsageFeatures.Assistant,
+                        "assistant_turn",
+                        Guid.NewGuid(),
+                        "assistant_thread",
+                        thread.Id.ToString()),
+                    cancellationToken);
             }
             catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {

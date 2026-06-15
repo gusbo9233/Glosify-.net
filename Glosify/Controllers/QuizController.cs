@@ -96,13 +96,20 @@ public class QuizController : Controller
     public async Task<IActionResult> RepairWord(string id, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var result = await _quizRepairService.RepairWordAsync(id, userId, cancellationToken);
-        return result.Status switch
+        try
         {
-            QuizRepairStatus.NotFound => NotFound(new { error = "Word not found." }),
-            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
-            _ => Json(new { message = $"Repaired {result.Word}." })
-        };
+            var result = await _quizRepairService.RepairWordAsync(id, userId, cancellationToken);
+            return result.Status switch
+            {
+                QuizRepairStatus.NotFound => NotFound(new { error = "Word not found." }),
+                QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
+                _ => Json(new { message = $"Repaired {result.Word}." })
+            };
+        }
+        catch (InsufficientAiCreditsException ex)
+        {
+            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
+        }
     }
 
     [HttpPost]
@@ -113,13 +120,20 @@ public class QuizController : Controller
         if (string.IsNullOrWhiteSpace(text))
             return BadRequest(new { error = "Choose a sentence to repair." });
 
-        var result = await _quizRepairService.RepairSentenceAsync(quizId, text, userId, cancellationToken);
-        return result.Status switch
+        try
         {
-            QuizRepairStatus.NotFound => NotFound(new { error = "Quiz not found." }),
-            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
-            _ => Json(new { message = result.UpdatedCount == 1 ? "Sentence repaired." : $"Sentence repaired in {result.UpdatedCount} places." })
-        };
+            var result = await _quizRepairService.RepairSentenceAsync(quizId, text, userId, cancellationToken);
+            return result.Status switch
+            {
+                QuizRepairStatus.NotFound => NotFound(new { error = "Quiz not found." }),
+                QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
+                _ => Json(new { message = result.UpdatedCount == 1 ? "Sentence repaired." : $"Sentence repaired in {result.UpdatedCount} places." })
+            };
+        }
+        catch (InsufficientAiCreditsException ex)
+        {
+            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
+        }
     }
 
     [HttpPost]
@@ -165,6 +179,7 @@ public class QuizController : Controller
         {
             await using var stream = image.OpenReadStream();
             var text = await _imageTextExtractionService.ExtractTextAsync(
+                userId,
                 stream,
                 image.ContentType,
                 quiz.SourceLanguage,
@@ -180,6 +195,10 @@ public class QuizController : Controller
         {
             _logger.LogWarning(ex, "Image text extraction failed for quiz {QuizId}", quizId);
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant });
+        }
+        catch (InsufficientAiCreditsException ex)
+        {
+            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
         }
     }
 

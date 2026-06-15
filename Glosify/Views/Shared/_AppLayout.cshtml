@@ -1,4 +1,6 @@
 @inject Glosify.Services.ILanguageContext LangContext
+@inject Glosify.Services.IAiCreditService AiCreditService
+@inject IConfiguration Configuration
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Html
 @functions {
@@ -52,6 +54,12 @@
 
     string AssistantText(string key, string fallback) =>
         ViewData[key] as string ?? fallback;
+
+    bool IsAiCreditAdmin()
+    {
+        var adminEmails = Configuration.GetSection("Admin:Emails").Get<string[]>() ?? [];
+        return adminEmails.Any(email => string.Equals(email, DisplayAccount, StringComparison.OrdinalIgnoreCase));
+    }
 
     IHtmlContent NavIcon(string name)
     {
@@ -187,11 +195,26 @@
                     <button type="button" class="icon-button" aria-label="Notifications">
                         <span class="material-symbols-outlined">notifications</span>
                     </button>
-                    <button type="button" class="icon-button" aria-label="Settings">
-                        <span class="material-symbols-outlined">settings</span>
-                    </button>
                     @if (User.Identity?.IsAuthenticated == true)
                     {
+                        var creditAccount = await AiCreditService.GetOrCreateAccountAsync(User.GetUserId());
+                        @if (IsAiCreditAdmin())
+                        {
+                            <a class="credit-pill" asp-controller="Admin" asp-action="AiCredits" title="AI credits">
+                                <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
+                                <span>@creditAccount.AvailableCredits credits</span>
+                            </a>
+                            <a class="icon-button" asp-controller="Admin" asp-action="AiCredits" aria-label="AI credit admin" title="AI credit admin">
+                                <span class="material-symbols-outlined">settings</span>
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="credit-pill" title="AI credits">
+                                <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
+                                <span>@creditAccount.AvailableCredits credits</span>
+                            </span>
+                        }
                         <div class="account-block">
                             <div class="account-meta">
                                 <span class="account-meta-eyebrow">Signed in as</span>

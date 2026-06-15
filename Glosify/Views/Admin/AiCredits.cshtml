@@ -1,0 +1,147 @@
+@model AiCreditAdminViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "AI Credits";
+    ViewData["HideAssistantPanel"] = true;
+}
+
+<section class="select-quiz-page admin-credit-page">
+    <header class="select-header">
+        <div>
+            <p class="select-kicker">Admin</p>
+            <h1 class="select-title">AI credits</h1>
+            <p class="select-subtitle">Manage trial balances, admin grants, reservations, and usage debits.</p>
+        </div>
+    </header>
+
+    @if (TempData["AdminMessage"] is string adminMessage)
+    {
+        <div class="page-message">@adminMessage</div>
+    }
+
+    <form class="admin-credit-search" method="get" asp-controller="Admin" asp-action="AiCredits">
+        <input class="form-input" type="search" name="search" value="@Model.Search" placeholder="Search users by email" />
+        <button class="btn-new-quiz" type="submit">
+            <span class="material-symbols-outlined">search</span>
+            Search
+        </button>
+    </form>
+
+    <div class="admin-credit-grid">
+        <section class="admin-credit-panel" aria-labelledby="creditUsersHeading">
+            <div class="library-section-header">
+                <h2 id="creditUsersHeading">Users</h2>
+                <span>@Model.Users.Count</span>
+            </div>
+
+            @if (Model.Users.Any())
+            {
+                <div class="admin-credit-user-list">
+                    @foreach (var user in Model.Users)
+                    {
+                        var active = Model.SelectedUser?.UserId == user.UserId;
+                        <a class="admin-credit-user @(active ? "is-active" : "")"
+                           asp-controller="Admin"
+                           asp-action="AiCredits"
+                           asp-route-search="@Model.Search"
+                           asp-route-selectedUserId="@user.UserId">
+                            <strong>@user.Email</strong>
+                            <span>@user.AvailableCredits available / @user.ReservedCredits reserved</span>
+                        </a>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state admin-credit-empty">
+                    <div class="empty-icon"><span class="material-symbols-outlined">person_search</span></div>
+                    <h2 class="empty-title">No users found</h2>
+                    <p class="empty-copy">Try another email search.</p>
+                </div>
+            }
+        </section>
+
+        <section class="admin-credit-panel" aria-labelledby="creditDetailsHeading">
+            <div class="library-section-header">
+                <h2 id="creditDetailsHeading">Balance</h2>
+            </div>
+
+            @if (Model.SelectedUser != null)
+            {
+                <div class="admin-credit-summary">
+                    <div>
+                        <span>Available</span>
+                        <strong>@Model.SelectedUser.AvailableCredits</strong>
+                    </div>
+                    <div>
+                        <span>Balance</span>
+                        <strong>@Model.SelectedUser.BalanceCredits</strong>
+                    </div>
+                    <div>
+                        <span>Reserved</span>
+                        <strong>@Model.SelectedUser.ReservedCredits</strong>
+                    </div>
+                </div>
+
+                <form class="admin-credit-grant" method="post" asp-controller="Admin" asp-action="GrantAiCredits">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="UserId" value="@Model.SelectedUser.UserId" />
+                    <input type="hidden" name="Search" value="@Model.Search" />
+                    <div class="form-group">
+                        <label class="form-label">Grant credits to @Model.SelectedUser.Email</label>
+                        <input class="form-input" type="number" min="1" name="Credits" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Note</label>
+                        <input class="form-input" type="text" name="Note" maxlength="512" placeholder="Reason for grant" required />
+                    </div>
+                    <button class="btn-new-quiz" type="submit">
+                        <span class="material-symbols-outlined">add</span>
+                        Grant
+                    </button>
+                </form>
+
+                <div class="admin-credit-transactions">
+                    <div class="library-section-header">
+                        <h2>Recent transactions</h2>
+                        <span>@Model.RecentTransactions.Count</span>
+                    </div>
+                    @if (Model.RecentTransactions.Any())
+                    {
+                        <table class="admin-credit-table">
+                            <thead>
+                                <tr>
+                                    <th>When</th>
+                                    <th>Type</th>
+                                    <th>Credits</th>
+                                    <th>Tokens</th>
+                                    <th>Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var transaction in Model.RecentTransactions)
+                                {
+                                    <tr>
+                                        <td>@transaction.CreatedAt.ToString("MMM d, HH:mm")</td>
+                                        <td>@transaction.Kind</td>
+                                        <td>@transaction.CreditAmount</td>
+                                        <td>@(transaction.TotalTokens?.ToString() ?? "-")</td>
+                                        <td>@(transaction.Note ?? transaction.Feature ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="select-subtitle">No transactions yet.</p>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="select-subtitle">Select a user to inspect or grant credits.</p>
+            }
+        </section>
+    </div>
+</section>

@@ -151,6 +151,10 @@ public class AssistantController : ControllerBase
         {
             return NotFound(new { error = ex.Message });
         }
+        catch (InsufficientAiCreditsException ex)
+        {
+            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
+        }
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { error = ex.Message });
@@ -190,6 +194,10 @@ public class AssistantController : ControllerBase
         {
             _logger.LogWarning(ex, "Dependency warm-up interrupted global assistant turn");
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant });
+        }
+        catch (InsufficientAiCreditsException ex)
+        {
+            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
         }
         catch (Exception ex)
         {
@@ -285,6 +293,10 @@ public class AssistantController : ControllerBase
         catch (QuizNotFoundException ex)
         {
             return NotFound(new { error = ex.Message });
+        }
+        catch (InsufficientAiCreditsException ex)
+        {
+            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {

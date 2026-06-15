@@ -24,6 +24,21 @@ builder.Services.AddAuthorization(options =>
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
+    var adminEmails = builder.Configuration.GetSection("Admin:Emails").Get<string[]>() ?? [];
+    options.AddPolicy("AiCreditAdmin", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context =>
+        {
+            var email = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                ?? context.User.Identity?.Name
+                ?? string.Empty;
+            return adminEmails.Any(adminEmail => string.Equals(
+                adminEmail,
+                email,
+                StringComparison.OrdinalIgnoreCase));
+        });
+    });
 });
 builder.Services.AddMemoryCache();
 
@@ -95,6 +110,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ILanguageContext, CookieLanguageContext>();
 
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
+builder.Services.Configure<AiUsageOptions>(builder.Configuration.GetSection("AiUsage"));
 builder.Services.Configure<GeminiOptions>(options =>
 {
     var apiKey = builder.Configuration["GEMINI_API_KEY"];
@@ -140,7 +156,8 @@ builder.Services.AddScoped<ITypingSessionService, TypingSessionService>();
 builder.Services.AddSingleton<IBookFileStorage, AzureBlobBookFileStorage>();
 builder.Services.AddScoped<IPdfTextExtractionService, PdfPigTextExtractionService>();
 builder.Services.AddScoped<IBookDocumentService, BookDocumentService>();
-builder.Services.AddSingleton<IGeminiClient, GeminiClient>();
+builder.Services.AddScoped<IAiCreditService, AiCreditService>();
+builder.Services.AddScoped<IGeminiClient, GeminiClient>();
 builder.Services.AddScoped<IVocabularyGenerationService, LlmVocabularyGenerationService>();
 builder.Services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();
 builder.Services.AddScoped<IAssistantTools, AssistantTools>();

@@ -10,6 +10,7 @@ public sealed class LlmImageTextExtractionService : IImageTextExtractionService
     }
 
     public async Task<string> ExtractTextAsync(
+        string userId,
         Stream imageStream,
         string contentType,
         string sourceLanguage,
@@ -29,6 +30,11 @@ public sealed class LlmImageTextExtractionService : IImageTextExtractionService
             imageBytes,
             contentType,
             prompt,
+            new AiUsageContext(
+                userId,
+                AiUsageFeatures.ImageExtraction,
+                "extract_text_from_image",
+                Guid.NewGuid()),
             cancellationToken);
 
         return CleanExtractedText(extracted);

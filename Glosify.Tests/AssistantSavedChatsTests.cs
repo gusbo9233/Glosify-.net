@@ -190,13 +190,13 @@ public class AssistantSavedChatsTests
 
     private sealed class StaticGeminiClient(string text) : IGeminiClient
     {
-        public Task<string> GenerateJsonAsync(string prompt, string? model = null, CancellationToken cancellationToken = default) =>
+        public Task<string> GenerateJsonAsync(string prompt, AiUsageContext usageContext, string? model = null, CancellationToken cancellationToken = default) =>
             Task.FromResult("{}");
 
-        public Task<string> ExtractTextFromImageAsync(byte[] imageBytes, string contentType, string prompt, CancellationToken cancellationToken = default) =>
+        public Task<string> ExtractTextFromImageAsync(byte[] imageBytes, string contentType, string prompt, AiUsageContext usageContext, CancellationToken cancellationToken = default) =>
             Task.FromResult(string.Empty);
 
-        public Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, CancellationToken cancellationToken = default) =>
+        public Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, AiUsageContext usageContext, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentTurnResult(text, []));
     }
 
