@@ -18,6 +18,14 @@
                 <a asp-controller="Quiz" asp-action="Settings" asp-route-id="@Model.SelectedQuiz.Id" class="btn-hero">
                     Start Quiz <span class="material-symbols-outlined">play_circle</span>
                 </a>
+                <form class="share-form" method="post" asp-controller="Quiz" asp-action="SetQuizVisibility" asp-route-id="@Model.SelectedQuiz.Id">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="isPublic" value="@(Model.SelectedQuiz.IsPublic ? "false" : "true")" />
+                    <button class="btn-hero btn-hero-secondary" type="submit">
+                        <span class="material-symbols-outlined">@(Model.SelectedQuiz.IsPublic ? "lock" : "public")</span>
+                        @(Model.SelectedQuiz.IsPublic ? "Make Private" : "Make Public")
+                    </button>
+                </form>
             </div>
         </div>
     </section>

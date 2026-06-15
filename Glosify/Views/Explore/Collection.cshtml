@@ -1,0 +1,121 @@
+@model ExploreCollectionViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Model.Collection.Name;
+    ViewData["HideAssistantPanel"] = true;
+}
+
+@functions {
+    static IReadOnlyList<Collection> FlattenCollections(Collection root)
+    {
+        var result = new List<Collection>();
+        AddChildren(root, result);
+        return result;
+    }
+
+    static void AddChildren(Collection collection, List<Collection> result)
+    {
+        foreach (var child in collection.ChildCollections.OrderBy(c => c.Name))
+        {
+            result.Add(child);
+            AddChildren(child, result);
+        }
+    }
+
+    static string PathFor(Collection collection)
+    {
+        var names = new Stack<string>();
+        var current = collection.ParentCollection;
+        while (current != null)
+        {
+            names.Push(current.Name);
+            current = current.ParentCollection;
+        }
+
+        return names.Count == 0 ? collection.Language : string.Join(" / ", names);
+    }
+}
+
+<section class="select-quiz-page explore-page">
+    <header class="select-header">
+        <div>
+            <p class="select-kicker">Public Collection - @Model.Collection.Language</p>
+            <h1 class="select-title">@Model.Collection.Name</h1>
+            <p class="select-subtitle">@Model.QuizCount quizzes across @(Model.CollectionCount + 1) collections.</p>
+        </div>
+        <div class="select-actions">
+            <a class="btn-new-quiz btn-back-library" asp-controller="Explore" asp-action="Index">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Back
+            </a>
+            <form method="post" asp-controller="Explore" asp-action="CopyCollection" asp-route-id="@Model.Collection.Id">
+                @Html.AntiForgeryToken()
+                <button class="btn-new-quiz" type="submit">
+                    <span class="material-symbols-outlined">library_add</span>
+                    Copy Collection
+                </button>
+            </form>
+        </div>
+    </header>
+
+    @if (Model.Collection.Quizzes.Any())
+    {
+        <section class="library-section" aria-labelledby="rootQuizzesHeading">
+            <div class="library-section-header">
+                <h2 id="rootQuizzesHeading">Quizzes</h2>
+                <span>@Model.Collection.Quizzes.Count</span>
+            </div>
+            <div class="quiz-grid">
+                @foreach (var quiz in Model.Collection.Quizzes.OrderBy(q => q.Name))
+                {
+                    <article class="quiz-card">
+                        <div class="quiz-card-link">
+                            <div class="quiz-card-top">
+                                <div class="quiz-icon"><span class="material-symbols-outlined">quiz</span></div>
+                            </div>
+                            <h2 class="quiz-name">@quiz.Name</h2>
+                            <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
+                        </div>
+                        <div class="quiz-meta">
+                            <span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="status-pill">@quiz.ProcessingStatus</span>
+                        </div>
+                    </article>
+                }
+            </div>
+        </section>
+    }
+
+    @foreach (var collection in FlattenCollections(Model.Collection))
+    {
+        <section class="library-section" aria-labelledby="collection-@collection.Id">
+            <div class="library-section-header">
+                <h2 id="collection-@collection.Id">@collection.Name</h2>
+                <span>@collection.Quizzes.Count quizzes</span>
+            </div>
+            <p class="select-subtitle explore-path">@PathFor(collection)</p>
+            <div class="quiz-grid">
+                @foreach (var quiz in collection.Quizzes.OrderBy(q => q.Name))
+                {
+                    <article class="quiz-card">
+                        <div class="quiz-card-link">
+                            <div class="quiz-card-top">
+                                <div class="quiz-icon"><span class="material-symbols-outlined">quiz</span></div>
+                            </div>
+                            <h2 class="quiz-name">@quiz.Name</h2>
+                            <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
+                        </div>
+                        <div class="quiz-meta">
+                            <span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="status-pill">@quiz.ProcessingStatus</span>
+                        </div>
+                    </article>
+                }
+                @if (!collection.Quizzes.Any())
+                {
+                    <div class="empty-state">No quizzes directly inside this collection.</div>
+                }
+            </div>
+        </section>
+    }
+</section>

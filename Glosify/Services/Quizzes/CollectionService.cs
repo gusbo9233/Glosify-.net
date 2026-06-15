@@ -234,6 +234,168 @@ namespace Glosify.Services.Quizzes
             return true;
         }
 
+        public async Task<bool> SetCollectionPublicAsync(Guid collectionId, string userId, bool isPublic)
+        {
+            var collection = await _context.Collections
+                .FirstOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId);
+
+            if (collection is null)
+            {
+                return false;
+            }
+
+            collection.IsPublic = isPublic;
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<IReadOnlyList<Collection>> GetPublicCollectionRootsAsync(string language)
+        {
+            language = language.Trim();
+
+            var collections = await _context.Collections
+                .AsNoTracking()
+                .Where(c => c.Language == language)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
+            var byId = collections.ToDictionary(c => c.Id);
+            return collections
+                .Where(c => c.IsPublic && !HasPublicAncestor(c, byId))
+                .ToList();
+        }
+
+        public async Task<Collection?> GetPublicCollectionTreeAsync(Guid collectionId)
+        {
+            var root = await _context.Collections
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == collectionId);
+
+            if (root is null || !await IsCollectionPubliclyReadableAsync(root))
+            {
+                return null;
+            }
+
+            var collectionIds = await GetDescendantCollectionIdsAsync(collectionId, root.UserId);
+            var collections = await _context.Collections
+                .AsNoTracking()
+                .Where(c => collectionIds.Contains(c.Id))
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+            var quizzes = await _context.Quizzes
+                .AsNoTracking()
+                .Where(q => q.CollectionId.HasValue && collectionIds.Contains(q.CollectionId.Value))
+                .OrderBy(q => q.Name)
+                .ToListAsync();
+
+            return BuildCollectionTree(collectionId, collections, quizzes);
+        }
+
+        public async Task<Collection?> CopyPublicCollectionAsync(Guid collectionId, string userId)
+        {
+            var sourceRoot = await _context.Collections
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == collectionId);
+
+            if (sourceRoot is null || !await IsCollectionPubliclyReadableAsync(sourceRoot))
+            {
+                return null;
+            }
+
+            var sourceCollectionIds = await GetDescendantCollectionIdsAsync(collectionId, sourceRoot.UserId);
+            var sourceCollections = await _context.Collections
+                .AsNoTracking()
+                .Where(c => sourceCollectionIds.Contains(c.Id))
+                .ToListAsync();
+            var sourceQuizzes = await _context.Quizzes
+                .AsNoTracking()
+                .Where(q => q.CollectionId.HasValue && sourceCollectionIds.Contains(q.CollectionId.Value))
+                .ToListAsync();
+            var sourceQuizIds = sourceQuizzes.Select(q => q.Id).ToList();
+            var sourceWords = await _context.Words
+                .AsNoTracking()
+                .Where(word => sourceQuizIds.Contains(word.QuizId))
+                .ToListAsync();
+            var sourceSentences = await _context.QuizSentences
+                .AsNoTracking()
+                .Where(sentence => sourceQuizIds.Contains(sentence.QuizId))
+                .ToListAsync();
+
+            var collectionDepths = GetCollectionDepths(sourceCollections, collectionId);
+            var collectionIdMap = new Dictionary<Guid, Guid>();
+
+            foreach (var source in sourceCollections.OrderBy(c => collectionDepths[c.Id]))
+            {
+                var copyId = Guid.NewGuid();
+                collectionIdMap[source.Id] = copyId;
+
+                _context.Collections.Add(new Collection
+                {
+                    Id = copyId,
+                    UserId = userId,
+                    Name = source.Name,
+                    Language = source.Language,
+                    ParentCollectionId = source.ParentCollectionId.HasValue
+                        && collectionIdMap.TryGetValue(source.ParentCollectionId.Value, out var copiedParentId)
+                            ? copiedParentId
+                            : null,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    IsPublic = false,
+                    OriginalCollectionId = source.Id
+                });
+            }
+
+            var quizIdMap = new Dictionary<Guid, Guid>();
+            foreach (var source in sourceQuizzes)
+            {
+                var copiedQuizId = Guid.NewGuid();
+                quizIdMap[source.Id] = copiedQuizId;
+
+                _context.Quizzes.Add(new Quiz
+                {
+                    Id = copiedQuizId,
+                    Name = source.Name,
+                    UserId = userId,
+                    CollectionId = source.CollectionId.HasValue ? collectionIdMap[source.CollectionId.Value] : null,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    IsSongQuiz = source.IsSongQuiz,
+                    ProcessingStatus = source.ProcessingStatus,
+                    ProcessingMessage = source.ProcessingMessage,
+                    SourceLanguage = source.SourceLanguage,
+                    TargetLanguage = source.TargetLanguage,
+                    Language = source.Language,
+                    AnkiTrackingEnabled = source.AnkiTrackingEnabled,
+                    AnkiTrackWordsForward = source.AnkiTrackWordsForward,
+                    AnkiTrackWordsReverse = source.AnkiTrackWordsReverse,
+                    AnkiTrackSentencesForward = source.AnkiTrackSentencesForward,
+                    AnkiTrackSentencesReverse = source.AnkiTrackSentencesReverse,
+                    IsPublic = false,
+                    OriginalQuizId = source.Id
+                });
+            }
+
+            _context.Words.AddRange(sourceWords.Select(word => new Word
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                QuizId = quizIdMap[word.QuizId],
+                Lemma = word.Lemma,
+                Translation = word.Translation
+            }));
+            _context.QuizSentences.AddRange(sourceSentences.Select(sentence => new QuizSentence
+            {
+                Id = Guid.NewGuid(),
+                QuizId = quizIdMap[sentence.QuizId],
+                Text = sentence.Text,
+                Translation = sentence.Translation,
+                CreatedAt = DateTimeOffset.UtcNow
+            }));
+
+            await _context.SaveChangesAsync();
+            var copiedRootId = collectionIdMap[collectionId];
+            return await GetCollectionAsync(copiedRootId, userId);
+        }
+
         public async Task<bool> MoveQuizToCollectionAsync(Guid quizId, Guid? collectionId, string userId)
         {
             var quiz = await _context.Quizzes
@@ -348,6 +510,91 @@ namespace Glosify.Services.Quizzes
 
                 currentId = parentId.Value;
             }
+        }
+
+        private async Task<bool> IsCollectionPubliclyReadableAsync(Collection collection)
+        {
+            var current = collection;
+
+            while (true)
+            {
+                if (current.IsPublic)
+                {
+                    return true;
+                }
+
+                if (!current.ParentCollectionId.HasValue)
+                {
+                    return false;
+                }
+
+                var parent = await _context.Collections
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == current.ParentCollectionId.Value);
+
+                if (parent is null)
+                {
+                    return false;
+                }
+
+                current = parent;
+            }
+        }
+
+        private static bool HasPublicAncestor(Collection collection, IReadOnlyDictionary<Guid, Collection> byId)
+        {
+            var current = collection;
+
+            while (current.ParentCollectionId.HasValue
+                && byId.TryGetValue(current.ParentCollectionId.Value, out var parent))
+            {
+                if (parent.IsPublic)
+                {
+                    return true;
+                }
+
+                current = parent;
+            }
+
+            return false;
+        }
+
+        private static Collection? BuildCollectionTree(
+            Guid rootId,
+            IReadOnlyList<Collection> collections,
+            IReadOnlyList<Quiz> quizzes)
+        {
+            var byId = collections.ToDictionary(c => c.Id);
+            if (!byId.TryGetValue(rootId, out var root))
+            {
+                return null;
+            }
+
+            foreach (var collection in collections)
+            {
+                collection.ChildCollections.Clear();
+                collection.Quizzes.Clear();
+            }
+
+            foreach (var collection in collections.Where(c => c.ParentCollectionId.HasValue))
+            {
+                if (byId.TryGetValue(collection.ParentCollectionId!.Value, out var parent))
+                {
+                    parent.ChildCollections.Add(collection);
+                    collection.ParentCollection = parent;
+                }
+            }
+
+            foreach (var quiz in quizzes)
+            {
+                if (quiz.CollectionId.HasValue && byId.TryGetValue(quiz.CollectionId.Value, out var collection))
+                {
+                    collection.Quizzes.Add(quiz);
+                    quiz.Collection = collection;
+                }
+            }
+
+            return root;
         }
     }
 }

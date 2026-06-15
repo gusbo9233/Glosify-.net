@@ -23,6 +23,33 @@ namespace Glosify.Models.ViewModels
         public int WordCount { get; set; }
     }
 
+    public class ExploreIndexViewModel
+    {
+        public string CurrentLanguage { get; set; } = string.Empty;
+        public IReadOnlyList<ExploreCollectionCardViewModel> Collections { get; set; } = [];
+        public IReadOnlyList<ExploreQuizCardViewModel> Quizzes { get; set; } = [];
+    }
+
+    public class ExploreCollectionCardViewModel
+    {
+        public Collection Collection { get; set; } = null!;
+        public int CollectionCount { get; set; }
+        public int QuizCount { get; set; }
+    }
+
+    public class ExploreQuizCardViewModel
+    {
+        public Quiz Quiz { get; set; } = null!;
+        public int WordCount { get; set; }
+    }
+
+    public class ExploreCollectionViewModel
+    {
+        public Collection Collection { get; set; } = null!;
+        public int CollectionCount { get; set; }
+        public int QuizCount { get; set; }
+    }
+
     public class AssistantPanelViewModel
     {
         public Guid? QuizId { get; set; }

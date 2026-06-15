@@ -207,6 +207,51 @@ body {
   justify-content: space-between;
   cursor: default;
 }
+
+.share-form {
+  margin: 0;
+}
+
+.btn-hero-secondary {
+  border: 1px solid rgba(214, 227, 255, 0.2);
+  background: rgba(17, 32, 54, 0.72);
+  color: var(--on-surface);
+}
+
+.collection-share-form {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn-inline-share,
+.btn-copy-public {
+  align-items: center;
+  border: 1px solid rgba(83, 224, 118, 0.28);
+  border-radius: 999px;
+  background: rgba(83, 224, 118, 0.12);
+  color: var(--primary);
+  display: inline-flex;
+  font-weight: 800;
+  gap: 6px;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+}
+
+.btn-inline-share {
+  cursor: pointer;
+}
+
+.btn-copy-public {
+  width: 100%;
+}
+
+.explore-path {
+  margin: -8px 0 16px;
+}
 /* Extracted from Glosify/Views/Languages/Index.cshtml */
 .language-page {
         display: flex;

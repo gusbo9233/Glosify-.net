@@ -17,6 +17,7 @@ public class HomeController : Controller
         _environment = environment;
     }
 
+    [AllowAnonymous]
     public IActionResult Index() => View();
 
     [AllowAnonymous]

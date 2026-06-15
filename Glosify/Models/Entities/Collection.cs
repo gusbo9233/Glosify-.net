@@ -13,5 +13,7 @@
         public ICollection<Quiz> Quizzes { get; set; } = [];
 
         public DateTimeOffset CreatedAt { get; set; }
+        public bool IsPublic { get; set; }
+        public Guid? OriginalCollectionId { get; set; }
     }
 }

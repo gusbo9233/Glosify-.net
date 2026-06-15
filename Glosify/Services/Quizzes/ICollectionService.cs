@@ -8,6 +8,10 @@
         Task<bool> MoveCollectionAsync(Guid collectionId, Guid? parentCollectionId, string userId);
         Task<bool> RenameCollectionAsync(Guid collectionId, string name, string userId);
         Task<bool> DeleteCollectionAsync(Guid collectionId, string userId);
+        Task<bool> SetCollectionPublicAsync(Guid collectionId, string userId, bool isPublic);
+        Task<IReadOnlyList<Collection>> GetPublicCollectionRootsAsync(string language);
+        Task<Collection?> GetPublicCollectionTreeAsync(Guid collectionId);
+        Task<Collection?> CopyPublicCollectionAsync(Guid collectionId, string userId);
         Task<bool> MoveQuizToCollectionAsync(Guid quizId, Guid? collectionId, string userId);
     }
 }

@@ -162,18 +162,6 @@
                     @NavIcon("explore")
                     Explore
                 </a>
-                <a class="@NavClass("Dictionary")" asp-controller="Dictionary" asp-action="Index">
-                    @NavIcon("menu_book")
-                    Dictionary
-                </a>
-                <a class="@NavClass("Practice")" asp-controller="Practice" asp-action="Index">
-                    @NavIcon("fitness_center")
-                    Practice
-                </a>
-                <a class="@NavClass("Library")" asp-controller="Library" asp-action="Index">
-                    @NavIcon("subscriptions")
-                    Library
-                </a>
                 <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
                     @NavIcon("auto_stories")
                     Books
@@ -184,7 +172,6 @@
                 </a>
             </nav>
 
-            <button type="button" class="app-sidebar-cta">Start New Unit</button>
         </aside>
 
         <main class="app-main">
@@ -268,7 +255,7 @@
             </a>
         }
     </nav>
-    @if (User.Identity?.IsAuthenticated == true)
+    @if (User.Identity?.IsAuthenticated == true && ViewData["HideAssistantPanel"] is not true)
     {
         @await Html.PartialAsync("_AssistantPanel", new AssistantPanelViewModel
         {

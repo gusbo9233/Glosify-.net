@@ -10,5 +10,8 @@ public interface IQuizService
     Task<Quiz> CreateQuizAsync(string name, string sourceLanguage, string targetLanguage, string userId, Guid? collectionId = null);
     Task<Quiz?> DeleteQuizAsync(Guid id, string userId);
     Task<bool> UserOwnsQuizAsync(Guid quizId, string userId);
+    Task<bool> SetQuizPublicAsync(Guid id, string userId, bool isPublic);
+    Task<IReadOnlyList<Quiz>> GetPublicQuizzesAsync(string language);
+    Task<Quiz?> CopyPublicQuizAsync(Guid id, string userId, Guid? collectionId = null);
     Task<int> GetAvailableWordCountAsync(Guid quizId);
 }

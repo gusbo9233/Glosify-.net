@@ -1,0 +1,104 @@
+@model ExploreIndexViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "Explore";
+    ViewData["HideAssistantPanel"] = true;
+}
+
+<section class="select-quiz-page explore-page">
+    <header class="select-header">
+        <div>
+            <p class="select-kicker">Explore - @Model.CurrentLanguage</p>
+            <h1 class="select-title">Public quizzes and collections</h1>
+            <p class="select-subtitle">
+                Copy shared vocabulary into your own library before practicing.
+                <a class="language-change-link" asp-controller="Languages" asp-action="Index">Change language</a>
+            </p>
+        </div>
+    </header>
+
+    @if (TempData["ExploreMessage"] is string exploreMessage)
+    {
+        <div class="page-message">@exploreMessage</div>
+    }
+
+    @if (Model.Collections.Any())
+    {
+        <section class="library-section" aria-labelledby="publicCollectionsHeading">
+            <div class="library-section-header">
+                <h2 id="publicCollectionsHeading">Public Collections</h2>
+                <span>@Model.Collections.Count</span>
+            </div>
+            <div class="quiz-grid">
+                @foreach (var item in Model.Collections)
+                {
+                    <article class="quiz-card collection-card">
+                        <a class="quiz-card-link" asp-controller="Explore" asp-action="Collection" asp-route-id="@item.Collection.Id">
+                            <div class="quiz-card-top">
+                                <div class="quiz-icon collection-icon"><span class="material-symbols-outlined">folder_shared</span></div>
+                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
+                            </div>
+                            <h2 class="quiz-name">@item.Collection.Name</h2>
+                            <p class="quiz-languages">@item.Collection.Language</p>
+                        </a>
+                        <div class="quiz-meta">
+                            <span>@item.Collection.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="status-pill">@item.QuizCount quizzes / @item.CollectionCount nested</span>
+                        </div>
+                        <form class="share-form" method="post" asp-controller="Explore" asp-action="CopyCollection" asp-route-id="@item.Collection.Id">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-delete btn-copy-public" type="submit">
+                                <span class="material-symbols-outlined">library_add</span>
+                                Copy
+                            </button>
+                        </form>
+                    </article>
+                }
+            </div>
+        </section>
+    }
+
+    @if (Model.Quizzes.Any())
+    {
+        <section class="library-section" aria-labelledby="publicQuizzesHeading">
+            <div class="library-section-header">
+                <h2 id="publicQuizzesHeading">Public Quizzes</h2>
+                <span>@Model.Quizzes.Count</span>
+            </div>
+            <div class="quiz-grid">
+                @foreach (var item in Model.Quizzes)
+                {
+                    <article class="quiz-card">
+                        <div class="quiz-card-link">
+                            <div class="quiz-card-top">
+                                <div class="quiz-icon"><span class="material-symbols-outlined">public</span></div>
+                            </div>
+                            <h2 class="quiz-name">@item.Quiz.Name</h2>
+                            <p class="quiz-languages">@item.Quiz.SourceLanguage &rarr; @item.Quiz.TargetLanguage</p>
+                        </div>
+                        <div class="quiz-meta">
+                            <span>@item.Quiz.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="status-pill">@item.WordCount words</span>
+                        </div>
+                        <form class="share-form" method="post" asp-controller="Explore" asp-action="CopyQuiz" asp-route-id="@item.Quiz.Id">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-delete btn-copy-public" type="submit">
+                                <span class="material-symbols-outlined">library_add</span>
+                                Copy
+                            </button>
+                        </form>
+                    </article>
+                }
+            </div>
+        </section>
+    }
+
+    @if (!Model.Collections.Any() && !Model.Quizzes.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon"><span class="material-symbols-outlined">explore</span></div>
+            <h2 class="empty-title">Nothing public for @Model.CurrentLanguage yet</h2>
+            <p class="empty-copy">When learners share quizzes or collections in this language, they will appear here.</p>
+        </div>
+    }
+</section>

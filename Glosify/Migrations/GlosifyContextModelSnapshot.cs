@@ -201,10 +201,16 @@ namespace Glosify.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<bool>("IsPublic")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("nvarchar(160)");
+
+                    b.Property<Guid?>("OriginalCollectionId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("ParentCollectionId")
                         .HasColumnType("uniqueidentifier");
@@ -217,6 +223,10 @@ namespace Glosify.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ParentCollectionId");
+
+                    b.HasIndex("IsPublic", "Language");
+
+                    b.HasIndex("OriginalCollectionId");
 
                     b.HasIndex("UserId", "Language", "ParentCollectionId", "Name");
 

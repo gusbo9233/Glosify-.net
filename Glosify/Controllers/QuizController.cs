@@ -211,6 +211,36 @@ public class QuizController : Controller
     }
 
     [HttpPost]
+    public async Task<IActionResult> SetQuizVisibility(Guid id, bool isPublic)
+    {
+        var userId = User.GetUserId();
+
+        var updated = await _quizService.SetQuizPublicAsync(id, userId, isPublic);
+        TempData["QuizMessage"] = updated
+            ? isPublic ? "Quiz is now public." : "Quiz is now private."
+            : "Could not update quiz visibility.";
+
+        return updated
+            ? RedirectToAction(nameof(Details), new { id })
+            : RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SetCollectionVisibility(Guid id, bool isPublic)
+    {
+        var userId = User.GetUserId();
+
+        var updated = await _collectionService.SetCollectionPublicAsync(id, userId, isPublic);
+        TempData["QuizMessage"] = updated
+            ? isPublic ? "Collection is now public." : "Collection is now private."
+            : "Could not update collection visibility.";
+
+        return updated
+            ? RedirectToAction(nameof(Collection), new { id })
+            : RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
     public async Task<IActionResult> Create(CreateQuizInput input)
     {
         var userId = User.GetUserId();
