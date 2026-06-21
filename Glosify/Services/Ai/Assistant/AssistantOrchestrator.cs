@@ -171,6 +171,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         string userId,
         string userMessage,
         string? model = null,
+        AssistantDocumentContext? documentContext = null,
         CancellationToken cancellationToken = default)
     {
         var thread = await GetOrCreateDefaultGlobalThreadAsync(userId, null, cancellationToken);
@@ -181,7 +182,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             thread.ContextQuizId,
             null,
             model,
-            null,
+            documentContext,
             cancellationToken);
     }
 
@@ -310,7 +311,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         };
 
         var systemInstruction = contextQuiz is null
-            ? BuildGlobalSystemInstruction(_languageContext.CurrentLanguage)
+            ? BuildGlobalSystemInstruction(_languageContext.CurrentLanguage, documentPage)
             : BuildSystemInstruction(contextQuiz, focusedWord, documentPage);
         var declarations = contextQuiz is null
             ? _tools.GlobalDeclarations
@@ -693,11 +694,14 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         """;
     }
 
-    private static string BuildGlobalSystemInstruction(string? currentLanguage)
+    private static string BuildGlobalSystemInstruction(string? currentLanguage, DocumentPageContext? documentPage)
     {
         var languageInstruction = string.IsNullOrWhiteSpace(currentLanguage)
             ? "No current app language is selected. If the user wants to create a quiz or collection and did not name a target language, ask for the target language before using creation tools."
             : $"The current app language is \"{currentLanguage}\". Use it as the default target language for new quizzes and the default language for new collections unless the user clearly asks for another language.";
+        var documentInstruction = documentPage == null
+            ? string.Empty
+            : BuildDocumentInstruction(documentPage);
 
         return $"""
         You are Glosify's app-wide language-learning assistant.
@@ -706,6 +710,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
         Current context:
         - {languageInstruction}
+        {documentInstruction}
 
         Rules:
         - Read-only tools (list_collections, list_quizzes) execute immediately. Their results are returned to you.
@@ -713,6 +718,9 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - Use list_collections before proposing a nested collection or placing a quiz into an existing collection unless the user gave an exact id through the UI.
         - Use list_quizzes if you need to check for duplicate quiz names.
         - If the user asks to create a quiz with starter vocabulary, include those words in the create_quiz tool call.
+        - When the user asks to make a quiz from the current book page, extract useful starter vocabulary from the current page text.
+        - If current page text is available and the user asks for sentences from it, use natural full sentences from that page.
+        - If the current book page has no selectable text, explain that Glosify cannot read this page in v1 and ask the user to choose another page or paste text.
         - Do not invent collection ids. If you cannot identify the collection, ask the user to clarify.
         - Keep your final response concise and user-facing: one or two sentences summarising what you queued or what detail you still need.
         - Do not mention internal tool names, tool calls, ids, JSON, routes, or implementation details.

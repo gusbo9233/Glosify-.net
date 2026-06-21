@@ -186,6 +186,9 @@ public class AssistantController : ControllerBase
                 userId,
                 input.Message,
                 input.Model,
+                input.DocumentContext is null
+                    ? null
+                    : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),
                 cancellationToken);
 
             return Ok(response);

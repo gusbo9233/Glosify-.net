@@ -131,6 +131,16 @@ public class QuizService : IQuizService
             .ToListAsync();
     }
 
+    public async Task<Quiz?> GetPublicQuizAsync(Guid id)
+    {
+        var quiz = await _context.Quizzes
+            .FirstOrDefaultAsync(q => q.Id == id);
+
+        return quiz != null && await IsQuizPubliclyReadableAsync(quiz)
+            ? quiz
+            : null;
+    }
+
     public async Task<Quiz?> CopyPublicQuizAsync(Guid id, string userId, Guid? collectionId = null)
     {
         var source = await _context.Quizzes
@@ -213,6 +223,11 @@ public class QuizService : IQuizService
     public async Task<int> GetAvailableWordCountAsync(Guid quizId)
     {
         return await _context.Words.CountAsync(word => word.QuizId == quizId);
+    }
+
+    public async Task<int> GetAvailableSentenceCountAsync(Guid quizId)
+    {
+        return await _context.QuizSentences.CountAsync(sentence => sentence.QuizId == quizId);
     }
 
     private async Task<bool> IsQuizPubliclyReadableAsync(Quiz quiz)

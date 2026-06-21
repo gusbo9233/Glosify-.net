@@ -69,13 +69,14 @@
                 @foreach (var quiz in Model.Collection.Quizzes.OrderBy(q => q.Name))
                 {
                     <article class="quiz-card">
-                        <div class="quiz-card-link">
+                        <a class="quiz-card-link" asp-controller="Explore" asp-action="Details" asp-route-id="@quiz.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon"><span class="material-symbols-outlined">quiz</span></div>
+                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
                             </div>
                             <h2 class="quiz-name">@quiz.Name</h2>
                             <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
-                        </div>
+                        </a>
                         <div class="quiz-meta">
                             <span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
                             <span class="status-pill">@quiz.ProcessingStatus</span>
@@ -98,13 +99,14 @@
                 @foreach (var quiz in collection.Quizzes.OrderBy(q => q.Name))
                 {
                     <article class="quiz-card">
-                        <div class="quiz-card-link">
+                        <a class="quiz-card-link" asp-controller="Explore" asp-action="Details" asp-route-id="@quiz.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon"><span class="material-symbols-outlined">quiz</span></div>
+                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
                             </div>
                             <h2 class="quiz-name">@quiz.Name</h2>
                             <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
-                        </div>
+                        </a>
                         <div class="quiz-meta">
                             <span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
                             <span class="status-pill">@quiz.ProcessingStatus</span>

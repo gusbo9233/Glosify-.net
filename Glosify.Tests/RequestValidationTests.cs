@@ -55,6 +55,62 @@ public class RequestValidationTests
         Assert.Empty(Validate(settings));
     }
 
+    [Theory]
+    [InlineData(PracticeDirection.SourceToTarget)]
+    [InlineData(PracticeDirection.TargetToSource)]
+    public void QuizSessionSettings_AcceptsPracticeDirections(string practiceDirection)
+    {
+        var settings = new QuizSessionSettings
+        {
+            WordCount = 20,
+            Mode = "flashcards",
+            PracticeDirection = practiceDirection
+        };
+
+        Assert.Empty(Validate(settings));
+    }
+
+    [Fact]
+    public void QuizSessionSettings_RejectsInvalidPracticeDirection()
+    {
+        var settings = new QuizSessionSettings
+        {
+            WordCount = 20,
+            Mode = "flashcards",
+            PracticeDirection = "sideways"
+        };
+
+        Assert.Contains(Validate(settings), r => r.MemberNames.Contains(nameof(QuizSessionSettings.PracticeDirection)));
+    }
+
+    [Theory]
+    [InlineData(PracticeItemType.Words)]
+    [InlineData(PracticeItemType.Sentences)]
+    public void QuizSessionSettings_AcceptsPracticeItemTypes(string practiceItemType)
+    {
+        var settings = new QuizSessionSettings
+        {
+            WordCount = 20,
+            Mode = "flashcards",
+            PracticeItemType = practiceItemType
+        };
+
+        Assert.Empty(Validate(settings));
+    }
+
+    [Fact]
+    public void QuizSessionSettings_RejectsInvalidPracticeItemType()
+    {
+        var settings = new QuizSessionSettings
+        {
+            WordCount = 20,
+            Mode = "flashcards",
+            PracticeItemType = "paragraphs"
+        };
+
+        Assert.Contains(Validate(settings), r => r.MemberNames.Contains(nameof(QuizSessionSettings.PracticeItemType)));
+    }
+
     private static IReadOnlyList<ValidationResult> Validate(object instance)
     {
         var ctx = new ValidationContext(instance);

@@ -23,15 +23,19 @@ public class FlashcardQuizController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(Guid? id, int wordCount = 20)
+    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null)
     {
         var userId = User.GetUserId();
+        var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
+        var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
 
         var selectedQuiz = await _quizService.FindQuizAsync(userId, id);
         if (selectedQuiz == null)
             return View(FlashcardQuizViewModel.Empty());
 
-        var cards = await _wordService.LoadCardsAsync(selectedQuiz.Id, wordCount);
+        var cards = PracticeItemType.IsSentences(normalizedItemType)
+            ? await _wordService.LoadSentenceCardsAsync(selectedQuiz.Id, wordCount)
+            : await _wordService.LoadCardsAsync(selectedQuiz.Id, wordCount);
         var cardData = cards.Select(c => new FlashcardCardData
         {
             Id = c.Id,
@@ -48,7 +52,9 @@ public class FlashcardQuizController : Controller
             selectedQuiz.SourceLanguage,
             selectedQuiz.TargetLanguage,
             wordCount,
-            cardData);
+            cardData,
+            normalizedDirection,
+            normalizedItemType);
         _sessionService.SaveSession(session);
 
         return View(BuildViewModel(session, selectedQuiz));
@@ -83,9 +89,9 @@ public class FlashcardQuizController : Controller
     }
 
     [HttpPost]
-    public IActionResult Restart(Guid quizId, int wordCount)
+    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null)
     {
-        return RedirectToAction(nameof(Index), new { id = quizId, wordCount });
+        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType) });
     }
 
     private IActionResult FlashcardResponse(FlashcardSessionData session)
@@ -115,6 +121,8 @@ public class FlashcardQuizController : Controller
             Id = currentCardData.Id,
             Lemma = currentCardData.Lemma,
             Translation = currentCardData.Translation,
+            Prompt = currentCardData.Prompt,
+            Answer = currentCardData.Answer,
             ExampleSentence = currentCardData.ExampleSentence,
             ExampleTranslation = currentCardData.ExampleTranslation
         };
@@ -134,6 +142,14 @@ public class FlashcardQuizController : Controller
             AgainCount = session.AgainCount,
             SkippedCount = session.SkippedCount,
             WordCount = session.WordCount,
+            PracticeDirection = session.PracticeDirection,
+            PromptLanguage = session.PromptLanguage,
+            AnswerLanguage = session.AnswerLanguage,
+            DirectionLabel = PracticeDirection.Label(session.PracticeDirection, session.SourceLanguage, session.TargetLanguage),
+            PracticeItemType = session.PracticeItemType,
+            ItemSingularLabel = PracticeItemType.SingularLabel(session.PracticeItemType),
+            ItemPluralLabel = PracticeItemType.PluralLabel(session.PracticeItemType),
+            CardLabel = PracticeItemType.CardLabel(session.PracticeItemType),
             IsAnswerRevealed = session.IsAnswerRevealed,
             IsComplete = totalCards > 0 && currentCard == null,
             ScorePercent = totalAnswered == 0 ? 0 : (int)Math.Round(session.RememberedCount * 100d / totalAnswered),
@@ -157,7 +173,9 @@ public class FlashcardQuizController : Controller
             session.SourceLanguage,
             session.TargetLanguage,
             session.AgainCards.Count,
-            session.AgainCards);
+            session.AgainCards,
+            session.PracticeDirection,
+            session.PracticeItemType);
 
         _sessionService.SaveSession(restarted);
         return FlashcardResponse(restarted);

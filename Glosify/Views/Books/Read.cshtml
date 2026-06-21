@@ -2,16 +2,18 @@
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Model.Book.Title;
+    ViewData["AssistantDocumentId"] = Model.Book.Id;
+    ViewData["AssistantCurrentPage"] = 1;
+    ViewData["AssistantTitle"] = "Page assistant";
+    ViewData["AssistantContextLabel"] = Model.Book.Title;
+    ViewData["AssistantEmptyText"] = "Ask for vocabulary or sentences from this page.";
+    ViewData["AssistantPlaceholder"] = "Make a quiz from this page...";
+
     var selectedQuiz = Model.Quizzes.FirstOrDefault(quiz => quiz.Id == Model.SelectedQuizId);
     if (selectedQuiz != null)
     {
         ViewData["AssistantQuizId"] = selectedQuiz.Id;
-        ViewData["AssistantDocumentId"] = Model.Book.Id;
-        ViewData["AssistantCurrentPage"] = 1;
-        ViewData["AssistantTitle"] = "Page assistant";
         ViewData["AssistantContextLabel"] = $"{selectedQuiz.Name} - {Model.Book.Title}";
-        ViewData["AssistantEmptyText"] = "Ask for vocabulary or sentences from this page.";
-        ViewData["AssistantPlaceholder"] = "Make a quiz from this page...";
     }
 }
 

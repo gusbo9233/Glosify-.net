@@ -106,6 +106,39 @@ public class PublicSharingTests
     }
 
     [Fact]
+    public async Task GetPublicQuiz_ReturnsQuizInsidePublicCollectionTree()
+    {
+        await using var context = CreateContext();
+        var publicCollection = CreateCollection("owner", "Shared", "Polish", isPublic: true);
+        var collectionQuiz = CreateQuiz("owner", "Polish", publicCollection.Id);
+        context.Collections.Add(publicCollection);
+        context.Quizzes.Add(collectionQuiz);
+        await context.SaveChangesAsync();
+        var service = new QuizService(context, new TestLanguageContext("Polish"));
+
+        var quiz = await service.GetPublicQuizAsync(collectionQuiz.Id);
+
+        Assert.NotNull(quiz);
+        Assert.Equal(collectionQuiz.Id, quiz!.Id);
+    }
+
+    [Fact]
+    public async Task GetPublicQuiz_ReturnsNullForQuizInsidePrivateCollection()
+    {
+        await using var context = CreateContext();
+        var privateCollection = CreateCollection("owner", "Private", "Polish");
+        var collectionQuiz = CreateQuiz("owner", "Polish", privateCollection.Id);
+        context.Collections.Add(privateCollection);
+        context.Quizzes.Add(collectionQuiz);
+        await context.SaveChangesAsync();
+        var service = new QuizService(context, new TestLanguageContext("Polish"));
+
+        var quiz = await service.GetPublicQuizAsync(collectionQuiz.Id);
+
+        Assert.Null(quiz);
+    }
+
+    [Fact]
     public async Task CopyPublicCollection_PreservesTreeAndCopiesContentPrivately()
     {
         await using var context = CreateContext();

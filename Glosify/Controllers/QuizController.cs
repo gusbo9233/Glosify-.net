@@ -336,11 +336,15 @@ public class QuizController : Controller
         var availableWordCount = selectedQuiz == null
             ? 0
             : await _quizService.GetAvailableWordCountAsync(selectedQuiz.Id);
+        var availableSentenceCount = selectedQuiz == null
+            ? 0
+            : await _quizService.GetAvailableSentenceCountAsync(selectedQuiz.Id);
 
         return View(new QuizSettingsViewModel
         {
             SelectedQuiz = selectedQuiz,
             AvailableWordCount = availableWordCount,
+            AvailableSentenceCount = availableSentenceCount,
             SelectedWordCount = Math.Min(Math.Max(availableWordCount, 1), 20)
         });
     }
@@ -359,25 +363,38 @@ public class QuizController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        if (settings.QuizId.HasValue)
+        {
+            var normalizedItemType = PracticeItemType.Normalize(settings.PracticeItemType);
+            var availableItemCount = PracticeItemType.IsSentences(normalizedItemType)
+                ? await _quizService.GetAvailableSentenceCountAsync(settings.QuizId.Value)
+                : await _quizService.GetAvailableWordCountAsync(settings.QuizId.Value);
+
+            if (availableItemCount == 0)
+            {
+                return RedirectToAction(nameof(Settings), new { id = settings.QuizId.Value });
+            }
+        }
+
         return settings.Mode switch
         {
-            "flashcards" => RedirectToAction("Index", "FlashcardQuiz", new { id = settings.QuizId, wordCount = settings.WordCount }),
-            "typing" => RedirectToAction("Index", "TypingQuiz", new { id = settings.QuizId, wordCount = settings.WordCount }),
+            "flashcards" => RedirectToAction("Index", "FlashcardQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = PracticeItemType.Normalize(settings.PracticeItemType) }),
+            "typing" => RedirectToAction("Index", "TypingQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = PracticeItemType.Normalize(settings.PracticeItemType) }),
             // "multiple-choice" mode is exposed in settings UI but not yet implemented; route back to settings.
             _ => RedirectToAction(nameof(Settings))
         };
     }
 
     [HttpGet]
-    public IActionResult Flashcard(Guid? id, int wordCount = 20)
+    public IActionResult Flashcard(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null)
     {
-        return RedirectToAction("Index", "FlashcardQuiz", new { id, wordCount });
+        return RedirectToAction("Index", "FlashcardQuiz", new { id, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType) });
     }
 
     [HttpGet]
-    public IActionResult Type(Guid? id, int wordCount = 20)
+    public IActionResult Type(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null)
     {
-        return RedirectToAction("Index", "TypingQuiz", new { id, wordCount });
+        return RedirectToAction("Index", "TypingQuiz", new { id, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType) });
     }
 
     private bool WantsJsonResponse()

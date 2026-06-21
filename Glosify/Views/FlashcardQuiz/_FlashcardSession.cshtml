@@ -2,7 +2,7 @@
 
 <div class="progress-wrap">
     <div class="progress-meta">
-        <span class="progress-count">@Model.CompletedCards of @Model.TotalCards cards</span>
+        <span class="progress-count">@Model.CompletedCards of @Model.TotalCards @Model.ItemPluralLabel</span>
         <span class="progress-count">@Model.RememberedCount remembered</span>
     </div>
     <div class="progress-track" aria-hidden="true">
@@ -25,6 +25,8 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="quizId" value="@Model.QuizId" />
                 <input type="hidden" name="wordCount" value="@Model.WordCount" />
+                <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
+                <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
                 <button class="btn-main" type="submit">Restart Session</button>
             </form>
             @if (Model.AgainCount > 0)
@@ -32,7 +34,7 @@
                 <form method="post" asp-controller="FlashcardQuiz" asp-action="RestartAgain">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="sessionId" value="@Model.SessionId" />
-                    <button class="btn-main" type="submit">Practice Incorrect Cards</button>
+                    <button class="btn-main" type="submit">Practice Again</button>
                 </form>
             }
             
@@ -43,10 +45,10 @@
         @if (Model.IsAnswerRevealed)
         {
             <article class="flashcard is-revealed" aria-live="polite">
-                <span class="card-label">Card @Model.CurrentCardNumber</span>
-                <h2 class="card-word">@Model.CurrentCard.Lemma</h2>
+                <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
+                <h2 class="card-word">@Model.CurrentCard.Prompt</h2>
                 <div class="card-answer revealed">
-                    <div class="translation">@Model.CurrentCard.Translation</div>
+                    <div class="translation">@Model.CurrentCard.Answer</div>
                     @if (!string.IsNullOrWhiteSpace(Model.CurrentCard.ExampleSentence))
                     {
                         <div class="example">@Model.CurrentCard.ExampleSentence</div>
@@ -63,9 +65,9 @@
             <form class="card-reveal-form" method="post" asp-controller="FlashcardQuiz" asp-action="Reveal" data-flashcard-form data-card-reveal-form>
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="sessionId" value="@Model.SessionId" />
-                <button class="flashcard flashcard-clickable" type="submit" aria-label="Reveal answer for @Model.CurrentCard.Lemma">
-                    <span class="card-label">Card @Model.CurrentCardNumber</span>
-                    <span class="card-word">@Model.CurrentCard.Lemma</span>
+                <button class="flashcard flashcard-clickable" type="submit" aria-label="Reveal answer for @Model.CurrentCard.Prompt">
+                    <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
+                    <span class="card-word">@Model.CurrentCard.Prompt</span>
                 </button>
             </form>
         }
@@ -102,8 +104,8 @@
     else
     {
         <div class="empty-state">
-            <h2 class="flash-title">No cards yet</h2>
-            <p class="flash-subtitle">Add words to a quiz, then start a flashcard session from that quiz.</p>
+            <h2 class="flash-title">No @Model.ItemPluralLabel yet</h2>
+            <p class="flash-subtitle">Add @Model.ItemPluralLabel to a quiz, then start a flashcard session from that quiz.</p>
             <button class="btn-main" type="button" disabled>Show Answer</button>
         </div>
     }

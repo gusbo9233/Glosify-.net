@@ -118,26 +118,39 @@ public class QuizzesApiController : ApiControllerBase
     }
 
     [HttpGet("{id:guid}/cards")]
-    public async Task<ActionResult<IReadOnlyList<QuizCardData>>> Cards(Guid id, [FromQuery] int count = 20)
+    public async Task<ActionResult<IReadOnlyList<QuizCardData>>> Cards(Guid id, [FromQuery] int count = 20, [FromQuery] string? practiceDirection = null, [FromQuery] string? practiceItemType = null)
     {
         if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId()))
         {
             return NotFound();
         }
 
-        var cards = await _wordService.LoadCardsAsync(id, Math.Clamp(count, 1, 100));
-        return Ok(cards);
+        var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
+        var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
+        var cards = PracticeItemType.IsSentences(normalizedItemType)
+            ? await _wordService.LoadSentenceCardsAsync(id, Math.Clamp(count, 1, 100))
+            : await _wordService.LoadCardsAsync(id, Math.Clamp(count, 1, 100));
+        return Ok(cards.Select(card => new QuizCardData
+        {
+            Id = card.Id,
+            Lemma = card.Lemma,
+            Translation = card.Translation,
+            Prompt = PracticeDirection.IsSourceToTarget(normalizedDirection) ? card.Translation : card.Lemma,
+            Answer = PracticeDirection.IsSourceToTarget(normalizedDirection) ? card.Lemma : card.Translation,
+            ExampleSentence = card.ExampleSentence,
+            ExampleTranslation = card.ExampleTranslation
+        }).ToList());
     }
 
     [HttpGet("{id:guid}/typing")]
-    public async Task<ActionResult<TypingQuizData>> Typing(Guid id, [FromQuery] int count = 20)
+    public async Task<ActionResult<TypingQuizData>> Typing(Guid id, [FromQuery] int count = 20, [FromQuery] string? practiceDirection = null, [FromQuery] string? practiceItemType = null)
     {
         if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId()))
         {
             return NotFound();
         }
 
-        return Ok(await _typingQuizService.GetQuizDataAsync(id, Math.Clamp(count, 1, 100)));
+        return Ok(await _typingQuizService.GetQuizDataAsync(id, Math.Clamp(count, 1, 100), practiceDirection, practiceItemType));
     }
 
     [HttpGet("{id:guid}/sentences")]

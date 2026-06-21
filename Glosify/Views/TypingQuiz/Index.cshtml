@@ -14,9 +14,9 @@
          data-show-ukrainian-keyboard="@Model.ShowsUkrainianKeyboard.ToString().ToLowerInvariant()">
     <header class="flash-header">
         <div>
-            <p class="flash-kicker">@Model.SelectedQuiz?.SourceLanguage &rarr; @Model.SelectedQuiz?.TargetLanguage</p>
+            <p class="flash-kicker">@Model.DirectionLabel</p>
             <h1 class="flash-title">@quizName</h1>
-            <p class="flash-subtitle">Type the target-language word from the translation prompt.</p>
+            <p class="flash-subtitle">Type the full @Model.AnswerLanguage @Model.ItemSingularLabel from the @Model.PromptLanguage prompt.</p>
         </div>
         @if (Model.SelectedQuiz != null)
         {
@@ -27,8 +27,8 @@
     @if (Model.TotalWords == 0)
     {
         <div class="empty-state">
-            <h2 class="flash-title">No words yet</h2>
-            <p class="flash-subtitle">Add words to a quiz, then start a typing session from that quiz.</p>
+            <h2 class="flash-title">No @Model.ItemPluralLabel yet</h2>
+            <p class="flash-subtitle">Add @Model.ItemPluralLabel to a quiz, then start a typing session from that quiz.</p>
             <button class="btn-main" type="button" disabled>Check Answer</button>
         </div>
     }
@@ -36,7 +36,7 @@
     {
         <div class="progress-wrap">
             <div class="progress-meta">
-                <span class="progress-count" data-progress-count>@Model.CurrentWordNumber of @Model.TotalWords words</span>
+                <span class="progress-count" data-progress-count>@Model.CurrentWordNumber of @Model.TotalWords @Model.ItemPluralLabel</span>
                 <span class="progress-count" data-accuracy>@Model.CorrectCount correct</span>
             </div>
             <div class="progress-track" aria-hidden="true">
@@ -46,8 +46,8 @@
 
         <div class="typing-stage">
             <article class="typing-card" data-card>
-                <span class="card-label" data-card-label>Word @Model.CurrentWordNumber</span>
-                <p class="typing-prompt-label">Translate</p>
+                <span class="card-label" data-card-label>@Model.CardLabel @Model.CurrentWordNumber</span>
+                <p class="typing-prompt-label">@Model.PromptLanguage prompt</p>
                 <h2 class="typing-prompt" data-prompt>@Model.CurrentWord?.Prompt</h2>
                 <p class="typing-feedback" data-feedback aria-live="polite"></p>
 
@@ -104,13 +104,15 @@
             <div class="result-grid">
                 <div class="result-stat"><span>Correct</span><span data-result-correct>@Model.CorrectCount</span></div>
                 <div class="result-stat"><span>Incorrect</span><span data-result-incorrect>@Model.IncorrectCount</span></div>
-                <div class="result-stat"><span>Words</span><span>@Model.TotalWords</span></div>
+                <div class="result-stat"><span>@Model.ItemPluralLabel</span><span>@Model.TotalWords</span></div>
             </div>
             <div class="typing-result-actions">
                 <form method="post" asp-controller="TypingQuiz" asp-action="Restart">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="quizId" value="@Model.QuizId" />
                     <input type="hidden" name="wordCount" value="@Model.WordCount" />
+                    <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
+                    <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
                     <button class="btn-main" type="submit">Restart Session</button>
                 </form>
                 <form method="post" asp-controller="TypingQuiz" asp-action="RestartIncorrect" data-practice-incorrect hidden>
@@ -140,7 +142,9 @@
             total: @Model.TotalWords,
             checked: false,
             nextWord: null,
-            isComplete: @Model.IsComplete.ToString().ToLowerInvariant()
+            isComplete: @Model.IsComplete.ToString().ToLowerInvariant(),
+            itemPluralLabel: '@Model.ItemPluralLabel',
+            cardLabel: '@Model.CardLabel'
         };
 
         const form = shell.querySelector('[data-typing-form]');
@@ -164,7 +168,7 @@
             if (!state.total) return;
 
             const completed = state.correct + state.incorrect;
-            progressCount.textContent = `${Math.min(state.index + 1, state.total)} of ${state.total} words`;
+            progressCount.textContent = `${Math.min(state.index + 1, state.total)} of ${state.total} ${state.itemPluralLabel}`;
             accuracy.textContent = `${state.correct} correct`;
             progressFill.style.width = `${Math.round(completed * 100 / state.total)}%`;
         };
@@ -177,7 +181,7 @@
             prompt.textContent = word.prompt;
             feedback.textContent = '';
             feedback.className = 'typing-feedback';
-            cardLabel.textContent = `Word ${state.index + 1}`;
+            cardLabel.textContent = `${state.cardLabel} ${state.index + 1}`;
             checkButton.innerHTML = 'Check Answer <span class="material-symbols-outlined">arrow_forward</span>';
             reveal.hidden = true;
             card.classList.remove('is-correct', 'is-incorrect');

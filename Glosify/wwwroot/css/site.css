@@ -345,6 +345,65 @@ body {
   color: var(--on-surface);
 }
 
+.visibility-checkbox-form {
+  display: inline-flex;
+}
+
+.visibility-checkbox {
+  align-items: center;
+  border: 1px solid rgba(214, 227, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(17, 32, 54, 0.48);
+  color: var(--on-surface-var);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 750;
+  gap: 9px;
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+.visibility-checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.visibility-checkbox-box {
+  align-items: center;
+  border: 1px solid rgba(214, 227, 255, 0.32);
+  border-radius: 4px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 18px;
+  justify-content: center;
+  width: 18px;
+}
+
+.visibility-checkbox input[type="checkbox"]:focus-visible + input + .visibility-checkbox-box {
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.visibility-checkbox input[type="checkbox"]:checked + input + .visibility-checkbox-box {
+  border-color: rgba(83, 224, 118, 0.75);
+  background: rgba(83, 224, 118, 0.18);
+}
+
+.visibility-checkbox input[type="checkbox"]:checked + input + .visibility-checkbox-box::after {
+  color: var(--primary);
+  content: "check";
+  font-family: "Material Symbols Outlined";
+  font-size: 16px;
+  font-variation-settings: "FILL" 1, "wght" 700, "GRAD" 0, "opsz" 20;
+  line-height: 1;
+}
+
+.visibility-checkbox:hover {
+  border-color: rgba(83, 224, 118, 0.35);
+  color: var(--on-surface);
+}
+
 .collection-share-form {
   align-items: center;
   display: flex;
@@ -4086,6 +4145,13 @@ body { margin: 0; }
     line-height: 1.5;
     white-space: pre-wrap;
     word-wrap: break-word;
+}
+
+.assistant-bubble a {
+    color: var(--primary, #53e076);
+    font-weight: 750;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .assistant-tool-list {

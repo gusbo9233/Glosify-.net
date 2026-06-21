@@ -21,4 +21,16 @@ public class QuizSessionSettings
 
     public string? Language { get; set; }
     public int? Difficulty { get; set; }
+
+    [Required]
+    [RegularExpression(
+        "^(source-to-target|target-to-source)$",
+        ErrorMessage = "Choose a valid practice direction.")]
+    public string PracticeDirection { get; set; } = Glosify.Models.PracticeDirection.SourceToTarget;
+
+    [Required]
+    [RegularExpression(
+        "^(words|sentences)$",
+        ErrorMessage = "Choose valid practice content.")]
+    public string PracticeItemType { get; set; } = Glosify.Models.PracticeItemType.Words;
 }

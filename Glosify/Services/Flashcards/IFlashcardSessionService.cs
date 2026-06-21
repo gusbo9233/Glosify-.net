@@ -2,7 +2,7 @@ namespace Glosify.Services;
 
 public interface IFlashcardSessionService
 {
-    FlashcardSessionData StartSession(string userId, Guid quizId, string quizName, string sourceLanguage, string targetLanguage, int wordCount, IReadOnlyList<FlashcardCardData> cards);
+    FlashcardSessionData StartSession(string userId, Guid quizId, string quizName, string sourceLanguage, string targetLanguage, int wordCount, IReadOnlyList<FlashcardCardData> cards, string? practiceDirection = null, string? practiceItemType = null);
     FlashcardSessionData? FindSession(string sessionId, string userId);
     void SaveSession(FlashcardSessionData session);
     void ApplyRating(FlashcardSessionData session, string rating);
@@ -17,6 +17,10 @@ public record FlashcardSessionData
     public string QuizName { get; init; } = string.Empty;
     public string SourceLanguage { get; init; } = string.Empty;
     public string TargetLanguage { get; init; } = string.Empty;
+    public string PracticeDirection { get; init; } = Glosify.Models.PracticeDirection.SourceToTarget;
+    public string PromptLanguage { get; init; } = string.Empty;
+    public string AnswerLanguage { get; init; } = string.Empty;
+    public string PracticeItemType { get; init; } = Glosify.Models.PracticeItemType.Words;
     public int WordCount { get; init; }
     public int CurrentIndex { get; set; }
     public int RememberedCount { get; set; }
@@ -33,6 +37,8 @@ public record FlashcardCardData
     public string Id { get; init; } = string.Empty;
     public string Lemma { get; init; } = string.Empty;
     public string Translation { get; init; } = string.Empty;
+    public string Prompt { get; init; } = string.Empty;
+    public string Answer { get; init; } = string.Empty;
     public string ExampleSentence { get; init; } = string.Empty;
     public string ExampleTranslation { get; init; } = string.Empty;
 }

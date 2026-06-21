@@ -6,10 +6,16 @@
 
     var quizName = Model.SelectedQuiz?.Name ?? "Flashcard Quiz";
     var availableWords = Model.AvailableWordCount;
+    var availableSentences = Model.AvailableSentenceCount;
     var selectedWordCount = Model.SelectedWordCount;
     var tenCount = Math.Min(10, Math.Max(availableWords, 1));
     var twentyCount = Math.Min(20, Math.Max(availableWords, 1));
     var allCount = Math.Max(availableWords, 1);
+    var sentenceTenCount = Math.Min(10, Math.Max(availableSentences, 1));
+    var sentenceTwentyCount = Math.Min(20, Math.Max(availableSentences, 1));
+    var sentenceAllCount = Math.Max(availableSentences, 1);
+    var sourceLanguage = Model.SelectedQuiz?.SourceLanguage ?? "Source";
+    var targetLanguage = Model.SelectedQuiz?.TargetLanguage ?? "Target";
 }
 
 
@@ -21,7 +27,7 @@
     <header class="settings-header">
         <span class="config-badge">Configuration</span>
         <h1 class="page-title">@quizName</h1>
-        <p class="page-subtitle">Pick a quick flashcard run and review the words in this quiz.</p>
+        <p class="page-subtitle">Pick a quick practice run and review this quiz.</p>
     </header>
 
     <div class="settings-grid">
@@ -30,22 +36,48 @@
                 <div class="section-header">
                     <div>
                         <h2 class="section-title">Session Length</h2>
-                        <p class="section-note">@availableWords words available</p>
+                        <p class="section-note"><span data-available-count>@availableWords</span> <span data-available-label>words</span> available</p>
                     </div>
                     <span class="material-symbols-outlined">timer</span>
                 </div>
                 <div class="length-grid">
                     <label class="choice">
-                        <input type="radio" name="WordCount" value="@tenCount" @(selectedWordCount <= 10 ? "checked" : "") />
-                        <span class="choice-card"><span class="num">@tenCount</span><span class="label">Quick</span></span>
+                        <input type="radio" name="WordCount" value="@tenCount" data-word-value="@tenCount" data-sentence-value="@sentenceTenCount" @(selectedWordCount <= 10 ? "checked" : "") />
+                        <span class="choice-card"><span class="num" data-length-num>@tenCount</span><span class="label">Quick</span></span>
                     </label>
                     <label class="choice">
-                        <input type="radio" name="WordCount" value="@twentyCount" @(selectedWordCount > 10 && selectedWordCount <= 20 ? "checked" : "") />
-                        <span class="choice-card"><span class="num">@twentyCount</span><span class="label">Standard</span></span>
+                        <input type="radio" name="WordCount" value="@twentyCount" data-word-value="@twentyCount" data-sentence-value="@sentenceTwentyCount" @(selectedWordCount > 10 && selectedWordCount <= 20 ? "checked" : "") />
+                        <span class="choice-card"><span class="num" data-length-num>@twentyCount</span><span class="label">Standard</span></span>
                     </label>
                     <label class="choice">
-                        <input type="radio" name="WordCount" value="@allCount" @(selectedWordCount > 20 ? "checked" : "") />
-                        <span class="choice-card"><span class="num">@allCount</span><span class="label">All Words</span></span>
+                        <input type="radio" name="WordCount" value="@allCount" data-word-value="@allCount" data-sentence-value="@sentenceAllCount" @(selectedWordCount > 20 ? "checked" : "") />
+                        <span class="choice-card"><span class="num" data-length-num>@allCount</span><span class="label">All</span></span>
+                    </label>
+                </div>
+            </div>
+
+            <div>
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Practice Content</h2>
+                        <p class="section-note">Choose words or full sentences.</p>
+                    </div>
+                    <span class="material-symbols-outlined">subject</span>
+                </div>
+                <div class="mode-grid">
+                    <label class="choice">
+                        <input type="radio" name="PracticeItemType" value="words" checked data-item-label="Words" data-count="@availableWords" />
+                        <span class="choice-card">
+                            <span class="material-symbols-outlined">short_text</span>
+                            <span class="mode-name">Words</span>
+                        </span>
+                    </label>
+                    <label class="choice">
+                        <input type="radio" name="PracticeItemType" value="sentences" data-item-label="Sentences" data-count="@availableSentences" />
+                        <span class="choice-card">
+                            <span class="material-symbols-outlined">notes</span>
+                            <span class="mode-name">Sentences</span>
+                        </span>
                     </label>
                 </div>
             </div>
@@ -82,17 +114,49 @@
                     </label>
                 </div>
             </div>
+
+            <div>
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Practice Direction</h2>
+                        <p class="section-note">Choose which language appears first.</p>
+                    </div>
+                    <span class="material-symbols-outlined">swap_horiz</span>
+                </div>
+                <div class="mode-grid">
+                    <label class="choice">
+                        <input type="radio" name="PracticeDirection" value="source-to-target" checked data-direction-label="@sourceLanguage -> @targetLanguage" />
+                        <span class="choice-card">
+                            <span class="material-symbols-outlined">east</span>
+                            <span class="mode-name">@sourceLanguage &rarr; @targetLanguage</span>
+                        </span>
+                    </label>
+                    <label class="choice">
+                        <input type="radio" name="PracticeDirection" value="target-to-source" data-direction-label="@targetLanguage -> @sourceLanguage" />
+                        <span class="choice-card">
+                            <span class="material-symbols-outlined">west</span>
+                            <span class="mode-name">@targetLanguage &rarr; @sourceLanguage</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
         </section>
 
         <aside class="start-panel">
             @if (availableWords == 0)
             {
-                <div class="empty-callout">Add at least one word before starting a flashcard session.</div>
+                <div class="empty-callout" data-empty-callout>Add at least one word before starting a practice session.</div>
+            }
+            else
+            {
+                <div class="empty-callout" data-empty-callout hidden>Add at least one word before starting a practice session.</div>
             }
             <div class="stat-row"><span>Quiz</span><span>@quizName</span></div>
-            <div class="stat-row"><span>Words</span><span>@availableWords</span></div>
+            <div class="stat-row"><span>Content</span><span data-selected-content>Words</span></div>
+            <div class="stat-row"><span>Available</span><span data-selected-available>@availableWords</span></div>
             <div class="stat-row"><span>Mode</span><span data-selected-mode>Flashcards</span></div>
-            <button class="btn-start" type="submit" @(availableWords == 0 ? "disabled" : "")>
+            <div class="stat-row"><span>Direction</span><span data-selected-direction>@sourceLanguage -> @targetLanguage</span></div>
+            <button class="btn-start" type="submit" data-start-button @(availableWords == 0 ? "disabled" : "")>
                 <span class="material-symbols-outlined">play_circle</span>
                 Start Quiz
             </button>
@@ -105,6 +169,16 @@
     (() => {
         const modeLabel = document.querySelector('[data-selected-mode]');
         const modes = document.querySelectorAll('input[name="Mode"]');
+        const directionLabel = document.querySelector('[data-selected-direction]');
+        const directions = document.querySelectorAll('input[name="PracticeDirection"]');
+        const itemTypes = document.querySelectorAll('input[name="PracticeItemType"]');
+        const contentLabel = document.querySelector('[data-selected-content]');
+        const availableLabel = document.querySelector('[data-selected-available]');
+        const availableCount = document.querySelector('[data-available-count]');
+        const availableItemLabel = document.querySelector('[data-available-label]');
+        const emptyCallout = document.querySelector('[data-empty-callout]');
+        const startButton = document.querySelector('[data-start-button]');
+        const lengthOptions = document.querySelectorAll('input[name="WordCount"]');
         if (!modeLabel || !modes.length) return;
 
         const labels = {
@@ -120,6 +194,50 @@
                 }
             });
         });
+
+        directions.forEach(direction => {
+            direction.addEventListener('change', () => {
+                if (direction.checked && directionLabel) {
+                    directionLabel.textContent = direction.dataset.directionLabel || direction.value;
+                }
+            });
+        });
+
+        const refreshContent = () => {
+            const selected = document.querySelector('input[name="PracticeItemType"]:checked');
+            if (!selected) return;
+
+            const isSentences = selected.value === 'sentences';
+            const count = Number(selected.dataset.count || '0');
+            const itemLabel = isSentences ? 'sentences' : 'words';
+            const singularLabel = isSentences ? 'sentence' : 'word';
+
+            if (contentLabel) contentLabel.textContent = selected.dataset.itemLabel || selected.value;
+            if (availableLabel) availableLabel.textContent = `${count} ${itemLabel}`;
+            if (availableCount) availableCount.textContent = `${count}`;
+            if (availableItemLabel) availableItemLabel.textContent = itemLabel;
+
+            lengthOptions.forEach(option => {
+                const value = isSentences ? option.dataset.sentenceValue : option.dataset.wordValue;
+                if (!value) return;
+                option.value = value;
+                option.closest('.choice')?.querySelector('[data-length-num]')?.replaceChildren(document.createTextNode(value));
+            });
+
+            if (emptyCallout) {
+                emptyCallout.hidden = count > 0;
+                emptyCallout.textContent = `Add at least one ${singularLabel} before starting a practice session.`;
+            }
+
+            if (startButton) {
+                startButton.disabled = count === 0;
+            }
+        };
+
+        itemTypes.forEach(itemType => {
+            itemType.addEventListener('change', refreshContent);
+        });
+        refreshContent();
     })();
 </script>
 }

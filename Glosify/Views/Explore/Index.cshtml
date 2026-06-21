@@ -69,13 +69,14 @@
                 @foreach (var item in Model.Quizzes)
                 {
                     <article class="quiz-card">
-                        <div class="quiz-card-link">
+                        <a class="quiz-card-link" asp-controller="Explore" asp-action="Details" asp-route-id="@item.Quiz.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon"><span class="material-symbols-outlined">public</span></div>
+                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
                             </div>
                             <h2 class="quiz-name">@item.Quiz.Name</h2>
                             <p class="quiz-languages">@item.Quiz.SourceLanguage &rarr; @item.Quiz.TargetLanguage</p>
-                        </div>
+                        </a>
                         <div class="quiz-meta">
                             <span>@item.Quiz.CreatedAt.ToString("MMM d, yyyy")</span>
                             <span class="status-pill">@item.WordCount words</span>

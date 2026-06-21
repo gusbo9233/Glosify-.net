@@ -66,6 +66,7 @@ namespace Glosify.Models.ViewModels
     {
         public Quiz? SelectedQuiz { get; set; }
         public int AvailableWordCount { get; set; }
+        public int AvailableSentenceCount { get; set; }
         public int SelectedWordCount { get; set; }
     }
 
@@ -87,6 +88,14 @@ namespace Glosify.Models.ViewModels
         public int ScorePercent { get; set; }
         public int ProgressPercent { get; set; }
         public int WordCount { get; set; }
+        public string PracticeDirection { get; set; } = Glosify.Models.PracticeDirection.SourceToTarget;
+        public string PromptLanguage { get; set; } = string.Empty;
+        public string AnswerLanguage { get; set; } = string.Empty;
+        public string DirectionLabel { get; set; } = string.Empty;
+        public string PracticeItemType { get; set; } = Glosify.Models.PracticeItemType.Words;
+        public string ItemSingularLabel { get; set; } = "word";
+        public string ItemPluralLabel { get; set; } = "words";
+        public string CardLabel { get; set; } = "Word";
         public bool IsAnswerRevealed { get; set; }
         public bool IsComplete { get; set; }
 
@@ -98,6 +107,8 @@ namespace Glosify.Models.ViewModels
         public string Id { get; set; } = string.Empty;
         public string Lemma { get; set; } = string.Empty;
         public string Translation { get; set; } = string.Empty;
+        public string Prompt { get; set; } = string.Empty;
+        public string Answer { get; set; } = string.Empty;
         public string ExampleSentence { get; set; } = string.Empty;
         public string ExampleTranslation { get; set; } = string.Empty;
     }
@@ -116,6 +127,14 @@ namespace Glosify.Models.ViewModels
         public int ScorePercent { get; set; }
         public int ProgressPercent { get; set; }
         public int WordCount { get; set; }
+        public string PracticeDirection { get; set; } = Glosify.Models.PracticeDirection.SourceToTarget;
+        public string PromptLanguage { get; set; } = string.Empty;
+        public string AnswerLanguage { get; set; } = string.Empty;
+        public string DirectionLabel { get; set; } = string.Empty;
+        public string PracticeItemType { get; set; } = Glosify.Models.PracticeItemType.Words;
+        public string ItemSingularLabel { get; set; } = "word";
+        public string ItemPluralLabel { get; set; } = "words";
+        public string CardLabel { get; set; } = "Word";
         public bool ShowsUkrainianKeyboard { get; set; }
         public bool IsComplete { get; set; }
 

@@ -52,6 +52,7 @@ public interface IAssistantOrchestrator
         string userId,
         string userMessage,
         string? model = null,
+        AssistantDocumentContext? documentContext = null,
         CancellationToken cancellationToken = default);
 
     Task<AssistantHistory> GetHistoryAsync(

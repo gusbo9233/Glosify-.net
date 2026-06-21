@@ -21,8 +21,12 @@ public class TypingSessionService : ITypingSessionService
         string sourceLanguage,
         string targetLanguage,
         int wordCount,
-        IReadOnlyList<TypingWordData> words)
+        IReadOnlyList<TypingWordData> words,
+        string? practiceDirection = null,
+        string? practiceItemType = null)
     {
+        var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
+        var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
         return new TypingSessionData
         {
             SessionId = Guid.NewGuid().ToString("N"),
@@ -31,6 +35,10 @@ public class TypingSessionService : ITypingSessionService
             QuizName = quizName,
             SourceLanguage = sourceLanguage,
             TargetLanguage = targetLanguage,
+            PracticeDirection = normalizedDirection,
+            PromptLanguage = PracticeDirection.PromptLanguage(normalizedDirection, sourceLanguage, targetLanguage),
+            AnswerLanguage = PracticeDirection.AnswerLanguage(normalizedDirection, sourceLanguage, targetLanguage),
+            PracticeItemType = normalizedItemType,
             WordCount = Math.Clamp(wordCount, 1, 100),
             Words = words
         };

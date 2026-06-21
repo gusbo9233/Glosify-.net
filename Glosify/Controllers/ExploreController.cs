@@ -11,15 +11,18 @@ public class ExploreController : Controller
 {
     private readonly ICollectionService _collectionService;
     private readonly IQuizService _quizService;
+    private readonly IWordService _wordService;
     private readonly ILanguageContext _languageContext;
 
     public ExploreController(
         ICollectionService collectionService,
         IQuizService quizService,
+        IWordService wordService,
         ILanguageContext languageContext)
     {
         _collectionService = collectionService;
         _quizService = quizService;
+        _wordService = wordService;
         _languageContext = languageContext;
     }
 
@@ -78,6 +81,49 @@ public class ExploreController : Controller
             Collection = collection,
             CollectionCount = CountDescendantCollections(collection),
             QuizCount = CountQuizzes(collection)
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Details(Guid id)
+    {
+        var selectedQuiz = await _quizService.GetPublicQuizAsync(id);
+        if (selectedQuiz == null)
+        {
+            TempData["ExploreMessage"] = "That quiz is no longer public.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        var language = _languageContext.CurrentLanguage;
+        if (language == null)
+        {
+            return RedirectToAction("Index", "Languages");
+        }
+
+        if (!string.Equals(selectedQuiz.TargetLanguage, language, StringComparison.OrdinalIgnoreCase))
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        var words = await _wordService.GetWordsAsync(selectedQuiz.Id);
+        var sentences = await _wordService.GetSentencesAsync(selectedQuiz.Id);
+
+        if (selectedQuiz.CollectionId is Guid collectionId
+            && await _collectionService.GetPublicCollectionTreeAsync(collectionId) != null)
+        {
+            ViewData["BackCollectionId"] = collectionId;
+        }
+
+        return View(new QuizWorkspaceViewModel
+        {
+            SelectedQuiz = selectedQuiz,
+            Words = words,
+            Sentences = sentences.Select(s => new QuizSentenceViewModel
+            {
+                Text = s.Text,
+                Translation = s.Translation,
+                WordCount = s.WordCount
+            }).ToList()
         });
     }
 

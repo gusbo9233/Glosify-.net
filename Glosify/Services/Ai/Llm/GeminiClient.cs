@@ -308,12 +308,13 @@ public sealed class GeminiClient : IGeminiClient
         int outputTokenReserve,
         CancellationToken cancellationToken)
     {
-        var count = await generativeModel.CountTokens(request, cancellationToken: cancellationToken);
+        var count = await generativeModel.CountTokens(CreateCountTokensRequest(request), cancellationToken: cancellationToken);
         var promptTokens = Convert.ToInt32(count.TotalTokens);
         if (promptTokens <= 0)
         {
             promptTokens = Convert.ToInt32(count.TokenCount);
         }
+        promptTokens += EstimateSupplementalPromptTokens(request);
         var estimatedTokens = Math.Max(1, promptTokens) + Math.Max(0, outputTokenReserve);
         var reservation = await _credits.ReserveAsync(
             usageContext,
@@ -335,6 +336,42 @@ public sealed class GeminiClient : IGeminiClient
         {
             await _credits.ReleaseAsync(reservation.ReservationId, CancellationToken.None);
             throw;
+        }
+    }
+
+    private static GenerateContentRequest CreateCountTokensRequest(GenerateContentRequest request)
+    {
+        return new GenerateContentRequest
+        {
+            Contents = request.Contents,
+        };
+    }
+
+    private static int EstimateSupplementalPromptTokens(GenerateContentRequest request)
+    {
+        var characterCount = 0;
+        characterCount += EstimateSerializedLength(request.SystemInstruction);
+        characterCount += EstimateSerializedLength(request.Tools);
+
+        return characterCount == 0
+            ? 0
+            : (int)Math.Ceiling(characterCount / 4.0);
+    }
+
+    private static int EstimateSerializedLength<T>(T value)
+    {
+        if (value == null)
+        {
+            return 0;
+        }
+
+        try
+        {
+            return JsonSerializer.Serialize(value, JsonOptions).Length;
+        }
+        catch (NotSupportedException)
+        {
+            return 0;
         }
     }
 

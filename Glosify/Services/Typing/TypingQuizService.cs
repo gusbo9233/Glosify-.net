@@ -13,8 +13,10 @@ public class TypingQuizService : ITypingQuizService
         _context = context;
     }
 
-    public async Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount)
+    public async Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null)
     {
+        var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
+        var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
         var quiz = await _context.Quizzes
             .FirstOrDefaultAsync(q => q.Id == quizId);
 
@@ -24,11 +26,15 @@ public class TypingQuizService : ITypingQuizService
             {
                 QuizId = quizId,
                 QuizName = string.Empty,
+                PracticeDirection = normalizedDirection,
+                PracticeItemType = normalizedItemType,
                 Words = []
             };
         }
 
-        var words = await LoadWordsAsync(quizId, wordCount);
+        var words = PracticeItemType.IsSentences(normalizedItemType)
+            ? await LoadSentencesAsync(quizId, wordCount, normalizedDirection)
+            : await LoadWordsAsync(quizId, wordCount, normalizedDirection);
 
         return new TypingQuizData
         {
@@ -36,6 +42,10 @@ public class TypingQuizService : ITypingQuizService
             QuizName = quiz.Name,
             SourceLanguage = quiz.SourceLanguage,
             TargetLanguage = quiz.TargetLanguage,
+            PracticeDirection = normalizedDirection,
+            PromptLanguage = PracticeDirection.PromptLanguage(normalizedDirection, quiz.SourceLanguage, quiz.TargetLanguage),
+            AnswerLanguage = PracticeDirection.AnswerLanguage(normalizedDirection, quiz.SourceLanguage, quiz.TargetLanguage),
+            PracticeItemType = normalizedItemType,
             Words = words
         };
     }
@@ -46,7 +56,7 @@ public class TypingQuizService : ITypingQuizService
             .Equals(correctAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
-    private async Task<IReadOnlyList<TypingWordData>> LoadWordsAsync(Guid quizId, int wordCount)
+    private async Task<IReadOnlyList<TypingWordData>> LoadWordsAsync(Guid quizId, int wordCount, string practiceDirection)
     {
         var take = Math.Clamp(wordCount, 1, 100);
 
@@ -67,11 +77,33 @@ public class TypingQuizService : ITypingQuizService
                 return new TypingWordData
                 {
                     Id = item.Id,
-                    Prompt = item.Translation,
-                    Answer = item.Lemma,
+                    Prompt = PracticeDirection.IsSourceToTarget(practiceDirection) ? item.Translation : item.Lemma,
+                    Answer = PracticeDirection.IsSourceToTarget(practiceDirection) ? item.Lemma : item.Translation,
                     ExampleSentence = sentence?.Text ?? string.Empty,
                     ExampleTranslation = sentence?.Translation ?? string.Empty
                 };
+            })
+            .ToList();
+    }
+
+    private async Task<IReadOnlyList<TypingWordData>> LoadSentencesAsync(Guid quizId, int sentenceCount, string practiceDirection)
+    {
+        var take = Math.Clamp(sentenceCount, 1, 100);
+
+        var rows = await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quizId)
+            .OrderBy(_ => Guid.NewGuid())
+            .Take(take)
+            .ToListAsync();
+
+        return rows
+            .Select(item => new TypingWordData
+            {
+                Id = item.Id.ToString("N"),
+                Prompt = PracticeDirection.IsSourceToTarget(practiceDirection) ? item.Translation : item.Text,
+                Answer = PracticeDirection.IsSourceToTarget(practiceDirection) ? item.Text : item.Translation,
+                ExampleSentence = string.Empty,
+                ExampleTranslation = string.Empty
             })
             .ToList();
     }

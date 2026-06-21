@@ -48,6 +48,25 @@ public class WordService : IWordService
             .ToList();
     }
 
+    public async Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount)
+    {
+        var take = Math.Clamp(sentenceCount, 1, 100);
+
+        return await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quizId)
+            .OrderBy(_ => Guid.NewGuid())
+            .Take(take)
+            .Select(sentence => new QuizCardData
+            {
+                Id = sentence.Id.ToString("N"),
+                Lemma = sentence.Text.Trim(),
+                Translation = sentence.Translation.Trim(),
+                ExampleSentence = string.Empty,
+                ExampleTranslation = string.Empty
+            })
+            .ToListAsync();
+    }
+
     public async Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId)
     {
         var words = await _context.Words
@@ -62,6 +81,7 @@ public class WordService : IWordService
         return sentences
             .Select(sentence => new QuizSentenceData
             {
+                Id = sentence.Id,
                 Text = CleanExampleForDisplay(sentence.Text),
                 Translation = sentence.Translation.Trim(),
                 WordCount = CountLinkedWords(sentence.Text, words)

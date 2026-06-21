@@ -19,8 +19,12 @@ public class FlashcardSessionService : IFlashcardSessionService
         string sourceLanguage,
         string targetLanguage,
         int wordCount,
-        IReadOnlyList<FlashcardCardData> cards)
+        IReadOnlyList<FlashcardCardData> cards,
+        string? practiceDirection = null,
+        string? practiceItemType = null)
     {
+        var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
+        var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
         return new FlashcardSessionData
         {
             SessionId = Guid.NewGuid().ToString("N"),
@@ -29,8 +33,16 @@ public class FlashcardSessionService : IFlashcardSessionService
             QuizName = quizName,
             SourceLanguage = sourceLanguage,
             TargetLanguage = targetLanguage,
+            PracticeDirection = normalizedDirection,
+            PromptLanguage = PracticeDirection.PromptLanguage(normalizedDirection, sourceLanguage, targetLanguage),
+            AnswerLanguage = PracticeDirection.AnswerLanguage(normalizedDirection, sourceLanguage, targetLanguage),
+            PracticeItemType = normalizedItemType,
             WordCount = Math.Clamp(wordCount, 1, 100),
-            Cards = cards
+            Cards = cards.Select(card => card with
+            {
+                Prompt = PracticeDirection.IsSourceToTarget(normalizedDirection) ? card.Translation : card.Lemma,
+                Answer = PracticeDirection.IsSourceToTarget(normalizedDirection) ? card.Lemma : card.Translation
+            }).ToList()
         };
     }
 
@@ -94,6 +106,8 @@ public class FlashcardSessionService : IFlashcardSessionService
        session.SourceLanguage,
        session.TargetLanguage,
        session.AgainCards.Count,
-       session.AgainCards);
+       session.AgainCards,
+       session.PracticeDirection,
+       session.PracticeItemType);
     }
 }

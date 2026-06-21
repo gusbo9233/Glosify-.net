@@ -9,7 +9,9 @@ public interface ITypingSessionService
         string sourceLanguage,
         string targetLanguage,
         int wordCount,
-        IReadOnlyList<TypingWordData> words);
+        IReadOnlyList<TypingWordData> words,
+        string? practiceDirection = null,
+        string? practiceItemType = null);
 
     TypingSessionData? FindSession(string sessionId, string userId);
     void SaveSession(TypingSessionData session);
@@ -24,6 +26,10 @@ public record TypingSessionData
     public string QuizName { get; init; } = string.Empty;
     public string SourceLanguage { get; init; } = string.Empty;
     public string TargetLanguage { get; init; } = string.Empty;
+    public string PracticeDirection { get; init; } = Glosify.Models.PracticeDirection.SourceToTarget;
+    public string PromptLanguage { get; init; } = string.Empty;
+    public string AnswerLanguage { get; init; } = string.Empty;
+    public string PracticeItemType { get; init; } = Glosify.Models.PracticeItemType.Words;
     public int WordCount { get; init; }
     public int CurrentIndex { get; set; }
     public int CorrectCount { get; set; }

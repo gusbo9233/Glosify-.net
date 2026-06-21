@@ -26,15 +26,17 @@ public class TypingQuizController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(Guid? id, int wordCount = 20)
+    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null)
     {
         var userId = User.GetUserId();
+        var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
+        var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
 
         var selectedQuiz = await _quizService.FindQuizAsync(userId, id);
         if (selectedQuiz == null)
             return View(TypingQuizViewModel.Empty());
 
-        var data = await _typingQuizService.GetQuizDataAsync(selectedQuiz.Id, wordCount);
+        var data = await _typingQuizService.GetQuizDataAsync(selectedQuiz.Id, wordCount, normalizedDirection, normalizedItemType);
         var session = _sessionService.StartSession(
             userId,
             data.QuizId,
@@ -42,7 +44,9 @@ public class TypingQuizController : Controller
             data.SourceLanguage,
             data.TargetLanguage,
             wordCount,
-            data.Words);
+            data.Words,
+            data.PracticeDirection,
+            data.PracticeItemType);
         _sessionService.SaveSession(session);
 
         return RedirectToAction(nameof(Session), new { sessionId = session.SessionId });
@@ -56,7 +60,7 @@ public class TypingQuizController : Controller
         if (session == null)
             return RedirectToAction("Index", "Quiz");
 
-        var showsUkrainianKeyboard = _languageContext.CurrentLanguage == "Ukrainian";
+        var showsUkrainianKeyboard = string.Equals(session.AnswerLanguage, "Ukrainian", StringComparison.OrdinalIgnoreCase);
         return View("Index", BuildViewModel(session, showsUkrainianKeyboard));
     }
 
@@ -101,9 +105,9 @@ public class TypingQuizController : Controller
     }
 
     [HttpPost]
-    public IActionResult Restart(Guid quizId, int wordCount)
+    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null)
     {
-        return RedirectToAction(nameof(Index), new { id = quizId, wordCount });
+        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType) });
     }
 
     [HttpPost]
@@ -123,7 +127,9 @@ public class TypingQuizController : Controller
             session.SourceLanguage,
             session.TargetLanguage,
             session.IncorrectWords.Count,
-            session.IncorrectWords);
+            session.IncorrectWords,
+            session.PracticeDirection,
+            session.PracticeItemType);
 
         _sessionService.SaveSession(restarted);
 
@@ -163,6 +169,14 @@ public class TypingQuizController : Controller
             ScorePercent = GetScorePercent(session),
             ProgressPercent = GetProgressPercent(session),
             WordCount = session.WordCount,
+            PracticeDirection = session.PracticeDirection,
+            PromptLanguage = session.PromptLanguage,
+            AnswerLanguage = session.AnswerLanguage,
+            DirectionLabel = PracticeDirection.Label(session.PracticeDirection, session.SourceLanguage, session.TargetLanguage),
+            PracticeItemType = session.PracticeItemType,
+            ItemSingularLabel = PracticeItemType.SingularLabel(session.PracticeItemType),
+            ItemPluralLabel = PracticeItemType.PluralLabel(session.PracticeItemType),
+            CardLabel = PracticeItemType.CardLabel(session.PracticeItemType),
             ShowsUkrainianKeyboard = showsUkrainianKeyboard,
             IsComplete = totalWords > 0 && currentWord == null
         };

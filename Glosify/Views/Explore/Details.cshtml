@@ -1,0 +1,153 @@
+@model QuizWorkspaceViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Model.SelectedQuiz.Name;
+    ViewData["ActiveNav"] = "Explore";
+    ViewData["HideAssistantPanel"] = true;
+
+    var backCollectionId = ViewData["BackCollectionId"] is Guid id ? id : (Guid?)null;
+}
+
+<section class="workspace explore-page">
+    <section class="workspace-hero">
+        <div class="workspace-hero-content">
+            <p class="hero-label">Public Quiz - @Model.SelectedQuiz.SourceLanguage &rarr; @Model.SelectedQuiz.TargetLanguage</p>
+            <h1 class="hero-title">@Model.SelectedQuiz.Name</h1>
+            <div class="hero-actions">
+                @if (backCollectionId.HasValue)
+                {
+                    <a class="btn-hero btn-hero-secondary" asp-controller="Explore" asp-action="Collection" asp-route-id="@backCollectionId">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                        Back
+                    </a>
+                }
+                else
+                {
+                    <a class="btn-hero btn-hero-secondary" asp-controller="Explore" asp-action="Index">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                        Back
+                    </a>
+                }
+                <form class="share-form" method="post" asp-controller="Explore" asp-action="CopyQuiz" asp-route-id="@Model.SelectedQuiz.Id">
+                    @Html.AntiForgeryToken()
+                    <button class="btn-hero" type="submit">
+                        Copy <span class="material-symbols-outlined">library_add</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="collection-header">
+            <div>
+                <h2 class="collection-title" id="collectionTitle">Words</h2>
+                <p class="collection-subtitle" id="collectionSubtitle">@Model.Words.Count words in @Model.SelectedQuiz.Name</p>
+            </div>
+            <div class="tab-group" role="tablist" aria-label="Quiz content">
+                <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="wordsPanel" data-tab="words">Words</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="sentencesPanel" data-tab="sentences">Sentences</button>
+            </div>
+        </div>
+
+        <div class="tab-panel" id="wordsPanel" data-title="Words" data-subtitle="@Model.Words.Count words in @Model.SelectedQuiz.Name">
+            <div class="word-grid" data-word-grid>
+                @foreach (var word in Model.Words)
+                {
+                    var wiktionaryUrl = WiktionaryLink.ForWord(Model.SelectedQuiz.TargetLanguage, word.Lemma);
+                    <article class="word-card">
+                        <div class="word-card-main">
+                            @if (wiktionaryUrl != null)
+                            {
+                                <a class="word-icon word-wiktionary-link"
+                                   href="@wiktionaryUrl"
+                                   aria-label="Open @word.Lemma on Wiktionary"
+                                   title="Open @word.Lemma on Wiktionary">
+                                    <span class="material-symbols-outlined">translate</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <div class="word-icon"><span class="material-symbols-outlined">translate</span></div>
+                            }
+                            <div class="word-card-link">
+                                <div>
+                                    <div class="word">@word.Lemma</div>
+                                    <div class="translation">@word.Translation</div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                }
+                @if (!Model.Words.Any())
+                {
+                    <div class="empty-state">No words have been added to this public quiz yet.</div>
+                }
+            </div>
+        </div>
+
+        <div class="tab-panel" id="sentencesPanel" data-title="Sentences" data-subtitle="@Model.Sentences.Count sentences in @Model.SelectedQuiz.Name" hidden>
+            <div class="sentence-grid" data-sentence-grid>
+                @foreach (var sentence in Model.Sentences)
+                {
+                    <article class="sentence-card">
+                        <div class="sentence-card-top">
+                            <div class="word-icon"><span class="material-symbols-outlined">format_quote</span></div>
+                            <div>
+                                <div class="sentence-text">@sentence.Text</div>
+                                @if (!string.IsNullOrWhiteSpace(sentence.Translation))
+                                {
+                                    <div class="sentence-translation">@sentence.Translation</div>
+                                }
+                            </div>
+                        </div>
+                        <div class="sentence-meta">
+                            @sentence.WordCount linked @(sentence.WordCount == 1 ? "word" : "words")
+                        </div>
+                    </article>
+                }
+                @if (!Model.Sentences.Any())
+                {
+                    <div class="empty-state">No sentences have been added to this public quiz yet.</div>
+                }
+            </div>
+        </div>
+    </section>
+</section>
+
+@section Scripts {
+<script>
+    (() => {
+        const tabs = document.querySelectorAll('[data-tab]');
+        const panels = {
+            words: document.getElementById('wordsPanel'),
+            sentences: document.getElementById('sentencesPanel')
+        };
+        const title = document.getElementById('collectionTitle');
+        const subtitle = document.getElementById('collectionSubtitle');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const activeTab = tab.dataset.tab;
+                tabs.forEach(item => {
+                    const isActive = item === tab;
+                    item.classList.toggle('active', isActive);
+                    item.setAttribute('aria-selected', isActive.toString());
+                });
+
+                Object.entries(panels).forEach(([name, panel]) => {
+                    if (panel) {
+                        panel.hidden = name !== activeTab;
+                    }
+                });
+
+                const activePanel = panels[activeTab];
+                if (activePanel && title && subtitle) {
+                    title.textContent = activePanel.dataset.title || "";
+                    subtitle.textContent = activePanel.dataset.subtitle || "";
+                }
+            });
+        });
+    })();
+</script>
+}

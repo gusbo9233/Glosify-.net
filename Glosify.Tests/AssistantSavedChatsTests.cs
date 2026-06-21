@@ -72,6 +72,29 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task SendGlobalMessage_IncludesBookPageContext()
+    {
+        await using var context = CreateContext();
+        var documentId = Guid.NewGuid();
+        var page = CreateBookPage(documentId, "user-1", "Pan Tadeusz opens with a longing for Lithuania.");
+        var gemini = new CapturingGeminiClient("Queued a quiz from the page.");
+        var orchestrator = CreateOrchestrator(
+            context,
+            gemini: gemini,
+            books: new StaticBookDocumentService(page));
+
+        await orchestrator.SendGlobalMessageAsync(
+            "user-1",
+            "Make a quiz from this page",
+            documentContext: new AssistantDocumentContext(documentId, 3));
+
+        Assert.NotNull(gemini.LastAgentRequest);
+        Assert.Contains("Current book page context", gemini.LastAgentRequest.SystemInstruction);
+        Assert.Contains("Page: 3", gemini.LastAgentRequest.SystemInstruction);
+        Assert.Contains("Pan Tadeusz opens with a longing for Lithuania.", gemini.LastAgentRequest.SystemInstruction);
+    }
+
+    [Fact]
     public async Task ApplyPendingChanges_UsesSavedMessageContextQuiz()
     {
         await using var context = CreateContext();
@@ -145,7 +168,8 @@ public class AssistantSavedChatsTests
     private static AssistantOrchestrator CreateOrchestrator(
         GlosifyContext context,
         IGeminiClient? gemini = null,
-        IChangeApplier? applier = null)
+        IChangeApplier? applier = null,
+        IBookDocumentService? books = null)
     {
         return new AssistantOrchestrator(
             context,
@@ -153,7 +177,7 @@ public class AssistantSavedChatsTests
             Options.Create(new GeminiOptions { AssistantModel = "test-model", StructuredModel = "test-model" }),
             new NoopAssistantTools(),
             applier ?? new CapturingChangeApplier(),
-            new NoopBookDocumentService(),
+            books ?? new NoopBookDocumentService(),
             new StaticLanguageContext(),
             NullLogger<AssistantOrchestrator>.Instance);
     }
@@ -168,6 +192,30 @@ public class AssistantSavedChatsTests
         Language = "Polish",
         CreatedAt = DateTimeOffset.UtcNow,
     };
+
+    private static BookPage CreateBookPage(Guid documentId, string userId, string text)
+    {
+        var document = new BookDocument
+        {
+            Id = documentId,
+            UserId = userId,
+            Title = "Polish Reader",
+            OriginalFileName = "polish-reader.pdf",
+            BlobName = "books/polish-reader.pdf",
+            PageCount = 5,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
+
+        return new BookPage
+        {
+            Id = Guid.NewGuid(),
+            BookDocumentId = documentId,
+            PageNumber = 3,
+            Text = text,
+            BookDocument = document,
+        };
+    }
 
     private static AssistantThread CreateThread(string userId, string title = "New chat", Guid? quizId = null) => new()
     {
@@ -198,6 +246,23 @@ public class AssistantSavedChatsTests
 
         public Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, AiUsageContext usageContext, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentTurnResult(text, []));
+    }
+
+    private sealed class CapturingGeminiClient(string text) : IGeminiClient
+    {
+        public AgentRequest? LastAgentRequest { get; private set; }
+
+        public Task<string> GenerateJsonAsync(string prompt, AiUsageContext usageContext, string? model = null, CancellationToken cancellationToken = default) =>
+            Task.FromResult("{}");
+
+        public Task<string> ExtractTextFromImageAsync(byte[] imageBytes, string contentType, string prompt, AiUsageContext usageContext, CancellationToken cancellationToken = default) =>
+            Task.FromResult(string.Empty);
+
+        public Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, AiUsageContext usageContext, CancellationToken cancellationToken = default)
+        {
+            LastAgentRequest = request;
+            return Task.FromResult(new AgentTurnResult(text, []));
+        }
     }
 
     private sealed class NoopAssistantTools : IAssistantTools
@@ -233,6 +298,27 @@ public class AssistantSavedChatsTests
 
         public Task<BookPage?> GetOwnedPageAsync(Guid documentId, int pageNumber, string userId, CancellationToken cancellationToken = default) =>
             Task.FromResult<BookPage?>(null);
+
+        public Task<Stream> OpenOwnedPdfAsync(Guid documentId, string userId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+    }
+
+    private sealed class StaticBookDocumentService(BookPage page) : IBookDocumentService
+    {
+        public Task<IReadOnlyList<BookDocument>> GetUserBooksAsync(string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<BookDocument>>([page.BookDocument]);
+
+        public Task<BookDocument> UploadAsync(string userId, IFormFile file, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<BookDocument?> GetOwnedDocumentAsync(Guid id, string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<BookDocument?>(page.BookDocument.Id == id && page.BookDocument.UserId == userId ? page.BookDocument : null);
+
+        public Task<BookPage?> GetOwnedPageAsync(Guid documentId, int pageNumber, string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<BookPage?>(
+                page.BookDocumentId == documentId && page.PageNumber == pageNumber && page.BookDocument.UserId == userId
+                    ? page
+                    : null);
 
         public Task<Stream> OpenOwnedPdfAsync(Guid documentId, string userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();

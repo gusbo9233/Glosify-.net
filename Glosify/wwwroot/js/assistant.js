@@ -378,6 +378,30 @@
         transcript.scrollTop = transcript.scrollHeight;
     };
 
+    const renderQuizCreatedMessage = (createdQuizId) => {
+        if (!createdQuizId || !transcript) {
+            return;
+        }
+
+        if (empty) empty.remove();
+
+        const row = document.createElement('article');
+        row.className = 'assistant-message assistant-message-model';
+
+        const body = document.createElement('div');
+        body.className = 'assistant-bubble';
+        body.appendChild(document.createTextNode('Quiz created. '));
+
+        const link = document.createElement('a');
+        link.href = `/Quizzes/Details/${encodeURIComponent(createdQuizId)}`;
+        link.textContent = 'Open quiz';
+        body.appendChild(link);
+
+        row.appendChild(body);
+        transcript.appendChild(row);
+        transcript.scrollTop = transcript.scrollHeight;
+    };
+
     const renderPendingChanges = (message) => {
         const card = document.createElement('div');
         card.className = 'assistant-pending-card';
@@ -466,10 +490,8 @@
             replaceActionsWithTag(card, `Applied (${data.applied})`, 'success');
             if (data.createdQuizId) {
                 await refreshQuizSelector(data.createdQuizId);
-                setStatus('Quiz created. Opening it...');
-                window.setTimeout(() => {
-                    window.location.href = `/Quizzes/Details/${data.createdQuizId}`;
-                }, 300);
+                renderQuizCreatedMessage(data.createdQuizId);
+                setStatus('Quiz created.');
             } else {
                 setStatus('Changes applied. Reloading...');
                 window.setTimeout(() => window.location.reload(), 600);

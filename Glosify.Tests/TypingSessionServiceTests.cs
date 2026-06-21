@@ -24,7 +24,9 @@ public class TypingSessionServiceTests
             "English",
             "Spanish",
             2,
-            words);
+            words,
+            PracticeDirection.TargetToSource,
+            PracticeItemType.Sentences);
 
         service.SaveSession(session);
 
@@ -37,6 +39,10 @@ public class TypingSessionServiceTests
         Assert.Equal(1, found!.CurrentIndex);
         Assert.Equal(0, found.CorrectCount);
         Assert.Equal(1, found.IncorrectCount);
+        Assert.Equal(PracticeDirection.TargetToSource, found.PracticeDirection);
+        Assert.Equal(PracticeItemType.Sentences, found.PracticeItemType);
+        Assert.Equal("Spanish", found.PromptLanguage);
+        Assert.Equal("English", found.AnswerLanguage);
         Assert.Single(found.IncorrectWords);
     }
 
@@ -61,7 +67,7 @@ public class TypingSessionServiceTests
 
     private sealed class StubTypingQuizService : ITypingQuizService
     {
-        public Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount)
+        public Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null)
         {
             throw new NotImplementedException();
         }
