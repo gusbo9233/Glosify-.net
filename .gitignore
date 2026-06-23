@@ -238,6 +238,7 @@ _pkginfo.txt
 # Others
 ClientBin/
 ~$*
+*.tex
 *~
 *.dbmdl
 *.dbproj.schemaview
