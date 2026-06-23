@@ -372,3 +372,12 @@ FodyWeavers.xsd
 # Local secrets
 .env
 **/.env
+
+# Public repo hygiene
+.DS_Store
+**/.DS_Store
+.claude/
+.codex/
+**/appsettings.Development.json
+*.docx
+*.pdf
