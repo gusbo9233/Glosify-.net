@@ -469,6 +469,10 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("id");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset")
+                        .HasColumnName("created_at");
+
                     b.Property<string>("Lemma")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")

@@ -8,6 +8,70 @@ namespace Glosify.Tests;
 public class WordServiceSentencePracticeTests
 {
     [Fact]
+    public async Task GetWordsAsync_ReturnsWordsInAddedOrder()
+    {
+        await using var context = CreateContext();
+        var quizId = await SeedQuizAsync(context);
+        var firstAddedAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        context.Words.AddRange(
+            new Word
+            {
+                Id = "first",
+                QuizId = quizId,
+                Lemma = "zebra",
+                Translation = "zebra",
+                CreatedAt = firstAddedAt
+            },
+            new Word
+            {
+                Id = "second",
+                QuizId = quizId,
+                Lemma = "apple",
+                Translation = "apple",
+                CreatedAt = firstAddedAt.AddMinutes(1)
+            });
+        await context.SaveChangesAsync();
+        var service = new WordService(context);
+
+        var words = await service.GetWordsAsync(quizId);
+
+        Assert.Equal(["zebra", "apple"], words.Select(word => word.Lemma));
+    }
+
+    [Fact]
+    public async Task GetSentencesAsync_ReturnsSentencesInAddedOrder()
+    {
+        await using var context = CreateContext();
+        var quizId = await SeedQuizAsync(context);
+        var firstAddedAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        context.QuizSentences.AddRange(
+            new QuizSentence
+            {
+                Id = Guid.NewGuid(),
+                QuizId = quizId,
+                Text = "Zebra sentence.",
+                Translation = "First.",
+                CreatedAt = firstAddedAt
+            },
+            new QuizSentence
+            {
+                Id = Guid.NewGuid(),
+                QuizId = quizId,
+                Text = "Apple sentence.",
+                Translation = "Second.",
+                CreatedAt = firstAddedAt.AddMinutes(1)
+            });
+        await context.SaveChangesAsync();
+        var service = new WordService(context);
+
+        var sentences = await service.GetSentencesAsync(quizId);
+
+        Assert.Equal(
+            ["Zebra sentence.", "Apple sentence.", "Esta es una casa."],
+            sentences.Select(sentence => sentence.Text));
+    }
+
+    [Fact]
     public async Task LoadSentenceCardsAsync_ReturnsStandaloneSentencesAsCards()
     {
         await using var context = CreateContext();

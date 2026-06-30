@@ -18,7 +18,8 @@ public class WordService : IWordService
     {
         return await _context.Words
             .Where(w => w.QuizId == quizId)
-            .OrderBy(w => w.Lemma)
+            .OrderBy(w => w.CreatedAt)
+            .ThenBy(w => w.Id)
             .ToListAsync();
     }
 
@@ -33,7 +34,8 @@ public class WordService : IWordService
             .ToListAsync();
         var sentences = await _context.QuizSentences
             .Where(sentence => sentence.QuizId == quizId)
-            .OrderBy(sentence => sentence.Text)
+            .OrderBy(sentence => sentence.CreatedAt)
+            .ThenBy(sentence => sentence.Id)
             .ToListAsync();
 
         return cards
@@ -75,7 +77,8 @@ public class WordService : IWordService
             .ToListAsync();
         var sentences = await _context.QuizSentences
             .Where(sentence => sentence.QuizId == quizId)
-            .OrderBy(sentence => sentence.Text)
+            .OrderBy(sentence => sentence.CreatedAt)
+            .ThenBy(sentence => sentence.Id)
             .ToListAsync();
 
         return sentences

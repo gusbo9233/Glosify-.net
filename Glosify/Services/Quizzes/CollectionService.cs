@@ -380,7 +380,8 @@ namespace Glosify.Services.Quizzes
                 Id = Guid.NewGuid().ToString("N"),
                 QuizId = quizIdMap[word.QuizId],
                 Lemma = word.Lemma,
-                Translation = word.Translation
+                Translation = word.Translation,
+                CreatedAt = word.CreatedAt
             }));
             _context.QuizSentences.AddRange(sourceSentences.Select(sentence => new QuizSentence
             {
@@ -388,7 +389,7 @@ namespace Glosify.Services.Quizzes
                 QuizId = quizIdMap[sentence.QuizId],
                 Text = sentence.Text,
                 Translation = sentence.Translation,
-                CreatedAt = DateTimeOffset.UtcNow
+                CreatedAt = sentence.CreatedAt
             }));
 
             await _context.SaveChangesAsync();

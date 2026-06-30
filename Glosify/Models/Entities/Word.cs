@@ -16,5 +16,8 @@ namespace Glosify.Models.Entities
 
         [Column("translation")]
         public string Translation { get; set; } = string.Empty;
+
+        [Column("created_at")]
+        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     }
 }

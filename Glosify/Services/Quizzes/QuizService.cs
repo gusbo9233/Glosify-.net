@@ -199,7 +199,8 @@ public class QuizService : IQuizService
             Id = Guid.NewGuid().ToString("N"),
             QuizId = copy.Id,
             Lemma = word.Lemma,
-            Translation = word.Translation
+            Translation = word.Translation,
+            CreatedAt = word.CreatedAt
         }));
         _context.QuizSentences.AddRange(sentences.Select(sentence => new QuizSentence
         {
@@ -207,7 +208,7 @@ public class QuizService : IQuizService
             QuizId = copy.Id,
             Text = sentence.Text,
             Translation = sentence.Translation,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = sentence.CreatedAt
         }));
 
         await _context.SaveChangesAsync();
