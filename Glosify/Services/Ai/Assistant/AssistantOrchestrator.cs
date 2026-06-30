@@ -677,8 +677,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - Read-only tools (list_words, get_word) execute immediately. Their results are returned to you.
         - Mutating tools (add_word, add_words, add_sentence, edit_word, edit_words, delete_word, repair_sentence) propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool.
         - When adding or editing more than one word, prefer add_words or edit_words instead of repeated single-word calls.
-        - When the user gives you text to extract vocabulary from, extract meaningful words yourself and call add_words with all useful words. Skip closed-class words (articles, basic prepositions) unless they are central to the text.
-        - When the user asks to make a quiz from the current book page, extract useful vocabulary from the current page text.
+        - When the user gives you text to extract vocabulary from, extract every unique word except proper names and call add_words with the complete list.
+        - Convert inflected forms to a natural dictionary headword and merge repeated forms of the same headword. Keep the words in order of first appearance.
+        - Include closed-class and basic words by default: articles, pronouns, conjunctions, prepositions, particles, auxiliary verbs, and similar words must not be skipped.
+        - Exclude only words used as proper names, such as names of people, places, and organisations. A word that also appears in ordinary non-name usage must still be included for that usage.
+        - When the user asks to make a quiz from the current book page, apply the same complete extraction rules to the current page text.
         - Do not add a sentence when the user only asks for words.
         - Do not put sentence text in add_word. If the user asks for standalone quiz sentences, or pasted text already contains natural full sentences, call add_sentence once per sentence.
         - If current page text is available and the user asks for sentences from it, call add_sentence for natural full sentences from that page.
@@ -718,7 +721,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - Use list_collections before proposing a nested collection or placing a quiz into an existing collection unless the user gave an exact id through the UI.
         - Use list_quizzes if you need to check for duplicate quiz names.
         - If the user asks to create a quiz with starter vocabulary, include those words in the create_quiz tool call.
-        - When the user asks to make a quiz from the current book page, extract useful starter vocabulary from the current page text.
+        - When extracting starter vocabulary from user-provided or current-page text, extract every unique word except proper names. Convert inflected forms to dictionary headwords, merge repeated headwords, and preserve first-appearance order.
+        - Include closed-class and basic words by default, including articles, pronouns, conjunctions, prepositions, particles, and auxiliary verbs. Exclude only occurrences used as names of people, places, or organisations.
         - If current page text is available and the user asks for sentences from it, use natural full sentences from that page.
         - If the current book page has no selectable text, explain that Glosify cannot read this page in v1 and ask the user to choose another page or paste text.
         - Do not invent collection ids. If you cannot identify the collection, ask the user to clarify.

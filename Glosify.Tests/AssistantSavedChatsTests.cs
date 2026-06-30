@@ -95,6 +95,32 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task SendChatMessage_InstructsModelToExtractEveryNonNameWord()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await context.SaveChangesAsync();
+        var gemini = new CapturingGeminiClient("Queued the words.");
+        var orchestrator = CreateOrchestrator(context, gemini: gemini);
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(
+            chat.Id,
+            "user-1",
+            "Extract vocabulary from this text.",
+            contextQuizId: quizId);
+
+        Assert.NotNull(gemini.LastAgentRequest);
+        Assert.Contains(
+            "extract every unique word except proper names",
+            gemini.LastAgentRequest.SystemInstruction);
+        Assert.Contains(
+            "closed-class and basic words by default",
+            gemini.LastAgentRequest.SystemInstruction);
+    }
+
+    [Fact]
     public async Task ApplyPendingChanges_UsesSavedMessageContextQuiz()
     {
         await using var context = CreateContext();
