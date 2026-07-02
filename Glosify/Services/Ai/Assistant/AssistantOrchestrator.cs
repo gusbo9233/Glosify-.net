@@ -219,6 +219,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         CancellationToken cancellationToken = default)
     {
         var message = await LoadOwnedMessageAsync(messageId, userId, cancellationToken);
+        if (message.Status != AssistantMessageStatus.Active)
+        {
+            return new AssistantApplyResult(0);
+        }
+
         var changes = ParseStoredChanges(message.PendingChangesJson);
         if (changes.Count == 0)
         {
@@ -245,6 +250,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         CancellationToken cancellationToken = default)
     {
         var message = await LoadOwnedMessageAsync(messageId, userId, cancellationToken);
+        if (message.Status != AssistantMessageStatus.Active)
+        {
+            return;
+        }
+
         message.Status = AssistantMessageStatus.Rejected;
         await _context.SaveChangesAsync(cancellationToken);
     }
@@ -304,7 +314,6 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         {
             QuizId = contextQuiz?.Id,
             UserId = userId,
-            Quiz = contextQuiz,
             CurrentLanguage = contextQuiz?.TargetLanguage ?? _languageContext.CurrentLanguage,
             FocusedWordId = focusedWord?.Id,
             FocusedWordLabel = focusedWord == null ? null : $"{focusedWord.Lemma} -> {focusedWord.Translation}",
@@ -669,31 +678,34 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             : BuildDocumentInstruction(documentPage);
 
         return $"""
-        You are Glosify's language-learning assistant. You help the user manage a quiz that teaches "{quiz.TargetLanguage}" to a speaker of "{quiz.SourceLanguage}". The current quiz is named "{quiz.Name}".
+        You are Glosify's language-learning assistant. The user is learning "{quiz.TargetLanguage}" as a speaker of "{quiz.SourceLanguage}", and is currently working in a quiz named "{quiz.Name}".
+
+        You are a general language-learning companion: answer questions about grammar, vocabulary, usage, culture, and study strategy conversationally, and manage the quiz's content when the user asks for that. Use your own judgment about what the user wants; the guidance below describes defaults, and the user's explicit wishes always win.
         {focusInstruction}
         {documentInstruction}
 
-        Rules:
-        - Read-only tools (list_words, get_word) execute immediately. Their results are returned to you.
-        - Mutating tools (add_word, add_words, add_sentence, edit_word, edit_words, delete_word, repair_sentence) propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool.
-        - When adding or editing more than one word, prefer add_words or edit_words instead of repeated single-word calls.
-        - When the user gives you text to extract vocabulary from, extract every unique word except proper names and call add_words with the complete list.
-        - Convert inflected forms to a natural dictionary headword and merge repeated forms of the same headword. Keep the words in order of first appearance.
-        - Include closed-class and basic words by default: articles, pronouns, conjunctions, prepositions, particles, auxiliary verbs, and similar words must not be skipped.
-        - Exclude only words used as proper names, such as names of people, places, and organisations. A word that also appears in ordinary non-name usage must still be included for that usage.
-        - When the user asks to make a quiz from the current book page, apply the same complete extraction rules to the current page text.
-        - Do not add a sentence when the user only asks for words.
-        - Do not put sentence text in add_word. If the user asks for standalone quiz sentences, or pasted text already contains natural full sentences, call add_sentence once per sentence.
-        - If current page text is available and the user asks for sentences from it, call add_sentence for natural full sentences from that page.
-        - If the current book page has no selectable text, explain that Glosify cannot read this page in v1 and ask the user to choose another page or paste text.
-        - When the user asks for grammar details, properties, conjugations, declensions, cases, forms, or variants, answer conversationally and recommend the Wiktionary link on the word card for dictionary detail.
-        - When the user asks to add or update example sentences, use add_sentence or repair_sentence.
-        - Good example sentences are short, grammatical, and context-rich. Do not write pronunciation hints, gender notes, slash-separated alternatives, dictionary glosses, fragments, or markup as example sentences.
-        - For sentence repair, keep the same learning target where possible and use natural inflection instead of forcing the exact dictionary form.
-        - Use list_words first if you need to check what is already in the quiz before proposing edits or deletions.
-        - Keep your final response concise and user-facing: one or two sentences summarising what you queued.
+        How tools work:
+        - Read-only tools (list_words, search_words, get_word, get_quiz_summary, list_sentences, list_quizzes, list_collections) execute immediately and return their results to you.
+        - Mutating tools (add_word, add_words, add_sentence, add_sentences, edit_word, edit_words, edit_sentence, edit_sentences, delete_word, repair_sentence, delete_sentence, create_quiz, create_collection, move_quiz, rename_collection, move_collection) propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool. Because the user reviews everything, you can propose changes freely when they seem helpful.
+        - When adding or editing more than one word, prefer add_words or edit_words over repeated single-word calls.
+        - When adding or editing more than one sentence, prefer add_sentences or edit_sentences over repeated single-sentence calls.
+        - Use list_words when you need to know what is already in the quiz before proposing edits or deletions.
+        - Use search_words when looking for specific vocabulary and get_quiz_summary when the user asks about quiz size, language, collection, or visibility.
+        - Use list_sentences before editing, repairing, or deleting quiz sentences. Prefer edit_sentence/edit_sentences for id-based edits; repair_sentence replaces every exact text match.
+        - For library-level requests, use list_collections and list_quizzes to find existing structure before creating, moving, or renaming items. Never invent quiz or collection ids — ask the user if you cannot identify the item.
+
+        Defaults (override when the user asks for something different):
+        - When extracting vocabulary from text, default to a complete extraction: every unique word except proper names, including closed-class words such as articles, pronouns, conjunctions, prepositions, particles, and auxiliary verbs. If the user asks for a selection instead (e.g. "the hard words", "just the verbs", "the ten most useful"), follow their criteria.
+        - Convert inflected forms to a natural dictionary headword, merge repeated forms of the same headword, and keep first-appearance order, unless the user wants the exact forms.
+        - Words go in add_word/add_words; full sentences go in add_sentence/add_sentences. Follow the user's intent about whether they want words, sentences, or both.
+        - Good example sentences are short, grammatical, and context-rich; avoid pronunciation hints, dictionary glosses, fragments, or markup as sentence text.
+        - For sentence repair, keep the same learning target where possible and prefer natural inflection over forcing the exact dictionary form.
+        - Words are normally in {quiz.TargetLanguage} with translations in {quiz.SourceLanguage}; deviate only when the user clearly wants otherwise.
+        - If the current book page has no selectable text, explain that Glosify cannot read this page and suggest choosing another page or pasting text.
+
+        Style:
+        - Match your response to the request: a short confirmation when you queued changes, a fuller conversational answer when the user asks a question or wants explanation.
         - Do not mention internal tool names, tool calls, word ids, JSON, or implementation details in your final response.
-        - All words stay in {quiz.TargetLanguage}; all translations stay in {quiz.SourceLanguage}.
         """;
     }
 
@@ -709,24 +721,26 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         return $"""
         You are Glosify's app-wide language-learning assistant.
 
-        Help the user understand the app, plan study sessions, think through language-learning questions, and create quiz-library structure when asked.
+        You are a general language-learning companion: help the user with grammar, vocabulary, usage, culture, study planning, and any other language-learning question, and help them understand the app and organise their quiz library when asked. Use your own judgment about what the user wants; the guidance below describes defaults, and the user's explicit wishes always win.
 
         Current context:
         - {languageInstruction}
         {documentInstruction}
 
-        Rules:
-        - Read-only tools (list_collections, list_quizzes) execute immediately. Their results are returned to you.
-        - Mutating tools (create_collection, create_quiz) propose changes that are queued for the user to review and Apply.
-        - Use list_collections before proposing a nested collection or placing a quiz into an existing collection unless the user gave an exact id through the UI.
-        - Use list_quizzes if you need to check for duplicate quiz names.
+        How tools work:
+        - Read-only tools (list_collections, list_quizzes) execute immediately and return their results to you.
+        - Mutating tools (create_collection, create_quiz, move_quiz, rename_collection, move_collection) propose changes that are queued for the user to review and Apply. Because the user reviews everything, you can propose changes freely when they seem helpful.
+        - Use list_collections and list_quizzes before proposing library changes unless the user gave an exact id through the UI.
+        - Do not invent quiz or collection ids. If you cannot identify an item or destination unambiguously, ask the user to clarify.
+
+        Defaults (override when the user asks for something different):
         - If the user asks to create a quiz with starter vocabulary, include those words in the create_quiz tool call.
-        - When extracting starter vocabulary from user-provided or current-page text, extract every unique word except proper names. Convert inflected forms to dictionary headwords, merge repeated headwords, and preserve first-appearance order.
-        - Include closed-class and basic words by default, including articles, pronouns, conjunctions, prepositions, particles, and auxiliary verbs. Exclude only occurrences used as names of people, places, or organisations.
-        - If current page text is available and the user asks for sentences from it, use natural full sentences from that page.
-        - If the current book page has no selectable text, explain that Glosify cannot read this page in v1 and ask the user to choose another page or paste text.
-        - Do not invent collection ids. If you cannot identify the collection, ask the user to clarify.
-        - Keep your final response concise and user-facing: one or two sentences summarising what you queued or what detail you still need.
+        - When extracting starter vocabulary from text, default to a complete extraction: every unique word except proper names, including closed-class words such as articles, pronouns, conjunctions, prepositions, particles, and auxiliary verbs. If the user asks for a selection instead, follow their criteria.
+        - Convert inflected forms to dictionary headwords, merge repeated headwords, and preserve first-appearance order, unless the user wants the exact forms.
+        - If the current book page has no selectable text, explain that Glosify cannot read this page and suggest choosing another page or pasting text.
+
+        Style:
+        - Match your response to the request: a short confirmation when you queued changes, a fuller conversational answer when the user asks a question or wants explanation.
         - Do not mention internal tool names, tool calls, ids, JSON, routes, or implementation details.
         """;
     }
@@ -743,9 +757,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - Document: "{documentPage.Title}"
         - Page: {documentPage.PageNumber}
         - The user is reading this page now.
-        - When the user says "this page", "here", "from the book", or "from what I am reading", use this page text.
-        - Use only this page text unless the user asks for something else.
-        - Keep generated words and sentences queued for review.
+        - When the user says "this page", "here", "from the book", or "from what I am reading", they mean this page text.
+        - You may combine the page with your general knowledge when explaining or answering questions, but words and sentences extracted "from the page" should actually come from it.
 
         Page text:
         ---
@@ -815,10 +828,15 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                 PendingChangeKinds.AddWord => BuildAddWordSummary(change.Payload),
                 PendingChangeKinds.AddSentence => BuildAddSentenceSummary(change.Payload),
                 PendingChangeKinds.EditWord => BuildEditWordSummary(change.Payload, wordLabels),
+                PendingChangeKinds.EditSentence => BuildEditSentenceSummary(change.Payload),
                 PendingChangeKinds.DeleteWord => $"Remove {GetWordDisplay(change.Payload, wordLabels)}",
                 PendingChangeKinds.RepairSentence => BuildRepairSentenceSummary(change.Payload),
+                PendingChangeKinds.DeleteSentence => BuildDeleteSentenceSummary(change.Payload),
                 PendingChangeKinds.CreateQuiz => BuildCreateQuizSummary(change.Payload),
                 PendingChangeKinds.CreateCollection => BuildCreateCollectionSummary(change.Payload),
+                PendingChangeKinds.MoveQuiz => BuildMoveQuizSummary(change.Payload),
+                PendingChangeKinds.RenameCollection => BuildRenameCollectionSummary(change.Payload),
+                PendingChangeKinds.MoveCollection => BuildMoveCollectionSummary(change.Payload),
                 _ => change.Kind,
             };
         }
@@ -830,12 +848,12 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
     private static string BuildAddWordSummary(JsonElement payload)
     {
-        return $"Add {GetString(payload, "word", "lemma")} -> {GetString(payload, "translation")}";
+        return $"Add {GetString(payload, "word")} -> {GetString(payload, "translation")}";
     }
 
     private static string BuildAddSentenceSummary(JsonElement payload)
     {
-        var text = Truncate(GetString(payload, "text", "sentence"), 90);
+        var text = Truncate(GetString(payload, "text"), 90);
         var translation = Truncate(GetString(payload, "translation"), 90);
         return string.IsNullOrWhiteSpace(translation)
             ? $"Add sentence \"{text}\""
@@ -851,7 +869,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
         var originalWord = FirstNonEmpty(GetString(payload, "original_word"), label?.Word);
         var originalTranslation = FirstNonEmpty(GetString(payload, "original_translation"), label?.Translation);
-        var newWord = FirstNonEmpty(GetString(payload, "word", "lemma"), originalWord);
+        var newWord = FirstNonEmpty(GetString(payload, "word"), originalWord);
         var newTranslation = FirstNonEmpty(GetString(payload, "translation"), originalTranslation);
 
         var changes = new List<string>();
@@ -889,6 +907,38 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         return $"Replace \"{original}\" with \"{replacement}\"";
     }
 
+    private static string BuildEditSentenceSummary(JsonElement payload)
+    {
+        var originalText = Truncate(GetString(payload, "original_text"), 60);
+        var newText = Truncate(FirstNonEmpty(GetString(payload, "text"), originalText), 60);
+        var originalTranslation = Truncate(GetString(payload, "original_translation"), 60);
+        var newTranslation = Truncate(
+            FirstNonEmpty(GetString(payload, "translation"), originalTranslation),
+            60);
+
+        var changes = new List<string>();
+        if (!string.Equals(originalText, newText, StringComparison.Ordinal))
+        {
+            changes.Add($"\"{originalText}\" -> \"{newText}\"");
+        }
+        if (!string.Equals(originalTranslation, newTranslation, StringComparison.Ordinal))
+        {
+            changes.Add($"\"{originalTranslation}\" -> \"{newTranslation}\"");
+        }
+
+        return changes.Count == 0
+            ? $"Edit sentence \"{originalText}\""
+            : $"Edit sentence {string.Join("; ", changes)}";
+    }
+
+    private static string BuildDeleteSentenceSummary(JsonElement payload)
+    {
+        var text = Truncate(GetString(payload, "text"), 90);
+        return string.IsNullOrWhiteSpace(text)
+            ? "Remove sentence"
+            : $"Remove sentence \"{text}\"";
+    }
+
     private static string BuildCreateQuizSummary(JsonElement payload)
     {
         var name = GetString(payload, "name");
@@ -902,6 +952,31 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var name = GetString(payload, "name");
         var language = GetString(payload, "language");
         return $"Create collection \"{name}\" in {language}";
+    }
+
+    private static string BuildMoveQuizSummary(JsonElement payload)
+    {
+        var quizName = GetString(payload, "quiz_name");
+        var collectionName = GetString(payload, "collection_name");
+        return string.IsNullOrWhiteSpace(collectionName)
+            ? $"Move quiz \"{quizName}\" to the library root"
+            : $"Move quiz \"{quizName}\" to collection \"{collectionName}\"";
+    }
+
+    private static string BuildRenameCollectionSummary(JsonElement payload)
+    {
+        var originalName = GetString(payload, "original_name");
+        var name = GetString(payload, "name");
+        return $"Rename collection \"{originalName}\" to \"{name}\"";
+    }
+
+    private static string BuildMoveCollectionSummary(JsonElement payload)
+    {
+        var collectionName = GetString(payload, "collection_name");
+        var parentName = GetString(payload, "parent_collection_name");
+        return string.IsNullOrWhiteSpace(parentName)
+            ? $"Move collection \"{collectionName}\" to the library root"
+            : $"Move collection \"{collectionName}\" under \"{parentName}\"";
     }
 
     private static string GetWordDisplay(
@@ -981,12 +1056,6 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         return element.TryGetProperty(property, out var p) && p.ValueKind == JsonValueKind.String
             ? p.GetString() ?? string.Empty
             : string.Empty;
-    }
-
-    private static string GetString(JsonElement element, string preferredProperty, string legacyProperty)
-    {
-        var preferred = GetString(element, preferredProperty);
-        return string.IsNullOrWhiteSpace(preferred) ? GetString(element, legacyProperty) : preferred;
     }
 
     private static IReadOnlyList<PendingChange> ParseStoredChanges(string? json)

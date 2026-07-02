@@ -9,6 +9,8 @@ namespace Glosify.Controllers;
 [Route("Quiz/{quizId:guid}/Assistant")]
 public class AssistantController : ControllerBase
 {
+    private const string AssistantErrorMessage = "The assistant hit an unexpected error. Please try again.";
+
     private readonly IAssistantOrchestrator _orchestrator;
     private readonly ILogger<AssistantController> _logger;
 
@@ -167,7 +169,7 @@ public class AssistantController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Assistant turn failed for chat {ThreadId}", threadId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"{ex.GetType().Name}: {ex.Message}" });
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = AssistantErrorMessage });
         }
     }
 
@@ -205,7 +207,7 @@ public class AssistantController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Global assistant turn failed");
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"{ex.GetType().Name}: {ex.Message}" });
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = AssistantErrorMessage });
         }
     }
 
@@ -313,7 +315,7 @@ public class AssistantController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Assistant turn failed for quiz {QuizId}", quizId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = $"{ex.GetType().Name}: {ex.Message}" });
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = AssistantErrorMessage });
         }
     }
 

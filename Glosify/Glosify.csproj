@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>b85225d0-8689-47df-8a71-412bb2389bfe</UserSecretsId>
+    <!-- Keep the Web SDK's default content globs (e.g. **/*.json) out of build output,
+         otherwise each build copies the previous bin into the new one recursively. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

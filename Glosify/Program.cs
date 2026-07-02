@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,10 +43,57 @@ builder.Services.AddAuthorization(options =>
 });
 builder.Services.AddMemoryCache();
 
+// Rate limiting: strict on credential endpoints (per IP), moderate on the AI
+// assistant (per user), unlimited elsewhere. Counts only POSTs on auth paths so
+// rendering the login page never trips the limiter.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var path = context.Request.Path;
+
+        var isAuthPath = path.StartsWithSegments("/login")
+            || path.StartsWithSegments("/Account")
+            || path.StartsWithSegments("/api/auth")
+            || path.StartsWithSegments("/Identity/Account");
+        if (isAuthPath && HttpMethods.IsPost(context.Request.Method))
+        {
+            var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter($"auth:{ip}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+        }
+
+        var isAssistantPath = path.StartsWithSegments("/Assistant")
+            || (path.Value?.Contains("/Assistant", StringComparison.OrdinalIgnoreCase) ?? false);
+        if (isAssistantPath)
+        {
+            var caller = context.User.Identity?.Name
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter($"ai:{caller}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+        }
+
+        return RateLimitPartition.GetNoLimiter("default");
+    });
+});
+
 // Add Identity
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = false;
+    // Off by default because registration has no email-confirmation flow yet;
+    // a deployment that adds an IEmailSender can flip this without a code change.
+    options.SignIn.RequireConfirmedAccount =
+        builder.Configuration.GetValue("Identity:RequireConfirmedAccount", false);
 })
     .AddEntityFrameworkStores<GlosifyContext>()
     .AddDefaultTokenProviders()
@@ -200,7 +248,32 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Security headers on every response. CSP notes: 'unsafe-inline' for scripts is
+// required by the inline <script> blocks in several views (tightening to nonces
+// is the follow-up); fonts.googleapis.com/gstatic.com serve the web fonts the
+// layout links; everything else is same-origin only.
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    headers["Content-Security-Policy"] =
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline'; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        "font-src 'self' https://fonts.gstatic.com; " +
+        "img-src 'self' data:; " +
+        "connect-src 'self'; " +
+        "frame-ancestors 'none'; " +
+        "base-uri 'self'; " +
+        "form-action 'self'";
+    await next();
+});
+
 app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

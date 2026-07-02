@@ -113,10 +113,10 @@ public class AssistantSavedChatsTests
 
         Assert.NotNull(gemini.LastAgentRequest);
         Assert.Contains(
-            "extract every unique word except proper names",
+            "every unique word except proper names",
             gemini.LastAgentRequest.SystemInstruction);
         Assert.Contains(
-            "closed-class and basic words by default",
+            "including closed-class words",
             gemini.LastAgentRequest.SystemInstruction);
     }
 
