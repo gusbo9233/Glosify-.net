@@ -92,11 +92,28 @@ public class QuizService : IQuizService
         var words = await _context.Words
             .Where(word => word.QuizId == quiz.Id)
             .ToListAsync();
+        var assistantThreads = await _context.AssistantThreads
+            .Where(thread => thread.ContextQuizId == quiz.Id)
+            .ToListAsync();
+        var assistantMessages = await _context.AssistantMessages
+            .Where(message => message.ContextQuizId == quiz.Id)
+            .ToListAsync();
+
+        foreach (var thread in assistantThreads)
+        {
+            thread.ContextQuizId = null;
+        }
+
+        foreach (var message in assistantMessages)
+        {
+            message.ContextQuizId = null;
+        }
 
         _context.Words.RemoveRange(words);
-        await _context.SaveChangesAsync();
-
         _context.Quizzes.Remove(quiz);
+
+        // Save reference cleanup and both deletions together so a constraint
+        // failure cannot leave the quiz behind after its words are removed.
         await _context.SaveChangesAsync();
 
         return quiz;
