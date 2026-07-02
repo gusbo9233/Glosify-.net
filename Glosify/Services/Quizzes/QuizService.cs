@@ -243,6 +243,20 @@ public class QuizService : IQuizService
         return await _context.Words.CountAsync(word => word.QuizId == quizId);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, int>> GetWordCountsAsync(IReadOnlyCollection<Guid> quizIds)
+    {
+        if (quizIds.Count == 0)
+        {
+            return new Dictionary<Guid, int>();
+        }
+
+        return await _context.Words
+            .Where(word => quizIds.Contains(word.QuizId))
+            .GroupBy(word => word.QuizId)
+            .Select(group => new { QuizId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(group => group.QuizId, group => group.Count);
+    }
+
     public async Task<int> GetAvailableSentenceCountAsync(Guid quizId)
     {
         return await _context.QuizSentences.CountAsync(sentence => sentence.QuizId == quizId);

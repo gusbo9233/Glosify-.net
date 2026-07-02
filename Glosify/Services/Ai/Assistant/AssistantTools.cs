@@ -512,7 +512,7 @@ public sealed class AssistantTools : IAssistantTools
 
     private async Task<object> ListCollectionsAsync(JsonElement args, AgentToolContext context, CancellationToken ct)
     {
-        var language = GetString(args, "language") ?? context.CurrentLanguage;
+        var language = FirstNonBlank(GetString(args, "language"), context.CurrentLanguage);
         if (string.IsNullOrWhiteSpace(language))
         {
             return new { error = "language is required when no current app language is selected." };
@@ -536,7 +536,7 @@ public sealed class AssistantTools : IAssistantTools
 
     private async Task<object> ListQuizzesAsync(JsonElement args, AgentToolContext context, CancellationToken ct)
     {
-        var language = GetString(args, "language") ?? context.CurrentLanguage;
+        var language = FirstNonBlank(GetString(args, "language"), context.CurrentLanguage);
         var query = _context.Quizzes.Where(q => q.UserId == context.UserId);
         if (!string.IsNullOrWhiteSpace(language))
         {
@@ -954,7 +954,7 @@ public sealed class AssistantTools : IAssistantTools
     {
         var name = GetString(args, "name");
         var sourceLanguage = GetString(args, "source_language");
-        var targetLanguage = GetString(args, "target_language") ?? context.CurrentLanguage;
+        var targetLanguage = FirstNonBlank(GetString(args, "target_language"), context.CurrentLanguage);
         var collectionId = GetNullableGuidString(args, "collection_id");
         var (words, skippedWords) = GetWordDrafts(args, "words");
 
@@ -990,7 +990,7 @@ public sealed class AssistantTools : IAssistantTools
     private static object QueueCreateCollection(JsonElement args, AgentToolContext context)
     {
         var name = GetString(args, "name");
-        var language = GetString(args, "language") ?? context.CurrentLanguage;
+        var language = FirstNonBlank(GetString(args, "language"), context.CurrentLanguage);
         var parentCollectionId = GetNullableGuidString(args, "parent_collection_id");
 
         if (string.IsNullOrWhiteSpace(name))
@@ -1269,6 +1269,13 @@ public sealed class AssistantTools : IAssistantTools
             return null;
         }
         return value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+    }
+
+    // Models sometimes pass "" for arguments they mean to omit, so blank must fall
+    // back the same way as missing.
+    private static string? FirstNonBlank(string? value, string? fallback)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fallback : value;
     }
 
     private static bool IsOutsideFocusedWord(string wordId, AgentToolContext context)

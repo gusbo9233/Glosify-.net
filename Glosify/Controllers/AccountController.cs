@@ -135,6 +135,19 @@ public class AccountController : Controller
         var existingUser = await _userManager.FindByEmailAsync(email);
         if (existingUser != null)
         {
+            // Only Google guarantees the email in its claims is verified. Other providers
+            // (notably Microsoft work/school tenants) let tenant admins put arbitrary
+            // addresses in the email claims, so auto-linking them to an existing account
+            // would allow account takeover.
+            if (!string.Equals(info.LoginProvider, "Google", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "An account with this email already exists. Sign in with the method you originally used.");
+                await SetLoginViewDataAsync(returnUrl);
+                return View("Login", new LoginViewModel());
+            }
+
             var addLoginResult = await _userManager.AddLoginAsync(existingUser, info);
             if (addLoginResult.Succeeded)
             {
@@ -184,12 +197,13 @@ public class AccountController : Controller
         return schemes.Any(scheme => string.Equals(scheme.Name, provider, StringComparison.OrdinalIgnoreCase));
     }
 
+    // Only real email claims. preferred_username/upn are not email addresses and are
+    // attacker-controlled in multi-tenant Microsoft sign-in, so they must never be
+    // used to match or create accounts.
     private static string GetExternalLoginEmail(ExternalLoginInfo info)
     {
         return info.Principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
             ?? info.Principal.FindFirst("email")?.Value
-            ?? info.Principal.FindFirst("preferred_username")?.Value
-            ?? info.Principal.FindFirst("upn")?.Value
             ?? string.Empty;
     }
 }

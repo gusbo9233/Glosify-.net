@@ -381,3 +381,8 @@ FodyWeavers.xsd
 **/appsettings.Development.json
 *.docx
 *.pdf
+
+# LaTeX build artifacts
+docs/*.aux
+docs/*.out
+docs/*.toc

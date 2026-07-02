@@ -39,13 +39,17 @@ public class WordService : IWordService
             .ToListAsync();
 
         return cards
-            .Select(item => new QuizCardData
+            .Select(item =>
             {
-                Id = item.Id,
-                Lemma = item.Lemma,
-                Translation = item.Translation,
-                ExampleSentence = CleanExampleForDisplay(ChooseSentenceForWord(item.Lemma, sentences)?.Text),
-                ExampleTranslation = ChooseSentenceForWord(item.Lemma, sentences)?.Translation ?? string.Empty
+                var sentence = ChooseSentenceForWord(item.Lemma, sentences);
+                return new QuizCardData
+                {
+                    Id = item.Id,
+                    Lemma = item.Lemma,
+                    Translation = item.Translation,
+                    ExampleSentence = CleanExampleForDisplay(sentence?.Text),
+                    ExampleTranslation = sentence?.Translation ?? string.Empty
+                };
             })
             .ToList();
     }

@@ -37,6 +37,27 @@ public class AssistantToolsTests
     }
 
     [Fact]
+    public async Task CreateQuiz_FallsBackToCurrentLanguageWhenTargetLanguageIsBlank()
+    {
+        await using var db = CreateContext();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Spanish"
+        };
+
+        await tools.ExecuteAsync(
+            "create_quiz",
+            """{"name":"Travel Basics","source_language":"English","target_language":""}""",
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Equal("Spanish", payload.GetProperty("target_language").GetString());
+    }
+
+    [Fact]
     public async Task CreateCollection_QueuesPendingChangeWithCurrentLanguageDefault()
     {
         await using var db = CreateContext();

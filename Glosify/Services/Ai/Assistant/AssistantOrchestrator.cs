@@ -230,10 +230,30 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             return new AssistantApplyResult(0);
         }
 
-        var result = await _changeApplier.ApplyAsync(message.ContextQuizId, userId, changes, cancellationToken);
+        // Claim the message before applying so concurrent Apply requests (e.g. a
+        // double-click) cannot run the same changes twice; revert the claim if
+        // applying fails so the user can retry.
         message.Status = AssistantMessageStatus.Applied;
         await _context.SaveChangesAsync(cancellationToken);
-        return result;
+
+        try
+        {
+            return await _changeApplier.ApplyAsync(message.ContextQuizId, userId, changes, cancellationToken);
+        }
+        catch
+        {
+            // Drop whatever the failed apply left in the change tracker, then put the
+            // message back to Active with a token that survives client aborts.
+            _context.ChangeTracker.Clear();
+            var claimed = await _context.AssistantMessages
+                .FirstOrDefaultAsync(m => m.Id == messageId, CancellationToken.None);
+            if (claimed != null)
+            {
+                claimed.Status = AssistantMessageStatus.Active;
+                await _context.SaveChangesAsync(CancellationToken.None);
+            }
+            throw;
+        }
     }
 
     public async Task RejectPendingChangesAsync(
@@ -309,6 +329,10 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
         thread.ContextQuizId = contextQuizId;
         thread.UpdatedAt = now;
+
+        // Persist the user's message (and title/context updates) before calling the
+        // LLM so a failed turn does not erase what the user typed from history.
+        await _context.SaveChangesAsync(cancellationToken);
 
         var toolContext = new AgentToolContext
         {
@@ -462,9 +486,10 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             return currentModel;
         }
 
+        // Only configured models may be requested by the client.
         var trimmed = requestedModel.Trim();
         return string.Equals(trimmed, currentModel, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(trimmed, "gemini-3.5-flash", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(trimmed, _geminiOptions.StructuredModel, StringComparison.OrdinalIgnoreCase)
             ? trimmed
             : currentModel;
     }

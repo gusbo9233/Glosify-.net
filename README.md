@@ -109,6 +109,8 @@ See [docs/database-diagram.md](docs/database-diagram.md) for the Mermaid ER diag
 
 The workflow in `.github/workflows/master_glosify.yml` builds and deploys the app to Azure Web App `glosify` when `master` is pushed.
 
+Note: practice sessions (flashcards/typing) and mobile sign-in codes are stored in in-process memory, so the app assumes a single instance; scaling out or restarting drops active sessions.
+
 Production configuration should be supplied through Azure app settings, including:
 
 - `ConnectionStrings__DefaultConnection`

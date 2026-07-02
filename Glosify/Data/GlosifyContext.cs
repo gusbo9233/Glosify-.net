@@ -65,6 +65,12 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<Word>(entity =>
         {
             entity.HasKey(w => w.Id);
+            entity.HasIndex(w => w.QuizId);
+            entity.HasOne<Quiz>()
+                .WithMany()
+                .HasForeignKey(w => w.QuizId)
+                .HasConstraintName("FK_words_quizzes")
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<QuizSentence>(entity =>

@@ -397,12 +397,6 @@ public class QuizController : Controller
         return RedirectToAction("Index", "TypingQuiz", new { id, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType) });
     }
 
-    private bool WantsJsonResponse()
-    {
-        return Request.Headers.Accept.Any(value => value?.Contains("application/json", StringComparison.OrdinalIgnoreCase) == true)
-            || string.Equals(Request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
-    }
-
     private async Task<QuizIndexViewModel> BuildQuizIndexViewModelAsync(string userId, string language, Collection? currentCollection)
     {
         var quizzes = await _quizService.GetUserQuizzesAsync(userId);

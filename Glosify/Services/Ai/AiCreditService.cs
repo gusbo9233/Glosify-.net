@@ -15,15 +15,16 @@ public sealed class AiCreditService : IAiCreditService
         _options = options.Value;
     }
 
-    public async Task<AiCreditAccountView> GetOrCreateAccountAsync(
+    public Task<AiCreditAccountView> GetOrCreateAccountAsync(
         string userId,
         CancellationToken cancellationToken = default)
-    {
-        var account = await GetOrCreateAccountEntityAsync(userId, cancellationToken);
-        await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
-        return Map(account);
-    }
+        => WithConcurrencyRetryAsync(async () =>
+        {
+            var account = await GetOrCreateAccountEntityAsync(userId, cancellationToken);
+            await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            return Map(account);
+        });
 
     public async Task<IReadOnlyList<AiCreditTransaction>> GetRecentTransactionsAsync(
         string userId,
@@ -38,12 +39,20 @@ public sealed class AiCreditService : IAiCreditService
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<AiCreditReservation> ReserveAsync(
+    public Task<AiCreditReservation> ReserveAsync(
         AiUsageContext usageContext,
         string provider,
         string model,
         int estimatedTokens,
         CancellationToken cancellationToken = default)
+        => WithConcurrencyRetryAsync(() => ReserveCoreAsync(usageContext, provider, model, estimatedTokens, cancellationToken));
+
+    private async Task<AiCreditReservation> ReserveCoreAsync(
+        AiUsageContext usageContext,
+        string provider,
+        string model,
+        int estimatedTokens,
+        CancellationToken cancellationToken)
     {
         var account = await GetOrCreateAccountEntityAsync(usageContext.UserId, cancellationToken);
         await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
@@ -80,15 +89,21 @@ public sealed class AiCreditService : IAiCreditService
         return new AiCreditReservation(reservationId, usageContext.UserId, requiredCredits, estimatedTokens);
     }
 
-    public async Task CommitUsageAsync(
+    public Task CommitUsageAsync(
         Guid reservationId,
         AiTokenUsage usage,
         CancellationToken cancellationToken = default)
+        => WithConcurrencyRetryAsync(() => CommitUsageCoreAsync(reservationId, usage, cancellationToken));
+
+    private async Task<bool> CommitUsageCoreAsync(
+        Guid reservationId,
+        AiTokenUsage usage,
+        CancellationToken cancellationToken)
     {
         var reservation = await LoadReservationAsync(reservationId, cancellationToken);
         if (reservation == null)
         {
-            return;
+            return false;
         }
 
         var account = await GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
@@ -131,14 +146,18 @@ public sealed class AiCreditService : IAiCreditService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
-    public async Task ReleaseAsync(Guid reservationId, CancellationToken cancellationToken = default)
+    public Task ReleaseAsync(Guid reservationId, CancellationToken cancellationToken = default)
+        => WithConcurrencyRetryAsync(() => ReleaseCoreAsync(reservationId, cancellationToken));
+
+    private async Task<bool> ReleaseCoreAsync(Guid reservationId, CancellationToken cancellationToken)
     {
         var reservation = await LoadReservationAsync(reservationId, cancellationToken);
         if (reservation == null)
         {
-            return;
+            return false;
         }
 
         var account = await GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
@@ -150,9 +169,10 @@ public sealed class AiCreditService : IAiCreditService
             reservation.CreditAmount,
             "Released reserved credits."));
         await _context.SaveChangesAsync(cancellationToken);
+        return true;
     }
 
-    public async Task GrantAsync(
+    public Task GrantAsync(
         string adminUserId,
         string targetUserId,
         int credits,
@@ -168,6 +188,16 @@ public sealed class AiCreditService : IAiCreditService
             throw new ArgumentException("A grant note is required.", nameof(note));
         }
 
+        return WithConcurrencyRetryAsync(() => GrantCoreAsync(adminUserId, targetUserId, credits, note, cancellationToken));
+    }
+
+    private async Task<bool> GrantCoreAsync(
+        string adminUserId,
+        string targetUserId,
+        int credits,
+        string note,
+        CancellationToken cancellationToken)
+    {
         var account = await GetOrCreateAccountEntityAsync(targetUserId, cancellationToken);
         await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
         account.BalanceCredits += credits;
@@ -185,6 +215,33 @@ public sealed class AiCreditService : IAiCreditService
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await _context.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    // Each mutating flow reads the account, applies a delta, and saves once. A
+    // concurrent request can invalidate the read (RowVersion conflict) or win the
+    // race to insert the account row (key conflict); both are resolved by dropping
+    // the tracked state and re-running the whole read-modify-write.
+    private async Task<T> WithConcurrencyRetryAsync<T>(Func<Task<T>> operation)
+    {
+        const int maxAttempts = 3;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await operation();
+            }
+            catch (DbUpdateException ex) when (attempt < maxAttempts && IsRetryableCreditConflict(ex))
+            {
+                _context.ChangeTracker.Clear();
+            }
+        }
+    }
+
+    private static bool IsRetryableCreditConflict(DbUpdateException ex)
+    {
+        return ex is DbUpdateConcurrencyException
+            || ex.Entries.Any(entry => entry.Entity is AiCreditAccount);
     }
 
     private async Task<AiCreditAccount> GetOrCreateAccountEntityAsync(

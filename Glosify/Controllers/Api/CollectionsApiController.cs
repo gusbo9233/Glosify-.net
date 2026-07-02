@@ -34,10 +34,22 @@ public class CollectionsApiController : ApiControllerBase
             return BadRequest("Name and Language are required.");
         }
 
-        var collection = await _collectionService.CreateCollectionAsync(
-            request.Name.Trim(), request.Language.Trim(), User.GetUserId(), request.ParentCollectionId);
+        try
+        {
+            var collection = await _collectionService.CreateCollectionAsync(
+                request.Name.Trim(), request.Language.Trim(), User.GetUserId(), request.ParentCollectionId);
 
-        return Ok(CollectionDto.From(collection));
+            return Ok(CollectionDto.From(collection));
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+        {
+            return Conflict(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Unknown or foreign parent collection id.
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPut("{id:guid}/name")]

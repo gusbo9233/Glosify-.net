@@ -56,14 +56,22 @@ public class QuizzesApiController : ApiControllerBase
             return BadRequest("Name, SourceLanguage and TargetLanguage are required.");
         }
 
-        var quiz = await _quizService.CreateQuizAsync(
-            request.Name.Trim(),
-            request.SourceLanguage.Trim(),
-            request.TargetLanguage.Trim(),
-            User.GetUserId(),
-            request.CollectionId);
+        try
+        {
+            var quiz = await _quizService.CreateQuizAsync(
+                request.Name.Trim(),
+                request.SourceLanguage.Trim(),
+                request.TargetLanguage.Trim(),
+                User.GetUserId(),
+                request.CollectionId);
 
-        return CreatedAtAction(nameof(Get), new { id = quiz.Id }, QuizSummaryDto.From(quiz));
+            return CreatedAtAction(nameof(Get), new { id = quiz.Id }, QuizSummaryDto.From(quiz));
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Unknown or foreign collection id.
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpDelete("{id:guid}")]

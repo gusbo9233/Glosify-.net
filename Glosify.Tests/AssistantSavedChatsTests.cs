@@ -159,6 +159,45 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task ApplyPendingChanges_SecondApplyIsANoOp()
+    {
+        await using var context = CreateContext();
+        var messageId = Guid.NewGuid();
+        var thread = CreateThread("user-1");
+        context.AssistantThreads.Add(thread);
+        context.AssistantMessages.Add(CreateActiveMessageWithPendingChange(messageId, thread.Id));
+        await context.SaveChangesAsync();
+        var applier = new CountingChangeApplier();
+        var orchestrator = CreateOrchestrator(context, applier: applier);
+
+        var first = await orchestrator.ApplyGlobalPendingChangesAsync(messageId, "user-1");
+        var second = await orchestrator.ApplyGlobalPendingChangesAsync(messageId, "user-1");
+
+        Assert.Equal(1, first.Applied);
+        Assert.Equal(0, second.Applied);
+        Assert.Equal(1, applier.Calls);
+    }
+
+    [Fact]
+    public async Task ApplyPendingChanges_RevertsClaimWhenApplyFails()
+    {
+        await using var context = CreateContext();
+        var messageId = Guid.NewGuid();
+        var thread = CreateThread("user-1");
+        context.AssistantThreads.Add(thread);
+        context.AssistantMessages.Add(CreateActiveMessageWithPendingChange(messageId, thread.Id));
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context, applier: new ThrowingChangeApplier());
+
+        await Assert.ThrowsAsync<InvalidDataException>(
+            () => orchestrator.ApplyGlobalPendingChangesAsync(messageId, "user-1"));
+
+        Assert.Equal(
+            AssistantMessageStatus.Active,
+            (await context.AssistantMessages.SingleAsync(m => m.Id == messageId)).Status);
+    }
+
+    [Fact]
     public async Task DeleteChat_RemovesMessagesAndBlocksLaterHistory()
     {
         await using var context = CreateContext();
@@ -310,6 +349,42 @@ public class AssistantSavedChatsTests
             return Task.FromResult(new AssistantApplyResult(changes.Count));
         }
     }
+
+    private sealed class CountingChangeApplier : IChangeApplier
+    {
+        public int Calls { get; private set; }
+
+        public Task<AssistantApplyResult> ApplyAsync(Guid? quizId, string userId, IReadOnlyList<PendingChange> changes, CancellationToken cancellationToken)
+        {
+            Calls++;
+            return Task.FromResult(new AssistantApplyResult(changes.Count));
+        }
+    }
+
+    private sealed class ThrowingChangeApplier : IChangeApplier
+    {
+        public Task<AssistantApplyResult> ApplyAsync(Guid? quizId, string userId, IReadOnlyList<PendingChange> changes, CancellationToken cancellationToken) =>
+            throw new InvalidDataException("Simulated apply failure.");
+    }
+
+    private static AssistantMessage CreateActiveMessageWithPendingChange(Guid messageId, Guid threadId) => new()
+    {
+        Id = messageId,
+        ThreadId = threadId,
+        Sequence = 0,
+        Role = AssistantMessageRole.Model,
+        ContentJson = StoredText("Ready."),
+        PendingChangesJson = JsonSerializer.Serialize(new[]
+        {
+            new PendingChange(PendingChangeKinds.CreateCollection, JsonSerializer.SerializeToElement(new
+            {
+                name = "Food",
+                language = "Polish",
+            })),
+        }),
+        Status = AssistantMessageStatus.Active,
+        CreatedAt = DateTimeOffset.UtcNow,
+    };
 
     private sealed class NoopBookDocumentService : IBookDocumentService
     {

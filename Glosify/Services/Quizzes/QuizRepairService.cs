@@ -39,7 +39,7 @@ public sealed class QuizRepairService : IQuizRepairService
             return new QuizRepairResult(QuizRepairStatus.LlmUnavailable);
         }
 
-        await ApplyWordAsync(result, cancellationToken);
+        await ApplyWordAsync(result, wordId, word.QuizId, cancellationToken);
         return new QuizRepairResult(QuizRepairStatus.Success, Word: word.Lemma);
     }
 
@@ -120,9 +120,14 @@ public sealed class QuizRepairService : IQuizRepairService
         };
     }
 
-    private async Task ApplyWordAsync(RepairWordResult result, CancellationToken cancellationToken)
+    // Looks up the word by the id the caller requested, scoped to the owned quiz. The
+    // id echoed back by the LLM is never used as a lookup key, so a hallucinated or
+    // injected id cannot redirect the update to another row.
+    private async Task ApplyWordAsync(RepairWordResult result, string wordId, Guid quizId, CancellationToken cancellationToken)
     {
-        var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == result.Word.Id, cancellationToken);
+        var word = await _context.Words.FirstOrDefaultAsync(
+            w => w.Id == wordId && w.QuizId == quizId,
+            cancellationToken);
         if (word == null)
         {
             return;

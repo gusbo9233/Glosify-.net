@@ -157,6 +157,7 @@ public class FlashcardQuizController : Controller
         };
     }
 
+    [HttpPost]
     public IActionResult RestartAgain(string sessionId)
     {
         var userId = User.GetUserId();

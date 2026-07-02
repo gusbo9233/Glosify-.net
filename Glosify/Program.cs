@@ -7,6 +7,7 @@ using Glosify.Services.Quizzes;
 using Glosify.Services.Storage;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -72,7 +73,9 @@ builder.Services.AddRateLimiter(options =>
             || (path.Value?.Contains("/Assistant", StringComparison.OrdinalIgnoreCase) ?? false);
         if (isAssistantPath)
         {
-            var caller = context.User.Identity?.Name
+            // UseRateLimiter runs after UseAuthentication, so the user id claim is
+            // available here; fall back to IP only for unauthenticated callers.
+            var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                 ?? context.Connection.RemoteIpAddress?.ToString()
                 ?? "unknown";
             return RateLimitPartition.GetFixedWindowLimiter($"ai:{caller}", _ => new FixedWindowRateLimiterOptions
@@ -239,6 +242,19 @@ builder.Services.AddDbContext<GlosifyContext>(options =>
 
 var app = builder.Build();
 
+// Azure App Service front ends terminate TLS and forward the client address in
+// X-Forwarded-* headers; without this, RemoteIpAddress is the front end's address
+// and every user shares the same rate-limit partition.
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+};
+// The App Service front-end addresses are not statically known, so the default
+// loopback-only proxy allowlist must be cleared for the headers to be honored.
+forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownProxies.Clear();
+app.UseForwardedHeaders(forwardedHeadersOptions);
+
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler("/Home/Error");
 if (!app.Environment.IsDevelopment())
@@ -273,9 +289,12 @@ app.Use(async (context, next) =>
 
 app.UseRouting();
 
+// Authentication must run before the rate limiter so the assistant limit can be
+// partitioned per user rather than per IP.
+app.UseAuthentication();
+
 app.UseRateLimiter();
 
-app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets().AllowAnonymous();

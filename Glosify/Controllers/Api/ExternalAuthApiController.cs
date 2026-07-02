@@ -134,12 +134,11 @@ public class ExternalAuthApiController : ControllerBase
 
     private RedirectResult AppRedirect(string query) => Redirect($"{CallbackScheme}?{query}");
 
+    // Only real email claims; preferred_username/upn are not verified email addresses.
     private static string GetExternalLoginEmail(ExternalLoginInfo info)
     {
         return info.Principal.FindFirst(ClaimTypes.Email)?.Value
             ?? info.Principal.FindFirst("email")?.Value
-            ?? info.Principal.FindFirst("preferred_username")?.Value
-            ?? info.Principal.FindFirst("upn")?.Value
             ?? string.Empty;
     }
 }

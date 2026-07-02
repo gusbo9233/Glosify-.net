@@ -200,22 +200,41 @@ namespace Glosify.Services.Quizzes
 
             var collectionIds = await GetDescendantCollectionIdsAsync(collectionId, userId);
 
-            var quizIds = await _context.Quizzes
+            var quizzes = await _context.Quizzes
                 .Where(q => q.CollectionId.HasValue
                     && collectionIds.Contains(q.CollectionId.Value)
                     && q.UserId == userId)
-                .Select(q => q.Id)
                 .ToListAsync();
 
-            if (quizIds.Count > 0)
+            if (quizzes.Count > 0)
             {
-                await _context.Words
-                    .Where(word => quizIds.Contains(word.QuizId))
-                    .ExecuteDeleteAsync();
+                var quizIds = quizzes.Select(q => q.Id).ToList();
 
-                await _context.Quizzes
-                    .Where(q => quizIds.Contains(q.Id) && q.UserId == userId)
-                    .ExecuteDeleteAsync();
+                var words = await _context.Words
+                    .Where(word => quizIds.Contains(word.QuizId))
+                    .ToListAsync();
+
+                // Saved assistant chats reference quizzes through no-action foreign
+                // keys; clear those references first or deleting the quizzes fails.
+                var assistantThreads = await _context.AssistantThreads
+                    .Where(thread => thread.ContextQuizId.HasValue && quizIds.Contains(thread.ContextQuizId.Value))
+                    .ToListAsync();
+                var assistantMessages = await _context.AssistantMessages
+                    .Where(message => message.ContextQuizId.HasValue && quizIds.Contains(message.ContextQuizId.Value))
+                    .ToListAsync();
+
+                foreach (var thread in assistantThreads)
+                {
+                    thread.ContextQuizId = null;
+                }
+
+                foreach (var message in assistantMessages)
+                {
+                    message.ContextQuizId = null;
+                }
+
+                _context.Words.RemoveRange(words);
+                _context.Quizzes.RemoveRange(quizzes);
             }
 
             var collections = await _context.Collections

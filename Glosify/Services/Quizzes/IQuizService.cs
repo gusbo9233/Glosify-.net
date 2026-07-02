@@ -15,5 +15,6 @@ public interface IQuizService
     Task<Quiz?> GetPublicQuizAsync(Guid id);
     Task<Quiz?> CopyPublicQuizAsync(Guid id, string userId, Guid? collectionId = null);
     Task<int> GetAvailableWordCountAsync(Guid quizId);
+    Task<IReadOnlyDictionary<Guid, int>> GetWordCountsAsync(IReadOnlyCollection<Guid> quizIds);
     Task<int> GetAvailableSentenceCountAsync(Guid quizId);
 }

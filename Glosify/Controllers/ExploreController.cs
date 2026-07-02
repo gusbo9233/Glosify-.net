@@ -49,15 +49,14 @@ public class ExploreController : Controller
             });
         }
 
-        var quizCards = new List<ExploreQuizCardViewModel>();
-        foreach (var quiz in quizzes)
-        {
-            quizCards.Add(new ExploreQuizCardViewModel
+        var wordCounts = await _quizService.GetWordCountsAsync(quizzes.Select(quiz => quiz.Id).ToList());
+        var quizCards = quizzes
+            .Select(quiz => new ExploreQuizCardViewModel
             {
                 Quiz = quiz,
-                WordCount = await _quizService.GetAvailableWordCountAsync(quiz.Id)
-            });
-        }
+                WordCount = wordCounts.GetValueOrDefault(quiz.Id)
+            })
+            .ToList();
 
         return View(new ExploreIndexViewModel
         {
