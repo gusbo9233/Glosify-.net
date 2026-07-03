@@ -3429,7 +3429,7 @@ body { margin: 0; }
 
 @media (max-width: 900px) {
     .app-body {
-        padding-bottom: calc(76px + env(safe-area-inset-bottom));
+        padding-bottom: calc(64px + env(safe-area-inset-bottom));
     }
 
     .app-sidebar {
@@ -3471,9 +3471,10 @@ body { margin: 0; }
         bottom: 0;
         z-index: 80;
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 4px;
-        padding: 8px max(10px, env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right));
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: 2px;
+        padding: 6px max(8px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-right));
         border-top: 1px solid rgba(61, 74, 61, 0.42);
         background: rgba(4, 19, 41, 0.94);
         backdrop-filter: blur(22px);
@@ -3483,20 +3484,27 @@ body { margin: 0; }
     .app-mobile-nav a,
     .app-mobile-nav .app-nav-item {
         min-width: 0;
-        min-height: 56px;
+        min-height: 50px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 4px;
+        gap: 3px;
         border-radius: 8px;
         color: var(--on-surface-var);
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 800;
         line-height: 1.1;
-        padding: 6px;
+        padding: 4px 2px;
         text-align: center;
         text-decoration: none;
+    }
+
+    .app-mobile-nav a > span:last-child {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .app-mobile-nav a.is-active,
@@ -3507,10 +3515,10 @@ body { margin: 0; }
 
     .app-mobile-nav .nav-svg-icon,
     .app-mobile-nav .material-symbols-outlined {
-        width: 22px;
-        height: 22px;
+        width: 20px;
+        height: 20px;
         flex: 0 0 auto;
-        font-size: 22px;
+        font-size: 20px;
     }
 }
 
@@ -3524,8 +3532,7 @@ body { margin: 0; }
         display: none;
     }
 
-    .app-topbar .account-avatar,
-    .app-topbar .btn-social-form {
+    .app-topbar .account-avatar {
         display: none;
     }
 
@@ -4355,7 +4362,7 @@ body { margin: 0; }
 @media (max-width: 720px) {
     .assistant-float {
         right: 16px;
-        bottom: calc(86px + env(safe-area-inset-bottom));
+        bottom: calc(74px + env(safe-area-inset-bottom));
     }
 
     .assistant-popover {
@@ -4376,7 +4383,7 @@ body { margin: 0; }
     .assistant-float.is-open {
         top: 64px;
         right: 12px;
-        bottom: calc(84px + env(safe-area-inset-bottom));
+        bottom: calc(72px + env(safe-area-inset-bottom));
         left: 12px;
         align-items: stretch;
         gap: 0;
@@ -4739,5 +4746,123 @@ body { margin: 0; }
 
     .reader-zoom-value {
         min-width: 50px;
+    }
+}
+
+/* =============================================================
+   Mobile polish
+   ============================================================= */
+/* Keep form fields at 16px on touch devices so iOS Safari does
+   not auto-zoom the page when a field receives focus. */
+@media (max-width: 900px), (pointer: coarse) {
+    .field-input,
+    .form-input,
+    .form-textarea,
+    .assistant-composer .form-textarea,
+    .assistant-context-picker select,
+    .assistant-model-picker select,
+    .app-search input {
+        font-size: 16px;
+    }
+}
+
+/* Size against the visible viewport on mobile browsers whose
+   URL bar collapses (100vh overshoots there). */
+@supports (min-height: 100dvh) {
+    .auth-body,
+    .app-shell {
+        min-height: 100dvh;
+    }
+
+    .app-sidebar {
+        height: 100dvh;
+    }
+}
+
+/* =============================================================
+   Flashcard swipe gestures
+   ============================================================= */
+.flashcard {
+    position: relative;
+    touch-action: pan-y;
+}
+
+.flashcard.is-dragging {
+    animation: none;
+    transition: none;
+}
+
+.flashcard.is-swipe-out-left,
+.flashcard.is-swipe-out-right {
+    animation: none;
+    pointer-events: none;
+    transition: transform 0.22s ease-in, opacity 0.22s ease-in;
+    opacity: 0;
+}
+
+.flashcard.is-swipe-out-left {
+    transform: translateX(-110%) rotate(-7deg);
+}
+
+.flashcard.is-swipe-out-right {
+    transform: translateX(110%) rotate(7deg);
+}
+
+.flashcard.is-revealed::before,
+.flashcard.is-revealed::after {
+    position: absolute;
+    top: 16px;
+    z-index: 1;
+    border-radius: 9999px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.flashcard.is-revealed::before {
+    content: "Again";
+    left: 16px;
+    border: 1px solid rgba(255, 180, 171, 0.45);
+    background: rgba(255, 180, 171, 0.12);
+    color: var(--error);
+}
+
+.flashcard.is-revealed::after {
+    content: "Good";
+    right: 16px;
+    border: 1px solid rgba(83, 224, 118, 0.45);
+    background: rgba(83, 224, 118, 0.12);
+    color: var(--primary);
+}
+
+.flashcard.drag-left::before,
+.flashcard.drag-right::after {
+    opacity: 1;
+}
+
+.swipe-hint {
+    display: none;
+    margin: 0;
+    color: var(--outline);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+}
+
+@media (pointer: coarse) {
+    .swipe-hint {
+        display: block;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .flashcard.is-swipe-out-left,
+    .flashcard.is-swipe-out-right {
+        transition: none;
     }
 }

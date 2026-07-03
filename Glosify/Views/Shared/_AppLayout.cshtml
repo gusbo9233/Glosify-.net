@@ -125,7 +125,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
     <title>@ViewData["Title"] - Glosify</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,400..800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
@@ -265,9 +265,9 @@
         </a>
         @if (User.Identity?.IsAuthenticated == true)
         {
-            <a class="@NavClass("Account")" asp-controller="Account" asp-action="Login">
-                <span class="material-symbols-outlined">account_circle</span>
-                <span>Account</span>
+            <a class="@NavClass("Explore")" asp-controller="Explore" asp-action="Index">
+                @NavIcon("explore")
+                <span>Explore</span>
             </a>
         }
         else

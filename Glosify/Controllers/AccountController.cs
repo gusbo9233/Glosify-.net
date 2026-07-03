@@ -26,6 +26,11 @@ public class AccountController : Controller
     [HttpGet]
     public async Task<IActionResult> Login(string? returnUrl = null, string? externalLoginError = null)
     {
+        if (User.Identity?.IsAuthenticated == true && string.IsNullOrWhiteSpace(externalLoginError))
+        {
+            return LocalRedirect(Url.IsLocalUrl(returnUrl) ? returnUrl! : "/");
+        }
+
         if (!string.IsNullOrWhiteSpace(externalLoginError))
         {
             var externalLoginMessage = string.Equals(externalLoginError, "Google", StringComparison.OrdinalIgnoreCase)
