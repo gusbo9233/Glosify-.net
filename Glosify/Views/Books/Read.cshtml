@@ -250,8 +250,8 @@
     window.addEventListener('resize', () => renderPage(currentPage));
 
     try {
-        const pdfjs = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
-        pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+        const pdfjs = await import('/lib/pdfjs/pdf.min.mjs');
+        pdfjs.GlobalWorkerOptions.workerSrc = '/lib/pdfjs/pdf.worker.min.mjs';
         pdf = await pdfjs.getDocument(`/Books/File/${documentId}`).promise;
         await renderPage(1);
     } catch {
