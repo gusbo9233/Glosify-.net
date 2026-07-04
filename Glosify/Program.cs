@@ -269,21 +269,16 @@ app.UseHttpsRedirection();
 // required by the inline <script> blocks in several views (tightening to nonces
 // is the follow-up); fonts.googleapis.com/gstatic.com serve the web fonts the
 // layout links; everything else is same-origin only.
+var configuredFormActionOrigins = builder.Configuration
+    .GetSection("Security:Csp:FormActionOrigins")
+    .Get<string[]>() ?? [];
+var contentSecurityPolicy = BuildContentSecurityPolicy(configuredFormActionOrigins);
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
     headers["X-Content-Type-Options"] = "nosniff";
     headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    headers["Content-Security-Policy"] =
-        "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline'; " +
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-        "font-src 'self' https://fonts.gstatic.com; " +
-        "img-src 'self' data:; " +
-        "connect-src 'self'; " +
-        "frame-ancestors 'none'; " +
-        "base-uri 'self'; " +
-        "form-action 'self'";
+    headers["Content-Security-Policy"] = contentSecurityPolicy;
     await next();
 });
 
@@ -334,6 +329,42 @@ static string BuildColdStartFriendlyConnectionString(string connectionString)
     }
 
     return builder.ConnectionString;
+}
+
+static string BuildContentSecurityPolicy(IEnumerable<string> formActionOrigins)
+{
+    var allowedFormActionSources = formActionOrigins
+        .Select(NormalizeCspOrigin)
+        .Where(origin => !string.IsNullOrWhiteSpace(origin))
+        .Distinct(StringComparer.OrdinalIgnoreCase);
+
+    var formActionDirective = string.Join(' ', ["'self'", .. allowedFormActionSources]);
+
+    return
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline'; " +
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+        "font-src 'self' https://fonts.gstatic.com; " +
+        "img-src 'self' data:; " +
+        "connect-src 'self'; " +
+        "frame-ancestors 'none'; " +
+        "base-uri 'self'; " +
+        $"form-action {formActionDirective}";
+}
+
+static string? NormalizeCspOrigin(string? origin)
+{
+    if (!Uri.TryCreate(origin?.Trim(), UriKind.Absolute, out var uri))
+    {
+        return null;
+    }
+
+    if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+    {
+        return null;
+    }
+
+    return uri.GetLeftPart(UriPartial.Authority);
 }
 
 public partial class Program { }

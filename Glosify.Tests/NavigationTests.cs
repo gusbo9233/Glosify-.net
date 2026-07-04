@@ -95,6 +95,20 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task Login_AllowsConfiguredExternalLoginFormActionOriginInCsp()
+    {
+        var client = CreateClient();
+
+        var response = await client.GetAsync("/login");
+
+        response.EnsureSuccessStatusCode();
+        var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
+        Assert.Contains(
+            "form-action 'self' https://glosify-f0d9e2g3f4ctc3hy.swedencentral-01.azurewebsites.net",
+            csp);
+    }
+
+    [Fact]
     public async Task Post_WithoutAntiForgeryToken_IsRejected()
     {
         var client = CreateClient();
