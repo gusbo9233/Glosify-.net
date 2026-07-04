@@ -106,6 +106,8 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains(
             "form-action 'self' https://glosify-f0d9e2g3f4ctc3hy.swedencentral-01.azurewebsites.net",
             csp);
+        Assert.Contains("https://accounts.google.com", csp);
+        Assert.Contains("https://login.microsoftonline.com", csp);
     }
 
     [Fact]

@@ -247,7 +247,9 @@ var app = builder.Build();
 // and every user shares the same rate-limit partition.
 var forwardedHeadersOptions = new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor
+        | ForwardedHeaders.XForwardedProto
+        | ForwardedHeaders.XForwardedHost,
 };
 // The App Service front-end addresses are not statically known, so the default
 // loopback-only proxy allowlist must be cleared for the headers to be honored.
