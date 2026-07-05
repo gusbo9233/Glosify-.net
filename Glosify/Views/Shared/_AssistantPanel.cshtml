@@ -8,9 +8,9 @@
     var currentAssistantModel = string.IsNullOrWhiteSpace(GeminiOptions.Value.AssistantModel)
         ? GeminiOptions.Value.StructuredModel
         : GeminiOptions.Value.AssistantModel;
-    var structuredModel = GeminiOptions.Value.StructuredModel;
-    var offersStructuredModel = !string.IsNullOrWhiteSpace(structuredModel)
-        && !string.Equals(currentAssistantModel, structuredModel, StringComparison.OrdinalIgnoreCase);
+    var altAssistantModel = GeminiOptions.Value.Model;
+    var offersAltModel = !string.IsNullOrWhiteSpace(altAssistantModel)
+        && !string.Equals(currentAssistantModel, altAssistantModel, StringComparison.OrdinalIgnoreCase);
     IReadOnlyList<Quiz> contextQuizzes = [];
     if (User.Identity?.IsAuthenticated == true)
     {
@@ -119,9 +119,9 @@
                                 <span class="visually-hidden">Assistant model</span>
                                 <select data-assistant-model-select aria-label="Assistant model">
                                     <option value="@currentAssistantModel">Auto</option>
-                                    @if (offersStructuredModel)
+                                    @if (offersAltModel)
                                     {
-                                        <option value="@structuredModel">@structuredModel</option>
+                                        <option value="@altAssistantModel">@altAssistantModel</option>
                                     }
                                 </select>
                             </label>

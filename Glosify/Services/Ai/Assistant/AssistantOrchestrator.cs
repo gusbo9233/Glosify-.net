@@ -489,7 +489,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         // Only configured models may be requested by the client.
         var trimmed = requestedModel.Trim();
         return string.Equals(trimmed, currentModel, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(trimmed, _geminiOptions.StructuredModel, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(trimmed, _geminiOptions.Model, StringComparison.OrdinalIgnoreCase)
             ? trimmed
             : currentModel;
     }
