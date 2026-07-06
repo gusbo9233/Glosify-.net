@@ -6,6 +6,7 @@ using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+using Glosify.Services.Ai.Assistant;
 
 namespace Glosify.Tests;
 

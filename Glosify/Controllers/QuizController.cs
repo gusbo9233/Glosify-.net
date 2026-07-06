@@ -1,8 +1,12 @@
+using Glosify.Filters;
 using Glosify.Models;
 using Glosify.Services;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Glosify.Services.Ai;
+using Glosify.Services.Language;
+using Glosify.Services.Words;
 
 namespace Glosify.Controllers;
 
@@ -15,7 +19,6 @@ public class QuizController : Controller
     private readonly IQuizRepairService _quizRepairService;
     private readonly IImageTextExtractionService _imageTextExtractionService;
     private readonly ILanguageContext _languageContext;
-    private readonly ILogger<QuizController> _logger;
 
     public QuizController(
         IQuizService quizService,
@@ -23,8 +26,7 @@ public class QuizController : Controller
         IWordService wordService,
         IQuizRepairService quizRepairService,
         IImageTextExtractionService imageTextExtractionService,
-        ILanguageContext languageContext,
-        ILogger<QuizController> logger)
+        ILanguageContext languageContext)
     {
         _quizService = quizService;
         _collectionService = collectionService;
@@ -32,7 +34,6 @@ public class QuizController : Controller
         _quizRepairService = quizRepairService;
         _imageTextExtractionService = imageTextExtractionService;
         _languageContext = languageContext;
-        _logger = logger;
     }
 
     public async Task<IActionResult> Index()
@@ -93,26 +94,21 @@ public class QuizController : Controller
     }
 
     [HttpPost]
+    [AiServiceExceptionFilter]
     public async Task<IActionResult> RepairWord(string id, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        try
+        var result = await _quizRepairService.RepairWordAsync(id, userId, cancellationToken);
+        return result.Status switch
         {
-            var result = await _quizRepairService.RepairWordAsync(id, userId, cancellationToken);
-            return result.Status switch
-            {
-                QuizRepairStatus.NotFound => NotFound(new { error = "Word not found." }),
-                QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
-                _ => Json(new { message = $"Repaired {result.Word}." })
-            };
-        }
-        catch (InsufficientAiCreditsException ex)
-        {
-            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
-        }
+            QuizRepairStatus.NotFound => NotFound(new { error = "Word not found." }),
+            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
+            _ => Json(new { message = $"Repaired {result.Word}." })
+        };
     }
 
     [HttpPost]
+    [AiServiceExceptionFilter]
     public async Task<IActionResult> RepairSentence(Guid quizId, string text, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -120,20 +116,13 @@ public class QuizController : Controller
         if (string.IsNullOrWhiteSpace(text))
             return BadRequest(new { error = "Choose a sentence to repair." });
 
-        try
+        var result = await _quizRepairService.RepairSentenceAsync(quizId, text, userId, cancellationToken);
+        return result.Status switch
         {
-            var result = await _quizRepairService.RepairSentenceAsync(quizId, text, userId, cancellationToken);
-            return result.Status switch
-            {
-                QuizRepairStatus.NotFound => NotFound(new { error = "Quiz not found." }),
-                QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
-                _ => Json(new { message = result.UpdatedCount == 1 ? "Sentence repaired." : $"Sentence repaired in {result.UpdatedCount} places." })
-            };
-        }
-        catch (InsufficientAiCreditsException ex)
-        {
-            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
-        }
+            QuizRepairStatus.NotFound => NotFound(new { error = "Quiz not found." }),
+            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
+            _ => Json(new { message = result.UpdatedCount == 1 ? "Sentence repaired." : $"Sentence repaired in {result.UpdatedCount} places." })
+        };
     }
 
     [HttpPost]
@@ -158,6 +147,7 @@ public class QuizController : Controller
 
     [HttpPost]
     [RequestSizeLimit(8 * 1024 * 1024)]
+    [AiServiceExceptionFilter]
     public async Task<IActionResult> ExtractTextFromImage(Guid quizId, IFormFile? image, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -175,31 +165,19 @@ public class QuizController : Controller
         if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             return BadRequest(new { error = "Choose an image file." });
 
-        try
-        {
-            await using var stream = image.OpenReadStream();
-            var text = await _imageTextExtractionService.ExtractTextAsync(
-                userId,
-                stream,
-                image.ContentType,
-                quiz.SourceLanguage,
-                quiz.TargetLanguage,
-                cancellationToken);
+        await using var stream = image.OpenReadStream();
+        var text = await _imageTextExtractionService.ExtractTextAsync(
+            userId,
+            stream,
+            image.ContentType,
+            quiz.SourceLanguage,
+            quiz.TargetLanguage,
+            cancellationToken);
 
-            if (string.IsNullOrWhiteSpace(text))
-                return UnprocessableEntity(new { error = "No readable text was found in that image." });
+        if (string.IsNullOrWhiteSpace(text))
+            return UnprocessableEntity(new { error = "No readable text was found in that image." });
 
-            return Json(new { text });
-        }
-        catch (Exception ex) when (ServiceWarmupMessage.IsLlmWarmupFailure(ex) || ex is HttpRequestException)
-        {
-            _logger.LogWarning(ex, "Image text extraction failed for quiz {QuizId}", quizId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant });
-        }
-        catch (InsufficientAiCreditsException ex)
-        {
-            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
-        }
+        return Json(new { text });
     }
 
     [HttpPost]

@@ -1,10 +1,9 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Mscc.GenerativeAI;
 using Mscc.GenerativeAI.Types;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Ai.Llm;
 
 public sealed class GeminiClient : IGeminiClient
 {
@@ -13,29 +12,21 @@ public sealed class GeminiClient : IGeminiClient
     private readonly GeminiOptions _options;
     private readonly AiUsageOptions _aiUsageOptions;
     private readonly IAiCreditService _credits;
+    private readonly IGeminiModelFactory _modelFactory;
     private readonly ILogger<GeminiClient> _logger;
-    private readonly Lazy<GoogleAI> _googleAi;
-    private readonly ConcurrentDictionary<(string Model, bool Json), GenerativeModel> _models = new();
 
     public GeminiClient(
         IOptions<GeminiOptions> options,
         IOptions<AiUsageOptions> aiUsageOptions,
         IAiCreditService credits,
+        IGeminiModelFactory modelFactory,
         ILogger<GeminiClient> logger)
     {
         _options = options.Value;
         _aiUsageOptions = aiUsageOptions.Value;
         _credits = credits;
+        _modelFactory = modelFactory;
         _logger = logger;
-        _googleAi = new Lazy<GoogleAI>(() =>
-        {
-            if (string.IsNullOrWhiteSpace(_options.ApiKey))
-            {
-                throw new InvalidOperationException(
-                    "Gemini API key is not configured. Set Gemini:ApiKey (user-secrets) or the GEMINI_API_KEY environment variable.");
-            }
-            return new GoogleAI(apiKey: _options.ApiKey);
-        });
     }
 
     public async Task<string> GenerateJsonAsync(
@@ -271,18 +262,7 @@ public sealed class GeminiClient : IGeminiClient
     }
 
     private GenerativeModel GetModel(string modelName, bool jsonMode)
-    {
-        return _models.GetOrAdd((modelName, jsonMode), key =>
-        {
-            var model = _googleAi.Value.GenerativeModel(model: key.Model);
-            model.Timeout = TimeSpan.FromSeconds(_options.TimeoutSeconds);
-            if (key.Json)
-            {
-                model.UseJsonMode = true;
-            }
-            return model;
-        });
-    }
+        => _modelFactory.GetModel(modelName, jsonMode);
 
     private GenerationConfig CreateGenerationConfig(
         string modelName,
@@ -308,13 +288,11 @@ public sealed class GeminiClient : IGeminiClient
         int outputTokenReserve,
         CancellationToken cancellationToken)
     {
-        var count = await generativeModel.CountTokens(CreateCountTokensRequest(request), cancellationToken: cancellationToken);
-        var promptTokens = Convert.ToInt32(count.TotalTokens);
-        if (promptTokens <= 0)
-        {
-            promptTokens = Convert.ToInt32(count.TokenCount);
-        }
-        promptTokens += EstimateSupplementalPromptTokens(request);
+        // Estimated locally (chars/4 plus a fixed cost per inline image) rather than via a
+        // CountTokens API call: the estimate only sizes the credit reservation, and the commit
+        // below reconciles against the real UsageMetadata, so an extra network round-trip per
+        // generation is not worth the precision.
+        var promptTokens = EstimatePromptTokens(request);
         var estimatedTokens = Math.Max(1, promptTokens) + Math.Max(0, outputTokenReserve);
         var reservation = await _credits.ReserveAsync(
             usageContext,
@@ -339,23 +317,33 @@ public sealed class GeminiClient : IGeminiClient
         }
     }
 
-    private static GenerateContentRequest CreateCountTokensRequest(GenerateContentRequest request)
-    {
-        return new GenerateContentRequest
-        {
-            Contents = request.Contents,
-        };
-    }
+    // Gemini charges a flat per-tile cost for images (258 tokens/tile); four tiles covers
+    // the photo sizes the app accepts without counting the base64 payload as text.
+    private const int InlineDataTokenEstimate = 1032;
 
-    private static int EstimateSupplementalPromptTokens(GenerateContentRequest request)
+    private static int EstimatePromptTokens(GenerateContentRequest request)
     {
         var characterCount = 0;
         characterCount += EstimateSerializedLength(request.SystemInstruction);
         characterCount += EstimateSerializedLength(request.Tools);
 
-        return characterCount == 0
-            ? 0
-            : (int)Math.Ceiling(characterCount / 4.0);
+        var inlineDataTokens = 0;
+        foreach (var content in request.Contents ?? [])
+        {
+            foreach (var part in content.Parts ?? [])
+            {
+                if (part is Part { InlineData: not null })
+                {
+                    inlineDataTokens += InlineDataTokenEstimate;
+                }
+                else
+                {
+                    characterCount += EstimateSerializedLength(part);
+                }
+            }
+        }
+
+        return (int)Math.Ceiling(characterCount / 4.0) + inlineDataTokens;
     }
 
     private static int EstimateSerializedLength<T>(T value)

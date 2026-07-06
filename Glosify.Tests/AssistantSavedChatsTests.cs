@@ -9,6 +9,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
+using Glosify.Services.Ai;
+using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Llm;
+using Glosify.Services.Language;
 
 namespace Glosify.Tests;
 

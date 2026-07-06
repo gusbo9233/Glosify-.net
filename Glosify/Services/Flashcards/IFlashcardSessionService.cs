@@ -1,9 +1,11 @@
-namespace Glosify.Services;
+namespace Glosify.Services.Flashcards;
 
 public interface IFlashcardSessionService
 {
     FlashcardSessionData StartSession(string userId, Guid quizId, string quizName, string sourceLanguage, string targetLanguage, int wordCount, IReadOnlyList<FlashcardCardData> cards, string? practiceDirection = null, string? practiceItemType = null);
     FlashcardSessionData? FindSession(string sessionId, string userId);
+    FlashcardSessionData? FindResumableSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount);
+    void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount);
     void SaveSession(FlashcardSessionData session);
     void ApplyRating(FlashcardSessionData session, string rating);
     void RevealAnswer(FlashcardSessionData session);

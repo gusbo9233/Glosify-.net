@@ -3,7 +3,7 @@ using Glosify.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Words;
 
 public class WordService : IWordService
 {

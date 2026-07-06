@@ -1,3 +1,4 @@
+using Glosify.Models.Api;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -142,5 +143,3 @@ public class ExternalAuthApiController : ControllerBase
             ?? string.Empty;
     }
 }
-
-public sealed record ExchangeCodeRequest(string Code);

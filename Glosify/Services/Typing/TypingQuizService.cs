@@ -2,7 +2,7 @@ using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Typing;
 
 public class TypingQuizService : ITypingQuizService
 {

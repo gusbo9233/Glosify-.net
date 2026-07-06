@@ -2,8 +2,11 @@ using System.Text.Json;
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Glosify.Services.Ai.Llm;
+using Glosify.Services.Language;
+using Glosify.Services.Quizzes;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Ai.Assistant;
 
 public sealed class AssistantOrchestrator : IAssistantOrchestrator
 {

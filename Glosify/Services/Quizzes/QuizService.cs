@@ -1,18 +1,21 @@
 using Glosify.Data;
 using Glosify.Models;
 using Microsoft.EntityFrameworkCore;
+using Glosify.Services.Language;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Quizzes;
 
 public class QuizService : IQuizService
 {
     private readonly GlosifyContext _context;
     private readonly ILanguageContext _languageContext;
+    private readonly CollectionVisibility _collectionVisibility;
 
     public QuizService(GlosifyContext context, ILanguageContext languageContext)
     {
         _context = context;
         _languageContext = languageContext;
+        _collectionVisibility = new CollectionVisibility(context);
     }
 
     public async Task<Quiz?> FindQuizAsync(string userId, Guid? quizId)
@@ -138,7 +141,7 @@ public class QuizService : IQuizService
     {
         language = language.Trim();
 
-        var publicCollectionIds = await GetPublicCollectionTreeIdsAsync(language);
+        var publicCollectionIds = await _collectionVisibility.GetPublicCollectionTreeIdsAsync(language);
 
         return await _context.Quizzes
             .Where(q => q.IsPublic
@@ -269,71 +272,7 @@ public class QuizService : IQuizService
             return true;
         }
 
-        if (!quiz.CollectionId.HasValue)
-        {
-            return false;
-        }
-
-        var collection = await _context.Collections
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == quiz.CollectionId.Value);
-
-        while (collection != null)
-        {
-            if (collection.IsPublic)
-            {
-                return true;
-            }
-
-            if (!collection.ParentCollectionId.HasValue)
-            {
-                return false;
-            }
-
-            collection = await _context.Collections
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == collection.ParentCollectionId.Value);
-        }
-
-        return false;
+        return quiz.CollectionId.HasValue
+            && await _collectionVisibility.IsCollectionPubliclyReadableAsync(quiz.CollectionId.Value);
     }
-
-    private async Task<List<Guid>> GetPublicCollectionTreeIdsAsync(string language)
-    {
-        var collections = await _context.Collections
-            .Where(c => c.Language == language)
-            .Select(c => new CollectionVisibilityNode(c.Id, c.ParentCollectionId, c.IsPublic))
-            .ToListAsync();
-
-        var childrenByParent = collections
-            .Where(c => c.ParentCollectionId.HasValue)
-            .GroupBy(c => c.ParentCollectionId!.Value)
-            .ToDictionary(g => g.Key, g => g.Select(c => c.Id).ToList());
-
-        var result = new HashSet<Guid>();
-        var frontier = collections
-            .Where(c => c.IsPublic)
-            .Select(c => c.Id)
-            .ToList();
-
-        while (frontier.Count > 0)
-        {
-            var current = frontier[^1];
-            frontier.RemoveAt(frontier.Count - 1);
-
-            if (!result.Add(current))
-            {
-                continue;
-            }
-
-            if (childrenByParent.TryGetValue(current, out var childIds))
-            {
-                frontier.AddRange(childIds);
-            }
-        }
-
-        return result.ToList();
-    }
-
-    private sealed record CollectionVisibilityNode(Guid Id, Guid? ParentCollectionId, bool IsPublic);
 }

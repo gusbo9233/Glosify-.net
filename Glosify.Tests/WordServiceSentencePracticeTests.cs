@@ -2,6 +2,9 @@ using Glosify.Data;
 using Glosify.Services;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using Glosify.Services.Language;
+using Glosify.Services.Quizzes;
+using Glosify.Services.Words;
 
 namespace Glosify.Tests;
 

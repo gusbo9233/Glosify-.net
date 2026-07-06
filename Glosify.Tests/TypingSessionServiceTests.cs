@@ -1,6 +1,8 @@
 using Glosify.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Xunit;
+using Glosify.Services.Typing;
+using Glosify.Services.Quizzes;
 
 namespace Glosify.Tests;
 
@@ -11,7 +13,7 @@ public class TypingSessionServiceTests
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var quizService = new StubTypingQuizService();
-        var service = new TypingSessionService(cache, quizService);
+        var service = new TypingSessionService(cache, quizService, new QuizSessionRegistry(cache));
         var words = new[]
         {
             new TypingWordData { Id = "1", Prompt = "house", Answer = "casa" },
@@ -50,7 +52,7 @@ public class TypingSessionServiceTests
     public void FindSession_DoesNotReturnOtherUsersSession()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var service = new TypingSessionService(cache, new StubTypingQuizService());
+        var service = new TypingSessionService(cache, new StubTypingQuizService(), new QuizSessionRegistry(cache));
         var session = service.StartSession(
             "user-1",
             Guid.NewGuid(),

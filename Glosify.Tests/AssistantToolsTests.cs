@@ -4,6 +4,7 @@ using Glosify.Models.Entities;
 using Glosify.Services;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using Glosify.Services.Ai.Assistant;
 
 namespace Glosify.Tests;
 

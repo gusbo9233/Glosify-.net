@@ -2,6 +2,9 @@ using Glosify.Models;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Glosify.Services.Flashcards;
+using Glosify.Services.Quizzes;
+using Glosify.Services.Words;
 
 namespace Glosify.Controllers;
 
@@ -32,6 +35,10 @@ public class FlashcardQuizController : Controller
         var selectedQuiz = await _quizService.FindQuizAsync(userId, id);
         if (selectedQuiz == null)
             return View(FlashcardQuizViewModel.Empty());
+
+        var resumed = _sessionService.FindResumableSession(userId, selectedQuiz.Id, normalizedDirection, normalizedItemType, wordCount);
+        if (resumed != null)
+            return View(BuildViewModel(resumed, selectedQuiz));
 
         var cards = PracticeItemType.IsSentences(normalizedItemType)
             ? await _wordService.LoadSentenceCardsAsync(selectedQuiz.Id, wordCount)
@@ -91,6 +98,7 @@ public class FlashcardQuizController : Controller
     [HttpPost]
     public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null)
     {
+        _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount);
         return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType) });
     }
 

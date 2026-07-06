@@ -1,4 +1,4 @@
-namespace Glosify.Services;
+namespace Glosify.Services.Typing;
 
 public interface ITypingSessionService
 {
@@ -14,6 +14,8 @@ public interface ITypingSessionService
         string? practiceItemType = null);
 
     TypingSessionData? FindSession(string sessionId, string userId);
+    TypingSessionData? FindResumableSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount);
+    void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount);
     void SaveSession(TypingSessionData session);
     TypingAnswerResult SubmitAnswer(TypingSessionData session, string userAnswer);
 }

@@ -1,4 +1,4 @@
-namespace Glosify.Services
+namespace Glosify.Services.Language
 {
     public interface ILanguageContext
     {

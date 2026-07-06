@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Ai.Assistant;
 
 public sealed record PendingChange(string Kind, JsonElement Payload);
 

@@ -1,4 +1,4 @@
-namespace Glosify.Services;
+namespace Glosify.Services.Ai.Llm;
 
 public sealed record AgentToolDeclaration(
     string Name,

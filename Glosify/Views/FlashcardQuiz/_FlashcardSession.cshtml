@@ -101,6 +101,15 @@
                 </form>
             </div>
         }
+
+        <form class="session-reset" method="post" asp-controller="FlashcardQuiz" asp-action="Restart">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="quizId" value="@Model.QuizId" />
+            <input type="hidden" name="wordCount" value="@Model.WordCount" />
+            <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
+            <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
+            <button class="btn-linkish" type="submit">Reset Session</button>
+        </form>
     }
     else
     {

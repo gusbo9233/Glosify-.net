@@ -3,7 +3,7 @@ using Glosify.Data;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Ai.Assistant;
 
 public sealed class ChangeApplier : IChangeApplier
 {

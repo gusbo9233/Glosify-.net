@@ -2,6 +2,7 @@ using Glosify.Data;
 using Glosify.Services;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using Glosify.Services.Typing;
 
 namespace Glosify.Tests;
 

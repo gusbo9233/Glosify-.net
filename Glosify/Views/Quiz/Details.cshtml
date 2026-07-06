@@ -21,7 +21,7 @@
                 <form class="share-form visibility-checkbox-form" method="post" asp-controller="Quiz" asp-action="SetQuizVisibility" asp-route-id="@Model.SelectedQuiz.Id">
                     @Html.AntiForgeryToken()
                     <label class="visibility-checkbox">
-                        <input type="checkbox" name="isPublic" value="true" @(Model.SelectedQuiz.IsPublic ? "checked" : "") onchange="this.form.submit()" />
+                        <input type="checkbox" name="isPublic" value="true" @(Model.SelectedQuiz.IsPublic ? "checked" : "") data-submit-on-change />
                         <input type="hidden" name="isPublic" value="false" />
                         <span class="visibility-checkbox-box" aria-hidden="true"></span>
                         <span>Make quiz public</span>
@@ -108,7 +108,7 @@
                                     data-repair-url="@Url.Action("RepairWord", "Quiz", new { id = word.Id })">
                                 <span class="material-symbols-outlined">build</span>
                             </button>
-                            <form class="delete-word-form" method="post" asp-controller="Quiz" asp-action="DeleteWord" asp-route-id="@word.Id" onsubmit="return confirm('Delete this word?');">
+                            <form class="delete-word-form" method="post" asp-controller="Quiz" asp-action="DeleteWord" asp-route-id="@word.Id" data-confirm="Delete this word?">
                                 @Html.AntiForgeryToken()
                                 <button class="btn-icon-delete" type="submit" aria-label="Delete @word.Lemma">
                                     <span class="material-symbols-outlined">delete</span>
@@ -163,98 +163,6 @@
 </section>
 
 @section Scripts {
-<script>
-    (() => {
-        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-        const messageHost = document.querySelector('[data-ai-message-host]');
-
-        const setMessage = (text, kind = 'success') => {
-            if (!messageHost) return;
-            messageHost.innerHTML = '';
-            const message = document.createElement('div');
-            message.className = `panel-message ${kind}`;
-            message.textContent = text;
-            messageHost.appendChild(message);
-        };
-
-        const postRepair = async (button, body) => {
-            if (!button?.dataset.repairUrl) return;
-            const originalHtml = button.innerHTML;
-            button.disabled = true;
-            button.innerHTML = '<span class="material-symbols-outlined">progress_activity</span>';
-
-            try {
-                const response = await fetch(button.dataset.repairUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'RequestVerificationToken': tokenInput?.value ?? ''
-                    },
-                    body
-                });
-                const data = await response.json().catch(() => null);
-                if (!response.ok) {
-                    setMessage(data?.error || 'Repair failed. Please try again.', 'error');
-                    return;
-                }
-
-                setMessage(data?.message || 'Repair finished.');
-                window.setTimeout(() => window.location.reload(), 450);
-            } catch {
-                setMessage('The repair request stopped unexpectedly. Please try again.', 'error');
-            } finally {
-                button.disabled = false;
-                button.innerHTML = originalHtml;
-            }
-        };
-
-        document.querySelectorAll('[data-repair-word-button]').forEach(button => {
-            button.addEventListener('click', event => {
-                postRepair(event.currentTarget, new FormData());
-            });
-        });
-
-        document.querySelectorAll('[data-repair-sentence-button]').forEach(button => {
-            button.addEventListener('click', event => {
-                const body = new FormData();
-                body.append('quizId', event.currentTarget.dataset.quizId || '');
-                body.append('text', event.currentTarget.dataset.sentenceText || '');
-                postRepair(event.currentTarget, body);
-            });
-        });
-    })();
-
-    (() => {
-        const tabs = document.querySelectorAll('[data-tab]');
-        const panels = {
-            words: document.getElementById('wordsPanel'),
-            sentences: document.getElementById('sentencesPanel')
-        };
-        const title = document.getElementById('collectionTitle');
-        const subtitle = document.getElementById('collectionSubtitle');
-
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const activeTab = tab.dataset.tab;
-                tabs.forEach(item => {
-                    const isActive = item === tab;
-                    item.classList.toggle('active', isActive);
-                    item.setAttribute('aria-selected', isActive.toString());
-                });
-
-                Object.entries(panels).forEach(([name, panel]) => {
-                    if (panel) {
-                        panel.hidden = name !== activeTab;
-                    }
-                });
-
-                const activePanel = panels[activeTab];
-                if (activePanel && title && subtitle) {
-                    title.textContent = activePanel.dataset.title || "";
-                    subtitle.textContent = activePanel.dataset.subtitle || "";
-                }
-            });
-        });
-    })();
-</script>
+<script src="~/js/quiz-details.js" asp-append-version="true"></script>
+<script src="~/js/word-tabs.js" asp-append-version="true"></script>
 }

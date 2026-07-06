@@ -4,6 +4,7 @@ using Glosify.Services;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using Glosify.Services.Language;
 
 namespace Glosify.Tests;
 

@@ -1,25 +1,23 @@
+using Glosify.Models.Api;
+using Glosify.Filters;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Glosify.Services.Ai.Assistant;
 
 namespace Glosify.Controllers;
 
 [Authorize]
 [ApiController]
 [Route("Quiz/{quizId:guid}/Assistant")]
+[AiServiceExceptionFilter]
 public class AssistantController : ControllerBase
 {
-    private const string AssistantErrorMessage = "The assistant hit an unexpected error. Please try again.";
-
     private readonly IAssistantOrchestrator _orchestrator;
-    private readonly ILogger<AssistantController> _logger;
 
-    public AssistantController(
-        IAssistantOrchestrator orchestrator,
-        ILogger<AssistantController> logger)
+    public AssistantController(IAssistantOrchestrator orchestrator)
     {
         _orchestrator = orchestrator;
-        _logger = logger;
     }
 
     [HttpGet("~/Assistant/History")]
@@ -41,16 +39,9 @@ public class AssistantController : ControllerBase
     [HttpPost("~/Assistant/Chats")]
     public async Task<IActionResult> CreateChat([FromBody] ChatMutationInput? input, CancellationToken cancellationToken)
     {
-        try
-        {
-            var userId = User.GetUserId();
-            var chat = await _orchestrator.CreateChatAsync(userId, input?.ContextQuizId, cancellationToken);
-            return Ok(chat);
-        }
-        catch (QuizNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
+        var userId = User.GetUserId();
+        var chat = await _orchestrator.CreateChatAsync(userId, input?.ContextQuizId, cancellationToken);
+        return Ok(chat);
     }
 
     [HttpPatch("~/Assistant/Chats/{threadId:guid}")]
@@ -68,14 +59,6 @@ public class AssistantController : ControllerBase
                 cancellationToken);
             return Ok(chat);
         }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (QuizNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
         catch (InvalidOperationException ex)
         {
             return NotFound(new { error = ex.Message });
@@ -91,10 +74,6 @@ public class AssistantController : ControllerBase
             await _orchestrator.DeleteChatAsync(threadId, userId, cancellationToken);
             return Ok();
         }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
         catch (InvalidOperationException ex)
         {
             return NotFound(new { error = ex.Message });
@@ -109,10 +88,6 @@ public class AssistantController : ControllerBase
             var userId = User.GetUserId();
             var history = await _orchestrator.GetChatHistoryAsync(threadId, userId, cancellationToken);
             return Ok(history);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
         }
         catch (InvalidOperationException ex)
         {
@@ -145,31 +120,9 @@ public class AssistantController : ControllerBase
 
             return Ok(response);
         }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (QuizNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (InsufficientAiCreditsException ex)
-        {
-            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
-        }
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex) || ServiceWarmupMessage.IsLlmWarmupFailure(ex))
-        {
-            _logger.LogWarning(ex, "Dependency warm-up interrupted assistant turn for chat {ThreadId}", threadId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.Dependencies });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Assistant turn failed for chat {ThreadId}", threadId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = AssistantErrorMessage });
         }
     }
 
@@ -181,34 +134,17 @@ public class AssistantController : ControllerBase
             return BadRequest(new { error = "Type a message first." });
         }
 
-        try
-        {
-            var userId = User.GetUserId();
-            var response = await _orchestrator.SendGlobalMessageAsync(
-                userId,
-                input.Message,
-                input.Model,
-                input.DocumentContext is null
-                    ? null
-                    : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),
-                cancellationToken);
+        var userId = User.GetUserId();
+        var response = await _orchestrator.SendGlobalMessageAsync(
+            userId,
+            input.Message,
+            input.Model,
+            input.DocumentContext is null
+                ? null
+                : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),
+            cancellationToken);
 
-            return Ok(response);
-        }
-        catch (Exception ex) when (ServiceWarmupMessage.IsLlmWarmupFailure(ex))
-        {
-            _logger.LogWarning(ex, "Dependency warm-up interrupted global assistant turn");
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant });
-        }
-        catch (InsufficientAiCreditsException ex)
-        {
-            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Global assistant turn failed");
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = AssistantErrorMessage });
-        }
+        return Ok(response);
     }
 
     [HttpPost("~/Assistant/Apply/{messageId:guid}")]
@@ -220,14 +156,6 @@ public class AssistantController : ControllerBase
         {
             var applied = await _orchestrator.ApplyGlobalPendingChangesAsync(messageId, userId, cancellationToken);
             return Ok(applied);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (QuizNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
@@ -244,10 +172,6 @@ public class AssistantController : ControllerBase
         {
             await _orchestrator.RejectGlobalPendingChangesAsync(messageId, userId, cancellationToken);
             return Ok();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
         }
         catch (InvalidOperationException ex)
         {
@@ -295,27 +219,9 @@ public class AssistantController : ControllerBase
                 cancellationToken);
             return Ok(response);
         }
-        catch (QuizNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (InsufficientAiCreditsException ex)
-        {
-            return StatusCode(StatusCodes.Status402PaymentRequired, new { error = ex.Message });
-        }
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { error = ex.Message });
-        }
-        catch (Exception ex) when (ServiceWarmupMessage.IsDatabaseWarmupFailure(ex) || ServiceWarmupMessage.IsLlmWarmupFailure(ex))
-        {
-            _logger.LogWarning(ex, "Dependency warm-up interrupted assistant turn for quiz {QuizId}", quizId);
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.Dependencies });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Assistant turn failed for quiz {QuizId}", quizId);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = AssistantErrorMessage });
         }
     }
 
@@ -328,14 +234,6 @@ public class AssistantController : ControllerBase
         {
             var applied = await _orchestrator.ApplyPendingChangesAsync(messageId, userId, cancellationToken);
             return Ok(applied);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-        catch (QuizNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
         }
         catch (InvalidOperationException ex)
         {
@@ -353,36 +251,9 @@ public class AssistantController : ControllerBase
             await _orchestrator.RejectPendingChangesAsync(messageId, userId, cancellationToken);
             return Ok();
         }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
         catch (InvalidOperationException ex)
         {
             return NotFound(new { error = ex.Message });
         }
     }
-
-    public sealed class SendMessageInput
-    {
-        public string Message { get; set; } = string.Empty;
-        public Guid? ContextQuizId { get; set; }
-        public string? FocusedWordId { get; set; }
-        public string? Model { get; set; }
-        public DocumentContextInput? DocumentContext { get; set; }
-    }
-
-    public sealed class ChatMutationInput
-    {
-        public string? Title { get; set; }
-        public Guid? ContextQuizId { get; set; }
-        public bool UpdateContext { get; set; }
-    }
-
-    public sealed class DocumentContextInput
-    {
-        public Guid DocumentId { get; set; }
-        public int PageNumber { get; set; }
-    }
-
 }

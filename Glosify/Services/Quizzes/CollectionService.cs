@@ -6,10 +6,12 @@ namespace Glosify.Services.Quizzes
     public class CollectionService : ICollectionService
     {
         private readonly GlosifyContext _context;
+        private readonly CollectionVisibility _collectionVisibility;
 
         public CollectionService(GlosifyContext context)
         {
             _context = context;
+            _collectionVisibility = new CollectionVisibility(context);
         }
 
         public async Task<IReadOnlyList<Collection>> GetCollectionsAsync(string userId, string language)
@@ -285,13 +287,82 @@ namespace Glosify.Services.Quizzes
                 .ToList();
         }
 
+        public async Task<IReadOnlyList<PublicCollectionSummary>> GetPublicCollectionSummariesAsync(string language)
+        {
+            language = language.Trim();
+
+            var collections = await _context.Collections
+                .AsNoTracking()
+                .Where(c => c.Language == language)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
+            var byId = collections.ToDictionary(c => c.Id);
+            var roots = collections
+                .Where(c => c.IsPublic && !HasPublicAncestor(c, byId))
+                .ToList();
+
+            if (roots.Count == 0)
+            {
+                return [];
+            }
+
+            var childrenByParent = collections
+                .Where(c => c.ParentCollectionId.HasValue)
+                .GroupBy(c => c.ParentCollectionId!.Value)
+                .ToDictionary(group => group.Key, group => group.Select(c => c.Id).ToList());
+
+            var collectionIds = collections.Select(c => c.Id).ToList();
+            var quizCounts = await _context.Quizzes
+                .AsNoTracking()
+                .Where(q => q.CollectionId.HasValue && collectionIds.Contains(q.CollectionId.Value))
+                .GroupBy(q => q.CollectionId!.Value)
+                .Select(group => new { CollectionId = group.Key, Count = group.Count() })
+                .ToDictionaryAsync(group => group.CollectionId, group => group.Count);
+
+            var summaries = new List<PublicCollectionSummary>(roots.Count);
+            foreach (var root in roots)
+            {
+                var treeIds = CollectSubtreeIds(root.Id, childrenByParent);
+                summaries.Add(new PublicCollectionSummary(
+                    root,
+                    treeIds.Count - 1,
+                    treeIds.Sum(id => quizCounts.GetValueOrDefault(id))));
+            }
+
+            return summaries;
+        }
+
+        private static List<Guid> CollectSubtreeIds(Guid rootId, IReadOnlyDictionary<Guid, List<Guid>> childrenByParent)
+        {
+            var subtreeIds = new List<Guid> { rootId };
+            var seen = new HashSet<Guid> { rootId };
+            for (var i = 0; i < subtreeIds.Count; i++)
+            {
+                if (!childrenByParent.TryGetValue(subtreeIds[i], out var childIds))
+                {
+                    continue;
+                }
+
+                foreach (var childId in childIds)
+                {
+                    if (seen.Add(childId))
+                    {
+                        subtreeIds.Add(childId);
+                    }
+                }
+            }
+
+            return subtreeIds;
+        }
+
         public async Task<Collection?> GetPublicCollectionTreeAsync(Guid collectionId)
         {
             var root = await _context.Collections
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == collectionId);
 
-            if (root is null || !await IsCollectionPubliclyReadableAsync(root))
+            if (root is null || !await _collectionVisibility.IsCollectionPubliclyReadableAsync(root.Id))
             {
                 return null;
             }
@@ -317,7 +388,7 @@ namespace Glosify.Services.Quizzes
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == collectionId);
 
-            if (sourceRoot is null || !await IsCollectionPubliclyReadableAsync(sourceRoot))
+            if (sourceRoot is null || !await _collectionVisibility.IsCollectionPubliclyReadableAsync(sourceRoot.Id))
             {
                 return null;
             }
@@ -447,23 +518,32 @@ namespace Glosify.Services.Quizzes
 
         private async Task<List<Guid>> GetDescendantCollectionIdsAsync(Guid rootCollectionId, string userId)
         {
+            var links = await _context.Collections
+                .AsNoTracking()
+                .Where(c => c.UserId == userId && c.ParentCollectionId.HasValue)
+                .Select(c => new { c.Id, ParentId = c.ParentCollectionId!.Value })
+                .ToListAsync();
+
+            var childrenByParent = links
+                .GroupBy(link => link.ParentId)
+                .ToDictionary(group => group.Key, group => group.Select(link => link.Id).ToList());
+
             var collectionIds = new List<Guid> { rootCollectionId };
-            var frontier = new List<Guid> { rootCollectionId };
-
-            while (frontier.Count > 0)
+            var seen = new HashSet<Guid> { rootCollectionId };
+            for (var i = 0; i < collectionIds.Count; i++)
             {
-                var childIds = await _context.Collections
-                    .Where(c => c.ParentCollectionId.HasValue
-                        && frontier.Contains(c.ParentCollectionId.Value)
-                        && c.UserId == userId)
-                    .Select(c => c.Id)
-                    .ToListAsync();
+                if (!childrenByParent.TryGetValue(collectionIds[i], out var childIds))
+                {
+                    continue;
+                }
 
-                frontier = childIds
-                    .Where(id => !collectionIds.Contains(id))
-                    .ToList();
-
-                collectionIds.AddRange(frontier);
+                foreach (var childId in childIds)
+                {
+                    if (seen.Add(childId))
+                    {
+                        collectionIds.Add(childId);
+                    }
+                }
             }
 
             return collectionIds;
@@ -509,20 +589,19 @@ namespace Glosify.Services.Quizzes
 
         private async Task<bool> IsDescendantAsync(Guid possibleDescendantId, Guid ancestorId, string userId)
         {
+            var parentsById = await _context.Collections
+                .AsNoTracking()
+                .Where(c => c.UserId == userId)
+                .Select(c => new { c.Id, c.ParentCollectionId })
+                .ToDictionaryAsync(c => c.Id, c => c.ParentCollectionId);
+
+            var visited = new HashSet<Guid>();
             var currentId = possibleDescendantId;
 
-            while (true)
+            while (visited.Add(currentId)
+                && parentsById.TryGetValue(currentId, out var parentId)
+                && parentId.HasValue)
             {
-                var parentId = await _context.Collections
-                    .Where(c => c.Id == currentId && c.UserId == userId)
-                    .Select(c => c.ParentCollectionId)
-                    .FirstOrDefaultAsync();
-
-                if (!parentId.HasValue)
-                {
-                    return false;
-                }
-
                 if (parentId.Value == ancestorId)
                 {
                     return true;
@@ -530,35 +609,8 @@ namespace Glosify.Services.Quizzes
 
                 currentId = parentId.Value;
             }
-        }
 
-        private async Task<bool> IsCollectionPubliclyReadableAsync(Collection collection)
-        {
-            var current = collection;
-
-            while (true)
-            {
-                if (current.IsPublic)
-                {
-                    return true;
-                }
-
-                if (!current.ParentCollectionId.HasValue)
-                {
-                    return false;
-                }
-
-                var parent = await _context.Collections
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == current.ParentCollectionId.Value);
-
-                if (parent is null)
-                {
-                    return false;
-                }
-
-                current = parent;
-            }
+            return false;
         }
 
         private static bool HasPublicAncestor(Collection collection, IReadOnlyDictionary<Guid, Collection> byId)

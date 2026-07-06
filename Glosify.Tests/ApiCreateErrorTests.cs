@@ -1,3 +1,4 @@
+using Glosify.Models.Api;
 using System.Security.Claims;
 using Glosify.Controllers.Api;
 using Glosify.Data;
@@ -7,6 +8,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+using Glosify.Services.Ai;
+using Glosify.Services.Language;
+using Glosify.Services.Typing;
+using Glosify.Services.Words;
 
 namespace Glosify.Tests;
 
@@ -80,7 +85,9 @@ public class ApiCreateErrorTests
         var controller = new QuizzesApiController(
             new QuizService(context, new StaticLanguage()),
             new WordService(context),
-            new TypingQuizService(context));
+            new TypingQuizService(context),
+            new StubQuizRepairService(),
+            new StubImageTextExtractionService());
         controller.ControllerContext = CreateControllerContext();
         return controller;
     }
@@ -99,6 +106,21 @@ public class ApiCreateErrorTests
         {
             HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
         };
+    }
+
+    private sealed class StubQuizRepairService : IQuizRepairService
+    {
+        public Task<QuizRepairResult> RepairWordAsync(string wordId, string userId, CancellationToken cancellationToken) =>
+            Task.FromResult(new QuizRepairResult(QuizRepairStatus.NotFound));
+
+        public Task<QuizRepairResult> RepairSentenceAsync(Guid quizId, string sentenceText, string userId, CancellationToken cancellationToken) =>
+            Task.FromResult(new QuizRepairResult(QuizRepairStatus.NotFound));
+    }
+
+    private sealed class StubImageTextExtractionService : IImageTextExtractionService
+    {
+        public Task<string> ExtractTextAsync(string userId, Stream imageStream, string contentType, string sourceLanguage, string targetLanguage, CancellationToken cancellationToken = default) =>
+            Task.FromResult(string.Empty);
     }
 
     private sealed class StaticLanguage : ILanguageContext

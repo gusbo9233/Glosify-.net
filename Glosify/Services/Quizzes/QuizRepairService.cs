@@ -1,7 +1,8 @@
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
+using Glosify.Services.Ai;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Quizzes;
 
 public sealed class QuizRepairService : IQuizRepairService
 {

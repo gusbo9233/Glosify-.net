@@ -3,6 +3,8 @@ using Glosify.Services;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Glosify.Services.Language;
+using Glosify.Services.Words;
 
 namespace Glosify.Controllers;
 
@@ -35,19 +37,16 @@ public class ExploreController : Controller
             return RedirectToAction("Index", "Languages");
         }
 
-        var collections = await _collectionService.GetPublicCollectionRootsAsync(language);
+        var summaries = await _collectionService.GetPublicCollectionSummariesAsync(language);
         var quizzes = await _quizService.GetPublicQuizzesAsync(language);
-        var collectionCards = new List<ExploreCollectionCardViewModel>();
-        foreach (var collection in collections)
-        {
-            var tree = await _collectionService.GetPublicCollectionTreeAsync(collection.Id);
-            collectionCards.Add(new ExploreCollectionCardViewModel
+        var collectionCards = summaries
+            .Select(summary => new ExploreCollectionCardViewModel
             {
-                Collection = collection,
-                CollectionCount = tree == null ? 0 : CountDescendantCollections(tree),
-                QuizCount = tree == null ? 0 : CountQuizzes(tree)
-            });
-        }
+                Collection = summary.Collection,
+                CollectionCount = summary.CollectionCount,
+                QuizCount = summary.QuizCount
+            })
+            .ToList();
 
         var wordCounts = await _quizService.GetWordCountsAsync(quizzes.Select(quiz => quiz.Id).ToList());
         var quizCards = quizzes

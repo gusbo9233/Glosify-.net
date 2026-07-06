@@ -1,3 +1,4 @@
+using Glosify.Models.Api;
 using Glosify.Services;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Mvc;
@@ -71,6 +72,13 @@ public class CollectionsApiController : ApiControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
+    [HttpPut("{id:guid}/visibility")]
+    public async Task<IActionResult> SetVisibility(Guid id, [FromBody] SetVisibilityRequest request)
+    {
+        var updated = await _collectionService.SetCollectionPublicAsync(id, User.GetUserId(), request.IsPublic);
+        return updated ? NoContent() : NotFound();
+    }
+
     [HttpPut("quizzes/{quizId:guid}")]
     public async Task<IActionResult> MoveQuiz(Guid quizId, [FromBody] MoveQuizRequest request)
     {
@@ -78,15 +86,3 @@ public class CollectionsApiController : ApiControllerBase
         return moved ? NoContent() : NotFound();
     }
 }
-
-public sealed record CollectionDto(Guid Id, string Name, string Language, Guid? ParentCollectionId)
-{
-    public static CollectionDto From(Collection collection) =>
-        new(collection.Id, collection.Name, collection.Language, collection.ParentCollectionId);
-}
-
-public sealed record CreateCollectionRequest(string Name, string Language, Guid? ParentCollectionId);
-
-public sealed record RenameCollectionRequest(string Name);
-
-public sealed record MoveQuizRequest(Guid? CollectionId);

@@ -1,5 +1,11 @@
+using Glosify.Models.Api;
+using Glosify.Filters;
 using Glosify.Services;
 using Microsoft.AspNetCore.Mvc;
+using Glosify.Services.Ai;
+using Glosify.Services.Quizzes;
+using Glosify.Services.Typing;
+using Glosify.Services.Words;
 
 namespace Glosify.Controllers.Api;
 
@@ -9,15 +15,21 @@ public class QuizzesApiController : ApiControllerBase
     private readonly IQuizService _quizService;
     private readonly IWordService _wordService;
     private readonly ITypingQuizService _typingQuizService;
+    private readonly IQuizRepairService _quizRepairService;
+    private readonly IImageTextExtractionService _imageTextExtractionService;
 
     public QuizzesApiController(
         IQuizService quizService,
         IWordService wordService,
-        ITypingQuizService typingQuizService)
+        ITypingQuizService typingQuizService,
+        IQuizRepairService quizRepairService,
+        IImageTextExtractionService imageTextExtractionService)
     {
         _quizService = quizService;
         _wordService = wordService;
         _typingQuizService = typingQuizService;
+        _quizRepairService = quizRepairService;
+        _imageTextExtractionService = imageTextExtractionService;
     }
 
     [HttpGet]
@@ -43,7 +55,15 @@ public class QuizzesApiController : ApiControllerBase
         }
 
         var wordCount = await _quizService.GetAvailableWordCountAsync(id);
-        return Ok(QuizDetailDto.From(quiz, wordCount));
+        var sentenceCount = await _quizService.GetAvailableSentenceCountAsync(id);
+        return Ok(QuizDetailDto.From(quiz, wordCount, sentenceCount));
+    }
+
+    [HttpPut("{id:guid}/visibility")]
+    public async Task<IActionResult> SetVisibility(Guid id, [FromBody] SetVisibilityRequest request)
+    {
+        var updated = await _quizService.SetQuizPublicAsync(id, User.GetUserId(), request.IsPublic);
+        return updated ? NoContent() : NotFound();
     }
 
     [HttpPost]
@@ -90,7 +110,7 @@ public class QuizzesApiController : ApiControllerBase
         }
 
         var words = await _wordService.GetWordsAsync(id);
-        return Ok(words.Select(w => new WordDto(w.Id, w.Lemma, w.Translation)).ToList());
+        return Ok(words.Select(w => new WordDto(w.Id, w.Lemma, w.Translation, w.CreatedAt)).ToList());
     }
 
     [HttpPost("{id:guid}/words")]
@@ -162,48 +182,81 @@ public class QuizzesApiController : ApiControllerBase
     }
 
     [HttpGet("{id:guid}/sentences")]
-    public async Task<ActionResult<IReadOnlyList<QuizSentenceData>>> Sentences(Guid id)
+    public async Task<ActionResult<IReadOnlyList<SentenceDto>>> Sentences(Guid id)
     {
         if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId()))
         {
             return NotFound();
         }
 
-        return Ok(await _wordService.GetSentencesAsync(id));
+        var sentences = await _wordService.GetSentencesAsync(id);
+        return Ok(sentences.Select(s => new SentenceDto(s.Id, s.Text, s.Translation, s.WordCount)).ToList());
+    }
+
+    [HttpPost("words/{wordId}/repair")]
+    [AiServiceExceptionFilter]
+    public async Task<IActionResult> RepairWord(string wordId, CancellationToken cancellationToken)
+    {
+        var result = await _quizRepairService.RepairWordAsync(wordId, User.GetUserId(), cancellationToken);
+        return result.Status switch
+        {
+            QuizRepairStatus.NotFound => NotFound("Word not found."),
+            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, ServiceWarmupMessage.LlmAssistant),
+            _ => Ok(new RepairResultDto($"Repaired {result.Word}."))
+        };
+    }
+
+    [HttpPost("{id:guid}/sentences/repair")]
+    [AiServiceExceptionFilter]
+    public async Task<IActionResult> RepairSentence(Guid id, [FromBody] RepairSentenceRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Text))
+        {
+            return BadRequest("Choose a sentence to repair.");
+        }
+
+        var result = await _quizRepairService.RepairSentenceAsync(id, request.Text, User.GetUserId(), cancellationToken);
+        return result.Status switch
+        {
+            QuizRepairStatus.NotFound => NotFound("Quiz not found."),
+            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, ServiceWarmupMessage.LlmAssistant),
+            _ => Ok(new RepairResultDto(result.UpdatedCount == 1
+                ? "Sentence repaired."
+                : $"Sentence repaired in {result.UpdatedCount} places."))
+        };
+    }
+
+    [HttpPost("{id:guid}/extract-image-text")]
+    [RequestSizeLimit(8 * 1024 * 1024)]
+    [AiServiceExceptionFilter]
+    public async Task<IActionResult> ExtractTextFromImage(Guid id, IFormFile? image, CancellationToken cancellationToken)
+    {
+        var quiz = await _quizService.GetQuizByIdAsync(id, User.GetUserId());
+        if (quiz == null)
+        {
+            return NotFound("Quiz not found.");
+        }
+
+        if (image == null || image.Length == 0)
+        {
+            return BadRequest("Take or choose a photo first.");
+        }
+
+        if (!image.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("Choose an image file.");
+        }
+
+        await using var stream = image.OpenReadStream();
+        var text = await _imageTextExtractionService.ExtractTextAsync(
+            User.GetUserId(), stream, image.ContentType,
+            quiz.SourceLanguage, quiz.TargetLanguage, cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return UnprocessableEntity("No readable text was found in that image.");
+        }
+
+        return Ok(new ExtractedTextDto(text));
     }
 }
-
-public sealed record QuizSummaryDto(
-    Guid Id,
-    string Name,
-    string SourceLanguage,
-    string TargetLanguage,
-    string Language,
-    Guid? CollectionId,
-    DateTimeOffset CreatedAt)
-{
-    public static QuizSummaryDto From(Quiz quiz) => new(
-        quiz.Id, quiz.Name, quiz.SourceLanguage, quiz.TargetLanguage,
-        quiz.Language, quiz.CollectionId, quiz.CreatedAt);
-}
-
-public sealed record QuizDetailDto(
-    Guid Id,
-    string Name,
-    string SourceLanguage,
-    string TargetLanguage,
-    string Language,
-    Guid? CollectionId,
-    DateTimeOffset CreatedAt,
-    int WordCount)
-{
-    public static QuizDetailDto From(Quiz quiz, int wordCount) => new(
-        quiz.Id, quiz.Name, quiz.SourceLanguage, quiz.TargetLanguage,
-        quiz.Language, quiz.CollectionId, quiz.CreatedAt, wordCount);
-}
-
-public sealed record WordDto(string Id, string Lemma, string Translation);
-
-public sealed record CreateQuizRequest(string Name, string SourceLanguage, string TargetLanguage, Guid? CollectionId);
-
-public sealed record AddWordRequest(string Word, string Translation);

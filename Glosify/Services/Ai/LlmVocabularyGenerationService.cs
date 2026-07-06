@@ -1,6 +1,7 @@
 using System.Text.Json;
+using Glosify.Services.Ai.Llm;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Ai;
 
 public sealed class LlmVocabularyGenerationService : IVocabularyGenerationService
 {

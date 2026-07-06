@@ -2,6 +2,9 @@ using Glosify.Models;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Glosify.Services.Language;
+using Glosify.Services.Quizzes;
+using Glosify.Services.Typing;
 
 namespace Glosify.Controllers;
 
@@ -35,6 +38,10 @@ public class TypingQuizController : Controller
         var selectedQuiz = await _quizService.FindQuizAsync(userId, id);
         if (selectedQuiz == null)
             return View(TypingQuizViewModel.Empty());
+
+        var resumed = _sessionService.FindResumableSession(userId, selectedQuiz.Id, normalizedDirection, normalizedItemType, wordCount);
+        if (resumed != null)
+            return RedirectToAction(nameof(Session), new { sessionId = resumed.SessionId });
 
         var data = await _typingQuizService.GetQuizDataAsync(selectedQuiz.Id, wordCount, normalizedDirection, normalizedItemType);
         var session = _sessionService.StartSession(
@@ -107,6 +114,7 @@ public class TypingQuizController : Controller
     [HttpPost]
     public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null)
     {
+        _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount);
         return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType) });
     }
 

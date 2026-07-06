@@ -1,4 +1,5 @@
-namespace Glosify.Services;
+using Glosify.Services.Ai.Llm;
+namespace Glosify.Services.Ai;
 
 public sealed class LlmImageTextExtractionService : IImageTextExtractionService
 {

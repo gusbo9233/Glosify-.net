@@ -2,7 +2,7 @@ using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Ai;
 
 public sealed class AiCreditService : IAiCreditService
 {

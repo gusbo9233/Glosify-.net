@@ -1,15 +1,19 @@
 using Microsoft.Extensions.Caching.Memory;
+using Glosify.Services.Quizzes;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Flashcards;
 
 public class FlashcardSessionService : IFlashcardSessionService
 {
+    private const string Mode = "flashcards";
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromMinutes(45);
     private readonly IMemoryCache _cache;
+    private readonly IQuizSessionRegistry _registry;
 
-    public FlashcardSessionService(IMemoryCache cache)
+    public FlashcardSessionService(IMemoryCache cache, IQuizSessionRegistry registry)
     {
         _cache = cache;
+        _registry = registry;
     }
 
     public FlashcardSessionData StartSession(
@@ -63,7 +67,56 @@ public class FlashcardSessionService : IFlashcardSessionService
             CacheKey(session.SessionId),
             session,
             new MemoryCacheEntryOptions { SlidingExpiration = SessionLifetime });
+
+        if (IsComplete(session))
+        {
+            _registry.Deregister(session.UserId, session.SessionId);
+        }
+        else
+        {
+            _registry.Register(new ActiveQuizSession
+            {
+                UserId = session.UserId,
+                SessionId = session.SessionId,
+                Mode = Mode,
+                QuizId = session.QuizId,
+                PracticeDirection = session.PracticeDirection,
+                PracticeItemType = session.PracticeItemType,
+                WordCount = session.WordCount,
+                CacheKey = CacheKey(session.SessionId)
+            });
+        }
     }
+
+    public FlashcardSessionData? FindResumableSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount)
+    {
+        var active = _registry.FindActive(
+            userId,
+            Mode,
+            quizId,
+            PracticeDirection.Normalize(practiceDirection),
+            PracticeItemType.Normalize(practiceItemType),
+            Math.Clamp(wordCount, 1, 100));
+
+        return active == null ? null : FindSession(active.SessionId, userId);
+    }
+
+    public void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount)
+    {
+        var active = _registry.FindActive(
+            userId,
+            Mode,
+            quizId,
+            PracticeDirection.Normalize(practiceDirection),
+            PracticeItemType.Normalize(practiceItemType),
+            Math.Clamp(wordCount, 1, 100));
+
+        if (active != null)
+            _registry.Deregister(userId, active.SessionId, removeSessionData: true);
+    }
+
+    private static bool IsComplete(FlashcardSessionData session)
+        => session.CurrentIndex >= session.Cards.Count;
 
     public void ApplyRating(FlashcardSessionData session, string rating)
     {

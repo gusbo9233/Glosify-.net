@@ -1,6 +1,8 @@
 using Glosify.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Xunit;
+using Glosify.Services.Flashcards;
+using Glosify.Services.Quizzes;
 
 namespace Glosify.Tests;
 
@@ -10,7 +12,7 @@ public class FlashcardSessionServiceTests
     public void RestartWithAgainCards_PreservesPracticeDirection()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var service = new FlashcardSessionService(cache);
+        var service = new FlashcardSessionService(cache, new QuizSessionRegistry(cache));
         var session = service.StartSession(
             "user-1",
             Guid.NewGuid(),

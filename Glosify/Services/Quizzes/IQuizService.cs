@@ -1,6 +1,6 @@
 using Glosify.Models;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Quizzes;
 
 public interface IQuizService
 {

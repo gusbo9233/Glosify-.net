@@ -1,4 +1,4 @@
-namespace Glosify.Services;
+namespace Glosify.Services.Ai.Assistant;
 
 public interface IAssistantOrchestrator
 {

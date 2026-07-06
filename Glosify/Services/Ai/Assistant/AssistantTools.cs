@@ -2,8 +2,9 @@ using System.Text.Json;
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
+using Glosify.Services.Ai.Llm;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Ai.Assistant;
 
 public sealed class AssistantTools : IAssistantTools
 {

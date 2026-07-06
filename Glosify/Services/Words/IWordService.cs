@@ -1,6 +1,6 @@
 using Glosify.Models;
 
-namespace Glosify.Services;
+namespace Glosify.Services.Words;
 
 public interface IWordService
 {

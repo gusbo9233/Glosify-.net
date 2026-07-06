@@ -1,6 +1,6 @@
 @model Glosify.Models.ViewModels.AssistantPanelViewModel
-@inject Microsoft.Extensions.Options.IOptions<Glosify.Services.GeminiOptions> GeminiOptions
-@inject Glosify.Services.IQuizService QuizService
+@inject Microsoft.Extensions.Options.IOptions<Glosify.Services.Ai.Llm.GeminiOptions> GeminiOptions
+@inject Glosify.Services.Quizzes.IQuizService QuizService
 @{
     var panelKey = Model.QuizId?.ToString("N") ?? "global";
     var imageInputId = $"assistantImageInput-{panelKey}";

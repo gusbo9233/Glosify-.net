@@ -58,11 +58,11 @@
                     </a>
                 }
             }
-            <button class="btn-new-quiz btn-secondary-action" type="button" onclick="document.getElementById('createCollectionModal').classList.add('open')">
+            <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="createCollectionModal">
                 <span class="material-symbols-outlined">create_new_folder</span>
                 New Collection
             </button>
-            <button class="btn-new-quiz" type="button" onclick="document.getElementById('createModal').classList.add('open')">
+            <button class="btn-new-quiz" type="button" data-modal-open="createModal">
                 <span class="material-symbols-outlined">add</span>
                 New Quiz
             </button>
@@ -135,7 +135,7 @@
                             <span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
                             <span class="status-pill">@quiz.ProcessingStatus</span>
                         </div>
-                        <form class="delete-form" method="post" asp-controller="Quiz" asp-action="DeleteQuiz" asp-route-id="@quiz.Id" onsubmit="return confirm('Delete this quiz and all of its words?');">
+                        <form class="delete-form" method="post" asp-controller="Quiz" asp-action="DeleteQuiz" asp-route-id="@quiz.Id" data-confirm="Delete this quiz and all of its words?">
                             @Html.AntiForgeryToken()
                             <button class="btn-delete" type="submit" aria-label="Delete @quiz.Name">
                                 <span class="material-symbols-outlined">delete</span>
@@ -154,11 +154,11 @@
             <h2 class="empty-title">No quizzes or collections yet</h2>
             <p class="empty-copy">Create a collection to organize your vocabulary, or create your first quiz.</p>
             <div class="empty-actions">
-                <button class="btn-new-quiz btn-secondary-action" type="button" onclick="document.getElementById('createCollectionModal').classList.add('open')">
+                <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="createCollectionModal">
                     <span class="material-symbols-outlined">create_new_folder</span>
                     Create Collection
                 </button>
-                <button class="btn-new-quiz" type="button" onclick="document.getElementById('createModal').classList.add('open')">
+                <button class="btn-new-quiz" type="button" data-modal-open="createModal">
                     <span class="material-symbols-outlined">add</span>
                     Create Quiz
                 </button>
@@ -167,7 +167,7 @@
     }
 </section>
 
-<div class="modal-backdrop" id="createCollectionModal" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal-backdrop" id="createCollectionModal">
     <div class="modal">
         <h2 class="modal-title">Create New Collection</h2>
         <form method="post" asp-controller="Quiz" asp-action="CreateCollection">
@@ -178,7 +178,7 @@
             </div>
             <input type="hidden" name="ParentCollectionId" value="@currentCollectionId" />
             <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="document.getElementById('createCollectionModal').classList.remove('open')">Cancel</button>
+                <button type="button" class="btn-cancel" data-modal-close>Cancel</button>
                 <button type="submit" class="btn-create">Create Collection</button>
             </div>
         </form>
@@ -186,113 +186,10 @@
 </div>
 
 @section Scripts {
-    <script>
-        (() => {
-            const library = document.querySelector('[data-quiz-library]');
-            if (!library) {
-                return;
-            }
-
-            const moveUrl = library.dataset.moveQuizUrl;
-            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-            const quizCards = library.querySelectorAll('[data-quiz-card]');
-            const dropTargets = library.querySelectorAll('[data-collection-drop-target]');
-
-            const createDragImage = (card) => {
-                const title = card.querySelector('.quiz-name')?.textContent?.trim() || 'Quiz';
-                const meta = card.querySelector('.quiz-languages')?.textContent?.trim() || '';
-                const dragImage = document.createElement('div');
-                dragImage.className = 'quiz-drag-preview';
-                dragImage.innerHTML = `
-                    <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
-                    <span class="quiz-drag-preview-text">
-                        <strong></strong>
-                        <small></small>
-                    </span>
-                `;
-                dragImage.querySelector('strong').textContent = title;
-                dragImage.querySelector('small').textContent = meta;
-                document.body.appendChild(dragImage);
-                return dragImage;
-            };
-
-            quizCards.forEach((card) => {
-                card.addEventListener('dragstart', (event) => {
-                    event.dataTransfer.effectAllowed = 'move';
-                    event.dataTransfer.setData('text/plain', card.dataset.quizId);
-                    const dragImage = createDragImage(card);
-                    event.dataTransfer.setDragImage(dragImage, 24, 24);
-                    window.setTimeout(() => dragImage.remove(), 0);
-                    card.classList.add('is-dragging');
-                    library.classList.add('is-dragging-quiz');
-                });
-
-                card.addEventListener('dragend', () => {
-                    card.classList.remove('is-dragging');
-                    library.classList.remove('is-dragging-quiz');
-                    dropTargets.forEach((target) => target.classList.remove('is-drop-target'));
-                });
-            });
-
-            dropTargets.forEach((target) => {
-                target.addEventListener('dragover', (event) => {
-                    if (!Array.from(event.dataTransfer.types).includes('text/plain')) {
-                        return;
-                    }
-
-                    event.preventDefault();
-                    event.dataTransfer.dropEffect = 'move';
-                    target.classList.add('is-drop-target');
-                });
-
-                target.addEventListener('dragleave', () => {
-                    target.classList.remove('is-drop-target');
-                });
-
-                target.addEventListener('drop', async (event) => {
-                    event.preventDefault();
-                    target.classList.remove('is-drop-target');
-
-                    const quizId = event.dataTransfer.getData('text/plain');
-                    const collectionId = target.dataset.collectionId;
-                    if (!quizId || !collectionId || !moveUrl) {
-                        return;
-                    }
-
-                    const formData = new FormData();
-                    formData.append('quizId', quizId);
-                    formData.append('collectionId', collectionId);
-                    if (token) {
-                        formData.append('__RequestVerificationToken', token);
-                    }
-
-                    target.classList.add('is-drop-saving');
-
-                    const response = await fetch(moveUrl, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-
-                    if (response.ok) {
-                        window.location.reload();
-                        return;
-                    }
-
-                    target.classList.remove('is-drop-saving');
-                    const pageMessage = document.querySelector('.page-message');
-                    if (pageMessage) {
-                        pageMessage.textContent = 'Could not move that quiz.';
-                    }
-                });
-            });
-        })();
-    </script>
+    <script src="~/js/quiz-library.js" asp-append-version="true"></script>
 }
 
-<div class="modal-backdrop" id="createModal" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal-backdrop" id="createModal">
     <div class="modal">
         <h2 class="modal-title">Create New Quiz</h2>
         <form method="post" asp-controller="Quiz" asp-action="Create">
@@ -318,7 +215,7 @@
                 </div>
             </div>
             <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="document.getElementById('createModal').classList.remove('open')">Cancel</button>
+                <button type="button" class="btn-cancel" data-modal-close>Cancel</button>
                 <button type="submit" class="btn-create">Create Quiz</button>
             </div>
         </form>

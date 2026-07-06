@@ -12,6 +12,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Threading.RateLimiting;
+using Glosify.Services.Ai;
+using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Llm;
+using Glosify.Services.Flashcards;
+using Glosify.Services.Language;
+using Glosify.Services.Typing;
+using Glosify.Services.Words;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -201,6 +208,7 @@ builder.Services.AddScoped<IQuizService, QuizService>();
 builder.Services.AddScoped<ICollectionService, CollectionService>();
 builder.Services.AddScoped<IQuizRepairService, QuizRepairService>();
 builder.Services.AddScoped<IWordService, WordService>();
+builder.Services.AddSingleton<IQuizSessionRegistry, QuizSessionRegistry>();
 builder.Services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
 builder.Services.AddScoped<ITypingQuizService, TypingQuizService>();
 builder.Services.AddScoped<ITypingSessionService, TypingSessionService>();
@@ -208,6 +216,9 @@ builder.Services.AddSingleton<IBookFileStorage, AzureBlobBookFileStorage>();
 builder.Services.AddScoped<IPdfTextExtractionService, PdfPigTextExtractionService>();
 builder.Services.AddScoped<IBookDocumentService, BookDocumentService>();
 builder.Services.AddScoped<IAiCreditService, AiCreditService>();
+// The model factory is a singleton so the GoogleAI client and configured models are
+// created once; GeminiClient stays scoped because it charges the per-request credit service.
+builder.Services.AddSingleton<IGeminiModelFactory, GeminiModelFactory>();
 builder.Services.AddScoped<IGeminiClient, GeminiClient>();
 builder.Services.AddScoped<IVocabularyGenerationService, LlmVocabularyGenerationService>();
 builder.Services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();
@@ -267,9 +278,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Security headers on every response. CSP notes: 'unsafe-inline' for scripts is
-// required by the inline <script> blocks in several views (tightening to nonces
-// is the follow-up); fonts.googleapis.com/gstatic.com serve the web fonts the
+// Security headers on every response. CSP notes: scripts are same-origin only —
+// all view scripts live in wwwroot/js and behaviors use data-* attributes instead
+// of inline on* handlers; 'unsafe-inline' for styles remains because views use
+// style attributes; fonts.googleapis.com/gstatic.com serve the web fonts the
 // layout links; everything else is same-origin only.
 var configuredFormActionOrigins = builder.Configuration
     .GetSection("Security:Csp:FormActionOrigins")
@@ -344,7 +356,7 @@ static string BuildContentSecurityPolicy(IEnumerable<string> formActionOrigins)
 
     return
         "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline'; " +
+        "script-src 'self'; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "font-src 'self' https://fonts.gstatic.com; " +
         "img-src 'self' data:; " +

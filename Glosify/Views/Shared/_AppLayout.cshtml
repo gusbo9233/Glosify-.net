@@ -1,5 +1,5 @@
-@inject Glosify.Services.ILanguageContext LangContext
-@inject Glosify.Services.IAiCreditService AiCreditService
+@inject Glosify.Services.Language.ILanguageContext LangContext
+@inject Glosify.Services.Ai.IAiCreditService AiCreditService
 @inject IConfiguration Configuration
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Html
@@ -293,6 +293,7 @@
         })
         <script src="~/js/assistant.js" asp-append-version="true"></script>
     }
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
