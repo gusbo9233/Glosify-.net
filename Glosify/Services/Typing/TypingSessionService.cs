@@ -1,22 +1,23 @@
-using Microsoft.Extensions.Caching.Memory;
 using Glosify.Services.Quizzes;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Glosify.Services.Typing;
 
-public class TypingSessionService : ITypingSessionService
+public class TypingSessionService : QuizSessionStore<TypingSessionData>, ITypingSessionService
 {
-    private const string Mode = "typing";
-    private static readonly TimeSpan SessionLifetime = TimeSpan.FromMinutes(45);
-    private readonly IMemoryCache _cache;
     private readonly ITypingQuizService _typingQuizService;
-    private readonly IQuizSessionRegistry _registry;
 
     public TypingSessionService(IMemoryCache cache, ITypingQuizService typingQuizService, IQuizSessionRegistry registry)
+        : base(cache, registry)
     {
-        _cache = cache;
         _typingQuizService = typingQuizService;
-        _registry = registry;
     }
+
+    protected override string Mode => "typing";
+    protected override string CacheKeyPrefix => "typing-quiz";
+
+    protected override bool IsComplete(TypingSessionData session)
+        => session.CurrentIndex >= session.Words.Count;
 
     public TypingSessionData StartSession(
         string userId,
@@ -47,74 +48,6 @@ public class TypingSessionService : ITypingSessionService
             Words = words
         };
     }
-
-    public TypingSessionData? FindSession(string sessionId, string userId)
-    {
-        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(sessionId))
-            return null;
-
-        return _cache.TryGetValue(CacheKey(sessionId), out TypingSessionData? session)
-            && session?.UserId == userId
-            ? session
-            : null;
-    }
-
-    public void SaveSession(TypingSessionData session)
-    {
-        _cache.Set(
-            CacheKey(session.SessionId),
-            session,
-            new MemoryCacheEntryOptions { SlidingExpiration = SessionLifetime });
-
-        if (IsComplete(session))
-        {
-            _registry.Deregister(session.UserId, session.SessionId);
-        }
-        else
-        {
-            _registry.Register(new ActiveQuizSession
-            {
-                UserId = session.UserId,
-                SessionId = session.SessionId,
-                Mode = Mode,
-                QuizId = session.QuizId,
-                PracticeDirection = session.PracticeDirection,
-                PracticeItemType = session.PracticeItemType,
-                WordCount = session.WordCount,
-                CacheKey = CacheKey(session.SessionId)
-            });
-        }
-    }
-
-    public TypingSessionData? FindResumableSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount)
-    {
-        var active = _registry.FindActive(
-            userId,
-            Mode,
-            quizId,
-            PracticeDirection.Normalize(practiceDirection),
-            PracticeItemType.Normalize(practiceItemType),
-            Math.Clamp(wordCount, 1, 100));
-
-        return active == null ? null : FindSession(active.SessionId, userId);
-    }
-
-    public void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount)
-    {
-        var active = _registry.FindActive(
-            userId,
-            Mode,
-            quizId,
-            PracticeDirection.Normalize(practiceDirection),
-            PracticeItemType.Normalize(practiceItemType),
-            Math.Clamp(wordCount, 1, 100));
-
-        if (active != null)
-            _registry.Deregister(userId, active.SessionId, removeSessionData: true);
-    }
-
-    private static bool IsComplete(TypingSessionData session)
-        => session.CurrentIndex >= session.Words.Count;
 
     public TypingAnswerResult SubmitAnswer(TypingSessionData session, string userAnswer)
     {
@@ -149,6 +82,4 @@ public class TypingSessionService : ITypingSessionService
             NextWord = nextWord
         };
     }
-
-    private static string CacheKey(string sessionId) => $"typing-quiz:{sessionId}";
 }

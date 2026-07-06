@@ -41,25 +41,25 @@ public sealed class BooksController : Controller
         var userId = User.GetUserId();
         if (file is null)
         {
-            TempData["BookMessage"] = "Choose a PDF file to upload.";
+            TempData[NotificationKeys.Book] = "Choose a PDF file to upload.";
             return RedirectToAction(nameof(Index));
         }
 
         try
         {
             var document = await _books.UploadAsync(userId, file, cancellationToken);
-            TempData["BookMessage"] = $"Uploaded {document.Title}.";
+            TempData[NotificationKeys.Book] = $"Uploaded {document.Title}.";
             return RedirectToAction(nameof(Read), new { id = document.Id });
         }
         catch (ArgumentException ex)
         {
-            TempData["BookMessage"] = ex.Message;
+            TempData[NotificationKeys.Book] = ex.Message;
             return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Book upload failed for user {UserId}", userId);
-            TempData["BookMessage"] = "The PDF could not be processed. Try a text-based PDF.";
+            TempData[NotificationKeys.Book] = "The PDF could not be processed. Try a text-based PDF.";
             return RedirectToAction(nameof(Index));
         }
     }

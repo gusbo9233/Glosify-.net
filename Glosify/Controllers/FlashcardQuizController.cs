@@ -26,13 +26,13 @@ public class FlashcardQuizController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null)
+    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
 
-        var selectedQuiz = await _quizService.FindQuizAsync(userId, id);
+        var selectedQuiz = await _quizService.FindQuizAsync(userId, id, cancellationToken: cancellationToken);
         if (selectedQuiz == null)
             return View(FlashcardQuizViewModel.Empty());
 
@@ -41,8 +41,8 @@ public class FlashcardQuizController : Controller
             return View(BuildViewModel(resumed, selectedQuiz));
 
         var cards = PracticeItemType.IsSentences(normalizedItemType)
-            ? await _wordService.LoadSentenceCardsAsync(selectedQuiz.Id, wordCount)
-            : await _wordService.LoadCardsAsync(selectedQuiz.Id, wordCount);
+            ? await _wordService.LoadSentenceCardsAsync(selectedQuiz.Id, wordCount, cancellationToken: cancellationToken)
+            : await _wordService.LoadCardsAsync(selectedQuiz.Id, wordCount, cancellationToken: cancellationToken);
         var cardData = cards.Select(c => new FlashcardCardData
         {
             Id = c.Id,

@@ -33,6 +33,7 @@ public sealed class AiCreditService : IAiCreditService
     {
         await GetOrCreateAccountAsync(userId, cancellationToken);
         return await _context.AiCreditTransactions
+            .AsNoTracking()
             .Where(transaction => transaction.UserId == userId)
             .OrderByDescending(transaction => transaction.CreatedAt)
             .Take(Math.Clamp(count, 1, 100))

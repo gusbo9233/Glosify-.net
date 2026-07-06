@@ -33,6 +33,7 @@ public sealed class ChangeApplier : IChangeApplier
         CancellationToken cancellationToken)
     {
         Quiz? quiz = null;
+        QuizContentBatch batch = QuizContentBatch.Empty;
         if (changes.Any(RequiresQuizContext))
         {
             if (!quizId.HasValue)
@@ -42,6 +43,10 @@ public sealed class ChangeApplier : IChangeApplier
 
             quiz = await _context.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId.Value && q.UserId == userId, cancellationToken)
                 ?? throw new QuizNotFoundException();
+
+            // Bulk applies used to issue one lookup/duplicate-check query per change;
+            // pre-loading the touched content keeps this at a fixed handful of queries.
+            batch = await LoadQuizContentAsync(quiz.Id, changes, cancellationToken);
         }
 
         var applied = 0;
@@ -53,25 +58,25 @@ public sealed class ChangeApplier : IChangeApplier
             switch (change.Kind)
             {
                 case PendingChangeKinds.AddWord:
-                    applied += await ApplyAddWordAsync(change.Payload, quiz!, cancellationToken) ? 1 : 0;
+                    applied += ApplyAddWord(change.Payload, quiz!, batch) ? 1 : 0;
                     break;
                 case PendingChangeKinds.AddSentence:
-                    applied += await ApplyAddSentenceAsync(change.Payload, quiz!, cancellationToken) ? 1 : 0;
+                    applied += ApplyAddSentence(change.Payload, quiz!, batch) ? 1 : 0;
                     break;
                 case PendingChangeKinds.EditWord:
-                    applied += await ApplyEditWordAsync(change.Payload, quiz!, cancellationToken) ? 1 : 0;
+                    applied += ApplyEditWord(change.Payload, batch) ? 1 : 0;
                     break;
                 case PendingChangeKinds.EditSentence:
-                    applied += await ApplyEditSentenceAsync(change.Payload, quiz!, cancellationToken) ? 1 : 0;
+                    applied += ApplyEditSentence(change.Payload, batch) ? 1 : 0;
                     break;
                 case PendingChangeKinds.DeleteWord:
-                    applied += await ApplyDeleteWordAsync(change.Payload, quiz!, cancellationToken) ? 1 : 0;
+                    applied += ApplyDeleteWord(change.Payload, batch) ? 1 : 0;
                     break;
                 case PendingChangeKinds.RepairSentence:
-                    applied += await ApplyRepairSentenceAsync(change.Payload, quiz!, cancellationToken);
+                    applied += ApplyRepairSentence(change.Payload, batch);
                     break;
                 case PendingChangeKinds.DeleteSentence:
-                    applied += await ApplyDeleteSentenceAsync(change.Payload, quiz!, cancellationToken) ? 1 : 0;
+                    applied += ApplyDeleteSentence(change.Payload, batch) ? 1 : 0;
                     break;
                 case PendingChangeKinds.CreateQuiz:
                 {
@@ -123,7 +128,72 @@ public sealed class ChangeApplier : IChangeApplier
             or PendingChangeKinds.DeleteSentence;
     }
 
-    private async Task<bool> ApplyAddWordAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
+    private sealed class QuizContentBatch
+    {
+        public static readonly QuizContentBatch Empty = new();
+
+        public Dictionary<string, Word> WordsById { get; } = new();
+        public HashSet<string> WordLemmas { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public List<QuizSentence> Sentences { get; } = [];
+        public Dictionary<Guid, QuizSentence> SentencesById { get; } = new();
+        public HashSet<string> SentenceTexts { get; } = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task<QuizContentBatch> LoadQuizContentAsync(
+        Guid quizId,
+        IReadOnlyList<PendingChange> changes,
+        CancellationToken ct)
+    {
+        var batch = new QuizContentBatch();
+
+        var wordIds = changes
+            .Where(change => change.Kind is PendingChangeKinds.EditWord or PendingChangeKinds.DeleteWord)
+            .Select(change => GetString(change.Payload, "word_id"))
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+        if (wordIds.Count > 0)
+        {
+            var words = await _context.Words
+                .Where(word => word.QuizId == quizId && wordIds.Contains(word.Id))
+                .ToListAsync(ct);
+            foreach (var word in words)
+            {
+                batch.WordsById[word.Id] = word;
+            }
+        }
+
+        if (changes.Any(change => change.Kind == PendingChangeKinds.AddWord))
+        {
+            var lemmas = await _context.Words
+                .Where(word => word.QuizId == quizId)
+                .Select(word => word.Lemma)
+                .ToListAsync(ct);
+            batch.WordLemmas.UnionWith(lemmas);
+        }
+
+        var needsSentences = changes.Any(change => change.Kind
+            is PendingChangeKinds.AddSentence
+            or PendingChangeKinds.EditSentence
+            or PendingChangeKinds.DeleteSentence
+            or PendingChangeKinds.RepairSentence);
+        if (needsSentences)
+        {
+            var sentences = await _context.QuizSentences
+                .Where(sentence => sentence.QuizId == quizId)
+                .ToListAsync(ct);
+            batch.Sentences.AddRange(sentences);
+            foreach (var sentence in sentences)
+            {
+                batch.SentencesById[sentence.Id] = sentence;
+                batch.SentenceTexts.Add(sentence.Text);
+            }
+        }
+
+        return batch;
+    }
+
+    private bool ApplyAddWord(JsonElement payload, Quiz quiz, QuizContentBatch batch)
     {
         var newWord = GetString(payload, "word");
         var translation = GetString(payload, "translation");
@@ -132,13 +202,7 @@ public sealed class ChangeApplier : IChangeApplier
             return false;
         }
 
-        var lowered = newWord.ToLowerInvariant();
-        var exists = _context.Words.Local.Any(w =>
-                w.QuizId == quiz.Id
-                && string.Equals(w.Lemma, newWord, StringComparison.OrdinalIgnoreCase))
-            || await _context.Words
-                .AnyAsync(w => w.QuizId == quiz.Id && w.Lemma.ToLower() == lowered, ct);
-        if (exists)
+        if (!batch.WordLemmas.Add(newWord))
         {
             return false;
         }
@@ -154,50 +218,54 @@ public sealed class ChangeApplier : IChangeApplier
         return true;
     }
 
-    private async Task<bool> ApplyAddSentenceAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
+    private bool ApplyAddSentence(JsonElement payload, Quiz quiz, QuizContentBatch batch)
     {
-        var text = GetString(payload, "text");
+        var text = GetString(payload, "text").Trim();
         var translation = GetString(payload, "translation");
         if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(translation))
         {
             return false;
         }
 
-        return await AddQuizSentenceAsync(quiz.Id, text, translation, ct);
-    }
-
-    private async Task<bool> ApplyEditWordAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
-    {
-        var wordId = GetString(payload, "word_id");
-        if (string.IsNullOrWhiteSpace(wordId))
+        if (!batch.SentenceTexts.Add(text))
         {
             return false;
         }
 
-        var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == wordId && w.QuizId == quiz.Id, ct);
-        if (word == null)
+        _context.QuizSentences.Add(new QuizSentence
+        {
+            Id = Guid.NewGuid(),
+            QuizId = quiz.Id,
+            Text = text,
+            Translation = translation.Trim(),
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+        return true;
+    }
+
+    private bool ApplyEditWord(JsonElement payload, QuizContentBatch batch)
+    {
+        var wordId = GetString(payload, "word_id");
+        if (string.IsNullOrWhiteSpace(wordId) || !batch.WordsById.TryGetValue(wordId, out var word))
         {
             return false;
         }
 
         var newWord = GetString(payload, "word");
         var newTranslation = GetString(payload, "translation");
-        if (!string.IsNullOrWhiteSpace(newWord)) word.Lemma = newWord;
+        if (!string.IsNullOrWhiteSpace(newWord))
+        {
+            word.Lemma = newWord;
+            batch.WordLemmas.Add(newWord);
+        }
         if (!string.IsNullOrWhiteSpace(newTranslation)) word.Translation = newTranslation;
         return true;
     }
 
-    private async Task<bool> ApplyEditSentenceAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
+    private bool ApplyEditSentence(JsonElement payload, QuizContentBatch batch)
     {
         var sentenceId = GetNullableGuid(payload, "sentence_id");
-        if (!sentenceId.HasValue)
-        {
-            return false;
-        }
-
-        var sentence = await _context.QuizSentences
-            .FirstOrDefaultAsync(s => s.Id == sentenceId.Value && s.QuizId == quiz.Id, ct);
-        if (sentence == null)
+        if (!sentenceId.HasValue || !batch.SentencesById.TryGetValue(sentenceId.Value, out var sentence))
         {
             return false;
         }
@@ -212,6 +280,7 @@ public sealed class ChangeApplier : IChangeApplier
         if (!string.IsNullOrWhiteSpace(newText))
         {
             sentence.Text = newText.Trim();
+            batch.SentenceTexts.Add(sentence.Text);
         }
         if (!string.IsNullOrWhiteSpace(newTranslation))
         {
@@ -220,20 +289,20 @@ public sealed class ChangeApplier : IChangeApplier
         return true;
     }
 
-    private async Task<bool> ApplyDeleteWordAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
+    private bool ApplyDeleteWord(JsonElement payload, QuizContentBatch batch)
     {
         var wordId = GetString(payload, "word_id");
-        if (string.IsNullOrWhiteSpace(wordId))
+        if (string.IsNullOrWhiteSpace(wordId) || !batch.WordsById.TryGetValue(wordId, out var word))
         {
             return false;
         }
-        var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == wordId && w.QuizId == quiz.Id, ct);
-        if (word == null) return false;
+
+        batch.WordsById.Remove(wordId);
         _context.Words.Remove(word);
         return true;
     }
 
-    private async Task<int> ApplyRepairSentenceAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
+    private int ApplyRepairSentence(JsonElement payload, QuizContentBatch batch)
     {
         var original = GetString(payload, "original_text");
         var newText = GetString(payload, "new_text");
@@ -243,14 +312,8 @@ public sealed class ChangeApplier : IChangeApplier
             return 0;
         }
 
-        var sentences = await _context.QuizSentences
-            .Where(sentence => sentence.QuizId == quiz.Id)
-            .ToListAsync(ct);
-        var matches = sentences
-            .Where(row => string.Equals(
-                row.Text,
-                original,
-                StringComparison.Ordinal))
+        var matches = batch.Sentences
+            .Where(sentence => string.Equals(sentence.Text, original, StringComparison.Ordinal))
             .ToList();
 
         foreach (var sentence in matches)
@@ -261,21 +324,16 @@ public sealed class ChangeApplier : IChangeApplier
         return matches.Count;
     }
 
-    private async Task<bool> ApplyDeleteSentenceAsync(JsonElement payload, Quiz quiz, CancellationToken ct)
+    private bool ApplyDeleteSentence(JsonElement payload, QuizContentBatch batch)
     {
         var sentenceId = GetNullableGuid(payload, "sentence_id");
-        if (!sentenceId.HasValue)
+        if (!sentenceId.HasValue || !batch.SentencesById.TryGetValue(sentenceId.Value, out var sentence))
         {
             return false;
         }
 
-        var sentence = await _context.QuizSentences
-            .FirstOrDefaultAsync(s => s.Id == sentenceId.Value && s.QuizId == quiz.Id, ct);
-        if (sentence == null)
-        {
-            return false;
-        }
-
+        batch.SentencesById.Remove(sentenceId.Value);
+        batch.Sentences.Remove(sentence);
         _context.QuizSentences.Remove(sentence);
         return true;
     }
@@ -301,7 +359,7 @@ public sealed class ChangeApplier : IChangeApplier
                 sourceLanguage.Trim(),
                 targetLanguage.Trim(),
                 userId,
-                collectionId);
+                collectionId, cancellationToken: ct);
 
             AddStarterWords(payload, quiz);
             return quiz.Id;
@@ -330,7 +388,7 @@ public sealed class ChangeApplier : IChangeApplier
                 name.Trim(),
                 language.Trim(),
                 userId,
-                parentCollectionId);
+                parentCollectionId, cancellationToken: ct);
             return collection.Id;
         }
         catch (InvalidOperationException ex)
@@ -340,7 +398,7 @@ public sealed class ChangeApplier : IChangeApplier
         }
     }
 
-    private async Task<bool> ApplyMoveQuizAsync(JsonElement payload, string userId)
+    private async Task<bool> ApplyMoveQuizAsync(JsonElement payload, string userId, CancellationToken cancellationToken = default)
     {
         var quizId = GetNullableGuid(payload, "quiz_id");
         if (!quizId.HasValue)
@@ -349,10 +407,10 @@ public sealed class ChangeApplier : IChangeApplier
         }
 
         var collectionId = GetNullableGuid(payload, "collection_id");
-        return await _collectionService.MoveQuizToCollectionAsync(quizId.Value, collectionId, userId);
+        return await _collectionService.MoveQuizToCollectionAsync(quizId.Value, collectionId, userId, cancellationToken: cancellationToken);
     }
 
-    private async Task<bool> ApplyRenameCollectionAsync(JsonElement payload, string userId)
+    private async Task<bool> ApplyRenameCollectionAsync(JsonElement payload, string userId, CancellationToken cancellationToken = default)
     {
         var collectionId = GetNullableGuid(payload, "collection_id");
         var name = GetString(payload, "name");
@@ -361,10 +419,10 @@ public sealed class ChangeApplier : IChangeApplier
             return false;
         }
 
-        return await _collectionService.RenameCollectionAsync(collectionId.Value, name.Trim(), userId);
+        return await _collectionService.RenameCollectionAsync(collectionId.Value, name.Trim(), userId, cancellationToken: cancellationToken);
     }
 
-    private async Task<bool> ApplyMoveCollectionAsync(JsonElement payload, string userId)
+    private async Task<bool> ApplyMoveCollectionAsync(JsonElement payload, string userId, CancellationToken cancellationToken = default)
     {
         var collectionId = GetNullableGuid(payload, "collection_id");
         if (!collectionId.HasValue)
@@ -373,7 +431,7 @@ public sealed class ChangeApplier : IChangeApplier
         }
 
         var parentCollectionId = GetNullableGuid(payload, "parent_collection_id");
-        return await _collectionService.MoveCollectionAsync(collectionId.Value, parentCollectionId, userId);
+        return await _collectionService.MoveCollectionAsync(collectionId.Value, parentCollectionId, userId, cancellationToken: cancellationToken);
     }
 
     private static string GetString(JsonElement element, string property)
@@ -423,30 +481,4 @@ public sealed class ChangeApplier : IChangeApplier
         }
     }
 
-    private async Task<bool> AddQuizSentenceAsync(Guid quizId, string text, string translation, CancellationToken ct)
-    {
-        var cleanText = text.Trim();
-        var loweredText = cleanText.ToLowerInvariant();
-        if (string.IsNullOrWhiteSpace(cleanText)
-            || _context.QuizSentences.Local.Any(sentence =>
-                sentence.QuizId == quizId
-                && string.Equals(sentence.Text, cleanText, StringComparison.OrdinalIgnoreCase))
-            || await _context.QuizSentences.AnyAsync(sentence =>
-                sentence.QuizId == quizId
-                && sentence.Text.ToLower() == loweredText,
-                ct))
-        {
-            return false;
-        }
-
-        _context.QuizSentences.Add(new QuizSentence
-        {
-            Id = Guid.NewGuid(),
-            QuizId = quizId,
-            Text = cleanText,
-            Translation = translation.Trim(),
-            CreatedAt = DateTimeOffset.UtcNow
-        });
-        return true;
-    }
 }

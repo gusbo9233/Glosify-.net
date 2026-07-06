@@ -14,30 +14,33 @@ namespace Glosify.Services.Quizzes
             _collectionVisibility = new CollectionVisibility(context);
         }
 
-        public async Task<IReadOnlyList<Collection>> GetCollectionsAsync(string userId, string language)
+        public async Task<IReadOnlyList<Collection>> GetCollectionsAsync(string userId, string language, CancellationToken cancellationToken = default)
         {
             language = language.Trim();
 
             return await _context.Collections
+                .AsNoTracking()
                 .Where(c => c.UserId == userId && c.Language == language)
                 .OrderBy(c => c.ParentCollectionId.HasValue)
                 .ThenBy(c => c.Name)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
         }
 
-        public async Task<Collection?> GetCollectionAsync(Guid id, string userId)
+        public async Task<Collection?> GetCollectionAsync(Guid id, string userId, CancellationToken cancellationToken = default)
         {
             return await _context.Collections
+                .AsNoTracking()
                 .Include(c => c.ChildCollections)
                 .Include(c => c.Quizzes)
-                .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId, cancellationToken);
         }
 
         public async Task<Collection> CreateCollectionAsync(
             string name,
             string language,
             string userId,
-            Guid? parentCollectionId)
+            Guid? parentCollectionId,
+            CancellationToken cancellationToken = default)
         {
             name = name.Trim();
             language = language.Trim();
@@ -47,7 +50,7 @@ namespace Glosify.Services.Quizzes
                 var parentExists = await _context.Collections.AnyAsync(c =>
                     c.Id == parentCollectionId.Value
                     && c.UserId == userId
-                    && c.Language == language);
+                    && c.Language == language, cancellationToken);
 
                 if (!parentExists)
                 {
@@ -59,7 +62,7 @@ namespace Glosify.Services.Quizzes
                 c.UserId == userId
                 && c.Language == language
                 && c.ParentCollectionId == parentCollectionId
-                && c.Name == name);
+                && c.Name == name, cancellationToken);
 
             if (siblingNameExists)
             {
@@ -77,12 +80,12 @@ namespace Glosify.Services.Quizzes
             };
 
             _context.Collections.Add(collection);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return collection;
         }
 
-        public async Task<bool> MoveCollectionAsync(Guid collectionId, Guid? parentCollectionId, string userId)
+        public async Task<bool> MoveCollectionAsync(Guid collectionId, Guid? parentCollectionId, string userId, CancellationToken cancellationToken = default)
         {
             if (collectionId == parentCollectionId)
             {
@@ -90,7 +93,7 @@ namespace Glosify.Services.Quizzes
             }
 
             var collection = await _context.Collections
-                .FirstOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId, cancellationToken);
 
             if (collection is null)
             {
@@ -100,14 +103,14 @@ namespace Glosify.Services.Quizzes
             if (parentCollectionId.HasValue)
             {
                 var parent = await _context.Collections
-                    .FirstOrDefaultAsync(c => c.Id == parentCollectionId.Value && c.UserId == userId);
+                    .FirstOrDefaultAsync(c => c.Id == parentCollectionId.Value && c.UserId == userId, cancellationToken);
 
                 if (parent is null || parent.Language != collection.Language)
                 {
                     return false;
                 }
 
-                if (await IsDescendantAsync(parent.Id, collection.Id, userId))
+                if (await IsDescendantAsync(parent.Id, collection.Id, userId, cancellationToken))
                 {
                     return false;
                 }
@@ -118,7 +121,7 @@ namespace Glosify.Services.Quizzes
                 && c.UserId == userId
                 && c.Language == collection.Language
                 && c.ParentCollectionId == parentCollectionId
-                && c.Name == collection.Name);
+                && c.Name == collection.Name, cancellationToken);
 
             if (siblingNameExists)
             {
@@ -126,17 +129,17 @@ namespace Glosify.Services.Quizzes
             }
 
             collection.ParentCollectionId = parentCollectionId;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return true;
         }
 
-        public async Task<bool> RenameCollectionAsync(Guid collectionId, string name, string userId)
+        public async Task<bool> RenameCollectionAsync(Guid collectionId, string name, string userId, CancellationToken cancellationToken = default)
         {
             name = name.Trim();
 
             var collection = await _context.Collections
-                .FirstOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId, cancellationToken);
 
             if (collection is null)
             {
@@ -148,7 +151,7 @@ namespace Glosify.Services.Quizzes
                 && c.UserId == userId
                 && c.Language == collection.Language
                 && c.ParentCollectionId == collection.ParentCollectionId
-                && c.Name == name);
+                && c.Name == name, cancellationToken);
 
             if (siblingNameExists)
             {
@@ -156,15 +159,15 @@ namespace Glosify.Services.Quizzes
             }
 
             collection.Name = name;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return true;
         }
 
-        public async Task<bool> DeleteCollectionAsync(Guid collectionId, string userId)
+        public async Task<bool> DeleteCollectionAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default)
         {
             var collection = await _context.Collections
-                .FirstOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId, cancellationToken);
 
             if (collection is null)
             {
@@ -172,7 +175,7 @@ namespace Glosify.Services.Quizzes
             }
 
             var hasChildCollections = await _context.Collections
-                .AnyAsync(c => c.ParentCollectionId == collectionId && c.UserId == userId);
+                .AnyAsync(c => c.ParentCollectionId == collectionId && c.UserId == userId, cancellationToken);
 
             if (hasChildCollections)
             {
@@ -182,31 +185,31 @@ namespace Glosify.Services.Quizzes
             await _context.Quizzes
                 .Where(q => q.CollectionId == collectionId && q.UserId == userId)
                 .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(q => q.CollectionId, (Guid?)null));
+                    .SetProperty(q => q.CollectionId, (Guid?)null), cancellationToken);
 
             _context.Collections.Remove(collection);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return true;
         }
 
-        public async Task<bool> DeleteCollectionTreeAsync(Guid collectionId, string userId)
+        public async Task<bool> DeleteCollectionTreeAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default)
         {
             var rootExists = await _context.Collections
-                .AnyAsync(c => c.Id == collectionId && c.UserId == userId);
+                .AnyAsync(c => c.Id == collectionId && c.UserId == userId, cancellationToken);
 
             if (!rootExists)
             {
                 return false;
             }
 
-            var collectionIds = await GetDescendantCollectionIdsAsync(collectionId, userId);
+            var collectionIds = await GetDescendantCollectionIdsAsync(collectionId, userId, cancellationToken);
 
             var quizzes = await _context.Quizzes
                 .Where(q => q.CollectionId.HasValue
                     && collectionIds.Contains(q.CollectionId.Value)
                     && q.UserId == userId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             if (quizzes.Count > 0)
             {
@@ -214,16 +217,16 @@ namespace Glosify.Services.Quizzes
 
                 var words = await _context.Words
                     .Where(word => quizIds.Contains(word.QuizId))
-                    .ToListAsync();
+                    .ToListAsync(cancellationToken);
 
                 // Saved assistant chats reference quizzes through no-action foreign
                 // keys; clear those references first or deleting the quizzes fails.
                 var assistantThreads = await _context.AssistantThreads
                     .Where(thread => thread.ContextQuizId.HasValue && quizIds.Contains(thread.ContextQuizId.Value))
-                    .ToListAsync();
+                    .ToListAsync(cancellationToken);
                 var assistantMessages = await _context.AssistantMessages
                     .Where(message => message.ContextQuizId.HasValue && quizIds.Contains(message.ContextQuizId.Value))
-                    .ToListAsync();
+                    .ToListAsync(cancellationToken);
 
                 foreach (var thread in assistantThreads)
                 {
@@ -241,7 +244,7 @@ namespace Glosify.Services.Quizzes
 
             var collections = await _context.Collections
                 .Where(c => collectionIds.Contains(c.Id) && c.UserId == userId)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var collectionDepths = GetCollectionDepths(collections, collectionId);
 
@@ -250,15 +253,15 @@ namespace Glosify.Services.Quizzes
                 _context.Collections.Remove(collection);
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return true;
         }
 
-        public async Task<bool> SetCollectionPublicAsync(Guid collectionId, string userId, bool isPublic)
+        public async Task<bool> SetCollectionPublicAsync(Guid collectionId, string userId, bool isPublic, CancellationToken cancellationToken = default)
         {
             var collection = await _context.Collections
-                .FirstOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId);
+                .FirstOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId, cancellationToken);
 
             if (collection is null)
             {
@@ -266,12 +269,12 @@ namespace Glosify.Services.Quizzes
             }
 
             collection.IsPublic = isPublic;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return true;
         }
 
-        public async Task<IReadOnlyList<Collection>> GetPublicCollectionRootsAsync(string language)
+        public async Task<IReadOnlyList<Collection>> GetPublicCollectionRootsAsync(string language, CancellationToken cancellationToken = default)
         {
             language = language.Trim();
 
@@ -279,7 +282,7 @@ namespace Glosify.Services.Quizzes
                 .AsNoTracking()
                 .Where(c => c.Language == language)
                 .OrderBy(c => c.Name)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var byId = collections.ToDictionary(c => c.Id);
             return collections
@@ -287,7 +290,7 @@ namespace Glosify.Services.Quizzes
                 .ToList();
         }
 
-        public async Task<IReadOnlyList<PublicCollectionSummary>> GetPublicCollectionSummariesAsync(string language)
+        public async Task<IReadOnlyList<PublicCollectionSummary>> GetPublicCollectionSummariesAsync(string language, CancellationToken cancellationToken = default)
         {
             language = language.Trim();
 
@@ -295,7 +298,7 @@ namespace Glosify.Services.Quizzes
                 .AsNoTracking()
                 .Where(c => c.Language == language)
                 .OrderBy(c => c.Name)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var byId = collections.ToDictionary(c => c.Id);
             var roots = collections
@@ -318,7 +321,7 @@ namespace Glosify.Services.Quizzes
                 .Where(q => q.CollectionId.HasValue && collectionIds.Contains(q.CollectionId.Value))
                 .GroupBy(q => q.CollectionId!.Value)
                 .Select(group => new { CollectionId = group.Key, Count = group.Count() })
-                .ToDictionaryAsync(group => group.CollectionId, group => group.Count);
+                .ToDictionaryAsync(group => group.CollectionId, group => group.Count, cancellationToken);
 
             var summaries = new List<PublicCollectionSummary>(roots.Count);
             foreach (var root in roots)
@@ -356,61 +359,61 @@ namespace Glosify.Services.Quizzes
             return subtreeIds;
         }
 
-        public async Task<Collection?> GetPublicCollectionTreeAsync(Guid collectionId)
+        public async Task<Collection?> GetPublicCollectionTreeAsync(Guid collectionId, CancellationToken cancellationToken = default)
         {
             var root = await _context.Collections
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == collectionId);
+                .FirstOrDefaultAsync(c => c.Id == collectionId, cancellationToken);
 
             if (root is null || !await _collectionVisibility.IsCollectionPubliclyReadableAsync(root.Id))
             {
                 return null;
             }
 
-            var collectionIds = await GetDescendantCollectionIdsAsync(collectionId, root.UserId);
+            var collectionIds = await GetDescendantCollectionIdsAsync(collectionId, root.UserId, cancellationToken);
             var collections = await _context.Collections
                 .AsNoTracking()
                 .Where(c => collectionIds.Contains(c.Id))
                 .OrderBy(c => c.Name)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
             var quizzes = await _context.Quizzes
                 .AsNoTracking()
                 .Where(q => q.CollectionId.HasValue && collectionIds.Contains(q.CollectionId.Value))
                 .OrderBy(q => q.Name)
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             return BuildCollectionTree(collectionId, collections, quizzes);
         }
 
-        public async Task<Collection?> CopyPublicCollectionAsync(Guid collectionId, string userId)
+        public async Task<Collection?> CopyPublicCollectionAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default)
         {
             var sourceRoot = await _context.Collections
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == collectionId);
+                .FirstOrDefaultAsync(c => c.Id == collectionId, cancellationToken);
 
             if (sourceRoot is null || !await _collectionVisibility.IsCollectionPubliclyReadableAsync(sourceRoot.Id))
             {
                 return null;
             }
 
-            var sourceCollectionIds = await GetDescendantCollectionIdsAsync(collectionId, sourceRoot.UserId);
+            var sourceCollectionIds = await GetDescendantCollectionIdsAsync(collectionId, sourceRoot.UserId, cancellationToken);
             var sourceCollections = await _context.Collections
                 .AsNoTracking()
                 .Where(c => sourceCollectionIds.Contains(c.Id))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
             var sourceQuizzes = await _context.Quizzes
                 .AsNoTracking()
                 .Where(q => q.CollectionId.HasValue && sourceCollectionIds.Contains(q.CollectionId.Value))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
             var sourceQuizIds = sourceQuizzes.Select(q => q.Id).ToList();
             var sourceWords = await _context.Words
                 .AsNoTracking()
                 .Where(word => sourceQuizIds.Contains(word.QuizId))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
             var sourceSentences = await _context.QuizSentences
                 .AsNoTracking()
                 .Where(sentence => sourceQuizIds.Contains(sentence.QuizId))
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var collectionDepths = GetCollectionDepths(sourceCollections, collectionId);
             var collectionIdMap = new Dictionary<Guid, Guid>();
@@ -482,15 +485,15 @@ namespace Glosify.Services.Quizzes
                 CreatedAt = sentence.CreatedAt
             }));
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             var copiedRootId = collectionIdMap[collectionId];
-            return await GetCollectionAsync(copiedRootId, userId);
+            return await GetCollectionAsync(copiedRootId, userId, cancellationToken);
         }
 
-        public async Task<bool> MoveQuizToCollectionAsync(Guid quizId, Guid? collectionId, string userId)
+        public async Task<bool> MoveQuizToCollectionAsync(Guid quizId, Guid? collectionId, string userId, CancellationToken cancellationToken = default)
         {
             var quiz = await _context.Quizzes
-                .FirstOrDefaultAsync(q => q.Id == quizId && q.UserId == userId);
+                .FirstOrDefaultAsync(q => q.Id == quizId && q.UserId == userId, cancellationToken);
 
             if (quiz is null)
             {
@@ -502,7 +505,7 @@ namespace Glosify.Services.Quizzes
                 var collectionExists = await _context.Collections.AnyAsync(c =>
                     c.Id == collectionId.Value
                     && c.UserId == userId
-                    && c.Language == quiz.TargetLanguage);
+                    && c.Language == quiz.TargetLanguage, cancellationToken);
 
                 if (!collectionExists)
                 {
@@ -511,18 +514,18 @@ namespace Glosify.Services.Quizzes
             }
 
             quiz.CollectionId = collectionId;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return true;
         }
 
-        private async Task<List<Guid>> GetDescendantCollectionIdsAsync(Guid rootCollectionId, string userId)
+        private async Task<List<Guid>> GetDescendantCollectionIdsAsync(Guid rootCollectionId, string userId, CancellationToken cancellationToken)
         {
             var links = await _context.Collections
                 .AsNoTracking()
                 .Where(c => c.UserId == userId && c.ParentCollectionId.HasValue)
                 .Select(c => new { c.Id, ParentId = c.ParentCollectionId!.Value })
-                .ToListAsync();
+                .ToListAsync(cancellationToken);
 
             var childrenByParent = links
                 .GroupBy(link => link.ParentId)
@@ -587,13 +590,13 @@ namespace Glosify.Services.Quizzes
             return depths;
         }
 
-        private async Task<bool> IsDescendantAsync(Guid possibleDescendantId, Guid ancestorId, string userId)
+        private async Task<bool> IsDescendantAsync(Guid possibleDescendantId, Guid ancestorId, string userId, CancellationToken cancellationToken)
         {
             var parentsById = await _context.Collections
                 .AsNoTracking()
                 .Where(c => c.UserId == userId)
                 .Select(c => new { c.Id, c.ParentCollectionId })
-                .ToDictionaryAsync(c => c.Id, c => c.ParentCollectionId);
+                .ToDictionaryAsync(c => c.Id, c => c.ParentCollectionId, cancellationToken);
 
             var visited = new HashSet<Guid>();
             var currentId = possibleDescendantId;

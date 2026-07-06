@@ -20,13 +20,13 @@ internal sealed class CollectionVisibility
 
     private sealed record Node(Guid Id, Guid? ParentCollectionId, bool IsPublic);
 
-    public async Task<bool> IsCollectionPubliclyReadableAsync(Guid collectionId)
+    public async Task<bool> IsCollectionPubliclyReadableAsync(Guid collectionId, CancellationToken cancellationToken = default)
     {
         var target = await _context.Collections
             .AsNoTracking()
             .Where(c => c.Id == collectionId)
             .Select(c => new { c.Language, c.IsPublic })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (target is null)
         {
@@ -38,7 +38,7 @@ internal sealed class CollectionVisibility
             return true;
         }
 
-        var publicTreeIds = await GetPublicCollectionTreeIdsAsync(target.Language);
+        var publicTreeIds = await GetPublicCollectionTreeIdsAsync(target.Language, cancellationToken);
         return publicTreeIds.Contains(collectionId);
     }
 
@@ -46,13 +46,13 @@ internal sealed class CollectionVisibility
     /// Ids of every collection in the language that is public or sits below a public
     /// collection (i.e. the union of all public subtrees).
     /// </summary>
-    public async Task<HashSet<Guid>> GetPublicCollectionTreeIdsAsync(string language)
+    public async Task<HashSet<Guid>> GetPublicCollectionTreeIdsAsync(string language, CancellationToken cancellationToken = default)
     {
         var nodes = await _context.Collections
             .AsNoTracking()
             .Where(c => c.Language == language)
             .Select(c => new Node(c.Id, c.ParentCollectionId, c.IsPublic))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var childrenByParent = nodes
             .Where(node => node.ParentCollectionId.HasValue)

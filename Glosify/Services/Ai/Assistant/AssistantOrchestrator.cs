@@ -307,7 +307,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             : await LoadDocumentPageContextAsync(documentContext, userId, cancellationToken);
 
         var storedMessages = await LoadThreadMessagesAsync(thread.Id, cancellationToken);
-        var history = storedMessages.Select(MapToTurn).ToList();
+        var history = WindowHistory(storedMessages).Select(MapToTurn).ToList();
         var nextSequence = storedMessages.Count == 0 ? 0 : storedMessages.Max(message => message.Sequence) + 1;
 
         var userTurnJson = SerializeContent([new StoredPart { Kind = "text", Text = userMessage }]);
@@ -560,6 +560,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     private async Task<List<AssistantMessage>> LoadThreadMessagesAsync(Guid threadId, CancellationToken ct)
     {
         return await _context.AssistantMessages
+            .AsNoTracking()
             .Where(message => message.ThreadId == threadId)
             .OrderBy(message => message.Sequence)
             .ToListAsync(ct);
@@ -573,6 +574,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         }
 
         return await _context.Quizzes
+            .AsNoTracking()
             .FirstOrDefaultAsync(q => q.Id == quizId.Value && q.UserId == userId, cancellationToken)
             ?? throw new QuizNotFoundException();
     }
@@ -586,15 +588,28 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             return [];
         }
 
+        // "Visible" (HasVisibleContent) can only be decided client-side, but the latest
+        // visible message is virtually always among the last few: tool call/response
+        // turns come in short bursts and every assistant turn ends with a text message.
+        // Fetching a small recent window per thread keeps this from loading entire
+        // conversations just to build 90-character previews.
         var threadIds = threads.Select(thread => thread.Id).ToList();
-        var messages = await _context.AssistantMessages
-            .Where(message => threadIds.Contains(message.ThreadId))
-            .OrderByDescending(message => message.Sequence)
+        var recentByThread = await _context.AssistantThreads
+            .AsNoTracking()
+            .Where(thread => threadIds.Contains(thread.Id))
+            .Select(thread => new
+            {
+                thread.Id,
+                Recent = _context.AssistantMessages
+                    .Where(message => message.ThreadId == thread.Id)
+                    .OrderByDescending(message => message.Sequence)
+                    .Take(8)
+                    .ToList()
+            })
             .ToListAsync(cancellationToken);
 
-        var latestByThread = messages
-            .GroupBy(message => message.ThreadId)
-            .ToDictionary(group => group.Key, group => group.FirstOrDefault(HasVisibleContent));
+        var latestByThread = recentByThread
+            .ToDictionary(entry => entry.Id, entry => entry.Recent.FirstOrDefault(HasVisibleContent));
 
         var contextQuizIds = threads
             .Select(thread => thread.ContextQuizId)
@@ -632,23 +647,40 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         IReadOnlyList<AssistantMessage> messages,
         CancellationToken cancellationToken)
     {
-        var views = new List<AssistantMessageView>();
-        foreach (var message in messages)
+        var parsed = messages
+            .Select(message => (Message: message, Changes: ParseStoredChanges(message.PendingChangesJson)))
+            .ToList();
+
+        // One label query per distinct context quiz (almost always one) instead of
+        // one query per message.
+        var emptyLabels = (IReadOnlyDictionary<string, WordLabel>)new Dictionary<string, WordLabel>();
+        var labelsByQuiz = new Dictionary<Guid, IReadOnlyDictionary<string, WordLabel>>();
+        foreach (var group in parsed
+            .Where(entry => entry.Message.ContextQuizId.HasValue && entry.Changes.Count > 0)
+            .GroupBy(entry => entry.Message.ContextQuizId!.Value))
         {
-            var pendingChanges = ParseStoredChanges(message.PendingChangesJson);
-            var wordLabels = await LoadWordLabelsAsync(message.ContextQuizId, pendingChanges, cancellationToken);
-            var pendingViews = pendingChanges.Select(change => MapPendingView(change, wordLabels)).ToList();
-            views.Add(new AssistantMessageView(
-                message.Id,
-                message.Role,
-                ExtractVisibleText(message),
-                [],
-                pendingViews,
-                message.Status,
-                message.CreatedAt));
+            labelsByQuiz[group.Key] = await LoadWordLabelsAsync(
+                group.Key,
+                group.SelectMany(entry => entry.Changes),
+                cancellationToken);
         }
 
-        return views;
+        return parsed
+            .Select(entry =>
+            {
+                var wordLabels = entry.Message.ContextQuizId.HasValue
+                    ? labelsByQuiz.GetValueOrDefault(entry.Message.ContextQuizId.Value, emptyLabels)
+                    : emptyLabels;
+                return new AssistantMessageView(
+                    entry.Message.Id,
+                    entry.Message.Role,
+                    ExtractVisibleText(entry.Message),
+                    [],
+                    entry.Changes.Select(change => MapPendingView(change, wordLabels)).ToList(),
+                    entry.Message.Status,
+                    entry.Message.CreatedAt);
+            })
+            .ToList();
     }
 
     private async Task<Word?> LoadFocusedWordAsync(Guid quizId, string? focusedWordId, CancellationToken ct)
@@ -659,6 +691,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         }
 
         return await _context.Words
+            .AsNoTracking()
             .FirstOrDefaultAsync(word => word.Id == focusedWordId && word.QuizId == quizId, ct);
     }
 
@@ -793,6 +826,28 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         {pageText}
         ---
         """;
+    }
+
+    // Replayed history per turn is capped so old threads don't grow token cost and
+    // latency without bound. A single user turn can persist up to 1 + MaxToolTurns*2 + 1
+    // messages, so the window must comfortably exceed that to keep at least the
+    // previous full exchange.
+    private const int MaxHistoryMessages = 80;
+
+    private static IReadOnlyList<AssistantMessage> WindowHistory(List<AssistantMessage> messages)
+    {
+        if (messages.Count <= MaxHistoryMessages)
+        {
+            return messages;
+        }
+
+        var window = messages.Skip(messages.Count - MaxHistoryMessages).ToList();
+
+        // Gemini rejects histories where a function response has no preceding call,
+        // so advance the window start to the first plain-text user message.
+        var start = window.FindIndex(message =>
+            message.Role == AssistantMessageRole.User && !string.IsNullOrWhiteSpace(ExtractVisibleText(message)));
+        return start <= 0 ? window : window.Skip(start).ToList();
     }
 
     private static AgentTurn MapToTurn(AssistantMessage message)

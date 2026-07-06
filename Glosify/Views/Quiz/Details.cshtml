@@ -54,7 +54,7 @@
         </section>
     </div>
 
-    @if (TempData["QuizMessage"] is string quizMessage)
+    @if (TempData[NotificationKeys.Quiz] is string quizMessage)
     {
         <div class="panel-message success">@quizMessage</div>
     }

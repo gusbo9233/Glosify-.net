@@ -14,7 +14,7 @@
         </div>
     </header>
 
-    @if (TempData["AdminMessage"] is string adminMessage)
+    @if (TempData[NotificationKeys.Admin] is string adminMessage)
     {
         <div class="page-message">@adminMessage</div>
     }

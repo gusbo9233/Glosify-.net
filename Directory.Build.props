@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- Shared build settings for all projects in the solution; keeps the test
+       project from drifting away from the app (framework, nullability). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

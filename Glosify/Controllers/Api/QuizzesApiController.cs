@@ -33,9 +33,9 @@ public class QuizzesApiController : ApiControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<QuizSummaryDto>>> List([FromQuery] string? language)
+    public async Task<ActionResult<IReadOnlyList<QuizSummaryDto>>> List([FromQuery] string? language, CancellationToken cancellationToken = default)
     {
-        var quizzes = await _quizService.GetUserQuizzesAsync(User.GetUserId());
+        var quizzes = await _quizService.GetUserQuizzesAsync(User.GetUserId(), cancellationToken: cancellationToken);
         var filtered = string.IsNullOrWhiteSpace(language)
             ? quizzes
             : quizzes.Where(q =>
@@ -46,28 +46,28 @@ public class QuizzesApiController : ApiControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<QuizDetailDto>> Get(Guid id)
+    public async Task<ActionResult<QuizDetailDto>> Get(Guid id, CancellationToken cancellationToken = default)
     {
-        var quiz = await _quizService.GetQuizByIdAsync(id, User.GetUserId());
+        var quiz = await _quizService.GetQuizByIdAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         if (quiz == null)
         {
             return NotFound();
         }
 
-        var wordCount = await _quizService.GetAvailableWordCountAsync(id);
-        var sentenceCount = await _quizService.GetAvailableSentenceCountAsync(id);
+        var wordCount = await _quizService.GetAvailableWordCountAsync(id, cancellationToken: cancellationToken);
+        var sentenceCount = await _quizService.GetAvailableSentenceCountAsync(id, cancellationToken: cancellationToken);
         return Ok(QuizDetailDto.From(quiz, wordCount, sentenceCount));
     }
 
     [HttpPut("{id:guid}/visibility")]
-    public async Task<IActionResult> SetVisibility(Guid id, [FromBody] SetVisibilityRequest request)
+    public async Task<IActionResult> SetVisibility(Guid id, [FromBody] SetVisibilityRequest request, CancellationToken cancellationToken = default)
     {
-        var updated = await _quizService.SetQuizPublicAsync(id, User.GetUserId(), request.IsPublic);
+        var updated = await _quizService.SetQuizPublicAsync(id, User.GetUserId(), request.IsPublic, cancellationToken: cancellationToken);
         return updated ? NoContent() : NotFound();
     }
 
     [HttpPost]
-    public async Task<ActionResult<QuizSummaryDto>> Create([FromBody] CreateQuizRequest request)
+    public async Task<ActionResult<QuizSummaryDto>> Create([FromBody] CreateQuizRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Name) ||
             string.IsNullOrWhiteSpace(request.SourceLanguage) ||
@@ -83,7 +83,7 @@ public class QuizzesApiController : ApiControllerBase
                 request.SourceLanguage.Trim(),
                 request.TargetLanguage.Trim(),
                 User.GetUserId(),
-                request.CollectionId);
+                request.CollectionId, cancellationToken: cancellationToken);
 
             return CreatedAtAction(nameof(Get), new { id = quiz.Id }, QuizSummaryDto.From(quiz));
         }
@@ -95,60 +95,60 @@ public class QuizzesApiController : ApiControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken = default)
     {
-        var deleted = await _quizService.DeleteQuizAsync(id, User.GetUserId());
+        var deleted = await _quizService.DeleteQuizAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         return deleted == null ? NotFound() : NoContent();
     }
 
     [HttpGet("{id:guid}/words")]
-    public async Task<ActionResult<IReadOnlyList<WordDto>>> Words(Guid id)
+    public async Task<ActionResult<IReadOnlyList<WordDto>>> Words(Guid id, CancellationToken cancellationToken = default)
     {
-        if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId()))
+        if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId(), cancellationToken: cancellationToken))
         {
             return NotFound();
         }
 
-        var words = await _wordService.GetWordsAsync(id);
+        var words = await _wordService.GetWordsAsync(id, cancellationToken: cancellationToken);
         return Ok(words.Select(w => new WordDto(w.Id, w.Lemma, w.Translation, w.CreatedAt)).ToList());
     }
 
     [HttpPost("{id:guid}/words")]
-    public async Task<IActionResult> AddWord(Guid id, [FromBody] AddWordRequest request)
+    public async Task<IActionResult> AddWord(Guid id, [FromBody] AddWordRequest request, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Word) || string.IsNullOrWhiteSpace(request.Translation))
         {
             return BadRequest("Word and Translation are required.");
         }
 
-        var quiz = await _quizService.GetQuizByIdAsync(id, User.GetUserId());
+        var quiz = await _quizService.GetQuizByIdAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         if (quiz == null)
         {
             return NotFound();
         }
 
-        if (await _wordService.WordExistsAsync(id, request.Word.Trim()))
+        if (await _wordService.WordExistsAsync(id, request.Word.Trim(), cancellationToken: cancellationToken))
         {
             return Conflict("The word already exists in this quiz.");
         }
 
         var added = await _wordService.AddWordAsync(
-            id, request.Word.Trim(), request.Translation.Trim(), quiz.SourceLanguage, quiz.TargetLanguage);
+            id, request.Word.Trim(), request.Translation.Trim(), quiz.SourceLanguage, quiz.TargetLanguage, cancellationToken: cancellationToken);
 
         return added ? NoContent() : BadRequest("Could not add the word.");
     }
 
     [HttpDelete("words/{wordId}")]
-    public async Task<IActionResult> DeleteWord(string wordId)
+    public async Task<IActionResult> DeleteWord(string wordId, CancellationToken cancellationToken = default)
     {
-        var deleted = await _wordService.DeleteWordAsync(wordId, User.GetUserId());
+        var deleted = await _wordService.DeleteWordAsync(wordId, User.GetUserId(), cancellationToken: cancellationToken);
         return deleted == null ? NotFound() : NoContent();
     }
 
     [HttpGet("{id:guid}/cards")]
-    public async Task<ActionResult<IReadOnlyList<QuizCardData>>> Cards(Guid id, [FromQuery] int count = 20, [FromQuery] string? practiceDirection = null, [FromQuery] string? practiceItemType = null)
+    public async Task<ActionResult<IReadOnlyList<QuizCardData>>> Cards(Guid id, [FromQuery] int count = 20, [FromQuery] string? practiceDirection = null, [FromQuery] string? practiceItemType = null, CancellationToken cancellationToken = default)
     {
-        if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId()))
+        if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId(), cancellationToken: cancellationToken))
         {
             return NotFound();
         }
@@ -156,8 +156,8 @@ public class QuizzesApiController : ApiControllerBase
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
         var cards = PracticeItemType.IsSentences(normalizedItemType)
-            ? await _wordService.LoadSentenceCardsAsync(id, Math.Clamp(count, 1, 100))
-            : await _wordService.LoadCardsAsync(id, Math.Clamp(count, 1, 100));
+            ? await _wordService.LoadSentenceCardsAsync(id, Math.Clamp(count, 1, 100), cancellationToken: cancellationToken)
+            : await _wordService.LoadCardsAsync(id, Math.Clamp(count, 1, 100), cancellationToken: cancellationToken);
         return Ok(cards.Select(card => new QuizCardData
         {
             Id = card.Id,
@@ -171,9 +171,9 @@ public class QuizzesApiController : ApiControllerBase
     }
 
     [HttpGet("{id:guid}/typing")]
-    public async Task<ActionResult<TypingQuizData>> Typing(Guid id, [FromQuery] int count = 20, [FromQuery] string? practiceDirection = null, [FromQuery] string? practiceItemType = null)
+    public async Task<ActionResult<TypingQuizData>> Typing(Guid id, [FromQuery] int count = 20, [FromQuery] string? practiceDirection = null, [FromQuery] string? practiceItemType = null, CancellationToken cancellationToken = default)
     {
-        if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId()))
+        if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId(), cancellationToken: cancellationToken))
         {
             return NotFound();
         }
@@ -182,14 +182,14 @@ public class QuizzesApiController : ApiControllerBase
     }
 
     [HttpGet("{id:guid}/sentences")]
-    public async Task<ActionResult<IReadOnlyList<SentenceDto>>> Sentences(Guid id)
+    public async Task<ActionResult<IReadOnlyList<SentenceDto>>> Sentences(Guid id, CancellationToken cancellationToken = default)
     {
-        if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId()))
+        if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId(), cancellationToken: cancellationToken))
         {
             return NotFound();
         }
 
-        var sentences = await _wordService.GetSentencesAsync(id);
+        var sentences = await _wordService.GetSentencesAsync(id, cancellationToken: cancellationToken);
         return Ok(sentences.Select(s => new SentenceDto(s.Id, s.Text, s.Translation, s.WordCount)).ToList());
     }
 
@@ -231,7 +231,7 @@ public class QuizzesApiController : ApiControllerBase
     [AiServiceExceptionFilter]
     public async Task<IActionResult> ExtractTextFromImage(Guid id, IFormFile? image, CancellationToken cancellationToken)
     {
-        var quiz = await _quizService.GetQuizByIdAsync(id, User.GetUserId());
+        var quiz = await _quizService.GetQuizByIdAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         if (quiz == null)
         {
             return NotFound("Quiz not found.");

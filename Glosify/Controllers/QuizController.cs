@@ -36,18 +36,18 @@ public class QuizController : Controller
         _languageContext = languageContext;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
         if (_languageContext.CurrentLanguage == null)
             return RedirectToAction("Index", "Languages");
 
         var language = _languageContext.CurrentLanguage;
-        return View(await BuildQuizIndexViewModelAsync(userId, language, null));
+        return View(await BuildQuizIndexViewModelAsync(userId, language, null, cancellationToken: cancellationToken));
     }
 
     [HttpGet]
-    public async Task<IActionResult> Collection(Guid id)
+    public async Task<IActionResult> Collection(Guid id, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
@@ -55,19 +55,19 @@ public class QuizController : Controller
         if (language == null)
             return RedirectToAction("Index", "Languages");
 
-        var collection = await _collectionService.GetCollectionAsync(id, userId);
+        var collection = await _collectionService.GetCollectionAsync(id, userId, cancellationToken: cancellationToken);
         if (collection == null || !string.Equals(collection.Language, language, StringComparison.OrdinalIgnoreCase))
             return RedirectToAction(nameof(Index));
 
-        return View(nameof(Index), await BuildQuizIndexViewModelAsync(userId, language, collection));
+        return View(nameof(Index), await BuildQuizIndexViewModelAsync(userId, language, collection, cancellationToken: cancellationToken));
     }
 
     [HttpGet]
-    public async Task<IActionResult> Details(Guid id)
+    public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
-        var selectedQuiz = await _quizService.GetQuizByIdAsync(id, userId);
+        var selectedQuiz = await _quizService.GetQuizByIdAsync(id, userId, cancellationToken: cancellationToken);
         if (selectedQuiz == null)
             return RedirectToAction(nameof(Index));
 
@@ -77,8 +77,8 @@ public class QuizController : Controller
         if (!string.Equals(selectedQuiz.TargetLanguage, language, StringComparison.OrdinalIgnoreCase))
             return RedirectToAction(nameof(Index));
 
-        var words = await _wordService.GetWordsAsync(selectedQuiz.Id);
-        var sentences = await _wordService.GetSentencesAsync(selectedQuiz.Id);
+        var words = await _wordService.GetWordsAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
+        var sentences = await _wordService.GetSentencesAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
 
         return View(new QuizWorkspaceViewModel
         {
@@ -126,21 +126,21 @@ public class QuizController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddWord(AddWordInput input)
+    public async Task<IActionResult> AddWord(AddWordInput input, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
         if (!ModelState.IsValid)
         {
-            TempData["QuizMessage"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            TempData[NotificationKeys.Quiz] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
             return RedirectToAction(nameof(Details), new { id = input.QuizId });
         }
 
-        var quiz = await _quizService.GetQuizByIdAsync(input.QuizId, userId);
+        var quiz = await _quizService.GetQuizByIdAsync(input.QuizId, userId, cancellationToken: cancellationToken);
         if (quiz == null)
             return RedirectToAction(nameof(Index));
 
-        await _wordService.AddWordAsync(input.QuizId, input.Word, input.Translation, quiz.SourceLanguage, quiz.TargetLanguage);
+        await _wordService.AddWordAsync(input.QuizId, input.Word, input.Translation, quiz.SourceLanguage, quiz.TargetLanguage, cancellationToken: cancellationToken);
 
         return RedirectToAction(nameof(Details), new { id = input.QuizId });
     }
@@ -152,7 +152,7 @@ public class QuizController : Controller
     {
         var userId = User.GetUserId();
 
-        var quiz = await _quizService.GetQuizByIdAsync(quizId, userId);
+        var quiz = await _quizService.GetQuizByIdAsync(quizId, userId, cancellationToken: cancellationToken);
         if (quiz == null)
             return NotFound(new { error = "Quiz not found." });
 
@@ -181,39 +181,39 @@ public class QuizController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> DeleteWord(string id)
+    public async Task<IActionResult> DeleteWord(string id, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
-        var deleted = await _wordService.DeleteWordAsync(id, userId);
+        var deleted = await _wordService.DeleteWordAsync(id, userId, cancellationToken: cancellationToken);
         if (deleted == null)
             return RedirectToAction(nameof(Index));
 
-        TempData["QuizMessage"] = $"Deleted {deleted.Lemma}.";
+        TempData[NotificationKeys.Quiz] = $"Deleted {deleted.Lemma}.";
         return RedirectToAction(nameof(Details), new { id = deleted.QuizId });
     }
 
     [HttpPost]
-    public async Task<IActionResult> DeleteQuiz(Guid id)
+    public async Task<IActionResult> DeleteQuiz(Guid id, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
-        var deleted = await _quizService.DeleteQuizAsync(id, userId);
+        var deleted = await _quizService.DeleteQuizAsync(id, userId, cancellationToken: cancellationToken);
         if (deleted != null)
         {
-            TempData["QuizMessage"] = $"Deleted {deleted.Name}.";
+            TempData[NotificationKeys.Quiz] = $"Deleted {deleted.Name}.";
         }
 
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
-    public async Task<IActionResult> SetQuizVisibility(Guid id, bool isPublic)
+    public async Task<IActionResult> SetQuizVisibility(Guid id, bool isPublic, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
-        var updated = await _quizService.SetQuizPublicAsync(id, userId, isPublic);
-        TempData["QuizMessage"] = updated
+        var updated = await _quizService.SetQuizPublicAsync(id, userId, isPublic, cancellationToken: cancellationToken);
+        TempData[NotificationKeys.Quiz] = updated
             ? isPublic ? "Quiz is now public." : "Quiz is now private."
             : "Could not update quiz visibility.";
 
@@ -223,12 +223,12 @@ public class QuizController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> SetCollectionVisibility(Guid id, bool isPublic)
+    public async Task<IActionResult> SetCollectionVisibility(Guid id, bool isPublic, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
-        var updated = await _collectionService.SetCollectionPublicAsync(id, userId, isPublic);
-        TempData["QuizMessage"] = updated
+        var updated = await _collectionService.SetCollectionPublicAsync(id, userId, isPublic, cancellationToken: cancellationToken);
+        TempData[NotificationKeys.Quiz] = updated
             ? isPublic ? "Collection is now public." : "Collection is now private."
             : "Could not update collection visibility.";
 
@@ -238,7 +238,7 @@ public class QuizController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CreateQuizInput input)
+    public async Task<IActionResult> Create(CreateQuizInput input, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
@@ -248,16 +248,16 @@ public class QuizController : Controller
 
         if (!ModelState.IsValid)
         {
-            TempData["QuizMessage"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            TempData[NotificationKeys.Quiz] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
             return RedirectToLibrary(input.CollectionId);
         }
 
-        var quiz = await _quizService.CreateQuizAsync(input.Name, input.SourceLanguage, language, userId, input.CollectionId);
+        var quiz = await _quizService.CreateQuizAsync(input.Name, input.SourceLanguage, language, userId, input.CollectionId, cancellationToken: cancellationToken);
         return RedirectToAction(nameof(Details), new { id = quiz.Id });
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateCollection(CreateCollectionInput input)
+    public async Task<IActionResult> CreateCollection(CreateCollectionInput input, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
@@ -267,29 +267,29 @@ public class QuizController : Controller
 
         if (!ModelState.IsValid)
         {
-            TempData["QuizMessage"] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+            TempData[NotificationKeys.Quiz] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
             return RedirectToLibrary(input.ParentCollectionId);
         }
 
         try
         {
-            var collection = await _collectionService.CreateCollectionAsync(input.Name, language, userId, input.ParentCollectionId);
-            TempData["QuizMessage"] = $"Created collection {collection.Name}.";
+            var collection = await _collectionService.CreateCollectionAsync(input.Name, language, userId, input.ParentCollectionId, cancellationToken: cancellationToken);
+            TempData[NotificationKeys.Quiz] = $"Created collection {collection.Name}.";
         }
         catch (InvalidOperationException ex)
         {
-            TempData["QuizMessage"] = ex.Message;
+            TempData[NotificationKeys.Quiz] = ex.Message;
         }
 
         return RedirectToLibrary(input.ParentCollectionId);
     }
 
     [HttpPost]
-    public async Task<IActionResult> MoveQuizToCollection(Guid quizId, Guid? collectionId)
+    public async Task<IActionResult> MoveQuizToCollection(Guid quizId, Guid? collectionId, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
-        var moved = await _collectionService.MoveQuizToCollectionAsync(quizId, collectionId, userId);
+        var moved = await _collectionService.MoveQuizToCollectionAsync(quizId, collectionId, userId, cancellationToken: cancellationToken);
         if (!moved)
         {
             return BadRequest(new { error = "Could not move quiz to that collection." });
@@ -299,24 +299,24 @@ public class QuizController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Settings(Guid? id)
+    public async Task<IActionResult> Settings(Guid? id, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
         Quiz? selectedQuiz = null;
         if (id.HasValue)
         {
-            selectedQuiz = await _quizService.GetQuizByIdAsync(id.Value, userId);
+            selectedQuiz = await _quizService.GetQuizByIdAsync(id.Value, userId, cancellationToken: cancellationToken);
             if (selectedQuiz == null)
                 return RedirectToAction(nameof(Index));
         }
 
         var availableWordCount = selectedQuiz == null
             ? 0
-            : await _quizService.GetAvailableWordCountAsync(selectedQuiz.Id);
+            : await _quizService.GetAvailableWordCountAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
         var availableSentenceCount = selectedQuiz == null
             ? 0
-            : await _quizService.GetAvailableSentenceCountAsync(selectedQuiz.Id);
+            : await _quizService.GetAvailableSentenceCountAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
 
         return View(new QuizSettingsViewModel
         {
@@ -328,7 +328,7 @@ public class QuizController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> Start(QuizSessionSettings settings)
+    public async Task<IActionResult> Start(QuizSessionSettings settings, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
 
@@ -336,7 +336,7 @@ public class QuizController : Controller
             return RedirectToAction(nameof(Settings));
 
         if (settings.QuizId.HasValue
-            && !await _quizService.UserOwnsQuizAsync(settings.QuizId.Value, userId))
+            && !await _quizService.UserOwnsQuizAsync(settings.QuizId.Value, userId, cancellationToken: cancellationToken))
         {
             return RedirectToAction(nameof(Index));
         }
@@ -345,8 +345,8 @@ public class QuizController : Controller
         {
             var normalizedItemType = PracticeItemType.Normalize(settings.PracticeItemType);
             var availableItemCount = PracticeItemType.IsSentences(normalizedItemType)
-                ? await _quizService.GetAvailableSentenceCountAsync(settings.QuizId.Value)
-                : await _quizService.GetAvailableWordCountAsync(settings.QuizId.Value);
+                ? await _quizService.GetAvailableSentenceCountAsync(settings.QuizId.Value, cancellationToken: cancellationToken)
+                : await _quizService.GetAvailableWordCountAsync(settings.QuizId.Value, cancellationToken: cancellationToken);
 
             if (availableItemCount == 0)
             {
@@ -375,10 +375,10 @@ public class QuizController : Controller
         return RedirectToAction("Index", "TypingQuiz", new { id, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType) });
     }
 
-    private async Task<QuizIndexViewModel> BuildQuizIndexViewModelAsync(string userId, string language, Collection? currentCollection)
+    private async Task<QuizIndexViewModel> BuildQuizIndexViewModelAsync(string userId, string language, Collection? currentCollection, CancellationToken cancellationToken = default)
     {
-        var quizzes = await _quizService.GetUserQuizzesAsync(userId);
-        var collections = await _collectionService.GetCollectionsAsync(userId, language);
+        var quizzes = await _quizService.GetUserQuizzesAsync(userId, cancellationToken: cancellationToken);
+        var collections = await _collectionService.GetCollectionsAsync(userId, language, cancellationToken: cancellationToken);
         Collection? parentCollection = null;
 
         if (currentCollection?.ParentCollectionId is Guid parentCollectionId)

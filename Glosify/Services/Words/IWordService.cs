@@ -4,13 +4,13 @@ namespace Glosify.Services.Words;
 
 public interface IWordService
 {
-    Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId);
-    Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount);
-    Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount);
-    Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId);
-    Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage);
-    Task<Word?> DeleteWordAsync(string wordId, string userId);
-    Task<bool> WordExistsAsync(Guid quizId, string word);
+    Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId, CancellationToken cancellationToken = default);
+    Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage, CancellationToken cancellationToken = default);
+    Task<Word?> DeleteWordAsync(string wordId, string userId, CancellationToken cancellationToken = default);
+    Task<bool> WordExistsAsync(Guid quizId, string word, CancellationToken cancellationToken = default);
 }
 
 public sealed record QuizCardData

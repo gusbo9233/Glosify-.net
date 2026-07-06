@@ -18,46 +18,47 @@ public class QuizService : IQuizService
         _collectionVisibility = new CollectionVisibility(context);
     }
 
-    public async Task<Quiz?> FindQuizAsync(string userId, Guid? quizId)
+    public async Task<Quiz?> FindQuizAsync(string userId, Guid? quizId, CancellationToken cancellationToken = default)
     {
         var language = _languageContext.CurrentLanguage;
-        var query = _context.Quizzes.Where(q => q.UserId == userId);
+        var query = _context.Quizzes.AsNoTracking().Where(q => q.UserId == userId);
         if (!string.IsNullOrWhiteSpace(language))
         {
             query = query.Where(q => q.TargetLanguage == language);
         }
 
         return quizId.HasValue
-            ? await query.FirstOrDefaultAsync(q => q.Id == quizId.Value)
-            : await query.OrderByDescending(q => q.CreatedAt).FirstOrDefaultAsync();
+            ? await query.FirstOrDefaultAsync(q => q.Id == quizId.Value, cancellationToken)
+            : await query.OrderByDescending(q => q.CreatedAt).FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<Quiz?> GetQuizByIdAsync(Guid id, string userId)
+    public async Task<Quiz?> GetQuizByIdAsync(Guid id, string userId, CancellationToken cancellationToken = default)
     {
         return await _context.Quizzes
-            .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<Quiz>> GetUserQuizzesAsync(string userId)
+    public async Task<IReadOnlyList<Quiz>> GetUserQuizzesAsync(string userId, CancellationToken cancellationToken = default)
     {
         var language = _languageContext.CurrentLanguage;
-        var query = _context.Quizzes.Where(q => q.UserId == userId);
+        var query = _context.Quizzes.AsNoTracking().Where(q => q.UserId == userId);
         if (!string.IsNullOrWhiteSpace(language))
         {
             query = query.Where(q => q.TargetLanguage == language);
         }
 
-        return await query.ToListAsync();
+        return await query.ToListAsync(cancellationToken);
     }
 
-    public async Task<Quiz> CreateQuizAsync(string name, string sourceLanguage, string targetLanguage, string userId, Guid? collectionId = null)
+    public async Task<Quiz> CreateQuizAsync(string name, string sourceLanguage, string targetLanguage, string userId, Guid? collectionId = null, CancellationToken cancellationToken = default)
     {
         if (collectionId.HasValue)
         {
             var collectionExists = await _context.Collections.AnyAsync(c =>
                 c.Id == collectionId.Value
                 && c.UserId == userId
-                && c.Language == targetLanguage);
+                && c.Language == targetLanguage, cancellationToken);
 
             if (!collectionExists)
             {
@@ -79,28 +80,28 @@ public class QuizService : IQuizService
         };
 
         _context.Quizzes.Add(quiz);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return quiz;
     }
 
-    public async Task<Quiz?> DeleteQuizAsync(Guid id, string userId)
+    public async Task<Quiz?> DeleteQuizAsync(Guid id, string userId, CancellationToken cancellationToken = default)
     {
         var quiz = await _context.Quizzes
-            .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId);
+            .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId, cancellationToken);
 
         if (quiz == null)
             return null;
 
         var words = await _context.Words
             .Where(word => word.QuizId == quiz.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
         var assistantThreads = await _context.AssistantThreads
             .Where(thread => thread.ContextQuizId == quiz.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
         var assistantMessages = await _context.AssistantMessages
             .Where(message => message.ContextQuizId == quiz.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         foreach (var thread in assistantThreads)
         {
@@ -117,15 +118,15 @@ public class QuizService : IQuizService
 
         // Save reference cleanup and both deletions together so a constraint
         // failure cannot leave the quiz behind after its words are removed.
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return quiz;
     }
 
-    public async Task<bool> SetQuizPublicAsync(Guid id, string userId, bool isPublic)
+    public async Task<bool> SetQuizPublicAsync(Guid id, string userId, bool isPublic, CancellationToken cancellationToken = default)
     {
         var quiz = await _context.Quizzes
-            .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId);
+            .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId, cancellationToken);
 
         if (quiz == null)
         {
@@ -133,40 +134,43 @@ public class QuizService : IQuizService
         }
 
         quiz.IsPublic = isPublic;
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 
-    public async Task<IReadOnlyList<Quiz>> GetPublicQuizzesAsync(string language)
+    public async Task<IReadOnlyList<Quiz>> GetPublicQuizzesAsync(string language, CancellationToken cancellationToken = default)
     {
         language = language.Trim();
 
         var publicCollectionIds = await _collectionVisibility.GetPublicCollectionTreeIdsAsync(language);
 
         return await _context.Quizzes
+            .AsNoTracking()
             .Where(q => q.IsPublic
                 && q.TargetLanguage == language
                 && (!q.CollectionId.HasValue || !publicCollectionIds.Contains(q.CollectionId.Value)))
             .OrderByDescending(q => q.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<Quiz?> GetPublicQuizAsync(Guid id)
+    public async Task<Quiz?> GetPublicQuizAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var quiz = await _context.Quizzes
-            .FirstOrDefaultAsync(q => q.Id == id);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
 
-        return quiz != null && await IsQuizPubliclyReadableAsync(quiz)
+        return quiz != null && await IsQuizPubliclyReadableAsync(quiz, cancellationToken)
             ? quiz
             : null;
     }
 
-    public async Task<Quiz?> CopyPublicQuizAsync(Guid id, string userId, Guid? collectionId = null)
+    public async Task<Quiz?> CopyPublicQuizAsync(Guid id, string userId, Guid? collectionId = null, CancellationToken cancellationToken = default)
     {
         var source = await _context.Quizzes
-            .FirstOrDefaultAsync(q => q.Id == id);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
 
-        if (source == null || !await IsQuizPubliclyReadableAsync(source))
+        if (source == null || !await IsQuizPubliclyReadableAsync(source, cancellationToken))
         {
             return null;
         }
@@ -176,7 +180,7 @@ public class QuizService : IQuizService
             var targetCollectionExists = await _context.Collections.AnyAsync(c =>
                 c.Id == collectionId.Value
                 && c.UserId == userId
-                && c.Language == source.TargetLanguage);
+                && c.Language == source.TargetLanguage, cancellationToken);
 
             if (!targetCollectionExists)
             {
@@ -207,11 +211,13 @@ public class QuizService : IQuizService
         };
 
         var words = await _context.Words
+            .AsNoTracking()
             .Where(word => word.QuizId == source.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
         var sentences = await _context.QuizSentences
+            .AsNoTracking()
             .Where(sentence => sentence.QuizId == source.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         _context.Quizzes.Add(copy);
         _context.Words.AddRange(words.Select(word => new Word
@@ -231,22 +237,22 @@ public class QuizService : IQuizService
             CreatedAt = sentence.CreatedAt
         }));
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return copy;
     }
 
 
-    public async Task<bool> UserOwnsQuizAsync(Guid quizId, string userId)
+    public async Task<bool> UserOwnsQuizAsync(Guid quizId, string userId, CancellationToken cancellationToken = default)
     {
-        return await _context.Quizzes.AnyAsync(q => q.Id == quizId && q.UserId == userId);
+        return await _context.Quizzes.AnyAsync(q => q.Id == quizId && q.UserId == userId, cancellationToken);
     }
 
-    public async Task<int> GetAvailableWordCountAsync(Guid quizId)
+    public async Task<int> GetAvailableWordCountAsync(Guid quizId, CancellationToken cancellationToken = default)
     {
-        return await _context.Words.CountAsync(word => word.QuizId == quizId);
+        return await _context.Words.CountAsync(word => word.QuizId == quizId, cancellationToken);
     }
 
-    public async Task<IReadOnlyDictionary<Guid, int>> GetWordCountsAsync(IReadOnlyCollection<Guid> quizIds)
+    public async Task<IReadOnlyDictionary<Guid, int>> GetWordCountsAsync(IReadOnlyCollection<Guid> quizIds, CancellationToken cancellationToken = default)
     {
         if (quizIds.Count == 0)
         {
@@ -257,15 +263,15 @@ public class QuizService : IQuizService
             .Where(word => quizIds.Contains(word.QuizId))
             .GroupBy(word => word.QuizId)
             .Select(group => new { QuizId = group.Key, Count = group.Count() })
-            .ToDictionaryAsync(group => group.QuizId, group => group.Count);
+            .ToDictionaryAsync(group => group.QuizId, group => group.Count, cancellationToken);
     }
 
-    public async Task<int> GetAvailableSentenceCountAsync(Guid quizId)
+    public async Task<int> GetAvailableSentenceCountAsync(Guid quizId, CancellationToken cancellationToken = default)
     {
-        return await _context.QuizSentences.CountAsync(sentence => sentence.QuizId == quizId);
+        return await _context.QuizSentences.CountAsync(sentence => sentence.QuizId == quizId, cancellationToken);
     }
 
-    private async Task<bool> IsQuizPubliclyReadableAsync(Quiz quiz)
+    private async Task<bool> IsQuizPubliclyReadableAsync(Quiz quiz, CancellationToken cancellationToken)
     {
         if (quiz.IsPublic)
         {

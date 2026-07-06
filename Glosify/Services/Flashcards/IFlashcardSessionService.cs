@@ -11,7 +11,7 @@ public interface IFlashcardSessionService
     void RevealAnswer(FlashcardSessionData session);
 }
 
-public record FlashcardSessionData
+public record FlashcardSessionData : Glosify.Services.Quizzes.IQuizSessionData
 {
     public string SessionId { get; init; } = string.Empty;
     public string UserId { get; init; } = string.Empty;

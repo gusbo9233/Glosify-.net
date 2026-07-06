@@ -27,14 +27,14 @@ public class ExploreApiController : ApiControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<ExploreIndexDto>> Index([FromQuery] string language)
+    public async Task<ActionResult<ExploreIndexDto>> Index([FromQuery] string language, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(language))
         {
             return BadRequest("language is required.");
         }
 
-        var summaries = await _collectionService.GetPublicCollectionSummariesAsync(language);
+        var summaries = await _collectionService.GetPublicCollectionSummariesAsync(language, cancellationToken: cancellationToken);
         var collectionCards = summaries
             .Select(summary => new ExploreCollectionCardDto(
                 summary.Collection.Id,
@@ -44,8 +44,8 @@ public class ExploreApiController : ApiControllerBase
                 summary.QuizCount))
             .ToList();
 
-        var quizzes = await _quizService.GetPublicQuizzesAsync(language);
-        var wordCounts = await _quizService.GetWordCountsAsync(quizzes.Select(quiz => quiz.Id).ToList());
+        var quizzes = await _quizService.GetPublicQuizzesAsync(language, cancellationToken: cancellationToken);
+        var wordCounts = await _quizService.GetWordCountsAsync(quizzes.Select(quiz => quiz.Id).ToList(), cancellationToken: cancellationToken);
         var quizCards = quizzes
             .Select(quiz => new ExploreQuizCardDto(
                 quiz.Id, quiz.Name, quiz.SourceLanguage, quiz.TargetLanguage,
@@ -56,30 +56,30 @@ public class ExploreApiController : ApiControllerBase
     }
 
     [HttpGet("collections/{id:guid}")]
-    public async Task<ActionResult<ExploreCollectionDto>> Collection(Guid id)
+    public async Task<ActionResult<ExploreCollectionDto>> Collection(Guid id, CancellationToken cancellationToken = default)
     {
-        var collection = await _collectionService.GetPublicCollectionTreeAsync(id);
+        var collection = await _collectionService.GetPublicCollectionTreeAsync(id, cancellationToken: cancellationToken);
         if (collection == null)
         {
             return NotFound();
         }
 
         var quizIds = CollectQuizIds(collection);
-        var wordCounts = await _quizService.GetWordCountsAsync(quizIds);
+        var wordCounts = await _quizService.GetWordCountsAsync(quizIds, cancellationToken: cancellationToken);
         return Ok(ToDto(collection, wordCounts));
     }
 
     [HttpGet("quizzes/{id:guid}")]
-    public async Task<ActionResult<ExploreQuizDetailDto>> Quiz(Guid id)
+    public async Task<ActionResult<ExploreQuizDetailDto>> Quiz(Guid id, CancellationToken cancellationToken = default)
     {
-        var quiz = await _quizService.GetPublicQuizAsync(id);
+        var quiz = await _quizService.GetPublicQuizAsync(id, cancellationToken: cancellationToken);
         if (quiz == null)
         {
             return NotFound();
         }
 
-        var words = await _wordService.GetWordsAsync(quiz.Id);
-        var sentences = await _wordService.GetSentencesAsync(quiz.Id);
+        var words = await _wordService.GetWordsAsync(quiz.Id, cancellationToken: cancellationToken);
+        var sentences = await _wordService.GetSentencesAsync(quiz.Id, cancellationToken: cancellationToken);
 
         return Ok(new ExploreQuizDetailDto(
             quiz.Id,
@@ -91,9 +91,9 @@ public class ExploreApiController : ApiControllerBase
     }
 
     [HttpPost("quizzes/{id:guid}/copy")]
-    public async Task<ActionResult<QuizSummaryDto>> CopyQuiz(Guid id)
+    public async Task<ActionResult<QuizSummaryDto>> CopyQuiz(Guid id, CancellationToken cancellationToken = default)
     {
-        var copied = await _quizService.CopyPublicQuizAsync(id, User.GetUserId());
+        var copied = await _quizService.CopyPublicQuizAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         if (copied == null)
         {
             return NotFound("That quiz is no longer public.");
@@ -103,9 +103,9 @@ public class ExploreApiController : ApiControllerBase
     }
 
     [HttpPost("collections/{id:guid}/copy")]
-    public async Task<ActionResult<CollectionDto>> CopyCollection(Guid id)
+    public async Task<ActionResult<CollectionDto>> CopyCollection(Guid id, CancellationToken cancellationToken = default)
     {
-        var copied = await _collectionService.CopyPublicCollectionAsync(id, User.GetUserId());
+        var copied = await _collectionService.CopyPublicCollectionAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         if (copied == null)
         {
             return NotFound("That collection is no longer public.");

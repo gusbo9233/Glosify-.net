@@ -17,7 +17,7 @@
         </div>
     </header>
 
-    @if (TempData["ExploreMessage"] is string exploreMessage)
+    @if (TempData[NotificationKeys.Explore] is string exploreMessage)
     {
         <div class="page-message">@exploreMessage</div>
     }

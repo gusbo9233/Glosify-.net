@@ -66,26 +66,26 @@ public sealed class AdminController : Controller
     {
         if (string.IsNullOrWhiteSpace(input.UserId))
         {
-            TempData["AdminMessage"] = "Choose a user first.";
+            TempData[NotificationKeys.Admin] = "Choose a user first.";
             return RedirectToAction(nameof(AiCredits), new { search = input.Search });
         }
 
         if (input.Credits <= 0)
         {
-            TempData["AdminMessage"] = "Credits must be greater than zero.";
+            TempData[NotificationKeys.Admin] = "Credits must be greater than zero.";
             return RedirectToAction(nameof(AiCredits), new { search = input.Search, selectedUserId = input.UserId });
         }
 
         if (string.IsNullOrWhiteSpace(input.Note))
         {
-            TempData["AdminMessage"] = "Add a note for the credit grant.";
+            TempData[NotificationKeys.Admin] = "Add a note for the credit grant.";
             return RedirectToAction(nameof(AiCredits), new { search = input.Search, selectedUserId = input.UserId });
         }
 
         var targetExists = await _userManager.Users.AnyAsync(user => user.Id == input.UserId, cancellationToken);
         if (!targetExists)
         {
-            TempData["AdminMessage"] = "User not found.";
+            TempData[NotificationKeys.Admin] = "User not found.";
             return RedirectToAction(nameof(AiCredits), new { search = input.Search });
         }
 
@@ -95,7 +95,7 @@ public sealed class AdminController : Controller
             input.Credits,
             input.Note,
             cancellationToken);
-        TempData["AdminMessage"] = $"Granted {input.Credits} credits.";
+        TempData[NotificationKeys.Admin] = $"Granted {input.Credits} credits.";
         return RedirectToAction(nameof(AiCredits), new { search = input.Search, selectedUserId = input.UserId });
     }
 

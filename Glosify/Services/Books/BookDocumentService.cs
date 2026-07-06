@@ -28,6 +28,7 @@ public sealed class BookDocumentService : IBookDocumentService
         CancellationToken cancellationToken = default)
     {
         return await _context.BookDocuments
+            .AsNoTracking()
             .Where(book => book.UserId == userId)
             .OrderByDescending(book => book.CreatedAt)
             .ToListAsync(cancellationToken);
@@ -43,17 +44,22 @@ public sealed class BookDocumentService : IBookDocumentService
         var documentId = Guid.NewGuid();
         var blobName = $"users/{userId}/books/{documentId}.pdf";
         var now = DateTimeOffset.UtcNow;
-        await using var buffer = new MemoryStream();
-        await file.CopyToAsync(buffer, cancellationToken);
 
+        // ASP.NET has already buffered the form file (memory or temp file), so each
+        // OpenReadStream call is an independent seekable view; copying the whole PDF
+        // into a MemoryStream here just doubled the memory cost of an upload.
         IReadOnlyList<ExtractedPdfPage> pages;
         try
         {
-            buffer.Position = 0;
-            await _storage.UploadAsync(buffer, blobName, "application/pdf", cancellationToken);
+            await using (var uploadStream = file.OpenReadStream())
+            {
+                await _storage.UploadAsync(uploadStream, blobName, "application/pdf", cancellationToken);
+            }
 
-            buffer.Position = 0;
-            pages = await _pdfTextExtraction.ExtractPagesAsync(buffer, cancellationToken);
+            await using (var extractionStream = file.OpenReadStream())
+            {
+                pages = await _pdfTextExtraction.ExtractPagesAsync(extractionStream, cancellationToken);
+            }
         }
         catch
         {
@@ -98,6 +104,7 @@ public sealed class BookDocumentService : IBookDocumentService
         CancellationToken cancellationToken = default)
     {
         return await _context.BookDocuments
+            .AsNoTracking()
             .FirstOrDefaultAsync(book => book.Id == id && book.UserId == userId, cancellationToken);
     }
 
@@ -108,6 +115,7 @@ public sealed class BookDocumentService : IBookDocumentService
         CancellationToken cancellationToken = default)
     {
         return await _context.BookPages
+            .AsNoTracking()
             .Include(page => page.BookDocument)
             .FirstOrDefaultAsync(
                 page => page.BookDocumentId == documentId

@@ -69,7 +69,7 @@
         </div>
     </header>
 
-    @if (TempData["QuizMessage"] is string quizMessage)
+    @if (TempData[NotificationKeys.Quiz] is string quizMessage)
     {
         <div class="page-message">@quizMessage</div>
     }

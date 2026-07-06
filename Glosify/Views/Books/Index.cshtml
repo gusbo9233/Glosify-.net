@@ -12,7 +12,7 @@
         </div>
     </section>
 
-    @if (TempData["BookMessage"] is string bookMessage)
+    @if (TempData[NotificationKeys.Book] is string bookMessage)
     {
         <div class="panel-message">@bookMessage</div>
     }

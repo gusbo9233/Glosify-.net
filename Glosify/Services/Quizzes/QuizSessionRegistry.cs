@@ -46,19 +46,33 @@ public class QuizSessionRegistry : IQuizSessionRegistry
         if (string.IsNullOrWhiteSpace(session.UserId) || string.IsNullOrWhiteSpace(session.SessionId))
             return;
 
-        var sessions = _sessionsByUser.GetOrAdd(session.UserId, _ => []);
-        lock (sessions)
+        while (true)
         {
-            PruneExpired(sessions);
-            if (sessions.Any(s => s.SessionId == session.SessionId))
-                return;
-
-            sessions.Add(session with { StartedAt = DateTimeOffset.UtcNow });
-            while (sessions.Count > MaxActiveSessionsPerUser)
+            var sessions = _sessionsByUser.GetOrAdd(session.UserId, _ => []);
+            lock (sessions)
             {
-                var oldest = sessions.MinBy(s => s.StartedAt)!;
-                sessions.Remove(oldest);
-                _cache.Remove(oldest.CacheKey);
+                // Another thread may have evicted this (emptied) entry between the
+                // GetOrAdd and the lock; adding to the orphaned list would lose the
+                // session, so retry with a fresh entry.
+                if (!_sessionsByUser.TryGetValue(session.UserId, out var current)
+                    || !ReferenceEquals(current, sessions))
+                {
+                    continue;
+                }
+
+                PruneExpired(sessions);
+                if (sessions.Any(s => s.SessionId == session.SessionId))
+                    return;
+
+                sessions.Add(session with { StartedAt = DateTimeOffset.UtcNow });
+                while (sessions.Count > MaxActiveSessionsPerUser)
+                {
+                    var oldest = sessions.MinBy(s => s.StartedAt)!;
+                    sessions.Remove(oldest);
+                    _cache.Remove(oldest.CacheKey);
+                }
+
+                return;
             }
         }
     }
@@ -71,12 +85,14 @@ public class QuizSessionRegistry : IQuizSessionRegistry
         lock (sessions)
         {
             PruneExpired(sessions);
-            return sessions.FirstOrDefault(s =>
+            var active = sessions.FirstOrDefault(s =>
                 s.Mode == mode
                 && s.QuizId == quizId
                 && string.Equals(s.PracticeDirection, practiceDirection, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(s.PracticeItemType, practiceItemType, StringComparison.OrdinalIgnoreCase)
                 && s.WordCount == wordCount);
+            RemoveUserEntryIfEmpty(userId, sessions);
+            return active;
         }
     }
 
@@ -88,17 +104,28 @@ public class QuizSessionRegistry : IQuizSessionRegistry
         lock (sessions)
         {
             var session = sessions.FirstOrDefault(s => s.SessionId == sessionId);
-            if (session == null)
-                return;
+            if (session != null)
+            {
+                sessions.Remove(session);
+                if (removeSessionData)
+                    _cache.Remove(session.CacheKey);
+            }
 
-            sessions.Remove(session);
-            if (removeSessionData)
-                _cache.Remove(session.CacheKey);
+            RemoveUserEntryIfEmpty(userId, sessions);
         }
     }
 
     private void PruneExpired(List<ActiveQuizSession> sessions)
     {
         sessions.RemoveAll(s => !_cache.TryGetValue(s.CacheKey, out _));
+    }
+
+    // Must be called while holding the lock on the user's session list; Register
+    // re-checks entry identity after locking, so a racing Register retries instead
+    // of adding to the removed list.
+    private void RemoveUserEntryIfEmpty(string userId, List<ActiveQuizSession> sessions)
+    {
+        if (sessions.Count == 0)
+            _sessionsByUser.TryRemove(userId, out _);
     }
 }

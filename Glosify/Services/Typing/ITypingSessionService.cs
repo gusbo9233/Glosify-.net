@@ -20,7 +20,7 @@ public interface ITypingSessionService
     TypingAnswerResult SubmitAnswer(TypingSessionData session, string userAnswer);
 }
 
-public record TypingSessionData
+public record TypingSessionData : Glosify.Services.Quizzes.IQuizSessionData
 {
     public string SessionId { get; init; } = string.Empty;
     public string UserId { get; init; } = string.Empty;

@@ -29,7 +29,7 @@ public class ExploreController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(CancellationToken cancellationToken = default)
     {
         var language = _languageContext.CurrentLanguage;
         if (language == null)
@@ -37,8 +37,8 @@ public class ExploreController : Controller
             return RedirectToAction("Index", "Languages");
         }
 
-        var summaries = await _collectionService.GetPublicCollectionSummariesAsync(language);
-        var quizzes = await _quizService.GetPublicQuizzesAsync(language);
+        var summaries = await _collectionService.GetPublicCollectionSummariesAsync(language, cancellationToken: cancellationToken);
+        var quizzes = await _quizService.GetPublicQuizzesAsync(language, cancellationToken: cancellationToken);
         var collectionCards = summaries
             .Select(summary => new ExploreCollectionCardViewModel
             {
@@ -48,7 +48,7 @@ public class ExploreController : Controller
             })
             .ToList();
 
-        var wordCounts = await _quizService.GetWordCountsAsync(quizzes.Select(quiz => quiz.Id).ToList());
+        var wordCounts = await _quizService.GetWordCountsAsync(quizzes.Select(quiz => quiz.Id).ToList(), cancellationToken: cancellationToken);
         var quizCards = quizzes
             .Select(quiz => new ExploreQuizCardViewModel
             {
@@ -66,9 +66,9 @@ public class ExploreController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Collection(Guid id)
+    public async Task<IActionResult> Collection(Guid id, CancellationToken cancellationToken = default)
     {
-        var collection = await _collectionService.GetPublicCollectionTreeAsync(id);
+        var collection = await _collectionService.GetPublicCollectionTreeAsync(id, cancellationToken: cancellationToken);
         if (collection == null)
         {
             return RedirectToAction(nameof(Index));
@@ -83,12 +83,12 @@ public class ExploreController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Details(Guid id)
+    public async Task<IActionResult> Details(Guid id, CancellationToken cancellationToken = default)
     {
-        var selectedQuiz = await _quizService.GetPublicQuizAsync(id);
+        var selectedQuiz = await _quizService.GetPublicQuizAsync(id, cancellationToken: cancellationToken);
         if (selectedQuiz == null)
         {
-            TempData["ExploreMessage"] = "That quiz is no longer public.";
+            TempData[NotificationKeys.Explore] = "That quiz is no longer public.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -103,11 +103,11 @@ public class ExploreController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        var words = await _wordService.GetWordsAsync(selectedQuiz.Id);
-        var sentences = await _wordService.GetSentencesAsync(selectedQuiz.Id);
+        var words = await _wordService.GetWordsAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
+        var sentences = await _wordService.GetSentencesAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
 
         if (selectedQuiz.CollectionId is Guid collectionId
-            && await _collectionService.GetPublicCollectionTreeAsync(collectionId) != null)
+            && await _collectionService.GetPublicCollectionTreeAsync(collectionId, cancellationToken: cancellationToken) != null)
         {
             ViewData["BackCollectionId"] = collectionId;
         }
@@ -126,30 +126,30 @@ public class ExploreController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> CopyQuiz(Guid id)
+    public async Task<IActionResult> CopyQuiz(Guid id, CancellationToken cancellationToken = default)
     {
-        var copied = await _quizService.CopyPublicQuizAsync(id, User.GetUserId());
+        var copied = await _quizService.CopyPublicQuizAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         if (copied == null)
         {
-            TempData["ExploreMessage"] = "That quiz is no longer public.";
+            TempData[NotificationKeys.Explore] = "That quiz is no longer public.";
             return RedirectToAction(nameof(Index));
         }
 
-        TempData["QuizMessage"] = $"Copied {copied.Name} to your library.";
+        TempData[NotificationKeys.Quiz] = $"Copied {copied.Name} to your library.";
         return RedirectToAction("Details", "Quiz", new { id = copied.Id });
     }
 
     [HttpPost]
-    public async Task<IActionResult> CopyCollection(Guid id)
+    public async Task<IActionResult> CopyCollection(Guid id, CancellationToken cancellationToken = default)
     {
-        var copied = await _collectionService.CopyPublicCollectionAsync(id, User.GetUserId());
+        var copied = await _collectionService.CopyPublicCollectionAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         if (copied == null)
         {
-            TempData["ExploreMessage"] = "That collection is no longer public.";
+            TempData[NotificationKeys.Explore] = "That collection is no longer public.";
             return RedirectToAction(nameof(Index));
         }
 
-        TempData["QuizMessage"] = $"Copied {copied.Name} to your library.";
+        TempData[NotificationKeys.Quiz] = $"Copied {copied.Name} to your library.";
         return RedirectToAction("Collection", "Quiz", new { id = copied.Id });
     }
 

@@ -14,29 +14,32 @@ public class WordService : IWordService
         _context = context;
     }
 
-    public async Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId)
+    public async Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId, CancellationToken cancellationToken = default)
     {
         return await _context.Words
+            .AsNoTracking()
             .Where(w => w.QuizId == quizId)
             .OrderBy(w => w.CreatedAt)
             .ThenBy(w => w.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount)
+    public async Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount, CancellationToken cancellationToken = default)
     {
         var take = Math.Clamp(wordCount, 1, 100);
 
         var cards = await _context.Words
+            .AsNoTracking()
             .Where(word => word.QuizId == quizId)
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
         var sentences = await _context.QuizSentences
+            .AsNoTracking()
             .Where(sentence => sentence.QuizId == quizId)
             .OrderBy(sentence => sentence.CreatedAt)
             .ThenBy(sentence => sentence.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return cards
             .Select(item =>
@@ -54,7 +57,7 @@ public class WordService : IWordService
             .ToList();
     }
 
-    public async Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount)
+    public async Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount, CancellationToken cancellationToken = default)
     {
         var take = Math.Clamp(sentenceCount, 1, 100);
 
@@ -70,20 +73,29 @@ public class WordService : IWordService
                 ExampleSentence = string.Empty,
                 ExampleTranslation = string.Empty
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId)
+    public async Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId, CancellationToken cancellationToken = default)
     {
         var words = await _context.Words
             .Where(word => word.QuizId == quizId)
             .Select(word => word.Lemma)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
         var sentences = await _context.QuizSentences
+            .AsNoTracking()
             .Where(sentence => sentence.QuizId == quizId)
             .OrderBy(sentence => sentence.CreatedAt)
             .ThenBy(sentence => sentence.Id)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
+
+        // One pattern per distinct word for the whole call; building the pattern
+        // inside the per-sentence loop churned the small static regex cache.
+        var wordRegexes = words
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(BuildWordRegex)
+            .OfType<Regex>()
+            .ToList();
 
         return sentences
             .Select(sentence => new QuizSentenceData
@@ -91,7 +103,9 @@ public class WordService : IWordService
                 Id = sentence.Id,
                 Text = CleanExampleForDisplay(sentence.Text),
                 Translation = sentence.Translation.Trim(),
-                WordCount = CountLinkedWords(sentence.Text, words)
+                WordCount = string.IsNullOrWhiteSpace(sentence.Text)
+                    ? 0
+                    : wordRegexes.Count(regex => regex.IsMatch(sentence.Text))
             })
             .Where(sentence => !string.IsNullOrWhiteSpace(sentence.Text))
             .ToList();
@@ -104,7 +118,7 @@ public class WordService : IWordService
             : exampleSentence.Trim();
     }
 
-    public async Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage)
+    public async Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(word) || string.IsNullOrWhiteSpace(translation))
             return false;
@@ -117,58 +131,54 @@ public class WordService : IWordService
             Translation = translation.Trim()
         });
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 
-    public async Task<Word?> DeleteWordAsync(string wordId, string userId)
+    public async Task<Word?> DeleteWordAsync(string wordId, string userId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(wordId))
             return null;
 
-        var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == wordId);
+        var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == wordId, cancellationToken);
         if (word == null)
             return null;
 
         var ownsQuiz = await _context.Quizzes
-            .AnyAsync(q => q.Id == word.QuizId && q.UserId == userId);
+            .AnyAsync(q => q.Id == word.QuizId && q.UserId == userId, cancellationToken);
 
         if (!ownsQuiz)
             return null;
 
         _context.Words.Remove(word);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         return word;
     }
 
-    public async Task<bool> WordExistsAsync(Guid quizId, string word)
+    public async Task<bool> WordExistsAsync(Guid quizId, string word, CancellationToken cancellationToken = default)
     {
         return await _context.Words
-            .AnyAsync(w => w.QuizId == quizId && w.Lemma == word);
+            .AnyAsync(w => w.QuizId == quizId && w.Lemma == word, cancellationToken);
     }
 
     private static QuizSentence? ChooseSentenceForWord(string word, IReadOnlyList<QuizSentence> sentences)
     {
-        return sentences.FirstOrDefault(sentence => ContainsWord(sentence.Text, word));
+        var regex = BuildWordRegex(word);
+        return regex == null
+            ? null
+            : sentences.FirstOrDefault(sentence =>
+                !string.IsNullOrWhiteSpace(sentence.Text) && regex.IsMatch(sentence.Text));
     }
 
-    private static int CountLinkedWords(string sentence, IReadOnlyList<string> words)
+    private static Regex? BuildWordRegex(string word)
     {
-        return words
-            .Where(word => ContainsWord(sentence, word))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Count();
-    }
-
-    private static bool ContainsWord(string sentence, string word)
-    {
-        if (string.IsNullOrWhiteSpace(sentence) || string.IsNullOrWhiteSpace(word))
+        if (string.IsNullOrWhiteSpace(word))
         {
-            return false;
+            return null;
         }
 
         var pattern = $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(word.Trim())}(?![\p{{L}}\p{{M}}])";
-        return Regex.IsMatch(sentence, pattern, RegexOptions.IgnoreCase);
+        return new Regex(pattern, RegexOptions.IgnoreCase);
     }
 }

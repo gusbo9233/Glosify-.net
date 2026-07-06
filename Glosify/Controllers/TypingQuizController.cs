@@ -29,13 +29,13 @@ public class TypingQuizController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null)
+    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
 
-        var selectedQuiz = await _quizService.FindQuizAsync(userId, id);
+        var selectedQuiz = await _quizService.FindQuizAsync(userId, id, cancellationToken: cancellationToken);
         if (selectedQuiz == null)
             return View(TypingQuizViewModel.Empty());
 

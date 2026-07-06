@@ -1,20 +1,20 @@
-using Microsoft.Extensions.Caching.Memory;
 using Glosify.Services.Quizzes;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Glosify.Services.Flashcards;
 
-public class FlashcardSessionService : IFlashcardSessionService
+public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, IFlashcardSessionService
 {
-    private const string Mode = "flashcards";
-    private static readonly TimeSpan SessionLifetime = TimeSpan.FromMinutes(45);
-    private readonly IMemoryCache _cache;
-    private readonly IQuizSessionRegistry _registry;
-
     public FlashcardSessionService(IMemoryCache cache, IQuizSessionRegistry registry)
+        : base(cache, registry)
     {
-        _cache = cache;
-        _registry = registry;
     }
+
+    protected override string Mode => "flashcards";
+    protected override string CacheKeyPrefix => "flashcard-quiz";
+
+    protected override bool IsComplete(FlashcardSessionData session)
+        => session.CurrentIndex >= session.Cards.Count;
 
     public FlashcardSessionData StartSession(
         string userId,
@@ -50,74 +50,6 @@ public class FlashcardSessionService : IFlashcardSessionService
         };
     }
 
-    public FlashcardSessionData? FindSession(string sessionId, string userId)
-    {
-        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(sessionId))
-            return null;
-
-        return _cache.TryGetValue(CacheKey(sessionId), out FlashcardSessionData? session)
-            && session?.UserId == userId
-            ? session
-            : null;
-    }
-
-    public void SaveSession(FlashcardSessionData session)
-    {
-        _cache.Set(
-            CacheKey(session.SessionId),
-            session,
-            new MemoryCacheEntryOptions { SlidingExpiration = SessionLifetime });
-
-        if (IsComplete(session))
-        {
-            _registry.Deregister(session.UserId, session.SessionId);
-        }
-        else
-        {
-            _registry.Register(new ActiveQuizSession
-            {
-                UserId = session.UserId,
-                SessionId = session.SessionId,
-                Mode = Mode,
-                QuizId = session.QuizId,
-                PracticeDirection = session.PracticeDirection,
-                PracticeItemType = session.PracticeItemType,
-                WordCount = session.WordCount,
-                CacheKey = CacheKey(session.SessionId)
-            });
-        }
-    }
-
-    public FlashcardSessionData? FindResumableSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount)
-    {
-        var active = _registry.FindActive(
-            userId,
-            Mode,
-            quizId,
-            PracticeDirection.Normalize(practiceDirection),
-            PracticeItemType.Normalize(practiceItemType),
-            Math.Clamp(wordCount, 1, 100));
-
-        return active == null ? null : FindSession(active.SessionId, userId);
-    }
-
-    public void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount)
-    {
-        var active = _registry.FindActive(
-            userId,
-            Mode,
-            quizId,
-            PracticeDirection.Normalize(practiceDirection),
-            PracticeItemType.Normalize(practiceItemType),
-            Math.Clamp(wordCount, 1, 100));
-
-        if (active != null)
-            _registry.Deregister(userId, active.SessionId, removeSessionData: true);
-    }
-
-    private static bool IsComplete(FlashcardSessionData session)
-        => session.CurrentIndex >= session.Cards.Count;
-
     public void ApplyRating(FlashcardSessionData session, string rating)
     {
         if (session.CurrentIndex >= session.Cards.Count)
@@ -148,19 +80,17 @@ public class FlashcardSessionService : IFlashcardSessionService
         session.IsAnswerRevealed = true;
     }
 
-    private static string CacheKey(string sessionId) => $"flashcard-quiz:{sessionId}";
-
     public FlashcardSessionData RestartWithAgainCards(FlashcardSessionData session)
     {
-       return StartSession(
-       session.UserId,
-       session.QuizId,
-       session.QuizName,
-       session.SourceLanguage,
-       session.TargetLanguage,
-       session.AgainCards.Count,
-       session.AgainCards,
-       session.PracticeDirection,
-       session.PracticeItemType);
+        return StartSession(
+            session.UserId,
+            session.QuizId,
+            session.QuizName,
+            session.SourceLanguage,
+            session.TargetLanguage,
+            session.AgainCards.Count,
+            session.AgainCards,
+            session.PracticeDirection,
+            session.PracticeItemType);
     }
 }
