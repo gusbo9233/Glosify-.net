@@ -14,6 +14,7 @@ public interface IQuizService
     Task<IReadOnlyList<Quiz>> GetPublicQuizzesAsync(string language, CancellationToken cancellationToken = default);
     Task<Quiz?> GetPublicQuizAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Quiz?> CopyPublicQuizAsync(Guid id, string userId, Guid? collectionId = null, CancellationToken cancellationToken = default);
+    Task<Quiz?> CopyClassroomQuizAsync(Guid id, Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task<int> GetAvailableWordCountAsync(Guid quizId, CancellationToken cancellationToken = default);
     Task<IReadOnlyDictionary<Guid, int>> GetWordCountsAsync(IReadOnlyCollection<Guid> quizIds, CancellationToken cancellationToken = default);
     Task<int> GetAvailableSentenceCountAsync(Guid quizId, CancellationToken cancellationToken = default);

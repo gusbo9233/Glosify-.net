@@ -79,6 +79,7 @@
                     <input type="hidden" name="wordCount" value="@Model.WordCount" />
                     <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
                     <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
+                    <input type="hidden" name="classroomId" value="@Model.ClassroomId" />
                     <button class="btn-linkish" type="submit">Reset Session</button>
                 </form>
             </article>
@@ -129,6 +130,7 @@
                     <input type="hidden" name="wordCount" value="@Model.WordCount" />
                     <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
                     <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
+                    <input type="hidden" name="classroomId" value="@Model.ClassroomId" />
                     <button class="btn-main" type="submit">Restart Session</button>
                 </form>
                 <form method="post" asp-controller="TypingQuiz" asp-action="RestartIncorrect" data-practice-incorrect hidden>

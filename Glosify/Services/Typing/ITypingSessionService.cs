@@ -36,6 +36,9 @@ public record TypingSessionData : Glosify.Services.Quizzes.IQuizSessionData
     public int CurrentIndex { get; set; }
     public int CorrectCount { get; set; }
     public int IncorrectCount { get; set; }
+    public Guid? ClassroomId { get; set; }
+    public DateTimeOffset StartedAt { get; init; } = DateTimeOffset.UtcNow;
+    public bool AttemptRecorded { get; set; }
     public IReadOnlyList<TypingWordData> Words { get; init; } = [];
     public List<TypingWordData> IncorrectWords { get; init; } = [];
 }

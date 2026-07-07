@@ -1,0 +1,127 @@
+@model ClassroomDetailsViewModel
+
+@if (Model.IsTeacher)
+{
+    <div class="tool-grid">
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-icon"><span class="material-symbols-outlined">person_add</span></div>
+                <h2 class="panel-title">Invite by email</h2>
+            </div>
+            <form method="post" asp-controller="Classroom" asp-action="Invite">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                <div class="form-group">
+                    <label class="form-label" for="inviteEmail">Email address</label>
+                    <input class="form-input" id="inviteEmail" name="email" type="email" maxlength="256" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="inviteRole">Role</label>
+                    <select class="form-input" id="inviteRole" name="role">
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                    </select>
+                </div>
+                <button class="btn-submit" type="submit">
+                    Invite <span class="material-symbols-outlined" aria-hidden="true">outgoing_mail</span>
+                </button>
+                <p class="book-meta">Invitations show up on the person's Classrooms page when they sign in with this email — no email is sent.</p>
+            </form>
+        </section>
+
+        @if (Model.IsOwner)
+        {
+            <section class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon"><span class="material-symbols-outlined">key</span></div>
+                    <h2 class="panel-title">Join code</h2>
+                </div>
+                <p class="book-meta">
+                    Anyone with the code <strong>@Model.Classroom.JoinCode</strong> can join as a student.
+                    Joining is currently <strong>@(Model.Classroom.JoinCodeEnabled ? "enabled" : "paused")</strong>.
+                </p>
+                <div class="classroom-invite-actions">
+                    <form method="post" asp-controller="Classroom" asp-action="RegenerateJoinCode">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                        <button class="btn-secondary" type="submit">New code</button>
+                    </form>
+                    <form method="post" asp-controller="Classroom" asp-action="ToggleJoinCode">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                        <input type="hidden" name="enabled" value="@((!Model.Classroom.JoinCodeEnabled).ToString().ToLowerInvariant())" />
+                        <button class="btn-secondary" type="submit">@(Model.Classroom.JoinCodeEnabled ? "Pause joining" : "Resume joining")</button>
+                    </form>
+                </div>
+            </section>
+        }
+    </div>
+}
+
+<section>
+    <div class="collection-header">
+        <div>
+            <h2 class="collection-title">Members</h2>
+            <p class="collection-subtitle">@Model.Members.Count @(Model.Members.Count == 1 ? "member" : "members")</p>
+        </div>
+    </div>
+
+    <div class="classroom-member-list">
+        @foreach (var member in Model.Members)
+        {
+            <article class="book-card">
+                <div class="book-card-main">
+                    <div class="word-icon"><span class="material-symbols-outlined">person</span></div>
+                    <div>
+                        <h3 class="book-title">@member.DisplayName</h3>
+                        <p class="book-meta">@member.Role &middot; joined @member.JoinedAt.ToLocalTime().ToString("MMM d, yyyy")</p>
+                    </div>
+                </div>
+                <div class="classroom-content-actions">
+                    @if (Model.IsTeacher)
+                    {
+                        <a class="btn-secondary" asp-controller="Classroom" asp-action="MemberResults" asp-route-id="@Model.Classroom.Id" asp-route-memberId="@member.UserId">Results</a>
+                    }
+                    @if (Model.IsOwner && member.Role != ClassroomRole.Owner)
+                    {
+                        <form method="post" asp-controller="Classroom" asp-action="ChangeRole">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                            <input type="hidden" name="memberUserId" value="@member.UserId" />
+                            <input type="hidden" name="role" value="@(member.Role == ClassroomRole.Student ? "teacher" : "student")" />
+                            <button class="btn-linkish" type="submit">Make @(member.Role == ClassroomRole.Student ? "teacher" : "student")</button>
+                        </form>
+                    }
+                    @if (Model.IsTeacher && member.Role != ClassroomRole.Owner && !(member.Role == ClassroomRole.Teacher && !Model.IsOwner))
+                    {
+                        <form method="post" asp-controller="Classroom" asp-action="RemoveMember" data-confirm="Remove @member.DisplayName from the classroom?">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                            <input type="hidden" name="memberUserId" value="@member.UserId" />
+                            <button class="btn-linkish" type="submit">Remove</button>
+                        </form>
+                    }
+                </div>
+            </article>
+        }
+    </div>
+
+    <div class="classroom-danger-zone">
+        @if (Model.IsOwner)
+        {
+            <form method="post" asp-controller="Classroom" asp-action="Delete" data-confirm="Delete this classroom for everyone? Shared quizzes and books stay in their owners' libraries.">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                <button class="btn-linkish" type="submit">Delete classroom</button>
+            </form>
+        }
+        else
+        {
+            <form method="post" asp-controller="Classroom" asp-action="Leave" data-confirm="Leave this classroom?">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                <button class="btn-linkish" type="submit">Leave classroom</button>
+            </form>
+        }
+    </div>
+</section>

@@ -9,4 +9,10 @@ public interface IBookDocumentService
     Task<BookDocument?> GetOwnedDocumentAsync(Guid id, string userId, CancellationToken cancellationToken = default);
     Task<BookPage?> GetOwnedPageAsync(Guid documentId, int pageNumber, string userId, CancellationToken cancellationToken = default);
     Task<Stream> OpenOwnedPdfAsync(Guid documentId, string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Opens a PDF without an ownership check. The caller must have already
+    /// authorized access (e.g. via a classroom share link).
+    /// </summary>
+    Task<Stream> OpenPdfUncheckedAsync(Guid documentId, CancellationToken cancellationToken = default);
 }

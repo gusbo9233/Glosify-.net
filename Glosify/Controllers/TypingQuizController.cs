@@ -2,6 +2,7 @@ using Glosify.Models;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Glosify.Services.Classrooms;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Typing;
@@ -15,33 +16,64 @@ public class TypingQuizController : Controller
     private readonly ITypingQuizService _typingQuizService;
     private readonly ITypingSessionService _sessionService;
     private readonly ILanguageContext _languageContext;
+    private readonly IClassroomService _classroomService;
+    private readonly IQuizAttemptService _attemptService;
 
     public TypingQuizController(
         IQuizService quizService,
         ITypingQuizService typingQuizService,
         ITypingSessionService sessionService,
-        ILanguageContext languageContext)
+        ILanguageContext languageContext,
+        IClassroomService classroomService,
+        IQuizAttemptService attemptService)
     {
         _quizService = quizService;
         _typingQuizService = typingQuizService;
         _sessionService = sessionService;
         _languageContext = languageContext;
+        _classroomService = classroomService;
+        _attemptService = attemptService;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
 
-        var selectedQuiz = await _quizService.FindQuizAsync(userId, id, cancellationToken: cancellationToken);
+        Quiz? selectedQuiz;
+        if (classroomId.HasValue && id.HasValue)
+        {
+            // Classroom-shared quizzes are practicable by members who don't own them.
+            try
+            {
+                selectedQuiz = await _classroomService.RequireSharedQuizAsync(classroomId.Value, id.Value, userId, cancellationToken);
+            }
+            catch (ClassroomAccessDeniedException)
+            {
+                return RedirectToAction("Index", "Classroom");
+            }
+        }
+        else
+        {
+            selectedQuiz = await _quizService.FindQuizAsync(userId, id, cancellationToken: cancellationToken);
+        }
+
         if (selectedQuiz == null)
             return View(TypingQuizViewModel.Empty());
 
         var resumed = _sessionService.FindResumableSession(userId, selectedQuiz.Id, normalizedDirection, normalizedItemType, wordCount);
         if (resumed != null)
+        {
+            if (classroomId.HasValue && resumed.ClassroomId == null)
+            {
+                resumed.ClassroomId = classroomId;
+                _sessionService.SaveSession(resumed);
+            }
+
             return RedirectToAction(nameof(Session), new { sessionId = resumed.SessionId });
+        }
 
         var data = await _typingQuizService.GetQuizDataAsync(selectedQuiz.Id, wordCount, normalizedDirection, normalizedItemType);
         var session = _sessionService.StartSession(
@@ -54,6 +86,7 @@ public class TypingQuizController : Controller
             data.Words,
             data.PracticeDirection,
             data.PracticeItemType);
+        session.ClassroomId = classroomId;
         _sessionService.SaveSession(session);
 
         return RedirectToAction(nameof(Session), new { sessionId = session.SessionId });
@@ -72,7 +105,7 @@ public class TypingQuizController : Controller
     }
 
     [HttpPost]
-    public IActionResult Submit([FromBody] TypingAnswer answer)
+    public async Task<IActionResult> Submit([FromBody] TypingAnswer answer, CancellationToken cancellationToken = default)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -83,7 +116,20 @@ public class TypingQuizController : Controller
             return NotFound(new { success = false, message = "Typing session expired." });
 
         var result = _sessionService.SubmitAnswer(session, answer.UserAnswer);
+
+        // Flag before persisting so a re-posted final answer can't double-record.
+        var justCompleted = session.CurrentIndex >= session.Words.Count && !session.AttemptRecorded;
+        if (justCompleted)
+        {
+            session.AttemptRecorded = true;
+        }
+
         _sessionService.SaveSession(session);
+
+        if (justCompleted)
+        {
+            await _attemptService.RecordTypingAttemptAsync(session, cancellationToken);
+        }
 
         return Ok(new
         {
@@ -112,10 +158,10 @@ public class TypingQuizController : Controller
     }
 
     [HttpPost]
-    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null)
+    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null)
     {
         _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount);
-        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType) });
+        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType), classroomId });
     }
 
     [HttpPost]
@@ -139,6 +185,7 @@ public class TypingQuizController : Controller
             session.PracticeDirection,
             session.PracticeItemType);
 
+        restarted.ClassroomId = session.ClassroomId;
         _sessionService.SaveSession(restarted);
 
         return RedirectToAction(nameof(Session), new { sessionId = restarted.SessionId });
@@ -186,7 +233,8 @@ public class TypingQuizController : Controller
             ItemPluralLabel = PracticeItemType.PluralLabel(session.PracticeItemType),
             CardLabel = PracticeItemType.CardLabel(session.PracticeItemType),
             ShowsUkrainianKeyboard = showsUkrainianKeyboard,
-            IsComplete = totalWords > 0 && currentWord == null
+            IsComplete = totalWords > 0 && currentWord == null,
+            ClassroomId = session.ClassroomId
         };
     }
 

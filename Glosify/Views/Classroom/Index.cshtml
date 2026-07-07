@@ -1,0 +1,124 @@
+@model ClassroomIndexViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "Classrooms";
+}
+
+<section class="classroom-page">
+    <section class="books-header">
+        <div>
+            <p class="hero-label">Learn together</p>
+            <h1 class="page-title">Classrooms</h1>
+        </div>
+    </section>
+
+    @if (TempData[NotificationKeys.Classroom] is string classroomMessage)
+    {
+        <div class="panel-message">@classroomMessage</div>
+    }
+
+    @if (Model.PendingInvitations.Any())
+    {
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-icon"><span class="material-symbols-outlined">mail</span></div>
+                <h2 class="panel-title">Invitations</h2>
+            </div>
+            <div class="classroom-invite-list">
+                @foreach (var invitation in Model.PendingInvitations)
+                {
+                    <div class="classroom-invite-row">
+                        <div>
+                            <strong>@invitation.ClassroomName</strong>
+                            <p class="book-meta">Invited by @invitation.InvitedByName as @invitation.Role.ToString().ToLowerInvariant()</p>
+                        </div>
+                        <div class="classroom-invite-actions">
+                            <form method="post" asp-controller="Classroom" asp-action="AcceptInvitation">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@invitation.Id" />
+                                <button class="btn-main" type="submit">Accept</button>
+                            </form>
+                            <form method="post" asp-controller="Classroom" asp-action="DeclineInvitation">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@invitation.Id" />
+                                <button class="btn-secondary" type="submit">Decline</button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <div class="tool-grid">
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-icon"><span class="material-symbols-outlined">add_circle</span></div>
+                <h2 class="panel-title">Create a classroom</h2>
+            </div>
+            <form method="post" asp-controller="Classroom" asp-action="Create">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label" for="classroomName">Name</label>
+                    <input class="form-input" id="classroomName" name="name" maxlength="160" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="classroomDescription">Description (optional)</label>
+                    <input class="form-input" id="classroomDescription" name="description" maxlength="1024" />
+                </div>
+                <button class="btn-submit" type="submit">
+                    Create <span class="material-symbols-outlined" aria-hidden="true">school</span>
+                </button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-icon"><span class="material-symbols-outlined">login</span></div>
+                <h2 class="panel-title">Join with a code</h2>
+            </div>
+            <form method="post" asp-controller="Classroom" asp-action="Join">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label class="form-label" for="joinCode">Join code</label>
+                    <input class="form-input" id="joinCode" name="code" maxlength="8" autocomplete="off"
+                           placeholder="e.g. K3XWPB7A" required />
+                </div>
+                <button class="btn-submit" type="submit">
+                    Join <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                </button>
+            </form>
+        </section>
+    </div>
+
+    <section>
+        <div class="collection-header">
+            <div>
+                <h2 class="collection-title">My classrooms</h2>
+                <p class="collection-subtitle">@Model.Classrooms.Count @(Model.Classrooms.Count == 1 ? "classroom" : "classrooms")</p>
+            </div>
+        </div>
+
+        <div class="book-grid">
+            @foreach (var summary in Model.Classrooms)
+            {
+                <article class="book-card">
+                    <div class="book-card-main">
+                        <div class="word-icon"><span class="material-symbols-outlined">school</span></div>
+                        <div>
+                            <h3 class="book-title">@summary.Classroom.Name</h3>
+                            <p class="book-meta">@summary.MemberCount @(summary.MemberCount == 1 ? "member" : "members") &middot; you are @summary.Role.ToString().ToLowerInvariant()</p>
+                        </div>
+                    </div>
+                    <a class="btn-secondary" asp-controller="Classroom" asp-action="Details" asp-route-id="@summary.Classroom.Id">
+                        Open <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                    </a>
+                </article>
+            }
+            @if (!Model.Classrooms.Any())
+            {
+                <div class="empty-state">No classrooms yet. Create one, or join with a code from your teacher.</div>
+            }
+        </div>
+    </section>
+</section>

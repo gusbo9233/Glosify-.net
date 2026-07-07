@@ -1,0 +1,128 @@
+@model ClassroomDetailsViewModel
+
+@if (Model.IsTeacher)
+{
+    <div class="tool-grid">
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-icon"><span class="material-symbols-outlined">quiz</span></div>
+                <h2 class="panel-title">Share a quiz</h2>
+            </div>
+            @if (Model.ShareableQuizzes.Any())
+            {
+                <form method="post" asp-controller="Classroom" asp-action="ShareQuiz">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                    <div class="form-group">
+                        <label class="form-label" for="shareQuizId">Quiz from your library</label>
+                        <select class="form-input" id="shareQuizId" name="quizId" required>
+                            @foreach (var quiz in Model.ShareableQuizzes)
+                            {
+                                <option value="@quiz.Id">@quiz.Name (@quiz.TargetLanguage)</option>
+                            }
+                        </select>
+                    </div>
+                    <button class="btn-submit" type="submit">
+                        Share <span class="material-symbols-outlined" aria-hidden="true">share</span>
+                    </button>
+                </form>
+            }
+            else
+            {
+                <p class="book-meta">All of your quizzes are already shared here, or your library is empty.</p>
+            }
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <div class="panel-icon"><span class="material-symbols-outlined">picture_as_pdf</span></div>
+                <h2 class="panel-title">Share a book</h2>
+            </div>
+            @if (Model.ShareableBooks.Any())
+            {
+                <form method="post" asp-controller="Classroom" asp-action="ShareBook">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                    <div class="form-group">
+                        <label class="form-label" for="shareBookId">Book from your library</label>
+                        <select class="form-input" id="shareBookId" name="bookId" required>
+                            @foreach (var book in Model.ShareableBooks)
+                            {
+                                <option value="@book.Id">@book.Title</option>
+                            }
+                        </select>
+                    </div>
+                    <button class="btn-submit" type="submit">
+                        Share <span class="material-symbols-outlined" aria-hidden="true">share</span>
+                    </button>
+                </form>
+            }
+            else
+            {
+                <p class="book-meta">All of your books are already shared here, or you have no uploads. <a asp-controller="Books" asp-action="Index">Upload a PDF</a> first.</p>
+            }
+        </section>
+    </div>
+}
+
+<section>
+    <div class="collection-header">
+        <div>
+            <h2 class="collection-title">Shared content</h2>
+            <p class="collection-subtitle">@Model.Content.Count @(Model.Content.Count == 1 ? "item" : "items")</p>
+        </div>
+    </div>
+
+    <div class="book-grid">
+        @foreach (var item in Model.Content)
+        {
+            <article class="book-card">
+                <div class="book-card-main">
+                    <div class="word-icon">
+                        <span class="material-symbols-outlined">@(item.ContentType == ClassroomContentType.Quiz ? "quiz" : "picture_as_pdf")</span>
+                    </div>
+                    <div>
+                        <h3 class="book-title">@(item.Quiz?.Name ?? item.Book?.Title ?? "Removed")</h3>
+                        <p class="book-meta">Shared by @item.SharedByName &middot; @item.SharedAt.ToLocalTime().ToString("MMM d, yyyy")</p>
+                    </div>
+                </div>
+                <div class="classroom-content-actions">
+                    @if (item.ContentType == ClassroomContentType.Quiz && item.Quiz != null)
+                    {
+                        <a class="btn-secondary" asp-controller="FlashcardQuiz" asp-action="Index" asp-route-id="@item.Quiz.Id" asp-route-classroomId="@Model.Classroom.Id">
+                            Flashcards
+                        </a>
+                        <a class="btn-secondary" asp-controller="TypingQuiz" asp-action="Index" asp-route-id="@item.Quiz.Id" asp-route-classroomId="@Model.Classroom.Id">
+                            Typing
+                        </a>
+                        <form method="post" asp-controller="Classroom" asp-action="CopyQuiz">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                            <input type="hidden" name="quizId" value="@item.Quiz.Id" />
+                            <button class="btn-linkish" type="submit">Copy to my library</button>
+                        </form>
+                    }
+                    else if (item.ContentType == ClassroomContentType.Book && item.Book != null)
+                    {
+                        <a class="btn-secondary" asp-controller="Classroom" asp-action="ContentPdf" asp-route-id="@Model.Classroom.Id" asp-route-bookId="@item.Book.Id" target="_blank" rel="noopener">
+                            Open PDF
+                        </a>
+                    }
+                    @if (Model.IsTeacher)
+                    {
+                        <form method="post" asp-controller="Classroom" asp-action="Unshare" data-confirm="Remove this from the classroom?">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                            <input type="hidden" name="contentId" value="@item.Id" />
+                            <button class="btn-linkish" type="submit">Remove</button>
+                        </form>
+                    }
+                </div>
+            </article>
+        }
+        @if (!Model.Content.Any())
+        {
+            <div class="empty-state">No shared content yet.</div>
+        }
+    </div>
+</section>

@@ -1,0 +1,70 @@
+@model ClassroomDetailsViewModel
+
+@if (Model.IsTeacher)
+{
+    <section class="panel">
+        <div class="panel-header">
+            <div class="panel-icon"><span class="material-symbols-outlined">campaign</span></div>
+            <h2 class="panel-title">Post an announcement</h2>
+        </div>
+        <form method="post" asp-controller="Classroom" asp-action="PostAnnouncement">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Classroom.Id" />
+            <div class="form-group">
+                <textarea class="form-input classroom-announcement-input" name="body" rows="3" maxlength="4000"
+                          placeholder="Share something with the class" required></textarea>
+            </div>
+            <button class="btn-submit" type="submit">
+                Post <span class="material-symbols-outlined" aria-hidden="true">send</span>
+            </button>
+        </form>
+    </section>
+}
+
+<section>
+    <div class="collection-header">
+        <div>
+            <h2 class="collection-title">Announcements</h2>
+            <p class="collection-subtitle">@Model.Board.Count @(Model.Board.Count == 1 ? "post" : "posts")</p>
+        </div>
+    </div>
+
+    <div class="classroom-board">
+        @foreach (var message in Model.Board)
+        {
+            <article class="panel classroom-board-post">
+                <div class="classroom-board-meta">
+                    <strong>@message.AuthorName</strong>
+                    <span class="book-meta">@message.CreatedAt.ToLocalTime().ToString("MMM d, yyyy HH:mm")</span>
+                    @if (message.IsPinned)
+                    {
+                        <span class="material-symbols-outlined classroom-pin-icon" title="Pinned">keep</span>
+                    }
+                </div>
+                <p class="classroom-board-body">@message.Body</p>
+                @if (Model.IsTeacher)
+                {
+                    <div class="classroom-board-actions">
+                        <form method="post" asp-controller="Classroom" asp-action="Pin">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                            <input type="hidden" name="messageId" value="@message.Id" />
+                            <input type="hidden" name="pinned" value="@((!message.IsPinned).ToString().ToLowerInvariant())" />
+                            <button class="btn-linkish" type="submit">@(message.IsPinned ? "Unpin" : "Pin")</button>
+                        </form>
+                        <form method="post" asp-controller="Classroom" asp-action="DeleteMessage" data-confirm="Delete this announcement?">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Classroom.Id" />
+                            <input type="hidden" name="messageId" value="@message.Id" />
+                            <button class="btn-linkish" type="submit">Delete</button>
+                        </form>
+                    </div>
+                }
+            </article>
+        }
+        @if (!Model.Board.Any())
+        {
+            <div class="empty-state">Nothing here yet. @(Model.IsTeacher ? "Post the first announcement above." : "Your teacher hasn't posted anything yet.")</div>
+        }
+    </div>
+</section>

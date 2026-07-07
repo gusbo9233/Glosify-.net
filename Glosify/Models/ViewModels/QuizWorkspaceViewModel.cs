@@ -98,6 +98,7 @@ namespace Glosify.Models.ViewModels
         public string CardLabel { get; set; } = "Word";
         public bool IsAnswerRevealed { get; set; }
         public bool IsComplete { get; set; }
+        public Guid? ClassroomId { get; set; }
 
         public static FlashcardQuizViewModel Empty() => new();
     }
@@ -137,6 +138,7 @@ namespace Glosify.Models.ViewModels
         public string CardLabel { get; set; } = "Word";
         public bool ShowsUkrainianKeyboard { get; set; }
         public bool IsComplete { get; set; }
+        public Guid? ClassroomId { get; set; }
 
         public static TypingQuizViewModel Empty() => new();
     }

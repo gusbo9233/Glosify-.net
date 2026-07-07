@@ -30,6 +30,15 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<BookDocument> BookDocuments { get; set; }
     public DbSet<BookPage> BookPages { get; set; }
 
+    public DbSet<Classroom> Classrooms { get; set; }
+    public DbSet<ClassroomMembership> ClassroomMemberships { get; set; }
+    public DbSet<ClassroomInvitation> ClassroomInvitations { get; set; }
+    public DbSet<ClassroomContent> ClassroomContents { get; set; }
+    public DbSet<ClassroomMessage> ClassroomMessages { get; set; }
+    public DbSet<QuizAttempt> QuizAttempts { get; set; }
+    public DbSet<QuizAttemptItem> QuizAttemptItems { get; set; }
+    public DbSet<AcsUserIdentity> AcsUserIdentities { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -221,6 +230,189 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
                 .WithMany(b => b.Pages)
                 .HasForeignKey(p => p.BookDocumentId)
                 .HasConstraintName("FK_BookPages_BookDocuments_BookDocumentId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Classroom>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.OwnerUserId).HasMaxLength(450).IsRequired();
+            entity.Property(c => c.Name).HasMaxLength(160).IsRequired();
+            entity.Property(c => c.Description).HasMaxLength(1024);
+            entity.Property(c => c.JoinCode).HasMaxLength(8).IsRequired();
+
+            entity.HasIndex(c => c.OwnerUserId);
+            entity.HasIndex(c => c.JoinCode).IsUnique();
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(c => c.OwnerUserId)
+                .HasConstraintName("FK_Classrooms_AspNetUsers_OwnerUserId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ClassroomMembership>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.UserId).HasMaxLength(450).IsRequired();
+
+            entity.HasIndex(m => new { m.ClassroomId, m.UserId }).IsUnique();
+            entity.HasIndex(m => m.UserId);
+
+            entity.HasOne<Classroom>()
+                .WithMany()
+                .HasForeignKey(m => m.ClassroomId)
+                .HasConstraintName("FK_ClassroomMemberships_Classrooms_ClassroomId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(m => m.UserId)
+                .HasConstraintName("FK_ClassroomMemberships_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<ClassroomInvitation>(entity =>
+        {
+            entity.HasKey(i => i.Id);
+            entity.Property(i => i.Email).HasMaxLength(256).IsRequired();
+            entity.Property(i => i.InvitedByUserId).HasMaxLength(450).IsRequired();
+            entity.Property(i => i.AcceptedByUserId).HasMaxLength(450);
+
+            entity.HasIndex(i => i.Email);
+            entity.HasIndex(i => new { i.ClassroomId, i.Email })
+                .IsUnique()
+                .HasFilter("[AcceptedAt] IS NULL");
+
+            entity.HasOne<Classroom>()
+                .WithMany()
+                .HasForeignKey(i => i.ClassroomId)
+                .HasConstraintName("FK_ClassroomInvitations_Classrooms_ClassroomId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(i => i.InvitedByUserId)
+                .HasConstraintName("FK_ClassroomInvitations_AspNetUsers_InvitedByUserId")
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<ClassroomContent>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.SharedByUserId).HasMaxLength(450).IsRequired();
+            entity.Property(c => c.Note).HasMaxLength(512);
+
+            entity.HasIndex(c => new { c.ClassroomId, c.SharedAt });
+            entity.HasIndex(c => new { c.ClassroomId, c.QuizId })
+                .IsUnique()
+                .HasFilter("[QuizId] IS NOT NULL");
+            entity.HasIndex(c => new { c.ClassroomId, c.BookDocumentId })
+                .IsUnique()
+                .HasFilter("[BookDocumentId] IS NOT NULL");
+
+            entity.HasOne<Classroom>()
+                .WithMany()
+                .HasForeignKey(c => c.ClassroomId)
+                .HasConstraintName("FK_ClassroomContents_Classrooms_ClassroomId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<Quiz>()
+                .WithMany()
+                .HasForeignKey(c => c.QuizId)
+                .HasConstraintName("FK_ClassroomContents_Quizzes_QuizId")
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne<BookDocument>()
+                .WithMany()
+                .HasForeignKey(c => c.BookDocumentId)
+                .HasConstraintName("FK_ClassroomContents_BookDocuments_BookDocumentId")
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(c => c.SharedByUserId)
+                .HasConstraintName("FK_ClassroomContents_AspNetUsers_SharedByUserId")
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<ClassroomMessage>(entity =>
+        {
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(m => m.Body).HasMaxLength(4000).IsRequired();
+
+            entity.HasIndex(m => new { m.ClassroomId, m.Kind, m.CreatedAt });
+
+            entity.HasOne<Classroom>()
+                .WithMany()
+                .HasForeignKey(m => m.ClassroomId)
+                .HasConstraintName("FK_ClassroomMessages_Classrooms_ClassroomId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(m => m.UserId)
+                .HasConstraintName("FK_ClassroomMessages_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<QuizAttempt>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(a => a.Mode).HasMaxLength(32).IsRequired();
+            entity.Property(a => a.PracticeDirection).HasMaxLength(32);
+            entity.Property(a => a.PracticeItemType).HasMaxLength(32);
+
+            entity.HasIndex(a => new { a.UserId, a.CompletedAt });
+            entity.HasIndex(a => new { a.ClassroomId, a.QuizId, a.CompletedAt });
+
+            entity.HasOne<Quiz>()
+                .WithMany()
+                .HasForeignKey(a => a.QuizId)
+                .HasConstraintName("FK_QuizAttempts_Quizzes_QuizId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .HasConstraintName("FK_QuizAttempts_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne<Classroom>()
+                .WithMany()
+                .HasForeignKey(a => a.ClassroomId)
+                .HasConstraintName("FK_QuizAttempts_Classrooms_ClassroomId")
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<QuizAttemptItem>(entity =>
+        {
+            entity.HasKey(i => i.Id);
+            entity.Property(i => i.Prompt).HasMaxLength(512).IsRequired();
+            entity.Property(i => i.ExpectedAnswer).HasMaxLength(512).IsRequired();
+            entity.Property(i => i.GivenAnswer).HasMaxLength(512);
+
+            entity.HasIndex(i => new { i.QuizAttemptId, i.Sequence });
+
+            entity.HasOne<QuizAttempt>()
+                .WithMany(a => a.Items)
+                .HasForeignKey(i => i.QuizAttemptId)
+                .HasConstraintName("FK_QuizAttemptItems_QuizAttempts_QuizAttemptId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AcsUserIdentity>(entity =>
+        {
+            entity.HasKey(a => a.UserId);
+            entity.Property(a => a.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(a => a.AcsUserId).HasMaxLength(256).IsRequired();
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .HasConstraintName("FK_AcsUserIdentities_AspNetUsers_UserId")
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

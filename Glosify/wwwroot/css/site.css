@@ -4866,3 +4866,111 @@ body { margin: 0; }
         transition: none;
     }
 }
+
+/* Classroom */
+.classroom-page {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.classroom-tabs {
+    align-self: flex-start;
+}
+
+.classroom-tabs .tab {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.classroom-join-code {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 12px 18px;
+}
+
+.classroom-code-value {
+    font-size: 20px;
+    letter-spacing: 0.12em;
+    font-variant-numeric: tabular-nums;
+}
+
+.classroom-invite-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.classroom-invite-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.classroom-invite-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.classroom-board {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.classroom-board-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.classroom-board-body {
+    margin: 10px 0 0;
+    white-space: pre-wrap;
+}
+
+.classroom-board-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.classroom-pin-icon {
+    font-size: 18px;
+    color: var(--primary);
+}
+
+.classroom-announcement-input {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.classroom-content-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.classroom-member-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.classroom-danger-zone {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--outline-variant, rgba(128, 128, 128, 0.25));
+}
+
+.classroom-results-table-wrap {
+    overflow-x: auto;
+}

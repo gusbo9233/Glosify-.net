@@ -1,0 +1,63 @@
+@model ClassroomDetailsViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Model.Classroom.Name;
+}
+
+<section class="classroom-page">
+    <section class="books-header">
+        <div>
+            <p class="hero-label">Classroom</p>
+            <h1 class="page-title">@Model.Classroom.Name</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Classroom.Description))
+            {
+                <p class="collection-subtitle">@Model.Classroom.Description</p>
+            }
+        </div>
+        @if (Model.IsTeacher)
+        {
+            <div class="classroom-join-code" data-join-code="@Model.Classroom.JoinCode">
+                <span class="book-meta">Join code</span>
+                <strong class="classroom-code-value">@Model.Classroom.JoinCode</strong>
+                <button class="btn-secondary" type="button" data-copy-join-code>
+                    Copy <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+                </button>
+            </div>
+        }
+    </section>
+
+    @if (TempData[NotificationKeys.Classroom] is string classroomMessage)
+    {
+        <div class="panel-message">@classroomMessage</div>
+    }
+
+    <div class="tab-group classroom-tabs" role="tablist" aria-label="Classroom sections">
+        <a class="tab @(Model.ActiveTab == "stream" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="stream">Stream</a>
+        <a class="tab @(Model.ActiveTab == "content" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="content">Content</a>
+        <a class="tab @(Model.ActiveTab == "members" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="members">Members</a>
+        @if (Model.IsTeacher)
+        {
+            <a class="tab @(Model.ActiveTab == "results" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="results">Results</a>
+        }
+    </div>
+
+    @switch (Model.ActiveTab)
+    {
+        case "content":
+            <partial name="_Content" model="Model" />
+            break;
+        case "members":
+            <partial name="_Members" model="Model" />
+            break;
+        case "results":
+            <partial name="_Results" model="Model" />
+            break;
+        default:
+            <partial name="_Stream" model="Model" />
+            break;
+    }
+</section>
+
+@section Scripts {
+    <script src="~/js/classroom.js" asp-append-version="true"></script>
+}

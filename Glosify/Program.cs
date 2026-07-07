@@ -15,6 +15,7 @@ using System.Threading.RateLimiting;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Llm;
+using Glosify.Services.Classrooms;
 using Glosify.Services.Flashcards;
 using Glosify.Services.Language;
 using Glosify.Services.Typing;
@@ -88,6 +89,19 @@ builder.Services.AddRateLimiter(options =>
             return RateLimitPartition.GetFixedWindowLimiter($"ai:{caller}", _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+        }
+
+        if (path.StartsWithSegments("/Classroom") && HttpMethods.IsPost(context.Request.Method))
+        {
+            var member = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter($"classroom:{member}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
             });
@@ -215,6 +229,8 @@ builder.Services.AddScoped<ITypingSessionService, TypingSessionService>();
 builder.Services.AddSingleton<IBookFileStorage, AzureBlobBookFileStorage>();
 builder.Services.AddScoped<IPdfTextExtractionService, PdfPigTextExtractionService>();
 builder.Services.AddScoped<IBookDocumentService, BookDocumentService>();
+builder.Services.AddScoped<IClassroomService, ClassroomService>();
+builder.Services.AddScoped<IQuizAttemptService, QuizAttemptService>();
 builder.Services.AddScoped<IAiCreditService, AiCreditService>();
 // The model factory is a singleton so the GoogleAI client and configured models are
 // created once; GeminiClient stays scoped because it charges the per-request credit service.

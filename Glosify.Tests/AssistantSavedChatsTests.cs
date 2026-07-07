@@ -406,6 +406,9 @@ public class AssistantSavedChatsTests
 
         public Task<Stream> OpenOwnedPdfAsync(Guid documentId, string userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<Stream> OpenPdfUncheckedAsync(Guid documentId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 
     private sealed class StaticBookDocumentService(BookPage page) : IBookDocumentService
@@ -426,6 +429,9 @@ public class AssistantSavedChatsTests
                     : null);
 
         public Task<Stream> OpenOwnedPdfAsync(Guid documentId, string userId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<Stream> OpenPdfUncheckedAsync(Guid documentId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
     }
 

@@ -29,6 +29,9 @@ public record FlashcardSessionData : Glosify.Services.Quizzes.IQuizSessionData
     public int AgainCount { get; set; }
     public int SkippedCount { get; set; }
     public bool IsAnswerRevealed { get; set; }
+    public Guid? ClassroomId { get; set; }
+    public DateTimeOffset StartedAt { get; init; } = DateTimeOffset.UtcNow;
+    public bool AttemptRecorded { get; set; }
     public IReadOnlyList<FlashcardCardData> Cards { get; init; } = [];
     public List<FlashcardCardData> AgainCards { get; init; } = [];
 

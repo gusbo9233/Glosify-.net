@@ -1,0 +1,57 @@
+@model ClassroomMemberResultsViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = $"{Model.MemberName} — results";
+}
+
+<section class="classroom-page">
+    <section class="books-header">
+        <div>
+            <p class="hero-label">@Model.Classroom.Name</p>
+            <h1 class="page-title">@Model.MemberName</h1>
+            <p class="collection-subtitle">@Model.Results.Count @(Model.Results.Count == 1 ? "attempt" : "attempts")</p>
+        </div>
+        <a class="btn-secondary" asp-controller="Classroom" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="results">
+            Back to classroom
+        </a>
+    </section>
+
+    @if (Model.Results.Any())
+    {
+        <div class="classroom-results-table-wrap">
+            <table class="admin-credit-table">
+                <thead>
+                    <tr>
+                        <th>Quiz</th>
+                        <th>Mode</th>
+                        <th>Score</th>
+                        <th>Correct</th>
+                        <th>Incorrect</th>
+                        <th>Skipped</th>
+                        <th>Completed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Results)
+                    {
+                        var answered = row.CorrectCount + row.IncorrectCount;
+                        var score = answered == 0 ? 0 : (int)Math.Round(row.CorrectCount * 100d / answered);
+                        <tr>
+                            <td>@row.QuizName</td>
+                            <td>@row.Mode</td>
+                            <td>@score%</td>
+                            <td>@row.CorrectCount</td>
+                            <td>@row.IncorrectCount</td>
+                            <td>@row.SkippedCount</td>
+                            <td>@row.CompletedAt.ToLocalTime().ToString("MMM d, yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">No attempts recorded for this member yet.</div>
+    }
+</section>

@@ -135,6 +135,18 @@ public sealed class BookDocumentService : IBookDocumentService
         return await _storage.OpenReadAsync(document.BlobName, cancellationToken);
     }
 
+    public async Task<Stream> OpenPdfUncheckedAsync(
+        Guid documentId,
+        CancellationToken cancellationToken = default)
+    {
+        var document = await _context.BookDocuments
+            .AsNoTracking()
+            .FirstOrDefaultAsync(book => book.Id == documentId, cancellationToken)
+            ?? throw new FileNotFoundException("Book not found.");
+
+        return await _storage.OpenReadAsync(document.BlobName, cancellationToken);
+    }
+
     private static void ValidatePdf(IFormFile? file)
     {
         if (file is null || file.Length == 0)
