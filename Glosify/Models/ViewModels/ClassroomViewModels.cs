@@ -20,6 +20,7 @@ public class ClassroomDetailsViewModel
     public IReadOnlyList<ClassroomMemberInfo> Members { get; set; } = [];
     public IReadOnlyList<ClassroomContentItem> Content { get; set; } = [];
     public IReadOnlyList<ClassroomAttemptRow> Results { get; set; } = [];
+    public ClassroomSchedule Schedule { get; set; } = new([], []);
 
     // Share pickers for teachers: their own quizzes/books not yet shared here.
     public IReadOnlyList<Quiz> ShareableQuizzes { get; set; } = [];

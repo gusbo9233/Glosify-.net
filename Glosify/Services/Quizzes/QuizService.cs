@@ -101,6 +101,15 @@ public class QuizService : IQuizService
         var classroomLinks = await _context.ClassroomContents
             .Where(link => link.QuizId == quiz.Id)
             .ToListAsync(cancellationToken);
+        // Assignments keep their row (title/instructions still matter) but lose
+        // the quiz reference, mirroring the assistant-thread context cleanup.
+        var assignments = await _context.ClassroomAssignments
+            .Where(assignment => assignment.QuizId == quiz.Id)
+            .ToListAsync(cancellationToken);
+        foreach (var assignment in assignments)
+        {
+            assignment.QuizId = null;
+        }
         var assistantThreads = await _context.AssistantThreads
             .Where(thread => thread.ContextQuizId == quiz.Id)
             .ToListAsync(cancellationToken);

@@ -695,6 +695,204 @@ public class ClassroomService : IClassroomService
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<ClassroomLesson> CreateLessonAsync(Guid classroomId, string userId, string title, string? description, DateTimeOffset? scheduledAt, CancellationToken cancellationToken = default)
+    {
+        await RequireTeacherAsync(classroomId, userId, cancellationToken);
+
+        title = title.Trim();
+        if (title.Length == 0)
+        {
+            throw new ArgumentException("Give the lesson a title.");
+        }
+
+        var lesson = new ClassroomLesson
+        {
+            Id = Guid.NewGuid(),
+            ClassroomId = classroomId,
+            Title = title,
+            Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
+            ScheduledAt = scheduledAt,
+            CreatedByUserId = userId,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        _context.ClassroomLessons.Add(lesson);
+        await _context.SaveChangesAsync(cancellationToken);
+        return lesson;
+    }
+
+    public async Task DeleteLessonAsync(Guid classroomId, string userId, Guid lessonId, CancellationToken cancellationToken = default)
+    {
+        await RequireTeacherAsync(classroomId, userId, cancellationToken);
+
+        var lesson = await _context.ClassroomLessons
+            .FirstOrDefaultAsync(l => l.Id == lessonId && l.ClassroomId == classroomId, cancellationToken);
+        if (lesson == null)
+        {
+            return;
+        }
+
+        // LessonId is a NoAction FK, so detach assignments before the lesson goes;
+        // they survive as unattached assignments.
+        var assignments = await _context.ClassroomAssignments
+            .Where(a => a.LessonId == lessonId)
+            .ToListAsync(cancellationToken);
+        foreach (var assignment in assignments)
+        {
+            assignment.LessonId = null;
+        }
+
+        _context.ClassroomLessons.Remove(lesson);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<ClassroomAssignment> CreateAssignmentAsync(Guid classroomId, string userId, string title, string? instructions, Guid? quizId, Guid? lessonId, DateTimeOffset? dueAt, CancellationToken cancellationToken = default)
+    {
+        await RequireTeacherAsync(classroomId, userId, cancellationToken);
+
+        title = title.Trim();
+        if (title.Length == 0)
+        {
+            throw new ArgumentException("Give the assignment a title.");
+        }
+
+        if (quizId.HasValue)
+        {
+            var quizShared = await _context.ClassroomContents
+                .AnyAsync(c => c.ClassroomId == classroomId && c.QuizId == quizId.Value, cancellationToken);
+            if (!quizShared)
+            {
+                throw new ArgumentException("Share the quiz with the classroom before assigning it.");
+            }
+        }
+
+        if (lessonId.HasValue)
+        {
+            var lessonExists = await _context.ClassroomLessons
+                .AnyAsync(l => l.Id == lessonId.Value && l.ClassroomId == classroomId, cancellationToken);
+            if (!lessonExists)
+            {
+                throw new ArgumentException("That lesson does not belong to this classroom.");
+            }
+        }
+
+        var assignment = new ClassroomAssignment
+        {
+            Id = Guid.NewGuid(),
+            ClassroomId = classroomId,
+            LessonId = lessonId,
+            Title = title,
+            Instructions = string.IsNullOrWhiteSpace(instructions) ? null : instructions.Trim(),
+            QuizId = quizId,
+            DueAt = dueAt,
+            CreatedByUserId = userId,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        _context.ClassroomAssignments.Add(assignment);
+        await _context.SaveChangesAsync(cancellationToken);
+        return assignment;
+    }
+
+    public async Task DeleteAssignmentAsync(Guid classroomId, string userId, Guid assignmentId, CancellationToken cancellationToken = default)
+    {
+        await RequireTeacherAsync(classroomId, userId, cancellationToken);
+
+        var assignment = await _context.ClassroomAssignments
+            .FirstOrDefaultAsync(a => a.Id == assignmentId && a.ClassroomId == classroomId, cancellationToken);
+        if (assignment != null)
+        {
+            _context.ClassroomAssignments.Remove(assignment);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    public async Task<ClassroomSchedule> GetScheduleAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
+    {
+        await RequireMemberAsync(classroomId, userId, cancellationToken);
+
+        var lessons = await _context.ClassroomLessons
+            .AsNoTracking()
+            .Where(l => l.ClassroomId == classroomId)
+            .OrderBy(l => l.ScheduledAt == null)
+            .ThenBy(l => l.ScheduledAt)
+            .ThenBy(l => l.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        var assignments = await _context.ClassroomAssignments
+            .AsNoTracking()
+            .Where(a => a.ClassroomId == classroomId)
+            .OrderBy(a => a.DueAt == null)
+            .ThenBy(a => a.DueAt)
+            .ThenBy(a => a.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        var studentCount = await _context.ClassroomMemberships
+            .CountAsync(m => m.ClassroomId == classroomId && m.Role == ClassroomRole.Student, cancellationToken);
+
+        var quizIds = assignments.Where(a => a.QuizId.HasValue).Select(a => a.QuizId!.Value).Distinct().ToList();
+        var quizNames = quizIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _context.Quizzes.AsNoTracking()
+                .Where(q => quizIds.Contains(q.Id))
+                .ToDictionaryAsync(q => q.Id, q => q.Name, cancellationToken);
+
+        // One pass over the classroom's attempts for the assigned quizzes covers
+        // both the teacher tally and the caller's own completion state.
+        var attempts = quizIds.Count == 0
+            ? []
+            : await _context.QuizAttempts.AsNoTracking()
+                .Where(a => a.ClassroomId == classroomId && quizIds.Contains(a.QuizId))
+                .Select(a => new { a.QuizId, a.UserId, a.CorrectCount, a.IncorrectCount })
+                .ToListAsync(cancellationToken);
+
+        var studentIds = await _context.ClassroomMemberships
+            .Where(m => m.ClassroomId == classroomId && m.Role == ClassroomRole.Student)
+            .Select(m => m.UserId)
+            .ToListAsync(cancellationToken);
+        var studentIdSet = studentIds.ToHashSet();
+
+        ClassroomAssignmentInfo BuildInfo(ClassroomAssignment assignment)
+        {
+            if (!assignment.QuizId.HasValue)
+            {
+                return new ClassroomAssignmentInfo(assignment, null, 0, studentCount, false, null);
+            }
+
+            var quizAttempts = attempts.Where(a => a.QuizId == assignment.QuizId.Value).ToList();
+            var completedStudents = quizAttempts
+                .Where(a => studentIdSet.Contains(a.UserId))
+                .Select(a => a.UserId)
+                .Distinct()
+                .Count();
+
+            var mine = quizAttempts.Where(a => a.UserId == userId).ToList();
+            int? bestScore = mine.Count == 0
+                ? null
+                : mine.Max(a =>
+                {
+                    var answered = a.CorrectCount + a.IncorrectCount;
+                    return answered == 0 ? 0 : (int)Math.Round(a.CorrectCount * 100d / answered);
+                });
+
+            return new ClassroomAssignmentInfo(
+                assignment,
+                quizNames.GetValueOrDefault(assignment.QuizId.Value),
+                completedStudents,
+                studentCount,
+                mine.Count > 0,
+                bestScore);
+        }
+
+        var infosByLesson = assignments
+            .Select(BuildInfo)
+            .ToLookup(info => info.Assignment.LessonId);
+
+        var lessonInfos = lessons
+            .Select(lesson => new ClassroomLessonInfo(lesson, infosByLesson[lesson.Id].ToList()))
+            .ToList();
+
+        return new ClassroomSchedule(lessonInfos, infosByLesson[null].ToList());
+    }
+
     public async Task<IReadOnlyList<ClassroomAttemptRow>> GetClassroomResultsAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
     {
         await RequireTeacherAsync(classroomId, userId, cancellationToken);

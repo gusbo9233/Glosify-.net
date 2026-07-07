@@ -1,0 +1,56 @@
+@model (ClassroomDetailsViewModel Parent, Glosify.Services.Classrooms.ClassroomAssignmentInfo Info)
+@{
+    var parent = Model.Parent;
+    var info = Model.Info;
+    var assignment = info.Assignment;
+    var overdue = assignment.DueAt.HasValue && assignment.DueAt.Value < DateTimeOffset.UtcNow;
+}
+
+<article class="book-card classroom-assignment">
+    <div class="book-card-main">
+        <div class="word-icon"><span class="material-symbols-outlined">assignment</span></div>
+        <div>
+            <h3 class="book-title">@assignment.Title</h3>
+            <p class="book-meta">
+                @if (assignment.DueAt.HasValue)
+                {
+                    <span class="classroom-due @(overdue ? "is-overdue" : null)">Due @assignment.DueAt.Value.ToLocalTime().ToString("MMM d, yyyy HH:mm")</span>
+                }
+                @if (info.QuizName != null)
+                {
+                    <span> &middot; Quiz: @info.QuizName</span>
+                }
+            </p>
+            @if (!string.IsNullOrWhiteSpace(assignment.Instructions))
+            {
+                <p class="book-meta">@assignment.Instructions</p>
+            }
+            <p class="book-meta">
+                @if (parent.IsTeacher)
+                {
+                    @($"{info.CompletedStudents} of {info.TotalStudents} students completed")
+                }
+                else if (assignment.QuizId.HasValue)
+                {
+                    @(info.CompletedByMe ? $"Done — best score {info.MyBestScorePercent}%" : "Not done yet")
+                }
+            </p>
+        </div>
+    </div>
+    <div class="classroom-content-actions">
+        @if (assignment.QuizId.HasValue)
+        {
+            <a class="btn-secondary" asp-controller="FlashcardQuiz" asp-action="Index" asp-route-id="@assignment.QuizId" asp-route-classroomId="@parent.Classroom.Id">Flashcards</a>
+            <a class="btn-secondary" asp-controller="TypingQuiz" asp-action="Index" asp-route-id="@assignment.QuizId" asp-route-classroomId="@parent.Classroom.Id">Typing</a>
+        }
+        @if (parent.IsTeacher)
+        {
+            <form method="post" asp-controller="Classroom" asp-action="DeleteAssignment" data-confirm="Delete this assignment?">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@parent.Classroom.Id" />
+                <input type="hidden" name="assignmentId" value="@assignment.Id" />
+                <button class="btn-linkish" type="submit">Delete</button>
+            </form>
+        }
+    </div>
+</article>

@@ -45,6 +45,12 @@ public interface IClassroomService
     Task SetPinnedAsync(Guid classroomId, string userId, Guid messageId, bool pinned, CancellationToken cancellationToken = default);
     Task DeleteMessageAsync(Guid classroomId, string userId, Guid messageId, CancellationToken cancellationToken = default);
 
+    Task<ClassroomLesson> CreateLessonAsync(Guid classroomId, string userId, string title, string? description, DateTimeOffset? scheduledAt, CancellationToken cancellationToken = default);
+    Task DeleteLessonAsync(Guid classroomId, string userId, Guid lessonId, CancellationToken cancellationToken = default);
+    Task<ClassroomAssignment> CreateAssignmentAsync(Guid classroomId, string userId, string title, string? instructions, Guid? quizId, Guid? lessonId, DateTimeOffset? dueAt, CancellationToken cancellationToken = default);
+    Task DeleteAssignmentAsync(Guid classroomId, string userId, Guid assignmentId, CancellationToken cancellationToken = default);
+    Task<ClassroomSchedule> GetScheduleAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<ClassroomAttemptRow>> GetClassroomResultsAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ClassroomAttemptRow>> GetMemberResultsAsync(Guid classroomId, string requesterUserId, string memberUserId, CancellationToken cancellationToken = default);
 }

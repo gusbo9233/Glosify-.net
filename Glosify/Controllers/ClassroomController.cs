@@ -118,7 +118,8 @@ public class ClassroomController : Controller
                 Board = await _classrooms.GetBoardAsync(id, userId, cancellationToken),
                 Members = await _classrooms.GetMembersAsync(id, userId, cancellationToken),
                 Content = await _classrooms.GetContentAsync(id, userId, cancellationToken),
-                UnreadChatCount = await _classrooms.GetUnreadChatCountAsync(id, userId, cancellationToken)
+                UnreadChatCount = await _classrooms.GetUnreadChatCountAsync(id, userId, cancellationToken),
+                Schedule = await _classrooms.GetScheduleAsync(id, userId, cancellationToken)
             };
 
             if (isTeacher)
@@ -298,6 +299,26 @@ public class ClassroomController : Controller
             return NotFound();
         }
     }
+
+    [HttpPost]
+    public Task<IActionResult> CreateLesson(Guid id, string title, string? description, DateTimeOffset? scheduledAt, CancellationToken cancellationToken)
+        => RunAndReturnAsync(id, "planning",
+            () => _classrooms.CreateLessonAsync(id, User.GetUserId(), title ?? string.Empty, description, scheduledAt, cancellationToken),
+            "Lesson created.");
+
+    [HttpPost]
+    public Task<IActionResult> DeleteLesson(Guid id, Guid lessonId, CancellationToken cancellationToken)
+        => RunAndReturnAsync(id, "planning", () => _classrooms.DeleteLessonAsync(id, User.GetUserId(), lessonId, cancellationToken));
+
+    [HttpPost]
+    public Task<IActionResult> CreateAssignment(Guid id, string title, string? instructions, Guid? quizId, Guid? lessonId, DateTimeOffset? dueAt, CancellationToken cancellationToken)
+        => RunAndReturnAsync(id, "planning",
+            () => _classrooms.CreateAssignmentAsync(id, User.GetUserId(), title ?? string.Empty, instructions, quizId, lessonId, dueAt, cancellationToken),
+            "Assignment created.");
+
+    [HttpPost]
+    public Task<IActionResult> DeleteAssignment(Guid id, Guid assignmentId, CancellationToken cancellationToken)
+        => RunAndReturnAsync(id, "planning", () => _classrooms.DeleteAssignmentAsync(id, User.GetUserId(), assignmentId, cancellationToken));
 
     [HttpGet]
     public async Task<IActionResult> Call(Guid id, CancellationToken cancellationToken)

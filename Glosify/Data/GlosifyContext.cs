@@ -38,6 +38,8 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<QuizAttempt> QuizAttempts { get; set; }
     public DbSet<QuizAttemptItem> QuizAttemptItems { get; set; }
     public DbSet<AcsUserIdentity> AcsUserIdentities { get; set; }
+    public DbSet<ClassroomLesson> ClassroomLessons { get; set; }
+    public DbSet<ClassroomAssignment> ClassroomAssignments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -401,6 +403,65 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(i => i.QuizAttemptId)
                 .HasConstraintName("FK_QuizAttemptItems_QuizAttempts_QuizAttemptId")
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ClassroomLesson>(entity =>
+        {
+            entity.HasKey(l => l.Id);
+            entity.Property(l => l.Title).HasMaxLength(160).IsRequired();
+            entity.Property(l => l.Description).HasMaxLength(2000);
+            entity.Property(l => l.CreatedByUserId).HasMaxLength(450).IsRequired();
+
+            entity.HasIndex(l => new { l.ClassroomId, l.ScheduledAt });
+
+            entity.HasOne<Classroom>()
+                .WithMany()
+                .HasForeignKey(l => l.ClassroomId)
+                .HasConstraintName("FK_ClassroomLessons_Classrooms_ClassroomId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(l => l.CreatedByUserId)
+                .HasConstraintName("FK_ClassroomLessons_AspNetUsers_CreatedByUserId")
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<ClassroomAssignment>(entity =>
+        {
+            entity.HasKey(a => a.Id);
+            entity.Property(a => a.Title).HasMaxLength(160).IsRequired();
+            entity.Property(a => a.Instructions).HasMaxLength(2000);
+            entity.Property(a => a.CreatedByUserId).HasMaxLength(450).IsRequired();
+
+            entity.HasIndex(a => new { a.ClassroomId, a.DueAt });
+            entity.HasIndex(a => a.LessonId);
+
+            entity.HasOne<Classroom>()
+                .WithMany()
+                .HasForeignKey(a => a.ClassroomId)
+                .HasConstraintName("FK_ClassroomAssignments_Classrooms_ClassroomId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // NoAction because lessons already cascade from the classroom (a second
+            // cascade path would be rejected); the service nulls LessonId on lesson delete.
+            entity.HasOne<ClassroomLesson>()
+                .WithMany()
+                .HasForeignKey(a => a.LessonId)
+                .HasConstraintName("FK_ClassroomAssignments_ClassroomLessons_LessonId")
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne<Quiz>()
+                .WithMany()
+                .HasForeignKey(a => a.QuizId)
+                .HasConstraintName("FK_ClassroomAssignments_Quizzes_QuizId")
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(a => a.CreatedByUserId)
+                .HasConstraintName("FK_ClassroomAssignments_AspNetUsers_CreatedByUserId")
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<AcsUserIdentity>(entity =>

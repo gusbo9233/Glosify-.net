@@ -44,6 +44,7 @@
             }
         </a>
         <a class="tab @(Model.ActiveTab == "content" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="content">Content</a>
+        <a class="tab @(Model.ActiveTab == "planning" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="planning">Planning</a>
         <a class="tab @(Model.ActiveTab == "members" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="members">Members</a>
         @if (Model.IsTeacher)
         {
@@ -58,6 +59,9 @@
             break;
         case "content":
             <partial name="_Content" model="Model" />
+            break;
+        case "planning":
+            <partial name="_Planning" model="Model" />
             break;
         case "members":
             <partial name="_Members" model="Model" />

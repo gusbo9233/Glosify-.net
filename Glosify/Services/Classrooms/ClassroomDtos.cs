@@ -46,6 +46,22 @@ public sealed record PendingInvitationInfo(
     ClassroomRole Role,
     DateTimeOffset CreatedAt);
 
+public sealed record ClassroomAssignmentInfo(
+    ClassroomAssignment Assignment,
+    string? QuizName,
+    int CompletedStudents,
+    int TotalStudents,
+    bool CompletedByMe,
+    int? MyBestScorePercent);
+
+public sealed record ClassroomLessonInfo(
+    ClassroomLesson Lesson,
+    IReadOnlyList<ClassroomAssignmentInfo> Assignments);
+
+public sealed record ClassroomSchedule(
+    IReadOnlyList<ClassroomLessonInfo> Lessons,
+    IReadOnlyList<ClassroomAssignmentInfo> UnattachedAssignments);
+
 public sealed record ClassroomAttemptRow(
     Guid AttemptId,
     string UserId,

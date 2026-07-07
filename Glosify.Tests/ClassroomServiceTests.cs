@@ -319,6 +319,93 @@ public sealed class ClassroomServiceTests
         Assert.Equal(["message-1", "message-2"], earlier.Select(m => m.Body));
     }
 
+    [Fact]
+    public async Task CoursePlanning_CrudRequiresTeacherAndValidatesReferences()
+    {
+        await using var context = CreateContext();
+        var service = new ClassroomService(context);
+        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var quiz = AddQuiz(context, OwnerId);
+        await context.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
+            () => service.CreateLessonAsync(classroom.Id, StudentId, "Week 1", null, null));
+
+        // An unshared quiz cannot be assigned.
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.CreateAssignmentAsync(classroom.Id, OwnerId, "Verbs", null, quiz.Id, null, null));
+
+        await service.ShareQuizAsync(classroom.Id, OwnerId, quiz.Id);
+        var lesson = await service.CreateLessonAsync(classroom.Id, OwnerId, "Week 1", "Intro", DateTimeOffset.UtcNow.AddDays(1));
+        var assignment = await service.CreateAssignmentAsync(
+            classroom.Id, OwnerId, "Verbs", "Practice all", quiz.Id, lesson.Id, DateTimeOffset.UtcNow.AddDays(7));
+
+        Assert.Equal(lesson.Id, assignment.LessonId);
+
+        // Deleting the lesson keeps the assignment, unattached.
+        await service.DeleteLessonAsync(classroom.Id, OwnerId, lesson.Id);
+        var remaining = Assert.Single(context.ClassroomAssignments.ToList());
+        Assert.Null(remaining.LessonId);
+        Assert.Empty(context.ClassroomLessons.ToList());
+    }
+
+    [Fact]
+    public async Task GetScheduleAsync_DerivesCompletionFromClassroomAttempts()
+    {
+        await using var context = CreateContext();
+        var service = new ClassroomService(context);
+        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var quiz = AddQuiz(context, OwnerId);
+        await context.SaveChangesAsync();
+        await service.ShareQuizAsync(classroom.Id, OwnerId, quiz.Id);
+        var lesson = await service.CreateLessonAsync(classroom.Id, OwnerId, "Week 1", null, null);
+        await service.CreateAssignmentAsync(classroom.Id, OwnerId, "Verbs", null, quiz.Id, lesson.Id, null);
+
+        // Personal (non-classroom) practice must not count as completion.
+        context.QuizAttempts.Add(new QuizAttempt
+        {
+            Id = Guid.NewGuid(),
+            QuizId = quiz.Id,
+            UserId = StudentId,
+            ClassroomId = null,
+            Mode = "typing",
+            TotalItems = 10,
+            CorrectCount = 10,
+            StartedAt = DateTimeOffset.UtcNow,
+            CompletedAt = DateTimeOffset.UtcNow
+        });
+        await context.SaveChangesAsync();
+
+        var schedule = await service.GetScheduleAsync(classroom.Id, StudentId);
+        var info = Assert.Single(Assert.Single(schedule.Lessons).Assignments);
+        Assert.False(info.CompletedByMe);
+        Assert.Equal(0, info.CompletedStudents);
+        Assert.Equal(1, info.TotalStudents);
+
+        context.QuizAttempts.Add(new QuizAttempt
+        {
+            Id = Guid.NewGuid(),
+            QuizId = quiz.Id,
+            UserId = StudentId,
+            ClassroomId = classroom.Id,
+            Mode = "typing",
+            TotalItems = 10,
+            CorrectCount = 8,
+            IncorrectCount = 2,
+            StartedAt = DateTimeOffset.UtcNow,
+            CompletedAt = DateTimeOffset.UtcNow
+        });
+        await context.SaveChangesAsync();
+
+        schedule = await service.GetScheduleAsync(classroom.Id, StudentId);
+        info = Assert.Single(Assert.Single(schedule.Lessons).Assignments);
+        Assert.True(info.CompletedByMe);
+        Assert.Equal(80, info.MyBestScorePercent);
+        Assert.Equal(1, info.CompletedStudents);
+    }
+
     private static void AddUser(GlosifyContext context, string id, string email)
     {
         context.Users.Add(new ApplicationUser

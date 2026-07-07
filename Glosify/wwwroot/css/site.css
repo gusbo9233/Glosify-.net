@@ -5089,3 +5089,21 @@ body { margin: 0; }
     font-size: 12px;
     font-weight: 700;
 }
+
+/* Classroom planning */
+.classroom-lesson {
+    margin-top: 24px;
+}
+
+.classroom-lesson-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.classroom-due.is-overdue {
+    color: #d64545;
+    font-weight: 700;
+}
