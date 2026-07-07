@@ -23,6 +23,13 @@ public sealed record ClassroomContentItem(
     DateTimeOffset SharedAt,
     string? Note);
 
+public sealed record ClassroomChatMessage(
+    Guid Id,
+    string UserId,
+    string AuthorName,
+    string Body,
+    DateTimeOffset CreatedAt);
+
 public sealed record ClassroomBoardMessage(
     Guid Id,
     string UserId,

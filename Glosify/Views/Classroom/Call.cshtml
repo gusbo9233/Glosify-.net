@@ -1,0 +1,57 @@
+@model ClassroomCallViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = $"{Model.Classroom.Name} — call";
+}
+
+<section class="classroom-page classroom-call-page"
+         data-classroom-call
+         data-classroom-id="@Model.Classroom.Id"
+         data-display-name="@Model.DisplayName">
+    <section class="books-header">
+        <div>
+            <p class="hero-label">@Model.Classroom.Name</p>
+            <h1 class="page-title">Video call</h1>
+            <p class="collection-subtitle" data-call-status>Not connected</p>
+        </div>
+        <a class="btn-secondary" asp-controller="Classroom" asp-action="Details" asp-route-id="@Model.Classroom.Id">
+            Back to classroom
+        </a>
+    </section>
+
+    @if (!Model.IsCallingConfigured)
+    {
+        <div class="empty-state">
+            Video calling is not configured on this server. An administrator needs to set the
+            <code>Acs__ConnectionString</code> app setting to an Azure Communication Services resource.
+        </div>
+    }
+    else
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="classroom-call-controls">
+            <button class="btn-main" type="button" data-call-join>
+                Join call <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
+            </button>
+            <button class="btn-secondary" type="button" data-call-mute hidden>Mute</button>
+            <button class="btn-secondary" type="button" data-call-camera hidden>Camera off</button>
+            <button class="btn-secondary" type="button" data-call-leave hidden>Leave</button>
+        </div>
+
+        <div class="classroom-call-grid" data-call-grid>
+            <div class="classroom-call-tile is-local" data-local-tile hidden>
+                <div class="classroom-call-video" data-local-video></div>
+                <span class="classroom-call-name">You</span>
+            </div>
+        </div>
+    }
+</section>
+
+@section Scripts {
+    @if (Model.IsCallingConfigured)
+    {
+        <script src="~/lib/acs/acs-calling.min.js" asp-append-version="true"></script>
+        <script src="~/js/classroom-call.js" asp-append-version="true"></script>
+    }
+}

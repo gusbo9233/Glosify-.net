@@ -255,6 +255,70 @@ public sealed class ClassroomServiceTests
             () => service.GetMemberResultsAsync(classroom.Id, StudentId, OwnerId));
     }
 
+    [Fact]
+    public async Task ChatFlow_PostsListsAndTracksUnread()
+    {
+        await using var context = CreateContext();
+        AddUser(context, OwnerId, "owner@example.test");
+        AddUser(context, StudentId, "student@example.test");
+        await context.SaveChangesAsync();
+        var service = new ClassroomService(context);
+        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+
+        await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
+            () => service.PostChatMessageAsync(classroom.Id, OutsiderId, "hi"));
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => service.PostChatMessageAsync(classroom.Id, OwnerId, "   "));
+
+        var posted = await service.PostChatMessageAsync(classroom.Id, OwnerId, "Hello class");
+        Assert.Equal("owner@example.test", posted.AuthorName);
+
+        var messages = await service.GetChatMessagesAsync(classroom.Id, StudentId);
+        var message = Assert.Single(messages);
+        Assert.Equal("Hello class", message.Body);
+
+        // Chat messages don't leak onto the announcement board.
+        Assert.Empty(await service.GetBoardAsync(classroom.Id, StudentId));
+
+        Assert.Equal(1, await service.GetUnreadChatCountAsync(classroom.Id, StudentId));
+        Assert.Equal(0, await service.GetUnreadChatCountAsync(classroom.Id, OwnerId)); // own message
+
+        await service.MarkChatReadAsync(classroom.Id, StudentId);
+        Assert.Equal(0, await service.GetUnreadChatCountAsync(classroom.Id, StudentId));
+    }
+
+    [Fact]
+    public async Task GetChatMessagesAsync_PagesBackwardsFromBefore()
+    {
+        await using var context = CreateContext();
+        AddUser(context, OwnerId, "owner@example.test");
+        await context.SaveChangesAsync();
+        var service = new ClassroomService(context);
+        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+
+        var now = DateTimeOffset.UtcNow;
+        for (var i = 0; i < 5; i++)
+        {
+            context.ClassroomMessages.Add(new ClassroomMessage
+            {
+                Id = Guid.NewGuid(),
+                ClassroomId = classroom.Id,
+                UserId = OwnerId,
+                Kind = ClassroomMessageKind.Chat,
+                Body = $"message-{i}",
+                CreatedAt = now.AddMinutes(i)
+            });
+        }
+        await context.SaveChangesAsync();
+
+        var latestTwo = await service.GetChatMessagesAsync(classroom.Id, OwnerId, take: 2);
+        Assert.Equal(["message-3", "message-4"], latestTwo.Select(m => m.Body));
+
+        var earlier = await service.GetChatMessagesAsync(classroom.Id, OwnerId, before: latestTwo[0].CreatedAt, take: 2);
+        Assert.Equal(["message-1", "message-2"], earlier.Select(m => m.Body));
+    }
+
     private static void AddUser(GlosifyContext context, string id, string email)
     {
         context.Users.Add(new ApplicationUser

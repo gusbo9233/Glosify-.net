@@ -1,0 +1,84 @@
+using System.Collections.Concurrent;
+using Glosify.Services.Classrooms;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+
+namespace Glosify.Hubs;
+
+[Authorize]
+public class ClassroomChatHub : Hub
+{
+    private const int MaxMessagesPerWindow = 10;
+    private static readonly TimeSpan ThrottleWindow = TimeSpan.FromSeconds(10);
+
+    // Hub messages bypass the HTTP rate limiter, so keep a small in-process
+    // send throttle per user (single-instance deployment assumption).
+    private static readonly ConcurrentDictionary<string, Queue<DateTimeOffset>> RecentSends = new();
+
+    private readonly IClassroomService _classrooms;
+
+    public ClassroomChatHub(IClassroomService classrooms)
+    {
+        _classrooms = classrooms;
+    }
+
+    public async Task JoinClassroom(Guid classroomId)
+    {
+        var userId = Context.User!.GetUserId();
+        await _classrooms.RequireMemberAsync(classroomId, userId, Context.ConnectionAborted);
+        await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(classroomId), Context.ConnectionAborted);
+    }
+
+    public async Task SendMessage(Guid classroomId, string body)
+    {
+        var userId = Context.User!.GetUserId();
+
+        if (!TryRecordSend(userId))
+        {
+            throw new HubException("You're sending messages too quickly. Wait a moment.");
+        }
+
+        ClassroomChatMessage message;
+        try
+        {
+            message = await _classrooms.PostChatMessageAsync(classroomId, userId, body ?? string.Empty, Context.ConnectionAborted);
+        }
+        catch (Exception ex) when (ex is ClassroomAccessDeniedException or ArgumentException)
+        {
+            throw new HubException(ex.Message);
+        }
+
+        await Clients.Group(GroupName(classroomId)).SendAsync("messageReceived", new
+        {
+            id = message.Id,
+            userId = message.UserId,
+            authorName = message.AuthorName,
+            body = message.Body,
+            createdAt = message.CreatedAt
+        }, Context.ConnectionAborted);
+    }
+
+    private static string GroupName(Guid classroomId) => $"classroom:{classroomId}";
+
+    private static bool TryRecordSend(string userId)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var window = RecentSends.GetOrAdd(userId, _ => new Queue<DateTimeOffset>());
+
+        lock (window)
+        {
+            while (window.Count > 0 && now - window.Peek() > ThrottleWindow)
+            {
+                window.Dequeue();
+            }
+
+            if (window.Count >= MaxMessagesPerWindow)
+            {
+                return false;
+            }
+
+            window.Enqueue(now);
+            return true;
+        }
+    }
+}

@@ -29,6 +29,8 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
 
+builder.Services.AddSignalR();
+
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
@@ -231,6 +233,9 @@ builder.Services.AddScoped<IPdfTextExtractionService, PdfPigTextExtractionServic
 builder.Services.AddScoped<IBookDocumentService, BookDocumentService>();
 builder.Services.AddScoped<IClassroomService, ClassroomService>();
 builder.Services.AddScoped<IQuizAttemptService, QuizAttemptService>();
+builder.Services.Configure<Glosify.Services.Communication.AcsOptions>(
+    builder.Configuration.GetSection(Glosify.Services.Communication.AcsOptions.SectionName));
+builder.Services.AddScoped<Glosify.Services.Communication.IAcsTokenService, Glosify.Services.Communication.AcsTokenService>();
 builder.Services.AddScoped<IAiCreditService, AiCreditService>();
 // The model factory is a singleton so the GoogleAI client and configured models are
 // created once; GeminiClient stays scoped because it charges the per-request credit service.
@@ -302,7 +307,12 @@ app.UseHttpsRedirection();
 var configuredFormActionOrigins = builder.Configuration
     .GetSection("Security:Csp:FormActionOrigins")
     .Get<string[]>() ?? [];
-var contentSecurityPolicy = BuildContentSecurityPolicy(configuredFormActionOrigins);
+// Extra connect-src entries for the ACS calling SDK (video signaling/media
+// endpoints); configurable so new ACS domains don't require a code change.
+var configuredConnectSources = builder.Configuration
+    .GetSection("Security:Csp:ConnectSources")
+    .Get<string[]>() ?? [];
+var contentSecurityPolicy = BuildContentSecurityPolicy(configuredFormActionOrigins, configuredConnectSources);
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
@@ -341,6 +351,8 @@ app.MapControllerRoute(
 
 app.MapRazorPages().AllowAnonymous();
 
+app.MapHub<Glosify.Hubs.ClassroomChatHub>("/hubs/classroom-chat");
+
 // Token auth endpoints for the mobile app (/api/auth/login, /register, /refresh, ...).
 // AllowAnonymous is required because of the fallback authorization policy; the /manage
 // endpoints in the group resolve the user from the bearer token and 404 without one.
@@ -361,7 +373,7 @@ static string BuildColdStartFriendlyConnectionString(string connectionString)
     return builder.ConnectionString;
 }
 
-static string BuildContentSecurityPolicy(IEnumerable<string> formActionOrigins)
+static string BuildContentSecurityPolicy(IEnumerable<string> formActionOrigins, IEnumerable<string> extraConnectSources)
 {
     var allowedFormActionSources = formActionOrigins
         .Select(NormalizeCspOrigin)
@@ -370,13 +382,25 @@ static string BuildContentSecurityPolicy(IEnumerable<string> formActionOrigins)
 
     var formActionDirective = string.Join(' ', ["'self'", .. allowedFormActionSources]);
 
+    // Wildcard hosts (e.g. https://*.communication.azure.com) are valid CSP
+    // sources but not absolute URIs, so they bypass NormalizeCspOrigin and are
+    // sanitized to a conservative character set instead.
+    var connectSources = extraConnectSources
+        .Select(source => source?.Trim())
+        .Where(source => !string.IsNullOrWhiteSpace(source)
+            && source.All(c => char.IsLetterOrDigit(c) || c is '.' or '-' or ':' or '/' or '*'))
+        .Distinct(StringComparer.OrdinalIgnoreCase);
+    var connectDirective = string.Join(' ', ["'self'", .. connectSources]);
+
     return
         "default-src 'self'; " +
         "script-src 'self'; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "font-src 'self' https://fonts.gstatic.com; " +
-        "img-src 'self' data:; " +
-        "connect-src 'self'; " +
+        "img-src 'self' data: blob:; " +
+        $"connect-src {connectDirective}; " +
+        // The ACS calling SDK spins up blob: web workers for media handling.
+        "worker-src 'self' blob:; " +
         "frame-ancestors 'none'; " +
         "base-uri 'self'; " +
         $"form-action {formActionDirective}";

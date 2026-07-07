@@ -16,6 +16,7 @@ public class ClassroomDetailsViewModel
     public string ActiveTab { get; set; } = "stream";
 
     public IReadOnlyList<ClassroomBoardMessage> Board { get; set; } = [];
+    public int UnreadChatCount { get; set; }
     public IReadOnlyList<ClassroomMemberInfo> Members { get; set; } = [];
     public IReadOnlyList<ClassroomContentItem> Content { get; set; } = [];
     public IReadOnlyList<ClassroomAttemptRow> Results { get; set; } = [];
@@ -26,6 +27,13 @@ public class ClassroomDetailsViewModel
 
     public bool IsTeacher => CurrentRole is ClassroomRole.Owner or ClassroomRole.Teacher;
     public bool IsOwner => CurrentRole == ClassroomRole.Owner;
+}
+
+public class ClassroomCallViewModel
+{
+    public Classroom Classroom { get; set; } = null!;
+    public bool IsCallingConfigured { get; set; }
+    public string DisplayName { get; set; } = string.Empty;
 }
 
 public class ClassroomMemberResultsViewModel

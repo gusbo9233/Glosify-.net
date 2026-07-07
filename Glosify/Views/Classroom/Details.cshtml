@@ -14,6 +14,9 @@
                 <p class="collection-subtitle">@Model.Classroom.Description</p>
             }
         </div>
+        <a class="btn-main classroom-call-link" asp-controller="Classroom" asp-action="Call" asp-route-id="@Model.Classroom.Id">
+            Video call <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
+        </a>
         @if (Model.IsTeacher)
         {
             <div class="classroom-join-code" data-join-code="@Model.Classroom.JoinCode">
@@ -33,6 +36,13 @@
 
     <div class="tab-group classroom-tabs" role="tablist" aria-label="Classroom sections">
         <a class="tab @(Model.ActiveTab == "stream" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="stream">Stream</a>
+        <a class="tab @(Model.ActiveTab == "chat" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="chat">
+            Chat
+            @if (Model.UnreadChatCount > 0 && Model.ActiveTab != "chat")
+            {
+                <span class="classroom-unread-badge">@(Model.UnreadChatCount > 99 ? "99+" : Model.UnreadChatCount.ToString())</span>
+            }
+        </a>
         <a class="tab @(Model.ActiveTab == "content" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="content">Content</a>
         <a class="tab @(Model.ActiveTab == "members" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="members">Members</a>
         @if (Model.IsTeacher)
@@ -43,6 +53,9 @@
 
     @switch (Model.ActiveTab)
     {
+        case "chat":
+            <partial name="_Chat" model="Model" />
+            break;
         case "content":
             <partial name="_Content" model="Model" />
             break;
@@ -60,4 +73,9 @@
 
 @section Scripts {
     <script src="~/js/classroom.js" asp-append-version="true"></script>
+    @if (Model.ActiveTab == "chat")
+    {
+        <script src="~/lib/signalr/dist/browser/signalr.min.js" asp-append-version="true"></script>
+        <script src="~/js/classroom-chat.js" asp-append-version="true"></script>
+    }
 }

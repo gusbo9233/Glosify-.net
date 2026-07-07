@@ -1,5 +1,6 @@
 using Glosify.Services.Books;
 using Glosify.Services.Classrooms;
+using Glosify.Services.Communication;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,17 +13,20 @@ public class ClassroomController : Controller
     private readonly IClassroomService _classrooms;
     private readonly IQuizService _quizzes;
     private readonly IBookDocumentService _books;
+    private readonly IAcsTokenService _acsTokens;
     private readonly ILogger<ClassroomController> _logger;
 
     public ClassroomController(
         IClassroomService classrooms,
         IQuizService quizzes,
         IBookDocumentService books,
+        IAcsTokenService acsTokens,
         ILogger<ClassroomController> logger)
     {
         _classrooms = classrooms;
         _quizzes = quizzes;
         _books = books;
+        _acsTokens = acsTokens;
         _logger = logger;
     }
 
@@ -113,7 +117,8 @@ public class ClassroomController : Controller
                 ActiveTab = activeTab,
                 Board = await _classrooms.GetBoardAsync(id, userId, cancellationToken),
                 Members = await _classrooms.GetMembersAsync(id, userId, cancellationToken),
-                Content = await _classrooms.GetContentAsync(id, userId, cancellationToken)
+                Content = await _classrooms.GetContentAsync(id, userId, cancellationToken),
+                UnreadChatCount = await _classrooms.GetUnreadChatCountAsync(id, userId, cancellationToken)
             };
 
             if (isTeacher)
@@ -136,6 +141,37 @@ public class ClassroomController : Controller
         {
             TempData[NotificationKeys.Classroom] = "Classroom not found.";
             return RedirectToAction(nameof(Index));
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ChatHistory(Guid id, DateTimeOffset? before, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        try
+        {
+            var messages = await _classrooms.GetChatMessagesAsync(id, userId, before, take: 50, cancellationToken);
+            if (!before.HasValue)
+            {
+                await _classrooms.MarkChatReadAsync(id, userId, cancellationToken);
+            }
+
+            return Json(new
+            {
+                currentUserId = userId,
+                messages = messages.Select(m => new
+                {
+                    id = m.Id,
+                    userId = m.UserId,
+                    authorName = m.AuthorName,
+                    body = m.Body,
+                    createdAt = m.CreatedAt
+                })
+            });
+        }
+        catch (ClassroomAccessDeniedException)
+        {
+            return NotFound();
         }
     }
 
@@ -260,6 +296,59 @@ public class ClassroomController : Controller
         catch (FileNotFoundException)
         {
             return NotFound();
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Call(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        try
+        {
+            var classroom = await _classrooms.GetDetailsAsync(id, userId, cancellationToken);
+            ViewData["HideAssistantPanel"] = true;
+            return View(new ClassroomCallViewModel
+            {
+                Classroom = classroom,
+                IsCallingConfigured = _acsTokens.IsConfigured,
+                DisplayName = User.Identity?.Name ?? "Member"
+            });
+        }
+        catch (ClassroomAccessDeniedException)
+        {
+            TempData[NotificationKeys.Classroom] = "Classroom not found.";
+            return RedirectToAction(nameof(Index));
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CallToken(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        try
+        {
+            var classroom = await _classrooms.GetDetailsAsync(id, userId, cancellationToken);
+            var token = await _acsTokens.GetCallTokenAsync(userId, cancellationToken);
+            return Json(new
+            {
+                token = token.Token,
+                expiresOn = token.ExpiresOn,
+                acsUserId = token.AcsUserId,
+                groupCallId = classroom.GroupCallId
+            });
+        }
+        catch (ClassroomAccessDeniedException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "ACS token issuance failed for classroom {ClassroomId}", id);
+            return StatusCode(StatusCodes.Status502BadGateway, new { message = "Could not start the call. Try again." });
         }
     }
 

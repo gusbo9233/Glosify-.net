@@ -11,6 +11,7 @@ public class ClassroomService : IClassroomService
     private const string JoinCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private const int JoinCodeLength = 8;
     private const int AnnouncementMaxLength = 4000;
+    private const int ChatMessageMaxLength = 2000;
 
     private readonly GlosifyContext _context;
 
@@ -518,6 +519,97 @@ public class ClassroomService : IClassroomService
         return await _context.BookDocuments
             .AsNoTracking()
             .FirstAsync(b => b.Id == bookDocumentId, cancellationToken);
+    }
+
+    public async Task<ClassroomChatMessage> PostChatMessageAsync(Guid classroomId, string userId, string body, CancellationToken cancellationToken = default)
+    {
+        await RequireMemberAsync(classroomId, userId, cancellationToken);
+
+        body = body.Trim();
+        if (body.Length == 0)
+        {
+            throw new ArgumentException("Write a message before sending.");
+        }
+
+        if (body.Length > ChatMessageMaxLength)
+        {
+            throw new ArgumentException($"Chat messages are limited to {ChatMessageMaxLength} characters.");
+        }
+
+        var message = new ClassroomMessage
+        {
+            Id = Guid.NewGuid(),
+            ClassroomId = classroomId,
+            UserId = userId,
+            Kind = ClassroomMessageKind.Chat,
+            Body = body,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        _context.ClassroomMessages.Add(message);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        var authorName = await _context.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.UserName ?? u.Email)
+            .FirstOrDefaultAsync(cancellationToken) ?? "Unknown";
+
+        return new ClassroomChatMessage(message.Id, userId, authorName, message.Body, message.CreatedAt);
+    }
+
+    public async Task<IReadOnlyList<ClassroomChatMessage>> GetChatMessagesAsync(Guid classroomId, string userId, DateTimeOffset? before = null, int take = 50, CancellationToken cancellationToken = default)
+    {
+        await RequireMemberAsync(classroomId, userId, cancellationToken);
+
+        take = Math.Clamp(take, 1, 100);
+        var query = _context.ClassroomMessages
+            .AsNoTracking()
+            .Where(m => m.ClassroomId == classroomId && m.Kind == ClassroomMessageKind.Chat && !m.IsDeleted);
+
+        if (before.HasValue)
+        {
+            query = query.Where(m => m.CreatedAt < before.Value);
+        }
+
+        var page = await query
+            .OrderByDescending(m => m.CreatedAt)
+            .Take(take)
+            .Join(_context.Users.AsNoTracking(), m => m.UserId, u => u.Id, (m, u) => new { m, AuthorName = u.UserName ?? u.Email ?? "Unknown" })
+            .Select(x => new ClassroomChatMessage(x.m.Id, x.m.UserId, x.AuthorName, x.m.Body, x.m.CreatedAt))
+            .ToListAsync(cancellationToken);
+
+        // Fetched newest-first for paging; render oldest-first.
+        page.Reverse();
+        return page;
+    }
+
+    public async Task<int> GetUnreadChatCountAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
+    {
+        var membership = await _context.ClassroomMemberships
+            .AsNoTracking()
+            .FirstOrDefaultAsync(m => m.ClassroomId == classroomId && m.UserId == userId, cancellationToken);
+
+        if (membership == null)
+        {
+            return 0;
+        }
+
+        var since = membership.LastChatReadAt ?? DateTimeOffset.MinValue;
+        return await _context.ClassroomMessages
+            .CountAsync(m => m.ClassroomId == classroomId
+                && m.Kind == ClassroomMessageKind.Chat
+                && !m.IsDeleted
+                && m.UserId != userId
+                && m.CreatedAt > since, cancellationToken);
+    }
+
+    public async Task MarkChatReadAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
+    {
+        var membership = await _context.ClassroomMemberships
+            .FirstOrDefaultAsync(m => m.ClassroomId == classroomId && m.UserId == userId, cancellationToken)
+            ?? throw new ClassroomAccessDeniedException();
+
+        membership.LastChatReadAt = DateTimeOffset.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task PostAnnouncementAsync(Guid classroomId, string userId, string body, CancellationToken cancellationToken = default)

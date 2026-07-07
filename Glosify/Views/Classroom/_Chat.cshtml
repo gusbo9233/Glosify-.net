@@ -1,0 +1,21 @@
+@model ClassroomDetailsViewModel
+
+<section class="panel classroom-chat" data-classroom-chat data-classroom-id="@Model.Classroom.Id">
+    <div class="panel-header">
+        <div class="panel-icon"><span class="material-symbols-outlined">forum</span></div>
+        <h2 class="panel-title">Class chat</h2>
+        <span class="book-meta classroom-chat-status" data-chat-status>Connecting&hellip;</span>
+    </div>
+
+    <div class="classroom-chat-messages" data-chat-messages aria-live="polite">
+        <div class="empty-state" data-chat-empty>Loading messages&hellip;</div>
+    </div>
+
+    <form class="classroom-chat-form" data-chat-form>
+        <input class="form-input" type="text" name="body" maxlength="2000" autocomplete="off"
+               placeholder="Message the class" aria-label="Chat message" required data-chat-input />
+        <button class="btn-submit" type="submit" data-chat-send disabled>
+            Send <span class="material-symbols-outlined" aria-hidden="true">send</span>
+        </button>
+    </form>
+</section>

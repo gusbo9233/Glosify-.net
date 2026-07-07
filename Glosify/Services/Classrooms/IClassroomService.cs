@@ -35,6 +35,11 @@ public interface IClassroomService
     Task<Quiz> RequireSharedQuizAsync(Guid classroomId, Guid quizId, string userId, CancellationToken cancellationToken = default);
     Task<BookDocument> RequireSharedBookAsync(Guid classroomId, Guid bookDocumentId, string userId, CancellationToken cancellationToken = default);
 
+    Task<ClassroomChatMessage> PostChatMessageAsync(Guid classroomId, string userId, string body, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ClassroomChatMessage>> GetChatMessagesAsync(Guid classroomId, string userId, DateTimeOffset? before = null, int take = 50, CancellationToken cancellationToken = default);
+    Task<int> GetUnreadChatCountAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
+    Task MarkChatReadAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
+
     Task PostAnnouncementAsync(Guid classroomId, string userId, string body, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ClassroomBoardMessage>> GetBoardAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task SetPinnedAsync(Guid classroomId, string userId, Guid messageId, bool pinned, CancellationToken cancellationToken = default);
