@@ -53,6 +53,7 @@ GEMINI_STRUCTURED_MODEL="..."
 GEMINI_ASSISTANT_MODEL="..."
 GEMINI_VISION_MODEL="..."
 GEMINI_TIMEOUT_SECONDS="180"
+Acs__ConnectionString="endpoint=https://<your-resource>.communication.azure.com/;accesskey=<key>"
 Authentication__Google__ClientId="..."
 Authentication__Google__ClientSecret="..."
 Authentication__Microsoft__ClientId="..."
@@ -115,6 +116,7 @@ Production configuration should be supplied through Azure app settings, includin
 
 - `ConnectionStrings__DefaultConnection`
 - `GEMINI_API_KEY`
+- `Acs__ConnectionString`
 - Blob storage settings
 - OAuth client credentials, if external login is enabled
 - `Admin__Emails__0` and additional indexed admin emails as needed
