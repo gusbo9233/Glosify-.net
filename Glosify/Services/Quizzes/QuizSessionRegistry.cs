@@ -12,6 +12,8 @@ public record ActiveQuizSession
     public string PracticeDirection { get; init; } = string.Empty;
     public string PracticeItemType { get; init; } = string.Empty;
     public int WordCount { get; init; }
+    public int WordRangeStart { get; init; }
+    public int WordRangeEnd { get; init; } = 100;
     public string CacheKey { get; init; } = string.Empty;
     public DateTimeOffset StartedAt { get; init; }
 }
@@ -19,7 +21,7 @@ public record ActiveQuizSession
 public interface IQuizSessionRegistry
 {
     void Register(ActiveQuizSession session);
-    ActiveQuizSession? FindActive(string userId, string mode, Guid quizId, string practiceDirection, string practiceItemType, int wordCount);
+    ActiveQuizSession? FindActive(string userId, string mode, Guid quizId, string practiceDirection, string practiceItemType, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100);
     void Deregister(string userId, string sessionId, bool removeSessionData = false);
 }
 
@@ -77,7 +79,7 @@ public class QuizSessionRegistry : IQuizSessionRegistry
         }
     }
 
-    public ActiveQuizSession? FindActive(string userId, string mode, Guid quizId, string practiceDirection, string practiceItemType, int wordCount)
+    public ActiveQuizSession? FindActive(string userId, string mode, Guid quizId, string practiceDirection, string practiceItemType, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100)
     {
         if (string.IsNullOrWhiteSpace(userId) || !_sessionsByUser.TryGetValue(userId, out var sessions))
             return null;
@@ -90,7 +92,9 @@ public class QuizSessionRegistry : IQuizSessionRegistry
                 && s.QuizId == quizId
                 && string.Equals(s.PracticeDirection, practiceDirection, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(s.PracticeItemType, practiceItemType, StringComparison.OrdinalIgnoreCase)
-                && s.WordCount == wordCount);
+                && s.WordCount == wordCount
+                && s.WordRangeStart == rangeStartPercent
+                && s.WordRangeEnd == rangeEndPercent);
             RemoveUserEntryIfEmpty(userId, sessions);
             return active;
         }

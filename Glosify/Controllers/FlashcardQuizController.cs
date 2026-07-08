@@ -33,11 +33,12 @@ public class FlashcardQuizController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
+        var wordIds = WordIdList.Parse(selectedWordIds);
 
         Quiz? selectedQuiz;
         if (classroomId.HasValue && id.HasValue)
@@ -60,7 +61,12 @@ public class FlashcardQuizController : Controller
         if (selectedQuiz == null)
             return View(FlashcardQuizViewModel.Empty());
 
-        var resumed = _sessionService.FindResumableSession(userId, selectedQuiz.Id, normalizedDirection, normalizedItemType, wordCount);
+        // Hand-picked word sets always start a fresh session rather than resuming
+        // one matched only by count/range, since the exact word set can't be
+        // expressed in the resumability key.
+        var resumed = wordIds.Count > 0
+            ? null
+            : _sessionService.FindResumableSession(userId, selectedQuiz.Id, normalizedDirection, normalizedItemType, wordCount, wordRangeStart, wordRangeEnd);
         if (resumed != null)
         {
             if (classroomId.HasValue && resumed.ClassroomId == null)
@@ -72,9 +78,11 @@ public class FlashcardQuizController : Controller
             return View(BuildViewModel(resumed, selectedQuiz));
         }
 
-        var cards = PracticeItemType.IsSentences(normalizedItemType)
-            ? await _wordService.LoadSentenceCardsAsync(selectedQuiz.Id, wordCount, cancellationToken: cancellationToken)
-            : await _wordService.LoadCardsAsync(selectedQuiz.Id, wordCount, cancellationToken: cancellationToken);
+        var cards = wordIds.Count > 0
+            ? await _wordService.LoadCardsByIdsAsync(selectedQuiz.Id, wordIds, cancellationToken: cancellationToken)
+            : PracticeItemType.IsSentences(normalizedItemType)
+                ? await _wordService.LoadSentenceCardsAsync(selectedQuiz.Id, wordCount, wordRangeStart, wordRangeEnd, cancellationToken: cancellationToken)
+                : await _wordService.LoadCardsAsync(selectedQuiz.Id, wordCount, wordRangeStart, wordRangeEnd, cancellationToken: cancellationToken);
         var cardData = cards.Select(c => new FlashcardCardData
         {
             Id = c.Id,
@@ -90,10 +98,13 @@ public class FlashcardQuizController : Controller
             selectedQuiz.Name,
             selectedQuiz.SourceLanguage,
             selectedQuiz.TargetLanguage,
-            wordCount,
+            wordIds.Count > 0 ? cardData.Count : wordCount,
             cardData,
             normalizedDirection,
-            normalizedItemType);
+            normalizedItemType,
+            wordRangeStart,
+            wordRangeEnd,
+            selectedWordIds);
         session.ClassroomId = classroomId;
         _sessionService.SaveSession(session);
 
@@ -142,10 +153,10 @@ public class FlashcardQuizController : Controller
     }
 
     [HttpPost]
-    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null)
+    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null)
     {
-        _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount);
-        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType), classroomId });
+        _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount, wordRangeStart, wordRangeEnd);
+        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType), classroomId, wordRangeStart, wordRangeEnd, selectedWordIds });
     }
 
     private IActionResult FlashcardResponse(FlashcardSessionData session)
@@ -196,6 +207,9 @@ public class FlashcardQuizController : Controller
             AgainCount = session.AgainCount,
             SkippedCount = session.SkippedCount,
             WordCount = session.WordCount,
+            WordRangeStart = session.WordRangeStart,
+            WordRangeEnd = session.WordRangeEnd,
+            SelectedWordIds = session.SelectedWordIds,
             PracticeDirection = session.PracticeDirection,
             PromptLanguage = session.PromptLanguage,
             AnswerLanguage = session.AnswerLanguage,

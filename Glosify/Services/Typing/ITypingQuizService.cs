@@ -2,7 +2,7 @@ namespace Glosify.Services.Typing;
 
 public interface ITypingQuizService
 {
-    Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null);
+    Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, int rangeStartPercent = 0, int rangeEndPercent = 100, IReadOnlyCollection<string>? wordIds = null);
     bool CheckAnswer(string userAnswer, string correctAnswer);
 }
 

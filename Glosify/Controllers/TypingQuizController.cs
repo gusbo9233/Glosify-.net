@@ -36,11 +36,12 @@ public class TypingQuizController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
+        var wordIds = WordIdList.Parse(selectedWordIds);
 
         Quiz? selectedQuiz;
         if (classroomId.HasValue && id.HasValue)
@@ -63,7 +64,12 @@ public class TypingQuizController : Controller
         if (selectedQuiz == null)
             return View(TypingQuizViewModel.Empty());
 
-        var resumed = _sessionService.FindResumableSession(userId, selectedQuiz.Id, normalizedDirection, normalizedItemType, wordCount);
+        // Hand-picked word sets always start a fresh session rather than resuming
+        // one matched only by count/range, since the exact word set can't be
+        // expressed in the resumability key.
+        var resumed = wordIds.Count > 0
+            ? null
+            : _sessionService.FindResumableSession(userId, selectedQuiz.Id, normalizedDirection, normalizedItemType, wordCount, wordRangeStart, wordRangeEnd);
         if (resumed != null)
         {
             if (classroomId.HasValue && resumed.ClassroomId == null)
@@ -75,17 +81,20 @@ public class TypingQuizController : Controller
             return RedirectToAction(nameof(Session), new { sessionId = resumed.SessionId });
         }
 
-        var data = await _typingQuizService.GetQuizDataAsync(selectedQuiz.Id, wordCount, normalizedDirection, normalizedItemType);
+        var data = await _typingQuizService.GetQuizDataAsync(selectedQuiz.Id, wordCount, normalizedDirection, normalizedItemType, wordRangeStart, wordRangeEnd, wordIds);
         var session = _sessionService.StartSession(
             userId,
             data.QuizId,
             data.QuizName,
             data.SourceLanguage,
             data.TargetLanguage,
-            wordCount,
+            wordIds.Count > 0 ? data.Words.Count : wordCount,
             data.Words,
             data.PracticeDirection,
-            data.PracticeItemType);
+            data.PracticeItemType,
+            wordRangeStart,
+            wordRangeEnd,
+            selectedWordIds);
         session.ClassroomId = classroomId;
         _sessionService.SaveSession(session);
 
@@ -158,10 +167,10 @@ public class TypingQuizController : Controller
     }
 
     [HttpPost]
-    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null)
+    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null)
     {
-        _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount);
-        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType), classroomId });
+        _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount, wordRangeStart, wordRangeEnd);
+        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType), classroomId, wordRangeStart, wordRangeEnd, selectedWordIds });
     }
 
     [HttpPost]
@@ -224,6 +233,9 @@ public class TypingQuizController : Controller
             ScorePercent = GetScorePercent(session),
             ProgressPercent = GetProgressPercent(session),
             WordCount = session.WordCount,
+            WordRangeStart = session.WordRangeStart,
+            WordRangeEnd = session.WordRangeEnd,
+            SelectedWordIds = session.SelectedWordIds,
             PracticeDirection = session.PracticeDirection,
             PromptLanguage = session.PromptLanguage,
             AnswerLanguage = session.AnswerLanguage,

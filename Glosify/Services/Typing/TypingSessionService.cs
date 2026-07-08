@@ -28,7 +28,10 @@ public class TypingSessionService : QuizSessionStore<TypingSessionData>, ITyping
         int wordCount,
         IReadOnlyList<TypingWordData> words,
         string? practiceDirection = null,
-        string? practiceItemType = null)
+        string? practiceItemType = null,
+        int rangeStartPercent = 0,
+        int rangeEndPercent = 100,
+        string? selectedWordIds = null)
     {
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
@@ -45,6 +48,9 @@ public class TypingSessionService : QuizSessionStore<TypingSessionData>, ITyping
             AnswerLanguage = PracticeDirection.AnswerLanguage(normalizedDirection, sourceLanguage, targetLanguage),
             PracticeItemType = normalizedItemType,
             WordCount = Math.Clamp(wordCount, 1, 100),
+            WordRangeStart = Math.Clamp(rangeStartPercent, 0, 100),
+            WordRangeEnd = Math.Clamp(rangeEndPercent, 0, 100),
+            SelectedWordIds = string.IsNullOrWhiteSpace(selectedWordIds) ? null : selectedWordIds,
             Words = words
         };
     }

@@ -5,8 +5,9 @@ namespace Glosify.Services.Words;
 public interface IWordService
 {
     Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<QuizCardData>> LoadCardsByIdsAsync(Guid quizId, IReadOnlyCollection<string> wordIds, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount, int rangeStartPercent = 0, int rangeEndPercent = 100, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId, CancellationToken cancellationToken = default);
     Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage, CancellationToken cancellationToken = default);
     Task<Word?> DeleteWordAsync(string wordId, string userId, CancellationToken cancellationToken = default);

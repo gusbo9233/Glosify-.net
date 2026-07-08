@@ -1,5 +1,6 @@
 using Glosify.Data;
 using Glosify.Models;
+using Glosify.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
@@ -24,16 +25,22 @@ public class WordService : IWordService
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100, CancellationToken cancellationToken = default)
     {
         var take = Math.Clamp(wordCount, 1, 100);
 
-        var cards = await _context.Words
+        var orderedWords = await _context.Words
             .AsNoTracking()
             .Where(word => word.QuizId == quizId)
+            .OrderBy(word => word.CreatedAt)
+            .ThenBy(word => word.Id)
+            .ToListAsync(cancellationToken);
+        var pool = PracticeRange.Slice(orderedWords, rangeStartPercent, rangeEndPercent);
+
+        var cards = pool
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
-            .ToListAsync(cancellationToken);
+            .ToList();
         var sentences = await _context.QuizSentences
             .AsNoTracking()
             .Where(sentence => sentence.QuizId == quizId)
@@ -57,12 +64,19 @@ public class WordService : IWordService
             .ToList();
     }
 
-    public async Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount, int rangeStartPercent = 0, int rangeEndPercent = 100, CancellationToken cancellationToken = default)
     {
         var take = Math.Clamp(sentenceCount, 1, 100);
 
-        return await _context.QuizSentences
+        var orderedSentences = await _context.QuizSentences
+            .AsNoTracking()
             .Where(sentence => sentence.QuizId == quizId)
+            .OrderBy(sentence => sentence.CreatedAt)
+            .ThenBy(sentence => sentence.Id)
+            .ToListAsync(cancellationToken);
+        var pool = PracticeRange.Slice(orderedSentences, rangeStartPercent, rangeEndPercent);
+
+        return pool
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
             .Select(sentence => new QuizCardData
@@ -73,7 +87,40 @@ public class WordService : IWordService
                 ExampleSentence = string.Empty,
                 ExampleTranslation = string.Empty
             })
+            .ToList();
+    }
+
+    public async Task<IReadOnlyList<QuizCardData>> LoadCardsByIdsAsync(Guid quizId, IReadOnlyCollection<string> wordIds, CancellationToken cancellationToken = default)
+    {
+        if (wordIds.Count == 0)
+            return [];
+
+        var words = await _context.Words
+            .AsNoTracking()
+            .Where(word => word.QuizId == quizId && wordIds.Contains(word.Id))
+            .OrderBy(_ => Guid.NewGuid())
             .ToListAsync(cancellationToken);
+        var sentences = await _context.QuizSentences
+            .AsNoTracking()
+            .Where(sentence => sentence.QuizId == quizId)
+            .OrderBy(sentence => sentence.CreatedAt)
+            .ThenBy(sentence => sentence.Id)
+            .ToListAsync(cancellationToken);
+
+        return words
+            .Select(item =>
+            {
+                var sentence = ChooseSentenceForWord(item.Lemma, sentences);
+                return new QuizCardData
+                {
+                    Id = item.Id,
+                    Lemma = item.Lemma,
+                    Translation = item.Translation,
+                    ExampleSentence = CleanExampleForDisplay(sentence?.Text),
+                    ExampleTranslation = sentence?.Translation ?? string.Empty
+                };
+            })
+            .ToList();
     }
 
     public async Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId, CancellationToken cancellationToken = default)

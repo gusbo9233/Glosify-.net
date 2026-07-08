@@ -11,11 +11,14 @@ public interface ITypingSessionService
         int wordCount,
         IReadOnlyList<TypingWordData> words,
         string? practiceDirection = null,
-        string? practiceItemType = null);
+        string? practiceItemType = null,
+        int rangeStartPercent = 0,
+        int rangeEndPercent = 100,
+        string? selectedWordIds = null);
 
     TypingSessionData? FindSession(string sessionId, string userId);
-    TypingSessionData? FindResumableSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount);
-    void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount);
+    TypingSessionData? FindResumableSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100);
+    void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100);
     void SaveSession(TypingSessionData session);
     TypingAnswerResult SubmitAnswer(TypingSessionData session, string userAnswer);
 }
@@ -33,6 +36,9 @@ public record TypingSessionData : Glosify.Services.Quizzes.IQuizSessionData
     public string AnswerLanguage { get; init; } = string.Empty;
     public string PracticeItemType { get; init; } = Glosify.Models.PracticeItemType.Words;
     public int WordCount { get; init; }
+    public int WordRangeStart { get; init; }
+    public int WordRangeEnd { get; init; } = 100;
+    public string? SelectedWordIds { get; init; }
     public int CurrentIndex { get; set; }
     public int CorrectCount { get; set; }
     public int IncorrectCount { get; set; }

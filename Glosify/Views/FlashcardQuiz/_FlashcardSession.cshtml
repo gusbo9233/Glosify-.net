@@ -25,6 +25,9 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="quizId" value="@Model.QuizId" />
                 <input type="hidden" name="wordCount" value="@Model.WordCount" />
+                <input type="hidden" name="wordRangeStart" value="@Model.WordRangeStart" />
+                <input type="hidden" name="wordRangeEnd" value="@Model.WordRangeEnd" />
+                <input type="hidden" name="selectedWordIds" value="@Model.SelectedWordIds" />
                 <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
                 <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
                 <input type="hidden" name="classroomId" value="@Model.ClassroomId" />

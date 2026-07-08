@@ -9,6 +9,15 @@ public class QuizSessionSettings
     [Range(1, 200, ErrorMessage = "Pick a word count between 1 and 200.")]
     public int WordCount { get; set; }
 
+    [Range(0, 100, ErrorMessage = "Word range start must be between 0 and 100.")]
+    public int WordRangeStart { get; set; }
+
+    [Range(0, 100, ErrorMessage = "Word range end must be between 0 and 100.")]
+    public int WordRangeEnd { get; set; } = 100;
+
+    /// <summary>Comma-separated word IDs; when set, overrides the word-range slider with an exact hand-picked set.</summary>
+    public string? SelectedWordIds { get; set; }
+
     [Required]
     [StringLength(32)]
     public string Mode { get; set; } = "flashcards";

@@ -25,7 +25,10 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
         int wordCount,
         IReadOnlyList<FlashcardCardData> cards,
         string? practiceDirection = null,
-        string? practiceItemType = null)
+        string? practiceItemType = null,
+        int rangeStartPercent = 0,
+        int rangeEndPercent = 100,
+        string? selectedWordIds = null)
     {
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
@@ -42,6 +45,9 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
             AnswerLanguage = PracticeDirection.AnswerLanguage(normalizedDirection, sourceLanguage, targetLanguage),
             PracticeItemType = normalizedItemType,
             WordCount = Math.Clamp(wordCount, 1, 100),
+            WordRangeStart = Math.Clamp(rangeStartPercent, 0, 100),
+            WordRangeEnd = Math.Clamp(rangeEndPercent, 0, 100),
+            SelectedWordIds = string.IsNullOrWhiteSpace(selectedWordIds) ? null : selectedWordIds,
             Cards = cards.Select(card => card with
             {
                 Prompt = PracticeDirection.IsSourceToTarget(normalizedDirection) ? card.Translation : card.Lemma,

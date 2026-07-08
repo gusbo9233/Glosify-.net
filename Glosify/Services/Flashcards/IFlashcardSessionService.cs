@@ -2,10 +2,10 @@ namespace Glosify.Services.Flashcards;
 
 public interface IFlashcardSessionService
 {
-    FlashcardSessionData StartSession(string userId, Guid quizId, string quizName, string sourceLanguage, string targetLanguage, int wordCount, IReadOnlyList<FlashcardCardData> cards, string? practiceDirection = null, string? practiceItemType = null);
+    FlashcardSessionData StartSession(string userId, Guid quizId, string quizName, string sourceLanguage, string targetLanguage, int wordCount, IReadOnlyList<FlashcardCardData> cards, string? practiceDirection = null, string? practiceItemType = null, int rangeStartPercent = 0, int rangeEndPercent = 100, string? selectedWordIds = null);
     FlashcardSessionData? FindSession(string sessionId, string userId);
-    FlashcardSessionData? FindResumableSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount);
-    void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount);
+    FlashcardSessionData? FindResumableSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100);
+    void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100);
     void SaveSession(FlashcardSessionData session);
     void ApplyRating(FlashcardSessionData session, string rating);
     void RevealAnswer(FlashcardSessionData session);
@@ -24,6 +24,9 @@ public record FlashcardSessionData : Glosify.Services.Quizzes.IQuizSessionData
     public string AnswerLanguage { get; init; } = string.Empty;
     public string PracticeItemType { get; init; } = Glosify.Models.PracticeItemType.Words;
     public int WordCount { get; init; }
+    public int WordRangeStart { get; init; }
+    public int WordRangeEnd { get; init; } = 100;
+    public string? SelectedWordIds { get; init; }
     public int CurrentIndex { get; set; }
     public int RememberedCount { get; set; }
     public int AgainCount { get; set; }

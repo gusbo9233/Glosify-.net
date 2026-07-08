@@ -68,6 +68,7 @@ namespace Glosify.Models.ViewModels
         public int AvailableWordCount { get; set; }
         public int AvailableSentenceCount { get; set; }
         public int SelectedWordCount { get; set; }
+        public IReadOnlyList<Word> Words { get; set; } = [];
     }
 
     public class FlashcardQuizViewModel
@@ -88,6 +89,9 @@ namespace Glosify.Models.ViewModels
         public int ScorePercent { get; set; }
         public int ProgressPercent { get; set; }
         public int WordCount { get; set; }
+        public int WordRangeStart { get; set; }
+        public int WordRangeEnd { get; set; } = 100;
+        public string? SelectedWordIds { get; set; }
         public string PracticeDirection { get; set; } = Glosify.Models.PracticeDirection.SourceToTarget;
         public string PromptLanguage { get; set; } = string.Empty;
         public string AnswerLanguage { get; set; } = string.Empty;
@@ -128,6 +132,9 @@ namespace Glosify.Models.ViewModels
         public int ScorePercent { get; set; }
         public int ProgressPercent { get; set; }
         public int WordCount { get; set; }
+        public int WordRangeStart { get; set; }
+        public int WordRangeEnd { get; set; } = 100;
+        public string? SelectedWordIds { get; set; }
         public string PracticeDirection { get; set; } = Glosify.Models.PracticeDirection.SourceToTarget;
         public string PromptLanguage { get; set; } = string.Empty;
         public string AnswerLanguage { get; set; } = string.Empty;

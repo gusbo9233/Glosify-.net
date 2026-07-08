@@ -317,13 +317,17 @@ public class QuizController : Controller
         var availableSentenceCount = selectedQuiz == null
             ? 0
             : await _quizService.GetAvailableSentenceCountAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
+        IReadOnlyList<Word> words = selectedQuiz == null
+            ? []
+            : await _wordService.GetWordsAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
 
         return View(new QuizSettingsViewModel
         {
             SelectedQuiz = selectedQuiz,
             AvailableWordCount = availableWordCount,
             AvailableSentenceCount = availableSentenceCount,
-            SelectedWordCount = Math.Min(Math.Max(availableWordCount, 1), 20)
+            SelectedWordCount = Math.Min(Math.Max(availableWordCount, 1), 20),
+            Words = words
         });
     }
 
@@ -356,8 +360,8 @@ public class QuizController : Controller
 
         return settings.Mode switch
         {
-            "flashcards" => RedirectToAction("Index", "FlashcardQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = PracticeItemType.Normalize(settings.PracticeItemType) }),
-            "typing" => RedirectToAction("Index", "TypingQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = PracticeItemType.Normalize(settings.PracticeItemType) }),
+            "flashcards" => RedirectToAction("Index", "FlashcardQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = PracticeItemType.Normalize(settings.PracticeItemType), wordRangeStart = settings.WordRangeStart, wordRangeEnd = settings.WordRangeEnd, selectedWordIds = settings.SelectedWordIds }),
+            "typing" => RedirectToAction("Index", "TypingQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = PracticeItemType.Normalize(settings.PracticeItemType), wordRangeStart = settings.WordRangeStart, wordRangeEnd = settings.WordRangeEnd, selectedWordIds = settings.SelectedWordIds }),
             // "multiple-choice" mode is exposed in settings UI but not yet implemented; route back to settings.
             _ => RedirectToAction(nameof(Settings))
         };

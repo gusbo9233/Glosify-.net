@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
@@ -13,7 +14,7 @@ public class TypingQuizService : ITypingQuizService
         _context = context;
     }
 
-    public async Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null)
+    public async Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, int rangeStartPercent = 0, int rangeEndPercent = 100, IReadOnlyCollection<string>? wordIds = null)
     {
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
@@ -32,9 +33,11 @@ public class TypingQuizService : ITypingQuizService
             };
         }
 
-        var words = PracticeItemType.IsSentences(normalizedItemType)
-            ? await LoadSentencesAsync(quizId, wordCount, normalizedDirection)
-            : await LoadWordsAsync(quizId, wordCount, normalizedDirection);
+        var words = wordIds is { Count: > 0 }
+            ? await LoadWordsByIdsAsync(quizId, wordIds, normalizedDirection)
+            : PracticeItemType.IsSentences(normalizedItemType)
+                ? await LoadSentencesAsync(quizId, wordCount, normalizedDirection, rangeStartPercent, rangeEndPercent)
+                : await LoadWordsAsync(quizId, wordCount, normalizedDirection, rangeStartPercent, rangeEndPercent);
 
         return new TypingQuizData
         {
@@ -56,14 +59,47 @@ public class TypingQuizService : ITypingQuizService
             .Equals(correctAnswer.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
-    private async Task<IReadOnlyList<TypingWordData>> LoadWordsAsync(Guid quizId, int wordCount, string practiceDirection)
+    private async Task<IReadOnlyList<TypingWordData>> LoadWordsAsync(Guid quizId, int wordCount, string practiceDirection, int rangeStartPercent = 0, int rangeEndPercent = 100)
     {
         var take = Math.Clamp(wordCount, 1, 100);
 
-        var rows = await _context.Words
+        var orderedWords = await _context.Words
             .Where(word => word.QuizId == quizId)
+            .OrderBy(word => word.CreatedAt)
+            .ThenBy(word => word.Id)
+            .ToListAsync();
+        var pool = PracticeRange.Slice(orderedWords, rangeStartPercent, rangeEndPercent);
+
+        var rows = pool
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
+            .ToList();
+        var sentences = await _context.QuizSentences
+            .Where(sentence => sentence.QuizId == quizId)
+            .OrderBy(sentence => sentence.Text)
+            .ToListAsync();
+
+        return rows
+            .Select(item =>
+            {
+                var sentence = ChooseSentenceForWord(item.Lemma, sentences);
+                return new TypingWordData
+                {
+                    Id = item.Id,
+                    Prompt = PracticeDirection.IsSourceToTarget(practiceDirection) ? item.Translation : item.Lemma,
+                    Answer = PracticeDirection.IsSourceToTarget(practiceDirection) ? item.Lemma : item.Translation,
+                    ExampleSentence = sentence?.Text ?? string.Empty,
+                    ExampleTranslation = sentence?.Translation ?? string.Empty
+                };
+            })
+            .ToList();
+    }
+
+    private async Task<IReadOnlyList<TypingWordData>> LoadWordsByIdsAsync(Guid quizId, IReadOnlyCollection<string> wordIds, string practiceDirection)
+    {
+        var rows = await _context.Words
+            .Where(word => word.QuizId == quizId && wordIds.Contains(word.Id))
+            .OrderBy(_ => Guid.NewGuid())
             .ToListAsync();
         var sentences = await _context.QuizSentences
             .Where(sentence => sentence.QuizId == quizId)
@@ -86,15 +122,21 @@ public class TypingQuizService : ITypingQuizService
             .ToList();
     }
 
-    private async Task<IReadOnlyList<TypingWordData>> LoadSentencesAsync(Guid quizId, int sentenceCount, string practiceDirection)
+    private async Task<IReadOnlyList<TypingWordData>> LoadSentencesAsync(Guid quizId, int sentenceCount, string practiceDirection, int rangeStartPercent = 0, int rangeEndPercent = 100)
     {
         var take = Math.Clamp(sentenceCount, 1, 100);
 
-        var rows = await _context.QuizSentences
+        var orderedSentences = await _context.QuizSentences
             .Where(sentence => sentence.QuizId == quizId)
+            .OrderBy(sentence => sentence.CreatedAt)
+            .ThenBy(sentence => sentence.Id)
+            .ToListAsync();
+        var pool = PracticeRange.Slice(orderedSentences, rangeStartPercent, rangeEndPercent);
+
+        var rows = pool
             .OrderBy(_ => Guid.NewGuid())
             .Take(take)
-            .ToListAsync();
+            .ToList();
 
         return rows
             .Select(item => new TypingWordData

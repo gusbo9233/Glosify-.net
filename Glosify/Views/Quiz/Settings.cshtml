@@ -59,6 +59,68 @@
             <div>
                 <div class="section-header">
                     <div>
+                        <h2 class="section-title">Word Range</h2>
+                        <p class="section-note">Drag either handle to focus on a slice of your list, e.g. just the newest words.</p>
+                    </div>
+                    <span class="material-symbols-outlined">tune</span>
+                </div>
+                <div class="range-presets">
+                    <button type="button" class="range-preset" data-range-preset="0,100">All</button>
+                    <button type="button" class="range-preset" data-range-preset="80,100">Newest 20%</button>
+                    <button type="button" class="range-preset" data-range-preset="50,100">Newest 50%</button>
+                    <button type="button" class="range-preset" data-range-preset="0,20">Oldest 20%</button>
+                </div>
+                <div class="range-slider" data-range-slider>
+                    <div class="range-slider-track">
+                        <div class="range-slider-fill" data-range-fill></div>
+                    </div>
+                    <input type="range" name="WordRangeStart" min="0" max="100" step="5" value="0" class="range-thumb range-thumb-min" data-range-min />
+                    <input type="range" name="WordRangeEnd" min="0" max="100" step="5" value="100" class="range-thumb range-thumb-max" data-range-max />
+                </div>
+                <p class="range-slider-label" data-range-label>Practicing all words, oldest to newest.</p>
+
+                <input type="hidden" name="SelectedWordIds" data-selected-word-ids value="" />
+                <div class="word-picker-row" data-word-picker-row>
+                    <button type="button" class="range-preset" data-open-word-picker>
+                        <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">checklist</span>
+                        Choose words individually&hellip;
+                    </button>
+                    <span class="word-picker-summary" data-word-picker-summary hidden></span>
+                    <button type="button" class="word-picker-clear" data-clear-word-picker hidden>Clear selection</button>
+                </div>
+
+                <dialog class="word-picker-dialog" data-word-picker-dialog>
+                    <div class="word-picker-header">
+                        <h3>Choose words to practice</h3>
+                        <button type="button" class="btn-icon" data-close-word-picker aria-label="Close">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                    <div class="word-picker-toolbar">
+                        <button type="button" class="range-preset" data-select-all>Select all</button>
+                        <button type="button" class="range-preset" data-deselect-all>Deselect all</button>
+                        <input type="search" class="word-picker-search" placeholder="Filter words&hellip;" data-word-picker-search />
+                        <span class="word-picker-count" data-word-picker-count></span>
+                    </div>
+                    <div class="word-picker-list">
+                        @foreach (var word in Model.Words)
+                        {
+                            <label class="word-picker-item" data-word-picker-item data-lemma="@word.Lemma.ToLowerInvariant()" data-translation="@word.Translation.ToLowerInvariant()">
+                                <input type="checkbox" class="word-picker-checkbox" data-word-picker-checkbox value="@word.Id" checked />
+                                <span class="word-picker-lemma">@word.Lemma</span>
+                                <span class="word-picker-translation">@word.Translation</span>
+                            </label>
+                        }
+                    </div>
+                    <div class="word-picker-footer">
+                        <button type="button" class="btn-start" data-apply-word-picker>Apply selection</button>
+                    </div>
+                </dialog>
+            </div>
+
+            <div>
+                <div class="section-header">
+                    <div>
                         <h2 class="section-title">Practice Content</h2>
                         <p class="section-note">Choose words or full sentences.</p>
                     </div>
@@ -155,6 +217,7 @@
             <div class="stat-row"><span>Content</span><span data-selected-content>Words</span></div>
             <div class="stat-row"><span>Available</span><span data-selected-available>@availableWords</span></div>
             <div class="stat-row"><span>Mode</span><span data-selected-mode>Flashcards</span></div>
+            <div class="stat-row"><span>Range</span><span data-selected-range>All</span></div>
             <div class="stat-row"><span>Direction</span><span data-selected-direction>@sourceLanguage -> @targetLanguage</span></div>
             <button class="btn-start" type="submit" data-start-button @(availableWords == 0 ? "disabled" : "")>
                 <span class="material-symbols-outlined">play_circle</span>
