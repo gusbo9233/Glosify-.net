@@ -156,8 +156,8 @@ public class QuizzesApiController : ApiControllerBase
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
         var cards = PracticeItemType.IsSentences(normalizedItemType)
-            ? await _wordService.LoadSentenceCardsAsync(id, Math.Clamp(count, 1, 100), cancellationToken: cancellationToken)
-            : await _wordService.LoadCardsAsync(id, Math.Clamp(count, 1, 100), cancellationToken: cancellationToken);
+            ? await _wordService.LoadSentenceCardsAsync(id, Math.Clamp(count, 1, 1000), cancellationToken: cancellationToken)
+            : await _wordService.LoadCardsAsync(id, Math.Clamp(count, 1, 1000), cancellationToken: cancellationToken);
         return Ok(cards.Select(card => new QuizCardData
         {
             Id = card.Id,
@@ -178,7 +178,7 @@ public class QuizzesApiController : ApiControllerBase
             return NotFound();
         }
 
-        return Ok(await _typingQuizService.GetQuizDataAsync(id, Math.Clamp(count, 1, 100), practiceDirection, practiceItemType));
+        return Ok(await _typingQuizService.GetQuizDataAsync(id, Math.Clamp(count, 1, 1000), practiceDirection, practiceItemType));
     }
 
     [HttpGet("{id:guid}/sentences")]

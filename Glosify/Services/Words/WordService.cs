@@ -27,7 +27,7 @@ public class WordService : IWordService
 
     public async Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100, CancellationToken cancellationToken = default)
     {
-        var take = Math.Clamp(wordCount, 1, 100);
+        var take = Math.Clamp(wordCount, 1, 1000);
 
         var orderedWords = await _context.Words
             .AsNoTracking()
@@ -66,7 +66,7 @@ public class WordService : IWordService
 
     public async Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount, int rangeStartPercent = 0, int rangeEndPercent = 100, CancellationToken cancellationToken = default)
     {
-        var take = Math.Clamp(sentenceCount, 1, 100);
+        var take = Math.Clamp(sentenceCount, 1, 1000);
 
         var orderedSentences = await _context.QuizSentences
             .AsNoTracking()

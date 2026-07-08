@@ -44,7 +44,7 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
             PromptLanguage = PracticeDirection.PromptLanguage(normalizedDirection, sourceLanguage, targetLanguage),
             AnswerLanguage = PracticeDirection.AnswerLanguage(normalizedDirection, sourceLanguage, targetLanguage),
             PracticeItemType = normalizedItemType,
-            WordCount = Math.Clamp(wordCount, 1, 100),
+            WordCount = Math.Clamp(wordCount, 1, 1000),
             WordRangeStart = Math.Clamp(rangeStartPercent, 0, 100),
             WordRangeEnd = Math.Clamp(rangeEndPercent, 0, 100),
             SelectedWordIds = string.IsNullOrWhiteSpace(selectedWordIds) ? null : selectedWordIds,
