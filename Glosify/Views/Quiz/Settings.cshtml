@@ -50,7 +50,7 @@
                         <span class="choice-card"><span class="num" data-length-num>@twentyCount</span><span class="label">Standard</span></span>
                     </label>
                     <label class="choice">
-                        <input type="radio" name="WordCount" value="@allCount" data-word-value="@allCount" data-sentence-value="@sentenceAllCount" @(selectedWordCount > 20 ? "checked" : "") />
+                        <input type="radio" name="WordCount" value="@allCount" data-word-value="@allCount" data-sentence-value="@sentenceAllCount" data-word-total="@availableWords" data-sentence-total="@availableSentences" data-length-all @(selectedWordCount > 20 ? "checked" : "") />
                         <span class="choice-card"><span class="num" data-length-num>@allCount</span><span class="label">All</span></span>
                     </label>
                 </div>

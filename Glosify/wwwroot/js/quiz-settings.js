@@ -35,6 +35,34 @@
         });
     });
 
+    const allLengthOption = document.querySelector('input[name="WordCount"][data-length-all]');
+
+    const getRangeFraction = () => {
+        const minEl = document.querySelector('[data-range-min]');
+        const maxEl = document.querySelector('[data-range-max]');
+        if (!minEl || !maxEl) return 1;
+        const minVal = Number(minEl.value);
+        const maxVal = Number(maxEl.value);
+        const width = Math.max(0, maxVal - minVal);
+        return width / 100;
+    };
+
+    const refreshAllLength = () => {
+        if (!allLengthOption) return;
+        const selected = document.querySelector('input[name="PracticeItemType"]:checked');
+        const isSentences = selected?.value === 'sentences';
+        const total = Number((isSentences ? allLengthOption.dataset.sentenceTotal : allLengthOption.dataset.wordTotal) || '0');
+        const fraction = getRangeFraction();
+        const newValue = Math.max(1, Math.ceil(total * fraction));
+        if (isSentences) {
+            allLengthOption.dataset.sentenceValue = String(newValue);
+        } else {
+            allLengthOption.dataset.wordValue = String(newValue);
+        }
+        allLengthOption.value = String(newValue);
+        allLengthOption.closest('.choice')?.querySelector('[data-length-num]')?.replaceChildren(document.createTextNode(String(newValue)));
+    };
+
     const refreshContent = () => {
         const selected = document.querySelector('input[name="PracticeItemType"]:checked');
         if (!selected) return;
@@ -48,6 +76,8 @@
         if (availableLabel) availableLabel.textContent = `${count} ${itemLabel}`;
         if (availableCount) availableCount.textContent = `${count}`;
         if (availableItemLabel) availableItemLabel.textContent = itemLabel;
+
+        refreshAllLength();
 
         lengthOptions.forEach(option => {
             const value = isSentences ? option.dataset.sentenceValue : option.dataset.wordValue;
@@ -107,6 +137,8 @@
             if (selectedRange) {
                 selectedRange.textContent = describeRange(minVal, maxVal);
             }
+
+            refreshAllLength();
         };
 
         const clamp = changed => {
