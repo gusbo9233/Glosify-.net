@@ -4975,59 +4975,171 @@ body { margin: 0; }
     overflow-x: auto;
 }
 
+/* Classroom layout fixes: equal-width form panels, right-sized buttons */
+.classroom-page .books-header {
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.classroom-page .tool-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    max-width: 1000px;
+}
+
+.classroom-page .btn-submit {
+    width: auto;
+    padding: 12px 26px;
+}
+
+.classroom-page .form-input,
+.classroom-page .form-textarea {
+    max-width: 520px;
+}
+
+.classroom-composer,
+.classroom-board {
+    width: 100%;
+    max-width: 760px;
+}
+
+.classroom-composer .classroom-announcement-input {
+    max-width: none;
+}
+
 /* Classroom chat */
-.classroom-chat {
+/* Classroom chat — floating panel next to the assistant */
+.classroom-chat-float {
+    position: fixed;
+    right: calc(28px + var(--assistant-offset, 190px));
+    bottom: 28px;
+    z-index: 1190;
     display: flex;
+    align-items: flex-end;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
+}
+
+.classroom-chat-fab {
+    position: relative;
+    background: var(--surface-highest);
+    color: var(--on-surface);
+}
+
+.classroom-chat-fab .classroom-unread-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    margin-left: 0;
+}
+
+.classroom-chat-popover {
+    display: flex;
+}
+
+.classroom-chat-popover[hidden] {
+    display: none;
+}
+
+.classroom-chat-tab-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 10px;
+    color: var(--on-surface);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    cursor: default;
 }
 
 .classroom-chat-status {
-    margin-left: auto;
+    color: var(--on-surface-var);
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 4px;
+    white-space: nowrap;
 }
 
-.classroom-chat-messages {
+.classroom-chat-pane {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    max-height: 55vh;
-    min-height: 200px;
-    overflow-y: auto;
-    padding-right: 4px;
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .classroom-chat-message {
-    max-width: 75%;
-    background: var(--surface);
-    border-radius: 16px;
-    padding: 10px 14px;
+    max-width: 88%;
     align-self: flex-start;
 }
 
 .classroom-chat-message.is-own {
     align-self: flex-end;
-    background: rgba(83, 224, 118, 0.12);
+    align-items: flex-end;
 }
 
-.classroom-chat-meta {
+.classroom-chat-message .classroom-chat-meta {
     display: flex;
     align-items: baseline;
-    gap: 10px;
+    gap: 8px;
+    padding: 0 2px;
+    color: var(--on-surface-var);
+    font-size: 11px;
 }
 
-.classroom-chat-body {
-    margin: 4px 0 0;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
+.classroom-chat-meta strong {
+    color: var(--on-surface);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.classroom-chat-bubble {
+    background: var(--surface-highest);
+    color: var(--on-surface);
+    max-width: 100%;
+}
+
+.classroom-chat-message.is-own .classroom-chat-bubble {
+    background: var(--primary-container, #1db954);
+    color: var(--on-primary, #003914);
 }
 
 .classroom-chat-form {
     display: flex;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+    border-top: 1px solid rgba(61, 74, 61, 0.42);
+    background: var(--surface-low, #0d1c32);
 }
 
-.classroom-chat-form .form-input {
+.classroom-chat-form .classroom-chat-input {
     flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 720px) {
+    .classroom-chat-float {
+        right: 16px;
+        bottom: calc(142px + env(safe-area-inset-bottom));
+    }
+
+    .classroom-chat-float.is-open {
+        top: 64px;
+        right: 12px;
+        bottom: calc(72px + env(safe-area-inset-bottom));
+        left: 12px;
+        align-items: stretch;
+        gap: 0;
+    }
+
+    .classroom-chat-float.is-open .classroom-chat-fab {
+        display: none;
+    }
+
+    .classroom-chat-float.is-open .classroom-chat-popover {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+    }
 }
 
 .classroom-unread-badge {
@@ -5050,24 +5162,170 @@ body { margin: 0; }
     align-items: center;
 }
 
-.classroom-call-controls {
+.call-lobby-card {
+    max-width: 420px;
+    margin: 48px auto 0;
+    padding: 40px 32px;
+    background: var(--surface);
+    border-radius: 24px;
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+}
+
+.call-lobby-avatar {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--surface-highest);
+    color: var(--on-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    font-weight: 800;
+    margin-bottom: 8px;
+}
+
+.call-lobby-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.call-lobby-subtitle {
+    color: var(--on-surface-var);
+    font-size: 14px;
+    margin: 0 0 16px;
+}
+
+/* Full-screen meeting stage (Teams-style) */
+.call-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-lowest);
+}
+
+body.call-in-progress {
+    overflow: hidden;
+}
+
+.call-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 24px;
+    background: rgba(4, 19, 41, 0.72);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+}
+
+.call-topbar-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.call-topbar-name {
+    font-size: 15px;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.call-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    background: var(--surface-high);
+    color: var(--on-surface-var);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.call-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--on-surface-var);
+}
+
+.classroom-call-page.is-connected .call-status-dot {
+    background: var(--primary);
+}
+
+.call-participant-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--on-surface-var);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.call-participant-count .material-symbols-outlined {
+    font-size: 18px;
+}
+
+.call-stage-main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 24px 110px;
+    overflow-y: auto;
 }
 
 .classroom-call-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(var(--call-cols, 1), minmax(0, 1fr));
+    gap: 12px;
+    width: 100%;
+    max-width: 1400px;
+    align-content: center;
+    justify-content: center;
+}
+
+.classroom-call-grid[data-count="1"] {
+    max-width: 960px;
+}
+
+.classroom-call-grid[data-count="2"],
+.classroom-call-grid[data-count="3"],
+.classroom-call-grid[data-count="4"] {
+    max-width: 1200px;
+}
+
+.classroom-call-grid:empty::before {
+    content: "Waiting for others to join…";
+    display: block;
+    text-align: center;
+    color: var(--on-surface-var);
+    font-size: 15px;
+    font-weight: 600;
 }
 
 .classroom-call-tile {
     position: relative;
     background: var(--surface);
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .classroom-call-video,
@@ -5078,16 +5336,151 @@ body { margin: 0; }
     object-fit: cover;
 }
 
+.classroom-call-video {
+    position: absolute;
+    inset: 0;
+    display: none;
+}
+
+.classroom-call-tile.has-video .classroom-call-video {
+    display: block;
+}
+
+.classroom-call-tile.has-video .classroom-call-avatar {
+    display: none;
+}
+
+.classroom-call-avatar {
+    width: clamp(48px, 25%, 96px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--surface-highest);
+    color: var(--on-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(16px, 3vw, 32px);
+    font-weight: 800;
+}
+
 .classroom-call-name {
     position: absolute;
     left: 10px;
     bottom: 8px;
-    padding: 2px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
     border-radius: 9999px;
     background: rgba(0, 0, 0, 0.55);
     color: #fff;
     font-size: 12px;
     font-weight: 700;
+    max-width: calc(100% - 20px);
+}
+
+.classroom-call-name .classroom-call-muted {
+    font-size: 14px;
+    color: var(--error);
+}
+
+/* Local picture-in-picture tile */
+.call-pip {
+    position: absolute;
+    right: 20px;
+    bottom: 104px;
+    width: 220px;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--surface-high);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.call-pip .classroom-call-avatar {
+    width: 52px;
+    font-size: 18px;
+}
+
+/* Bottom control bar */
+.call-controls {
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 18px;
+    border-radius: 9999px;
+    background: rgba(17, 32, 54, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    z-index: 3;
+}
+
+.call-ctrl {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-highest);
+    color: var(--on-surface);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.call-ctrl:hover {
+    background: var(--surface-bright);
+}
+
+.call-ctrl .material-symbols-outlined {
+    font-size: 24px;
+}
+
+.call-ctrl.is-off {
+    background: #fff;
+    color: #1a1a2e;
+}
+
+.call-ctrl-danger {
+    background: #d64545;
+    color: #fff;
+    width: 64px;
+    border-radius: 9999px;
+}
+
+.call-ctrl-danger:hover {
+    background: #b93a3a;
+}
+
+@media (max-width: 700px) {
+    .call-stage-main {
+        padding: 12px 12px 150px;
+    }
+
+    .call-pip {
+        width: 132px;
+        right: 12px;
+        bottom: 108px;
+    }
+
+    .call-ctrl {
+        width: 46px;
+        height: 46px;
+    }
+
+    .call-controls {
+        bottom: 18px;
+    }
 }
 
 /* Classroom planning */

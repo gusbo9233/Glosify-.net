@@ -1,21 +1,49 @@
 @model ClassroomDetailsViewModel
 
-<section class="panel classroom-chat" data-classroom-chat data-classroom-id="@Model.Classroom.Id">
-    <div class="panel-header">
-        <div class="panel-icon"><span class="material-symbols-outlined">forum</span></div>
-        <h2 class="panel-title">Class chat</h2>
-        <span class="book-meta classroom-chat-status" data-chat-status>Connecting&hellip;</span>
-    </div>
+<div class="classroom-chat-float"
+     data-classroom-chat
+     data-classroom-id="@Model.Classroom.Id"
+     data-unread-count="@Model.UnreadChatCount">
+    <button class="assistant-fab classroom-chat-fab"
+            type="button"
+            aria-label="Open class chat"
+            aria-controls="classroomChatPopover"
+            aria-expanded="false"
+            data-chat-toggle>
+        <span class="material-symbols-outlined" aria-hidden="true">forum</span>
+        <span class="assistant-fab-label">Class chat</span>
+        <span class="classroom-unread-badge" data-chat-unread hidden></span>
+    </button>
 
-    <div class="classroom-chat-messages" data-chat-messages aria-live="polite">
-        <div class="empty-state" data-chat-empty>Loading messages&hellip;</div>
-    </div>
+    <section class="assistant-popover assistant-panel classroom-chat-popover" id="classroomChatPopover" hidden data-chat-window>
+        <header class="assistant-ide-header">
+            <div class="assistant-tabs" aria-label="Class chat">
+                <span class="assistant-tab is-active classroom-chat-tab-label">CLASS CHAT</span>
+            </div>
+            <div class="assistant-header-actions">
+                <span class="classroom-chat-status" data-chat-status>Connecting&hellip;</span>
+                <button class="assistant-close" type="button" aria-label="Close class chat" data-chat-close>
+                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                </button>
+            </div>
+        </header>
 
-    <form class="classroom-chat-form" data-chat-form>
-        <input class="form-input" type="text" name="body" maxlength="2000" autocomplete="off"
-               placeholder="Message the class" aria-label="Chat message" required data-chat-input />
-        <button class="btn-submit" type="submit" data-chat-send disabled>
-            Send <span class="material-symbols-outlined" aria-hidden="true">send</span>
-        </button>
-    </form>
-</section>
+        <div class="assistant-pane is-active classroom-chat-pane">
+            <div class="assistant-transcript classroom-chat-messages" data-chat-messages aria-live="polite">
+                <div class="assistant-empty" data-chat-empty>
+                    <span class="material-symbols-outlined" aria-hidden="true">forum</span>
+                    <strong>Class chat</strong>
+                    <span>Loading messages&hellip;</span>
+                </div>
+            </div>
+
+            <form class="classroom-chat-form" data-chat-form>
+                <input class="form-input classroom-chat-input" type="text" name="body" maxlength="2000" autocomplete="off"
+                       placeholder="Message the class" aria-label="Chat message" required data-chat-input />
+                <button class="assistant-send" type="submit" aria-label="Send" data-chat-send disabled>
+                    <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
+                </button>
+            </form>
+        </div>
+    </section>
+</div>

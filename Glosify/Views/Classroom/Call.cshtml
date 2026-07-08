@@ -2,47 +2,86 @@
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = $"{Model.Classroom.Name} — call";
+    ViewData["HideAssistantPanel"] = true;
 }
 
 <section class="classroom-page classroom-call-page"
          data-classroom-call
          data-classroom-id="@Model.Classroom.Id"
          data-display-name="@Model.DisplayName">
-    <section class="books-header">
-        <div>
-            <p class="hero-label">@Model.Classroom.Name</p>
-            <h1 class="page-title">Video call</h1>
-            <p class="collection-subtitle" data-call-status>Not connected</p>
-        </div>
-        <a class="btn-secondary" asp-controller="Classroom" asp-action="Details" asp-route-id="@Model.Classroom.Id">
-            Back to classroom
-        </a>
-    </section>
 
-    @if (!Model.IsCallingConfigured)
+    <div class="call-lobby" data-call-lobby>
+        <section class="books-header">
+            <div>
+                <p class="hero-label">@Model.Classroom.Name</p>
+                <h1 class="page-title">Video call</h1>
+                <p class="collection-subtitle" data-call-status>Not connected</p>
+            </div>
+            <a class="btn-secondary" asp-controller="Classroom" asp-action="Details" asp-route-id="@Model.Classroom.Id">
+                Back to classroom
+            </a>
+        </section>
+
+        @if (!Model.IsCallingConfigured)
+        {
+            <div class="empty-state">
+                Video calling is not configured on this server. An administrator needs to set the
+                <code>Acs__ConnectionString</code> app setting to an Azure Communication Services resource.
+            </div>
+        }
+        else
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="call-lobby-card">
+                <div class="call-lobby-avatar" data-lobby-avatar aria-hidden="true"></div>
+                <p class="call-lobby-title">Ready to join?</p>
+                <p class="call-lobby-subtitle">You will join as <strong>@Model.DisplayName</strong></p>
+                <button class="btn-main" type="button" data-call-join>
+                    Join call <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
+                </button>
+            </div>
+        }
+    </div>
+
+    @if (Model.IsCallingConfigured)
     {
-        <div class="empty-state">
-            Video calling is not configured on this server. An administrator needs to set the
-            <code>Acs__ConnectionString</code> app setting to an Azure Communication Services resource.
-        </div>
-    }
-    else
-    {
-        @Html.AntiForgeryToken()
+        <div class="call-stage" data-call-stage hidden>
+            <header class="call-topbar">
+                <div class="call-topbar-info">
+                    <span class="call-topbar-name">@Model.Classroom.Name</span>
+                    <span class="call-status-pill">
+                        <span class="call-status-dot" aria-hidden="true"></span>
+                        <span data-call-status-live>Connecting…</span>
+                        <span data-call-timer hidden></span>
+                    </span>
+                </div>
+                <span class="call-participant-count">
+                    <span class="material-symbols-outlined" aria-hidden="true">group</span>
+                    <span data-call-count>1</span>
+                </span>
+            </header>
 
-        <div class="classroom-call-controls">
-            <button class="btn-main" type="button" data-call-join>
-                Join call <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
-            </button>
-            <button class="btn-secondary" type="button" data-call-mute hidden>Mute</button>
-            <button class="btn-secondary" type="button" data-call-camera hidden>Camera off</button>
-            <button class="btn-secondary" type="button" data-call-leave hidden>Leave</button>
-        </div>
+            <div class="call-stage-main">
+                <div class="classroom-call-grid" data-call-grid></div>
+            </div>
 
-        <div class="classroom-call-grid" data-call-grid>
-            <div class="classroom-call-tile is-local" data-local-tile hidden>
+            <div class="call-pip" data-local-tile hidden>
                 <div class="classroom-call-video" data-local-video></div>
+                <div class="classroom-call-avatar" data-local-avatar aria-hidden="true"></div>
                 <span class="classroom-call-name">You</span>
+            </div>
+
+            <div class="call-controls">
+                <button class="call-ctrl" type="button" data-call-mute aria-label="Mute microphone" title="Mute">
+                    <span class="material-symbols-outlined" aria-hidden="true">mic</span>
+                </button>
+                <button class="call-ctrl" type="button" data-call-camera aria-label="Turn camera off" title="Camera">
+                    <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
+                </button>
+                <button class="call-ctrl call-ctrl-danger" type="button" data-call-leave aria-label="Leave call" title="Leave">
+                    <span class="material-symbols-outlined" aria-hidden="true">call_end</span>
+                </button>
             </div>
         </div>
     }
