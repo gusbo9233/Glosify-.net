@@ -5469,6 +5469,14 @@ body { margin: 0; }
     background: #ff5f57;
 }
 
+.classroom-call-live[hidden] {
+    display: none;
+}
+
+.call-lobby-presence[hidden] {
+    display: none;
+}
+
 /* Full-screen meeting stage (Teams-style) */
 .call-stage {
     position: fixed;

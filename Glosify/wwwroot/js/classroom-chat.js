@@ -184,10 +184,7 @@
     const callLinkLabel = document.querySelector("[data-call-link-label]");
     const callLiveBadge = document.querySelector("[data-call-live]");
     const callLiveCount = document.querySelector("[data-call-live-count]");
-    connection.on("callChanged", (payload) => {
-        const count = payload && typeof payload.participantCount === "number"
-            ? payload.participantCount
-            : 0;
+    function renderCallState(count) {
         if (callLinkLabel) {
             callLinkLabel.textContent = count > 0 ? "Join call" : "Video call";
         }
@@ -197,6 +194,12 @@
         if (callLiveCount) {
             callLiveCount.textContent = String(count);
         }
+    }
+
+    connection.on("callChanged", (payload) => {
+        renderCallState(payload && typeof payload.participantCount === "number"
+            ? payload.participantCount
+            : 0);
     });
 
     connection.onreconnecting(() => setStatus("Reconnecting…"));
@@ -236,6 +239,7 @@
             setStatus("Connected");
             connected = true;
             sendButton.disabled = false;
+            renderCallState(await connection.invoke("GetCallParticipants", classroomId));
         } catch {
             setStatus("Chat is unavailable right now.");
         }

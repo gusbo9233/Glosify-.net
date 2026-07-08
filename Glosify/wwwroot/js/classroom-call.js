@@ -334,12 +334,24 @@
             if (inCall) {
                 await hub.invoke("JoinCall", classroomId);
             }
+            // Catch up on anything broadcast before this connection was up.
+            callParticipants = await hub.invoke("GetCallParticipants", classroomId);
+            renderLobby(joining);
         };
 
         hub.onreconnected(() => {
             register().catch(() => { });
         });
-        hub.start().then(register).catch(() => { });
+
+        // Presence is what tells everyone else a call exists, so the initial
+        // connect must not fail silently — retry with backoff.
+        (function startHub(attempt) {
+            hub.start().then(register).catch(() => {
+                if (attempt < 5) {
+                    setTimeout(() => startHub(attempt + 1), Math.min(30000, 1000 * Math.pow(2, attempt)));
+                }
+            });
+        })(0);
     }
 
     function disposeLocalVideo() {

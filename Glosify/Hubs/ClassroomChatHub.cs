@@ -70,6 +70,17 @@ public class ClassroomChatHub : Hub
     }
 
     /// <summary>
+    /// Current call roster size, for clients that (re)connect after missing a
+    /// broadcast. Requires membership like every other hub entry point.
+    /// </summary>
+    public async Task<int> GetCallParticipants(Guid classroomId)
+    {
+        var userId = Context.User!.GetUserId();
+        await _classrooms.RequireMemberAsync(classroomId, userId, Context.ConnectionAborted);
+        return GetCallParticipantCount(classroomId);
+    }
+
+    /// <summary>
     /// Reports that the caller has joined the classroom's video call. The
     /// roster entry is dropped automatically when the connection closes.
     /// </summary>
