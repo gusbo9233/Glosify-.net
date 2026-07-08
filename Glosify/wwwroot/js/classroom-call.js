@@ -8,7 +8,12 @@
 
     const classroomId = root.getAttribute("data-classroom-id");
     const displayName = root.getAttribute("data-display-name") || "Member";
+    const isTeacher = root.getAttribute("data-is-teacher") === "true";
+    let callParticipants = parseInt(root.getAttribute("data-call-participants") || "0", 10) || 0;
     const lobby = root.querySelector("[data-call-lobby]");
+    const lobbyTitle = root.querySelector("[data-call-lobby-title]");
+    const presenceLine = root.querySelector("[data-call-presence]");
+    const joinLabel = root.querySelector("[data-call-join-label]");
     const stage = root.querySelector("[data-call-stage]");
     const status = root.querySelector("[data-call-status]");
     const liveStatus = root.querySelector("[data-call-status-live]");
@@ -50,6 +55,63 @@
 
     function setStatus(text) {
         status.textContent = text;
+    }
+
+    // The lobby adapts to who you are and whether a call is running: teachers
+    // can always start/join; students can only join a call in progress (the
+    // server enforces the same rule on the token endpoint).
+    function renderLobby(joinInFlight) {
+        if (!joinButton) {
+            return;
+        }
+        const active = callParticipants > 0;
+        if (active) {
+            lobbyTitle.textContent = "A call is in progress";
+            presenceLine.textContent = callParticipants === 1
+                ? "1 person is in the call."
+                : `${callParticipants} people are in the call.`;
+            presenceLine.hidden = false;
+            joinLabel.textContent = "Join call";
+            joinButton.disabled = Boolean(joinInFlight);
+        } else if (isTeacher) {
+            lobbyTitle.textContent = "Ready to start?";
+            presenceLine.textContent = "No one is in the call yet.";
+            presenceLine.hidden = false;
+            joinLabel.textContent = "Start call";
+            joinButton.disabled = Boolean(joinInFlight);
+        } else {
+            lobbyTitle.textContent = "Waiting for a teacher";
+            presenceLine.textContent = "You can join once a teacher has started the call.";
+            presenceLine.hidden = false;
+            joinLabel.textContent = "Join call";
+            joinButton.disabled = true;
+        }
+    }
+
+    // Hanging up a call that is still connecting can fail silently in the
+    // calling SDK, leaving a ghost participant. Retry once the call settles.
+    function hangUpCall(activeCall) {
+        const retryWhenSettled = () => {
+            const onState = () => {
+                if (activeCall.state === "Connected") {
+                    activeCall.off("stateChanged", onState);
+                    activeCall.hangUp().catch(() => { });
+                } else if (activeCall.state === "Disconnected") {
+                    activeCall.off("stateChanged", onState);
+                }
+            };
+            activeCall.on("stateChanged", onState);
+            onState();
+        };
+
+        if (activeCall.state === "Disconnected" || activeCall.state === "Disconnecting") {
+            return;
+        }
+        activeCall.hangUp().then(() => {
+            if (activeCall.state !== "Disconnected" && activeCall.state !== "Disconnecting") {
+                retryWhenSettled();
+            }
+        }).catch(retryWhenSettled);
     }
 
     function antiforgeryToken() {
@@ -229,6 +291,56 @@
     // Incremented on every join attempt and on hang-up, so an in-flight join
     // notices it was cancelled after each await and backs out.
     let joinSession = 0;
+    let joining = false;
+
+    // Call presence rides on the classroom chat hub: joining/leaving the call
+    // is reported so lobbies elsewhere update live, and a closed tab drops off
+    // the roster with its hub connection.
+    let hub = null;
+    let inCall = false;
+
+    function notifyJoinedCall() {
+        inCall = true;
+        if (hub && hub.state === "Connected") {
+            hub.invoke("JoinCall", classroomId).catch(() => { });
+        }
+    }
+
+    function notifyLeftCall() {
+        if (!inCall) {
+            return;
+        }
+        inCall = false;
+        if (hub && hub.state === "Connected") {
+            hub.invoke("LeaveCall").catch(() => { });
+        }
+    }
+
+    if (typeof signalR !== "undefined") {
+        hub = new signalR.HubConnectionBuilder()
+            .withUrl("/hubs/classroom-chat")
+            .withAutomaticReconnect()
+            .build();
+
+        hub.on("callChanged", (payload) => {
+            callParticipants = payload && typeof payload.participantCount === "number"
+                ? payload.participantCount
+                : 0;
+            renderLobby(joining);
+        });
+
+        const register = async () => {
+            await hub.invoke("JoinClassroom", classroomId);
+            if (inCall) {
+                await hub.invoke("JoinCall", classroomId);
+            }
+        };
+
+        hub.onreconnected(() => {
+            register().catch(() => { });
+        });
+        hub.start().then(register).catch(() => { });
+    }
 
     function disposeLocalVideo() {
         if (localRenderer) {
@@ -241,7 +353,11 @@
     }
 
     async function join() {
+        if (joinButton.disabled) {
+            return;
+        }
         const session = ++joinSession;
+        joining = true;
         joinButton.disabled = true;
         setStatus("Connecting…");
 
@@ -289,7 +405,7 @@
                 { groupId: info.groupCallId },
                 videoStream ? { videoOptions: { localVideoStreams: [videoStream] } } : undefined);
             if (session !== joinSession) {
-                joined.hangUp().catch(() => { });
+                hangUpCall(joined);
                 return;
             }
             call = joined;
@@ -309,6 +425,8 @@
                 if (joined.state === "Connected") {
                     liveStatus.textContent = "Connected";
                     root.classList.add("is-connected");
+                    joining = false;
+                    notifyJoinedCall();
                     if (!timerHandle) {
                         startTimer();
                     }
@@ -332,12 +450,14 @@
         localTile.hidden = true;
         call = null;
         stopTimer();
+        notifyLeftCall();
 
         lobby.hidden = false;
         stage.hidden = true;
         root.classList.remove("is-live", "is-connected");
         document.body.classList.remove("call-in-progress");
-        joinButton.disabled = false;
+        joining = false;
+        renderLobby(false);
         setStatus("Not connected");
     }
 
@@ -377,21 +497,18 @@
         }
     });
 
-    leaveButton.addEventListener("click", async () => {
+    leaveButton.addEventListener("click", () => {
         joinSession++; // cancels a join that is still in flight
         const active = call;
         call = null;
         cleanUp();
         if (active) {
-            try {
-                await active.hangUp();
-            } catch {
-                // The call may already be disconnecting; the UI is reset either way.
-            }
+            hangUpCall(active);
         }
     });
 
     joinButton.addEventListener("click", join);
+    renderLobby(false);
 
     window.addEventListener("beforeunload", () => {
         if (call) {

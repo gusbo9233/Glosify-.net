@@ -5445,6 +5445,30 @@ body { margin: 0; }
     margin: 0 0 16px;
 }
 
+.call-lobby-presence {
+    color: var(--on-surface-var);
+    font-size: 13px;
+    font-weight: 700;
+    margin: -8px 0 16px;
+}
+
+/* "Live" pill on the classroom header's call link */
+.classroom-call-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.18);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.classroom-call-live .call-status-dot {
+    background: #ff5f57;
+}
+
 /* Full-screen meeting stage (Teams-style) */
 .call-stage {
     position: fixed;

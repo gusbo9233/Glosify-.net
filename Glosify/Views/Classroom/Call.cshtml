@@ -8,7 +8,9 @@
 <section class="classroom-page classroom-call-page"
          data-classroom-call
          data-classroom-id="@Model.Classroom.Id"
-         data-display-name="@Model.DisplayName">
+         data-display-name="@Model.DisplayName"
+         data-is-teacher="@(Model.IsTeacher ? "true" : "false")"
+         data-call-participants="@Model.ActiveCallParticipants">
 
     <div class="call-lobby" data-call-lobby>
         <section class="books-header">
@@ -35,10 +37,11 @@
 
             <div class="call-lobby-card">
                 <div class="call-lobby-avatar" data-lobby-avatar aria-hidden="true"></div>
-                <p class="call-lobby-title">Ready to join?</p>
+                <p class="call-lobby-title" data-call-lobby-title>Ready to join?</p>
                 <p class="call-lobby-subtitle">You will join as <strong>@Model.DisplayName</strong></p>
+                <p class="call-lobby-presence" data-call-presence hidden></p>
                 <button class="btn-main" type="button" data-call-join>
-                    Join call <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
+                    <span data-call-join-label>Join call</span> <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
                 </button>
             </div>
         }
@@ -90,6 +93,7 @@
 @section Scripts {
     @if (Model.IsCallingConfigured)
     {
+        <script src="~/lib/signalr/dist/browser/signalr.min.js" asp-append-version="true"></script>
         <script src="~/lib/acs/acs-calling.min.js" asp-append-version="true"></script>
         <script src="~/js/classroom-call.js" asp-append-version="true"></script>
     }

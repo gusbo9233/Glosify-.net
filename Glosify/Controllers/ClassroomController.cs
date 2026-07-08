@@ -119,6 +119,7 @@ public class ClassroomController : Controller
                 Classroom = page.Classroom,
                 CurrentRole = page.Membership.Role,
                 ActiveTab = activeTab,
+                ActiveCallParticipants = ClassroomChatHub.GetCallParticipantCount(id),
                 Board = page.Board,
                 Members = page.Members,
                 Content = page.Content,
@@ -334,13 +335,16 @@ public class ClassroomController : Controller
         var userId = User.GetUserId();
         try
         {
+            var membership = await _classrooms.RequireMemberAsync(id, userId, cancellationToken);
             var classroom = await _classrooms.GetDetailsAsync(id, userId, cancellationToken);
             ViewData["HideAssistantPanel"] = true;
             return View(new ClassroomCallViewModel
             {
                 Classroom = classroom,
                 IsCallingConfigured = _acsTokens.IsConfigured,
-                DisplayName = User.Identity?.Name ?? "Member"
+                DisplayName = User.Identity?.Name ?? "Member",
+                IsTeacher = membership.Role is ClassroomRole.Owner or ClassroomRole.Teacher,
+                ActiveCallParticipants = ClassroomChatHub.GetCallParticipantCount(id)
             });
         }
         catch (ClassroomAccessDeniedException)
@@ -356,7 +360,17 @@ public class ClassroomController : Controller
         var userId = User.GetUserId();
         try
         {
+            var membership = await _classrooms.RequireMemberAsync(id, userId, cancellationToken);
             var classroom = await _classrooms.GetDetailsAsync(id, userId, cancellationToken);
+
+            // Students may only join a call that is already in progress; starting
+            // one is reserved for teachers. Enforced here, not just in the UI.
+            if (membership.Role == ClassroomRole.Student && ClassroomChatHub.GetCallParticipantCount(id) == 0)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    new { message = "Only a teacher can start the call. You can join once a teacher has started it." });
+            }
+
             var token = await _acsTokens.GetCallTokenAsync(userId, cancellationToken);
             return Json(new
             {

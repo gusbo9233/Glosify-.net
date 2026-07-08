@@ -180,6 +180,25 @@
         }
     });
 
+    // Keep the "Join call" indicator on the classroom header live.
+    const callLinkLabel = document.querySelector("[data-call-link-label]");
+    const callLiveBadge = document.querySelector("[data-call-live]");
+    const callLiveCount = document.querySelector("[data-call-live-count]");
+    connection.on("callChanged", (payload) => {
+        const count = payload && typeof payload.participantCount === "number"
+            ? payload.participantCount
+            : 0;
+        if (callLinkLabel) {
+            callLinkLabel.textContent = count > 0 ? "Join call" : "Video call";
+        }
+        if (callLiveBadge) {
+            callLiveBadge.hidden = count === 0;
+        }
+        if (callLiveCount) {
+            callLiveCount.textContent = String(count);
+        }
+    });
+
     connection.onreconnecting(() => setStatus("Reconnecting…"));
     connection.onreconnected(async () => {
         setStatus("Connected");

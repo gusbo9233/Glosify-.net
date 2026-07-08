@@ -22,6 +22,11 @@ public class ClassroomChatHub : Hub
     // single-instance assumption as the throttle).
     private static readonly ConcurrentDictionary<string, (string UserId, Guid ClassroomId)> Connections = new();
 
+    // Who is currently in each classroom's video call, keyed by the hub
+    // connection that reported it so a dropped tab leaves the roster on
+    // disconnect (same single-instance assumption as above).
+    private static readonly ConcurrentDictionary<string, (string UserId, Guid ClassroomId)> CallConnections = new();
+
     private readonly IClassroomService _classrooms;
 
     public ClassroomChatHub(IClassroomService classrooms)
@@ -37,11 +42,58 @@ public class ClassroomChatHub : Hub
         Connections[Context.ConnectionId] = (userId, classroomId);
     }
 
-    public override Task OnDisconnectedAsync(Exception? exception)
+    public override async Task OnDisconnectedAsync(Exception? exception)
     {
         Connections.TryRemove(Context.ConnectionId, out _);
-        return base.OnDisconnectedAsync(exception);
+        if (CallConnections.TryRemove(Context.ConnectionId, out var callInfo))
+        {
+            await BroadcastCallChangedAsync(Clients.Group(GroupName(callInfo.ClassroomId)), callInfo.ClassroomId);
+        }
+        await base.OnDisconnectedAsync(exception);
     }
+
+    /// <summary>
+    /// Number of distinct members currently reported in a classroom's video
+    /// call. Zero means no call is in progress.
+    /// </summary>
+    public static int GetCallParticipantCount(Guid classroomId)
+    {
+        var users = new HashSet<string>();
+        foreach (var info in CallConnections.Values)
+        {
+            if (info.ClassroomId == classroomId)
+            {
+                users.Add(info.UserId);
+            }
+        }
+        return users.Count;
+    }
+
+    /// <summary>
+    /// Reports that the caller has joined the classroom's video call. The
+    /// roster entry is dropped automatically when the connection closes.
+    /// </summary>
+    public async Task JoinCall(Guid classroomId)
+    {
+        var userId = Context.User!.GetUserId();
+        await _classrooms.RequireMemberAsync(classroomId, userId, Context.ConnectionAborted);
+        CallConnections[Context.ConnectionId] = (userId, classroomId);
+        await BroadcastCallChangedAsync(Clients.Group(GroupName(classroomId)), classroomId);
+    }
+
+    /// <summary>
+    /// Reports that the caller has left the classroom's video call.
+    /// </summary>
+    public async Task LeaveCall()
+    {
+        if (CallConnections.TryRemove(Context.ConnectionId, out var info))
+        {
+            await BroadcastCallChangedAsync(Clients.Group(GroupName(info.ClassroomId)), info.ClassroomId);
+        }
+    }
+
+    private static Task BroadcastCallChangedAsync(IClientProxy group, Guid classroomId, CancellationToken cancellationToken = default)
+        => group.SendAsync("callChanged", new { participantCount = GetCallParticipantCount(classroomId) }, cancellationToken);
 
     /// <summary>
     /// Drops a user's live connections out of a classroom's chat group, e.g.
@@ -56,6 +108,19 @@ public class ClassroomChatHub : Hub
                 Connections.TryRemove(connectionId, out _);
                 await hubContext.Groups.RemoveFromGroupAsync(connectionId, GroupName(classroomId), cancellationToken);
             }
+        }
+
+        var leftCall = false;
+        foreach (var (connectionId, info) in CallConnections)
+        {
+            if (info.UserId == userId && info.ClassroomId == classroomId)
+            {
+                leftCall |= CallConnections.TryRemove(connectionId, out _);
+            }
+        }
+        if (leftCall)
+        {
+            await BroadcastCallChangedAsync(hubContext.Clients.Group(GroupName(classroomId)), classroomId, cancellationToken);
         }
     }
 

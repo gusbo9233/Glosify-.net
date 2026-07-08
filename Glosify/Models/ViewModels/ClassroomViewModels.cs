@@ -14,6 +14,7 @@ public class ClassroomDetailsViewModel
     public Classroom Classroom { get; set; } = null!;
     public ClassroomRole CurrentRole { get; set; }
     public string ActiveTab { get; set; } = "stream";
+    public int ActiveCallParticipants { get; set; }
 
     public IReadOnlyList<ClassroomBoardMessage> Board { get; set; } = [];
     public int UnreadChatCount { get; set; }
@@ -35,6 +36,8 @@ public class ClassroomCallViewModel
     public Classroom Classroom { get; set; } = null!;
     public bool IsCallingConfigured { get; set; }
     public string DisplayName { get; set; } = string.Empty;
+    public bool IsTeacher { get; set; }
+    public int ActiveCallParticipants { get; set; }
 }
 
 public class ClassroomMemberResultsViewModel
