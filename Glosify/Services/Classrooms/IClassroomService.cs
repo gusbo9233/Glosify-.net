@@ -7,6 +7,7 @@ public interface IClassroomService
     Task<Classroom> CreateAsync(string ownerUserId, string name, string? description, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<ClassroomSummary>> GetForUserAsync(string userId, CancellationToken cancellationToken = default);
     Task<Classroom> GetDetailsAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
+    Task<ClassroomDetailsPage> GetDetailsPageAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task DeleteClassroomAsync(Guid classroomId, string ownerUserId, CancellationToken cancellationToken = default);
 
     Task<ClassroomMembership> RequireMemberAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
@@ -24,6 +25,7 @@ public interface IClassroomService
     Task DeclineInvitationAsync(Guid invitationId, string userId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ClassroomMemberInfo>> GetMembersAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
+    Task<string?> GetMemberNameAsync(Guid classroomId, string requesterUserId, string memberUserId, CancellationToken cancellationToken = default);
     Task RemoveMemberAsync(Guid classroomId, string requesterUserId, string memberUserId, CancellationToken cancellationToken = default);
     Task LeaveAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task ChangeRoleAsync(Guid classroomId, string ownerUserId, string memberUserId, ClassroomRole role, CancellationToken cancellationToken = default);

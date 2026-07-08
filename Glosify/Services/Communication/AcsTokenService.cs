@@ -1,5 +1,6 @@
 using Azure.Communication;
 using Azure.Communication.Identity;
+using Azure.Identity;
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -17,7 +18,9 @@ public sealed class AcsTokenService : IAcsTokenService
         _context = context;
         _options = options.Value;
         _client = new Lazy<CommunicationIdentityClient>(
-            () => new CommunicationIdentityClient(_options.ConnectionString));
+            () => !string.IsNullOrWhiteSpace(_options.Endpoint)
+                ? new CommunicationIdentityClient(new Uri(_options.Endpoint), new DefaultAzureCredential())
+                : new CommunicationIdentityClient(_options.ConnectionString));
     }
 
     public bool IsConfigured => _options.IsConfigured;
@@ -42,7 +45,18 @@ public sealed class AcsTokenService : IAcsTokenService
                 CreatedAt = DateTimeOffset.UtcNow
             };
             _context.AcsUserIdentities.Add(identity);
-            await _context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                // A concurrent request created the mapping first (UserId is the
+                // key); use theirs. The extra ACS identity is never referenced.
+                _context.Entry(identity).State = EntityState.Detached;
+                identity = await _context.AcsUserIdentities
+                    .FirstAsync(a => a.UserId == userId, cancellationToken);
+            }
         }
 
         var token = await _client.Value.GetTokenAsync(

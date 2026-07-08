@@ -69,7 +69,7 @@ public class TypingSessionServiceTests
 
     private sealed class StubTypingQuizService : ITypingQuizService
     {
-        public Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null)
+        public Task<TypingQuizData> GetQuizDataAsync(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, int rangeStartPercent = 0, int rangeEndPercent = 100, IReadOnlyCollection<string>? wordIds = null)
         {
             throw new NotImplementedException();
         }

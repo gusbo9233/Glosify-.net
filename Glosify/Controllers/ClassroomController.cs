@@ -1,9 +1,11 @@
+using Glosify.Hubs;
 using Glosify.Services.Books;
 using Glosify.Services.Classrooms;
 using Glosify.Services.Communication;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Glosify.Controllers;
 
@@ -14,6 +16,7 @@ public class ClassroomController : Controller
     private readonly IQuizService _quizzes;
     private readonly IBookDocumentService _books;
     private readonly IAcsTokenService _acsTokens;
+    private readonly IHubContext<ClassroomChatHub> _chatHub;
     private readonly ILogger<ClassroomController> _logger;
 
     public ClassroomController(
@@ -21,12 +24,14 @@ public class ClassroomController : Controller
         IQuizService quizzes,
         IBookDocumentService books,
         IAcsTokenService acsTokens,
+        IHubContext<ClassroomChatHub> chatHub,
         ILogger<ClassroomController> logger)
     {
         _classrooms = classrooms;
         _quizzes = quizzes;
         _books = books;
         _acsTokens = acsTokens;
+        _chatHub = chatHub;
         _logger = logger;
     }
 
@@ -100,9 +105,8 @@ public class ClassroomController : Controller
 
         try
         {
-            var membership = await _classrooms.RequireMemberAsync(id, userId, cancellationToken);
-            var classroom = await _classrooms.GetDetailsAsync(id, userId, cancellationToken);
-            var isTeacher = membership.Role is ClassroomRole.Owner or ClassroomRole.Teacher;
+            var page = await _classrooms.GetDetailsPageAsync(id, userId, cancellationToken);
+            var isTeacher = page.Membership.Role is ClassroomRole.Owner or ClassroomRole.Teacher;
 
             var activeTab = (tab ?? "stream").ToLowerInvariant();
             if (activeTab == "results" && !isTeacher)
@@ -112,14 +116,14 @@ public class ClassroomController : Controller
 
             var model = new ClassroomDetailsViewModel
             {
-                Classroom = classroom,
-                CurrentRole = membership.Role,
+                Classroom = page.Classroom,
+                CurrentRole = page.Membership.Role,
                 ActiveTab = activeTab,
-                Board = await _classrooms.GetBoardAsync(id, userId, cancellationToken),
-                Members = await _classrooms.GetMembersAsync(id, userId, cancellationToken),
-                Content = await _classrooms.GetContentAsync(id, userId, cancellationToken),
-                UnreadChatCount = await _classrooms.GetUnreadChatCountAsync(id, userId, cancellationToken),
-                Schedule = await _classrooms.GetScheduleAsync(id, userId, cancellationToken)
+                Board = page.Board,
+                Members = page.Members,
+                Content = page.Content,
+                UnreadChatCount = page.UnreadChatCount,
+                Schedule = page.Schedule
             };
 
             if (isTeacher)
@@ -201,7 +205,11 @@ public class ClassroomController : Controller
 
     [HttpPost]
     public Task<IActionResult> RemoveMember(Guid id, string memberUserId, CancellationToken cancellationToken)
-        => RunAndReturnAsync(id, "members", () => _classrooms.RemoveMemberAsync(id, User.GetUserId(), memberUserId, cancellationToken));
+        => RunAndReturnAsync(id, "members", async () =>
+        {
+            await _classrooms.RemoveMemberAsync(id, User.GetUserId(), memberUserId, cancellationToken);
+            await ClassroomChatHub.EvictFromGroupAsync(_chatHub, id, memberUserId, cancellationToken);
+        });
 
     [HttpPost]
     public Task<IActionResult> ChangeRole(Guid id, string memberUserId, string role, CancellationToken cancellationToken)
@@ -381,14 +389,13 @@ public class ClassroomController : Controller
         {
             var classroom = await _classrooms.GetDetailsAsync(id, userId, cancellationToken);
             var results = await _classrooms.GetMemberResultsAsync(id, userId, memberId, cancellationToken);
-            var members = await _classrooms.GetMembersAsync(id, userId, cancellationToken);
-            var member = members.FirstOrDefault(m => m.UserId == memberId);
+            var memberName = await _classrooms.GetMemberNameAsync(id, userId, memberId, cancellationToken);
 
             return View(new ClassroomMemberResultsViewModel
             {
                 Classroom = classroom,
                 MemberUserId = memberId,
-                MemberName = member?.DisplayName ?? "Unknown",
+                MemberName = memberName ?? "Unknown",
                 Results = results
             });
         }

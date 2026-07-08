@@ -170,6 +170,61 @@ public sealed class ClassroomServiceTests
     }
 
     [Fact]
+    public async Task RemoveMemberAsync_RotatesGroupCallId()
+    {
+        await using var context = CreateContext();
+        var service = new ClassroomService(context);
+        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var originalGroupCallId = classroom.GroupCallId;
+
+        await service.RemoveMemberAsync(classroom.Id, OwnerId, StudentId);
+
+        var updated = context.Classrooms.Single(c => c.Id == classroom.Id);
+        Assert.NotEqual(originalGroupCallId, updated.GroupCallId);
+    }
+
+    [Fact]
+    public async Task LeaveAsync_RotatesGroupCallId()
+    {
+        await using var context = CreateContext();
+        var service = new ClassroomService(context);
+        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var originalGroupCallId = classroom.GroupCallId;
+
+        await service.LeaveAsync(classroom.Id, StudentId);
+
+        var updated = context.Classrooms.Single(c => c.Id == classroom.Id);
+        Assert.NotEqual(originalGroupCallId, updated.GroupCallId);
+    }
+
+    [Fact]
+    public async Task GetDetailsPageAsync_ReturnsAggregateAndRequiresMembership()
+    {
+        await using var context = CreateContext();
+        var service = new ClassroomService(context);
+        AddUser(context, OwnerId, "owner@example.com");
+        AddUser(context, StudentId, "student@example.com");
+        await context.SaveChangesAsync();
+        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        await service.PostAnnouncementAsync(classroom.Id, OwnerId, "Welcome!");
+
+        await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
+            () => service.GetDetailsPageAsync(classroom.Id, OutsiderId));
+
+        var page = await service.GetDetailsPageAsync(classroom.Id, StudentId);
+
+        Assert.Equal(classroom.Id, page.Classroom.Id);
+        Assert.Equal(ClassroomRole.Student, page.Membership.Role);
+        Assert.Single(page.Board);
+        Assert.Equal(2, page.Members.Count);
+        Assert.Empty(page.Content);
+        Assert.Equal(0, page.UnreadChatCount);
+    }
+
+    [Fact]
     public async Task DeleteClassroomAsync_DetachesAttemptsAndRequiresOwner()
     {
         await using var context = CreateContext();

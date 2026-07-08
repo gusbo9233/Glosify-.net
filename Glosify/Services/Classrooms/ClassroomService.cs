@@ -81,6 +81,24 @@ public class ClassroomService : IClassroomService
             .FirstAsync(c => c.Id == classroomId, cancellationToken);
     }
 
+    public async Task<ClassroomDetailsPage> GetDetailsPageAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
+    {
+        // One membership check covers every query on the details page.
+        var membership = await RequireMemberAsync(classroomId, userId, cancellationToken);
+        var classroom = await _context.Classrooms
+            .AsNoTracking()
+            .FirstAsync(c => c.Id == classroomId, cancellationToken);
+
+        return new ClassroomDetailsPage(
+            classroom,
+            membership,
+            await QueryBoardAsync(classroomId, cancellationToken),
+            await QueryMembersAsync(classroomId, cancellationToken),
+            await QueryContentAsync(classroomId, cancellationToken),
+            await CountUnreadChatAsync(membership, cancellationToken),
+            await QueryScheduleAsync(classroomId, userId, cancellationToken));
+    }
+
     public async Task DeleteClassroomAsync(Guid classroomId, string ownerUserId, CancellationToken cancellationToken = default)
     {
         await RequireOwnerAsync(classroomId, ownerUserId, cancellationToken);
@@ -309,7 +327,22 @@ public class ClassroomService : IClassroomService
     public async Task<IReadOnlyList<ClassroomMemberInfo>> GetMembersAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
     {
         await RequireMemberAsync(classroomId, userId, cancellationToken);
+        return await QueryMembersAsync(classroomId, cancellationToken);
+    }
 
+    public async Task<string?> GetMemberNameAsync(Guid classroomId, string requesterUserId, string memberUserId, CancellationToken cancellationToken = default)
+    {
+        await RequireMemberAsync(classroomId, requesterUserId, cancellationToken);
+
+        return await _context.ClassroomMemberships
+            .AsNoTracking()
+            .Where(m => m.ClassroomId == classroomId && m.UserId == memberUserId)
+            .Join(_context.Users.AsNoTracking(), m => m.UserId, u => u.Id, (m, u) => u.UserName ?? u.Email ?? "Unknown")
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<ClassroomMemberInfo>> QueryMembersAsync(Guid classroomId, CancellationToken cancellationToken)
+    {
         return await _context.ClassroomMemberships
             .AsNoTracking()
             .Where(m => m.ClassroomId == classroomId)
@@ -344,6 +377,7 @@ public class ClassroomService : IClassroomService
         }
 
         _context.ClassroomMemberships.Remove(membership);
+        await RotateGroupCallIdAsync(classroomId, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
     }
 
@@ -359,7 +393,18 @@ public class ClassroomService : IClassroomService
         }
 
         _context.ClassroomMemberships.Remove(membership);
+        await RotateGroupCallIdAsync(classroomId, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    // ACS group calls have no server-side roster; the group id is the only
+    // gate. Rotate it when someone leaves so an ex-member who captured the id
+    // cannot rejoin future calls. Participants already in a call stay on the
+    // old id until they rejoin.
+    private async Task RotateGroupCallIdAsync(Guid classroomId, CancellationToken cancellationToken)
+    {
+        var classroom = await _context.Classrooms.FirstAsync(c => c.Id == classroomId, cancellationToken);
+        classroom.GroupCallId = Guid.NewGuid();
     }
 
     public async Task ChangeRoleAsync(Guid classroomId, string ownerUserId, string memberUserId, ClassroomRole role, CancellationToken cancellationToken = default)
@@ -459,7 +504,11 @@ public class ClassroomService : IClassroomService
     public async Task<IReadOnlyList<ClassroomContentItem>> GetContentAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
     {
         await RequireMemberAsync(classroomId, userId, cancellationToken);
+        return await QueryContentAsync(classroomId, cancellationToken);
+    }
 
+    private async Task<IReadOnlyList<ClassroomContentItem>> QueryContentAsync(Guid classroomId, CancellationToken cancellationToken)
+    {
         var links = await _context.ClassroomContents
             .AsNoTracking()
             .Where(c => c.ClassroomId == classroomId)
@@ -593,12 +642,17 @@ public class ClassroomService : IClassroomService
             return 0;
         }
 
+        return await CountUnreadChatAsync(membership, cancellationToken);
+    }
+
+    private async Task<int> CountUnreadChatAsync(ClassroomMembership membership, CancellationToken cancellationToken)
+    {
         var since = membership.LastChatReadAt ?? DateTimeOffset.MinValue;
         return await _context.ClassroomMessages
-            .CountAsync(m => m.ClassroomId == classroomId
+            .CountAsync(m => m.ClassroomId == membership.ClassroomId
                 && m.Kind == ClassroomMessageKind.Chat
                 && !m.IsDeleted
-                && m.UserId != userId
+                && m.UserId != membership.UserId
                 && m.CreatedAt > since, cancellationToken);
     }
 
@@ -642,7 +696,11 @@ public class ClassroomService : IClassroomService
     public async Task<IReadOnlyList<ClassroomBoardMessage>> GetBoardAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
     {
         await RequireMemberAsync(classroomId, userId, cancellationToken);
+        return await QueryBoardAsync(classroomId, cancellationToken);
+    }
 
+    private async Task<IReadOnlyList<ClassroomBoardMessage>> QueryBoardAsync(Guid classroomId, CancellationToken cancellationToken)
+    {
         return await _context.ClassroomMessages
             .AsNoTracking()
             .Where(m => m.ClassroomId == classroomId && m.Kind == ClassroomMessageKind.Announcement && !m.IsDeleted)
@@ -808,7 +866,11 @@ public class ClassroomService : IClassroomService
     public async Task<ClassroomSchedule> GetScheduleAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
     {
         await RequireMemberAsync(classroomId, userId, cancellationToken);
+        return await QueryScheduleAsync(classroomId, userId, cancellationToken);
+    }
 
+    private async Task<ClassroomSchedule> QueryScheduleAsync(Guid classroomId, string userId, CancellationToken cancellationToken)
+    {
         var lessons = await _context.ClassroomLessons
             .AsNoTracking()
             .Where(l => l.ClassroomId == classroomId)
@@ -825,8 +887,12 @@ public class ClassroomService : IClassroomService
             .ThenBy(a => a.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        var studentCount = await _context.ClassroomMemberships
-            .CountAsync(m => m.ClassroomId == classroomId && m.Role == ClassroomRole.Student, cancellationToken);
+        var studentIds = await _context.ClassroomMemberships
+            .Where(m => m.ClassroomId == classroomId && m.Role == ClassroomRole.Student)
+            .Select(m => m.UserId)
+            .ToListAsync(cancellationToken);
+        var studentIdSet = studentIds.ToHashSet();
+        var studentCount = studentIds.Count;
 
         var quizIds = assignments.Where(a => a.QuizId.HasValue).Select(a => a.QuizId!.Value).Distinct().ToList();
         var quizNames = quizIds.Count == 0
@@ -843,12 +909,6 @@ public class ClassroomService : IClassroomService
                 .Where(a => a.ClassroomId == classroomId && quizIds.Contains(a.QuizId))
                 .Select(a => new { a.QuizId, a.UserId, a.CorrectCount, a.IncorrectCount })
                 .ToListAsync(cancellationToken);
-
-        var studentIds = await _context.ClassroomMemberships
-            .Where(m => m.ClassroomId == classroomId && m.Role == ClassroomRole.Student)
-            .Select(m => m.UserId)
-            .ToListAsync(cancellationToken);
-        var studentIdSet = studentIds.ToHashSet();
 
         ClassroomAssignmentInfo BuildInfo(ClassroomAssignment assignment)
         {

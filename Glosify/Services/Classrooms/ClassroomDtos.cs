@@ -62,6 +62,15 @@ public sealed record ClassroomSchedule(
     IReadOnlyList<ClassroomLessonInfo> Lessons,
     IReadOnlyList<ClassroomAssignmentInfo> UnattachedAssignments);
 
+public sealed record ClassroomDetailsPage(
+    Classroom Classroom,
+    ClassroomMembership Membership,
+    IReadOnlyList<ClassroomBoardMessage> Board,
+    IReadOnlyList<ClassroomMemberInfo> Members,
+    IReadOnlyList<ClassroomContentItem> Content,
+    int UnreadChatCount,
+    ClassroomSchedule Schedule);
+
 public sealed record ClassroomAttemptRow(
     Guid AttemptId,
     string UserId,
