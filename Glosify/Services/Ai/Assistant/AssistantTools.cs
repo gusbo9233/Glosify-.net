@@ -2,7 +2,7 @@ using System.Text.Json;
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
-using Glosify.Services.Ai.Llm;
+using Glosify.Services.Ai.Generation;
 using Glosify.Services.CustomQuizzes;
 
 namespace Glosify.Services.Ai.Assistant;

@@ -1,6 +1,8 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services;
+using Glosify.Services.Ai.Generation;
+using Glosify.Services.Ai.Llm;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -77,6 +79,34 @@ public sealed class AiCreditServiceTests
     }
 
     [Fact]
+    public async Task CommitUsage_AppliesTheConfiguredModelCreditMultiplier()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var service = CreateService(context, creditMultiplier: 2m);
+
+        var reservation = await service.ReserveAsync(
+            UsageContext("user-1"),
+            "foundry",
+            "test-model",
+            2_500);
+        await service.CommitUsageAsync(
+            reservation.ReservationId,
+            new AiTokenUsage(900, 200, 0, 0, 1_100));
+
+        var account = await service.GetOrCreateAccountAsync("user-1");
+        Assert.Equal(21, account.BalanceCredits);
+        Assert.Equal(0, account.ReservedCredits);
+        var debit = await context.AiCreditTransactions
+            .SingleAsync(transaction => transaction.Kind == AiCreditTransactionKinds.UsageDebit);
+        Assert.Equal(-4, debit.CreditAmount);
+        Assert.Single(await context.AiCreditTransactions
+            .Where(transaction => transaction.Kind == AiCreditTransactionKinds.Release)
+            .ToListAsync());
+    }
+
+    [Fact]
     public async Task Release_ReturnsReservedCreditsWithoutDebit()
     {
         await using var context = CreateContext();
@@ -102,13 +132,41 @@ public sealed class AiCreditServiceTests
         return new GlosifyContext(options);
     }
 
-    private static AiCreditService CreateService(GlosifyContext context)
+    private static AiCreditService CreateService(
+        GlosifyContext context,
+        decimal creditMultiplier = 1m)
     {
-        return new AiCreditService(context, Options.Create(new AiUsageOptions
+        var generativeAiOptions = new GenerativeAiOptions
         {
-            TrialGrantCredits = 25,
-            CreditsPerThousandTokens = 1
-        }));
+            Foundry = new FoundryGenerativeAiOptions
+            {
+                AssistantDeployment = "test-model",
+                AllowedAssistantDeployments = ["test-model"],
+                AssistantModels =
+                [
+                    new AssistantModelOptions
+                    {
+                        Deployment = "test-model",
+                        DisplayName = "Test Model",
+                        Provider = "Test",
+                        SpeedTier = "Test",
+                        CostTier = "Test",
+                        CreditMultiplier = creditMultiplier,
+                    },
+                ],
+            },
+        };
+        var resolver = new GenerativeAiModelResolver(
+            Options.Create(generativeAiOptions),
+            Options.Create(new GeminiOptions()));
+        return new AiCreditService(
+            context,
+            Options.Create(new AiUsageOptions
+            {
+                TrialGrantCredits = 25,
+                CreditsPerThousandTokens = 1,
+            }),
+            resolver);
     }
 
     private static AiUsageContext UsageContext(string userId) =>

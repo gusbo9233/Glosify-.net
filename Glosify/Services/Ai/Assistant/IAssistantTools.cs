@@ -1,4 +1,4 @@
-using Glosify.Services.Ai.Llm;
+using Glosify.Services.Ai.Generation;
 namespace Glosify.Services.Ai.Assistant;
 
 public interface IAssistantTools

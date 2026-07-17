@@ -1,17 +1,18 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Azure.AI.Projects;
+using Azure.AI.Projects.Agents;
 using Azure.Core;
 using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.AzureAI;
+using Microsoft.Agents.AI.Foundry;
 using Microsoft.Extensions.Options;
 using Glosify.Services.Ai;
 using OpenAI.Conversations;
 
 namespace Glosify.Services.Speaking;
 
-// The requested versioned Foundry Prompt Agent integration and best-effort
-// server conversation deletion are prerelease APIs in the pinned SDK.
+// Best-effort server conversation deletion uses the OpenAI conversations API,
+// which is still marked experimental by the stable Foundry package.
 #pragma warning disable OPENAI001
 public sealed class FoundrySpeakingAgentClient : ISpeakingAgentClient
 {
@@ -61,7 +62,9 @@ public sealed class FoundrySpeakingAgentClient : ISpeakingAgentClient
         var configuredAgent = _options.GetAgent(avatar);
         try
         {
-            var result = await client.Agents.GetAgentVersionAsync(
+            var result = await client
+                .GetProjectAgentsClient()
+                .GetAgentVersionAsync(
                 configuredAgent.Name,
                 configuredAgent.Version,
                 cancellationToken);

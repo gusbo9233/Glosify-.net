@@ -11,8 +11,8 @@ public interface IGeminiModelFactory
 
 /// <summary>
 /// Singleton owner of the GoogleAI client and configured GenerativeModel instances.
-/// GeminiClient itself is scoped (it charges the per-request credit service), so the
-/// caches live here to survive across requests.
+/// GeminiGenerativeAiClient itself is scoped (it charges the per-request credit
+/// service), so the caches live here to survive across requests.
 /// </summary>
 public sealed class GeminiModelFactory : IGeminiModelFactory
 {

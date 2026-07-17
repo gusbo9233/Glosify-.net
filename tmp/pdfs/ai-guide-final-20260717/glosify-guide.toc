@@ -1,0 +1,219 @@
+\contentsline {part}{Part I --- Foundations}{8}{part*.2}%
+\contentsline {chapter}{\numberline {1}What .NET Is}{9}{chapter.1}%
+\contentsline {section}{\numberline {1.1}The three things people call ``.NET''}{9}{section.1.1}%
+\contentsline {section}{\numberline {1.2}.NET is not Azure: where Glosify runs}{9}{section.1.2}%
+\contentsline {section}{\numberline {1.3}The version that matters here: \texttt {net10.0}}{11}{section.1.3}%
+\contentsline {section}{\numberline {1.4}How code becomes a running program}{12}{section.1.4}%
+\contentsline {section}{\numberline {1.5}Dependencies: NuGet and \texttt {<PackageReference>}}{12}{section.1.5}%
+\contentsline {section}{\numberline {1.6}Summary}{14}{section.1.6}%
+\contentsline {chapter}{\numberline {2}C\# for People Who Already Program}{15}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Value types vs reference types}{15}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Properties, not fields}{16}{section.2.2}%
+\contentsline {section}{\numberline {2.3}Nullable reference types: the \texttt {?} everywhere}{16}{section.2.3}%
+\contentsline {section}{\numberline {2.4}\texttt {var}, object initializers, and \texttt {new}}{17}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Interfaces and the implementation beside them}{17}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Constructors and \texttt {readonly} fields}{18}{section.2.6}%
+\contentsline {section}{\numberline {2.7}\texttt {async}/\texttt {await} and \texttt {Task<T>}}{18}{section.2.7}%
+\contentsline {section}{\numberline {2.8}LINQ: querying collections and databases the same way}{19}{section.2.8}%
+\contentsline {section}{\numberline {2.9}Namespaces, \texttt {using}, and extension methods}{20}{section.2.9}%
+\contentsline {section}{\numberline {2.10}Exceptions and guard clauses}{21}{section.2.10}%
+\contentsline {section}{\numberline {2.11}Summary}{21}{section.2.11}%
+\contentsline {chapter}{\numberline {3}Project Layout \& Conventions}{22}{chapter.3}%
+\contentsline {section}{\numberline {3.1}The shape of the source tree}{22}{section.3.1}%
+\contentsline {section}{\numberline {3.2}The \texttt {Models} split: why three kinds of model}{23}{section.3.2}%
+\contentsline {section}{\numberline {3.3}Namespaces and \texttt {global using}}{24}{section.3.3}%
+\contentsline {section}{\numberline {3.4}The interface-beside-implementation convention}{24}{section.3.4}%
+\contentsline {section}{\numberline {3.5}Test project layout}{24}{section.3.5}%
+\contentsline {section}{\numberline {3.6}Summary}{25}{section.3.6}%
+\contentsline {part}{Part II --- The ASP.NET Core Application}{27}{part*.3}%
+\contentsline {chapter}{\numberline {4}The Host \& the Request Pipeline}{28}{chapter.4}%
+\contentsline {section}{\numberline {4.1}One file starts everything: \texttt {Program.cs}}{28}{section.4.1}%
+\contentsline {section}{\numberline {4.2}What middleware is}{29}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Where the host runs: App Service and other compute choices}{31}{section.4.3}%
+\contentsline {section}{\numberline {4.4}Routing: turning URLs into actions}{32}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Summary}{32}{section.4.5}%
+\contentsline {chapter}{\numberline {5}Dependency Injection \& Configuration}{33}{chapter.5}%
+\contentsline {section}{\numberline {5.1}The problem DI solves}{33}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Registering services and the three lifetimes}{33}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Configuration: layered settings}{34}{section.5.3}%
+\contentsline {section}{\numberline {5.4}The Options pattern: typed configuration}{36}{section.5.4}%
+\contentsline {section}{\numberline {5.5}The database registration and connection string}{37}{section.5.5}%
+\contentsline {section}{\numberline {5.6}Summary}{37}{section.5.6}%
+\contentsline {chapter}{\numberline {6}MVC: Controllers, Routing \& Model Binding}{38}{chapter.6}%
+\contentsline {section}{\numberline {6.1}What a controller is}{38}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Action methods and \texttt {IActionResult}}{39}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Model binding and validation}{40}{section.6.3}%
+\contentsline {section}{\numberline {6.4}Summary}{41}{section.6.4}%
+\contentsline {chapter}{\numberline {7}Razor Views \& the Front End}{42}{chapter.7}%
+\contentsline {section}{\numberline {7.1}What Razor is}{42}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Three files that wire up every view}{42}{section.7.2}%
+\contentsline {section}{\numberline {7.3}The layout: \texttt {@RenderBody}, sections, and injection}{42}{section.7.3}%
+\contentsline {section}{\numberline {7.4}Tag helpers: HTML that knows about your app}{43}{section.7.4}%
+\contentsline {section}{\numberline {7.5}Static assets and progressive enhancement}{44}{section.7.5}%
+\contentsline {section}{\numberline {7.6}Summary}{45}{section.7.6}%
+\contentsline {chapter}{\numberline {8}Building a REST API}{46}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Two front doors on one application}{46}{section.8.1}%
+\contentsline {section}{\numberline {8.2}The API base controller}{46}{section.8.2}%
+\contentsline {section}{\numberline {8.3}A REST controller end to end}{47}{section.8.3}%
+\contentsline {section}{\numberline {8.4}Summary}{49}{section.8.4}%
+\contentsline {part}{Part III --- Data \& Persistence}{51}{part*.4}%
+\contentsline {chapter}{\numberline {9}Entity Framework Core Fundamentals}{52}{chapter.9}%
+\contentsline {section}{\numberline {9.1}What an ORM does}{52}{section.9.1}%
+\contentsline {section}{\numberline {9.2}The \texttt {DbContext}: your handle to the database}{52}{section.9.2}%
+\contentsline {section}{\numberline {9.3}Querying: LINQ becomes SQL}{53}{section.9.3}%
+\contentsline {section}{\numberline {9.4}Change tracking: the magic behind saving}{54}{section.9.4}%
+\contentsline {section}{\numberline {9.5}One save is one transaction}{54}{section.9.5}%
+\contentsline {section}{\numberline {9.6}Summary}{55}{section.9.6}%
+\contentsline {chapter}{\numberline {10}Modeling with the Fluent API}{56}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Two ways to describe the model}{56}{section.10.1}%
+\contentsline {section}{\numberline {10.2}Keys, columns, and indexes}{56}{section.10.2}%
+\contentsline {section}{\numberline {10.3}Relationships and delete behaviour}{57}{section.10.3}%
+\contentsline {section}{\numberline {10.4}Navigation properties vs foreign keys}{57}{section.10.4}%
+\contentsline {section}{\numberline {10.5}Two special cases: concurrency tokens and ignored properties}{58}{section.10.5}%
+\contentsline {section}{\numberline {10.6}Summary}{59}{section.10.6}%
+\contentsline {chapter}{\numberline {11}Migrations \& the Database}{60}{chapter.11}%
+\contentsline {section}{\numberline {11.1}The problem: keeping schema and code in sync}{60}{section.11.1}%
+\contentsline {section}{\numberline {11.2}The \texttt {dotnet ef} workflow}{60}{section.11.2}%
+\contentsline {section}{\numberline {11.3}Anatomy of a migration}{60}{section.11.3}%
+\contentsline {section}{\numberline {11.4}Migrations that move data, not just schema}{61}{section.11.4}%
+\contentsline {section}{\numberline {11.5}The model snapshot}{62}{section.11.5}%
+\contentsline {section}{\numberline {11.6}Running against Azure SQL}{62}{section.11.6}%
+\contentsline {section}{\numberline {11.7}Summary}{63}{section.11.7}%
+\contentsline {part}{Part IV --- Authentication \& Authorization}{65}{part*.5}%
+\contentsline {chapter}{\numberline {12}ASP.NET Core Identity}{66}{chapter.12}%
+\contentsline {section}{\numberline {12.1}What Identity gives you}{66}{section.12.1}%
+\contentsline {section}{\numberline {12.2}ASP.NET Core Identity is not Microsoft Entra ID}{66}{section.12.2}%
+\contentsline {section}{\numberline {12.3}The user entity}{67}{section.12.3}%
+\contentsline {section}{\numberline {12.4}Registering Identity}{67}{section.12.4}%
+\contentsline {section}{\numberline {12.5}The two managers}{68}{section.12.5}%
+\contentsline {section}{\numberline {12.6}Registration and sign-in}{68}{section.12.6}%
+\contentsline {section}{\numberline {12.7}The Identity UI Razor Pages}{69}{section.12.7}%
+\contentsline {section}{\numberline {12.8}Summary}{70}{section.12.8}%
+\contentsline {chapter}{\numberline {13}Authorization, Claims \& External Login}{71}{chapter.13}%
+\contentsline {section}{\numberline {13.1}Secure by default: the fallback policy}{71}{section.13.1}%
+\contentsline {section}{\numberline {13.2}Claims: how identity carries data}{72}{section.13.2}%
+\contentsline {section}{\numberline {13.3}Custom policies and the \texttt {[Authorize]} attribute}{72}{section.13.3}%
+\contentsline {section}{\numberline {13.4}External login (web): Google and Microsoft}{73}{section.13.4}%
+\contentsline {section}{\numberline {13.5}Bearer tokens (mobile): a stateless alternative}{74}{section.13.5}%
+\contentsline {section}{\numberline {13.6}Summary}{75}{section.13.6}%
+\contentsline {part}{Part V --- The Domain \& Services}{77}{part*.6}%
+\contentsline {chapter}{\numberline {14}The Service Layer Pattern}{78}{chapter.14}%
+\contentsline {section}{\numberline {14.1}Why a service layer at all}{78}{section.14.1}%
+\contentsline {section}{\numberline {14.2}Anatomy of a service}{78}{section.14.2}%
+\contentsline {section}{\numberline {14.3}Logic that earns its place}{79}{section.14.3}%
+\contentsline {section}{\numberline {14.4}Custom exceptions as domain vocabulary}{80}{section.14.4}%
+\contentsline {section}{\numberline {14.5}Two kinds of service: durable vs ephemeral state}{80}{section.14.5}%
+\contentsline {section}{\numberline {14.6}Summary}{81}{section.14.6}%
+\contentsline {chapter}{\numberline {15}Cross-Cutting Services: Language, Caching, Storage \& Speech}{82}{chapter.15}%
+\contentsline {section}{\numberline {15.1}Per-request state: the language context}{82}{section.15.1}%
+\contentsline {section}{\numberline {15.2}In-memory caching}{83}{section.15.2}%
+\contentsline {section}{\numberline {15.3}Abstracting a cloud service: blob storage}{83}{section.15.3}%
+\contentsline {section}{\numberline {15.4}Wrapping a library: PDF text extraction}{86}{section.15.4}%
+\contentsline {section}{\numberline {15.5}Pronunciation: Azure Speech with a browser fallback}{87}{section.15.5}%
+\contentsline {section}{\numberline {15.6}Speaking practice: binding language, agent, and voice}{89}{section.15.6}%
+\contentsline {subsection}{\numberline {15.6.1}Exact prompt-agent versions}{90}{subsection.15.6.1}%
+\contentsline {subsection}{\numberline {15.6.2}Trusted context, sessions, and cost}{90}{subsection.15.6.2}%
+\contentsline {subsection}{\numberline {15.6.3}Speech stays aligned with the avatar}{90}{subsection.15.6.3}%
+\contentsline {section}{\numberline {15.7}Summary}{91}{section.15.7}%
+\contentsline {chapter}{\numberline {16}Custom Quizzes: Documents, Design \& Grading}{92}{chapter.16}%
+\contentsline {section}{\numberline {16.1}A custom exercise on top of a vocabulary quiz}{92}{section.16.1}%
+\contentsline {section}{\numberline {16.2}The V1 document and its invariants}{92}{section.16.2}%
+\contentsline {section}{\numberline {16.3}The editor, routes, and optimistic concurrency}{93}{section.16.3}%
+\contentsline {section}{\numberline {16.4}Server-side grading and attempt history}{94}{section.16.4}%
+\contentsline {section}{\numberline {16.5}Assistant integration}{94}{section.16.5}%
+\contentsline {section}{\numberline {16.6}Summary}{95}{section.16.6}%
+\contentsline {chapter}{\numberline {17}Classrooms: Membership, Real-Time Chat \& Video Calls}{96}{chapter.17}%
+\contentsline {section}{\numberline {17.1}What the feature is}{96}{section.17.1}%
+\contentsline {section}{\numberline {17.2}The data model: roles, membership, and two ways in}{96}{section.17.2}%
+\contentsline {section}{\numberline {17.3}Real-time chat: the SignalR hub}{97}{section.17.3}%
+\contentsline {section}{\numberline {17.4}Video calls: Azure Communication Services}{99}{section.17.4}%
+\contentsline {section}{\numberline {17.5}Summary}{100}{section.17.5}%
+\contentsline {part}{Part VI --- AI Integration}{102}{part*.7}%
+\contentsline {chapter}{\numberline {18}Talking to an LLM}{103}{chapter.18}%
+\contentsline {section}{\numberline {18.1}One application, several AI workloads}{103}{section.18.1}%
+\contentsline {section}{\numberline {18.2}How a language model produces a reply}{104}{section.18.2}%
+\contentsline {section}{\numberline {18.3}One neutral interface, three kinds of call}{104}{section.18.3}%
+\contentsline {section}{\numberline {18.4}The Foundry project is the service boundary}{105}{section.18.4}%
+\contentsline {section}{\numberline {18.5}Prompt design is application design}{106}{section.18.5}%
+\contentsline {section}{\numberline {18.6}Structured output and multimodal input}{106}{section.18.6}%
+\contentsline {section}{\numberline {18.7}Selectable deployments}{107}{section.18.7}%
+\contentsline {section}{\numberline {18.8}Summary}{108}{section.18.8}%
+\contentsline {chapter}{\numberline {19}The Assistant Orchestrator \& Tool-Calling}{109}{chapter.19}%
+\contentsline {section}{\numberline {19.1}What ``agentic'' means here}{109}{section.19.1}%
+\contentsline {section}{\numberline {19.2}Where the agent runtime lives}{109}{section.19.2}%
+\contentsline {section}{\numberline {19.3}Tools: declarations the model can call}{110}{section.19.3}%
+\contentsline {section}{\numberline {19.4}The agentic loop}{111}{section.19.4}%
+\contentsline {section}{\numberline {19.5}Human-in-the-loop: proposing changes, not making them}{112}{section.19.5}%
+\contentsline {section}{\numberline {19.6}Summary}{113}{section.19.6}%
+\contentsline {chapter}{\numberline {20}The AI Credit System}{114}{chapter.20}%
+\contentsline {section}{\numberline {20.1}Why meter at all}{114}{section.20.1}%
+\contentsline {section}{\numberline {20.2}The account and the ledger}{114}{section.20.2}%
+\contentsline {section}{\numberline {20.3}Reserve, then commit or release}{114}{section.20.3}%
+\contentsline {section}{\numberline {20.4}Why reservation beats ``just subtract after''}{116}{section.20.4}%
+\contentsline {section}{\numberline {20.5}Administration and trials}{116}{section.20.5}%
+\contentsline {section}{\numberline {20.6}Application credits are not the Azure bill}{117}{section.20.6}%
+\contentsline {section}{\numberline {20.7}Summary}{117}{section.20.7}%
+\contentsline {part}{Part VII --- Quality \& Operations}{120}{part*.8}%
+\contentsline {chapter}{\numberline {21}Testing with xUnit}{121}{chapter.21}%
+\contentsline {section}{\numberline {21.1}The test project}{121}{section.21.1}%
+\contentsline {section}{\numberline {21.2}xUnit basics: facts and theories}{122}{section.21.2}%
+\contentsline {section}{\numberline {21.3}Unit-testing a service with stubs}{122}{section.21.3}%
+\contentsline {section}{\numberline {21.4}Testing data access with the in-memory provider}{123}{section.21.4}%
+\contentsline {section}{\numberline {21.5}Integration tests: hosting the whole app}{124}{section.21.5}%
+\contentsline {section}{\numberline {21.6}Summary}{124}{section.21.6}%
+\contentsline {chapter}{\numberline {22}Configuration, Secrets \& Deployment}{125}{chapter.22}%
+\contentsline {section}{\numberline {22.1}The configuration layers, revisited}{125}{section.22.1}%
+\contentsline {section}{\numberline {22.2}Secrets stay out of the repository}{125}{section.22.2}%
+\contentsline {section}{\numberline {22.3}Where Azure resources live}{126}{section.22.3}%
+\contentsline {section}{\numberline {22.4}The management hierarchy and a resource ID}{127}{section.22.4}%
+\contentsline {section}{\numberline {22.5}Resource Manager, deployment tools, and guardrails}{128}{section.22.5}%
+\contentsline {section}{\numberline {22.6}Public and private service connectivity}{128}{section.22.6}%
+\contentsline {section}{\numberline {22.7}Database and Azure identity at deploy time}{129}{section.22.7}%
+\contentsline {section}{\numberline {22.8}Summary}{130}{section.22.8}%
+\contentsline {chapter}{\numberline {23}Security: Reading the Code Like an Attacker}{131}{chapter.23}%
+\contentsline {section}{\numberline {23.1}Trust boundaries: what an attacker controls}{131}{section.23.1}%
+\contentsline {section}{\numberline {23.2}Zero Trust and defence in depth}{131}{section.23.2}%
+\contentsline {section}{\numberline {23.3}Deny by default: the fallback policy, revisited}{132}{section.23.3}%
+\contentsline {section}{\numberline {23.4}Ownership checks: the defence against IDOR}{133}{section.23.4}%
+\contentsline {section}{\numberline {23.5}Over-posting: why request models have few properties}{133}{section.23.5}%
+\contentsline {section}{\numberline {23.6}Injection: SQL that cannot be edited by data}{134}{section.23.6}%
+\contentsline {section}{\numberline {23.7}Cross-site scripting: encoding at every exit}{134}{section.23.7}%
+\contentsline {section}{\numberline {23.8}Cross-site request forgery: the token, and the API exemption}{135}{section.23.8}%
+\contentsline {section}{\numberline {23.9}Transport, secrets, and uploads: the remaining edges}{135}{section.23.9}%
+\contentsline {section}{\numberline {23.10}The AI boundary: prompt injection and the untrusted model}{136}{section.23.10}%
+\contentsline {section}{\numberline {23.11}Responsible AI turns principles into controls}{136}{section.23.11}%
+\contentsline {section}{\numberline {23.12}The hardening layer: rate limits, headers, and account policy}{137}{section.23.12}%
+\contentsline {section}{\numberline {23.13}Honest gaps: what a further pass would add}{138}{section.23.13}%
+\contentsline {section}{\numberline {23.14}Summary}{138}{section.23.14}%
+\contentsline {chapter}{\numberline {24}Putting It Together: Tracing a Full Request}{140}{chapter.24}%
+\contentsline {section}{\numberline {24.1}The setup}{140}{section.24.1}%
+\contentsline {section}{\numberline {24.2}Through the pipeline and into the controller}{140}{section.24.2}%
+\contentsline {section}{\numberline {24.3}The orchestrator runs the agentic loop}{140}{section.24.3}%
+\contentsline {section}{\numberline {24.4}The response, and the human in the loop}{141}{section.24.4}%
+\contentsline {section}{\numberline {24.5}What the trace shows}{141}{section.24.5}%
+\contentsline {section}{Afterword}{141}{section.24.5}%
+\contentsline {part}{Part VIII --- Beyond the Current Codebase}{144}{part*.9}%
+\contentsline {chapter}{\numberline {25}Background Work}{145}{chapter.25}%
+\contentsline {section}{\numberline {25.1}The problem in the current code}{145}{section.25.1}%
+\contentsline {section}{\numberline {25.2}The concept: hosted background services and a channel queue}{145}{section.25.2}%
+\contentsline {section}{\numberline {25.3}Where else it applies}{146}{section.25.3}%
+\contentsline {chapter}{\numberline {26}Streaming the Assistant's Reply}{147}{chapter.26}%
+\contentsline {section}{\numberline {26.1}The problem in the current code}{147}{section.26.1}%
+\contentsline {section}{\numberline {26.2}The concept: stream tokens with \texttt {IAsyncEnumerable} and SignalR}{147}{section.26.2}%
+\contentsline {chapter}{\numberline {27}Pushing EF Core Further}{149}{chapter.27}%
+\contentsline {section}{\numberline {27.1}Read-only queries do not track}{149}{section.27.1}%
+\contentsline {section}{\numberline {27.2}Bulk operations without materializing}{149}{section.27.2}%
+\contentsline {section}{\numberline {27.3}Global query filters for ownership}{150}{section.27.3}%
+\contentsline {chapter}{\numberline {28}Scaling Out and Staying Resilient}{151}{chapter.28}%
+\contentsline {section}{\numberline {28.1}Scale, availability, and resilience are different}{151}{section.28.1}%
+\contentsline {section}{\numberline {28.2}Distributed cache for multi-instance state}{152}{section.28.2}%
+\contentsline {section}{\numberline {28.3}Resilience pipelines for external calls}{152}{section.28.3}%
+\contentsline {section}{\numberline {28.4}Rate limiting and output caching}{153}{section.28.4}%
+\contentsline {chapter}{\numberline {29}Operability and Correctness}{154}{chapter.29}%
+\contentsline {section}{\numberline {29.1}Health checks}{154}{section.29.1}%
+\contentsline {section}{\numberline {29.2}Observability with OpenTelemetry and Azure Monitor}{154}{section.29.2}%
+\contentsline {section}{\numberline {29.3}AI quality requires evaluation, not only telemetry}{155}{section.29.3}%
+\contentsline {section}{\numberline {29.4}Platform health and recommendations}{156}{section.29.4}%
+\contentsline {section}{\numberline {29.5}Testable time}{156}{section.29.5}%
+\contentsline {section}{\numberline {29.6}Smaller wins}{157}{section.29.6}%
+\contentsline {section}{Closing}{157}{section.29.6}%

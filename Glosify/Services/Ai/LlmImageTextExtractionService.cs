@@ -1,13 +1,13 @@
-using Glosify.Services.Ai.Llm;
+using Glosify.Services.Ai.Generation;
 namespace Glosify.Services.Ai;
 
 public sealed class LlmImageTextExtractionService : IImageTextExtractionService
 {
-    private readonly IGeminiClient _gemini;
+    private readonly IGenerativeAiClient _generativeAi;
 
-    public LlmImageTextExtractionService(IGeminiClient gemini)
+    public LlmImageTextExtractionService(IGenerativeAiClient generativeAi)
     {
-        _gemini = gemini;
+        _generativeAi = generativeAi;
     }
 
     public async Task<string> ExtractTextAsync(
@@ -27,7 +27,7 @@ public sealed class LlmImageTextExtractionService : IImageTextExtractionService
         }
 
         var prompt = BuildPrompt(sourceLanguage, targetLanguage);
-        var extracted = await _gemini.ExtractTextFromImageAsync(
+        var extracted = await _generativeAi.ExtractTextFromImageAsync(
             imageBytes,
             contentType,
             prompt,

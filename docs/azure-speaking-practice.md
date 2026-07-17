@@ -248,8 +248,8 @@ The CSP derives exact regional Speech HTTPS and WebSocket origins from
 
 The application pins:
 
-- `Microsoft.Agents.AI.AzureAI` `1.0.0-rc5`. Keep it pinned until a compatible
-  stable Agent Framework release is adopted.
+- stable `Microsoft.Agents.AI.Foundry` `1.5.0` for versioned prompt agents and
+  project-scoped Responses calls.
 - `microsoft-cognitiveservices-speech-sdk` `1.50.0`, self-hosted through LibMan
   so the current CSP does not need a third-party script origin.
 

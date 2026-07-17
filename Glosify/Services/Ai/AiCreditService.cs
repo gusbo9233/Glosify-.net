@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Services.Ai.Generation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -8,11 +9,16 @@ public sealed class AiCreditService : IAiCreditService
 {
     private readonly GlosifyContext _context;
     private readonly AiUsageOptions _options;
+    private readonly IGenerativeAiModelResolver _modelResolver;
 
-    public AiCreditService(GlosifyContext context, IOptions<AiUsageOptions> options)
+    public AiCreditService(
+        GlosifyContext context,
+        IOptions<AiUsageOptions> options,
+        IGenerativeAiModelResolver modelResolver)
     {
         _context = context;
         _options = options.Value;
+        _modelResolver = modelResolver;
     }
 
     public Task<AiCreditAccountView> GetOrCreateAccountAsync(
@@ -58,7 +64,7 @@ public sealed class AiCreditService : IAiCreditService
         var account = await GetOrCreateAccountEntityAsync(usageContext.UserId, cancellationToken);
         await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
 
-        var requiredCredits = CalculateCredits(estimatedTokens);
+        var requiredCredits = CalculateCredits(estimatedTokens, model);
         if (account.AvailableCredits < requiredCredits)
         {
             throw new InsufficientAiCreditsException(account.AvailableCredits, requiredCredits);
@@ -108,7 +114,7 @@ public sealed class AiCreditService : IAiCreditService
         }
 
         var account = await GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
-        var debitCredits = CalculateCredits(usage.TotalTokens);
+        var debitCredits = CalculateCredits(usage.TotalTokens, reservation.Model ?? string.Empty);
         var releaseCredits = Math.Max(0, reservation.CreditAmount - debitCredits);
         account.ReservedCredits = Math.Max(0, account.ReservedCredits - reservation.CreditAmount);
         account.BalanceCredits -= debitCredits;
@@ -342,14 +348,19 @@ public sealed class AiCreditService : IAiCreditService
         };
     }
 
-    private int CalculateCredits(int totalTokens)
+    private int CalculateCredits(int totalTokens, string model)
     {
         if (totalTokens <= 0)
         {
             return 0;
         }
 
-        return (int)Math.Ceiling(totalTokens / 1000.0) * Math.Max(1, _options.CreditsPerThousandTokens);
+        var baseCredits =
+            (decimal)Math.Ceiling(totalTokens / 1000.0)
+            * Math.Max(1, _options.CreditsPerThousandTokens);
+        var configuredMultiplier = _modelResolver.GetCreditMultiplier(model);
+        var multiplier = configuredMultiplier > 0 ? configuredMultiplier : 1m;
+        return Math.Max(1, (int)Math.Ceiling(baseCredits * multiplier));
     }
 
     private static AiCreditAccountView Map(AiCreditAccount account)

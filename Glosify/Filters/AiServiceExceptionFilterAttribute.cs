@@ -2,6 +2,7 @@ using Glosify.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Glosify.Services.Ai;
+using Glosify.Services.Ai.Generation;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Speaking;
 
@@ -25,8 +26,8 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
         var exception = context.Exception;
 
         // A cancelled request has no reader; let the abort propagate instead of
-        // mislabelling it a warm-up failure (Gemini timeouts also surface as
-        // TaskCanceledException, so only genuine client aborts are excluded).
+        // mislabelling it a warm-up failure (provider timeouts can also surface
+        // as TaskCanceledException, so only genuine client aborts are excluded).
         if (exception is OperationCanceledException && context.HttpContext.RequestAborted.IsCancellationRequested)
         {
             return;
@@ -35,6 +36,11 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
         context.Result = exception switch
         {
             InsufficientAiCreditsException => Error(StatusCodes.Status402PaymentRequired, exception.Message),
+            GenerativeAiValidationException => Error(StatusCodes.Status400BadRequest, exception.Message),
+            GenerativeAiDependencyUnavailableException =>
+                Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
+            GenerativeAiTimeoutException => Error(StatusCodes.Status504GatewayTimeout, exception.Message),
+            GenerativeAiUpstreamException => Error(StatusCodes.Status502BadGateway, exception.Message),
             SpeakingValidationException => Error(StatusCodes.Status400BadRequest, exception.Message),
             SpeakingSessionNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),
             SpeakingSessionExpiredException => Error(StatusCodes.Status410Gone, exception.Message),

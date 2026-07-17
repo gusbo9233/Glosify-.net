@@ -7,9 +7,17 @@ Glosify is a **web-only** ASP.NET Core MVC app (`Glosify/Glosify.csproj`, `net10
 Quiz generation is already gated by a real credit system, not a flat quota:
 
 - `Glosify/Services/Ai/IAiCreditService.cs` — `ReserveAsync` → `CommitUsageAsync`/`ReleaseAsync`, plus `GrantAsync` for manual/admin grants.
-- `Glosify/Services/Ai/AiUsageOptions.cs` — `TrialGrantCredits = 25`, `CreditsPerThousandTokens = 1`. Cost is `ceil(tokens/1000) * creditsPerK`, not "N quizzes/day".
+- `Glosify/Services/Ai/AiUsageOptions.cs` — `TrialGrantCredits = 25`,
+  `CreditsPerThousandTokens = 1`. The base cost is
+  `ceil(tokens/1000) * creditsPerK`; selectable assistant models then apply
+  their configured product-level credit multiplier. It is not "N quizzes/day".
 - `Glosify/Models/Entities/AiCreditTransaction.cs` — ledger with kinds `TrialGrant`, `AdminGrant`, `Reservation`, `UsageDebit`, `Release`.
-- Reserve/commit calls happen in `Glosify/Services/Ai/Llm/GeminiClient.cs` (not in the controllers). `QuizController` just catches the bubbled `InsufficientAiCreditsException` and returns HTTP 402 with `{ error: message }` (e.g. lines ~109, 133, 199).
+- Reserve/commit calls happen inside the selected provider adapter
+  (`FoundryGenerativeAiClient` by default, with
+  `GeminiGenerativeAiClient` retained temporarily for deployment rollback), not
+  in controllers. Usage records store provider and deployment strings, and
+  `QuizController` preserves the existing HTTP 402 `{ error: message }` shape
+  for `InsufficientAiCreditsException`.
 - No payment/subscription system exists today. No ad SDK exists today. The only way to get credits right now is the one-time trial grant or an admin manual grant.
 
 So a rewarded-ads feature would slot in as **a third source of credits**, alongside trial grant and admin grant — architecturally this is the easy part, since the ledger already supports arbitrary grant reasons.

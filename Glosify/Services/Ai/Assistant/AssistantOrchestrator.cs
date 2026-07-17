@@ -1,8 +1,7 @@
 using System.Text.Json;
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Glosify.Services.Ai.Llm;
+using Glosify.Services.Ai.Generation;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 
@@ -16,8 +15,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly GlosifyContext _context;
-    private readonly IGeminiClient _gemini;
-    private readonly GeminiOptions _geminiOptions;
+    private readonly IGenerativeAiClient _generativeAi;
+    private readonly IGenerativeAiModelResolver _modelResolver;
     private readonly IAssistantTools _tools;
     private readonly IChangeApplier _changeApplier;
     private readonly IBookDocumentService _books;
@@ -26,8 +25,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
     public AssistantOrchestrator(
         GlosifyContext context,
-        IGeminiClient gemini,
-        IOptions<GeminiOptions> geminiOptions,
+        IGenerativeAiClient generativeAi,
+        IGenerativeAiModelResolver modelResolver,
         IAssistantTools tools,
         IChangeApplier changeApplier,
         IBookDocumentService books,
@@ -35,8 +34,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         ILogger<AssistantOrchestrator> logger)
     {
         _context = context;
-        _gemini = gemini;
-        _geminiOptions = geminiOptions.Value;
+        _generativeAi = generativeAi;
+        _modelResolver = modelResolver;
         _tools = tools;
         _changeApplier = changeApplier;
         _books = books;
@@ -360,7 +359,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var declarations = contextQuiz is null
             ? _tools.GlobalDeclarations
             : _tools.GlobalDeclarations.Concat(_tools.Declarations).ToList();
-        var selectedModel = ResolveAssistantModel(model);
+        var selectedModel = _modelResolver.ResolveAssistantModel(model);
         var toolEvents = new List<AssistantToolEvent>();
 
         AgentTurnResult? finalTurn = null;
@@ -371,7 +370,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             AgentTurnResult turn;
             try
             {
-                turn = await _gemini.RunAgentTurnAsync(
+                turn = await _generativeAi.RunAgentTurnAsync(
                     agentRequest,
                     new AiUsageContext(
                         userId,
@@ -384,7 +383,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             }
             catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogWarning(ex, "Gemini agent turn failed for assistant thread {ThreadId}", thread.Id);
+                _logger.LogWarning(ex, "Generative AI turn failed for assistant thread {ThreadId}", thread.Id);
                 throw;
             }
 
@@ -406,6 +405,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                     Kind = "function_call",
                     Name = call.Name,
                     ArgsJson = call.ArgsJson,
+                    CallId = call.CallId,
                     ThoughtSignature = call.ThoughtSignature,
                 });
             }
@@ -435,6 +435,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                     Kind = "function_response",
                     Name = call.Name,
                     ResponseJson = resultJson,
+                    CallId = call.CallId,
                 });
             }
 
@@ -484,25 +485,6 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             toolEvents,
             pendingChangeViews,
             AssistantMessageStatus.Active);
-    }
-
-    private string ResolveAssistantModel(string? requestedModel)
-    {
-        var currentModel = string.IsNullOrWhiteSpace(_geminiOptions.AssistantModel)
-            ? _geminiOptions.StructuredModel
-            : _geminiOptions.AssistantModel;
-
-        if (string.IsNullOrWhiteSpace(requestedModel))
-        {
-            return currentModel;
-        }
-
-        // Only configured models may be requested by the client.
-        var trimmed = requestedModel.Trim();
-        return string.Equals(trimmed, currentModel, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(trimmed, _geminiOptions.Model, StringComparison.OrdinalIgnoreCase)
-            ? trimmed
-            : currentModel;
     }
 
     private async Task<AssistantThread> GetOrCreateDefaultGlobalThreadAsync(
@@ -895,7 +877,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
         var window = messages.Skip(messages.Count - MaxHistoryMessages).ToList();
 
-        // Gemini rejects histories where a function response has no preceding call,
+        // Providers reject histories where a function response has no preceding call,
         // so advance the window start to the first plain-text user message.
         var start = window.FindIndex(message =>
             message.Role == AssistantMessageRole.User && !string.IsNullOrWhiteSpace(ExtractVisibleText(message)));
@@ -1244,6 +1226,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         public string? Name { get; set; }
         public string? ArgsJson { get; set; }
         public string? ResponseJson { get; set; }
+        public string? CallId { get; set; }
         public string? ThoughtSignature { get; set; }
     }
 

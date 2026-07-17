@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Xunit;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Generation;
 using Glosify.Services.Ai.Llm;
 using Glosify.Services.Language;
 
@@ -59,7 +60,7 @@ public class AssistantSavedChatsTests
         var quizId = Guid.NewGuid();
         context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
         await context.SaveChangesAsync();
-        var orchestrator = CreateOrchestrator(context, gemini: new StaticGeminiClient("Queued those words."));
+        var orchestrator = CreateOrchestrator(context, generativeAi: new StaticGenerativeAiClient("Queued those words."));
         var chat = await orchestrator.CreateChatAsync("user-1", quizId);
 
         var response = await orchestrator.SendChatMessageAsync(
@@ -81,10 +82,10 @@ public class AssistantSavedChatsTests
         await using var context = CreateContext();
         var documentId = Guid.NewGuid();
         var page = CreateBookPage(documentId, "user-1", "Pan Tadeusz opens with a longing for Lithuania.");
-        var gemini = new CapturingGeminiClient("Queued a quiz from the page.");
+        var generativeAi = new CapturingGenerativeAiClient("Queued a quiz from the page.");
         var orchestrator = CreateOrchestrator(
             context,
-            gemini: gemini,
+            generativeAi: generativeAi,
             books: new StaticBookDocumentService(page));
 
         await orchestrator.SendGlobalMessageAsync(
@@ -92,10 +93,10 @@ public class AssistantSavedChatsTests
             "Make a quiz from this page",
             documentContext: new AssistantDocumentContext(documentId, 3));
 
-        Assert.NotNull(gemini.LastAgentRequest);
-        Assert.Contains("Current book page context", gemini.LastAgentRequest.SystemInstruction);
-        Assert.Contains("Page: 3", gemini.LastAgentRequest.SystemInstruction);
-        Assert.Contains("Pan Tadeusz opens with a longing for Lithuania.", gemini.LastAgentRequest.SystemInstruction);
+        Assert.NotNull(generativeAi.LastAgentRequest);
+        Assert.Contains("Current book page context", generativeAi.LastAgentRequest.SystemInstruction);
+        Assert.Contains("Page: 3", generativeAi.LastAgentRequest.SystemInstruction);
+        Assert.Contains("Pan Tadeusz opens with a longing for Lithuania.", generativeAi.LastAgentRequest.SystemInstruction);
     }
 
     [Fact]
@@ -105,8 +106,8 @@ public class AssistantSavedChatsTests
         var quizId = Guid.NewGuid();
         context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
         await context.SaveChangesAsync();
-        var gemini = new CapturingGeminiClient("Queued the words.");
-        var orchestrator = CreateOrchestrator(context, gemini: gemini);
+        var generativeAi = new CapturingGenerativeAiClient("Queued the words.");
+        var orchestrator = CreateOrchestrator(context, generativeAi: generativeAi);
         var chat = await orchestrator.CreateChatAsync("user-1", quizId);
 
         await orchestrator.SendChatMessageAsync(
@@ -115,13 +116,13 @@ public class AssistantSavedChatsTests
             "Extract vocabulary from this text.",
             contextQuizId: quizId);
 
-        Assert.NotNull(gemini.LastAgentRequest);
+        Assert.NotNull(generativeAi.LastAgentRequest);
         Assert.Contains(
             "every unique word except proper names",
-            gemini.LastAgentRequest.SystemInstruction);
+            generativeAi.LastAgentRequest.SystemInstruction);
         Assert.Contains(
             "including closed-class words",
-            gemini.LastAgentRequest.SystemInstruction);
+            generativeAi.LastAgentRequest.SystemInstruction);
     }
 
     [Fact]
@@ -226,6 +227,29 @@ public class AssistantSavedChatsTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => orchestrator.GetChatHistoryAsync(thread.Id, "user-1"));
     }
 
+    [Fact]
+    public async Task Assistant_stops_after_twenty_four_model_tool_turns()
+    {
+        await using var context = CreateContext();
+        var generativeAi = new LoopingGenerativeAiClient();
+        var tools = new LoopAssistantTools();
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: generativeAi,
+            tools: tools);
+
+        var result = await orchestrator.SendGlobalMessageAsync(
+            "user-1",
+            "Keep looking things up.");
+
+        Assert.Equal(24, generativeAi.Calls);
+        Assert.Equal(24, tools.Calls);
+        Assert.Contains("tool-call limit", result.AssistantText);
+        Assert.Equal(
+            50,
+            await context.AssistantMessages.CountAsync(message => message.ThreadId == result.ThreadId));
+    }
+
     private static GlosifyContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<GlosifyContext>()
@@ -236,20 +260,54 @@ public class AssistantSavedChatsTests
 
     private static AssistantOrchestrator CreateOrchestrator(
         GlosifyContext context,
-        IGeminiClient? gemini = null,
+        IGenerativeAiClient? generativeAi = null,
         IChangeApplier? applier = null,
-        IBookDocumentService? books = null)
+        IBookDocumentService? books = null,
+        IAssistantTools? tools = null)
     {
         return new AssistantOrchestrator(
             context,
-            gemini ?? new StaticGeminiClient("Done."),
-            Options.Create(new GeminiOptions { AssistantModel = "test-model", StructuredModel = "test-model" }),
-            new NoopAssistantTools(),
+            generativeAi ?? new StaticGenerativeAiClient("Done."),
+            CreateModelResolver(),
+            tools ?? new NoopAssistantTools(),
             applier ?? new CapturingChangeApplier(),
             books ?? new NoopBookDocumentService(),
             new StaticLanguageContext(),
             NullLogger<AssistantOrchestrator>.Instance);
     }
+
+    private static IGenerativeAiModelResolver CreateModelResolver() =>
+        new GenerativeAiModelResolver(
+            Options.Create(new GenerativeAiOptions
+            {
+                Provider = GenerativeAiOptions.FoundryProvider,
+                Foundry = new FoundryGenerativeAiOptions
+                {
+                    ProjectEndpoint = "https://example.services.ai.azure.com/api/projects/test",
+                    AssistantDeployment = "test-model",
+                    StructuredDeployment = "test-model",
+                    VisionDeployment = "test-model",
+                    AllowedAssistantDeployments = ["test-model"],
+                    AssistantModels =
+                    [
+                        new AssistantModelOptions
+                        {
+                            Deployment = "test-model",
+                            DisplayName = "Test Model",
+                            Provider = "Test",
+                            SpeedTier = "Test",
+                            CostTier = "Test",
+                            CreditMultiplier = 1m,
+                        },
+                    ],
+                },
+            }),
+            Options.Create(new GeminiOptions
+            {
+                Model = "test-model",
+                AssistantModel = "test-model",
+                StructuredModel = "test-model",
+            }));
 
     private static Quiz CreateQuiz(Guid id, string userId) => new()
     {
@@ -305,10 +363,10 @@ public class AssistantSavedChatsTests
             },
         }, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
-    private sealed class StaticGeminiClient(string text) : IGeminiClient
+    private sealed class StaticGenerativeAiClient(string text) : IGenerativeAiClient
     {
-        public Task<string> GenerateJsonAsync(string prompt, AiUsageContext usageContext, string? model = null, CancellationToken cancellationToken = default) =>
-            Task.FromResult("{}");
+        public Task<T> GenerateStructuredAsync<T>(string prompt, AiUsageContext usageContext, string? model = null, CancellationToken cancellationToken = default) =>
+            Task.FromException<T>(new NotSupportedException());
 
         public Task<string> ExtractTextFromImageAsync(byte[] imageBytes, string contentType, string prompt, AiUsageContext usageContext, CancellationToken cancellationToken = default) =>
             Task.FromResult(string.Empty);
@@ -317,12 +375,12 @@ public class AssistantSavedChatsTests
             Task.FromResult(new AgentTurnResult(text, []));
     }
 
-    private sealed class CapturingGeminiClient(string text) : IGeminiClient
+    private sealed class CapturingGenerativeAiClient(string text) : IGenerativeAiClient
     {
         public AgentRequest? LastAgentRequest { get; private set; }
 
-        public Task<string> GenerateJsonAsync(string prompt, AiUsageContext usageContext, string? model = null, CancellationToken cancellationToken = default) =>
-            Task.FromResult("{}");
+        public Task<T> GenerateStructuredAsync<T>(string prompt, AiUsageContext usageContext, string? model = null, CancellationToken cancellationToken = default) =>
+            Task.FromException<T>(new NotSupportedException());
 
         public Task<string> ExtractTextFromImageAsync(byte[] imageBytes, string contentType, string prompt, AiUsageContext usageContext, CancellationToken cancellationToken = default) =>
             Task.FromResult(string.Empty);
@@ -334,6 +392,42 @@ public class AssistantSavedChatsTests
         }
     }
 
+    private sealed class LoopingGenerativeAiClient : IGenerativeAiClient
+    {
+        public int Calls { get; private set; }
+
+        public Task<T> GenerateStructuredAsync<T>(
+            string prompt,
+            AiUsageContext usageContext,
+            string? model = null,
+            CancellationToken cancellationToken = default) =>
+            Task.FromException<T>(new NotSupportedException());
+
+        public Task<string> ExtractTextFromImageAsync(
+            byte[] imageBytes,
+            string contentType,
+            string prompt,
+            AiUsageContext usageContext,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(string.Empty);
+
+        public Task<AgentTurnResult> RunAgentTurnAsync(
+            AgentRequest request,
+            AiUsageContext usageContext,
+            CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.FromResult(new AgentTurnResult(
+                string.Empty,
+                [
+                    new AgentFunctionCall("loop", "{}")
+                    {
+                        CallId = $"call-{Calls}",
+                    },
+                ]));
+        }
+    }
+
     private sealed class NoopAssistantTools : IAssistantTools
     {
         public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = [];
@@ -341,6 +435,29 @@ public class AssistantSavedChatsTests
 
         public Task<object> ExecuteAsync(string name, string argsJson, AgentToolContext context, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+    }
+
+    private sealed class LoopAssistantTools : IAssistantTools
+    {
+        public int Calls { get; private set; }
+        public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = [];
+        public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; } =
+        [
+            new AgentToolDeclaration(
+                "loop",
+                "Continues the test loop.",
+                new { type = "object", properties = new { } }),
+        ];
+
+        public Task<object> ExecuteAsync(
+            string name,
+            string argsJson,
+            AgentToolContext context,
+            CancellationToken cancellationToken)
+        {
+            Calls++;
+            return Task.FromResult<object>(new { ok = true });
+        }
     }
 
     private sealed class CapturingChangeApplier : IChangeApplier

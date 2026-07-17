@@ -10,7 +10,7 @@ repair.
 
 - Account-based quiz and collection management with ASP.NET Core Identity.
 - Vocabulary and sentence practice with flashcard and typing quiz modes.
-- AI-assisted vocabulary generation, image text extraction, and quiz repair through Gemini-compatible configuration.
+- AI-assisted vocabulary generation, image text extraction, and quiz repair through the Microsoft Foundry Responses API.
 - In-app assistant threads scoped to quizzes.
 - Azure-powered speaking practice with three animated avatars per supported language, typed chat, pronunciation assessment, and coaching.
 - PDF book uploads with Azure Blob Storage and extracted page text.
@@ -25,8 +25,9 @@ repair.
 - SQL Server / Azure SQL
 - ASP.NET Core Identity
 - Azure Blob Storage
-- Gemini via `Mscc.GenerativeAI`
-- Azure AI Foundry, Azure AI Speech, and Azure Monitor OpenTelemetry
+- Microsoft Foundry via `Microsoft.Agents.AI.Foundry`
+- Azure AI Speech and Azure Monitor OpenTelemetry
+- Gemini via `Mscc.GenerativeAI` only as a temporary, explicit deployment rollback
 - PdfPig for PDF text extraction
 - xUnit, ASP.NET Core MVC testing, AngleSharp
 
@@ -50,16 +51,21 @@ Required for local startup:
 
 ```bash
 ConnectionStrings__DefaultConnection="Server=...;"
-GEMINI_API_KEY="..."
+az login
 ```
 
 Common optional settings:
 
 ```bash
-GEMINI_STRUCTURED_MODEL="..."
-GEMINI_ASSISTANT_MODEL="..."
-GEMINI_VISION_MODEL="..."
-GEMINI_TIMEOUT_SECONDS="180"
+GenerativeAi__Provider="Foundry"
+GenerativeAi__Foundry__ProjectEndpoint="https://glosify-foundry.services.ai.azure.com/api/projects/glosify-speaking"
+GenerativeAi__Foundry__AssistantDeployment="gpt-5.4-mini"
+GenerativeAi__Foundry__StructuredDeployment="gpt-5.4-mini"
+GenerativeAi__Foundry__VisionDeployment="gpt-5.4-mini"
+GenerativeAi__Foundry__AllowedAssistantDeployments__0="gpt-5.4-mini"
+GenerativeAi__Foundry__AllowedAssistantDeployments__1="grok-4-1-fast-non-reasoning"
+GenerativeAi__Foundry__AllowedAssistantDeployments__2="grok-4-1-fast-reasoning"
+GenerativeAi__Foundry__TimeoutSeconds="180"
 Acs__ConnectionString="endpoint=https://<your-resource>.communication.azure.com/;accesskey=<key>"
 Authentication__Google__ClientId="..."
 Authentication__Google__ClientSecret="..."
@@ -101,12 +107,27 @@ Speech__Region="<region>"
 APPLICATIONINSIGHTS_CONNECTION_STRING="..."
 ```
 
-`Glosify/appsettings.json` contains non-secret defaults such as model names, blob container name, AI credit settings, and logging levels.
+`Glosify/appsettings.json` contains non-secret defaults such as the Foundry
+project endpoint and deployment aliases, blob container name, AI credit
+settings, and logging levels.
 
-Speaking practice uses `DefaultAzureCredential`; do not configure a Foundry or
-Speech key in browser-accessible settings. See the
+The assistant model menu is configured under
+`GenerativeAi:Foundry:AssistantModels`. Each entry supplies a friendly name,
+publisher, speed tier, cost tier, and credit multiplier. Repair, OCR, and
+speaking remain pinned to `gpt-5.4-mini`; only assistant conversations are
+user-selectable.
+
+Local development uses `DefaultAzureCredential`. Non-development environments
+use `ManagedIdentityCredential`; set `AZURE_CLIENT_ID` only when the App Service
+uses a user-assigned identity. Do not configure a Foundry API key or expose
+Speech credentials in browser-accessible settings. See the
 [Azure speaking-practice guide](docs/azure-speaking-practice.md#identity-and-access)
 for roles and local authentication.
+
+Gemini remains available temporarily as a deployment-level rollback only. Set
+`GenerativeAi__Provider=Gemini`, configure `Gemini__ApiKey` (or the legacy
+`GEMINI_API_KEY` setting), and restart the app. There is no automatic
+per-request fallback.
 
 ## Local Development
 
@@ -146,6 +167,17 @@ authorisation, public sharing, assistant flows, AI credits, quiz practice
 services, Speaking API antiforgery and rate limits, user-bound speaking
 sessions, structured Foundry usage accounting, and keyless Speech tokens.
 
+The live Foundry smoke suite is opt-in and remains disabled during normal tests:
+
+```bash
+RUN_FOUNDRY_SMOKE_TESTS=true \
+dotnet test Glosify.slnx -c Release \
+  --filter Category=LiveFoundry
+```
+
+It uses `DefaultAzureCredential`; `FOUNDRY_PROJECT_ENDPOINT` and
+`FOUNDRY_MODEL_DEPLOYMENT` can override the checked-in non-secret defaults.
+
 ## Documentation
 
 Start with the [documentation index](docs/README.md).
@@ -153,6 +185,9 @@ Start with the [documentation index](docs/README.md).
 - [Azure-powered speaking practice](docs/azure-speaking-practice.md) documents
   the complete `/Speaking` experience, API contract, live Azure deployment,
   identity, data lifecycle, costs, Foundry evaluations, and validation.
+- [Foundry generative AI](docs/foundry-generative-ai.md) documents the
+  assistant, structured repair, and image-extraction architecture, deployment,
+  rollback, telemetry, and smoke validation.
 - [Database diagram](docs/database-diagram.md) documents the EF Core model.
 - [Rewarded ads for AI credits](docs/rewarded-ads-for-credits.md) documents the
   rewarded-credit integration.
@@ -174,7 +209,7 @@ assumes a single instance. Scaling out or restarting drops active sessions.
 Production configuration should be supplied through Azure app settings, including:
 
 - `ConnectionStrings__DefaultConnection`
-- `GEMINI_API_KEY`
+- `GenerativeAi__Provider=Foundry` and the `GenerativeAi__Foundry__*` settings
 - `Acs__ConnectionString`
 - Blob storage settings
 - OAuth client credentials, if external login is enabled
@@ -182,11 +217,15 @@ Production configuration should be supplied through Azure app settings, includin
 - `Speaking__ProjectEndpoint`, `Speaking__ModelDeployment`, and all twelve pinned
   `Speaking__Agents__*` names and versions
 - `Speech__Endpoint`, `Speech__ResourceId`, and `Speech__Region`
-- `APPLICATIONINSIGHTS_CONNECTION_STRING`, when speaking telemetry is enabled
+- `APPLICATIONINSIGHTS_CONNECTION_STRING`, when AI and speaking telemetry is enabled
 
-The App Service managed identity needs `Azure AI User` on the Foundry account
-and `Cognitive Services Speech User` on the Speech resource. Production does not
-require a Foundry or Speech key.
+The App Service managed identity needs `Foundry User` (formerly
+`Azure AI User`) on the Foundry account and `Cognitive Services Speech User` on
+the Speech resource. Production does not require a Foundry or Speech key.
+
+During the temporary rollback soak only, retain the Gemini credential and switch
+the whole deployment with `GenerativeAi__Provider=Gemini`. Do not configure
+request-level fallback.
 
 ## Public Repo Hygiene
 

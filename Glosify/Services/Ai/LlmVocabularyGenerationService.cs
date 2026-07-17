@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Glosify.Services.Ai.Llm;
+using Glosify.Services.Ai.Generation;
 
 namespace Glosify.Services.Ai;
 
@@ -7,11 +7,11 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private readonly IGeminiClient _gemini;
+    private readonly IGenerativeAiClient _generativeAi;
 
-    public LlmVocabularyGenerationService(IGeminiClient gemini)
+    public LlmVocabularyGenerationService(IGenerativeAiClient generativeAi)
     {
-        _gemini = gemini;
+        _generativeAi = generativeAi;
     }
 
     public async Task<RepairWordResult?> RepairWordAsync(
@@ -21,7 +21,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         CancellationToken cancellationToken = default)
     {
         var prompt = BuildRepairWordPrompt(quizData, wordId);
-        var responseText = await _gemini.GenerateJsonAsync(
+        var result = await _generativeAi.GenerateStructuredAsync<RepairWordResult>(
             prompt,
             new AiUsageContext(
                 userId,
@@ -31,7 +31,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
                 "word",
                 wordId),
             cancellationToken: cancellationToken);
-        return TryDeserialize<RepairWordResult>(responseText);
+        return IsValidWordResult(result, wordId, quizData.Quiz.Id) ? result : null;
     }
 
     public async Task<RepairSentenceResult?> RepairSentenceAsync(
@@ -41,7 +41,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         CancellationToken cancellationToken = default)
     {
         var prompt = BuildRepairSentencePrompt(quizData, sentenceText);
-        var responseText = await _gemini.GenerateJsonAsync(
+        var result = await _generativeAi.GenerateStructuredAsync<RepairSentenceResult>(
             prompt,
             new AiUsageContext(
                 userId,
@@ -51,7 +51,7 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
                 "quiz",
                 quizData.Quiz.Id),
             cancellationToken: cancellationToken);
-        return TryDeserialize<RepairSentenceResult>(responseText);
+        return IsValidSentenceResult(result, quizData.Quiz.Id) ? result : null;
     }
 
     private static string BuildRepairWordPrompt(RepairQuizData quizData, string wordId)
@@ -110,40 +110,22 @@ public sealed class LlmVocabularyGenerationService : IVocabularyGenerationServic
         """;
     }
 
-    private static T? TryDeserialize<T>(string responseText)
-    {
-        if (string.IsNullOrWhiteSpace(responseText))
-        {
-            return default;
-        }
+    private static bool IsValidWordResult(
+        RepairWordResult? result,
+        string wordId,
+        string quizId) =>
+        result?.Word is not null
+        && string.Equals(result.Word.Id, wordId, StringComparison.Ordinal)
+        && string.Equals(result.Word.QuizId, quizId, StringComparison.OrdinalIgnoreCase)
+        && !string.IsNullOrWhiteSpace(result.Word.Word)
+        && !string.IsNullOrWhiteSpace(result.Word.Translation);
 
-        var stripped = StripJsonFences(responseText);
-        try
-        {
-            return JsonSerializer.Deserialize<T>(stripped, JsonOptions);
-        }
-        catch (JsonException)
-        {
-            return default;
-        }
-    }
-
-    private static string StripJsonFences(string text)
-    {
-        var trimmed = text.Trim();
-        if (trimmed.StartsWith("```", StringComparison.Ordinal))
-        {
-            var newlineIndex = trimmed.IndexOf('\n');
-            if (newlineIndex >= 0)
-            {
-                trimmed = trimmed[(newlineIndex + 1)..];
-            }
-            if (trimmed.EndsWith("```", StringComparison.Ordinal))
-            {
-                trimmed = trimmed[..^3];
-            }
-        }
-        return trimmed.Trim();
-    }
+    private static bool IsValidSentenceResult(
+        RepairSentenceResult? result,
+        string quizId) =>
+        result?.Sentence is not null
+        && string.Equals(result.Sentence.QuizId, quizId, StringComparison.OrdinalIgnoreCase)
+        && !string.IsNullOrWhiteSpace(result.Sentence.Text)
+        && !string.IsNullOrWhiteSpace(result.Sentence.Translation);
 
 }

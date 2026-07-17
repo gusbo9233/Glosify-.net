@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Threading.RateLimiting;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Generation;
 using Glosify.Services.Ai.Llm;
 using Glosify.Services.Classrooms;
 using Glosify.Services.CustomQuizzes;
@@ -24,10 +25,11 @@ using Glosify.Services.Speaking;
 using Glosify.Services.Typing;
 using Glosify.Services.Words;
 using Azure.Core;
-using Azure.Identity;
+using Azure.AI.Projects;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -242,38 +244,22 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ILanguageContext, CookieLanguageContext>();
 
-builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
+builder.Services.AddOptions<GeminiOptions>()
+    .Bind(builder.Configuration.GetSection("Gemini"));
+builder.Services.AddOptions<GenerativeAiOptions>()
+    .Bind(builder.Configuration.GetSection(GenerativeAiOptions.SectionName))
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<GenerativeAiOptions>, GenerativeAiOptionsValidator>();
 builder.Services.Configure<AiUsageOptions>(builder.Configuration.GetSection("AiUsage"));
+// Keep the legacy Gemini credential alias only while the explicit rollback
+// provider is available. All model and timeout settings use standard ASP.NET
+// double-underscore configuration binding.
 builder.Services.Configure<GeminiOptions>(options =>
 {
     var apiKey = builder.Configuration["GEMINI_API_KEY"];
     if (!string.IsNullOrWhiteSpace(apiKey))
     {
         options.ApiKey = apiKey;
-    }
-
-    var structuredModel = builder.Configuration["GEMINI_STRUCTURED_MODEL"];
-    if (!string.IsNullOrWhiteSpace(structuredModel))
-    {
-        options.StructuredModel = structuredModel;
-    }
-
-    var assistantModel = builder.Configuration["GEMINI_ASSISTANT_MODEL"];
-    if (!string.IsNullOrWhiteSpace(assistantModel))
-    {
-        options.AssistantModel = assistantModel;
-    }
-
-    var visionModel = builder.Configuration["GEMINI_VISION_MODEL"];
-    if (!string.IsNullOrWhiteSpace(visionModel))
-    {
-        options.VisionModel = visionModel;
-    }
-
-    var timeoutSeconds = builder.Configuration["GEMINI_TIMEOUT_SECONDS"];
-    if (int.TryParse(timeoutSeconds, out var parsedTimeoutSeconds) && parsedTimeoutSeconds > 0)
-    {
-        options.TimeoutSeconds = parsedTimeoutSeconds;
     }
 });
 
@@ -298,10 +284,24 @@ builder.Services.Configure<Glosify.Services.Communication.AcsOptions>(
     builder.Configuration.GetSection(Glosify.Services.Communication.AcsOptions.SectionName));
 builder.Services.AddScoped<Glosify.Services.Communication.IAcsTokenService, Glosify.Services.Communication.AcsTokenService>();
 builder.Services.AddScoped<IAiCreditService, AiCreditService>();
-// The model factory is a singleton so the GoogleAI client and configured models are
-// created once; GeminiClient stays scoped because it charges the per-request credit service.
+// The Gemini model factory remains only for the explicit deployment-level
+// rollback path during the Foundry soak.
 builder.Services.AddSingleton<IGeminiModelFactory, GeminiModelFactory>();
-builder.Services.AddScoped<IGeminiClient, GeminiClient>();
+builder.Services.AddSingleton<IGenerativeAiModelResolver, GenerativeAiModelResolver>();
+builder.Services.AddSingleton<IFoundryAgentInvoker, FoundryAgentInvoker>();
+builder.Services.AddScoped<FoundryGenerativeAiClient>();
+builder.Services.AddScoped<GeminiGenerativeAiClient>();
+builder.Services.AddScoped<IGenerativeAiClient>(services =>
+{
+    var provider = services.GetRequiredService<IOptions<GenerativeAiOptions>>()
+        .Value.Provider.Trim();
+    return string.Equals(
+        provider,
+        GenerativeAiOptions.GeminiProvider,
+        StringComparison.OrdinalIgnoreCase)
+        ? services.GetRequiredService<GeminiGenerativeAiClient>()
+        : services.GetRequiredService<FoundryGenerativeAiClient>();
+});
 builder.Services.AddScoped<IVocabularyGenerationService, LlmVocabularyGenerationService>();
 builder.Services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();
 builder.Services.AddScoped<IAssistantTools, AssistantTools>();
@@ -310,7 +310,16 @@ builder.Services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
 
 builder.Services.Configure<SpeechOptions>(builder.Configuration.GetSection(SpeechOptions.SectionName));
 builder.Services.Configure<SpeakingOptions>(builder.Configuration.GetSection(SpeakingOptions.SectionName));
-builder.Services.AddSingleton<TokenCredential>(_ => new DefaultAzureCredential());
+builder.Services.AddSingleton<TokenCredential>(_ =>
+    FoundryCredentialFactory.Create(builder.Environment, builder.Configuration));
+builder.Services.AddSingleton(services =>
+{
+    var endpoint = services.GetRequiredService<IOptions<GenerativeAiOptions>>()
+        .Value.Foundry.ProjectEndpoint;
+    return new AIProjectClient(
+        new Uri(endpoint, UriKind.Absolute),
+        services.GetRequiredService<TokenCredential>());
+});
 builder.Services.AddHttpClient(nameof(AzureTextToSpeechService));
 builder.Services.AddSingleton<ITextToSpeechService, AzureTextToSpeechService>();
 builder.Services.AddSingleton<ISpeechAuthorizationTokenService, SpeechAuthorizationTokenService>();
@@ -323,8 +332,12 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNEC
 {
     builder.Services
         .AddOpenTelemetry()
-        .WithTracing(tracing => tracing.AddSource(SpeakingTelemetry.ActivitySourceName))
-        .WithMetrics(metrics => metrics.AddMeter(SpeakingTelemetry.MeterName))
+        .WithTracing(tracing => tracing
+            .AddSource(SpeakingTelemetry.ActivitySourceName)
+            .AddSource(GenerativeAiTelemetry.ActivitySourceName))
+        .WithMetrics(metrics => metrics
+            .AddMeter(SpeakingTelemetry.MeterName)
+            .AddMeter(GenerativeAiTelemetry.MeterName))
         .UseAzureMonitor();
 }
 
