@@ -14,6 +14,7 @@ namespace Glosify.Models.ViewModels
         public Quiz SelectedQuiz { get; set; } = null!;
         public IReadOnlyList<Word> Words { get; set; } = [];
         public IReadOnlyList<QuizSentenceViewModel> Sentences { get; set; } = [];
+        public IReadOnlyList<CustomQuizSummaryDto> CustomQuizzes { get; set; } = [];
     }
 
     public class QuizSentenceViewModel
@@ -56,6 +57,7 @@ namespace Glosify.Models.ViewModels
         public string? FocusedWordId { get; set; }
         public Guid? DocumentId { get; set; }
         public int? CurrentPage { get; set; }
+        public Guid? CustomQuizId { get; set; }
         public string Title { get; set; } = "Assistant";
         public string ContextLabel { get; set; } = string.Empty;
         public string EmptyText { get; set; } = "Start a conversation.";

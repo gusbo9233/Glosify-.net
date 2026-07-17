@@ -2,6 +2,7 @@ using Glosify.Data;
 using Glosify.Models;
 using Microsoft.EntityFrameworkCore;
 using Glosify.Services.Language;
+using Glosify.Services.CustomQuizzes;
 
 namespace Glosify.Services.Quizzes;
 
@@ -264,14 +265,20 @@ public class QuizService : IQuizService
             .ToListAsync(cancellationToken);
 
         _context.Quizzes.Add(copy);
-        _context.Words.AddRange(words.Select(word => new Word
+        var wordIdMap = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var word in words)
         {
-            Id = Guid.NewGuid().ToString("N"),
-            QuizId = copy.Id,
-            Lemma = word.Lemma,
-            Translation = word.Translation,
-            CreatedAt = word.CreatedAt
-        }));
+            var copiedWordId = Guid.NewGuid().ToString("N");
+            wordIdMap[word.Id] = copiedWordId;
+            _context.Words.Add(new Word
+            {
+                Id = copiedWordId,
+                QuizId = copy.Id,
+                Lemma = word.Lemma,
+                Translation = word.Translation,
+                CreatedAt = word.CreatedAt
+            });
+        }
         _context.QuizSentences.AddRange(sentences.Select(sentence => new QuizSentence
         {
             Id = Guid.NewGuid(),
@@ -280,6 +287,8 @@ public class QuizService : IQuizService
             Translation = sentence.Translation,
             CreatedAt = sentence.CreatedAt
         }));
+
+        await new CustomQuizService(_context).CloneForCopiedQuizAsync(source.Id, copy.Id, wordIdMap, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
         return copy;

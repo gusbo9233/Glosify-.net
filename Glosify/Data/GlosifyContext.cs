@@ -37,6 +37,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<ClassroomMessage> ClassroomMessages { get; set; }
     public DbSet<QuizAttempt> QuizAttempts { get; set; }
     public DbSet<QuizAttemptItem> QuizAttemptItems { get; set; }
+    public DbSet<CustomQuiz> CustomQuizzes { get; set; }
     public DbSet<AcsUserIdentity> AcsUserIdentities { get; set; }
     public DbSet<ClassroomLesson> ClassroomLessons { get; set; }
     public DbSet<ClassroomAssignment> ClassroomAssignments { get; set; }
@@ -81,6 +82,21 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(w => w.QuizId)
                 .HasConstraintName("FK_words_quizzes")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CustomQuiz>(entity =>
+        {
+            entity.HasKey(item => item.Id);
+            entity.Property(item => item.Name).HasMaxLength(160).IsRequired();
+            entity.Property(item => item.DefinitionJson).IsRequired();
+            entity.Property(item => item.RowVersion).IsRowVersion();
+            entity.HasIndex(item => new { item.QuizId, item.Name }).IsUnique();
+            entity.HasIndex(item => new { item.QuizId, item.IsPlayable });
+            entity.HasOne(item => item.Quiz)
+                .WithMany()
+                .HasForeignKey(item => item.QuizId)
+                .HasConstraintName("FK_CustomQuizzes_Quizzes_QuizId")
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -363,7 +379,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
         {
             entity.HasKey(a => a.Id);
             entity.Property(a => a.UserId).HasMaxLength(450).IsRequired();
-            entity.Property(a => a.Mode).HasMaxLength(32).IsRequired();
+            entity.Property(a => a.Mode).HasMaxLength(200).IsRequired();
             entity.Property(a => a.PracticeDirection).HasMaxLength(32);
             entity.Property(a => a.PracticeItemType).HasMaxLength(32);
 

@@ -3,6 +3,7 @@ using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 using Glosify.Services.Ai.Llm;
+using Glosify.Services.CustomQuizzes;
 
 namespace Glosify.Services.Ai.Assistant;
 
@@ -218,8 +219,8 @@ public sealed class AssistantTools : IAssistantTools
         }, required: ["name"]));
 
     private static readonly AgentToolDeclaration CreateQuizDeclaration = new(
-        "create_quiz",
-        "Propose creating a quiz. The change is queued; it is only saved when the user clicks Apply.",
+        "create_vocabulary_quiz",
+        "Propose creating a standard vocabulary quiz with words and translations. This tool does not create an interactive custom-quiz document. The change is only saved when the user clicks Apply.",
         BuildSchema(new Dictionary<string, object>
         {
             ["name"] = StringProp("Quiz name."),
@@ -270,6 +271,154 @@ public sealed class AssistantTools : IAssistantTools
             ["parent_collection_id"] = StringProp("Optional destination parent collection id. Omit to move the collection to the library root."),
         }, required: ["collection_id"]));
 
+    private static readonly AgentToolDeclaration ListCustomQuizzesDeclaration = new(
+        "list_custom_quizzes",
+        "List custom quizzes owned by the user, optionally limited to a backing quiz. Use this to find an existing custom quiz before inspecting or changing its elements.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["quiz_id"] = StringProp("Optional backing quiz id. Defaults to the current quiz when one is selected."),
+        }));
+
+    private static readonly AgentToolDeclaration ListCustomQuizTemplatesDeclaration = new(
+        "list_custom_quiz_templates",
+        "List curated visual and layout templates for custom quizzes. Use this before creating or substantially redesigning a custom quiz, then follow the selected template's layout guidance while adding individual elements.",
+        BuildSchema([]));
+
+    private static readonly AgentToolDeclaration GetCustomQuizDeclaration = new(
+        "get_custom_quiz",
+        "Get a custom quiz's complete element document and validation state. In the custom quiz creator, omit custom_quiz_id to inspect the open custom quiz. Always inspect it before configuring or removing elements.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["custom_quiz_id"] = StringProp("Optional custom quiz id. Defaults to the custom quiz open in the creator."),
+        }));
+
+    private static readonly AgentToolDeclaration CreateCustomQuizDeclaration = new(
+        "create_custom_quiz",
+        "Start a new empty custom quiz for an existing backing quiz. This queues only the quiz shell. After it succeeds, add every element with a separate add_label, add_text_input, add_checkbox, add_choice, add_word_bank, add_submit_button, add_feedback_message, or add_custom_quiz_element call. Never pass a complete document here. Queued until Apply.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["quiz_id"] = StringProp("Optional backing quiz id. Defaults to the selected quiz."),
+            ["name"] = StringProp("Custom quiz name."),
+            ["template_id"] = StringProp("Optional id from list_custom_quiz_templates. Sets the visual style; follow that template's layout guidance when adding elements."),
+        }, required: ["name"]));
+
+    private static readonly AgentToolDeclaration CreateCustomQuizFromContentDeclaration = new(
+        "create_custom_quiz_from_content",
+        "Start a new backing vocabulary quiz and an empty custom quiz from source material such as the current book page. This queues only the quiz shells and starter words. After it succeeds, add every custom element with a separate element tool call; word bindings in those calls may use the exact word values supplied here. Queued until Apply.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["quiz_name"] = StringProp("Name of the backing vocabulary quiz."),
+            ["custom_quiz_name"] = StringProp("Name shown for the custom quiz."),
+            ["source_language"] = StringProp("Language the user already knows."),
+            ["target_language"] = StringProp("Language being learned. Defaults to the current app language."),
+            ["collection_id"] = StringProp("Optional collection id for the backing quiz."),
+            ["template_id"] = StringProp("Optional id from list_custom_quiz_templates. Sets the visual style for the custom quiz."),
+            ["words"] = WordArrayProp("Starter vocabulary needed by the custom quiz."),
+        }, required: ["quiz_name", "custom_quiz_name", "source_language", "words"]));
+
+    private static readonly AgentToolDeclaration AddLabelDeclaration = AtomicElementDeclaration(
+        "add_label",
+        "Add one visible label to the custom quiz. Call once per label. label_type may be instruction_label, prompt_label, translation_label, or quiz_heading.",
+        new Dictionary<string, object>
+        {
+            ["id"] = StringProp("Stable unique element id."),
+            ["text"] = StringProp("Visible label text."),
+            ["label_type"] = EnumProp("Label type.", "instruction_label", "prompt_label", "translation_label", "quiz_heading"),
+        }, ["id", "text"]);
+
+    private static readonly AgentToolDeclaration AddTextInputDeclaration = AtomicElementDeclaration(
+        "add_text_input",
+        "Add one graded text answer to the custom quiz. Call once per question. Single-line inputs render as compact inline blanks: put {{blank}} in the learner-visible label exactly where the answer belongs. Never draw a blank with underscores or dots. Use expected_text for literal endings; otherwise use expected_binding.",
+        new Dictionary<string, object>
+        {
+            ["id"] = StringProp("Stable unique element id."),
+            ["label"] = StringProp("The complete, specific exercise row with {{blank}} at the answer position, for example '1. ja jest{{blank}}'. Do not include underscores or a second visual blank."),
+            ["answer_type"] = EnumProp("Use text_input for one line or textarea for a long answer.", "text_input", "textarea"),
+            ["expected_text"] = StringProp("Literal correct answer, such as a verb ending."),
+            ["expected_binding"] = FlexibleBindingProp(),
+        }, ["id", "label"]);
+
+    private static readonly AgentToolDeclaration AddCheckboxDeclaration = AtomicElementDeclaration(
+        "add_checkbox",
+        "Add one graded checkbox to the custom quiz. Call once per checkbox question.",
+        new Dictionary<string, object>
+        {
+            ["id"] = StringProp("Stable unique element id."),
+            ["label"] = StringProp("Specific learner-visible checkbox question."),
+            ["expected_checked"] = new Dictionary<string, object> { ["type"] = "boolean" },
+        }, ["id", "label", "expected_checked"]);
+
+    private static readonly AgentToolDeclaration AddChoiceDeclaration = AtomicElementDeclaration(
+        "add_choice",
+        "Add one graded choice question. Call once per question. Supply at least two options and mark the correct selection or selections.",
+        new Dictionary<string, object>
+        {
+            ["id"] = StringProp("Stable unique element id."),
+            ["label"] = StringProp("Specific learner-visible choice question."),
+            ["choice_type"] = EnumProp("Choice control type.", "radio_group", "multi_select_group", "select_menu"),
+            ["options"] = FlexibleOptionsProp(),
+        }, ["id", "label", "choice_type", "options"]);
+
+    private static readonly AgentToolDeclaration AddWordBankDeclaration = AtomicElementDeclaration(
+        "add_word_bank",
+        "Add one word bank targeting existing text inputs or textareas.",
+        new Dictionary<string, object>
+        {
+            ["id"] = StringProp("Stable unique element id."),
+            ["target_input_ids"] = StringArrayProp("Ids of text inputs or textareas filled by this word bank."),
+        }, ["id", "target_input_ids"]);
+
+    private static readonly AgentToolDeclaration AddSubmitButtonDeclaration = AtomicElementDeclaration(
+        "add_submit_button",
+        "Add the custom quiz's single submit button. Call exactly once per new quiz.",
+        new Dictionary<string, object>
+        {
+            ["id"] = StringProp("Stable unique element id."),
+            ["text"] = StringProp("Button text, such as Check answers."),
+        }, ["id"]);
+
+    private static readonly AgentToolDeclaration AddFeedbackMessageDeclaration = AtomicElementDeclaration(
+        "add_feedback_message",
+        "Add the custom quiz's single feedback message element. Call exactly once per new quiz.",
+        new Dictionary<string, object> { ["id"] = StringProp("Stable unique element id.") }, ["id"]);
+
+    private static readonly AgentToolDeclaration AddCustomQuizElementDeclaration = new(
+        "add_custom_quiz_element",
+        "Add exactly one custom quiz element not covered by a more specific add tool. Never pass an array or a complete quiz document. Queued until Apply.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["custom_quiz_id"] = StringProp("Optional existing custom quiz id. Omit for the open quiz or the new quiz shell started earlier in this turn."),
+            ["element"] = CustomQuizBlockProp(useWordReference: false, requireType: true),
+        }, required: ["element"]));
+
+    private static readonly AgentToolDeclaration AddCustomQuizElementsDeclaration = new(
+        "add_custom_quiz_elements",
+        "Propose adding one or more configured elements to an existing custom quiz. Inspect the custom quiz and list its words first. Queued until Apply.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["custom_quiz_id"] = StringProp("Optional custom quiz id. Defaults to the custom quiz open in the creator."),
+            ["blocks"] = CustomQuizBlocksProp(useWordReference: false),
+        }, required: ["blocks"]));
+
+    private static readonly AgentToolDeclaration ConfigureCustomQuizElementDeclaration = new(
+        "configure_custom_quiz_element",
+        "Propose changing an existing custom quiz element. Only supplied settings are changed. options replaces the full option list. Queued until Apply.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["custom_quiz_id"] = StringProp("Optional custom quiz id. Defaults to the custom quiz open in the creator."),
+            ["block_id"] = StringProp("Existing element id from get_custom_quiz."),
+            ["settings"] = CustomQuizBlockProp(useWordReference: false, requireType: false),
+        }, required: ["block_id", "settings"]));
+
+    private static readonly AgentToolDeclaration RemoveCustomQuizElementDeclaration = new(
+        "remove_custom_quiz_element",
+        "Propose removing an element from an existing custom quiz. Inspect the quiz first and use its exact element id. Queued until Apply.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["custom_quiz_id"] = StringProp("Optional custom quiz id. Defaults to the custom quiz open in the creator."),
+            ["block_id"] = StringProp("Element id to remove."),
+        }, required: ["block_id"]));
+
     public IReadOnlyList<AgentToolDeclaration> Declarations { get; } =
     [
         ListWordsDeclaration,
@@ -299,6 +448,21 @@ public sealed class AssistantTools : IAssistantTools
         MoveQuizDeclaration,
         RenameCollectionDeclaration,
         MoveCollectionDeclaration,
+        ListCustomQuizzesDeclaration,
+        ListCustomQuizTemplatesDeclaration,
+        GetCustomQuizDeclaration,
+        CreateCustomQuizDeclaration,
+        CreateCustomQuizFromContentDeclaration,
+        AddLabelDeclaration,
+        AddTextInputDeclaration,
+        AddCheckboxDeclaration,
+        AddChoiceDeclaration,
+        AddWordBankDeclaration,
+        AddSubmitButtonDeclaration,
+        AddFeedbackMessageDeclaration,
+        AddCustomQuizElementDeclaration,
+        ConfigureCustomQuizElementDeclaration,
+        RemoveCustomQuizElementDeclaration,
     ];
 
     public async Task<object> ExecuteAsync(
@@ -330,10 +494,21 @@ public sealed class AssistantTools : IAssistantTools
             "repair_sentence" => QueueRepairSentence(args, context),
             "delete_sentence" => await QueueDeleteSentenceAsync(args, context, cancellationToken),
             "create_quiz" => QueueCreateQuiz(args, context),
+            "create_vocabulary_quiz" => QueueCreateQuiz(args, context),
             "create_collection" => QueueCreateCollection(args, context),
             "move_quiz" => await QueueMoveQuizAsync(args, context, cancellationToken),
             "rename_collection" => await QueueRenameCollectionAsync(args, context, cancellationToken),
             "move_collection" => await QueueMoveCollectionAsync(args, context, cancellationToken),
+            "list_custom_quizzes" => await ListCustomQuizzesAsync(args, context, cancellationToken),
+            "list_custom_quiz_templates" => ListCustomQuizTemplates(),
+            "get_custom_quiz" => await GetCustomQuizAsync(args, context, cancellationToken),
+            "create_custom_quiz" => await QueueCreateCustomQuizAsync(args, context, cancellationToken),
+            "create_custom_quiz_from_content" => QueueCreateCustomQuizFromContent(args, context),
+            "add_label" or "add_text_input" or "add_checkbox" or "add_choice" or "add_word_bank" or "add_submit_button" or "add_feedback_message" or "add_custom_quiz_element"
+                => await QueueAtomicCustomQuizElementAsync(name, args, context, cancellationToken),
+            "add_custom_quiz_elements" => await QueueAddCustomQuizElementsAsync(args, context, cancellationToken),
+            "configure_custom_quiz_element" => await QueueConfigureCustomQuizElementAsync(args, context, cancellationToken),
+            "remove_custom_quiz_element" => await QueueRemoveCustomQuizElementAsync(args, context, cancellationToken),
             _ => new { error = $"Unknown tool: {name}" },
         };
     }
@@ -958,6 +1133,28 @@ public sealed class AssistantTools : IAssistantTools
         var targetLanguage = FirstNonBlank(GetString(args, "target_language"), context.CurrentLanguage);
         var collectionId = GetNullableGuidString(args, "collection_id");
         var (words, skippedWords) = GetWordDrafts(args, "words");
+        JsonElement? customQuiz = null;
+        if (args.TryGetProperty("custom_quiz", out var customQuizElement)
+            && customQuizElement.ValueKind != JsonValueKind.Null)
+        {
+            if (customQuizElement.ValueKind != JsonValueKind.Object
+                || string.IsNullOrWhiteSpace(GetString(customQuizElement, "name"))
+                || !TryGetArray(customQuizElement, "blocks", out var customBlocks)
+                || customBlocks.GetArrayLength() == 0)
+            {
+                return new { error = "custom_quiz requires a name and at least one block." };
+            }
+            if (words.Count == 0)
+            {
+                return new { error = "A custom quiz created with a new quiz needs starter words for its bindings." };
+            }
+            var promptError = ValidateAssistantAnswerPrompts(customBlocks);
+            if (promptError != null)
+            {
+                return InvalidCustomQuizPrompts(promptError);
+            }
+            customQuiz = customQuizElement.Clone();
+        }
 
         if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(sourceLanguage))
         {
@@ -982,10 +1179,18 @@ public sealed class AssistantTools : IAssistantTools
             target_language = targetLanguage.Trim(),
             collection_id = collectionId.Value,
             words,
+            custom_quiz = customQuiz,
         }, JsonOptions);
 
         context.PendingChanges.Add(new PendingChange(PendingChangeKinds.CreateQuiz, payload));
-        return new { queued = true, kind = PendingChangeKinds.CreateQuiz, name = name.Trim(), skipped = skippedWords };
+        return new
+        {
+            queued = true,
+            kind = PendingChangeKinds.CreateQuiz,
+            name = name.Trim(),
+            includes_custom_quiz = customQuiz.HasValue,
+            skipped = skippedWords,
+        };
     }
 
     private static object QueueCreateCollection(JsonElement args, AgentToolContext context)
@@ -1217,6 +1422,554 @@ public sealed class AssistantTools : IAssistantTools
         return new { queued = true, kind = PendingChangeKinds.MoveCollection, collection_id = collection.Id };
     }
 
+    private async Task<object> ListCustomQuizzesAsync(JsonElement args, AgentToolContext context, CancellationToken ct)
+    {
+        Guid? quizId = context.QuizId;
+        var suppliedQuizId = GetString(args, "quiz_id");
+        if (!string.IsNullOrWhiteSpace(suppliedQuizId))
+        {
+            if (!Guid.TryParse(suppliedQuizId, out var parsed))
+            {
+                return new { error = "quiz_id must be a valid id." };
+            }
+            quizId = parsed;
+        }
+
+        var query = _context.CustomQuizzes
+            .AsNoTracking()
+            .Where(item => item.Quiz.UserId == context.UserId);
+        if (quizId.HasValue)
+        {
+            query = query.Where(item => item.QuizId == quizId.Value);
+        }
+
+        var rows = await query
+            .OrderBy(item => item.Quiz.Name)
+            .ThenBy(item => item.Name)
+            .Select(item => new
+            {
+                id = item.Id,
+                name = item.Name,
+                quiz_id = item.QuizId,
+                quiz_name = item.Quiz.Name,
+                is_playable = item.IsPlayable,
+                updated_at = item.UpdatedAt,
+            })
+            .ToListAsync(ct);
+        return new { custom_quizzes = rows, count = rows.Count };
+    }
+
+    private static object ListCustomQuizTemplates()
+    {
+        var templates = new CustomQuizTemplateCatalog().List().Select(template => new
+        {
+            id = template.Id,
+            name = template.Name,
+            description = template.Description,
+            style_preset = template.StylePreset,
+            best_for = template.BestFor,
+            layout_guidance = template.LayoutGuidance,
+        }).ToList();
+        return new { templates, count = templates.Count };
+    }
+
+    private async Task<object> GetCustomQuizAsync(JsonElement args, AgentToolContext context, CancellationToken ct)
+    {
+        var resolved = ResolveCustomQuizId(args, context);
+        if (resolved.Error != null)
+        {
+            return new { error = resolved.Error };
+        }
+
+        var item = await new Glosify.Services.CustomQuizzes.CustomQuizService(_context)
+            .GetForEditorAsync(resolved.Id!.Value, context.UserId, ct);
+        if (item == null)
+        {
+            return new { error = "That custom quiz was not found." };
+        }
+
+        return new
+        {
+            id = item.Id,
+            quiz_id = item.QuizId,
+            name = item.Name,
+            is_playable = item.IsPlayable,
+            validation_errors = item.PlayabilityErrors,
+            document = item.Document,
+        };
+    }
+
+    private async Task<object> QueueCreateCustomQuizAsync(JsonElement args, AgentToolContext context, CancellationToken ct)
+    {
+        var quizId = context.QuizId;
+        var suppliedQuizId = GetString(args, "quiz_id");
+        if (!string.IsNullOrWhiteSpace(suppliedQuizId))
+        {
+            if (!Guid.TryParse(suppliedQuizId, out var parsed))
+            {
+                return new { error = "quiz_id must be a valid id." };
+            }
+            quizId = parsed;
+        }
+
+        var name = GetString(args, "name")?.Trim();
+        var template = ResolveCustomQuizTemplate(args);
+        if (!quizId.HasValue || string.IsNullOrWhiteSpace(name))
+        {
+            return new { error = "Choose a backing quiz and provide a custom quiz name." };
+        }
+        if (args.TryGetProperty("blocks", out _))
+        {
+            return new { error = "create_custom_quiz queues only the empty quiz shell. Call one element tool per element after creating the shell." };
+        }
+        if (!await _context.Quizzes.AnyAsync(quiz => quiz.Id == quizId.Value && quiz.UserId == context.UserId, ct))
+        {
+            return QuizContextRequired();
+        }
+
+        var draftRef = $"custom-{Guid.NewGuid():N}";
+        var payload = JsonSerializer.SerializeToElement(new
+        {
+            kind = PendingChangeKinds.CreateCustomQuiz,
+            quiz_id = quizId.Value,
+            name,
+            draft_ref = draftRef,
+            style_preset = template?.StylePreset ?? CustomQuizStylePresets.Editorial,
+        }, JsonOptions);
+        context.PendingChanges.Add(new PendingChange(PendingChangeKinds.CreateCustomQuiz, payload));
+        context.PendingCustomQuizRef = draftRef;
+        context.PendingCustomQuizName = name;
+        return new { queued = true, kind = PendingChangeKinds.CreateCustomQuiz, name, draft_ref = draftRef, next = "Add each element with a separate element tool call." };
+    }
+
+    private static object QueueCreateCustomQuizFromContent(JsonElement args, AgentToolContext context)
+    {
+        var quizName = GetString(args, "quiz_name")?.Trim();
+        var customQuizName = GetString(args, "custom_quiz_name")?.Trim();
+        var sourceLanguage = GetString(args, "source_language")?.Trim();
+        var targetLanguage = FirstNonBlank(GetString(args, "target_language"), context.CurrentLanguage)?.Trim();
+        var collectionId = GetNullableGuidString(args, "collection_id");
+        var template = ResolveCustomQuizTemplate(args);
+        var (words, skippedWords) = GetWordDrafts(args, "words");
+        if (string.IsNullOrWhiteSpace(quizName)
+            || string.IsNullOrWhiteSpace(customQuizName)
+            || string.IsNullOrWhiteSpace(sourceLanguage))
+        {
+            return new { error = "quiz_name, custom_quiz_name, and source_language are required." };
+        }
+        if (string.IsNullOrWhiteSpace(targetLanguage))
+        {
+            return new { error = "target_language is required when no current app language is selected." };
+        }
+        if (collectionId.Invalid)
+        {
+            return new { error = "collection_id must be a valid id." };
+        }
+        if (words.Count == 0)
+        {
+            return new { error = "At least one starter word is required." };
+        }
+        if (args.TryGetProperty("blocks", out _))
+        {
+            return new { error = "create_custom_quiz_from_content queues only the quiz shells and starter words. Call one element tool per element afterward." };
+        }
+
+        var draftRef = $"custom-{Guid.NewGuid():N}";
+        var payload = JsonSerializer.SerializeToElement(new
+        {
+            kind = PendingChangeKinds.CreateQuiz,
+            name = quizName,
+            source_language = sourceLanguage,
+            target_language = targetLanguage,
+            collection_id = collectionId.Value,
+            words,
+            custom_quiz = new
+            {
+                name = customQuizName,
+                draft_ref = draftRef,
+                style_preset = template?.StylePreset ?? CustomQuizStylePresets.Editorial,
+            },
+        }, JsonOptions);
+        context.PendingChanges.Add(new PendingChange(PendingChangeKinds.CreateQuiz, payload));
+        context.PendingCustomQuizRef = draftRef;
+        context.PendingCustomQuizName = customQuizName;
+        return new
+        {
+            queued = true,
+            kind = PendingChangeKinds.CreateQuiz,
+            includes_custom_quiz = true,
+            name = quizName,
+            custom_quiz_name = customQuizName,
+            draft_ref = draftRef,
+            next = "Add each element with a separate element tool call.",
+            skipped = skippedWords,
+        };
+    }
+
+    private static CustomQuizTemplateSummary? ResolveCustomQuizTemplate(JsonElement args)
+    {
+        var templateId = GetString(args, "template_id");
+        return string.IsNullOrWhiteSpace(templateId)
+            ? null
+            : new CustomQuizTemplateCatalog().List().FirstOrDefault(template => template.Id == templateId);
+    }
+
+    private async Task<object> QueueAtomicCustomQuizElementAsync(
+        string toolName,
+        JsonElement args,
+        AgentToolContext context,
+        CancellationToken ct)
+    {
+        var target = await ResolveCustomQuizTargetAsync(args, context, ct);
+        if (target.Error != null)
+        {
+            return new { error = target.Error };
+        }
+
+        JsonElement block;
+        if (toolName == "add_custom_quiz_element")
+        {
+            if (!args.TryGetProperty("element", out var supplied) || supplied.ValueKind != JsonValueKind.Object)
+            {
+                return new { error = "element is required and must be one custom quiz element." };
+            }
+            block = supplied.Clone();
+        }
+        else
+        {
+            var type = toolName switch
+            {
+                "add_label" => FirstNonBlank(GetString(args, "label_type"), CustomQuizBlockTypes.InstructionLabel),
+                "add_text_input" => FirstNonBlank(GetString(args, "answer_type"), CustomQuizBlockTypes.TextInput),
+                "add_checkbox" => CustomQuizBlockTypes.Checkbox,
+                "add_choice" => GetString(args, "choice_type"),
+                "add_word_bank" => CustomQuizBlockTypes.WordBank,
+                "add_submit_button" => CustomQuizBlockTypes.SubmitButton,
+                "add_feedback_message" => CustomQuizBlockTypes.FeedbackMessage,
+                _ => null,
+            };
+            if (string.IsNullOrWhiteSpace(type) || !CustomQuizBlockTypes.All.Contains(type))
+            {
+                return new { error = "A valid element type is required." };
+            }
+
+            var properties = new Dictionary<string, object?> { ["type"] = type };
+            foreach (var property in args.EnumerateObject())
+            {
+                if (property.Name is "custom_quiz_id" or "label_type" or "answer_type" or "choice_type") continue;
+                properties[property.Name] = property.Value.Clone();
+            }
+            block = JsonSerializer.SerializeToElement(properties, JsonOptions);
+        }
+
+        var blockId = GetString(block, "id")?.Trim();
+        var blockType = GetString(block, "type")?.Trim();
+        if (string.IsNullOrWhiteSpace(blockId) || string.IsNullOrWhiteSpace(blockType))
+        {
+            return new { error = "Every element needs a stable id and type." };
+        }
+        var promptError = ValidateAssistantAnswerPrompts(JsonSerializer.SerializeToElement(new[] { block }, JsonOptions), requireAnswer: false);
+        if (promptError != null)
+        {
+            return InvalidCustomQuizPrompts(promptError);
+        }
+        var label = GetString(block, "label")?.Trim();
+        if (CustomQuizBlockTypes.IsAnswer(blockType)
+            && !string.IsNullOrWhiteSpace(label)
+            && AnswerLabelAlreadyExists(context, target, label))
+        {
+            return InvalidCustomQuizPrompts($"The answer question label \"{label}\" is already used in this custom quiz.");
+        }
+
+        var payload = JsonSerializer.SerializeToElement(new
+        {
+            kind = PendingChangeKinds.AddCustomQuizElement,
+            custom_quiz_id = target.Id,
+            custom_quiz_ref = target.DraftRef,
+            custom_quiz_name = target.Name,
+            block,
+            binding_words_from_draft = target.DraftRef != null,
+        }, JsonOptions);
+        context.PendingChanges.Add(new PendingChange(PendingChangeKinds.AddCustomQuizElement, payload));
+        return new { queued = true, kind = toolName, element_id = blockId, element_type = blockType };
+    }
+
+    private async Task<object> QueueAddCustomQuizElementsAsync(JsonElement args, AgentToolContext context, CancellationToken ct)
+    {
+        var resolved = ResolveCustomQuizId(args, context);
+        if (resolved.Error != null)
+        {
+            return new { error = resolved.Error };
+        }
+        if (!TryGetArray(args, "blocks", out var blocks) || blocks.GetArrayLength() == 0)
+        {
+            return new { error = "blocks must contain at least one custom quiz element." };
+        }
+        var promptError = ValidateAssistantAnswerPrompts(blocks, requireAnswer: false);
+        if (promptError != null)
+        {
+            return InvalidCustomQuizPrompts(promptError);
+        }
+        var item = await LoadOwnedCustomQuizAsync(resolved.Id!.Value, context.UserId, ct);
+        if (item == null)
+        {
+            return new { error = "That custom quiz was not found." };
+        }
+        var payload = JsonSerializer.SerializeToElement(new
+        {
+            kind = PendingChangeKinds.AddCustomQuizElements,
+            custom_quiz_id = item.Id,
+            custom_quiz_name = item.Name,
+            blocks = blocks.Clone(),
+        }, JsonOptions);
+        context.PendingChanges.Add(new PendingChange(PendingChangeKinds.AddCustomQuizElements, payload));
+        return new { queued = true, kind = PendingChangeKinds.AddCustomQuizElements, element_count = blocks.GetArrayLength() };
+    }
+
+    private async Task<object> QueueConfigureCustomQuizElementAsync(JsonElement args, AgentToolContext context, CancellationToken ct)
+    {
+        var resolved = ResolveCustomQuizId(args, context);
+        if (resolved.Error != null)
+        {
+            return new { error = resolved.Error };
+        }
+        var blockId = GetString(args, "block_id")?.Trim();
+        if (string.IsNullOrWhiteSpace(blockId)
+            || !args.TryGetProperty("settings", out var settings)
+            || settings.ValueKind != JsonValueKind.Object)
+        {
+            return new { error = "block_id and settings are required." };
+        }
+        var item = await LoadOwnedCustomQuizAsync(resolved.Id!.Value, context.UserId, ct);
+        if (item == null)
+        {
+            return new { error = "That custom quiz was not found." };
+        }
+        if (settings.TryGetProperty("label", out var configuredLabel)
+            && (configuredLabel.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(configuredLabel.GetString())))
+        {
+            return InvalidCustomQuizPrompts($"Element {blockId} cannot have an empty question label.");
+        }
+        if (!CustomQuizDocumentContainsBlock(item.DefinitionJson, blockId))
+        {
+            return new { error = $"Element {blockId} was not found in that custom quiz. Inspect it again before configuring elements." };
+        }
+
+        var payload = JsonSerializer.SerializeToElement(new
+        {
+            kind = PendingChangeKinds.ConfigureCustomQuizElement,
+            custom_quiz_id = item.Id,
+            custom_quiz_name = item.Name,
+            block_id = blockId,
+            settings = settings.Clone(),
+        }, JsonOptions);
+        context.PendingChanges.Add(new PendingChange(PendingChangeKinds.ConfigureCustomQuizElement, payload));
+        return new { queued = true, kind = PendingChangeKinds.ConfigureCustomQuizElement, block_id = blockId };
+    }
+
+    private async Task<object> QueueRemoveCustomQuizElementAsync(JsonElement args, AgentToolContext context, CancellationToken ct)
+    {
+        var resolved = ResolveCustomQuizId(args, context);
+        if (resolved.Error != null)
+        {
+            return new { error = resolved.Error };
+        }
+        var blockId = GetString(args, "block_id")?.Trim();
+        if (string.IsNullOrWhiteSpace(blockId))
+        {
+            return new { error = "block_id is required." };
+        }
+        var item = await LoadOwnedCustomQuizAsync(resolved.Id!.Value, context.UserId, ct);
+        if (item == null)
+        {
+            return new { error = "That custom quiz was not found." };
+        }
+        if (!CustomQuizDocumentContainsBlock(item.DefinitionJson, blockId))
+        {
+            return new { error = $"Element {blockId} was not found in that custom quiz." };
+        }
+
+        var payload = JsonSerializer.SerializeToElement(new
+        {
+            kind = PendingChangeKinds.RemoveCustomQuizElement,
+            custom_quiz_id = item.Id,
+            custom_quiz_name = item.Name,
+            block_id = blockId,
+        }, JsonOptions);
+        context.PendingChanges.Add(new PendingChange(PendingChangeKinds.RemoveCustomQuizElement, payload));
+        return new { queued = true, kind = PendingChangeKinds.RemoveCustomQuizElement, block_id = blockId };
+    }
+
+    private async Task<CustomQuiz?> LoadOwnedCustomQuizAsync(Guid id, string userId, CancellationToken ct) =>
+        await _context.CustomQuizzes
+            .AsNoTracking()
+            .Include(item => item.Quiz)
+            .FirstOrDefaultAsync(item => item.Id == id && item.Quiz.UserId == userId, ct);
+
+    private async Task<CustomQuizTarget> ResolveCustomQuizTargetAsync(
+        JsonElement args,
+        AgentToolContext context,
+        CancellationToken ct)
+    {
+        var supplied = GetString(args, "custom_quiz_id");
+        if (!string.IsNullOrWhiteSpace(supplied))
+        {
+            if (!Guid.TryParse(supplied, out var parsed))
+            {
+                return new(null, null, string.Empty, null, "custom_quiz_id must be a valid id.");
+            }
+            var item = await LoadOwnedCustomQuizAsync(parsed, context.UserId, ct);
+            return item == null
+                ? new(null, null, string.Empty, null, "That custom quiz was not found.")
+                : new(item.Id, null, item.Name, item.DefinitionJson, null);
+        }
+
+        if (!string.IsNullOrWhiteSpace(context.PendingCustomQuizRef))
+        {
+            return new(null, context.PendingCustomQuizRef, context.PendingCustomQuizName ?? "New custom quiz", null, null);
+        }
+
+        if (context.CustomQuizId.HasValue)
+        {
+            var item = await LoadOwnedCustomQuizAsync(context.CustomQuizId.Value, context.UserId, ct);
+            return item == null
+                ? new(null, null, string.Empty, null, "The open custom quiz was not found.")
+                : new(item.Id, null, item.Name, item.DefinitionJson, null);
+        }
+
+        return new(null, null, string.Empty, null, "Start or open a custom quiz before adding elements.");
+    }
+
+    private static bool AnswerLabelAlreadyExists(AgentToolContext context, CustomQuizTarget target, string label)
+    {
+        if (!string.IsNullOrWhiteSpace(target.DefinitionJson))
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(target.DefinitionJson);
+                if (document.RootElement.TryGetProperty("blocks", out var existing)
+                    && existing.ValueKind == JsonValueKind.Array
+                    && existing.EnumerateArray().Any(block =>
+                        CustomQuizBlockTypes.IsAnswer(GetString(block, "type") ?? string.Empty)
+                        && string.Equals(GetString(block, "label")?.Trim(), label, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+            }
+            catch (JsonException)
+            {
+                // Stored-document validation is handled by the custom quiz service.
+            }
+        }
+
+        return context.PendingChanges
+            .Where(change => change.Kind == PendingChangeKinds.AddCustomQuizElement)
+            .Where(change => TargetMatches(change.Payload, target))
+            .Select(change => change.Payload.TryGetProperty("block", out var block) ? block : default)
+            .Any(block => block.ValueKind == JsonValueKind.Object
+                && CustomQuizBlockTypes.IsAnswer(GetString(block, "type") ?? string.Empty)
+                && string.Equals(GetString(block, "label")?.Trim(), label, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool TargetMatches(JsonElement payload, CustomQuizTarget target)
+    {
+        if (target.Id.HasValue)
+        {
+            return Guid.TryParse(GetString(payload, "custom_quiz_id"), out var id) && id == target.Id.Value;
+        }
+        return string.Equals(GetString(payload, "custom_quiz_ref"), target.DraftRef, StringComparison.Ordinal);
+    }
+
+    private static (Guid? Id, string? Error) ResolveCustomQuizId(JsonElement args, AgentToolContext context)
+    {
+        var supplied = GetString(args, "custom_quiz_id");
+        if (string.IsNullOrWhiteSpace(supplied))
+        {
+            return context.CustomQuizId.HasValue
+                ? (context.CustomQuizId, null)
+                : (null, "Choose or open a custom quiz first.");
+        }
+        return Guid.TryParse(supplied, out var parsed)
+            ? (parsed, null)
+            : (null, "custom_quiz_id must be a valid id.");
+    }
+
+    private static bool CustomQuizDocumentContainsBlock(string definitionJson, string blockId)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(definitionJson);
+            return document.RootElement.TryGetProperty("blocks", out var blocks)
+                && blocks.ValueKind == JsonValueKind.Array
+                && blocks.EnumerateArray().Any(block => string.Equals(GetString(block, "id"), blockId, StringComparison.Ordinal));
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static object InvalidCustomQuizPrompts(string error) => new
+    {
+        error,
+        invalid_custom_quiz_questions = true,
+        correction = "Give every answer control a specific learner-visible label containing that question's prompt or gap. For text inputs, put {{blank}} where the compact real input belongs and never draw a second blank with underscores or dots. Use different labels for different answers, then call the custom quiz tool again.",
+    };
+
+    private static string? ValidateAssistantAnswerPrompts(JsonElement blocks, bool requireAnswer = true)
+    {
+        var answers = blocks.EnumerateArray()
+            .Where(block => block.ValueKind == JsonValueKind.Object
+                && CustomQuizBlockTypes.IsAnswer(GetString(block, "type") ?? string.Empty))
+            .Select(block => new
+            {
+                Id = FirstNonBlank(GetString(block, "id"), "unnamed"),
+                Type = GetString(block, "type") ?? string.Empty,
+                Label = FirstNonBlank(GetString(block, "label"), GetString(block, "text"))?.Trim(),
+            })
+            .ToList();
+
+        if (requireAnswer && answers.Count == 0)
+        {
+            return "A custom quiz must contain at least one answer control with its own visible question label.";
+        }
+
+        var missing = answers.Where(answer => string.IsNullOrWhiteSpace(answer.Label)).Select(answer => answer.Id).ToList();
+        if (missing.Count > 0)
+        {
+            return $"Answer elements are missing learner-visible question labels: {string.Join(", ", missing)}.";
+        }
+
+        var drawnBlanks = answers
+            .Where(answer => answer.Type == CustomQuizBlockTypes.TextInput
+                && System.Text.RegularExpressions.Regex.IsMatch(answer.Label!, @"_{2,}|\.{3,}"))
+            .Select(answer => answer.Id)
+            .ToList();
+        if (drawnBlanks.Count > 0)
+        {
+            return $"Text input labels must use {{{{blank}}}} for the real inline control instead of underscores or dots: {string.Join(", ", drawnBlanks)}.";
+        }
+
+        var duplicates = answers
+            .GroupBy(answer => answer.Label!, StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .Select(group => $"\"{group.Key}\"")
+            .ToList();
+        return duplicates.Count == 0
+            ? null
+            : $"Answer question labels must be distinct. Repeated: {string.Join(", ", duplicates)}.";
+    }
+
+    private static bool TryGetArray(JsonElement element, string property, out JsonElement array)
+    {
+        if (element.TryGetProperty(property, out array) && array.ValueKind == JsonValueKind.Array)
+        {
+            return true;
+        }
+        array = default;
+        return false;
+    }
+
     private static JsonElement ParseArgs(string argsJson)
     {
         if (string.IsNullOrWhiteSpace(argsJson))
@@ -1327,6 +2080,66 @@ public sealed class AssistantTools : IAssistantTools
         return schema;
     }
 
+    private static AgentToolDeclaration AtomicElementDeclaration(
+        string name,
+        string description,
+        Dictionary<string, object> properties,
+        IReadOnlyList<string> required)
+    {
+        properties["custom_quiz_id"] = StringProp("Optional existing custom quiz id. Omit for the open quiz or the new quiz shell started earlier in this turn.");
+        properties["column_span"] = EnumProp("Element width in the 12-column layout.", 3, 4, 6, 12);
+        properties["grid_column"] = IntegerProp("Optional start column from 1 to 12.");
+        properties["grid_row"] = IntegerProp("Optional row from 1 to 500.");
+        return new AgentToolDeclaration(name, description + " The change is queued separately until Apply.", BuildSchema(properties, required));
+    }
+
+    private static object EnumProp(string description, params object[] values) =>
+        new Dictionary<string, object>
+        {
+            ["type"] = values.Length > 0 && values[0] is int ? "integer" : "string",
+            ["enum"] = values,
+            ["description"] = description,
+        };
+
+    private static object StringArrayProp(string description) =>
+        new Dictionary<string, object>
+        {
+            ["type"] = "array",
+            ["description"] = description,
+            ["items"] = new Dictionary<string, object> { ["type"] = "string" },
+        };
+
+    private static object FlexibleBindingProp() =>
+        new Dictionary<string, object>
+        {
+            ["type"] = "object",
+            ["description"] = "Expected word binding. Use word_id from list_words for an existing backing quiz, or exact word for a backing quiz just started from content.",
+            ["properties"] = new Dictionary<string, object>
+            {
+                ["word_id"] = StringProp("Existing backing-quiz word id."),
+                ["word"] = StringProp("Exact starter word when the backing quiz is pending creation."),
+                ["field"] = EnumProp("Word side to expect.", "lemma", "translation"),
+            },
+            ["required"] = new[] { "field" },
+        };
+
+    private static object FlexibleOptionsProp() =>
+        new Dictionary<string, object>
+        {
+            ["type"] = "array",
+            ["items"] = new Dictionary<string, object>
+            {
+                ["type"] = "object",
+                ["properties"] = new Dictionary<string, object>
+                {
+                    ["id"] = StringProp("Stable unique option id."),
+                    ["binding"] = FlexibleBindingProp(),
+                    ["is_correct"] = new Dictionary<string, object> { ["type"] = "boolean" },
+                },
+                ["required"] = new[] { "id", "binding", "is_correct" },
+            },
+        };
+
     private static object StringProp(string description) =>
         new Dictionary<string, object>
         {
@@ -1340,6 +2153,83 @@ public sealed class AssistantTools : IAssistantTools
             ["type"] = "integer",
             ["description"] = description,
         };
+
+    private static object CustomQuizBlocksProp(bool useWordReference) =>
+        new Dictionary<string, object>
+        {
+            ["type"] = "array",
+            ["description"] = "Custom quiz elements in display order. A playable quiz needs exactly one submit_button, exactly one feedback_message, and at least one answer element. Every answer element must have a non-empty, learner-visible label; when there are multiple answers, their labels must be distinct questions.",
+            ["items"] = CustomQuizBlockProp(useWordReference, requireType: true),
+        };
+
+    private static object CustomQuizBlockProp(bool useWordReference, bool requireType)
+    {
+        var bindingKey = useWordReference ? "word" : "word_id";
+        var binding = new Dictionary<string, object>
+        {
+            ["type"] = "object",
+            ["description"] = useWordReference
+                ? "Bind to the exact target-language word supplied in the starter words array."
+                : "Bind to a word in the backing quiz.",
+            ["properties"] = new Dictionary<string, object>
+            {
+                [bindingKey] = StringProp(useWordReference ? "Exact word value from starter words." : "Word id returned by list_words."),
+                ["field"] = new Dictionary<string, object>
+                {
+                    ["type"] = "string",
+                    ["enum"] = new[] { "lemma", "translation" },
+                    ["description"] = "Which side of the word to display or expect.",
+                },
+            },
+            ["required"] = new[] { bindingKey, "field" },
+        };
+        var option = new Dictionary<string, object>
+        {
+            ["type"] = "object",
+            ["properties"] = new Dictionary<string, object>
+            {
+                ["id"] = StringProp("Stable unique option id."),
+                ["binding"] = binding,
+                ["is_correct"] = new Dictionary<string, object> { ["type"] = "boolean" },
+            },
+            ["required"] = new[] { "id", "binding", "is_correct" },
+        };
+        var schema = new Dictionary<string, object>
+        {
+            ["type"] = "object",
+            ["properties"] = new Dictionary<string, object>
+            {
+                ["id"] = StringProp("Stable unique element id. Use short descriptive ids so word banks can target inputs."),
+                ["type"] = new Dictionary<string, object>
+                {
+                    ["type"] = "string",
+                    ["enum"] = CustomQuizBlockTypes.All.Order().ToArray(),
+                    ["description"] = "Element type: labels display text or bound words; answer controls are graded; word_bank targets text inputs.",
+                },
+                ["column_span"] = new Dictionary<string, object> { ["type"] = "integer", ["enum"] = new[] { 3, 4, 6, 12 } },
+                ["grid_column"] = IntegerProp("Optional start column from 1 to 12. Layout is normalized to avoid overlaps."),
+                ["grid_row"] = IntegerProp("Optional row from 1 to 500. Layout is normalized to avoid overlaps."),
+                ["text"] = StringProp("Text for headings, instructions, and submit buttons."),
+                ["label"] = StringProp("Required learner-visible question or prompt for every answer control. For text_input, put {{blank}} exactly where the compact inline answer belongs (for example, '1. ja jest{{blank}}'); never use underscores or dots to draw a blank. Keep labels distinct."),
+                ["binding"] = binding,
+                ["expected_binding"] = binding,
+                ["expected_text"] = StringProp("Literal correct answer for text inputs, such as a verb ending. Use instead of expected_binding when the learner should enter only part of a word."),
+                ["expected_checked"] = new Dictionary<string, object> { ["type"] = "boolean" },
+                ["options"] = new Dictionary<string, object> { ["type"] = "array", ["items"] = option },
+                ["target_input_ids"] = new Dictionary<string, object>
+                {
+                    ["type"] = "array",
+                    ["items"] = new Dictionary<string, object> { ["type"] = "string" },
+                    ["description"] = "For word_bank only: ids of text_input or textarea elements it fills.",
+                },
+            },
+        };
+        if (requireType)
+        {
+            schema["required"] = new[] { "type" };
+        }
+        return schema;
+    }
 
     private static NullableGuidString GetNullableGuidString(JsonElement element, string property)
     {
@@ -1570,6 +2460,7 @@ public sealed class AssistantTools : IAssistantTools
         Guid SentenceId,
         string? Text,
         string? Translation);
+    private sealed record CustomQuizTarget(Guid? Id, string? DraftRef, string Name, string? DefinitionJson, string? Error);
     private sealed record SkippedItem(int Index, string Reason);
 
 }

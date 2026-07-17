@@ -7,6 +7,7 @@ public sealed class SendMessageInput
     public string? FocusedWordId { get; set; }
     public string? Model { get; set; }
     public DocumentContextInput? DocumentContext { get; set; }
+    public Guid? CustomQuizId { get; set; }
 }
 
 public sealed class ChatMutationInput

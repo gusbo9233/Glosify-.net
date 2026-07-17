@@ -1,0 +1,102 @@
+@model CustomQuizPlayViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Model.Play.Name;
+    ViewData["HideAssistantPanel"] = true;
+    string ResolveBlock(string blockId) => Model.Play.ResolvedValues.GetValueOrDefault($"block:{blockId}", string.Empty);
+    string ResolveOption(string blockId, string optionId) => Model.Play.ResolvedValues.GetValueOrDefault($"option:{blockId}:{optionId}", string.Empty);
+    (string Before, string After) SplitInlineBlank(string? value)
+    {
+        var label = string.IsNullOrWhiteSpace(value) ? "Answer" : value.Trim();
+        var match = System.Text.RegularExpressions.Regex.Match(label, @"\{\{blank\}\}|\{blank\}|_{2,}|\.{3,}", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return match.Success
+            ? (label[..match.Index].TrimEnd(), label[(match.Index + match.Length)..].TrimStart())
+            : (label, string.Empty);
+    }
+}
+
+<section class="custom-player" data-custom-player
+         data-custom-style="@Model.Play.Document.StylePreset"
+         data-custom-id="@Model.Play.Id"
+         data-attempt-id="@Model.Play.AttemptId"
+         data-classroom-id="@Model.Play.ClassroomId"
+         data-grade-url="@Url.Action("Grade", "CustomQuiz", new { id = Model.Play.Id })">
+    @Html.AntiForgeryToken()
+    <header class="custom-player-header">
+        <p>@Model.Play.SourceQuizName &middot; @Model.Play.SourceLanguage &rarr; @Model.Play.TargetLanguage</p>
+        <h1>@Model.Play.Name</h1>
+    </header>
+    <form class="custom-player-grid" data-custom-player-form>
+        @foreach (var block in Model.Play.Document.Blocks.OrderBy(item => item.Order))
+        {
+            <section class="custom-play-block" style="--custom-span:@block.ColumnSpan;--custom-column:@block.GridColumn;--custom-row:@block.GridRow" data-play-block="@block.Id" data-block-type="@block.Type">
+                @switch (block.Type)
+                {
+                    case CustomQuizBlockTypes.Heading:
+                        <h2>@block.Text</h2>
+                        break;
+                    case CustomQuizBlockTypes.InstructionLabel:
+                        <p class="custom-instruction">@block.Text</p>
+                        break;
+                    case CustomQuizBlockTypes.PromptLabel:
+                    case CustomQuizBlockTypes.TranslationLabel:
+                        <p class="custom-bound-label">@ResolveBlock(block.Id)</p>
+                        break;
+                    case CustomQuizBlockTypes.TextInput:
+                        {
+                            var blank = SplitInlineBlank(block.Label);
+                            <label class="custom-inline-answer">
+                                @if (!string.IsNullOrEmpty(blank.Before)) { <span class="custom-inline-answer-before">@blank.Before</span> }
+                                <input class="form-input" type="text" data-answer-block="@block.Id" />
+                                @if (!string.IsNullOrEmpty(blank.After)) { <span class="custom-inline-answer-after">@blank.After</span> }
+                            </label>
+                            <div class="custom-answer-feedback" data-answer-feedback></div>
+                        }
+                        break;
+                    case CustomQuizBlockTypes.Textarea:
+                        <label>@block.Label<textarea class="form-input" rows="4" data-answer-block="@block.Id"></textarea></label>
+                        <div class="custom-answer-feedback" data-answer-feedback></div>
+                        break;
+                    case CustomQuizBlockTypes.Checkbox:
+                        <label class="custom-check"><input type="checkbox" data-answer-block="@block.Id" /><span>@block.Label @ResolveBlock(block.Id)</span></label>
+                        <div class="custom-answer-feedback" data-answer-feedback></div>
+                        break;
+                    case CustomQuizBlockTypes.RadioGroup:
+                        <fieldset><legend>@block.Label</legend>
+                            @foreach (var option in block.Options) { <label class="custom-choice"><input type="radio" name="@block.Id" value="@option.Id" data-answer-block="@block.Id" />@ResolveOption(block.Id, option.Id)</label> }
+                        </fieldset>
+                        <div class="custom-answer-feedback" data-answer-feedback></div>
+                        break;
+                    case CustomQuizBlockTypes.MultiSelectGroup:
+                        <fieldset><legend>@block.Label</legend>
+                            @foreach (var option in block.Options) { <label class="custom-choice"><input type="checkbox" value="@option.Id" data-answer-block="@block.Id" />@ResolveOption(block.Id, option.Id)</label> }
+                        </fieldset>
+                        <div class="custom-answer-feedback" data-answer-feedback></div>
+                        break;
+                    case CustomQuizBlockTypes.SelectMenu:
+                        <label>@block.Label<select class="form-input" data-answer-block="@block.Id"><option value="">Choose...</option>
+                            @foreach (var option in block.Options) { <option value="@option.Id">@ResolveOption(block.Id, option.Id)</option> }
+                        </select></label>
+                        <div class="custom-answer-feedback" data-answer-feedback></div>
+                        break;
+                    case CustomQuizBlockTypes.WordBank:
+                        <div class="custom-word-bank" data-word-bank data-target-inputs="@string.Join(",", block.TargetInputIds)">
+                            <span>@block.Label</span>
+                            @foreach (var option in block.Options) { <button type="button" data-bank-value="@ResolveOption(block.Id, option.Id)">@ResolveOption(block.Id, option.Id)</button> }
+                        </div>
+                        break;
+                    case CustomQuizBlockTypes.SubmitButton:
+                        <button class="btn-submit" type="submit">@(string.IsNullOrWhiteSpace(block.Text) ? "Check answers" : block.Text)</button>
+                        break;
+                    case CustomQuizBlockTypes.FeedbackMessage:
+                        <div class="custom-overall-feedback" role="status" data-overall-feedback>Complete the quiz, then submit your answers.</div>
+                        break;
+                }
+            </section>
+        }
+    </form>
+</section>
+
+@section Scripts {
+<script src="~/js/custom-quiz-player.js" asp-append-version="true"></script>
+}

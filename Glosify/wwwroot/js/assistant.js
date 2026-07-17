@@ -20,6 +20,7 @@
     const modelStorageKey = 'glosify.assistant.model';
 
     const focusedWordId = panel.dataset.focusedWordId || null;
+    const customQuizId = panel.dataset.customQuizId || null;
     const toggle = panel.querySelector('[data-assistant-toggle]');
     const close = panel.querySelector('[data-assistant-close]');
     const reset = panel.querySelector('[data-assistant-reset]');
@@ -402,6 +403,23 @@
         transcript.scrollTop = transcript.scrollHeight;
     };
 
+    const renderCustomQuizCreatedMessage = (createdCustomQuizId) => {
+        if (!createdCustomQuizId || !transcript) return;
+        if (empty) empty.remove();
+        const row = document.createElement('article');
+        row.className = 'assistant-message assistant-message-model';
+        const body = document.createElement('div');
+        body.className = 'assistant-bubble';
+        body.appendChild(document.createTextNode('Custom quiz created. '));
+        const link = document.createElement('a');
+        link.href = `/CustomQuizzes/${encodeURIComponent(createdCustomQuizId)}/Edit`;
+        link.textContent = 'Open custom quiz creator';
+        body.appendChild(link);
+        row.appendChild(body);
+        transcript.appendChild(row);
+        transcript.scrollTop = transcript.scrollHeight;
+    };
+
     const renderPendingChanges = (message) => {
         const card = document.createElement('div');
         card.className = 'assistant-pending-card';
@@ -491,7 +509,11 @@
             if (data.createdQuizId) {
                 await refreshQuizSelector(data.createdQuizId);
                 renderQuizCreatedMessage(data.createdQuizId);
-                setStatus('Quiz created.');
+                renderCustomQuizCreatedMessage(data.createdCustomQuizId);
+                setStatus(data.createdCustomQuizId ? 'Quiz and custom quiz created.' : 'Quiz created.');
+            } else if (data.createdCustomQuizId) {
+                renderCustomQuizCreatedMessage(data.createdCustomQuizId);
+                setStatus('Custom quiz created.');
             } else {
                 setStatus('Changes applied. Reloading...');
                 window.setTimeout(() => window.location.reload(), 600);
@@ -681,6 +703,7 @@
                     message,
                     contextQuizId: quizId,
                     focusedWordId,
+                    customQuizId,
                     model: modelSelect?.value || null,
                     documentContext,
                 }),

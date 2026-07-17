@@ -8,4 +8,5 @@ public sealed record AssistantSendInput(
     string? FocusedWordId,
     string? Model,
     Guid? DocumentId,
-    int? PageNumber);
+    int? PageNumber,
+    Guid? CustomQuizId);

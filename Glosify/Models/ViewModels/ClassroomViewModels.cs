@@ -1,4 +1,5 @@
 using Glosify.Models.Library;
+using Glosify.Models.CustomQuizzes;
 using Glosify.Services.Classrooms;
 
 namespace Glosify.Models.ViewModels;
@@ -22,6 +23,8 @@ public class ClassroomDetailsViewModel
     public IReadOnlyList<ClassroomContentItem> Content { get; set; } = [];
     public IReadOnlyList<ClassroomAttemptRow> Results { get; set; } = [];
     public ClassroomSchedule Schedule { get; set; } = new([], []);
+    public IReadOnlyDictionary<Guid, IReadOnlyList<CustomQuizSummaryDto>> CustomQuizzesByQuizId { get; set; }
+        = new Dictionary<Guid, IReadOnlyList<CustomQuizSummaryDto>>();
 
     // Share pickers for teachers: their own quizzes/books not yet shared here.
     public IReadOnlyList<Quiz> ShareableQuizzes { get; set; } = [];

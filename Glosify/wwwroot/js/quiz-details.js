@@ -56,4 +56,22 @@
             postRepair(event.currentTarget, body);
         });
     });
+
+    document.querySelectorAll('[data-delete-custom-quiz]').forEach(button => {
+        button.addEventListener('click', async () => {
+            if (!window.confirm('Delete this custom quiz?')) return;
+            button.disabled = true;
+            try {
+                const response = await fetch(button.dataset.deleteUrl, {
+                    method: 'DELETE',
+                    headers: { 'RequestVerificationToken': tokenInput?.value ?? '' }
+                });
+                if (!response.ok) throw new Error();
+                button.closest('[data-custom-quiz-card]')?.remove();
+            } catch {
+                setMessage('Could not delete the custom quiz. Try again.', 'error');
+                button.disabled = false;
+            }
+        });
+    });
 })();

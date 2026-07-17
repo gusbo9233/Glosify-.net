@@ -1,4 +1,9 @@
 @model FlashcardQuizViewModel
+@{
+    var isTargetToSource = Glosify.Models.PracticeDirection.IsTargetToSource(Model.PracticeDirection);
+    var promptIsTarget = isTargetToSource;
+    var answerIsTarget = !isTargetToSource;
+}
 
 <div class="progress-wrap">
     <div class="progress-meta">
@@ -50,9 +55,35 @@
         {
             <article class="flashcard is-revealed" aria-live="polite">
                 <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
-                <h2 class="card-word">@Model.CurrentCard.Prompt</h2>
+                <h2 class="card-word">
+                    @Model.CurrentCard.Prompt
+                    @if (promptIsTarget)
+                    {
+                        <button class="btn-icon-tts"
+                                type="button"
+                                data-tts="@Model.CurrentCard.Prompt"
+                                data-tts-lang="@Model.PromptLanguage"
+                                title="Play pronunciation"
+                                aria-label="Play pronunciation of @Model.CurrentCard.Prompt">
+                            <span class="material-symbols-outlined">volume_up</span>
+                        </button>
+                    }
+                </h2>
                 <div class="card-answer revealed">
-                    <div class="translation">@Model.CurrentCard.Answer</div>
+                    <div class="translation">
+                        @Model.CurrentCard.Answer
+                        @if (answerIsTarget)
+                        {
+                            <button class="btn-icon-tts"
+                                    type="button"
+                                    data-tts="@Model.CurrentCard.Answer"
+                                    data-tts-lang="@Model.AnswerLanguage"
+                                    title="Play pronunciation"
+                                    aria-label="Play pronunciation of @Model.CurrentCard.Answer">
+                                <span class="material-symbols-outlined">volume_up</span>
+                            </button>
+                        }
+                    </div>
                     @if (!string.IsNullOrWhiteSpace(Model.CurrentCard.ExampleSentence))
                     {
                         <div class="example">@Model.CurrentCard.ExampleSentence</div>
@@ -71,7 +102,21 @@
                 <input type="hidden" name="sessionId" value="@Model.SessionId" />
                 <button class="flashcard flashcard-clickable" type="submit" aria-label="Reveal answer for @Model.CurrentCard.Prompt">
                     <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
-                    <span class="card-word">@Model.CurrentCard.Prompt</span>
+                    <span class="card-word">
+                        @Model.CurrentCard.Prompt
+                        @if (promptIsTarget)
+                        {
+                            <span class="btn-icon-tts"
+                                  role="button"
+                                  tabindex="0"
+                                  data-tts="@Model.CurrentCard.Prompt"
+                                  data-tts-lang="@Model.PromptLanguage"
+                                  title="Play pronunciation"
+                                  aria-label="Play pronunciation of @Model.CurrentCard.Prompt">
+                                <span class="material-symbols-outlined">volume_up</span>
+                            </span>
+                        }
+                    </span>
                 </button>
             </form>
         }

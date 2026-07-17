@@ -676,6 +676,52 @@ namespace Glosify.Migrations
                     b.ToTable("Collections");
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.CustomQuiz", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DefinitionJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsPlayable")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<Guid>("QuizId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("SchemaVersion")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuizId", "IsPlayable");
+
+                    b.HasIndex("QuizId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("CustomQuizzes");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.Quiz", b =>
                 {
                     b.Property<Guid>("Id")
@@ -775,8 +821,8 @@ namespace Glosify.Migrations
 
                     b.Property<string>("Mode")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("PracticeDirection")
                         .HasMaxLength(32)
@@ -1349,6 +1395,18 @@ namespace Glosify.Migrations
                         .IsRequired();
 
                     b.Navigation("ParentCollection");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.CustomQuiz", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.Quiz", "Quiz")
+                        .WithMany()
+                        .HasForeignKey("QuizId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_CustomQuizzes_Quizzes_QuizId");
+
+                    b.Navigation("Quiz");
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.Quiz", b =>

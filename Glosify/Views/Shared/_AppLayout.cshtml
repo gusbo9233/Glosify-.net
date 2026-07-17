@@ -16,7 +16,9 @@
     bool IsQuizzesActive() =>
         CurrentController == "quiz"
         || CurrentController == "quizzes"
-        || CurrentController == "flashcardquiz";
+        || CurrentController == "flashcardquiz"
+        || CurrentController == "typingquiz"
+        || CurrentController == "customquiz";
 
     string NavClass(string controller, string action = "Index") =>
         IsActive(controller, action) ? "app-nav-item is-active" : "app-nav-item";
@@ -299,6 +301,7 @@
             FocusedWordId = ViewData["AssistantFocusedWordId"] as string,
             DocumentId = AssistantGuid("AssistantDocumentId"),
             CurrentPage = AssistantInt("AssistantCurrentPage"),
+            CustomQuizId = AssistantGuid("AssistantCustomQuizId"),
             Title = AssistantText("AssistantTitle", "Assistant"),
             ContextLabel = AssistantText("AssistantContextLabel", "Glosify"),
             EmptyText = AssistantText("AssistantEmptyText", "Ask for help anywhere in Glosify."),
@@ -307,6 +310,7 @@
         <script src="~/js/assistant.js" asp-append-version="true"></script>
     }
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/tts.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

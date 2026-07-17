@@ -55,7 +55,23 @@
             <article class="typing-card" data-card>
                 <span class="card-label" data-card-label>@Model.CardLabel @Model.CurrentWordNumber</span>
                 <p class="typing-prompt-label">@Model.PromptLanguage prompt</p>
-                <h2 class="typing-prompt" data-prompt>@Model.CurrentWord?.Prompt</h2>
+                @{
+                    var typingPromptIsTarget = Glosify.Models.PracticeDirection.IsTargetToSource(Model.PracticeDirection);
+                }
+                <h2 class="typing-prompt">
+                    <span data-prompt>@Model.CurrentWord?.Prompt</span>
+                    @if (typingPromptIsTarget && Model.CurrentWord != null && !string.IsNullOrWhiteSpace(Model.CurrentWord.Prompt))
+                    {
+                        <button class="btn-icon-tts"
+                                type="button"
+                                data-tts="@Model.CurrentWord.Prompt"
+                                data-tts-lang="@Model.PromptLanguage"
+                                title="Play pronunciation"
+                                aria-label="Play pronunciation">
+                            <span class="material-symbols-outlined">volume_up</span>
+                        </button>
+                    }
+                </h2>
                 <p class="typing-feedback" data-feedback aria-live="polite"></p>
 
                 <form class="typing-form" data-typing-form autocomplete="off">

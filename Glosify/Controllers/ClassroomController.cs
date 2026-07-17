@@ -2,6 +2,7 @@ using Glosify.Hubs;
 using Glosify.Services.Books;
 using Glosify.Services.Classrooms;
 using Glosify.Services.Communication;
+using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,7 @@ public class ClassroomController : Controller
     private readonly IClassroomService _classrooms;
     private readonly IQuizService _quizzes;
     private readonly IBookDocumentService _books;
+    private readonly ICustomQuizService _customQuizzes;
     private readonly IAcsTokenService _acsTokens;
     private readonly IHubContext<ClassroomChatHub> _chatHub;
     private readonly ILogger<ClassroomController> _logger;
@@ -23,6 +25,7 @@ public class ClassroomController : Controller
         IClassroomService classrooms,
         IQuizService quizzes,
         IBookDocumentService books,
+        ICustomQuizService customQuizzes,
         IAcsTokenService acsTokens,
         IHubContext<ClassroomChatHub> chatHub,
         ILogger<ClassroomController> logger)
@@ -30,6 +33,7 @@ public class ClassroomController : Controller
         _classrooms = classrooms;
         _quizzes = quizzes;
         _books = books;
+        _customQuizzes = customQuizzes;
         _acsTokens = acsTokens;
         _chatHub = chatHub;
         _logger = logger;
@@ -126,6 +130,23 @@ public class ClassroomController : Controller
                 UnreadChatCount = page.UnreadChatCount,
                 Schedule = page.Schedule
             };
+
+            var customQuizSourceIds = activeTab switch
+            {
+                "content" => page.Content
+                    .Where(item => item.Quiz is not null)
+                    .Select(item => item.Quiz!.Id),
+                "planning" => page.Schedule.Lessons
+                    .SelectMany(lesson => lesson.Assignments)
+                    .Concat(page.Schedule.UnattachedAssignments)
+                    .Where(info => info.Assignment.QuizId.HasValue)
+                    .Select(info => info.Assignment.QuizId!.Value),
+                _ => []
+            };
+            model.CustomQuizzesByQuizId = await _customQuizzes.ListForQuizzesAsync(
+                customQuizSourceIds.Distinct().ToList(),
+                playableOnly: true,
+                cancellationToken);
 
             if (isTeacher)
             {

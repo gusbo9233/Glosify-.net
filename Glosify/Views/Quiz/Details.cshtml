@@ -27,6 +27,9 @@
                         <span>Make quiz public</span>
                     </label>
                 </form>
+                <a class="btn-hero btn-hero-secondary" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
+                    Build custom quiz <span class="material-symbols-outlined">dashboard_customize</span>
+                </a>
             </div>
         </div>
     </section>
@@ -58,6 +61,41 @@
     {
         <div class="panel-message success">@quizMessage</div>
     }
+
+    <section class="custom-quiz-library">
+        <div class="collection-header">
+            <div>
+                <h2 class="collection-title">Custom quizzes</h2>
+                <p class="collection-subtitle">Build a freeform exercise from the words in this quiz.</p>
+            </div>
+            <a class="btn-new-quiz" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
+                <span class="material-symbols-outlined">add</span> New custom quiz
+            </a>
+        </div>
+        <div class="custom-quiz-card-grid">
+            @foreach (var customQuiz in Model.CustomQuizzes)
+            {
+                <article class="custom-quiz-card" data-custom-quiz-card>
+                    <div>
+                        <h3>@customQuiz.Name</h3>
+                        <span class="status-pill @(customQuiz.IsPlayable ? "" : "custom-quiz-draft")">@(customQuiz.IsPlayable ? "Playable" : "Draft")</span>
+                    </div>
+                    <div class="custom-quiz-card-actions">
+                        <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Edit" asp-route-id="@customQuiz.Id">Edit</a>
+                        @if (customQuiz.IsPlayable)
+                        {
+                            <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id">Play</a>
+                        }
+                        <button class="btn-linkish" type="button" data-delete-custom-quiz data-delete-url="@Url.Action("Delete", "CustomQuiz", new { id = customQuiz.Id })">Delete</button>
+                    </div>
+                </article>
+            }
+            @if (!Model.CustomQuizzes.Any())
+            {
+                <div class="empty-state">No custom quizzes yet. Create one by dragging blocks onto a canvas.</div>
+            }
+        </div>
+    </section>
 
     <section>
         <div class="collection-header">
@@ -100,6 +138,14 @@
                             </div>
                         </div>
                         <div class="word-actions">
+                            <button class="btn-icon-tts"
+                                    type="button"
+                                    data-tts="@word.Lemma"
+                                    data-tts-lang="@Model.SelectedQuiz.TargetLanguage"
+                                    title="Play pronunciation"
+                                    aria-label="Play pronunciation of @word.Lemma">
+                                <span class="material-symbols-outlined">volume_up</span>
+                            </button>
                             <button class="btn-icon-repair"
                                     type="button"
                                     title="Repair word"

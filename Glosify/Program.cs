@@ -16,10 +16,14 @@ using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Llm;
 using Glosify.Services.Classrooms;
+using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Flashcards;
 using Glosify.Services.Language;
+using Glosify.Services.Speech;
 using Glosify.Services.Typing;
 using Glosify.Services.Words;
+using Azure.Core;
+using Azure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,6 +93,19 @@ builder.Services.AddRateLimiter(options =>
                 ?? context.Connection.RemoteIpAddress?.ToString()
                 ?? "unknown";
             return RateLimitPartition.GetFixedWindowLimiter($"ai:{caller}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+        }
+
+        if (path.StartsWithSegments("/api/tts"))
+        {
+            var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter($"tts:{caller}", _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 60,
                 Window = TimeSpan.FromMinutes(1),
@@ -233,6 +250,8 @@ builder.Services.AddScoped<IPdfTextExtractionService, PdfPigTextExtractionServic
 builder.Services.AddScoped<IBookDocumentService, BookDocumentService>();
 builder.Services.AddScoped<IClassroomService, ClassroomService>();
 builder.Services.AddScoped<IQuizAttemptService, QuizAttemptService>();
+builder.Services.AddScoped<ICustomQuizService, CustomQuizService>();
+builder.Services.AddSingleton<ICustomQuizTemplateCatalog, CustomQuizTemplateCatalog>();
 builder.Services.Configure<Glosify.Services.Communication.AcsOptions>(
     builder.Configuration.GetSection(Glosify.Services.Communication.AcsOptions.SectionName));
 builder.Services.AddScoped<Glosify.Services.Communication.IAcsTokenService, Glosify.Services.Communication.AcsTokenService>();
@@ -246,6 +265,11 @@ builder.Services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionSe
 builder.Services.AddScoped<IAssistantTools, AssistantTools>();
 builder.Services.AddScoped<IChangeApplier, ChangeApplier>();
 builder.Services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
+
+builder.Services.Configure<SpeechOptions>(builder.Configuration.GetSection(SpeechOptions.SectionName));
+builder.Services.AddSingleton<TokenCredential>(_ => new DefaultAzureCredential());
+builder.Services.AddHttpClient(nameof(AzureTextToSpeechService));
+builder.Services.AddSingleton<ITextToSpeechService, AzureTextToSpeechService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))

@@ -89,12 +89,17 @@
                 <div class="classroom-content-actions">
                     @if (item.ContentType == ClassroomContentType.Quiz && item.Quiz != null)
                     {
+                        var customQuizzes = Model.CustomQuizzesByQuizId.GetValueOrDefault(item.Quiz.Id, []);
                         <a class="btn-secondary" asp-controller="FlashcardQuiz" asp-action="Index" asp-route-id="@item.Quiz.Id" asp-route-classroomId="@Model.Classroom.Id">
                             Flashcards
                         </a>
                         <a class="btn-secondary" asp-controller="TypingQuiz" asp-action="Index" asp-route-id="@item.Quiz.Id" asp-route-classroomId="@Model.Classroom.Id">
                             Typing
                         </a>
+                        @foreach (var customQuiz in customQuizzes)
+                        {
+                            <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id" asp-route-classroomId="@Model.Classroom.Id">@customQuiz.Name</a>
+                        }
                         <form method="post" asp-controller="Classroom" asp-action="CopyQuiz">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@Model.Classroom.Id" />

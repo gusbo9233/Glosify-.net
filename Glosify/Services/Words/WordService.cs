@@ -2,6 +2,7 @@ using Glosify.Data;
 using Glosify.Models;
 using Glosify.Services;
 using Microsoft.EntityFrameworkCore;
+using Glosify.Services.CustomQuizzes;
 using System.Text.RegularExpressions;
 
 namespace Glosify.Services.Words;
@@ -197,6 +198,7 @@ public class WordService : IWordService
         if (!ownsQuiz)
             return null;
 
+        await new CustomQuizService(_context).PruneWordBindingsAsync(word.QuizId, [word.Id], cancellationToken);
         _context.Words.Remove(word);
         await _context.SaveChangesAsync(cancellationToken);
 

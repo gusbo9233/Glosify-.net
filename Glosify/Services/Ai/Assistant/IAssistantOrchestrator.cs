@@ -37,6 +37,7 @@ public interface IAssistantOrchestrator
         string? focusedWordId = null,
         string? model = null,
         AssistantDocumentContext? documentContext = null,
+        Guid? customQuizId = null,
         CancellationToken cancellationToken = default);
 
     Task<AssistantTurnResponse> SendMessageAsync(

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Glosify.Services.Language;
 using Glosify.Services.Words;
+using Glosify.Services.CustomQuizzes;
 
 namespace Glosify.Controllers;
 
@@ -15,17 +16,20 @@ public class ExploreController : Controller
     private readonly IQuizService _quizService;
     private readonly IWordService _wordService;
     private readonly ILanguageContext _languageContext;
+    private readonly ICustomQuizService _customQuizService;
 
     public ExploreController(
         ICollectionService collectionService,
         IQuizService quizService,
         IWordService wordService,
-        ILanguageContext languageContext)
+        ILanguageContext languageContext,
+        ICustomQuizService customQuizService)
     {
         _collectionService = collectionService;
         _quizService = quizService;
         _wordService = wordService;
         _languageContext = languageContext;
+        _customQuizService = customQuizService;
     }
 
     [HttpGet]
@@ -116,6 +120,7 @@ public class ExploreController : Controller
         {
             SelectedQuiz = selectedQuiz,
             Words = words,
+            CustomQuizzes = await _customQuizService.ListForQuizAsync(selectedQuiz.Id, playableOnly: true, cancellationToken),
             Sentences = sentences.Select(s => new QuizSentenceViewModel
             {
                 Text = s.Text,

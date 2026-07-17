@@ -2,6 +2,7 @@ using System.Text.Json;
 using Glosify.Data;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
+using Glosify.Services.CustomQuizzes;
 
 namespace Glosify.Services.Ai.Assistant;
 
@@ -32,6 +33,43 @@ public sealed class ChangeApplier : IChangeApplier
         IReadOnlyList<PendingChange> changes,
         CancellationToken cancellationToken)
     {
+        if (!_context.Database.IsRelational())
+        {
+            return await ApplyCoreAsync(quizId, userId, changes, cancellationToken);
+        }
+
+        // Every service used below shares this scoped DbContext. Their intermediate
+        // SaveChanges calls therefore participate in this transaction, so a failed
+        // later change cannot leave a partially-created quiz or custom quiz behind.
+        // The execution strategy wrapper is required because Azure SQL retries are
+        // enabled for the application's DbContext.
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var result = await ApplyCoreAsync(quizId, userId, changes, cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                return result;
+            }
+            catch
+            {
+                // SaveChanges accepts tracked state before a later operation can
+                // fail. The database rolls that state back, so detach it before an
+                // execution-strategy retry or a caller's recovery SaveChanges.
+                _context.ChangeTracker.Clear();
+                throw;
+            }
+        });
+    }
+
+    private async Task<AssistantApplyResult> ApplyCoreAsync(
+        Guid? quizId,
+        string userId,
+        IReadOnlyList<PendingChange> changes,
+        CancellationToken cancellationToken)
+    {
         Quiz? quiz = null;
         QuizContentBatch batch = QuizContentBatch.Empty;
         if (changes.Any(RequiresQuizContext))
@@ -52,6 +90,9 @@ public sealed class ChangeApplier : IChangeApplier
         var applied = 0;
         Guid? createdQuizId = null;
         Guid? createdCollectionId = null;
+        Guid? createdCustomQuizId = null;
+        var customQuizIdsByDraftRef = new Dictionary<string, Guid>(StringComparer.Ordinal);
+        var wordIdsByCustomQuizDraftRef = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.Ordinal);
 
         foreach (var change in changes)
         {
@@ -81,10 +122,19 @@ public sealed class ChangeApplier : IChangeApplier
                 case PendingChangeKinds.CreateQuiz:
                 {
                     var created = await ApplyCreateQuizAsync(change.Payload, userId, cancellationToken);
-                    if (created.HasValue)
+                    if (created != null)
                     {
                         applied++;
-                        createdQuizId ??= created;
+                        createdQuizId ??= created.QuizId;
+                        createdCustomQuizId ??= created.CustomQuizId;
+                        if (created.CustomQuizId.HasValue
+                            && change.Payload.TryGetProperty("custom_quiz", out var customQuiz)
+                            && !string.IsNullOrWhiteSpace(GetString(customQuiz, "draft_ref")))
+                        {
+                            var draftRef = GetString(customQuiz, "draft_ref");
+                            customQuizIdsByDraftRef[draftRef] = created.CustomQuizId.Value;
+                            wordIdsByCustomQuizDraftRef[draftRef] = created.StarterWordIds;
+                        }
                     }
                     break;
                 }
@@ -107,14 +157,50 @@ public sealed class ChangeApplier : IChangeApplier
                 case PendingChangeKinds.MoveCollection:
                     applied += await ApplyMoveCollectionAsync(change.Payload, userId) ? 1 : 0;
                     break;
+                case PendingChangeKinds.CreateCustomQuiz:
+                {
+                    var created = await ApplyCreateCustomQuizAsync(change.Payload, userId, cancellationToken);
+                    if (created.HasValue)
+                    {
+                        applied++;
+                        createdCustomQuizId ??= created;
+                        var draftRef = GetString(change.Payload, "draft_ref");
+                        if (!string.IsNullOrWhiteSpace(draftRef))
+                        {
+                            customQuizIdsByDraftRef[draftRef] = created.Value;
+                        }
+                    }
+                    break;
+                }
+                case PendingChangeKinds.AddCustomQuizElement:
+                    applied += await ApplyAddCustomQuizElementAsync(
+                        change.Payload,
+                        userId,
+                        customQuizIdsByDraftRef,
+                        wordIdsByCustomQuizDraftRef,
+                        cancellationToken) ? 1 : 0;
+                    break;
+                case PendingChangeKinds.AddCustomQuizElements:
+                    applied += await ApplyAddCustomQuizElementsAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
+                    break;
+                case PendingChangeKinds.ConfigureCustomQuizElement:
+                    applied += await ApplyConfigureCustomQuizElementAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
+                    break;
+                case PendingChangeKinds.RemoveCustomQuizElement:
+                    applied += await ApplyRemoveCustomQuizElementAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
+                    break;
                 default:
                     _logger.LogWarning("Unknown pending change kind {Kind}; skipping.", change.Kind);
                     break;
             }
         }
 
+        if (quiz != null && batch.DeletedWordIds.Count > 0)
+        {
+            await new CustomQuizService(_context).PruneWordBindingsAsync(quiz.Id, batch.DeletedWordIds, cancellationToken);
+        }
         await _context.SaveChangesAsync(cancellationToken);
-        return new AssistantApplyResult(applied, createdQuizId, createdCollectionId);
+        return new AssistantApplyResult(applied, createdQuizId, createdCollectionId, createdCustomQuizId);
     }
 
     private static bool RequiresQuizContext(PendingChange change)
@@ -137,6 +223,7 @@ public sealed class ChangeApplier : IChangeApplier
         public List<QuizSentence> Sentences { get; } = [];
         public Dictionary<Guid, QuizSentence> SentencesById { get; } = new();
         public HashSet<string> SentenceTexts { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public HashSet<string> DeletedWordIds { get; } = new(StringComparer.Ordinal);
     }
 
     private async Task<QuizContentBatch> LoadQuizContentAsync(
@@ -298,6 +385,7 @@ public sealed class ChangeApplier : IChangeApplier
         }
 
         batch.WordsById.Remove(wordId);
+        batch.DeletedWordIds.Add(wordId);
         _context.Words.Remove(word);
         return true;
     }
@@ -338,7 +426,7 @@ public sealed class ChangeApplier : IChangeApplier
         return true;
     }
 
-    private async Task<Guid?> ApplyCreateQuizAsync(JsonElement payload, string userId, CancellationToken ct)
+    private async Task<CreatedQuizResult?> ApplyCreateQuizAsync(JsonElement payload, string userId, CancellationToken ct)
     {
         var name = GetString(payload, "name");
         var sourceLanguage = GetString(payload, "source_language");
@@ -361,14 +449,181 @@ public sealed class ChangeApplier : IChangeApplier
                 userId,
                 collectionId, cancellationToken: ct);
 
-            AddStarterWords(payload, quiz);
-            return quiz.Id;
+            var starterWords = AddStarterWords(payload, quiz);
+            Guid? customQuizId = null;
+            if (payload.TryGetProperty("custom_quiz", out var customQuiz)
+                && customQuiz.ValueKind == JsonValueKind.Object)
+            {
+                await _context.SaveChangesAsync(ct);
+                var customName = GetString(customQuiz, "name");
+                var document = ParseCustomQuizDocument(customQuiz, starterWords);
+                var createdCustom = await new CustomQuizService(_context).CreateAsync(new SaveCustomQuizRequest
+                {
+                    QuizId = quiz.Id,
+                    Name = string.IsNullOrWhiteSpace(customName) ? $"{quiz.Name} custom quiz" : customName,
+                    Document = document,
+                }, userId, ct);
+                customQuizId = createdCustom.Id;
+            }
+            return new CreatedQuizResult(quiz.Id, customQuizId, starterWords);
         }
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "Assistant could not create quiz {QuizName} for user {UserId}", name, userId);
             return null;
         }
+    }
+
+    private async Task<Guid?> ApplyCreateCustomQuizAsync(JsonElement payload, string userId, CancellationToken ct)
+    {
+        var quizId = GetNullableGuid(payload, "quiz_id");
+        var name = GetString(payload, "name");
+        if (!quizId.HasValue || string.IsNullOrWhiteSpace(name))
+        {
+            return null;
+        }
+
+        try
+        {
+            var created = await new CustomQuizService(_context).CreateAsync(new SaveCustomQuizRequest
+            {
+                QuizId = quizId.Value,
+                Name = name,
+                Document = ParseCustomQuizDocument(payload),
+            }, userId, ct);
+            return created.Id;
+        }
+        catch (QuizNotFoundException)
+        {
+            return null;
+        }
+    }
+
+    private async Task<bool> ApplyAddCustomQuizElementsAsync(JsonElement payload, string userId, CancellationToken ct)
+    {
+        var customQuizId = GetNullableGuid(payload, "custom_quiz_id");
+        if (!customQuizId.HasValue)
+        {
+            return false;
+        }
+
+        var service = new CustomQuizService(_context);
+        var editor = await service.GetForEditorAsync(customQuizId.Value, userId, ct);
+        if (editor == null)
+        {
+            return false;
+        }
+
+        var nextOrder = editor.Document.Blocks.Count == 0 ? 0 : editor.Document.Blocks.Max(block => block.Order) + 1;
+        var additions = ParseCustomQuizBlocks(payload);
+        foreach (var block in additions)
+        {
+            block.Order = nextOrder++;
+        }
+        editor.Document.Blocks.AddRange(additions);
+        return await UpdateCustomQuizAsync(service, editor, userId, ct);
+    }
+
+    private async Task<bool> ApplyAddCustomQuizElementAsync(
+        JsonElement payload,
+        string userId,
+        IReadOnlyDictionary<string, Guid> customQuizIdsByDraftRef,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> wordIdsByCustomQuizDraftRef,
+        CancellationToken ct)
+    {
+        var customQuizId = GetNullableGuid(payload, "custom_quiz_id");
+        var draftRef = GetString(payload, "custom_quiz_ref");
+        if (!customQuizId.HasValue
+            && (!string.IsNullOrWhiteSpace(draftRef) && customQuizIdsByDraftRef.TryGetValue(draftRef, out var resolved)))
+        {
+            customQuizId = resolved;
+        }
+        if (!customQuizId.HasValue
+            || !payload.TryGetProperty("block", out var blockElement)
+            || blockElement.ValueKind != JsonValueKind.Object)
+        {
+            return false;
+        }
+
+        var service = new CustomQuizService(_context);
+        var editor = await service.GetForEditorAsync(customQuizId.Value, userId, ct);
+        if (editor == null)
+        {
+            return false;
+        }
+
+        IReadOnlyDictionary<string, string>? wordIds = null;
+        if (!string.IsNullOrWhiteSpace(draftRef))
+        {
+            wordIdsByCustomQuizDraftRef.TryGetValue(draftRef, out wordIds);
+        }
+        var block = ParseCustomQuizBlock(
+            blockElement,
+            editor.Document.Blocks.Count == 0 ? 0 : editor.Document.Blocks.Max(item => item.Order) + 1,
+            wordIds);
+        editor.Document.Blocks.Add(block);
+        return await UpdateCustomQuizAsync(service, editor, userId, ct);
+    }
+
+    private async Task<bool> ApplyConfigureCustomQuizElementAsync(JsonElement payload, string userId, CancellationToken ct)
+    {
+        var customQuizId = GetNullableGuid(payload, "custom_quiz_id");
+        var blockId = GetString(payload, "block_id");
+        if (!customQuizId.HasValue || string.IsNullOrWhiteSpace(blockId)
+            || !payload.TryGetProperty("settings", out var settings)
+            || settings.ValueKind != JsonValueKind.Object)
+        {
+            return false;
+        }
+
+        var service = new CustomQuizService(_context);
+        var editor = await service.GetForEditorAsync(customQuizId.Value, userId, ct);
+        var block = editor?.Document.Blocks.FirstOrDefault(item => item.Id == blockId);
+        if (editor == null || block == null)
+        {
+            return false;
+        }
+
+        ApplyBlockSettings(block, settings);
+        return await UpdateCustomQuizAsync(service, editor, userId, ct);
+    }
+
+    private async Task<bool> ApplyRemoveCustomQuizElementAsync(JsonElement payload, string userId, CancellationToken ct)
+    {
+        var customQuizId = GetNullableGuid(payload, "custom_quiz_id");
+        var blockId = GetString(payload, "block_id");
+        if (!customQuizId.HasValue || string.IsNullOrWhiteSpace(blockId))
+        {
+            return false;
+        }
+
+        var service = new CustomQuizService(_context);
+        var editor = await service.GetForEditorAsync(customQuizId.Value, userId, ct);
+        if (editor == null || editor.Document.Blocks.RemoveAll(block => block.Id == blockId) == 0)
+        {
+            return false;
+        }
+        foreach (var block in editor.Document.Blocks)
+        {
+            block.TargetInputIds.RemoveAll(id => id == blockId);
+        }
+        return await UpdateCustomQuizAsync(service, editor, userId, ct);
+    }
+
+    private static async Task<bool> UpdateCustomQuizAsync(
+        CustomQuizService service,
+        CustomQuizEditorDto editor,
+        string userId,
+        CancellationToken ct)
+    {
+        var updated = await service.UpdateAsync(editor.Id!.Value, new SaveCustomQuizRequest
+        {
+            QuizId = editor.QuizId,
+            Name = editor.Name,
+            Document = editor.Document,
+            RowVersion = editor.RowVersion,
+        }, userId, ct);
+        return updated != null;
     }
 
     private async Task<Guid?> ApplyCreateCollectionAsync(JsonElement payload, string userId, CancellationToken ct)
@@ -446,12 +701,13 @@ public sealed class ChangeApplier : IChangeApplier
         return Guid.TryParse(value, out var parsed) ? parsed : null;
     }
 
-    private void AddStarterWords(JsonElement payload, Quiz quiz)
+    private Dictionary<string, string> AddStarterWords(JsonElement payload, Quiz quiz)
     {
+        var idsByWord = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (!payload.TryGetProperty("words", out var wordsElement)
             || wordsElement.ValueKind != JsonValueKind.Array)
         {
-            return;
+            return idsByWord;
         }
 
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -471,14 +727,193 @@ public sealed class ChangeApplier : IChangeApplier
                 continue;
             }
 
+            var id = Guid.NewGuid().ToString("N");
             _context.Words.Add(new Word
             {
-                Id = Guid.NewGuid().ToString("N"),
+                Id = id,
                 QuizId = quiz.Id,
                 Lemma = word,
                 Translation = translation,
             });
+            idsByWord[word] = id;
+        }
+        return idsByWord;
+    }
+
+    private static CustomQuizDocumentV1 ParseCustomQuizDocument(
+        JsonElement source,
+        IReadOnlyDictionary<string, string>? idsByWord = null) =>
+        new()
+        {
+            SchemaVersion = 1,
+            StylePreset = FirstNonBlank(GetString(source, "style_preset"), CustomQuizStylePresets.Editorial),
+            Blocks = ParseCustomQuizBlocks(source, idsByWord),
+        };
+
+    private static List<CustomQuizBlockV1> ParseCustomQuizBlocks(
+        JsonElement source,
+        IReadOnlyDictionary<string, string>? idsByWord = null)
+    {
+        if (!source.TryGetProperty("blocks", out var blocks) || blocks.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var parsed = new List<CustomQuizBlockV1>();
+        var order = 0;
+        foreach (var item in blocks.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+            parsed.Add(ParseCustomQuizBlock(item, order++, idsByWord));
+        }
+        return parsed;
+    }
+
+    private static CustomQuizBlockV1 ParseCustomQuizBlock(
+        JsonElement item,
+        int order,
+        IReadOnlyDictionary<string, string>? idsByWord)
+    {
+        var type = GetString(item, "type");
+        var block = new CustomQuizBlockV1
+        {
+            Id = FirstNonBlank(GetString(item, "id"), Guid.NewGuid().ToString("N")),
+            Type = type,
+            Order = order,
+            ColumnSpan = GetInt(item, "column_span", DefaultSpan(type)),
+            GridColumn = GetInt(item, "grid_column", 0),
+            GridRow = GetInt(item, "grid_row", 0),
+            Text = GetOptionalString(item, "text"),
+            Label = GetOptionalString(item, "label"),
+            Binding = ParseBinding(item, "binding", idsByWord),
+            ExpectedBinding = ParseBinding(item, "expected_binding", idsByWord),
+            ExpectedText = GetOptionalString(item, "expected_text"),
+            ExpectedChecked = GetBool(item, "expected_checked"),
+            TargetInputIds = GetStringArray(item, "target_input_ids"),
+        };
+
+        if (item.TryGetProperty("options", out var options) && options.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var option in options.EnumerateArray())
+            {
+                var binding = ParseBindingValue(option.TryGetProperty("binding", out var value) ? value : default, idsByWord);
+                if (binding == null)
+                {
+                    continue;
+                }
+                block.Options.Add(new CustomQuizOptionV1
+                {
+                    Id = FirstNonBlank(GetString(option, "id"), Guid.NewGuid().ToString("N")),
+                    Binding = binding,
+                    IsCorrect = GetBool(option, "is_correct"),
+                });
+            }
+        }
+        return block;
+    }
+
+    private static void ApplyBlockSettings(CustomQuizBlockV1 block, JsonElement settings)
+    {
+        if (HasProperty(settings, "type")) block.Type = GetString(settings, "type");
+        if (HasProperty(settings, "column_span")) block.ColumnSpan = GetInt(settings, "column_span", block.ColumnSpan);
+        if (HasProperty(settings, "grid_column")) block.GridColumn = GetInt(settings, "grid_column", block.GridColumn);
+        if (HasProperty(settings, "grid_row")) block.GridRow = GetInt(settings, "grid_row", block.GridRow);
+        if (HasProperty(settings, "text")) block.Text = GetOptionalString(settings, "text");
+        if (HasProperty(settings, "label")) block.Label = GetOptionalString(settings, "label");
+        if (HasProperty(settings, "binding")) block.Binding = ParseBinding(settings, "binding");
+        if (HasProperty(settings, "expected_binding")) block.ExpectedBinding = ParseBinding(settings, "expected_binding");
+        if (HasProperty(settings, "expected_text"))
+        {
+            block.ExpectedText = GetOptionalString(settings, "expected_text")?.Trim();
+            if (!string.IsNullOrWhiteSpace(block.ExpectedText) && !HasProperty(settings, "expected_binding"))
+            {
+                block.ExpectedBinding = null;
+            }
+        }
+        if (HasProperty(settings, "expected_checked")) block.ExpectedChecked = GetBool(settings, "expected_checked");
+        if (HasProperty(settings, "target_input_ids")) block.TargetInputIds = GetStringArray(settings, "target_input_ids");
+        if (settings.TryGetProperty("options", out var options) && options.ValueKind == JsonValueKind.Array)
+        {
+            block.Options = [];
+            foreach (var option in options.EnumerateArray())
+            {
+                var binding = ParseBindingValue(option.TryGetProperty("binding", out var value) ? value : default, null);
+                if (binding == null) continue;
+                block.Options.Add(new CustomQuizOptionV1
+                {
+                    Id = FirstNonBlank(GetString(option, "id"), Guid.NewGuid().ToString("N")),
+                    Binding = binding,
+                    IsCorrect = GetBool(option, "is_correct"),
+                });
+            }
         }
     }
+
+    private static CustomQuizWordBindingV1? ParseBinding(
+        JsonElement parent,
+        string property,
+        IReadOnlyDictionary<string, string>? idsByWord = null)
+    {
+        if (!parent.TryGetProperty(property, out var binding) || binding.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+        return ParseBindingValue(binding, idsByWord);
+    }
+
+    private static CustomQuizWordBindingV1? ParseBindingValue(
+        JsonElement binding,
+        IReadOnlyDictionary<string, string>? idsByWord)
+    {
+        if (binding.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+        var wordId = FirstNonBlank(GetString(binding, "word_id"), GetString(binding, "wordId"));
+        var word = GetString(binding, "word");
+        if (string.IsNullOrWhiteSpace(wordId)
+            && !string.IsNullOrWhiteSpace(word)
+            && idsByWord != null)
+        {
+            idsByWord.TryGetValue(word, out wordId);
+        }
+        return new CustomQuizWordBindingV1
+        {
+            WordId = wordId ?? string.Empty,
+            Field = FirstNonBlank(GetString(binding, "field"), CustomQuizWordFields.Lemma),
+        };
+    }
+
+    private static int DefaultSpan(string type) => type is CustomQuizBlockTypes.Heading or CustomQuizBlockTypes.InstructionLabel
+        ? 12
+        : type is CustomQuizBlockTypes.PromptLabel or CustomQuizBlockTypes.TranslationLabel or CustomQuizBlockTypes.SubmitButton
+            ? 4
+            : 6;
+
+    private static bool HasProperty(JsonElement element, string property) => element.TryGetProperty(property, out _);
+
+    private static int GetInt(JsonElement element, string property, int fallback) =>
+        element.TryGetProperty(property, out var value) && value.TryGetInt32(out var parsed) ? parsed : fallback;
+
+    private static bool GetBool(JsonElement element, string property) =>
+        element.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False && value.GetBoolean();
+
+    private static string? GetOptionalString(JsonElement element, string property) =>
+        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+    private static List<string> GetStringArray(JsonElement element, string property) =>
+        element.TryGetProperty(property, out var values) && values.ValueKind == JsonValueKind.Array
+            ? values.EnumerateArray().Where(value => value.ValueKind == JsonValueKind.String).Select(value => value.GetString()!).ToList()
+            : [];
+
+    private static string FirstNonBlank(string? value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value;
+
+    private sealed record CreatedQuizResult(
+        Guid QuizId,
+        Guid? CustomQuizId,
+        IReadOnlyDictionary<string, string> StarterWordIds);
 
 }

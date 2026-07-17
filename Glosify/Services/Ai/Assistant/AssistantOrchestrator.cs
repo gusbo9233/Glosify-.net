@@ -12,6 +12,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 {
     private const int MaxToolTurns = 24;
     private const string NewChatTitle = "New chat";
+    private const string InlineBlankMarker = "{{blank}}";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly GlosifyContext _context;
@@ -135,6 +136,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         string? focusedWordId = null,
         string? model = null,
         AssistantDocumentContext? documentContext = null,
+        Guid? customQuizId = null,
         CancellationToken cancellationToken = default)
     {
         var thread = await LoadOwnedGlobalThreadAsync(threadId, userId, cancellationToken);
@@ -146,6 +148,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             focusedWordId,
             model,
             documentContext,
+            customQuizId,
             cancellationToken);
     }
 
@@ -167,6 +170,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             focusedWordId,
             model,
             documentContext,
+            null,
             cancellationToken);
     }
 
@@ -186,6 +190,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             null,
             model,
             documentContext,
+            null,
             cancellationToken);
     }
 
@@ -297,10 +302,12 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         string? focusedWordId,
         string? model,
         AssistantDocumentContext? documentContext,
+        Guid? customQuizId,
         CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
         var contextQuiz = await ValidateContextQuizAsync(contextQuizId, userId, cancellationToken);
+        var contextCustomQuiz = await ValidateCustomQuizAsync(customQuizId, contextQuiz, userId, cancellationToken);
         var focusedWord = contextQuiz is null ? null : await LoadFocusedWordAsync(contextQuiz.Id, focusedWordId, cancellationToken);
         var documentPage = documentContext is null
             ? null
@@ -340,6 +347,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var toolContext = new AgentToolContext
         {
             QuizId = contextQuiz?.Id,
+            CustomQuizId = contextCustomQuiz?.Id,
             UserId = userId,
             CurrentLanguage = contextQuiz?.TargetLanguage ?? _languageContext.CurrentLanguage,
             FocusedWordId = focusedWord?.Id,
@@ -348,7 +356,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
         var systemInstruction = contextQuiz is null
             ? BuildGlobalSystemInstruction(_languageContext.CurrentLanguage, documentPage)
-            : BuildSystemInstruction(contextQuiz, focusedWord, documentPage);
+            : BuildSystemInstruction(contextQuiz, focusedWord, documentPage, contextCustomQuiz);
         var declarations = contextQuiz is null
             ? _tools.GlobalDeclarations
             : _tools.GlobalDeclarations.Concat(_tools.Declarations).ToList();
@@ -579,6 +587,31 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             ?? throw new QuizNotFoundException();
     }
 
+    private async Task<CustomQuiz?> ValidateCustomQuizAsync(
+        Guid? customQuizId,
+        Quiz? quiz,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        if (!customQuizId.HasValue)
+        {
+            return null;
+        }
+
+        if (quiz == null)
+        {
+            throw new InvalidOperationException("Choose the source quiz for this custom quiz.");
+        }
+
+        return await _context.CustomQuizzes
+            .AsNoTracking()
+            .Include(item => item.Quiz)
+            .FirstOrDefaultAsync(item => item.Id == customQuizId.Value
+                && item.QuizId == quiz.Id
+                && item.Quiz.UserId == userId, cancellationToken)
+            ?? throw new InvalidOperationException("That custom quiz was not found.");
+    }
+
     private async Task<IReadOnlyList<AssistantChatSummary>> BuildChatSummariesAsync(
         IReadOnlyList<AssistantThread> threads,
         CancellationToken cancellationToken)
@@ -723,7 +756,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             page.ExtractionWarning);
     }
 
-    private static string BuildSystemInstruction(Quiz quiz, Word? focusedWord, DocumentPageContext? documentPage)
+    private static string BuildSystemInstruction(
+        Quiz quiz,
+        Word? focusedWord,
+        DocumentPageContext? documentPage,
+        CustomQuiz? customQuiz)
     {
         var focusInstruction = focusedWord == null
             ? string.Empty
@@ -737,6 +774,14 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var documentInstruction = documentPage == null
             ? string.Empty
             : BuildDocumentInstruction(documentPage);
+        var customQuizInstruction = customQuiz == null
+            ? string.Empty
+            : $"""
+
+        Current custom quiz creator context:
+        - The open custom quiz is "{customQuiz.Name}" with id {customQuiz.Id}.
+        - Use get_custom_quiz before changing its elements, then add, configure, or remove elements as requested.
+        """;
 
         return $"""
         You are Glosify's language-learning assistant. The user is learning "{quiz.TargetLanguage}" as a speaker of "{quiz.SourceLanguage}", and is currently working in a quiz named "{quiz.Name}".
@@ -744,16 +789,20 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         You are a general language-learning companion: answer questions about grammar, vocabulary, usage, culture, and study strategy conversationally, and manage the quiz's content when the user asks for that. Use your own judgment about what the user wants; the guidance below describes defaults, and the user's explicit wishes always win.
         {focusInstruction}
         {documentInstruction}
+        {customQuizInstruction}
 
         How tools work:
-        - Read-only tools (list_words, search_words, get_word, get_quiz_summary, list_sentences, list_quizzes, list_collections) execute immediately and return their results to you.
-        - Mutating tools (add_word, add_words, add_sentence, add_sentences, edit_word, edit_words, edit_sentence, edit_sentences, delete_word, repair_sentence, delete_sentence, create_quiz, create_collection, move_quiz, rename_collection, move_collection) propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool. Because the user reviews everything, you can propose changes freely when they seem helpful.
+        - Read-only tools (list_words, search_words, get_word, get_quiz_summary, list_sentences, list_quizzes, list_collections, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz) execute immediately and return their results to you.
+        - Mutating tools, including the custom quiz element tools, propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool. Because the user reviews everything, you can propose changes freely when they seem helpful.
         - When adding or editing more than one word, prefer add_words or edit_words over repeated single-word calls.
         - When adding or editing more than one sentence, prefer add_sentences or edit_sentences over repeated single-sentence calls.
         - Use list_words when you need to know what is already in the quiz before proposing edits or deletions.
         - Use search_words when looking for specific vocabulary and get_quiz_summary when the user asks about quiz size, language, collection, or visibility.
         - Use list_sentences before editing, repairing, or deleting quiz sentences. Prefer edit_sentence/edit_sentences for id-based edits; repair_sentence replaces every exact text match.
         - For library-level requests, use list_collections and list_quizzes to find existing structure before creating, moving, or renaming items. Never invent quiz or collection ids — ask the user if you cannot identify the item.
+        - For custom quizzes, inspect an existing document first. Before creating or substantially redesigning one, call list_custom_quiz_templates and use the best template as visual and layout guidance. Pass its template_id during creation. Prefer the compact textbook exercise patterns represented by the Textbook drill template: a short heading and instruction followed by consecutive rows, with minimal card chrome. A playable document needs exactly one submit_button, exactly one feedback_message, and at least one answer control. Every answer control must have a specific learner-visible label that contains its question or gap; multiple answer controls must have distinct labels. Text inputs need either an expected word binding or literal expected_text; choice controls need at least two options and valid correct selections. Use stable descriptive element ids and non-overlapping 12-column layout coordinates.
+        - "Custom quiz" is a specific interactive quiz-builder artifact, not a synonym for a vocabulary quiz. With the current backing quiz, first call create_custom_quiz to queue only its empty shell. Then call add_label, add_text_input, add_checkbox, add_choice, add_word_bank, add_submit_button, or add_feedback_message separately for every element. Use add_custom_quiz_element only for an element the typed tools cannot express. Never send a blocks array or a complete custom document in a creation or element call. create_vocabulary_quiz is only for standard word-and-translation quizzes.
+        - A single-line text_input is a compact inline blank. Put {InlineBlankMarker} exactly where the input belongs in its label, for example "1. ja będ{InlineBlankMarker} jutro w domu." Never include underscore or dot runs: they create a fake blank beside the real control. For conjugation, cloze, and word transformation, normally use one text_input per compact row and do not add a separate prompt_label for the same item. Pack rows consecutively instead of making tall cards. For fill-in-the-ending questions, set expected_text to only the literal ending (for example "ę" or "esz"), not the full word unless the user asks for it.
 
         Defaults (override when the user asks for something different):
         - When extracting vocabulary from text, default to a complete extraction: every unique word except proper names, including closed-class words such as articles, pronouns, conjunctions, prepositions, particles, and auxiliary verbs. If the user asks for a selection instead (e.g. "the hard words", "just the verbs", "the ten most useful"), follow their criteria.
@@ -789,13 +838,16 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         {documentInstruction}
 
         How tools work:
-        - Read-only tools (list_collections, list_quizzes) execute immediately and return their results to you.
-        - Mutating tools (create_collection, create_quiz, move_quiz, rename_collection, move_collection) propose changes that are queued for the user to review and Apply. Because the user reviews everything, you can propose changes freely when they seem helpful.
+        - Read-only tools (list_collections, list_quizzes, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz) execute immediately and return their results to you.
+        - Mutating tools, including custom quiz creation and element tools, propose changes that are queued for the user to review and Apply. Because the user reviews everything, you can propose changes freely when they seem helpful.
         - Use list_collections and list_quizzes before proposing library changes unless the user gave an exact id through the UI.
         - Do not invent quiz or collection ids. If you cannot identify an item or destination unambiguously, ask the user to clarify.
+        - "Custom quiz" means an interactive quiz-builder artifact. It is distinct from the standard word-and-translation quiz created by create_vocabulary_quiz.
 
         Defaults (override when the user asks for something different):
-        - If the user asks to create a quiz with starter vocabulary, include those words in the create_quiz tool call.
+        - If the user asks for a standard vocabulary quiz with starter vocabulary, include those words in create_vocabulary_quiz.
+        - If the user asks for a custom quiz from a book page or pasted text and no backing quiz exists yet, first call list_custom_quiz_templates, prefer the Textbook drill template for textbook-derived conjugation, cloze, and transformation work, and pass its template_id to create_custom_quiz_from_content. Then call add_label, add_text_input, add_checkbox, add_choice, add_word_bank, add_submit_button, or add_feedback_message once for each element, following that template's layout guidance. Bind word-backed elements to the exact word string in the starter words. Never send a blocks array or complete custom document in one call. Finish with exactly one submit button and one feedback message.
+        - A single-line text_input is a compact inline blank. Put {InlineBlankMarker} exactly where the real input belongs in its label, for example "1. ja będ{InlineBlankMarker} jutro w domu." Never draw blanks with underscores or dots. For textbook conjugation, cloze, and transformation exercises, use one text_input per compact consecutive row and do not add a separate prompt label for the same item. For endings, expected_text is only the literal ending (for example "ę" or "esz"), not the whole word unless requested.
         - When extracting starter vocabulary from text, default to a complete extraction: every unique word except proper names, including closed-class words such as articles, pronouns, conjunctions, prepositions, particles, and auxiliary verbs. If the user asks for a selection instead, follow their criteria.
         - Convert inflected forms to dictionary headwords, merge repeated headwords, and preserve first-appearance order, unless the user wants the exact forms.
         - If the current book page has no selectable text, explain that Glosify cannot read this page and suggest choosing another page or pasting text.
@@ -920,6 +972,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                 PendingChangeKinds.MoveQuiz => BuildMoveQuizSummary(change.Payload),
                 PendingChangeKinds.RenameCollection => BuildRenameCollectionSummary(change.Payload),
                 PendingChangeKinds.MoveCollection => BuildMoveCollectionSummary(change.Payload),
+                PendingChangeKinds.CreateCustomQuiz => $"Create custom quiz \"{GetString(change.Payload, "name")}\"",
+                PendingChangeKinds.AddCustomQuizElement => BuildAddCustomQuizElementSummary(change.Payload),
+                PendingChangeKinds.AddCustomQuizElements => $"Add custom quiz elements to \"{GetString(change.Payload, "custom_quiz_name")}\"",
+                PendingChangeKinds.ConfigureCustomQuizElement => $"Configure element {GetString(change.Payload, "block_id")} in \"{GetString(change.Payload, "custom_quiz_name")}\"",
+                PendingChangeKinds.RemoveCustomQuizElement => $"Remove element {GetString(change.Payload, "block_id")} from \"{GetString(change.Payload, "custom_quiz_name")}\"",
                 _ => change.Kind,
             };
         }
@@ -932,6 +989,20 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     private static string BuildAddWordSummary(JsonElement payload)
     {
         return $"Add {GetString(payload, "word")} -> {GetString(payload, "translation")}";
+    }
+
+    private static string BuildAddCustomQuizElementSummary(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("block", out var block) || block.ValueKind != JsonValueKind.Object)
+        {
+            return "Add custom quiz element";
+        }
+        var type = GetString(block, "type");
+        var id = GetString(block, "id");
+        var visible = GetString(block, "label");
+        if (string.IsNullOrWhiteSpace(visible)) visible = GetString(block, "text");
+        var detail = string.IsNullOrWhiteSpace(visible) ? id : Truncate(visible, 70);
+        return $"Add {type} {detail} to \"{GetString(payload, "custom_quiz_name")}\"";
     }
 
     private static string BuildAddSentenceSummary(JsonElement payload)
@@ -1027,7 +1098,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var name = GetString(payload, "name");
         var source = GetString(payload, "source_language");
         var target = GetString(payload, "target_language");
-        return $"Create quiz \"{name}\" ({source} -> {target})";
+        var includesCustomQuiz = payload.TryGetProperty("custom_quiz", out var customQuiz)
+            && customQuiz.ValueKind == JsonValueKind.Object;
+        return includesCustomQuiz
+            ? $"Create quiz \"{name}\" and custom quiz \"{GetString(customQuiz, "name")}\" ({source} -> {target})"
+            : $"Create quiz \"{name}\" ({source} -> {target})";
     }
 
     private static string BuildCreateCollectionSummary(JsonElement payload)

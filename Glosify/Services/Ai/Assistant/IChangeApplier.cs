@@ -12,4 +12,5 @@ public interface IChangeApplier
 public sealed record AssistantApplyResult(
     int Applied,
     Guid? CreatedQuizId = null,
-    Guid? CreatedCollectionId = null);
+    Guid? CreatedCollectionId = null,
+    Guid? CreatedCustomQuizId = null);

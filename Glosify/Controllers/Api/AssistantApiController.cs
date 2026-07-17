@@ -3,6 +3,7 @@ using Glosify.Filters;
 using Glosify.Services;
 using Microsoft.AspNetCore.Mvc;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Models.CustomQuizzes;
 
 namespace Glosify.Controllers.Api;
 
@@ -83,6 +84,7 @@ public class AssistantApiController : ApiControllerBase
                 input.DocumentId is Guid documentId
                     ? new AssistantDocumentContext(documentId, input.PageNumber ?? 1)
                     : null,
+                input.CustomQuizId,
                 cancellationToken);
             return Ok(response);
         }
@@ -103,6 +105,10 @@ public class AssistantApiController : ApiControllerBase
         catch (InvalidOperationException ex)
         {
             return NotFound(ex.Message);
+        }
+        catch (CustomQuizValidationException ex)
+        {
+            return BadRequest(new { error = string.Join(" ", ex.Errors), errors = ex.Errors });
         }
     }
 

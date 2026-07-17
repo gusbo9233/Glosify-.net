@@ -40,8 +40,13 @@
     <div class="classroom-content-actions">
         @if (assignment.QuizId.HasValue)
         {
+            var customQuizzes = parent.CustomQuizzesByQuizId.GetValueOrDefault(assignment.QuizId.Value, []);
             <a class="btn-secondary" asp-controller="FlashcardQuiz" asp-action="Index" asp-route-id="@assignment.QuizId" asp-route-classroomId="@parent.Classroom.Id">Flashcards</a>
             <a class="btn-secondary" asp-controller="TypingQuiz" asp-action="Index" asp-route-id="@assignment.QuizId" asp-route-classroomId="@parent.Classroom.Id">Typing</a>
+            @foreach (var customQuiz in customQuizzes)
+            {
+                <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id" asp-route-classroomId="@parent.Classroom.Id">@customQuiz.Name</a>
+            }
         }
         @if (parent.IsTeacher)
         {

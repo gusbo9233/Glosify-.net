@@ -18,4 +18,9 @@ public static class PendingChangeKinds
     public const string MoveQuiz = "move_quiz";
     public const string RenameCollection = "rename_collection";
     public const string MoveCollection = "move_collection";
+    public const string CreateCustomQuiz = "create_custom_quiz";
+    public const string AddCustomQuizElement = "add_custom_quiz_element";
+    public const string AddCustomQuizElements = "add_custom_quiz_elements";
+    public const string ConfigureCustomQuizElement = "configure_custom_quiz_element";
+    public const string RemoveCustomQuizElement = "remove_custom_quiz_element";
 }

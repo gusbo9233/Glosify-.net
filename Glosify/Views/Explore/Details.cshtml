@@ -38,6 +38,27 @@
         </div>
     </section>
 
+    @if (Model.CustomQuizzes.Any())
+    {
+        <section class="custom-quiz-library">
+            <div class="collection-header">
+                <div>
+                    <h2 class="collection-title">Custom quizzes</h2>
+                    <p class="collection-subtitle">Exercises created from this quiz's vocabulary.</p>
+                </div>
+            </div>
+            <div class="custom-quiz-card-grid">
+                @foreach (var customQuiz in Model.CustomQuizzes)
+                {
+                    <article class="custom-quiz-card">
+                        <h3>@customQuiz.Name</h3>
+                        <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id">Play</a>
+                    </article>
+                }
+            </div>
+        </section>
+    }
+
     <section>
         <div class="collection-header">
             <div>

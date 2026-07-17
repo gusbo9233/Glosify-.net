@@ -1,0 +1,116 @@
+@model CustomQuizEditorViewModel
+@using System.Text.Json
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Model.Editor.Id.HasValue ? $"Edit {Model.Editor.Name}" : "New custom quiz";
+    ViewData["AssistantQuizId"] = Model.Quiz.Id;
+    ViewData["AssistantCustomQuizId"] = Model.Editor.Id;
+    ViewData["AssistantTitle"] = "Quiz builder assistant";
+    ViewData["AssistantContextLabel"] = Model.Editor.Name;
+    ViewData["AssistantEmptyText"] = "Ask me to add, configure, or arrange quiz elements.";
+    ViewData["AssistantPlaceholder"] = "Add questions to this custom quiz...";
+    var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+}
+
+<section class="custom-builder" data-custom-builder
+         data-quiz-id="@Model.Quiz.Id"
+         data-custom-id="@Model.Editor.Id"
+         data-custom-style="@Model.Editor.Document.StylePreset"
+         data-row-version="@Model.Editor.RowVersion">
+    @Html.AntiForgeryToken()
+    <textarea hidden data-custom-document>@JsonSerializer.Serialize(Model.Editor.Document, jsonOptions)</textarea>
+    <textarea hidden data-custom-words>@JsonSerializer.Serialize(Model.Words.Select(word => new { id = word.Id, lemma = word.Lemma, translation = word.Translation }), jsonOptions)</textarea>
+    <textarea hidden data-custom-templates>@JsonSerializer.Serialize(Model.Templates, jsonOptions)</textarea>
+
+    <header class="custom-builder-header">
+        <div>
+            <a class="custom-builder-back" asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.Quiz.Id">&larr; @Model.Quiz.Name</a>
+            <input class="custom-builder-name" value="@Model.Editor.Name" maxlength="160" aria-label="Custom quiz name" data-custom-name />
+            <p>@Model.Quiz.SourceLanguage &rarr; @Model.Quiz.TargetLanguage</p>
+        </div>
+        <div class="custom-builder-actions">
+            <button class="btn-secondary" type="button" data-custom-undo disabled>Undo</button>
+            <button class="btn-secondary" type="button" data-custom-preview>Preview</button>
+            <button class="btn-submit" type="button" data-custom-save>Save</button>
+        </div>
+    </header>
+    <div class="panel-message error" data-custom-errors hidden></div>
+    <div class="panel-message success" data-custom-message hidden></div>
+    <div class="custom-builder-runtime" data-custom-runtime role="status" aria-live="polite">
+        Loading editor controls&hellip;
+    </div>
+
+    <section class="custom-template-gallery" aria-labelledby="custom-template-title">
+        <div class="custom-template-heading">
+            <div>
+                <span class="custom-template-eyebrow">Design starters</span>
+                <h2 id="custom-template-title">Choose a visual direction</h2>
+            </div>
+            <p>Apply only the look, or replace the canvas with a complete layout built from this quiz&rsquo;s words.</p>
+        </div>
+        <div class="custom-template-grid">
+            @foreach (var template in Model.Templates)
+            {
+                <article class="custom-template-card custom-template-card-@template.StylePreset" data-template-card="@template.Id">
+                    <div class="custom-template-card-preview" aria-hidden="true">
+                        <span class="material-symbols-outlined">@template.Icon</span>
+                        <i></i><i></i><i></i>
+                    </div>
+                    <div class="custom-template-card-copy">
+                        <h3>@template.Name</h3>
+                        <p>@template.Description</p>
+                        <small>@template.BestFor</small>
+                    </div>
+                    <div class="custom-template-card-actions">
+                        <button type="button" class="btn-secondary" data-template-style="@template.Id">Use style</button>
+                        <button type="button" class="btn-linkish" data-template-apply="@template.Id">Use layout</button>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <div class="custom-builder-layout">
+        <aside class="custom-block-palette" aria-label="Quiz building blocks">
+            <h2>Blocks</h2>
+            <p>Drag onto any open area, or click to add automatically.</p>
+            @foreach (var block in new[] {
+                (CustomQuizBlockTypes.Heading, "Heading"), (CustomQuizBlockTypes.InstructionLabel, "Instruction"),
+                (CustomQuizBlockTypes.PromptLabel, "Word label"), (CustomQuizBlockTypes.TranslationLabel, "Translation label"),
+                (CustomQuizBlockTypes.TextInput, "Text input"), (CustomQuizBlockTypes.Textarea, "Long answer"),
+                (CustomQuizBlockTypes.Checkbox, "Checkbox"), (CustomQuizBlockTypes.RadioGroup, "Radio choices"),
+                (CustomQuizBlockTypes.MultiSelectGroup, "Checkbox choices"), (CustomQuizBlockTypes.SelectMenu, "Select menu"),
+                (CustomQuizBlockTypes.WordBank, "Word bank"), (CustomQuizBlockTypes.SubmitButton, "Submit button"),
+                (CustomQuizBlockTypes.FeedbackMessage, "Feedback") })
+            {
+                <div class="custom-palette-block">
+                    <button type="button" class="custom-palette-drag" data-palette-drag data-palette-type="@block.Item1" aria-label="Drag or click to add @block.Item2">
+                        <span class="material-symbols-outlined">drag_indicator</span>
+                        <span>@block.Item2</span>
+                    </button>
+                    <button type="button" class="custom-palette-add" data-palette-add data-palette-type="@block.Item1" aria-label="Add @block.Item2">
+                        <span class="material-symbols-outlined">add</span>
+                    </button>
+                </div>
+            }
+        </aside>
+
+        <main class="custom-canvas-wrap">
+            <div class="custom-canvas-toolbar">
+                <span><span class="material-symbols-outlined">grid_4x4</span> 12-column smart grid</span>
+                <small>Drag to place · edges snap · occupied spaces are avoided</small>
+            </div>
+            <div class="custom-canvas" data-custom-canvas aria-label="Custom quiz canvas"></div>
+            <div class="custom-preview" data-custom-preview-host hidden></div>
+        </main>
+
+        <aside class="custom-inspector" data-custom-inspector>
+            <h2>Properties</h2>
+            <p>Select a block to edit its content and bindings.</p>
+        </aside>
+    </div>
+</section>
+
+@section Scripts {
+<script src="~/js/custom-quiz-editor.js" asp-append-version="true"></script>
+}

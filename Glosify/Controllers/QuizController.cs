@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Glosify.Services.Ai;
 using Glosify.Services.Language;
 using Glosify.Services.Words;
+using Glosify.Services.CustomQuizzes;
 
 namespace Glosify.Controllers;
 
@@ -19,6 +20,7 @@ public class QuizController : Controller
     private readonly IQuizRepairService _quizRepairService;
     private readonly IImageTextExtractionService _imageTextExtractionService;
     private readonly ILanguageContext _languageContext;
+    private readonly ICustomQuizService _customQuizService;
 
     public QuizController(
         IQuizService quizService,
@@ -26,7 +28,8 @@ public class QuizController : Controller
         IWordService wordService,
         IQuizRepairService quizRepairService,
         IImageTextExtractionService imageTextExtractionService,
-        ILanguageContext languageContext)
+        ILanguageContext languageContext,
+        ICustomQuizService customQuizService)
     {
         _quizService = quizService;
         _collectionService = collectionService;
@@ -34,6 +37,7 @@ public class QuizController : Controller
         _quizRepairService = quizRepairService;
         _imageTextExtractionService = imageTextExtractionService;
         _languageContext = languageContext;
+        _customQuizService = customQuizService;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken = default)
@@ -84,6 +88,7 @@ public class QuizController : Controller
         {
             SelectedQuiz = selectedQuiz,
             Words = words,
+            CustomQuizzes = await _customQuizService.ListForQuizAsync(selectedQuiz.Id, cancellationToken: cancellationToken),
             Sentences = sentences.Select(s => new QuizSentenceViewModel
             {
                 Text = s.Text,

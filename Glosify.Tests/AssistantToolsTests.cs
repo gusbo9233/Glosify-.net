@@ -11,6 +11,165 @@ namespace Glosify.Tests;
 public class AssistantToolsTests
 {
     [Fact]
+    public void Declarations_SeparateVocabularyAndCustomQuizCreation()
+    {
+        using var db = CreateContext();
+        var names = new AssistantTools(db).GlobalDeclarations.Select(tool => tool.Name).ToList();
+
+        Assert.Contains("create_vocabulary_quiz", names);
+        Assert.Contains("create_custom_quiz", names);
+        Assert.Contains("create_custom_quiz_from_content", names);
+        Assert.Contains("list_custom_quiz_templates", names);
+        Assert.Contains("add_label", names);
+        Assert.Contains("add_text_input", names);
+        Assert.Contains("add_submit_button", names);
+        Assert.Contains("add_feedback_message", names);
+        Assert.DoesNotContain("add_custom_quiz_elements", names);
+        Assert.DoesNotContain("create_quiz", names);
+    }
+
+    [Fact]
+    public async Task CustomQuizTemplates_AreDiscoverableAndSetCreationStyle()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId, CurrentLanguage = "Polish" };
+
+        var listed = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "list_custom_quiz_templates", "{}", context, CancellationToken.None));
+        await tools.ExecuteAsync("create_custom_quiz", """{"name":"Styled","template_id":"aurora_cards"}""", context, CancellationToken.None);
+
+        Assert.Equal(4, listed.GetProperty("count").GetInt32());
+        Assert.Contains(listed.GetProperty("templates").EnumerateArray(), template =>
+            template.GetProperty("id").GetString() == "aurora_cards");
+        Assert.Equal("aurora", Assert.Single(context.PendingChanges).Payload.GetProperty("style_preset").GetString());
+    }
+
+    [Fact]
+    public async Task CreateQuiz_QueuesBundledCustomQuizFromStarterWords()
+    {
+        await using var db = CreateContext();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+
+        await tools.ExecuteAsync(
+            "create_quiz",
+            """
+            {
+              "name": "Page vocabulary",
+              "source_language": "English",
+              "words": [{ "word": "dom", "translation": "house" }],
+              "custom_quiz": {
+                "name": "Page practice",
+                "blocks": [
+                  { "id": "answer", "type": "text_input", "label": "Translate house", "expected_binding": { "word": "dom", "field": "lemma" } },
+                  { "id": "submit", "type": "submit_button", "text": "Check" },
+                  { "id": "feedback", "type": "feedback_message" }
+                ]
+              }
+            }
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Equal("Page practice", payload.GetProperty("custom_quiz").GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task CreateCustomQuizFromContent_QueuesShellThenIndividualElements()
+    {
+        await using var db = CreateContext();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+
+        await tools.ExecuteAsync(
+            "create_custom_quiz_from_content",
+            """
+            {
+              "quiz_name": "Verb endings source",
+              "custom_quiz_name": "Verb endings",
+              "source_language": "English",
+              "words": [{ "word": "być", "translation": "to be" }]
+            }
+            """,
+            context,
+            CancellationToken.None);
+        await tools.ExecuteAsync("add_label", """{"id":"instructions","text":"Write the ending"}""", context, CancellationToken.None);
+        await tools.ExecuteAsync("add_text_input", """{"id":"answer","label":"1. ja będ{{blank}} jutro w domu.","expected_text":"ę"}""", context, CancellationToken.None);
+        await tools.ExecuteAsync("add_submit_button", """{"id":"submit","text":"Check"}""", context, CancellationToken.None);
+        await tools.ExecuteAsync("add_feedback_message", """{"id":"feedback"}""", context, CancellationToken.None);
+
+        Assert.Equal(5, context.PendingChanges.Count);
+        Assert.Equal(PendingChangeKinds.CreateQuiz, context.PendingChanges[0].Kind);
+        Assert.All(context.PendingChanges.Skip(1), change => Assert.Equal(PendingChangeKinds.AddCustomQuizElement, change.Kind));
+        var answer = context.PendingChanges[2].Payload.GetProperty("block");
+        Assert.Equal("ę", answer.GetProperty("expected_text").GetString());
+        Assert.Equal(context.PendingChanges[0].Payload.GetProperty("custom_quiz").GetProperty("draft_ref").GetString(),
+            context.PendingChanges[2].Payload.GetProperty("custom_quiz_ref").GetString());
+    }
+
+    [Fact]
+    public async Task AtomicTextInputs_RejectMissingDuplicateAndDrawnBlankLabels()
+    {
+        await using var db = CreateContext();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+        await tools.ExecuteAsync("create_custom_quiz_from_content", """
+            {"quiz_name":"Verb source","custom_quiz_name":"Verb questions","source_language":"English","words":[{"word":"być","translation":"to be"}]}
+            """, context, CancellationToken.None);
+        var missing = await tools.ExecuteAsync("add_text_input", """{"id":"q1","expected_text":"ę"}""", context, CancellationToken.None);
+        var drawnBlank = await tools.ExecuteAsync("add_text_input", """{"id":"q0","label":"ja będ___","expected_text":"ę"}""", context, CancellationToken.None);
+        await tools.ExecuteAsync("add_text_input", """{"id":"q1","label":"ja będ{{blank}}","expected_text":"ę"}""", context, CancellationToken.None);
+        var duplicate = await tools.ExecuteAsync("add_text_input", """{"id":"q2","label":"ja będ{{blank}}","expected_text":"esz"}""", context, CancellationToken.None);
+
+        Assert.Equal(2, context.PendingChanges.Count);
+        Assert.Contains("invalid_custom_quiz_questions", JsonSerializer.Serialize(missing));
+        Assert.Contains("{{blank}}", JsonSerializer.Serialize(drawnBlank));
+        Assert.Contains("invalid_custom_quiz_questions", JsonSerializer.Serialize(duplicate));
+    }
+
+    [Fact]
+    public async Task AddCustomQuizElements_UsesOpenCustomQuizContext()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        var customQuizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.CustomQuizzes.Add(new CustomQuiz
+        {
+            Id = customQuizId,
+            QuizId = quizId,
+            Name = "Builder",
+            DefinitionJson = "{\"schemaVersion\":1,\"blocks\":[]}",
+            SchemaVersion = 1,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext
+        {
+            QuizId = quizId,
+            CustomQuizId = customQuizId,
+            UserId = "user-1",
+        };
+
+        await tools.ExecuteAsync(
+            "add_custom_quiz_elements",
+            """{"blocks":[{"id":"heading","type":"quiz_heading","text":"Practice"}]}""",
+            context,
+            CancellationToken.None);
+
+        var change = Assert.Single(context.PendingChanges);
+        Assert.Equal(PendingChangeKinds.AddCustomQuizElements, change.Kind);
+        Assert.Equal(customQuizId, change.Payload.GetProperty("custom_quiz_id").GetGuid());
+    }
+
+    [Fact]
     public async Task CreateQuiz_QueuesPendingChangeWithCurrentLanguageDefault()
     {
         await using var db = CreateContext();
@@ -573,4 +732,15 @@ public class AssistantToolsTests
             .Options;
         return new GlosifyContext(options);
     }
+
+    private static Quiz CreateQuiz(Guid id, string userId) => new()
+    {
+        Id = id,
+        UserId = userId,
+        Name = "Polish",
+        SourceLanguage = "English",
+        TargetLanguage = "Polish",
+        Language = "Polish",
+        CreatedAt = DateTimeOffset.UtcNow,
+    };
 }

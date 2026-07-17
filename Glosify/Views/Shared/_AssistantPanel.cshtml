@@ -24,7 +24,8 @@
      data-context-label="@(string.IsNullOrWhiteSpace(Model.ContextLabel) ? "Glosify" : Model.ContextLabel)"
      data-focused-word-id="@Model.FocusedWordId"
      data-document-id="@Model.DocumentId"
-     data-current-page="@Model.CurrentPage">
+     data-current-page="@Model.CurrentPage"
+     data-custom-quiz-id="@Model.CustomQuizId">
     @Html.AntiForgeryToken()
     <button class="assistant-fab"
             type="button"

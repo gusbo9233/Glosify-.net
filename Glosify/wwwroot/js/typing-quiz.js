@@ -17,6 +17,7 @@
     const form = shell.querySelector('[data-typing-form]');
     const input = shell.querySelector('[data-answer-input]');
     const prompt = shell.querySelector('[data-prompt]');
+    const promptTts = shell.querySelector('.typing-prompt [data-tts]');
     const feedback = shell.querySelector('[data-feedback]');
     const progressCount = shell.querySelector('[data-progress-count]');
     const accuracy = shell.querySelector('[data-accuracy]');
@@ -46,6 +47,10 @@
         input.disabled = false;
         input.focus();
         prompt.textContent = word.prompt;
+        if (promptTts) {
+            promptTts.setAttribute('data-tts', word.prompt || '');
+            promptTts.setAttribute('aria-label', `Play pronunciation of ${word.prompt || ''}`);
+        }
         feedback.textContent = '';
         feedback.className = 'typing-feedback';
         cardLabel.textContent = `${state.cardLabel} ${state.index + 1}`;

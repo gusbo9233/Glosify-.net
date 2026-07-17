@@ -1,5 +1,6 @@
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
+using Glosify.Services.CustomQuizzes;
 
 namespace Glosify.Services.Quizzes
 {
@@ -468,14 +469,20 @@ namespace Glosify.Services.Quizzes
                 });
             }
 
-            _context.Words.AddRange(sourceWords.Select(word => new Word
+            var wordMapsByQuiz = sourceQuizIds.ToDictionary(id => id, _ => new Dictionary<string, string>(StringComparer.Ordinal));
+            foreach (var word in sourceWords)
             {
-                Id = Guid.NewGuid().ToString("N"),
-                QuizId = quizIdMap[word.QuizId],
-                Lemma = word.Lemma,
-                Translation = word.Translation,
-                CreatedAt = word.CreatedAt
-            }));
+                var copiedWordId = Guid.NewGuid().ToString("N");
+                wordMapsByQuiz[word.QuizId][word.Id] = copiedWordId;
+                _context.Words.Add(new Word
+                {
+                    Id = copiedWordId,
+                    QuizId = quizIdMap[word.QuizId],
+                    Lemma = word.Lemma,
+                    Translation = word.Translation,
+                    CreatedAt = word.CreatedAt
+                });
+            }
             _context.QuizSentences.AddRange(sourceSentences.Select(sentence => new QuizSentence
             {
                 Id = Guid.NewGuid(),
@@ -484,6 +491,12 @@ namespace Glosify.Services.Quizzes
                 Translation = sentence.Translation,
                 CreatedAt = sentence.CreatedAt
             }));
+
+            var customQuizService = new CustomQuizService(_context);
+            foreach (var sourceQuizId in sourceQuizIds)
+            {
+                await customQuizService.CloneForCopiedQuizAsync(sourceQuizId, quizIdMap[sourceQuizId], wordMapsByQuiz[sourceQuizId], cancellationToken);
+            }
 
             await _context.SaveChangesAsync(cancellationToken);
             var copiedRootId = collectionIdMap[collectionId];

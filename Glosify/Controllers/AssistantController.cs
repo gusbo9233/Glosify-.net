@@ -4,6 +4,7 @@ using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Models.CustomQuizzes;
 
 namespace Glosify.Controllers;
 
@@ -116,6 +117,7 @@ public class AssistantController : ControllerBase
                 input.DocumentContext is null
                     ? null
                     : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),
+                input.CustomQuizId,
                 cancellationToken);
 
             return Ok(response);
@@ -160,6 +162,10 @@ public class AssistantController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return NotFound(new { error = ex.Message });
+        }
+        catch (CustomQuizValidationException ex)
+        {
+            return BadRequest(new { error = string.Join(" ", ex.Errors), errors = ex.Errors });
         }
     }
 
@@ -238,6 +244,10 @@ public class AssistantController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return NotFound(new { error = ex.Message });
+        }
+        catch (CustomQuizValidationException ex)
+        {
+            return BadRequest(new { error = string.Join(" ", ex.Errors), errors = ex.Errors });
         }
     }
 
