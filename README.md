@@ -8,6 +8,7 @@ Glosify is an ASP.NET Core MVC application for building and practicing language-
 - Vocabulary and sentence practice with flashcard and typing quiz modes.
 - AI-assisted vocabulary generation, image text extraction, and quiz repair through Gemini-compatible configuration.
 - In-app assistant threads scoped to quizzes.
+- Azure-powered Polish speaking practice with three animated avatars, typed chat, pronunciation assessment, and coaching.
 - PDF book uploads with Azure Blob Storage and extracted page text.
 - AI credit accounting for trial grants, reservations, usage debits, and admin grants.
 - Bearer-token API endpoints for mobile clients under `/api/*`.
@@ -21,6 +22,7 @@ Glosify is an ASP.NET Core MVC application for building and practicing language-
 - ASP.NET Core Identity
 - Azure Blob Storage
 - Gemini via `Mscc.GenerativeAI`
+- Azure AI Foundry, Azure AI Speech, and Azure Monitor OpenTelemetry
 - PdfPig for PDF text extraction
 - xUnit, ASP.NET Core MVC testing, AngleSharp
 
@@ -105,6 +107,8 @@ The tests use in-memory EF Core databases where practical and cover navigation, 
 The EF Core context is `Glosify.Data.GlosifyContext`. The database includes Identity tables plus application tables for quizzes, words, sentences, collections, assistant messages, AI credits, and book documents/pages.
 
 See [docs/database-diagram.md](docs/database-diagram.md) for the Mermaid ER diagram.
+
+See [docs/azure-speaking-practice.md](docs/azure-speaking-practice.md) for the Azure resources, identities, agent versions, and local configuration required by `/Speaking`.
 
 ## Deployment
 

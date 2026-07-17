@@ -8,6 +8,15 @@
       "files": [
         "dist/browser/signalr.min.js"
       ]
+    },
+    {
+      "library": "microsoft-cognitiveservices-speech-sdk@1.50.0",
+      "destination": "wwwroot/lib/speech-sdk/",
+      "files": [
+        "distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js",
+        "distrib/browser/speech-processor.js",
+        "LICENSE"
+      ]
     }
   ]
 }

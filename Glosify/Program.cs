@@ -20,10 +20,14 @@ using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Flashcards;
 using Glosify.Services.Language;
 using Glosify.Services.Speech;
+using Glosify.Services.Speaking;
 using Glosify.Services.Typing;
 using Glosify.Services.Words;
 using Azure.Core;
 using Azure.Identity;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,6 +68,15 @@ builder.Services.AddMemoryCache();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = (context, _) =>
+    {
+        if (context.HttpContext.Request.Path.StartsWithSegments("/api/speaking"))
+        {
+            SpeakingTelemetry.RateLimits.Add(1);
+        }
+
+        return ValueTask.CompletedTask;
+    };
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
     {
         var path = context.Request.Path;
@@ -108,6 +121,35 @@ builder.Services.AddRateLimiter(options =>
             return RateLimitPartition.GetFixedWindowLimiter($"tts:{caller}", _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+        }
+
+        if (string.Equals(
+            path.Value,
+            "/api/speaking/speech-token",
+            StringComparison.OrdinalIgnoreCase))
+        {
+            var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter($"speaking-token:{caller}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 12,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+        }
+
+        if (path.StartsWithSegments("/api/speaking"))
+        {
+            var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter($"speaking:{caller}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
             });
@@ -267,9 +309,24 @@ builder.Services.AddScoped<IChangeApplier, ChangeApplier>();
 builder.Services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
 
 builder.Services.Configure<SpeechOptions>(builder.Configuration.GetSection(SpeechOptions.SectionName));
+builder.Services.Configure<SpeakingOptions>(builder.Configuration.GetSection(SpeakingOptions.SectionName));
 builder.Services.AddSingleton<TokenCredential>(_ => new DefaultAzureCredential());
 builder.Services.AddHttpClient(nameof(AzureTextToSpeechService));
 builder.Services.AddSingleton<ITextToSpeechService, AzureTextToSpeechService>();
+builder.Services.AddSingleton<ISpeechAuthorizationTokenService, SpeechAuthorizationTokenService>();
+builder.Services.AddSingleton<ISpeakingAgentClient, FoundrySpeakingAgentClient>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ISpeakingSessionStore, SpeakingSessionStore>();
+builder.Services.AddScoped<ISpeakingService, SpeakingService>();
+
+if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
+{
+    builder.Services
+        .AddOpenTelemetry()
+        .WithTracing(tracing => tracing.AddSource(SpeakingTelemetry.ActivitySourceName))
+        .WithMetrics(metrics => metrics.AddMeter(SpeakingTelemetry.MeterName))
+        .UseAzureMonitor();
+}
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))
@@ -309,7 +366,7 @@ var forwardedHeadersOptions = new ForwardedHeadersOptions
 };
 // The App Service front-end addresses are not statically known, so the default
 // loopback-only proxy allowlist must be cleared for the headers to be honored.
-forwardedHeadersOptions.KnownNetworks.Clear();
+forwardedHeadersOptions.KnownIPNetworks.Clear();
 forwardedHeadersOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeadersOptions);
 
@@ -336,6 +393,13 @@ var configuredFormActionOrigins = builder.Configuration
 var configuredConnectSources = builder.Configuration
     .GetSection("Security:Csp:ConnectSources")
     .Get<string[]>() ?? [];
+configuredConnectSources =
+[
+    .. configuredConnectSources,
+    .. BuildSpeechConnectSources(
+        builder.Configuration["Speech:Region"],
+        builder.Configuration["Speech:Endpoint"]),
+];
 var contentSecurityPolicy = BuildContentSecurityPolicy(configuredFormActionOrigins, configuredConnectSources);
 app.Use(async (context, next) =>
 {
@@ -443,6 +507,30 @@ static string? NormalizeCspOrigin(string? origin)
     }
 
     return uri.GetLeftPart(UriPartial.Authority);
+}
+
+static IEnumerable<string> BuildSpeechConnectSources(string? region, string? endpoint)
+{
+    if (!string.IsNullOrWhiteSpace(endpoint)
+        && Uri.TryCreate(endpoint.Trim(), UriKind.Absolute, out var endpointUri)
+        && endpointUri.Scheme == Uri.UriSchemeHttps)
+    {
+        yield return endpointUri.GetLeftPart(UriPartial.Authority);
+    }
+
+    var normalizedRegion = region?.Trim().ToLowerInvariant();
+    if (string.IsNullOrWhiteSpace(normalizedRegion)
+        || normalizedRegion.Any(character =>
+            !char.IsAsciiLetterOrDigit(character) && character != '-'))
+    {
+        yield break;
+    }
+
+    yield return $"https://{normalizedRegion}.api.cognitive.microsoft.com";
+    yield return $"https://{normalizedRegion}.stt.speech.microsoft.com";
+    yield return $"wss://{normalizedRegion}.stt.speech.microsoft.com";
+    yield return $"https://{normalizedRegion}.tts.speech.microsoft.com";
+    yield return $"wss://{normalizedRegion}.tts.speech.microsoft.com";
 }
 
 public partial class Program { }

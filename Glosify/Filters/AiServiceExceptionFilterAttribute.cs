@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Glosify.Services.Ai;
 using Glosify.Services.Quizzes;
+using Glosify.Services.Speaking;
 
 namespace Glosify.Filters;
 
@@ -34,6 +35,13 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
         context.Result = exception switch
         {
             InsufficientAiCreditsException => Error(StatusCodes.Status402PaymentRequired, exception.Message),
+            SpeakingValidationException => Error(StatusCodes.Status400BadRequest, exception.Message),
+            SpeakingSessionNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),
+            SpeakingSessionExpiredException => Error(StatusCodes.Status410Gone, exception.Message),
+            SpeakingSessionBusyException => Error(StatusCodes.Status409Conflict, exception.Message),
+            SpeakingSessionLimitException => Error(StatusCodes.Status409Conflict, exception.Message),
+            SpeakingDependencyUnavailableException => Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
+            SpeakingUpstreamException => Error(StatusCodes.Status502BadGateway, exception.Message),
             QuizNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),
             UnauthorizedAccessException => new ForbidResult(),
             _ when ServiceWarmupMessage.IsDatabaseWarmupFailure(exception) =>

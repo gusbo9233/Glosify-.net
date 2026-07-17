@@ -1,0 +1,222 @@
+@model Glosify.Services.Speaking.SpeakingPageViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Speaking practice";
+    ViewData["HideAssistantPanel"] = true;
+    var pageData = JsonSerializer.Serialize(Model, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/speaking.css" asp-append-version="true" />
+}
+
+<div class="speaking-page"
+     id="speaking-app"
+     data-speaking-page="@pageData"
+     data-create-url="/api/speaking/sessions"
+     data-token-url="/api/speaking/speech-token"
+     data-tts-fallback-url="/api/tts">
+    <form class="speaking-antiforgery" aria-hidden="true">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <header class="speaking-hero">
+        <div>
+            <span class="speaking-kicker">Polish conversation lab</span>
+            <h2>Speak your way into the language.</h2>
+            <p>Choose a scene, talk naturally, and get private coaching after every turn.</p>
+        </div>
+        <div class="speaking-azure-badge" title="Powered by Microsoft Foundry and Azure AI Speech">
+            <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
+            Azure-powered
+        </div>
+    </header>
+
+    <section class="speaking-controls" aria-label="Practice settings">
+        <div class="speaking-avatar-picker" role="radiogroup" aria-label="Choose an avatar">
+            @foreach (var avatar in Model.Avatars)
+            {
+                <button type="button"
+                        class="speaking-avatar-option"
+                        data-avatar-choice="@avatar.Id"
+                        role="radio"
+                        aria-checked="false">
+                    <span class="speaking-avatar-dot speaking-avatar-dot-@avatar.Id" aria-hidden="true"></span>
+                    <span>
+                        <strong>@avatar.Name</strong>
+                        <small>@avatar.Scenario</small>
+                    </span>
+                </button>
+            }
+        </div>
+
+        <label class="speaking-level-control">
+            <span>Level</span>
+            <select id="speaking-level" aria-label="Choose CEFR level">
+                <option value="A1">A1 · Beginner</option>
+                <option value="A2" selected>A2 · Elementary</option>
+                <option value="B1">B1 · Intermediate</option>
+                <option value="B2">B2 · Upper intermediate</option>
+                <option value="C1">C1 · Advanced</option>
+            </select>
+        </label>
+
+        <label class="speaking-switch">
+            <input type="checkbox" id="speaking-translation-toggle" />
+            <span class="speaking-switch-track" aria-hidden="true"></span>
+            <span>English translation</span>
+        </label>
+
+        <label class="speaking-switch">
+            <input type="checkbox" id="speaking-mute-toggle" />
+            <span class="speaking-switch-track" aria-hidden="true"></span>
+            <span>Mute avatar</span>
+        </label>
+    </section>
+
+    <div class="speaking-workspace">
+        <section class="speaking-stage-card" aria-label="Avatar scene">
+            <div class="speaking-stage" id="speaking-stage">
+                @await Html.PartialAsync("_AvatarScenes")
+                <div class="speaking-scene-caption">
+                    <span id="speaking-avatar-name"></span>
+                    <small id="speaking-scene-name"></small>
+                </div>
+                <div class="speaking-live-bubble" id="speaking-live-bubble" hidden>
+                    <p id="speaking-live-polish" lang="pl"></p>
+                    <p class="speaking-translation" id="speaking-live-english" lang="en"></p>
+                </div>
+            </div>
+            <div class="speaking-stage-status">
+                <span class="speaking-presence-dot" aria-hidden="true"></span>
+                <span id="speaking-connection-label">Starting the scene…</span>
+                <button type="button"
+                        class="speaking-icon-action"
+                        id="speaking-replay-latest"
+                        aria-label="Replay the latest avatar reply"
+                        title="Replay latest reply"
+                        disabled>
+                    <span class="material-symbols-outlined" aria-hidden="true">replay</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="speaking-chat-card" aria-label="Conversation">
+            <div class="speaking-chat-heading">
+                <div>
+                    <span class="speaking-kicker">Current session</span>
+                    <h3>Conversation</h3>
+                </div>
+                <button type="button" class="speaking-text-action" id="speaking-new-session">
+                    New session
+                </button>
+            </div>
+
+            <div class="speaking-messages"
+                 id="speaking-messages"
+                 role="log"
+                 aria-live="polite"
+                 aria-relevant="additions">
+            </div>
+
+            <div class="speaking-recording-note" id="speaking-recording-note" hidden>
+                <span class="material-symbols-outlined" aria-hidden="true">graphic_eq</span>
+                <span>Pronunciation scores refer to your recorded audio.</span>
+            </div>
+
+            <div class="speaking-composer">
+                <label for="speaking-message" class="visually-hidden">Your Polish message</label>
+                <textarea id="speaking-message"
+                          maxlength="800"
+                          rows="3"
+                          placeholder="Napisz po polsku albo użyj mikrofonu…"></textarea>
+                <div class="speaking-composer-actions">
+                    <button type="button"
+                            class="speaking-mic-button"
+                            id="speaking-mic"
+                            aria-label="Start speaking in Polish">
+                        <span class="material-symbols-outlined" aria-hidden="true">mic</span>
+                        <span class="speaking-mic-label">Speak</span>
+                    </button>
+                    <span class="speaking-character-count" id="speaking-character-count">0 / 800</span>
+                    <button type="button" class="speaking-send-button" id="speaking-send">
+                        Send
+                        <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
+                    </button>
+                </div>
+            </div>
+
+            <p class="speaking-status"
+               id="speaking-status"
+               role="status"
+               aria-live="polite"></p>
+        </section>
+    </div>
+
+    <p class="speaking-privacy-note">
+        <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+        Audio streams directly to Azure Speech. This conversation is kept only for the current session.
+    </p>
+</div>
+
+<template id="speaking-user-message-template">
+    <article class="speaking-message speaking-message-user">
+        <div class="speaking-message-meta">
+            <span>You</span>
+            <span class="speaking-input-badge"></span>
+        </div>
+        <p class="speaking-message-polish" lang="pl"></p>
+        <div class="speaking-pronunciation" hidden>
+            <div>
+                <span>Accuracy</span>
+                <strong data-score="accuracy"></strong>
+            </div>
+            <div>
+                <span>Fluency</span>
+                <strong data-score="fluency"></strong>
+            </div>
+        </div>
+    </article>
+</template>
+
+<template id="speaking-avatar-message-template">
+    <article class="speaking-message speaking-message-avatar">
+        <div class="speaking-message-meta">
+            <span class="speaking-message-speaker"></span>
+            <button type="button" class="speaking-message-replay" aria-label="Replay this reply">
+                <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
+            </button>
+        </div>
+        <p class="speaking-message-polish" lang="pl"></p>
+        <p class="speaking-message-english speaking-translation" lang="en"></p>
+        <details class="speaking-coach">
+            <summary>
+                <span class="material-symbols-outlined" aria-hidden="true">school</span>
+                Coach feedback
+            </summary>
+            <dl>
+                <div data-coach-row="correctedPolish">
+                    <dt>More natural Polish</dt>
+                    <dd lang="pl"></dd>
+                </div>
+                <div data-coach-row="grammarTipEnglish">
+                    <dt>Grammar</dt>
+                    <dd></dd>
+                </div>
+                <div data-coach-row="vocabularyTipEnglish">
+                    <dt>Vocabulary</dt>
+                    <dd></dd>
+                </div>
+                <div data-coach-row="naturalnessTipEnglish">
+                    <dt>Naturalness</dt>
+                    <dd></dd>
+                </div>
+            </dl>
+        </details>
+    </article>
+</template>
+
+@section Scripts {
+    <script src="~/lib/speech-sdk/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
+    <script src="~/js/speaking.js" asp-append-version="true"></script>
+}
