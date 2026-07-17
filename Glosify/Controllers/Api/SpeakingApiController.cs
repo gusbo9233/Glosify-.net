@@ -1,6 +1,7 @@
 using Glosify.Extensions;
 using Glosify.Filters;
 using Glosify.Models.Api;
+using Glosify.Services.Language;
 using Glosify.Services.Speaking;
 using Glosify.Services.Speech;
 using Microsoft.AspNetCore.Authorization;
@@ -16,13 +17,16 @@ public sealed class SpeakingApiController : ControllerBase
 {
     private readonly ISpeakingService _speaking;
     private readonly ISpeechAuthorizationTokenService _speechTokens;
+    private readonly ILanguageContext _languageContext;
 
     public SpeakingApiController(
         ISpeakingService speaking,
-        ISpeechAuthorizationTokenService speechTokens)
+        ISpeechAuthorizationTokenService speechTokens,
+        ILanguageContext languageContext)
     {
         _speaking = speaking;
         _speechTokens = speechTokens;
+        _languageContext = languageContext;
     }
 
     [HttpPost("speech-token")]
@@ -44,9 +48,15 @@ public sealed class SpeakingApiController : ControllerBase
         [FromBody] CreateSpeakingSessionRequest request,
         CancellationToken cancellationToken)
     {
-        if (!SpeakingAvatarCatalog.TryParse(request.AvatarId, out var avatar))
+        var language = _languageContext.CurrentLanguage;
+        if (language is null)
         {
-            return BadRequest(new { error = "Unknown avatar." });
+            return BadRequest(new { error = "Select a language before starting speaking practice." });
+        }
+
+        if (!SpeakingAvatarCatalog.TryParseForLanguage(request.AvatarId, language, out var avatar))
+        {
+            return BadRequest(new { error = $"That avatar is not available for {language}." });
         }
 
         if (!SpeakingAvatarCatalog.TryParseCefr(request.CefrLevel, out var cefrLevel))

@@ -1,0 +1,348 @@
+<div class="speaking-scene speaking-scene-prototype speaking-scene-bartender"
+     data-avatar-scene="bartender"
+     data-mouth-pose="closed"
+     hidden>
+<svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A detailed Polish bar scene with the bartender behind the counter">
+  <defs>
+    <linearGradient id="bartender-wallGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c130c"/>
+      <stop offset="0.5" stop-color="#33210f"/>
+      <stop offset="1" stop-color="#241608"/>
+    </linearGradient>
+    <linearGradient id="bartender-panelGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a2e14"/>
+      <stop offset="1" stop-color="#2e1c0b"/>
+    </linearGradient>
+    <linearGradient id="bartender-counterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a4a1e"/>
+      <stop offset="0.12" stop-color="#5c3413"/>
+      <stop offset="1" stop-color="#311a07"/>
+    </linearGradient>
+    <linearGradient id="bartender-backBarGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#503113"/>
+      <stop offset="1" stop-color="#38200a"/>
+    </linearGradient>
+    <radialGradient id="bartender-lampGlowGrad" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffce6b" stop-opacity="0.55"/>
+      <stop offset="0.5" stop-color="#ffb347" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bartender-beerGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5b93a"/>
+      <stop offset="1" stop-color="#b96f10"/>
+    </linearGradient>
+    <linearGradient id="bartender-glassShine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="0.25" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.12"/>
+    </linearGradient>
+    <filter id="bartender-neonGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="bartender-softBlur"><feGaussianBlur stdDeviation="2.2"/></filter>
+  </defs>
+
+  <!-- ======================= WALL ======================= -->
+  <rect width="1600" height="900" fill="url(#bartender-wallGrad)"/>
+
+  <!-- wood wainscot panels -->
+  <g opacity="0.9">
+    <rect x="0" y="80" width="1600" height="18" fill="#241505"/>
+    <rect x="0" y="0" width="1600" height="82" fill="url(#bartender-panelGrad)"/>
+  </g>
+
+  <!-- window, evening street light, left -->
+  <g>
+    <rect x="55" y="130" width="230" height="290" rx="6" fill="#0d1524"/>
+    <rect x="55" y="130" width="230" height="290" rx="6" fill="none" stroke="#3a2410" stroke-width="14"/>
+    <line x1="170" y1="140" x2="170" y2="412" stroke="#3a2410" stroke-width="10"/>
+    <line x1="62" y1="275" x2="278" y2="275" stroke="#3a2410" stroke-width="10"/>
+    <!-- street lamp glow + rain-dusk sky -->
+    <circle cx="120" cy="200" r="26" fill="#f4d47c" opacity="0.75" filter="url(#bartender-softBlur)"/>
+    <rect x="62" y="282" width="102" height="130" fill="#131c2b"/>
+    <!-- lace half-curtain -->
+    <rect x="62" y="330" width="216" height="84" fill="#e8dcc0" opacity="0.16"/>
+  </g>
+
+  <!-- framed photos & eagle emblem, right wall -->
+  <g>
+    <rect x="1290" y="140" width="120" height="150" rx="4" fill="#241708" stroke="#5a3a16" stroke-width="6"/>
+    <rect x="1305" y="158" width="90" height="114" fill="#8a7452" opacity="0.5"/>
+    <rect x="1440" y="170" width="105" height="90" rx="4" fill="#241708" stroke="#5a3a16" stroke-width="6"/>
+    <rect x="1453" y="183" width="79" height="64" fill="#6d7c6a" opacity="0.5"/>
+    <!-- white eagle plaque -->
+    <g transform="translate(1355, 340)">
+      <circle r="52" fill="#7a1220" stroke="#c8a049" stroke-width="5"/>
+      <path d="M0,-30 C-8,-22 -26,-16 -30,2 C-20,-2 -14,0 -10,6 C-16,14 -12,22 0,28 C12,22 16,14 10,6 C14,0 20,-2 30,2 C26,-16 8,-22 0,-30 Z"
+            fill="#f2ede2"/>
+      <circle cx="0" cy="-26" r="6" fill="#f2ede2"/>
+      <path d="M-4,-32 L4,-32 L0,-40 Z" fill="#c8a049"/>
+    </g>
+  </g>
+
+  <!-- Polish flag pennant strings above back bar -->
+  <g>
+    <path d="M320 108 Q 800 170 1280 108" stroke="#1a0f05" stroke-width="3" fill="none"/>
+    <g id="bartender-pennants">
+      <path d="M306.0 108.0 L334.0 108.0 L320.0 138.0 Z" fill="#f2ede2" opacity=".92"/>
+      <path d="M386.0 112.7 L414.0 112.7 L400.0 142.7 Z" fill="#c02a2a" opacity=".92"/>
+      <path d="M466.0 116.6 L494.0 116.6 L480.0 146.6 Z" fill="#f2ede2" opacity=".92"/>
+      <path d="M546.0 119.6 L574.0 119.6 L560.0 149.6 Z" fill="#c02a2a" opacity=".92"/>
+      <path d="M626.0 121.8 L654.0 121.8 L640.0 151.8 Z" fill="#f2ede2" opacity=".92"/>
+      <path d="M706.0 123.1 L734.0 123.1 L720.0 153.1 Z" fill="#c02a2a" opacity=".92"/>
+      <path d="M786.0 123.5 L814.0 123.5 L800.0 153.5 Z" fill="#f2ede2" opacity=".92"/>
+      <path d="M866.0 123.1 L894.0 123.1 L880.0 153.1 Z" fill="#c02a2a" opacity=".92"/>
+      <path d="M946.0 121.8 L974.0 121.8 L960.0 151.8 Z" fill="#f2ede2" opacity=".92"/>
+      <path d="M1026.0 119.6 L1054.0 119.6 L1040.0 149.6 Z" fill="#c02a2a" opacity=".92"/>
+      <path d="M1106.0 116.6 L1134.0 116.6 L1120.0 146.6 Z" fill="#f2ede2" opacity=".92"/>
+      <path d="M1186.0 112.7 L1214.0 112.7 L1200.0 142.7 Z" fill="#c02a2a" opacity=".92"/>
+      <path d="M1266.0 108.0 L1294.0 108.0 L1280.0 138.0 Z" fill="#f2ede2" opacity=".92"/>
+    </g>
+  </g>
+
+  <!-- neon sign -->
+  <g class="scene-neon" filter="url(#bartender-neonGlow)">
+    <text x="800" y="88" text-anchor="middle" font-family="Georgia, serif" font-size="52"
+          fill="#ff5a4e" stroke="#ffd3cf" stroke-width="1" letter-spacing="6">POD BIAŁYM ORŁEM</text>
+  </g>
+
+  <!-- ======================= BACK BAR SHELVES ======================= -->
+  <g>
+    <rect x="330" y="170" width="940" height="330" rx="8" fill="url(#bartender-backBarGrad)"/>
+    <rect x="330" y="170" width="940" height="330" rx="8" fill="none" stroke="#1c0f04" stroke-width="6"/>
+    <!-- mirror -->
+    <rect x="355" y="192" width="890" height="120" rx="4" fill="#4c3d2a" opacity="0.55"/>
+    <rect x="355" y="192" width="890" height="120" rx="4" fill="none" stroke="#6b4a1e" stroke-width="4"/>
+    <!-- shelf boards -->
+    <rect x="345" y="310" width="910" height="10" fill="#1e1105"/>
+    <rect x="345" y="410" width="910" height="10" fill="#1e1105"/>
+
+    <!-- top shelf bottles (vodka & spirits) -->
+    <g id="bartender-shelf-top">
+      <g aria-hidden="true"><rect x="381.0" y="248.0" width="26" height="62" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="389.0" y="230.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="387.0" y="225.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="384.0" y="266.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="394.0" y="280.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">WÓDKA</text></g>
+      <g aria-hidden="true"><rect x="449.3" y="235.0" width="26" height="75" rx="5" fill="#b95c1e" opacity=".9"/><rect x="457.3" y="217.0" width="10" height="20" rx="3" fill="#b95c1e" opacity=".9"/><rect x="455.3" y="212.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="452.3" y="253.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="462.3" y="267.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">MIÓD</text></g>
+      <g aria-hidden="true"><rect x="517.6" y="246.0" width="26" height="64" rx="5" fill="#3e6b2f" opacity=".9"/><rect x="525.6" y="228.0" width="10" height="20" rx="3" fill="#3e6b2f" opacity=".9"/><rect x="523.6" y="223.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="520.6" y="264.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="530.6" y="278.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">ZIOŁOWA</text></g>
+      <g aria-hidden="true"><rect x="567.9" y="233.0" width="26" height="77" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="575.9" y="215.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="573.9" y="210.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="570.9" y="251.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="580.9" y="265.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">CZYSTA</text></g>
+      <g aria-hidden="true"><rect x="636.2" y="244.0" width="26" height="66" rx="5" fill="#8a5a2a" opacity=".9"/><rect x="644.2" y="226.0" width="10" height="20" rx="3" fill="#8a5a2a" opacity=".9"/><rect x="642.2" y="221.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="639.2" y="262.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="649.2" y="276.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">ŚLIWOWICA</text></g>
+      <g aria-hidden="true"><rect x="704.5" y="231.0" width="26" height="79" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="712.5" y="213.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="710.5" y="208.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="707.5" y="249.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="717.5" y="263.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">ŻYTNIA</text></g>
+      <g aria-hidden="true"><rect x="754.8" y="242.0" width="26" height="68" rx="5" fill="#6e2f1e" opacity=".9"/><rect x="762.8" y="224.0" width="10" height="20" rx="3" fill="#6e2f1e" opacity=".9"/><rect x="760.8" y="219.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="757.8" y="260.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="767.8" y="274.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">WIŚNIÓWKA</text></g>
+      <g aria-hidden="true"><rect x="823.2" y="229.0" width="26" height="81" rx="5" fill="#3e5c6b" opacity=".9"/><rect x="831.2" y="211.0" width="10" height="20" rx="3" fill="#3e5c6b" opacity=".9"/><rect x="829.2" y="206.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="826.2" y="247.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="836.2" y="261.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">PIOŁUN</text></g>
+      <g aria-hidden="true"><rect x="891.5" y="240.0" width="26" height="70" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="899.5" y="222.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="897.5" y="217.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="894.5" y="258.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="904.5" y="272.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">WÓDKA</text></g>
+      <g aria-hidden="true"><rect x="941.8" y="227.0" width="26" height="83" rx="5" fill="#b95c1e" opacity=".9"/><rect x="949.8" y="209.0" width="10" height="20" rx="3" fill="#b95c1e" opacity=".9"/><rect x="947.8" y="204.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="944.8" y="245.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="954.8" y="259.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">MIÓD</text></g>
+      <g aria-hidden="true"><rect x="1010.1" y="238.0" width="26" height="72" rx="5" fill="#3e6b2f" opacity=".9"/><rect x="1018.1" y="220.0" width="10" height="20" rx="3" fill="#3e6b2f" opacity=".9"/><rect x="1016.1" y="215.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="1013.1" y="256.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="1023.1" y="270.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">ZIOŁOWA</text></g>
+      <g aria-hidden="true"><rect x="1078.4" y="225.0" width="26" height="85" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="1086.4" y="207.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="1084.4" y="202.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="1081.4" y="243.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="1091.4" y="257.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">CZYSTA</text></g>
+      <g aria-hidden="true"><rect x="1128.7" y="236.0" width="26" height="74" rx="5" fill="#8a5a2a" opacity=".9"/><rect x="1136.7" y="218.0" width="10" height="20" rx="3" fill="#8a5a2a" opacity=".9"/><rect x="1134.7" y="213.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="1131.7" y="254.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="1141.7" y="268.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">ŚLIWOWICA</text></g>
+      <g aria-hidden="true"><rect x="1197.0" y="247.0" width="26" height="63" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="1205.0" y="229.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="1203.0" y="224.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="1200.0" y="265.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="1210.0" y="279.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">ŻYTNIA</text></g>
+    </g>
+    <!-- bottom shelf bottles -->
+    <g id="bartender-shelf-bottom">
+      <g aria-hidden="true"><rect x="381.0" y="348.0" width="26" height="62" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="389.0" y="330.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="387.0" y="325.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="384.0" y="366.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="394.0" y="380.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">WÓDKA</text></g>
+      <g aria-hidden="true"><rect x="460.6" y="335.0" width="26" height="75" rx="5" fill="#b95c1e" opacity=".9"/><rect x="468.6" y="317.0" width="10" height="20" rx="3" fill="#b95c1e" opacity=".9"/><rect x="466.6" y="312.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="463.6" y="353.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="473.6" y="367.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">MIÓD</text></g>
+      <g aria-hidden="true"><rect x="540.3" y="346.0" width="26" height="64" rx="5" fill="#3e6b2f" opacity=".9"/><rect x="548.3" y="328.0" width="10" height="20" rx="3" fill="#3e6b2f" opacity=".9"/><rect x="546.3" y="323.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="543.3" y="364.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="553.3" y="378.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">ZIOŁOWA</text></g>
+      <g aria-hidden="true"><rect x="601.9" y="333.0" width="26" height="77" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="609.9" y="315.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="607.9" y="310.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="604.9" y="351.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="614.9" y="365.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">CZYSTA</text></g>
+      <g aria-hidden="true"><rect x="681.5" y="344.0" width="26" height="66" rx="5" fill="#8a5a2a" opacity=".9"/><rect x="689.5" y="326.0" width="10" height="20" rx="3" fill="#8a5a2a" opacity=".9"/><rect x="687.5" y="321.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="684.5" y="362.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="694.5" y="376.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">ŚLIWOWICA</text></g>
+      <g aria-hidden="true"><rect x="761.2" y="331.0" width="26" height="79" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="769.2" y="313.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="767.2" y="308.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="764.2" y="349.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="774.2" y="363.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">ŻYTNIA</text></g>
+      <g aria-hidden="true"><rect x="822.8" y="342.0" width="26" height="68" rx="5" fill="#6e2f1e" opacity=".9"/><rect x="830.8" y="324.0" width="10" height="20" rx="3" fill="#6e2f1e" opacity=".9"/><rect x="828.8" y="319.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="825.8" y="360.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="835.8" y="374.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">WIŚNIÓWKA</text></g>
+      <g aria-hidden="true"><rect x="902.5" y="329.0" width="26" height="81" rx="5" fill="#3e5c6b" opacity=".9"/><rect x="910.5" y="311.0" width="10" height="20" rx="3" fill="#3e5c6b" opacity=".9"/><rect x="908.5" y="306.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="905.5" y="347.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="915.5" y="361.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">PIOŁUN</text></g>
+      <g aria-hidden="true"><rect x="982.1" y="340.0" width="26" height="70" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="990.1" y="322.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="988.1" y="317.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="985.1" y="358.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="995.1" y="372.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">WÓDKA</text></g>
+      <g aria-hidden="true"><rect x="1043.7" y="327.0" width="26" height="83" rx="5" fill="#b95c1e" opacity=".9"/><rect x="1051.7" y="309.0" width="10" height="20" rx="3" fill="#b95c1e" opacity=".9"/><rect x="1049.7" y="304.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="1046.7" y="345.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="1056.7" y="359.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">MIÓD</text></g>
+      <g aria-hidden="true"><rect x="1123.4" y="338.0" width="26" height="72" rx="5" fill="#3e6b2f" opacity=".9"/><rect x="1131.4" y="320.0" width="10" height="20" rx="3" fill="#3e6b2f" opacity=".9"/><rect x="1129.4" y="315.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="1126.4" y="356.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="1136.4" y="370.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">ZIOŁOWA</text></g>
+      <g aria-hidden="true"><rect x="1203.0" y="325.0" width="26" height="85" rx="5" fill="#dbe7ec" opacity=".9"/><rect x="1211.0" y="307.0" width="10" height="20" rx="3" fill="#dbe7ec" opacity=".9"/><rect x="1209.0" y="302.0" width="14" height="6" rx="2" fill="#2a1a08"/><rect x="1206.0" y="343.0" width="20" height="22" rx="2" fill="#f2ede2" opacity=".92"/><text x="1216.0" y="357.0" text-anchor="middle" font-size="6.5" fill="#5a3416" font-weight="bold">CZYSTA</text></g>
+    </g>
+  </g>
+
+  <!-- chalkboard menu -->
+  <g transform="translate(180, 470)">
+    <rect x="-95" y="-120" width="190" height="250" rx="6" fill="#1a231c" stroke="#5a3a16" stroke-width="8"/>
+    <text x="0" y="-82" text-anchor="middle" font-size="26" fill="#e8dcc0" font-style="italic">Dziś polecamy</text>
+    <line x1="-60" y1="-68" x2="60" y2="-68" stroke="#e8dcc0" stroke-width="2" opacity="0.6"/>
+    <text x="0" y="-32" text-anchor="middle" font-size="22" fill="#cfe3cf">Pierogi ruskie</text>
+    <text x="0" y="4"   text-anchor="middle" font-size="22" fill="#cfe3cf">Żurek w chlebie</text>
+    <text x="0" y="40"  text-anchor="middle" font-size="22" fill="#cfe3cf">Bigos domowy</text>
+    <text x="0" y="76"  text-anchor="middle" font-size="22" fill="#cfe3cf">Oscypek z żurawiną</text>
+    <text x="0" y="112" text-anchor="middle" font-size="20" fill="#e8c56a">Piwo lane 12 zł</text>
+  </g>
+
+  <!-- hanging pendant lamps -->
+  <g>
+    <g transform="translate(470,0)">
+      <line x1="0" y1="0" x2="0" y2="120" stroke="#181008" stroke-width="5"/>
+      <path d="M-45 160 L45 160 L28 118 L-28 118 Z" fill="#2a4231"/>
+      <ellipse cx="0" cy="162" rx="45" ry="8" fill="#f7c96b" opacity="0.9"/>
+      <circle class="scene-glow" cx="0" cy="230" r="170" fill="url(#bartender-lampGlowGrad)"/>
+    </g>
+    <g transform="translate(1130,0)">
+      <line x1="0" y1="0" x2="0" y2="120" stroke="#181008" stroke-width="5"/>
+      <path d="M-45 160 L45 160 L28 118 L-28 118 Z" fill="#2a4231"/>
+      <ellipse cx="0" cy="162" rx="45" ry="8" fill="#f7c96b" opacity="0.9"/>
+      <circle class="scene-glow" cx="0" cy="230" r="170" fill="url(#bartender-lampGlowGrad)"/>
+    </g>
+  </g>
+
+  <!-- ======================= AVATAR: THE BARTENDER ======================= -->
+  <g class="avatar-figure" data-avatar-figure>
+    <!-- torso -->
+    <path d="M660 900 C660 720 690 640 730 605 C755 583 775 570 800 570
+             C825 570 845 583 870 605 C910 640 940 720 940 900 Z" fill="#3a3f4a"/>
+    <!-- rolled sleeves / shirt -->
+    <path d="M700 618 C740 594 860 594 900 618 L900 650 C860 630 740 630 700 650 Z" fill="#4c525f"/>
+    <!-- apron -->
+    <path d="M712 900 C712 760 730 680 800 672 C870 680 888 760 888 900 Z" fill="#5c3418"/>
+    <path d="M726 690 C770 674 830 674 874 690" stroke="#40230f" stroke-width="6" fill="none"/>
+    <!-- apron strap -->
+    <path d="M745 640 C770 660 830 660 855 640" stroke="#40230f" stroke-width="10" fill="none"/>
+
+    <!-- left arm resting on counter -->
+    <path d="M690 630 C640 660 610 700 596 742 C590 760 600 774 620 770
+             C660 760 690 748 706 738" fill="#4c525f"/>
+    <ellipse cx="608" cy="752" rx="30" ry="20" fill="#d9a06b"/>
+
+    <!-- right arm: polishing a glass -->
+    <g class="avatar-gesture">
+      <path d="M905 632 C950 660 962 690 948 720 C930 750 880 720 856 700" fill="#4c525f"/>
+      <ellipse cx="868" cy="700" rx="26" ry="20" fill="#d9a06b"/>
+      <!-- glass -->
+      <path d="M840 640 L888 640 L880 706 L848 706 Z" fill="#cfe0e8" opacity="0.55" stroke="#eef6fa" stroke-width="2"/>
+      <!-- towel -->
+      <path d="M846 660 Q866 646 886 660 Q878 686 866 692 Q852 684 846 660 Z" fill="#e8dcc0"/>
+    </g>
+
+    <!-- neck -->
+    <rect x="778" y="500" width="44" height="80" rx="16" fill="#d9a06b"/>
+    <path d="M778 520 Q800 540 822 520 L822 500 L778 500 Z" fill="#c68d5a"/>
+
+    <!-- head -->
+    <g class="avatar-head">
+      <!-- ears -->
+      <ellipse cx="723" cy="405" rx="14" ry="22" fill="#d9a06b"/>
+      <ellipse cx="877" cy="405" rx="14" ry="22" fill="#d9a06b"/>
+      <!-- face -->
+      <path d="M726 370 C726 300 754 268 800 268 C846 268 874 300 874 370
+               C874 440 852 496 800 496 C748 496 726 440 726 370 Z" fill="#e0ab74"/>
+      <!-- hair: short, greying at temples -->
+      <path d="M726 372 C720 292 756 258 800 258 C844 258 880 292 874 372
+               C870 330 858 306 848 300 C838 320 762 320 752 300 C742 306 730 330 726 372 Z"
+            fill="#5a4632"/>
+      <path d="M728 350 C730 330 736 316 742 308 L748 330 C740 336 732 344 728 350 Z" fill="#8d8478"/>
+      <path d="M872 350 C870 330 864 316 858 308 L852 330 C860 336 868 344 872 350 Z" fill="#8d8478"/>
+
+      <!-- eyebrows -->
+      <path d="M746 366 Q766 356 786 364" stroke="#4a3826" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M814 364 Q834 356 854 366" stroke="#4a3826" stroke-width="7" fill="none" stroke-linecap="round"/>
+
+      <!-- eyes -->
+      <g class="avatar-eyes">
+        <ellipse cx="768" cy="388" rx="13" ry="10" fill="#f6f1e6"/>
+        <ellipse cx="832" cy="388" rx="13" ry="10" fill="#f6f1e6"/>
+        <circle cx="770" cy="389" r="5.5" fill="#3d2f1e"/>
+        <circle cx="830" cy="389" r="5.5" fill="#3d2f1e"/>
+        <circle cx="772" cy="387" r="1.8" fill="#fff"/>
+        <circle cx="832" cy="387" r="1.8" fill="#fff"/>
+      </g>
+      <!-- crow's feet / cheek lines -->
+      <path d="M750 404 Q756 410 764 410" stroke="#c68d5a" stroke-width="2.5" fill="none"/>
+      <path d="M850 404 Q844 410 836 410" stroke="#c68d5a" stroke-width="2.5" fill="none"/>
+
+      <!-- nose -->
+      <path d="M800 392 C796 410 790 420 792 428 C795 434 805 434 808 428 C810 420 804 410 800 392 Z" fill="#cf9662"/>
+
+      <!-- mustache -->
+      <path d="M766 440 Q800 428 834 440 Q820 452 800 450 Q780 452 766 440 Z" fill="#4a3826"/>
+
+      <!-- mouth: resting -->
+      <path class="mouth-pose mouth-pose-closed" d="M778 458 Q800 468 822 458" stroke="#8a4a34" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <!-- mouth: talking (jaw-animated) -->
+      <g class="mouth-pose mouth-pose-open">
+        <ellipse cx="800" cy="460" rx="20" ry="13" fill="#6e3325"/>
+        <path d="M784 453 Q800 458 816 453" stroke="#f6f1e6" stroke-width="5" fill="none"/>
+      </g>
+
+      <!-- chin crease -->
+      <path d="M782 480 Q800 490 818 480" stroke="#c68d5a" stroke-width="3" fill="none" opacity="0.7"/>
+    </g>
+  </g>
+
+  <!-- ======================= BAR COUNTER (foreground of avatar) ======================= -->
+  <g>
+    <!-- counter top: perspective trapezoid toward viewer -->
+    <path d="M0 700 L1600 700 L1600 760 L0 760 Z" fill="#2a1608"/>
+    <path d="M0 760 L1600 760 L1600 900 L0 900 Z" fill="url(#bartender-counterGrad)"/>
+    <!-- counter top surface -->
+    <path d="M0 700 L1600 700 L1600 726 L0 726 Z" fill="#8a5525"/>
+    <!-- wood grain -->
+    <g stroke="#22110499" stroke-width="3" opacity="0.5">
+      <path d="M0 800 C400 792 900 812 1600 798" fill="none"/>
+      <path d="M0 848 C500 860 1100 838 1600 852" fill="none"/>
+      <path d="M0 884 C400 876 1000 894 1600 880" fill="none"/>
+    </g>
+    <!-- brass rail -->
+    <rect x="0" y="726" width="1600" height="9" fill="#c8a049"/>
+    <rect x="0" y="726" width="1600" height="3" fill="#f0d68a"/>
+
+    <!-- beer taps on the counter, left of avatar -->
+    <g transform="translate(430, 700)">
+      <rect x="-16" y="-96" width="32" height="96" rx="8" fill="#c8a049"/>
+      <rect x="-12" y="-92" width="10" height="88" rx="5" fill="#f0d68a" opacity="0.5"/>
+      <circle cx="0" cy="-108" r="20" fill="#7a1220" stroke="#c8a049" stroke-width="4"/>
+      <text y="-102" text-anchor="middle" font-size="13" fill="#f2ede2" font-weight="bold">PIWO</text>
+      <path d="M14 -66 L34 -66 L34 -46 L26 -46 L26 -30 L20 -30 L20 -46 L14 -46 Z" fill="#8a6a2a"/>
+    </g>
+    <g transform="translate(510, 700)">
+      <rect x="-16" y="-96" width="32" height="96" rx="8" fill="#c8a049"/>
+      <rect x="-12" y="-92" width="10" height="88" rx="5" fill="#f0d68a" opacity="0.5"/>
+      <circle cx="0" cy="-108" r="20" fill="#1e3a5c" stroke="#c8a049" stroke-width="4"/>
+      <text y="-102" text-anchor="middle" font-size="12" fill="#f2ede2" font-weight="bold">CIEMNE</text>
+    </g>
+
+    <!-- shot glasses + vodka bottle near avatar's resting hand -->
+    <g transform="translate(1060, 700)">
+      <path d="M-70 0 L-46 0 L-50 -26 L-66 -26 Z" fill="#dce8ee" opacity="0.7"/>
+      <path d="M-36 0 L-12 0 L-16 -26 L-32 -26 Z" fill="#dce8ee" opacity="0.7"/>
+      <g>
+        <rect x="8" y="-86" width="40" height="86" rx="7" fill="#dbe7ec" opacity="0.85"/>
+        <rect x="18" y="-112" width="20" height="30" rx="5" fill="#dbe7ec" opacity="0.85"/>
+        <rect x="16" y="-118" width="24" height="9" rx="3" fill="#8a1a1a"/>
+        <rect x="12" y="-72" width="32" height="42" rx="3" fill="#f2ede2"/>
+        <text x="28" y="-52" text-anchor="middle" font-size="12" fill="#8a1a1a" font-weight="bold">WÓDKA</text>
+        <text x="28" y="-38" text-anchor="middle" font-size="8" fill="#3a3a3a">CZYSTA 40%</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ======================= EXTREME FOREGROUND (POV: your beer) ======================= -->
+  <g filter="url(#bartender-softBlur)">
+    <!-- your pint, bottom right, big & close -->
+    <g transform="translate(1310, 900)">
+      <path d="M-95 0 L95 0 L78 -280 L-78 -280 Z" fill="url(#bartender-beerGrad)" opacity="0.96"/>
+      <path d="M-95 0 L95 0 L78 -280 L-78 -280 Z" fill="url(#bartender-glassShine)"/>
+      <!-- foam -->
+      <path d="M-80 -272 Q-60 -300 -34 -286 Q-16 -308 8 -290 Q30 -306 52 -288 Q72 -298 80 -272 L78 -258 L-78 -258 Z" fill="#fdf6e3"/>
+      <!-- bubbles -->
+      <g fill="#ffe9b0">
+        <circle class="scene-bubble" cx="-30" cy="-40" r="5"/>
+        <circle class="scene-bubble" cx="14" cy="-30" r="4"/>
+        <circle class="scene-bubble" cx="44" cy="-52" r="6"/>
+        <circle class="scene-bubble" cx="-8" cy="-24" r="3.5"/>
+      </g>
+      <!-- glass rim highlight -->
+      <path d="M-78 -280 L78 -280" stroke="#ffffff" stroke-width="4" opacity="0.5"/>
+    </g>
+    <!-- beer coaster -->
+    <ellipse cx="1310" cy="893" rx="130" ry="16" fill="#7a1220" opacity="0.85"/>
+    <!-- bowl of paluszki (snack sticks), bottom left -->
+    <g transform="translate(220, 900)">
+      <path d="M-110 0 Q-110 -52 0 -52 Q110 -52 110 0 Z" fill="#5c3418"/>
+      <g stroke="#d9a832" stroke-width="7" stroke-linecap="round">
+        <line x1="-52" y1="-48" x2="-14" y2="-86"/>
+        <line x1="-20" y1="-50" x2="16" y2="-92"/>
+        <line x1="12" y1="-48" x2="52" y2="-80"/>
+        <line x1="34" y1="-50" x2="-6" y2="-78"/>
+      </g>
+    </g>
+  </g>
+</svg>
+<span class="visually-hidden">The bartender at Bar Pod Białym Orłem</span>
+</div>

@@ -113,6 +113,18 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task Responses_allow_speech_sdk_blob_audio_in_csp()
+    {
+        var client = CreateClient();
+
+        var response = await client.GetAsync("/login");
+
+        response.EnsureSuccessStatusCode();
+        var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
+        Assert.Contains("media-src 'self' blob:", csp);
+    }
+
+    [Fact]
     public async Task Post_WithoutAntiForgeryToken_IsRejected()
     {
         var client = CreateClient();

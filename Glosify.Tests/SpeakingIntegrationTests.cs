@@ -3,8 +3,10 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using Glosify.Services.Ai;
+using Glosify.Services.Language;
 using Glosify.Services.Speaking;
 using Glosify.Services.Speech;
 using Microsoft.AspNetCore.Authentication;
@@ -21,6 +23,21 @@ namespace Glosify.Tests;
 
 public sealed class SpeakingIntegrationTests
 {
+    [Fact]
+    public async Task Speaking_page_redirects_to_language_selection_when_none_is_selected()
+    {
+        using var factory = CreateFactory(null);
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+
+        var response = await client.GetAsync("/Speaking");
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("/Languages", response.Headers.Location?.OriginalString);
+    }
+
     [Fact]
     public async Task Speaking_page_renders_navigation_scenes_and_no_floating_assistant()
     {
@@ -50,6 +67,104 @@ public sealed class SpeakingIntegrationTests
             document.Scripts,
             script => (script.GetAttribute("src") ?? string.Empty)
                 .Contains("/lib/speech-sdk/distrib/browser/", StringComparison.Ordinal));
+        var microphone = document.QuerySelector("#speaking-mic");
+        Assert.Equal("false", microphone?.GetAttribute("aria-pressed"));
+        Assert.Contains("Speak to type", microphone?.TextContent ?? string.Empty);
+        var avatarRecorder = document.QuerySelector("#speaking-avatar-record");
+        Assert.Equal("false", avatarRecorder?.GetAttribute("aria-pressed"));
+        Assert.Contains("Hold to speak & send", avatarRecorder?.TextContent ?? string.Empty);
+        var avatarTemplate = Assert.IsAssignableFrom<IHtmlTemplateElement>(
+            document.QuerySelector("#speaking-avatar-message-template"));
+        var messageFlip = avatarTemplate.Content.QuerySelector("[data-message-flip]");
+        Assert.Equal("button", messageFlip?.LocalName);
+        Assert.Equal("false", messageFlip?.GetAttribute("aria-pressed"));
+        Assert.Equal(
+            "false",
+            messageFlip?.QuerySelector(".speaking-message-front")?.GetAttribute("aria-hidden"));
+        Assert.Equal(
+            "true",
+            messageFlip?.QuerySelector(".speaking-message-back")?.GetAttribute("aria-hidden"));
+    }
+
+    [Theory]
+    [InlineData("Estonian", "maarja")]
+    [InlineData("German", "hanna")]
+    [InlineData("Polish", "bartender")]
+    [InlineData("Ukrainian", "oksana")]
+    public async Task Speaking_page_only_exposes_avatars_for_the_selected_language(
+        string language,
+        string expectedDefaultAvatar)
+    {
+        using var factory = CreateFactory(language);
+        var client = factory.CreateClient();
+
+        var document = await GetDocumentAsync(client);
+        var root = Assert.IsAssignableFrom<IHtmlElement>(document.QuerySelector("#speaking-app"));
+        using var pageData = JsonDocument.Parse(
+            root.GetAttribute("data-speaking-page")
+            ?? throw new InvalidOperationException("Speaking page data is missing."));
+
+        Assert.Equal(language, pageData.RootElement.GetProperty("language").GetString());
+        Assert.Equal(expectedDefaultAvatar, pageData.RootElement.GetProperty("defaultAvatarId").GetString());
+        Assert.Equal(3, pageData.RootElement.GetProperty("avatars").GetArrayLength());
+        Assert.All(
+            pageData.RootElement.GetProperty("avatars").EnumerateArray(),
+            avatar => Assert.Equal(language, avatar.GetProperty("language").GetString()));
+        Assert.Equal(3, document.QuerySelectorAll("[data-avatar-choice]").Length);
+        Assert.Equal(3, document.QuerySelectorAll("[data-avatar-scene]").Length);
+        var svgIds = document.QuerySelectorAll("[data-avatar-scene] [id]")
+            .Select(element => element.Id)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .ToArray();
+        Assert.Equal(svgIds.Length, svgIds.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public async Task Speaking_client_supports_hold_to_send_and_silence_ended_draft_transcription()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var script = await client.GetStringAsync("/js/speaking.js");
+
+        Assert.Contains("startContinuousRecognitionAsync", script, StringComparison.Ordinal);
+        Assert.Contains("stopContinuousRecognitionAsync", script, StringComparison.Ordinal);
+        Assert.Contains("elements.avatarRecord.addEventListener(\"pointerdown\"", script, StringComparison.Ordinal);
+        Assert.Contains("elements.avatarRecord.addEventListener(\"pointerup\"", script, StringComparison.Ordinal);
+        Assert.Contains("elements.mic.addEventListener(\"click\"", script, StringComparison.Ordinal);
+        Assert.Contains("function scheduleSilenceStop", script, StringComparison.Ordinal);
+        Assert.Contains("recognition.autoStop", script, StringComparison.Ordinal);
+        Assert.Contains("if (recognition.autoSend)", script, StringComparison.Ordinal);
+        Assert.Contains("addEventListener(\"pointerdown\"", script, StringComparison.Ordinal);
+        Assert.Contains("await sendCurrentMessage();", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Speaking_client_flips_individual_avatar_messages_to_their_translation()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var script = await client.GetStringAsync("/js/speaking.js");
+
+        Assert.Contains("function setMessageTranslation", script, StringComparison.Ordinal);
+        Assert.Contains("root.querySelectorAll(\"[data-message-flip]\")", script, StringComparison.Ordinal);
+        Assert.Contains("messageFlip.addEventListener(\"click\"", script, StringComparison.Ordinal);
+        Assert.Contains("\"is-flipped\"", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Speaking_client_uses_the_selected_avatar_locale_for_speech()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var script = await client.GetStringAsync("/js/speaking.js");
+
+        Assert.Contains("avatar?.locale || pageData.locale", script, StringComparison.Ordinal);
+        Assert.Contains("escapeXml(avatar.locale)", script, StringComparison.Ordinal);
+        Assert.Contains("avatar?.languageCode || pageData.languageCode", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("speechRecognitionLanguage = \"pl-PL\"", script, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -116,6 +231,29 @@ public sealed class SpeakingIntegrationTests
     }
 
     [Fact]
+    public async Task Session_endpoint_rejects_an_avatar_from_another_language()
+    {
+        using var factory = CreateFactory("German");
+        var client = factory.CreateClient();
+        var token = await GetAntiforgeryTokenAsync(client);
+        using var polishAvatar = Post(
+            "/api/speaking/sessions",
+            token,
+            """{"avatarId":"bartender","cefrLevel":"A2"}""");
+        using var germanAvatar = Post(
+            "/api/speaking/sessions",
+            token,
+            """{"avatarId":"hanna","cefrLevel":"A2"}""");
+
+        var rejected = await client.SendAsync(polishAvatar);
+        var accepted = await client.SendAsync(germanAvatar);
+
+        Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+        accepted.EnsureSuccessStatusCode();
+        Assert.Contains("German", await rejected.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Speech_token_endpoint_is_limited_to_twelve_requests_per_minute_per_user()
     {
         using var factory = CreateFactory();
@@ -137,7 +275,7 @@ public sealed class SpeakingIntegrationTests
         Assert.Equal(HttpStatusCode.TooManyRequests, limitedResponse.StatusCode);
     }
 
-    private static WebApplicationFactory<Program> CreateFactory() =>
+    private static WebApplicationFactory<Program> CreateFactory(string? language = "Polish") =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
@@ -149,6 +287,8 @@ public sealed class SpeakingIntegrationTests
                 services.AddSingleton<ISpeakingService, FakeSpeakingService>();
                 services.RemoveAll<ISpeechAuthorizationTokenService>();
                 services.AddSingleton<ISpeechAuthorizationTokenService, FakeSpeechTokens>();
+                services.RemoveAll<ILanguageContext>();
+                services.AddSingleton<ILanguageContext>(new FixedLanguageContext(language));
                 services
                     .AddAuthentication(options =>
                     {
@@ -161,6 +301,20 @@ public sealed class SpeakingIntegrationTests
                         _ => { });
             });
         });
+
+    private sealed class FixedLanguageContext(string? currentLanguage) : ILanguageContext
+    {
+        public string? CurrentLanguage { get; } = currentLanguage;
+        public bool HasLanguage => CurrentLanguage is not null;
+        public IReadOnlyList<string> SupportedLanguages { get; } =
+            ["Estonian", "German", "Polish", "Ukrainian"];
+
+        public bool TrySetLanguage(string language) => false;
+
+        public void Clear()
+        {
+        }
+    }
 
     private static async Task<AngleSharp.Dom.IDocument> GetDocumentAsync(HttpClient client)
     {

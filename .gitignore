@@ -386,3 +386,4 @@ FodyWeavers.xsd
 docs/*.aux
 docs/*.out
 docs/*.toc
+.firecrawl/

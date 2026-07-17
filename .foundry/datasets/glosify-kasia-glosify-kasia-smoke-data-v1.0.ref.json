@@ -1,0 +1,16 @@
+{
+  "dataUri": "https://sap4tnsiyyqewfs.blob.core.windows.net/glosify-fo-e0464ce7-36cb-58a1-983f-2214a6c20abf",
+  "isReference": false,
+  "id": "azureai://accounts/glosify-foundry/projects/glosify-speaking/data/glosify-kasia-smoke-data/versions/1.0",
+  "name": "glosify-kasia-smoke-data",
+  "version": "1.0",
+  "description": "Dataset for eval data generation job: datagen-16318368982b403588d2a5c7f8845703",
+  "tags": {
+    "data_generation_job_id": "datagen-16318368982b403588d2a5c7f8845703"
+  },
+  "contentDownloaded": true,
+  "contentPath": ".foundry/datasets/glosify-kasia-smoke-data-v1.0",
+  "contentFiles": [
+    "glosify-kasia-smoke-data_dg.jsonl"
+  ]
+}

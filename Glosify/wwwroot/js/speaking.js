@@ -7,10 +7,12 @@
     }
 
     const pageData = JSON.parse(root.dataset.speakingPage || "{}");
+    const practiceLanguage = pageData.language || "the selected language";
     const avatars = new Map((pageData.avatars || []).map(avatar => [avatar.id, avatar]));
     const elements = {
         avatarChoices: [...root.querySelectorAll("[data-avatar-choice]")],
-        scenes: [...root.querySelectorAll("[data-avatar-scene]")],
+        scenes: [...root.querySelectorAll("[data-avatar-scene]")]
+            .filter(scene => avatars.has(scene.dataset.avatarScene)),
         stageCard: root.querySelector(".speaking-stage-card"),
         avatarName: document.getElementById("speaking-avatar-name"),
         sceneName: document.getElementById("speaking-scene-name"),
@@ -23,6 +25,8 @@
         characterCount: document.getElementById("speaking-character-count"),
         mic: document.getElementById("speaking-mic"),
         micLabel: root.querySelector(".speaking-mic-label"),
+        avatarRecord: document.getElementById("speaking-avatar-record"),
+        avatarRecordLabel: root.querySelector(".speaking-avatar-record-label"),
         send: document.getElementById("speaking-send"),
         status: document.getElementById("speaking-status"),
         recordingNote: document.getElementById("speaking-recording-note"),
@@ -36,7 +40,7 @@
     };
 
     const state = {
-        avatarId: pageData.defaultAvatarId || "bartender",
+        avatarId: pageData.defaultAvatarId || avatars.keys().next().value || "",
         cefrLevel: pageData.defaultCefrLevel || "A2",
         sessionId: null,
         ready: false,
@@ -47,6 +51,7 @@
         pronunciation: null,
         token: null,
         latestReply: null,
+        activeRecognition: null,
         activeSynthesizer: null,
         activeAudio: null,
         mouthTimers: [],
@@ -81,11 +86,22 @@
 
     function setBusy(busy) {
         state.busy = busy;
-        elements.send.disabled = busy || !state.ready;
-        elements.mic.disabled = busy || !state.ready || state.listening;
-        elements.level.disabled = busy;
+        const interactionLocked = busy || state.listening;
+        const recognitionSource = state.activeRecognition?.source;
+        elements.send.disabled = interactionLocked || !state.ready;
+        elements.mic.disabled =
+            busy
+            || !state.ready
+            || (state.listening && recognitionSource !== "composer");
+        elements.avatarRecord.disabled =
+            busy
+            || !state.ready
+            || (state.listening && recognitionSource !== "avatar");
+        elements.level.disabled = interactionLocked;
+        elements.newSession.disabled = interactionLocked;
+        elements.textarea.readOnly = state.listening;
         elements.avatarChoices.forEach(choice => {
-            choice.disabled = busy;
+            choice.disabled = interactionLocked;
         });
     }
 
@@ -110,9 +126,26 @@
         elements.sceneName.textContent = avatar?.scenario || "";
     }
 
+    function setMessageTranslation(message, showTranslation) {
+        message.classList.toggle("is-flipped", showTranslation);
+        message.setAttribute("aria-pressed", showTranslation ? "true" : "false");
+        message.setAttribute(
+            "aria-label",
+            showTranslation
+                ? `Show ${practiceLanguage} message`
+                : "Show English translation");
+        message.querySelector(".speaking-message-front")
+            ?.setAttribute("aria-hidden", showTranslation ? "true" : "false");
+        message.querySelector(".speaking-message-back")
+            ?.setAttribute("aria-hidden", showTranslation ? "false" : "true");
+    }
+
     function setTranslationVisibility(show) {
         elements.translationToggle.checked = show;
         root.classList.toggle("show-translations", show);
+        root.querySelectorAll("[data-message-flip]").forEach(message => {
+            setMessageTranslation(message, show);
+        });
         try {
             localStorage.setItem("glosify-speaking-translation", show ? "1" : "0");
         } catch {
@@ -279,6 +312,14 @@
         fragment.querySelector(".speaking-message-polish").textContent = turn.replyPolish;
         fragment.querySelector(".speaking-message-english").textContent = turn.replyEnglish;
 
+        const messageFlip = fragment.querySelector("[data-message-flip]");
+        setMessageTranslation(messageFlip, elements.translationToggle.checked);
+        messageFlip.addEventListener("click", () => {
+            setMessageTranslation(
+                messageFlip,
+                !messageFlip.classList.contains("is-flipped"));
+        });
+
         const replay = fragment.querySelector(".speaking-message-replay");
         replay.hidden = !allowReplay;
         replay.addEventListener("click", () => {
@@ -401,7 +442,14 @@
         return state.token;
     }
 
-    async function startRecognition() {
+    function beginRecognition({
+        source,
+        autoSend,
+        autoStop,
+        control,
+        label,
+        idleLabel
+    }) {
         if (state.listening || state.busy) {
             return;
         }
@@ -412,69 +460,302 @@
             return;
         }
 
+        stopSpeaking();
+        clearRecordedSpeech();
         state.listening = true;
-        elements.mic.classList.add("is-listening");
-        elements.micLabel.textContent = "Listening…";
-        elements.mic.disabled = true;
-        setStatus("Speak one Polish sentence. Recording stops automatically after the phrase.");
+        const recognition = {
+            source,
+            autoSend,
+            autoStop,
+            control,
+            label,
+            idleLabel,
+            recognizer: null,
+            started: false,
+            stopRequested: false,
+            finishing: false,
+            silenceTimer: null,
+            segments: [],
+            partialTranscript: "",
+            pronunciationSamples: [],
+            error: null,
+            startPromise: null
+        };
+        state.activeRecognition = recognition;
+        control.classList.add("is-listening");
+        control.setAttribute("aria-pressed", "true");
+        label.textContent = "Starting…";
+        setBusy(state.busy);
+        setStatus(
+            autoStop
+                ? "Connecting to the microphone. Start speaking when it is ready."
+                : "Connecting to the microphone. Keep holding the button.");
 
-        let recognizer;
-        try {
-            const token = await getSpeechToken();
-            const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(
-                token.authorizationToken,
-                token.region);
-            speechConfig.speechRecognitionLanguage = "pl-PL";
-            speechConfig.outputFormat = sdk.OutputFormat.Detailed;
-            const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
-            recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
-            const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
-                "",
-                sdk.PronunciationAssessmentGradingSystem.HundredMark,
-                sdk.PronunciationAssessmentGranularity.Phoneme,
-                false);
-            pronunciationConfig.applyTo(recognizer);
-
-            const result = await new Promise((resolve, reject) => {
-                recognizer.recognizeOnceAsync(resolve, reject);
+        recognition.startPromise = initializeRecognition(recognition, sdk)
+            .catch(error => {
+                recognition.error =
+                    error instanceof Error
+                        ? error
+                        : new Error("Microphone access failed. Typed chat is still available.");
+                return finishRecognition(recognition, false);
             });
-            if (result.reason !== sdk.ResultReason.RecognizedSpeech || !result.text?.trim()) {
-                throw new Error("Azure Speech did not catch that. Try again or type your message.");
+    }
+
+    function beginAvatarRecognition() {
+        beginRecognition({
+            source: "avatar",
+            autoSend: true,
+            autoStop: false,
+            control: elements.avatarRecord,
+            label: elements.avatarRecordLabel,
+            idleLabel: "Hold to speak & send"
+        });
+    }
+
+    function beginComposerRecognition() {
+        beginRecognition({
+            source: "composer",
+            autoSend: false,
+            autoStop: true,
+            control: elements.mic,
+            label: elements.micLabel,
+            idleLabel: "Speak to type"
+        });
+    }
+
+    function clearSilenceTimer(recognition) {
+        if (!recognition.silenceTimer) {
+            return;
+        }
+
+        window.clearTimeout(recognition.silenceTimer);
+        recognition.silenceTimer = null;
+    }
+
+    function scheduleSilenceStop(recognition, delay = 1_800) {
+        if (!recognition.autoStop
+            || recognition.stopRequested
+            || state.activeRecognition !== recognition) {
+            return;
+        }
+
+        clearSilenceTimer(recognition);
+        recognition.silenceTimer = window.setTimeout(() => {
+            recognition.silenceTimer = null;
+            void stopRecognition(recognition);
+        }, delay);
+    }
+
+    async function initializeRecognition(recognition, sdk) {
+        const token = await getSpeechToken();
+        if (state.activeRecognition !== recognition) {
+            return;
+        }
+
+        const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(
+            token.authorizationToken,
+            token.region);
+        const avatar = currentAvatar();
+        speechConfig.speechRecognitionLanguage = avatar?.locale || pageData.locale;
+        speechConfig.outputFormat = sdk.OutputFormat.Detailed;
+        const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
+        const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+        recognition.recognizer = recognizer;
+
+        const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
+            "",
+            sdk.PronunciationAssessmentGradingSystem.HundredMark,
+            sdk.PronunciationAssessmentGranularity.Phoneme,
+            false);
+        pronunciationConfig.applyTo(recognizer);
+
+        recognizer.recognizing = (_sender, event) => {
+            if (event.result.reason === sdk.ResultReason.RecognizingSpeech) {
+                recognition.partialTranscript = event.result.text?.trim() || "";
+                if (recognition.partialTranscript) {
+                    scheduleSilenceStop(recognition);
+                }
+            }
+        };
+        recognizer.recognized = (_sender, event) => {
+            if (event.result.reason !== sdk.ResultReason.RecognizedSpeech
+                || !event.result.text?.trim()) {
+                return;
             }
 
-            let pronunciation = null;
+            const text = event.result.text.trim();
+            recognition.segments.push(text);
+            recognition.partialTranscript = "";
+            scheduleSilenceStop(recognition);
             try {
-                const assessment = sdk.PronunciationAssessmentResult.fromResult(result);
-                pronunciation = {
+                const assessment = sdk.PronunciationAssessmentResult.fromResult(event.result);
+                recognition.pronunciationSamples.push({
                     accuracy: assessment.accuracyScore,
-                    fluency: assessment.fluencyScore
-                };
+                    fluency: assessment.fluencyScore,
+                    weight: Math.max(1, text.length)
+                });
             } catch {
                 // Recognition remains useful when assessment is unavailable.
             }
+        };
+        recognizer.canceled = (_sender, event) => {
+            if (event.reason === sdk.CancellationReason.Error) {
+                recognition.error = new Error(
+                    "Azure Speech could not finish the recording. Try again or type your message.");
+                void finishRecognition(recognition, false);
+            }
+        };
 
-            const transcript = result.text.trim();
-            elements.textarea.value = transcript;
-            state.recordedTranscript = transcript;
-            state.pronunciation = pronunciation;
+        await new Promise((resolve, reject) => {
+            recognizer.startContinuousRecognitionAsync(resolve, reject);
+        });
+        recognition.started = true;
+        if (!recognition.stopRequested && state.activeRecognition === recognition) {
+            if (recognition.autoStop) {
+                recognition.label.textContent = "Listening…";
+                setStatus("Speak naturally. The recording will stop when you finish.");
+                scheduleSilenceStop(recognition, 10_000);
+            } else {
+                recognition.label.textContent = "Release to send";
+                setStatus("Keep holding while you speak. Release the button to send.");
+            }
+        }
+    }
+
+    async function stopRecognition(recognition = state.activeRecognition) {
+        if (!recognition || recognition.stopRequested) {
+            return;
+        }
+
+        clearSilenceTimer(recognition);
+        recognition.stopRequested = true;
+        recognition.label.textContent = "Transcribing…";
+        recognition.control.disabled = true;
+        setStatus("Finishing your transcription…");
+        await recognition.startPromise;
+        if (state.activeRecognition !== recognition) {
+            return;
+        }
+
+        if (recognition.started && recognition.recognizer) {
+            try {
+                await new Promise((resolve, reject) => {
+                    recognition.recognizer.stopContinuousRecognitionAsync(resolve, reject);
+                });
+            } catch (error) {
+                recognition.error =
+                    error instanceof Error
+                        ? error
+                        : new Error("Azure Speech could not finish the recording.");
+            }
+        }
+
+        await finishRecognition(recognition, true);
+    }
+
+    async function endAvatarRecognition() {
+        const recognition = state.activeRecognition;
+        if (recognition?.source !== "avatar") {
+            return;
+        }
+
+        await stopRecognition(recognition);
+    }
+
+    async function finishRecognition(recognition, processTranscript) {
+        if (recognition.finishing || state.activeRecognition !== recognition) {
+            return;
+        }
+
+        recognition.finishing = true;
+        clearSilenceTimer(recognition);
+        recognition.recognizer?.close();
+        state.activeRecognition = null;
+        state.listening = false;
+        recognition.control.classList.remove("is-listening");
+        recognition.control.setAttribute("aria-pressed", "false");
+        recognition.label.textContent = recognition.idleLabel;
+        setBusy(state.busy);
+
+        if (recognition.error) {
+            setStatus(recognition.error.message, true);
+            return;
+        }
+        if (!processTranscript) {
+            return;
+        }
+
+        const transcript = [...recognition.segments, recognition.partialTranscript]
+            .filter(Boolean)
+            .join(" ")
+            .replace(/\s+/g, " ")
+            .trim();
+        if (!transcript) {
+            setStatus(
+                recognition.source === "composer"
+                    ? "Azure Speech did not catch that. Press Speak to type and try again."
+                    : "Azure Speech did not catch that. Hold the red button and try again.",
+                true);
+            return;
+        }
+        if (transcript.length > 800) {
+            const shortenedTranscript = transcript.slice(0, 800);
+            elements.textarea.value = shortenedTranscript;
+            state.recordedTranscript = shortenedTranscript;
+            state.pronunciation = averagePronunciation(recognition.pronunciationSamples);
             elements.recordingNote.hidden = false;
             updateCharacterCount();
-            setStatus(
-                pronunciation
-                    ? "Transcript ready. Edit it if needed, then send."
-                    : "Transcript ready. Pronunciation scoring was unavailable for this recording.");
+            setStatus("That recording is too long. Shorten the transcript and press Send.", true);
             elements.textarea.focus();
-        } catch (error) {
-            setStatus(
-                error?.message || "Microphone access failed. Typed chat is still available.",
-                true);
-        } finally {
-            recognizer?.close();
-            state.listening = false;
-            elements.mic.classList.remove("is-listening");
-            elements.micLabel.textContent = "Speak";
-            elements.mic.disabled = state.busy || !state.ready;
+            return;
         }
+
+        elements.textarea.value = transcript;
+        state.recordedTranscript = transcript;
+        state.pronunciation = averagePronunciation(recognition.pronunciationSamples);
+        elements.recordingNote.hidden = false;
+        updateCharacterCount();
+        if (recognition.autoSend) {
+            setStatus("Transcript ready. Sending…");
+            await sendCurrentMessage();
+            return;
+        }
+
+        setStatus("Transcript ready. Review or edit it, then press Send.");
+        elements.textarea.focus();
+    }
+
+    function averagePronunciation(samples) {
+        if (!samples.length) {
+            return null;
+        }
+
+        const totalWeight = samples.reduce((sum, sample) => sum + sample.weight, 0);
+        return {
+            accuracy: samples.reduce(
+                (sum, sample) => sum + sample.accuracy * sample.weight,
+                0) / totalWeight,
+            fluency: samples.reduce(
+                (sum, sample) => sum + sample.fluency * sample.weight,
+                0) / totalWeight
+        };
+    }
+
+    function cancelRecognition() {
+        const recognition = state.activeRecognition;
+        if (!recognition) {
+            return;
+        }
+
+        recognition.finishing = true;
+        clearSilenceTimer(recognition);
+        recognition.recognizer?.close();
+        state.activeRecognition = null;
+        state.listening = false;
+        recognition.control.classList.remove("is-listening");
+        recognition.control.setAttribute("aria-pressed", "false");
+        recognition.label.textContent = recognition.idleLabel;
+        setBusy(state.busy);
     }
 
     function setMouthPose(pose) {
@@ -527,7 +808,8 @@
                 token.authorizationToken,
                 token.region);
             speechConfig.speechSynthesisVoiceName = avatar.voice;
-            const synthesizer = new sdk.SpeechSynthesizer(speechConfig);
+            const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
+            const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
             state.activeSynthesizer = synthesizer;
             let synthesisStartedAt = performance.now();
             let receivedVisemes = false;
@@ -575,7 +857,7 @@
     }
 
     function buildSsml(text, avatar) {
-        return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="pl-PL">`
+        return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${escapeXml(avatar.locale)}">`
             + `<voice name="${escapeXml(avatar.voice)}">`
             + `<prosody rate="${escapeXml(avatar.ssmlRate || "0%")}" pitch="${escapeXml(avatar.ssmlPitch || "0%")}">`
             + `${escapeXml(text)}</prosody></voice></speak>`;
@@ -593,7 +875,9 @@
     async function playFallbackAudio(text) {
         startGenericMouth();
         try {
-            const url = `${root.dataset.ttsFallbackUrl}?text=${encodeURIComponent(text.slice(0, 200))}&lang=pl`;
+            const avatar = currentAvatar();
+            const languageCode = avatar?.languageCode || pageData.languageCode;
+            const url = `${root.dataset.ttsFallbackUrl}?text=${encodeURIComponent(text.slice(0, 200))}&lang=${encodeURIComponent(languageCode)}`;
             const audio = new Audio(url);
             state.activeAudio = audio;
             await audio.play();
@@ -654,8 +938,51 @@
         void speakReply(state.latestReply);
     });
 
+    elements.avatarRecord.addEventListener("pointerdown", event => {
+        if (!event.isPrimary || event.button !== 0) {
+            return;
+        }
+        event.preventDefault();
+        elements.avatarRecord.setPointerCapture?.(event.pointerId);
+        beginAvatarRecognition();
+    });
+
+    const releasePointer = event => {
+        if (!event.isPrimary) {
+            return;
+        }
+        event.preventDefault();
+        if (elements.avatarRecord.hasPointerCapture?.(event.pointerId)) {
+            elements.avatarRecord.releasePointerCapture(event.pointerId);
+        }
+        void endAvatarRecognition();
+    };
+    elements.avatarRecord.addEventListener("pointerup", releasePointer);
+    elements.avatarRecord.addEventListener("pointercancel", releasePointer);
+    elements.avatarRecord.addEventListener("lostpointercapture", () => {
+        void endAvatarRecognition();
+    });
+    elements.avatarRecord.addEventListener("keydown", event => {
+        if ((event.key === " " || event.key === "Enter") && !event.repeat) {
+            event.preventDefault();
+            beginAvatarRecognition();
+        }
+    });
+    elements.avatarRecord.addEventListener("keyup", event => {
+        if (event.key === " " || event.key === "Enter") {
+            event.preventDefault();
+            void endAvatarRecognition();
+        }
+    });
+
     elements.mic.addEventListener("click", () => {
-        void startRecognition();
+        const recognition = state.activeRecognition;
+        if (recognition?.source === "composer") {
+            void stopRecognition(recognition);
+            return;
+        }
+
+        beginComposerRecognition();
     });
 
     elements.send.addEventListener("click", () => {
@@ -677,7 +1004,12 @@
         }
     });
 
+    window.addEventListener("blur", () => {
+        void stopRecognition();
+    });
+
     window.addEventListener("pagehide", () => {
+        cancelRecognition();
         stopSpeaking();
         if (!state.sessionId || !antiforgeryToken) {
             return;

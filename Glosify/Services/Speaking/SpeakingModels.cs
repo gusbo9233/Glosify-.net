@@ -8,6 +8,15 @@ public enum SpeakingAvatarId
     Bartender,
     Kasia,
     Mietek,
+    Maarja,
+    Karl,
+    Liis,
+    Hanna,
+    Jonas,
+    FrauSchneider,
+    Oksana,
+    Andriy,
+    PanMykola,
 }
 
 public enum CefrLevel
@@ -28,13 +37,22 @@ public enum SpeakingInputMode
 public sealed record SpeakingAvatarDefinition(
     SpeakingAvatarId Id,
     string Slug,
+    string Language,
+    string Locale,
     string Name,
     string Scenario,
     string Voice,
     string OpeningPolish,
     string OpeningEnglish,
     string SsmlRate,
-    string SsmlPitch);
+    string SsmlPitch,
+    string SceneTemplate,
+    string PortraitStyle,
+    string SceneSign,
+    string AccentColor)
+{
+    public string LanguageCode => Locale.Split('-', 2)[0];
+}
 
 public sealed record SpeakingOpeningTurn(string ReplyPolish, string ReplyEnglish);
 
@@ -62,6 +80,9 @@ public sealed class SpeakingCoach
 
 public sealed class SpeakingTurn
 {
+    // These JSON names are retained for compatibility with the published
+    // Polish prompt agents. For other avatars they contain the selected
+    // practice language rather than Polish specifically.
     [JsonPropertyName("replyPolish")]
     public string ReplyPolish { get; set; } = string.Empty;
 
@@ -76,15 +97,25 @@ public sealed record SpeakingAgentTurn(SpeakingTurn Turn, AiTokenUsage? Usage);
 
 public sealed record SpeakingPageAvatar(
     string Id,
+    string Language,
+    string Locale,
+    string LanguageCode,
     string Name,
     string Scenario,
     string Voice,
     string OpeningPolish,
     string OpeningEnglish,
     string SsmlRate,
-    string SsmlPitch);
+    string SsmlPitch,
+    string SceneTemplate,
+    string PortraitStyle,
+    string SceneSign,
+    string AccentColor);
 
 public sealed record SpeakingPageViewModel(
     IReadOnlyList<SpeakingPageAvatar> Avatars,
+    string Language,
+    string Locale,
+    string LanguageCode,
     string DefaultAvatarId,
     string DefaultCefrLevel);

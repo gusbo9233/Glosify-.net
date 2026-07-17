@@ -40,7 +40,8 @@ public sealed class SpeakingService : ISpeakingService
         var state = await _sessions.CreateAsync(userId, avatar, cefrLevel, cancellationToken);
         SpeakingTelemetry.SessionsCreated.Add(
             1,
-            new KeyValuePair<string, object?>("speaking.avatar", avatar.Slug));
+            new KeyValuePair<string, object?>("speaking.avatar", avatar.Slug),
+            new KeyValuePair<string, object?>("speaking.language", avatar.Language));
         return new SpeakingSessionCreated(
             state.Id,
             avatar.Slug,
@@ -77,6 +78,7 @@ public sealed class SpeakingService : ISpeakingService
         var stopwatch = Stopwatch.StartNew();
         using var activity = SpeakingTelemetry.ActivitySource.StartActivity("speaking.turn");
         activity?.SetTag("speaking.avatar", session.Avatar.Slug);
+        activity?.SetTag("speaking.language", session.Avatar.Language);
         activity?.SetTag("speaking.cefr", session.CefrLevel.ToString());
         activity?.SetTag("speaking.input_mode", inputMode.ToString().ToLowerInvariant());
 
@@ -153,13 +155,16 @@ public sealed class SpeakingService : ISpeakingService
     private static string BuildAgentMessage(SpeakingSessionState session, string learnerText) =>
         $"""
         Trusted Glosify session context:
+        - Practice language: {session.Avatar.Language} ({session.Avatar.Locale})
         - Learner CEFR level: {session.CefrLevel}
         - Persona: {session.Avatar.Name}
         - Scenario: {session.Avatar.Scenario}
-        - The learner has already seen this opening line: {session.Avatar.OpeningPolish}
+        - The learner has already seen this opening line in {session.Avatar.Language}: {session.Avatar.OpeningPolish}
 
-        Continue the role-play in Polish at the selected CEFR level. Keep the in-character
-        reply concise, then provide the required English translation and coaching fields.
+        Continue the role-play only in {session.Avatar.Language} at the selected CEFR level.
+        Keep the in-character reply concise, then provide the required English translation
+        and coaching fields. The legacy replyPolish and correctedPolish fields must contain
+        {session.Avatar.Language} for this session.
 
         Learner message:
         {learnerText}

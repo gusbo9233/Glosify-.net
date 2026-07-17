@@ -222,7 +222,7 @@
 
 .speaking-stage-card {
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr) auto auto;
 }
 
 .speaking-stage {
@@ -257,6 +257,225 @@
     height: 100%;
     display: block;
     object-fit: cover;
+    filter: saturate(1.04) contrast(1.025);
+}
+
+.speaking-scene-prototype .avatar-figure,
+.speaking-scene-crafted .avatar-figure,
+.speaking-scene-generated .avatar-figure {
+    filter: drop-shadow(0 18px 18px rgba(8, 5, 3, .28));
+}
+
+.speaking-scene-crafted .scene-steam {
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: speaking-steam 3.6s ease-in-out infinite;
+}
+
+.speaking-scene-crafted .scene-leaves {
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: speaking-leaf-sway 7s ease-in-out infinite;
+}
+
+.speaking-scene-crafted .scene-leaves-delayed {
+    animation-delay: -3.4s;
+}
+
+.speaking-scene-crafted .scene-foreground-leaves {
+    transform-origin: left bottom;
+    animation: speaking-foreground-sway 8s ease-in-out infinite;
+}
+
+.speaking-scene-prototype .mouth-pose-open {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.speaking-scene-prototype[data-mouth-pose="narrow"] .mouth-pose-open {
+    display: block;
+    transform: scale(1, .52);
+}
+
+.speaking-scene-prototype[data-mouth-pose="round"] .mouth-pose-open {
+    display: block;
+    transform: scale(.62, 1.08);
+}
+
+.speaking-scene-prototype .scene-neon {
+    animation: speaking-neon-buzz 9s linear infinite;
+}
+
+.speaking-scene-prototype .scene-twinkle-item {
+    animation: speaking-twinkle 3s ease-in-out infinite;
+}
+
+.speaking-scene-prototype .avatar-hair-back {
+    transform-origin: 800px 300px;
+    animation: speaking-hair-sway 6s ease-in-out infinite;
+}
+
+.speaking-scene-prototype .avatar-earring {
+    transform-box: fill-box;
+    transform-origin: top center;
+    animation: speaking-earring-swing 3.4s ease-in-out infinite;
+}
+
+.speaking-scene-prototype .avatar-earring-right {
+    animation-direction: reverse;
+}
+
+.speaking-scene-prototype .scene-cloud-a {
+    animation: speaking-cloud-drift 46s ease-in-out infinite alternate;
+}
+
+.speaking-scene-prototype .scene-cloud-b {
+    animation: speaking-cloud-drift 62s ease-in-out infinite alternate-reverse;
+}
+
+.speaking-scene-prototype .scene-peck {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: speaking-peck 1.6s ease-in-out infinite;
+}
+
+.speaking-scene-prototype .scene-bubble {
+    animation: speaking-bubble-rise 3.5s linear infinite;
+}
+
+.speaking-scene-prototype .scene-bubble:nth-child(2) {
+    animation-delay: 1.1s;
+    animation-duration: 2.9s;
+}
+
+.speaking-scene-prototype .scene-bubble:nth-child(3) {
+    animation-delay: 2.2s;
+    animation-duration: 4.1s;
+}
+
+.speaking-scene-prototype .scene-bubble:nth-child(4) {
+    animation-delay: .6s;
+    animation-duration: 3.2s;
+}
+
+.speaking-scene-generated {
+    --generated-scene-top: #213b55;
+    --generated-scene-bottom: #765747;
+    --generated-accent: #7fd9f5;
+    --generated-lamp: #ffd58a;
+    --generated-floor: #4b382f;
+    --generated-table: #76513a;
+    --generated-awning: #d86d63;
+    --generated-awning-alt: #f1c65b;
+    --generated-crate: #7b5536;
+    --generated-produce: #d78446;
+    --generated-tree: #4f8b5b;
+    --generated-tree-alt: #6ca264;
+    --generated-trunk: #694831;
+    --generated-grass: #52784c;
+    --generated-bench: #7d583c;
+    --generated-bench-leg: #3d4248;
+    --generated-sign: #fff1c1;
+    --generated-hair: #4b3428;
+    --generated-shirt: #355b77;
+    --generated-skin: #e5ad82;
+    --generated-brow: #4a3429;
+    --generated-eye: #3d4d54;
+    --generated-nose: #cf946d;
+    --generated-grey: #d2d0ca;
+    --generated-lip: #9b4d47;
+    --generated-mouth: #6d302b;
+}
+
+.speaking-scene-template-cafe {
+    --generated-scene-top: #23354a;
+    --generated-scene-bottom: #6b4b43;
+    --generated-floor: #3d2d29;
+    --generated-table: #815a3e;
+}
+
+.speaking-scene-template-market {
+    --generated-scene-top: #6d92a8;
+    --generated-scene-bottom: #d6b376;
+    --generated-floor: #756a5e;
+}
+
+.speaking-scene-template-park {
+    --generated-scene-top: #729cb5;
+    --generated-scene-bottom: #d8c18c;
+    --generated-grass: #587b4c;
+}
+
+.speaking-scene-maarja {
+    --generated-accent: #63c7df;
+    --generated-hair: #7b4d2e;
+    --generated-shirt: #2f7180;
+    --generated-eye: #49716a;
+}
+
+.speaking-scene-karl {
+    --generated-accent: #f2aa55;
+    --generated-hair: #5c432f;
+    --generated-shirt: #315570;
+    --generated-awning: #347ea5;
+    --generated-awning-alt: #1e252c;
+    --generated-produce: #c94b48;
+}
+
+.speaking-scene-liis {
+    --generated-accent: #91d49a;
+    --generated-hair: #b77b3e;
+    --generated-shirt: #6b4f84;
+    --generated-tree: #3f7852;
+    --generated-tree-alt: #6c995c;
+}
+
+.speaking-scene-hanna {
+    --generated-accent: #f18d93;
+    --generated-hair: #5d302c;
+    --generated-shirt: #8b3f52;
+}
+
+.speaking-scene-jonas {
+    --generated-accent: #f2c15d;
+    --generated-hair: #3f352f;
+    --generated-shirt: #536378;
+    --generated-awning: #c33c3c;
+    --generated-awning-alt: #e1ad2d;
+}
+
+.speaking-scene-frau-schneider {
+    --generated-accent: #a8cf83;
+    --generated-hair: #c3c0b9;
+    --generated-shirt: #586f56;
+    --generated-brow: #8c8983;
+    --generated-tree: #587c4f;
+    --generated-tree-alt: #819a5c;
+}
+
+.speaking-scene-oksana {
+    --generated-accent: #75b9f0;
+    --generated-hair: #3d2b26;
+    --generated-shirt: #275c86;
+    --generated-eye: #456b78;
+}
+
+.speaking-scene-andriy {
+    --generated-accent: #ffd44a;
+    --generated-hair: #4a382c;
+    --generated-shirt: #375f87;
+    --generated-awning: #2469aa;
+    --generated-awning-alt: #e1bd31;
+    --generated-produce: #b94d43;
+}
+
+.speaking-scene-pan-mykola {
+    --generated-accent: #8dc594;
+    --generated-hair: #b8b5ad;
+    --generated-shirt: #536854;
+    --generated-brow: #85817b;
+    --generated-tree: #477353;
+    --generated-tree-alt: #72905c;
 }
 
 .speaking-scene .avatar-figure {
@@ -382,6 +601,70 @@
     border-top: 1px solid rgba(255, 255, 255, .08);
     color: var(--on-surface-var);
     font-size: .78rem;
+}
+
+.speaking-avatar-recorder {
+    display: flex;
+    justify-content: center;
+    padding: 13px 14px 4px;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+.speaking-avatar-record-button {
+    display: inline-flex;
+    min-width: min(330px, 86%);
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 11px 22px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 999px;
+    background: linear-gradient(180deg, #e34850, #b92432);
+    color: #fff;
+    box-shadow: 0 9px 24px rgba(166, 25, 40, .28);
+    font: inherit;
+    font-size: .82rem;
+    font-weight: 850;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.speaking-avatar-record-button:hover:not(:disabled) {
+    background: linear-gradient(180deg, #ee545b, #c22a38);
+}
+
+.speaking-avatar-record-button:focus-visible {
+    outline: 3px solid rgba(255, 154, 159, .5);
+    outline-offset: 3px;
+}
+
+.speaking-avatar-record-button.is-listening {
+    background: linear-gradient(180deg, #ff5a61, #c51f30);
+    animation: speaking-mic-pulse 1s ease-in-out infinite;
+}
+
+.speaking-avatar-record-button:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.speaking-avatar-record-button .material-symbols-outlined {
+    font-size: 21px;
+}
+
+.speaking-record-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, .14);
+}
+
+.speaking-avatar-record-button.is-listening .speaking-record-dot {
+    animation: speaking-glow 1s ease-in-out infinite;
 }
 
 .speaking-presence-dot {
@@ -512,10 +795,82 @@
 }
 
 .speaking-message-english {
-    margin-top: 6px !important;
     color: var(--on-surface-var);
-    font-size: .78rem;
+    font-size: .9rem;
     font-style: italic;
+    white-space: pre-wrap;
+}
+
+.speaking-message-flip {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    outline: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    perspective: 900px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.speaking-message-flip:focus-visible {
+    outline: 2px solid var(--primary-fixed);
+    outline-offset: 4px;
+}
+
+.speaking-message-flip-inner {
+    display: grid;
+    min-width: 0;
+    transform-style: preserve-3d;
+    transition: transform .34s var(--ease-standard);
+}
+
+.speaking-message-flip.is-flipped .speaking-message-flip-inner {
+    transform: rotateY(180deg);
+}
+
+.speaking-message-face {
+    display: grid;
+    grid-area: 1 / 1;
+    min-width: 0;
+    align-content: start;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.speaking-message-front {
+    transform: rotateY(0);
+}
+
+.speaking-message-back {
+    transform: rotateY(180deg);
+}
+
+.speaking-message-face > :first-child {
+    overflow-wrap: anywhere;
+}
+
+.speaking-message-flip-hint {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+    margin-top: 7px;
+    color: rgba(255, 255, 255, .48);
+    font-size: .6rem;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.speaking-message-flip-hint .material-symbols-outlined {
+    font-size: 14px;
 }
 
 .speaking-pronunciation {
@@ -672,6 +1027,9 @@
     padding: 8px 10px;
     background: var(--surface-highest);
     color: var(--on-surface);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .speaking-mic-button.is-listening {
@@ -778,6 +1136,53 @@
     to { transform: scale(1.05, .94) rotate(2deg); }
 }
 
+@keyframes speaking-neon-buzz {
+    0%, 40%, 43%, 78%, 80%, 100% { opacity: 1; }
+    41%, 79% { opacity: .62; }
+    42% { opacity: .86; }
+}
+
+@keyframes speaking-hair-sway {
+    0%, 100% { transform: skewX(0); }
+    40% { transform: skewX(.8deg); }
+    75% { transform: skewX(-.7deg); }
+}
+
+@keyframes speaking-earring-swing {
+    0%, 100% { transform: rotate(-6deg); }
+    50% { transform: rotate(6deg); }
+}
+
+@keyframes speaking-cloud-drift {
+    from { transform: translateX(-70px); }
+    to { transform: translateX(90px); }
+}
+
+@keyframes speaking-peck {
+    0%, 55%, 100% { transform: rotate(0); }
+    68%, 82% { transform: rotate(28deg); }
+}
+
+@keyframes speaking-bubble-rise {
+    from { opacity: .9; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-150px); }
+}
+
+@keyframes speaking-steam {
+    0%, 100% { opacity: .3; transform: translateY(0) scaleX(.92); }
+    50% { opacity: .7; transform: translateY(-9px) scaleX(1.08); }
+}
+
+@keyframes speaking-leaf-sway {
+    0%, 100% { transform: rotate(-.35deg); }
+    50% { transform: rotate(.65deg); }
+}
+
+@keyframes speaking-foreground-sway {
+    0%, 100% { transform: rotate(0); }
+    50% { transform: rotate(1.2deg); }
+}
+
 @keyframes speaking-message-in {
     from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
@@ -879,8 +1284,13 @@
 @media (prefers-reduced-motion: reduce) {
     .speaking-scene *,
     .speaking-message,
+    .speaking-avatar-record-button,
     .speaking-mic-button {
         animation: none !important;
+    }
+
+    .speaking-message-flip-inner {
+        transition: none;
     }
 
     .speaking-messages {

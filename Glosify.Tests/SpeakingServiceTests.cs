@@ -15,6 +15,9 @@ public sealed class SpeakingServiceTests
     [InlineData("bartender", SpeakingAvatarId.Bartender)]
     [InlineData("KASIA", SpeakingAvatarId.Kasia)]
     [InlineData("mietek", SpeakingAvatarId.Mietek)]
+    [InlineData("maarja", SpeakingAvatarId.Maarja)]
+    [InlineData("FRAU-SCHNEIDER", SpeakingAvatarId.FrauSchneider)]
+    [InlineData("pan-mykola", SpeakingAvatarId.PanMykola)]
     public void Avatar_catalog_parses_supported_slugs(string slug, SpeakingAvatarId expected)
     {
         Assert.True(SpeakingAvatarCatalog.TryParse(slug, out var avatar));
@@ -28,6 +31,31 @@ public sealed class SpeakingServiceTests
     public void Avatar_catalog_rejects_unknown_slugs(string slug)
     {
         Assert.False(SpeakingAvatarCatalog.TryParse(slug, out _));
+    }
+
+    [Theory]
+    [InlineData("Estonian", "et-EE")]
+    [InlineData("German", "de-DE")]
+    [InlineData("Polish", "pl-PL")]
+    [InlineData("Ukrainian", "uk-UA")]
+    public void Avatar_catalog_has_three_language_bound_avatars(string language, string locale)
+    {
+        var avatars = SpeakingAvatarCatalog.ForLanguage(language);
+
+        Assert.Equal(3, avatars.Count);
+        Assert.All(avatars, avatar =>
+        {
+            Assert.Equal(language, avatar.Language);
+            Assert.Equal(locale, avatar.Locale);
+        });
+    }
+
+    [Fact]
+    public void Avatar_catalog_rejects_an_avatar_from_another_language()
+    {
+        Assert.False(SpeakingAvatarCatalog.TryParseForLanguage("bartender", "German", out _));
+        Assert.True(SpeakingAvatarCatalog.TryParseForLanguage("hanna", "German", out var avatar));
+        Assert.Equal(SpeakingAvatarId.Hanna, avatar.Id);
     }
 
     [Theory]
@@ -119,6 +147,7 @@ public sealed class SpeakingServiceTests
         Assert.Equal(expectedUsage, Assert.Single(credits.Commits).Usage);
         Assert.Empty(credits.Releases);
         Assert.Contains("Poproszę piwo.", Assert.Single(conversation.Messages));
+        Assert.Contains("Practice language: Polish (pl-PL)", conversation.Messages[0]);
     }
 
     [Fact]

@@ -1,0 +1,76 @@
+defaultEnvironment: prod
+environments:
+  prod:
+    projectEndpoint: https://glosify-foundry.services.ai.azure.com/api/projects/glosify-speaking
+    agentName: glosify-bartender
+    agentVersion: "1"
+    evaluationSuites:
+      - id: bartender-smoke
+        suiteName: glosify-bartender-smoke
+        suiteVersion: "1"
+        generationJobId: suitegen-glosify-bartender-smoke-v1-a7e4ea85
+        generationSource: synthetic
+        agentName: glosify-bartender
+        agentVersion: "1"
+        suiteFile: .foundry/suites/glosify-bartender-smoke-v1.json
+        dataset: glosify-bartender-smoke-data
+        datasetVersion: "1.0"
+        datasetFile: .foundry/datasets/glosify-bartender-glosify-bartender-smoke-data-v1.0.ref.json
+        datasetContentPath: .foundry/datasets/glosify-bartender-smoke-data-v1.0
+        datasetUri: azureai://accounts/glosify-foundry/projects/glosify-speaking/data/glosify-bartender-smoke-data/versions/1.0
+        evaluators:
+          - name: glosify-bartender-smoke-evaluator
+            version: "1"
+            threshold: 0.5
+            definitionFile: .foundry/evaluators/glosify-bartender-smoke-evaluator-v1.json
+        tags:
+          tier: smoke
+          purpose: baseline
+          stage: generated
+          persona: bartender
+      - id: kasia-smoke
+        suiteName: glosify-kasia-smoke
+        suiteVersion: "1"
+        generationJobId: suitegen-glosify-kasia-smoke-v1-a5479c9f
+        generationSource: synthetic
+        agentName: glosify-kasia
+        agentVersion: "1"
+        suiteFile: .foundry/suites/glosify-kasia-smoke-v1.json
+        dataset: glosify-kasia-smoke-data
+        datasetVersion: "1.0"
+        datasetFile: .foundry/datasets/glosify-kasia-glosify-kasia-smoke-data-v1.0.ref.json
+        datasetContentPath: .foundry/datasets/glosify-kasia-smoke-data-v1.0
+        datasetUri: azureai://accounts/glosify-foundry/projects/glosify-speaking/data/glosify-kasia-smoke-data/versions/1.0
+        evaluators:
+          - name: glosify-kasia-smoke-evaluator
+            version: "1"
+            threshold: 0.5
+            definitionFile: .foundry/evaluators/glosify-kasia-smoke-evaluator-v1.json
+        tags:
+          tier: smoke
+          purpose: baseline
+          stage: generated
+          persona: kasia
+      - id: mietek-smoke
+        suiteName: glosify-mietek-smoke
+        suiteVersion: "1"
+        generationJobId: suitegen-glosify-mietek-smoke-v1-2e1f79d1
+        generationSource: synthetic
+        agentName: glosify-mietek
+        agentVersion: "1"
+        suiteFile: .foundry/suites/glosify-mietek-smoke-v1.json
+        dataset: glosify-mietek-smoke-data
+        datasetVersion: "1.0"
+        datasetFile: .foundry/datasets/glosify-mietek-glosify-mietek-smoke-data-v1.0.ref.json
+        datasetContentPath: .foundry/datasets/glosify-mietek-smoke-data-v1.0
+        datasetUri: azureai://accounts/glosify-foundry/projects/glosify-speaking/data/glosify-mietek-smoke-data/versions/1.0
+        evaluators:
+          - name: glosify-mietek-smoke-evaluator
+            version: "1"
+            threshold: 0.5
+            definitionFile: .foundry/evaluators/glosify-mietek-smoke-evaluator-v1.json
+        tags:
+          tier: smoke
+          purpose: baseline
+          stage: generated
+          persona: mietek

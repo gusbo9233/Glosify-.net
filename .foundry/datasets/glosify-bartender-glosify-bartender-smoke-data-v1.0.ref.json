@@ -1,0 +1,16 @@
+{
+  "dataUri": "https://sap4tnsiyyqewfs.blob.core.windows.net/glosify-fo-5f7bf645-e897-5d2b-82a4-9abb7b15fea5",
+  "isReference": false,
+  "id": "azureai://accounts/glosify-foundry/projects/glosify-speaking/data/glosify-bartender-smoke-data/versions/1.0",
+  "name": "glosify-bartender-smoke-data",
+  "version": "1.0",
+  "description": "Dataset for eval data generation job: datagen-4a93777e2a5d465193905f73861cd8a7",
+  "tags": {
+    "data_generation_job_id": "datagen-4a93777e2a5d465193905f73861cd8a7"
+  },
+  "contentDownloaded": true,
+  "contentPath": ".foundry/datasets/glosify-bartender-smoke-data-v1.0",
+  "contentFiles": [
+    "glosify-bartender-smoke-data_dg.jsonl"
+  ]
+}

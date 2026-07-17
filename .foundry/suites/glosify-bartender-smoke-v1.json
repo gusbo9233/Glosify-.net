@@ -1,0 +1,48 @@
+{
+  "name": "glosify-bartender-smoke",
+  "version": "1",
+  "display_name": "glosify-bartender-smoke",
+  "description": "Auto-generated evaluation suite for glosify-bartender-smoke",
+  "subtype": "default",
+  "dataset": {
+    "name": "glosify-bartender-smoke-data",
+    "version": "1.0"
+  },
+  "testing_criteria": [
+    {
+      "type": "azure_ai_evaluator",
+      "id": "",
+      "name": "glosify-bartender-smoke-evaluator",
+      "evaluator_name": "glosify-bartender-smoke-evaluator",
+      "evaluator_version": "",
+      "initialization_parameters": {
+        "deployment_name": "gpt-5.4-mini"
+      },
+      "data_mapping": {
+        "query": "{{item.query}}",
+        "response": "{{sample.output_items}}"
+      }
+    }
+  ],
+  "target": {
+    "type": "azure_ai_agent",
+    "name": "glosify-bartender",
+    "version": null,
+    "tool_descriptions": []
+  },
+  "input_messages": {
+    "type": "template",
+    "template": [
+      {
+        "role": "user",
+        "content": "{{item.query}}"
+      }
+    ]
+  },
+  "system_data": {
+    "createdAt": "07/17/2026 12:20:48 +00:00",
+    "createdBy": "Gustav Boberg",
+    "modifiedAt": "07/17/2026 12:25:57 +00:00",
+    "modifiedBy": ""
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "dataUri": "https://sap4tnsiyyqewfs.blob.core.windows.net/glosify-fo-6d0b8eed-81a9-5667-8acf-4c8263a34055",
+  "isReference": false,
+  "id": "azureai://accounts/glosify-foundry/projects/glosify-speaking/data/glosify-mietek-smoke-data/versions/1.0",
+  "name": "glosify-mietek-smoke-data",
+  "version": "1.0",
+  "description": "Dataset for eval data generation job: datagen-e130ba219f444e6d9ffce7fefc3e9b54",
+  "tags": {
+    "data_generation_job_id": "datagen-e130ba219f444e6d9ffce7fefc3e9b54"
+  },
+  "contentDownloaded": true,
+  "contentPath": ".foundry/datasets/glosify-mietek-smoke-data-v1.0",
+  "contentFiles": [
+    "glosify-mietek-smoke-data_dg.jsonl"
+  ]
+}

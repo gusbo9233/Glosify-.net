@@ -486,6 +486,9 @@ static string BuildContentSecurityPolicy(IEnumerable<string> formActionOrigins, 
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "font-src 'self' https://fonts.gstatic.com; " +
         "img-src 'self' data: blob:; " +
+        // The browser Speech SDK renders synthesized replies through a blob:
+        // URL, while the server-side fallback streams same-origin MP3 audio.
+        "media-src 'self' blob:; " +
         $"connect-src {connectDirective}; " +
         // The ACS calling SDK spins up blob: web workers for media handling.
         "worker-src 'self' blob:; " +

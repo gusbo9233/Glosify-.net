@@ -1,6 +1,10 @@
 # Glosify
 
-Glosify is an ASP.NET Core MVC application for building and practicing language-learning quizzes. It supports vocabulary lists, sentence practice, flashcards, typing sessions, public/shared collections, PDF book text extraction, and AI-assisted quiz generation and repair.
+Glosify is an ASP.NET Core MVC application for building and practising
+language-learning quizzes. It supports vocabulary lists, sentence practice,
+flashcards, typing sessions, language-bound avatar conversations, public/shared
+collections, PDF book text extraction, and AI-assisted quiz generation and
+repair.
 
 ## Features
 
@@ -8,7 +12,7 @@ Glosify is an ASP.NET Core MVC application for building and practicing language-
 - Vocabulary and sentence practice with flashcard and typing quiz modes.
 - AI-assisted vocabulary generation, image text extraction, and quiz repair through Gemini-compatible configuration.
 - In-app assistant threads scoped to quizzes.
-- Azure-powered Polish speaking practice with three animated avatars, typed chat, pronunciation assessment, and coaching.
+- Azure-powered speaking practice with three animated avatars per supported language, typed chat, pronunciation assessment, and coaching.
 - PDF book uploads with Azure Blob Storage and extracted page text.
 - AI credit accounting for trial grants, reservations, usage debits, and admin grants.
 - Bearer-token API endpoints for mobile clients under `/api/*`.
@@ -29,12 +33,13 @@ Glosify is an ASP.NET Core MVC application for building and practicing language-
 ## Repository Layout
 
 ```text
-Glosify/                 Web application
-Glosify.Tests/           Automated tests
-Glosify/Migrations/      EF Core migrations
-Glosify/wwwroot/         Static assets
-docs/database-diagram.md Mermaid database diagram
-.github/workflows/      Azure deployment workflow
+Glosify/                  Web application
+Glosify.Tests/            Automated tests
+Glosify/Migrations/       EF Core migrations
+Glosify/wwwroot/          Static assets, including Speaking CSS, JS, and Speech SDK
+.foundry/                 Speaking-agent evaluation suites, datasets, and rubrics
+docs/                     Product, architecture, and operations documentation
+.github/workflows/        Azure deployment workflow
 ```
 
 ## Configuration
@@ -63,9 +68,45 @@ Authentication__Microsoft__ClientSecret="..."
 BlobStorage__AccountName="..."
 BlobStorage__ContainerName="..."
 Admin__Emails__0="admin@example.com"
+
+Speaking__ProjectEndpoint="https://<foundry-resource>.services.ai.azure.com/api/projects/<project>"
+Speaking__ModelDeployment="gpt-5.4-mini"
+Speaking__Agents__Bartender__Name="glosify-bartender"
+Speaking__Agents__Bartender__Version="1"
+Speaking__Agents__Kasia__Name="glosify-kasia"
+Speaking__Agents__Kasia__Version="1"
+Speaking__Agents__Mietek__Name="glosify-mietek"
+Speaking__Agents__Mietek__Version="1"
+Speaking__Agents__Maarja__Name="glosify-maarja"
+Speaking__Agents__Maarja__Version="1"
+Speaking__Agents__Karl__Name="glosify-karl"
+Speaking__Agents__Karl__Version="1"
+Speaking__Agents__Liis__Name="glosify-liis"
+Speaking__Agents__Liis__Version="1"
+Speaking__Agents__Hanna__Name="glosify-hanna"
+Speaking__Agents__Hanna__Version="1"
+Speaking__Agents__Jonas__Name="glosify-jonas"
+Speaking__Agents__Jonas__Version="1"
+Speaking__Agents__FrauSchneider__Name="glosify-frau-schneider"
+Speaking__Agents__FrauSchneider__Version="1"
+Speaking__Agents__Oksana__Name="glosify-oksana"
+Speaking__Agents__Oksana__Version="1"
+Speaking__Agents__Andriy__Name="glosify-andriy"
+Speaking__Agents__Andriy__Version="1"
+Speaking__Agents__PanMykola__Name="glosify-pan-mykola"
+Speaking__Agents__PanMykola__Version="1"
+Speech__Endpoint="https://<speech-resource>.cognitiveservices.azure.com"
+Speech__ResourceId="/subscriptions/<subscription>/resourceGroups/<group>/providers/Microsoft.CognitiveServices/accounts/<speech-resource>"
+Speech__Region="<region>"
+APPLICATIONINSIGHTS_CONNECTION_STRING="..."
 ```
 
 `Glosify/appsettings.json` contains non-secret defaults such as model names, blob container name, AI credit settings, and logging levels.
+
+Speaking practice uses `DefaultAzureCredential`; do not configure a Foundry or
+Speech key in browser-accessible settings. See the
+[Azure speaking-practice guide](docs/azure-speaking-practice.md#identity-and-access)
+for roles and local authentication.
 
 ## Local Development
 
@@ -100,7 +141,21 @@ Run the test suite with:
 dotnet test
 ```
 
-The tests use in-memory EF Core databases where practical and cover navigation, authorization, public sharing, assistant flows, AI credits, and quiz practice services.
+The tests use in-memory EF Core databases where practical and cover navigation,
+authorisation, public sharing, assistant flows, AI credits, quiz practice
+services, Speaking API antiforgery and rate limits, user-bound speaking
+sessions, structured Foundry usage accounting, and keyless Speech tokens.
+
+## Documentation
+
+Start with the [documentation index](docs/README.md).
+
+- [Azure-powered speaking practice](docs/azure-speaking-practice.md) documents
+  the complete `/Speaking` experience, API contract, live Azure deployment,
+  identity, data lifecycle, costs, Foundry evaluations, and validation.
+- [Database diagram](docs/database-diagram.md) documents the EF Core model.
+- [Rewarded ads for AI credits](docs/rewarded-ads-for-credits.md) documents the
+  rewarded-credit integration.
 
 ## Database
 
@@ -108,13 +163,13 @@ The EF Core context is `Glosify.Data.GlosifyContext`. The database includes Iden
 
 See [docs/database-diagram.md](docs/database-diagram.md) for the Mermaid ER diagram.
 
-See [docs/azure-speaking-practice.md](docs/azure-speaking-practice.md) for the Azure resources, identities, agent versions, and local configuration required by `/Speaking`.
-
 ## Deployment
 
 The workflow in `.github/workflows/master_glosify.yml` builds and deploys the app to Azure Web App `glosify` when `master` is pushed.
 
-Note: practice sessions (flashcards/typing) and mobile sign-in codes are stored in in-process memory, so the app assumes a single instance; scaling out or restarting drops active sessions.
+Note: practice sessions (flashcards, typing, and Speaking), opaque Speaking
+session mappings, and mobile sign-in codes are stored in process, so the app
+assumes a single instance. Scaling out or restarting drops active sessions.
 
 Production configuration should be supplied through Azure app settings, including:
 
@@ -124,7 +179,20 @@ Production configuration should be supplied through Azure app settings, includin
 - Blob storage settings
 - OAuth client credentials, if external login is enabled
 - `Admin__Emails__0` and additional indexed admin emails as needed
+- `Speaking__ProjectEndpoint`, `Speaking__ModelDeployment`, and all twelve pinned
+  `Speaking__Agents__*` names and versions
+- `Speech__Endpoint`, `Speech__ResourceId`, and `Speech__Region`
+- `APPLICATIONINSIGHTS_CONNECTION_STRING`, when speaking telemetry is enabled
+
+The App Service managed identity needs `Azure AI User` on the Foundry account
+and `Cognitive Services Speech User` on the Speech resource. Production does not
+require a Foundry or Speech key.
 
 ## Public Repo Hygiene
 
-This repo intentionally ignores local development settings, `.env` files, generated document exports, `.DS_Store`, and tool-specific local config. Keep secrets out of commits and rotate any credential that has ever been pushed.
+This repo intentionally ignores local development settings, `.env` files,
+generated document exports, `.DS_Store`, and tool-specific local config. The
+versioned `.foundry` files contain evaluation metadata, prompts, datasets, and
+rubrics, but no resource keys or access tokens. Review generated evaluation
+content before committing it, keep secrets out of commits, and rotate any
+credential that has ever been pushed.

@@ -1,7 +1,7 @@
 @model Glosify.Services.Speaking.SpeakingPageViewModel
 @using System.Text.Json
 @{
-    ViewData["Title"] = "Speaking practice";
+    ViewData["Title"] = $"{Model.Language} speaking practice";
     ViewData["HideAssistantPanel"] = true;
     var pageData = JsonSerializer.Serialize(Model, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 }
@@ -22,7 +22,7 @@
 
     <header class="speaking-hero">
         <div>
-            <span class="speaking-kicker">Polish conversation lab</span>
+            <span class="speaking-kicker">@Model.Language conversation lab</span>
             <h2>Speak your way into the language.</h2>
             <p>Choose a scene, talk naturally, and get private coaching after every turn.</p>
         </div>
@@ -41,7 +41,9 @@
                         data-avatar-choice="@avatar.Id"
                         role="radio"
                         aria-checked="false">
-                    <span class="speaking-avatar-dot speaking-avatar-dot-@avatar.Id" aria-hidden="true"></span>
+                    <span class="speaking-avatar-dot speaking-avatar-dot-@avatar.Id"
+                          style="background: @avatar.AccentColor"
+                          aria-hidden="true"></span>
                     <span>
                         <strong>@avatar.Name</strong>
                         <small>@avatar.Scenario</small>
@@ -77,15 +79,26 @@
     <div class="speaking-workspace">
         <section class="speaking-stage-card" aria-label="Avatar scene">
             <div class="speaking-stage" id="speaking-stage">
-                @await Html.PartialAsync("_AvatarScenes")
+                @await Html.PartialAsync("_AvatarScenes", Model.Avatars)
                 <div class="speaking-scene-caption">
                     <span id="speaking-avatar-name"></span>
                     <small id="speaking-scene-name"></small>
                 </div>
                 <div class="speaking-live-bubble" id="speaking-live-bubble" hidden>
-                    <p id="speaking-live-polish" lang="pl"></p>
+                    <p id="speaking-live-polish" lang="@Model.LanguageCode"></p>
                     <p class="speaking-translation" id="speaking-live-english" lang="en"></p>
                 </div>
+            </div>
+            <div class="speaking-avatar-recorder">
+                <button type="button"
+                        class="speaking-avatar-record-button"
+                        id="speaking-avatar-record"
+                        aria-label="Hold to speak in @Model.Language; release to send"
+                        aria-pressed="false">
+                    <span class="speaking-record-dot" aria-hidden="true"></span>
+                    <span class="material-symbols-outlined" aria-hidden="true">mic</span>
+                    <span class="speaking-avatar-record-label">Hold to speak &amp; send</span>
+                </button>
             </div>
             <div class="speaking-stage-status">
                 <span class="speaking-presence-dot" aria-hidden="true"></span>
@@ -125,18 +138,19 @@
             </div>
 
             <div class="speaking-composer">
-                <label for="speaking-message" class="visually-hidden">Your Polish message</label>
+                <label for="speaking-message" class="visually-hidden">Your @Model.Language message</label>
                 <textarea id="speaking-message"
                           maxlength="800"
                           rows="3"
-                          placeholder="Napisz po polsku albo użyj mikrofonu…"></textarea>
+                          placeholder="Write in @Model.Language or use the microphone…"></textarea>
                 <div class="speaking-composer-actions">
                     <button type="button"
                             class="speaking-mic-button"
                             id="speaking-mic"
-                            aria-label="Start speaking in Polish">
+                            aria-label="Start voice transcription in @Model.Language; recording stops after you finish speaking"
+                            aria-pressed="false">
                         <span class="material-symbols-outlined" aria-hidden="true">mic</span>
-                        <span class="speaking-mic-label">Speak</span>
+                        <span class="speaking-mic-label">Speak to type</span>
                     </button>
                     <span class="speaking-character-count" id="speaking-character-count">0 / 800</span>
                     <button type="button" class="speaking-send-button" id="speaking-send">
@@ -165,7 +179,7 @@
             <span>You</span>
             <span class="speaking-input-badge"></span>
         </div>
-        <p class="speaking-message-polish" lang="pl"></p>
+        <p class="speaking-message-polish" lang="@Model.LanguageCode"></p>
         <div class="speaking-pronunciation" hidden>
             <div>
                 <span>Accuracy</span>
@@ -187,8 +201,28 @@
                 <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
             </button>
         </div>
-        <p class="speaking-message-polish" lang="pl"></p>
-        <p class="speaking-message-english speaking-translation" lang="en"></p>
+        <button type="button"
+                class="speaking-message-flip"
+                data-message-flip
+                aria-label="Show English translation"
+                aria-pressed="false">
+            <span class="speaking-message-flip-inner">
+                <span class="speaking-message-face speaking-message-front" aria-hidden="false">
+                    <span class="speaking-message-polish" lang="@Model.LanguageCode"></span>
+                    <span class="speaking-message-flip-hint" aria-hidden="true">
+                        <span class="material-symbols-outlined">translate</span>
+                        Click to translate
+                    </span>
+                </span>
+                <span class="speaking-message-face speaking-message-back" aria-hidden="true">
+                    <span class="speaking-message-english" lang="en"></span>
+                    <span class="speaking-message-flip-hint" aria-hidden="true">
+                        <span class="material-symbols-outlined">undo</span>
+                        Click to show @Model.Language
+                    </span>
+                </span>
+            </span>
+        </button>
         <details class="speaking-coach">
             <summary>
                 <span class="material-symbols-outlined" aria-hidden="true">school</span>
@@ -196,8 +230,8 @@
             </summary>
             <dl>
                 <div data-coach-row="correctedPolish">
-                    <dt>More natural Polish</dt>
-                    <dd lang="pl"></dd>
+                    <dt>More natural @Model.Language</dt>
+                    <dd lang="@Model.LanguageCode"></dd>
                 </div>
                 <div data-coach-row="grammarTipEnglish">
                     <dt>Grammar</dt>

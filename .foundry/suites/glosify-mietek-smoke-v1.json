@@ -1,0 +1,48 @@
+{
+  "name": "glosify-mietek-smoke",
+  "version": "1",
+  "display_name": "glosify-mietek-smoke",
+  "description": "Auto-generated evaluation suite for glosify-mietek-smoke",
+  "subtype": "default",
+  "dataset": {
+    "name": "glosify-mietek-smoke-data",
+    "version": "1.0"
+  },
+  "testing_criteria": [
+    {
+      "type": "azure_ai_evaluator",
+      "id": "",
+      "name": "glosify-mietek-smoke-evaluator",
+      "evaluator_name": "glosify-mietek-smoke-evaluator",
+      "evaluator_version": "",
+      "initialization_parameters": {
+        "deployment_name": "gpt-5.4-mini"
+      },
+      "data_mapping": {
+        "query": "{{item.query}}",
+        "response": "{{sample.output_items}}"
+      }
+    }
+  ],
+  "target": {
+    "type": "azure_ai_agent",
+    "name": "glosify-mietek",
+    "version": null,
+    "tool_descriptions": []
+  },
+  "input_messages": {
+    "type": "template",
+    "template": [
+      {
+        "role": "user",
+        "content": "{{item.query}}"
+      }
+    ]
+  },
+  "system_data": {
+    "createdAt": "07/17/2026 12:20:59 +00:00",
+    "createdBy": "Gustav Boberg",
+    "modifiedAt": "07/17/2026 12:25:52 +00:00",
+    "modifiedBy": ""
+  }
+}
