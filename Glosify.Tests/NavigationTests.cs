@@ -156,6 +156,36 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains(hrefs, h => h.Contains("/Quiz", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public async Task Home_RendersLearningJourneyWithWorkingAnonymousCallsToAction()
+    {
+        var client = CreateClient();
+        var document = await GetDocumentAsync(client, "/");
+
+        Assert.Equal(
+            "Turn new words into real conversations.",
+            document.QuerySelector("#home-title")?.TextContent.Trim());
+        Assert.NotNull(document.QuerySelector("a[href*='/Account/Register']"));
+        Assert.NotNull(document.QuerySelector("a[href='/login'], a[href*='/Account/Login']"));
+        Assert.NotNull(document.QuerySelector("a[href*='/Quiz']"));
+        Assert.NotNull(document.QuerySelector("a[href*='/Speaking']"));
+        Assert.NotNull(document.QuerySelector("a[href*='/Books']"));
+        Assert.NotNull(document.QuerySelector("a[href*='/Explore']"));
+        Assert.NotNull(document.QuerySelector("a[href*='/Classroom']"));
+    }
+
+    [Fact]
+    public async Task Home_LinksUseTheCanonicalLandingRoute()
+    {
+        var client = CreateClient();
+        var document = await GetDocumentAsync(client, "/");
+
+        var homeLinks = document.QuerySelectorAll("a[href='/']");
+
+        Assert.NotEmpty(homeLinks);
+        Assert.All(homeLinks, link => Assert.Equal("/", link.GetAttribute("href")));
+    }
+
     private static async Task<(string form, string cookie)> AntiForgeryAsync(HttpClient client, string url)
     {
         var response = await client.GetAsync(url);

@@ -1,4 +1,245 @@
+@inject Glosify.Services.Language.ILanguageContext LangContext
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = "Home";
+    ViewData["AssistantTitle"] = "Learning coach";
+    ViewData["AssistantContextLabel"] = "Home";
+
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var currentLanguage = LangContext.CurrentLanguage;
+    var hasLanguage = !string.IsNullOrWhiteSpace(currentLanguage);
 }
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+}
+
+<div class="home-page">
+    <section class="home-hero" aria-labelledby="home-title">
+        <div class="home-hero-copy">
+            <p class="home-kicker">
+                <span class="home-kicker-dot" aria-hidden="true"></span>
+                Your language learning space
+            </p>
+            <h1 id="home-title">
+                @if (hasLanguage)
+                {
+                    <text>Make <span>@currentLanguage</span> part of your day.</text>
+                }
+                else
+                {
+                    <text>Turn new words into <span>real conversations.</span></text>
+                }
+            </h1>
+            <p class="home-hero-lede">
+                Build vocabulary from the things you read, make it stick with focused practice,
+                then use it out loud with an AI conversation partner.
+            </p>
+
+            <div class="home-hero-actions">
+                @if (!isAuthenticated)
+                {
+                    <a class="home-button home-button-primary" asp-controller="Account" asp-action="Register">
+                        Start learning
+                        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    </a>
+                    <a class="home-button home-button-secondary" asp-controller="Account" asp-action="Login">
+                        Log in
+                    </a>
+                }
+                else if (!hasLanguage)
+                {
+                    <a class="home-button home-button-primary" asp-controller="Languages" asp-action="Index">
+                        Choose a language
+                        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    </a>
+                    <a class="home-button home-button-secondary" asp-controller="Explore" asp-action="Index">
+                        Browse shared sets
+                    </a>
+                }
+                else
+                {
+                    <a class="home-button home-button-primary" asp-controller="Speaking" asp-action="Index">
+                        Start speaking
+                        <span class="material-symbols-outlined" aria-hidden="true">mic</span>
+                    </a>
+                    <a class="home-button home-button-secondary" asp-controller="Quiz" asp-action="Index">
+                        Open my quizzes
+                    </a>
+                }
+            </div>
+
+            <ul class="home-hero-points" aria-label="Ways to learn with Glosify">
+                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> Read in context</li>
+                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> Practice recall</li>
+                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> Speak with confidence</li>
+            </ul>
+        </div>
+
+        <div class="home-hero-visual" aria-label="A connected learning loop from reading to speaking">
+            <div class="home-orbit home-orbit-outer" aria-hidden="true"></div>
+            <div class="home-orbit home-orbit-inner" aria-hidden="true"></div>
+
+            <div class="home-orbit-node home-orbit-node-book">
+                <span class="material-symbols-outlined" aria-hidden="true">auto_stories</span>
+                <small>Discover</small>
+            </div>
+            <div class="home-orbit-node home-orbit-node-quiz">
+                <span class="material-symbols-outlined" aria-hidden="true">neurology</span>
+                <small>Remember</small>
+            </div>
+            <div class="home-orbit-node home-orbit-node-speak">
+                <span class="material-symbols-outlined" aria-hidden="true">graphic_eq</span>
+                <small>Speak</small>
+            </div>
+
+            <div class="home-orbit-core">
+                <span class="material-symbols-outlined" aria-hidden="true">translate</span>
+                <strong>@(hasLanguage ? currentLanguage : "Glosify")</strong>
+                <small>Your learning loop</small>
+            </div>
+
+            <div class="home-phrase-card">
+                <span class="home-phrase-label">Today’s mindset</span>
+                <strong>Small steps. Real progress.</strong>
+                <div class="home-phrase-progress" aria-hidden="true"><span></span></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-section" aria-labelledby="next-move-title">
+        <div class="home-section-heading">
+            <div>
+                <p class="home-kicker">Quick start</p>
+                <h2 id="next-move-title">Choose your next move</h2>
+            </div>
+            @if (hasLanguage)
+            {
+                <a class="home-text-link" asp-controller="Languages" asp-action="Index">
+                    Learning @currentLanguage
+                    <span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
+                </a>
+            }
+        </div>
+
+        <div class="home-action-grid">
+            <a class="home-action-card home-action-card-vocabulary" asp-controller="Quiz" asp-action="Index">
+                <span class="home-action-number">01</span>
+                <span class="home-action-icon">
+                    <span class="material-symbols-outlined" aria-hidden="true">library_add</span>
+                </span>
+                <span class="home-action-content">
+                    <strong>Build vocabulary</strong>
+                    <small>Create focused sets from words you actually want to use.</small>
+                </span>
+                <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
+            </a>
+
+            <a class="home-action-card home-action-card-practice" asp-controller="Quiz" asp-action="Index">
+                <span class="home-action-number">02</span>
+                <span class="home-action-icon">
+                    <span class="material-symbols-outlined" aria-hidden="true">psychology</span>
+                </span>
+                <span class="home-action-content">
+                    <strong>Practice recall</strong>
+                    <small>Use flashcards, typing, and custom quizzes to make words stick.</small>
+                </span>
+                <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
+            </a>
+
+            <a class="home-action-card home-action-card-speaking" asp-controller="Speaking" asp-action="Index">
+                <span class="home-action-number">03</span>
+                <span class="home-action-icon">
+                    <span class="material-symbols-outlined" aria-hidden="true">mic</span>
+                </span>
+                <span class="home-action-content">
+                    <strong>Speak naturally</strong>
+                    <small>Enter a guided scene and get private coaching after every turn.</small>
+                </span>
+                <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="home-connected" aria-labelledby="connected-title">
+        <div class="home-connected-copy">
+            <p class="home-kicker">One connected workspace</p>
+            <h2 id="connected-title">Learn from whatever already has your attention.</h2>
+            <p>
+                A book, a shared word list, or a classroom assignment can become the start of your
+                next practice session. Your vocabulary stays close wherever you go next.
+            </p>
+            <a class="home-text-link home-text-link-bright" asp-controller="Explore" asp-action="Index">
+                Explore community collections
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+        </div>
+
+        <div class="home-feature-grid">
+            <a class="home-feature-card home-feature-card-books" asp-controller="Books" asp-action="Index">
+                <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">menu_book</span>
+                <span>
+                    <strong>Read &amp; collect</strong>
+                    <small>Turn a PDF into vocabulary without leaving the page.</small>
+                </span>
+                <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
+            </a>
+
+            <a class="home-feature-card home-feature-card-explore" asp-controller="Explore" asp-action="Index">
+                <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">travel_explore</span>
+                <span>
+                    <strong>Explore together</strong>
+                    <small>Copy public quizzes and collections into your library.</small>
+                </span>
+                <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
+            </a>
+
+            <a class="home-feature-card home-feature-card-classroom" asp-controller="Classroom" asp-action="Index">
+                <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">school</span>
+                <span>
+                    <strong>Join a classroom</strong>
+                    <small>Learn with assignments, shared content, and live support.</small>
+                </span>
+                <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="home-final-cta" aria-labelledby="home-final-title">
+        <span class="home-final-icon material-symbols-outlined" aria-hidden="true">waving_hand</span>
+        <div>
+            <p class="home-kicker">Your turn</p>
+            <h2 id="home-final-title">
+                @if (hasLanguage)
+                {
+                    <text>What will you do in @currentLanguage today?</text>
+                }
+                else
+                {
+                    <text>Pick a language and begin with one useful word.</text>
+                }
+            </h2>
+        </div>
+        @if (hasLanguage && isAuthenticated)
+        {
+            <a class="home-button home-button-primary" asp-controller="Quiz" asp-action="Index">
+                Continue learning
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+        }
+        else if (isAuthenticated)
+        {
+            <a class="home-button home-button-primary" asp-controller="Languages" asp-action="Index">
+                Pick a language
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+        }
+        else
+        {
+            <a class="home-button home-button-primary" asp-controller="Account" asp-action="Register">
+                Create an account
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+        }
+    </section>
+</div>

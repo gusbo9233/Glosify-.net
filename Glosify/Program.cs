@@ -436,6 +436,12 @@ app.UseAuthorization();
 app.MapStaticAssets().AllowAnonymous();
 
 app.MapControllerRoute(
+    name: "landing",
+    pattern: "",
+    defaults: new { controller = "Home", action = "Index" })
+    .WithStaticAssets();
+
+app.MapControllerRoute(
     name: "login",
     pattern: "login",
     defaults: new { controller = "Account", action = "Login" });
