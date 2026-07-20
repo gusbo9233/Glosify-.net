@@ -207,12 +207,14 @@
 .speaking-workspace {
     display: grid;
     grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr);
-    min-height: 650px;
+    height: clamp(700px, 78vh, 800px);
+    min-height: 0;
     gap: 16px;
 }
 
 .speaking-stage-card,
 .speaking-chat-card {
+    min-height: 0;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, .08);
     border-radius: 24px;
@@ -550,6 +552,457 @@
     color: rgba(255, 255, 255, .65);
 }
 
+.speaking-interactive-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 7;
+    pointer-events: none;
+}
+
+.speaking-interactive-toolbar {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: flex;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.speaking-scene-tool,
+.speaking-context-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 8px 11px;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 12px;
+    background: rgba(21, 13, 7, .82);
+    color: #fff6dc;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+    font: inherit;
+    font-size: .72rem;
+    font-weight: 800;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+}
+
+.speaking-scene-tool:hover,
+.speaking-context-action:hover {
+    border-color: rgba(255, 219, 139, .55);
+    background: rgba(49, 29, 10, .9);
+}
+
+.speaking-scene-tool:focus-visible,
+.speaking-context-action:focus-visible,
+.speaking-wallet-pay:focus-visible,
+.speaking-wallet-denomination:focus-visible {
+    outline: 3px solid rgba(255, 214, 119, .62);
+    outline-offset: 2px;
+}
+
+.speaking-scene-tool .material-symbols-outlined,
+.speaking-context-action .material-symbols-outlined {
+    font-size: 18px;
+}
+
+.speaking-interactive-switch.is-disabled {
+    opacity: .46;
+}
+
+.speaking-interactive-switch {
+    white-space: normal;
+}
+
+.speaking-switch-copy {
+    display: grid;
+    gap: 1px;
+}
+
+.speaking-switch-copy strong {
+    color: var(--on-surface);
+    font: inherit;
+    font-weight: 700;
+}
+
+.speaking-switch-copy small {
+    max-width: 220px;
+    color: var(--on-surface-var);
+    font-size: .68rem;
+    line-height: 1.25;
+}
+
+.speaking-bar-menu,
+.speaking-wallet {
+    position: absolute;
+    top: 62px;
+    z-index: 2;
+    width: min(320px, calc(100% - 28px));
+    max-height: calc(100% - 124px);
+    overflow: auto;
+    padding: 15px;
+    border: 2px solid #7a4a1e;
+    border-radius: 14px;
+    background:
+        linear-gradient(rgba(255, 255, 255, .025), rgba(255, 255, 255, 0)),
+        #17251c;
+    color: #f3e8c7;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, .48), inset 0 0 0 3px #2d1a0b;
+    pointer-events: auto;
+}
+
+.speaking-bar-menu {
+    right: 14px;
+}
+
+.speaking-wallet {
+    right: 14px;
+    background: #2d1b10;
+}
+
+.speaking-panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.speaking-panel-heading strong,
+.speaking-panel-heading small {
+    display: block;
+}
+
+.speaking-panel-heading strong {
+    font-family: var(--font-serif);
+    letter-spacing: .08em;
+}
+
+.speaking-panel-heading small {
+    margin-top: 2px;
+    color: rgba(243, 232, 199, .68);
+    font-size: .66rem;
+}
+
+.speaking-panel-close {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .08);
+    color: inherit;
+    cursor: pointer;
+}
+
+.speaking-panel-close .material-symbols-outlined {
+    font-size: 18px;
+}
+
+.speaking-bar-menu dl {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+}
+
+.speaking-bar-menu dl > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed rgba(243, 232, 199, .24);
+}
+
+.speaking-bar-menu dt,
+.speaking-bar-menu dd {
+    margin: 0;
+    font-size: .74rem;
+}
+
+.speaking-bar-menu [data-unavailable="true"] {
+    opacity: .45;
+    text-decoration: line-through;
+}
+
+.speaking-wallet-money {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.speaking-wallet-denomination {
+    position: relative;
+    min-height: 48px;
+    padding: 7px;
+    border: 1px solid rgba(255, 225, 162, .28);
+    border-radius: 9px;
+    background: #e7d9b3;
+    color: #432b16;
+    font: inherit;
+    font-size: .74rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.speaking-wallet-denomination.is-selected {
+    border-color: #ffd16d;
+    box-shadow: inset 0 0 0 2px #9a651b;
+    transform: translateY(-2px);
+}
+
+.speaking-wallet-denomination:disabled {
+    opacity: .34;
+    cursor: default;
+}
+
+.speaking-wallet-denomination small {
+    position: absolute;
+    right: 5px;
+    bottom: 3px;
+    font-size: .56rem;
+}
+
+.speaking-wallet-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 13px;
+    font-size: .7rem;
+}
+
+.speaking-wallet-pay {
+    padding: 8px 15px;
+    border: 0;
+    border-radius: 9px;
+    background: #d7a43b;
+    color: #211407;
+    font: inherit;
+    font-size: .72rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.speaking-wallet-pay:disabled {
+    opacity: .4;
+    cursor: default;
+}
+
+.speaking-bill {
+    position: absolute;
+    right: 22px;
+    bottom: 82px;
+    display: grid;
+    min-width: 112px;
+    padding: 12px 14px;
+    border-radius: 4px 4px 16px 4px;
+    background: #f4edda;
+    color: #342719;
+    box-shadow: 0 12px 25px rgba(0, 0, 0, .4);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    transform: rotate(-2deg);
+}
+
+.speaking-bill span {
+    font-size: .58rem;
+    letter-spacing: .14em;
+}
+
+.speaking-bill strong {
+    font-size: 1rem;
+}
+
+.speaking-context-actions {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    display: flex;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.speaking-scene-event {
+    position: absolute;
+    bottom: 76px;
+    left: 50%;
+    max-width: calc(100% - 40px);
+    margin: 0;
+    padding: 9px 13px;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 999px;
+    background: rgba(20, 12, 7, .88);
+    color: #fff2ce;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .35);
+    font-size: .7rem;
+    text-align: center;
+    transform: translateX(-50%);
+}
+
+.speaking-scene-bartender [data-bartender-active-drink],
+.speaking-scene-bartender [data-bartender-coaster] {
+    opacity: 0;
+    transition: opacity .35s ease;
+}
+
+.speaking-scene-bartender.is-serving [data-bartender-active-drink],
+.speaking-scene-bartender.is-serving [data-bartender-coaster],
+.speaking-scene-bartender.has-active-drink [data-bartender-active-drink],
+.speaking-scene-bartender.has-active-drink [data-bartender-coaster] {
+    opacity: 1;
+}
+
+.speaking-scene-bartender .bartender-drink-liquid {
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    transition: transform .45s ease, fill .25s ease;
+}
+
+.speaking-scene-bartender [data-fill-level="2"] .bartender-drink-liquid {
+    transform: scaleY(.68);
+}
+
+.speaking-scene-bartender [data-fill-level="1"] .bartender-drink-liquid {
+    transform: scaleY(.34);
+}
+
+.speaking-scene-bartender [data-fill-level="0"] .bartender-drink-liquid {
+    transform: scaleY(.03);
+}
+
+.speaking-scene-bartender [data-drink-id="darkBeer"] .bartender-drink-liquid {
+    fill: #6e3514;
+}
+
+.speaking-scene-bartender [data-drink-id="vodka"] .bartender-drink-liquid,
+.speaking-scene-bartender [data-drink-id="sparklingWater"] .bartender-drink-liquid,
+.speaking-scene-bartender [data-drink-id="stillWater"] .bartender-drink-liquid {
+    fill: #dcebf1;
+    opacity: .68;
+}
+
+.speaking-scene-bartender [data-drink-id="appleJuice"] .bartender-drink-liquid {
+    fill: #d4a12c;
+}
+
+.speaking-scene-bartender [data-drink-id="vodka"] .bartender-drink-foam,
+.speaking-scene-bartender [data-drink-id="sparklingWater"] .bartender-drink-foam,
+.speaking-scene-bartender [data-drink-id="stillWater"] .bartender-drink-foam,
+.speaking-scene-bartender [data-drink-id="appleJuice"] .bartender-drink-foam,
+.speaking-scene-bartender [data-drink-id="vodka"] .bartender-drink-bubbles,
+.speaking-scene-bartender [data-drink-id="stillWater"] .bartender-drink-bubbles,
+.speaking-scene-bartender [data-drink-id="appleJuice"] .bartender-drink-bubbles {
+    opacity: 0;
+}
+
+.speaking-scene-bartender [data-bartender-tap="lightBeer"] {
+    --bartender-pour-color: #e39a20;
+    --bartender-pour-highlight: #ffd978;
+}
+
+.speaking-scene-bartender [data-bartender-tap="darkBeer"] {
+    --bartender-pour-color: #713714;
+    --bartender-pour-highlight: #c7803c;
+}
+
+.speaking-scene-bartender [data-bartender-pour-effect] {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.speaking-scene-bartender .bartender-pour-stream {
+    fill: none;
+    stroke: var(--bartender-pour-highlight);
+    stroke-width: 9;
+    stroke-dasharray: 7 5;
+    stroke-linecap: round;
+}
+
+.speaking-scene-bartender .bartender-service-beer {
+    fill: var(--bartender-pour-color);
+    opacity: .96;
+    transform-box: fill-box;
+    transform-origin: center bottom;
+}
+
+.speaking-scene-bartender .bartender-service-foam {
+    fill: #fff4d7;
+    filter: drop-shadow(0 1px 1px rgba(67, 35, 5, .35));
+    transform-box: fill-box;
+    transform-origin: center bottom;
+}
+
+.speaking-scene-bartender.is-pouring[data-pour-source="lightBeer"] [data-bartender-tap="lightBeer"] [data-bartender-pour-motion],
+.speaking-scene-bartender.is-pouring[data-pour-source="darkBeer"] [data-bartender-tap="darkBeer"] [data-bartender-pour-motion] {
+    animation: speaking-bartender-pour .9s linear;
+}
+
+.speaking-scene-bartender.is-pouring[data-pour-source="lightBeer"] [data-bartender-tap="lightBeer"] [data-bartender-tap-handle],
+.speaking-scene-bartender.is-pouring[data-pour-source="darkBeer"] [data-bartender-tap="darkBeer"] [data-bartender-tap-handle] {
+    animation: speaking-bartender-tap-handle .9s ease-in-out;
+    transform-box: fill-box;
+    transform-origin: center bottom;
+}
+
+.speaking-scene-bartender.is-pouring[data-pour-source="lightBeer"] [data-bartender-tap="lightBeer"] [data-bartender-pour-effect],
+.speaking-scene-bartender.is-pouring[data-pour-source="darkBeer"] [data-bartender-tap="darkBeer"] [data-bartender-pour-effect] {
+    visibility: visible;
+    animation: speaking-bartender-pour-effect .9s ease-in-out;
+}
+
+.speaking-scene-bartender.is-pouring[data-pour-source="lightBeer"] [data-bartender-tap="lightBeer"] .bartender-pour-stream,
+.speaking-scene-bartender.is-pouring[data-pour-source="darkBeer"] [data-bartender-tap="darkBeer"] .bartender-pour-stream {
+    animation: speaking-bartender-beer-stream .9s linear;
+}
+
+.speaking-scene-bartender.is-pouring[data-pour-source="lightBeer"] [data-bartender-tap="lightBeer"] .bartender-service-beer,
+.speaking-scene-bartender.is-pouring[data-pour-source="darkBeer"] [data-bartender-tap="darkBeer"] .bartender-service-beer {
+    animation: speaking-bartender-glass-fill .9s ease-out;
+}
+
+.speaking-scene-bartender.is-pouring[data-pour-source="lightBeer"] [data-bartender-tap="lightBeer"] .bartender-service-foam,
+.speaking-scene-bartender.is-pouring[data-pour-source="darkBeer"] [data-bartender-tap="darkBeer"] .bartender-service-foam {
+    animation: speaking-bartender-foam-rise .9s ease-out;
+}
+
+.speaking-scene-bartender.is-pouring:not([data-pour-source="lightBeer"]):not([data-pour-source="darkBeer"]) [data-bartender-bottle] [data-bartender-pour-motion] {
+    animation: speaking-bartender-pour .9s linear, speaking-bartender-bottle-pour .9s ease-in-out;
+    transform-box: fill-box;
+    transform-origin: center bottom;
+}
+
+.speaking-scene-bartender.is-serving [data-bartender-drink-motion] {
+    animation: speaking-bartender-serve .75s ease-out;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.speaking-scene-bartender.is-polishing [data-bartender-polish-gesture] {
+    animation: speaking-bartender-polish .45s ease-in-out 3;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.speaking-scene-bartender.is-wiping [data-bartender-counter] {
+    animation: speaking-bartender-wipe .8s ease-in-out;
+}
+
+.speaking-scene-bartender.is-clearing [data-bartender-drink-motion] {
+    animation: speaking-bartender-clear .65s ease-in forwards;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.speaking-scene-bartender.is-snacking [data-bartender-snack-motion] {
+    animation: speaking-bartender-snack .55s ease-in-out;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.speaking-scene-bartender.is-last-call {
+    filter: saturate(.72) brightness(.88);
+    transition: filter .3s ease;
+}
+
 .speaking-live-bubble {
     position: absolute;
     top: 24px;
@@ -726,6 +1179,7 @@
 }
 
 .speaking-messages {
+    min-height: 0;
     overflow-y: auto;
     padding: 18px;
     scroll-behavior: smooth;
@@ -1193,6 +1647,66 @@
     50% { box-shadow: 0 0 0 7px rgba(255, 118, 123, 0); }
 }
 
+@keyframes speaking-bartender-pour {
+    0%, 100% { filter: brightness(1); }
+    15%, 82% { filter: brightness(1.3) drop-shadow(0 0 8px rgba(255, 207, 94, .55)); }
+}
+
+@keyframes speaking-bartender-tap-handle {
+    0%, 100% { transform: rotate(0); }
+    16%, 82% { transform: rotate(-22deg) translateY(3px); }
+}
+
+@keyframes speaking-bartender-pour-effect {
+    0%, 8%, 100% { opacity: 0; }
+    15%, 91% { opacity: 1; }
+}
+
+@keyframes speaking-bartender-beer-stream {
+    0%, 12%, 93%, 100% { opacity: 0; stroke-dashoffset: 0; }
+    18%, 88% { opacity: 1; }
+    100% { stroke-dashoffset: -36; }
+}
+
+@keyframes speaking-bartender-glass-fill {
+    0%, 14% { transform: scaleY(.05); }
+    84%, 100% { transform: scaleY(1); }
+}
+
+@keyframes speaking-bartender-foam-rise {
+    0%, 58% { opacity: 0; transform: translateY(34px) scaleY(.4); }
+    82%, 100% { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
+@keyframes speaking-bartender-bottle-pour {
+    0%, 100% { transform: rotate(0); }
+    45% { transform: rotate(-18deg) translateY(5px); }
+}
+
+@keyframes speaking-bartender-serve {
+    from { opacity: 0; transform: translateX(180px) scale(.8); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes speaking-bartender-polish {
+    0%, 100% { transform: rotate(0); }
+    50% { transform: rotate(-7deg) translateY(-7px); }
+}
+
+@keyframes speaking-bartender-wipe {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.32); }
+}
+
+@keyframes speaking-bartender-clear {
+    to { opacity: 0; transform: translateX(190px) scale(.75); }
+}
+
+@keyframes speaking-bartender-snack {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-24px) rotate(-4deg); }
+}
+
 @media (max-width: 1220px) {
     .speaking-controls {
         flex-wrap: wrap;
@@ -1218,6 +1732,8 @@
 
     .speaking-workspace {
         grid-template-columns: 1fr;
+        height: auto;
+        min-height: 650px;
     }
 
     .speaking-stage {
@@ -1226,6 +1742,12 @@
 
     .speaking-chat-card {
         min-height: 620px;
+    }
+}
+
+@media (max-width: 900px), (pointer: coarse) {
+    .speaking-composer textarea {
+        font-size: 16px;
     }
 }
 
@@ -1261,6 +1783,7 @@
 
     .speaking-level-control select {
         width: 100%;
+        font-size: 16px;
     }
 
     .speaking-switch {
@@ -1276,6 +1799,31 @@
         width: calc(100% - 28px);
     }
 
+    .speaking-interactive-toolbar {
+        top: auto;
+        right: 10px;
+        bottom: 10px;
+    }
+
+    .speaking-bar-menu,
+    .speaking-wallet {
+        top: 12px;
+        right: 10px;
+        width: calc(100% - 20px);
+        max-height: calc(100% - 76px);
+    }
+
+    .speaking-context-actions {
+        right: auto;
+        bottom: 58px;
+        left: 10px;
+    }
+
+    .speaking-bill {
+        right: 12px;
+        bottom: 60px;
+    }
+
     .speaking-message {
         max-width: 96%;
     }
@@ -1287,6 +1835,18 @@
     .speaking-avatar-record-button,
     .speaking-mic-button {
         animation: none !important;
+    }
+
+    .speaking-scene-bartender [data-bartender-active-drink],
+    .speaking-scene-bartender [data-bartender-coaster],
+    .speaking-scene-bartender .bartender-drink-liquid,
+    .speaking-scene-bartender [data-bartender-pour-effect] {
+        transition: none;
+    }
+
+    .speaking-scene-bartender.is-pouring[data-pour-source="lightBeer"] [data-bartender-tap="lightBeer"] [data-bartender-pour-effect],
+    .speaking-scene-bartender.is-pouring[data-pour-source="darkBeer"] [data-bartender-tap="darkBeer"] [data-bartender-pour-effect] {
+        opacity: 1;
     }
 
     .speaking-message-flip-inner {

@@ -202,12 +202,14 @@
 
     <!-- right arm: polishing a glass -->
     <g class="avatar-gesture">
-      <path d="M905 632 C950 660 962 690 948 720 C930 750 880 720 856 700" fill="#4c525f"/>
-      <ellipse cx="868" cy="700" rx="26" ry="20" fill="#d9a06b"/>
-      <!-- glass -->
-      <path d="M840 640 L888 640 L880 706 L848 706 Z" fill="#cfe0e8" opacity="0.55" stroke="#eef6fa" stroke-width="2"/>
-      <!-- towel -->
-      <path d="M846 660 Q866 646 886 660 Q878 686 866 692 Q852 684 846 660 Z" fill="#e8dcc0"/>
+      <g data-bartender-polish-gesture>
+        <path d="M905 632 C950 660 962 690 948 720 C930 750 880 720 856 700" fill="#4c525f"/>
+        <ellipse cx="868" cy="700" rx="26" ry="20" fill="#d9a06b"/>
+        <!-- glass -->
+        <path d="M840 640 L888 640 L880 706 L848 706 Z" fill="#cfe0e8" opacity="0.55" stroke="#eef6fa" stroke-width="2"/>
+        <!-- towel -->
+        <path d="M846 660 Q866 646 886 660 Q878 686 866 692 Q852 684 846 660 Z" fill="#e8dcc0"/>
+      </g>
     </g>
 
     <!-- neck -->
@@ -266,7 +268,7 @@
   </g>
 
   <!-- ======================= BAR COUNTER (foreground of avatar) ======================= -->
-  <g>
+  <g data-bartender-counter>
     <!-- counter top: perspective trapezoid toward viewer -->
     <path d="M0 700 L1600 700 L1600 760 L0 760 Z" fill="#2a1608"/>
     <path d="M0 760 L1600 760 L1600 900 L0 900 Z" fill="url(#bartender-counterGrad)"/>
@@ -283,25 +285,56 @@
     <rect x="0" y="726" width="1600" height="3" fill="#f0d68a"/>
 
     <!-- beer taps on the counter, left of avatar -->
-    <g transform="translate(430, 700)">
-      <rect x="-16" y="-96" width="32" height="96" rx="8" fill="#c8a049"/>
-      <rect x="-12" y="-92" width="10" height="88" rx="5" fill="#f0d68a" opacity="0.5"/>
-      <circle cx="0" cy="-108" r="20" fill="#7a1220" stroke="#c8a049" stroke-width="4"/>
-      <text y="-102" text-anchor="middle" font-size="13" fill="#f2ede2" font-weight="bold">PIWO</text>
-      <path d="M14 -66 L34 -66 L34 -46 L26 -46 L26 -30 L20 -30 L20 -46 L14 -46 Z" fill="#8a6a2a"/>
+    <g transform="translate(430, 700)" data-bartender-tap="lightBeer">
+      <g data-bartender-pour-motion>
+        <rect x="-16" y="-96" width="32" height="96" rx="8" fill="#c8a049"/>
+        <rect x="-12" y="-92" width="10" height="88" rx="5" fill="#f0d68a" opacity="0.5"/>
+        <g data-bartender-tap-handle>
+          <circle cx="0" cy="-108" r="20" fill="#7a1220" stroke="#c8a049" stroke-width="4"/>
+          <text y="-102" text-anchor="middle" font-size="13" fill="#f2ede2" font-weight="bold">PIWO</text>
+        </g>
+        <path d="M14 -66 L34 -66 L34 -46 L26 -46 L26 -30 L20 -30 L20 -46 L14 -46 Z" fill="#8a6a2a"/>
+        <g class="bartender-pour-effect" data-bartender-pour-effect aria-hidden="true">
+          <path class="bartender-pour-stream" d="M23 -30 L23 -17"/>
+          <g class="bartender-service-glass" transform="translate(23, -19)">
+            <path class="bartender-service-beer" d="M-24 56 L24 56 L20 8 L-20 8 Z"/>
+            <path class="bartender-service-foam" d="M-20 10 Q-13 3 -6 9 Q1 1 8 8 Q15 2 20 10 L20 15 L-20 15 Z"/>
+            <path d="M-28 0 L28 0 L23 60 L-23 60 Z" fill="#dcebf1" fill-opacity=".16"
+                  stroke="#f5fbff" stroke-width="3"/>
+            <path d="M-20 5 L-16 52" stroke="#fff" stroke-width="3" opacity=".65"/>
+            <path d="M-28 0 L28 0" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+          </g>
+        </g>
+      </g>
     </g>
-    <g transform="translate(510, 700)">
-      <rect x="-16" y="-96" width="32" height="96" rx="8" fill="#c8a049"/>
-      <rect x="-12" y="-92" width="10" height="88" rx="5" fill="#f0d68a" opacity="0.5"/>
-      <circle cx="0" cy="-108" r="20" fill="#1e3a5c" stroke="#c8a049" stroke-width="4"/>
-      <text y="-102" text-anchor="middle" font-size="12" fill="#f2ede2" font-weight="bold">CIEMNE</text>
+    <g transform="translate(510, 700)" data-bartender-tap="darkBeer">
+      <g data-bartender-pour-motion>
+        <rect x="-16" y="-96" width="32" height="96" rx="8" fill="#c8a049"/>
+        <rect x="-12" y="-92" width="10" height="88" rx="5" fill="#f0d68a" opacity="0.5"/>
+        <g data-bartender-tap-handle>
+          <circle cx="0" cy="-108" r="20" fill="#1e3a5c" stroke="#c8a049" stroke-width="4"/>
+          <text y="-102" text-anchor="middle" font-size="12" fill="#f2ede2" font-weight="bold">CIEMNE</text>
+        </g>
+        <path d="M14 -66 L34 -66 L34 -46 L26 -46 L26 -30 L20 -30 L20 -46 L14 -46 Z" fill="#8a6a2a"/>
+        <g class="bartender-pour-effect" data-bartender-pour-effect aria-hidden="true">
+          <path class="bartender-pour-stream" d="M23 -30 L23 -17"/>
+          <g class="bartender-service-glass" transform="translate(23, -19)">
+            <path class="bartender-service-beer" d="M-24 56 L24 56 L20 8 L-20 8 Z"/>
+            <path class="bartender-service-foam" d="M-20 10 Q-13 3 -6 9 Q1 1 8 8 Q15 2 20 10 L20 15 L-20 15 Z"/>
+            <path d="M-28 0 L28 0 L23 60 L-23 60 Z" fill="#dcebf1" fill-opacity=".16"
+                  stroke="#f5fbff" stroke-width="3"/>
+            <path d="M-20 5 L-16 52" stroke="#fff" stroke-width="3" opacity=".65"/>
+            <path d="M-28 0 L28 0" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+          </g>
+        </g>
+      </g>
     </g>
 
     <!-- shot glasses + vodka bottle near avatar's resting hand -->
-    <g transform="translate(1060, 700)">
-      <path d="M-70 0 L-46 0 L-50 -26 L-66 -26 Z" fill="#dce8ee" opacity="0.7"/>
-      <path d="M-36 0 L-12 0 L-16 -26 L-32 -26 Z" fill="#dce8ee" opacity="0.7"/>
-      <g>
+    <g transform="translate(1060, 700)" data-bartender-bottle="vodka">
+      <g data-bartender-pour-motion>
+        <path d="M-70 0 L-46 0 L-50 -26 L-66 -26 Z" fill="#dce8ee" opacity="0.7"/>
+        <path d="M-36 0 L-12 0 L-16 -26 L-32 -26 Z" fill="#dce8ee" opacity="0.7"/>
         <rect x="8" y="-86" width="40" height="86" rx="7" fill="#dbe7ec" opacity="0.85"/>
         <rect x="18" y="-112" width="20" height="30" rx="5" fill="#dbe7ec" opacity="0.85"/>
         <rect x="16" y="-118" width="24" height="9" rx="3" fill="#8a1a1a"/>
@@ -315,31 +348,40 @@
   <!-- ======================= EXTREME FOREGROUND (POV: your beer) ======================= -->
   <g filter="url(#bartender-softBlur)">
     <!-- your pint, bottom right, big & close -->
-    <g transform="translate(1310, 900)">
-      <path d="M-95 0 L95 0 L78 -280 L-78 -280 Z" fill="url(#bartender-beerGrad)" opacity="0.96"/>
-      <path d="M-95 0 L95 0 L78 -280 L-78 -280 Z" fill="url(#bartender-glassShine)"/>
-      <!-- foam -->
-      <path d="M-80 -272 Q-60 -300 -34 -286 Q-16 -308 8 -290 Q30 -306 52 -288 Q72 -298 80 -272 L78 -258 L-78 -258 Z" fill="#fdf6e3"/>
-      <!-- bubbles -->
-      <g fill="#ffe9b0">
-        <circle class="scene-bubble" cx="-30" cy="-40" r="5"/>
-        <circle class="scene-bubble" cx="14" cy="-30" r="4"/>
-        <circle class="scene-bubble" cx="44" cy="-52" r="6"/>
-        <circle class="scene-bubble" cx="-8" cy="-24" r="3.5"/>
+    <g transform="translate(1310, 900)"
+       class="bartender-active-drink"
+       data-bartender-active-drink
+       data-drink-id="lightBeer"
+       data-fill-level="3">
+      <g data-bartender-drink-motion>
+        <path class="bartender-drink-liquid" d="M-95 0 L95 0 L78 -280 L-78 -280 Z" fill="url(#bartender-beerGrad)" opacity="0.96"/>
+        <path d="M-95 0 L95 0 L78 -280 L-78 -280 Z" fill="url(#bartender-glassShine)"/>
+        <!-- foam -->
+        <path class="bartender-drink-foam" d="M-80 -272 Q-60 -300 -34 -286 Q-16 -308 8 -290 Q30 -306 52 -288 Q72 -298 80 -272 L78 -258 L-78 -258 Z" fill="#fdf6e3"/>
+        <!-- bubbles -->
+        <g class="bartender-drink-bubbles" fill="#ffe9b0">
+          <circle class="scene-bubble" cx="-30" cy="-40" r="5"/>
+          <circle class="scene-bubble" cx="14" cy="-30" r="4"/>
+          <circle class="scene-bubble" cx="44" cy="-52" r="6"/>
+          <circle class="scene-bubble" cx="-8" cy="-24" r="3.5"/>
+        </g>
+        <!-- glass rim highlight -->
+        <path d="M-78 -280 L78 -280" stroke="#ffffff" stroke-width="4" opacity="0.5"/>
       </g>
-      <!-- glass rim highlight -->
-      <path d="M-78 -280 L78 -280" stroke="#ffffff" stroke-width="4" opacity="0.5"/>
     </g>
     <!-- beer coaster -->
-    <ellipse cx="1310" cy="893" rx="130" ry="16" fill="#7a1220" opacity="0.85"/>
+    <ellipse cx="1310" cy="893" rx="130" ry="16" fill="#7a1220" opacity="0.85"
+             data-bartender-coaster/>
     <!-- bowl of paluszki (snack sticks), bottom left -->
-    <g transform="translate(220, 900)">
-      <path d="M-110 0 Q-110 -52 0 -52 Q110 -52 110 0 Z" fill="#5c3418"/>
-      <g stroke="#d9a832" stroke-width="7" stroke-linecap="round">
-        <line x1="-52" y1="-48" x2="-14" y2="-86"/>
-        <line x1="-20" y1="-50" x2="16" y2="-92"/>
-        <line x1="12" y1="-48" x2="52" y2="-80"/>
-        <line x1="34" y1="-50" x2="-6" y2="-78"/>
+    <g transform="translate(220, 900)" data-bartender-snack>
+      <g data-bartender-snack-motion>
+        <path d="M-110 0 Q-110 -52 0 -52 Q110 -52 110 0 Z" fill="#5c3418"/>
+        <g stroke="#d9a832" stroke-width="7" stroke-linecap="round">
+          <line x1="-52" y1="-48" x2="-14" y2="-86"/>
+          <line x1="-20" y1="-50" x2="16" y2="-92"/>
+          <line x1="12" y1="-48" x2="52" y2="-80"/>
+          <line x1="34" y1="-50" x2="-6" y2="-78"/>
+        </g>
       </g>
     </g>
   </g>

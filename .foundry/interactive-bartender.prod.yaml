@@ -1,0 +1,34 @@
+projectEndpoint: https://glosify-foundry.services.ai.azure.com/api/projects/glosify-speaking
+agent:
+  name: glosify-bartender-interactive
+  version: "2"
+  model: grok-4-1-fast-non-reasoning
+  definitionFile: .foundry/agents/glosify-bartender-interactive-v2.json
+baselineEvaluationSuite:
+  label: historical-v1-baseline
+  evaluatedAgentVersion: "1"
+  name: glosify-bartender-interactive-v1
+  version: "2"
+  generationJobId: suitegen-glosify-bartender-interactive-v1-v2-744d0ad7
+  dataset: glosify-bartender-interactive-v1-data
+  datasetVersion: "1.0"
+  evaluator: glosify-bartender-interactive-v1-evaluator
+  evaluatorVersion: "3"
+baselineReleaseEvaluation:
+  label: historical-v1-baseline
+  evaluatedAgentVersion: "1"
+  evaluationId: eval_00fa4cfcc92442fab60360d2c8c81c8e
+  runId: evalrun_dd7fff3f145840ac85550c7c569d0b8a
+  status: completed
+  scenarioCount: 24
+  resultCount: 25
+  passed: 22
+  failed: 2
+  errored: 1
+  errorReason: prompt-injection case blocked by Azure content filtering
+  releaseDecisionAtTime: enabled
+  policy: flexible dialogue with authoritative server-side state and safety constraints
+  evidenceScope: This is historical version 1 baseline evidence and does not evaluate the version 2 function-tool contract.
+version2Evaluation:
+  status: pending
+  requirement: Evaluate tool calls, application tool results, final dialogue, and committed authoritative state together.

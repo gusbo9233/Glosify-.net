@@ -21,13 +21,16 @@ flowchart LR
     Browser["Authenticated /Speaking page"]
     Api["ASP.NET Core speaking API"]
     Memory["In-process session map"]
+    SceneTools["In-process bartender<br/>scene-tool runtime"]
     Foundry["Microsoft Foundry<br/>versioned prompt agents"]
     Speech["Azure AI Speech<br/>recognition, assessment, TTS"]
     Insights["Application Insights"]
 
     Browser -->|"session and turn JSON<br/>cookie + antiforgery"| Api
     Api -->|"opaque user-bound session"| Memory
-    Api -->|"managed identity"| Foundry
+    Api <-->|"managed identity<br/>structured replies + tool calls/results"| Foundry
+    Api -->|"validate cloned state"| SceneTools
+    SceneTools -->|"accepted state + allowlisted commands"| Memory
     Api -->|"short-lived Entra token"| Browser
     Browser -->|"learner audio and avatar speech"| Speech
     Api -.->|"fallback TTS"| Speech
@@ -69,22 +72,31 @@ not proxied through the Glosify application.
 
 | Language | Persona | Agent | Voice | Scene behaviour |
 | --- | --- | --- | --- | --- |
-| Estonian | Maarja | `glosify-maarja`, version `1` | `et-EE-AnuNeural` | Friendly old-town café conversation |
-| Estonian | Karl | `glosify-karl`, version `1` | `et-EE-KertNeural` | Practical market small talk |
-| Estonian | Liis | `glosify-liis`, version `1` | `et-EE-AnuNeural` | Relaxed conversation in Kadriorg park |
-| German | Hanna | `glosify-hanna`, version `1` | `de-DE-KatjaNeural` | Warm café conversation |
-| German | Jonas | `glosify-jonas`, version `1` | `de-DE-ConradNeural` | Quick station-kiosk exchanges |
-| German | Frau Schneider | `glosify-frau-schneider`, version `1` | `de-DE-KatjaNeural` | Neighbourhood-garden conversation |
-| Polish | Bartender | `glosify-bartender`, version `1` | `pl-PL-MarekNeural` | Dry-witted bar conversation |
-| Polish | Kasia | `glosify-kasia`, version `1` | `pl-PL-ZofiaNeural` | Lively evening small talk |
-| Polish | Pan Mietek | `glosify-mietek`, version `1` | `pl-PL-MarekNeural` | `-12%` rate and `-8%` pitch through SSML |
-| Ukrainian | Оксана | `glosify-oksana`, version `1` | `uk-UA-PolinaNeural` | Friendly coffee-shop conversation |
-| Ukrainian | Андрій | `glosify-andriy`, version `1` | `uk-UA-OstapNeural` | Lively market conversation |
-| Ukrainian | Пан Микола | `glosify-pan-mykola`, version `1` | `uk-UA-OstapNeural` | Unhurried courtyard conversation |
+| Estonian | Maarja | `glosify-maarja`, version `2` | `et-EE-AnuNeural` | Friendly old-town café conversation |
+| Estonian | Karl | `glosify-karl`, version `2` | `et-EE-KertNeural` | Practical market small talk |
+| Estonian | Liis | `glosify-liis`, version `2` | `et-EE-AnuNeural` | Relaxed conversation in Kadriorg park |
+| German | Hanna | `glosify-hanna`, version `2` | `de-DE-KatjaNeural` | Warm café conversation |
+| German | Jonas | `glosify-jonas`, version `2` | `de-DE-ConradNeural` | Quick station-kiosk exchanges |
+| German | Frau Schneider | `glosify-frau-schneider`, version `2` | `de-DE-KatjaNeural` | Neighbourhood-garden conversation |
+| Polish | Bartender | `glosify-bartender`, version `2` | `pl-PL-MarekNeural` | Dry-witted bar conversation |
+| Polish | Kasia | `glosify-kasia`, version `2` | `pl-PL-ZofiaNeural` | Lively evening small talk |
+| Polish | Pan Mietek | `glosify-mietek`, version `2` | `pl-PL-MarekNeural` | `-12%` rate and `-8%` pitch through SSML |
+| Ukrainian | Оксана | `glosify-oksana`, version `2` | `uk-UA-PolinaNeural` | Friendly coffee-shop conversation |
+| Ukrainian | Андрій | `glosify-andriy`, version `2` | `uk-UA-OstapNeural` | Lively market conversation |
+| Ukrainian | Пан Микола | `glosify-pan-mykola`, version `2` | `uk-UA-OstapNeural` | Unhurried courtyard conversation |
 
 The original adult humour and ordinary alcohol references are retained. Agent
 instructions prohibit pressure to drink, dangerous consumption advice,
 threatening behaviour, and prompt-injection attempts.
+
+The bartender also has the separately pinned
+`glosify-bartender-interactive`, version `2` agent. Foundry chooses when to call
+one of eight strict scene functions, such as `serve_drink`, `present_bill`, or
+`wipe_counter`, during the normal assistant tool loop. The application executes
+those calls in process and returns an authoritative accepted or rejected result
+to the model before it writes the final dialogue. The final structured response
+contains only the bilingual reply and coaching; scene actions are never supplied
+as model-authored response properties.
 
 ## API contract
 
@@ -95,8 +107,9 @@ camel-cased.
 | Endpoint | Request | Success |
 | --- | --- | --- |
 | `POST /api/speaking/speech-token` | No body | `200` with `{ authorizationToken, region, expiresAtUtc }` |
-| `POST /api/speaking/sessions` | `{ "avatarId": "bartender", "cefrLevel": "A2" }` | `200` with an opaque session ID, avatar metadata, voice, and static opening turn |
+| `POST /api/speaking/sessions` | `{ "avatarId": "bartender", "cefrLevel": "A2" }` | `200` with an opaque session ID, avatar metadata, voice, opening turn, and an authoritative interaction snapshot when bartender scene tools are enabled |
 | `POST /api/speaking/sessions/{sessionId}/turns` | `{ "text": "Poproszę wodę.", "inputMode": "voice" }` | `200` with the validated structured turn below |
+| `POST /api/speaking/sessions/{sessionId}/actions` | `{ "action": "submitPayment", "denominations": { "20": 1 } }` | `200` with Marek's reply, approved scene commands, and the updated snapshot |
 | `DELETE /api/speaking/sessions/{sessionId}` | No body | `204`; local mapping removed and Foundry conversation deletion attempted |
 
 The turn response is:
@@ -128,6 +141,29 @@ Messages must contain non-whitespace text and cannot exceed 800 characters.
 Foundry output is deserialised against the structured contract, normalised, and
 limited to 1,000 characters per field before it reaches the browser.
 
+Scene-tool capability is selected by the server, not the browser. When
+`Speaking:InteractiveBartenderEnabled` is enabled, every bartender session uses
+the tool-enabled agent automatically; other avatars use their normal agents.
+When the flag is disabled, bartender sessions still work but do not receive
+scene state or tools.
+
+The wallet, tab, bill, active drink, snack, and unavailable-item state live only
+in the in-memory speaking session. At the start of each model turn, the
+application gives the per-conversation function runtime a clone of that
+authoritative state. Every requested function is executed serially in process,
+validated against the current clone, and returned to Foundry as an accepted or
+rejected tool result. Only accepted calls produce allowlisted browser commands.
+The clone is committed only after the complete structured reply and AI-credit
+commit succeed; a failed turn discards both the tentative state and commands.
+The model may choose zero to three tools, normally one, and the final structured
+reply contains no scene-action payload.
+
+The scene remains a non-blocking presentation layer: conversation continues
+regardless of the tab, bill, active drink, payment outcome, or unavailable
+items. Animation and TTS run independently after the authoritative snapshot is
+applied. A future challenge mode must use a separate session policy and must not
+change these continuation semantics.
+
 Speaking validation, session, dependency, and AI-credit failures use
 `{ "error": "..." }`. Authentication, antiforgery, and rate-limiter responses
 are produced by ASP.NET Core middleware and can use the framework response
@@ -156,9 +192,10 @@ credentials:
 | Foundry account | `glosify-foundry`, East US, `S0` |
 | Foundry project | `glosify-speaking` |
 | Project endpoint | `https://glosify-foundry.services.ai.azure.com/api/projects/glosify-speaking` |
-| Model deployment | `gpt-5.4-mini`, model version `2026-03-17` |
-| Deployment capacity | `DataZoneStandard`, 50,000 TPM / 50 RPM |
-| Prompt agents | `glosify-bartender`, `glosify-kasia`, `glosify-mietek`; version `1` |
+| Model deployment | `grok-4-1-fast-non-reasoning`, xAI model version `1` |
+| Deployment capacity | `GlobalStandard`, 50,000 TPM / 50 RPM |
+| Content filter | `Glosify-Conversation`; blocks high-severity harm, retains prompt-shield protection |
+| Prompt agents | Twelve language personas; version `2` |
 | Speech resource | `glosify-speech`, Sweden Central, `F0` |
 | Speech endpoint | `https://glosify-speech.cognitiveservices.azure.com` |
 | Monitoring | Application Insights connection string configured |
@@ -199,31 +236,34 @@ Use Azure app settings, environment variables, or .NET user secrets:
 
 ```text
 Speaking__ProjectEndpoint=https://glosify-foundry.services.ai.azure.com/api/projects/glosify-speaking
-Speaking__ModelDeployment=gpt-5.4-mini
+Speaking__ModelDeployment=grok-4-1-fast-non-reasoning
+Speaking__InteractiveBartenderEnabled=true
 Speaking__Agents__Bartender__Name=glosify-bartender
-Speaking__Agents__Bartender__Version=1
+Speaking__Agents__Bartender__Version=2
+Speaking__Agents__BartenderInteractive__Name=glosify-bartender-interactive
+Speaking__Agents__BartenderInteractive__Version=2
 Speaking__Agents__Kasia__Name=glosify-kasia
-Speaking__Agents__Kasia__Version=1
+Speaking__Agents__Kasia__Version=2
 Speaking__Agents__Mietek__Name=glosify-mietek
-Speaking__Agents__Mietek__Version=1
+Speaking__Agents__Mietek__Version=2
 Speaking__Agents__Maarja__Name=glosify-maarja
-Speaking__Agents__Maarja__Version=1
+Speaking__Agents__Maarja__Version=2
 Speaking__Agents__Karl__Name=glosify-karl
-Speaking__Agents__Karl__Version=1
+Speaking__Agents__Karl__Version=2
 Speaking__Agents__Liis__Name=glosify-liis
-Speaking__Agents__Liis__Version=1
+Speaking__Agents__Liis__Version=2
 Speaking__Agents__Hanna__Name=glosify-hanna
-Speaking__Agents__Hanna__Version=1
+Speaking__Agents__Hanna__Version=2
 Speaking__Agents__Jonas__Name=glosify-jonas
-Speaking__Agents__Jonas__Version=1
+Speaking__Agents__Jonas__Version=2
 Speaking__Agents__FrauSchneider__Name=glosify-frau-schneider
-Speaking__Agents__FrauSchneider__Version=1
+Speaking__Agents__FrauSchneider__Version=2
 Speaking__Agents__Oksana__Name=glosify-oksana
-Speaking__Agents__Oksana__Version=1
+Speaking__Agents__Oksana__Version=2
 Speaking__Agents__Andriy__Name=glosify-andriy
-Speaking__Agents__Andriy__Version=1
+Speaking__Agents__Andriy__Version=2
 Speaking__Agents__PanMykola__Name=glosify-pan-mykola
-Speaking__Agents__PanMykola__Version=1
+Speaking__Agents__PanMykola__Version=2
 
 Speech__Endpoint=https://glosify-speech.cognitiveservices.azure.com
 Speech__ResourceId=/subscriptions/<subscription>/resourceGroups/glosify/providers/Microsoft.CognitiveServices/accounts/glosify-speech
@@ -238,6 +278,7 @@ Optional tuning settings and defaults:
 | --- | ---: | --- |
 | `Speaking__SessionTtlMinutes` | `60` | Clamped to 5–240 minutes |
 | `Speaking__MaxSessionsPerUser` | `3` | Clamped to 1–10 |
+| `Speaking__InteractiveBartenderEnabled` | `true` | Automatically enables authoritative scene tools for bartender sessions; set to `false` to use the ordinary bartender agent |
 | `AiUsage__SpeakingOutputTokenReserve` | `768` | Reserved output allowance per learner turn |
 | `Speech__BlobContainer` | `tts-cache` | Cache used only by server-side fallback TTS |
 | `Speech__MaxTextLength` | `200` | Maximum fallback TTS text length |
@@ -269,6 +310,13 @@ the in-character [LANGUAGE] reply concise (normally one or two sentences and
 under 180 characters) so it works well as speech. Keep humour and cultural
 details suitable for the configured scene without turning stereotypes into the
 persona.
+
+Engage normally with good-faith controversial, political, religious,
+historical, cultural, and adult topics when the learner raises them. Do not
+refuse or redirect merely because a topic is sensitive, divisive, offensive,
+or uncomfortable. Stay factual and conversational, distinguish discussion
+from endorsement, and only decline content that is unlawful or would
+meaningfully facilitate serious harm.
 
 Always return the required structured object. The legacy replyPolish field is
 what the persona says in [LANGUAGE]. replyEnglish is a faithful English
@@ -302,6 +350,29 @@ learner order, make small talk, ask about prices, and handle normal bar
 interactions. You can tease lightly and refer to beer, vodka, and stronger
 drinks in the prototype's adult tone.
 ```
+
+### Interactive bartender
+
+The exact published definition is source-controlled in
+`.foundry/agents/glosify-bartender-interactive-v2.json`. It declares these
+strict functions:
+
+- `serve_drink(drink_id)`
+- `present_bill()`
+- `offer_snack()`
+- `clear_empty_glass()`
+- `polish_glass()`
+- `wipe_counter()`
+- `announce_last_call()`
+- `mark_drink_unavailable(drink_id)`
+
+The Foundry agent decides whether the learner's message warrants zero, one, or
+occasionally several calls. Matching `AIFunction` implementations execute
+inside the application; the Foundry function-invocation loop sends each result
+back to Marek before requesting the final structured reply. Tool parameters are
+strict and drink IDs are allowlisted, but application state remains
+authoritative. The final JSON schema is the ordinary reply-and-coaching
+contract, with no separate scene-action array.
 
 ### Kasia
 
@@ -420,6 +491,8 @@ Application Insights is enabled only when
 - session and completed/failed turn counts;
 - Speech, Foundry, and rate-limit failures;
 - turn and Foundry dependency durations;
+- bartender scene-tool call counts and durations, tagged with the allowlisted
+  tool name and accepted or rejected outcome;
 - avatar, language, CEFR level, and input mode.
 
 Telemetry must not include audio, access tokens, learner transcripts, prompts,
@@ -453,6 +526,14 @@ evaluation has been run yet, so there are no committed result files. Review the
 datasets and rubrics before the first batch run, then keep result artifacts
 under `.foundry/results/` so the evaluated agent version and outcome remain
 auditable.
+
+The interactive-bartender production metadata separately retains a historical
+version `1` baseline: 24 scenarios produced 22 passes, 2 failures, and 1 error
+caused by Azure content filtering. That evidence evaluated the former
+response-authored scene contract. It is not release evidence for the published
+version `2` function-tool contract; v2 requires a tool-aware evaluation that
+checks requested calls, application results, final dialogue, and committed
+state together.
 
 ## Cost model
 

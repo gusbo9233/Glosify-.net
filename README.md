@@ -12,7 +12,7 @@ repair.
 - Vocabulary and sentence practice with flashcard and typing quiz modes.
 - AI-assisted vocabulary generation, image text extraction, and quiz repair through the Microsoft Foundry Responses API.
 - In-app assistant threads scoped to quizzes.
-- Azure-powered speaking practice with three animated avatars per supported language, typed chat, pronunciation assessment, and coaching.
+- Azure-powered speaking practice with three animated avatars per supported language, typed chat, pronunciation assessment, coaching, and automatic non-blocking bartender scene animations driven by validated AI function calls.
 - PDF book uploads with Azure Blob Storage and extracted page text.
 - AI credit accounting for trial grants, reservations, usage debits, and admin grants.
 - Bearer-token API endpoints for mobile clients under `/api/*`.
@@ -76,31 +76,34 @@ BlobStorage__ContainerName="..."
 Admin__Emails__0="admin@example.com"
 
 Speaking__ProjectEndpoint="https://<foundry-resource>.services.ai.azure.com/api/projects/<project>"
-Speaking__ModelDeployment="gpt-5.4-mini"
+Speaking__ModelDeployment="grok-4-1-fast-non-reasoning"
+Speaking__InteractiveBartenderEnabled="true"
 Speaking__Agents__Bartender__Name="glosify-bartender"
-Speaking__Agents__Bartender__Version="1"
+Speaking__Agents__Bartender__Version="2"
+Speaking__Agents__BartenderInteractive__Name="glosify-bartender-interactive"
+Speaking__Agents__BartenderInteractive__Version="2"
 Speaking__Agents__Kasia__Name="glosify-kasia"
-Speaking__Agents__Kasia__Version="1"
+Speaking__Agents__Kasia__Version="2"
 Speaking__Agents__Mietek__Name="glosify-mietek"
-Speaking__Agents__Mietek__Version="1"
+Speaking__Agents__Mietek__Version="2"
 Speaking__Agents__Maarja__Name="glosify-maarja"
-Speaking__Agents__Maarja__Version="1"
+Speaking__Agents__Maarja__Version="2"
 Speaking__Agents__Karl__Name="glosify-karl"
-Speaking__Agents__Karl__Version="1"
+Speaking__Agents__Karl__Version="2"
 Speaking__Agents__Liis__Name="glosify-liis"
-Speaking__Agents__Liis__Version="1"
+Speaking__Agents__Liis__Version="2"
 Speaking__Agents__Hanna__Name="glosify-hanna"
-Speaking__Agents__Hanna__Version="1"
+Speaking__Agents__Hanna__Version="2"
 Speaking__Agents__Jonas__Name="glosify-jonas"
-Speaking__Agents__Jonas__Version="1"
+Speaking__Agents__Jonas__Version="2"
 Speaking__Agents__FrauSchneider__Name="glosify-frau-schneider"
-Speaking__Agents__FrauSchneider__Version="1"
+Speaking__Agents__FrauSchneider__Version="2"
 Speaking__Agents__Oksana__Name="glosify-oksana"
-Speaking__Agents__Oksana__Version="1"
+Speaking__Agents__Oksana__Version="2"
 Speaking__Agents__Andriy__Name="glosify-andriy"
-Speaking__Agents__Andriy__Version="1"
+Speaking__Agents__Andriy__Version="2"
 Speaking__Agents__PanMykola__Name="glosify-pan-mykola"
-Speaking__Agents__PanMykola__Version="1"
+Speaking__Agents__PanMykola__Version="2"
 Speech__Endpoint="https://<speech-resource>.cognitiveservices.azure.com"
 Speech__ResourceId="/subscriptions/<subscription>/resourceGroups/<group>/providers/Microsoft.CognitiveServices/accounts/<speech-resource>"
 Speech__Region="<region>"
@@ -113,9 +116,16 @@ settings, and logging levels.
 
 The assistant model menu is configured under
 `GenerativeAi:Foundry:AssistantModels`. Each entry supplies a friendly name,
-publisher, speed tier, cost tier, and credit multiplier. Repair, OCR, and
-speaking remain pinned to `gpt-5.4-mini`; only assistant conversations are
-user-selectable.
+publisher, speed tier, cost tier, and credit multiplier. Repair and OCR remain
+pinned to `gpt-5.4-mini`; speaking is pinned to
+`grok-4-1-fast-non-reasoning`. Only assistant conversations are user-selectable.
+
+When `Speaking:InteractiveBartenderEnabled` is enabled, every new bartender
+session automatically uses the separately pinned tool-enabled agent. The model
+chooses context-appropriate scene functions, while the application executes and
+validates them in process against authoritative cloned state before returning
+allowlisted animation commands. Session creation does not accept an
+`interactiveMode` preference.
 
 Local development uses `DefaultAzureCredential`. Non-development environments
 use `ManagedIdentityCredential`; set `AZURE_CLIENT_ID` only when the App Service

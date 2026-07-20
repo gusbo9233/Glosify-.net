@@ -35,6 +35,23 @@
         liveBubble: document.getElementById("speaking-live-bubble"),
         livePolish: document.getElementById("speaking-live-polish"),
         liveEnglish: document.getElementById("speaking-live-english"),
+        interactiveLayer: document.getElementById("speaking-interactive-layer"),
+        menuToggle: document.getElementById("speaking-menu-toggle"),
+        barMenu: document.getElementById("speaking-bar-menu"),
+        walletToggle: document.getElementById("speaking-wallet-toggle"),
+        wallet: document.getElementById("speaking-wallet"),
+        walletClose: document.getElementById("speaking-wallet-close"),
+        walletBalance: document.getElementById("speaking-wallet-balance"),
+        walletMoney: document.getElementById("speaking-wallet-money"),
+        paymentDue: document.getElementById("speaking-payment-due"),
+        paymentSelected: document.getElementById("speaking-payment-selected"),
+        paymentSubmit: document.getElementById("speaking-payment-submit"),
+        bill: document.getElementById("speaking-bill"),
+        billTotal: document.getElementById("speaking-bill-total"),
+        drinkAction: document.getElementById("speaking-drink-action"),
+        drinkLabel: document.getElementById("speaking-drink-label"),
+        snackAction: document.getElementById("speaking-snack-action"),
+        sceneEvent: document.getElementById("speaking-scene-event"),
         userTemplate: document.getElementById("speaking-user-message-template"),
         avatarTemplate: document.getElementById("speaking-avatar-message-template")
     };
@@ -55,7 +72,16 @@
         activeSynthesizer: null,
         activeAudio: null,
         mouthTimers: [],
-        genericMouthTimer: null
+        genericMouthTimer: null,
+        interactiveMode: false,
+        interaction: null,
+        selectedTender: new Map(),
+        sceneEventTimer: null,
+        sceneGeneration: 0,
+        sceneQueue: Promise.resolve(),
+        sceneQueueVersion: 0,
+        sceneActionsPending: false,
+        speechGeneration: 0
     };
 
     const antiforgeryToken =
@@ -72,6 +98,15 @@
 
     function currentScene() {
         return elements.scenes.find(scene => scene.dataset.avatarScene === state.avatarId);
+    }
+
+    function supportsInteractiveMode() {
+        return Boolean(pageData.interactiveBartenderEnabled)
+            && state.avatarId === "bartender";
+    }
+
+    function updateInteractiveMode() {
+        state.interactiveMode = supportsInteractiveMode();
     }
 
     function setStatus(message, isError = false) {
@@ -103,6 +138,20 @@
         elements.avatarChoices.forEach(choice => {
             choice.disabled = interactionLocked;
         });
+        [elements.drinkAction, elements.snackAction]
+            .filter(Boolean)
+            .forEach(control => {
+                control.disabled =
+                    interactionLocked
+                    || state.sceneActionsPending
+                    || !state.ready;
+            });
+        [elements.menuToggle, elements.walletToggle]
+            .filter(Boolean)
+            .forEach(control => {
+                control.disabled = !state.ready;
+            });
+        updatePaymentSelection();
     }
 
     function updateCharacterCount() {
@@ -111,6 +160,7 @@
 
     function updateSelectionUi() {
         const avatar = currentAvatar();
+        updateInteractiveMode();
         elements.avatarChoices.forEach(choice => {
             choice.setAttribute(
                 "aria-checked",
@@ -124,6 +174,14 @@
         elements.level.value = state.cefrLevel;
         elements.avatarName.textContent = avatar?.name || "";
         elements.sceneName.textContent = avatar?.scenario || "";
+        if (elements.interactiveLayer) {
+            elements.interactiveLayer.hidden = !state.interactiveMode;
+        }
+        const scene = currentScene();
+        scene?.classList.toggle("is-interactive", state.interactiveMode);
+        if (!state.interactiveMode) {
+            resetInteractionUi();
+        }
     }
 
     function setMessageTranslation(message, showTranslation) {
@@ -159,6 +217,488 @@
                 localStorage.getItem("glosify-speaking-translation") === "1");
         } catch {
             setTranslationVisibility(false);
+        }
+    }
+
+    function resetInteractionUi() {
+        cancelSceneActions();
+        state.interaction = null;
+        state.selectedTender.clear();
+        if (elements.barMenu) {
+            elements.barMenu.hidden = true;
+        }
+        if (elements.wallet) {
+            elements.wallet.hidden = true;
+        }
+        if (elements.menuToggle) {
+            elements.menuToggle.setAttribute("aria-expanded", "false");
+        }
+        if (elements.walletToggle) {
+            elements.walletToggle.setAttribute("aria-expanded", "false");
+        }
+        if (elements.bill) {
+            elements.bill.hidden = true;
+        }
+        if (elements.drinkAction) {
+            elements.drinkAction.hidden = true;
+        }
+        if (elements.snackAction) {
+            elements.snackAction.hidden = true;
+        }
+        if (elements.walletMoney) {
+            elements.walletMoney.replaceChildren();
+        }
+        hideSceneEvent();
+    }
+
+    function applySceneSnapshot(snapshot) {
+        const activeDrink = snapshot?.activeDrink || null;
+        const scene = currentScene();
+        scene?.classList.toggle("has-active-drink", Boolean(activeDrink));
+        const glass = scene?.querySelector("[data-bartender-active-drink]");
+        if (glass && activeDrink) {
+            glass.dataset.drinkId = activeDrink.id;
+            glass.dataset.fillLevel = String(activeDrink.fillLevel);
+        }
+    }
+
+    function hideInteractionActions() {
+        if (elements.drinkAction) {
+            elements.drinkAction.hidden = true;
+        }
+        if (elements.snackAction) {
+            elements.snackAction.hidden = true;
+        }
+    }
+
+    function applyInteractionActions(snapshot) {
+        const activeDrink = snapshot?.activeDrink || null;
+        const actions = new Set(snapshot?.availableActions || []);
+        elements.drinkAction.hidden = !actions.has("drink");
+        if (activeDrink) {
+            elements.drinkLabel.textContent =
+                activeDrink.fillLevel <= 1 ? "Finish drink" : "Take a sip";
+            elements.drinkAction.setAttribute(
+                "aria-label",
+                `${elements.drinkLabel.textContent}: ${activeDrink.nameEnglish}`);
+        }
+        elements.snackAction.hidden = !actions.has("takeSnack");
+    }
+
+    function applyInteractionSnapshot(
+        snapshot,
+        { updateScene = true, updateActions = true } = {}) {
+        state.interaction = snapshot || null;
+        state.selectedTender.clear();
+        if (!snapshot || !state.interactiveMode) {
+            resetInteractionUi();
+            return;
+        }
+
+        elements.walletBalance.textContent = `${snapshot.walletBalance} zł`;
+        elements.paymentDue.textContent = snapshot.billPresented
+            ? `Amount due: ${snapshot.tabTotal} zł`
+            : snapshot.tabTotal > 0
+                ? `Open tab: ${snapshot.tabTotal} zł`
+                : "No bill yet";
+        elements.bill.hidden = !snapshot.billPresented;
+        elements.billTotal.textContent = `${snapshot.tabTotal} zł`;
+        if (!snapshot.billPresented && snapshot.tabTotal === 0) {
+            setPanel(elements.wallet, elements.walletToggle, false);
+        }
+
+        if (updateScene) {
+            applySceneSnapshot(snapshot);
+        }
+
+        if (updateActions) {
+            applyInteractionActions(snapshot);
+        } else {
+            hideInteractionActions();
+        }
+
+        root.querySelectorAll("[data-menu-drink]").forEach(row => {
+            const unavailable =
+                (snapshot.unavailableDrinkIds || []).includes(row.dataset.menuDrink);
+            row.classList.toggle("is-unavailable", unavailable);
+            row.dataset.unavailable = unavailable ? "true" : "false";
+            if (unavailable) {
+                row.setAttribute("aria-label", `${row.textContent.trim()} unavailable`);
+            } else {
+                row.removeAttribute("aria-label");
+            }
+        });
+
+        renderWallet(snapshot.wallet || []);
+        updatePaymentSelection();
+    }
+
+    function renderWallet(wallet) {
+        if (!elements.walletMoney) {
+            return;
+        }
+
+        elements.walletMoney.replaceChildren();
+        for (const denomination of wallet) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "speaking-wallet-denomination";
+            button.dataset.denomination = String(denomination.value);
+            button.disabled = denomination.count <= 0;
+            button.innerHTML =
+                `<span>${denomination.value} zł</span><small>owned ×${denomination.count}</small>`;
+            button.addEventListener("click", () => {
+                const selected = state.selectedTender.get(denomination.value) || 0;
+                const next = selected >= denomination.count ? 0 : selected + 1;
+                if (next === 0) {
+                    state.selectedTender.delete(denomination.value);
+                } else {
+                    state.selectedTender.set(denomination.value, next);
+                }
+                updatePaymentSelection();
+            });
+            elements.walletMoney.append(button);
+        }
+    }
+
+    function updatePaymentSelection() {
+        if (!elements.paymentSubmit) {
+            return;
+        }
+
+        const total = [...state.selectedTender.entries()]
+            .reduce((sum, [value, count]) => sum + value * count, 0);
+        elements.paymentSelected.textContent = `${total} zł`;
+        elements.walletMoney?.querySelectorAll("[data-denomination]").forEach(button => {
+            const value = Number(button.dataset.denomination);
+            const count = state.selectedTender.get(value) || 0;
+            button.classList.toggle("is-selected", count > 0);
+            button.setAttribute("aria-pressed", count > 0 ? "true" : "false");
+            const detail = button.querySelector("small");
+            const owned = state.interaction?.wallet
+                ?.find(item => item.value === value)?.count || 0;
+            if (detail) {
+                detail.textContent = count > 0
+                    ? `selected ×${count} · owned ×${owned}`
+                    : `owned ×${owned}`;
+            }
+            button.disabled = owned <= 0;
+        });
+        elements.paymentSubmit.disabled =
+            state.busy
+            || state.sceneActionsPending
+            || !state.ready
+            || !state.interaction?.billPresented
+            || total <= 0;
+    }
+
+    function setPanel(panel, toggle, open) {
+        if (!panel || !toggle) {
+            return;
+        }
+        panel.hidden = !open;
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    function openWallet() {
+        setPanel(elements.barMenu, elements.menuToggle, false);
+        setPanel(elements.wallet, elements.walletToggle, true);
+    }
+
+    function hideSceneEvent() {
+        if (!elements.sceneEvent) {
+            return;
+        }
+        if (state.sceneEventTimer) {
+            window.clearTimeout(state.sceneEventTimer);
+            state.sceneEventTimer = null;
+        }
+        elements.sceneEvent.hidden = true;
+    }
+
+    function showSceneEvent(message) {
+        if (!elements.sceneEvent) {
+            return;
+        }
+        hideSceneEvent();
+        elements.sceneEvent.textContent = message;
+        elements.sceneEvent.hidden = false;
+        state.sceneEventTimer = window.setTimeout(hideSceneEvent, 3_500);
+    }
+
+    function animationDelay(milliseconds) {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            return Promise.resolve();
+        }
+        return new Promise(resolve => window.setTimeout(resolve, milliseconds));
+    }
+
+    function cancelSceneActions() {
+        state.sceneGeneration += 1;
+        state.sceneQueueVersion += 1;
+        state.sceneQueue = Promise.resolve();
+        state.sceneActionsPending = false;
+        elements.interactiveLayer?.setAttribute("aria-busy", "false");
+        elements.scenes.forEach(scene => {
+            scene.classList.remove(
+                "has-active-drink",
+                "is-pouring",
+                "is-serving",
+                "is-polishing",
+                "is-wiping",
+                "is-clearing",
+                "is-snacking",
+                "is-last-call");
+            delete scene.dataset.pourSource;
+        });
+        hideSceneEvent();
+    }
+
+    async function waitForScene(milliseconds, generation) {
+        await animationDelay(milliseconds);
+        return generation === state.sceneGeneration;
+    }
+
+    function waitForSceneAnimation(
+        element,
+        expectedAnimationName,
+        fallbackMilliseconds,
+        generation) {
+        if (!element
+            || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            return Promise.resolve(generation === state.sceneGeneration);
+        }
+
+        return new Promise(resolve => {
+            let settled = false;
+            const finish = () => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                window.clearTimeout(fallbackTimer);
+                element.removeEventListener("animationend", handleAnimationEnd);
+                element.removeEventListener("animationcancel", handleAnimationCancel);
+                resolve(generation === state.sceneGeneration);
+            };
+            const handleAnimationEnd = event => {
+                if (event.target === element
+                    && event.animationName === expectedAnimationName) {
+                    finish();
+                }
+            };
+            const handleAnimationCancel = event => {
+                if (event.target === element
+                    && event.animationName === expectedAnimationName
+                    && generation !== state.sceneGeneration) {
+                    finish();
+                }
+            };
+            const fallbackTimer = window.setTimeout(finish, fallbackMilliseconds);
+            element.addEventListener("animationend", handleAnimationEnd);
+            element.addEventListener("animationcancel", handleAnimationCancel);
+        });
+    }
+
+    async function playSceneCommand(command, generation) {
+        if (!state.interactiveMode
+            || !command
+            || generation !== state.sceneGeneration) {
+            return;
+        }
+
+        const scene = currentScene();
+        const glass = scene?.querySelector("[data-bartender-active-drink]");
+        const glassMotion = glass?.querySelector("[data-bartender-drink-motion]");
+        switch (command.type) {
+            case "pourAndServe":
+                if (scene) {
+                    scene.dataset.pourSource = command.drinkId || "";
+                }
+                scene?.classList.add("is-pouring");
+                if (glass) {
+                    glass.dataset.drinkId = command.drinkId || "";
+                    glass.dataset.fillLevel = String(command.fillLevel ?? 3);
+                }
+                showSceneEvent("Marek pours and slides over your drink.");
+                const beerTap =
+                    command.drinkId === "lightBeer" || command.drinkId === "darkBeer"
+                        ? scene?.querySelector(
+                            `[data-bartender-tap="${command.drinkId}"] [data-bartender-pour-motion]`)
+                        : null;
+                const pourMotion = beerTap
+                    || scene?.querySelector(
+                        "[data-bartender-bottle] [data-bartender-pour-motion]");
+                if (!await waitForSceneAnimation(
+                    pourMotion,
+                    "speaking-bartender-pour",
+                    1_000,
+                    generation)) {
+                    return;
+                }
+                scene?.classList.remove("is-pouring");
+                if (scene) {
+                    delete scene.dataset.pourSource;
+                }
+                scene?.classList.add("is-serving");
+                if (!await waitForSceneAnimation(
+                    glassMotion,
+                    "speaking-bartender-serve",
+                    850,
+                    generation)) {
+                    return;
+                }
+                scene?.classList.add("has-active-drink");
+                scene?.classList.remove("is-serving");
+                break;
+            case "drink":
+                if (glass) {
+                    glass.dataset.fillLevel = String(command.fillLevel ?? 0);
+                }
+                showSceneEvent(
+                    command.fillLevel === 0 ? "You finish the drink." : "You take a sip.");
+                await waitForScene(350, generation);
+                break;
+            case "takeSnack":
+                scene?.classList.add("is-snacking");
+                showSceneEvent("You take some paluszki.");
+                if (!await waitForSceneAnimation(
+                    scene?.querySelector(
+                        "[data-bartender-snack] [data-bartender-snack-motion]"),
+                    "speaking-bartender-snack",
+                    650,
+                    generation)) {
+                    return;
+                }
+                scene?.classList.remove("is-snacking");
+                break;
+            case "showBill":
+                openWallet();
+                showSceneEvent(`Marek presents the ${command.amount} zł bill.`);
+                await waitForScene(350, generation);
+                break;
+            case "offerSnack":
+                showSceneEvent("Marek offers you paluszki.");
+                await waitForScene(350, generation);
+                break;
+            case "clearGlass":
+                scene?.classList.add("is-clearing");
+                showSceneEvent("Marek clears the empty glass.");
+                if (!await waitForSceneAnimation(
+                    glassMotion,
+                    "speaking-bartender-clear",
+                    750,
+                    generation)) {
+                    return;
+                }
+                scene?.classList.remove("is-clearing", "has-active-drink");
+                break;
+            case "polishGlass":
+                scene?.classList.add("is-polishing");
+                showSceneEvent("Marek polishes a glass.");
+                if (!await waitForSceneAnimation(
+                    scene?.querySelector("[data-bartender-polish-gesture]"),
+                    "speaking-bartender-polish",
+                    1_450,
+                    generation)) {
+                    return;
+                }
+                scene?.classList.remove("is-polishing");
+                break;
+            case "wipeCounter":
+                scene?.classList.add("is-wiping");
+                showSceneEvent("Marek wipes the counter.");
+                if (!await waitForSceneAnimation(
+                    scene?.querySelector("[data-bartender-counter]"),
+                    "speaking-bartender-wipe",
+                    900,
+                    generation)) {
+                    return;
+                }
+                scene?.classList.remove("is-wiping");
+                break;
+            case "lastCall":
+                scene?.classList.add("is-last-call");
+                showSceneEvent("Last call.");
+                if (!await waitForScene(650, generation)) {
+                    return;
+                }
+                scene?.classList.remove("is-last-call");
+                break;
+            case "markUnavailable":
+                showSceneEvent("That item is unavailable.");
+                await waitForScene(350, generation);
+                break;
+            case "paymentRejected":
+                openWallet();
+                showSceneEvent(`${command.amount} zł is not enough. Nothing was removed.`);
+                await waitForScene(450, generation);
+                break;
+            case "paymentAccepted":
+                showSceneEvent(`Marek accepts ${command.amount} zł.`);
+                await waitForScene(450, generation);
+                break;
+            case "returnChange":
+                showSceneEvent(`Marek returns ${command.amount} zł change.`);
+                await waitForScene(500, generation);
+                break;
+        }
+    }
+
+    async function playSceneActions(commands, snapshot, generation) {
+        try {
+            for (const command of commands || []) {
+                if (generation !== state.sceneGeneration) {
+                    return;
+                }
+                await playSceneCommand(command, generation);
+            }
+        } finally {
+            if (generation === state.sceneGeneration && state.interactiveMode) {
+                applySceneSnapshot(snapshot);
+            }
+        }
+    }
+
+    function enqueueSceneActions(commands, snapshot) {
+        const generation = state.sceneGeneration;
+        const queueVersion = ++state.sceneQueueVersion;
+        state.sceneActionsPending = true;
+        elements.interactiveLayer?.setAttribute("aria-busy", "true");
+        hideInteractionActions();
+        setBusy(state.busy);
+        state.sceneQueue = state.sceneQueue
+            .catch(() => {})
+            .then(() => playSceneActions(commands, snapshot, generation))
+            .catch(() => {})
+            .then(() => {
+                if (generation !== state.sceneGeneration
+                    || queueVersion !== state.sceneQueueVersion
+                    || !state.interactiveMode) {
+                    return;
+                }
+                applyInteractionActions(snapshot);
+                state.sceneActionsPending = false;
+                elements.interactiveLayer?.setAttribute("aria-busy", "false");
+                setBusy(state.busy);
+            });
+    }
+
+    function presentTurn(turn) {
+        appendAvatarMessage(turn);
+        showLiveReply(turn.replyPolish, turn.replyEnglish);
+        state.latestReply = turn.replyPolish;
+        elements.replayLatest.disabled = false;
+        if (state.interactiveMode && turn.interaction) {
+            applyInteractionSnapshot(
+                turn.interaction,
+                { updateScene: false, updateActions: false });
+            enqueueSceneActions(turn.sceneActions, turn.interaction);
+        } else {
+            applyInteractionSnapshot(turn.interaction);
+        }
+        if (!elements.muteToggle.checked) {
+            void speakReply(turn.replyPolish);
         }
     }
 
@@ -207,6 +747,7 @@
         elements.replayLatest.disabled = true;
         state.latestReply = null;
         state.userTurns = 0;
+        resetInteractionUi();
         clearRecordedSpeech();
 
         try {
@@ -230,6 +771,7 @@
             showLiveReply(opening.replyPolish, opening.replyEnglish);
             state.latestReply = opening.replyPolish;
             elements.replayLatest.disabled = false;
+            applyInteractionSnapshot(created.interaction);
             setConnection(`${created.avatarName} is ready · ${state.cefrLevel}`, true);
             if (announce) {
                 setStatus("Your practice session is ready.");
@@ -353,6 +895,12 @@
         elements.messages.scrollTop = elements.messages.scrollHeight;
     }
 
+    function refocusComposerForKeyboardUsers() {
+        if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+            elements.textarea.focus({ preventScroll: true });
+        }
+    }
+
     function formatScore(value) {
         const number = Number(value);
         return Number.isFinite(number) ? `${Math.round(number)} / 100` : "—";
@@ -376,6 +924,7 @@
         const mode = state.recordedTranscript ? "voice" : "text";
         const pronunciation = mode === "voice" ? state.pronunciation : null;
         const recordedTranscript = state.recordedTranscript;
+        stopSpeaking();
         appendUserMessage(text, mode, pronunciation);
         state.userTurns += 1;
         elements.textarea.value = "";
@@ -392,14 +941,8 @@
                     body: JSON.stringify({ text, inputMode: mode })
                 });
             const turn = await response.json();
-            appendAvatarMessage(turn);
-            showLiveReply(turn.replyPolish, turn.replyEnglish);
-            state.latestReply = turn.replyPolish;
-            elements.replayLatest.disabled = false;
             setStatus("");
-            if (!elements.muteToggle.checked) {
-                await speakReply(turn.replyPolish);
-            }
+            presentTurn(turn);
         } catch (error) {
             elements.textarea.value = text;
             updateCharacterCount();
@@ -415,7 +958,46 @@
             }
         } finally {
             setBusy(false);
-            elements.textarea.focus();
+            refocusComposerForKeyboardUsers();
+        }
+    }
+
+    async function sendInteractiveAction(action, denominations = null) {
+        if (state.busy
+            || state.sceneActionsPending
+            || !state.ready
+            || !state.sessionId
+            || !state.interactiveMode) {
+            return;
+        }
+
+        stopSpeaking();
+        setBusy(true);
+        setStatus(`${currentAvatar()?.name || "The avatar"} is reacting…`);
+        try {
+            const response = await apiFetch(
+                `${root.dataset.createUrl}/${state.sessionId}/actions`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({ action, denominations })
+                });
+            const turn = await response.json();
+            state.userTurns += 1;
+            setStatus("");
+            presentTurn(turn);
+        } catch (error) {
+            if (error.status === 404 || error.status === 410) {
+                setStatus(error.message, true);
+                state.ready = false;
+                setConnection("Session ended · start a new session", false);
+            } else if (error.status === 400 || error.status === 409) {
+                setStatus("");
+                showSceneEvent("That moment passed. Keep chatting or try another action.");
+            } else {
+                setStatus(error.message, true);
+            }
+        } finally {
+            setBusy(false);
         }
     }
 
@@ -789,36 +1371,55 @@
         });
     }
 
+    function closeSynthesizer(synthesizer) {
+        try {
+            synthesizer?.close();
+        } catch {
+            // Superseded speech must never interrupt the conversation controls.
+        }
+    }
+
     async function speakReply(text) {
         if (!text || elements.muteToggle.checked) {
             return;
         }
 
         stopSpeaking();
+        const generation = state.speechGeneration;
         const sdk = window.SpeechSDK;
         if (!sdk) {
-            await playFallbackAudio(text);
+            await playFallbackAudio(text, generation);
             return;
         }
 
+        let synthesizer = null;
         try {
             const token = await getSpeechToken();
+            if (generation !== state.speechGeneration) {
+                return;
+            }
             const avatar = currentAvatar();
             const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(
                 token.authorizationToken,
                 token.region);
             speechConfig.speechSynthesisVoiceName = avatar.voice;
             const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
-            const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
+            synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
             state.activeSynthesizer = synthesizer;
             let synthesisStartedAt = performance.now();
             let receivedVisemes = false;
 
             startGenericMouth();
             synthesizer.synthesisStarted = () => {
+                if (generation !== state.speechGeneration) {
+                    return;
+                }
                 synthesisStartedAt = performance.now();
             };
             synthesizer.visemeReceived = (_sender, event) => {
+                if (generation !== state.speechGeneration) {
+                    return;
+                }
                 if (!receivedVisemes) {
                     receivedVisemes = true;
                     if (state.genericMouthTimer) {
@@ -848,11 +1449,22 @@
                     reject);
             });
         } catch {
-            await playFallbackAudio(text);
+            closeSynthesizer(synthesizer);
+            if (state.activeSynthesizer === synthesizer) {
+                state.activeSynthesizer = null;
+            }
+            synthesizer = null;
+            if (generation === state.speechGeneration) {
+                await playFallbackAudio(text, generation);
+            }
         } finally {
-            state.activeSynthesizer?.close();
-            state.activeSynthesizer = null;
-            stopMouthAnimation();
+            closeSynthesizer(synthesizer);
+            if (state.activeSynthesizer === synthesizer) {
+                state.activeSynthesizer = null;
+            }
+            if (generation === state.speechGeneration) {
+                stopMouthAnimation();
+            }
         }
     }
 
@@ -872,33 +1484,49 @@
             .replaceAll("'", "&apos;");
     }
 
-    async function playFallbackAudio(text) {
+    async function playFallbackAudio(text, generation) {
+        if (generation !== state.speechGeneration) {
+            return;
+        }
+
         startGenericMouth();
+        let audio = null;
         try {
             const avatar = currentAvatar();
             const languageCode = avatar?.languageCode || pageData.languageCode;
             const url = `${root.dataset.ttsFallbackUrl}?text=${encodeURIComponent(text.slice(0, 200))}&lang=${encodeURIComponent(languageCode)}`;
-            const audio = new Audio(url);
+            audio = new Audio(url);
             state.activeAudio = audio;
             await audio.play();
-            await new Promise((resolve, reject) => {
+            await new Promise(resolve => {
                 audio.addEventListener("ended", resolve, { once: true });
-                audio.addEventListener("error", reject, { once: true });
+                audio.addEventListener("error", resolve, { once: true });
+                audio.addEventListener("abort", resolve, { once: true });
+                audio.addEventListener("emptied", resolve, { once: true });
             });
         } catch {
-            setStatus("The reply is visible, but audio playback is unavailable.", true);
+            // The visible reply remains usable when audio is unavailable.
         } finally {
-            state.activeAudio = null;
-            stopMouthAnimation();
+            if (state.activeAudio === audio) {
+                state.activeAudio = null;
+            }
+            if (generation === state.speechGeneration) {
+                stopMouthAnimation();
+            }
         }
     }
 
     function stopSpeaking() {
-        state.activeSynthesizer?.close();
+        state.speechGeneration += 1;
+        closeSynthesizer(state.activeSynthesizer);
         state.activeSynthesizer = null;
         if (state.activeAudio) {
-            state.activeAudio.pause();
-            state.activeAudio.src = "";
+            try {
+                state.activeAudio.pause();
+                state.activeAudio.src = "";
+            } catch {
+                // A detached audio element is already effectively stopped.
+            }
             state.activeAudio = null;
         }
         stopMouthAnimation();
@@ -922,6 +1550,35 @@
         if (elements.muteToggle.checked) {
             stopSpeaking();
         }
+    });
+
+    elements.menuToggle?.addEventListener("click", () => {
+        const open = elements.barMenu.hidden;
+        setPanel(elements.wallet, elements.walletToggle, false);
+        setPanel(elements.barMenu, elements.menuToggle, open);
+    });
+
+    elements.walletToggle?.addEventListener("click", () => {
+        const open = elements.wallet.hidden;
+        setPanel(elements.barMenu, elements.menuToggle, false);
+        setPanel(elements.wallet, elements.walletToggle, open);
+    });
+
+    elements.walletClose?.addEventListener("click", () => {
+        setPanel(elements.wallet, elements.walletToggle, false);
+    });
+
+    elements.drinkAction?.addEventListener("click", () => {
+        void sendInteractiveAction("drink");
+    });
+
+    elements.snackAction?.addEventListener("click", () => {
+        void sendInteractiveAction("takeSnack");
+    });
+
+    elements.paymentSubmit?.addEventListener("click", () => {
+        const denominations = Object.fromEntries(state.selectedTender.entries());
+        void sendInteractiveAction("submitPayment", denominations);
     });
 
     elements.newSession.addEventListener("click", async () => {

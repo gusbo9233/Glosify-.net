@@ -250,7 +250,10 @@ builder.Services.AddOptions<GenerativeAiOptions>()
     .Bind(builder.Configuration.GetSection(GenerativeAiOptions.SectionName))
     .ValidateOnStart();
 builder.Services.AddSingleton<IValidateOptions<GenerativeAiOptions>, GenerativeAiOptionsValidator>();
-builder.Services.Configure<AiUsageOptions>(builder.Configuration.GetSection("AiUsage"));
+builder.Services.AddOptions<AiUsageOptions>()
+    .Bind(builder.Configuration.GetSection("AiUsage"))
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<AiUsageOptions>, AiUsageOptionsValidator>();
 // Keep the legacy Gemini credential alias only while the explicit rollback
 // provider is available. All model and timeout settings use standard ASP.NET
 // double-underscore configuration binding.

@@ -15,6 +15,13 @@ public interface ISpeakingService
         SpeakingInputMode inputMode,
         CancellationToken cancellationToken = default);
 
+    Task<SpeakingTurn> SendActionAsync(
+        Guid sessionId,
+        string userId,
+        SpeakingInteractionAction action,
+        IReadOnlyDictionary<int, int>? denominations,
+        CancellationToken cancellationToken = default);
+
     Task DeleteSessionAsync(
         Guid sessionId,
         string userId,

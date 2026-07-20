@@ -40,3 +40,27 @@ public sealed class InsufficientAiCreditsException : InvalidOperationException
     public int AvailableCredits { get; }
     public int RequiredCredits { get; }
 }
+
+public sealed class MonthlyAiBudgetExceededException : InvalidOperationException
+{
+    public MonthlyAiBudgetExceededException(
+        string periodKey,
+        long limitMicros,
+        long spentMicros,
+        long reservedMicros,
+        long requiredMicros)
+        : base("AI is temporarily unavailable because this request would exceed the application's monthly budget.")
+    {
+        PeriodKey = periodKey;
+        LimitMicros = limitMicros;
+        SpentMicros = spentMicros;
+        ReservedMicros = reservedMicros;
+        RequiredMicros = requiredMicros;
+    }
+
+    public string PeriodKey { get; }
+    public long LimitMicros { get; }
+    public long SpentMicros { get; }
+    public long ReservedMicros { get; }
+    public long RequiredMicros { get; }
+}

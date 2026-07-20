@@ -24,6 +24,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<AssistantMessage> AssistantMessages { get; set; }
     public DbSet<AiCreditAccount> AiCreditAccounts { get; set; }
     public DbSet<AiCreditTransaction> AiCreditTransactions { get; set; }
+    public DbSet<AiMonthlyBudget> AiMonthlyBudgets { get; set; }
 
     public DbSet<Collection> Collections { get; set; }
 
@@ -184,14 +185,24 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.Property(transaction => transaction.Note).HasMaxLength(512);
             entity.Property(transaction => transaction.RelatedEntityType).HasMaxLength(64);
             entity.Property(transaction => transaction.RelatedEntityId).HasMaxLength(128);
+            entity.Property(transaction => transaction.BudgetPeriodKey).HasMaxLength(7);
             entity.HasIndex(transaction => new { transaction.UserId, transaction.CreatedAt });
             entity.HasIndex(transaction => transaction.ReservationId);
+            entity.HasIndex(transaction => transaction.BudgetPeriodKey);
 
             entity.HasOne<ApplicationUser>()
                 .WithMany()
                 .HasForeignKey(transaction => transaction.UserId)
                 .HasConstraintName("FK_AiCreditTransactions_AspNetUsers_UserId")
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AiMonthlyBudget>(entity =>
+        {
+            entity.HasKey(budget => budget.PeriodKey);
+            entity.Property(budget => budget.PeriodKey).HasMaxLength(7);
+            entity.Property(budget => budget.RowVersion).IsRowVersion();
+            entity.Ignore(budget => budget.AvailableMicros);
         });
 
         modelBuilder.Entity<Collection>(entity =>

@@ -92,6 +92,29 @@ public sealed class SpeakingApiController : ControllerBase
         return Ok(turn);
     }
 
+    [HttpPost("sessions/{sessionId:guid}/actions")]
+    public async Task<IActionResult> SendAction(
+        Guid sessionId,
+        [FromBody] SendSpeakingActionRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!BartenderInteractionCatalog.TryParseUserAction(request.Action, out var action))
+        {
+            return BadRequest(new
+            {
+                error = "Action must be drink, takeSnack, or submitPayment.",
+            });
+        }
+
+        var turn = await _speaking.SendActionAsync(
+            sessionId,
+            User.GetUserId(),
+            action,
+            request.Denominations,
+            cancellationToken);
+        return Ok(turn);
+    }
+
     [HttpDelete("sessions/{sessionId:guid}")]
     public async Task<IActionResult> DeleteSession(
         Guid sessionId,

@@ -6,6 +6,11 @@ public sealed class SpeakingSessionNotFoundException()
 public sealed class SpeakingSessionExpiredException()
     : InvalidOperationException("This speaking session has expired. Start a new one to continue.");
 
+public sealed class SpeakingSessionInvalidatedException(Exception innerException)
+    : InvalidOperationException(
+        "This speaking session could not be continued safely. Start a new one to continue.",
+        innerException);
+
 public sealed class SpeakingSessionBusyException()
     : InvalidOperationException("Wait for the current avatar reply before sending another message.");
 

@@ -22,6 +22,8 @@ public sealed class AiCreditTransaction
     public string? Note { get; set; }
     public string? RelatedEntityType { get; set; }
     public string? RelatedEntityId { get; set; }
+    public string? BudgetPeriodKey { get; set; }
+    public long? BudgetAmountMicros { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 

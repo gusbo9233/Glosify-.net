@@ -74,6 +74,7 @@
             <span class="speaking-switch-track" aria-hidden="true"></span>
             <span>Mute avatar</span>
         </label>
+
     </section>
 
     <div class="speaking-workspace">
@@ -88,6 +89,114 @@
                     <p id="speaking-live-polish" lang="@Model.LanguageCode"></p>
                     <p class="speaking-translation" id="speaking-live-english" lang="en"></p>
                 </div>
+                @if (Model.InteractiveBartenderEnabled)
+                {
+                    <div class="speaking-interactive-layer"
+                         id="speaking-interactive-layer"
+                         hidden>
+                        <div class="speaking-interactive-toolbar">
+                            <button type="button"
+                                    class="speaking-scene-tool"
+                                    id="speaking-menu-toggle"
+                                    aria-expanded="false"
+                                    aria-controls="speaking-bar-menu">
+                                <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                                Menu
+                            </button>
+                            <button type="button"
+                                    class="speaking-scene-tool"
+                                    id="speaking-wallet-toggle"
+                                    aria-expanded="false"
+                                    aria-controls="speaking-wallet">
+                                <span class="material-symbols-outlined" aria-hidden="true">account_balance_wallet</span>
+                                <span id="speaking-wallet-balance">100 zł</span>
+                            </button>
+                        </div>
+
+                        <section class="speaking-bar-menu"
+                                 id="speaking-bar-menu"
+                                 aria-label="Bar menu"
+                                 hidden>
+                            <div class="speaking-panel-heading">
+                                <strong>MENU</strong>
+                                <small>Pod Białym Orłem</small>
+                            </div>
+                            <dl>
+                                @foreach (var drink in Glosify.Services.Speaking.BartenderInteractionCatalog.Drinks)
+                                {
+                                    <div data-menu-drink="@drink.Id">
+                                        <dt>@drink.NamePolish</dt>
+                                        <dd>@drink.Price zł</dd>
+                                    </div>
+                                }
+                            </dl>
+                        </section>
+
+                        <section class="speaking-wallet"
+                                 id="speaking-wallet"
+                                 aria-label="Your wallet"
+                                 hidden>
+                            <div class="speaking-panel-heading">
+                                <div>
+                                    <strong>Portfel</strong>
+                                    <small id="speaking-payment-due">No bill yet</small>
+                                </div>
+                                <button type="button"
+                                        class="speaking-panel-close"
+                                        id="speaking-wallet-close"
+                                        aria-label="Close wallet">
+                                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                                </button>
+                            </div>
+                            <div class="speaking-wallet-money"
+                                 id="speaking-wallet-money"
+                                 aria-label="Choose Polish złoty notes and coins"></div>
+                            <div class="speaking-wallet-footer">
+                                <span>Selected <strong id="speaking-payment-selected">0 zł</strong></span>
+                                <button type="button"
+                                        class="speaking-wallet-pay"
+                                        id="speaking-payment-submit"
+                                        disabled>
+                                    Pay
+                                </button>
+                            </div>
+                        </section>
+
+                        <div class="speaking-bill"
+                             id="speaking-bill"
+                             role="status"
+                             aria-live="polite"
+                             hidden>
+                            <span>RACHUNEK</span>
+                            <strong id="speaking-bill-total">0 zł</strong>
+                        </div>
+
+                        <div class="speaking-context-actions"
+                             id="speaking-context-actions"
+                             aria-label="Scene actions">
+                            <button type="button"
+                                    class="speaking-context-action"
+                                    id="speaking-drink-action"
+                                    hidden>
+                                <span class="material-symbols-outlined" aria-hidden="true">local_bar</span>
+                                <span id="speaking-drink-label">Take a sip</span>
+                            </button>
+                            <button type="button"
+                                    class="speaking-context-action"
+                                    id="speaking-snack-action"
+                                    hidden>
+                                <span class="material-symbols-outlined" aria-hidden="true">bakery_dining</span>
+                                Take paluszki
+                            </button>
+                        </div>
+
+                        <p class="speaking-scene-event"
+                           id="speaking-scene-event"
+                           role="status"
+                           aria-live="polite"
+                           hidden></p>
+                    </div>
+                }
             </div>
             <div class="speaking-avatar-recorder">
                 <button type="button"

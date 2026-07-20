@@ -99,12 +99,27 @@ Assistant reservation and debit amounts apply the selected model's configured
 credit multiplier. Usage rows record provider `foundry` and the actual
 deployment used.
 
+Foundry usage also shares one application-wide monthly monetary budget. The
+default `AiUsage:MonthlyBudget:LimitSek` is `200`; the period rolls over on the
+first day of each month in `Europe/Stockholm`. Estimated calls reserve against
+the shared SQL ledger before reaching Foundry, successful calls reconcile the
+reservation against reported usage, and failed calls release it. Costs are
+stored as integer micro-SEK to avoid floating-point and per-request öre rounding.
+
+Input and output prices are configured per deployment under
+`AiUsage:MonthlyBudget:Models`. The checked-in rates correspond to the deployed
+East US SKUs on 2026-07-19: Data Zone Standard for `gpt-5.4-mini` and Global
+Standard for the two Grok 4.1 deployments. Recheck Azure retail pricing when a
+deployment, SKU, region, or price changes. A budgeted provider with no matching
+deployment price fails closed instead of making an unaccounted request.
+
 Existing controller routes and JSON response shapes are unchanged:
 
 | Condition | HTTP status |
 |---|---:|
 | Invalid image media or model selection | 400 |
 | Insufficient credits | 402 |
+| Application monthly budget exhausted | 503 |
 | Foundry throttling or temporary unavailability | 503 |
 | Foundry timeout | 504 |
 | Other Foundry or structured-response failure | 502 |

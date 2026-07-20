@@ -2,68 +2,144 @@
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = "Books";
+
+    var totalPages = Model.Books.Sum(book => book.PageCount);
 }
 
 <section class="books-page">
-    <section class="books-header">
-        <div>
-            <p class="hero-label">Library</p>
-            <h1 class="page-title">Books</h1>
+    <section class="books-library-hero">
+        <div class="books-hero-copy">
+            <div class="books-eyebrow">
+                <span class="material-symbols-outlined" aria-hidden="true">auto_stories</span>
+                Your library
+            </div>
+            <h1 class="books-hero-title">Turn every page into <span>progress.</span></h1>
+            <p class="books-hero-description">
+                Bring your own reading material and use Glosify to explore every page, phrase, and new word.
+            </p>
+
+            <div class="books-library-stats" aria-label="Library summary">
+                <div class="books-library-stat">
+                    <strong>@Model.Books.Count</strong>
+                    <span>@(Model.Books.Count == 1 ? "book" : "books")</span>
+                </div>
+                <span class="books-stat-divider" aria-hidden="true"></span>
+                <div class="books-library-stat">
+                    <strong>@totalPages</strong>
+                    <span>@(totalPages == 1 ? "page" : "pages")</span>
+                </div>
+            </div>
         </div>
+
+        <div class="books-upload-card">
+            <div class="books-upload-heading">
+                <span class="books-upload-icon">
+                    <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
+                </span>
+                <div>
+                    <p>Add to your shelf</p>
+                    <h2>Upload a PDF</h2>
+                </div>
+            </div>
+
+            <form method="post" asp-controller="Books" asp-action="Upload" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <label class="books-file-picker" for="bookFile">
+                    <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+                    <span class="books-file-picker-copy">
+                        <strong data-book-file-label>Choose a PDF</strong>
+                        <small>Text-based PDF · up to 25 MB</small>
+                    </span>
+                    <span class="books-file-browse">Browse</span>
+                    <input id="bookFile" name="file" type="file" accept="application/pdf,.pdf" required data-book-file-input />
+                </label>
+                <button class="books-upload-button" type="submit">
+                    Add to library
+                    <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                </button>
+            </form>
+        </div>
+        <span class="books-hero-orbit books-hero-orbit-one" aria-hidden="true"></span>
+        <span class="books-hero-orbit books-hero-orbit-two" aria-hidden="true"></span>
     </section>
 
     @if (TempData[NotificationKeys.Book] is string bookMessage)
     {
-        <div class="panel-message">@bookMessage</div>
+        <div class="books-notice" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+            @bookMessage
+        </div>
     }
 
-    <div class="tool-grid tool-grid-single">
-        <section class="panel">
-            <div class="panel-header">
-                <div class="panel-icon"><span class="material-symbols-outlined">upload_file</span></div>
-                <h2 class="panel-title">Upload PDF</h2>
-            </div>
-            <form method="post" asp-controller="Books" asp-action="Upload" enctype="multipart/form-data">
-                @Html.AntiForgeryToken()
-                <div class="form-group">
-                    <label class="form-label" for="bookFile">PDF file</label>
-                    <input class="form-input" id="bookFile" name="file" type="file" accept="application/pdf,.pdf" required />
-                </div>
-                <button class="btn-submit" type="submit">
-                    Upload <span class="material-symbols-outlined" aria-hidden="true">cloud_upload</span>
-                </button>
-            </form>
-        </section>
-    </div>
-
-    <section>
-        <div class="collection-header">
+    <section class="books-collection">
+        <div class="books-collection-header">
             <div>
-                <h2 class="collection-title">Uploaded Books</h2>
-                <p class="collection-subtitle">@Model.Books.Count @(Model.Books.Count == 1 ? "book" : "books") in your library</p>
+                <p class="books-section-label">Keep reading</p>
+                <h2>Your books</h2>
             </div>
+            @if (Model.Books.Any())
+            {
+                <span class="books-count-pill">@Model.Books.Count on your shelf</span>
+            }
         </div>
 
         <div class="book-grid">
-            @foreach (var book in Model.Books)
+            @foreach (var book in Model.Books.Select((book, index) => new { Book = book, Index = index }))
             {
                 <article class="book-card">
-                    <div class="book-card-main">
-                        <div class="word-icon"><span class="material-symbols-outlined">picture_as_pdf</span></div>
-                        <div>
-                            <h3 class="book-title">@book.Title</h3>
-                            <p class="book-meta">@book.PageCount pages &middot; @book.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</p>
+                    <a class="book-card-link" asp-controller="Books" asp-action="Read" asp-route-id="@book.Book.Id"
+                       aria-label="Read @book.Book.Title">
+                        <div class="book-cover book-cover-@((book.Index % 4) + 1)" aria-hidden="true">
+                            <span class="book-cover-mark">G</span>
+                            <span class="book-cover-title">@book.Book.Title</span>
+                            <span class="book-cover-rule"></span>
+                            <span class="book-cover-type">Reader edition</span>
+                            <canvas class="book-cover-preview"
+                                    data-book-preview
+                                    data-pdf-url="@Url.Action("File", "Books", new { id = book.Book.Id })"></canvas>
                         </div>
-                    </div>
-                    <a class="btn-secondary" asp-controller="Books" asp-action="Read" asp-route-id="@book.Id">
-                        Read <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+
+                        <div class="book-card-content">
+                            <div class="book-card-topline">
+                                <span class="book-format">
+                                    <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
+                                    PDF
+                                </span>
+                                <span class="book-added">Added @book.Book.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</span>
+                            </div>
+                            <h3 class="book-title">@book.Book.Title</h3>
+                            <div class="book-card-footer">
+                                <span class="book-page-count">
+                                    <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                                    @book.Book.PageCount @(book.Book.PageCount == 1 ? "page" : "pages")
+                                </span>
+                                <span class="book-read-action">
+                                    Start reading
+                                    <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                                </span>
+                            </div>
+                        </div>
                     </a>
                 </article>
             }
             @if (!Model.Books.Any())
             {
-                <div class="empty-state">No books yet. Upload a text-based PDF to start reading.</div>
+                <div class="books-empty-state">
+                    <span class="books-empty-icon">
+                        <span class="material-symbols-outlined" aria-hidden="true">library_books</span>
+                    </span>
+                    <h3>Your shelf is ready</h3>
+                    <p>Upload your first text-based PDF above and start learning from the things you already love to read.</p>
+                    <label class="books-empty-action" for="bookFile">
+                        Choose your first book
+                        <span class="material-symbols-outlined" aria-hidden="true">north_east</span>
+                    </label>
+                </div>
             }
         </div>
     </section>
 </section>
+
+@section Scripts {
+<script type="module" src="~/js/books-library.js" asp-append-version="true"></script>
+}

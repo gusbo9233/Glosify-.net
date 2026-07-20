@@ -267,7 +267,9 @@ public static class SpeakingAvatarCatalog
         Enum.TryParse(value?.Trim(), ignoreCase: true, out mode)
         && Enum.IsDefined(mode);
 
-    public static SpeakingPageViewModel CreatePageViewModel(string language)
+    public static SpeakingPageViewModel CreatePageViewModel(
+        string language,
+        bool interactiveBartenderEnabled = false)
     {
         var definitions = ForLanguage(language);
         if (definitions.Count == 0)
@@ -297,6 +299,8 @@ public static class SpeakingAvatarCatalog
             first.Locale,
             first.LanguageCode,
             first.Slug,
-            CefrLevel.A2.ToString());
+            CefrLevel.A2.ToString(),
+            interactiveBartenderEnabled
+                && definitions.Any(definition => definition.Id == SpeakingAvatarId.Bartender));
     }
 }

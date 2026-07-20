@@ -6,6 +6,7 @@ public interface ISpeakingAgentClient
 
     Task<ISpeakingAgentConversation> CreateConversationAsync(
         SpeakingAvatarId avatar,
+        bool interactiveMode = false,
         CancellationToken cancellationToken = default);
 }
 
@@ -13,5 +14,6 @@ public interface ISpeakingAgentConversation : IAsyncDisposable
 {
     Task<SpeakingAgentTurn> RunTurnAsync(
         string message,
+        BartenderInteractionState? interactionState = null,
         CancellationToken cancellationToken = default);
 }

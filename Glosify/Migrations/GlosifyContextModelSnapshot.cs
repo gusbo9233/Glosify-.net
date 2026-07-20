@@ -86,6 +86,13 @@ namespace Glosify.Migrations
                     b.Property<int>("BalanceAfterCredits")
                         .HasColumnType("int");
 
+                    b.Property<long?>("BudgetAmountMicros")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("BudgetPeriodKey")
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
+
                     b.Property<int?>("CandidateTokens")
                         .HasColumnType("int");
 
@@ -153,11 +160,45 @@ namespace Glosify.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BudgetPeriodKey");
+
                     b.HasIndex("ReservationId");
 
                     b.HasIndex("UserId", "CreatedAt");
 
                     b.ToTable("AiCreditTransactions");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AiMonthlyBudget", b =>
+                {
+                    b.Property<string>("PeriodKey")
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<long>("LimitMicros")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ReservedMicros")
+                        .HasColumnType("bigint");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<long>("SpentMicros")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("PeriodKey");
+
+                    b.ToTable("AiMonthlyBudgets");
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.ApplicationUser", b =>

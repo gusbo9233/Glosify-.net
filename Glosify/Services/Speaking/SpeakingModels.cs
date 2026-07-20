@@ -34,6 +34,25 @@ public enum SpeakingInputMode
     Voice,
 }
 
+public enum SpeakingInteractionAction
+{
+    Drink,
+    TakeSnack,
+    SubmitPayment,
+}
+
+public enum SpeakingProposedActionType
+{
+    ServeDrink,
+    PresentBill,
+    OfferSnack,
+    ClearGlass,
+    PolishGlass,
+    WipeCounter,
+    LastCall,
+    MarkUnavailable,
+}
+
 public sealed record SpeakingAvatarDefinition(
     SpeakingAvatarId Id,
     string Slug,
@@ -61,7 +80,8 @@ public sealed record SpeakingSessionCreated(
     string AvatarId,
     string AvatarName,
     string Voice,
-    SpeakingOpeningTurn OpeningTurn);
+    SpeakingOpeningTurn OpeningTurn,
+    SpeakingInteractionSnapshot? Interaction = null);
 
 public sealed class SpeakingCoach
 {
@@ -78,7 +98,7 @@ public sealed class SpeakingCoach
     public string NaturalnessTipEnglish { get; set; } = string.Empty;
 }
 
-public sealed class SpeakingTurn
+public class SpeakingAgentReply
 {
     // These JSON names are retained for compatibility with the published
     // Polish prompt agents. For other avatars they contain the selected
@@ -93,7 +113,61 @@ public sealed class SpeakingTurn
     public SpeakingCoach Coach { get; set; } = new();
 }
 
-public sealed record SpeakingAgentTurn(SpeakingTurn Turn, AiTokenUsage? Usage);
+public sealed class SpeakingProposedAction
+{
+    [JsonPropertyName("type")]
+    [JsonConverter(typeof(JsonStringEnumConverter<SpeakingProposedActionType>))]
+    public SpeakingProposedActionType Type { get; set; }
+
+    [JsonPropertyName("drinkId")]
+    public string? DrinkId { get; set; }
+}
+
+public sealed class SpeakingTurn : SpeakingAgentReply
+{
+    [JsonPropertyName("sceneActions")]
+    public IReadOnlyList<SpeakingSceneCommand> SceneActions { get; set; } = [];
+
+    [JsonPropertyName("interaction")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public SpeakingInteractionSnapshot? Interaction { get; set; }
+}
+
+public sealed record SpeakingAgentTurn(
+    SpeakingAgentReply Reply,
+    AiTokenUsage? Usage,
+    IReadOnlyList<SpeakingSceneCommand>? SceneCommands = null);
+
+public sealed record SpeakingDrinkSnapshot(
+    string Id,
+    string NamePolish,
+    string NameEnglish,
+    int Price);
+
+public sealed record SpeakingActiveDrinkSnapshot(
+    string Id,
+    string NamePolish,
+    string NameEnglish,
+    int FillLevel);
+
+public sealed record SpeakingWalletDenominationSnapshot(int Value, int Count);
+
+public sealed record SpeakingInteractionSnapshot(
+    IReadOnlyList<SpeakingDrinkSnapshot> Menu,
+    IReadOnlyList<SpeakingWalletDenominationSnapshot> Wallet,
+    int WalletBalance,
+    int TabTotal,
+    bool BillPresented,
+    SpeakingActiveDrinkSnapshot? ActiveDrink,
+    bool SnackOffered,
+    IReadOnlyList<string> UnavailableDrinkIds,
+    IReadOnlyList<string> AvailableActions);
+
+public sealed record SpeakingSceneCommand(
+    string Type,
+    string? DrinkId = null,
+    int? Amount = null,
+    int? FillLevel = null);
 
 public sealed record SpeakingPageAvatar(
     string Id,
@@ -118,4 +192,5 @@ public sealed record SpeakingPageViewModel(
     string Locale,
     string LanguageCode,
     string DefaultAvatarId,
-    string DefaultCefrLevel);
+    string DefaultCefrLevel,
+    bool InteractiveBartenderEnabled);

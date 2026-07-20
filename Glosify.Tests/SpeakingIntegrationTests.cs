@@ -84,6 +84,38 @@ public sealed class SpeakingIntegrationTests
         Assert.Equal(
             "true",
             messageFlip?.QuerySelector(".speaking-message-back")?.GetAttribute("aria-hidden"));
+        Assert.Null(document.QuerySelector("#speaking-interactive-toggle"));
+        Assert.Null(document.QuerySelector("#speaking-interactive-control"));
+        Assert.NotNull(document.QuerySelector("#speaking-bar-menu"));
+        Assert.Equal(6, document.QuerySelectorAll("[data-menu-drink]").Length);
+        Assert.NotNull(document.QuerySelector("#speaking-wallet"));
+        Assert.Null(document.QuerySelector(
+            ".speaking-scene-bartender.has-active-drink"));
+        Assert.NotNull(document.QuerySelector(
+            "[data-bartender-active-drink][transform] [data-bartender-drink-motion]"));
+        Assert.Equal(2, document.QuerySelectorAll(
+            "[data-bartender-tap][transform] [data-bartender-pour-motion]").Length);
+        Assert.Equal(2, document.QuerySelectorAll(
+            "[data-bartender-pour-effect] .bartender-pour-stream").Length);
+        Assert.Equal(2, document.QuerySelectorAll(
+            "[data-bartender-pour-effect] .bartender-service-glass").Length);
+        Assert.NotNull(document.QuerySelector(
+            "[data-bartender-snack][transform] [data-bartender-snack-motion]"));
+        Assert.NotNull(document.QuerySelector(
+            ".avatar-gesture > [data-bartender-polish-gesture]"));
+    }
+
+    [Fact]
+    public async Task Speaking_page_hides_interactive_controls_behind_the_operational_flag()
+    {
+        using var factory = CreateFactory(interactiveEnabled: false);
+        var client = factory.CreateClient();
+
+        var document = await GetDocumentAsync(client);
+
+        Assert.Null(document.QuerySelector("#speaking-interactive-toggle"));
+        Assert.Null(document.QuerySelector("#speaking-wallet"));
+        Assert.Null(document.QuerySelector("#speaking-bar-menu"));
     }
 
     [Theory]
@@ -165,6 +197,168 @@ public sealed class SpeakingIntegrationTests
         Assert.Contains("escapeXml(avatar.locale)", script, StringComparison.Ordinal);
         Assert.Contains("avatar?.languageCode || pageData.languageCode", script, StringComparison.Ordinal);
         Assert.DoesNotContain("speechRecognitionLanguage = \"pl-PL\"", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Interactive_client_uses_authoritative_snapshots_and_reduced_motion_queue()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient();
+
+        var script = await client.GetStringAsync("/js/speaking.js");
+        var styles = await client.GetStringAsync("/css/speaking.css");
+
+        Assert.DoesNotContain("interactiveMode: state.interactiveMode", script, StringComparison.Ordinal);
+        Assert.Contains("/actions`", script, StringComparison.Ordinal);
+        Assert.Contains("function playSceneActions", script, StringComparison.Ordinal);
+        Assert.Contains("function enqueueSceneActions", script, StringComparison.Ordinal);
+        Assert.Contains("function cancelSceneActions", script, StringComparison.Ordinal);
+        Assert.Contains("function waitForSceneAnimation", script, StringComparison.Ordinal);
+        Assert.Contains("function applyInteractionSnapshot", script, StringComparison.Ordinal);
+        Assert.Contains("function applySceneSnapshot", script, StringComparison.Ordinal);
+        Assert.Contains("state.sceneQueue = state.sceneQueue", script, StringComparison.Ordinal);
+        Assert.Contains("state.speechGeneration += 1", script, StringComparison.Ordinal);
+        Assert.Contains("[elements.menuToggle, elements.walletToggle]", script, StringComparison.Ordinal);
+        Assert.Contains("[elements.drinkAction, elements.snackAction]", script, StringComparison.Ordinal);
+        Assert.Contains("That moment passed. Keep chatting", script, StringComparison.Ordinal);
+        Assert.Contains("function closeSynthesizer", script, StringComparison.Ordinal);
+        Assert.Contains("function refocusComposerForKeyboardUsers", script, StringComparison.Ordinal);
+        Assert.Contains(
+            "(hover: hover) and (pointer: fine)",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "elements.textarea.focus({ preventScroll: true })",
+            script,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            "setBusy(false);\n            elements.textarea.focus();",
+            script,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("await presentTurn(turn)", script, StringComparison.Ordinal);
+        Assert.Contains(
+            "{ updateScene: false, updateActions: false }",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "enqueueSceneActions(turn.sceneActions, turn.interaction)",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains("sceneActionsPending: false", script, StringComparison.Ordinal);
+        Assert.Contains(
+            "control.disabled =\n                    interactionLocked\n                    || state.sceneActionsPending",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "state.sceneActionsPending = true;\n        elements.interactiveLayer?.setAttribute(\"aria-busy\", \"true\");\n        hideInteractionActions();",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "applyInteractionActions(snapshot);\n                state.sceneActionsPending = false;\n                elements.interactiveLayer?.setAttribute(\"aria-busy\", \"false\");",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (state.busy\n            || state.sceneActionsPending",
+            script,
+            StringComparison.Ordinal);
+        var scenePlayback = script.IndexOf(
+            "async function playSceneActions",
+            StringComparison.Ordinal);
+        var commandPlayback = script.IndexOf(
+            "await playSceneCommand(command, generation)",
+            scenePlayback,
+            StringComparison.Ordinal);
+        Assert.True(commandPlayback > scenePlayback);
+        Assert.True(commandPlayback < script.IndexOf(
+            "applySceneSnapshot(snapshot)",
+            commandPlayback,
+            StringComparison.Ordinal));
+        var pourCommand = script.IndexOf(
+            "case \"pourAndServe\"",
+            StringComparison.Ordinal);
+        var pourClass = script.IndexOf(
+            "scene?.classList.add(\"is-pouring\")",
+            pourCommand,
+            StringComparison.Ordinal);
+        var pourAnimation = script.IndexOf(
+            "\"speaking-bartender-pour\"",
+            pourClass,
+            StringComparison.Ordinal);
+        var serveClass = script.IndexOf(
+            "scene?.classList.add(\"is-serving\")",
+            pourAnimation,
+            StringComparison.Ordinal);
+        var serveAnimation = script.IndexOf(
+            "\"speaking-bartender-serve\"",
+            serveClass,
+            StringComparison.Ordinal);
+        var activeDrinkClass = script.IndexOf(
+            "scene?.classList.add(\"has-active-drink\")",
+            serveAnimation,
+            StringComparison.Ordinal);
+        var finishServing = script.IndexOf(
+            "scene?.classList.remove(\"is-serving\")",
+            activeDrinkClass,
+            StringComparison.Ordinal);
+        Assert.True(pourCommand >= 0);
+        Assert.True(pourClass > pourCommand);
+        Assert.True(pourAnimation > pourClass);
+        Assert.True(serveClass > pourAnimation);
+        Assert.True(serveAnimation > serveClass);
+        Assert.True(activeDrinkClass > serveAnimation);
+        Assert.True(finishServing > activeDrinkClass);
+        Assert.DoesNotContain(
+            "classList.add(\"has-active-drink\", \"is-pouring\")",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains("\"animationend\"", script, StringComparison.Ordinal);
+        Assert.Contains("\"animationcancel\"", script, StringComparison.Ordinal);
+        Assert.Contains(
+            "event.animationName === expectedAnimationName",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains("prefers-reduced-motion: reduce", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("glosify-speaking-bartender-interactive", script, StringComparison.Ordinal);
+        Assert.Contains("@media (prefers-reduced-motion: reduce)", styles, StringComparison.Ordinal);
+        Assert.Contains("@media (max-width: 620px)", styles, StringComparison.Ordinal);
+        Assert.Contains(
+            "@media (max-width: 900px), (pointer: coarse)",
+            styles,
+            StringComparison.Ordinal);
+        Assert.Contains("height: clamp(700px, 78vh, 800px);", styles, StringComparison.Ordinal);
+        Assert.Contains(".speaking-messages {\n    min-height: 0;", styles, StringComparison.Ordinal);
+        Assert.Contains(
+            ".speaking-scene-bartender.is-serving [data-bartender-drink-motion]",
+            styles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "@keyframes speaking-bartender-beer-stream",
+            styles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "@keyframes speaking-bartender-glass-fill",
+            styles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            ".speaking-scene-bartender.is-serving [data-bartender-active-drink]",
+            styles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            ".speaking-scene-bartender.has-active-drink [data-bartender-active-drink]",
+            styles,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            """
+            .speaking-scene-bartender [data-bartender-active-drink],
+            .speaking-scene-bartender [data-bartender-coaster] {
+                opacity: 0;
+            """,
+            styles,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            ".speaking-scene-bartender.is-interactive:not(.has-active-drink)",
+            styles,
+            StringComparison.Ordinal);
     }
 
     [Fact]
@@ -254,6 +448,83 @@ public sealed class SpeakingIntegrationTests
     }
 
     [Fact]
+    public async Task Bartender_session_automatically_returns_an_authoritative_wallet_snapshot()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var token = await GetAntiforgeryTokenAsync(client);
+        using var request = Post(
+            "/api/speaking/sessions",
+            token,
+            """{"avatarId":"bartender","cefrLevel":"A2"}""");
+
+        var response = await client.SendAsync(request);
+
+        response.EnsureSuccessStatusCode();
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var interaction = body.RootElement.GetProperty("interaction");
+        Assert.Equal(100, interaction.GetProperty("walletBalance").GetInt32());
+        Assert.Equal(6, interaction.GetProperty("menu").GetArrayLength());
+        Assert.Equal(6, interaction.GetProperty("wallet").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task Non_bartender_session_stays_noninteractive_without_a_client_mode_flag()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var token = await GetAntiforgeryTokenAsync(client);
+        using var request = Post(
+            "/api/speaking/sessions",
+            token,
+            """{"avatarId":"kasia","cefrLevel":"A2"}""");
+
+        var response = await client.SendAsync(request);
+
+        response.EnsureSuccessStatusCode();
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(JsonValueKind.Null, body.RootElement.GetProperty("interaction").ValueKind);
+    }
+
+    [Fact]
+    public async Task Interactive_action_endpoint_requires_antiforgery_and_valid_action()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var sessionId = Guid.NewGuid();
+
+        var missingToken = await client.PostAsync(
+            $"/api/speaking/sessions/{sessionId}/actions",
+            JsonContent("""{"action":"drink"}"""));
+        Assert.Equal(HttpStatusCode.BadRequest, missingToken.StatusCode);
+
+        var token = await GetAntiforgeryTokenAsync(client);
+        using var malformed = Post(
+            $"/api/speaking/sessions/{sessionId}/actions",
+            token,
+            """{"action":"invented"}""");
+        var malformedResponse = await client.SendAsync(malformed);
+        Assert.Equal(HttpStatusCode.BadRequest, malformedResponse.StatusCode);
+
+        using var badDenomination = Post(
+            $"/api/speaking/sessions/{sessionId}/actions",
+            token,
+            """{"action":"submitPayment","denominations":{"3":1}}""");
+        var badDenominationResponse = await client.SendAsync(badDenomination);
+        Assert.Equal(HttpStatusCode.BadRequest, badDenominationResponse.StatusCode);
+
+        using var valid = Post(
+            $"/api/speaking/sessions/{sessionId}/actions",
+            token,
+            """{"action":"submitPayment","denominations":{"20":1}}""");
+        var validResponse = await client.SendAsync(valid);
+        validResponse.EnsureSuccessStatusCode();
+        using var body = JsonDocument.Parse(await validResponse.Content.ReadAsStringAsync());
+        Assert.Equal(100, body.RootElement.GetProperty("interaction")
+            .GetProperty("walletBalance").GetInt32());
+    }
+
+    [Fact]
     public async Task Speech_token_endpoint_is_limited_to_twelve_requests_per_minute_per_user()
     {
         using var factory = CreateFactory();
@@ -275,7 +546,9 @@ public sealed class SpeakingIntegrationTests
         Assert.Equal(HttpStatusCode.TooManyRequests, limitedResponse.StatusCode);
     }
 
-    private static WebApplicationFactory<Program> CreateFactory(string? language = "Polish") =>
+    private static WebApplicationFactory<Program> CreateFactory(
+        string? language = "Polish",
+        bool interactiveEnabled = true) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
@@ -285,6 +558,8 @@ public sealed class SpeakingIntegrationTests
                 services.AddSingleton<IAiCreditService, PageCredits>();
                 services.RemoveAll<ISpeakingService>();
                 services.AddSingleton<ISpeakingService, FakeSpeakingService>();
+                services.PostConfigure<SpeakingOptions>(
+                    options => options.InteractiveBartenderEnabled = interactiveEnabled);
                 services.RemoveAll<ISpeechAuthorizationTokenService>();
                 services.AddSingleton<ISpeechAuthorizationTokenService, FakeSpeechTokens>();
                 services.RemoveAll<ILanguageContext>();
@@ -389,13 +664,18 @@ public sealed class SpeakingIntegrationTests
             string userId,
             SpeakingAvatarDefinition avatar,
             CefrLevel cefrLevel,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(new SpeakingSessionCreated(
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new SpeakingSessionCreated(
                 Guid.NewGuid(),
                 avatar.Slug,
                 avatar.Name,
                 avatar.Voice,
-                new SpeakingOpeningTurn(avatar.OpeningPolish, avatar.OpeningEnglish)));
+                new SpeakingOpeningTurn(avatar.OpeningPolish, avatar.OpeningEnglish),
+                avatar.Id == SpeakingAvatarId.Bartender
+                    ? BartenderInteractionState.Create().ToSnapshot()
+                    : null));
+        }
 
         public Task<SpeakingTurn> SendTurnAsync(
             Guid sessionId,
@@ -409,6 +689,31 @@ public sealed class SpeakingIntegrationTests
                 ReplyEnglish = "All right.",
                 Coach = new SpeakingCoach(),
             });
+
+        public Task<SpeakingTurn> SendActionAsync(
+            Guid sessionId,
+            string userId,
+            SpeakingInteractionAction action,
+            IReadOnlyDictionary<int, int>? denominations,
+            CancellationToken cancellationToken = default)
+        {
+            if (action == SpeakingInteractionAction.SubmitPayment
+                && denominations?.Any(item =>
+                    !BartenderInteractionCatalog.Denominations.Contains(item.Key)
+                    || item.Value <= 0) == true)
+            {
+                throw new SpeakingValidationException(
+                    "The selected payment is not available in the wallet.");
+            }
+
+            return Task.FromResult(new SpeakingTurn
+            {
+                ReplyPolish = "Proszę bardzo.",
+                ReplyEnglish = "There you are.",
+                Coach = new SpeakingCoach(),
+                Interaction = BartenderInteractionState.Create().ToSnapshot(),
+            });
+        }
 
         public Task DeleteSessionAsync(
             Guid sessionId,

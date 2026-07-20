@@ -7,18 +7,27 @@ namespace Glosify.Services.Ai;
 
 public sealed class AiCreditService : IAiCreditService
 {
+    private const decimal MicrosPerSek = 1_000_000m;
+
     private readonly GlosifyContext _context;
     private readonly AiUsageOptions _options;
     private readonly IGenerativeAiModelResolver _modelResolver;
+    private readonly TimeProvider _timeProvider;
+    private readonly TimeZoneInfo _budgetTimeZone;
 
     public AiCreditService(
         GlosifyContext context,
         IOptions<AiUsageOptions> options,
-        IGenerativeAiModelResolver modelResolver)
+        IGenerativeAiModelResolver modelResolver,
+        TimeProvider? timeProvider = null)
     {
         _context = context;
         _options = options.Value;
         _modelResolver = modelResolver;
+        _timeProvider = timeProvider ?? TimeProvider.System;
+        _budgetTimeZone = _options.MonthlyBudget.Enabled
+            ? TimeZoneInfo.FindSystemTimeZoneById(_options.MonthlyBudget.TimeZoneId)
+            : TimeZoneInfo.Utc;
     }
 
     public Task<AiCreditAccountView> GetOrCreateAccountAsync(
@@ -70,9 +79,15 @@ public sealed class AiCreditService : IAiCreditService
             throw new InsufficientAiCreditsException(account.AvailableCredits, requiredCredits);
         }
 
+        var budgetReservation = await ReserveMonthlyBudgetAsync(
+            provider,
+            model,
+            estimatedTokens,
+            cancellationToken);
+        var now = _timeProvider.GetUtcNow();
         var reservationId = Guid.NewGuid();
         account.ReservedCredits += requiredCredits;
-        account.UpdatedAt = DateTimeOffset.UtcNow;
+        account.UpdatedAt = now;
         _context.AiCreditTransactions.Add(new AiCreditTransaction
         {
             Id = Guid.NewGuid(),
@@ -89,7 +104,9 @@ public sealed class AiCreditService : IAiCreditService
             TotalTokens = estimatedTokens,
             RelatedEntityType = usageContext.RelatedEntityType,
             RelatedEntityId = usageContext.RelatedEntityId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            BudgetPeriodKey = budgetReservation?.PeriodKey,
+            BudgetAmountMicros = budgetReservation?.AmountMicros,
+            CreatedAt = now,
         });
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -116,9 +133,14 @@ public sealed class AiCreditService : IAiCreditService
         var account = await GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
         var debitCredits = CalculateCredits(usage.TotalTokens, reservation.Model ?? string.Empty);
         var releaseCredits = Math.Max(0, reservation.CreditAmount - debitCredits);
+        var budgetCharge = await CommitMonthlyBudgetAsync(
+            reservation,
+            usage,
+            cancellationToken);
+        var now = _timeProvider.GetUtcNow();
         account.ReservedCredits = Math.Max(0, account.ReservedCredits - reservation.CreditAmount);
         account.BalanceCredits -= debitCredits;
-        account.UpdatedAt = DateTimeOffset.UtcNow;
+        account.UpdatedAt = now;
 
         _context.AiCreditTransactions.Add(new AiCreditTransaction
         {
@@ -140,16 +162,22 @@ public sealed class AiCreditService : IAiCreditService
             TotalTokens = usage.TotalTokens,
             RelatedEntityType = reservation.RelatedEntityType,
             RelatedEntityId = reservation.RelatedEntityId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            BudgetPeriodKey = reservation.BudgetPeriodKey,
+            BudgetAmountMicros = budgetCharge?.ActualMicros,
+            CreatedAt = now,
         });
 
-        if (releaseCredits > 0)
+        var releasedBudgetMicros = budgetCharge is null
+            ? 0
+            : Math.Max(0, budgetCharge.ReservedMicros - budgetCharge.ActualMicros);
+        if (releaseCredits > 0 || releasedBudgetMicros > 0)
         {
             _context.AiCreditTransactions.Add(BuildReleaseTransaction(
                 reservation,
                 account,
                 releaseCredits,
-                "Released unused reserved credits."));
+                releasedBudgetMicros,
+                "Released unused reservation."));
         }
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -168,13 +196,16 @@ public sealed class AiCreditService : IAiCreditService
         }
 
         var account = await GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
+        await ReleaseMonthlyBudgetAsync(reservation, cancellationToken);
+        var now = _timeProvider.GetUtcNow();
         account.ReservedCredits = Math.Max(0, account.ReservedCredits - reservation.CreditAmount);
-        account.UpdatedAt = DateTimeOffset.UtcNow;
+        account.UpdatedAt = now;
         _context.AiCreditTransactions.Add(BuildReleaseTransaction(
             reservation,
             account,
             reservation.CreditAmount,
-            "Released reserved credits."));
+            reservation.BudgetAmountMicros ?? 0,
+            "Released reservation."));
         await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -207,8 +238,9 @@ public sealed class AiCreditService : IAiCreditService
     {
         var account = await GetOrCreateAccountEntityAsync(targetUserId, cancellationToken);
         await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
+        var now = _timeProvider.GetUtcNow();
         account.BalanceCredits += credits;
-        account.UpdatedAt = DateTimeOffset.UtcNow;
+        account.UpdatedAt = now;
         _context.AiCreditTransactions.Add(new AiCreditTransaction
         {
             Id = Guid.NewGuid(),
@@ -219,7 +251,7 @@ public sealed class AiCreditService : IAiCreditService
             ReservedAfterCredits = account.ReservedCredits,
             ActorUserId = adminUserId,
             Note = note.Trim(),
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = now,
         });
         await _context.SaveChangesAsync(cancellationToken);
         return true;
@@ -238,9 +270,13 @@ public sealed class AiCreditService : IAiCreditService
             {
                 return await operation();
             }
-            catch (DbUpdateException ex) when (attempt < maxAttempts && IsRetryableCreditConflict(ex))
+            catch (DbUpdateException ex) when (IsRetryableCreditConflict(ex))
             {
                 _context.ChangeTracker.Clear();
+                if (attempt >= maxAttempts)
+                {
+                    throw;
+                }
             }
         }
     }
@@ -248,7 +284,8 @@ public sealed class AiCreditService : IAiCreditService
     private static bool IsRetryableCreditConflict(DbUpdateException ex)
     {
         return ex is DbUpdateConcurrencyException
-            || ex.Entries.Any(entry => entry.Entity is AiCreditAccount);
+            || ex.Entries.Any(entry =>
+                entry.Entity is AiCreditAccount or AiMonthlyBudget);
     }
 
     private async Task<AiCreditAccount> GetOrCreateAccountEntityAsync(
@@ -267,8 +304,8 @@ public sealed class AiCreditService : IAiCreditService
             UserId = userId,
             BalanceCredits = 0,
             ReservedCredits = 0,
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = _timeProvider.GetUtcNow(),
+            UpdatedAt = _timeProvider.GetUtcNow(),
         };
         _context.AiCreditAccounts.Add(account);
         return account;
@@ -281,7 +318,7 @@ public sealed class AiCreditService : IAiCreditService
             return Task.CompletedTask;
         }
 
-        var now = DateTimeOffset.UtcNow;
+        var now = _timeProvider.GetUtcNow();
         account.TrialGrantedAt = now;
         account.BalanceCredits += _options.TrialGrantCredits;
         account.UpdatedAt = now;
@@ -326,6 +363,7 @@ public sealed class AiCreditService : IAiCreditService
         AiCreditTransaction reservation,
         AiCreditAccount account,
         int credits,
+        long budgetMicros,
         string note)
     {
         return new AiCreditTransaction
@@ -344,9 +382,171 @@ public sealed class AiCreditService : IAiCreditService
             Note = note,
             RelatedEntityType = reservation.RelatedEntityType,
             RelatedEntityId = reservation.RelatedEntityId,
-            CreatedAt = DateTimeOffset.UtcNow,
+            BudgetPeriodKey = reservation.BudgetPeriodKey,
+            BudgetAmountMicros = budgetMicros,
+            CreatedAt = _timeProvider.GetUtcNow(),
         };
     }
+
+    private async Task<BudgetReservation?> ReserveMonthlyBudgetAsync(
+        string provider,
+        string model,
+        int estimatedTokens,
+        CancellationToken cancellationToken)
+    {
+        if (!IsBudgetedProvider(provider))
+        {
+            return null;
+        }
+
+        var price = GetModelPrice(model);
+        var amountMicros = CalculateEstimatedBudgetMicros(estimatedTokens, price);
+        var periodKey = GetBudgetPeriodKey();
+        var budget = await GetOrCreateMonthlyBudgetAsync(periodKey, cancellationToken);
+        if (budget.AvailableMicros < amountMicros)
+        {
+            throw new MonthlyAiBudgetExceededException(
+                periodKey,
+                budget.LimitMicros,
+                budget.SpentMicros,
+                budget.ReservedMicros,
+                amountMicros);
+        }
+
+        budget.ReservedMicros += amountMicros;
+        budget.UpdatedAt = _timeProvider.GetUtcNow();
+        return new BudgetReservation(periodKey, amountMicros);
+    }
+
+    private async Task<BudgetCharge?> CommitMonthlyBudgetAsync(
+        AiCreditTransaction reservation,
+        AiTokenUsage usage,
+        CancellationToken cancellationToken)
+    {
+        if (reservation.BudgetPeriodKey is null
+            || reservation.BudgetAmountMicros is not { } reservedMicros)
+        {
+            return null;
+        }
+
+        var budget = await _context.AiMonthlyBudgets
+            .SingleAsync(
+                item => item.PeriodKey == reservation.BudgetPeriodKey,
+                cancellationToken);
+        var price = GetModelPrice(reservation.Model ?? string.Empty);
+        var actualMicros = CalculateActualBudgetMicros(usage, price);
+        budget.ReservedMicros = Math.Max(0, budget.ReservedMicros - reservedMicros);
+        budget.SpentMicros += actualMicros;
+        budget.LimitMicros = GetConfiguredLimitMicros();
+        budget.UpdatedAt = _timeProvider.GetUtcNow();
+        return new BudgetCharge(reservedMicros, actualMicros);
+    }
+
+    private async Task ReleaseMonthlyBudgetAsync(
+        AiCreditTransaction reservation,
+        CancellationToken cancellationToken)
+    {
+        if (reservation.BudgetPeriodKey is null
+            || reservation.BudgetAmountMicros is not { } reservedMicros)
+        {
+            return;
+        }
+
+        var budget = await _context.AiMonthlyBudgets
+            .SingleAsync(
+                item => item.PeriodKey == reservation.BudgetPeriodKey,
+                cancellationToken);
+        budget.ReservedMicros = Math.Max(0, budget.ReservedMicros - reservedMicros);
+        budget.LimitMicros = GetConfiguredLimitMicros();
+        budget.UpdatedAt = _timeProvider.GetUtcNow();
+    }
+
+    private async Task<AiMonthlyBudget> GetOrCreateMonthlyBudgetAsync(
+        string periodKey,
+        CancellationToken cancellationToken)
+    {
+        var budget = await _context.AiMonthlyBudgets
+            .FirstOrDefaultAsync(item => item.PeriodKey == periodKey, cancellationToken);
+        var configuredLimit = GetConfiguredLimitMicros();
+        if (budget is not null)
+        {
+            budget.LimitMicros = configuredLimit;
+            return budget;
+        }
+
+        var now = _timeProvider.GetUtcNow();
+        budget = new AiMonthlyBudget
+        {
+            PeriodKey = periodKey,
+            LimitMicros = configuredLimit,
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+        _context.AiMonthlyBudgets.Add(budget);
+        return budget;
+    }
+
+    private bool IsBudgetedProvider(string provider) =>
+        _options.MonthlyBudget.Enabled
+        && _options.MonthlyBudget.Providers.Any(candidate =>
+            string.Equals(
+                candidate?.Trim(),
+                provider?.Trim(),
+                StringComparison.OrdinalIgnoreCase));
+
+    private AiModelPriceOptions GetModelPrice(string model) =>
+        _options.MonthlyBudget.Models.FirstOrDefault(candidate =>
+            string.Equals(
+                candidate.Deployment?.Trim(),
+                model?.Trim(),
+                StringComparison.OrdinalIgnoreCase))
+        ?? throw new InvalidOperationException(
+            $"No monthly AI budget price is configured for deployment '{model}'.");
+
+    private long CalculateEstimatedBudgetMicros(
+        int estimatedTokens,
+        AiModelPriceOptions price)
+    {
+        var highestPrice = Math.Max(
+            price.InputSekPerMillionTokens,
+            price.OutputSekPerMillionTokens);
+        return ToMicros(
+            Math.Max(0, estimatedTokens)
+            * highestPrice
+            * _options.MonthlyBudget.ReservationSafetyMultiplier);
+    }
+
+    private static long CalculateActualBudgetMicros(
+        AiTokenUsage usage,
+        AiModelPriceOptions price)
+    {
+        var inputTokens = (long)Math.Max(0, usage.PromptTokens)
+            + Math.Max(0, usage.ToolPromptTokens);
+        var outputTokens = (long)Math.Max(0, usage.CandidateTokens);
+        var classifiedTokens = inputTokens + outputTokens;
+        var unclassifiedTokens = Math.Max(0L, (long)usage.TotalTokens - classifiedTokens);
+        var highestPrice = Math.Max(
+            price.InputSekPerMillionTokens,
+            price.OutputSekPerMillionTokens);
+        return ToMicros(
+            inputTokens * price.InputSekPerMillionTokens
+            + outputTokens * price.OutputSekPerMillionTokens
+            + unclassifiedTokens * highestPrice);
+    }
+
+    private long GetConfiguredLimitMicros() =>
+        ToMicros(_options.MonthlyBudget.LimitSek * MicrosPerSek);
+
+    private string GetBudgetPeriodKey()
+    {
+        var localNow = TimeZoneInfo.ConvertTime(
+            _timeProvider.GetUtcNow(),
+            _budgetTimeZone);
+        return localNow.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private static long ToMicros(decimal micros) =>
+        checked((long)decimal.Ceiling(micros));
 
     private int CalculateCredits(int totalTokens, string model)
     {
@@ -372,4 +572,7 @@ public sealed class AiCreditService : IAiCreditService
             account.AvailableCredits,
             account.TrialGrantedAt);
     }
+
+    private sealed record BudgetReservation(string PeriodKey, long AmountMicros);
+    private sealed record BudgetCharge(long ReservedMicros, long ActualMicros);
 }

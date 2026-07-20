@@ -2,6 +2,7 @@ using Glosify.Models.Api;
 using Glosify.Filters;
 using Glosify.Services;
 using Microsoft.AspNetCore.Mvc;
+using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Models.CustomQuizzes;
 
@@ -88,7 +89,9 @@ public class AssistantApiController : ApiControllerBase
                 cancellationToken);
             return Ok(response);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException ex) when (
+            ex is not InsufficientAiCreditsException
+            and not MonthlyAiBudgetExceededException)
         {
             return BadRequest(ex.Message);
         }

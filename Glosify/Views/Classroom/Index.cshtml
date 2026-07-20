@@ -2,122 +2,250 @@
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = "Classrooms";
+
+    var totalMembers = Model.Classrooms.Sum(summary => summary.MemberCount);
 }
 
-<section class="classroom-page">
-    <section class="books-header">
-        <div>
-            <p class="hero-label">Learn together</p>
-            <h1 class="page-title">Classrooms</h1>
+<section class="classroom-page classroom-index-page">
+    <section class="classroom-index-hero">
+        <div class="classroom-hero-copy">
+            <div class="classroom-hero-eyebrow">
+                <span class="material-symbols-outlined" aria-hidden="true">diversity_3</span>
+                Shared learning spaces
+            </div>
+            <h1>Learn better, <span>together.</span></h1>
+            <p>Create a space for your learners, share practice material, and keep everyone moving in the same direction.</p>
+
+            <div class="classroom-hero-stats" aria-label="Classroom summary">
+                <div>
+                    <strong>@Model.Classrooms.Count</strong>
+                    <span>@(Model.Classrooms.Count == 1 ? "classroom" : "classrooms")</span>
+                </div>
+                <i aria-hidden="true"></i>
+                <div>
+                    <strong>@totalMembers</strong>
+                    <span>@(totalMembers == 1 ? "member" : "members")</span>
+                </div>
+                @if (Model.PendingInvitations.Any())
+                {
+                    <i aria-hidden="true"></i>
+                    <div>
+                        <strong>@Model.PendingInvitations.Count</strong>
+                        <span>waiting</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="classroom-hero-visual" aria-hidden="true">
+            <span class="classroom-orbit classroom-orbit-one"></span>
+            <span class="classroom-orbit classroom-orbit-two"></span>
+            <div class="classroom-visual-card classroom-visual-card-main">
+                <span class="material-symbols-outlined">school</span>
+                <div>
+                    <strong>Language lab</strong>
+                    <small>12 learners active</small>
+                </div>
+                <span class="classroom-visual-live">Live</span>
+            </div>
+            <div class="classroom-visual-person classroom-person-one">AM</div>
+            <div class="classroom-visual-person classroom-person-two">JL</div>
+            <div class="classroom-visual-person classroom-person-three">SK</div>
+            <div class="classroom-visual-note">
+                <span class="material-symbols-outlined">task_alt</span>
+                Practice completed
+            </div>
         </div>
     </section>
 
     @if (TempData[NotificationKeys.Classroom] is string classroomMessage)
     {
-        <div class="panel-message">@classroomMessage</div>
+        <div class="classroom-index-notice" role="status">
+            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+            @classroomMessage
+        </div>
     }
 
     @if (Model.PendingInvitations.Any())
     {
-        <section class="panel classroom-composer">
-            <div class="panel-header">
-                <div class="panel-icon"><span class="material-symbols-outlined">mail</span></div>
-                <h2 class="panel-title">Invitations</h2>
+        <section class="classroom-invitations">
+            <div class="classroom-section-heading">
+                <div>
+                    <p>Waiting for you</p>
+                    <h2>Invitations</h2>
+                </div>
+                <span class="classroom-heading-count">@Model.PendingInvitations.Count new</span>
             </div>
             <div class="classroom-invite-list">
                 @foreach (var invitation in Model.PendingInvitations)
                 {
-                    <div class="classroom-invite-row">
-                        <div>
+                    <article class="classroom-invite-card">
+                        <span class="classroom-invite-icon">
+                            <span class="material-symbols-outlined" aria-hidden="true">mark_email_unread</span>
+                        </span>
+                        <div class="classroom-invite-copy">
+                            <span class="classroom-invite-label">You’re invited</span>
                             <strong>@invitation.ClassroomName</strong>
-                            <p class="book-meta">Invited by @invitation.InvitedByName as @invitation.Role.ToString().ToLowerInvariant()</p>
+                            <p>@invitation.InvitedByName invited you to join as @invitation.Role.ToString().ToLowerInvariant()</p>
                         </div>
                         <div class="classroom-invite-actions">
                             <form method="post" asp-controller="Classroom" asp-action="AcceptInvitation">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@invitation.Id" />
-                                <button class="btn-main" type="submit">Accept</button>
+                                <button class="classroom-invite-accept" type="submit">
+                                    Accept
+                                    <span class="material-symbols-outlined" aria-hidden="true">check</span>
+                                </button>
                             </form>
                             <form method="post" asp-controller="Classroom" asp-action="DeclineInvitation">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@invitation.Id" />
-                                <button class="btn-secondary" type="submit">Decline</button>
+                                <button class="classroom-invite-decline" type="submit" aria-label="Decline invitation to @invitation.ClassroomName">
+                                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                                </button>
                             </form>
                         </div>
-                    </div>
+                    </article>
                 }
             </div>
         </section>
     }
 
-    <div class="tool-grid">
-        <section class="panel">
-            <div class="panel-header">
-                <div class="panel-icon"><span class="material-symbols-outlined">add_circle</span></div>
-                <h2 class="panel-title">Create a classroom</h2>
-            </div>
-            <form method="post" asp-controller="Classroom" asp-action="Create">
-                @Html.AntiForgeryToken()
-                <div class="form-group">
-                    <label class="form-label" for="classroomName">Name</label>
-                    <input class="form-input" id="classroomName" name="name" maxlength="160" required />
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="classroomDescription">Description (optional)</label>
-                    <input class="form-input" id="classroomDescription" name="description" maxlength="1024" />
-                </div>
-                <button class="btn-submit" type="submit">
-                    Create <span class="material-symbols-outlined" aria-hidden="true">school</span>
-                </button>
-            </form>
-        </section>
-
-        <section class="panel">
-            <div class="panel-header">
-                <div class="panel-icon"><span class="material-symbols-outlined">login</span></div>
-                <h2 class="panel-title">Join with a code</h2>
-            </div>
-            <form method="post" asp-controller="Classroom" asp-action="Join">
-                @Html.AntiForgeryToken()
-                <div class="form-group">
-                    <label class="form-label" for="joinCode">Join code</label>
-                    <input class="form-input" id="joinCode" name="code" maxlength="8" autocomplete="off"
-                           placeholder="e.g. K3XWPB7A" required />
-                </div>
-                <button class="btn-submit" type="submit">
-                    Join <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-                </button>
-            </form>
-        </section>
-    </div>
-
-    <section>
-        <div class="collection-header">
+    <section class="classroom-actions-section">
+        <div class="classroom-section-heading">
             <div>
-                <h2 class="collection-title">My classrooms</h2>
-                <p class="collection-subtitle">@Model.Classrooms.Count @(Model.Classrooms.Count == 1 ? "classroom" : "classrooms")</p>
+                <p>Get started</p>
+                <h2>Make a space or join one</h2>
             </div>
         </div>
 
-        <div class="book-grid">
-            @foreach (var summary in Model.Classrooms)
-            {
-                <article class="book-card">
-                    <div class="book-card-main">
-                        <div class="word-icon"><span class="material-symbols-outlined">school</span></div>
-                        <div>
-                            <h3 class="book-title">@summary.Classroom.Name</h3>
-                            <p class="book-meta">@summary.MemberCount @(summary.MemberCount == 1 ? "member" : "members") &middot; you are @summary.Role.ToString().ToLowerInvariant()</p>
+        <div class="classroom-action-grid">
+            <article class="classroom-action-card classroom-create-card">
+                <div class="classroom-action-heading">
+                    <span class="classroom-action-icon">
+                        <span class="material-symbols-outlined" aria-hidden="true">add_home_work</span>
+                    </span>
+                    <div>
+                        <span>For teachers</span>
+                        <h3>Create a classroom</h3>
+                        <p>Set up a home for lessons, quizzes, books, and conversation.</p>
+                    </div>
+                </div>
+
+                <form method="post" asp-controller="Classroom" asp-action="Create">
+                    @Html.AntiForgeryToken()
+                    <div class="classroom-create-fields">
+                        <div class="classroom-field">
+                            <label for="classroomName">Classroom name</label>
+                            <input id="classroomName" name="name" maxlength="160" placeholder="e.g. Swedish A2 · Spring" required />
+                        </div>
+                        <div class="classroom-field">
+                            <label for="classroomDescription">Short description <span>Optional</span></label>
+                            <input id="classroomDescription" name="description" maxlength="1024" placeholder="What will your group learn?" />
                         </div>
                     </div>
-                    <a class="btn-secondary" asp-controller="Classroom" asp-action="Details" asp-route-id="@summary.Classroom.Id">
-                        Open <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                    <button class="classroom-primary-action" type="submit">
+                        Create classroom
+                        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                    </button>
+                </form>
+            </article>
+
+            <article class="classroom-action-card classroom-join-card">
+                <div class="classroom-action-heading">
+                    <span class="classroom-action-icon">
+                        <span class="material-symbols-outlined" aria-hidden="true">key</span>
+                    </span>
+                    <div>
+                        <span>Have an invite code?</span>
+                        <h3>Join a classroom</h3>
+                        <p>Enter the eight-character code shared by your teacher.</p>
+                    </div>
+                </div>
+
+                <form method="post" asp-controller="Classroom" asp-action="Join">
+                    @Html.AntiForgeryToken()
+                    <div class="classroom-field classroom-code-field">
+                        <label for="joinCode">Join code</label>
+                        <input id="joinCode" name="code" maxlength="8" autocomplete="off"
+                               autocapitalize="characters" spellcheck="false" placeholder="K3XWPB7A" required />
+                    </div>
+                    <button class="classroom-secondary-action" type="submit">
+                        Join this classroom
+                        <span class="material-symbols-outlined" aria-hidden="true">login</span>
+                    </button>
+                </form>
+            </article>
+        </div>
+    </section>
+
+    <section class="classroom-collection">
+        <div class="classroom-section-heading classroom-collection-heading">
+            <div>
+                <p>Your learning spaces</p>
+                <h2>My classrooms</h2>
+            </div>
+            @if (Model.Classrooms.Any())
+            {
+                <span class="classroom-heading-count">@Model.Classrooms.Count total</span>
+            }
+        </div>
+
+        <div class="classroom-index-grid">
+            @foreach (var item in Model.Classrooms.Select((summary, index) => new { Summary = summary, Index = index }))
+            {
+                var roleLabel = item.Summary.Role.ToString();
+                <article class="classroom-index-card classroom-index-card-@((item.Index % 4) + 1)">
+                    <a asp-controller="Classroom" asp-action="Details" asp-route-id="@item.Summary.Classroom.Id"
+                       aria-label="Open @item.Summary.Classroom.Name">
+                        <div class="classroom-card-top">
+                            <span class="classroom-card-icon">
+                                <span class="material-symbols-outlined" aria-hidden="true">school</span>
+                            </span>
+                            <span class="classroom-role-badge">@roleLabel</span>
+                        </div>
+
+                        <div class="classroom-card-copy">
+                            <h3>@item.Summary.Classroom.Name</h3>
+                            @if (!string.IsNullOrWhiteSpace(item.Summary.Classroom.Description))
+                            {
+                                <p>@item.Summary.Classroom.Description</p>
+                            }
+                            else
+                            {
+                                <p class="classroom-card-placeholder">A shared space for learning and practice.</p>
+                            }
+                        </div>
+
+                        <div class="classroom-card-footer">
+                            <span class="classroom-member-count">
+                                <span class="material-symbols-outlined" aria-hidden="true">group</span>
+                                @item.Summary.MemberCount @(item.Summary.MemberCount == 1 ? "member" : "members")
+                            </span>
+                            <span class="classroom-open-action">
+                                Open
+                                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                            </span>
+                        </div>
                     </a>
                 </article>
             }
+
             @if (!Model.Classrooms.Any())
             {
-                <div class="empty-state">No classrooms yet. Create one, or join with a code from your teacher.</div>
+                <div class="classroom-empty-state">
+                    <span class="classroom-empty-visual" aria-hidden="true">
+                        <span class="material-symbols-outlined">groups</span>
+                        <i></i>
+                        <i></i>
+                    </span>
+                    <h3>Learning is better with company</h3>
+                    <p>Create your first classroom, or ask your teacher for a join code to find your group.</p>
+                    <a href="#classroomName">
+                        Create your first space
+                        <span class="material-symbols-outlined" aria-hidden="true">north_east</span>
+                    </a>
+                </div>
             }
         </div>
     </section>

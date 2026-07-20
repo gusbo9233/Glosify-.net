@@ -13,6 +13,10 @@ public static class SpeakingTelemetry
     public static readonly Counter<long> SessionsCreated = Meter.CreateCounter<long>("speaking.sessions.created");
     public static readonly Counter<long> TurnsCompleted = Meter.CreateCounter<long>("speaking.turns.completed");
     public static readonly Counter<long> TurnsFailed = Meter.CreateCounter<long>("speaking.turns.failed");
+    public static readonly Counter<long> SceneProposalsIgnored =
+        Meter.CreateCounter<long>("speaking.scene.proposals.ignored");
+    public static readonly Counter<long> SceneToolCalls =
+        Meter.CreateCounter<long>("speaking.scene.tools.calls");
     public static readonly Counter<long> SpeechFailures = Meter.CreateCounter<long>("speaking.speech.failures");
     public static readonly Counter<long> FoundryFailures = Meter.CreateCounter<long>("speaking.foundry.failures");
     public static readonly Counter<long> RateLimits = Meter.CreateCounter<long>("speaking.rate_limits");
@@ -21,5 +25,8 @@ public static class SpeakingTelemetry
         unit: "ms");
     public static readonly Histogram<double> FoundryDuration = Meter.CreateHistogram<double>(
         "speaking.foundry.duration",
+        unit: "ms");
+    public static readonly Histogram<double> SceneToolDuration = Meter.CreateHistogram<double>(
+        "speaking.scene.tools.duration",
         unit: "ms");
 }

@@ -3,6 +3,7 @@ using Glosify.Filters;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Models.CustomQuizzes;
 
@@ -122,7 +123,9 @@ public class AssistantController : ControllerBase
 
             return Ok(response);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException ex) when (
+            ex is not InsufficientAiCreditsException
+            and not MonthlyAiBudgetExceededException)
         {
             return BadRequest(new { error = ex.Message });
         }
@@ -225,7 +228,9 @@ public class AssistantController : ControllerBase
                 cancellationToken);
             return Ok(response);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException ex) when (
+            ex is not InsufficientAiCreditsException
+            and not MonthlyAiBudgetExceededException)
         {
             return BadRequest(new { error = ex.Message });
         }

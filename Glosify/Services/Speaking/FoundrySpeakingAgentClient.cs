@@ -5,6 +5,7 @@ using Azure.AI.Projects.Agents;
 using Azure.Core;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Foundry;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using Glosify.Services.Ai;
 using OpenAI.Conversations;
@@ -46,10 +47,14 @@ public sealed class FoundrySpeakingAgentClient : ISpeakingAgentClient
             var agent = _options.GetAgent(avatar.Id);
             return !string.IsNullOrWhiteSpace(agent.Name)
                 && !string.IsNullOrWhiteSpace(agent.Version);
-        });
+        })
+        && (!_options.InteractiveBartenderEnabled
+            || (!string.IsNullOrWhiteSpace(_options.Agents.BartenderInteractive.Name)
+                && !string.IsNullOrWhiteSpace(_options.Agents.BartenderInteractive.Version)));
 
     public async Task<ISpeakingAgentConversation> CreateConversationAsync(
         SpeakingAvatarId avatar,
+        bool interactiveMode = false,
         CancellationToken cancellationToken = default)
     {
         var client = _client.Value;
@@ -59,7 +64,7 @@ public sealed class FoundrySpeakingAgentClient : ISpeakingAgentClient
                 "Azure AI Foundry is not configured for speaking practice.");
         }
 
-        var configuredAgent = _options.GetAgent(avatar);
+        var configuredAgent = _options.GetAgent(avatar, interactiveMode);
         try
         {
             var result = await client
@@ -68,7 +73,26 @@ public sealed class FoundrySpeakingAgentClient : ISpeakingAgentClient
                 configuredAgent.Name,
                 configuredAgent.Version,
                 cancellationToken);
-            AIAgent agent = client.AsAIAgent(result.Value);
+            var sceneTools = interactiveMode
+                ? new BartenderSceneToolRuntime()
+                : null;
+            AIAgent agent = sceneTools is null
+                ? client.AsAIAgent(result.Value)
+                : client.AsAIAgent(
+                    result.Value,
+                    sceneTools.Tools.ToList(),
+                    chatClient => new ChatClientBuilder(chatClient)
+                        .UseFunctionInvocation(
+                            _loggerFactory,
+                            options =>
+                            {
+                                options.AllowConcurrentInvocation = false;
+                                options.MaximumIterationsPerRequest = 5;
+                                options.MaximumConsecutiveErrorsPerRequest = 2;
+                                options.IncludeDetailedErrors = false;
+                            })
+                        .Build(null),
+                    services: null);
             AgentSession session = agent is FoundryAgent foundryAgent
                 ? await foundryAgent.CreateConversationSessionAsync(cancellationToken)
                 : await agent.CreateSessionAsync(cancellationToken);
@@ -77,7 +101,8 @@ public sealed class FoundrySpeakingAgentClient : ISpeakingAgentClient
                 .GetConversationClient();
 
             _logger.LogInformation(
-                "Created speaking conversation with agent {AgentName} version {AgentVersion}.",
+                "Created {SpeakingMode} speaking conversation with agent {AgentName} version {AgentVersion}.",
+                interactiveMode ? "interactive" : "standard",
                 configuredAgent.Name,
                 configuredAgent.Version);
 
@@ -85,6 +110,7 @@ public sealed class FoundrySpeakingAgentClient : ISpeakingAgentClient
                 agent,
                 session,
                 conversationClient,
+                sceneTools,
                 _logger);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -119,34 +145,61 @@ public sealed class FoundrySpeakingAgentClient : ISpeakingAgentClient
         AIAgent agent,
         AgentSession session,
         ConversationClient conversationClient,
+        BartenderSceneToolRuntime? sceneTools,
         ILogger logger) : ISpeakingAgentConversation
     {
         public async Task<SpeakingAgentTurn> RunTurnAsync(
             string message,
+            BartenderInteractionState? interactionState = null,
             CancellationToken cancellationToken = default)
         {
             var startedAt = Stopwatch.GetTimestamp();
             try
             {
-                var response = await agent.RunAsync<SpeakingTurn>(
+                if (sceneTools is not null)
+                {
+                    if (interactionState is null)
+                    {
+                        throw new InvalidOperationException(
+                            "Interactive bartender state is required for scene tools.");
+                    }
+
+                    sceneTools.BeginTurn(interactionState);
+                    try
+                    {
+                        var response = await agent.RunAsync<SpeakingAgentReply>(
+                            message,
+                            session,
+                            AgentJsonOptions,
+                            new ChatClientAgentRunOptions(new ChatOptions
+                            {
+                                AllowMultipleToolCalls = false,
+                            }),
+                            cancellationToken);
+                        var result = response.Result
+                            ?? throw new InvalidDataException(
+                                "Foundry returned an empty interactive response.");
+                        return new SpeakingAgentTurn(
+                            result,
+                            ToUsage(response.Usage),
+                            sceneTools.CompleteTurn());
+                    }
+                    catch
+                    {
+                        sceneTools.AbortTurn();
+                        throw;
+                    }
+                }
+
+                var standardResponse = await agent.RunAsync<SpeakingAgentReply>(
                     message,
                     session,
                     AgentJsonOptions,
                     options: null,
                     cancellationToken);
-                var result = response.Result
+                var standardResult = standardResponse.Result
                     ?? throw new InvalidDataException("Foundry returned an empty structured response.");
-                var usage = response.Usage;
-                var tokenUsage = usage is null
-                    ? null
-                    : new AiTokenUsage(
-                        ToInt(usage.InputTokenCount),
-                        ToInt(usage.OutputTokenCount),
-                        0,
-                        0,
-                        ToInt(usage.TotalTokenCount));
-
-                return new SpeakingAgentTurn(result, tokenUsage);
+                return new SpeakingAgentTurn(standardResult, ToUsage(standardResponse.Usage));
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -164,6 +217,21 @@ public sealed class FoundrySpeakingAgentClient : ISpeakingAgentClient
                 SpeakingTelemetry.FoundryDuration.Record(
                     Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
             }
+        }
+
+        private static AiTokenUsage? ToUsage(Microsoft.Extensions.AI.UsageDetails? usage)
+        {
+            if (usage is null)
+            {
+                return null;
+            }
+
+            return new AiTokenUsage(
+                ToInt(usage.InputTokenCount),
+                ToInt(usage.OutputTokenCount),
+                0,
+                0,
+                ToInt(usage.TotalTokenCount));
         }
 
         public async ValueTask DisposeAsync()

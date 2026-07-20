@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Glosify.Filters;
+using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Speaking;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -69,6 +71,22 @@ public sealed class AiServiceExceptionFilterTests
             new GenerativeAiUpstreamException("Upstream failed."),
             StatusCodes.Status502BadGateway,
             "Upstream failed."
+        },
+        {
+            new MonthlyAiBudgetExceededException(
+                "2026-07",
+                200_000_000,
+                200_000_000,
+                0,
+                1),
+            StatusCodes.Status503ServiceUnavailable,
+            "AI is temporarily unavailable because this request would exceed the application's monthly budget."
+        },
+        {
+            new SpeakingSessionInvalidatedException(
+                new InvalidOperationException("private failure detail")),
+            StatusCodes.Status410Gone,
+            "This speaking session could not be continued safely. Start a new one to continue."
         },
     };
 }

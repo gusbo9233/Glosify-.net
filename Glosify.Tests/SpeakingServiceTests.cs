@@ -91,6 +91,22 @@ public sealed class SpeakingServiceTests
     }
 
     [Fact]
+    public async Task Session_store_invalidation_is_idempotent()
+    {
+        var conversation = new FakeConversation();
+        var store = CreateStore(new FakeAgentClient(() => conversation));
+        var session = await store.CreateAsync("learner", Bartender, CefrLevel.A2);
+
+        await Task.WhenAll(
+            store.InvalidateAsync(session),
+            store.InvalidateAsync(session));
+
+        Assert.Equal(1, conversation.DisposeCount);
+        Assert.Throws<SpeakingSessionNotFoundException>(
+            () => store.Get(session.Id, "learner"));
+    }
+
+    [Fact]
     public async Task Session_store_returns_gone_after_sliding_expiry()
     {
         var clock = new ManualTimeProvider(new DateTimeOffset(2026, 7, 17, 10, 0, 0, TimeSpan.Zero));
@@ -143,7 +159,7 @@ public sealed class SpeakingServiceTests
         var reservation = Assert.Single(credits.Reservations);
         Assert.Equal(AiUsageFeatures.Speaking, reservation.Context.Feature);
         Assert.Equal("speaking_turn", reservation.Context.Operation);
-        Assert.Equal("gpt-5.4-mini", reservation.Model);
+        Assert.Equal("grok-4-1-fast-non-reasoning", reservation.Model);
         Assert.Equal(expectedUsage, Assert.Single(credits.Commits).Usage);
         Assert.Empty(credits.Releases);
         Assert.Contains("Poproszę piwo.", Assert.Single(conversation.Messages));
@@ -236,6 +252,390 @@ public sealed class SpeakingServiceTests
                 SpeakingInputMode.Text));
     }
 
+    [Fact]
+    public async Task Bartender_session_automatically_exposes_scene_tools_and_state()
+    {
+        var conversation = new FakeConversation();
+        var credits = new FakeCredits();
+        var (service, sessionId) = await CreateServiceAsync(
+            conversation,
+            credits,
+            interactiveMode: true);
+
+        var turn = await service.SendTurnAsync(
+            sessionId,
+            "learner",
+            "Poproszę wodę gazowaną.",
+            SpeakingInputMode.Text);
+
+        Assert.NotNull(Assert.Single(conversation.InteractionStates));
+        Assert.Contains("Wallet balance: 100 zł", Assert.Single(conversation.Messages));
+        Assert.Contains("supplied function tools", conversation.Messages[0]);
+        Assert.Contains("serve_drink", conversation.Messages[0]);
+        Assert.Contains("call zero to three", conversation.Messages[0]);
+        Assert.Contains("wait for each tool result", conversation.Messages[0], StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("means drink_id lightBeer", conversation.Messages[0]);
+        Assert.Contains("never require payment", conversation.Messages[0]);
+        Assert.Contains(
+            "Legal first scene tools now: serve_drink(drink_id=lightBeer)",
+            conversation.Messages[0]);
+        Assert.DoesNotContain("Return proposedActions", conversation.Messages[0]);
+        Assert.NotNull(turn.Interaction);
+        Assert.Equal(100, turn.Interaction.WalletBalance);
+    }
+
+    [Fact]
+    public async Task Exact_piwo_turn_returns_the_pour_executed_by_the_agent_tool()
+    {
+        var conversation = new FakeConversation((_, state, _) =>
+        {
+            var commands = Assert.IsType<BartenderInteractionState>(state)
+                .ApplyProposedActions(
+                    [Proposal(SpeakingProposedActionType.ServeDrink, "lightBeer")]);
+            return Task.FromResult(new SpeakingAgentTurn(ValidTurn(), null, commands));
+        });
+        var credits = new FakeCredits();
+        var (service, sessionId) = await CreateServiceAsync(
+            conversation,
+            credits,
+            interactiveMode: true);
+
+        var turn = await service.SendTurnAsync(
+            sessionId,
+            "learner",
+            "Piwo.",
+            SpeakingInputMode.Voice);
+
+        var command = Assert.Single(turn.SceneActions);
+        Assert.Equal("pourAndServe", command.Type);
+        Assert.Equal("lightBeer", command.DrinkId);
+        Assert.Equal(14, command.Amount);
+        Assert.Equal(3, command.FillLevel);
+        Assert.Equal("lightBeer", turn.Interaction?.ActiveDrink?.Id);
+        Assert.Equal(14, turn.Interaction?.TabTotal);
+    }
+
+    [Fact]
+    public async Task Exact_piwo_turn_without_an_agent_tool_call_does_not_use_a_phrase_fallback()
+    {
+        var conversation = new FakeConversation((_, _) =>
+            Task.FromResult(new SpeakingAgentTurn(ValidTurn(), null, [])));
+        var credits = new FakeCredits();
+        var (service, sessionId) = await CreateServiceAsync(
+            conversation,
+            credits,
+            interactiveMode: true);
+
+        var turn = await service.SendTurnAsync(
+            sessionId,
+            "learner",
+            "Piwo.",
+            SpeakingInputMode.Voice);
+
+        Assert.Empty(turn.SceneActions);
+        Assert.Null(turn.Interaction?.ActiveDrink);
+        Assert.Equal(0, turn.Interaction?.TabTotal);
+    }
+
+    [Fact]
+    public async Task Scene_capability_is_derived_from_the_flag_and_bartender_avatar()
+    {
+        var timeProvider = TimeProvider.System;
+        var credits = new FakeCredits();
+
+        var disabledStore = CreateStore(
+            new FakeAgentClient(() => new FakeConversation()),
+            timeProvider);
+        var disabled = new SpeakingService(
+            disabledStore,
+            credits,
+            Options.Create(new AiUsageOptions()),
+            Options.Create(new SpeakingOptions
+            {
+                InteractiveBartenderEnabled = false,
+            }),
+            timeProvider,
+            NullLogger<SpeakingService>.Instance);
+        var disabledBartender = await disabled.CreateSessionAsync(
+            "learner",
+            Bartender,
+            CefrLevel.A2);
+        Assert.Null(disabledBartender.Interaction);
+
+        var enabledStore = CreateStore(
+            new FakeAgentClient(() => new FakeConversation()),
+            timeProvider);
+        var enabled = new SpeakingService(
+            enabledStore,
+            credits,
+            Options.Create(new AiUsageOptions()),
+            Options.Create(new SpeakingOptions
+            {
+                InteractiveBartenderEnabled = true,
+            }),
+            timeProvider,
+            NullLogger<SpeakingService>.Instance);
+        var enabledBartender = await enabled.CreateSessionAsync(
+            "learner",
+            Bartender,
+            CefrLevel.A2);
+        var enabledKasia = await enabled.CreateSessionAsync(
+            "learner",
+            SpeakingAvatarCatalog.Get(SpeakingAvatarId.Kasia),
+            CefrLevel.A2);
+
+        Assert.NotNull(enabledBartender.Interaction);
+        Assert.Null(enabledKasia.Interaction);
+    }
+
+    [Fact]
+    public async Task Executed_scene_tools_commit_as_authoritative_commands_and_state()
+    {
+        var conversation = new FakeConversation((_, state, _) =>
+        {
+            var commands = Assert.IsType<BartenderInteractionState>(state)
+                .ApplyProposedActions(
+                    [
+                        Proposal(SpeakingProposedActionType.ServeDrink, "lightBeer"),
+                        Proposal(SpeakingProposedActionType.ClearGlass),
+                        Proposal(SpeakingProposedActionType.PresentBill),
+                    ]);
+            return Task.FromResult(new SpeakingAgentTurn(
+                ValidTurn(),
+                new AiTokenUsage(10, 5, 0, 0, 15),
+                commands));
+        });
+        var credits = new FakeCredits();
+        var (service, sessionId) = await CreateServiceAsync(
+            conversation,
+            credits,
+            interactiveMode: true);
+
+        var turn = await service.SendTurnAsync(
+            sessionId,
+            "learner",
+            "Poproszę jasne piwo i rachunek.",
+            SpeakingInputMode.Text);
+
+        Assert.Collection(
+            turn.SceneActions,
+            command => Assert.Equal("pourAndServe", command.Type),
+            command => Assert.Equal("showBill", command.Type));
+        Assert.Equal(14, turn.Interaction?.TabTotal);
+        Assert.True(turn.Interaction?.BillPresented);
+        Assert.Equal("lightBeer", turn.Interaction?.ActiveDrink?.Id);
+    }
+
+    [Fact]
+    public async Task Valid_learner_action_commits_when_the_model_scene_proposal_is_invalid()
+    {
+        var call = 0;
+        var conversation = new FakeConversation((_, state, _) =>
+        {
+            call++;
+            IReadOnlyList<SpeakingSceneCommand> commands = call == 1
+                ? Assert.IsType<BartenderInteractionState>(state)
+                    .ApplyProposedActions(
+                        [Proposal(SpeakingProposedActionType.ServeDrink, "stillWater")])
+                : Assert.IsType<BartenderInteractionState>(state)
+                    .ApplyProposedActions(
+                        [Proposal(SpeakingProposedActionType.ServeDrink, "vodka")]);
+            return Task.FromResult(new SpeakingAgentTurn(
+                ValidTurn(),
+                null,
+                commands));
+        });
+        var credits = new FakeCredits();
+        var (service, sessionId) = await CreateServiceAsync(
+            conversation,
+            credits,
+            interactiveMode: true);
+        await service.SendTurnAsync(
+            sessionId,
+            "learner",
+            "Poproszę wodę.",
+            SpeakingInputMode.Text);
+
+        var turn = await service.SendActionAsync(
+            sessionId,
+            "learner",
+            SpeakingInteractionAction.Drink,
+            denominations: null);
+
+        Assert.Equal("drink", Assert.Single(turn.SceneActions).Type);
+        Assert.Equal(2, turn.Interaction?.ActiveDrink?.FillLevel);
+        Assert.Contains("Trusted non-verbal learner event", conversation.Messages[1]);
+        Assert.Contains("Leave every coach field as an empty string", conversation.Messages[1]);
+        Assert.Equal("speaking_action", credits.Reservations[1].Context.Operation);
+        Assert.Equal(2, credits.Commits.Count);
+        Assert.Empty(credits.Releases);
+    }
+
+    [Fact]
+    public async Task Incomplete_reply_after_an_executed_scene_tool_invalidates_the_session()
+    {
+        var conversation = new FakeConversation((_, state, _) =>
+        {
+            var commands = Assert.IsType<BartenderInteractionState>(state)
+                .ApplyProposedActions(
+                    [Proposal(SpeakingProposedActionType.ServeDrink, "stillWater")]);
+            var incomplete = ValidTurn();
+            incomplete.ReplyPolish = " ";
+            return Task.FromResult(new SpeakingAgentTurn(
+                incomplete,
+                null,
+                commands));
+        });
+        var credits = new FakeCredits();
+        var timeProvider = TimeProvider.System;
+        var store = CreateStore(new FakeAgentClient(() => conversation), timeProvider);
+        var service = CreateService(store, credits, timeProvider, interactiveMode: true);
+        var created = await service.CreateSessionAsync("learner", Bartender, CefrLevel.A2);
+        var session = store.Get(created.SessionId, "learner");
+
+        var exception = await Assert.ThrowsAsync<SpeakingSessionInvalidatedException>(() =>
+            service.SendTurnAsync(
+                created.SessionId,
+                "learner",
+                "Poproszę wodę.",
+                SpeakingInputMode.Text));
+
+        Assert.IsType<SpeakingUpstreamException>(exception.InnerException);
+        Assert.Single(credits.Releases);
+        Assert.Empty(credits.Commits);
+        Assert.Equal(1, conversation.DisposeCount);
+        Assert.Equal(1, session.TurnGate.CurrentCount);
+        await Assert.ThrowsAsync<SpeakingSessionNotFoundException>(() =>
+            service.SendTurnAsync(
+                created.SessionId,
+                "learner",
+                "Spróbujmy dalej.",
+                SpeakingInputMode.Text));
+    }
+
+    [Fact]
+    public async Task Credit_commit_failure_after_an_executed_scene_tool_invalidates_the_session()
+    {
+        var conversation = new FakeConversation((_, state, _) =>
+        {
+            var commands = Assert.IsType<BartenderInteractionState>(state)
+                .ApplyProposedActions(
+                    [Proposal(SpeakingProposedActionType.ServeDrink, "lightBeer")]);
+            return Task.FromResult(new SpeakingAgentTurn(
+                ValidTurn(),
+                new AiTokenUsage(10, 5, 0, 0, 15),
+                commands));
+        });
+        var commitError = new InvalidOperationException("database commit failed");
+        var credits = new FakeCredits
+        {
+            CommitError = commitError,
+        };
+        var (service, sessionId) = await CreateServiceAsync(
+            conversation,
+            credits,
+            interactiveMode: true);
+
+        var exception = await Assert.ThrowsAsync<SpeakingSessionInvalidatedException>(() =>
+            service.SendTurnAsync(
+                sessionId,
+                "learner",
+                "Poproszę piwo.",
+                SpeakingInputMode.Text));
+
+        Assert.Same(commitError, exception.InnerException);
+        Assert.Single(credits.Releases);
+        Assert.Empty(credits.Commits);
+        Assert.Equal(1, conversation.DisposeCount);
+        await Assert.ThrowsAsync<SpeakingSessionNotFoundException>(() =>
+            service.SendTurnAsync(
+                sessionId,
+                "learner",
+                "Spróbujmy dalej.",
+                SpeakingInputMode.Text));
+    }
+
+    [Fact]
+    public async Task Invalid_user_action_does_not_reserve_credit()
+    {
+        var conversation = new FakeConversation();
+        var credits = new FakeCredits();
+        var (service, sessionId) = await CreateServiceAsync(
+            conversation,
+            credits,
+            interactiveMode: true);
+
+        await Assert.ThrowsAsync<SpeakingValidationException>(() => service.SendActionAsync(
+            sessionId,
+            "learner",
+            SpeakingInteractionAction.Drink,
+            denominations: null));
+
+        Assert.Empty(credits.Reservations);
+        Assert.Empty(conversation.Messages);
+
+        var continued = await service.SendTurnAsync(
+            sessionId,
+            "learner",
+            "To porozmawiajmy dalej.",
+            SpeakingInputMode.Text);
+
+        Assert.Equal("Dobrze, już podaję.", continued.ReplyPolish);
+        Assert.Single(credits.Commits);
+    }
+
+    [Fact]
+    public async Task Open_bill_and_scene_state_never_gate_a_later_conversation_turn()
+    {
+        var call = 0;
+        var conversation = new FakeConversation((_, state, _) =>
+        {
+            call++;
+            IReadOnlyList<SpeakingSceneCommand> commands = call == 1
+                ? Assert.IsType<BartenderInteractionState>(state)
+                    .ApplyProposedActions(
+                        [
+                            Proposal(SpeakingProposedActionType.ServeDrink, "lightBeer"),
+                            Proposal(SpeakingProposedActionType.PresentBill),
+                            Proposal(SpeakingProposedActionType.MarkUnavailable, "vodka"),
+                        ])
+                : [];
+            return Task.FromResult(new SpeakingAgentTurn(ValidTurn(), null, commands));
+        });
+        var credits = new FakeCredits();
+        var (service, sessionId) = await CreateServiceAsync(
+            conversation,
+            credits,
+            interactiveMode: true);
+
+        await service.SendTurnAsync(
+            sessionId,
+            "learner",
+            "Piwo i rachunek, proszę.",
+            SpeakingInputMode.Text);
+        var insufficient = await service.SendActionAsync(
+            sessionId,
+            "learner",
+            SpeakingInteractionAction.SubmitPayment,
+            new Dictionary<int, int> { [5] = 1 });
+        var continued = await service.SendTurnAsync(
+            sessionId,
+            "learner",
+            "Nieważne, opowiedz mi coś o Krakowie.",
+            SpeakingInputMode.Voice);
+
+        Assert.Equal("paymentRejected", Assert.Single(insufficient.SceneActions).Type);
+        Assert.Equal("Dobrze, już podaję.", continued.ReplyPolish);
+        var interaction = Assert.IsType<SpeakingInteractionSnapshot>(continued.Interaction);
+        Assert.Equal("lightBeer", interaction.ActiveDrink?.Id);
+        Assert.True(interaction.BillPresented);
+        Assert.Equal(14, interaction.TabTotal);
+        Assert.Contains("vodka", interaction.UnavailableDrinkIds);
+        Assert.Contains("Bill presented: True", conversation.Messages[2]);
+        Assert.Contains("Active drink: lightBeer", conversation.Messages[2]);
+        Assert.Equal(3, credits.Commits.Count);
+    }
+
     private static SpeakingSessionStore CreateStore(
         ISpeakingAgentClient agentClient,
         TimeProvider? timeProvider = null,
@@ -251,20 +651,44 @@ public sealed class SpeakingServiceTests
 
     private static async Task<(SpeakingService Service, Guid SessionId)> CreateServiceAsync(
         FakeConversation conversation,
-        FakeCredits credits)
+        FakeCredits credits,
+        bool interactiveMode = false)
     {
         var timeProvider = TimeProvider.System;
         var store = CreateStore(new FakeAgentClient(() => conversation), timeProvider);
-        var service = new SpeakingService(
+        var service = CreateService(store, credits, timeProvider, interactiveMode);
+        var created = await service.CreateSessionAsync(
+            "learner",
+            Bartender,
+            CefrLevel.A2);
+        return (service, created.SessionId);
+    }
+
+    private static SpeakingService CreateService(
+        ISpeakingSessionStore store,
+        FakeCredits credits,
+        TimeProvider timeProvider,
+        bool interactiveMode) =>
+        new(
             store,
             credits,
             Options.Create(new AiUsageOptions { SpeakingOutputTokenReserve = 768 }),
-            Options.Create(new SpeakingOptions { ModelDeployment = "gpt-5.4-mini" }),
+            Options.Create(new SpeakingOptions
+            {
+                ModelDeployment = "grok-4-1-fast-non-reasoning",
+                InteractiveBartenderEnabled = interactiveMode,
+            }),
             timeProvider,
             NullLogger<SpeakingService>.Instance);
-        var created = await service.CreateSessionAsync("learner", Bartender, CefrLevel.A2);
-        return (service, created.SessionId);
-    }
+
+    private static SpeakingProposedAction Proposal(
+        SpeakingProposedActionType type,
+        string? drinkId = null) =>
+        new()
+        {
+            Type = type,
+            DrinkId = drinkId,
+        };
 
     private static SpeakingTurn ValidTurn() =>
         new()
@@ -286,30 +710,52 @@ public sealed class SpeakingServiceTests
 
         public Task<ISpeakingAgentConversation> CreateConversationAsync(
             SpeakingAvatarId avatar,
+            bool interactiveMode = false,
             CancellationToken cancellationToken = default) =>
             Task.FromResult<ISpeakingAgentConversation>(factory());
     }
 
     private sealed class FakeConversation : ISpeakingAgentConversation
     {
-        private readonly Func<string, CancellationToken, Task<SpeakingAgentTurn>> _run;
+        private readonly Func<
+            string,
+            BartenderInteractionState?,
+            CancellationToken,
+            Task<SpeakingAgentTurn>> _run;
 
         public FakeConversation(
             Func<string, CancellationToken, Task<SpeakingAgentTurn>>? run = null)
         {
-            _run = run ?? ((_, _) => Task.FromResult(
-                new SpeakingAgentTurn(ValidTurn(), new AiTokenUsage(1, 1, 0, 0, 2))));
+            _run = run is null
+                ? ((_, _, _) => Task.FromResult(
+                    new SpeakingAgentTurn(
+                        ValidTurn(),
+                        new AiTokenUsage(1, 1, 0, 0, 2))))
+                : ((message, _, cancellationToken) => run(message, cancellationToken));
+        }
+
+        public FakeConversation(
+            Func<
+                string,
+                BartenderInteractionState?,
+                CancellationToken,
+                Task<SpeakingAgentTurn>> run)
+        {
+            _run = run;
         }
 
         public List<string> Messages { get; } = [];
+        public List<BartenderInteractionState?> InteractionStates { get; } = [];
         public int DisposeCount { get; private set; }
 
         public Task<SpeakingAgentTurn> RunTurnAsync(
             string message,
+            BartenderInteractionState? interactionState = null,
             CancellationToken cancellationToken = default)
         {
             Messages.Add(message);
-            return _run(message, cancellationToken);
+            InteractionStates.Add(interactionState);
+            return _run(message, interactionState, cancellationToken);
         }
 
         public ValueTask DisposeAsync()
@@ -334,6 +780,7 @@ public sealed class SpeakingServiceTests
             Reservations { get; } = [];
         public List<(Guid ReservationId, AiTokenUsage Usage)> Commits { get; } = [];
         public List<Guid> Releases { get; } = [];
+        public Exception? CommitError { get; init; }
 
         public Task<AiCreditReservation> ReserveAsync(
             AiUsageContext context,
@@ -352,6 +799,11 @@ public sealed class SpeakingServiceTests
             AiTokenUsage usage,
             CancellationToken cancellationToken = default)
         {
+            if (CommitError is not null)
+            {
+                return Task.FromException(CommitError);
+            }
+
             Commits.Add((reservationId, usage));
             return Task.CompletedTask;
         }

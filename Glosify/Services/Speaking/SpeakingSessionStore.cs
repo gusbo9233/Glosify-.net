@@ -9,6 +9,7 @@ public interface ISpeakingSessionStore
         string userId,
         SpeakingAvatarDefinition avatar,
         CefrLevel cefrLevel,
+        bool interactiveMode = false,
         CancellationToken cancellationToken = default);
 
     SpeakingSessionState Get(Guid sessionId, string userId);
@@ -17,6 +18,8 @@ public interface ISpeakingSessionStore
         Guid sessionId,
         string userId,
         CancellationToken cancellationToken = default);
+
+    Task InvalidateAsync(SpeakingSessionState session);
 }
 
 public sealed class SpeakingSessionStore : ISpeakingSessionStore
@@ -43,18 +46,23 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
         string userId,
         SpeakingAvatarDefinition avatar,
         CefrLevel cefrLevel,
+        bool interactiveMode = false,
         CancellationToken cancellationToken = default)
     {
         await RemoveExpiredAsync(userId);
         EnsureCapacity(userId);
 
-        var conversation = await _agentClient.CreateConversationAsync(avatar.Id, cancellationToken);
+        var conversation = await _agentClient.CreateConversationAsync(
+            avatar.Id,
+            interactiveMode,
+            cancellationToken);
         var now = _timeProvider.GetUtcNow();
         var state = new SpeakingSessionState(
             Guid.NewGuid(),
             userId,
             avatar,
             cefrLevel,
+            interactiveMode,
             conversation,
             now,
             _ttl);
@@ -104,8 +112,24 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
             throw new SpeakingSessionNotFoundException();
         }
 
-        _sessions.TryRemove(sessionId, out _);
-        await state.Conversation.DisposeAsync();
+        if (!_sessions.TryRemove(sessionId, out var removed))
+        {
+            throw new SpeakingSessionNotFoundException();
+        }
+
+        await removed.Conversation.DisposeAsync();
+    }
+
+    public async Task InvalidateAsync(SpeakingSessionState session)
+    {
+        if (!_sessions.TryGetValue(session.Id, out var current)
+            || !ReferenceEquals(current, session)
+            || !_sessions.TryRemove(session.Id, out var removed))
+        {
+            return;
+        }
+
+        await removed.Conversation.DisposeAsync();
     }
 
     private void EnsureCapacity(string userId)
@@ -148,6 +172,7 @@ public sealed class SpeakingSessionState(
     string userId,
     SpeakingAvatarDefinition avatar,
     CefrLevel cefrLevel,
+    bool interactiveMode,
     ISpeakingAgentConversation conversation,
     DateTimeOffset now,
     TimeSpan ttl)
@@ -158,7 +183,10 @@ public sealed class SpeakingSessionState(
     public string UserId { get; } = userId;
     public SpeakingAvatarDefinition Avatar { get; } = avatar;
     public CefrLevel CefrLevel { get; } = cefrLevel;
+    public bool InteractiveMode { get; } = interactiveMode;
     public ISpeakingAgentConversation Conversation { get; } = conversation;
+    public BartenderInteractionState? InteractionState { get; set; } =
+        interactiveMode ? BartenderInteractionState.Create() : null;
     public SemaphoreSlim TurnGate { get; } = new(1, 1);
 
     public bool IsExpired(DateTimeOffset at) =>

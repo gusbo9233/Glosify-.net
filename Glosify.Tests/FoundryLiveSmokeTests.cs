@@ -3,6 +3,7 @@ using Azure.AI.Projects;
 using Azure.Identity;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Speaking;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -193,6 +194,65 @@ public sealed class FoundryLiveSmokeTests
             Assert.Equal("get_quiz_summary", Assert.Single(turn.FunctionCalls).Name);
             Assert.Single(credits.Commits);
             Assert.Empty(credits.Releases);
+        }
+    }
+
+    [LiveFoundryFact]
+    [Trait("Category", "LiveFoundry")]
+    public async Task Interactive_bartender_executes_serve_drink_and_returns_the_pour_command()
+    {
+        var endpoint = Environment.GetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT")
+            ?? DefaultEndpoint;
+        var deployment = Environment.GetEnvironmentVariable("FOUNDRY_SPEAKING_MODEL_DEPLOYMENT")
+            ?? "grok-4-1-fast-non-reasoning";
+        var speakingOptions = new SpeakingOptions
+        {
+            ProjectEndpoint = endpoint,
+            ModelDeployment = deployment,
+            InteractiveBartenderEnabled = true,
+        };
+        var agentClient = new FoundrySpeakingAgentClient(
+            Options.Create(speakingOptions),
+            new DefaultAzureCredential(),
+            NullLoggerFactory.Instance,
+            NullLogger<FoundrySpeakingAgentClient>.Instance);
+        var sessions = new SpeakingSessionStore(
+            agentClient,
+            Options.Create(speakingOptions),
+            TimeProvider.System);
+        var credits = new SmokeCredits();
+        var service = new SpeakingService(
+            sessions,
+            credits,
+            Options.Create(new AiUsageOptions { SpeakingOutputTokenReserve = 768 }),
+            Options.Create(speakingOptions),
+            TimeProvider.System,
+            NullLogger<SpeakingService>.Instance);
+        var created = await service.CreateSessionAsync(
+            "live-speaking-tool",
+            SpeakingAvatarCatalog.Get(SpeakingAvatarId.Bartender),
+            CefrLevel.A2);
+
+        try
+        {
+            var turn = await service.SendTurnAsync(
+                created.SessionId,
+                "live-speaking-tool",
+                "Piwo.",
+                SpeakingInputMode.Text);
+
+            var command = Assert.Single(turn.SceneActions);
+            Assert.Equal("pourAndServe", command.Type);
+            Assert.Equal("lightBeer", command.DrinkId);
+            Assert.Equal(3, command.FillLevel);
+            Assert.Equal("lightBeer", Assert.IsType<SpeakingInteractionSnapshot>(
+                turn.Interaction).ActiveDrink?.Id);
+            Assert.Single(credits.Commits);
+            Assert.Empty(credits.Releases);
+        }
+        finally
+        {
+            await service.DeleteSessionAsync(created.SessionId, "live-speaking-tool");
         }
     }
 

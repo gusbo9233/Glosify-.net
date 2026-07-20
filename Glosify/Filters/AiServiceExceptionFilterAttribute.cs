@@ -11,8 +11,9 @@ namespace Glosify.Filters;
 /// <summary>
 /// Maps the exceptions shared by AI-backed endpoints onto their HTTP statuses so
 /// controllers don't repeat the same catch ladder: insufficient credits → 402,
-/// unknown quiz → 404, foreign resource → 403, dependency warm-up → 503, and any
-/// other failure → 500. All bodies use the <c>{ "error": message }</c> shape.
+/// exhausted application budget → 503, unknown quiz → 404, foreign resource → 403,
+/// dependency warm-up → 503, and any other failure → 500. All bodies use the
+/// <c>{ "error": message }</c> shape.
 /// Apply to actions or controllers that call AI services and return JSON;
 /// exceptions an action catches itself never reach this filter.
 /// </summary>
@@ -36,6 +37,8 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
         context.Result = exception switch
         {
             InsufficientAiCreditsException => Error(StatusCodes.Status402PaymentRequired, exception.Message),
+            MonthlyAiBudgetExceededException =>
+                Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
             GenerativeAiValidationException => Error(StatusCodes.Status400BadRequest, exception.Message),
             GenerativeAiDependencyUnavailableException =>
                 Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
@@ -44,6 +47,7 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
             SpeakingValidationException => Error(StatusCodes.Status400BadRequest, exception.Message),
             SpeakingSessionNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),
             SpeakingSessionExpiredException => Error(StatusCodes.Status410Gone, exception.Message),
+            SpeakingSessionInvalidatedException => Error(StatusCodes.Status410Gone, exception.Message),
             SpeakingSessionBusyException => Error(StatusCodes.Status409Conflict, exception.Message),
             SpeakingSessionLimitException => Error(StatusCodes.Status409Conflict, exception.Message),
             SpeakingDependencyUnavailableException => Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
