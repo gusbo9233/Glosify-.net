@@ -1,3 +1,16 @@
+import {
+    getBartenderThreeController,
+    initializeBartenderThreeScenes
+} from "./speaking-bartender-three.js";
+import {
+    getMietekThreeController,
+    initializeMietekThreeScenes
+} from "./speaking-mietek-three.js";
+import {
+    getKasiaThreeController,
+    initializeKasiaThreeScenes
+} from "./speaking-kasia-three.js";
+
 (() => {
     "use strict";
 
@@ -5,6 +18,10 @@
     if (!root) {
         return;
     }
+
+    initializeBartenderThreeScenes(root);
+    initializeKasiaThreeScenes(root);
+    initializeMietekThreeScenes(root);
 
     const pageData = JSON.parse(root.dataset.speakingPage || "{}");
     const practiceLanguage = pageData.language || "the selected language";
@@ -48,8 +65,7 @@
         paymentSubmit: document.getElementById("speaking-payment-submit"),
         bill: document.getElementById("speaking-bill"),
         billTotal: document.getElementById("speaking-bill-total"),
-        drinkAction: document.getElementById("speaking-drink-action"),
-        drinkLabel: document.getElementById("speaking-drink-label"),
+        drinkActions: document.getElementById("speaking-drink-actions"),
         snackAction: document.getElementById("speaking-snack-action"),
         sceneEvent: document.getElementById("speaking-scene-event"),
         userTemplate: document.getElementById("speaking-user-message-template"),
@@ -100,6 +116,16 @@
         return elements.scenes.find(scene => scene.dataset.avatarScene === state.avatarId);
     }
 
+    function bartenderController(scene = currentScene()) {
+        return getBartenderThreeController(scene);
+    }
+
+    function avatarThreeController(scene = currentScene()) {
+        return getBartenderThreeController(scene)
+            || getKasiaThreeController(scene)
+            || getMietekThreeController(scene);
+    }
+
     function supportsInteractiveMode() {
         return Boolean(pageData.interactiveBartenderEnabled)
             && state.avatarId === "bartender";
@@ -138,7 +164,10 @@
         elements.avatarChoices.forEach(choice => {
             choice.disabled = interactionLocked;
         });
-        [elements.drinkAction, elements.snackAction]
+        [
+            ...root.querySelectorAll("[data-drink-action]"),
+            elements.snackAction
+        ]
             .filter(Boolean)
             .forEach(control => {
                 control.disabled =
@@ -170,6 +199,10 @@
             scene.hidden = scene.dataset.avatarScene !== state.avatarId;
             scene.dataset.mouthPose = "closed";
             scene.classList.remove("is-talking");
+            const controller = avatarThreeController(scene);
+            controller?.setMouthPose("closed");
+            controller?.setTalking(false);
+            controller?.setActive(scene.dataset.avatarScene === state.avatarId);
         });
         elements.level.value = state.cefrLevel;
         elements.avatarName.textContent = avatar?.name || "";
@@ -239,8 +272,9 @@
         if (elements.bill) {
             elements.bill.hidden = true;
         }
-        if (elements.drinkAction) {
-            elements.drinkAction.hidden = true;
+        if (elements.drinkActions) {
+            elements.drinkActions.hidden = true;
+            elements.drinkActions.replaceChildren();
         }
         if (elements.snackAction) {
             elements.snackAction.hidden = true;
@@ -252,19 +286,16 @@
     }
 
     function applySceneSnapshot(snapshot) {
-        const activeDrink = snapshot?.activeDrink || null;
+        const activeDrinks = snapshot?.activeDrinks || [];
         const scene = currentScene();
-        scene?.classList.toggle("has-active-drink", Boolean(activeDrink));
-        const glass = scene?.querySelector("[data-bartender-active-drink]");
-        if (glass && activeDrink) {
-            glass.dataset.drinkId = activeDrink.id;
-            glass.dataset.fillLevel = String(activeDrink.fillLevel);
-        }
+        scene?.classList.toggle("has-active-drink", activeDrinks.length > 0);
+        bartenderController(scene)?.applySnapshot(activeDrinks);
     }
 
     function hideInteractionActions() {
-        if (elements.drinkAction) {
-            elements.drinkAction.hidden = true;
+        if (elements.drinkActions) {
+            elements.drinkActions.hidden = true;
+            elements.drinkActions.replaceChildren();
         }
         if (elements.snackAction) {
             elements.snackAction.hidden = true;
@@ -272,15 +303,34 @@
     }
 
     function applyInteractionActions(snapshot) {
-        const activeDrink = snapshot?.activeDrink || null;
+        const activeDrinks = snapshot?.activeDrinks || [];
         const actions = new Set(snapshot?.availableActions || []);
-        elements.drinkAction.hidden = !actions.has("drink");
-        if (activeDrink) {
-            elements.drinkLabel.textContent =
-                activeDrink.fillLevel <= 1 ? "Finish drink" : "Take a sip";
-            elements.drinkAction.setAttribute(
-                "aria-label",
-                `${elements.drinkLabel.textContent}: ${activeDrink.nameEnglish}`);
+        if (elements.drinkActions) {
+            elements.drinkActions.replaceChildren();
+            if (actions.has("drink")) {
+                activeDrinks
+                    .filter(drink => drink.fillLevel > 0)
+                    .forEach(drink => {
+                        const action = document.createElement("button");
+                        action.type = "button";
+                        action.className = "speaking-context-action";
+                        action.dataset.drinkAction = drink.id;
+                        const icon = document.createElement("span");
+                        icon.className = "material-symbols-outlined";
+                        icon.setAttribute("aria-hidden", "true");
+                        icon.textContent = drink.category === "spirit"
+                            ? "shot_bar"
+                            : "local_bar";
+                        const label = document.createElement("span");
+                        label.textContent = drink.fillLevel <= 1
+                            ? `Finish ${drink.nameEnglish}`
+                            : `Sip ${drink.nameEnglish}`;
+                        action.append(icon, label);
+                        action.setAttribute("aria-label", label.textContent);
+                        elements.drinkActions.append(action);
+                    });
+            }
+            elements.drinkActions.hidden = elements.drinkActions.childElementCount === 0;
         }
         elements.snackAction.hidden = !actions.has("takeSnack");
     }
@@ -440,6 +490,7 @@
         state.sceneActionsPending = false;
         elements.interactiveLayer?.setAttribute("aria-busy", "false");
         elements.scenes.forEach(scene => {
+            avatarThreeController(scene)?.cancel({ reset: true });
             scene.classList.remove(
                 "has-active-drink",
                 "is-pouring",
@@ -508,6 +559,7 @@
         }
 
         const scene = currentScene();
+        const threeController = bartenderController(scene);
         const glass = scene?.querySelector("[data-bartender-active-drink]");
         const glassMotion = glass?.querySelector("[data-bartender-drink-motion]");
         switch (command.type) {
@@ -521,6 +573,19 @@
                     glass.dataset.fillLevel = String(command.fillLevel ?? 3);
                 }
                 showSceneEvent("Marek pours and slides over your drink.");
+                if (threeController) {
+                    if (!await threeController.playCommand(command)
+                        || generation !== state.sceneGeneration) {
+                        return;
+                    }
+                    scene?.classList.remove("is-pouring");
+                    if (scene) {
+                        delete scene.dataset.pourSource;
+                    }
+                    scene?.classList.add("is-serving", "has-active-drink");
+                    scene?.classList.remove("is-serving");
+                    break;
+                }
                 const beerTap =
                     command.drinkId === "lightBeer" || command.drinkId === "darkBeer"
                         ? scene?.querySelector(
@@ -557,11 +622,20 @@
                 }
                 showSceneEvent(
                     command.fillLevel === 0 ? "You finish the drink." : "You take a sip.");
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    break;
+                }
                 await waitForScene(350, generation);
                 break;
             case "takeSnack":
                 scene?.classList.add("is-snacking");
                 showSceneEvent("You take some paluszki.");
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    scene?.classList.remove("is-snacking");
+                    break;
+                }
                 if (!await waitForSceneAnimation(
                     scene?.querySelector(
                         "[data-bartender-snack] [data-bartender-snack-motion]"),
@@ -575,15 +649,28 @@
             case "showBill":
                 openWallet();
                 showSceneEvent(`Marek presents the ${command.amount} zł bill.`);
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    break;
+                }
                 await waitForScene(350, generation);
                 break;
             case "offerSnack":
                 showSceneEvent("Marek offers you paluszki.");
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    break;
+                }
                 await waitForScene(350, generation);
                 break;
             case "clearGlass":
                 scene?.classList.add("is-clearing");
                 showSceneEvent("Marek clears the empty glass.");
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    scene?.classList.remove("is-clearing", "has-active-drink");
+                    break;
+                }
                 if (!await waitForSceneAnimation(
                     glassMotion,
                     "speaking-bartender-clear",
@@ -596,6 +683,11 @@
             case "polishGlass":
                 scene?.classList.add("is-polishing");
                 showSceneEvent("Marek polishes a glass.");
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    scene?.classList.remove("is-polishing");
+                    break;
+                }
                 if (!await waitForSceneAnimation(
                     scene?.querySelector("[data-bartender-polish-gesture]"),
                     "speaking-bartender-polish",
@@ -608,6 +700,11 @@
             case "wipeCounter":
                 scene?.classList.add("is-wiping");
                 showSceneEvent("Marek wipes the counter.");
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    scene?.classList.remove("is-wiping");
+                    break;
+                }
                 if (!await waitForSceneAnimation(
                     scene?.querySelector("[data-bartender-counter]"),
                     "speaking-bartender-wipe",
@@ -620,6 +717,11 @@
             case "lastCall":
                 scene?.classList.add("is-last-call");
                 showSceneEvent("Last call.");
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    scene?.classList.remove("is-last-call");
+                    break;
+                }
                 if (!await waitForScene(650, generation)) {
                     return;
                 }
@@ -627,19 +729,35 @@
                 break;
             case "markUnavailable":
                 showSceneEvent("That item is unavailable.");
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    break;
+                }
                 await waitForScene(350, generation);
                 break;
             case "paymentRejected":
                 openWallet();
                 showSceneEvent(`${command.amount} zł is not enough. Nothing was removed.`);
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    break;
+                }
                 await waitForScene(450, generation);
                 break;
             case "paymentAccepted":
                 showSceneEvent(`Marek accepts ${command.amount} zł.`);
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    break;
+                }
                 await waitForScene(450, generation);
                 break;
             case "returnChange":
                 showSceneEvent(`Marek returns ${command.amount} zł change.`);
+                if (threeController) {
+                    await threeController.playCommand(command);
+                    break;
+                }
                 await waitForScene(500, generation);
                 break;
         }
@@ -962,7 +1080,7 @@
         }
     }
 
-    async function sendInteractiveAction(action, denominations = null) {
+    async function sendInteractiveAction(action, denominations = null, drinkId = null) {
         if (state.busy
             || state.sceneActionsPending
             || !state.ready
@@ -973,18 +1091,35 @@
 
         stopSpeaking();
         setBusy(true);
-        setStatus(`${currentAvatar()?.name || "The avatar"} is reacting…`);
+        const userOnlyAction = action === "drink" || action === "takeSnack";
+        setStatus(
+            userOnlyAction
+                ? action === "drink"
+                    ? "Taking a sip…"
+                    : "Taking a snack…"
+                : `${currentAvatar()?.name || "The avatar"} is reacting…`);
         try {
             const response = await apiFetch(
                 `${root.dataset.createUrl}/${state.sessionId}/actions`,
                 {
                     method: "POST",
-                    body: JSON.stringify({ action, denominations })
+                    body: JSON.stringify({ action, denominations, drinkId })
                 });
             const turn = await response.json();
             state.userTurns += 1;
             setStatus("");
-            presentTurn(turn);
+            if (turn.suppressAvatarReaction) {
+                if (state.interactiveMode && turn.interaction) {
+                    applyInteractionSnapshot(
+                        turn.interaction,
+                        { updateScene: false, updateActions: false });
+                    enqueueSceneActions(turn.sceneActions, turn.interaction);
+                } else {
+                    applyInteractionSnapshot(turn.interaction);
+                }
+            } else {
+                presentTurn(turn);
+            }
         } catch (error) {
             if (error.status === 404 || error.status === 410) {
                 setStatus(error.message, true);
@@ -1344,6 +1479,7 @@
         const scene = currentScene();
         if (scene) {
             scene.dataset.mouthPose = pose;
+            avatarThreeController(scene)?.setMouthPose(pose);
         }
     }
 
@@ -1353,6 +1489,7 @@
         let index = 0;
         const scene = currentScene();
         scene?.classList.add("is-talking");
+        avatarThreeController(scene)?.setTalking(true);
         state.genericMouthTimer = window.setInterval(() => {
             setMouthPose(poses[index++ % poses.length]);
         }, 150);
@@ -1368,6 +1505,9 @@
         elements.scenes.forEach(scene => {
             scene.classList.remove("is-talking");
             scene.dataset.mouthPose = "closed";
+            const controller = avatarThreeController(scene);
+            controller?.setTalking(false);
+            controller?.setMouthPose("closed");
         });
     }
 
@@ -1568,8 +1708,18 @@
         setPanel(elements.wallet, elements.walletToggle, false);
     });
 
-    elements.drinkAction?.addEventListener("click", () => {
-        void sendInteractiveAction("drink");
+    elements.drinkActions?.addEventListener("click", event => {
+        const action = event.target.closest("[data-drink-action]");
+        if (action) {
+            void sendInteractiveAction("drink", null, action.dataset.drinkAction);
+        }
+    });
+
+    root.addEventListener("bartenderdrinkselect", event => {
+        const drinkId = event.detail?.drinkId;
+        if (drinkId) {
+            void sendInteractiveAction("drink", null, drinkId);
+        }
     });
 
     elements.snackAction?.addEventListener("click", () => {

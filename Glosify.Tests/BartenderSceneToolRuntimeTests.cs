@@ -40,7 +40,10 @@ public sealed class BartenderSceneToolRuntimeTests
         foreach (var function in functions)
         {
             var properties = function.JsonSchema.GetProperty("properties");
-            if (function.Name is "serve_drink" or "mark_drink_unavailable")
+            if (function.Name is
+                "serve_drink"
+                or "clear_empty_glass"
+                or "mark_drink_unavailable")
             {
                 Assert.Equal(
                     "string",
@@ -71,11 +74,11 @@ public sealed class BartenderSceneToolRuntimeTests
         var command = Assert.Single(runtime.CompleteTurn());
 
         Assert.True(result.Accepted);
-        Assert.Equal("lightBeer", result.State.ActiveDrinkId);
-        Assert.Equal(3, result.State.ActiveDrinkFillLevel);
+        Assert.Equal("lightBeer", Assert.Single(result.State.ActiveDrinks).Id);
+        Assert.Equal(3, Assert.Single(result.State.ActiveDrinks).FillLevel);
         Assert.Equal(14, result.State.TabTotal);
-        Assert.Equal("lightBeer", turnState.ActiveDrinkId);
-        Assert.Equal(3, turnState.ActiveDrinkFillLevel);
+        Assert.Equal("lightBeer", Assert.Single(turnState.ToSnapshot().ActiveDrinks).Id);
+        Assert.Equal(3, Assert.Single(turnState.ToSnapshot().ActiveDrinks).FillLevel);
         Assert.Equal(14, turnState.TabTotal);
 
         Assert.Equal("pourAndServe", command.Type);
@@ -83,7 +86,7 @@ public sealed class BartenderSceneToolRuntimeTests
         Assert.Equal(14, command.Amount);
         Assert.Equal(3, command.FillLevel);
 
-        Assert.Null(authoritativeState.ActiveDrinkId);
+        Assert.Empty(authoritativeState.ToSnapshot().ActiveDrinks);
         Assert.Equal(0, authoritativeState.TabTotal);
     }
 
@@ -101,16 +104,15 @@ public sealed class BartenderSceneToolRuntimeTests
         var commands = runtime.CompleteTurn();
 
         Assert.False(result.Accepted);
-        Assert.Null(result.State.ActiveDrinkId);
-        Assert.Equal(0, result.State.ActiveDrinkFillLevel);
+        Assert.Empty(result.State.ActiveDrinks);
         Assert.Equal(0, result.State.TabTotal);
-        Assert.Null(turnState.ActiveDrinkId);
+        Assert.Empty(turnState.ToSnapshot().ActiveDrinks);
         Assert.Equal(0, turnState.TabTotal);
         Assert.Empty(commands);
     }
 
     [Fact]
-    public async Task Second_serve_is_rejected_without_overwriting_the_active_drink()
+    public async Task Different_glassware_categories_coexist_and_a_second_beer_is_rejected()
     {
         var turnState = BartenderInteractionState.Create();
         var runtime = new BartenderSceneToolRuntime();
@@ -124,17 +126,26 @@ public sealed class BartenderSceneToolRuntimeTests
             runtime,
             "serve_drink",
             ("drink_id", "vodka"));
-        var command = Assert.Single(runtime.CompleteTurn());
+        var third = await InvokeAsync(
+            runtime,
+            "serve_drink",
+            ("drink_id", "lightBeer"));
+        var commands = runtime.CompleteTurn();
 
         Assert.True(first.Accepted);
-        Assert.False(second.Accepted);
-        Assert.Equal("darkBeer", second.State.ActiveDrinkId);
-        Assert.Equal(3, second.State.ActiveDrinkFillLevel);
-        Assert.Equal(16, second.State.TabTotal);
-        Assert.Equal("darkBeer", turnState.ActiveDrinkId);
-        Assert.Equal(16, turnState.TabTotal);
-        Assert.Equal("pourAndServe", command.Type);
-        Assert.Equal("darkBeer", command.DrinkId);
+        Assert.True(second.Accepted);
+        Assert.False(third.Accepted);
+        Assert.Equal(
+            ["darkBeer", "vodka"],
+            third.State.ActiveDrinks.Select(drink => drink.Id));
+        Assert.Equal(28, third.State.TabTotal);
+        Assert.Equal(
+            ["darkBeer", "vodka"],
+            turnState.ToSnapshot().ActiveDrinks.Select(drink => drink.Id));
+        Assert.Equal(28, turnState.TabTotal);
+        Assert.Equal(
+            ["darkBeer", "vodka"],
+            commands.Select(command => command.DrinkId));
     }
 
     [Fact]
@@ -177,9 +188,11 @@ public sealed class BartenderSceneToolRuntimeTests
             ("drink_id", "appleJuice"))).Accepted);
         runtime.AbortTurn();
 
-        Assert.Equal("appleJuice", discardedTurnState.ActiveDrinkId);
+        Assert.Equal(
+            "appleJuice",
+            Assert.Single(discardedTurnState.ToSnapshot().ActiveDrinks).Id);
         Assert.Equal(10, discardedTurnState.TabTotal);
-        Assert.Null(authoritativeState.ActiveDrinkId);
+        Assert.Empty(authoritativeState.ToSnapshot().ActiveDrinks);
         Assert.Equal(0, authoritativeState.TabTotal);
 
         var retryTurnState = authoritativeState.Clone();

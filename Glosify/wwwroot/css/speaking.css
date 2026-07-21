@@ -262,6 +262,201 @@
     filter: saturate(1.04) contrast(1.025);
 }
 
+.speaking-scene-bartender-three {
+    background:
+        radial-gradient(circle at 50% 35%, rgba(119, 67, 31, .28), transparent 46%),
+        #100b08;
+}
+
+.speaking-bartender-three-host,
+.speaking-bartender-three-host canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.speaking-bartender-three-host {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    touch-action: pan-y;
+}
+
+.speaking-bartender-three-host canvas {
+    filter: saturate(1.04) contrast(1.025);
+    opacity: 0;
+    transition: opacity .35s ease;
+}
+
+.speaking-bartender-three-host.is-ready canvas {
+    opacity: 1;
+}
+
+.speaking-bartender-three-loading,
+.speaking-bartender-three-fallback {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    margin: 0;
+    color: #f7e6c1;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-align: center;
+    transform: translate(-50%, -50%);
+}
+
+.speaking-bartender-three-loading {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+}
+
+.speaking-bartender-three-loading[hidden],
+.speaking-bartender-three-fallback[hidden] {
+    display: none;
+}
+
+.speaking-bartender-three-loading span {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(247, 230, 193, .25);
+    border-top-color: #f7c96b;
+    border-radius: 50%;
+    animation: speaking-bartender-three-loading .8s linear infinite;
+}
+
+.speaking-scene-kasia-three {
+    background:
+        radial-gradient(circle at 50% 34%, rgba(188, 241, 198, .32), transparent 48%),
+        #dce8d8;
+}
+
+.speaking-kasia-three-host,
+.speaking-kasia-three-host canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.speaking-kasia-three-host {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    touch-action: pan-y;
+}
+
+.speaking-kasia-three-host canvas {
+    filter: saturate(1.03) contrast(1.025);
+    opacity: 0;
+    transition: opacity .35s ease;
+}
+
+.speaking-kasia-three-host.is-ready canvas {
+    opacity: 1;
+}
+
+.speaking-kasia-three-loading,
+.speaking-kasia-three-fallback {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    margin: 0;
+    color: #12462d;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-align: center;
+    transform: translate(-50%, -50%);
+}
+
+.speaking-kasia-three-loading {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+}
+
+.speaking-kasia-three-loading[hidden],
+.speaking-kasia-three-fallback[hidden] {
+    display: none;
+}
+
+.speaking-kasia-three-loading span {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(0, 125, 65, .2);
+    border-top-color: #00a651;
+    border-radius: 50%;
+    animation: speaking-bartender-three-loading .8s linear infinite;
+}
+
+.speaking-scene-mietek-three {
+    background:
+        radial-gradient(circle at 50% 38%, rgba(211, 218, 221, .24), transparent 48%),
+        #7d8589;
+}
+
+.speaking-mietek-three-host,
+.speaking-mietek-three-host canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.speaking-mietek-three-host {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    touch-action: pan-y;
+}
+
+.speaking-mietek-three-host canvas {
+    filter: saturate(.9) contrast(1.04);
+    opacity: 0;
+    transition: opacity .35s ease;
+}
+
+.speaking-mietek-three-host.is-ready canvas {
+    opacity: 1;
+}
+
+.speaking-mietek-three-loading,
+.speaking-mietek-three-fallback {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 2;
+    margin: 0;
+    color: #f2eee3;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-align: center;
+    transform: translate(-50%, -50%);
+}
+
+.speaking-mietek-three-loading {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+}
+
+.speaking-mietek-three-loading[hidden],
+.speaking-mietek-three-fallback[hidden] {
+    display: none;
+}
+
+.speaking-mietek-three-loading span {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(242, 238, 227, .28);
+    border-top-color: #d1a957;
+    border-radius: 50%;
+    animation: speaking-bartender-three-loading .8s linear infinite;
+}
+
 .speaking-scene-prototype .avatar-figure,
 .speaking-scene-crafted .avatar-figure,
 .speaking-scene-generated .avatar-figure {
@@ -819,6 +1014,13 @@
     display: flex;
     gap: 8px;
     pointer-events: auto;
+}
+
+.speaking-drink-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
 }
 
 .speaking-scene-event {
@@ -1705,6 +1907,10 @@
 @keyframes speaking-bartender-snack {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-24px) rotate(-4deg); }
+}
+
+@keyframes speaking-bartender-three-loading {
+    to { transform: rotate(360deg); }
 }
 
 @media (max-width: 1220px) {

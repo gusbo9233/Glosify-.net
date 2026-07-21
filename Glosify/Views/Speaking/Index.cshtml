@@ -174,13 +174,9 @@
                         <div class="speaking-context-actions"
                              id="speaking-context-actions"
                              aria-label="Scene actions">
-                            <button type="button"
-                                    class="speaking-context-action"
-                                    id="speaking-drink-action"
-                                    hidden>
-                                <span class="material-symbols-outlined" aria-hidden="true">local_bar</span>
-                                <span id="speaking-drink-label">Take a sip</span>
-                            </button>
+                            <div class="speaking-drink-actions"
+                                 id="speaking-drink-actions"
+                                 hidden></div>
                             <button type="button"
                                     class="speaking-context-action"
                                     id="speaking-snack-action"
@@ -361,5 +357,5 @@
 
 @section Scripts {
     <script src="~/lib/speech-sdk/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
-    <script src="~/js/speaking.js" asp-append-version="true"></script>
+    <script type="module" src="~/js/speaking.js" asp-append-version="true"></script>
 }

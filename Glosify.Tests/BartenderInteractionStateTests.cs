@@ -9,6 +9,7 @@ public sealed class BartenderInteractionStateTests
     [InlineData("lightBeer", 14)]
     [InlineData("darkBeer", 16)]
     [InlineData("vodka", 12)]
+    [InlineData("redWine", 18)]
     [InlineData("sparklingWater", 8)]
     [InlineData("stillWater", 8)]
     [InlineData("appleJuice", 10)]
@@ -27,35 +28,44 @@ public sealed class BartenderInteractionStateTests
         Assert.Equal(
             [(50, 1), (20, 1), (10, 1), (5, 2), (2, 3), (1, 4)],
             snapshot.Wallet.Select(item => (item.Value, item.Count)));
-        Assert.Equal(6, snapshot.Menu.Count);
+        Assert.Equal(7, snapshot.Menu.Count);
         Assert.Empty(snapshot.AvailableActions);
     }
 
     [Fact]
-    public void Serving_accumulates_the_tab_and_ignores_a_second_drink_over_the_active_glass()
+    public void Beer_spirit_and_wine_can_be_served_together_but_each_category_has_one_glass()
     {
         var state = BartenderInteractionState.Create();
         var rejected = new List<(SpeakingProposedActionType Type, string Reason)>();
 
-        var command = Assert.Single(state.ApplyProposedActions(
-            [Proposal(SpeakingProposedActionType.ServeDrink, "darkBeer")]));
+        var commands = state.ApplyProposedActions(
+            [
+                Proposal(SpeakingProposedActionType.ServeDrink, "darkBeer"),
+                Proposal(SpeakingProposedActionType.ServeDrink, "vodka"),
+                Proposal(SpeakingProposedActionType.ServeDrink, "redWine"),
+            ]);
 
-        Assert.Equal("pourAndServe", command.Type);
-        Assert.Equal(16, state.TabTotal);
-        Assert.Equal(3, state.ActiveDrinkFillLevel);
+        Assert.Equal(3, commands.Count);
+        Assert.Equal(46, state.TabTotal);
+        Assert.Equal(
+            ["darkBeer", "vodka", "redWine"],
+            state.ToSnapshot().ActiveDrinks.Select(drink => drink.Id));
         Assert.Empty(state.ApplyProposedActions(
-            [Proposal(SpeakingProposedActionType.ServeDrink, "vodka")],
+            [Proposal(SpeakingProposedActionType.ServeDrink, "lightBeer")],
             (proposal, reason) => rejected.Add((proposal.Type, reason))));
         Assert.Contains(
             rejected,
             item => item.Type == SpeakingProposedActionType.ServeDrink
                 && item.Reason.Contains("clearing", StringComparison.Ordinal));
-        Assert.Equal("darkBeer", state.ActiveDrinkId);
-        Assert.Equal(16, state.TabTotal);
+        Assert.Equal(46, state.TabTotal);
         Assert.DoesNotContain(
             state.GetPermittedFirstToolCalls(),
-            action => action.StartsWith("serve_drink", StringComparison.Ordinal));
-        Assert.DoesNotContain("clear_empty_glass", state.GetPermittedFirstToolCalls());
+            action => action is
+                "serve_drink(drink_id=lightBeer)"
+                or "serve_drink(drink_id=darkBeer)");
+        Assert.DoesNotContain(
+            state.GetPermittedFirstToolCalls(),
+            action => action.StartsWith("clear_empty_glass", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -72,14 +82,41 @@ public sealed class BartenderInteractionStateTests
         Assert.Equal(0, Assert.Single(
             state.ApplyUserAction(SpeakingInteractionAction.Drink, null).SceneCommands).FillLevel);
         Assert.DoesNotContain("drink", state.ToSnapshot().AvailableActions);
-        Assert.Contains("clear_empty_glass", state.GetPermittedFirstToolCalls());
+        Assert.Contains(
+            "clear_empty_glass(drink_id=stillWater)",
+            state.GetPermittedFirstToolCalls());
         Assert.Throws<SpeakingValidationException>(
             () => state.ApplyUserAction(SpeakingInteractionAction.Drink, null));
 
         var clear = Assert.Single(state.ApplyProposedActions(
             [Proposal(SpeakingProposedActionType.ClearGlass)]));
         Assert.Equal("clearGlass", clear.Type);
-        Assert.Null(state.ActiveDrinkId);
+        Assert.Empty(state.ToSnapshot().ActiveDrinks);
+    }
+
+    [Fact]
+    public void Sip_targets_one_of_multiple_active_drinks_without_changing_the_others()
+    {
+        var state = BartenderInteractionState.Create();
+        state.ApplyProposedActions(
+            [
+                Proposal(SpeakingProposedActionType.ServeDrink, "lightBeer"),
+                Proposal(SpeakingProposedActionType.ServeDrink, "vodka"),
+                Proposal(SpeakingProposedActionType.ServeDrink, "redWine"),
+            ]);
+
+        Assert.Throws<SpeakingValidationException>(() =>
+            state.ApplyUserAction(SpeakingInteractionAction.Drink, null));
+        var command = Assert.Single(state.ApplyUserAction(
+            SpeakingInteractionAction.Drink,
+            null,
+            "vodka").SceneCommands);
+
+        Assert.Equal("vodka", command.DrinkId);
+        Assert.Equal(2, command.FillLevel);
+        Assert.Equal(
+            [("lightBeer", 3), ("vodka", 2), ("redWine", 3)],
+            state.ToSnapshot().ActiveDrinks.Select(drink => (drink.Id, drink.FillLevel)));
     }
 
     [Fact]
@@ -91,8 +128,9 @@ public sealed class BartenderInteractionStateTests
 
         Assert.Empty(state.ApplyProposedActions(
             [Proposal(SpeakingProposedActionType.ClearGlass)]));
-        Assert.Equal("appleJuice", state.ActiveDrinkId);
-        Assert.Equal(3, state.ActiveDrinkFillLevel);
+        var active = Assert.Single(state.ToSnapshot().ActiveDrinks);
+        Assert.Equal("appleJuice", active.Id);
+        Assert.Equal(3, active.FillLevel);
     }
 
     [Fact]
@@ -112,7 +150,7 @@ public sealed class BartenderInteractionStateTests
             ]);
 
         Assert.Equal(26, state.TabTotal);
-        Assert.Equal("vodka", state.ActiveDrinkId);
+        Assert.Equal("vodka", Assert.Single(state.ToSnapshot().ActiveDrinks).Id);
     }
 
     [Fact]
@@ -218,7 +256,7 @@ public sealed class BartenderInteractionStateTests
         Assert.Contains("vodka", state.ToSnapshot().UnavailableDrinkIds);
         Assert.Empty(state.ApplyProposedActions(
             [Proposal(SpeakingProposedActionType.ServeDrink, "vodka")]));
-        Assert.Null(state.ActiveDrinkId);
+        Assert.Empty(state.ToSnapshot().ActiveDrinks);
         Assert.Equal(0, state.TabTotal);
     }
 

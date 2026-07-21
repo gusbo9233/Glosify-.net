@@ -246,7 +246,7 @@ public sealed class FoundryLiveSmokeTests
             Assert.Equal("lightBeer", command.DrinkId);
             Assert.Equal(3, command.FillLevel);
             Assert.Equal("lightBeer", Assert.IsType<SpeakingInteractionSnapshot>(
-                turn.Interaction).ActiveDrink?.Id);
+                turn.Interaction).ActiveDrinks.Single().Id);
             Assert.Single(credits.Commits);
             Assert.Empty(credits.Releases);
         }

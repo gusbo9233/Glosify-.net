@@ -396,11 +396,11 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Security headers on every response. CSP notes: scripts are same-origin only —
-// all view scripts live in wwwroot/js and behaviors use data-* attributes instead
-// of inline on* handlers; 'unsafe-inline' for styles remains because views use
-// style attributes; fonts.googleapis.com/gstatic.com serve the web fonts the
-// layout links; everything else is same-origin only.
+// Security headers on every response. App scripts live in wwwroot/js and
+// behaviors use data-* attributes instead of inline on* handlers; the only
+// external script origin is jsDelivr for the pinned Three.js module.
+// 'unsafe-inline' for styles remains because views use style attributes, while
+// fonts.googleapis.com/gstatic.com serve the web fonts linked by the layout.
 var configuredFormActionOrigins = builder.Configuration
     .GetSection("Security:Csp:FormActionOrigins")
     .Get<string[]>() ?? [];
@@ -504,7 +504,7 @@ static string BuildContentSecurityPolicy(IEnumerable<string> formActionOrigins, 
 
     return
         "default-src 'self'; " +
-        "script-src 'self'; " +
+        "script-src 'self' https://cdn.jsdelivr.net; " +
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "font-src 'self' https://fonts.gstatic.com; " +
         "img-src 'self' data: blob:; " +

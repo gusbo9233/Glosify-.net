@@ -44,9 +44,9 @@ internal sealed class BartenderSceneToolRuntime
                 "Offer the learner paluszki when that fits the conversation naturally.",
                 ToolJsonOptions),
             AIFunctionFactory.Create(
-                (Func<BartenderSceneToolResult>)ClearEmptyGlass,
+                (Func<string, BartenderSceneToolResult>)ClearEmptyGlass,
                 "clear_empty_glass",
-                "Clear the learner's active glass only after it is empty.",
+                "Clear one of the learner's served glasses only after it is empty. Use its drink_id from the trusted scene state.",
                 ToolJsonOptions),
             AIFunctionFactory.Create(
                 (Func<BartenderSceneToolResult>)PolishGlass,
@@ -105,8 +105,8 @@ internal sealed class BartenderSceneToolRuntime
     private BartenderSceneToolResult OfferSnack() =>
         Execute(SpeakingProposedActionType.OfferSnack);
 
-    private BartenderSceneToolResult ClearEmptyGlass() =>
-        Execute(SpeakingProposedActionType.ClearGlass);
+    private BartenderSceneToolResult ClearEmptyGlass(string drink_id) =>
+        Execute(SpeakingProposedActionType.ClearGlass, drink_id);
 
     private BartenderSceneToolResult PolishGlass() =>
         Execute(SpeakingProposedActionType.PolishGlass);
@@ -187,8 +187,7 @@ internal sealed class BartenderSceneToolRuntime
             accepted,
             message,
             new BartenderSceneToolState(
-                state.ActiveDrinkId,
-                state.ActiveDrinkFillLevel,
+                state.ToSnapshot().ActiveDrinks,
                 state.TabTotal,
                 state.BillPresented,
                 state.SnackOffered,
@@ -227,8 +226,7 @@ internal sealed record BartenderSceneToolResult(
     BartenderSceneToolState State);
 
 internal sealed record BartenderSceneToolState(
-    string? ActiveDrinkId,
-    int ActiveDrinkFillLevel,
+    IReadOnlyList<SpeakingActiveDrinkSnapshot> ActiveDrinks,
     int TabTotal,
     bool BillPresented,
     bool SnackOffered,

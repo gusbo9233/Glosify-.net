@@ -125,6 +125,9 @@ public sealed class SpeakingProposedAction
 
 public sealed class SpeakingTurn : SpeakingAgentReply
 {
+    [JsonPropertyName("suppressAvatarReaction")]
+    public bool SuppressAvatarReaction { get; set; }
+
     [JsonPropertyName("sceneActions")]
     public IReadOnlyList<SpeakingSceneCommand> SceneActions { get; set; } = [];
 
@@ -142,13 +145,15 @@ public sealed record SpeakingDrinkSnapshot(
     string Id,
     string NamePolish,
     string NameEnglish,
-    int Price);
+    int Price,
+    string Category);
 
 public sealed record SpeakingActiveDrinkSnapshot(
     string Id,
     string NamePolish,
     string NameEnglish,
-    int FillLevel);
+    int FillLevel,
+    string Category);
 
 public sealed record SpeakingWalletDenominationSnapshot(int Value, int Count);
 
@@ -158,7 +163,7 @@ public sealed record SpeakingInteractionSnapshot(
     int WalletBalance,
     int TabTotal,
     bool BillPresented,
-    SpeakingActiveDrinkSnapshot? ActiveDrink,
+    IReadOnlyList<SpeakingActiveDrinkSnapshot> ActiveDrinks,
     bool SnackOffered,
     IReadOnlyList<string> UnavailableDrinkIds,
     IReadOnlyList<string> AvailableActions);

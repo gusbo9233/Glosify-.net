@@ -111,6 +111,7 @@ public sealed class SpeakingApiController : ControllerBase
             User.GetUserId(),
             action,
             request.Denominations,
+            request.DrinkId,
             cancellationToken);
         return Ok(turn);
     }

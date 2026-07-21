@@ -20,6 +20,7 @@ public interface ISpeakingService
         string userId,
         SpeakingInteractionAction action,
         IReadOnlyDictionary<int, int>? denominations,
+        string? drinkId = null,
         CancellationToken cancellationToken = default);
 
     Task DeleteSessionAsync(

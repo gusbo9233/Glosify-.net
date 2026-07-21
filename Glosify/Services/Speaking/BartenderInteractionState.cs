@@ -2,14 +2,20 @@ namespace Glosify.Services.Speaking;
 
 public static class BartenderInteractionCatalog
 {
+    public const string BeerCategory = "beer";
+    public const string SpiritCategory = "spirit";
+    public const string WineCategory = "wine";
+    public const string NonAlcoholicCategory = "nonAlcoholic";
+
     public static readonly IReadOnlyList<SpeakingDrinkSnapshot> Drinks =
     [
-        new("lightBeer", "Piwo jasne", "Light beer", 14),
-        new("darkBeer", "Piwo ciemne", "Dark beer", 16),
-        new("vodka", "Wódka", "Vodka", 12),
-        new("sparklingWater", "Woda gazowana", "Sparkling water", 8),
-        new("stillWater", "Woda niegazowana", "Still water", 8),
-        new("appleJuice", "Sok jabłkowy", "Apple juice", 10),
+        new("lightBeer", "Piwo jasne", "Light beer", 14, BeerCategory),
+        new("darkBeer", "Piwo ciemne", "Dark beer", 16, BeerCategory),
+        new("vodka", "Wódka", "Vodka", 12, SpiritCategory),
+        new("redWine", "Wino czerwone", "Red wine", 18, WineCategory),
+        new("sparklingWater", "Woda gazowana", "Sparkling water", 8, NonAlcoholicCategory),
+        new("stillWater", "Woda niegazowana", "Still water", 8, NonAlcoholicCategory),
+        new("appleJuice", "Sok jabłkowy", "Apple juice", 10, NonAlcoholicCategory),
     ];
 
     public static readonly IReadOnlyList<int> Denominations = [50, 20, 10, 5, 2, 1];
@@ -48,31 +54,30 @@ public static class BartenderInteractionCatalog
 
 public sealed class BartenderInteractionState
 {
+    private sealed record ActiveDrink(string DrinkId, int FillLevel);
+
     private readonly Dictionary<int, int> _wallet;
+    private readonly Dictionary<string, ActiveDrink> _activeDrinks;
     private readonly HashSet<string> _unavailableDrinkIds;
 
     private BartenderInteractionState(
         Dictionary<int, int> wallet,
         int tabTotal,
         bool billPresented,
-        string? activeDrinkId,
-        int activeDrinkFillLevel,
+        Dictionary<string, ActiveDrink> activeDrinks,
         bool snackOffered,
         HashSet<string> unavailableDrinkIds)
     {
         _wallet = wallet;
         TabTotal = tabTotal;
         BillPresented = billPresented;
-        ActiveDrinkId = activeDrinkId;
-        ActiveDrinkFillLevel = activeDrinkFillLevel;
+        _activeDrinks = activeDrinks;
         SnackOffered = snackOffered;
         _unavailableDrinkIds = unavailableDrinkIds;
     }
 
     public int TabTotal { get; private set; }
     public bool BillPresented { get; private set; }
-    public string? ActiveDrinkId { get; private set; }
-    public int ActiveDrinkFillLevel { get; private set; }
     public bool SnackOffered { get; private set; }
 
     public int WalletBalance =>
@@ -91,8 +96,7 @@ public sealed class BartenderInteractionState
             },
             0,
             false,
-            null,
-            0,
+            [],
             false,
             []);
 
@@ -101,25 +105,30 @@ public sealed class BartenderInteractionState
             new Dictionary<int, int>(_wallet),
             TabTotal,
             BillPresented,
-            ActiveDrinkId,
-            ActiveDrinkFillLevel,
+            new Dictionary<string, ActiveDrink>(_activeDrinks, StringComparer.Ordinal),
             SnackOffered,
             new HashSet<string>(_unavailableDrinkIds, StringComparer.Ordinal));
 
     public SpeakingInteractionSnapshot ToSnapshot()
     {
-        SpeakingActiveDrinkSnapshot? activeDrink = null;
-        if (BartenderInteractionCatalog.TryGetDrink(ActiveDrinkId, out var drink))
-        {
-            activeDrink = new SpeakingActiveDrinkSnapshot(
-                drink.Id,
-                drink.NamePolish,
-                drink.NameEnglish,
-                ActiveDrinkFillLevel);
-        }
+        var activeDrinks = BartenderInteractionCatalog.Drinks
+            .Where(drink =>
+                _activeDrinks.TryGetValue(drink.Category, out var active)
+                && active.DrinkId == drink.Id)
+            .Select(drink =>
+            {
+                var active = _activeDrinks[drink.Category];
+                return new SpeakingActiveDrinkSnapshot(
+                    drink.Id,
+                    drink.NamePolish,
+                    drink.NameEnglish,
+                    active.FillLevel,
+                    drink.Category);
+            })
+            .ToArray();
 
         var actions = new List<string>(3);
-        if (activeDrink is { FillLevel: > 0 })
+        if (activeDrinks.Any(drink => drink.FillLevel > 0))
         {
             actions.Add("drink");
         }
@@ -140,7 +149,7 @@ public sealed class BartenderInteractionState
             WalletBalance,
             TabTotal,
             BillPresented,
-            activeDrink,
+            activeDrinks,
             SnackOffered,
             _unavailableDrinkIds.Order(StringComparer.Ordinal).ToArray(),
             actions);
@@ -149,14 +158,12 @@ public sealed class BartenderInteractionState
     public IReadOnlyList<string> GetPermittedFirstToolCalls()
     {
         var actions = new List<string>();
-        if (ActiveDrinkId is null)
-        {
-            actions.AddRange(BartenderInteractionCatalog.Drinks
-                .Where(drink =>
-                    !_unavailableDrinkIds.Contains(drink.Id)
-                    && TabTotal + drink.Price <= WalletBalance)
-                .Select(drink => $"serve_drink(drink_id={drink.Id})"));
-        }
+        actions.AddRange(BartenderInteractionCatalog.Drinks
+            .Where(drink =>
+                !_activeDrinks.ContainsKey(drink.Category)
+                && !_unavailableDrinkIds.Contains(drink.Id)
+                && TabTotal + drink.Price <= WalletBalance)
+            .Select(drink => $"serve_drink(drink_id={drink.Id})"));
         if (TabTotal > 0 && !BillPresented)
         {
             actions.Add("present_bill");
@@ -165,17 +172,19 @@ public sealed class BartenderInteractionState
         {
             actions.Add("offer_snack");
         }
-        if (ActiveDrinkId is not null && ActiveDrinkFillLevel == 0)
-        {
-            actions.Add("clear_empty_glass");
-        }
+        actions.AddRange(_activeDrinks.Values
+            .Where(active => active.FillLevel == 0)
+            .Select(active => $"clear_empty_glass(drink_id={active.DrinkId})"));
 
         actions.Add("polish_glass");
         actions.Add("wipe_counter");
         actions.Add("announce_last_call");
+        var activeDrinkIds = _activeDrinks.Values
+            .Select(active => active.DrinkId)
+            .ToHashSet(StringComparer.Ordinal);
         actions.AddRange(BartenderInteractionCatalog.Drinks
             .Where(drink =>
-                drink.Id != ActiveDrinkId
+                !activeDrinkIds.Contains(drink.Id)
                 && !_unavailableDrinkIds.Contains(drink.Id))
             .Select(drink => $"mark_drink_unavailable(drink_id={drink.Id})"));
         return actions;
@@ -183,11 +192,12 @@ public sealed class BartenderInteractionState
 
     public SpeakingInteractionEvent ApplyUserAction(
         SpeakingInteractionAction action,
-        IReadOnlyDictionary<int, int>? tender)
+        IReadOnlyDictionary<int, int>? tender,
+        string? drinkId = null)
     {
         return action switch
         {
-            SpeakingInteractionAction.Drink => Drink(),
+            SpeakingInteractionAction.Drink => Drink(drinkId),
             SpeakingInteractionAction.TakeSnack => TakeSnack(),
             SpeakingInteractionAction.SubmitPayment => SubmitPayment(tender),
             _ => throw new SpeakingValidationException("That interaction is not supported."),
@@ -235,7 +245,7 @@ public sealed class BartenderInteractionState
             SpeakingProposedActionType.ServeDrink => ServeDrink(action.DrinkId),
             SpeakingProposedActionType.PresentBill => PresentBill(),
             SpeakingProposedActionType.OfferSnack => OfferSnack(),
-            SpeakingProposedActionType.ClearGlass => ClearGlass(),
+            SpeakingProposedActionType.ClearGlass => ClearGlass(action.DrinkId),
             SpeakingProposedActionType.PolishGlass => new("polishGlass"),
             SpeakingProposedActionType.WipeCounter => new("wipeCounter"),
             SpeakingProposedActionType.LastCall => new("lastCall"),
@@ -244,19 +254,56 @@ public sealed class BartenderInteractionState
         };
     }
 
-    private SpeakingInteractionEvent Drink()
+    private SpeakingInteractionEvent Drink(string? drinkId)
     {
-        if (ActiveDrinkId is null || ActiveDrinkFillLevel <= 0)
+        var active = ResolveActiveDrink(
+            drinkId,
+            candidate => candidate.FillLevel > 0,
+            "There is no drink to sip.",
+            "Choose which drink to sip.");
+        var updated = active.Value with { FillLevel = active.Value.FillLevel - 1 };
+        _activeDrinks[active.Key] = updated;
+
+        return new SpeakingInteractionEvent(
+            updated.FillLevel == 0
+                ? $"The learner finished the served {updated.DrinkId}."
+                : $"The learner took a sip of the served {updated.DrinkId}.",
+            [new SpeakingSceneCommand(
+                "drink",
+                updated.DrinkId,
+                FillLevel: updated.FillLevel)]);
+    }
+
+    private KeyValuePair<string, ActiveDrink> ResolveActiveDrink(
+        string? drinkId,
+        Func<ActiveDrink, bool> predicate,
+        string missingMessage,
+        string ambiguousMessage)
+    {
+        var candidates = _activeDrinks
+            .Where(item => predicate(item.Value))
+            .ToArray();
+        if (!string.IsNullOrWhiteSpace(drinkId))
         {
-            throw new SpeakingValidationException("There is no drink to sip.");
+            var requested = candidates
+                .Where(item => string.Equals(
+                    item.Value.DrinkId,
+                    drinkId.Trim(),
+                    StringComparison.Ordinal))
+                .ToArray();
+            if (requested.Length == 1)
+            {
+                return requested[0];
+            }
+            throw new SpeakingValidationException(missingMessage);
         }
 
-        ActiveDrinkFillLevel--;
-        return new SpeakingInteractionEvent(
-            ActiveDrinkFillLevel == 0
-                ? "The learner finished the served drink."
-                : "The learner took a sip of the served drink.",
-            [new SpeakingSceneCommand("drink", ActiveDrinkId, FillLevel: ActiveDrinkFillLevel)]);
+        return candidates.Length switch
+        {
+            1 => candidates[0],
+            > 1 => throw new SpeakingValidationException(ambiguousMessage),
+            _ => throw new SpeakingValidationException(missingMessage),
+        };
     }
 
     private SpeakingInteractionEvent TakeSnack()
@@ -341,17 +388,17 @@ public sealed class BartenderInteractionState
         {
             throw InvalidAgentAction("The avatar tried to serve an unavailable drink.");
         }
-        if (ActiveDrinkId is not null)
+        if (_activeDrinks.ContainsKey(drink.Category))
         {
-            throw InvalidAgentAction("The avatar tried to serve a drink before clearing the current glass.");
+            throw InvalidAgentAction(
+                $"The avatar tried to serve another {drink.Category} drink before clearing that glass.");
         }
         if (TabTotal + drink.Price > WalletBalance)
         {
             throw InvalidAgentAction("The avatar tried to serve more than the learner can pay for.");
         }
 
-        ActiveDrinkId = drink.Id;
-        ActiveDrinkFillLevel = 3;
+        _activeDrinks[drink.Category] = new ActiveDrink(drink.Id, 3);
         TabTotal += drink.Price;
         return new SpeakingSceneCommand("pourAndServe", drink.Id, drink.Price, 3);
     }
@@ -382,17 +429,24 @@ public sealed class BartenderInteractionState
         return new SpeakingSceneCommand("offerSnack");
     }
 
-    private SpeakingSceneCommand ClearGlass()
+    private SpeakingSceneCommand ClearGlass(string? drinkId)
     {
-        if (ActiveDrinkId is null || ActiveDrinkFillLevel != 0)
+        KeyValuePair<string, ActiveDrink> active;
+        try
         {
-            throw InvalidAgentAction("The avatar can only clear an empty glass.");
+            active = ResolveActiveDrink(
+                drinkId,
+                candidate => candidate.FillLevel == 0,
+                "The avatar can only clear an empty glass.",
+                "The avatar must identify which empty glass to clear.");
+        }
+        catch (SpeakingValidationException ex)
+        {
+            throw InvalidAgentAction(ex.Message);
         }
 
-        var drinkId = ActiveDrinkId;
-        ActiveDrinkId = null;
-        ActiveDrinkFillLevel = 0;
-        return new SpeakingSceneCommand("clearGlass", drinkId);
+        _activeDrinks.Remove(active.Key);
+        return new SpeakingSceneCommand("clearGlass", active.Value.DrinkId);
     }
 
     private SpeakingSceneCommand MarkUnavailable(string? drinkId)
@@ -401,7 +455,8 @@ public sealed class BartenderInteractionState
         {
             throw InvalidAgentAction("The avatar marked an unknown drink unavailable.");
         }
-        if (string.Equals(ActiveDrinkId, drink.Id, StringComparison.Ordinal))
+        if (_activeDrinks.Values.Any(active =>
+            string.Equals(active.DrinkId, drink.Id, StringComparison.Ordinal)))
         {
             throw InvalidAgentAction("A served drink cannot become unavailable.");
         }
@@ -438,8 +493,11 @@ public sealed class BartenderInteractionState
 
         TabTotal = source.TabTotal;
         BillPresented = source.BillPresented;
-        ActiveDrinkId = source.ActiveDrinkId;
-        ActiveDrinkFillLevel = source.ActiveDrinkFillLevel;
+        _activeDrinks.Clear();
+        foreach (var item in source._activeDrinks)
+        {
+            _activeDrinks[item.Key] = item.Value;
+        }
         SnackOffered = source.SnackOffered;
         _unavailableDrinkIds.Clear();
         _unavailableDrinkIds.UnionWith(source._unavailableDrinkIds);

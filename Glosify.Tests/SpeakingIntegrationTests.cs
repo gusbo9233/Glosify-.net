@@ -61,7 +61,6 @@ public sealed class SpeakingIntegrationTests
             .Select(element => element.Id)
             .Where(id => !string.IsNullOrWhiteSpace(id))
             .ToArray();
-        Assert.NotEmpty(svgIds);
         Assert.Equal(svgIds.Length, svgIds.Distinct(StringComparer.Ordinal).Count());
         Assert.Contains(
             document.Scripts,
@@ -87,22 +86,31 @@ public sealed class SpeakingIntegrationTests
         Assert.Null(document.QuerySelector("#speaking-interactive-toggle"));
         Assert.Null(document.QuerySelector("#speaking-interactive-control"));
         Assert.NotNull(document.QuerySelector("#speaking-bar-menu"));
-        Assert.Equal(6, document.QuerySelectorAll("[data-menu-drink]").Length);
+        Assert.Equal(7, document.QuerySelectorAll("[data-menu-drink]").Length);
+        Assert.NotNull(document.QuerySelector("[data-menu-drink='redWine']"));
         Assert.NotNull(document.QuerySelector("#speaking-wallet"));
         Assert.Null(document.QuerySelector(
             ".speaking-scene-bartender.has-active-drink"));
         Assert.NotNull(document.QuerySelector(
-            "[data-bartender-active-drink][transform] [data-bartender-drink-motion]"));
-        Assert.Equal(2, document.QuerySelectorAll(
-            "[data-bartender-tap][transform] [data-bartender-pour-motion]").Length);
-        Assert.Equal(2, document.QuerySelectorAll(
-            "[data-bartender-pour-effect] .bartender-pour-stream").Length);
-        Assert.Equal(2, document.QuerySelectorAll(
-            "[data-bartender-pour-effect] .bartender-service-glass").Length);
+            ".speaking-scene-bartender-three [data-bartender-three-host]"));
+        Assert.NotNull(document.QuerySelector("[data-bartender-three-loading]"));
+        Assert.NotNull(document.QuerySelector("[data-bartender-three-fallback]"));
+        Assert.Null(document.QuerySelector(".speaking-scene-bartender svg"));
         Assert.NotNull(document.QuerySelector(
-            "[data-bartender-snack][transform] [data-bartender-snack-motion]"));
+            ".speaking-scene-mietek-three [data-mietek-three-host]"));
+        Assert.NotNull(document.QuerySelector("[data-mietek-three-loading]"));
+        Assert.NotNull(document.QuerySelector("[data-mietek-three-fallback]"));
+        Assert.Null(document.QuerySelector(".speaking-scene-mietek svg"));
         Assert.NotNull(document.QuerySelector(
-            ".avatar-gesture > [data-bartender-polish-gesture]"));
+            ".speaking-scene-kasia-three [data-kasia-three-host]"));
+        Assert.NotNull(document.QuerySelector("[data-kasia-three-loading]"));
+        Assert.NotNull(document.QuerySelector("[data-kasia-three-fallback]"));
+        Assert.Null(document.QuerySelector(".speaking-scene-kasia svg"));
+        var speakingScript = Assert.Single(
+            document.Scripts,
+            script => (script.GetAttribute("src") ?? string.Empty)
+                .Contains("/js/speaking.js", StringComparison.Ordinal));
+        Assert.Equal("module", speakingScript.GetAttribute("type"));
     }
 
     [Fact]
@@ -206,6 +214,8 @@ public sealed class SpeakingIntegrationTests
         var client = factory.CreateClient();
 
         var script = await client.GetStringAsync("/js/speaking.js");
+        var threeScript = await client.GetStringAsync("/js/speaking-bartender-three.js");
+        var mietekThreeScript = await client.GetStringAsync("/js/speaking-mietek-three.js");
         var styles = await client.GetStringAsync("/css/speaking.css");
 
         Assert.DoesNotContain("interactiveMode: state.interactiveMode", script, StringComparison.Ordinal);
@@ -219,7 +229,23 @@ public sealed class SpeakingIntegrationTests
         Assert.Contains("state.sceneQueue = state.sceneQueue", script, StringComparison.Ordinal);
         Assert.Contains("state.speechGeneration += 1", script, StringComparison.Ordinal);
         Assert.Contains("[elements.menuToggle, elements.walletToggle]", script, StringComparison.Ordinal);
-        Assert.Contains("[elements.drinkAction, elements.snackAction]", script, StringComparison.Ordinal);
+        Assert.Contains(
+            "root.querySelectorAll(\"[data-drink-action]\")",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "JSON.stringify({ action, denominations, drinkId })",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains("bartenderdrinkselect", script, StringComparison.Ordinal);
+        Assert.Contains("bartenderdrinkselect", threeScript, StringComparison.Ordinal);
+        Assert.Contains("this.raycaster.intersectObjects", threeScript, StringComparison.Ordinal);
+        Assert.Contains("initializeMietekThreeScenes(root)", script, StringComparison.Ordinal);
+        Assert.Contains("getMietekThreeController", script, StringComparison.Ordinal);
+        Assert.Contains("data-avatar-scene='mietek'", mietekThreeScript, StringComparison.Ordinal);
+        Assert.Contains("setMouthPose(pose)", mietekThreeScript, StringComparison.Ordinal);
+        Assert.Contains("this.talking", mietekThreeScript, StringComparison.Ordinal);
+        Assert.Contains("speaking-mietek-three-host", styles, StringComparison.Ordinal);
         Assert.Contains("That moment passed. Keep chatting", script, StringComparison.Ordinal);
         Assert.Contains("function closeSynthesizer", script, StringComparison.Ordinal);
         Assert.Contains("function refocusComposerForKeyboardUsers", script, StringComparison.Ordinal);
@@ -318,6 +344,34 @@ public sealed class SpeakingIntegrationTests
             script,
             StringComparison.Ordinal);
         Assert.Contains("prefers-reduced-motion: reduce", script, StringComparison.Ordinal);
+        Assert.Contains(
+            "initializeBartenderThreeScenes(root)",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "threeController.playCommand(command)",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "if (turn.suppressAvatarReaction)",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "action === \"drink\" || action === \"takeSnack\"",
+            script,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+            threeScript,
+            StringComparison.Ordinal);
+        Assert.Contains("class BartenderThreeController", threeScript, StringComparison.Ordinal);
+        Assert.Contains("async pourAndServe", threeScript, StringComparison.Ordinal);
+        Assert.Contains("async drink(command", threeScript, StringComparison.Ordinal);
+        Assert.Contains("async offerSnack", threeScript, StringComparison.Ordinal);
+        Assert.Contains("async acceptPayment", threeScript, StringComparison.Ordinal);
+        Assert.Contains("createBartenderHand", threeScript, StringComparison.Ordinal);
+        Assert.Contains("buildGuestHand", threeScript, StringComparison.Ordinal);
+        Assert.Contains(".speaking-bartender-three-host", styles, StringComparison.Ordinal);
         Assert.DoesNotContain("glosify-speaking-bartender-interactive", script, StringComparison.Ordinal);
         Assert.Contains("@media (prefers-reduced-motion: reduce)", styles, StringComparison.Ordinal);
         Assert.Contains("@media (max-width: 620px)", styles, StringComparison.Ordinal);
@@ -464,7 +518,7 @@ public sealed class SpeakingIntegrationTests
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var interaction = body.RootElement.GetProperty("interaction");
         Assert.Equal(100, interaction.GetProperty("walletBalance").GetInt32());
-        Assert.Equal(6, interaction.GetProperty("menu").GetArrayLength());
+        Assert.Equal(7, interaction.GetProperty("menu").GetArrayLength());
         Assert.Equal(6, interaction.GetProperty("wallet").GetArrayLength());
     }
 
@@ -695,6 +749,7 @@ public sealed class SpeakingIntegrationTests
             string userId,
             SpeakingInteractionAction action,
             IReadOnlyDictionary<int, int>? denominations,
+            string? drinkId = null,
             CancellationToken cancellationToken = default)
         {
             if (action == SpeakingInteractionAction.SubmitPayment

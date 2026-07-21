@@ -58,6 +58,16 @@ public sealed class SpeakingServiceTests
         Assert.Equal(SpeakingAvatarId.Hanna, avatar.Id);
     }
 
+    [Fact]
+    public void Kasia_is_the_Polish_convenience_store_cashier()
+    {
+        var kasia = SpeakingAvatarCatalog.Get(SpeakingAvatarId.Kasia);
+
+        Assert.Equal("Żabka checkout", kasia.Scenario);
+        Assert.Equal("ŻABKA", kasia.SceneSign);
+        Assert.Contains("kawę", kasia.OpeningPolish, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("A1", CefrLevel.A1)]
     [InlineData("a2", CefrLevel.A2)]
@@ -311,7 +321,7 @@ public sealed class SpeakingServiceTests
         Assert.Equal("lightBeer", command.DrinkId);
         Assert.Equal(14, command.Amount);
         Assert.Equal(3, command.FillLevel);
-        Assert.Equal("lightBeer", turn.Interaction?.ActiveDrink?.Id);
+        Assert.Equal("lightBeer", Assert.Single(turn.Interaction!.ActiveDrinks).Id);
         Assert.Equal(14, turn.Interaction?.TabTotal);
     }
 
@@ -333,7 +343,7 @@ public sealed class SpeakingServiceTests
             SpeakingInputMode.Voice);
 
         Assert.Empty(turn.SceneActions);
-        Assert.Null(turn.Interaction?.ActiveDrink);
+        Assert.Empty(turn.Interaction!.ActiveDrinks);
         Assert.Equal(0, turn.Interaction?.TabTotal);
     }
 
@@ -423,23 +433,17 @@ public sealed class SpeakingServiceTests
             command => Assert.Equal("showBill", command.Type));
         Assert.Equal(14, turn.Interaction?.TabTotal);
         Assert.True(turn.Interaction?.BillPresented);
-        Assert.Equal("lightBeer", turn.Interaction?.ActiveDrink?.Id);
+        Assert.Equal("lightBeer", Assert.Single(turn.Interaction!.ActiveDrinks).Id);
     }
 
     [Fact]
-    public async Task Valid_learner_action_commits_when_the_model_scene_proposal_is_invalid()
+    public async Task Drinking_updates_the_scene_without_dispatching_a_bartender_reply()
     {
-        var call = 0;
         var conversation = new FakeConversation((_, state, _) =>
         {
-            call++;
-            IReadOnlyList<SpeakingSceneCommand> commands = call == 1
-                ? Assert.IsType<BartenderInteractionState>(state)
-                    .ApplyProposedActions(
-                        [Proposal(SpeakingProposedActionType.ServeDrink, "stillWater")])
-                : Assert.IsType<BartenderInteractionState>(state)
-                    .ApplyProposedActions(
-                        [Proposal(SpeakingProposedActionType.ServeDrink, "vodka")]);
+            var commands = Assert.IsType<BartenderInteractionState>(state)
+                .ApplyProposedActions(
+                    [Proposal(SpeakingProposedActionType.ServeDrink, "stillWater")]);
             return Task.FromResult(new SpeakingAgentTurn(
                 ValidTurn(),
                 null,
@@ -460,14 +464,58 @@ public sealed class SpeakingServiceTests
             sessionId,
             "learner",
             SpeakingInteractionAction.Drink,
-            denominations: null);
+            denominations: null,
+            drinkId: "stillWater");
 
         Assert.Equal("drink", Assert.Single(turn.SceneActions).Type);
-        Assert.Equal(2, turn.Interaction?.ActiveDrink?.FillLevel);
-        Assert.Contains("Trusted non-verbal learner event", conversation.Messages[1]);
-        Assert.Contains("Leave every coach field as an empty string", conversation.Messages[1]);
-        Assert.Equal("speaking_action", credits.Reservations[1].Context.Operation);
-        Assert.Equal(2, credits.Commits.Count);
+        Assert.Equal(2, Assert.Single(turn.Interaction!.ActiveDrinks).FillLevel);
+        Assert.True(turn.SuppressAvatarReaction);
+        Assert.Empty(turn.ReplyPolish);
+        Assert.Empty(turn.ReplyEnglish);
+        Assert.Single(conversation.Messages);
+        Assert.Single(credits.Reservations);
+        Assert.Single(credits.Commits);
+        Assert.Empty(credits.Releases);
+    }
+
+    [Fact]
+    public async Task Eating_updates_the_scene_without_dispatching_a_bartender_reply()
+    {
+        var conversation = new FakeConversation((_, state, _) =>
+        {
+            var commands = Assert.IsType<BartenderInteractionState>(state)
+                .ApplyProposedActions(
+                    [Proposal(SpeakingProposedActionType.OfferSnack)]);
+            return Task.FromResult(new SpeakingAgentTurn(
+                ValidTurn(),
+                null,
+                commands));
+        });
+        var credits = new FakeCredits();
+        var (service, sessionId) = await CreateServiceAsync(
+            conversation,
+            credits,
+            interactiveMode: true);
+        await service.SendTurnAsync(
+            sessionId,
+            "learner",
+            "Macie jakieś przekąski?",
+            SpeakingInputMode.Text);
+
+        var turn = await service.SendActionAsync(
+            sessionId,
+            "learner",
+            SpeakingInteractionAction.TakeSnack,
+            denominations: null);
+
+        Assert.Equal("takeSnack", Assert.Single(turn.SceneActions).Type);
+        Assert.False(turn.Interaction?.SnackOffered);
+        Assert.True(turn.SuppressAvatarReaction);
+        Assert.Empty(turn.ReplyPolish);
+        Assert.Empty(turn.ReplyEnglish);
+        Assert.Single(conversation.Messages);
+        Assert.Single(credits.Reservations);
+        Assert.Single(credits.Commits);
         Assert.Empty(credits.Releases);
     }
 
@@ -627,12 +675,12 @@ public sealed class SpeakingServiceTests
         Assert.Equal("paymentRejected", Assert.Single(insufficient.SceneActions).Type);
         Assert.Equal("Dobrze, już podaję.", continued.ReplyPolish);
         var interaction = Assert.IsType<SpeakingInteractionSnapshot>(continued.Interaction);
-        Assert.Equal("lightBeer", interaction.ActiveDrink?.Id);
+        Assert.Equal("lightBeer", Assert.Single(interaction.ActiveDrinks).Id);
         Assert.True(interaction.BillPresented);
         Assert.Equal(14, interaction.TabTotal);
         Assert.Contains("vodka", interaction.UnavailableDrinkIds);
         Assert.Contains("Bill presented: True", conversation.Messages[2]);
-        Assert.Contains("Active drink: lightBeer", conversation.Messages[2]);
+        Assert.Contains("Active drinks: lightBeer", conversation.Messages[2]);
         Assert.Equal(3, credits.Commits.Count);
     }
 

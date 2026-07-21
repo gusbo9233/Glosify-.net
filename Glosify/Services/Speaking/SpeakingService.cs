@@ -105,6 +105,7 @@ public sealed class SpeakingService : ISpeakingService
         string userId,
         SpeakingInteractionAction action,
         IReadOnlyDictionary<int, int>? denominations,
+        string? drinkId = null,
         CancellationToken cancellationToken = default)
     {
         var session = _sessions.Get(sessionId, userId);
@@ -120,7 +121,7 @@ public sealed class SpeakingService : ISpeakingService
         try
         {
             candidate = session.InteractionState.Clone();
-            interactionEvent = candidate.ApplyUserAction(action, denominations);
+            interactionEvent = candidate.ApplyUserAction(action, denominations, drinkId);
         }
         catch
         {
@@ -128,6 +129,27 @@ public sealed class SpeakingService : ISpeakingService
             session.TurnGate.Release();
             throw;
         }
+
+        if (action is SpeakingInteractionAction.Drink
+            or SpeakingInteractionAction.TakeSnack)
+        {
+            try
+            {
+                session.InteractionState = candidate;
+                return new SpeakingTurn
+                {
+                    SuppressAvatarReaction = true,
+                    SceneActions = interactionEvent.SceneCommands,
+                    Interaction = candidate.ToSnapshot(),
+                };
+            }
+            finally
+            {
+                session.Touch(_timeProvider.GetUtcNow());
+                session.TurnGate.Release();
+            }
+        }
+
         var prompt = BuildAgentMessage(
             session,
             learnerText: null,
@@ -299,9 +321,12 @@ public sealed class SpeakingService : ISpeakingService
         if (interactionState is not null)
         {
             var snapshot = interactionState.ToSnapshot();
-            var activeDrink = snapshot.ActiveDrink is null
+            var activeDrinks = snapshot.ActiveDrinks.Count == 0
                 ? "none"
-                : $"{snapshot.ActiveDrink.Id}, fill level {snapshot.ActiveDrink.FillLevel}/3";
+                : string.Join(
+                    "; ",
+                    snapshot.ActiveDrinks.Select(drink =>
+                        $"{drink.Id} ({drink.Category}), fill level {drink.FillLevel}/3"));
             message += $"""
 
             Interactive scene is enabled. This state is authoritative:
@@ -309,7 +334,7 @@ public sealed class SpeakingService : ISpeakingService
             - Wallet balance: {snapshot.WalletBalance} zł
             - Unpaid tab: {snapshot.TabTotal} zł
             - Bill presented: {snapshot.BillPresented}
-            - Active drink: {activeDrink}
+            - Active drinks: {activeDrinks}
             - Snack offered: {snapshot.SnackOffered}
             - Unavailable drinks: {(snapshot.UnavailableDrinkIds.Count == 0 ? "none" : string.Join(", ", snapshot.UnavailableDrinkIds))}
             - Learner controls currently permitted: {(snapshot.AvailableActions.Count == 0 ? "none" : string.Join(", ", snapshot.AvailableActions))}
@@ -335,7 +360,9 @@ public sealed class SpeakingService : ISpeakingService
             Never invent drinks, prices, money, selectors, code, tool names, or tool arguments.
             The first tool call must appear exactly in Legal first scene tools now.
             Each later tool call must be legal according to the accepted result of the earlier call.
-            Serve only one drink at a time. clear_empty_glass requires an empty glass.
+            Serve at most one drink in each glassware category. Beer, spirit, wine, and
+            non-alcoholic glasses are independent, so the learner may have one of each at
+            the same time. clear_empty_glass requires the drink_id of an empty glass.
             present_bill requires a positive unpaid tab. Do not serve more than the wallet can cover.
             The final structured reply must contain only replyPolish, replyEnglish, and coach.
             Do not emit proposedActions, sceneActions, raw tool calls, or tool arguments in it.
