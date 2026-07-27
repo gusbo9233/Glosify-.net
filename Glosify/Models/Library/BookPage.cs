@@ -8,5 +8,6 @@
         public string Text { get; set; } = string.Empty;
         public string? ExtractionWarning { get; set; }
         public BookDocument BookDocument { get; set; } = null!;
+        public ICollection<BookPageTranslation> Translations { get; set; } = [];
     }
 }

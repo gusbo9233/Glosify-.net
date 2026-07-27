@@ -44,7 +44,7 @@ public class AzureTextToSpeechServiceTests
     [Theory]
     [InlineData("et", "et-EE-AnuNeural")]
     [InlineData("de-DE", "de-DE-KatjaNeural")]
-    [InlineData("pl", "pl-PL-AgnieszkaNeural")]
+    [InlineData("pl", "pl-PL-ZofiaNeural")]
     [InlineData("uk-UA", "uk-UA-PolinaNeural")]
     public void Voice_map_resolves_supported_languages(string code, string expectedVoice)
     {
@@ -56,6 +56,62 @@ public class AzureTextToSpeechServiceTests
     public void Voice_map_rejects_unknown_language()
     {
         Assert.False(VoiceMap.TryResolve("sv-SE", out _, out _));
+    }
+
+    [Theory]
+    [InlineData("zofia", "pl-PL-ZofiaNeural")]
+    [InlineData("agnieszka", "pl-PL-AgnieszkaNeural")]
+    [InlineData("marek", "pl-PL-MarekNeural")]
+    [InlineData("not-an-azure-voice", "pl-PL-ZofiaNeural")]
+    public void Voice_map_allowlists_Polish_voice_preferences(string preference, string expectedVoice)
+    {
+        Assert.True(VoiceMap.TryResolve("pl", preference, out var locale, out var voice));
+        Assert.Equal("pl-PL", locale);
+        Assert.Equal(expectedVoice, voice);
+    }
+
+    [Theory]
+    [InlineData("zofia", "pl-PL-ZofiaNeural")]
+    [InlineData("agnieszka", "pl-PL-AgnieszkaNeural")]
+    [InlineData("marek", "pl-PL-MarekNeural")]
+    public async Task Polish_voice_uses_selected_voice_and_48_kHz_output(
+        string preference,
+        string expectedVoice)
+    {
+        string? outputFormat = null;
+        string? ssml = null;
+        var handler = new StubHandler(request =>
+        {
+            outputFormat = request.Headers.GetValues("X-Microsoft-OutputFormat").Single();
+            ssml = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent([1, 2, 3]),
+            };
+        });
+        var service = CreateService(
+            new SpeechOptions { Key = "k", Region = "swedencentral", BlobContainer = string.Empty },
+            handler);
+
+        using var stream = await service.GetOrSynthesizeAsync(
+            "Dzień dobry",
+            "pl",
+            voicePreference: preference);
+
+        Assert.Equal("audio-48khz-192kbitrate-mono-mp3", outputFormat);
+        Assert.Contains($"name='{expectedVoice}'", ssml, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("de", "de-DE-Seraphina:DragonHDLatestNeural")]
+    [InlineData("de-DE", "de-DE-Seraphina:DragonHDLatestNeural")]
+    public void Voice_map_resolves_only_explicitly_supported_HD_voices(string language, string expected)
+    {
+        Assert.True(VoiceMap.TryResolveHighDefinition(language, out var voice));
+        Assert.Equal(expected, voice);
+        Assert.False(VoiceMap.TryResolveHighDefinition("et", out _));
+        Assert.False(VoiceMap.TryResolveHighDefinition("pl", out _));
+        Assert.False(VoiceMap.TryResolveHighDefinition("uk", out _));
     }
 
     [Fact]
@@ -112,9 +168,121 @@ public class AzureTextToSpeechServiceTests
         Assert.Equal($"Bearer aad#{resourceId}#entra-token", authorization);
         Assert.Null(subscriptionKey);
         Assert.Equal(
-            "https://glosify-speech.cognitiveservices.azure.com/cognitiveservices/v1",
+            "https://swedencentral.tts.speech.microsoft.com/cognitiveservices/v1",
             requestUri!.AbsoluteUri);
         Assert.Equal(["https://cognitiveservices.azure.com/.default"], credential.RequestedScopes);
+    }
+
+    [Fact]
+    public async Task High_definition_request_uses_Dragon_HD_Omni_and_dedicated_resource()
+    {
+        const string hdResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/foundry";
+        Uri? requestUri = null;
+        string? authorization = null;
+        string? ssml = null;
+        var handler = new StubHandler(request =>
+        {
+            requestUri = request.RequestUri;
+            authorization = request.Headers.Authorization?.ToString();
+            ssml = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent([1, 2, 3]),
+            };
+        });
+        var service = CreateService(new SpeechOptions
+        {
+            Endpoint = "https://standard.cognitiveservices.azure.com",
+            ResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/standard",
+            Region = "swedencentral",
+            BlobContainer = string.Empty,
+            HighDefinition = new SpeechHighDefinitionOptions
+            {
+                Enabled = true,
+                ResourceId = hdResourceId,
+                Region = "eastus",
+            },
+        }, handler, new StubTokenCredential("entra-token"));
+
+        using var stream = await service.GetOrSynthesizeAsync("Guten Tag", "de", preferHighDefinition: true);
+
+        Assert.Equal("https://eastus.tts.speech.microsoft.com/cognitiveservices/v1", requestUri!.AbsoluteUri);
+        Assert.Equal($"Bearer aad#{hdResourceId}#entra-token", authorization);
+        Assert.Contains("name='de-DE-Seraphina:DragonHDLatestNeural'", ssml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task High_definition_failure_falls_back_to_standard_voice_and_resource()
+    {
+        var requests = new List<(Uri Uri, string Ssml)>();
+        var handler = new StubHandler(request =>
+        {
+            requests.Add((
+                request.RequestUri!,
+                request.Content!.ReadAsStringAsync().GetAwaiter().GetResult()));
+            return requests.Count == 1
+                ? new HttpResponseMessage(HttpStatusCode.BadRequest)
+                : new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new ByteArrayContent([4, 5, 6]),
+                };
+        });
+        var service = CreateService(new SpeechOptions
+        {
+            Endpoint = "https://standard.cognitiveservices.azure.com",
+            ResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/standard",
+            Region = "swedencentral",
+            BlobContainer = string.Empty,
+            HighDefinition = new SpeechHighDefinitionOptions
+            {
+                Enabled = true,
+                ResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/foundry",
+                Region = "eastus",
+            },
+        }, handler, new StubTokenCredential("entra-token"));
+
+        using var stream = await service.GetOrSynthesizeAsync("Guten Tag", "de", preferHighDefinition: true);
+
+        Assert.Equal(2, requests.Count);
+        Assert.Equal("eastus.tts.speech.microsoft.com", requests[0].Uri.Host);
+        Assert.Contains("DragonHDLatestNeural", requests[0].Ssml, StringComparison.Ordinal);
+        Assert.Equal("swedencentral.tts.speech.microsoft.com", requests[1].Uri.Host);
+        Assert.Contains("name='de-DE-KatjaNeural'", requests[1].Ssml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Language_without_native_HD_voice_uses_standard_voice_directly()
+    {
+        Uri? requestUri = null;
+        string? ssml = null;
+        var handler = new StubHandler(request =>
+        {
+            requestUri = request.RequestUri;
+            ssml = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent([1, 2, 3]),
+            };
+        });
+        var service = CreateService(new SpeechOptions
+        {
+            Endpoint = "https://standard.cognitiveservices.azure.com",
+            ResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/standard",
+            Region = "swedencentral",
+            BlobContainer = string.Empty,
+            HighDefinition = new SpeechHighDefinitionOptions
+            {
+                Enabled = true,
+                ResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/foundry",
+                Region = "eastus",
+            },
+        }, handler, new StubTokenCredential("entra-token"));
+
+        using var stream = await service.GetOrSynthesizeAsync("Tere", "et", preferHighDefinition: true);
+
+        Assert.Equal(1, handler.CallCount);
+        Assert.Equal("swedencentral.tts.speech.microsoft.com", requestUri!.Host);
+        Assert.Contains("name='et-EE-AnuNeural'", ssml, StringComparison.Ordinal);
     }
 
     private static AzureTextToSpeechService CreateService(

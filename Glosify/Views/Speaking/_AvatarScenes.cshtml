@@ -5,12 +5,17 @@
         .ToHashSet(StringComparer.OrdinalIgnoreCase);
     var craftedAvatarIds = new HashSet<string>(
         [
-            "kasia",
+            "kasia", "tutor",
             "maarja", "karl", "liis",
             "hanna", "jonas", "frau-schneider",
             "oksana", "andriy", "pan-mykola"
         ],
         StringComparer.OrdinalIgnoreCase);
+}
+
+@if (avatarIds.Contains("tutor"))
+{
+    @await Html.PartialAsync("_AvatarSceneTutor")
 }
 
 @if (avatarIds.Contains("bartender"))

@@ -5,15 +5,35 @@
     ViewData["HideAssistantPanel"] = true;
 }
 
-<section class="select-quiz-page explore-page">
-    <header class="select-header">
-        <div>
-            <p class="select-kicker">Explore - @Model.CurrentLanguage</p>
-            <h1 class="select-title">Public quizzes and collections</h1>
+<section class="select-quiz-page library-page explore-page">
+    <header class="select-header library-hero explore-hero">
+        <div class="select-heading">
+            <p class="select-kicker">
+                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
+                Explore <span class="select-kicker-separator">/</span> @Model.CurrentLanguage
+            </p>
+            <h1 class="select-title">Discover something new</h1>
             <p class="select-subtitle">
-                Copy shared vocabulary into your own library before practicing.
+                Browse vocabulary shared by other learners, then copy what inspires you into your own library.
                 <a class="language-change-link" asp-controller="Languages" asp-action="Index">Change language</a>
             </p>
+            <div class="library-overview" aria-label="Public library summary">
+                <span class="overview-item">
+                    <span class="material-symbols-outlined" aria-hidden="true">folder_shared</span>
+                    <strong>@Model.Collections.Count</strong> @(Model.Collections.Count == 1 ? "collection" : "collections")
+                </span>
+                <span class="overview-item">
+                    <span class="material-symbols-outlined" aria-hidden="true">public</span>
+                    <strong>@Model.Quizzes.Count</strong> @(Model.Quizzes.Count == 1 ? "quiz" : "quizzes")
+                </span>
+            </div>
+        </div>
+        <div class="explore-hero-feature" aria-hidden="true">
+            <span class="material-symbols-outlined">diversity_3</span>
+            <div>
+                <span>Community library</span>
+                <strong>@Model.CurrentLanguage</strong>
+            </div>
         </div>
     </header>
 
@@ -24,10 +44,12 @@
 
     @if (Model.Collections.Any())
     {
-        <section class="library-section" aria-labelledby="publicCollectionsHeading">
+        <section class="library-section library-section--collections" aria-labelledby="publicCollectionsHeading">
             <div class="library-section-header">
-                <h2 id="publicCollectionsHeading">Public Collections</h2>
-                <span>@Model.Collections.Count</span>
+                <div class="library-section-copy">
+                    <h2 id="publicCollectionsHeading">Shared collections <span class="section-count">@Model.Collections.Count</span></h2>
+                    <p>Explore complete learning sets curated by the community.</p>
+                </div>
             </div>
             <div class="quiz-grid">
                 @foreach (var item in Model.Collections)
@@ -36,22 +58,25 @@
                         <a class="quiz-card-link" asp-controller="Explore" asp-action="Collection" asp-route-id="@item.Collection.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon collection-icon"><span class="material-symbols-outlined">folder_shared</span></div>
-                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
+                                <span class="quiz-card-kind">Shared collection</span>
+                                <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@item.Collection.Name</h2>
                             <p class="quiz-languages">@item.Collection.Language</p>
                         </a>
                         <div class="quiz-meta">
-                            <span>@item.Collection.CreatedAt.ToString("MMM d, yyyy")</span>
-                            <span class="status-pill">@item.QuizCount quizzes / @item.CollectionCount nested</span>
+                            <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@item.Collection.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <div class="quiz-meta-actions">
+                                <span class="status-pill">@item.QuizCount @(item.QuizCount == 1 ? "quiz" : "quizzes") &middot; @item.CollectionCount nested</span>
+                                <form class="share-form" method="post" asp-controller="Explore" asp-action="CopyCollection" asp-route-id="@item.Collection.Id">
+                                    @Html.AntiForgeryToken()
+                                    <button class="btn-copy-public" type="submit" aria-label="Copy @item.Collection.Name to your library">
+                                        <span class="material-symbols-outlined" aria-hidden="true">library_add</span>
+                                        Copy
+                                    </button>
+                                </form>
+                            </div>
                         </div>
-                        <form class="share-form" method="post" asp-controller="Explore" asp-action="CopyCollection" asp-route-id="@item.Collection.Id">
-                            @Html.AntiForgeryToken()
-                            <button class="btn-delete btn-copy-public" type="submit">
-                                <span class="material-symbols-outlined">library_add</span>
-                                Copy
-                            </button>
-                        </form>
                     </article>
                 }
             </div>
@@ -60,10 +85,12 @@
 
     @if (Model.Quizzes.Any())
     {
-        <section class="library-section" aria-labelledby="publicQuizzesHeading">
+        <section class="library-section library-section--quizzes" aria-labelledby="publicQuizzesHeading">
             <div class="library-section-header">
-                <h2 id="publicQuizzesHeading">Public Quizzes</h2>
-                <span>@Model.Quizzes.Count</span>
+                <div class="library-section-copy">
+                    <h2 id="publicQuizzesHeading">Community quizzes <span class="section-count">@Model.Quizzes.Count</span></h2>
+                    <p>Preview a quiz, then add a personal copy to your library.</p>
+                </div>
             </div>
             <div class="quiz-grid">
                 @foreach (var item in Model.Quizzes)
@@ -72,22 +99,25 @@
                         <a class="quiz-card-link" asp-controller="Explore" asp-action="Details" asp-route-id="@item.Quiz.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon"><span class="material-symbols-outlined">public</span></div>
-                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
+                                <span class="quiz-card-kind">Community quiz</span>
+                                <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@item.Quiz.Name</h2>
                             <p class="quiz-languages">@item.Quiz.SourceLanguage &rarr; @item.Quiz.TargetLanguage</p>
                         </a>
                         <div class="quiz-meta">
-                            <span>@item.Quiz.CreatedAt.ToString("MMM d, yyyy")</span>
-                            <span class="status-pill">@item.WordCount words</span>
+                            <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@item.Quiz.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <div class="quiz-meta-actions">
+                                <span class="status-pill"><span class="status-dot" aria-hidden="true"></span>@item.WordCount @(item.WordCount == 1 ? "word" : "words")</span>
+                                <form class="share-form" method="post" asp-controller="Explore" asp-action="CopyQuiz" asp-route-id="@item.Quiz.Id">
+                                    @Html.AntiForgeryToken()
+                                    <button class="btn-copy-public" type="submit" aria-label="Copy @item.Quiz.Name to your library">
+                                        <span class="material-symbols-outlined" aria-hidden="true">library_add</span>
+                                        Copy
+                                    </button>
+                                </form>
+                            </div>
                         </div>
-                        <form class="share-form" method="post" asp-controller="Explore" asp-action="CopyQuiz" asp-route-id="@item.Quiz.Id">
-                            @Html.AntiForgeryToken()
-                            <button class="btn-delete btn-copy-public" type="submit">
-                                <span class="material-symbols-outlined">library_add</span>
-                                Copy
-                            </button>
-                        </form>
                     </article>
                 }
             </div>

@@ -36,12 +36,25 @@
     }
 }
 
-<section class="select-quiz-page explore-page">
-    <header class="select-header">
-        <div>
-            <p class="select-kicker">Public Collection - @Model.Collection.Language</p>
+<section class="select-quiz-page library-page explore-page">
+    <header class="select-header library-hero explore-hero">
+        <div class="select-heading">
+            <p class="select-kicker">
+                <span class="material-symbols-outlined" aria-hidden="true">folder_shared</span>
+                Public collection <span class="select-kicker-separator">/</span> @Model.Collection.Language
+            </p>
             <h1 class="select-title">@Model.Collection.Name</h1>
-            <p class="select-subtitle">@Model.QuizCount quizzes across @(Model.CollectionCount + 1) collections.</p>
+            <p class="select-subtitle">Explore @Model.QuizCount @(Model.QuizCount == 1 ? "quiz" : "quizzes") across @(Model.CollectionCount + 1) collections, then copy the complete set to your library.</p>
+            <div class="library-overview" aria-label="Collection summary">
+                <span class="overview-item">
+                    <span class="material-symbols-outlined" aria-hidden="true">public</span>
+                    <strong>@Model.QuizCount</strong> @(Model.QuizCount == 1 ? "quiz" : "quizzes")
+                </span>
+                <span class="overview-item">
+                    <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
+                    <strong>@(Model.CollectionCount + 1)</strong> @(Model.CollectionCount == 0 ? "collection" : "collections")
+                </span>
+            </div>
         </div>
         <div class="select-actions">
             <a class="btn-new-quiz btn-back-library" asp-controller="Explore" asp-action="Index">
@@ -60,10 +73,12 @@
 
     @if (Model.Collection.Quizzes.Any())
     {
-        <section class="library-section" aria-labelledby="rootQuizzesHeading">
+        <section class="library-section library-section--quizzes" aria-labelledby="rootQuizzesHeading">
             <div class="library-section-header">
-                <h2 id="rootQuizzesHeading">Quizzes</h2>
-                <span>@Model.Collection.Quizzes.Count</span>
+                <div class="library-section-copy">
+                    <h2 id="rootQuizzesHeading">In this collection <span class="section-count">@Model.Collection.Quizzes.Count</span></h2>
+                    <p>Quizzes filed directly inside @Model.Collection.Name.</p>
+                </div>
             </div>
             <div class="quiz-grid">
                 @foreach (var quiz in Model.Collection.Quizzes.OrderBy(q => q.Name))
@@ -71,15 +86,16 @@
                     <article class="quiz-card">
                         <a class="quiz-card-link" asp-controller="Explore" asp-action="Details" asp-route-id="@quiz.Id">
                             <div class="quiz-card-top">
-                                <div class="quiz-icon"><span class="material-symbols-outlined">quiz</span></div>
-                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
+                                <div class="quiz-icon"><span class="material-symbols-outlined">public</span></div>
+                                <span class="quiz-card-kind">Community quiz</span>
+                                <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@quiz.Name</h2>
                             <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
                         </a>
                         <div class="quiz-meta">
-                            <span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
-                            <span class="status-pill">@quiz.ProcessingStatus</span>
+                            <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="status-pill"><span class="status-dot" aria-hidden="true"></span>@quiz.ProcessingStatus</span>
                         </div>
                     </article>
                 }
@@ -89,33 +105,38 @@
 
     @foreach (var collection in FlattenCollections(Model.Collection))
     {
-        <section class="library-section" aria-labelledby="collection-@collection.Id">
+        <section class="library-section library-section--quizzes" aria-labelledby="collection-@collection.Id">
             <div class="library-section-header">
-                <h2 id="collection-@collection.Id">@collection.Name</h2>
-                <span>@collection.Quizzes.Count quizzes</span>
+                <div class="library-section-copy">
+                    <h2 id="collection-@collection.Id">@collection.Name <span class="section-count">@collection.Quizzes.Count</span></h2>
+                    <p class="explore-path">@PathFor(collection)</p>
+                </div>
             </div>
-            <p class="select-subtitle explore-path">@PathFor(collection)</p>
             <div class="quiz-grid">
                 @foreach (var quiz in collection.Quizzes.OrderBy(q => q.Name))
                 {
                     <article class="quiz-card">
                         <a class="quiz-card-link" asp-controller="Explore" asp-action="Details" asp-route-id="@quiz.Id">
                             <div class="quiz-card-top">
-                                <div class="quiz-icon"><span class="material-symbols-outlined">quiz</span></div>
-                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
+                                <div class="quiz-icon"><span class="material-symbols-outlined">public</span></div>
+                                <span class="quiz-card-kind">Community quiz</span>
+                                <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@quiz.Name</h2>
                             <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
                         </a>
                         <div class="quiz-meta">
-                            <span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
-                            <span class="status-pill">@quiz.ProcessingStatus</span>
+                            <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="status-pill"><span class="status-dot" aria-hidden="true"></span>@quiz.ProcessingStatus</span>
                         </div>
                     </article>
                 }
                 @if (!collection.Quizzes.Any())
                 {
-                    <div class="empty-state">No quizzes directly inside this collection.</div>
+                    <div class="library-inline-empty">
+                        <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
+                        No quizzes directly inside this collection.
+                    </div>
                 }
             </div>
         </section>

@@ -15,10 +15,13 @@
         : $"{currentLanguage} collection.";
 }
 
-<section class="select-quiz-page" data-quiz-library data-move-quiz-url="@Url.Action("MoveQuizToCollection", "Quiz")">
-    <header class="select-header">
-        <div>
-            <p class="select-kicker">Quiz Library - @currentLanguage</p>
+<section class="select-quiz-page library-page" data-quiz-library data-move-quiz-url="@Url.Action("MoveQuizToCollection", "Quiz")">
+    <header class="select-header library-hero">
+        <div class="select-heading">
+            <p class="select-kicker">
+                <span class="material-symbols-outlined" aria-hidden="true">stacks</span>
+                Quiz Library <span class="select-kicker-separator">/</span> @currentLanguage
+            </p>
             <h1 class="select-title">@pageTitle</h1>
             <p class="select-subtitle">
                 @pageSubtitle
@@ -39,6 +42,16 @@
                     <span class="status-pill">@(currentCollection.IsPublic ? "Public subtree" : "Private")</span>
                 </form>
             }
+            <div class="library-overview" aria-label="Library summary">
+                <span class="overview-item">
+                    <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>
+                    <strong>@childCollections.Count</strong> @(childCollections.Count == 1 ? "collection" : "collections")
+                </span>
+                <span class="overview-item">
+                    <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
+                    <strong>@visibleQuizzes.Count</strong> @(visibleQuizzes.Count == 1 ? "quiz" : "quizzes")
+                </span>
+            </div>
         </div>
         <div class="select-actions">
             @if (currentCollection != null)
@@ -76,10 +89,12 @@
 
     @if (childCollections.Any())
     {
-        <section class="library-section" aria-labelledby="collectionsHeading">
+        <section class="library-section library-section--collections" aria-labelledby="collectionsHeading">
             <div class="library-section-header">
-                <h2 id="collectionsHeading">Collections</h2>
-                <span>@childCollections.Count</span>
+                <div class="library-section-copy">
+                    <h2 id="collectionsHeading">Collections <span class="section-count">@childCollections.Count</span></h2>
+                    <p>Group related quizzes and keep your learning path tidy.</p>
+                </div>
             </div>
             <div class="quiz-grid">
                 @foreach (var collection in childCollections)
@@ -94,14 +109,15 @@
                         <a class="quiz-card-link" asp-controller="Quiz" asp-action="Collection" asp-route-id="@collection.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon collection-icon"><span class="material-symbols-outlined">folder</span></div>
-                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
+                                <span class="quiz-card-kind">Collection</span>
+                                <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@collection.Name</h2>
                             <p class="quiz-languages">@collection.Language</p>
                         </a>
                         <div class="quiz-meta">
-                            <span>@collection.CreatedAt.ToString("MMM d, yyyy")</span>
-                            <span class="status-pill">@quizCount quizzes / @childCollectionCount nested</span>
+                            <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@collection.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="status-pill">@quizCount @(quizCount == 1 ? "quiz" : "quizzes") &middot; @childCollectionCount nested</span>
                         </div>
                     </article>
                 }
@@ -111,10 +127,12 @@
 
     @if (visibleQuizzes.Any())
     {
-        <section class="library-section" aria-labelledby="quizzesHeading">
+        <section class="library-section library-section--quizzes" aria-labelledby="quizzesHeading">
             <div class="library-section-header">
-                <h2 id="quizzesHeading">Quizzes</h2>
-                <span>@visibleQuizzes.Count</span>
+                <div class="library-section-copy">
+                    <h2 id="quizzesHeading">Your quizzes <span class="section-count">@visibleQuizzes.Count</span></h2>
+                    <p>@(childCollections.Any() ? "Open a quiz to study, or drag it onto a collection to organize it." : "Choose a quiz and keep your learning streak moving.")</p>
+                </div>
             </div>
             <div class="quiz-grid">
                 @foreach (var quiz in visibleQuizzes)
@@ -126,22 +144,24 @@
                         <a class="quiz-card-link" draggable="false" asp-controller="Quiz" asp-action="Details" asp-route-id="@quiz.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon"><span class="material-symbols-outlined">quiz</span></div>
-                                <span class="material-symbols-outlined quiz-arrow">arrow_forward</span>
+                                <span class="quiz-card-kind">Quiz</span>
+                                <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@quiz.Name</h2>
                             <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
                         </a>
                         <div class="quiz-meta">
-                            <span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
-                            <span class="status-pill">@quiz.ProcessingStatus</span>
+                            <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <div class="quiz-meta-actions">
+                                <span class="status-pill"><span class="status-dot" aria-hidden="true"></span>@quiz.ProcessingStatus</span>
+                                <form class="delete-form" method="post" asp-controller="Quiz" asp-action="DeleteQuiz" asp-route-id="@quiz.Id" data-confirm="Delete this quiz and all of its words?">
+                                    @Html.AntiForgeryToken()
+                                    <button class="btn-delete" type="submit" aria-label="Delete @quiz.Name" title="Delete quiz">
+                                        <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
-                        <form class="delete-form" method="post" asp-controller="Quiz" asp-action="DeleteQuiz" asp-route-id="@quiz.Id" data-confirm="Delete this quiz and all of its words?">
-                            @Html.AntiForgeryToken()
-                            <button class="btn-delete" type="submit" aria-label="Delete @quiz.Name">
-                                <span class="material-symbols-outlined">delete</span>
-                                Delete
-                            </button>
-                        </form>
                     </article>
                 }
             </div>

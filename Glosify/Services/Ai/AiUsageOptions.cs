@@ -10,6 +10,7 @@ public sealed class AiUsageOptions
     public int RepairOutputTokenReserve { get; set; } = 1024;
     public int ImageExtractionOutputTokenReserve { get; set; } = 1024;
     public int SpeakingOutputTokenReserve { get; set; } = 768;
+    public int PageTranslationOutputTokenReserve { get; set; } = 4096;
     public AiMonthlyBudgetOptions MonthlyBudget { get; set; } = new();
 
     public int GetOutputReserve(string feature)
@@ -20,6 +21,7 @@ public sealed class AiUsageOptions
             AiUsageFeatures.Repair => RepairOutputTokenReserve,
             AiUsageFeatures.ImageExtraction => ImageExtractionOutputTokenReserve,
             AiUsageFeatures.Speaking => SpeakingOutputTokenReserve,
+            AiUsageFeatures.PageTranslation => PageTranslationOutputTokenReserve,
             _ => AssistantOutputTokenReserve,
         };
     }
@@ -49,9 +51,16 @@ public sealed class AiUsageOptionsValidator : IValidateOptions<AiUsageOptions>
         var failures = new List<string>();
         var budget = options.MonthlyBudget;
 
+        if (options.PageTranslationOutputTokenReserve <= 0)
+        {
+            failures.Add("AiUsage:PageTranslationOutputTokenReserve must be greater than zero.");
+        }
+
         if (!budget.Enabled)
         {
-            return ValidateOptionsResult.Success;
+            return failures.Count == 0
+                ? ValidateOptionsResult.Success
+                : ValidateOptionsResult.Fail(failures);
         }
 
         if (budget.LimitSek <= 0)
@@ -123,4 +132,5 @@ public static class AiUsageFeatures
     public const string Repair = "repair";
     public const string ImageExtraction = "image_extraction";
     public const string Speaking = "speaking";
+    public const string PageTranslation = "page_translation";
 }

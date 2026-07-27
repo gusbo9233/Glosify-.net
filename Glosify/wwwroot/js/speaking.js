@@ -35,6 +35,8 @@ import {
         sceneName: document.getElementById("speaking-scene-name"),
         connectionLabel: document.getElementById("speaking-connection-label"),
         level: document.getElementById("speaking-level"),
+        quizControl: document.getElementById("speaking-quiz-control"),
+        quiz: document.getElementById("speaking-quiz"),
         translationToggle: document.getElementById("speaking-translation-toggle"),
         muteToggle: document.getElementById("speaking-mute-toggle"),
         messages: document.getElementById("speaking-messages"),
@@ -75,6 +77,10 @@ import {
     const state = {
         avatarId: pageData.defaultAvatarId || avatars.keys().next().value || "",
         cefrLevel: pageData.defaultCefrLevel || "A2",
+        quizId: "",
+        activeQuiz: null,
+        activePracticePrompt: null,
+        recordedPracticePromptId: null,
         sessionId: null,
         ready: false,
         busy: false,
@@ -159,11 +165,22 @@ import {
             || !state.ready
             || (state.listening && recognitionSource !== "avatar");
         elements.level.disabled = interactionLocked;
+        if (elements.quiz) {
+            elements.quiz.disabled = interactionLocked || state.avatarId !== "tutor";
+        }
         elements.newSession.disabled = interactionLocked;
         elements.textarea.readOnly = state.listening;
         elements.avatarChoices.forEach(choice => {
             choice.disabled = interactionLocked;
         });
+        root.querySelectorAll(".speaking-practice-record[data-practice-prompt-id]")
+            .forEach(control => {
+                control.disabled = busy
+                    || (state.listening && state.activeRecognition?.control !== control)
+                    || !state.ready
+                    || !state.activePracticePrompt
+                    || control.dataset.practicePromptId !== state.activePracticePrompt.id;
+            });
         [
             ...root.querySelectorAll("[data-drink-action]"),
             elements.snackAction
@@ -207,6 +224,12 @@ import {
         elements.level.value = state.cefrLevel;
         elements.avatarName.textContent = avatar?.name || "";
         elements.sceneName.textContent = avatar?.scenario || "";
+        if (elements.quizControl) {
+            elements.quizControl.hidden = state.avatarId !== "tutor";
+        }
+        if (elements.quiz) {
+            elements.quiz.value = state.quizId || "";
+        }
         if (elements.interactiveLayer) {
             elements.interactiveLayer.hidden = !state.interactiveMode;
         }
@@ -803,6 +826,8 @@ import {
     }
 
     function presentTurn(turn) {
+        applyActiveQuiz(turn.activeQuiz);
+        setActivePracticePrompt(turn.practicePrompt);
         appendAvatarMessage(turn);
         showLiveReply(turn.replyPolish, turn.replyEnglish);
         state.latestReply = turn.replyPolish;
@@ -818,6 +843,22 @@ import {
         if (!elements.muteToggle.checked) {
             void speakReply(turn.replyPolish);
         }
+    }
+
+    function applyActiveQuiz(activeQuiz) {
+        state.activeQuiz = activeQuiz || null;
+        state.quizId = activeQuiz?.id || "";
+        if (elements.quiz) {
+            elements.quiz.value = state.quizId;
+        }
+    }
+
+    function setActivePracticePrompt(prompt) {
+        state.activePracticePrompt = prompt || null;
+        root.querySelectorAll(".speaking-practice-record[data-practice-prompt-id]")
+            .forEach(control => {
+                control.disabled = !prompt || control.dataset.practicePromptId !== prompt.id;
+            });
     }
 
     async function apiFetch(url, options = {}) {
@@ -873,7 +914,10 @@ import {
                 method: "POST",
                 body: JSON.stringify({
                     avatarId: state.avatarId,
-                    cefrLevel: state.cefrLevel
+                    cefrLevel: state.cefrLevel,
+                    quizId: state.avatarId === "tutor" && state.quizId
+                        ? state.quizId
+                        : null
                 })
             });
             const created = await response.json();
@@ -890,6 +934,8 @@ import {
             state.latestReply = opening.replyPolish;
             elements.replayLatest.disabled = false;
             applyInteractionSnapshot(created.interaction);
+            applyActiveQuiz(created.activeQuiz);
+            setActivePracticePrompt(null);
             setConnection(`${created.avatarName} is ready · ${state.cefrLevel}`, true);
             if (announce) {
                 setStatus("Your practice session is ready.");
@@ -944,6 +990,37 @@ import {
         await createSession({ speakOpening: true });
     }
 
+    async function selectQuiz(quizId) {
+        if (state.avatarId !== "tutor" || !state.ready || !state.sessionId || state.busy) {
+            updateSelectionUi();
+            return;
+        }
+
+        const previousQuizId = state.quizId;
+        setBusy(true);
+        setStatus("Updating the tutor's practice quiz…");
+        try {
+            const response = await apiFetch(
+                `${root.dataset.createUrl}/${state.sessionId}/quiz`,
+                {
+                    method: "PUT",
+                    body: JSON.stringify({ quizId: quizId || null })
+                });
+            const result = await response.json();
+            applyActiveQuiz(result.activeQuiz);
+            setActivePracticePrompt(null);
+            setStatus(result.activeQuiz
+                ? `Practising ${result.activeQuiz.name}.`
+                : "Free lesson mode is active.");
+        } catch (error) {
+            state.quizId = previousQuizId;
+            updateSelectionUi();
+            setStatus(error.message, true);
+        } finally {
+            setBusy(false);
+        }
+    }
+
     function appendUserMessage(text, mode, pronunciation) {
         const fragment = elements.userTemplate.content.cloneNode(true);
         const article = fragment.querySelector(".speaking-message");
@@ -958,6 +1035,12 @@ import {
                 formatScore(pronunciation.accuracy);
             scores.querySelector("[data-score='fluency']").textContent =
                 formatScore(pronunciation.fluency);
+            const completenessRow = scores.querySelector("[data-score-row='completeness']");
+            if (Number.isFinite(Number(pronunciation.completeness))) {
+                completenessRow.hidden = false;
+                completenessRow.querySelector("[data-score='completeness']").textContent =
+                    formatScore(pronunciation.completeness);
+            }
         }
 
         elements.messages.append(article);
@@ -1005,6 +1088,21 @@ import {
         }
         coachPanel.hidden = visibleCoachRows === 0;
 
+        const practicePrompt = turn.practicePrompt;
+        const practicePanel = fragment.querySelector(".speaking-practice-prompt");
+        if (practicePrompt) {
+            practicePanel.hidden = false;
+            practicePanel.querySelector(".speaking-practice-text").textContent =
+                practicePrompt.text;
+            practicePanel.querySelector(".speaking-practice-translation").textContent =
+                practicePrompt.translation;
+            practicePanel.querySelector(".speaking-practice-replay")
+                .addEventListener("click", () => void speakReply(practicePrompt.text));
+            bindPracticeRecorder(
+                practicePanel.querySelector(".speaking-practice-record"),
+                practicePrompt);
+        }
+
         elements.messages.append(article);
         scrollMessages();
     }
@@ -1042,6 +1140,7 @@ import {
         const mode = state.recordedTranscript ? "voice" : "text";
         const pronunciation = mode === "voice" ? state.pronunciation : null;
         const recordedTranscript = state.recordedTranscript;
+        const practicePromptId = state.recordedPracticePromptId;
         stopSpeaking();
         appendUserMessage(text, mode, pronunciation);
         state.userTurns += 1;
@@ -1056,7 +1155,7 @@ import {
                 `${root.dataset.createUrl}/${state.sessionId}/turns`,
                 {
                     method: "POST",
-                    body: JSON.stringify({ text, inputMode: mode })
+                    body: JSON.stringify({ text, inputMode: mode, practicePromptId })
                 });
             const turn = await response.json();
             setStatus("");
@@ -1067,6 +1166,7 @@ import {
             if (mode === "voice") {
                 state.recordedTranscript = recordedTranscript;
                 state.pronunciation = pronunciation;
+                state.recordedPracticePromptId = practicePromptId;
                 elements.recordingNote.hidden = false;
             }
             setStatus(error.message, true);
@@ -1139,6 +1239,7 @@ import {
     function clearRecordedSpeech() {
         state.recordedTranscript = "";
         state.pronunciation = null;
+        state.recordedPracticePromptId = null;
         elements.recordingNote.hidden = true;
     }
 
@@ -1165,7 +1266,8 @@ import {
         autoStop,
         control,
         label,
-        idleLabel
+        idleLabel,
+        practicePrompt = null
     }) {
         if (state.listening || state.busy) {
             return;
@@ -1187,6 +1289,7 @@ import {
             control,
             label,
             idleLabel,
+            practicePrompt,
             recognizer: null,
             started: false,
             stopRequested: false,
@@ -1240,6 +1343,59 @@ import {
         });
     }
 
+    function bindPracticeRecorder(control, practicePrompt) {
+        if (!control || !practicePrompt) {
+            return;
+        }
+
+        control.dataset.practicePromptId = practicePrompt.id;
+        const label = control.querySelector("span:last-child");
+        const begin = event => {
+            if (event?.type?.startsWith("pointer")
+                && (!event.isPrimary || event.button !== 0)) {
+                return;
+            }
+            event?.preventDefault();
+            if (event?.pointerId !== undefined) {
+                control.setPointerCapture?.(event.pointerId);
+            }
+            beginRecognition({
+                source: "practice",
+                autoSend: true,
+                autoStop: false,
+                control,
+                label,
+                idleLabel: "Hold to repeat",
+                practicePrompt
+            });
+        };
+        const end = event => {
+            if (event && !event.isPrimary) {
+                return;
+            }
+            event?.preventDefault();
+            if (event?.pointerId !== undefined && control.hasPointerCapture?.(event.pointerId)) {
+                control.releasePointerCapture(event.pointerId);
+            }
+            if (state.activeRecognition?.control === control) {
+                void stopRecognition(state.activeRecognition);
+            }
+        };
+        control.addEventListener("pointerdown", begin);
+        control.addEventListener("pointerup", end);
+        control.addEventListener("pointercancel", end);
+        control.addEventListener("keydown", event => {
+            if ((event.key === " " || event.key === "Enter") && !event.repeat) {
+                begin(event);
+            }
+        });
+        control.addEventListener("keyup", event => {
+            if (event.key === " " || event.key === "Enter") {
+                end(event);
+            }
+        });
+    }
+
     function clearSilenceTimer(recognition) {
         if (!recognition.silenceTimer) {
             return;
@@ -1280,10 +1436,10 @@ import {
         recognition.recognizer = recognizer;
 
         const pronunciationConfig = new sdk.PronunciationAssessmentConfig(
-            "",
+            recognition.practicePrompt?.text || "",
             sdk.PronunciationAssessmentGradingSystem.HundredMark,
             sdk.PronunciationAssessmentGranularity.Phoneme,
-            false);
+            Boolean(recognition.practicePrompt));
         pronunciationConfig.applyTo(recognizer);
 
         recognizer.recognizing = (_sender, event) => {
@@ -1309,6 +1465,9 @@ import {
                 recognition.pronunciationSamples.push({
                     accuracy: assessment.accuracyScore,
                     fluency: assessment.fluencyScore,
+                    completeness: recognition.practicePrompt
+                        ? assessment.completenessScore
+                        : null,
                     weight: Math.max(1, text.length)
                 });
             } catch {
@@ -1420,6 +1579,7 @@ import {
             elements.textarea.value = shortenedTranscript;
             state.recordedTranscript = shortenedTranscript;
             state.pronunciation = averagePronunciation(recognition.pronunciationSamples);
+            state.recordedPracticePromptId = recognition.practicePrompt?.id || null;
             elements.recordingNote.hidden = false;
             updateCharacterCount();
             setStatus("That recording is too long. Shorten the transcript and press Send.", true);
@@ -1430,6 +1590,7 @@ import {
         elements.textarea.value = transcript;
         state.recordedTranscript = transcript;
         state.pronunciation = averagePronunciation(recognition.pronunciationSamples);
+        state.recordedPracticePromptId = recognition.practicePrompt?.id || null;
         elements.recordingNote.hidden = false;
         updateCharacterCount();
         if (recognition.autoSend) {
@@ -1454,7 +1615,12 @@ import {
                 0) / totalWeight,
             fluency: samples.reduce(
                 (sum, sample) => sum + sample.fluency * sample.weight,
-                0) / totalWeight
+                0) / totalWeight,
+            completeness: samples.some(sample => Number.isFinite(Number(sample.completeness)))
+                ? samples.reduce(
+                    (sum, sample) => sum + Number(sample.completeness || 0) * sample.weight,
+                    0) / totalWeight
+                : null
         };
     }
 
@@ -1680,6 +1846,10 @@ import {
 
     elements.level.addEventListener("change", () => {
         void changePractice(state.avatarId, elements.level.value);
+    });
+
+    elements.quiz?.addEventListener("change", () => {
+        void selectQuiz(elements.quiz.value);
     });
 
     elements.translationToggle.addEventListener("change", () => {

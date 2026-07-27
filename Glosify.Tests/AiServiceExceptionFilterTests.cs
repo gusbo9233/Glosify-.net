@@ -2,6 +2,7 @@ using System.Text.Json;
 using Glosify.Filters;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Books;
 using Glosify.Services.Speaking;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -87,6 +88,26 @@ public sealed class AiServiceExceptionFilterTests
                 new InvalidOperationException("private failure detail")),
             StatusCodes.Status410Gone,
             "This speaking session could not be continued safely. Start a new one to continue."
+        },
+        {
+            new SpeakingQuizNotFoundException(),
+            StatusCodes.Status404NotFound,
+            "Quiz not found."
+        },
+        {
+            new BookPageTranslationValidationException("Invalid translation input."),
+            StatusCodes.Status400BadRequest,
+            "Invalid translation input."
+        },
+        {
+            new BookPageTranslationNotFoundException(),
+            StatusCodes.Status404NotFound,
+            "Book page not found."
+        },
+        {
+            new BookPageTranslationUnavailableException("No selectable text found on this page."),
+            StatusCodes.Status422UnprocessableEntity,
+            "No selectable text found on this page."
         },
     };
 }

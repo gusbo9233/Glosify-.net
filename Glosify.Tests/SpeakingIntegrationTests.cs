@@ -159,6 +159,45 @@ public sealed class SpeakingIntegrationTests
         Assert.Equal(svgIds.Length, svgIds.Distinct(StringComparer.Ordinal).Count());
     }
 
+    [Theory]
+    [InlineData("Estonian", "et-EE")]
+    [InlineData("German", "de-DE")]
+    [InlineData("Polish", "pl-PL")]
+    [InlineData("Ukrainian", "uk-UA")]
+    public async Task Enabled_tutor_is_default_and_exposes_the_read_only_quiz_picker(
+        string language,
+        string locale)
+    {
+        using var factory = CreateFactory(language, genericTutorEnabled: true);
+        var client = factory.CreateClient();
+
+        var document = await GetDocumentAsync(client);
+        var root = Assert.IsAssignableFrom<IHtmlElement>(document.QuerySelector("#speaking-app"));
+        using var pageData = JsonDocument.Parse(root.GetAttribute("data-speaking-page")!);
+
+        Assert.Equal("tutor", pageData.RootElement.GetProperty("defaultAvatarId").GetString());
+        Assert.Equal(locale, pageData.RootElement.GetProperty("locale").GetString());
+        Assert.Equal(4, document.QuerySelectorAll("[data-avatar-choice]").Length);
+        Assert.NotNull(document.QuerySelector("[data-avatar-scene='tutor']"));
+        Assert.Equal("Free lesson", document.QuerySelector("#speaking-quiz option")?.TextContent.Trim());
+        Assert.Contains("Travel", document.QuerySelector("#speaking-quiz")?.TextContent ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task Speaking_client_keeps_free_speech_and_exact_practice_assessment_separate()
+    {
+        using var factory = CreateFactory(genericTutorEnabled: true);
+        var client = factory.CreateClient();
+
+        var script = await client.GetStringAsync("/js/speaking.js");
+
+        Assert.Contains("recognition.practicePrompt?.text || \"\"", script, StringComparison.Ordinal);
+        Assert.Contains("Boolean(recognition.practicePrompt)", script, StringComparison.Ordinal);
+        Assert.Contains("practicePromptId", script, StringComparison.Ordinal);
+        Assert.Contains("completenessScore", script, StringComparison.Ordinal);
+        Assert.Contains("method: \"PUT\"", script, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task Speaking_client_supports_hold_to_send_and_silence_ended_draft_transcription()
     {
@@ -502,6 +541,50 @@ public sealed class SpeakingIntegrationTests
     }
 
     [Fact]
+    public async Task Tutor_session_is_hidden_until_enabled_and_preserves_picker_selection()
+    {
+        using var disabledFactory = CreateFactory(genericTutorEnabled: false);
+        var disabledClient = disabledFactory.CreateClient();
+        var disabledToken = await GetAntiforgeryTokenAsync(disabledClient);
+        using var disabledRequest = Post(
+            "/api/speaking/sessions",
+            disabledToken,
+            """{"avatarId":"tutor","cefrLevel":"A2"}""");
+
+        var disabledResponse = await disabledClient.SendAsync(disabledRequest);
+
+        Assert.Equal(HttpStatusCode.NotFound, disabledResponse.StatusCode);
+
+        using var enabledFactory = CreateFactory(genericTutorEnabled: true);
+        var enabledClient = enabledFactory.CreateClient();
+        var token = await GetAntiforgeryTokenAsync(enabledClient);
+        var quizId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        using var createRequest = Post(
+            "/api/speaking/sessions",
+            token,
+            $$"""{"avatarId":"tutor","cefrLevel":"A2","quizId":"{{quizId}}"}""");
+        var createResponse = await enabledClient.SendAsync(createRequest);
+
+        createResponse.EnsureSuccessStatusCode();
+        using var created = JsonDocument.Parse(await createResponse.Content.ReadAsStringAsync());
+        Assert.Equal(
+            quizId,
+            created.RootElement.GetProperty("activeQuiz").GetProperty("id").GetGuid());
+
+        var sessionId = created.RootElement.GetProperty("sessionId").GetGuid();
+        using var clearRequest = new HttpRequestMessage(
+            HttpMethod.Put,
+            $"/api/speaking/sessions/{sessionId}/quiz");
+        clearRequest.Headers.Add("RequestVerificationToken", token);
+        clearRequest.Content = JsonContent("""{"quizId":null}""");
+        var clearResponse = await enabledClient.SendAsync(clearRequest);
+
+        clearResponse.EnsureSuccessStatusCode();
+        using var cleared = JsonDocument.Parse(await clearResponse.Content.ReadAsStringAsync());
+        Assert.Equal(JsonValueKind.Null, cleared.RootElement.GetProperty("activeQuiz").ValueKind);
+    }
+
+    [Fact]
     public async Task Bartender_session_automatically_returns_an_authoritative_wallet_snapshot()
     {
         using var factory = CreateFactory();
@@ -602,7 +685,8 @@ public sealed class SpeakingIntegrationTests
 
     private static WebApplicationFactory<Program> CreateFactory(
         string? language = "Polish",
-        bool interactiveEnabled = true) =>
+        bool interactiveEnabled = true,
+        bool genericTutorEnabled = false) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
@@ -613,7 +697,13 @@ public sealed class SpeakingIntegrationTests
                 services.RemoveAll<ISpeakingService>();
                 services.AddSingleton<ISpeakingService, FakeSpeakingService>();
                 services.PostConfigure<SpeakingOptions>(
-                    options => options.InteractiveBartenderEnabled = interactiveEnabled);
+                    options =>
+                    {
+                        options.InteractiveBartenderEnabled = interactiveEnabled;
+                        options.GenericTutorEnabled = genericTutorEnabled;
+                    });
+                services.RemoveAll<ISpeakingQuizReader>();
+                services.AddSingleton<ISpeakingQuizReader, FakeSpeakingQuizReader>();
                 services.RemoveAll<ISpeechAuthorizationTokenService>();
                 services.AddSingleton<ISpeechAuthorizationTokenService, FakeSpeechTokens>();
                 services.RemoveAll<ILanguageContext>();
@@ -731,6 +821,31 @@ public sealed class SpeakingIntegrationTests
                     : null));
         }
 
+        public async Task<SpeakingSessionCreated> CreateSessionAsync(
+            string userId,
+            SpeakingAvatarDefinition avatar,
+            CefrLevel cefrLevel,
+            Guid? quizId,
+            CancellationToken cancellationToken = default)
+        {
+            var created = await CreateSessionAsync(userId, avatar, cefrLevel, cancellationToken);
+            return created with
+            {
+                ActiveQuiz = quizId.HasValue
+                    ? new SpeakingActiveQuiz(quizId.Value, "Travel", 2, 1)
+                    : null,
+            };
+        }
+
+        public Task<SpeakingActiveQuiz?> SelectQuizAsync(
+            Guid sessionId,
+            string userId,
+            Guid? quizId,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<SpeakingActiveQuiz?>(quizId.HasValue
+                ? new SpeakingActiveQuiz(quizId.Value, "Travel", 2, 1)
+                : null);
+
         public Task<SpeakingTurn> SendTurnAsync(
             Guid sessionId,
             string userId,
@@ -775,6 +890,27 @@ public sealed class SpeakingIntegrationTests
             string userId,
             CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
+    }
+
+    private sealed class FakeSpeakingQuizReader : ISpeakingQuizReader
+    {
+        private static readonly Guid QuizId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+        public Task<IReadOnlyList<SpeakingQuizOption>> ListAsync(
+            string userId,
+            string language,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<SpeakingQuizOption>>(
+                [new SpeakingQuizOption(QuizId, "Travel")]);
+
+        public Task<SpeakingActiveQuiz?> GetAsync(Guid quizId, string userId, string language, CancellationToken cancellationToken = default) =>
+            Task.FromResult<SpeakingActiveQuiz?>(new SpeakingActiveQuiz(quizId, "Travel", 2, 1));
+
+        public Task<SpeakingQuizWordPage?> GetWordsAsync(Guid quizId, string userId, string language, int offset, int limit, CancellationToken cancellationToken = default) =>
+            Task.FromResult<SpeakingQuizWordPage?>(new SpeakingQuizWordPage([], false, null));
+
+        public Task<SpeakingQuizSentencePage?> GetSentencesAsync(Guid quizId, string userId, string language, int offset, int limit, CancellationToken cancellationToken = default) =>
+            Task.FromResult<SpeakingQuizSentencePage?>(new SpeakingQuizSentencePage([], false, null));
     }
 
     private sealed class PageCredits : IAiCreditService

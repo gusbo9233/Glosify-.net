@@ -9,6 +9,7 @@ public sealed class SpeakingOptions
     public int SessionTtlMinutes { get; set; } = 60;
     public int MaxSessionsPerUser { get; set; } = 3;
     public bool InteractiveBartenderEnabled { get; set; }
+    public bool GenericTutorEnabled { get; set; }
     public SpeakingAgentOptions Agents { get; set; } = new();
 
     public SpeakingAgentVersion GetAgent(
@@ -18,6 +19,10 @@ public sealed class SpeakingOptions
             ? Agents.BartenderInteractive
             : avatar switch
     {
+        SpeakingAvatarId.TutorEstonian
+            or SpeakingAvatarId.TutorGerman
+            or SpeakingAvatarId.TutorPolish
+            or SpeakingAvatarId.TutorUkrainian => Agents.Tutor,
         SpeakingAvatarId.Bartender => Agents.Bartender,
         SpeakingAvatarId.Kasia => Agents.Kasia,
         SpeakingAvatarId.Mietek => Agents.Mietek,
@@ -36,6 +41,7 @@ public sealed class SpeakingOptions
 
 public sealed class SpeakingAgentOptions
 {
+    public SpeakingAgentVersion Tutor { get; set; } = new("glosify-tutor", "1");
     public SpeakingAgentVersion Bartender { get; set; } = new("glosify-bartender", "2");
     public SpeakingAgentVersion BartenderInteractive { get; set; } =
         new("glosify-bartender-interactive", "2");

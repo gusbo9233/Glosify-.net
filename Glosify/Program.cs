@@ -128,6 +128,21 @@ builder.Services.AddRateLimiter(options =>
             });
         }
 
+        var isBookTranslationPath = path.StartsWithSegments("/Books")
+            && (path.Value?.Contains("/Translation", StringComparison.OrdinalIgnoreCase) ?? false);
+        if (isBookTranslationPath)
+        {
+            var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter($"book-translation:{caller}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 12,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+        }
+
         if (string.Equals(
             path.Value,
             "/api/speaking/speech-token",
@@ -279,6 +294,8 @@ builder.Services.AddScoped<ITypingSessionService, TypingSessionService>();
 builder.Services.AddSingleton<IBookFileStorage, AzureBlobBookFileStorage>();
 builder.Services.AddScoped<IPdfTextExtractionService, PdfPigTextExtractionService>();
 builder.Services.AddScoped<IBookDocumentService, BookDocumentService>();
+builder.Services.AddSingleton<IBookPageTranslationCoordinator, BookPageTranslationCoordinator>();
+builder.Services.AddScoped<IBookPageTranslationService, BookPageTranslationService>();
 builder.Services.AddScoped<IClassroomService, ClassroomService>();
 builder.Services.AddScoped<IQuizAttemptService, QuizAttemptService>();
 builder.Services.AddScoped<ICustomQuizService, CustomQuizService>();
@@ -330,6 +347,7 @@ builder.Services.AddSingleton<ISpeakingAgentClient, FoundrySpeakingAgentClient>(
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ISpeakingSessionStore, SpeakingSessionStore>();
 builder.Services.AddScoped<ISpeakingService, SpeakingService>();
+builder.Services.AddScoped<ISpeakingQuizReader, SpeakingQuizReader>();
 
 if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
 {

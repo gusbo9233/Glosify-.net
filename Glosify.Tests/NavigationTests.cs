@@ -151,6 +151,7 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
             .Where(h => h.Length > 0)
             .ToArray();
 
+        Assert.NotNull(document.QuerySelector("aside .app-sidebar-brand .wordmark a[href='/']"));
         Assert.Contains(hrefs, h => h.Equals("/", StringComparison.Ordinal) || h.Contains("/Home", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(hrefs, h => h.Contains("/Languages", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(hrefs, h => h.Contains("/Quiz", StringComparison.OrdinalIgnoreCase));

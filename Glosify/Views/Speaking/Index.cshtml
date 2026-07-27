@@ -24,8 +24,22 @@
         <div>
             <span class="speaking-kicker">@Model.Language conversation lab</span>
             <h2>Speak your way into the language.</h2>
-            <p>Choose a scene, talk naturally, and get private coaching after every turn.</p>
+            <p>Choose an open tutor or a scene, talk naturally, and get private coaching after every turn.</p>
         </div>
+
+        @if (Model.GenericTutorEnabled)
+        {
+            <label class="speaking-quiz-control" id="speaking-quiz-control">
+                <span>Practice quiz</span>
+                <select id="speaking-quiz" aria-label="Choose a quiz for speaking practice">
+                    <option value="">Free lesson</option>
+                    @foreach (var quiz in Model.Quizzes)
+                    {
+                        <option value="@quiz.Id">@quiz.Name</option>
+                    }
+                </select>
+            </label>
+        }
         <div class="speaking-azure-badge" title="Powered by Microsoft Foundry and Azure AI Speech">
             <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
             Azure-powered
@@ -294,6 +308,10 @@
                 <span>Fluency</span>
                 <strong data-score="fluency"></strong>
             </div>
+            <div data-score-row="completeness" hidden>
+                <span>Completeness</span>
+                <strong data-score="completeness"></strong>
+            </div>
         </div>
     </article>
 </template>
@@ -352,6 +370,23 @@
                 </div>
             </dl>
         </details>
+        <section class="speaking-practice-prompt" hidden>
+            <div class="speaking-practice-copy">
+                <span class="speaking-kicker">Practice this</span>
+                <strong class="speaking-practice-text" lang="@Model.LanguageCode"></strong>
+                <span class="speaking-practice-translation" lang="en"></span>
+            </div>
+            <div class="speaking-practice-actions">
+                <button type="button" class="speaking-practice-replay" aria-label="Hear this practice phrase">
+                    <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
+                    Hear it
+                </button>
+                <button type="button" class="speaking-practice-record" aria-label="Hold to repeat this practice phrase" aria-pressed="false">
+                    <span class="material-symbols-outlined" aria-hidden="true">mic</span>
+                    <span>Hold to repeat</span>
+                </button>
+            </div>
+        </section>
     </article>
 </template>
 

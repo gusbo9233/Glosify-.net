@@ -143,6 +143,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,400..800&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/quiz-library.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
     @await RenderSectionAsync("Head", required: false)
 </head>
@@ -150,7 +151,9 @@
     <div class="app-shell">
         <aside class="app-sidebar">
             <div class="app-sidebar-brand">
-                <h1 class="wordmark">Glosiglot</h1>
+                <h1 class="wordmark">
+                    <a asp-controller="Home" asp-action="Index">Glosiglot</a>
+                </h1>
                 <p class="brand-tier">Premium Learner</p>
                 @if (!string.IsNullOrEmpty(LangContext.CurrentLanguage))
                 {

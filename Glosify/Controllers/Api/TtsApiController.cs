@@ -28,6 +28,8 @@ public sealed class TtsApiController : ControllerBase
     public async Task<IActionResult> Get(
         [FromQuery] string text,
         [FromQuery] string lang,
+        [FromQuery] string? quality,
+        [FromQuery] string? voice,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(lang))
@@ -48,7 +50,14 @@ public sealed class TtsApiController : ControllerBase
 
         try
         {
-            var stream = await _tts.GetOrSynthesizeAsync(text, lang, cancellationToken);
+            var preferHighDefinition = string.Equals(quality, "hd", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(quality, "hd-supported-v2", StringComparison.OrdinalIgnoreCase);
+            var stream = await _tts.GetOrSynthesizeAsync(
+                text,
+                lang,
+                preferHighDefinition,
+                voice,
+                cancellationToken);
             Response.Headers.CacheControl = "private, max-age=604800";
             return File(stream, "audio/mpeg");
         }

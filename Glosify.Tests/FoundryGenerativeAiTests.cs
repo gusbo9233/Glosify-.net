@@ -194,6 +194,53 @@ public sealed class FoundryGenerativeAiTests
     }
 
     [Fact]
+    public async Task Json_output_uses_plain_response_mode_and_returns_the_typed_result()
+    {
+        var invoker = new FakeInvoker
+        {
+            Response = Response(
+                [new TextContent("```json\n{\"value\":\"translated\"}\n```")],
+                new UsageDetails
+                {
+                    InputTokenCount = 18,
+                    OutputTokenCount = 4,
+                    TotalTokenCount = 22,
+                }),
+        };
+        var credits = new FakeCredits();
+        var client = CreateClient(invoker, credits);
+
+        var result = await client.GenerateJsonAsync<StructuredFixture>(
+            "Translate this.",
+            Usage(AiUsageFeatures.PageTranslation));
+
+        Assert.Equal("translated", result.Value);
+        Assert.Equal(
+            new AiTokenUsage(18, 4, 0, 0, 22),
+            Assert.Single(credits.Commits).Usage);
+        Assert.Empty(credits.Releases);
+    }
+
+    [Fact]
+    public async Task Invalid_json_output_releases_the_reservation()
+    {
+        var invoker = new FakeInvoker
+        {
+            Response = Response([new TextContent("not json")]),
+        };
+        var credits = new FakeCredits();
+        var client = CreateClient(invoker, credits);
+
+        await Assert.ThrowsAsync<GenerativeAiStructuredOutputException>(() =>
+            client.GenerateJsonAsync<StructuredFixture>(
+                "Translate this.",
+                Usage(AiUsageFeatures.PageTranslation)));
+
+        Assert.Empty(credits.Commits);
+        Assert.Single(credits.Releases);
+    }
+
+    [Fact]
     public async Task Structured_refusal_is_typed_and_releases_the_reservation()
     {
         var invoker = new FakeInvoker
@@ -616,6 +663,7 @@ public sealed class FoundryGenerativeAiTests
                 AssistantOutputTokenReserve = 50,
                 RepairOutputTokenReserve = 40,
                 ImageExtractionOutputTokenReserve = 30,
+                PageTranslationOutputTokenReserve = 40,
             }),
             credits,
             NullLogger<FoundryGenerativeAiClient>.Instance);

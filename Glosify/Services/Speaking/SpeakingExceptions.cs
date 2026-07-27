@@ -20,6 +20,9 @@ public sealed class SpeakingSessionLimitException(int limit)
 public sealed class SpeakingValidationException(string message)
     : ArgumentException(message);
 
+public sealed class SpeakingQuizNotFoundException()
+    : InvalidOperationException("Quiz not found.");
+
 public sealed class SpeakingDependencyUnavailableException : InvalidOperationException
 {
     public SpeakingDependencyUnavailableException(string message)

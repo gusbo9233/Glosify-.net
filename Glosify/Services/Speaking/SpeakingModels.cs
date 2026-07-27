@@ -5,6 +5,10 @@ namespace Glosify.Services.Speaking;
 
 public enum SpeakingAvatarId
 {
+    TutorEstonian,
+    TutorGerman,
+    TutorPolish,
+    TutorUkrainian,
     Bartender,
     Kasia,
     Mietek,
@@ -81,7 +85,8 @@ public sealed record SpeakingSessionCreated(
     string AvatarName,
     string Voice,
     SpeakingOpeningTurn OpeningTurn,
-    SpeakingInteractionSnapshot? Interaction = null);
+    SpeakingInteractionSnapshot? Interaction = null,
+    SpeakingActiveQuiz? ActiveQuiz = null);
 
 public sealed class SpeakingCoach
 {
@@ -111,6 +116,21 @@ public class SpeakingAgentReply
 
     [JsonPropertyName("coach")]
     public SpeakingCoach Coach { get; set; } = new();
+
+    [JsonPropertyName("practice")]
+    public SpeakingAgentPracticeSuggestion? Practice { get; set; }
+}
+
+public sealed class SpeakingAgentPracticeSuggestion
+{
+    [JsonPropertyName("text")]
+    public string Text { get; set; } = string.Empty;
+
+    [JsonPropertyName("translation")]
+    public string Translation { get; set; } = string.Empty;
+
+    [JsonPropertyName("itemType")]
+    public string ItemType { get; set; } = "sentence";
 }
 
 public sealed class SpeakingProposedAction
@@ -134,12 +154,32 @@ public sealed class SpeakingTurn : SpeakingAgentReply
     [JsonPropertyName("interaction")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public SpeakingInteractionSnapshot? Interaction { get; set; }
+
+    [JsonPropertyName("activeQuiz")]
+    public SpeakingActiveQuiz? ActiveQuiz { get; set; }
+
+    [JsonPropertyName("practicePrompt")]
+    public SpeakingPracticePrompt? PracticePrompt { get; set; }
 }
 
 public sealed record SpeakingAgentTurn(
     SpeakingAgentReply Reply,
     AiTokenUsage? Usage,
     IReadOnlyList<SpeakingSceneCommand>? SceneCommands = null);
+
+public sealed record SpeakingActiveQuiz(
+    Guid Id,
+    string Name,
+    int WordCount,
+    int SentenceCount);
+
+public sealed record SpeakingPracticePrompt(
+    Guid Id,
+    string Text,
+    string Translation,
+    string ItemType);
+
+public sealed record SpeakingQuizOption(Guid Id, string Name);
 
 public sealed record SpeakingDrinkSnapshot(
     string Id,
@@ -193,9 +233,11 @@ public sealed record SpeakingPageAvatar(
 
 public sealed record SpeakingPageViewModel(
     IReadOnlyList<SpeakingPageAvatar> Avatars,
+    IReadOnlyList<SpeakingQuizOption> Quizzes,
     string Language,
     string Locale,
     string LanguageCode,
     string DefaultAvatarId,
     string DefaultCefrLevel,
-    bool InteractiveBartenderEnabled);
+    bool InteractiveBartenderEnabled,
+    bool GenericTutorEnabled);

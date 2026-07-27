@@ -86,6 +86,66 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
         return result!;
     }
 
+    public async Task<T> GenerateJsonAsync<T>(
+        string prompt,
+        AiUsageContext usageContext,
+        string? model = null,
+        CancellationToken cancellationToken = default)
+    {
+        var deployment = string.IsNullOrWhiteSpace(model)
+            ? _options.StructuredDeployment
+            : model.Trim();
+        var outputReserve = _usageOptions.GetOutputReserve(usageContext.Feature);
+        T? result = default;
+        await ExecuteChargedAsync(
+            deployment,
+            usageContext,
+            EstimateTokens(prompt),
+            outputReserve,
+            token => _invoker.RunAsync(
+                deployment,
+                "Return only valid JSON matching the object shape requested by the user. Do not use markdown fences or explanatory text.",
+                [new ChatMessage(ChatRole.User, [new TextContent(prompt)])],
+                [],
+                outputReserve,
+                token),
+            cancellationToken,
+            validateResponse: response =>
+            {
+                if (IsRefusal(response))
+                {
+                    throw new GenerativeAiStructuredOutputException(
+                        "The AI service could not produce a valid JSON response.");
+                }
+
+                var json = StripJsonFences(response.Text);
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    throw new GenerativeAiStructuredOutputException(
+                        "The AI service returned an empty JSON response.");
+                }
+
+                try
+                {
+                    result = JsonSerializer.Deserialize<T>(json, JsonOptions);
+                }
+                catch (JsonException ex)
+                {
+                    throw new GenerativeAiStructuredOutputException(
+                        "The AI service could not produce a valid JSON response.",
+                        ex);
+                }
+
+                if (result is null)
+                {
+                    throw new GenerativeAiStructuredOutputException(
+                        "The AI service could not produce a valid JSON response.");
+                }
+            });
+
+        return result!;
+    }
+
     public async Task<string> ExtractTextFromImageAsync(
         byte[] imageBytes,
         string contentType,
@@ -433,6 +493,21 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
     {
         var finishReason = response.FinishReason?.ToString();
         return finishReason?.Contains("content", StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private static string StripJsonFences(string? text)
+    {
+        var trimmed = text?.Trim() ?? string.Empty;
+        if (!trimmed.StartsWith("```", StringComparison.Ordinal)
+            || !trimmed.EndsWith("```", StringComparison.Ordinal))
+        {
+            return trimmed;
+        }
+
+        var firstLineEnd = trimmed.IndexOf('\n');
+        return firstLineEnd < 0
+            ? string.Empty
+            : trimmed[(firstLineEnd + 1)..^3].Trim();
     }
 
     private static string NormalizeImageContentType(string contentType) =>

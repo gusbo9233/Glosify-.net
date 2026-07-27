@@ -19,6 +19,8 @@ public sealed class FoundryGenerativeAiOptions
     public string AssistantDeployment { get; set; } = "gpt-5.4-mini";
     public string StructuredDeployment { get; set; } = "gpt-5.4-mini";
     public string VisionDeployment { get; set; } = "gpt-5.4-mini";
+    public string PageTranslationDeployment { get; set; } = "gpt-5.4-mini";
+    public string PageTranslationFallbackDeployment { get; set; } = "grok-4-1-fast-non-reasoning";
     public List<string> AllowedAssistantDeployments { get; set; } = [];
     public List<AssistantModelOptions> AssistantModels { get; set; } = [];
     public int TimeoutSeconds { get; set; } = 180;
@@ -56,10 +58,19 @@ public sealed class GenerativeAiOptionsValidator(IOptions<GeminiOptions> geminiO
 
         if (IsProvider(options.Provider, GenerativeAiOptions.GeminiProvider))
         {
-            return string.IsNullOrWhiteSpace(geminiOptions.Value.ApiKey)
-                ? ValidateOptionsResult.Fail(
-                    "Gemini:ApiKey must be configured when GenerativeAi:Provider is 'Gemini'.")
-                : ValidateOptionsResult.Success;
+            var geminiFailures = new List<string>();
+            if (string.IsNullOrWhiteSpace(geminiOptions.Value.ApiKey))
+            {
+                geminiFailures.Add(
+                    "Gemini:ApiKey must be configured when GenerativeAi:Provider is 'Gemini'.");
+            }
+            if (string.IsNullOrWhiteSpace(geminiOptions.Value.PageTranslationModel))
+            {
+                geminiFailures.Add("Gemini:PageTranslationModel must not be empty.");
+            }
+            return geminiFailures.Count == 0
+                ? ValidateOptionsResult.Success
+                : ValidateOptionsResult.Fail(geminiFailures);
         }
 
         var foundry = options.Foundry;
@@ -73,6 +84,11 @@ public sealed class GenerativeAiOptionsValidator(IOptions<GeminiOptions> geminiO
         RequireValue(foundry.AssistantDeployment, "AssistantDeployment", failures);
         RequireValue(foundry.StructuredDeployment, "StructuredDeployment", failures);
         RequireValue(foundry.VisionDeployment, "VisionDeployment", failures);
+        RequireValue(foundry.PageTranslationDeployment, "PageTranslationDeployment", failures);
+        RequireValue(
+            foundry.PageTranslationFallbackDeployment,
+            "PageTranslationFallbackDeployment",
+            failures);
 
         if (foundry.TimeoutSeconds <= 0)
         {

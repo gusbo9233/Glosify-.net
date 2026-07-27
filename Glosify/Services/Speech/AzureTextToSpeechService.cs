@@ -13,7 +13,8 @@ namespace Glosify.Services.Speech;
 
 public sealed class AzureTextToSpeechService : ITextToSpeechService
 {
-    private const string OutputFormat = "audio-24khz-48kbitrate-mono-mp3";
+    private const string DefaultOutputFormat = "audio-24khz-48kbitrate-mono-mp3";
+    private const string PolishOutputFormat = "audio-48khz-192kbitrate-mono-mp3";
     private const string ContentType = "audio/mpeg";
     private static readonly TokenRequestContext SpeechTokenContext =
         new(["https://cognitiveservices.azure.com/.default"]);
@@ -39,20 +40,54 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
     }
 
     public bool IsConfigured =>
-        HasEntraConfiguration
-        || HasKeyConfiguration;
+        StandardConnection is not null
+        || HighDefinitionConnection is not null;
 
-    private bool HasEntraConfiguration =>
-        !string.IsNullOrWhiteSpace(_speech.Endpoint)
-        && !string.IsNullOrWhiteSpace(_speech.ResourceId);
+    private SpeechConnection? StandardConnection
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(_speech.Endpoint)
+                && !string.IsNullOrWhiteSpace(_speech.ResourceId))
+            {
+                return new SpeechConnection(
+                    _speech.Endpoint,
+                    _speech.ResourceId,
+                    string.Empty,
+                    _speech.Region);
+            }
 
-    private bool HasKeyConfiguration =>
-        !string.IsNullOrWhiteSpace(_speech.Key)
-        && !string.IsNullOrWhiteSpace(_speech.Region);
+            if (!string.IsNullOrWhiteSpace(_speech.Key)
+                && !string.IsNullOrWhiteSpace(_speech.Region))
+            {
+                return new SpeechConnection(
+                    string.Empty,
+                    string.Empty,
+                    _speech.Key,
+                    _speech.Region);
+            }
+
+            return null;
+        }
+    }
+
+    private SpeechConnection? HighDefinitionConnection =>
+        _speech.HighDefinition.Enabled
+        && !string.IsNullOrWhiteSpace(_speech.HighDefinition.ResourceId)
+        && (!string.IsNullOrWhiteSpace(_speech.HighDefinition.Endpoint)
+            || !string.IsNullOrWhiteSpace(_speech.HighDefinition.Region))
+            ? new SpeechConnection(
+                _speech.HighDefinition.Endpoint,
+                _speech.HighDefinition.ResourceId,
+                string.Empty,
+                _speech.HighDefinition.Region)
+            : null;
 
     public async Task<Stream> GetOrSynthesizeAsync(
         string text,
         string languageCode,
+        bool preferHighDefinition = false,
+        string? voicePreference = null,
         CancellationToken cancellationToken = default)
     {
         if (!IsConfigured)
@@ -65,7 +100,7 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
             throw new ArgumentException("Text is required.", nameof(text));
         }
 
-        if (!VoiceMap.TryResolve(languageCode, out var locale, out var voice))
+        if (!VoiceMap.TryResolve(languageCode, voicePreference, out var locale, out var voice))
         {
             throw new NotSupportedException($"Language '{languageCode}' has no configured voice.");
         }
@@ -76,7 +111,54 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
             trimmed = trimmed[.._speech.MaxTextLength];
         }
 
-        var blobName = BuildBlobName(voice, trimmed);
+        var standardConnection = StandardConnection;
+        var outputFormat = string.Equals(locale, "pl-PL", StringComparison.OrdinalIgnoreCase)
+            ? PolishOutputFormat
+            : DefaultOutputFormat;
+        var highDefinitionConnection = preferHighDefinition ? HighDefinitionConnection : null;
+        if (highDefinitionConnection is not null
+            && VoiceMap.TryResolveHighDefinition(languageCode, out var highDefinitionVoice))
+        {
+            try
+            {
+                return await GetOrSynthesizeWithVoiceAsync(
+                    trimmed,
+                    locale,
+                    highDefinitionVoice,
+                    outputFormat,
+                    highDefinitionConnection,
+                    cancellationToken);
+            }
+            catch (HttpRequestException ex) when (standardConnection is not null)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Dragon HD Omni synthesis failed for {Language}; falling back to {Voice}.",
+                    languageCode,
+                    voice);
+            }
+        }
+
+        var connection = standardConnection ?? HighDefinitionConnection
+            ?? throw new InvalidOperationException("Azure Speech is not configured.");
+        return await GetOrSynthesizeWithVoiceAsync(
+            trimmed,
+            locale,
+            voice,
+            outputFormat,
+            connection,
+            cancellationToken);
+    }
+
+    private async Task<Stream> GetOrSynthesizeWithVoiceAsync(
+        string text,
+        string locale,
+        string voice,
+        string outputFormat,
+        SpeechConnection connection,
+        CancellationToken cancellationToken)
+    {
+        var blobName = BuildBlobName(voice, outputFormat, text);
 
         if (_container is not null)
         {
@@ -87,7 +169,13 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
             }
         }
 
-        var audio = await SynthesizeAsync(trimmed, locale, voice, cancellationToken);
+        var audio = await SynthesizeAsync(
+            text,
+            locale,
+            voice,
+            outputFormat,
+            connection,
+            cancellationToken);
 
         if (_container is not null)
         {
@@ -98,22 +186,28 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
         return audio;
     }
 
-    private async Task<byte[]> SynthesizeBytesAsync(string text, string locale, string voice, CancellationToken ct)
+    private async Task<byte[]> SynthesizeBytesAsync(
+        string text,
+        string locale,
+        string voice,
+        string outputFormat,
+        SpeechConnection connection,
+        CancellationToken ct)
     {
         var ssml = BuildSsml(text, locale, voice);
-        using var request = new HttpRequestMessage(HttpMethod.Post, BuildSynthesisEndpoint());
-        if (HasEntraConfiguration)
+        using var request = new HttpRequestMessage(HttpMethod.Post, BuildSynthesisEndpoint(connection));
+        if (connection.UsesEntra)
         {
             var token = await _credential.GetTokenAsync(SpeechTokenContext, ct);
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 "Bearer",
-                $"aad#{_speech.ResourceId.Trim()}#{token.Token}");
+                $"aad#{connection.ResourceId.Trim()}#{token.Token}");
         }
         else
         {
-            request.Headers.Add("Ocp-Apim-Subscription-Key", _speech.Key);
+            request.Headers.Add("Ocp-Apim-Subscription-Key", connection.Key);
         }
-        request.Headers.Add("X-Microsoft-OutputFormat", OutputFormat);
+        request.Headers.Add("X-Microsoft-OutputFormat", outputFormat);
         request.Headers.Add("User-Agent", "Glosify");
         request.Content = new StringContent(ssml, Encoding.UTF8, "application/ssml+xml");
 
@@ -132,29 +226,42 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
         return await response.Content.ReadAsByteArrayAsync(ct);
     }
 
-    private Uri BuildSynthesisEndpoint()
+    private static Uri BuildSynthesisEndpoint(SpeechConnection connection)
     {
-        if (!HasEntraConfiguration)
+        // Azure's Entra-enabled custom domain identifies the resource, but the
+        // synthesis REST route is hosted on the regional TTS endpoint.
+        if (!string.IsNullOrWhiteSpace(connection.Region))
         {
             return new Uri(
-                $"https://{_speech.Region.Trim()}.tts.speech.microsoft.com/cognitiveservices/v1",
+                $"https://{connection.Region.Trim()}.tts.speech.microsoft.com/cognitiveservices/v1",
                 UriKind.Absolute);
         }
 
-        if (!Uri.TryCreate(_speech.Endpoint.Trim(), UriKind.Absolute, out var resourceEndpoint)
-            || resourceEndpoint.Scheme != Uri.UriSchemeHttps)
+        if (!string.IsNullOrWhiteSpace(connection.Endpoint))
         {
-            throw new InvalidOperationException("Speech:Endpoint must be an absolute HTTPS URI.");
+            if (!Uri.TryCreate(connection.Endpoint.Trim(), UriKind.Absolute, out var resourceEndpoint)
+                || resourceEndpoint.Scheme != Uri.UriSchemeHttps)
+            {
+                throw new InvalidOperationException("Speech endpoint must be an absolute HTTPS URI.");
+            }
+
+            return new Uri(
+                $"{resourceEndpoint.AbsoluteUri.TrimEnd('/')}/cognitiveservices/v1",
+                UriKind.Absolute);
         }
 
-        return new Uri(
-            $"{resourceEndpoint.AbsoluteUri.TrimEnd('/')}/cognitiveservices/v1",
-            UriKind.Absolute);
+        throw new InvalidOperationException("Speech region or endpoint must be configured.");
     }
 
-    private async Task<MemoryStream> SynthesizeAsync(string text, string locale, string voice, CancellationToken ct)
+    private async Task<MemoryStream> SynthesizeAsync(
+        string text,
+        string locale,
+        string voice,
+        string outputFormat,
+        SpeechConnection connection,
+        CancellationToken ct)
     {
-        var bytes = await SynthesizeBytesAsync(text, locale, voice, ct);
+        var bytes = await SynthesizeBytesAsync(text, locale, voice, outputFormat, connection, ct);
         return new MemoryStream(bytes, writable: false);
     }
 
@@ -195,9 +302,9 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
         }
     }
 
-    private static string BuildBlobName(string voice, string text)
+    private static string BuildBlobName(string voice, string outputFormat, string text)
     {
-        var bytes = Encoding.UTF8.GetBytes($"{voice}|{text}");
+        var bytes = Encoding.UTF8.GetBytes($"{voice}|{outputFormat}|{text}");
         var hash = SHA256.HashData(bytes);
         var hex = Convert.ToHexString(hash).ToLowerInvariant();
         return $"{voice}/{hex}.mp3";
@@ -258,5 +365,14 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
             logger.LogWarning(ex, "Failed to initialize TTS blob cache; synthesis will bypass cache.");
             return null;
         }
+    }
+
+    private sealed record SpeechConnection(
+        string Endpoint,
+        string ResourceId,
+        string Key,
+        string Region)
+    {
+        public bool UsesEntra => !string.IsNullOrWhiteSpace(ResourceId);
     }
 }

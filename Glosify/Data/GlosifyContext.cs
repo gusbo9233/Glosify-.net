@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Glosify.Models;
 using Glosify.Models.Library;
@@ -30,6 +31,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<BookDocument> BookDocuments { get; set; }
     public DbSet<BookPage> BookPages { get; set; }
+    public DbSet<BookPageTranslation> BookPageTranslations { get; set; }
 
     public DbSet<Classroom> Classrooms { get; set; }
     public DbSet<ClassroomMembership> ClassroomMemberships { get; set; }
@@ -46,6 +48,19 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Preserve the key lengths used by the existing Identity schema. Newer
+        // Identity package defaults otherwise scaffold unrelated widening changes.
+        modelBuilder.Entity<IdentityUserLogin<string>>(entity =>
+        {
+            entity.Property(login => login.LoginProvider).HasMaxLength(128);
+            entity.Property(login => login.ProviderKey).HasMaxLength(128);
+        });
+        modelBuilder.Entity<IdentityUserToken<string>>(entity =>
+        {
+            entity.Property(token => token.LoginProvider).HasMaxLength(128);
+            entity.Property(token => token.Name).HasMaxLength(128);
+        });
 
         modelBuilder.Entity<Quiz>(entity =>
         {
@@ -236,6 +251,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.Property(b => b.BlobName).HasMaxLength(1024).IsRequired();
             entity.Property(b => b.ProcessingStatus).HasMaxLength(64).IsRequired();
             entity.Property(b => b.ProcessingMessage).HasMaxLength(512);
+            entity.Property(b => b.PreferredTranslationLanguage).HasMaxLength(64);
 
             entity.HasIndex(b => b.UserId);
             entity.HasIndex(b => new { b.UserId, b.CreatedAt });
@@ -259,6 +275,30 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
                 .WithMany(b => b.Pages)
                 .HasForeignKey(p => p.BookDocumentId)
                 .HasConstraintName("FK_BookPages_BookDocuments_BookDocumentId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BookPageTranslation>(entity =>
+        {
+            entity.HasKey(translation => translation.Id);
+            entity.Property(translation => translation.TargetLanguage).HasMaxLength(64).IsRequired();
+            entity.Property(translation => translation.SourceTextHash).HasMaxLength(64).IsRequired();
+            entity.Property(translation => translation.DetectedSourceLanguage).HasMaxLength(64);
+            entity.Property(translation => translation.Model).HasMaxLength(128).IsRequired();
+            entity.Property(translation => translation.SegmentsJson).IsRequired();
+
+            entity.HasIndex(translation => new
+            {
+                translation.BookPageId,
+                translation.TargetLanguage,
+                translation.SourceTextHash,
+                translation.SchemaVersion,
+            }).IsUnique();
+
+            entity.HasOne(translation => translation.BookPage)
+                .WithMany(page => page.Translations)
+                .HasForeignKey(translation => translation.BookPageId)
+                .HasConstraintName("FK_BookPageTranslations_BookPages_BookPageId")
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -5,6 +5,7 @@ using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Speaking;
+using Glosify.Services.Books;
 
 namespace Glosify.Filters;
 
@@ -44,7 +45,14 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
                 Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
             GenerativeAiTimeoutException => Error(StatusCodes.Status504GatewayTimeout, exception.Message),
             GenerativeAiUpstreamException => Error(StatusCodes.Status502BadGateway, exception.Message),
+            BookPageTranslationValidationException =>
+                Error(StatusCodes.Status400BadRequest, exception.Message),
+            BookPageTranslationNotFoundException =>
+                Error(StatusCodes.Status404NotFound, exception.Message),
+            BookPageTranslationUnavailableException =>
+                Error(StatusCodes.Status422UnprocessableEntity, exception.Message),
             SpeakingValidationException => Error(StatusCodes.Status400BadRequest, exception.Message),
+            SpeakingQuizNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),
             SpeakingSessionNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),
             SpeakingSessionExpiredException => Error(StatusCodes.Status410Gone, exception.Message),
             SpeakingSessionInvalidatedException => Error(StatusCodes.Status410Gone, exception.Message),

@@ -38,11 +38,13 @@ public sealed class SpeakingServiceTests
     [InlineData("German", "de-DE")]
     [InlineData("Polish", "pl-PL")]
     [InlineData("Ukrainian", "uk-UA")]
-    public void Avatar_catalog_has_three_language_bound_avatars(string language, string locale)
+    public void Avatar_catalog_has_tutor_and_three_language_bound_avatars(string language, string locale)
     {
         var avatars = SpeakingAvatarCatalog.ForLanguage(language);
 
-        Assert.Equal(3, avatars.Count);
+        Assert.Equal(4, avatars.Count);
+        Assert.Equal("tutor", avatars[0].Slug);
+        Assert.True(SpeakingAvatarCatalog.IsTutor(avatars[0].Id));
         Assert.All(avatars, avatar =>
         {
             Assert.Equal(language, avatar.Language);
@@ -66,6 +68,59 @@ public sealed class SpeakingServiceTests
         Assert.Equal("Żabka checkout", kasia.Scenario);
         Assert.Equal("ŻABKA", kasia.SceneSign);
         Assert.Contains("kawę", kasia.OpeningPolish, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Tutor_session_keeps_read_only_quiz_context_and_uses_opaque_practice_ids()
+    {
+        var quizId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        var reply = ValidTurn();
+        reply.Practice = new SpeakingAgentPracticeSuggestion
+        {
+            Text = "Poproszę bilet.",
+            Translation = "A ticket, please.",
+            ItemType = "sentence",
+        };
+        var conversation = new FakeConversation((_, _) =>
+            Task.FromResult(new SpeakingAgentTurn(reply, new AiTokenUsage(5, 5, 0, 0, 10))));
+        var credits = new FakeCredits();
+        var timeProvider = TimeProvider.System;
+        var store = CreateStore(new FakeAgentClient(() => conversation), timeProvider);
+        var service = CreateService(
+            store,
+            credits,
+            timeProvider,
+            interactiveMode: false,
+            new FixedQuizReader(quizId));
+        var tutor = SpeakingAvatarCatalog.ForLanguage("Polish")[0];
+        var created = await service.CreateSessionAsync(
+            "learner",
+            tutor,
+            CefrLevel.A2,
+            quizId);
+
+        var turn = await service.SendTurnAsync(
+            created.SessionId,
+            "learner",
+            "Chcę ćwiczyć.",
+            SpeakingInputMode.Text,
+            practicePromptId: null);
+
+        Assert.Equal(quizId, created.ActiveQuiz?.Id);
+        Assert.Equal(quizId, turn.ActiveQuiz?.Id);
+        Assert.Equal("Poproszę bilet.", turn.PracticePrompt?.Text);
+        Assert.NotEqual(Guid.Empty, turn.PracticePrompt?.Id);
+        Assert.Contains("Scenario-neutral tutor mode is enabled", Assert.Single(conversation.Messages));
+        Assert.Contains("Quiz access is read-only", conversation.Messages[0]);
+
+        var reservationsBeforeStaleAttempt = credits.Reservations.Count;
+        await Assert.ThrowsAsync<SpeakingValidationException>(() => service.SendTurnAsync(
+            created.SessionId,
+            "learner",
+            "Jeszcze raz.",
+            SpeakingInputMode.Voice,
+            Guid.NewGuid()));
+        Assert.Equal(reservationsBeforeStaleAttempt, credits.Reservations.Count);
     }
 
     [Theory]
@@ -716,7 +771,8 @@ public sealed class SpeakingServiceTests
         ISpeakingSessionStore store,
         FakeCredits credits,
         TimeProvider timeProvider,
-        bool interactiveMode) =>
+        bool interactiveMode,
+        ISpeakingQuizReader? quizReader = null) =>
         new(
             store,
             credits,
@@ -727,7 +783,8 @@ public sealed class SpeakingServiceTests
                 InteractiveBartenderEnabled = interactiveMode,
             }),
             timeProvider,
-            NullLogger<SpeakingService>.Instance);
+            NullLogger<SpeakingService>.Instance,
+            quizReader);
 
     private static SpeakingProposedAction Proposal(
         SpeakingProposedActionType type,
@@ -806,11 +863,39 @@ public sealed class SpeakingServiceTests
             return _run(message, interactionState, cancellationToken);
         }
 
+        public Task<SpeakingAgentTurn> RunTurnAsync(
+            string message,
+            BartenderInteractionState? interactionState,
+            CancellationToken cancellationToken,
+            SpeakingQuizContextState? quizContext)
+        {
+            Messages.Add(message);
+            InteractionStates.Add(interactionState);
+            return _run(message, interactionState, cancellationToken);
+        }
+
         public ValueTask DisposeAsync()
         {
             DisposeCount++;
             return ValueTask.CompletedTask;
         }
+    }
+
+    private sealed class FixedQuizReader(Guid quizId) : ISpeakingQuizReader
+    {
+        private readonly SpeakingActiveQuiz _quiz = new(quizId, "Travel", 2, 1);
+
+        public Task<IReadOnlyList<SpeakingQuizOption>> ListAsync(string userId, string language, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<SpeakingQuizOption>>([new(_quiz.Id, _quiz.Name)]);
+
+        public Task<SpeakingActiveQuiz?> GetAsync(Guid requestedQuizId, string userId, string language, CancellationToken cancellationToken = default) =>
+            Task.FromResult<SpeakingActiveQuiz?>(requestedQuizId == _quiz.Id ? _quiz : null);
+
+        public Task<SpeakingQuizWordPage?> GetWordsAsync(Guid requestedQuizId, string userId, string language, int offset, int limit, CancellationToken cancellationToken = default) =>
+            Task.FromResult<SpeakingQuizWordPage?>(new SpeakingQuizWordPage([], false, null));
+
+        public Task<SpeakingQuizSentencePage?> GetSentencesAsync(Guid requestedQuizId, string userId, string language, int offset, int limit, CancellationToken cancellationToken = default) =>
+            Task.FromResult<SpeakingQuizSentencePage?>(new SpeakingQuizSentencePage([], false, null));
     }
 
     private sealed class ManualTimeProvider(DateTimeOffset now) : TimeProvider

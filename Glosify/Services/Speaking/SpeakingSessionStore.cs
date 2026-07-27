@@ -10,7 +10,8 @@ public interface ISpeakingSessionStore
         SpeakingAvatarDefinition avatar,
         CefrLevel cefrLevel,
         bool interactiveMode = false,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        SpeakingQuizContextState? quizContext = null);
 
     SpeakingSessionState Get(Guid sessionId, string userId);
 
@@ -47,7 +48,8 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
         SpeakingAvatarDefinition avatar,
         CefrLevel cefrLevel,
         bool interactiveMode = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        SpeakingQuizContextState? quizContext = null)
     {
         await RemoveExpiredAsync(userId);
         EnsureCapacity(userId);
@@ -65,7 +67,8 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
             interactiveMode,
             conversation,
             now,
-            _ttl);
+            _ttl,
+            quizContext);
 
         lock (_mutationLock)
         {
@@ -175,7 +178,8 @@ public sealed class SpeakingSessionState(
     bool interactiveMode,
     ISpeakingAgentConversation conversation,
     DateTimeOffset now,
-    TimeSpan ttl)
+    TimeSpan ttl,
+    SpeakingQuizContextState? quizContext = null)
 {
     private long _lastAccessUtcTicks = now.UtcTicks;
 
@@ -187,6 +191,9 @@ public sealed class SpeakingSessionState(
     public ISpeakingAgentConversation Conversation { get; } = conversation;
     public BartenderInteractionState? InteractionState { get; set; } =
         interactiveMode ? BartenderInteractionState.Create() : null;
+    public SpeakingQuizContextState? QuizContext { get; set; } = quizContext;
+    public SpeakingPracticePrompt? PendingPracticePrompt { get; set; }
+    public bool HasTransactionalTools => InteractiveMode || QuizContext is not null;
     public SemaphoreSlim TurnGate { get; } = new(1, 1);
 
     public bool IsExpired(DateTimeOffset at) =>

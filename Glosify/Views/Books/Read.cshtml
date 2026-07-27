@@ -1,3 +1,5 @@
+@using Glosify.Services.Books
+@inject Glosify.Services.Language.ILanguageContext LangContext
 @model BookReaderViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
@@ -15,17 +17,44 @@
         ViewData["AssistantQuizId"] = selectedQuiz.Id;
         ViewData["AssistantContextLabel"] = $"{selectedQuiz.Name} - {Model.Book.Title}";
     }
+
+    var preferredTranslationLanguage = Model.Book.PreferredTranslationLanguage ?? "English";
 }
 
 <section class="book-reader-page">
-    <section class="pdf-reader-shell" data-document-id="@Model.Book.Id" data-page-count="@Model.Book.PageCount">
-        <div class="pdf-canvas-wrap">
-            <canvas data-pdf-canvas></canvas>
+    <form class="reader-antiforgery" aria-hidden="true">
+        @Html.AntiForgeryToken()
+    </form>
+    <section class="pdf-reader-shell"
+             data-document-id="@Model.Book.Id"
+             data-page-count="@Model.Book.PageCount"
+             data-reading-language="@(LangContext.CurrentLanguage ?? string.Empty)"
+             data-preferred-translation-language="@preferredTranslationLanguage">
+        <div class="reader-workspace" data-reader-workspace>
+            <div class="pdf-canvas-wrap" data-reader-original-pane>
+                <div class="pdf-page-surface" data-pdf-page-surface>
+                    <canvas data-pdf-canvas></canvas>
+                    <div class="reader-highlight-layer" data-reader-highlight-layer aria-hidden="true"></div>
+                    <div class="textLayer" data-pdf-text-layer></div>
+                </div>
+            </div>
+
+            <aside class="reader-translation-pane" data-reader-translation-pane hidden>
+                <header class="reader-translation-heading">
+                    <div>
+                        <span>Translated page</span>
+                        <strong data-translation-heading-language>@preferredTranslationLanguage</strong>
+                    </div>
+                    <small data-detected-language></small>
+                </header>
+                <div class="reader-translation-state" data-translation-state hidden></div>
+                <div class="reader-translation-content" data-translation-content></div>
+            </aside>
         </div>
 
         <a class="reader-back" asp-controller="Books" asp-action="Index" title="Back to books">
             <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-            Books
+            <span class="reader-back-label">Books</span>
         </a>
 
         <div class="reader-tools" role="toolbar" aria-label="PDF view controls">
@@ -43,6 +72,70 @@
             <button class="reader-tool" type="button" data-rotate aria-label="Rotate clockwise" title="Rotate clockwise">
                 <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>
             </button>
+            <span class="reader-tool-divider" aria-hidden="true"></span>
+            <label class="reader-voice-picker" data-reader-voice-control hidden>
+                <span class="visually-hidden">Polish reading voice</span>
+                <select data-reader-voice aria-label="Polish reading voice" title="Polish reading voice">
+                    <option value="zofia" selected>Zofia</option>
+                    <option value="agnieszka">Agnieszka</option>
+                    <option value="marek">Marek</option>
+                </select>
+            </label>
+            <button class="reader-tool reader-tts-toggle"
+                    type="button"
+                    data-reader-tts
+                    aria-pressed="false"
+                    aria-label="Read this page aloud"
+                    title="Read this page aloud"
+                    disabled>
+                <span class="material-symbols-outlined" data-reader-tts-icon aria-hidden="true">volume_up</span>
+                <span class="reader-tts-label" data-reader-tts-label>Read</span>
+            </button>
+        </div>
+
+        <div class="reader-translation-tools" role="toolbar" aria-label="Page translation controls">
+            <button class="reader-tool reader-translation-toggle"
+                    type="button"
+                    data-translation-toggle
+                    data-translation-state="off"
+                    aria-pressed="false"
+                    aria-label="Translation is off. Translate this page"
+                    title="Translation is off. Click to translate this page">
+                <span class="material-symbols-outlined" data-translation-toggle-icon aria-hidden="true">translate</span>
+                <span class="reader-translation-label">Translation</span>
+                <span class="reader-translation-status" data-translation-toggle-status aria-live="polite">Off</span>
+            </button>
+            <label class="reader-language-picker">
+                <span class="visually-hidden">Translation language</span>
+                <select data-translation-language aria-label="Translation language">
+                    @foreach (var language in BookTranslationLanguages.All)
+                    {
+                        if (string.Equals(language, preferredTranslationLanguage, StringComparison.OrdinalIgnoreCase))
+                        {
+                            <option value="@language" selected>@language</option>
+                        }
+                        else
+                        {
+                            <option value="@language">@language</option>
+                        }
+                    }
+                </select>
+            </label>
+            <button class="reader-tool"
+                    type="button"
+                    data-split-view-toggle
+                    aria-pressed="false"
+                    aria-label="Show original and translation side by side"
+                    title="Show original and translation side by side"
+                    disabled>
+                <span class="material-symbols-outlined" aria-hidden="true">view_column_2</span>
+                <span class="reader-split-label">Split view</span>
+            </button>
+        </div>
+
+        <div class="reader-mobile-tabs" data-reader-mobile-tabs hidden>
+            <button type="button" class="is-active" data-reader-mobile-view="original">Original</button>
+            <button type="button" data-reader-mobile-view="translation">Translation</button>
         </div>
 
         <button class="reader-nav-arrow reader-nav-prev" type="button" data-prev-page aria-label="Previous page" aria-keyshortcuts="ArrowLeft" title="Previous page">
@@ -54,7 +147,13 @@
 
         <div class="reader-page-pill" data-page-indicator>Page 1 of @Model.Book.PageCount</div>
 
+        <div class="reader-tts-live" data-reader-tts-status aria-live="polite" hidden></div>
+
         <div class="assistant-status is-error" data-reader-status hidden></div>
+
+        <aside class="reader-selection-popover" data-selection-popover role="tooltip" aria-live="polite" hidden>
+            <strong data-hover-translation></strong>
+        </aside>
     </section>
 </section>
 

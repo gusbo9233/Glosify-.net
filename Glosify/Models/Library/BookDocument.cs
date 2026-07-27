@@ -10,6 +10,7 @@ namespace Glosify.Models.Library
         public int PageCount { get; set; }
         public string ProcessingStatus { get; set; } = "Ready";
         public string? ProcessingMessage { get; set; }
+        public string? PreferredTranslationLanguage { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
 

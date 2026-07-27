@@ -7,6 +7,70 @@ public static class SpeakingAvatarCatalog
     private static readonly SpeakingAvatarDefinition[] Definitions =
     [
         new(
+            SpeakingAvatarId.TutorPolish,
+            "tutor",
+            "Polish",
+            "pl-PL",
+            "Glosify Tutor",
+            "Open learning studio",
+            "pl-PL-MarekNeural",
+            "Cześć! Czego chcesz się dziś nauczyć albo co chcesz przećwiczyć?",
+            "Hi! What would you like to learn or practise today?",
+            "0%",
+            "0%",
+            "tutor",
+            "tutor",
+            "GLOSIFY LAB",
+            "#7667e8"),
+        new(
+            SpeakingAvatarId.TutorEstonian,
+            "tutor",
+            "Estonian",
+            "et-EE",
+            "Glosify Tutor",
+            "Open learning studio",
+            "et-EE-KertNeural",
+            "Tere! Mida soovid täna õppida või harjutada?",
+            "Hi! What would you like to learn or practise today?",
+            "0%",
+            "0%",
+            "tutor",
+            "tutor",
+            "GLOSIFY LAB",
+            "#7667e8"),
+        new(
+            SpeakingAvatarId.TutorGerman,
+            "tutor",
+            "German",
+            "de-DE",
+            "Glosify Tutor",
+            "Open learning studio",
+            "de-DE-ConradNeural",
+            "Hallo! Was möchtest du heute lernen oder üben?",
+            "Hi! What would you like to learn or practise today?",
+            "0%",
+            "0%",
+            "tutor",
+            "tutor",
+            "GLOSIFY LAB",
+            "#7667e8"),
+        new(
+            SpeakingAvatarId.TutorUkrainian,
+            "tutor",
+            "Ukrainian",
+            "uk-UA",
+            "Glosify Tutor",
+            "Open learning studio",
+            "uk-UA-OstapNeural",
+            "Привіт! Що ти хочеш сьогодні вивчити або попрактикувати?",
+            "Hi! What would you like to learn or practise today?",
+            "0%",
+            "0%",
+            "tutor",
+            "tutor",
+            "GLOSIFY LAB",
+            "#7667e8"),
+        new(
             SpeakingAvatarId.Bartender,
             "bartender",
             "Polish",
@@ -203,8 +267,13 @@ public static class SpeakingAvatarCatalog
     private static readonly FrozenDictionary<SpeakingAvatarId, SpeakingAvatarDefinition> ById =
         Definitions.ToFrozenDictionary(definition => definition.Id);
 
-    private static readonly FrozenDictionary<string, SpeakingAvatarDefinition> BySlug =
-        Definitions.ToFrozenDictionary(definition => definition.Slug, StringComparer.OrdinalIgnoreCase);
+    private static readonly FrozenDictionary<string, SpeakingAvatarDefinition[]> BySlug =
+        Definitions
+            .GroupBy(definition => definition.Slug, StringComparer.OrdinalIgnoreCase)
+            .ToFrozenDictionary(
+                group => group.Key,
+                group => group.ToArray(),
+                StringComparer.OrdinalIgnoreCase);
 
     private static readonly FrozenDictionary<string, SpeakingAvatarDefinition[]> ByLanguage =
         Definitions
@@ -217,6 +286,12 @@ public static class SpeakingAvatarCatalog
     public static IReadOnlyList<SpeakingAvatarDefinition> All => Definitions;
 
     public static SpeakingAvatarDefinition Get(SpeakingAvatarId id) => ById[id];
+
+    public static bool IsTutor(SpeakingAvatarId id) => id is
+        SpeakingAvatarId.TutorEstonian
+        or SpeakingAvatarId.TutorGerman
+        or SpeakingAvatarId.TutorPolish
+        or SpeakingAvatarId.TutorUkrainian;
 
     public static IReadOnlyList<SpeakingAvatarDefinition> ForLanguage(string? language)
     {
@@ -232,9 +307,10 @@ public static class SpeakingAvatarCatalog
     public static bool TryParse(string? value, out SpeakingAvatarDefinition definition)
     {
         if (!string.IsNullOrWhiteSpace(value)
-            && BySlug.TryGetValue(value.Trim(), out var parsed))
+            && BySlug.TryGetValue(value.Trim(), out var matches)
+            && matches.Length == 1)
         {
-            definition = parsed;
+            definition = matches[0];
             return true;
         }
 
@@ -247,9 +323,13 @@ public static class SpeakingAvatarCatalog
         string? language,
         out SpeakingAvatarDefinition definition)
     {
-        if (TryParse(value, out var parsed)
+        if (!string.IsNullOrWhiteSpace(value)
             && !string.IsNullOrWhiteSpace(language)
-            && string.Equals(parsed.Language, language.Trim(), StringComparison.OrdinalIgnoreCase))
+            && BySlug.TryGetValue(value.Trim(), out var matches)
+            && matches.FirstOrDefault(candidate => string.Equals(
+                candidate.Language,
+                language.Trim(),
+                StringComparison.OrdinalIgnoreCase)) is { } parsed)
         {
             definition = parsed;
             return true;
@@ -269,10 +349,14 @@ public static class SpeakingAvatarCatalog
 
     public static SpeakingPageViewModel CreatePageViewModel(
         string language,
-        bool interactiveBartenderEnabled = false)
+        IReadOnlyList<SpeakingQuizOption>? quizzes = null,
+        bool interactiveBartenderEnabled = false,
+        bool genericTutorEnabled = false)
     {
-        var definitions = ForLanguage(language);
-        if (definitions.Count == 0)
+        var definitions = ForLanguage(language)
+            .Where(definition => genericTutorEnabled || !IsTutor(definition.Id))
+            .ToArray();
+        if (definitions.Length == 0)
         {
             throw new ArgumentException("Speaking avatars are not configured for this language.", nameof(language));
         }
@@ -295,12 +379,14 @@ public static class SpeakingAvatarCatalog
                 definition.PortraitStyle,
                 definition.SceneSign,
                 definition.AccentColor)).ToArray(),
+            quizzes ?? [],
             first.Language,
             first.Locale,
             first.LanguageCode,
             first.Slug,
             CefrLevel.A2.ToString(),
             interactiveBartenderEnabled
-                && definitions.Any(definition => definition.Id == SpeakingAvatarId.Bartender));
+                && definitions.Any(definition => definition.Id == SpeakingAvatarId.Bartender),
+            genericTutorEnabled);
     }
 }

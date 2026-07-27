@@ -14,4 +14,13 @@ public sealed class SpeechOptions
     public string Region { get; set; } = string.Empty;
     public string BlobContainer { get; set; } = "tts-cache";
     public int MaxTextLength { get; set; } = 200;
+    public SpeechHighDefinitionOptions HighDefinition { get; set; } = new();
+}
+
+public sealed class SpeechHighDefinitionOptions
+{
+    public bool Enabled { get; set; }
+    public string Endpoint { get; set; } = string.Empty;
+    public string ResourceId { get; set; } = string.Empty;
+    public string Region { get; set; } = string.Empty;
 }

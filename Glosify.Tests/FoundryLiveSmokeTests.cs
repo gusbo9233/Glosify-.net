@@ -3,6 +3,7 @@ using Azure.AI.Projects;
 using Azure.Identity;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Books;
 using Glosify.Services.Speaking;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -195,6 +196,57 @@ public sealed class FoundryLiveSmokeTests
             Assert.Single(credits.Commits);
             Assert.Empty(credits.Releases);
         }
+    }
+
+    [LiveFoundryFact]
+    [Trait("Category", "LiveFoundry")]
+    public async Task Page_translation_deployment_returns_complete_ordered_segments()
+    {
+        var endpoint = Environment.GetEnvironmentVariable("FOUNDRY_PROJECT_ENDPOINT")
+            ?? DefaultEndpoint;
+        var deployment = Environment.GetEnvironmentVariable("FOUNDRY_PAGE_TRANSLATION_DEPLOYMENT")
+            ?? "gpt-5.4-mini";
+        var projectClient = new AIProjectClient(
+            new Uri(endpoint),
+            new DefaultAzureCredential());
+        var credits = new SmokeCredits();
+        var client = new FoundryGenerativeAiClient(
+            new FoundryAgentInvoker(projectClient, NullLoggerFactory.Instance),
+            Options.Create(new GenerativeAiOptions
+            {
+                Provider = GenerativeAiOptions.FoundryProvider,
+                Foundry = new FoundryGenerativeAiOptions
+                {
+                    ProjectEndpoint = endpoint,
+                    StructuredDeployment = deployment,
+                    PageTranslationDeployment = deployment,
+                    TimeoutSeconds = 180,
+                },
+            }),
+            Options.Create(new AiUsageOptions { PageTranslationOutputTokenReserve = 256 }),
+            credits,
+            NullLogger<FoundryGenerativeAiClient>.Instance);
+
+        var result = await client.GenerateStructuredAsync<BookPageTranslationAiResponse>(
+            """
+            Translate every input segment naturally into Swedish. Preserve each index exactly,
+            return every segment once, and report the detected source language. Return only an
+            object shaped exactly like
+            {"detectedSourceLanguage":"English","segments":[{"index":0,"translation":"God morgon."}]}
+            with one segments item for every input index and no markdown or extra keys.
+            Input: [{"index":0,"sourceText":"Good morning."},{"index":1,"sourceText":"How are you?"}]
+            """,
+            Usage(AiUsageFeatures.PageTranslation, "live_page_translation"),
+            deployment);
+
+        if (result.DetectedSourceLanguage is not null)
+        {
+            Assert.Equal("English", result.DetectedSourceLanguage, ignoreCase: true);
+        }
+        Assert.Equal([0, 1], result.Segments.Select(segment => segment.Index));
+        Assert.All(result.Segments, segment => Assert.False(string.IsNullOrWhiteSpace(segment.Translation)));
+        Assert.Single(credits.Commits);
+        Assert.Empty(credits.Releases);
     }
 
     [LiveFoundryFact]

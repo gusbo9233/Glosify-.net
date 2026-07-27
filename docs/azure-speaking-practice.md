@@ -1,18 +1,21 @@
 # Azure-powered speaking practice
 
 The authenticated `/Speaking` page lets learners practise their currently
-selected Glosify language with three language-bound animated personas using
+selected Glosify language with a scenario-neutral tutor and three
+language-bound animated personas using
 either typed chat or one-utterance push-to-talk. Estonian, German, Polish, and
 Ukrainian each have their own avatar set.
 Microsoft Foundry generates the conversation and coaching, while Azure AI
 Speech handles recognition, pronunciation assessment, neural speech, and
 viseme-driven mouth animation.
 
-**Production status (17 July 2026): Polish configured; multilingual code ready.**
+**Production status (22 July 2026): Polish configured; multilingual tutor code
+is implemented behind a disabled feature flag.**
 The `glosify` App Service is connected to the `glosify-speaking` Foundry project
 and the `glosify-speech` Speech resource through its system-assigned managed
 identity. Publish the nine named Estonian, German, and Ukrainian prompt agents
-before enabling those languages in production.
+before enabling those languages in production. Publish and verify the pinned
+`glosify-tutor`, version `1` agent before enabling the tutor flag.
 
 ## Architecture
 
@@ -21,6 +24,8 @@ flowchart LR
     Browser["Authenticated /Speaking page"]
     Api["ASP.NET Core speaking API"]
     Memory["In-process session map"]
+    QuizReader["Read-only quiz reader"]
+    QuizData["Existing learner quizzes"]
     SceneTools["In-process bartender<br/>scene-tool runtime"]
     Foundry["Microsoft Foundry<br/>versioned prompt agents"]
     Speech["Azure AI Speech<br/>recognition, assessment, TTS"]
@@ -30,6 +35,8 @@ flowchart LR
     Api -->|"opaque user-bound session"| Memory
     Api <-->|"managed identity<br/>structured replies + tool calls/results"| Foundry
     Api -->|"validate cloned state"| SceneTools
+    Api -->|"owner + language scoped"| QuizReader
+    QuizReader --> QuizData
     SceneTools -->|"accepted state + allowlisted commands"| Memory
     Api -->|"short-lived Entra token"| Browser
     Browser -->|"learner audio and avatar speech"| Speech
@@ -44,8 +51,13 @@ not proxied through the Glosify application.
 
 - Desktop navigation shows **Speaking** and compact navigation shows **Speak**.
   The floating Glosify assistant is hidden on this page.
-- Learners choose one of the three avatars bound to the currently selected app
-  language and a CEFR level from A1 through C1. A2 is the default.
+- When `Speaking:GenericTutorEnabled` is on, Glosify Tutor is the first/default
+  avatar for every supported language. It teaches arbitrary topics in a neutral
+  digital studio using the selected language and CEFR level. The three existing
+  scenario avatars remain available and unchanged.
+- Tutor sessions expose a quiz picker. **Free lesson** is the default; changing
+  the picker keeps the current conversation, and a conversational tool-based
+  switch updates the picker.
 - Each avatar has a static opening greeting, so creating a session does not call
   the model or consume an AI credit.
 - Changing avatar or level starts a new session. The page asks for confirmation
@@ -58,7 +70,12 @@ not proxied through the Glosify application.
   default; the toggle is stored locally in the browser.
 - Every model turn includes a corrected target-language sentence plus English
   grammar, vocabulary, and naturalness coaching. Voice turns additionally show
-  Azure Speech accuracy and fluency scores.
+  Azure Speech accuracy and fluency scores. Exact repeat drills also show
+  completeness, with no pass threshold.
+- The tutor can optionally return a practice card with target text, English
+  translation, replay, and a dedicated hold-to-repeat control. The server keeps
+  the trusted target behind an opaque prompt ID; ordinary microphone input stays
+  in unscripted free-speech mode.
 - Avatar replies play automatically unless muted and can be replayed later.
   Azure Speech visemes drive closed, narrow, round, and open mouth poses; a generic
   talking animation is used when visemes are unavailable.
@@ -72,15 +89,19 @@ not proxied through the Glosify application.
 
 | Language | Persona | Agent | Voice | Scene behaviour |
 | --- | --- | --- | --- | --- |
+| Estonian | Glosify Tutor | `glosify-tutor`, version `1` | `et-EE-KertNeural` | Scenario-neutral digital studio |
 | Estonian | Maarja | `glosify-maarja`, version `2` | `et-EE-AnuNeural` | Friendly old-town café conversation |
 | Estonian | Karl | `glosify-karl`, version `2` | `et-EE-KertNeural` | Practical market small talk |
 | Estonian | Liis | `glosify-liis`, version `2` | `et-EE-AnuNeural` | Relaxed conversation in Kadriorg park |
+| German | Glosify Tutor | `glosify-tutor`, version `1` | `de-DE-ConradNeural` | Scenario-neutral digital studio |
 | German | Hanna | `glosify-hanna`, version `2` | `de-DE-KatjaNeural` | Warm café conversation |
 | German | Jonas | `glosify-jonas`, version `2` | `de-DE-ConradNeural` | Quick station-kiosk exchanges |
 | German | Frau Schneider | `glosify-frau-schneider`, version `2` | `de-DE-KatjaNeural` | Neighbourhood-garden conversation |
+| Polish | Glosify Tutor | `glosify-tutor`, version `1` | `pl-PL-MarekNeural` | Scenario-neutral digital studio |
 | Polish | Bartender | `glosify-bartender`, version `2` | `pl-PL-MarekNeural` | Dry-witted bar conversation |
 | Polish | Kasia | `glosify-kasia`, version `2` | `pl-PL-ZofiaNeural` | Lively evening small talk |
 | Polish | Pan Mietek | `glosify-mietek`, version `2` | `pl-PL-MarekNeural` | `-12%` rate and `-8%` pitch through SSML |
+| Ukrainian | Glosify Tutor | `glosify-tutor`, version `1` | `uk-UA-OstapNeural` | Scenario-neutral digital studio |
 | Ukrainian | Оксана | `glosify-oksana`, version `2` | `uk-UA-PolinaNeural` | Friendly coffee-shop conversation |
 | Ukrainian | Андрій | `glosify-andriy`, version `2` | `uk-UA-OstapNeural` | Lively market conversation |
 | Ukrainian | Пан Микола | `glosify-pan-mykola`, version `2` | `uk-UA-OstapNeural` | Unhurried courtyard conversation |
@@ -107,8 +128,9 @@ camel-cased.
 | Endpoint | Request | Success |
 | --- | --- | --- |
 | `POST /api/speaking/speech-token` | No body | `200` with `{ authorizationToken, region, expiresAtUtc }` |
-| `POST /api/speaking/sessions` | `{ "avatarId": "bartender", "cefrLevel": "A2" }` | `200` with an opaque session ID, avatar metadata, voice, opening turn, and an authoritative interaction snapshot when bartender scene tools are enabled |
-| `POST /api/speaking/sessions/{sessionId}/turns` | `{ "text": "Poproszę wodę.", "inputMode": "voice" }` | `200` with the validated structured turn below |
+| `POST /api/speaking/sessions` | `{ "avatarId": "tutor", "cefrLevel": "A2", "quizId": "guid-or-null" }` | `200` with an opaque session ID, avatar metadata, voice, opening turn, and `activeQuiz` |
+| `PUT /api/speaking/sessions/{sessionId}/quiz` | `{ "quizId": "guid-or-null" }` | `200` with `activeQuiz`; `null` selects Free lesson without replacing the session |
+| `POST /api/speaking/sessions/{sessionId}/turns` | `{ "text": "Poproszę wodę.", "inputMode": "voice", "practicePromptId": "guid-or-null" }` | `200` with the validated structured turn below |
 | `POST /api/speaking/sessions/{sessionId}/actions` | `{ "action": "submitPayment", "denominations": { "20": 1 } }` | `200` with Marek's reply, approved scene commands, and the updated snapshot |
 | `DELETE /api/speaking/sessions/{sessionId}` | No body | `204`; local mapping removed and Foundry conversation deletion attempted |
 
@@ -123,11 +145,24 @@ The turn response is:
     "grammarTipEnglish": "The sentence is already grammatically correct.",
     "vocabularyTipEnglish": "You can add gazowaną or niegazowaną.",
     "naturalnessTipEnglish": "This is a natural and polite order."
+  },
+  "activeQuiz": {
+    "id": "11111111-1111-1111-1111-111111111111",
+    "name": "Travel",
+    "wordCount": 20,
+    "sentenceCount": 8
+  },
+  "practicePrompt": {
+    "id": "f2c3318e-4d09-4b52-b16d-09d767f9ddbc",
+    "text": "Poproszę bilet.",
+    "translation": "A ticket, please.",
+    "itemType": "sentence"
   }
 }
 ```
 
-Avatar IDs are language-bound: Estonian uses `maarja`, `karl`, and `liis`;
+The public `tutor` avatar ID resolves to a language-specific catalog entry.
+Other avatar IDs are language-bound: Estonian uses `maarja`, `karl`, and `liis`;
 German uses `hanna`, `jonas`, and `frau-schneider`; Polish uses `bartender`,
 `kasia`, and `mietek`; Ukrainian uses `oksana`, `andriy`, and `pan-mykola`.
 The server rejects an avatar that does not match the selected-language cookie.
@@ -158,6 +193,15 @@ commit succeed; a failed turn discards both the tentative state and commands.
 The model may choose zero to three tools, normally one, and the final structured
 reply contains no scene-action payload.
 
+Tutor sessions use the same transaction boundary for quiz state. Foundry can
+only list the authenticated learner's quizzes for the trusted target language,
+select one exact protected ID, and page its words or standalone sentences. All
+pages are limited to 50 items. Quiz content is treated as untrusted data and no
+mutation functions are registered. A conversational selection is committed
+only after a valid structured response and successful AI-credit commit; any
+unsafe commit failure invalidates the remote conversation. If the selected quiz
+is deleted, the session returns to Free lesson mode.
+
 The scene remains a non-blocking presentation layer: conversation continues
 regardless of the tab, bill, active drink, payment outcome, or unavailable
 items. Animation and TTS run independently after the authoritative snapshot is
@@ -173,7 +217,7 @@ shape instead.
 | --- | --- |
 | `400` | Invalid avatar, level, input mode, blank text, overlong text, or a request rejected by antiforgery validation |
 | `402` | Insufficient Glosify AI credits |
-| `404` | Session is missing or belongs to another user |
+| `404` | Session is missing/foreign, the tutor flag is disabled, or a quiz is missing, foreign, or for another target language |
 | `409` | Session already has a turn in flight, or the user has reached the active-session limit |
 | `410` | Session expired |
 | `429` | Per-user rate limit exceeded |
@@ -195,7 +239,7 @@ credentials:
 | Model deployment | `grok-4-1-fast-non-reasoning`, xAI model version `1` |
 | Deployment capacity | `GlobalStandard`, 50,000 TPM / 50 RPM |
 | Content filter | `Glosify-Conversation`; blocks high-severity harm, retains prompt-shield protection |
-| Prompt agents | Twelve language personas; version `2` |
+| Prompt agents | Twelve scenario personas at version `2`; tutor version `1` must be published before the flag is enabled |
 | Speech resource | `glosify-speech`, Sweden Central, `F0` |
 | Speech endpoint | `https://glosify-speech.cognitiveservices.azure.com` |
 | Monitoring | Application Insights connection string configured |
@@ -238,6 +282,9 @@ Use Azure app settings, environment variables, or .NET user secrets:
 Speaking__ProjectEndpoint=https://glosify-foundry.services.ai.azure.com/api/projects/glosify-speaking
 Speaking__ModelDeployment=grok-4-1-fast-non-reasoning
 Speaking__InteractiveBartenderEnabled=true
+Speaking__GenericTutorEnabled=false
+Speaking__Agents__Tutor__Name=glosify-tutor
+Speaking__Agents__Tutor__Version=1
 Speaking__Agents__Bartender__Name=glosify-bartender
 Speaking__Agents__Bartender__Version=2
 Speaking__Agents__BartenderInteractive__Name=glosify-bartender-interactive
@@ -268,9 +315,16 @@ Speaking__Agents__PanMykola__Version=2
 Speech__Endpoint=https://glosify-speech.cognitiveservices.azure.com
 Speech__ResourceId=/subscriptions/<subscription>/resourceGroups/glosify/providers/Microsoft.CognitiveServices/accounts/glosify-speech
 Speech__Region=swedencentral
+Speech__HighDefinition__Enabled=true
+Speech__HighDefinition__ResourceId=/subscriptions/<subscription>/resourceGroups/glosify/providers/Microsoft.CognitiveServices/accounts/<hd-speech-resource>
+Speech__HighDefinition__Region=eastus
 
 APPLICATIONINSIGHTS_CONNECTION_STRING=InstrumentationKey=...;IngestionEndpoint=...
 ```
+
+The checked-in `http` and `https` development launch profiles override
+`Speaking__GenericTutorEnabled=true` so the Tutor is visible during local
+development. The production-safe base setting remains `false`.
 
 Optional tuning settings and defaults:
 
@@ -279,9 +333,20 @@ Optional tuning settings and defaults:
 | `Speaking__SessionTtlMinutes` | `60` | Clamped to 5–240 minutes |
 | `Speaking__MaxSessionsPerUser` | `3` | Clamped to 1–10 |
 | `Speaking__InteractiveBartenderEnabled` | `true` | Automatically enables authoritative scene tools for bartender sessions; set to `false` to use the ordinary bartender agent |
+| `Speaking__GenericTutorEnabled` | `false` | Exposes the multilingual Tutor only after its pinned Foundry agent is published and verified |
 | `AiUsage__SpeakingOutputTokenReserve` | `768` | Reserved output allowance per learner turn |
 | `Speech__BlobContainer` | `tts-cache` | Cache used only by server-side fallback TTS |
 | `Speech__MaxTextLength` | `200` | Maximum fallback TTS text length |
+| `Speech__HighDefinition__Enabled` | `false` | Uses an explicitly supported Dragon HD voice for reading-mode German; Estonian, Polish, Ukrainian, and failed HD synthesis use the standard native voice |
+| `Speech__HighDefinition__ResourceId` | empty | Full Azure resource ID used for managed-identity authentication to the HD resource |
+| `Speech__HighDefinition__Region` | empty | Region of the HD-capable resource; uses the regional TTS endpoint when no custom endpoint is supplied |
+| `Speech__HighDefinition__Endpoint` | empty | Optional custom-domain endpoint for a dedicated Speech resource |
+
+Reading mode requests Polish audio as `audio-48khz-192kbitrate-mono-mp3` and
+offers the allowlisted native voices Zofia, Agnieszka, and Marek. Zofia is the
+default, and the browser stores the learner's choice locally. The output format
+and voice are included in the Blob cache identity so lower-rate or differently
+voiced cached audio is never reused.
 
 The CSP derives exact regional Speech HTTPS and WebSocket origins from
 `Speech__Region` and adds the exact custom-domain origin from
@@ -341,6 +406,24 @@ Required object:
   }
 }
 ```
+
+### Glosify Tutor
+
+The exact version-1 definition is source-controlled in
+`.foundry/agents/glosify-tutor-v1.json`. It replaces the scenario/persona block
+with a strict scenario-neutral teaching contract, retains the legacy response
+field names, adds the nullable `practice` object, and declares only these
+read-only functions:
+
+- `list_user_quizzes(offset, limit)`
+- `select_quiz(quiz_id)`
+- `list_quiz_words(offset, limit)`
+- `list_quiz_sentences(offset, limit)`
+
+The application, not the prompt, enforces ownership, current target language,
+pagination bounds, and the trusted active-quiz state. Duplicate quiz names are
+clarified conversationally before an ID is selected. Prompt-like text inside a
+quiz remains learner data and is never followed as an instruction.
 
 ### Bartender
 
@@ -426,6 +509,9 @@ Never threaten or target the learner.
 - The mapping is intentionally stored in process. An app restart or scale-out
   loses active sessions. Add a distributed mapping before running more than one
   app instance.
+- The active quiz and pending opaque practice-prompt ID are also held only in
+  that in-process session. Quiz choice, practice prompts, speaking progress, and
+  transcripts are not persisted.
 - Static opening greetings do not reserve AI credits.
 - Each learner turn uses the `speaking` feature and `speaking_turn` operation.
   It reserves estimated prompt tokens plus the configured 768-token output
@@ -444,9 +530,11 @@ The JavaScript Speech adapter:
 1. Requests a short-lived Entra Speech token from Glosify.
 2. Recognises one utterance with detailed output using the selected avatar's
    `et-EE`, `de-DE`, `pl-PL`, or `uk-UA` locale.
-3. Requests unscripted pronunciation assessment and displays accuracy and
-   fluency. These scores are part of baseline speech-to-text billing; the
-   separately billed prosody add-on is not enabled.
+3. Requests unscripted pronunciation assessment for the ordinary microphone and
+   displays accuracy and fluency. A dedicated repeat drill instead supplies the
+   server-issued exact target and also displays completeness. The scores are
+   informational and do not gate progress. The separately billed prosody add-on
+   is not enabled.
 4. Synthesises replies in the selected neural voice and schedules the four mouth
    poses from Azure viseme audio offsets.
 
@@ -467,6 +555,9 @@ The complete lifecycle is:
 - The browser holds the visible conversation for the current page session and
   stores only the English-translation preference in `localStorage`.
 - The web app stores an opaque user-to-session mapping in process.
+- Tutor session state stores only the active quiz summary and latest opaque
+  practice ID in process. Quiz content is fetched read-only from the learner's
+  existing quizzes when needed.
 - Foundry Agent Service is stateful and holds the remote conversation used for
   context. Glosify attempts to delete it when the learner starts a new session,
   leaves the page, explicitly deletes the session, or when an expired mapping is
@@ -611,6 +702,12 @@ Speaking coverage includes:
 - AI credit reservation, exact and estimated usage commits, release on failure,
   and `402` responses;
 - per-user rate limiting;
+- tutor defaults and language-specific voices; protected quiz ownership,
+  language filtering, 50-item pagination, read-only tool registration, picker
+  switching, transactional tool state, and deleted quizzes;
+- opaque practice-prompt lifecycle, stale prompt rejection before AI-credit
+  reservation, exact-reference assessment, unscripted recording, completeness,
+  and strict Foundry tutor-schema validation;
 - navigation, hidden assistant panel, unique SVG IDs, and pinned Speech SDK
   rendering.
 
@@ -626,11 +723,20 @@ per avatar. Confirm:
    and `/api/tts` fallback leave typed chat and visible replies usable.
 7. No speaking rows or learner audio objects are added to Glosify storage.
 
+Tutor rollout is deliberately staged:
+
+1. Deploy the application with `Speaking__GenericTutorEnabled=false`.
+2. Publish `.foundry/agents/glosify-tutor-v1.json` as the pinned
+   `glosify-tutor`, version `1` agent.
+3. Run free-topic, selection-by-name, vocabulary, sentence, empty-quiz, and
+   prompt-injection smoke cases in all four languages.
+4. Set `Speaking__GenericTutorEnabled=true` only after those checks pass.
+
 ## Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
-| “Azure AI Foundry is not configured for speaking practice.” | `Speaking__ProjectEndpoint`, model deployment, all twelve agent names, and pinned versions |
+| “Azure AI Foundry is not configured for speaking practice.” | `Speaking__ProjectEndpoint`, model deployment, required persona agents, and pinned versions; when the tutor flag is on, also check `glosify-tutor` version `1` |
 | Speech token returns `503` | Speech endpoint, region, resource ID, managed-identity role, and local `DefaultAzureCredential` sign-in |
 | Browser recognition or TTS cannot connect | CSP `connect-src`, custom Speech endpoint, exact regional HTTPS/WSS origins, and microphone permission |
 | Foundry turn returns `502` | Agent structured-output schema, published version, required reply fields, and deployment health |

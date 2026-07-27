@@ -6,6 +6,7 @@ using Glosify.Services.Speaking;
 using Glosify.Services.Speech;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Glosify.Controllers.Api;
 
@@ -18,15 +19,18 @@ public sealed class SpeakingApiController : ControllerBase
     private readonly ISpeakingService _speaking;
     private readonly ISpeechAuthorizationTokenService _speechTokens;
     private readonly ILanguageContext _languageContext;
+    private readonly SpeakingOptions _options;
 
     public SpeakingApiController(
         ISpeakingService speaking,
         ISpeechAuthorizationTokenService speechTokens,
-        ILanguageContext languageContext)
+        ILanguageContext languageContext,
+        IOptions<SpeakingOptions> options)
     {
         _speaking = speaking;
         _speechTokens = speechTokens;
         _languageContext = languageContext;
+        _options = options.Value;
     }
 
     [HttpPost("speech-token")]
@@ -59,6 +63,11 @@ public sealed class SpeakingApiController : ControllerBase
             return BadRequest(new { error = $"That avatar is not available for {language}." });
         }
 
+        if (SpeakingAvatarCatalog.IsTutor(avatar.Id) && !_options.GenericTutorEnabled)
+        {
+            return NotFound();
+        }
+
         if (!SpeakingAvatarCatalog.TryParseCefr(request.CefrLevel, out var cefrLevel))
         {
             return BadRequest(new { error = "CEFR level must be A1, A2, B1, B2, or C1." });
@@ -68,6 +77,7 @@ public sealed class SpeakingApiController : ControllerBase
             User.GetUserId(),
             avatar,
             cefrLevel,
+            request.QuizId,
             cancellationToken);
         return Ok(created);
     }
@@ -88,8 +98,23 @@ public sealed class SpeakingApiController : ControllerBase
             User.GetUserId(),
             request.Text ?? string.Empty,
             inputMode,
+            request.PracticePromptId,
             cancellationToken);
         return Ok(turn);
+    }
+
+    [HttpPut("sessions/{sessionId:guid}/quiz")]
+    public async Task<IActionResult> SelectQuiz(
+        Guid sessionId,
+        [FromBody] SelectSpeakingQuizRequest request,
+        CancellationToken cancellationToken)
+    {
+        var activeQuiz = await _speaking.SelectQuizAsync(
+            sessionId,
+            User.GetUserId(),
+            request.QuizId,
+            cancellationToken);
+        return Ok(new { activeQuiz });
     }
 
     [HttpPost("sessions/{sessionId:guid}/actions")]

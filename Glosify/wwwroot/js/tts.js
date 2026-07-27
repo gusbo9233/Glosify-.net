@@ -1,15 +1,15 @@
 (function () {
     'use strict';
 
-    // Prefer Azure Speech via /api/tts. On 501/503/network errors, fall back to
-    // window.speechSynthesis so the button still works without a Speech resource.
+    // Prefer Azure Speech via /api/tts. Unsupported languages and failed
+    // requests fall back to SpeechSynthesis without affecting supported voices.
     var azureUnavailable = false;
-    var currentAudio = null;
-    var currentObjectUrl = null;
-    var currentButton = null;
+    var unsupportedAzureLanguages = new Set();
+    var currentSession = null;
+    var nextSessionId = 0;
 
-    // Map free-form language names / short codes from the quiz to BCP-47 locales
-    // so the browser's SpeechSynthesis picks the right voice instead of the OS default.
+    // Map free-form language names / short codes to BCP-47 locales so the
+    // browser chooses a matching voice instead of the OS default when possible.
     var LOCALE_MAP = {
         'et': 'et-EE', 'et-ee': 'et-EE', 'estonian': 'et-EE',
         'de': 'de-DE', 'de-de': 'de-DE', 'german': 'de-DE',
@@ -27,35 +27,86 @@
         var key = String(lang).trim().toLowerCase();
         if (LOCALE_MAP[key]) return LOCALE_MAP[key];
         // Already looks like BCP-47 (e.g. "pt-BR"): preserve casing convention.
-        var m = key.match(/^([a-z]{2,3})[-_]([a-z]{2,4})$/);
-        if (m) return m[1] + '-' + m[2].toUpperCase();
+        var match = key.match(/^([a-z]{2,3})[-_]([a-z]{2,4})$/);
+        if (match) return match[1] + '-' + match[2].toUpperCase();
         return key;
     }
 
-    function stopCurrent() {
-        if (currentAudio) {
-            currentAudio.onended = null;
-            currentAudio.onerror = null;
-            try { currentAudio.pause(); } catch (e) { /* ignore */ }
-            currentAudio.removeAttribute('src');
-            currentAudio = null;
-        }
-        if (currentObjectUrl) {
-            URL.revokeObjectURL(currentObjectUrl);
-            currentObjectUrl = null;
-        }
-        if (window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-        }
-        if (currentButton) {
-            currentButton.classList.remove('is-playing');
-            currentButton = null;
+    function cancellationError() {
+        var error = new Error('Speech playback was stopped.');
+        error.name = 'TtsPlaybackCancelledError';
+        return error;
+    }
+
+    function isCancellation(error) {
+        return error && (error.name === 'TtsPlaybackCancelledError' || error.name === 'AbortError');
+    }
+
+    function safeCall(callback) {
+        if (typeof callback !== 'function') return;
+        try {
+            callback.apply(null, Array.prototype.slice.call(arguments, 1));
+        } catch (error) {
+            console.error('TTS callback failed.', error);
         }
     }
 
-    function markPlaying(button) {
-        currentButton = button;
-        button.classList.add('is-playing');
+    function ensureCurrent(session) {
+        if (session.cancelled || currentSession !== session) {
+            throw cancellationError();
+        }
+    }
+
+    function releaseAudio(session) {
+        if (session.audio) {
+            session.audio.onended = null;
+            session.audio.onerror = null;
+            try { session.audio.pause(); } catch (error) { /* ignore */ }
+            session.audio.removeAttribute('src');
+            session.audio = null;
+        }
+        if (session.objectUrl) {
+            URL.revokeObjectURL(session.objectUrl);
+            session.objectUrl = null;
+        }
+    }
+
+    function releaseBrowserSpeech(session) {
+        session.utterance = null;
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+    }
+
+    function releaseCurrentItem(session) {
+        if (session.abortController) {
+            session.abortController.abort();
+            session.abortController = null;
+        }
+        if (session.cancelCurrent) {
+            var cancel = session.cancelCurrent;
+            session.cancelCurrent = null;
+            cancel();
+        }
+        releaseAudio(session);
+        releaseBrowserSpeech(session);
+    }
+
+    function finalize(session, state, error) {
+        if (session.finished) return;
+        session.finished = true;
+        releaseCurrentItem(session);
+        if (currentSession === session) currentSession = null;
+        safeCall(session.callbacks.onStateChange, state, error || null);
+        session.resolve({ state: state, error: error || null });
+    }
+
+    function stop() {
+        if (!currentSession) return false;
+        var session = currentSession;
+        session.cancelled = true;
+        finalize(session, 'stopped');
+        return true;
     }
 
     function pickVoice(locale) {
@@ -64,24 +115,22 @@
         if (!voices || !voices.length) return null;
         var lower = locale.toLowerCase();
         var langOnly = lower.split('-')[0];
-        // 1. Exact BCP-47 match, prefer localService (offline, usually higher quality).
-        var exact = voices.filter(function (v) { return v.lang && v.lang.toLowerCase() === lower; });
-        if (exact.length) {
-            return exact.find(function (v) { return v.localService; }) || exact[0];
-        }
-        // 2. Same primary language (e.g. any pl-*).
-        var sameLang = voices.filter(function (v) {
-            return v.lang && v.lang.toLowerCase().split('-')[0] === langOnly;
+        var exact = voices.filter(function (voice) {
+            return voice.lang && voice.lang.toLowerCase() === lower;
         });
-        if (sameLang.length) {
-            return sameLang.find(function (v) { return v.localService; }) || sameLang[0];
+        if (exact.length) {
+            return exact.find(function (voice) { return voice.localService; }) || exact[0];
+        }
+        var sameLanguage = voices.filter(function (voice) {
+            return voice.lang && voice.lang.toLowerCase().split('-')[0] === langOnly;
+        });
+        if (sameLanguage.length) {
+            return sameLanguage.find(function (voice) { return voice.localService; }) || sameLanguage[0];
         }
         return null;
     }
 
-    // On some browsers (notably Chrome) getVoices() is empty until the
-    // voiceschanged event fires. Prime the list once.
-    function ensureVoicesReady() {
+    function ensureVoicesReady(session) {
         return new Promise(function (resolve) {
             if (!window.speechSynthesis) { resolve(); return; }
             var voices = window.speechSynthesis.getVoices();
@@ -94,111 +143,218 @@
                 resolve();
             };
             window.speechSynthesis.addEventListener('voiceschanged', finish);
-            // Fallback timeout so callers never hang if the event never fires.
             setTimeout(finish, 500);
+        }).then(function () { ensureCurrent(session); });
+    }
+
+    async function playBrowser(item, session) {
+        if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== 'function') {
+            throw new Error('Text-to-speech is unavailable in this browser.');
+        }
+        await ensureVoicesReady(session);
+        ensureCurrent(session);
+
+        var locale = normalizeLocale(item.lang);
+        var utterance = new SpeechSynthesisUtterance(item.text);
+        session.utterance = utterance;
+        if (locale) {
+            utterance.lang = locale;
+            var voice = pickVoice(locale);
+            if (voice) utterance.voice = voice;
+        }
+
+        await new Promise(function (resolve, reject) {
+            var settled = false;
+            var finish = function (error) {
+                if (settled) return;
+                settled = true;
+                utterance.onend = null;
+                utterance.onerror = null;
+                if (session.cancelCurrent === cancel) session.cancelCurrent = null;
+                session.utterance = null;
+                if (error) reject(error); else resolve();
+            };
+            var cancel = function () { finish(cancellationError()); };
+            session.cancelCurrent = cancel;
+            utterance.onend = function () { finish(); };
+            utterance.onerror = function () {
+                finish(new Error('Browser text-to-speech playback failed.'));
+            };
+            window.speechSynthesis.speak(utterance);
         });
     }
 
-    async function playBrowser(text, lang, button) {
-        if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== 'function') {
-            button.classList.remove('is-playing');
-            return;
+    async function playAzure(item, session) {
+        var url = '/api/tts?text=' + encodeURIComponent(item.text)
+            + '&lang=' + encodeURIComponent(item.lang);
+        if (item.quality) url += '&quality=' + encodeURIComponent(item.quality);
+        if (item.voice) url += '&voice=' + encodeURIComponent(item.voice);
+        var controller = new AbortController();
+        session.abortController = controller;
+        var response;
+        try {
+            response = await fetch(url, {
+                credentials: 'same-origin',
+                signal: controller.signal,
+            });
+        } finally {
+            if (session.abortController === controller) session.abortController = null;
         }
-        await ensureVoicesReady();
-        var locale = normalizeLocale(lang);
-        var utter = new SpeechSynthesisUtterance(text);
-        if (locale) {
-            utter.lang = locale;
-            var voice = pickVoice(locale);
-            if (voice) {
-                utter.voice = voice;
-            } else {
-                console.info('No SpeechSynthesis voice found for', locale,
-                    '- browser will use its default voice.');
-            }
-        }
-        var finish = function () {
-            button.classList.remove('is-playing');
-            if (currentButton === button) currentButton = null;
-        };
-        utter.onend = finish;
-        utter.onerror = finish;
-        window.speechSynthesis.speak(utter);
-    }
+        ensureCurrent(session);
 
-    async function playAzure(text, lang, button) {
-        var url = '/api/tts?text=' + encodeURIComponent(text) + '&lang=' + encodeURIComponent(lang);
-        var response = await fetch(url, { credentials: 'same-origin' });
-        if (response.status === 503 || response.status === 501) {
+        var languageKey = normalizeLocale(item.lang) || String(item.lang || '').trim().toLowerCase();
+        if (response.status === 501) {
+            unsupportedAzureLanguages.add(languageKey);
+            throw new Error('Azure Speech does not support this language.');
+        }
+        if (response.status === 503) {
             azureUnavailable = true;
-            await playBrowser(text, lang, button);
-            return;
+            throw new Error('Azure Speech is not configured.');
         }
         if (!response.ok) {
             throw new Error('TTS request failed: ' + response.status);
         }
+
         var blob = await response.blob();
+        ensureCurrent(session);
         var objectUrl = URL.createObjectURL(blob);
         var audio = new Audio(objectUrl);
-        currentAudio = audio;
-        currentObjectUrl = objectUrl;
-        var released = false;
-        var release = function () {
-            if (released) return;
-            released = true;
-            button.classList.remove('is-playing');
-            if (currentAudio === audio) {
-                currentAudio = null;
-                currentButton = null;
-            }
-            if (currentObjectUrl === objectUrl) {
-                currentObjectUrl = null;
-            }
-            audio.removeAttribute('src');
-            URL.revokeObjectURL(objectUrl);
-        };
-        audio.onended = release;
-        audio.onerror = release;
+        session.audio = audio;
+        session.objectUrl = objectUrl;
+
         try {
-            await audio.play();
-        } catch (error) {
-            release();
-            throw error;
+            await new Promise(function (resolve, reject) {
+                var settled = false;
+                var finish = function (error) {
+                    if (settled) return;
+                    settled = true;
+                    audio.onended = null;
+                    audio.onerror = null;
+                    if (session.cancelCurrent === cancel) session.cancelCurrent = null;
+                    if (error) reject(error); else resolve();
+                };
+                var cancel = function () { finish(cancellationError()); };
+                session.cancelCurrent = cancel;
+                audio.onended = function () { finish(); };
+                audio.onerror = function () { finish(new Error('Audio playback failed.')); };
+                audio.play().catch(finish);
+            });
+        } finally {
+            releaseAudio(session);
         }
     }
 
-    document.addEventListener('click', async function (event) {
-        var button = event.target.closest('[data-tts]');
-        if (!button) {
-            return;
+    async function playItem(item, session) {
+        var languageKey = normalizeLocale(item.lang) || String(item.lang || '').trim().toLowerCase();
+        var useBrowser = !item.lang
+            || azureUnavailable
+            || session.azureFailed
+            || unsupportedAzureLanguages.has(languageKey);
+        if (useBrowser && item.voice) {
+            throw new Error('The selected Azure voice is unavailable. No browser voice was substituted.');
         }
+        if (!useBrowser) {
+            try {
+                await playAzure(item, session);
+                return;
+            } catch (error) {
+                if (isCancellation(error)) throw error;
+                if (item.voice) {
+                    throw new Error(
+                        'The selected Azure voice could not be played. No browser voice was substituted.');
+                }
+                session.azureFailed = true;
+                console.warn('Azure TTS failed, falling back to browser TTS.', error);
+            }
+        }
+        ensureCurrent(session);
+        await playBrowser(item, session);
+    }
+
+    async function runQueue(session) {
+        try {
+            for (var index = 0; index < session.items.length; index += 1) {
+                ensureCurrent(session);
+                var item = session.items[index];
+                safeCall(session.callbacks.onItemStart, item, index, session.items.length);
+                await playItem(item, session);
+                ensureCurrent(session);
+                safeCall(session.callbacks.onItemEnd, item, index, session.items.length);
+            }
+            finalize(session, 'completed');
+        } catch (error) {
+            if (isCancellation(error) || session.cancelled) return;
+            finalize(session, 'error', error);
+        }
+    }
+
+    function playQueue(items, callbacks) {
+        stop();
+        callbacks = callbacks || {};
+        var normalizedItems = (Array.isArray(items) ? items : [])
+            .map(function (item) {
+                return {
+                    text: String(item && item.text || '').trim(),
+                    lang: String(item && item.lang || '').trim(),
+                    quality: String(item && item.quality || '').trim(),
+                    voice: String(item && item.voice || '').trim(),
+                    meta: item && item.meta,
+                };
+            })
+            .filter(function (item) { return item.text.length > 0; });
+
+        if (!normalizedItems.length) {
+            var emptyError = new Error('No text is available to read.');
+            safeCall(callbacks.onStateChange, 'error', emptyError);
+            return Promise.resolve({ state: 'error', error: emptyError });
+        }
+
+        var resolveResult;
+        var result = new Promise(function (resolve) { resolveResult = resolve; });
+        var session = {
+            id: ++nextSessionId,
+            items: normalizedItems,
+            callbacks: callbacks,
+            resolve: resolveResult,
+            cancelled: false,
+            finished: false,
+            abortController: null,
+            cancelCurrent: null,
+            audio: null,
+            objectUrl: null,
+            utterance: null,
+            azureFailed: false,
+        };
+        currentSession = session;
+        safeCall(callbacks.onStateChange, 'playing', null);
+        runQueue(session);
+        return result;
+    }
+
+    window.GlosifyTts = Object.freeze({
+        playQueue: playQueue,
+        stop: stop,
+    });
+
+    document.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-tts]');
+        if (!button) return;
         event.preventDefault();
 
         var text = button.getAttribute('data-tts');
         var lang = button.getAttribute('data-tts-lang') || '';
-        if (!text) {
-            return;
-        }
+        if (!text) return;
 
         var wasPlaying = button.classList.contains('is-playing');
-        stopCurrent();
-        if (wasPlaying) {
-            return;
-        }
+        stop();
+        if (wasPlaying) return;
 
-        markPlaying(button);
-
-        if (azureUnavailable) {
-            await playBrowser(text, lang, button);
-            return;
-        }
-
-        try {
-            await playAzure(text, lang, button);
-        } catch (err) {
-            console.warn('Azure TTS failed, falling back to browser TTS.', err);
-            markPlaying(button);
-            await playBrowser(text, lang, button);
-        }
+        playQueue([{ text: text, lang: lang }], {
+            onStateChange: function (state, error) {
+                button.classList.toggle('is-playing', state === 'playing');
+                button.setAttribute('aria-pressed', String(state === 'playing'));
+                if (state === 'error') console.warn('Text-to-speech failed.', error);
+            },
+        });
     });
 })();
