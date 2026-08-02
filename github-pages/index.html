@@ -29,9 +29,9 @@
   </header>
 
   <main id="main">
-    <section class="hero">
+    <section class="hero hero-home">
       <div class="wrap hero-grid">
-        <div>
+        <div class="hero-message">
           <p class="eyebrow">Production full-stack application</p>
           <h1>Language learning, <span class="accent">engineered end to end.</span></h1>
           <p class="hero-copy">Glosify turns books, word lists, and classroom material into a connected practice loop: collect vocabulary, train recall, and build speaking confidence with an AI conversation partner.</p>
@@ -45,16 +45,22 @@
             <span class="proof-item">Automated test suite</span>
           </div>
         </div>
-        <div class="product-orbit" aria-label="Glosify learning loop: discover, remember, and speak">
-          <div class="orbit orbit-one"></div>
-          <div class="orbit orbit-two"></div>
-          <div class="orbit orbit-three"></div>
-          <div class="orbit-core"><div><span>文A</span>Glosify</div></div>
-          <div class="orbit-tag tag-a">▣ Discover</div>
-          <div class="orbit-tag tag-b">✦ Remember</div>
-          <div class="orbit-tag tag-c">● Speak</div>
-          <div class="orbit-tag tag-d">↗ Improve</div>
+        <div class="hero-showcase" aria-label="Screenshots of the deployed Glosify application">
+          <div class="showcase-glow"></div>
+          <div class="browser-frame browser-frame-primary">
+            <div class="browser-bar"><span></span><span></span><span></span><small>Live product · Azure</small></div>
+            <img src="assets/glosify-hero.png" alt="Glosify home screen showing the learning loop" width="1280" height="720">
+          </div>
+          <div class="browser-frame browser-frame-secondary">
+            <div class="browser-bar"><span></span><span></span><span></span><small>Practice paths</small></div>
+            <img src="assets/glosify-learning-flow.png" alt="Glosify vocabulary, recall, and speaking practice choices" width="1280" height="720">
+          </div>
+          <div class="showcase-chip showcase-chip-top"><strong>Live</strong><span>Azure App Service</span></div>
+          <div class="showcase-chip showcase-chip-bottom"><strong>289</strong><span>automated test cases</span></div>
         </div>
+      </div>
+      <div class="wrap stack-rail" aria-label="Technology highlights">
+        <span>.NET 10</span><i></i><span>Azure AI Foundry</span><i></i><span>Azure SQL</span><i></i><span>Speech</span><i></i><span>SignalR</span>
       </div>
     </section>
 
@@ -70,9 +76,9 @@
         </div>
         <figure>
           <div class="screenshot-frame">
-            <img src="assets/glosify-hero.png" alt="Glosify home screen showing the learning loop and navigation for books, quizzes, speaking, and classrooms" width="1280" height="720">
+            <img src="assets/glosify-learning-flow.png" alt="Glosify quick start screen for vocabulary, recall, and speaking practice" width="1280" height="720">
           </div>
-          <figcaption class="screenshot-caption"><span>Live production interface</span><span>Captured from the Azure deployment</span></figcaption>
+          <figcaption class="screenshot-caption"><span>Three clear routes into the learning loop</span><span>Captured from the Azure deployment</span></figcaption>
         </figure>
       </div>
     </section>
@@ -113,7 +119,7 @@
     <section class="section section-tight">
       <div class="wrap">
         <figure>
-          <div class="screenshot-frame"><img src="assets/glosify-learning-flow.png" alt="Glosify quick start cards for vocabulary, recall practice, and speaking" width="1280" height="720"></div>
+          <div class="screenshot-frame"><img src="assets/glosify-hero.png" alt="Glosify learning workspace with books, quizzes, speaking, and classrooms" width="1280" height="720"></div>
           <figcaption class="screenshot-caption"><span>Product pathways remain clear across a feature-rich workspace</span><span>Desktop view</span></figcaption>
         </figure>
       </div>
