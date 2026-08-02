@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Developer overview for the Glosify .NET and Azure application.">
+  <meta name="theme-color" content="#061326"><title>Engineering overview — Glosify</title>
+  <link rel="stylesheet" href="assets/site.css"><script src="assets/site.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header"><div class="wrap header-inner"><a class="brand" href="index.html"><span class="brand-mark">G</span>Glosify</a><button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav" data-menu-button>Menu</button><nav class="nav" id="site-nav" aria-label="Primary navigation" data-nav><a href="index.html">For employers</a><a href="developers.html" aria-current="page">Engineering</a><a href="architecture.html">Architecture</a><a href="workflow.html">Workflow</a><a class="nav-live" href="https://glosify-f0d9e2g3f4ctc3hy.swedencentral-01.azurewebsites.net/">Open live app ↗</a></nav></div></header>
+  <main id="main">
+    <header class="page-hero"><div class="wrap"><p class="eyebrow">Developer documentation</p><h1>Engineering <span class="accent">overview.</span></h1><p class="lede">A guide to the system boundaries, source layout, runtime responsibilities, and technical choices behind Glosify.</p><div class="pill-row"><span class="pill">.NET 10</span><span class="pill">ASP.NET Core MVC</span><span class="pill">EF Core</span><span class="pill">Azure AI Foundry</span><span class="pill">Azure SQL</span><span class="pill">SignalR</span></div></div></header>
+    <section class="section section-tight"><div class="wrap doc-layout">
+      <nav class="doc-toc" aria-label="On this page"><strong>On this page</strong><a href="#shape">System shape</a><a href="#capabilities">Capabilities</a><a href="#source">Source layout</a><a href="#boundaries">Boundaries</a><a href="#next">Next steps</a></nav>
+      <div class="doc-content">
+        <section class="doc-section" id="shape"><p class="kicker">01 · System shape</p><h2>Server-rendered core, focused browser clients.</h2><p>Glosify is an ASP.NET Core MVC application. Controllers own HTTP concerns, scoped services hold application logic, Entity Framework Core maps domain entities to SQL Server, and Razor views render the UI. Feature-specific JavaScript handles interactive sessions such as quizzes, the book reader, speaking scenes, and classroom collaboration.</p><div class="flow"><div class="flow-step"><small>CLIENT</small><strong>Razor + JavaScript</strong><span>Responsive views and interactive feature modules</span></div><div class="flow-step"><small>HTTP</small><strong>MVC + API controllers</strong><span>Validation, authorization, and response shaping</span></div><div class="flow-step"><small>DOMAIN</small><strong>Application services</strong><span>Quiz, word, book, classroom, AI, and speech logic</span></div><div class="flow-step"><small>PLATFORM</small><strong>EF Core + Azure</strong><span>SQL, blobs, AI, speech, calling, and telemetry</span></div></div></section>
+        <section class="doc-section" id="capabilities"><p class="kicker">02 · Capability map</p><h2>Features are organized as vertical slices.</h2><div class="doc-grid"><article class="doc-card"><h3>Vocabulary & quizzes</h3><p>Word sets, public collections, flashcards, typing practice, sentence work, quiz attempts, and custom templates.</p></article><article class="doc-card"><h3>Books</h3><p>PDF upload, blob-backed storage, browser reading, text extraction, page-level translation, and vocabulary capture.</p></article><article class="doc-card"><h3>AI learning</h3><p>Assistant tool calling, structured vocabulary generation, image text extraction, saved context, and credit accounting.</p></article><article class="doc-card"><h3>Speaking</h3><p>Foundry-backed scene agents, browser speech recognition, text-to-speech, session state, and structured coaching.</p></article><article class="doc-card"><h3>Classrooms</h3><p>Membership, invitations, assignments, shared content, live chat, and Azure Communication Services calling.</p></article><article class="doc-card"><h3>Accounts & API</h3><p>Cookie-based web identity, bearer-token mobile endpoints, external login providers, policy authorization, and antiforgery protection.</p></article></div></section>
+        <section class="doc-section" id="source"><p class="kicker">03 · Source layout</p><h2>Where to find the moving parts.</h2><div class="file-tree"><span class="folder">Glosify/</span>
+├── Controllers/        MVC endpoints and page flows
+│   └── Api/            JSON endpoints for app clients
+├── Data/               EF Core context and design-time factory
+├── Hubs/               SignalR classroom hub
+├── Migrations/         Versioned SQL Server schema changes
+├── Models/             Entities, requests, API models, view models
+├── Services/           Application and infrastructure services
+├── Views/              Razor UI grouped by feature
+├── wwwroot/            CSS, browser modules, and vendored libraries
+└── Program.cs          Composition root, middleware, routing
+
+<span class="folder">Glosify.Tests/</span>       xUnit unit and integration tests
+<span class="folder">.github/workflows/</span> CI and Azure deployment</div></section>
+        <section class="doc-section" id="boundaries"><p class="kicker">04 · Design boundaries</p><h2>Interfaces isolate changing infrastructure.</h2><p>Services such as book storage, generative AI, speech, quiz sessions, and classroom operations are consumed behind interfaces. The composition root selects implementations and lifetimes, which keeps controllers small and makes infrastructure-heavy behavior testable.</p><div class="table-wrap"><table><thead><tr><th>Boundary</th><th>Responsibility</th><th>Why it matters</th></tr></thead><tbody><tr><td>Controllers</td><td>HTTP, authorization, validation, status codes</td><td>Web concerns stay out of domain services</td></tr><tr><td>Application services</td><td>Feature rules and orchestration</td><td>Logic can be tested without rendering views</td></tr><tr><td>Infrastructure adapters</td><td>Azure, database, speech, storage, model access</td><td>External dependencies remain replaceable</td></tr><tr><td>View/browser layer</td><td>Presentation and interaction state</td><td>Progressive enhancement keeps page flows legible</td></tr></tbody></table></div></section>
+        <section class="doc-section" id="next"><div class="cta"><p class="kicker">Continue</p><h2>Follow a request through the architecture.</h2><p>See how browser input crosses the MVC, service, data, and managed-cloud boundaries—and where reliability controls are applied.</p><div class="actions" style="margin-top:24px"><a class="button button-primary" href="architecture.html">Read architecture →</a><a class="button button-secondary" href="workflow.html">Local workflow</a></div></div></section>
+      </div>
+    </div></section>
+  </main>
+  <footer class="site-footer"><div class="wrap footer-inner"><span>Glosify developer documentation</span><div class="footer-links"><a href="architecture.html">Architecture</a><a href="https://github.com/gusbo9233/Glosify-.net">GitHub</a></div></div></footer>
+</body></html>
