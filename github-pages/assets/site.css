@@ -196,6 +196,7 @@ td:first-child { color: var(--ink); font-weight: 700; }
 .project-facts dd { margin: 0; color: #d4deec; font-size: .88rem; }
 .case-actions { margin-top: 24px; }
 .case-actions .button { min-height: 44px; padding-inline: 16px; font-size: .88rem; }
+.cold-start-note { margin: 9px 0 0; color: var(--dim); font-size: .74rem; }
 .case-screen { margin: 0; overflow: hidden; border: 1px solid rgba(204,222,245,.19); border-radius: 18px; background: #081528; box-shadow: 0 30px 70px rgba(0,0,0,.4); transform: rotate(.7deg); }
 .case-screen-bar { height: 33px; display: flex; align-items: center; gap: 6px; padding: 0 12px; border-bottom: 1px solid var(--line); }
 .case-screen-bar span { width: 7px; height: 7px; border-radius: 50%; background: #ff7e84; }
