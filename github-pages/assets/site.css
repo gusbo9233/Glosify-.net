@@ -224,6 +224,7 @@ td:first-child { color: var(--ink); font-weight: 700; }
 .engineering-list p { margin: 0; color: var(--muted); font-size: .86rem; }
 .engineering-list strong { color: var(--ink); }
 .screenshot-pair { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(40px,7vw,80px); align-items: center; }
+.screenshot-stack { display: grid; gap: 14px; }
 .screenshot-pair figure { margin: 0; padding: 7px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.035); }
 .screenshot-pair img { width: 100%; height: auto; border-radius: 10px; }
 .screenshot-pair figcaption { padding: 8px 7px 2px; color: var(--dim); font-size: .72rem; }
