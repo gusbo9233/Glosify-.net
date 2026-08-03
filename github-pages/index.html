@@ -28,118 +28,75 @@
     </div>
   </header>
 
-  <main id="main">
-    <section class="hero hero-home">
-      <div class="wrap hero-grid">
-        <div class="hero-message">
-          <p class="eyebrow">Production full-stack application</p>
-          <h1>Language learning, <span class="accent">engineered end to end.</span></h1>
-          <p class="hero-copy">Glosify turns books, word lists, and classroom material into a connected practice loop: collect vocabulary, train recall, and build speaking confidence with an AI conversation partner.</p>
-          <div class="actions">
-            <a class="button button-primary" href="https://glosify-f0d9e2g3f4ctc3hy.swedencentral-01.azurewebsites.net/">Explore the live product ↗</a>
-            <a class="button button-secondary" href="developers.html">View engineering details</a>
-          </div>
-          <div class="hero-proof" aria-label="Project highlights">
-            <span class="proof-item">Deployed on Azure</span>
-            <span class="proof-item">AI & speech integrated</span>
-            <span class="proof-item">Automated test suite</span>
+  <main id="main" class="employer-page">
+    <section class="case-hero">
+      <div class="wrap case-hero-grid">
+        <div class="case-intro">
+          <p class="eyebrow">Full-stack portfolio project</p>
+          <h1>Glosify</h1>
+          <p class="case-summary">A production language-learning web application for collecting vocabulary, practising recall, reading uploaded books, working in classrooms, and speaking with an AI tutor.</p>
+          <dl class="project-facts">
+            <div><dt>Application</dt><dd>ASP.NET Core MVC · .NET 10</dd></div>
+            <div><dt>Platform</dt><dd>Azure App Service, SQL, Blob Storage</dd></div>
+            <div><dt>AI & realtime</dt><dd>Azure AI Foundry, Speech, SignalR</dd></div>
+          </dl>
+          <div class="actions case-actions">
+            <a class="button button-primary" href="https://glosify-f0d9e2g3f4ctc3hy.swedencentral-01.azurewebsites.net/">Live application ↗</a>
+            <a class="button button-secondary" href="https://github.com/gusbo9233/Glosify-.net">Source code ↗</a>
           </div>
         </div>
-        <div class="hero-showcase" aria-label="Screenshots of the deployed Glosify application">
-          <div class="showcase-glow"></div>
-          <div class="browser-frame browser-frame-primary">
-            <div class="browser-bar"><span></span><span></span><span></span><small>Live product · Azure</small></div>
-            <img src="assets/glosify-hero.png" alt="Glosify home screen showing the learning loop" width="1280" height="720">
-          </div>
-          <div class="browser-frame browser-frame-secondary">
-            <div class="browser-bar"><span></span><span></span><span></span><small>Practice paths</small></div>
-            <img src="assets/glosify-learning-flow.png" alt="Glosify vocabulary, recall, and speaking practice choices" width="1280" height="720">
-          </div>
-          <div class="showcase-chip showcase-chip-top"><strong>Live</strong><span>Azure App Service</span></div>
-          <div class="showcase-chip showcase-chip-bottom"><strong>289</strong><span>automated test cases</span></div>
-        </div>
-      </div>
-      <div class="wrap stack-rail" aria-label="Technology highlights">
-        <span>.NET 10</span><i></i><span>Azure AI Foundry</span><i></i><span>Azure SQL</span><i></i><span>Speech</span><i></i><span>SignalR</span>
-      </div>
-    </section>
-
-    <section class="section section-tight">
-      <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="kicker">The product</p>
-            <h2>A complete learning workspace, not a single-purpose demo.</h2>
-            <p>Every feature feeds the next: source material becomes vocabulary, vocabulary becomes practice, and practice becomes real conversation.</p>
-          </div>
-          <a class="text-link" href="https://glosify-f0d9e2g3f4ctc3hy.swedencentral-01.azurewebsites.net/">Launch product ↗</a>
-        </div>
-        <figure>
-          <div class="screenshot-frame">
-            <img src="assets/glosify-learning-flow.png" alt="Glosify quick start screen for vocabulary, recall, and speaking practice" width="1280" height="720">
-          </div>
-          <figcaption class="screenshot-caption"><span>Three clear routes into the learning loop</span><span>Captured from the Azure deployment</span></figcaption>
+        <figure class="case-screen">
+          <div class="case-screen-bar"><span></span><span></span><span></span><small>Production deployment</small></div>
+          <img src="assets/glosify-hero.png" alt="Glosify home screen with navigation for books, quizzes, speaking, and classrooms" width="1280" height="720">
+          <figcaption>Home screen · Azure deployment</figcaption>
         </figure>
       </div>
     </section>
 
-    <section class="section">
+    <section class="case-section">
+      <div class="wrap case-section-grid">
+        <div class="case-section-heading">
+          <p class="kicker">Product scope</p>
+          <h2>What the application does</h2>
+        </div>
+        <div class="scope-list">
+          <article><span>01</span><div><h3>Vocabulary practice</h3><p>Collections, flashcards, typing exercises, custom quizzes, example sentences, and progress tracking.</p></div></article>
+          <article><span>02</span><div><h3>Books and context</h3><p>PDF upload, browser-based reading, text extraction, page translation, and vocabulary capture.</p></div></article>
+          <article><span>03</span><div><h3>AI speaking</h3><p>Guided conversation scenes using browser speech recognition, generated replies, and structured feedback.</p></div></article>
+          <article><span>04</span><div><h3>Classrooms</h3><p>Membership, assignments, shared content, SignalR chat, and Azure Communication Services calling.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="case-section case-section-bordered">
       <div class="wrap">
-        <div class="section-head">
-          <div>
-            <p class="kicker">Core experiences</p>
-            <h2>One product. Three reinforcing loops.</h2>
-          </div>
+        <div class="case-section-heading case-heading-row">
+          <div><p class="kicker">Engineering evidence</p><h2>Implemented across the stack</h2></div>
+          <a class="text-link" href="developers.html">Developer documentation →</a>
         </div>
-        <div class="feature-grid">
-          <article class="card"><div class="card-icon">01</div><h3>Build vocabulary</h3><p>Collect words from PDFs, public collections, assignments, or focused word sets—with translations and contextual examples kept close.</p></article>
-          <article class="card"><div class="card-icon">02</div><h3>Practice recall</h3><p>Move from recognition to production using flashcards, typing sessions, sentence work, and configurable custom quizzes.</p></article>
-          <article class="card"><div class="card-icon">03</div><h3>Speak naturally</h3><p>Enter guided AI scenes, speak through the browser, and receive structured coaching after each turn.</p></article>
+        <div class="evidence-grid">
+          <article><strong>.NET 10</strong><span>ASP.NET Core MVC, Razor, Identity, REST APIs</span></article>
+          <article><strong>25</strong><span>MVC and API controller types</span></article>
+          <article><strong>289</strong><span>xUnit facts and theories</span></article>
+          <article><strong>Azure</strong><span>Managed services, telemetry, and OIDC deployment</span></article>
         </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="wrap split">
-        <div class="sticky-copy">
-          <p class="kicker">Engineering breadth</p>
-          <h2>A modern .NET system backed by managed Azure services.</h2>
-          <p class="lede">The project spans interaction design, domain modeling, data persistence, real-time collaboration, generative AI, speech, security, observability, testing, and continuous delivery.</p>
-          <div class="actions" style="margin-top:28px"><a class="button button-secondary" href="architecture.html">See system architecture</a></div>
-        </div>
-        <div class="stack-list">
-          <article class="stack-item"><div class="stack-num">01</div><div><h3>Application</h3><p>.NET 10, ASP.NET Core MVC, Razor views, JavaScript, and responsive CSS deliver a server-rendered product with focused client-side interactions.</p></div></article>
-          <article class="stack-item"><div class="stack-num">02</div><div><h3>Data & identity</h3><p>Entity Framework Core, Azure SQL, ASP.NET Core Identity, and Azure Blob Storage support relational state, accounts, and book assets.</p></div></article>
-          <article class="stack-item"><div class="stack-num">03</div><div><h3>AI & communication</h3><p>Azure AI Foundry, Azure Speech, Azure Communication Services, and SignalR power tutoring, voice, calling, and live classroom experiences.</p></div></article>
-          <article class="stack-item"><div class="stack-num">04</div><div><h3>Operations</h3><p>OpenTelemetry, Azure Monitor, rate limiting, security headers, xUnit, and GitHub Actions make reliability part of the implementation.</p></div></article>
+        <div class="engineering-list">
+          <p><strong>Backend:</strong> service boundaries, EF Core migrations, SQL retry policies, authentication, authorization, validation, and rate limiting.</p>
+          <p><strong>Cloud:</strong> Azure AI Foundry, Speech, Blob Storage, Communication Services, Monitor, and App Service.</p>
+          <p><strong>Delivery:</strong> automated build and Azure deployment through GitHub Actions with OpenID Connect.</p>
         </div>
       </div>
     </section>
 
-    <section class="section section-tight">
-      <div class="wrap">
-        <figure>
-          <div class="screenshot-frame"><img src="assets/glosify-hero.png" alt="Glosify learning workspace with books, quizzes, speaking, and classrooms" width="1280" height="720"></div>
-          <figcaption class="screenshot-caption"><span>Product pathways remain clear across a feature-rich workspace</span><span>Desktop view</span></figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="wrap impact-band" aria-label="Engineering facts">
-        <div class="metric"><strong>.NET 10</strong><span>current application target</span></div>
-        <div class="metric"><strong>289</strong><span>xUnit facts and theories</span></div>
-        <div class="metric"><strong>25</strong><span>controller types across MVC and APIs</span></div>
-        <div class="metric"><strong>Azure</strong><span>production cloud platform</span></div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="wrap cta">
-        <p class="kicker">Go deeper</p>
-        <h2>Inspect the decisions behind the product.</h2>
-        <p>The developer section explains the source layout, request flow, service boundaries, cloud integrations, testing approach, and local setup.</p>
-        <div class="actions" style="margin-top:26px"><a class="button button-primary" href="developers.html">Enter developer docs →</a><a class="button button-secondary" href="https://github.com/gusbo9233/Glosify-.net">View source on GitHub ↗</a></div>
+    <section class="case-section">
+      <div class="wrap screenshot-pair">
+        <figure><img src="assets/glosify-learning-flow.png" alt="Glosify practice options for vocabulary, recall, and speaking" width="1280" height="720"><figcaption>Practice pathways</figcaption></figure>
+        <div class="case-links">
+          <p class="kicker">Technical detail</p>
+          <h2>Continue with the developer documentation</h2>
+          <p>Architecture, source layout, configuration, local setup, tests, and deployment are documented separately.</p>
+          <div class="case-link-list"><a href="developers.html">Engineering overview <span>→</span></a><a href="architecture.html">System architecture <span>→</span></a><a href="workflow.html">Development workflow <span>→</span></a></div>
+        </div>
       </div>
     </section>
   </main>
