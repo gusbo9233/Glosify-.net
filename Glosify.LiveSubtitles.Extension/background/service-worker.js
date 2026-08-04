@@ -819,14 +819,14 @@ function saveTranscriptUnavailableMessage() {
   const selected = state.catalog?.selectedQuizLanguage;
   if (state.sessionId) {
     return state.saveTranscript
-      ? "Finalized original speech is being saved. Uncheck anytime to stop saving."
-      : "Check anytime to start saving original speech without stopping tab audio.";
+      ? `Finalized original speech is being transcribed as ${selected?.name ?? "your quiz language"} and saved. Uncheck anytime to stop saving.`
+      : `Check anytime to transcribe original speech as ${selected?.name ?? "your quiz language"} and save it without stopping tab audio.`;
   }
   if (state.catalog && !state.catalog.savedSourceTranscriptsEnabled) {
     return "Saved source transcripts are temporarily unavailable.";
   }
   return selected
-    ? "Check anytime to save finalized original-language speech in your private Glosify account."
+    ? `Check anytime to transcribe original speech as ${selected.name} and save it in your private Glosify account.`
     : "Check anytime to save. Glosify will use the quiz language shown above.";
 }
 

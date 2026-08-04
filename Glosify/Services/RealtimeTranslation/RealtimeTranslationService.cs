@@ -210,7 +210,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                     session.Id,
                     userId,
                     language.Code,
-                    transcript is not null);
+                    transcript is not null,
+                    selectedQuizLanguage?.Code);
                 var account = await _credits.GetOrCreateAccountAsync(userId, cancellationToken);
                 RealtimeTranslationTelemetry.SessionsCreated.Add(1);
                 return new RealtimeTranslationSessionCreated(

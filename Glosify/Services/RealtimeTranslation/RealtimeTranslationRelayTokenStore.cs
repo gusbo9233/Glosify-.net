@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Glosify.Services.Language;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
@@ -6,7 +7,12 @@ namespace Glosify.Services.RealtimeTranslation;
 
 public interface IRealtimeTranslationRelayTokenStore
 {
-    RealtimeTranslationRelayGrant Create(Guid sessionId, string userId, string targetLanguage, bool saveTranscript);
+    RealtimeTranslationRelayGrant Create(
+        Guid sessionId,
+        string userId,
+        string targetLanguage,
+        bool saveTranscript,
+        string? sourceLanguage);
 
     bool TryRedeem(
         Guid sessionId,
@@ -36,10 +42,18 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         Guid sessionId,
         string userId,
         string targetLanguage,
-        bool saveTranscript)
+        bool saveTranscript,
+        string? sourceLanguage)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetLanguage);
+
+        var canonicalSourceLanguage = saveTranscript
+            ? QuizLanguageCatalog.Find(sourceLanguage)?.Code
+                ?? throw new ArgumentException(
+                    "Saved source transcription requires a supported quiz language.",
+                    nameof(sourceLanguage))
+            : null;
 
         var lifetime = TimeSpan.FromSeconds(Math.Clamp(
             _options.RelayTokenLifetimeSeconds,
@@ -47,7 +61,13 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
             300));
         var expiresAt = _timeProvider.GetUtcNow().Add(lifetime);
         var token = Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
-        var entry = new RelayTokenEntry(sessionId, userId, targetLanguage, saveTranscript, expiresAt);
+        var entry = new RelayTokenEntry(
+            sessionId,
+            userId,
+            targetLanguage,
+            saveTranscript,
+            canonicalSourceLanguage,
+            expiresAt);
         _cache.Set(CacheKeyPrefix + HashToken(token), entry, lifetime);
         return new RealtimeTranslationRelayGrant(token, expiresAt);
     }
@@ -81,7 +101,8 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
             entry.SessionId,
             entry.UserId,
             entry.TargetLanguage,
-            entry.SaveTranscript);
+            entry.SaveTranscript,
+            entry.SourceLanguage);
         return true;
     }
 
@@ -103,5 +124,6 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         string UserId,
         string TargetLanguage,
         bool SaveTranscript,
+        string? SourceLanguage,
         DateTimeOffset ExpiresAt);
 }

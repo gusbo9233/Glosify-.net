@@ -104,11 +104,16 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
             await WaitForFoundrySessionUpdatedAsync(foundrySocket, relayToken);
             if (sourceSocket is not null)
             {
+                var sourceLanguage = authorization.SourceLanguage
+                    ?? throw new InvalidOperationException(
+                        "Saved source transcription is missing its quiz language.");
                 await sourceSocket.ConnectAsync(
                     FoundryTranslationProtocol.BuildSourceTranscriptionWebSocketUri(_options),
                     relayToken);
                 await sourceSocket.SendAsync(
-                    FoundryTranslationProtocol.CreateSourceTranscriptionSessionUpdate(_options),
+                    FoundryTranslationProtocol.CreateSourceTranscriptionSessionUpdate(
+                        _options,
+                        sourceLanguage),
                     WebSocketMessageType.Text,
                     endOfMessage: true,
                     relayToken);

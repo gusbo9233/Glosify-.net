@@ -54,7 +54,8 @@ public sealed record RealtimeTranslationRelayAuthorization(
     Guid SessionId,
     string UserId,
     string TargetLanguage,
-    bool SaveTranscript);
+    bool SaveTranscript,
+    string? SourceLanguage);
 
 public sealed class RealtimeTranslationValidationException(string message) : InvalidOperationException(message);
 public sealed class RealtimeTranslationConflictException(string message) : InvalidOperationException(message);

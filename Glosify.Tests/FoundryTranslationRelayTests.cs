@@ -30,7 +30,7 @@ public sealed class FoundryTranslationRelayTests
     }
 
     [Fact]
-    public void Protocol_UsesWhisperTranscriptionEndpointWithoutLanguageHint()
+    public void Protocol_UsesWhisperTranscriptionEndpointWithQuizLanguageHint()
     {
         var options = new RealtimeTranslationOptions
         {
@@ -41,14 +41,14 @@ public sealed class FoundryTranslationRelayTests
 
         var uri = FoundryTranslationProtocol.BuildSourceTranscriptionWebSocketUri(options);
         var update = Encoding.UTF8.GetString(
-            FoundryTranslationProtocol.CreateSourceTranscriptionSessionUpdate(options));
+            FoundryTranslationProtocol.CreateSourceTranscriptionSessionUpdate(options, "pl"));
 
         Assert.Equal(
             "wss://glosify-foundry.openai.azure.com/openai/v1/realtime?intent=transcription",
             uri.ToString());
         Assert.Contains("\"model\":\"gpt-realtime-whisper\"", update);
+        Assert.Contains("\"language\":\"pl\"", update);
         Assert.Contains("\"delay\":\"medium\"", update);
-        Assert.DoesNotContain("\"language\"", update);
     }
 
     [Fact]
@@ -129,12 +129,18 @@ public sealed class FoundryTranslationRelayTests
         var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
         var store = CreateTokenStore(cache, clock);
         var sessionId = Guid.NewGuid();
-        var grant = store.Create(sessionId, "user-1", "es", saveTranscript: true);
+        var grant = store.Create(
+            sessionId,
+            "user-1",
+            "es",
+            saveTranscript: true,
+            sourceLanguage: "Polish");
 
         Assert.True(store.TryRedeem(sessionId, grant.Token, out var authorization));
         Assert.Equal("user-1", authorization.UserId);
         Assert.Equal("es", authorization.TargetLanguage);
         Assert.True(authorization.SaveTranscript);
+        Assert.Equal("pl", authorization.SourceLanguage);
         Assert.False(store.TryRedeem(sessionId, grant.Token, out _));
     }
 
@@ -145,14 +151,38 @@ public sealed class FoundryTranslationRelayTests
         var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
         var store = CreateTokenStore(cache, clock);
         var sessionId = Guid.NewGuid();
-        var wrongSessionGrant = store.Create(sessionId, "user-1", "es", saveTranscript: false);
+        var wrongSessionGrant = store.Create(
+            sessionId,
+            "user-1",
+            "es",
+            saveTranscript: false,
+            sourceLanguage: null);
 
         Assert.False(store.TryRedeem(Guid.NewGuid(), wrongSessionGrant.Token, out _));
         Assert.False(store.TryRedeem(sessionId, wrongSessionGrant.Token, out _));
 
-        var expiredGrant = store.Create(sessionId, "user-1", "es", saveTranscript: false);
+        var expiredGrant = store.Create(
+            sessionId,
+            "user-1",
+            "es",
+            saveTranscript: false,
+            sourceLanguage: null);
         clock.Advance(TimeSpan.FromMinutes(3));
         Assert.False(store.TryRedeem(sessionId, expiredGrant.Token, out _));
+    }
+
+    [Fact]
+    public void RelayToken_RequiresSupportedSourceLanguageWhenSaving()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var store = CreateTokenStore(cache, TimeProvider.System);
+
+        Assert.Throws<ArgumentException>(() => store.Create(
+            Guid.NewGuid(),
+            "user-1",
+            "es",
+            saveTranscript: true,
+            sourceLanguage: "sv"));
     }
 
     [Fact]

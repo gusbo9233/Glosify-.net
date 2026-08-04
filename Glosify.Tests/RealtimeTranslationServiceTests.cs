@@ -119,10 +119,11 @@ public sealed class RealtimeTranslationServiceTests
         await using var context = CreateContext();
         await SeedUserAsync(context);
         var user = await context.Users.SingleAsync();
+        var relayTokens = new FakeRelayTokenStore();
         var service = CreateService(
             context,
             new ManualTimeProvider(DateTimeOffset.UtcNow),
-            new FakeRelayTokenStore());
+            relayTokens);
 
         user.SelectedQuizLanguageCode = null;
         await context.SaveChangesAsync();
@@ -138,6 +139,7 @@ public sealed class RealtimeTranslationServiceTests
         var transcript = await context.RealtimeTranslationTranscripts.SingleAsync();
         Assert.Equal("pl", transcript.TargetLanguage);
         Assert.StartsWith("Polish source transcript", transcript.Title);
+        Assert.Equal("pl", relayTokens.LastSourceLanguage);
     }
 
     [Fact]
@@ -355,12 +357,16 @@ public sealed class RealtimeTranslationServiceTests
 
     private sealed class FakeRelayTokenStore(bool fail = false) : IRealtimeTranslationRelayTokenStore
     {
+        public string? LastSourceLanguage { get; private set; }
+
         public RealtimeTranslationRelayGrant Create(
             Guid sessionId,
             string userId,
             string targetLanguage,
-            bool saveTranscript)
+            bool saveTranscript,
+            string? sourceLanguage)
         {
+            LastSourceLanguage = sourceLanguage;
             if (fail)
             {
                 throw new RealtimeTranslationUpstreamException("Microsoft Foundry unavailable.");

@@ -62,7 +62,9 @@ internal static class FoundryTranslationProtocol
             },
         });
 
-    internal static byte[] CreateSourceTranscriptionSessionUpdate(RealtimeTranslationOptions options) =>
+    internal static byte[] CreateSourceTranscriptionSessionUpdate(
+        RealtimeTranslationOptions options,
+        string sourceLanguage) =>
         JsonSerializer.SerializeToUtf8Bytes(new
         {
             type = "session.update",
@@ -78,6 +80,7 @@ internal static class FoundryTranslationProtocol
                         transcription = new
                         {
                             model = options.SourceTranscriptionDeployment,
+                            language = sourceLanguage,
                             delay = options.SourceTranscriptionDelay,
                         },
                     },

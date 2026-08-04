@@ -15,7 +15,8 @@ credits per started minute.
 The provider integration uses Foundry's GA `gpt-realtime-translate` deployment
 and dedicated `/openai/v1/realtime/translations` API. Opted-in sessions also use
 `gpt-realtime-whisper` through `/openai/v1/realtime?intent=transcription`, with
-24 kHz mono PCM, automatic language detection, and three-second manual commits.
+24 kHz mono PCM, an ISO-639-1 language hint taken from the user's selected quiz
+language, and three-second manual commits.
 The browser never receives an Azure credential. The relay uses the App Service
 managed identity to authenticate to Foundry.
 
@@ -142,7 +143,8 @@ az webapp config set \
    connect Glosify, select a subtitle target, and choose **Start subtitles**.
    **Save original speech transcript** can be checked or unchecked before or
    during capture. Glosify assigns the transcript to the quiz language shown in
-   the popup, persisting that account choice automatically when necessary.
+   the popup, persists that account choice automatically when necessary, and
+   sends its ISO-639-1 code to Whisper as the source-transcription language hint.
    Storage consent resets after Stop.
 
 The manifest key keeps the unpacked pilot ID stable across directories and
