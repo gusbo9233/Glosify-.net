@@ -1,27 +1,15 @@
 (() => {
   class ChatBuffer {
-    constructor({ maximumMessages = 30, maximumTranslationCharacters = 800, maximumSourceCharacters = 400 } = {}) {
+    constructor({ maximumMessages = 30, maximumTranslationCharacters = 800 } = {}) {
       this.maximumMessages = maximumMessages;
       this.maximumTranslationCharacters = maximumTranslationCharacters;
-      this.maximumSourceCharacters = maximumSourceCharacters;
       this.messages = [];
       this.translation = "";
-      this.source = "";
     }
 
     apply(event) {
-      if (!event || (event.stream !== "translation" && event.stream !== "source")) {
+      if (!event || event.stream !== "translation") {
         return { changed: false, committed: false };
-      }
-
-      if (event.stream === "source") {
-        if (event.delta) {
-          this.source = appendBounded(
-            this.source,
-            event.delta,
-            this.maximumSourceCharacters);
-        }
-        return { changed: Boolean(event.delta), committed: false };
       }
 
       if (event.delta) {
@@ -35,16 +23,13 @@
       }
 
       const text = this.translation.trim();
-      const source = this.source.trim();
       this.translation = "";
-      this.source = "";
       if (!text) {
         return { changed: true, committed: false };
       }
 
       this.messages.push({
         text,
-        source,
         timestamp: Number.isFinite(event.clientTimestamp)
           ? event.clientTimestamp
           : Date.now(),
@@ -58,7 +43,6 @@
     clear() {
       this.messages.length = 0;
       this.translation = "";
-      this.source = "";
     }
   }
 

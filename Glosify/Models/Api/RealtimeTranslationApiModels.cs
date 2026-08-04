@@ -5,6 +5,8 @@ public sealed record CreateRealtimeTranslationSessionRequest(
     bool SaveTranscript = false,
     Guid? TranscriptId = null);
 
+public sealed record SetRealtimeTranslationQuizLanguageRequest(string Code);
+
 public sealed record RealtimeTranslationHeartbeatRequest(
     double? FirstCaptionLatencyMs = null,
     bool Reconnected = false);

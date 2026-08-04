@@ -1,5 +1,6 @@
 using Glosify.Filters;
 using Glosify.Models.Api;
+using Glosify.Services.Language;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,10 +11,32 @@ namespace Glosify.Controllers.Api;
 public sealed class RealtimeTranslationApiController : ApiControllerBase
 {
     private readonly IRealtimeTranslationService _translation;
+    private readonly IQuizLanguagePreferenceService _languagePreferences;
 
-    public RealtimeTranslationApiController(IRealtimeTranslationService translation)
+    public RealtimeTranslationApiController(
+        IRealtimeTranslationService translation,
+        IQuizLanguagePreferenceService languagePreferences)
     {
         _translation = translation;
+        _languagePreferences = languagePreferences;
+    }
+
+    [HttpPut("quiz-language")]
+    public async Task<ActionResult<RealtimeTranslationSelectedQuizLanguage>> SetQuizLanguage(
+        [FromBody] SetRealtimeTranslationQuizLanguageRequest request,
+        CancellationToken cancellationToken)
+    {
+        NoStore();
+        if (QuizLanguageCatalog.Find(request.Code) is null)
+        {
+            throw new RealtimeTranslationValidationException(
+                "Choose Estonian, German, Polish, or Ukrainian.");
+        }
+        var selected = await _languagePreferences.SetSelectedAsync(
+            User.GetUserId(),
+            request.Code,
+            cancellationToken);
+        return Ok(new RealtimeTranslationSelectedQuizLanguage(selected.Code, selected.Name));
     }
 
     [HttpGet("catalog")]

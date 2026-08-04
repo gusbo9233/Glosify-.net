@@ -139,10 +139,12 @@ az webapp config set \
    ```
 
 5. Open Twitch, YouTube, or another ordinary HTTP(S) page. Open the extension,
-   connect Glosify, select a target language, optionally enable **Save original
-   speech transcript**, and choose **Start subtitles**. Saving is available only
-   when the target matches the persisted Glosify quiz language (`et`, `de`, `pl`,
-   or `uk`). Storage consent resets after Stop.
+   connect Glosify, choose Estonian, German, Polish, or Ukrainian as the Glosify
+   quiz language, select a subtitle target, optionally enable **Save original
+   speech transcript**, and choose **Start subtitles**. The popup persists the
+   quiz-language choice to the user's Glosify account and aligns the subtitle
+   target when possible. Saving is available only while both languages match.
+   Storage consent resets after Stop.
 
 The manifest key keeps the unpacked pilot ID stable across directories and
 Chrome profiles. Add only known exact callback URLs; never allow a wildcard
@@ -162,8 +164,9 @@ Chrome profiles. Add only known exact callback URLs; never allow a wildcard
 - A new Foundry and Glosify session is created automatically after 30 minutes.
   If storage was enabled, reconnect sessions append to the same saved transcript.
 - Live-only sessions open only the translation connection. Saved sessions require
-  both translation and source-transcription connections. Source deltas may enable
-  the optional bilingual overlay, which remains off by default.
+  both translation and source-transcription connections. Source text remains on
+  the server-side persistence path and is never shown in the extension overlay;
+  the overlay remains translation-only in both modes.
 - The overlay is an adjustable subtitle chat: drag its header to reposition it,
   resize it from the lower-right corner, minimize it from the header, or clear
   the visible chat without stopping translation. It retains at most 30 bounded

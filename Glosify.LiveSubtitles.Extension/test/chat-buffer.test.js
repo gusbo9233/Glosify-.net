@@ -16,18 +16,17 @@ test("builds one live message from deltas and commits it on done", () => {
   });
 
   assert.deepEqual(result, { changed: true, committed: true });
-  assert.deepEqual(chat.messages, [{ text: "God morgon", source: "", timestamp: 123 }]);
+  assert.deepEqual(chat.messages, [{ text: "God morgon", timestamp: 123 }]);
   assert.equal(chat.translation, "");
 });
 
-test("keeps an optional source line with the translated bubble", () => {
+test("ignores source speech so the overlay remains translation-only", () => {
   const chat = new ChatBuffer();
   chat.apply({ stream: "source", delta: "Good morning", isFinal: false });
   chat.apply({ stream: "translation", delta: "Guten Morgen", isFinal: false });
   chat.apply({ stream: "translation", isFinal: true, clientTimestamp: 456 });
 
-  assert.equal(chat.messages[0].source, "Good morning");
-  assert.equal(chat.messages[0].text, "Guten Morgen");
+  assert.deepEqual(chat.messages[0], { text: "Guten Morgen", timestamp: 456 });
 });
 
 test("bounds both live text and retained chat history", () => {
@@ -50,6 +49,5 @@ test("clear removes finalized and partial transcript text", () => {
   chat.clear();
 
   assert.equal(chat.translation, "");
-  assert.equal(chat.source, "");
   assert.deepEqual(chat.messages, []);
 });

@@ -10,12 +10,6 @@ export function normalizeRealtimeEvent(event, context) {
     return null;
   }
 
-  const sourceEventTypes = new Set([
-    "session.input_transcript.delta",
-    "session.input_transcript.done",
-    "conversation.item.input_audio_transcription.delta",
-    "conversation.item.input_audio_transcription.completed",
-  ]);
   const translationEventTypes = new Set([
     "session.output_transcript.delta",
     "session.output_transcript.done",
@@ -26,9 +20,8 @@ export function normalizeRealtimeEvent(event, context) {
     "response.output_audio_transcript.delta",
     "response.output_audio_transcript.done",
   ]);
-  const isSource = sourceEventTypes.has(event.type);
   const isTranslation = translationEventTypes.has(event.type);
-  if (!isSource && !isTranslation) {
+  if (!isTranslation) {
     return null;
   }
 
@@ -43,8 +36,8 @@ export function normalizeRealtimeEvent(event, context) {
 
   return {
     sessionId: context.sessionId,
-    stream: isSource ? "source" : "translation",
-    language: isSource ? (event.language ?? "und") : context.targetLanguage,
+    stream: "translation",
+    language: context.targetLanguage,
     sequence: context.nextSequence(),
     delta,
     isFinal,

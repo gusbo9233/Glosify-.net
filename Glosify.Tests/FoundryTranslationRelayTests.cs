@@ -92,6 +92,10 @@ public sealed class FoundryTranslationRelayTests
             "{\"type\":\"response.output_audio.delta\",\"delta\":\"AQID\"}"u8));
         Assert.False(FoundryTranslationProtocol.ShouldForwardFoundryMessage(
             "{\"type\":\"session.output_audio.delta\",\"delta\":\"AQID\"}"u8));
+        Assert.False(FoundryTranslationProtocol.ShouldForwardFoundryMessage(
+            "{\"type\":\"session.input_transcript.delta\",\"delta\":\"Hello\"}"u8));
+        Assert.False(FoundryTranslationProtocol.ShouldForwardFoundryMessage(
+            "{\"type\":\"conversation.item.input_audio_transcription.completed\",\"transcript\":\"Hello\"}"u8));
     }
 
     [Fact]

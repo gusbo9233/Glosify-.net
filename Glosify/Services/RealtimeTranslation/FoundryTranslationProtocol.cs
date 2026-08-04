@@ -100,47 +100,6 @@ internal static class FoundryTranslationProtocol
     internal static byte[] CreateSourceAudioCommit() =>
         JsonSerializer.SerializeToUtf8Bytes(new { type = "input_audio_buffer.commit" });
 
-    internal static byte[]? NormalizeSourceMessage(ReadOnlySpan<byte> payload)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(payload.ToArray());
-            var root = document.RootElement;
-            var providerType = root.TryGetProperty("type", out var typeElement)
-                ? typeElement.GetString()
-                : null;
-            var isDelta = providerType is "conversation.item.input_audio_transcription.delta"
-                or "response.text.delta";
-            var isFinal = providerType is "conversation.item.input_audio_transcription.completed"
-                or "response.text.done";
-            if (!isDelta && !isFinal)
-            {
-                return null;
-            }
-
-            string? GetString(string name) =>
-                root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-                    ? value.GetString()
-                    : null;
-
-            var text = GetString("delta") ?? GetString("text") ?? GetString("transcript") ?? string.Empty;
-            return JsonSerializer.SerializeToUtf8Bytes(new
-            {
-                type = isFinal ? "session.input_transcript.done" : "session.input_transcript.delta",
-                delta = isDelta ? text : null,
-                transcript = isFinal ? text : null,
-                language = GetString("language") ?? "und",
-                event_id = GetString("event_id"),
-                item_id = GetString("item_id"),
-                response_id = GetString("response_id"),
-            });
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
     internal static bool IsAllowedBrowserMessage(ReadOnlySpan<byte> payload) =>
         TryGetBrowserAudioByteCount(payload, out _);
 
@@ -187,7 +146,9 @@ internal static class FoundryTranslationProtocol
             var type = typeElement.GetString();
             return !string.IsNullOrWhiteSpace(type)
                 && !type.StartsWith("session.output_audio.", StringComparison.Ordinal)
-                && !type.StartsWith("response.output_audio.", StringComparison.Ordinal);
+                && !type.StartsWith("response.output_audio.", StringComparison.Ordinal)
+                && !type.StartsWith("session.input_transcript.", StringComparison.Ordinal)
+                && !type.StartsWith("conversation.item.input_audio_transcription.", StringComparison.Ordinal);
         }
         catch (JsonException)
         {

@@ -126,7 +126,6 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .secondary { width: 100%; padding: 10px 14px; color: #cfc7ff; background: rgba(128, 104, 255, .13); }
 .secondary:hover:not(:disabled) { background: rgba(128, 104, 255, .22); }
 .link-button { padding: 4px; color: #a99bff; background: transparent; font-size: 11px; }
-.link-panel { padding: 0; color: #a99bff; background: transparent; text-align: left; font-size: 11px; }
 
 .status, .notice, .error {
   margin-top: 11px;

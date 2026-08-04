@@ -14,6 +14,25 @@ namespace Glosify.Tests;
 public sealed class RealtimeTranslationServiceTests
 {
     [Fact]
+    public async Task Catalog_ReturnsAllQuizLanguagesAndThePersistedSelection()
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var service = CreateService(
+            context,
+            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            new FakeRelayTokenStore());
+
+        var catalog = await service.GetCatalogAsync("user-1");
+
+        Assert.Equal(
+            [("et", "Estonian"), ("de", "German"), ("pl", "Polish"), ("uk", "Ukrainian")],
+            catalog.QuizLanguages.Select(language => (language.Code, language.Name)).ToArray());
+        Assert.Equal("pl", catalog.SelectedQuizLanguage?.Code);
+        Assert.Equal("Polish", catalog.SelectedQuizLanguage?.Name);
+    }
+
+    [Fact]
     public async Task CreateAndBegin_AreIdempotentAndChargeOneMinute()
     {
         await using var context = CreateContext();

@@ -10,6 +10,7 @@ public sealed record RealtimeTranslationSelectedQuizLanguage(string Code, string
 
 public sealed record RealtimeTranslationCatalog(
     IReadOnlyList<RealtimeTranslationLanguage> Languages,
+    IReadOnlyList<RealtimeTranslationLanguage> QuizLanguages,
     int CreditsPerMinute,
     int SavedTranscriptCreditsPerMinute,
     bool SavedSourceTranscriptsEnabled,

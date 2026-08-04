@@ -6,12 +6,10 @@ const elements = {
   signOut: document.querySelector("#sign-out"),
   email: document.querySelector("#email"),
   credits: document.querySelector("#credits"),
+  quizLanguage: document.querySelector("#quiz-language"),
   language: document.querySelector("#language"),
-  bilingual: document.querySelector("#bilingual"),
-  bilingualHelp: document.querySelector("#bilingual-help"),
   saveTranscript: document.querySelector("#save-transcript"),
   saveTranscriptHelp: document.querySelector("#save-transcript-help"),
-  chooseLanguage: document.querySelector("#choose-language"),
   price: document.querySelector("#price"),
   start: document.querySelector("#start"),
   stop: document.querySelector("#stop"),
@@ -31,14 +29,13 @@ elements.stop.addEventListener("click", () => run("popup:stop"));
 elements.language.addEventListener("change", () => run("popup:set-target", {
   targetLanguage: elements.language.value,
 }));
-elements.bilingual.addEventListener("change", () => run("popup:set-bilingual", {
-  enabled: elements.bilingual.checked,
+elements.quizLanguage.addEventListener("change", () => run("popup:set-quiz-language", {
+  code: elements.quizLanguage.value,
 }));
 elements.saveTranscript.addEventListener("change", () => run("popup:set-save-transcript", {
   enabled: elements.saveTranscript.checked,
 }));
 elements.viewTranscripts.addEventListener("click", () => run("popup:open-transcripts", {}, false));
-elements.chooseLanguage.addEventListener("click", () => run("popup:open-languages", {}, false));
 
 chrome.runtime.onMessage.addListener(message => {
   if (message?.target === "popup" && message.type === "state:update") {
@@ -89,6 +86,24 @@ function render() {
   const price = currentState.effectiveCreditsPerMinute ?? currentState.catalog?.creditsPerMinute ?? 8;
   elements.price.textContent = `${price} credits/min`;
 
+  const quizLanguages = currentState.catalog?.quizLanguages ?? [];
+  const quizSignature = quizLanguages.map(language => language.code).join(",");
+  if (elements.quizLanguage.dataset.signature !== quizSignature) {
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Choose a quiz language…";
+    placeholder.disabled = true;
+    elements.quizLanguage.replaceChildren(placeholder, ...quizLanguages.map(language => {
+      const option = document.createElement("option");
+      option.value = language.code;
+      option.textContent = language.name;
+      return option;
+    }));
+    elements.quizLanguage.dataset.signature = quizSignature;
+  }
+  elements.quizLanguage.value = currentState.catalog?.selectedQuizLanguage?.code ?? "";
+  elements.quizLanguage.disabled = busy || currentState.active || quizLanguages.length === 0;
+
   const languages = currentState.catalog?.languages ?? [];
   const signature = languages.map(language => language.code).join(",");
   if (elements.language.dataset.signature !== signature) {
@@ -103,18 +118,10 @@ function render() {
   elements.language.value = currentState.targetLanguage ?? languages[0]?.code ?? "";
   elements.language.disabled = busy || currentState.active || languages.length === 0;
 
-  elements.bilingual.disabled = busy || !currentState.active || !currentState.bilingualAvailable;
-  elements.bilingual.checked = Boolean(currentState.bilingualEnabled);
-  elements.bilingualHelp.textContent = currentState.bilingualAvailable
-    ? "Show detected source speech above the translation"
-    : "Available after source captions are detected";
   elements.saveTranscript.checked = Boolean(currentState.saveTranscript);
   elements.saveTranscript.disabled = busy || currentState.active || !currentState.canSaveTranscript;
   elements.saveTranscriptHelp.textContent = currentState.saveTranscriptHelp
     ?? "Stores finalized original-language speech in your private Glosify account for this session only.";
-  elements.chooseLanguage.classList.toggle(
-    "hidden",
-    !currentState.catalog?.savedSourceTranscriptsEnabled || Boolean(currentState.canSaveTranscript));
 
   const canStart = !busy
     && !currentState.active

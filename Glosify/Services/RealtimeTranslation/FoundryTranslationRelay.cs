@@ -149,7 +149,7 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
                 relayToken);
             var sourceToBrowser = sourceSocket is null
                 ? Task.Delay(Timeout.InfiniteTimeSpan, relayToken)
-                : PumpSourceToBrowserAsync(
+                : PumpSourceTranscriptAsync(
                     sourceSocket,
                     browserSocket,
                     browserSendLock,
@@ -506,7 +506,7 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
         }
     }
 
-    private async Task PumpSourceToBrowserAsync(
+    private async Task PumpSourceTranscriptAsync(
         WebSocket sourceSocket,
         WebSocket browserSocket,
         SemaphoreSlim browserSendLock,
@@ -542,8 +542,7 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
                     sessionId);
             }
 
-            var normalized = FoundryTranslationProtocol.NormalizeSourceMessage(message);
-            if (normalized is null || browserSocket.State != WebSocketState.Open)
+            if (browserSocket.State != WebSocketState.Open)
             {
                 continue;
             }
@@ -563,7 +562,6 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
                     browserSendLock.Release();
                 }
             }
-            await SendBrowserBytesAsync(browserSocket, browserSendLock, normalized, cancellationToken);
         }
     }
 

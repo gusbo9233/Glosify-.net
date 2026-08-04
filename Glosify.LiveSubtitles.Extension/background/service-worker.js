@@ -26,8 +26,6 @@ const state = {
   availableCredits: 0,
   catalog: null,
   targetLanguage: "en",
-  bilingualAvailable: false,
-  bilingualEnabled: false,
   saveTranscript: false,
   tabId: null,
   sessionId: null,
@@ -72,7 +70,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
     return;
   }
   void ensureContentOverlay(tabId).then(async () => {
-    await sendToTab({ type: "overlay:mode", bilingualEnabled: state.bilingualEnabled });
     await sendToTab({ type: "overlay:status", text: statusText() });
   });
 });
@@ -97,17 +94,14 @@ async function handleMessage(message) {
     case "popup:set-target":
       await setTargetLanguage(message.targetLanguage);
       return publicState();
-    case "popup:set-bilingual":
-      await setBilingual(Boolean(message.enabled));
+    case "popup:set-quiz-language":
+      await setQuizLanguage(message.code);
       return publicState();
     case "popup:set-save-transcript":
       setSaveTranscript(Boolean(message.enabled));
       return publicState();
     case "popup:open-transcripts":
       await chrome.tabs.create({ url: new URL("/Transcripts", CONFIG.glosifyBaseUrl).toString() });
-      return publicState();
-    case "popup:open-languages":
-      await chrome.tabs.create({ url: new URL("/Languages?returnUrl=%2FTranscripts", CONFIG.glosifyBaseUrl).toString() });
       return publicState();
     case "popup:start":
       await startSession();
@@ -361,9 +355,26 @@ async function setTargetLanguage(targetLanguage) {
   broadcastState();
 }
 
-async function setBilingual(enabled) {
-  state.bilingualEnabled = enabled && state.bilingualAvailable;
-  await sendToTab({ type: "overlay:mode", bilingualEnabled: state.bilingualEnabled });
+async function setQuizLanguage(code) {
+  if (state.sessionId) {
+    throw new Error("Stop the current subtitles before changing quiz language.");
+  }
+  if (!state.catalog?.quizLanguages?.some(language => language.code === code)) {
+    throw new Error("Choose Estonian, German, Polish, or Ukrainian.");
+  }
+  const selected = await apiFetch("/api/realtime-translation/quiz-language", {
+    method: "PUT",
+    body: JSON.stringify({ code }),
+  });
+  state.catalog = { ...state.catalog, selectedQuizLanguage: selected };
+  if (state.catalog.languages.some(language => language.code === selected.code)) {
+    state.targetLanguage = selected.code;
+    await chrome.storage.local.set({ [STORAGE_KEYS.targetLanguage]: selected.code });
+  }
+  if (state.saveTranscript && !canSaveTranscript()) {
+    state.saveTranscript = false;
+    state.transcriptId = null;
+  }
   broadcastState();
 }
 
@@ -403,8 +414,6 @@ async function startSession() {
   state.error = null;
   state.notice = null;
   state.tabId = tab.id;
-  state.bilingualAvailable = false;
-  state.bilingualEnabled = false;
   broadcastState();
 
   try {
@@ -460,17 +469,12 @@ async function handleSubtitleEvent(event) {
   if (!event || event.sessionId !== state.sessionId || !state.tabId) {
     return;
   }
-  if (event.stream === "source" && event.delta) {
-    state.bilingualAvailable = true;
-    broadcastState();
-  }
   if (event.stream === "translation" && event.delta && state.firstCaptionLatencyMs === null) {
     state.firstCaptionLatencyMs = Math.max(0, Date.now() - state.connectionStartedAt);
   }
   await sendToTab({
     type: "overlay:subtitle",
     event,
-    bilingualEnabled: state.bilingualEnabled,
   });
 }
 
@@ -614,11 +618,8 @@ async function reconnectAtSessionLimit() {
     sessionStartedAt: Date.now(),
     lastHeartbeatAt: Date.now(),
     notice: null,
-    bilingualAvailable: false,
-    bilingualEnabled: false,
   });
   await authorizeOffscreenMinute(1);
-  await sendToTab({ type: "overlay:mode", bilingualEnabled: false });
   await sendToTab({ type: "overlay:status", text: "Listening…" });
   broadcastState();
 }
@@ -657,8 +658,6 @@ async function stopSession(message, finalStatus) {
       firstCaptionLatencyMs: null,
       firstCaptionReported: false,
       reconnectReported: false,
-      bilingualAvailable: false,
-      bilingualEnabled: false,
       saveTranscript: false,
       error: finalStatus === "error" || finalStatus === "insufficient_credits" ? message : null,
       notice: null,
@@ -737,8 +736,6 @@ function publicState() {
     availableCredits: state.availableCredits,
     catalog: state.catalog,
     targetLanguage: state.targetLanguage,
-    bilingualAvailable: state.bilingualAvailable,
-    bilingualEnabled: state.bilingualEnabled,
     saveTranscript: state.saveTranscript,
     canSaveTranscript: canSaveTranscript(),
     effectiveCreditsPerMinute: effectiveCreditsPerMinute(),
@@ -765,13 +762,13 @@ function saveTranscriptUnavailableMessage() {
     return "Saved source transcripts are temporarily unavailable.";
   }
   if (!selected) {
-    return "Choose one of Glosify’s four quiz languages before saving source speech.";
+    return "Choose Estonian, German, Polish, or Ukrainian above before saving source speech.";
   }
   const target = state.catalog?.languages?.find(language => language.code === state.targetLanguage)?.name
     ?? state.targetLanguage;
   return selected.code === state.targetLanguage
     ? "Stores finalized original-language speech in your private Glosify account for this session only."
-    : `Choose ${target} in Glosify, or change the subtitle language to ${selected.name}, before saving.`;
+    : `Change the subtitle language to ${selected.name} before saving.`;
 }
 
 function broadcastState() {

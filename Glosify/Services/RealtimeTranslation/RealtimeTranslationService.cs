@@ -48,8 +48,12 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             .Where(language => language.Enabled)
             .Select(language => new RealtimeTranslationLanguage(language.Code, language.Name))
             .ToArray();
+        var quizLanguages = QuizLanguageCatalog.All
+            .Select(language => new RealtimeTranslationLanguage(language.Code, language.Name))
+            .ToArray();
         return new RealtimeTranslationCatalog(
             languages,
+            quizLanguages,
             _options.CreditsPerStartedMinute,
             _options.SavedTranscriptCreditsPerStartedMinute,
             _options.SavedSourceTranscriptsEnabled,

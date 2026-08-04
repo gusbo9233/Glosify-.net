@@ -34,16 +34,13 @@
       </div>
 
       <div class="panel controls">
+        <label for="quiz-language">Glosify quiz language</label>
+        <select id="quiz-language">
+          <option value="">Choose a quiz language…</option>
+        </select>
+
         <label for="language">Subtitle language</label>
         <select id="language"></select>
-
-        <label class="switch-row" for="bilingual">
-          <span>
-            <strong>Bilingual subtitles</strong>
-            <small id="bilingual-help">Available after source captions are detected</small>
-          </span>
-          <input id="bilingual" type="checkbox" disabled>
-        </label>
 
         <label class="switch-row" for="save-transcript">
           <span>
@@ -52,7 +49,6 @@
           </span>
           <input id="save-transcript" type="checkbox">
         </label>
-        <button id="choose-language" class="link-panel hidden" type="button">Choose quiz language in Glosify</button>
 
         <div class="price-row">
           <span>Price</span>

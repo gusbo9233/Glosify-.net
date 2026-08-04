@@ -26,14 +26,12 @@ test("Microsoft Foundry translation text deltas normalize", () => {
   assert.equal(event.sequence, 2);
 });
 
-test("source transcript events enable a distinct bilingual stream", () => {
+test("source transcript events are ignored by the translation-only overlay", () => {
   const event = normalizeRealtimeEvent(
     { type: "session.input_transcript.delta", delta: "Hello", language: "en" },
     { sessionId: "session-1", targetLanguage: "es", nextSequence: () => 4 });
 
-  assert.equal(event.stream, "source");
-  assert.equal(event.language, "en");
-  assert.equal(event.sequence, 4);
+  assert.equal(event, null);
 });
 
 test("unrelated realtime events are ignored", () => {

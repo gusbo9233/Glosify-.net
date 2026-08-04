@@ -190,13 +190,6 @@
         border-color: rgba(167, 139, 250, .38);
         background: rgba(79, 70, 229, .13);
       }
-      .source {
-        display: none;
-        margin-bottom: 4px;
-        color: rgba(203, 213, 225, .67);
-        font-size: 12px;
-      }
-      .panel.bilingual .source:not(:empty) { display: block; }
       .translation {
         color: #fff;
         font-size: clamp(16px, 1.5vw, 20px);
@@ -271,7 +264,6 @@
           <div class="empty">Translated speech will appear here as a private, in-memory chat.</div>
           <div class="history"></div>
           <div class="message current" hidden>
-            <div class="source current-source"></div>
             <div class="translation current-translation"></div>
             <div class="typing" aria-label="Translation in progress"><i></i><i></i><i></i></div>
           </div>
@@ -289,13 +281,11 @@
   const history = shadow.querySelector(".history");
   const empty = shadow.querySelector(".empty");
   const current = shadow.querySelector(".current");
-  const currentSource = shadow.querySelector(".current-source");
   const currentTranslation = shadow.querySelector(".current-translation");
   const statusText = shadow.querySelector(".status-text");
   const clearButton = shadow.querySelector(".clear");
   const minimizeButton = shadow.querySelector(".minimize");
   const chat = new ChatBuffer();
-  let bilingualEnabled = false;
   let minimized = false;
   let drag = null;
   let constraintFrame = null;
@@ -313,21 +303,11 @@
     panel.classList.remove("hidden");
   }
 
-  function setMode(enabled) {
-    bilingualEnabled = enabled;
-    panel.classList.toggle("bilingual", enabled);
-  }
-
   function rebuildHistory() {
     const fragment = document.createDocumentFragment();
     for (const item of chat.messages) {
       const bubble = document.createElement("article");
       bubble.className = "message";
-
-      const sourceLine = document.createElement("div");
-      sourceLine.className = "source";
-      sourceLine.textContent = item.source;
-      bubble.append(sourceLine);
 
       const translationLine = document.createElement("div");
       translationLine.className = "translation";
@@ -348,9 +328,8 @@
     if (committed) {
       rebuildHistory();
     }
-    currentSource.textContent = bilingualEnabled ? chat.source : "";
     currentTranslation.textContent = chat.translation;
-    current.hidden = !chat.translation && !(bilingualEnabled && chat.source);
+    current.hidden = !chat.translation;
     empty.classList.toggle("hidden", chat.messages.length > 0 || !current.hidden);
     if (shouldFollow || committed) {
       requestAnimationFrame(() => {
@@ -485,10 +464,6 @@
         }
         break;
       }
-      case "overlay:mode":
-        setMode(Boolean(message.bilingualEnabled));
-        renderChat();
-        break;
       case "overlay:status":
         show();
         statusText.textContent = message.text ?? "";
