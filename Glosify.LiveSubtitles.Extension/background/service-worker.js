@@ -2,7 +2,6 @@ import { CONFIG } from "../config.js";
 import { getBillingAction } from "../lib/billing.js";
 import {
   buildTranscriptSessionRequest,
-  canEnableSourceTranscript,
   canSaveSourceTranscript,
   clearTranscriptStorageState,
   getEffectiveCreditsPerMinute,
@@ -18,6 +17,7 @@ let accessExpiresAt = 0;
 let refreshToken = null;
 let billingBusy = false;
 let heartbeatBusy = false;
+let relaySwitchBusy = false;
 let stopping = false;
 
 const state = {
@@ -99,7 +99,7 @@ async function handleMessage(message) {
       await setQuizLanguage(message.code);
       return publicState();
     case "popup:set-save-transcript":
-      await setSaveTranscript(Boolean(message.enabled));
+      await setSaveTranscript(Boolean(message.enabled), message.quizLanguageCode);
       return publicState();
     case "popup:open-transcripts":
       await chrome.tabs.create({ url: new URL("/Transcripts", CONFIG.glosifyBaseUrl).toString() });
@@ -321,7 +321,9 @@ async function refreshAccountState() {
       state.targetLanguage = catalog.languages[0]?.code ?? "en";
       await chrome.storage.local.set({ [STORAGE_KEYS.targetLanguage]: state.targetLanguage });
     }
-    if (!state.sessionId && state.saveTranscript && !canSaveTranscript()) {
+    if (!state.sessionId
+        && state.saveTranscript
+        && !state.catalog.savedSourceTranscriptsEnabled) {
       state.saveTranscript = false;
       state.transcriptId = null;
     }
@@ -348,10 +350,6 @@ async function setTargetLanguage(targetLanguage) {
     throw new Error("Choose a supported target language.");
   }
   state.targetLanguage = targetLanguage;
-  if (state.saveTranscript && !canSaveTranscript()) {
-    state.saveTranscript = false;
-    state.transcriptId = null;
-  }
   await chrome.storage.local.set({ [STORAGE_KEYS.targetLanguage]: targetLanguage });
   broadcastState();
 }
@@ -372,31 +370,75 @@ async function setQuizLanguage(code) {
     state.targetLanguage = selected.code;
     await chrome.storage.local.set({ [STORAGE_KEYS.targetLanguage]: selected.code });
   }
-  if (state.saveTranscript && !canSaveTranscript()) {
-    state.saveTranscript = false;
-    state.transcriptId = null;
-  }
   broadcastState();
 }
 
-async function setSaveTranscript(enabled) {
-  if (state.sessionId) {
-    throw new Error("Stop subtitles before changing transcript saving for the next session.");
+async function setSaveTranscript(enabled, requestedQuizLanguageCode) {
+  if (relaySwitchBusy) {
+    throw new Error("Glosify is already changing subtitle mode.");
   }
-  if (enabled) {
-    if (!canEnableTranscript()) {
-      throw new Error(saveTranscriptUnavailableMessage());
-    }
-    if (!canSaveTranscript()) {
-      await setQuizLanguage(state.targetLanguage);
-    }
-    if (!canSaveTranscript()) {
-      throw new Error("Glosify could not enable source transcript saving for this language.");
-    }
+  if (enabled === state.saveTranscript) {
+    return;
   }
-  state.saveTranscript = enabled;
-  state.error = null;
-  broadcastState();
+  relaySwitchBusy = true;
+  try {
+    if (enabled) {
+      await ensureTranscriptLearningLanguage(requestedQuizLanguageCode);
+    }
+
+    const previousValue = state.saveTranscript;
+    state.saveTranscript = enabled;
+    state.error = null;
+    if (state.sessionId) {
+      const requiredCredits = effectiveCreditsPerMinute();
+      if (state.availableCredits < requiredCredits) {
+        state.saveTranscript = previousValue;
+        throw new ApiRequestError(
+          402,
+          `You need ${requiredCredits} credits to change subtitle mode.`);
+      }
+      try {
+        await reconnectRelaySession({
+          connectingMessage: enabled
+            ? "Starting saved transcript…"
+            : "Stopping transcript saving…",
+          completedNotice: enabled
+            ? "Original speech is now being saved. The relay started a new 16-credit minute."
+            : "Transcript saving stopped. The relay started a new 8-credit minute.",
+        });
+      } catch (error) {
+        state.saveTranscript = previousValue;
+        const normalized = normalizeError(error);
+        await stopSession(normalized.message, normalized.status === 402 ? "insufficient_credits" : "error");
+        throw error;
+      }
+    }
+    broadcastState();
+  } finally {
+    relaySwitchBusy = false;
+  }
+}
+
+async function ensureTranscriptLearningLanguage(requestedCode) {
+  if (!state.catalog?.savedSourceTranscriptsEnabled) {
+    throw new Error("Saved source transcripts are temporarily unavailable.");
+  }
+  const quizLanguages = state.catalog.quizLanguages ?? [];
+  const requested = quizLanguages.find(language => language.code === requestedCode);
+  const selected = state.catalog.selectedQuizLanguage;
+  const matchingTarget = quizLanguages.find(language => language.code === state.targetLanguage);
+  const learningLanguage = requested ?? selected ?? matchingTarget ?? quizLanguages[0];
+  if (!learningLanguage) {
+    throw new Error("Glosify did not return a supported quiz language.");
+  }
+  if (selected?.code === learningLanguage.code) {
+    return;
+  }
+  const persisted = await apiFetch("/api/realtime-translation/quiz-language", {
+    method: "PUT",
+    body: JSON.stringify({ code: learningLanguage.code }),
+  });
+  state.catalog = { ...state.catalog, selectedQuizLanguage: persisted };
 }
 
 async function startSession() {
@@ -489,7 +531,11 @@ async function handleSubtitleEvent(event) {
 }
 
 async function processTick() {
-  if (!state.sessionId || !state.sessionStartedAt || stopping) {
+  if (!state.sessionId
+      || !state.sessionStartedAt
+      || stopping
+      || relaySwitchBusy
+      || state.status === "reconnecting") {
     return;
   }
 
@@ -571,7 +617,7 @@ async function processTick() {
         state.stopAtBoundary ? "Subtitles stopped because your Glosify credits ran out." : "The next minute was not authorized.",
         state.stopAtBoundary ? "insufficient_credits" : "error");
     } else if (action.type === "reconnect") {
-      await reconnectAtSessionLimit();
+      await reconnectRelaySession();
     }
   } catch (error) {
     const normalized = normalizeError(error);
@@ -585,15 +631,18 @@ async function processTick() {
   }
 }
 
-async function reconnectAtSessionLimit() {
+async function reconnectRelaySession({
+  connectingMessage = "Reconnecting…",
+  completedNotice = null,
+} = {}) {
   const oldSessionId = state.sessionId;
   if (!oldSessionId) {
     return;
   }
   state.status = "reconnecting";
-  state.notice = "Reconnecting…";
+  state.notice = connectingMessage;
   broadcastState();
-  await sendToTab({ type: "overlay:status", text: "Reconnecting…" });
+  await sendToTab({ type: "overlay:status", text: connectingMessage });
   await sendToOffscreen({ type: "media:disconnect-relay" });
   await apiFetch(`/api/realtime-translation/sessions/${oldSessionId}`, { method: "DELETE" });
   state.sessionId = null;
@@ -627,7 +676,7 @@ async function reconnectAtSessionLimit() {
     stopAtBoundary: false,
     sessionStartedAt: Date.now(),
     lastHeartbeatAt: Date.now(),
-    notice: null,
+    notice: completedNotice,
   });
   await authorizeOffscreenMinute(1);
   await sendToTab({ type: "overlay:status", text: "Listening…" });
@@ -748,7 +797,6 @@ function publicState() {
     targetLanguage: state.targetLanguage,
     saveTranscript: state.saveTranscript,
     canSaveTranscript: canSaveTranscript(),
-    canEnableSaveTranscript: canEnableTranscript(),
     effectiveCreditsPerMinute: effectiveCreditsPerMinute(),
     saveTranscriptHelp: saveTranscriptUnavailableMessage(),
     transcriptId: state.transcriptId,
@@ -760,11 +808,7 @@ function publicState() {
 }
 
 function canSaveTranscript() {
-  return canSaveSourceTranscript(state.catalog, state.targetLanguage);
-}
-
-function canEnableTranscript() {
-  return canEnableSourceTranscript(state.catalog, state.targetLanguage);
+  return canSaveSourceTranscript(state.catalog);
 }
 
 function effectiveCreditsPerMinute() {
@@ -775,20 +819,15 @@ function saveTranscriptUnavailableMessage() {
   const selected = state.catalog?.selectedQuizLanguage;
   if (state.sessionId) {
     return state.saveTranscript
-      ? "Finalized original speech is being saved for this session."
-      : "Stop subtitles to enable transcript saving for the next session.";
+      ? "Finalized original speech is being saved. Uncheck anytime to stop saving."
+      : "Check anytime to start saving original speech without stopping tab audio.";
   }
   if (state.catalog && !state.catalog.savedSourceTranscriptsEnabled) {
     return "Saved source transcripts are temporarily unavailable.";
   }
-  if (!canEnableTranscript()) {
-    return "Choose Estonian, German, Polish, or Ukrainian as the subtitle language to save source speech.";
-  }
-  const target = state.catalog?.quizLanguages?.find(language => language.code === state.targetLanguage)?.name
-    ?? state.targetLanguage;
-  return selected?.code === state.targetLanguage
-    ? "Stores finalized original-language speech in your private Glosify account for this session only."
-    : `Checking this also selects ${target} as your Glosify quiz language.`;
+  return selected
+    ? "Check anytime to save finalized original-language speech in your private Glosify account."
+    : "Check anytime to save. Glosify will use the quiz language shown above.";
 }
 
 function broadcastState() {

@@ -91,11 +91,6 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 throw new RealtimeTranslationValidationException(
                     "Choose a quiz language in Glosify before saving an original speech transcript.");
             }
-            if (!string.Equals(selectedQuizLanguage.Code, language.Code, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new RealtimeTranslationValidationException(
-                    $"Select {language.Name} as your Glosify quiz language before saving this transcript.");
-            }
         }
         var gate = GetLock("user:" + userId);
         await gate.WaitAsync(cancellationToken);
@@ -127,10 +122,13 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                     && item.UserId == userId,
                     cancellationToken)
                     ?? throw new RealtimeTranslationNotFoundException("Saved transcript not found.");
-                if (!string.Equals(transcript.TargetLanguage, language.Code, StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(
+                        transcript.TargetLanguage,
+                        selectedQuizLanguage!.Code,
+                        StringComparison.OrdinalIgnoreCase))
                 {
                     throw new RealtimeTranslationValidationException(
-                        "A saved transcript cannot change subtitle language during reconnect.");
+                        "A saved transcript cannot change learning language during reconnect.");
                 }
                 if (!string.Equals(transcript.Stream, RealtimeTranslationTranscriptStreams.Source, StringComparison.Ordinal))
                 {
@@ -144,9 +142,9 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
-                    TargetLanguage = language.Code,
+                    TargetLanguage = selectedQuizLanguage!.Code,
                     Stream = RealtimeTranslationTranscriptStreams.Source,
-                    Title = $"{language.Name} source transcript · {now:dd MMM yyyy, HH:mm}",
+                    Title = $"{selectedQuizLanguage.Name} source transcript · {now:dd MMM yyyy, HH:mm}",
                     CreatedAt = now,
                     UpdatedAt = now,
                 };

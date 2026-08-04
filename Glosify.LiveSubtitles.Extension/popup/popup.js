@@ -1,3 +1,5 @@
+import { isTranscriptToggleDisabled } from "../lib/transcript-storage.js";
+
 const elements = {
   loading: document.querySelector("#loading"),
   signedOut: document.querySelector("#signed-out"),
@@ -32,9 +34,19 @@ elements.language.addEventListener("change", () => run("popup:set-target", {
 elements.quizLanguage.addEventListener("change", () => run("popup:set-quiz-language", {
   code: elements.quizLanguage.value,
 }));
-elements.saveTranscript.addEventListener("change", () => run("popup:set-save-transcript", {
-  enabled: elements.saveTranscript.checked,
-}));
+elements.saveTranscript.addEventListener("change", () => {
+  const enabled = elements.saveTranscript.checked;
+  const catalog = currentState?.catalog;
+  void run("popup:set-save-transcript", {
+    enabled,
+    quizLanguageCode: elements.quizLanguage.value,
+  }, true, {
+    saveTranscript: enabled,
+    effectiveCreditsPerMinute: enabled
+      ? catalog?.savedTranscriptCreditsPerMinute ?? 16
+      : catalog?.creditsPerMinute ?? 8,
+  });
+});
 elements.viewTranscripts.addEventListener("click", () => run("popup:open-transcripts", {}, false));
 
 chrome.runtime.onMessage.addListener(message => {
@@ -46,9 +58,13 @@ chrome.runtime.onMessage.addListener(message => {
 
 void run("popup:get-state", {}, false);
 
-async function run(type, extra = {}, showBusy = true) {
+async function run(type, extra = {}, showBusy = true, optimisticState = null) {
+  const previousState = currentState ? { ...currentState } : null;
   if (showBusy) {
     busy = true;
+    if (optimisticState && currentState) {
+      currentState = { ...currentState, ...optimisticState };
+    }
     render();
   }
   try {
@@ -60,7 +76,7 @@ async function run(type, extra = {}, showBusy = true) {
       currentState = response.result;
     }
   } catch (error) {
-    currentState ??= { signedIn: false, status: "disconnected" };
+    currentState = previousState ?? { signedIn: false, status: "disconnected" };
     currentState.error = error?.message || "Unexpected extension error.";
   } finally {
     busy = false;
@@ -101,7 +117,10 @@ function render() {
     }));
     elements.quizLanguage.dataset.signature = quizSignature;
   }
-  elements.quizLanguage.value = currentState.catalog?.selectedQuizLanguage?.code ?? "";
+  elements.quizLanguage.value = currentState.catalog?.selectedQuizLanguage?.code
+    ?? quizLanguages.find(language => language.code === currentState.targetLanguage)?.code
+    ?? quizLanguages[0]?.code
+    ?? "";
   elements.quizLanguage.disabled = busy || currentState.active || quizLanguages.length === 0;
 
   const languages = currentState.catalog?.languages ?? [];
@@ -119,9 +138,10 @@ function render() {
   elements.language.disabled = busy || currentState.active || languages.length === 0;
 
   elements.saveTranscript.checked = Boolean(currentState.saveTranscript);
-  elements.saveTranscript.disabled = busy
-    || currentState.active
-    || !currentState.canEnableSaveTranscript;
+  elements.saveTranscript.disabled = isTranscriptToggleDisabled({
+    busy,
+    catalog: currentState.catalog,
+  });
   elements.saveTranscriptHelp.textContent = currentState.saveTranscriptHelp
     ?? "Stores finalized original-language speech in your private Glosify account for this session only.";
 

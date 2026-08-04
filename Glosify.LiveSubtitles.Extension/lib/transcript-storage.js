@@ -15,19 +15,17 @@ export function clearTranscriptStorageState(state) {
   return state;
 }
 
-export function canSaveSourceTranscript(catalog, targetLanguage) {
+export function canSaveSourceTranscript(catalog) {
   return Boolean(catalog?.savedSourceTranscriptsEnabled
-    && catalog.selectedQuizLanguage
-    && catalog.selectedQuizLanguage.code === targetLanguage);
-}
-
-export function canEnableSourceTranscript(catalog, targetLanguage) {
-  return Boolean(catalog?.savedSourceTranscriptsEnabled
-    && catalog.quizLanguages?.some(language => language.code === targetLanguage));
+    && catalog.selectedQuizLanguage);
 }
 
 export function getEffectiveCreditsPerMinute(catalog, saveTranscript) {
   return saveTranscript
     ? catalog?.savedTranscriptCreditsPerMinute ?? 16
     : catalog?.creditsPerMinute ?? 8;
+}
+
+export function isTranscriptToggleDisabled({ busy, catalog }) {
+  return Boolean(busy || catalog?.savedSourceTranscriptsEnabled === false);
 }

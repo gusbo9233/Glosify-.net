@@ -34,7 +34,7 @@
 
     <header class="transcript-detail-header">
         <div>
-            <p class="transcripts-eyebrow">@(isSource ? $"Original speech captured while translating into {learningLanguage}" : $"Legacy translated captions · learning {learningLanguage}")</p>
+            <p class="transcripts-eyebrow">@(isSource ? $"Original speech saved for {learningLanguage} learning" : $"Legacy translated captions · learning {learningLanguage}")</p>
             <h1>@Model.Transcript.Title</h1>
             <p>@Model.Transcript.TotalSegments captions · started @Model.Transcript.CreatedAt.ToLocalTime().ToString("MMM d, yyyy · HH:mm")</p>
         </div>

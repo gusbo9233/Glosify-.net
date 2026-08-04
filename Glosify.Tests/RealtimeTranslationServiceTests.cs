@@ -114,7 +114,7 @@ public sealed class RealtimeTranslationServiceTests
     }
 
     [Fact]
-    public async Task OptIn_RequiresPersistedMatchingQuizLanguage()
+    public async Task OptIn_RequiresAQuizLanguageButAllowsAnySubtitleTarget()
     {
         await using var context = CreateContext();
         await SeedUserAsync(context);
@@ -131,11 +131,13 @@ public sealed class RealtimeTranslationServiceTests
 
         user.SelectedQuizLanguageCode = "pl";
         await context.SaveChangesAsync();
-        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(() =>
-            service.CreateSessionAsync("user-1", "es", saveTranscript: true));
+        var created = await service.CreateSessionAsync("user-1", "es", saveTranscript: true);
 
-        Assert.Empty(await context.RealtimeTranslationSessions.ToListAsync());
-        Assert.Empty(await context.RealtimeTranslationTranscripts.ToListAsync());
+        Assert.NotNull(created.TranscriptId);
+        Assert.Equal("es", (await context.RealtimeTranslationSessions.SingleAsync()).TargetLanguage);
+        var transcript = await context.RealtimeTranslationTranscripts.SingleAsync();
+        Assert.Equal("pl", transcript.TargetLanguage);
+        Assert.StartsWith("Polish source transcript", transcript.Title);
     }
 
     [Fact]

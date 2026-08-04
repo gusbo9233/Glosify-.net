@@ -139,11 +139,10 @@ az webapp config set \
    ```
 
 5. Open Twitch, YouTube, or another ordinary HTTP(S) page. Open the extension,
-   connect Glosify, choose Estonian, German, Polish, or Ukrainian as the Glosify
-   quiz language, select a subtitle target, optionally enable **Save original
-   speech transcript**, and choose **Start subtitles**. The popup persists the
-   quiz-language choice to the user's Glosify account and aligns the subtitle
-   target when possible. Saving is available only while both languages match.
+   connect Glosify, select a subtitle target, and choose **Start subtitles**.
+   **Save original speech transcript** can be checked or unchecked before or
+   during capture. Glosify assigns the transcript to the quiz language shown in
+   the popup, persisting that account choice automatically when necessary.
    Storage consent resets after Stop.
 
 The manifest key keeps the unpacked pilot ID stable across directories and
@@ -167,6 +166,10 @@ Chrome profiles. Add only known exact callback URLs; never allow a wildcard
   both translation and source-transcription connections. Source text remains on
   the server-side persistence path and is never shown in the extension overlay;
   the overlay remains translation-only in both modes.
+- The save checkbox can be changed during capture. Glosify reconnects only the
+  relay while retaining the tab capture and overlay. Each mode handoff starts a
+  newly billed minute at the applicable 8- or 16-credit rate; previously started
+  minutes remain charged under normal started-minute billing.
 - The overlay is an adjustable subtitle chat: drag its header to reposition it,
   resize it from the lower-right corner, minimize it from the header, or clear
   the visible chat without stopping translation. It retains at most 30 bounded

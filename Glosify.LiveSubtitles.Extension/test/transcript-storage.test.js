@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildTranscriptSessionRequest,
-  canEnableSourceTranscript,
   canSaveSourceTranscript,
   clearTranscriptStorageState,
   getEffectiveCreditsPerMinute,
+  isTranscriptToggleDisabled,
 } from "../lib/transcript-storage.js";
 
 test("transcript storage is opt-in and does not send an id while disabled", () => {
@@ -37,36 +37,30 @@ test("stopping clears consent and transcript identity", () => {
   assert.equal(state.transcriptId, null);
 });
 
-test("source saving requires feature enablement and an exact selected-language match", () => {
+test("source saving requires only feature enablement and an assigned quiz language", () => {
   const catalog = {
     savedSourceTranscriptsEnabled: true,
     selectedQuizLanguage: { code: "pl", name: "Polish" },
   };
-  assert.equal(canSaveSourceTranscript(catalog, "pl"), true);
-  assert.equal(canSaveSourceTranscript(catalog, "de"), false);
-  assert.equal(canSaveSourceTranscript({ ...catalog, savedSourceTranscriptsEnabled: false }, "pl"), false);
-  assert.equal(canSaveSourceTranscript({ ...catalog, selectedQuizLanguage: null }, "pl"), false);
-});
-
-test("the save checkbox can align any supported quiz target automatically", () => {
-  const catalog = {
-    savedSourceTranscriptsEnabled: true,
-    quizLanguages: [
-      { code: "et", name: "Estonian" },
-      { code: "de", name: "German" },
-      { code: "pl", name: "Polish" },
-      { code: "uk", name: "Ukrainian" },
-    ],
-    selectedQuizLanguage: { code: "pl", name: "Polish" },
-  };
-
-  assert.equal(canEnableSourceTranscript(catalog, "de"), true);
-  assert.equal(canSaveSourceTranscript(catalog, "de"), false);
-  assert.equal(canEnableSourceTranscript(catalog, "es"), false);
+  assert.equal(canSaveSourceTranscript(catalog), true);
+  assert.equal(canSaveSourceTranscript({ ...catalog, savedSourceTranscriptsEnabled: false }), false);
+  assert.equal(canSaveSourceTranscript({ ...catalog, selectedQuizLanguage: null }), false);
 });
 
 test("source saving switches the displayed and preflight rate to sixteen credits", () => {
   const catalog = { creditsPerMinute: 8, savedTranscriptCreditsPerMinute: 16 };
   assert.equal(getEffectiveCreditsPerMinute(catalog, false), 8);
   assert.equal(getEffectiveCreditsPerMinute(catalog, true), 16);
+});
+
+test("the transcript toggle is not gated by active state or language matching", () => {
+  const catalog = { savedSourceTranscriptsEnabled: true };
+
+  assert.equal(isTranscriptToggleDisabled({ busy: false, active: true, catalog }), false);
+  assert.equal(isTranscriptToggleDisabled({ busy: true, active: false, catalog }), true);
+  assert.equal(isTranscriptToggleDisabled({
+    busy: false,
+    active: false,
+    catalog: { savedSourceTranscriptsEnabled: false },
+  }), true);
 });
