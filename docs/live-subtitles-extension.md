@@ -100,6 +100,12 @@ dotnet ef database update --project Glosify
 dotnet run --project Glosify
 ```
 
+When production uses managed-identity SQL authentication, the migration can be
+run inside App Service by temporarily setting
+`Database__ApplyMigrationsOnStartup=true`, restarting once, confirming the
+migration-complete log, and setting it back to `false`. Keep this opt-in switch
+off during normal starts.
+
 Production uses equivalent App Service settings with double underscores, such
 as `RealtimeTranslation__FoundryEndpoint`,
 `RealtimeTranslation__Deployment`, `RealtimeTranslation__Enabled`, and (only

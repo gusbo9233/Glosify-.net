@@ -420,6 +420,18 @@ builder.Services.AddDbContext<GlosifyContext>(options =>
 
 var app = builder.Build();
 
+if (builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
+{
+    await using var migrationScope = app.Services.CreateAsyncScope();
+    var migrationLogger = migrationScope.ServiceProvider
+        .GetRequiredService<ILoggerFactory>()
+        .CreateLogger("DatabaseMigration");
+    migrationLogger.LogInformation("Applying pending Glosify database migrations.");
+    var migrationContext = migrationScope.ServiceProvider.GetRequiredService<GlosifyContext>();
+    await migrationContext.Database.MigrateAsync();
+    migrationLogger.LogInformation("Glosify database migrations are current.");
+}
+
 // Azure App Service front ends terminate TLS and forward the client address in
 // X-Forwarded-* headers; without this, RemoteIpAddress is the front end's address
 // and every user shares the same rate-limit partition.
