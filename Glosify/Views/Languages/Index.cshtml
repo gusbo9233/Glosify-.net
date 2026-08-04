@@ -4,13 +4,18 @@
     ViewData["Title"] = "Language selector";
     ViewData["ActiveNav"] = "languages";
 
-    var languages = new[]
+    var languages = Glosify.Services.Language.QuizLanguageCatalog.All.Select(language => new
     {
-        new { Name = "Estonian", Flag = "estonia" },
-        new { Name = "German", Flag = "germany" },
-        new { Name = "Polish", Flag = "poland" },
-        new { Name = "Ukrainian", Flag = "ukraine" }
-    };
+        language.Name,
+        Flag = language.Code switch
+        {
+            "et" => "estonia",
+            "de" => "germany",
+            "pl" => "poland",
+            "uk" => "ukraine",
+            _ => string.Empty,
+        },
+    });
 
     var current = LangContext.CurrentLanguage;
 }
@@ -34,6 +39,10 @@
 
     <form class="language-form" method="post" asp-controller="Languages" asp-action="Select">
         @Html.AntiForgeryToken()
+        @if (ViewData["ReturnUrl"] is string returnUrl)
+        {
+            <input type="hidden" name="returnUrl" value="@returnUrl" />
+        }
         @foreach (var language in languages)
         {
             var isCurrent = string.Equals(current, language.Name, StringComparison.OrdinalIgnoreCase);

@@ -1,0 +1,8 @@
+{
+  "name": "glosify-live-subtitles-extension",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

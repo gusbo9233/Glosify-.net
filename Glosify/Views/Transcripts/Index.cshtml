@@ -1,0 +1,61 @@
+@model TranscriptLibraryViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "Transcripts";
+    var totalPages = Math.Max(1, (int)Math.Ceiling(Model.Library.TotalCount / (double)Model.Library.PageSize));
+    var learningLanguage = Model.Library.Items.Count == 0
+        ? null
+        : Glosify.Services.Language.QuizLanguageCatalog.Find(Model.Library.Items[0].TargetLanguage)?.Name;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/transcripts.css" asp-append-version="true" />
+}
+
+<section class="transcripts-page">
+    <header class="transcripts-hero">
+        <div>
+            <p class="transcripts-eyebrow">Live subtitle history</p>
+            <h1>Saved transcripts</h1>
+            <p>Saved live-subtitle text for @(learningLanguage ?? "your selected language"). New sessions contain original speech; legacy sessions remain labeled as translations.</p>
+        </div>
+        <span class="transcripts-count">@Model.Library.TotalCount saved</span>
+    </header>
+
+    @if (TempData["TranscriptMessage"] is string message)
+    {
+        <div class="transcripts-notice" role="status">@message</div>
+    }
+
+    <div class="transcript-grid">
+        @foreach (var transcript in Model.Library.Items)
+        {
+            <a class="transcript-card" asp-action="Details" asp-route-id="@transcript.Id">
+                <span class="material-symbols-outlined" aria-hidden="true">subtitles</span>
+                <div>
+                    <h2>@transcript.Title</h2>
+                    <p>@(Glosify.Services.Language.QuizLanguageCatalog.Find(transcript.TargetLanguage)?.Name ?? transcript.TargetLanguage.ToUpperInvariant()) · @transcript.Stream · @transcript.SegmentCount captions</p>
+                    <small>Updated @transcript.UpdatedAt.ToLocalTime().ToString("MMM d, yyyy · HH:mm")</small>
+                </div>
+                <span class="material-symbols-outlined transcript-card-arrow" aria-hidden="true">arrow_forward</span>
+            </a>
+        }
+        @if (Model.Library.Items.Count == 0)
+        {
+            <div class="transcripts-empty">
+                <span class="material-symbols-outlined" aria-hidden="true">subtitles_off</span>
+                <h2>No saved transcripts yet</h2>
+                <p>Enable “Save original speech transcript” before starting live subtitles.</p>
+            </div>
+        }
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav class="transcript-pagination" aria-label="Transcript pages">
+            <a class="@(Model.Library.Page <= 1 ? "is-disabled" : "")" asp-route-page="@(Model.Library.Page - 1)">Previous</a>
+            <span>Page @Model.Library.Page of @totalPages</span>
+            <a class="@(Model.Library.Page >= totalPages ? "is-disabled" : "")" asp-route-page="@(Model.Library.Page + 1)">Next</a>
+        </nav>
+    }
+</section>

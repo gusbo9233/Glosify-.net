@@ -21,6 +21,21 @@ public interface IAiCreditService
         AiTokenUsage usage,
         CancellationToken cancellationToken = default);
 
+    Task<AiDurationCreditReservation> ReserveDurationAsync(
+        AiUsageContext context,
+        string provider,
+        string model,
+        int durationSeconds,
+        int requiredCredits,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("This AI credit service does not support duration billing.");
+
+    Task CommitDurationUsageAsync(
+        Guid reservationId,
+        int actualDurationSeconds,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("This AI credit service does not support duration billing.");
+
     Task ReleaseAsync(
         Guid reservationId,
         CancellationToken cancellationToken = default);

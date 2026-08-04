@@ -33,7 +33,11 @@ public class AssistantApiController : ApiControllerBase
     [HttpPost("chats")]
     public async Task<IActionResult> CreateChat([FromBody] AssistantChatInput? input, CancellationToken cancellationToken)
     {
-        var chat = await _orchestrator.CreateChatAsync(User.GetUserId(), input?.ContextQuizId, cancellationToken);
+        var chat = await _orchestrator.CreateChatAsync(
+            User.GetUserId(),
+            input?.ContextQuizId,
+            cancellationToken,
+            input?.ContextTranscriptId);
         return Ok(chat);
     }
 
@@ -86,7 +90,8 @@ public class AssistantApiController : ApiControllerBase
                     ? new AssistantDocumentContext(documentId, input.PageNumber ?? 1)
                     : null,
                 input.CustomQuizId,
-                cancellationToken);
+                cancellationToken,
+                input.TranscriptId);
             return Ok(response);
         }
         catch (InvalidOperationException ex) when (

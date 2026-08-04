@@ -26,6 +26,10 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<AiCreditAccount> AiCreditAccounts { get; set; }
     public DbSet<AiCreditTransaction> AiCreditTransactions { get; set; }
     public DbSet<AiMonthlyBudget> AiMonthlyBudgets { get; set; }
+    public DbSet<RealtimeTranslationSession> RealtimeTranslationSessions { get; set; }
+    public DbSet<RealtimeTranslationMinute> RealtimeTranslationMinutes { get; set; }
+    public DbSet<RealtimeTranslationTranscript> RealtimeTranslationTranscripts { get; set; }
+    public DbSet<RealtimeTranslationTranscriptSegment> RealtimeTranslationTranscriptSegments { get; set; }
 
     public DbSet<Collection> Collections { get; set; }
 
@@ -60,6 +64,13 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
         {
             entity.Property(token => token.LoginProvider).HasMaxLength(128);
             entity.Property(token => token.Name).HasMaxLength(128);
+        });
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.Property(user => user.SelectedQuizLanguageCode).HasMaxLength(8);
+            entity.HasCheckConstraint(
+                "CK_AspNetUsers_SelectedQuizLanguageCode",
+                "[SelectedQuizLanguageCode] IS NULL OR [SelectedQuizLanguageCode] IN ('et', 'de', 'pl', 'uk')");
         });
 
         modelBuilder.Entity<Quiz>(entity =>
@@ -137,6 +148,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(t => new { t.QuizId, t.UserId });
             entity.HasIndex(t => new { t.UserId, t.QuizId });
             entity.HasIndex(t => t.ContextQuizId);
+            entity.HasIndex(t => t.ContextTranscriptId);
             entity.HasOne<Quiz>()
                 .WithMany()
                 .HasForeignKey(t => t.QuizId)
@@ -151,6 +163,11 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(t => t.UserId)
                 .HasConstraintName("FK_AssistantThreads_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne<RealtimeTranslationTranscript>()
+                .WithMany()
+                .HasForeignKey(t => t.ContextTranscriptId)
+                .HasConstraintName("FK_AssistantThreads_RealtimeTranslationTranscripts_ContextTranscriptId")
                 .OnDelete(DeleteBehavior.NoAction);
         });
 
@@ -218,6 +235,84 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.Property(budget => budget.PeriodKey).HasMaxLength(7);
             entity.Property(budget => budget.RowVersion).IsRowVersion();
             entity.Ignore(budget => budget.AvailableMicros);
+        });
+
+        modelBuilder.Entity<RealtimeTranslationSession>(entity =>
+        {
+            entity.HasKey(session => session.Id);
+            entity.Property(session => session.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(session => session.TargetLanguage).HasMaxLength(16).IsRequired();
+            entity.Property(session => session.Model).HasMaxLength(128).IsRequired();
+            entity.Property(session => session.SourceTranscriptionDeployment).HasMaxLength(128);
+            entity.Property(session => session.BillingModel).HasMaxLength(256).IsRequired();
+            entity.Property(session => session.Status).HasMaxLength(32).IsRequired();
+            entity.Property(session => session.RowVersion).IsRowVersion();
+            entity.HasIndex(session => new { session.UserId, session.CreatedAt });
+            entity.HasIndex(session => session.UserId)
+                .IsUnique()
+                .HasFilter("[Status] IN ('pending', 'active')");
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(session => session.UserId)
+                .HasConstraintName("FK_RealtimeTranslationSessions_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(session => session.Transcript)
+                .WithMany(transcript => transcript.Sessions)
+                .HasForeignKey(session => session.TranscriptId)
+                .HasConstraintName("FK_RealtimeTranslationSessions_RealtimeTranslationTranscripts_TranscriptId")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<RealtimeTranslationMinute>(entity =>
+        {
+            entity.HasKey(minute => minute.Id);
+            entity.Property(minute => minute.Status).HasMaxLength(32).IsRequired();
+            entity.Property(minute => minute.RowVersion).IsRowVersion();
+            entity.HasIndex(minute => new { minute.SessionId, minute.MinuteIndex }).IsUnique();
+            entity.HasIndex(minute => minute.ReservationId).IsUnique();
+
+            entity.HasOne(minute => minute.Session)
+                .WithMany(session => session.Minutes)
+                .HasForeignKey(minute => minute.SessionId)
+                .HasConstraintName("FK_RealtimeTranslationMinutes_RealtimeTranslationSessions_SessionId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RealtimeTranslationTranscript>(entity =>
+        {
+            entity.HasKey(transcript => transcript.Id);
+            entity.Property(transcript => transcript.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(transcript => transcript.Title).HasMaxLength(160).IsRequired();
+            entity.Property(transcript => transcript.TargetLanguage).HasMaxLength(16).IsRequired();
+            entity.Property(transcript => transcript.Stream).HasMaxLength(16).IsRequired();
+            entity.HasCheckConstraint(
+                "CK_RealtimeTranslationTranscripts_Stream",
+                "[Stream] IN ('translation', 'source')");
+            entity.HasIndex(transcript => new { transcript.UserId, transcript.TargetLanguage, transcript.UpdatedAt });
+
+            entity.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(transcript => transcript.UserId)
+                .HasConstraintName("FK_RealtimeTranslationTranscripts_AspNetUsers_UserId")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RealtimeTranslationTranscriptSegment>(entity =>
+        {
+            entity.HasKey(segment => segment.Id);
+            entity.Property(segment => segment.ProviderEventKey).HasMaxLength(256).IsRequired();
+            entity.Property(segment => segment.Text).IsRequired();
+            entity.HasIndex(segment => new { segment.SessionId, segment.Sequence }).IsUnique();
+            entity.HasIndex(segment => new { segment.SessionId, segment.ProviderEventKey }).IsUnique();
+            entity.HasIndex(segment => new { segment.TranscriptId, segment.CapturedAt });
+
+            entity.HasOne(segment => segment.Transcript)
+                .WithMany(transcript => transcript.Segments)
+                .HasForeignKey(segment => segment.TranscriptId)
+                .HasConstraintName("FK_RealtimeTranslationTranscriptSegments_RealtimeTranslationTranscripts_TranscriptId")
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Collection>(entity =>

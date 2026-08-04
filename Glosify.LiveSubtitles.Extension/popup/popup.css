@@ -1,0 +1,140 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0c1018;
+  color: #eef2ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  width: 350px;
+  min-height: 240px;
+  background:
+    radial-gradient(circle at 90% -20%, rgba(118, 94, 255, .34), transparent 45%),
+    #0c1018;
+}
+
+main { padding: 18px; }
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 16px;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(145deg, #8c75ff, #5a41e8);
+  font-size: 20px;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(91, 65, 232, .34);
+}
+
+h1, h2, p { margin: 0; }
+h1 { font-size: 18px; letter-spacing: -.02em; }
+h2 { margin-bottom: 7px; font-size: 17px; }
+p { color: #adb6c9; font-size: 13px; line-height: 1.45; }
+.brand-subtitle { margin-top: 2px; font-size: 11px; }
+
+.panel {
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .045);
+}
+
+#signed-out p { margin-bottom: 14px; }
+.muted { color: #adb6c9; font-size: 13px; }
+.hidden { display: none !important; }
+
+.account-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 13px;
+  color: #b9c1d2;
+  font-size: 12px;
+}
+
+.email {
+  overflow: hidden;
+  max-width: 230px;
+  margin-bottom: 3px;
+  color: #eef2ff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controls { display: grid; gap: 11px; }
+label { color: #c8cfdd; font-size: 12px; font-weight: 650; }
+
+select {
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 9px;
+  outline: none;
+  background: #161c28;
+  color: #f4f6ff;
+  font: inherit;
+}
+
+select:focus { border-color: #8872ff; }
+
+.switch-row, .price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, .07);
+}
+
+.switch-row small {
+  display: block;
+  margin-top: 3px;
+  color: #8f99ad;
+  font-weight: 400;
+}
+
+.switch-row input { accent-color: #8068ff; }
+.price-row { color: #aab3c5; font-size: 12px; }
+.price-row strong { color: #eef2ff; }
+
+button {
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+button:disabled { cursor: not-allowed; opacity: .45; }
+.primary { width: 100%; padding: 11px 14px; color: #fff; background: #7058f3; }
+.primary:hover:not(:disabled) { background: #806aff; }
+.danger { width: 100%; padding: 11px 14px; color: #ffd9df; background: #6e2734; }
+.secondary { width: 100%; padding: 10px 14px; color: #cfc7ff; background: rgba(128, 104, 255, .13); }
+.secondary:hover:not(:disabled) { background: rgba(128, 104, 255, .22); }
+.link-button { padding: 4px; color: #a99bff; background: transparent; font-size: 11px; }
+.link-panel { padding: 0; color: #a99bff; background: transparent; text-align: left; font-size: 11px; }
+
+.status, .notice, .error {
+  margin-top: 11px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.status { color: #bfe8d5; background: rgba(39, 139, 98, .17); }
+.notice { color: #ffe1a6; background: rgba(182, 117, 30, .18); }
+.error { color: #ffc4cd; background: rgba(181, 52, 72, .19); }

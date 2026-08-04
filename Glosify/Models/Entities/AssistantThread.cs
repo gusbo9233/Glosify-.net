@@ -14,6 +14,9 @@ public class AssistantThread
     [Column("context_quiz_id")]
     public Guid? ContextQuizId { get; set; }
 
+    [Column("context_transcript_id")]
+    public Guid? ContextTranscriptId { get; set; }
+
     [Column("user_id")]
     public string UserId { get; set; } = string.Empty;
 

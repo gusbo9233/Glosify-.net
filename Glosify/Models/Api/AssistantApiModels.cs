@@ -1,6 +1,6 @@
 namespace Glosify.Models.Api;
 
-public sealed record AssistantChatInput(Guid? ContextQuizId);
+public sealed record AssistantChatInput(Guid? ContextQuizId, Guid? ContextTranscriptId = null);
 
 public sealed record AssistantSendInput(
     string Message,
@@ -9,4 +9,5 @@ public sealed record AssistantSendInput(
     string? Model,
     Guid? DocumentId,
     int? PageNumber,
-    Guid? CustomQuizId);
+    Guid? CustomQuizId,
+    Guid? TranscriptId = null);

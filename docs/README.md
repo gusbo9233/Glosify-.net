@@ -11,6 +11,9 @@
   telemetry, rollback, and live smoke validation.
 - [Rewarded ads for AI credits](rewarded-ads-for-credits.md) — rewarded-ad
   integration and credit flow.
+- [Live Subtitles Chrome extension](live-subtitles-extension.md) — unpacked
+  extension setup, memory-only Microsoft Foundry relay, PKCE sign-in, enforced
+  credit billing, privacy, and pilot validation.
 - [Database diagram](database-diagram.md) — Mermaid entity-relationship
   diagram for the Glosify database.
 

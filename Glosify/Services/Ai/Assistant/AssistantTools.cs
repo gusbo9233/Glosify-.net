@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.CustomQuizzes;
+using Glosify.Services.Language;
 
 namespace Glosify.Services.Ai.Assistant;
 
@@ -244,6 +245,24 @@ public sealed class AssistantTools : IAssistantTools
             },
         }, required: ["name", "source_language"]));
 
+    private static readonly AgentToolDeclaration ListSavedTranscriptsDeclaration = new(
+        "list_saved_transcripts",
+        "List the user's saved live-subtitle transcripts with title, target language, date, segment count, and id. Use this when the user refers to a saved session without identifying it. Returns up to 50 transcripts per call.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["offset"] = IntegerProp("Optional number of transcripts to skip. Defaults to 0."),
+        }));
+
+    private static readonly AgentToolDeclaration GetSavedTranscriptDeclaration = new(
+        "get_saved_transcript",
+        "Read a bounded page of finalized text from one of the user's saved transcripts. New transcripts contain original source speech; legacy transcripts may contain translations. Defaults to the transcript open in the UI. Page through with offset while has_more is true when the user's request needs more text.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["transcript_id"] = StringProp("Optional saved transcript id. Omit to use the transcript open in the UI."),
+            ["offset"] = IntegerProp("Optional number of caption segments to skip. Defaults to 0."),
+            ["limit"] = IntegerProp("Optional maximum segments from 1 to 100. Defaults to 100."),
+        }));
+
     private static readonly AgentToolDeclaration MoveQuizDeclaration = new(
         "move_quiz",
         "Propose moving one of the user's quizzes into a collection. Omit collection_id to move it to the library root. The change is queued until the user clicks Apply.",
@@ -445,6 +464,8 @@ public sealed class AssistantTools : IAssistantTools
         ListQuizzesDeclaration,
         CreateCollectionDeclaration,
         CreateQuizDeclaration,
+        ListSavedTranscriptsDeclaration,
+        GetSavedTranscriptDeclaration,
         MoveQuizDeclaration,
         RenameCollectionDeclaration,
         MoveCollectionDeclaration,
@@ -495,6 +516,8 @@ public sealed class AssistantTools : IAssistantTools
             "delete_sentence" => await QueueDeleteSentenceAsync(args, context, cancellationToken),
             "create_quiz" => QueueCreateQuiz(args, context),
             "create_vocabulary_quiz" => QueueCreateQuiz(args, context),
+            "list_saved_transcripts" => await ListSavedTranscriptsAsync(args, context, cancellationToken),
+            "get_saved_transcript" => await GetSavedTranscriptAsync(args, context, cancellationToken),
             "create_collection" => QueueCreateCollection(args, context),
             "move_quiz" => await QueueMoveQuizAsync(args, context, cancellationToken),
             "rename_collection" => await QueueRenameCollectionAsync(args, context, cancellationToken),
@@ -536,6 +559,124 @@ public sealed class AssistantTools : IAssistantTools
             total_count = totalCount,
             offset,
             has_more = offset + rows.Count < totalCount,
+        };
+    }
+
+    private async Task<object> ListSavedTranscriptsAsync(
+        JsonElement args,
+        AgentToolContext context,
+        CancellationToken cancellationToken)
+    {
+        const int pageSize = 50;
+        var offset = GetOffset(args);
+        var languageCode = QuizLanguageCatalog.Find(
+            context.CurrentLanguageCode ?? context.CurrentLanguage)?.Code;
+        var query = _context.RealtimeTranslationTranscripts
+            .AsNoTracking()
+            .Where(transcript => transcript.UserId == context.UserId
+                && languageCode != null
+                && transcript.TargetLanguage == languageCode
+                && transcript.Segments.Any());
+        var total = await query.CountAsync(cancellationToken);
+        var transcripts = await query
+            .OrderByDescending(transcript => transcript.UpdatedAt)
+            .Skip(offset)
+            .Take(pageSize)
+            .Select(transcript => new
+            {
+                id = transcript.Id,
+                title = transcript.Title,
+                target_language = transcript.TargetLanguage,
+                learning_language = transcript.TargetLanguage,
+                stream = transcript.Stream,
+                created_at = transcript.CreatedAt,
+                updated_at = transcript.UpdatedAt,
+                segment_count = transcript.Segments.Count,
+            })
+            .ToListAsync(cancellationToken);
+        return new
+        {
+            transcripts,
+            total_count = total,
+            offset,
+            has_more = offset + transcripts.Count < total,
+            current_transcript_id = context.TranscriptId,
+        };
+    }
+
+    private async Task<object> GetSavedTranscriptAsync(
+        JsonElement args,
+        AgentToolContext context,
+        CancellationToken cancellationToken)
+    {
+        var idText = FirstNonBlank(GetString(args, "transcript_id"), context.TranscriptId?.ToString());
+        if (!Guid.TryParse(idText, out var transcriptId))
+        {
+            return new { error = "Choose a saved transcript first or provide a valid transcript_id." };
+        }
+        var offset = GetOffset(args);
+        var limit = GetBoundedInt(args, "limit", 100, 1, 100);
+        var languageCode = QuizLanguageCatalog.Find(
+            context.CurrentLanguageCode ?? context.CurrentLanguage)?.Code;
+        var transcript = await _context.RealtimeTranslationTranscripts
+            .AsNoTracking()
+            .Where(item => item.Id == transcriptId
+                && item.UserId == context.UserId
+                && languageCode != null
+                && item.TargetLanguage == languageCode
+                && item.Segments.Any())
+            .Select(item => new
+            {
+                item.Id,
+                item.Title,
+                item.TargetLanguage,
+                item.Stream,
+                total = item.Segments.Count,
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (transcript is null)
+        {
+            return new { error = "Saved transcript not found." };
+        }
+
+        var rows = await _context.RealtimeTranslationTranscriptSegments
+            .AsNoTracking()
+            .Where(segment => segment.TranscriptId == transcript.Id)
+            .OrderBy(segment => segment.CapturedAt)
+            .ThenBy(segment => segment.SessionId)
+            .ThenBy(segment => segment.Sequence)
+            .Skip(offset)
+            .Take(limit)
+            .Select(segment => new { segment.CapturedAt, segment.Text })
+            .ToListAsync(cancellationToken);
+        const int maximumCharacters = 12_000;
+        var captions = new List<object>(rows.Count);
+        var characters = 0;
+        foreach (var row in rows)
+        {
+            if (captions.Count > 0 && characters + row.Text.Length > maximumCharacters)
+            {
+                break;
+            }
+            var text = row.Text.Length <= maximumCharacters
+                ? row.Text
+                : row.Text[..maximumCharacters];
+            captions.Add(new { captured_at = row.CapturedAt, text });
+            characters += text.Length;
+        }
+
+        return new
+        {
+            id = transcript.Id,
+            title = transcript.Title,
+            target_language = transcript.TargetLanguage,
+            learning_language = transcript.TargetLanguage,
+            stream = transcript.Stream,
+            captions,
+            offset,
+            total_segments = transcript.total,
+            has_more = offset + captions.Count < transcript.total,
+            next_offset = offset + captions.Count,
         };
     }
 

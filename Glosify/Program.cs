@@ -24,6 +24,8 @@ using Glosify.Services.Speech;
 using Glosify.Services.Speaking;
 using Glosify.Services.Typing;
 using Glosify.Services.Words;
+using Glosify.Services.Auth;
+using Glosify.Services.RealtimeTranslation;
 using Azure.Core;
 using Azure.AI.Projects;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
@@ -86,6 +88,7 @@ builder.Services.AddRateLimiter(options =>
         var isAuthPath = path.StartsWithSegments("/login")
             || path.StartsWithSegments("/Account")
             || path.StartsWithSegments("/api/auth")
+            || path.StartsWithSegments("/api/extension-auth")
             || path.StartsWithSegments("/Identity/Account");
         if (isAuthPath && HttpMethods.IsPost(context.Request.Method))
         {
@@ -167,6 +170,19 @@ builder.Services.AddRateLimiter(options =>
             return RateLimitPartition.GetFixedWindowLimiter($"speaking:{caller}", _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+        }
+
+        if (path.StartsWithSegments("/api/realtime-translation"))
+        {
+            var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Connection.RemoteIpAddress?.ToString()
+                ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter($"realtime-translation:{caller}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 90,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
             });
@@ -258,6 +274,7 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ILanguageContext, CookieLanguageContext>();
+builder.Services.AddScoped<IQuizLanguagePreferenceService, QuizLanguagePreferenceService>();
 
 builder.Services.AddOptions<GeminiOptions>()
     .Bind(builder.Configuration.GetSection("Gemini"));
@@ -269,6 +286,12 @@ builder.Services.AddOptions<AiUsageOptions>()
     .Bind(builder.Configuration.GetSection("AiUsage"))
     .ValidateOnStart();
 builder.Services.AddSingleton<IValidateOptions<AiUsageOptions>, AiUsageOptionsValidator>();
+builder.Services.AddOptions<ExtensionAuthOptions>()
+    .Bind(builder.Configuration.GetSection(ExtensionAuthOptions.SectionName));
+builder.Services.AddOptions<RealtimeTranslationOptions>()
+    .Bind(builder.Configuration.GetSection(RealtimeTranslationOptions.SectionName))
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<RealtimeTranslationOptions>, RealtimeTranslationOptionsValidator>();
 // Keep the legacy Gemini credential alias only while the explicit rollback
 // provider is available. All model and timeout settings use standard ASP.NET
 // double-underscore configuration binding.
@@ -304,6 +327,12 @@ builder.Services.Configure<Glosify.Services.Communication.AcsOptions>(
     builder.Configuration.GetSection(Glosify.Services.Communication.AcsOptions.SectionName));
 builder.Services.AddScoped<Glosify.Services.Communication.IAcsTokenService, Glosify.Services.Communication.AcsTokenService>();
 builder.Services.AddScoped<IAiCreditService, AiCreditService>();
+builder.Services.AddSingleton<IExtensionAuthorizationCodeStore, ExtensionAuthorizationCodeStore>();
+builder.Services.AddSingleton<IRealtimeTranslationRelayTokenStore, RealtimeTranslationRelayTokenStore>();
+builder.Services.AddSingleton<IFoundryTranslationRelay, FoundryTranslationRelay>();
+builder.Services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();
+builder.Services.AddScoped<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>();
+builder.Services.AddHostedService<RealtimeTranslationCleanupService>();
 // The Gemini model factory remains only for the explicit deployment-level
 // rollback path during the Foundry soak.
 builder.Services.AddSingleton<IGeminiModelFactory, GeminiModelFactory>();
@@ -355,10 +384,12 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNEC
         .AddOpenTelemetry()
         .WithTracing(tracing => tracing
             .AddSource(SpeakingTelemetry.ActivitySourceName)
-            .AddSource(GenerativeAiTelemetry.ActivitySourceName))
+            .AddSource(GenerativeAiTelemetry.ActivitySourceName)
+            .AddSource(RealtimeTranslationTelemetry.ActivitySourceName))
         .WithMetrics(metrics => metrics
             .AddMeter(SpeakingTelemetry.MeterName)
-            .AddMeter(GenerativeAiTelemetry.MeterName))
+            .AddMeter(GenerativeAiTelemetry.MeterName)
+            .AddMeter(RealtimeTranslationTelemetry.MeterName))
         .UseAzureMonitor();
 }
 
@@ -413,6 +444,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseWebSockets(new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromSeconds(20),
+});
 
 // Security headers on every response. App scripts live in wwwroot/js and
 // behaviors use data-* attributes instead of inline on* handlers; the only

@@ -42,6 +42,7 @@ public sealed class AiModelPriceOptions
     public string Deployment { get; set; } = string.Empty;
     public decimal InputSekPerMillionTokens { get; set; }
     public decimal OutputSekPerMillionTokens { get; set; }
+    public decimal? AudioSekPerMinute { get; set; }
 }
 
 public sealed class AiUsageOptionsValidator : IValidateOptions<AiUsageOptions>
@@ -107,11 +108,20 @@ public sealed class AiUsageOptionsValidator : IValidateOptions<AiUsageOptions>
                     $"AiUsage:MonthlyBudget:Models contains duplicate deployment '{model.Deployment.Trim()}'.");
             }
 
-            if (model.InputSekPerMillionTokens <= 0
-                || model.OutputSekPerMillionTokens <= 0)
+            var hasTokenPrice = model.InputSekPerMillionTokens > 0
+                && model.OutputSekPerMillionTokens > 0;
+            var hasPartialTokenPrice = model.InputSekPerMillionTokens != 0
+                || model.OutputSekPerMillionTokens != 0;
+            var hasAudioPrice = model.AudioSekPerMinute is > 0;
+            if (!hasTokenPrice && !hasAudioPrice)
             {
                 failures.Add(
-                    $"AiUsage:MonthlyBudget:Models deployment '{model.Deployment.Trim()}' requires positive input and output prices.");
+                    $"AiUsage:MonthlyBudget:Models deployment '{model.Deployment.Trim()}' requires positive token prices or AudioSekPerMinute.");
+            }
+            else if (hasPartialTokenPrice && !hasTokenPrice)
+            {
+                failures.Add(
+                    $"AiUsage:MonthlyBudget:Models deployment '{model.Deployment.Trim()}' must configure both token prices together.");
             }
         }
 
@@ -133,4 +143,5 @@ public static class AiUsageFeatures
     public const string ImageExtraction = "image_extraction";
     public const string Speaking = "speaking";
     public const string PageTranslation = "page_translation";
+    public const string RealtimeTranslation = "realtime_translation";
 }

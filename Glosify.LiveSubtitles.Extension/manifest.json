@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Glosify Live Subtitles",
+  "description": "Real-time translated subtitles for the audio playing in a Chrome tab.",
+  "version": "0.3.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3EWb0lg1qHn+jCKdT5RdBP7WQ5TzaEvs3XC4WoXwijmdGApbCjgsHV7PwcCn/Qwemj3x2YmBoUO1efXXHnTawC1gjfgmsCz41aRaIiBnBhNbRtjMalB0cZ59qjEm6Ivyzy+n8NZMDpTY25GBDcb4WFMG9HC8BFBlyc+g5bfvwZYHrnh75HKQ343v5JmR/37m9M74zxYrXYzO4xzNkojWUntuEenNd7/KQz004+FwFIC+GenXlqQd3KwmTHeUChoSMC0Xw1FlDd6bKETE8EZy+ZzFxHDTvv8AUsWWeCyoOo9XNI4VjkvLSiZTfuKc3D0GiJn5Nkca4nnwKFdAHC3X3QIDAQAB",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "activeTab",
+    "identity",
+    "offscreen",
+    "scripting",
+    "storage",
+    "tabCapture"
+  ],
+  "host_permissions": [
+    "https://glosify-f0d9e2g3f4ctc3hy.swedencentral-01.azurewebsites.net/*",
+    "https://localhost/*",
+    "http://localhost/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Glosify Live Subtitles",
+    "default_popup": "popup/popup.html"
+  }
+}

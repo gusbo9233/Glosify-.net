@@ -6,6 +6,7 @@ using Glosify.Services.Ai.Generation;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Speaking;
 using Glosify.Services.Books;
+using Glosify.Services.RealtimeTranslation;
 
 namespace Glosify.Filters;
 
@@ -51,6 +52,18 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
                 Error(StatusCodes.Status404NotFound, exception.Message),
             BookPageTranslationUnavailableException =>
                 Error(StatusCodes.Status422UnprocessableEntity, exception.Message),
+            RealtimeTranslationValidationException =>
+                Error(StatusCodes.Status400BadRequest, exception.Message),
+            RealtimeTranslationNotFoundException =>
+                Error(StatusCodes.Status404NotFound, exception.Message),
+            RealtimeTranslationConflictException =>
+                Error(StatusCodes.Status409Conflict, exception.Message),
+            RealtimeTranslationExpiredException =>
+                Error(StatusCodes.Status410Gone, exception.Message),
+            RealtimeTranslationUnavailableException =>
+                Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
+            RealtimeTranslationUpstreamException =>
+                Error(StatusCodes.Status502BadGateway, exception.Message),
             SpeakingValidationException => Error(StatusCodes.Status400BadRequest, exception.Message),
             SpeakingQuizNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),
             SpeakingSessionNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),

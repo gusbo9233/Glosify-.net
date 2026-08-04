@@ -273,6 +273,7 @@ public class AssistantSavedChatsTests
             applier ?? new CapturingChangeApplier(),
             books ?? new NoopBookDocumentService(),
             new StaticLanguageContext(),
+            new QuizLanguagePreferenceService(context),
             NullLogger<AssistantOrchestrator>.Instance);
     }
 

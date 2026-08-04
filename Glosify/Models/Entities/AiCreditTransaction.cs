@@ -18,6 +18,7 @@ public sealed class AiCreditTransaction
     public int? ThoughtTokens { get; set; }
     public int? ToolPromptTokens { get; set; }
     public int? TotalTokens { get; set; }
+    public int? AudioDurationSeconds { get; set; }
     public string? ActorUserId { get; set; }
     public string? Note { get; set; }
     public string? RelatedEntityType { get; set; }

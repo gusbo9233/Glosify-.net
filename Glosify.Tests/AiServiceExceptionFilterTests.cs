@@ -4,6 +4,7 @@ using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Books;
 using Glosify.Services.Speaking;
+using Glosify.Services.RealtimeTranslation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -108,6 +109,26 @@ public sealed class AiServiceExceptionFilterTests
             new BookPageTranslationUnavailableException("No selectable text found on this page."),
             StatusCodes.Status422UnprocessableEntity,
             "No selectable text found on this page."
+        },
+        {
+            new RealtimeTranslationValidationException("Invalid target language."),
+            StatusCodes.Status400BadRequest,
+            "Invalid target language."
+        },
+        {
+            new RealtimeTranslationConflictException("Session already active."),
+            StatusCodes.Status409Conflict,
+            "Session already active."
+        },
+        {
+            new RealtimeTranslationExpiredException("Session ended."),
+            StatusCodes.Status410Gone,
+            "Session ended."
+        },
+        {
+            new RealtimeTranslationUpstreamException("Microsoft Foundry unavailable."),
+            StatusCodes.Status502BadGateway,
+            "Microsoft Foundry unavailable."
         },
     };
 }

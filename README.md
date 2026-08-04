@@ -115,6 +115,7 @@ Start with the [documentation index](docs/README.md).
 
 - [Azure-powered speaking practice](docs/azure-speaking-practice.md)
 - [Foundry generative AI](docs/foundry-generative-ai.md)
+- [Live Subtitles Chrome extension](docs/live-subtitles-extension.md)
 - [Database diagram](docs/database-diagram.md)
 - [Rewarded ads for AI credits](docs/rewarded-ads-for-credits.md)
 

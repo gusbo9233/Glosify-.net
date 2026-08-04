@@ -146,11 +146,41 @@ erDiagram
         int ThoughtTokens
         int ToolPromptTokens
         int TotalTokens
+        int AudioDurationSeconds
         string ActorUserId
         string Note
         string RelatedEntityType
         string RelatedEntityId
         datetimeoffset CreatedAt
+    }
+
+    RealtimeTranslationSessions {
+        guid Id PK
+        string UserId FK
+        string TargetLanguage
+        string Model
+        string Status
+        datetimeoffset CreatedAt
+        datetimeoffset StartedAt
+        datetimeoffset EndedAt
+        datetimeoffset LastHeartbeatAt
+        datetimeoffset ExpiresAt
+        int ChargedMinutes
+        int CreditsCharged
+        bytes RowVersion
+    }
+
+    RealtimeTranslationMinutes {
+        guid Id PK
+        guid SessionId FK
+        int MinuteIndex
+        guid ReservationId
+        int Credits
+        string Status
+        datetimeoffset ReservedAt
+        datetimeoffset BegunAt
+        datetimeoffset ReleasedAt
+        bytes RowVersion
     }
 
     BookDocuments {
@@ -305,6 +335,8 @@ erDiagram
 
     AspNetUsers ||--|| AiCreditAccounts : has
     AspNetUsers ||--o{ AiCreditTransactions : records
+    AspNetUsers ||--o{ RealtimeTranslationSessions : starts
+    RealtimeTranslationSessions ||--o{ RealtimeTranslationMinutes : bills
     AspNetUsers ||--o{ BookDocuments : uploads
     BookDocuments ||--o{ BookPages : contains
 
@@ -341,6 +373,9 @@ erDiagram
 - `Quizzes.CollectionId`, `assistant_threads.quiz_id`, `assistant_threads.context_quiz_id`, and `assistant_messages.context_quiz_id` are nullable in the model.
 - `BookPages` has a unique index on `(BookDocumentId, PageNumber)`.
 - `assistant_messages` has a unique index on `(thread_id, sequence)`.
+- `RealtimeTranslationMinutes` has unique indexes on `(SessionId, MinuteIndex)`
+  and `ReservationId`. `RealtimeTranslationSessions` allows only one `pending`
+  or `active` row per user through a filtered unique index.
 - `Classrooms.JoinCode` has a unique index; `ClassroomMemberships` has a unique index on `(ClassroomId, UserId)`.
 - `ClassroomInvitations` has a filtered unique index on `(ClassroomId, Email)` where `AcceptedAt IS NULL` (one pending invitation per email per classroom).
 - `ClassroomContents` has filtered unique indexes on `(ClassroomId, QuizId)` and `(ClassroomId, BookDocumentId)` so the same quiz or book can be shared to a classroom only once. `ContentType` is the `ClassroomContentType` enum (Quiz/Book).

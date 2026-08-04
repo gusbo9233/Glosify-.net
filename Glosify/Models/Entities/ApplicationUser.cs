@@ -4,6 +4,6 @@ namespace Glosify.Models.Entities
 {
     public class ApplicationUser : IdentityUser
     {
-        // Extend with additional profile properties as needed
+        public string? SelectedQuizLanguageCode { get; set; }
     }
 }

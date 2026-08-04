@@ -125,6 +125,64 @@ public sealed class AiCreditServiceTests
     }
 
     [Fact]
+    public async Task DurationUsage_ChargesEightCreditsPerStartedMinute()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var service = CreateService(context, audioSekPerMinute: 1m);
+
+        for (var minute = 1; minute <= 3; minute++)
+        {
+            var reservation = await service.ReserveDurationAsync(
+                new AiUsageContext("user-1", AiUsageFeatures.RealtimeTranslation, "subtitle_minute", Guid.NewGuid()),
+                "foundry",
+                "test-model",
+                60,
+                8);
+            await service.CommitDurationUsageAsync(reservation.ReservationId, 60);
+        }
+
+        var account = await service.GetOrCreateAccountAsync("user-1");
+        Assert.Equal(1, account.AvailableCredits);
+        var exception = await Assert.ThrowsAsync<InsufficientAiCreditsException>(() =>
+            service.ReserveDurationAsync(
+                new AiUsageContext("user-1", AiUsageFeatures.RealtimeTranslation, "subtitle_minute", Guid.NewGuid()),
+                "foundry",
+                "test-model",
+                60,
+                8));
+        Assert.Equal(1, exception.AvailableCredits);
+        Assert.Equal(8, exception.RequiredCredits);
+        Assert.Equal(3, await context.AiCreditTransactions.CountAsync(transaction =>
+            transaction.Kind == AiCreditTransactionKinds.UsageDebit
+            && transaction.AudioDurationSeconds == 60));
+    }
+
+    [Fact]
+    public async Task DurationReservation_ReleaseReturnsCreditsAndBudget()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var service = CreateService(context, audioSekPerMinute: 1m);
+
+        var reservation = await service.ReserveDurationAsync(
+            new AiUsageContext("user-1", AiUsageFeatures.RealtimeTranslation, "subtitle_minute", Guid.NewGuid()),
+            "foundry",
+            "test-model",
+            60,
+            8);
+        await service.ReleaseAsync(reservation.ReservationId);
+
+        var account = await service.GetOrCreateAccountAsync("user-1");
+        var budget = await context.AiMonthlyBudgets.SingleAsync();
+        Assert.Equal(25, account.AvailableCredits);
+        Assert.Equal(0, budget.ReservedMicros);
+        Assert.Equal(0, budget.SpentMicros);
+    }
+
+    [Fact]
     public async Task MonthlyBudget_IsSharedAcrossUsersAndBlocksTheRequestThatWouldExceedIt()
     {
         await using var context = CreateContext();
@@ -249,6 +307,7 @@ public sealed class AiCreditServiceTests
         decimal monthlyLimitSek = 200m,
         decimal inputSekPerMillionTokens = 1m,
         decimal outputSekPerMillionTokens = 1m,
+        decimal? audioSekPerMinute = null,
         TimeProvider? timeProvider = null)
     {
         var generativeAiOptions = new GenerativeAiOptions
@@ -294,6 +353,7 @@ public sealed class AiCreditServiceTests
                             Deployment = "test-model",
                             InputSekPerMillionTokens = inputSekPerMillionTokens,
                             OutputSekPerMillionTokens = outputSekPerMillionTokens,
+                            AudioSekPerMinute = audioSekPerMinute,
                         },
                     ],
                 },

@@ -6,6 +6,7 @@
 
     const pageQuizId = panel.dataset.quizId || null;
     const pageContextLabel = panel.dataset.contextLabel || null;
+    const pageTranscriptId = panel.dataset.transcriptId || null;
     let quizId = pageQuizId;
     let activeThreadId = null;
     let chats = [];
@@ -165,7 +166,11 @@
         }
 
         if (persist && activeThreadId) {
-            updateChat(activeThreadId, { contextQuizId: quizId, updateContext: true }).catch(() => {
+            updateChat(activeThreadId, {
+                contextQuizId: quizId,
+                contextTranscriptId: pageTranscriptId,
+                updateContext: true,
+            }).catch(() => {
                 setStatus('Could not save chat context.', true);
             });
         }
@@ -187,7 +192,11 @@
         const response = await fetch(chatsUrl, {
             method: 'POST',
             headers: requestHeaders(true),
-            body: JSON.stringify({ contextQuizId: contextQuizId || null, updateContext: true }),
+            body: JSON.stringify({
+                contextQuizId: contextQuizId || null,
+                contextTranscriptId: pageTranscriptId,
+                updateContext: true,
+            }),
         });
         if (!response.ok) {
             const data = await response.json().catch(() => null);
@@ -261,7 +270,11 @@
             : chat?.contextQuizName || null;
         setQuizContext(contextQuizId, contextQuizName, false);
         if (pageQuizId && chat?.contextQuizId !== pageQuizId) {
-            await updateChat(threadId, { contextQuizId: pageQuizId, updateContext: true });
+            await updateChat(threadId, {
+                contextQuizId: pageQuizId,
+                contextTranscriptId: pageTranscriptId,
+                updateContext: true,
+            });
         }
         renderChatList();
         await loadHistory(threadId);
@@ -704,6 +717,7 @@
                     contextQuizId: quizId,
                     focusedWordId,
                     customQuizId,
+                    transcriptId: pageTranscriptId,
                     model: modelSelect?.value || null,
                     documentContext,
                 }),
