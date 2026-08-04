@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildTranscriptSessionRequest,
+  canEnableSourceTranscript,
   canSaveSourceTranscript,
   clearTranscriptStorageState,
   getEffectiveCreditsPerMinute,
@@ -45,6 +46,23 @@ test("source saving requires feature enablement and an exact selected-language m
   assert.equal(canSaveSourceTranscript(catalog, "de"), false);
   assert.equal(canSaveSourceTranscript({ ...catalog, savedSourceTranscriptsEnabled: false }, "pl"), false);
   assert.equal(canSaveSourceTranscript({ ...catalog, selectedQuizLanguage: null }, "pl"), false);
+});
+
+test("the save checkbox can align any supported quiz target automatically", () => {
+  const catalog = {
+    savedSourceTranscriptsEnabled: true,
+    quizLanguages: [
+      { code: "et", name: "Estonian" },
+      { code: "de", name: "German" },
+      { code: "pl", name: "Polish" },
+      { code: "uk", name: "Ukrainian" },
+    ],
+    selectedQuizLanguage: { code: "pl", name: "Polish" },
+  };
+
+  assert.equal(canEnableSourceTranscript(catalog, "de"), true);
+  assert.equal(canSaveSourceTranscript(catalog, "de"), false);
+  assert.equal(canEnableSourceTranscript(catalog, "es"), false);
 });
 
 test("source saving switches the displayed and preflight rate to sixteen credits", () => {

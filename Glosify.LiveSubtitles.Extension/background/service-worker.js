@@ -2,6 +2,7 @@ import { CONFIG } from "../config.js";
 import { getBillingAction } from "../lib/billing.js";
 import {
   buildTranscriptSessionRequest,
+  canEnableSourceTranscript,
   canSaveSourceTranscript,
   clearTranscriptStorageState,
   getEffectiveCreditsPerMinute,
@@ -98,7 +99,7 @@ async function handleMessage(message) {
       await setQuizLanguage(message.code);
       return publicState();
     case "popup:set-save-transcript":
-      setSaveTranscript(Boolean(message.enabled));
+      await setSaveTranscript(Boolean(message.enabled));
       return publicState();
     case "popup:open-transcripts":
       await chrome.tabs.create({ url: new URL("/Transcripts", CONFIG.glosifyBaseUrl).toString() });
@@ -378,14 +379,23 @@ async function setQuizLanguage(code) {
   broadcastState();
 }
 
-function setSaveTranscript(enabled) {
+async function setSaveTranscript(enabled) {
   if (state.sessionId) {
-    throw new Error("Stop the current subtitles before changing transcript storage.");
+    throw new Error("Stop subtitles before changing transcript saving for the next session.");
   }
-  if (enabled && !canSaveTranscript()) {
-    throw new Error(saveTranscriptUnavailableMessage());
+  if (enabled) {
+    if (!canEnableTranscript()) {
+      throw new Error(saveTranscriptUnavailableMessage());
+    }
+    if (!canSaveTranscript()) {
+      await setQuizLanguage(state.targetLanguage);
+    }
+    if (!canSaveTranscript()) {
+      throw new Error("Glosify could not enable source transcript saving for this language.");
+    }
   }
   state.saveTranscript = enabled;
+  state.error = null;
   broadcastState();
 }
 
@@ -738,6 +748,7 @@ function publicState() {
     targetLanguage: state.targetLanguage,
     saveTranscript: state.saveTranscript,
     canSaveTranscript: canSaveTranscript(),
+    canEnableSaveTranscript: canEnableTranscript(),
     effectiveCreditsPerMinute: effectiveCreditsPerMinute(),
     saveTranscriptHelp: saveTranscriptUnavailableMessage(),
     transcriptId: state.transcriptId,
@@ -752,23 +763,32 @@ function canSaveTranscript() {
   return canSaveSourceTranscript(state.catalog, state.targetLanguage);
 }
 
+function canEnableTranscript() {
+  return canEnableSourceTranscript(state.catalog, state.targetLanguage);
+}
+
 function effectiveCreditsPerMinute() {
   return getEffectiveCreditsPerMinute(state.catalog, state.saveTranscript);
 }
 
 function saveTranscriptUnavailableMessage() {
   const selected = state.catalog?.selectedQuizLanguage;
+  if (state.sessionId) {
+    return state.saveTranscript
+      ? "Finalized original speech is being saved for this session."
+      : "Stop subtitles to enable transcript saving for the next session.";
+  }
   if (state.catalog && !state.catalog.savedSourceTranscriptsEnabled) {
     return "Saved source transcripts are temporarily unavailable.";
   }
-  if (!selected) {
-    return "Choose Estonian, German, Polish, or Ukrainian above before saving source speech.";
+  if (!canEnableTranscript()) {
+    return "Choose Estonian, German, Polish, or Ukrainian as the subtitle language to save source speech.";
   }
-  const target = state.catalog?.languages?.find(language => language.code === state.targetLanguage)?.name
+  const target = state.catalog?.quizLanguages?.find(language => language.code === state.targetLanguage)?.name
     ?? state.targetLanguage;
-  return selected.code === state.targetLanguage
+  return selected?.code === state.targetLanguage
     ? "Stores finalized original-language speech in your private Glosify account for this session only."
-    : `Change the subtitle language to ${selected.name} before saving.`;
+    : `Checking this also selects ${target} as your Glosify quiz language.`;
 }
 
 function broadcastState() {

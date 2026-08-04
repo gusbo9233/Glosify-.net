@@ -119,7 +119,9 @@ function render() {
   elements.language.disabled = busy || currentState.active || languages.length === 0;
 
   elements.saveTranscript.checked = Boolean(currentState.saveTranscript);
-  elements.saveTranscript.disabled = busy || currentState.active || !currentState.canSaveTranscript;
+  elements.saveTranscript.disabled = busy
+    || currentState.active
+    || !currentState.canEnableSaveTranscript;
   elements.saveTranscriptHelp.textContent = currentState.saveTranscriptHelp
     ?? "Stores finalized original-language speech in your private Glosify account for this session only.";
 

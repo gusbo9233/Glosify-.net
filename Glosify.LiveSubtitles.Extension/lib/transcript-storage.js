@@ -21,6 +21,11 @@ export function canSaveSourceTranscript(catalog, targetLanguage) {
     && catalog.selectedQuizLanguage.code === targetLanguage);
 }
 
+export function canEnableSourceTranscript(catalog, targetLanguage) {
+  return Boolean(catalog?.savedSourceTranscriptsEnabled
+    && catalog.quizLanguages?.some(language => language.code === targetLanguage));
+}
+
 export function getEffectiveCreditsPerMinute(catalog, saveTranscript) {
   return saveTranscript
     ? catalog?.savedTranscriptCreditsPerMinute ?? 16
