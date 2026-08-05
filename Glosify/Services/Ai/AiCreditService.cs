@@ -184,6 +184,160 @@ public sealed class AiCreditService : IAiCreditService
         return true;
     }
 
+    public Task<AiDurationCreditReservation> ReserveDurationAsync(
+        AiUsageContext usageContext,
+        string provider,
+        string model,
+        int durationSeconds,
+        int requiredCredits,
+        CancellationToken cancellationToken = default)
+    {
+        if (durationSeconds <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(durationSeconds));
+        }
+        if (requiredCredits <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(requiredCredits));
+        }
+
+        return WithConcurrencyRetryAsync(() => ReserveDurationCoreAsync(
+            usageContext,
+            provider,
+            model,
+            durationSeconds,
+            requiredCredits,
+            cancellationToken));
+    }
+
+    private async Task<AiDurationCreditReservation> ReserveDurationCoreAsync(
+        AiUsageContext usageContext,
+        string provider,
+        string model,
+        int durationSeconds,
+        int requiredCredits,
+        CancellationToken cancellationToken)
+    {
+        var account = await GetOrCreateAccountEntityAsync(usageContext.UserId, cancellationToken);
+        await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
+        if (account.AvailableCredits < requiredCredits)
+        {
+            throw new InsufficientAiCreditsException(account.AvailableCredits, requiredCredits);
+        }
+
+        var budgetReservation = await ReserveDurationMonthlyBudgetAsync(
+            provider,
+            model,
+            durationSeconds,
+            cancellationToken);
+        var now = _timeProvider.GetUtcNow();
+        var reservationId = Guid.NewGuid();
+        account.ReservedCredits += requiredCredits;
+        account.UpdatedAt = now;
+        _context.AiCreditTransactions.Add(new AiCreditTransaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = usageContext.UserId,
+            ReservationId = reservationId,
+            Kind = AiCreditTransactionKinds.Reservation,
+            CreditAmount = requiredCredits,
+            BalanceAfterCredits = account.BalanceCredits,
+            ReservedAfterCredits = account.ReservedCredits,
+            Provider = provider,
+            Model = model,
+            Feature = usageContext.Feature,
+            Operation = usageContext.Operation,
+            AudioDurationSeconds = durationSeconds,
+            RelatedEntityType = usageContext.RelatedEntityType,
+            RelatedEntityId = usageContext.RelatedEntityId,
+            BudgetPeriodKey = budgetReservation?.PeriodKey,
+            BudgetAmountMicros = budgetReservation?.AmountMicros,
+            CreatedAt = now,
+        });
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return new AiDurationCreditReservation(
+            reservationId,
+            usageContext.UserId,
+            requiredCredits,
+            durationSeconds);
+    }
+
+    public Task CommitDurationUsageAsync(
+        Guid reservationId,
+        int actualDurationSeconds,
+        CancellationToken cancellationToken = default)
+    {
+        if (actualDurationSeconds <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(actualDurationSeconds));
+        }
+
+        return WithConcurrencyRetryAsync(() => CommitDurationUsageCoreAsync(
+            reservationId,
+            actualDurationSeconds,
+            cancellationToken));
+    }
+
+    private async Task<bool> CommitDurationUsageCoreAsync(
+        Guid reservationId,
+        int actualDurationSeconds,
+        CancellationToken cancellationToken)
+    {
+        var reservation = await LoadReservationAsync(reservationId, cancellationToken);
+        if (reservation is null)
+        {
+            return false;
+        }
+
+        var account = await GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
+        var budgetCharge = await CommitDurationMonthlyBudgetAsync(
+            reservation,
+            actualDurationSeconds,
+            cancellationToken);
+        var now = _timeProvider.GetUtcNow();
+        account.ReservedCredits = Math.Max(0, account.ReservedCredits - reservation.CreditAmount);
+        account.BalanceCredits -= reservation.CreditAmount;
+        account.UpdatedAt = now;
+
+        _context.AiCreditTransactions.Add(new AiCreditTransaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = reservation.UserId,
+            ReservationId = reservationId,
+            Kind = AiCreditTransactionKinds.UsageDebit,
+            CreditAmount = -reservation.CreditAmount,
+            BalanceAfterCredits = account.BalanceCredits,
+            ReservedAfterCredits = account.ReservedCredits,
+            Provider = reservation.Provider,
+            Model = reservation.Model,
+            Feature = reservation.Feature,
+            Operation = reservation.Operation,
+            AudioDurationSeconds = actualDurationSeconds,
+            RelatedEntityType = reservation.RelatedEntityType,
+            RelatedEntityId = reservation.RelatedEntityId,
+            BudgetPeriodKey = reservation.BudgetPeriodKey,
+            BudgetAmountMicros = budgetCharge?.ActualMicros,
+            CreatedAt = now,
+        });
+
+        var releasedBudgetMicros = budgetCharge is null
+            ? 0
+            : Math.Max(0, budgetCharge.ReservedMicros - budgetCharge.ActualMicros);
+        if (releasedBudgetMicros > 0)
+        {
+            _context.AiCreditTransactions.Add(BuildReleaseTransaction(
+                reservation,
+                account,
+                0,
+                releasedBudgetMicros,
+                "Released unused duration budget reservation."));
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     public Task ReleaseAsync(Guid reservationId, CancellationToken cancellationToken = default)
         => WithConcurrencyRetryAsync(() => ReleaseCoreAsync(reservationId, cancellationToken));
 
@@ -379,6 +533,7 @@ public sealed class AiCreditService : IAiCreditService
             Model = reservation.Model,
             Feature = reservation.Feature,
             Operation = reservation.Operation,
+            AudioDurationSeconds = reservation.AudioDurationSeconds,
             Note = note,
             RelatedEntityType = reservation.RelatedEntityType,
             RelatedEntityId = reservation.RelatedEntityId,
@@ -418,6 +573,41 @@ public sealed class AiCreditService : IAiCreditService
         return new BudgetReservation(periodKey, amountMicros);
     }
 
+    private async Task<BudgetReservation?> ReserveDurationMonthlyBudgetAsync(
+        string provider,
+        string model,
+        int durationSeconds,
+        CancellationToken cancellationToken)
+    {
+        if (!IsBudgetedProvider(provider))
+        {
+            return null;
+        }
+
+        var price = GetDurationModelPrice(model);
+        var amountMicros = ToMicros(
+            price.AudioSekPerMinute!.Value
+            * Math.Max(0, durationSeconds)
+            / 60m
+            * MicrosPerSek
+            * _options.MonthlyBudget.ReservationSafetyMultiplier);
+        var periodKey = GetBudgetPeriodKey();
+        var budget = await GetOrCreateMonthlyBudgetAsync(periodKey, cancellationToken);
+        if (budget.AvailableMicros < amountMicros)
+        {
+            throw new MonthlyAiBudgetExceededException(
+                periodKey,
+                budget.LimitMicros,
+                budget.SpentMicros,
+                budget.ReservedMicros,
+                amountMicros);
+        }
+
+        budget.ReservedMicros += amountMicros;
+        budget.UpdatedAt = _timeProvider.GetUtcNow();
+        return new BudgetReservation(periodKey, amountMicros);
+    }
+
     private async Task<BudgetCharge?> CommitMonthlyBudgetAsync(
         AiCreditTransaction reservation,
         AiTokenUsage usage,
@@ -435,6 +625,33 @@ public sealed class AiCreditService : IAiCreditService
                 cancellationToken);
         var price = GetModelPrice(reservation.Model ?? string.Empty);
         var actualMicros = CalculateActualBudgetMicros(usage, price);
+        budget.ReservedMicros = Math.Max(0, budget.ReservedMicros - reservedMicros);
+        budget.SpentMicros += actualMicros;
+        budget.LimitMicros = GetConfiguredLimitMicros();
+        budget.UpdatedAt = _timeProvider.GetUtcNow();
+        return new BudgetCharge(reservedMicros, actualMicros);
+    }
+
+    private async Task<BudgetCharge?> CommitDurationMonthlyBudgetAsync(
+        AiCreditTransaction reservation,
+        int actualDurationSeconds,
+        CancellationToken cancellationToken)
+    {
+        if (reservation.BudgetPeriodKey is null
+            || reservation.BudgetAmountMicros is not { } reservedMicros)
+        {
+            return null;
+        }
+
+        var budget = await _context.AiMonthlyBudgets.SingleAsync(
+            item => item.PeriodKey == reservation.BudgetPeriodKey,
+            cancellationToken);
+        var price = GetDurationModelPrice(reservation.Model ?? string.Empty);
+        var actualMicros = ToMicros(
+            price.AudioSekPerMinute!.Value
+            * Math.Max(0, actualDurationSeconds)
+            / 60m
+            * MicrosPerSek);
         budget.ReservedMicros = Math.Max(0, budget.ReservedMicros - reservedMicros);
         budget.SpentMicros += actualMicros;
         budget.LimitMicros = GetConfiguredLimitMicros();
@@ -502,6 +719,15 @@ public sealed class AiCreditService : IAiCreditService
                 StringComparison.OrdinalIgnoreCase))
         ?? throw new InvalidOperationException(
             $"No monthly AI budget price is configured for deployment '{model}'.");
+
+    private AiModelPriceOptions GetDurationModelPrice(string model)
+    {
+        var price = GetModelPrice(model);
+        return price.AudioSekPerMinute is > 0
+            ? price
+            : throw new InvalidOperationException(
+                $"No duration budget price is configured for deployment '{model}'.");
+    }
 
     private long CalculateEstimatedBudgetMicros(
         int estimatedTokens,

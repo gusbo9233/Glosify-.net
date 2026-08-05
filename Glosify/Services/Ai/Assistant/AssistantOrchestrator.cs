@@ -21,6 +21,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     private readonly IChangeApplier _changeApplier;
     private readonly IBookDocumentService _books;
     private readonly ILanguageContext _languageContext;
+    private readonly IQuizLanguagePreferenceService _languagePreferences;
     private readonly ILogger<AssistantOrchestrator> _logger;
 
     public AssistantOrchestrator(
@@ -31,6 +32,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         IChangeApplier changeApplier,
         IBookDocumentService books,
         ILanguageContext languageContext,
+        IQuizLanguagePreferenceService languagePreferences,
         ILogger<AssistantOrchestrator> logger)
     {
         _context = context;
@@ -40,6 +42,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         _changeApplier = changeApplier;
         _books = books;
         _languageContext = languageContext;
+        _languagePreferences = languagePreferences;
         _logger = logger;
     }
 
@@ -58,9 +61,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     public async Task<AssistantChatSummary> CreateChatAsync(
         string userId,
         Guid? contextQuizId = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Guid? contextTranscriptId = null)
     {
         await ValidateContextQuizAsync(contextQuizId, userId, cancellationToken);
+        await ValidateTranscriptContextAsync(contextTranscriptId, userId, cancellationToken);
 
         var now = DateTimeOffset.UtcNow;
         var thread = new AssistantThread
@@ -68,6 +73,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             Id = Guid.NewGuid(),
             QuizId = null,
             ContextQuizId = contextQuizId,
+            ContextTranscriptId = contextTranscriptId,
             UserId = userId,
             Title = NewChatTitle,
             CreatedAt = now,
@@ -86,7 +92,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         string? title = null,
         Guid? contextQuizId = null,
         bool updateContext = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Guid? contextTranscriptId = null)
     {
         var thread = await LoadOwnedGlobalThreadAsync(threadId, userId, cancellationToken);
 
@@ -98,7 +105,9 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         if (updateContext)
         {
             await ValidateContextQuizAsync(contextQuizId, userId, cancellationToken);
+            await ValidateTranscriptContextAsync(contextTranscriptId, userId, cancellationToken);
             thread.ContextQuizId = contextQuizId;
+            thread.ContextTranscriptId = contextTranscriptId;
         }
 
         thread.UpdatedAt = DateTimeOffset.UtcNow;
@@ -136,7 +145,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         string? model = null,
         AssistantDocumentContext? documentContext = null,
         Guid? customQuizId = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Guid? transcriptId = null)
     {
         var thread = await LoadOwnedGlobalThreadAsync(threadId, userId, cancellationToken);
         return await SendInThreadAsync(
@@ -148,7 +158,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             model,
             documentContext,
             customQuizId,
-            cancellationToken);
+            cancellationToken,
+            transcriptId ?? thread.ContextTranscriptId);
     }
 
     public async Task<AssistantTurnResponse> SendMessageAsync(
@@ -170,7 +181,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             model,
             documentContext,
             null,
-            cancellationToken);
+            cancellationToken,
+            null);
     }
 
     public async Task<AssistantTurnResponse> SendGlobalMessageAsync(
@@ -190,7 +202,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             model,
             documentContext,
             null,
-            cancellationToken);
+            cancellationToken,
+            thread.ContextTranscriptId);
     }
 
     public async Task<AssistantHistory> GetHistoryAsync(
@@ -302,7 +315,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         string? model,
         AssistantDocumentContext? documentContext,
         Guid? customQuizId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? transcriptId)
     {
         var now = DateTimeOffset.UtcNow;
         var contextQuiz = await ValidateContextQuizAsync(contextQuizId, userId, cancellationToken);
@@ -311,6 +325,9 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var documentPage = documentContext is null
             ? null
             : await LoadDocumentPageContextAsync(documentContext, userId, cancellationToken);
+        var transcriptContext = await ValidateTranscriptContextAsync(transcriptId, userId, cancellationToken);
+        var selectedQuizLanguage = await _languagePreferences.GetSelectedAsync(userId, cancellationToken);
+        var currentLanguage = contextQuiz?.TargetLanguage ?? selectedQuizLanguage?.Name;
 
         var storedMessages = await LoadThreadMessagesAsync(thread.Id, cancellationToken);
         var history = WindowHistory(storedMessages).Select(MapToTurn).ToList();
@@ -337,6 +354,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         }
 
         thread.ContextQuizId = contextQuizId;
+        thread.ContextTranscriptId = transcriptContext?.Id;
         thread.UpdatedAt = now;
 
         // Persist the user's message (and title/context updates) before calling the
@@ -348,14 +366,16 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             QuizId = contextQuiz?.Id,
             CustomQuizId = contextCustomQuiz?.Id,
             UserId = userId,
-            CurrentLanguage = contextQuiz?.TargetLanguage ?? _languageContext.CurrentLanguage,
+            CurrentLanguage = currentLanguage,
+            CurrentLanguageCode = selectedQuizLanguage?.Code,
             FocusedWordId = focusedWord?.Id,
             FocusedWordLabel = focusedWord == null ? null : $"{focusedWord.Lemma} -> {focusedWord.Translation}",
+            TranscriptId = transcriptContext?.Id,
         };
 
         var systemInstruction = contextQuiz is null
-            ? BuildGlobalSystemInstruction(_languageContext.CurrentLanguage, documentPage)
-            : BuildSystemInstruction(contextQuiz, focusedWord, documentPage, contextCustomQuiz);
+            ? BuildGlobalSystemInstruction(currentLanguage, documentPage, transcriptContext)
+            : BuildSystemInstruction(contextQuiz, focusedWord, documentPage, contextCustomQuiz, transcriptContext);
         var declarations = contextQuiz is null
             ? _tools.GlobalDeclarations
             : _tools.GlobalDeclarations.Concat(_tools.Declarations).ToList();
@@ -594,6 +614,36 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             ?? throw new InvalidOperationException("That custom quiz was not found.");
     }
 
+    private async Task<TranscriptAssistantContext?> ValidateTranscriptContextAsync(
+        Guid? transcriptId,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        if (!transcriptId.HasValue)
+        {
+            return null;
+        }
+
+        var selectedLanguage = await _languagePreferences.GetSelectedAsync(userId, cancellationToken);
+        if (selectedLanguage is null)
+        {
+            throw new InvalidOperationException("Choose a Glosify quiz language before using saved transcripts.");
+        }
+
+        return await _context.RealtimeTranslationTranscripts
+            .AsNoTracking()
+            .Where(transcript => transcript.Id == transcriptId.Value
+                && transcript.UserId == userId
+                && transcript.TargetLanguage == selectedLanguage.Code)
+            .Select(transcript => new TranscriptAssistantContext(
+                transcript.Id,
+                transcript.Title,
+                transcript.TargetLanguage,
+                transcript.Stream))
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new InvalidOperationException("That saved transcript was not found.");
+    }
+
     private async Task<IReadOnlyList<AssistantChatSummary>> BuildChatSummariesAsync(
         IReadOnlyList<AssistantThread> threads,
         CancellationToken cancellationToken)
@@ -637,6 +687,22 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             : await _context.Quizzes
                 .Where(quiz => contextQuizIds.Contains(quiz.Id))
                 .ToDictionaryAsync(quiz => quiz.Id, quiz => quiz.Name, cancellationToken);
+        var selectedLanguage = await _languagePreferences.GetSelectedAsync(
+            threads[0].UserId,
+            cancellationToken);
+        var contextTranscriptIds = threads
+            .Select(thread => thread.ContextTranscriptId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+        var transcriptTitles = contextTranscriptIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _context.RealtimeTranslationTranscripts
+                .Where(transcript => contextTranscriptIds.Contains(transcript.Id)
+                    && selectedLanguage != null
+                    && transcript.TargetLanguage == selectedLanguage.Code)
+                .ToDictionaryAsync(transcript => transcript.Id, transcript => transcript.Title, cancellationToken);
 
         return threads
             .Select(thread =>
@@ -646,6 +712,10 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                 var quizName = thread.ContextQuizId.HasValue && quizNames.TryGetValue(thread.ContextQuizId.Value, out var name)
                     ? name
                     : null;
+                var transcriptTitle = thread.ContextTranscriptId.HasValue
+                    && transcriptTitles.TryGetValue(thread.ContextTranscriptId.Value, out var savedTitle)
+                        ? savedTitle
+                        : null;
                 return new AssistantChatSummary(
                     thread.Id,
                     string.IsNullOrWhiteSpace(thread.Title) ? NewChatTitle : thread.Title,
@@ -653,7 +723,9 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                     thread.UpdatedAt,
                     preview,
                     thread.ContextQuizId,
-                    quizName);
+                    quizName,
+                    thread.ContextTranscriptId,
+                    transcriptTitle);
             })
             .ToList();
     }
@@ -742,7 +814,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         Quiz quiz,
         Word? focusedWord,
         DocumentPageContext? documentPage,
-        CustomQuiz? customQuiz)
+        CustomQuiz? customQuiz,
+        TranscriptAssistantContext? transcriptContext)
     {
         var focusInstruction = focusedWord == null
             ? string.Empty
@@ -756,6 +829,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var documentInstruction = documentPage == null
             ? string.Empty
             : BuildDocumentInstruction(documentPage);
+        var transcriptInstruction = BuildTranscriptInstruction(transcriptContext);
         var customQuizInstruction = customQuiz == null
             ? string.Empty
             : $"""
@@ -771,10 +845,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         You are a general language-learning companion: answer questions about grammar, vocabulary, usage, culture, and study strategy conversationally, and manage the quiz's content when the user asks for that. Use your own judgment about what the user wants; the guidance below describes defaults, and the user's explicit wishes always win.
         {focusInstruction}
         {documentInstruction}
+        {transcriptInstruction}
         {customQuizInstruction}
 
         How tools work:
-        - Read-only tools (list_words, search_words, get_word, get_quiz_summary, list_sentences, list_quizzes, list_collections, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz) execute immediately and return their results to you.
+        - Read-only tools (list_words, search_words, get_word, get_quiz_summary, list_sentences, list_quizzes, list_collections, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz, list_saved_transcripts, get_saved_transcript) execute immediately and return their results to you.
         - Mutating tools, including the custom quiz element tools, propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool. Because the user reviews everything, you can propose changes freely when they seem helpful.
         - When adding or editing more than one word, prefer add_words or edit_words over repeated single-word calls.
         - When adding or editing more than one sentence, prefer add_sentences or edit_sentences over repeated single-sentence calls.
@@ -801,7 +876,10 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         """;
     }
 
-    private static string BuildGlobalSystemInstruction(string? currentLanguage, DocumentPageContext? documentPage)
+    private static string BuildGlobalSystemInstruction(
+        string? currentLanguage,
+        DocumentPageContext? documentPage,
+        TranscriptAssistantContext? transcriptContext)
     {
         var languageInstruction = string.IsNullOrWhiteSpace(currentLanguage)
             ? "No current app language is selected. If the user wants to create a quiz or collection and did not name a target language, ask for the target language before using creation tools."
@@ -809,6 +887,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var documentInstruction = documentPage == null
             ? string.Empty
             : BuildDocumentInstruction(documentPage);
+        var transcriptInstruction = BuildTranscriptInstruction(transcriptContext);
 
         return $"""
         You are Glosify's app-wide language-learning assistant.
@@ -818,9 +897,10 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         Current context:
         - {languageInstruction}
         {documentInstruction}
+        {transcriptInstruction}
 
         How tools work:
-        - Read-only tools (list_collections, list_quizzes, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz) execute immediately and return their results to you.
+        - Read-only tools (list_collections, list_quizzes, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz, list_saved_transcripts, get_saved_transcript) execute immediately and return their results to you.
         - Mutating tools, including custom quiz creation and element tools, propose changes that are queued for the user to review and Apply. Because the user reviews everything, you can propose changes freely when they seem helpful.
         - Use list_collections and list_quizzes before proposing library changes unless the user gave an exact id through the UI.
         - Do not invent quiz or collection ids. If you cannot identify an item or destination unambiguously, ask the user to clarify.
@@ -859,6 +939,26 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         ---
         {pageText}
         ---
+        """;
+    }
+
+    private static string BuildTranscriptInstruction(TranscriptAssistantContext? transcript)
+    {
+        if (transcript is null)
+        {
+            return string.Empty;
+        }
+        return $"""
+
+        Current saved transcript context:
+        - Transcript: "{transcript.Title}"
+        - Transcript id: {transcript.Id}
+        - Learning language: {transcript.TargetLanguage}
+        - Stored stream: {transcript.Stream}
+        - A source stream contains the original-language speech captured while translating into the learning language.
+        - When the user says "this transcript", "this session", or "what I watched", they mean this saved transcript.
+        - The transcript text is not included automatically. Call get_saved_transcript with this id and page through it when the request requires its text.
+        - Reading a transcript never authorizes a change. Use the normal proposed-change tools only when the user asks to create or modify learning material.
         """;
     }
 
@@ -1232,4 +1332,5 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
     private sealed record WordLabel(string Id, string Word, string Translation);
     private sealed record DocumentPageContext(string Title, int PageNumber, string Text, string? Warning);
+    private sealed record TranscriptAssistantContext(Guid Id, string Title, string TargetLanguage, string Stream);
 }

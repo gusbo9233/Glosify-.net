@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glosify Live Subtitles</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div class="brand-mark" aria-hidden="true">G</div>
+      <div>
+        <h1>Live Subtitles</h1>
+        <p class="brand-subtitle">Powered by Glosify</p>
+      </div>
+    </header>
+
+    <section id="loading" class="panel muted">Loading Glosify…</section>
+
+    <section id="signed-out" class="panel hidden">
+      <h2>Translate this tab’s audio</h2>
+      <p>Connect your Glosify account to use credits for real-time subtitles.</p>
+      <button id="connect" class="primary">Connect Glosify</button>
+    </section>
+
+    <section id="signed-in" class="hidden">
+      <div class="account-row">
+        <div>
+          <div id="email" class="email"></div>
+          <div><strong id="credits">0</strong> credits available</div>
+        </div>
+        <button id="sign-out" class="link-button">Sign out</button>
+      </div>
+
+      <div class="panel controls">
+        <label for="quiz-language">Glosify quiz language</label>
+        <select id="quiz-language">
+          <option value="">Choose a quiz language…</option>
+        </select>
+
+        <label for="language">Subtitle language</label>
+        <select id="language"></select>
+
+        <label class="switch-row" for="save-transcript">
+          <span>
+            <strong>Save original speech transcript</strong>
+            <small id="save-transcript-help">Stores finalized original-language speech in your private Glosify account for this session only</small>
+          </span>
+          <input id="save-transcript" type="checkbox">
+        </label>
+
+        <div class="price-row">
+          <span>Price</span>
+          <strong id="price">8 credits/min</strong>
+        </div>
+
+        <button id="start" class="primary">Start subtitles</button>
+        <button id="stop" class="danger hidden">Stop subtitles</button>
+        <button id="view-transcripts" class="secondary" type="button">View saved transcripts</button>
+      </div>
+
+      <div id="session-status" class="status hidden"></div>
+      <div id="notice" class="notice hidden"></div>
+      <div id="error" class="error hidden"></div>
+    </section>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

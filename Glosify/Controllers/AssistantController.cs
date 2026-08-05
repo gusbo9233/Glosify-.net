@@ -42,7 +42,11 @@ public class AssistantController : ControllerBase
     public async Task<IActionResult> CreateChat([FromBody] ChatMutationInput? input, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var chat = await _orchestrator.CreateChatAsync(userId, input?.ContextQuizId, cancellationToken);
+        var chat = await _orchestrator.CreateChatAsync(
+            userId,
+            input?.ContextQuizId,
+            cancellationToken,
+            input?.ContextTranscriptId);
         return Ok(chat);
     }
 
@@ -58,7 +62,8 @@ public class AssistantController : ControllerBase
                 input.Title,
                 input.ContextQuizId,
                 input.UpdateContext,
-                cancellationToken);
+                cancellationToken,
+                input.ContextTranscriptId);
             return Ok(chat);
         }
         catch (InvalidOperationException ex)
@@ -119,7 +124,8 @@ public class AssistantController : ControllerBase
                     ? null
                     : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),
                 input.CustomQuizId,
-                cancellationToken);
+                cancellationToken,
+                input.TranscriptId);
 
             return Ok(response);
         }

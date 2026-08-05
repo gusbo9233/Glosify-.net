@@ -21,6 +21,12 @@ public sealed record AiCreditReservation(
     int ReservedCredits,
     int EstimatedTokens);
 
+public sealed record AiDurationCreditReservation(
+    Guid ReservationId,
+    string UserId,
+    int ReservedCredits,
+    int ReservedDurationSeconds);
+
 public sealed record AiCreditAccountView(
     string UserId,
     int BalanceCredits,

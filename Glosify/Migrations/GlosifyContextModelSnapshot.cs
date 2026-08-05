@@ -83,6 +83,9 @@ namespace Glosify.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("AudioDurationSeconds")
+                        .HasColumnType("int");
+
                     b.Property<int>("BalanceAfterCredits")
                         .HasColumnType("int");
 
@@ -246,6 +249,10 @@ namespace Glosify.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SelectedQuizLanguageCode")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("bit");
 
@@ -263,7 +270,10 @@ namespace Glosify.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
-                    b.ToTable("AspNetUsers", (string)null);
+                    b.ToTable("AspNetUsers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_AspNetUsers_SelectedQuizLanguageCode", "[SelectedQuizLanguageCode] IS NULL OR [SelectedQuizLanguageCode] IN ('et', 'de', 'pl', 'uk')");
+                        });
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.AssistantMessage", b =>
@@ -331,6 +341,10 @@ namespace Glosify.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("context_quiz_id");
 
+                    b.Property<Guid?>("ContextTranscriptId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("context_transcript_id");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset")
                         .HasColumnName("created_at");
@@ -358,6 +372,8 @@ namespace Glosify.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ContextQuizId");
+
+                    b.HasIndex("ContextTranscriptId");
 
                     b.HasIndex("QuizId", "UserId");
 
@@ -969,6 +985,221 @@ namespace Glosify.Migrations
                     b.ToTable("quiz_sentences");
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.RealtimeTranslationMinute", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("BegunAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Credits")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinuteIndex")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("ReleasedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("ReservationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ReservedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReservationId")
+                        .IsUnique();
+
+                    b.HasIndex("SessionId", "MinuteIndex")
+                        .IsUnique();
+
+                    b.ToTable("RealtimeTranslationMinutes");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.RealtimeTranslationSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BillingModel")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("ChargedMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("CreditsCharged")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CreditsPerStartedMinute")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("LastHeartbeatAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SourceTranscriptionDeployment")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("TargetLanguage")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<DateTimeOffset?>("TranscriptConsentAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("TranscriptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TranscriptId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[Status] IN ('pending', 'active')");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("RealtimeTranslationSessions");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.RealtimeTranslationTranscript", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Stream")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("TargetLanguage")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "TargetLanguage", "UpdatedAt");
+
+                    b.ToTable("RealtimeTranslationTranscripts", t =>
+                        {
+                            t.HasCheckConstraint("CK_RealtimeTranslationTranscripts_Stream", "[Stream] IN ('translation', 'source')");
+                        });
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.RealtimeTranslationTranscriptSegment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CapturedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ProviderEventKey")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TranscriptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "ProviderEventKey")
+                        .IsUnique();
+
+                    b.HasIndex("SessionId", "Sequence")
+                        .IsUnique();
+
+                    b.HasIndex("TranscriptId", "CapturedAt");
+
+                    b.ToTable("RealtimeTranslationTranscriptSegments");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.Word", b =>
                 {
                     b.Property<string>("Id")
@@ -1322,6 +1553,12 @@ namespace Glosify.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("FK_AssistantThreads_Quizzes_ContextQuizId");
 
+                    b.HasOne("Glosify.Models.Entities.RealtimeTranslationTranscript", null)
+                        .WithMany()
+                        .HasForeignKey("ContextTranscriptId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .HasConstraintName("FK_AssistantThreads_RealtimeTranslationTranscripts_ContextTranscriptId");
+
                     b.HasOne("Glosify.Models.Entities.Quiz", null)
                         .WithMany()
                         .HasForeignKey("QuizId")
@@ -1561,6 +1798,58 @@ namespace Glosify.Migrations
                         .HasConstraintName("FK_quiz_sentences_quizzes");
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.RealtimeTranslationMinute", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.RealtimeTranslationSession", "Session")
+                        .WithMany("Minutes")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_RealtimeTranslationMinutes_RealtimeTranslationSessions_SessionId");
+
+                    b.Navigation("Session");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.RealtimeTranslationSession", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.RealtimeTranslationTranscript", "Transcript")
+                        .WithMany("Sessions")
+                        .HasForeignKey("TranscriptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_RealtimeTranslationSessions_RealtimeTranslationTranscripts_TranscriptId");
+
+                    b.HasOne("Glosify.Models.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_RealtimeTranslationSessions_AspNetUsers_UserId");
+
+                    b.Navigation("Transcript");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.RealtimeTranslationTranscript", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_RealtimeTranslationTranscripts_AspNetUsers_UserId");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.RealtimeTranslationTranscriptSegment", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.RealtimeTranslationTranscript", "Transcript")
+                        .WithMany("Segments")
+                        .HasForeignKey("TranscriptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_RealtimeTranslationTranscriptSegments_RealtimeTranslationTranscripts_TranscriptId");
+
+                    b.Navigation("Transcript");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.Word", b =>
                 {
                     b.HasOne("Glosify.Models.Entities.Quiz", null)
@@ -1666,6 +1955,18 @@ namespace Glosify.Migrations
             modelBuilder.Entity("Glosify.Models.Entities.QuizAttempt", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.RealtimeTranslationSession", b =>
+                {
+                    b.Navigation("Minutes");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.RealtimeTranslationTranscript", b =>
+                {
+                    b.Navigation("Segments");
+
+                    b.Navigation("Sessions");
                 });
 
             modelBuilder.Entity("Glosify.Models.Library.BookDocument", b =>

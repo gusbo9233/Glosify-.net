@@ -122,6 +122,13 @@
                 <path d="M12 17.5V21"></path>
                 <path d="M9 21h6"></path>
                 """,
+            "subtitles" => """
+                <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                <path d="M7 11h4"></path>
+                <path d="M14 11h3"></path>
+                <path d="M7 15h3"></path>
+                <path d="M13 15h4"></path>
+                """,
             _ => """
                 <circle cx="12" cy="12" r="9"></circle>
                 """
@@ -189,6 +196,10 @@
                 <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
                     @NavIcon("auto_stories")
                     Books
+                </a>
+                <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
+                    @NavIcon("subtitles")
+                    Transcripts
                 </a>
                 <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
                     @NavIcon("quiz")
@@ -291,6 +302,10 @@
             @NavIcon("auto_stories")
             <span>Books</span>
         </a>
+        <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
+            @NavIcon("subtitles")
+            <span>Transcripts</span>
+        </a>
         @if (User.Identity?.IsAuthenticated == true)
         {
             <a class="@NavClass("Explore")" asp-controller="Explore" asp-action="Index">
@@ -319,6 +334,7 @@
             DocumentId = AssistantGuid("AssistantDocumentId"),
             CurrentPage = AssistantInt("AssistantCurrentPage"),
             CustomQuizId = AssistantGuid("AssistantCustomQuizId"),
+            TranscriptId = AssistantGuid("AssistantTranscriptId"),
             Title = AssistantText("AssistantTitle", "Assistant"),
             ContextLabel = AssistantText("AssistantContextLabel", "Glosify"),
             EmptyText = AssistantText("AssistantEmptyText", "Ask for help anywhere in Glosify."),

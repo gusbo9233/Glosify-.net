@@ -13,14 +13,6 @@ namespace Glosify.Services.Language
     {
         private const string CookieName = "glosify.language";
 
-        private static readonly HashSet<string> Allowed = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "Estonian",
-            "German",
-            "Polish",
-            "Ukrainian"
-        };
-
         private readonly IHttpContextAccessor _accessor;
 
         public CookieLanguageContext(IHttpContextAccessor accessor)
@@ -29,7 +21,7 @@ namespace Glosify.Services.Language
         }
 
         public IReadOnlyList<string> SupportedLanguages { get; } =
-            new[] { "Estonian", "German", "Polish", "Ukrainian" };
+            QuizLanguageCatalog.All.Select(language => language.Name).ToArray();
 
         public string? CurrentLanguage
         {
@@ -38,7 +30,7 @@ namespace Glosify.Services.Language
                 var ctx = _accessor.HttpContext;
                 if (ctx == null) return null;
                 if (!ctx.Request.Cookies.TryGetValue(CookieName, out var value)) return null;
-                return Allowed.TryGetValue(value, out var canonical) ? canonical : null;
+                return QuizLanguageCatalog.Find(value)?.Name;
             }
         }
 
@@ -46,7 +38,8 @@ namespace Glosify.Services.Language
 
         public bool TrySetLanguage(string language)
         {
-            if (string.IsNullOrWhiteSpace(language) || !Allowed.TryGetValue(language, out var canonical))
+            var canonical = QuizLanguageCatalog.Find(language);
+            if (canonical is null)
             {
                 return false;
             }
@@ -54,7 +47,7 @@ namespace Glosify.Services.Language
             var ctx = _accessor.HttpContext;
             if (ctx == null) return false;
 
-            ctx.Response.Cookies.Append(CookieName, canonical, new CookieOptions
+            ctx.Response.Cookies.Append(CookieName, canonical.Name, new CookieOptions
             {
                 Expires = DateTimeOffset.UtcNow.AddYears(1),
                 HttpOnly = true,

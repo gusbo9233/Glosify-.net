@@ -58,6 +58,7 @@ namespace Glosify.Models.ViewModels
         public Guid? DocumentId { get; set; }
         public int? CurrentPage { get; set; }
         public Guid? CustomQuizId { get; set; }
+        public Guid? TranscriptId { get; set; }
         public string Title { get; set; } = "Assistant";
         public string ContextLabel { get; set; } = string.Empty;
         public string EmptyText { get; set; } = "Start a conversation.";

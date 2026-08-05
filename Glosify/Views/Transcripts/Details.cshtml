@@ -1,0 +1,83 @@
+@model TranscriptDetailViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Model.Transcript.Title;
+    ViewData["AssistantTranscriptId"] = Model.Transcript.Id;
+    ViewData["AssistantTitle"] = "Transcript assistant";
+    ViewData["AssistantContextLabel"] = Model.Transcript.Title;
+    ViewData["AssistantEmptyText"] = "Ask about this transcript or use it with your existing quizzes.";
+    ViewData["AssistantPlaceholder"] = "Ask about this transcript...";
+    var totalPages = Math.Max(1, (int)Math.Ceiling(Model.Transcript.TotalSegments / (double)Model.Transcript.PageSize));
+    var learningLanguage = Glosify.Services.Language.QuizLanguageCatalog.Find(Model.Transcript.TargetLanguage)?.Name
+        ?? Model.Transcript.TargetLanguage.ToUpperInvariant();
+    var isSource = Model.Transcript.Stream == Glosify.Models.Entities.RealtimeTranslationTranscriptStreams.Source;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/transcripts.css" asp-append-version="true" />
+}
+
+<section class="transcripts-page transcript-detail-page">
+    <a class="transcript-back" asp-action="Index">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        Saved transcripts
+    </a>
+
+    @if (TempData["TranscriptMessage"] is string message)
+    {
+        <div class="transcripts-notice" role="status">@message</div>
+    }
+    @if (TempData["TranscriptError"] is string error)
+    {
+        <div class="transcripts-notice is-error" role="alert">@error</div>
+    }
+
+    <header class="transcript-detail-header">
+        <div>
+            <p class="transcripts-eyebrow">@(isSource ? $"Original speech saved for {learningLanguage} learning" : $"Legacy translated captions · learning {learningLanguage}")</p>
+            <h1>@Model.Transcript.Title</h1>
+            <p>@Model.Transcript.TotalSegments captions · started @Model.Transcript.CreatedAt.ToLocalTime().ToString("MMM d, yyyy · HH:mm")</p>
+        </div>
+        <div class="transcript-actions">
+            <form method="post" asp-action="Rename" asp-route-id="@Model.Transcript.Id" class="transcript-rename">
+                @Html.AntiForgeryToken()
+                <label class="visually-hidden" for="transcript-title">Transcript title</label>
+                <input id="transcript-title" name="title" value="@Model.Transcript.Title" maxlength="160" required />
+                <button type="submit">Rename</button>
+            </form>
+            <form method="post" asp-action="Delete" asp-route-id="@Model.Transcript.Id"
+                  data-confirm="Delete this saved transcript permanently?">
+                @Html.AntiForgeryToken()
+                @if (Model.Transcript.HasActiveSession)
+                {
+                    <button type="submit" class="transcript-delete" disabled title="Stop live subtitles before deleting">Delete</button>
+                }
+                else
+                {
+                    <button type="submit" class="transcript-delete">Delete</button>
+                }
+            </form>
+        </div>
+    </header>
+
+    <article class="transcript-reader" aria-label="@(isSource ? "Saved original speech" : "Saved translated captions")">
+        @foreach (var segment in Model.Transcript.Segments)
+        {
+            <section class="transcript-segment">
+                <time datetime="@segment.CapturedAt.ToString("O")">@segment.CapturedAt.ToLocalTime().ToString("HH:mm:ss")</time>
+                <p>@segment.Text</p>
+            </section>
+        }
+    </article>
+
+    @if (totalPages > 1)
+    {
+        <nav class="transcript-pagination" aria-label="Transcript text pages">
+            <a class="@(Model.Transcript.Page <= 1 ? "is-disabled" : "")"
+               asp-route-id="@Model.Transcript.Id" asp-route-page="@(Model.Transcript.Page - 1)">Previous</a>
+            <span>Page @Model.Transcript.Page of @totalPages</span>
+            <a class="@(Model.Transcript.Page >= totalPages ? "is-disabled" : "")"
+               asp-route-id="@Model.Transcript.Id" asp-route-page="@(Model.Transcript.Page + 1)">Next</a>
+        </nav>
+    }
+</section>
