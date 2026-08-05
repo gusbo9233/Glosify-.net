@@ -8,7 +8,7 @@
   <meta property="og:description" content="A production language-learning app built with .NET 10 and Azure.">
   <meta property="og:image" content="assets/speaking-practice.png">
   <meta name="theme-color" content="#061326">
-  <title>Glosify — Product & engineering case study</title>
+  <title>Glosify — Product &amp; engineering case study</title>
   <link rel="stylesheet" href="assets/site.css">
   <script src="assets/site.js" defer></script>
 </head>
@@ -33,11 +33,11 @@
         <div class="case-intro">
           <p class="eyebrow">My full-stack project</p>
           <h1>Glosify</h1>
-          <p class="case-summary">I built Glosify to practise language skills in one place. Users can save vocabulary, take quizzes, read uploaded books, join classrooms, and practise speaking with an AI tutor.</p>
+          <p class="case-summary">I built Glosify to practise language skills in one place. Users can save vocabulary, take quizzes, read uploaded books, join classrooms, practise speaking with an AI tutor, and translate audio from any Chrome tab.</p>
           <dl class="project-facts">
             <div><dt>Application</dt><dd>ASP.NET Core MVC · .NET 10</dd></div>
             <div><dt>Platform</dt><dd>Azure App Service, SQL, Blob Storage</dd></div>
-            <div><dt>AI & realtime</dt><dd>Azure AI Foundry, Speech, SignalR</dd></div>
+            <div><dt>AI &amp; realtime</dt><dd>Azure AI Foundry, Speech, WebSockets, SignalR</dd></div>
           </dl>
           <div class="actions case-actions">
             <a class="button button-primary" href="https://glosify-f0d9e2g3f4ctc3hy.swedencentral-01.azurewebsites.net/">Live application ↗</a>
@@ -64,7 +64,42 @@
           <article><span>02</span><div><h3>Books and context</h3><p>PDF upload, browser-based reading, text extraction, page translation, and vocabulary capture.</p></div></article>
           <article><span>03</span><div><h3>AI speaking</h3><p>Guided conversation scenes using browser speech recognition, generated replies, and structured feedback.</p></div></article>
           <article><span>04</span><div><h3>Classrooms</h3><p>Membership, assignments, shared content, SignalR chat, and Azure Communication Services calling.</p></div></article>
+          <article><span>05</span><div><h3>Live translated subtitles</h3><p>A Chrome extension that connects to a Glosify account and translates audio playing in the current tab.</p></div></article>
         </div>
+      </div>
+    </section>
+
+    <section class="case-section extension-section">
+      <div class="wrap">
+        <div class="extension-heading">
+          <div>
+            <p class="kicker">Chrome extension</p>
+            <h2>Glosify beyond the app</h2>
+          </div>
+          <p>The Live Subtitles extension brings Glosify to videos, streams, and other audio in Chrome. It uses the same account, language preferences, credits, and saved learning material as the main application.</p>
+        </div>
+
+        <div class="extension-gallery">
+          <figure class="extension-shot extension-shot-live">
+            <a href="assets/live-subtitles-in-action.png" aria-label="Open the live translated subtitles screenshot at full size">
+              <img src="assets/live-subtitles-in-action.png" alt="A Polish news video in Chrome with the Glosify Live Subtitles overlay translating speech into English" width="1385" height="594">
+            </a>
+            <figcaption>Translated subtitles appear in a movable, resizable overlay while the video continues playing.</figcaption>
+          </figure>
+          <figure class="extension-shot extension-shot-settings">
+            <a href="assets/live-subtitles-settings.png" aria-label="Open the Live Subtitles settings screenshot at full size">
+              <img src="assets/live-subtitles-settings.png" alt="Glosify Live Subtitles extension settings showing the connected account, quiz language, subtitle language, transcript option, credits, and controls" width="414" height="643">
+            </a>
+            <figcaption>The popup connects the current Glosify account with language, transcript, and credit controls.</figcaption>
+          </figure>
+        </div>
+
+        <div class="extension-connection" aria-label="How the Chrome extension connects to Glosify">
+          <article><span>01</span><h3>Connect</h3><p>The user signs in with their Glosify account. The extension shows the account’s available credits and current quiz language.</p></article>
+          <article><span>02</span><h3>Translate</h3><p>The extension captures audio from the active tab and sends it through Glosify’s authenticated, memory-only relay to Azure AI Foundry.</p></article>
+          <article><span>03</span><h3>Learn</h3><p>Translated captions return to the overlay in real time. If the user opts in, finalized original speech can be saved privately in Glosify for later study.</p></article>
+        </div>
+        <p class="extension-privacy"><strong>Privacy by design:</strong> audio is relayed in memory and is not stored. Saving an original-language transcript is a separate, explicit choice for each session.</p>
       </div>
     </section>
 
