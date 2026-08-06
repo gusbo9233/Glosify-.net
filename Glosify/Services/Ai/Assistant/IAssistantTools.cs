@@ -5,6 +5,9 @@ public interface IAssistantTools
 {
     IReadOnlyList<AgentToolDeclaration> Declarations { get; }
     IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; }
+    IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; }
+    IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; }
+    IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; }
 
     Task<object> ExecuteAsync(
         string name,

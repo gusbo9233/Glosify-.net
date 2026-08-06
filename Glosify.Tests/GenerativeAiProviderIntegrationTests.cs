@@ -17,24 +17,21 @@ public sealed class GenerativeAiProviderIntegrationTests
 
         var resolver = factory.Services.GetRequiredService<IGenerativeAiModelResolver>();
 
-        Assert.Equal("gpt-5.4-mini", resolver.DefaultAssistantModel);
+        // Both entries must exist as deployments in the glosify-assistant project.
+        // DeepSeek-V4-Flash is deployed there too but is page-translation fallback only,
+        // so it is deliberately absent from the user-selectable menu.
+        Assert.Equal("gpt-5.6-luna", resolver.DefaultAssistantModel);
         Assert.Collection(
             resolver.AssistantModels,
             model =>
             {
-                Assert.Equal("gpt-5.4-mini", model.Deployment);
+                Assert.Equal("gpt-5.6-luna", model.Deployment);
                 Assert.Equal("OpenAI", model.Provider);
                 Assert.Equal(1m, model.CreditMultiplier);
             },
             model =>
             {
-                Assert.Equal("grok-4-1-fast-non-reasoning", model.Deployment);
-                Assert.Equal("xAI", model.Provider);
-                Assert.Equal(1m, model.CreditMultiplier);
-            },
-            model =>
-            {
-                Assert.Equal("grok-4-1-fast-reasoning", model.Deployment);
+                Assert.Equal("grok-4.3", model.Deployment);
                 Assert.Equal("xAI", model.Provider);
                 Assert.Equal(2m, model.CreditMultiplier);
             });

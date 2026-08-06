@@ -23,11 +23,17 @@ public sealed class CustomQuizController : Controller
         _words = words;
     }
 
-    [HttpGet("/Quizzes/{quizId:guid}/Custom/New")]
+    // The starter quiz is persisted before the editor opens instead of being rendered
+    // as an unsaved draft. An unsaved draft has no id to hand the assistant panel, and
+    // without one the assistant can only create a second custom quiz, stranding the
+    // editor the user is looking at.
+    [HttpPost("/Quizzes/{quizId:guid}/Custom/New")]
     public async Task<IActionResult> New(Guid quizId, CancellationToken cancellationToken)
     {
-        var quiz = await _quizzes.GetQuizByIdAsync(quizId, User.GetUserId(), cancellationToken);
+        var userId = User.GetUserId();
+        var quiz = await _quizzes.GetQuizByIdAsync(quizId, userId, cancellationToken);
         if (quiz == null) return NotFound();
+
         var document = new CustomQuizDocumentV1
         {
             Blocks =
@@ -36,15 +42,39 @@ public sealed class CustomQuizController : Controller
                 new() { Id = Guid.NewGuid().ToString("N"), Type = CustomQuizBlockTypes.FeedbackMessage, Order = 1, ColumnSpan = 6, GridColumn = 7, GridRow = 1 }
             ]
         };
-        var words = await _words.GetWordsAsync(quizId, cancellationToken);
-        return View("Editor", new CustomQuizEditorViewModel
+
+        // Names are unique per backing quiz, and a double-submitted form can lose the
+        // race between picking a free name and taking it, so re-pick and try again.
+        for (var attempt = 0; ; attempt++)
         {
-            Quiz = quiz,
-            Words = words,
-            Templates = _templates.Build(words),
-            Editor = new CustomQuizEditorDto(null, quizId, "Custom quiz", document, false,
-                ["Add at least one answer control."], string.Empty)
-        });
+            var existing = await _customQuizzes.ListForQuizAsync(quizId, cancellationToken: cancellationToken);
+            try
+            {
+                var created = await _customQuizzes.CreateAsync(new SaveCustomQuizRequest
+                {
+                    QuizId = quizId,
+                    Name = NextStarterName(existing.Select(item => item.Name)),
+                    Document = document,
+                }, userId, cancellationToken);
+                return RedirectToAction(nameof(Edit), new { id = created.Id });
+            }
+            catch (CustomQuizValidationException) when (attempt < 3)
+            {
+            }
+        }
+    }
+
+    private static string NextStarterName(IEnumerable<string> existingNames)
+    {
+        const string baseName = "Custom quiz";
+        var taken = existingNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (!taken.Contains(baseName)) return baseName;
+        for (var suffix = 2; suffix < 1000; suffix++)
+        {
+            var candidate = $"{baseName} {suffix}";
+            if (!taken.Contains(candidate)) return candidate;
+        }
+        return $"{baseName} {Guid.NewGuid():N}";
     }
 
     [HttpGet("/CustomQuizzes/{id:guid}/Edit")]

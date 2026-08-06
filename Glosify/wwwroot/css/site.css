@@ -7845,6 +7845,11 @@ body.call-in-progress {
 }
 
 /* Custom quiz builder and player */
+/* Starting a custom quiz POSTs so the row exists before the editor opens. The form
+   wrapper must not disturb the surrounding flex rows, and the button needs the page
+   font that the anchor it replaced inherited for free. */
+.custom-quiz-new-form { display: contents; }
+button.btn-hero, button.btn-new-quiz { font: inherit; }
 .custom-quiz-library { margin-top: 2rem; }
 .custom-quiz-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
 .custom-quiz-card { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.15rem; border: 1px solid var(--border-color, rgba(255,255,255,.1)); border-radius: 16px; background: var(--surface, #171d1a); }

@@ -313,12 +313,13 @@ public sealed class AssistantTools : IAssistantTools
 
     private static readonly AgentToolDeclaration CreateCustomQuizDeclaration = new(
         "create_custom_quiz",
-        "Start a new empty custom quiz for an existing backing quiz. This queues only the quiz shell. After it succeeds, add every element with a separate add_label, add_text_input, add_checkbox, add_choice, add_word_bank, add_submit_button, add_feedback_message, or add_custom_quiz_element call. Never pass a complete document here. Queued until Apply.",
+        "Start a new empty custom quiz for an existing backing quiz. Do NOT call this when a custom quiz is already open in the creator; add elements to that one instead. This queues only the quiz shell, but the shell is a valid target for the rest of this turn: immediately add every element with a separate add_label, add_text_input, add_checkbox, add_choice, add_word_bank, add_submit_button, add_feedback_message, or add_custom_quiz_element call in this same turn. Never pass a complete document here, and never stop after the shell to wait for the user to apply it.",
         BuildSchema(new Dictionary<string, object>
         {
             ["quiz_id"] = StringProp("Optional backing quiz id. Defaults to the selected quiz."),
             ["name"] = StringProp("Custom quiz name."),
             ["template_id"] = StringProp("Optional id from list_custom_quiz_templates. Sets the visual style; follow that template's layout guidance when adding elements."),
+            ["create_additional_quiz"] = BoolProp("Set true only when a custom quiz is already open in the creator and the user explicitly asked for a second, separate custom quiz."),
         }, required: ["name"]));
 
     private static readonly AgentToolDeclaration CreateCustomQuizFromContentDeclaration = new(
@@ -474,6 +475,101 @@ public sealed class AssistantTools : IAssistantTools
         GetCustomQuizDeclaration,
         CreateCustomQuizDeclaration,
         CreateCustomQuizFromContentDeclaration,
+        AddLabelDeclaration,
+        AddTextInputDeclaration,
+        AddCheckboxDeclaration,
+        AddChoiceDeclaration,
+        AddWordBankDeclaration,
+        AddSubmitButtonDeclaration,
+        AddFeedbackMessageDeclaration,
+        AddCustomQuizElementDeclaration,
+        ConfigureCustomQuizElementDeclaration,
+        RemoveCustomQuizElementDeclaration,
+    ];
+
+    /// <summary>
+    /// Everything a custom quiz needs: inspect it, look up bindable words, and build or
+    /// change its elements. Shared by the profiles that can reach a custom quiz.
+    /// </summary>
+    private static readonly AgentToolDeclaration[] CustomQuizElementDeclarations =
+    [
+        ListCustomQuizzesDeclaration,
+        ListCustomQuizTemplatesDeclaration,
+        GetCustomQuizDeclaration,
+        AddLabelDeclaration,
+        AddTextInputDeclaration,
+        AddCheckboxDeclaration,
+        AddChoiceDeclaration,
+        AddWordBankDeclaration,
+        AddSubmitButtonDeclaration,
+        AddFeedbackMessageDeclaration,
+        AddCustomQuizElementDeclaration,
+        ConfigureCustomQuizElementDeclaration,
+        RemoveCustomQuizElementDeclaration,
+    ];
+
+    /// <summary>
+    /// The tools offered on a quiz page: its words and sentences, plus everything needed
+    /// to start and fill a custom quiz for it. Collection and library management is
+    /// absent — moving and renaming quizzes belongs to the library context, not to the
+    /// quiz the user is working inside.
+    /// </summary>
+    public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } =
+    [
+        ListWordsDeclaration,
+        SearchWordsDeclaration,
+        GetWordDeclaration,
+        GetQuizSummaryDeclaration,
+        ListSentencesDeclaration,
+        AddWordDeclaration,
+        AddWordsDeclaration,
+        AddSentenceDeclaration,
+        AddSentencesDeclaration,
+        EditWordDeclaration,
+        EditWordsDeclaration,
+        EditSentenceDeclaration,
+        EditSentencesDeclaration,
+        DeleteWordDeclaration,
+        RepairSentenceDeclaration,
+        DeleteSentenceDeclaration,
+        CreateCustomQuizDeclaration,
+        ListSavedTranscriptsDeclaration,
+        GetSavedTranscriptDeclaration,
+        .. CustomQuizElementDeclarations,
+    ];
+
+    /// <summary>
+    /// The tools offered with no quiz selected: organising the library, creating quizzes,
+    /// and building a custom quiz from source material. The per-word and per-sentence
+    /// tools are absent because they need a quiz in context to act on.
+    /// </summary>
+    public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } =
+    [
+        ListCollectionsDeclaration,
+        ListQuizzesDeclaration,
+        CreateCollectionDeclaration,
+        CreateQuizDeclaration,
+        MoveQuizDeclaration,
+        RenameCollectionDeclaration,
+        MoveCollectionDeclaration,
+        ListSavedTranscriptsDeclaration,
+        GetSavedTranscriptDeclaration,
+        CreateCustomQuizFromContentDeclaration,
+        .. CustomQuizElementDeclarations,
+    ];
+
+    /// <summary>
+    /// The tools offered inside the custom quiz creator. The quiz-creation tools are
+    /// deliberately absent: with a custom quiz open on screen, creating another one can
+    /// only strand the editor the user is looking at. Everything here either inspects the
+    /// open document or edits it.
+    /// </summary>
+    public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; } =
+    [
+        GetCustomQuizDeclaration,
+        ListCustomQuizTemplatesDeclaration,
+        ListWordsDeclaration,
+        SearchWordsDeclaration,
         AddLabelDeclaration,
         AddTextInputDeclaration,
         AddCheckboxDeclaration,
@@ -1616,6 +1712,15 @@ public sealed class AssistantTools : IAssistantTools
 
     private async Task<object> GetCustomQuizAsync(JsonElement args, AgentToolContext context, CancellationToken ct)
     {
+        // A quiz queued earlier in this turn has no row to read yet. Returning the open
+        // quiz instead, or an error, used to read as "the new quiz isn't ready" and stop
+        // the model mid-build, leaving the user an empty custom quiz to apply.
+        if (string.IsNullOrWhiteSpace(GetString(args, "custom_quiz_id"))
+            && !string.IsNullOrWhiteSpace(context.PendingCustomQuizRef))
+        {
+            return DescribeQueuedCustomQuiz(context);
+        }
+
         var resolved = ResolveCustomQuizId(args, context);
         if (resolved.Error != null)
         {
@@ -1640,6 +1745,54 @@ public sealed class AssistantTools : IAssistantTools
         };
     }
 
+    /// <summary>
+    /// Reports the state of a custom quiz that is still queued, assembled from the
+    /// pending changes rather than the database.
+    /// </summary>
+    private static object DescribeQueuedCustomQuiz(AgentToolContext context)
+    {
+        var blocks = context.PendingChanges
+            .Where(change => change.Kind == PendingChangeKinds.AddCustomQuizElement)
+            .Where(change => string.Equals(
+                GetString(change.Payload, "custom_quiz_ref"),
+                context.PendingCustomQuizRef,
+                StringComparison.Ordinal))
+            .Select(change => change.Payload.TryGetProperty("block", out var block) ? block : default)
+            .Where(block => block.ValueKind == JsonValueKind.Object)
+            .ToList();
+
+        var types = blocks.Select(block => GetString(block, "type")).ToList();
+        var missing = new List<string>();
+        if (types.Count(type => type == CustomQuizBlockTypes.SubmitButton) != 1)
+        {
+            missing.Add("Add exactly one submit button.");
+        }
+        if (types.Count(type => type == CustomQuizBlockTypes.FeedbackMessage) != 1)
+        {
+            missing.Add("Add exactly one feedback message.");
+        }
+        if (!types.Any(type => type is not null && CustomQuizBlockTypes.IsAnswer(type)))
+        {
+            missing.Add("Add at least one answer control.");
+        }
+
+        return new
+        {
+            queued = true,
+            name = context.PendingCustomQuizName,
+            draft_ref = context.PendingCustomQuizRef,
+            element_count = blocks.Count,
+            elements = blocks.Select(block => new
+            {
+                id = GetString(block, "id"),
+                type = GetString(block, "type"),
+                label = GetString(block, "label") ?? GetString(block, "text"),
+            }),
+            validation_errors = missing,
+            note = "This custom quiz is queued in this turn and has no stored document yet. Keep adding its elements now; do not wait for the user to apply it.",
+        };
+    }
+
     private async Task<object> QueueCreateCustomQuizAsync(JsonElement args, AgentToolContext context, CancellationToken ct)
     {
         var quizId = context.QuizId;
@@ -1658,6 +1811,17 @@ public sealed class AssistantTools : IAssistantTools
         if (!quizId.HasValue || string.IsNullOrWhiteSpace(name))
         {
             return new { error = "Choose a backing quiz and provide a custom quiz name." };
+        }
+        // Creating a second quiz while the creator has one open used to strand the open
+        // editor: every later element call in the turn resolves to the new draft first.
+        if (context.CustomQuizId.HasValue && !GetBool(args, "create_additional_quiz"))
+        {
+            return new
+            {
+                error = "A custom quiz is already open in the creator, so there is nothing to create.",
+                open_custom_quiz_id = context.CustomQuizId.Value,
+                correction = "Call get_custom_quiz to inspect the open custom quiz, then add, configure, or remove its elements. Only call create_custom_quiz again with create_additional_quiz set to true if the user explicitly asked for a second, separate custom quiz.",
+            };
         }
         if (args.TryGetProperty("blocks", out _))
         {
@@ -1680,7 +1844,15 @@ public sealed class AssistantTools : IAssistantTools
         context.PendingChanges.Add(new PendingChange(PendingChangeKinds.CreateCustomQuiz, payload));
         context.PendingCustomQuizRef = draftRef;
         context.PendingCustomQuizName = name;
-        return new { queued = true, kind = PendingChangeKinds.CreateCustomQuiz, name, draft_ref = draftRef, next = "Add each element with a separate element tool call." };
+        return new
+        {
+            queued = true,
+            kind = PendingChangeKinds.CreateCustomQuiz,
+            name,
+            draft_ref = draftRef,
+            next = "Add every element now, in this same turn, with one element tool call each. Element calls default to this new quiz, so leave custom_quiz_id out.",
+            important = "This shell is only half the work. Do not end your turn and do not ask the user to apply anything yet: applying now would produce an empty custom quiz.",
+        };
     }
 
     private static object QueueCreateCustomQuizFromContent(JsonElement args, AgentToolContext context)
@@ -1742,7 +1914,8 @@ public sealed class AssistantTools : IAssistantTools
             name = quizName,
             custom_quiz_name = customQuizName,
             draft_ref = draftRef,
-            next = "Add each element with a separate element tool call.",
+            next = "Add every element now, in this same turn, with one element tool call each. Element calls default to this new custom quiz, so leave custom_quiz_id out.",
+            important = "These shells are only half the work. Do not end your turn and do not ask the user to apply anything yet: applying now would produce an empty custom quiz.",
             skipped = skippedWords,
         };
     }
@@ -2166,6 +2339,22 @@ public sealed class AssistantTools : IAssistantTools
         return value.ValueKind == JsonValueKind.String ? value.GetString() : null;
     }
 
+    // Models sometimes send a boolean flag as the string "true" instead of a JSON
+    // boolean, so both spellings have to count.
+    private static bool GetBool(JsonElement element, string property)
+    {
+        if (!element.TryGetProperty(property, out var value))
+        {
+            return false;
+        }
+        return value.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.String => bool.TryParse(value.GetString(), out var parsed) && parsed,
+            _ => false,
+        };
+    }
+
     // Models sometimes pass "" for arguments they mean to omit, so blank must fall
     // back the same way as missing.
     private static string? FirstNonBlank(string? value, string? fallback)
@@ -2285,6 +2474,13 @@ public sealed class AssistantTools : IAssistantTools
         new Dictionary<string, object>
         {
             ["type"] = "string",
+            ["description"] = description,
+        };
+
+    private static object BoolProp(string description) =>
+        new Dictionary<string, object>
+        {
+            ["type"] = "boolean",
             ["description"] = description,
         };
 

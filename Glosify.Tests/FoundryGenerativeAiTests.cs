@@ -456,6 +456,166 @@ public sealed class FoundryGenerativeAiTests
     }
 
     [Fact]
+    public async Task Quiz_builder_profile_runs_on_the_instructions_authored_in_foundry()
+    {
+        var invoker = new FakeInvoker
+        {
+            AuthoredAgent = new FoundryAuthoredAgent("You build custom quiz elements.", null, []),
+        };
+        var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
+
+        await client.RunAgentTurnAsync(
+            new AgentRequest(
+                "In-code fallback instruction.",
+                [],
+                [],
+                Model: null,
+                Profile: AssistantAgentProfile.CustomQuizBuilder,
+                ContextInstruction: "The open custom quiz is \"Verb drills\"."),
+            Usage(AiUsageFeatures.Assistant));
+
+        Assert.Equal("glosify-quiz-builder@3", Assert.Single(invoker.AuthoredLookups));
+        Assert.Contains("You build custom quiz elements.", invoker.Instructions);
+        Assert.Contains("The open custom quiz is \"Verb drills\".", invoker.Instructions);
+        Assert.DoesNotContain("In-code fallback instruction.", invoker.Instructions);
+    }
+
+    // The assistant has to keep working before the agent is authored in Foundry, and
+    // has to survive the project being unreachable.
+    [Fact]
+    public async Task Quiz_builder_profile_falls_back_to_in_code_instructions_when_the_agent_is_unavailable()
+    {
+        var invoker = new FakeInvoker { AuthoredAgent = null };
+        var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
+
+        await client.RunAgentTurnAsync(
+            new AgentRequest(
+                "In-code fallback instruction.",
+                [],
+                [],
+                Model: null,
+                Profile: AssistantAgentProfile.CustomQuizBuilder,
+                ContextInstruction: "The open custom quiz is \"Verb drills\"."),
+            Usage(AiUsageFeatures.Assistant));
+
+        Assert.Equal("In-code fallback instruction.", invoker.Instructions);
+    }
+
+    [Fact]
+    public async Task Unconfigured_profiles_never_look_up_an_agent()
+    {
+        var invoker = new FakeInvoker
+        {
+            AuthoredAgent = new FoundryAuthoredAgent("You build custom quiz elements.", null, []),
+        };
+        var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
+
+        await client.RunAgentTurnAsync(
+            new AgentRequest("General assistant instruction.", [], []),
+            Usage(AiUsageFeatures.Assistant));
+
+        Assert.Empty(invoker.AuthoredLookups);
+        Assert.Equal("General assistant instruction.", invoker.Instructions);
+    }
+
+    [Fact]
+    public async Task Authored_model_is_a_default_that_the_user_selection_overrides()
+    {
+        var invoker = new FakeInvoker
+        {
+            AuthoredAgent = new FoundryAuthoredAgent("Build elements.", "grok-4-1-fast-non-reasoning", []),
+        };
+        var client = CreateClient(invoker, new FakeCredits(), foundry =>
+        {
+            ConfigureQuizBuilderAgent(foundry);
+            foundry.AllowedAssistantDeployments = ["gpt-5.4-mini", "grok-4-1-fast-non-reasoning"];
+        });
+
+        await client.RunAgentTurnAsync(
+            new AgentRequest("Fallback.", [], [], "gpt-5.4-mini", AssistantAgentProfile.CustomQuizBuilder),
+            Usage(AiUsageFeatures.Assistant));
+        Assert.Equal("gpt-5.4-mini", invoker.Deployment);
+
+        await client.RunAgentTurnAsync(
+            new AgentRequest("Fallback.", [], [], Model: null, Profile: AssistantAgentProfile.CustomQuizBuilder),
+            Usage(AiUsageFeatures.Assistant));
+        Assert.Equal("grok-4-1-fast-non-reasoning", invoker.Deployment);
+    }
+
+    // Editing an agent in the Foundry portal must not be able to route traffic to a
+    // deployment the application has not approved.
+    [Fact]
+    public async Task Authored_model_outside_the_allowlist_is_ignored()
+    {
+        var invoker = new FakeInvoker
+        {
+            AuthoredAgent = new FoundryAuthoredAgent("Build elements.", "some-unapproved-deployment", []),
+        };
+        var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
+
+        await client.RunAgentTurnAsync(
+            new AgentRequest("Fallback.", [], [], Model: null, Profile: AssistantAgentProfile.CustomQuizBuilder),
+            Usage(AiUsageFeatures.Assistant));
+
+        Assert.Equal("gpt-5.4-mini", invoker.Deployment);
+    }
+
+    // The agent owns which tools exist and how they are described; Glosify still runs
+    // them, matching handlers by name.
+    [Fact]
+    public async Task Tools_declared_on_the_agent_replace_the_in_code_declarations()
+    {
+        var invoker = new FakeInvoker
+        {
+            AuthoredAgent = new FoundryAuthoredAgent(
+                "Build elements.",
+                null,
+                [new AgentToolDeclaration("add_text_input", "Add one graded text answer.", new { type = "object" })]),
+        };
+        var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
+
+        await client.RunAgentTurnAsync(
+            new AgentRequest(
+                "Fallback.",
+                [],
+                [new AgentToolDeclaration("in_code_only", "Should not be offered.", new { type = "object" })],
+                Model: null,
+                Profile: AssistantAgentProfile.CustomQuizBuilder),
+            Usage(AiUsageFeatures.Assistant));
+
+        var offered = invoker.Tools.Select(tool => tool.Name).ToList();
+        Assert.Equal(["add_text_input"], offered);
+    }
+
+    [Fact]
+    public async Task In_code_declarations_are_used_when_the_agent_declares_no_tools()
+    {
+        var invoker = new FakeInvoker
+        {
+            AuthoredAgent = new FoundryAuthoredAgent("Build elements.", null, []),
+        };
+        var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
+
+        await client.RunAgentTurnAsync(
+            new AgentRequest(
+                "Fallback.",
+                [],
+                [new AgentToolDeclaration("in_code_only", "Offered because the agent declares none.", new { type = "object" })],
+                Model: null,
+                Profile: AssistantAgentProfile.CustomQuizBuilder),
+            Usage(AiUsageFeatures.Assistant));
+
+        Assert.Equal(["in_code_only"], invoker.Tools.Select(tool => tool.Name).ToList());
+    }
+
+    private static void ConfigureQuizBuilderAgent(FoundryGenerativeAiOptions foundry) =>
+        foundry.Agents.CustomQuizBuilder = new FoundryAgentVersionOptions
+        {
+            Name = "glosify-quiz-builder",
+            Version = "3",
+        };
+
+    [Fact]
     public async Task Credit_step_failures_emit_outcomes_and_do_not_mask_the_original_ai_failure()
     {
         var measurements = new List<(string Instrument, Dictionary<string, object?> Tags)>();
@@ -654,10 +814,21 @@ public sealed class FoundryGenerativeAiTests
 
     private static FoundryGenerativeAiClient CreateClient(
         IFoundryAgentInvoker invoker,
-        FakeCredits credits) =>
+        FakeCredits credits,
+        Action<FoundryGenerativeAiOptions>? configureFoundry = null)
+    {
+        var options = ValidOptions();
+        configureFoundry?.Invoke(options.Foundry);
+        return CreateClient(invoker, credits, options);
+    }
+
+    private static FoundryGenerativeAiClient CreateClient(
+        IFoundryAgentInvoker invoker,
+        FakeCredits credits,
+        GenerativeAiOptions options) =>
         new(
             invoker,
-            Options.Create(ValidOptions()),
+            Options.Create(options),
             Options.Create(new AiUsageOptions
             {
                 AssistantOutputTokenReserve = 50,
@@ -736,6 +907,10 @@ public sealed class FoundryGenerativeAiTests
         public ChatFinishReason? StructuredFinishReason { get; set; }
         public IReadOnlyList<ChatMessage> Messages { get; private set; } = [];
         public IReadOnlyList<AITool> Tools { get; private set; } = [];
+        public string? Deployment { get; private set; }
+        public string? Instructions { get; private set; }
+        public FoundryAuthoredAgent? AuthoredAgent { get; set; }
+        public List<string> AuthoredLookups { get; } = [];
 
         public Task<AgentResponse> RunAsync(
             string deployment,
@@ -745,11 +920,22 @@ public sealed class FoundryGenerativeAiTests
             int maxOutputTokens,
             CancellationToken cancellationToken)
         {
+            Deployment = deployment;
+            Instructions = instructions;
             Messages = messages;
             Tools = tools;
             return Error is null
                 ? Task.FromResult(Response)
                 : Task.FromException<AgentResponse>(Error);
+        }
+
+        public Task<FoundryAuthoredAgent?> TryGetAuthoredAgentAsync(
+            string name,
+            string version,
+            CancellationToken cancellationToken)
+        {
+            AuthoredLookups.Add($"{name}@{version}");
+            return Task.FromResult(AuthoredAgent);
         }
 
         public Task<AgentResponse<T>> RunStructuredAsync<T>(

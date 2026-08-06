@@ -9,8 +9,13 @@ public interface IChangeApplier
         CancellationToken cancellationToken);
 }
 
+/// <param name="CreatedCustomQuizElements">
+/// How many elements landed in the created custom quiz. Zero means the agent queued the
+/// shell but never filled it, so the client must not invite the user into an empty editor.
+/// </param>
 public sealed record AssistantApplyResult(
     int Applied,
     Guid? CreatedQuizId = null,
     Guid? CreatedCollectionId = null,
-    Guid? CreatedCustomQuizId = null);
+    Guid? CreatedCustomQuizId = null,
+    int CreatedCustomQuizElements = 0);

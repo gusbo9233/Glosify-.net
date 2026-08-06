@@ -28,6 +28,45 @@ public class AssistantToolsTests
         Assert.DoesNotContain("create_quiz", names);
     }
 
+    // Scoping the creator's tools is what makes "generate exercises" unable to fork a new
+    // custom quiz: the tool that would do it is not on the agent at all.
+    [Fact]
+    public void CustomQuizBuilderDeclarations_ExcludeEverythingThatCouldLeaveTheOpenQuiz()
+    {
+        using var db = CreateContext();
+        var names = new AssistantTools(db).CustomQuizBuilderDeclarations.Select(tool => tool.Name).ToList();
+
+        Assert.DoesNotContain("create_custom_quiz", names);
+        Assert.DoesNotContain("create_custom_quiz_from_content", names);
+        Assert.DoesNotContain("create_vocabulary_quiz", names);
+        Assert.DoesNotContain("create_quiz", names);
+        Assert.DoesNotContain("create_collection", names);
+        Assert.DoesNotContain("move_quiz", names);
+
+        Assert.Contains("get_custom_quiz", names);
+        Assert.Contains("add_text_input", names);
+        Assert.Contains("add_submit_button", names);
+        Assert.Contains("add_feedback_message", names);
+        Assert.Contains("configure_custom_quiz_element", names);
+        Assert.Contains("remove_custom_quiz_element", names);
+        // Word bindings can only reference words already in the backing quiz, so the
+        // builder still needs to look them up.
+        Assert.Contains("list_words", names);
+        Assert.Contains("search_words", names);
+    }
+
+    [Fact]
+    public void CustomQuizBuilderDeclarations_StayWellUnderTheGeneralToolSurface()
+    {
+        using var db = CreateContext();
+        var tools = new AssistantTools(db);
+
+        var builder = tools.CustomQuizBuilderDeclarations.Count;
+        var general = tools.GlobalDeclarations.Count + tools.Declarations.Count;
+
+        Assert.True(builder < general / 2, $"Builder surface {builder} should be far smaller than {general}.");
+    }
+
     [Fact]
     public async Task CustomQuizTemplates_AreDiscoverableAndSetCreationStyle()
     {
@@ -46,6 +85,123 @@ public class AssistantToolsTests
         Assert.Contains(listed.GetProperty("templates").EnumerateArray(), template =>
             template.GetProperty("id").GetString() == "aurora_cards");
         Assert.Equal("aurora", Assert.Single(context.PendingChanges).Payload.GetProperty("style_preset").GetString());
+    }
+
+    // Creating a second custom quiz while one is open in the creator stranded the open
+    // editor: PendingCustomQuizRef wins over the open quiz, so every later element call
+    // in the turn went to the new draft instead.
+    [Fact]
+    public async Task CreateCustomQuiz_RefusesWhileACustomQuizIsOpenInTheCreator()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        var openCustomQuizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId, CustomQuizId = openCustomQuizId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "create_custom_quiz", """{"name":"Second quiz"}""", context, CancellationToken.None));
+
+        Assert.Equal(openCustomQuizId, result.GetProperty("open_custom_quiz_id").GetGuid());
+        Assert.Empty(context.PendingChanges);
+        Assert.Null(context.PendingCustomQuizRef);
+    }
+
+    [Fact]
+    public async Task CreateCustomQuiz_AllowsASecondQuizWhenExplicitlyRequested()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId, CustomQuizId = Guid.NewGuid() };
+
+        await tools.ExecuteAsync(
+            "create_custom_quiz",
+            """{"name":"Second quiz","create_additional_quiz":true}""",
+            context,
+            CancellationToken.None);
+
+        Assert.Equal("Second quiz", Assert.Single(context.PendingChanges).Payload.GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task CreateCustomQuiz_QueuesNormallyWhenNoCustomQuizIsOpen()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId };
+
+        await tools.ExecuteAsync("create_custom_quiz", """{"name":"Drills"}""", context, CancellationToken.None);
+
+        Assert.Equal("Drills", Assert.Single(context.PendingChanges).Payload.GetProperty("name").GetString());
+        Assert.NotNull(context.PendingCustomQuizRef);
+    }
+
+    // Inspecting a quiz queued earlier in the turn used to return the open quiz or an
+    // error, which read as "the new quiz isn't ready" and stopped the model mid-build.
+    [Fact]
+    public async Task GetCustomQuiz_DescribesAQuizStillQueuedInThisTurn()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId };
+
+        await tools.ExecuteAsync("create_custom_quiz", """{"name":"Verb drills"}""", context, CancellationToken.None);
+        await tools.ExecuteAsync(
+            "add_text_input",
+            """{"id":"row1","label":"1. ja bed{{blank}}","expected_text":"e"}""",
+            context,
+            CancellationToken.None);
+
+        var inspected = JsonSerializer.SerializeToElement(
+            await tools.ExecuteAsync("get_custom_quiz", "{}", context, CancellationToken.None));
+
+        Assert.True(inspected.GetProperty("queued").GetBoolean());
+        Assert.Equal("Verb drills", inspected.GetProperty("name").GetString());
+        Assert.Equal(1, inspected.GetProperty("element_count").GetInt32());
+        Assert.Equal("row1", inspected.GetProperty("elements")[0].GetProperty("id").GetString());
+        // It must still report what the document is missing to be playable.
+        var errors = inspected.GetProperty("validation_errors").EnumerateArray()
+            .Select(error => error.GetString()).ToList();
+        Assert.Contains("Add exactly one submit button.", errors);
+        Assert.Contains("Add exactly one feedback message.", errors);
+    }
+
+    [Fact]
+    public async Task GetCustomQuiz_StillReadsAStoredQuizWhenNoDraftIsQueued()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        var customQuizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.CustomQuizzes.Add(new Glosify.Models.Entities.CustomQuiz
+        {
+            Id = customQuizId,
+            QuizId = quizId,
+            Name = "Stored quiz",
+            DefinitionJson = """{"schemaVersion":1,"stylePreset":"editorial","blocks":[]}""",
+            SchemaVersion = 1,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId, CustomQuizId = customQuizId };
+
+        var inspected = JsonSerializer.SerializeToElement(await new AssistantTools(db)
+            .ExecuteAsync("get_custom_quiz", "{}", context, CancellationToken.None));
+
+        Assert.False(inspected.TryGetProperty("queued", out _));
+        Assert.Equal("Stored quiz", inspected.GetProperty("name").GetString());
     }
 
     [Fact]

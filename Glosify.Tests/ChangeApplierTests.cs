@@ -93,6 +93,31 @@ public class ChangeApplierTests
         Assert.True(custom!.IsPlayable);
         Assert.Equal("ę", custom.Document.Blocks.Single(block => block.Id == "answer").ExpectedText);
         Assert.Equal(3, custom.Document.Blocks.Count);
+        Assert.Equal(3, result.CreatedCustomQuizElements);
+    }
+
+    // The client links the user into the new editor. A shell with no elements opens
+    // blank, so the count has to distinguish the two.
+    [Fact]
+    public async Task ApplyAsync_ReportsZeroElementsForACustomQuizShellThatWasNeverFilled()
+    {
+        await using var db = CreateContext();
+        var changes = new[]
+        {
+            new PendingChange(PendingChangeKinds.CreateQuiz, JsonSerializer.SerializeToElement(new
+            {
+                name = "Verb source",
+                source_language = "English",
+                target_language = "Polish",
+                words = new[] { new { word = "być", translation = "to be" } },
+                custom_quiz = new { name = "Empty shell", draft_ref = "custom-draft-2" },
+            })),
+        };
+
+        var result = await CreateApplier(db).ApplyAsync(null, "user-1", changes, CancellationToken.None);
+
+        Assert.NotNull(result.CreatedCustomQuizId);
+        Assert.Equal(0, result.CreatedCustomQuizElements);
     }
 
     [Fact]

@@ -416,17 +416,24 @@
         transcript.scrollTop = transcript.scrollHeight;
     };
 
-    const renderCustomQuizCreatedMessage = (createdCustomQuizId) => {
+    const renderCustomQuizCreatedMessage = (createdCustomQuizId, elementCount) => {
         if (!createdCustomQuizId || !transcript) return;
         if (empty) empty.remove();
         const row = document.createElement('article');
         row.className = 'assistant-message assistant-message-model';
         const body = document.createElement('div');
         body.className = 'assistant-bubble';
-        body.appendChild(document.createTextNode('Custom quiz created. '));
+
+        // A shell with no elements opens as a blank editor. Say so rather than inviting
+        // the user in and letting them find it empty.
+        const isEmpty = !elementCount;
+        body.appendChild(document.createTextNode(isEmpty
+            ? 'Custom quiz created, but no questions were added to it yet. Ask me to fill it in. '
+            : `Custom quiz created with ${elementCount} element${elementCount === 1 ? '' : 's'}. `));
+
         const link = document.createElement('a');
         link.href = `/CustomQuizzes/${encodeURIComponent(createdCustomQuizId)}/Edit`;
-        link.textContent = 'Open custom quiz creator';
+        link.textContent = isEmpty ? 'Open the empty quiz' : 'Open custom quiz creator';
         body.appendChild(link);
         row.appendChild(body);
         transcript.appendChild(row);
@@ -522,11 +529,13 @@
             if (data.createdQuizId) {
                 await refreshQuizSelector(data.createdQuizId);
                 renderQuizCreatedMessage(data.createdQuizId);
-                renderCustomQuizCreatedMessage(data.createdCustomQuizId);
+                renderCustomQuizCreatedMessage(data.createdCustomQuizId, data.createdCustomQuizElements);
                 setStatus(data.createdCustomQuizId ? 'Quiz and custom quiz created.' : 'Quiz created.');
             } else if (data.createdCustomQuizId) {
-                renderCustomQuizCreatedMessage(data.createdCustomQuizId);
-                setStatus('Custom quiz created.');
+                renderCustomQuizCreatedMessage(data.createdCustomQuizId, data.createdCustomQuizElements);
+                setStatus(data.createdCustomQuizElements
+                    ? 'Custom quiz created.'
+                    : 'Custom quiz created, but it has no questions yet.');
             } else {
                 setStatus('Changes applied. Reloading...');
                 window.setTimeout(() => window.location.reload(), 600);

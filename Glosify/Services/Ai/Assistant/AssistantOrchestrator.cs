@@ -376,16 +376,37 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var systemInstruction = contextQuiz is null
             ? BuildGlobalSystemInstruction(currentLanguage, documentPage, transcriptContext)
             : BuildSystemInstruction(contextQuiz, focusedWord, documentPage, contextCustomQuiz, transcriptContext);
-        var declarations = contextQuiz is null
-            ? _tools.GlobalDeclarations
-            : _tools.GlobalDeclarations.Concat(_tools.Declarations).ToList();
+
+        // The page the user is on selects the profile, which fixes both the tool set and
+        // which authored agent supplies the instructions. Each profile falls back to the
+        // in-code instruction and declarations when no agent is configured for it.
+        var (profile, declarations) = contextCustomQuiz is not null && contextQuiz is not null
+            ? (AssistantAgentProfile.CustomQuizBuilder, _tools.CustomQuizBuilderDeclarations)
+            : contextQuiz is not null
+                ? (AssistantAgentProfile.QuizAssistant, _tools.QuizAssistantDeclarations)
+                : (AssistantAgentProfile.Librarian, _tools.LibrarianDeclarations);
+
+        var contextInstruction = profile switch
+        {
+            AssistantAgentProfile.CustomQuizBuilder =>
+                BuildCustomQuizBuilderContext(contextQuiz!, contextCustomQuiz!, currentLanguage),
+            AssistantAgentProfile.QuizAssistant =>
+                BuildQuizAssistantContext(contextQuiz!, focusedWord, documentPage, transcriptContext),
+            _ => BuildLibrarianContext(currentLanguage, documentPage, transcriptContext),
+        };
         var selectedModel = _modelResolver.ResolveAssistantModel(model);
         var toolEvents = new List<AssistantToolEvent>();
 
         AgentTurnResult? finalTurn = null;
         for (var loop = 0; loop < MaxToolTurns; loop++)
         {
-            var agentRequest = new AgentRequest(systemInstruction, history, declarations, selectedModel);
+            var agentRequest = new AgentRequest(
+                systemInstruction,
+                history,
+                declarations,
+                selectedModel,
+                profile,
+                contextInstruction);
 
             AgentTurnResult turn;
             try
@@ -835,9 +856,14 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             : $"""
 
         Current custom quiz creator context:
-        - The open custom quiz is "{customQuiz.Name}" with id {customQuiz.Id}.
-        - Use get_custom_quiz before changing its elements, then add, configure, or remove elements as requested.
+        - The user has the custom quiz "{customQuiz.Name}" (id {customQuiz.Id}) open in the creator and is looking at it right now.
+        - This open custom quiz is the target of every custom quiz request in this context. When the user asks you to generate, add, change, or remove exercises, they mean this document.
+        - Use get_custom_quiz before changing its elements, then add, configure, or remove elements as requested. The element tools already default to this quiz, so omit custom_quiz_id.
+        - Do NOT call create_custom_quiz here. A new custom quiz would leave the open editor untouched and send the user somewhere else. Only create one if the user explicitly asks for a second, separate custom quiz, and then pass create_additional_quiz.
         """;
+        var customQuizCreationRule = customQuiz != null
+            ? """- "Custom quiz" is a specific interactive quiz-builder artifact, not a synonym for a vocabulary quiz. One is already open, so build it up with the element tools: call add_label, add_text_input, add_checkbox, add_choice, add_word_bank, add_submit_button, or add_feedback_message separately for every element, and configure_custom_quiz_element or remove_custom_quiz_element to change what is there. Use add_custom_quiz_element only for an element the typed tools cannot express. Never send a blocks array or a complete custom document in an element call. create_vocabulary_quiz is only for standard word-and-translation quizzes."""
+            : """- "Custom quiz" is a specific interactive quiz-builder artifact, not a synonym for a vocabulary quiz. With the current backing quiz, first call create_custom_quiz to queue only its empty shell. Then, in the same turn, call add_label, add_text_input, add_checkbox, add_choice, add_word_bank, add_submit_button, or add_feedback_message separately for every element. Use add_custom_quiz_element only for an element the typed tools cannot express. Never send a blocks array or a complete custom document in a creation or element call. create_vocabulary_quiz is only for standard word-and-translation quizzes.""";
 
         return $"""
         You are Glosify's language-learning assistant. The user is learning "{quiz.TargetLanguage}" as a speaker of "{quiz.SourceLanguage}", and is currently working in a quiz named "{quiz.Name}".
@@ -851,6 +877,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         How tools work:
         - Read-only tools (list_words, search_words, get_word, get_quiz_summary, list_sentences, list_quizzes, list_collections, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz, list_saved_transcripts, get_saved_transcript) execute immediately and return their results to you.
         - Mutating tools, including the custom quiz element tools, propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool. Because the user reviews everything, you can propose changes freely when they seem helpful.
+        - Queued changes are still valid targets for your later tool calls in the same turn. A custom quiz you just queued with create_custom_quiz can take element calls immediately; the queued shell and its elements are linked and applied together. Never end your turn on a bare quiz shell and never ask the user to apply something first so you can continue: applying a shell with no elements just gives them an empty custom quiz. Finish the whole document in this turn.
         - When adding or editing more than one word, prefer add_words or edit_words over repeated single-word calls.
         - When adding or editing more than one sentence, prefer add_sentences or edit_sentences over repeated single-sentence calls.
         - Use list_words when you need to know what is already in the quiz before proposing edits or deletions.
@@ -858,7 +885,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         - Use list_sentences before editing, repairing, or deleting quiz sentences. Prefer edit_sentence/edit_sentences for id-based edits; repair_sentence replaces every exact text match.
         - For library-level requests, use list_collections and list_quizzes to find existing structure before creating, moving, or renaming items. Never invent quiz or collection ids — ask the user if you cannot identify the item.
         - For custom quizzes, inspect an existing document first. Before creating or substantially redesigning one, call list_custom_quiz_templates and use the best template as visual and layout guidance. Pass its template_id during creation. Prefer the compact textbook exercise patterns represented by the Textbook drill template: a short heading and instruction followed by consecutive rows, with minimal card chrome. A playable document needs exactly one submit_button, exactly one feedback_message, and at least one answer control. Every answer control must have a specific learner-visible label that contains its question or gap; multiple answer controls must have distinct labels. Text inputs need either an expected word binding or literal expected_text; choice controls need at least two options and valid correct selections. Use stable descriptive element ids and non-overlapping 12-column layout coordinates.
-        - "Custom quiz" is a specific interactive quiz-builder artifact, not a synonym for a vocabulary quiz. With the current backing quiz, first call create_custom_quiz to queue only its empty shell. Then call add_label, add_text_input, add_checkbox, add_choice, add_word_bank, add_submit_button, or add_feedback_message separately for every element. Use add_custom_quiz_element only for an element the typed tools cannot express. Never send a blocks array or a complete custom document in a creation or element call. create_vocabulary_quiz is only for standard word-and-translation quizzes.
+        {customQuizCreationRule}
         - A single-line text_input is a compact inline blank. Put {InlineBlankMarker} exactly where the input belongs in its label, for example "1. ja będ{InlineBlankMarker} jutro w domu." Never include underscore or dot runs: they create a fake blank beside the real control. For conjugation, cloze, and word transformation, normally use one text_input per compact row and do not add a separate prompt_label for the same item. Pack rows consecutively instead of making tall cards. For fill-in-the-ending questions, set expected_text to only the literal ending (for example "ę" or "esz"), not the full word unless the user asks for it.
 
         Defaults (override when the user asks for something different):
@@ -873,6 +900,68 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         Style:
         - Match your response to the request: a short confirmation when you queued changes, a fuller conversational answer when the user asks a question or wants explanation.
         - Do not mention internal tool names, tool calls, word ids, JSON, or implementation details in your final response.
+        """;
+    }
+
+    /// <summary>
+    /// The per-turn facts handed to the authored quiz-builder agent. Everything static —
+    /// how elements are composed, what makes a document playable, style rules — lives in
+    /// the agent's own instructions in Foundry, not here.
+    /// </summary>
+    private static string BuildCustomQuizBuilderContext(
+        Quiz quiz,
+        CustomQuiz customQuiz,
+        string? currentLanguage)
+    {
+        return $"""
+        Current context:
+        - The user is learning "{quiz.TargetLanguage}" as a speaker of "{quiz.SourceLanguage}"{(string.IsNullOrWhiteSpace(currentLanguage) ? string.Empty : $", and the app language is \"{currentLanguage}\"")}.
+        - The backing quiz is "{quiz.Name}" with id {quiz.Id}. Its words are the only ones available for word bindings.
+        - The user has the custom quiz "{customQuiz.Name}" (id {customQuiz.Id}) open in the creator and is looking at it right now. Every request in this context targets that document, and the element tools already default to it, so omit custom_quiz_id.
+        """;
+    }
+
+    /// <summary>
+    /// Per-turn facts for the quiz-page agent. The book page and transcript blocks are
+    /// included because an authored agent receives only this text: leaving them out would
+    /// silently break "add words from this page".
+    /// </summary>
+    private static string BuildQuizAssistantContext(
+        Quiz quiz,
+        Word? focusedWord,
+        DocumentPageContext? documentPage,
+        TranscriptAssistantContext? transcriptContext)
+    {
+        var focus = focusedWord == null
+            ? string.Empty
+            : $"""
+
+        - The assistant is focused on "{focusedWord.Lemma}" -> "{focusedWord.Translation}". Any mutating call that needs a word id must target {focusedWord.Id} only, and you must not propose changes to other words until the user leaves this context.
+        """;
+
+        return $"""
+        Current context:
+        - The user is learning "{quiz.TargetLanguage}" as a speaker of "{quiz.SourceLanguage}".
+        - They are working in the quiz "{quiz.Name}" with id {quiz.Id}. Every word and sentence tool acts on that quiz.{focus}
+        {(documentPage == null ? string.Empty : BuildDocumentInstruction(documentPage))}
+        {BuildTranscriptInstruction(transcriptContext)}
+        """;
+    }
+
+    /// <summary>Per-turn facts for the library agent, which has no quiz in context.</summary>
+    private static string BuildLibrarianContext(
+        string? currentLanguage,
+        DocumentPageContext? documentPage,
+        TranscriptAssistantContext? transcriptContext)
+    {
+        return $"""
+        Current context:
+        - {(string.IsNullOrWhiteSpace(currentLanguage)
+            ? "No app language is selected. If the user wants a quiz or collection and did not name a target language, ask for it before creating anything."
+            : $"The app language is \"{currentLanguage}\". Use it as the default target language for new quizzes and collections unless the user asks for another.")}
+        - No quiz is selected, so there is nothing to add words or sentences to until one is created or chosen.
+        {(documentPage == null ? string.Empty : BuildDocumentInstruction(documentPage))}
+        {BuildTranscriptInstruction(transcriptContext)}
         """;
     }
 
@@ -902,6 +991,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         How tools work:
         - Read-only tools (list_collections, list_quizzes, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz, list_saved_transcripts, get_saved_transcript) execute immediately and return their results to you.
         - Mutating tools, including custom quiz creation and element tools, propose changes that are queued for the user to review and Apply. Because the user reviews everything, you can propose changes freely when they seem helpful.
+        - Queued changes are still valid targets for your later tool calls in the same turn. A custom quiz you just queued with create_custom_quiz or create_custom_quiz_from_content can take element calls immediately; the queued shells and their elements are linked and applied together. Never end your turn on a bare quiz shell and never ask the user to apply something first so you can continue: applying a shell with no elements just gives them an empty custom quiz. Finish the whole document in this turn.
         - Use list_collections and list_quizzes before proposing library changes unless the user gave an exact id through the UI.
         - Do not invent quiz or collection ids. If you cannot identify an item or destination unambiguously, ask the user to clarify.
         - "Custom quiz" means an interactive quiz-builder artifact. It is distinct from the standard word-and-translation quiz created by create_vocabulary_quiz.

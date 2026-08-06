@@ -193,23 +193,25 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
         AiUsageContext usageContext,
         CancellationToken cancellationToken = default)
     {
-        var deployment = string.IsNullOrWhiteSpace(request.Model)
-            ? _options.AssistantDeployment
-            : request.Model.Trim();
-        if (!_options.AllowedAssistantDeployments.Contains(
-                deployment,
-                StringComparer.OrdinalIgnoreCase))
-        {
-            throw new GenerativeAiValidationException("The requested assistant model is not available.");
-        }
+        var authored = await ResolveAuthoredAgentAsync(request.Profile, cancellationToken);
+        var deployment = ResolveAssistantDeployment(request.Model, authored?.Model);
+        var instruction = BuildInstruction(request, authored);
+
+        // An authored agent owns which tools exist and how they are described. Glosify
+        // still runs them: the handlers are matched by name, so a tool the agent declares
+        // that this build has no handler for is reported back as unknown rather than
+        // silently doing nothing.
+        var declarations = authored?.Tools is { Count: > 0 } authoredTools
+            ? authoredTools
+            : request.Tools;
 
         var messages = FoundryMessageMapper.MapHistory(request.History);
-        var tools = FoundryMessageMapper.MapTools(request.Tools);
+        var tools = FoundryMessageMapper.MapTools(declarations);
         var outputReserve = _usageOptions.GetOutputReserve(usageContext.Feature);
         var estimatedPromptTokens =
-            EstimateTokens(request.SystemInstruction)
+            EstimateTokens(instruction)
             + EstimateTokens(JsonSerializer.Serialize(request.History, JsonOptions))
-            + EstimateTokens(JsonSerializer.Serialize(request.Tools, JsonOptions));
+            + EstimateTokens(JsonSerializer.Serialize(declarations, JsonOptions));
 
         var response = await ExecuteChargedAsync(
             deployment,
@@ -218,9 +220,7 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
             outputReserve,
             token => _invoker.RunAsync(
                 deployment,
-                string.IsNullOrWhiteSpace(request.SystemInstruction)
-                    ? "Help the user with their language-learning request."
-                    : request.SystemInstruction,
+                instruction,
                 messages,
                 tools,
                 outputReserve,
@@ -251,6 +251,80 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
         }
 
         return new AgentTurnResult(response.Text ?? string.Empty, calls);
+    }
+
+    private async Task<FoundryAuthoredAgent?> ResolveAuthoredAgentAsync(
+        AssistantAgentProfile profile,
+        CancellationToken cancellationToken)
+    {
+        var configured = profile switch
+        {
+            AssistantAgentProfile.CustomQuizBuilder => _options.Agents.CustomQuizBuilder,
+            AssistantAgentProfile.QuizAssistant => _options.Agents.QuizAssistant,
+            AssistantAgentProfile.Librarian => _options.Agents.Librarian,
+            _ => null,
+        };
+
+        return configured is null || !configured.IsConfigured
+            ? null
+            : await _invoker.TryGetAuthoredAgentAsync(
+                configured.Name.Trim(),
+                configured.Version.Trim(),
+                cancellationToken);
+    }
+
+    // The user's model choice always wins. An authored agent may name a model, but it is
+    // only a default and is ignored when it falls outside the allowlist, so editing an
+    // agent in the portal can never route traffic to an unapproved deployment.
+    private string ResolveAssistantDeployment(string? requestedModel, string? authoredModel)
+    {
+        if (!string.IsNullOrWhiteSpace(requestedModel))
+        {
+            var requested = requestedModel.Trim();
+            if (!IsAllowedAssistantDeployment(requested))
+            {
+                throw new GenerativeAiValidationException("The requested assistant model is not available.");
+            }
+            return requested;
+        }
+
+        if (!string.IsNullOrWhiteSpace(authoredModel))
+        {
+            var authored = authoredModel.Trim();
+            if (IsAllowedAssistantDeployment(authored))
+            {
+                return authored;
+            }
+            _logger.LogWarning(
+                "Foundry agent requested deployment {Deployment}, which is not allowlisted; using {Fallback}.",
+                authored,
+                _options.AssistantDeployment);
+        }
+
+        if (!IsAllowedAssistantDeployment(_options.AssistantDeployment))
+        {
+            throw new GenerativeAiValidationException("The requested assistant model is not available.");
+        }
+        return _options.AssistantDeployment;
+    }
+
+    private bool IsAllowedAssistantDeployment(string deployment) =>
+        _options.AllowedAssistantDeployments.Contains(deployment, StringComparer.OrdinalIgnoreCase);
+
+    private static string BuildInstruction(AgentRequest request, FoundryAuthoredAgent? authored)
+    {
+        // An authored agent owns the static instructions; code contributes only the facts
+        // that change per turn. Without one, the in-code instruction carries everything.
+        if (authored is not null)
+        {
+            return string.IsNullOrWhiteSpace(request.ContextInstruction)
+                ? authored.Instructions
+                : $"{authored.Instructions}\n\n{request.ContextInstruction}";
+        }
+
+        return string.IsNullOrWhiteSpace(request.SystemInstruction)
+            ? "Help the user with their language-learning request."
+            : request.SystemInstruction;
     }
 
     private async Task<TResponse> ExecuteChargedAsync<TResponse>(

@@ -93,6 +93,7 @@ public sealed class ChangeApplier : IChangeApplier
         Guid? createdCustomQuizId = null;
         var customQuizIdsByDraftRef = new Dictionary<string, Guid>(StringComparer.Ordinal);
         var wordIdsByCustomQuizDraftRef = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.Ordinal);
+        var createdCustomQuizElements = 0;
 
         foreach (var change in changes)
         {
@@ -173,13 +174,22 @@ public sealed class ChangeApplier : IChangeApplier
                     break;
                 }
                 case PendingChangeKinds.AddCustomQuizElement:
-                    applied += await ApplyAddCustomQuizElementAsync(
+                {
+                    var addedElement = await ApplyAddCustomQuizElementAsync(
                         change.Payload,
                         userId,
                         customQuizIdsByDraftRef,
                         wordIdsByCustomQuizDraftRef,
-                        cancellationToken) ? 1 : 0;
+                        cancellationToken);
+                    applied += addedElement ? 1 : 0;
+                    // Counted so the client can tell a finished custom quiz from a bare
+                    // shell and avoid linking the user into an empty editor.
+                    if (addedElement && TargetsCreatedCustomQuiz(change.Payload, createdCustomQuizId, customQuizIdsByDraftRef))
+                    {
+                        createdCustomQuizElements++;
+                    }
                     break;
+                }
                 case PendingChangeKinds.AddCustomQuizElements:
                     applied += await ApplyAddCustomQuizElementsAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
                     break;
@@ -200,7 +210,36 @@ public sealed class ChangeApplier : IChangeApplier
             await new CustomQuizService(_context).PruneWordBindingsAsync(quiz.Id, batch.DeletedWordIds, cancellationToken);
         }
         await _context.SaveChangesAsync(cancellationToken);
-        return new AssistantApplyResult(applied, createdQuizId, createdCollectionId, createdCustomQuizId);
+        return new AssistantApplyResult(
+            applied,
+            createdQuizId,
+            createdCollectionId,
+            createdCustomQuizId,
+            createdCustomQuizElements);
+    }
+
+    /// <summary>
+    /// True when an element belongs to the custom quiz this apply created, whether it was
+    /// addressed by draft ref (queued in the same turn) or by id.
+    /// </summary>
+    private static bool TargetsCreatedCustomQuiz(
+        JsonElement payload,
+        Guid? createdCustomQuizId,
+        IReadOnlyDictionary<string, Guid> customQuizIdsByDraftRef)
+    {
+        if (!createdCustomQuizId.HasValue)
+        {
+            return false;
+        }
+
+        var draftRef = GetString(payload, "custom_quiz_ref");
+        if (!string.IsNullOrWhiteSpace(draftRef)
+            && customQuizIdsByDraftRef.TryGetValue(draftRef, out var resolved))
+        {
+            return resolved == createdCustomQuizId.Value;
+        }
+
+        return GetNullableGuid(payload, "custom_quiz_id") == createdCustomQuizId.Value;
     }
 
     private static bool RequiresQuizContext(PendingChange change)

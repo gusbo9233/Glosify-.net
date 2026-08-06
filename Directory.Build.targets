@@ -1,0 +1,20 @@
+<Project>
+
+  <!-- Drop any build output that the SDK's default item globs picked back up.
+       Without this, the Web SDK's **/*.json content glob re-collects the previous
+       build's bin, copies it into the new output one level deeper, and repeats every
+       build until the path is long enough to fail with MSB3021.
+
+       This lives in Directory.Build.targets rather than Directory.Build.props because
+       the removal has to run after the SDK has expanded its globs, and it repeats the
+       exclusion set in DefaultItemExcludes because the SDK's own bin/obj exclusions are
+       written with backslash separators, which are literal characters on macOS and
+       Linux and therefore never match. -->
+  <ItemGroup>
+    <Compile Remove="bin/**;obj/**" />
+    <Content Remove="bin/**;obj/**" />
+    <None Remove="bin/**;obj/**" />
+    <EmbeddedResource Remove="bin/**;obj/**" />
+  </ItemGroup>
+
+</Project>

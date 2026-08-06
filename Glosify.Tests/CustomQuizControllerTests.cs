@@ -1,5 +1,15 @@
+using System.Security.Claims;
 using Glosify.Controllers;
+using Glosify.Data;
+using Glosify.Models.Entities;
+using Glosify.Services;
+using Glosify.Services.CustomQuizzes;
+using Glosify.Services.Language;
+using Glosify.Services.Quizzes;
+using Glosify.Services.Words;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -53,6 +63,104 @@ public sealed class CustomQuizControllerTests
         Assert.Equal(400, Assert.IsType<ValidationProblemDetails>(problem.Value).Status);
     }
 
+    // The editor is only reachable through a saved custom quiz. An unsaved draft has no
+    // id to give the assistant panel, and without one the assistant can only create a
+    // second custom quiz instead of filling in the one on screen.
+    [Fact]
+    public async Task New_persists_the_starter_quiz_and_redirects_to_its_editor()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId));
+        await db.SaveChangesAsync();
+        var controller = CreateController(db);
+
+        var result = await controller.New(quizId, CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal(nameof(CustomQuizController.Edit), redirect.ActionName);
+        var created = Assert.Single(await db.CustomQuizzes.ToListAsync());
+        Assert.Equal(created.Id, redirect.RouteValues!["id"]);
+        Assert.Equal("Custom quiz", created.Name);
+    }
+
+    [Fact]
+    public async Task New_gives_each_starter_quiz_a_free_name()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId));
+        await db.SaveChangesAsync();
+        var controller = CreateController(db);
+
+        await controller.New(quizId, CancellationToken.None);
+        await controller.New(quizId, CancellationToken.None);
+
+        var names = await db.CustomQuizzes.Select(item => item.Name).ToListAsync();
+        Assert.Equal(["Custom quiz", "Custom quiz 2"], names.Order().ToList());
+    }
+
+    [Fact]
+    public async Task New_returns_not_found_for_another_users_quiz()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        var quiz = CreateQuiz(quizId);
+        quiz.UserId = "someone-else";
+        db.Quizzes.Add(quiz);
+        await db.SaveChangesAsync();
+        var controller = CreateController(db);
+
+        Assert.IsType<NotFoundResult>(await controller.New(quizId, CancellationToken.None));
+        Assert.Empty(await db.CustomQuizzes.ToListAsync());
+    }
+
     private static CustomQuizController CreateController() =>
         new(null!, null!, null!, null!);
+
+    private static CustomQuizController CreateController(GlosifyContext context)
+    {
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, UserId)], "Test");
+        return new CustomQuizController(
+            new CustomQuizService(context),
+            new CustomQuizTemplateCatalog(),
+            new QuizService(context, new StaticLanguage()),
+            new WordService(context))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
+            }
+        };
+    }
+
+    private static GlosifyContext CreateContext()
+    {
+        var options = new DbContextOptionsBuilder<GlosifyContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+        return new GlosifyContext(options);
+    }
+
+    private static Quiz CreateQuiz(Guid id) => new()
+    {
+        Id = id,
+        UserId = UserId,
+        Name = "Polish",
+        SourceLanguage = "English",
+        TargetLanguage = "Polish",
+        Language = "Polish",
+        CreatedAt = DateTimeOffset.UtcNow,
+    };
+
+    private const string UserId = "user-1";
+
+    private sealed class StaticLanguage : ILanguageContext
+    {
+        public string? CurrentLanguage => "Polish";
+        public bool HasLanguage => true;
+        public IReadOnlyList<string> SupportedLanguages { get; } = ["Polish"];
+        public bool TrySetLanguage(string language) => true;
+        public void Clear() { }
+    }
 }

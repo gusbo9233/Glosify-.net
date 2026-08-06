@@ -27,9 +27,12 @@
                         <span>Make quiz public</span>
                     </label>
                 </form>
-                <a class="btn-hero btn-hero-secondary" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
-                    Build custom quiz <span class="material-symbols-outlined">dashboard_customize</span>
-                </a>
+                <form class="custom-quiz-new-form" method="post" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
+                    @Html.AntiForgeryToken()
+                    <button class="btn-hero btn-hero-secondary" type="submit">
+                        Build custom quiz <span class="material-symbols-outlined">dashboard_customize</span>
+                    </button>
+                </form>
             </div>
         </div>
     </section>
@@ -68,9 +71,12 @@
                 <h2 class="collection-title">Custom quizzes</h2>
                 <p class="collection-subtitle">Build a freeform exercise from the words in this quiz.</p>
             </div>
-            <a class="btn-new-quiz" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
-                <span class="material-symbols-outlined">add</span> New custom quiz
-            </a>
+            <form class="custom-quiz-new-form" method="post" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
+                @Html.AntiForgeryToken()
+                <button class="btn-new-quiz" type="submit">
+                    <span class="material-symbols-outlined">add</span> New custom quiz
+                </button>
+            </form>
         </div>
         <div class="custom-quiz-card-grid">
             @foreach (var customQuiz in Model.CustomQuizzes)

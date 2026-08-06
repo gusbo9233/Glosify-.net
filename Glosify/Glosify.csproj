@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <UserSecretsId>b85225d0-8689-47df-8a71-412bb2389bfe</UserSecretsId>
-    <!-- Keep the Web SDK's default content globs (e.g. **/*.json) out of build output,
-         otherwise each build copies the previous bin into the new one recursively. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +24,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="10.0.2">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.1.0" />
     <PackageReference Include="Mscc.GenerativeAI" Version="3.1.0" />
     <!-- Not referenced by application code; keeps the transitive NuGet.* packages the
          scaffolding tooling pulls in above their security-advisory versions. -->

@@ -23,7 +23,28 @@ public sealed class FoundryGenerativeAiOptions
     public string PageTranslationFallbackDeployment { get; set; } = "grok-4-1-fast-non-reasoning";
     public List<string> AllowedAssistantDeployments { get; set; } = [];
     public List<AssistantModelOptions> AssistantModels { get; set; } = [];
+    public FoundryAssistantAgentOptions Agents { get; set; } = new();
     public int TimeoutSeconds { get; set; } = 180;
+}
+
+/// <summary>
+/// Persisted Foundry agents that back an assistant profile. A profile left unconfigured
+/// falls back to the instructions built in code, so agents can be adopted one at a time.
+/// </summary>
+public sealed class FoundryAssistantAgentOptions
+{
+    public FoundryAgentVersionOptions CustomQuizBuilder { get; set; } = new();
+    public FoundryAgentVersionOptions QuizAssistant { get; set; } = new();
+    public FoundryAgentVersionOptions Librarian { get; set; } = new();
+}
+
+public sealed class FoundryAgentVersionOptions
+{
+    public string Name { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+
+    public bool IsConfigured =>
+        !string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Version);
 }
 
 public sealed class AssistantModelOptions

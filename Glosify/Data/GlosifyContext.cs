@@ -23,6 +23,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<QuizSentence> QuizSentences { get; set; }
     public DbSet<AssistantThread> AssistantThreads { get; set; }
     public DbSet<AssistantMessage> AssistantMessages { get; set; }
+    public DbSet<AssistantPendingChange> AssistantPendingChanges { get; set; }
     public DbSet<AiCreditAccount> AiCreditAccounts { get; set; }
     public DbSet<AiCreditTransaction> AiCreditTransactions { get; set; }
     public DbSet<AiMonthlyBudget> AiMonthlyBudgets { get; set; }
@@ -187,6 +188,26 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(m => m.ContextQuizId)
                 .HasConstraintName("FK_AssistantMessages_Quizzes_ContextQuizId")
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<AssistantPendingChange>(entity =>
+        {
+            entity.HasKey(change => change.Id);
+            entity.Property(change => change.UserId).HasMaxLength(450).IsRequired();
+            entity.Property(change => change.Kind).HasMaxLength(64).IsRequired();
+            entity.Property(change => change.Status).HasMaxLength(16).IsRequired();
+            entity.Property(change => change.PayloadJson).IsRequired();
+            // Apply reads a whole conversation in call order.
+            entity.HasIndex(change => new { change.ConversationId, change.Sequence }).IsUnique();
+            entity.HasIndex(change => new { change.UserId, change.Status });
+            entity.HasIndex(change => change.MessageId);
+            // No foreign key to assistant_messages: a tool call can land here before the
+            // response that owns it has been persisted.
+            entity.HasOne<Quiz>()
+                .WithMany()
+                .HasForeignKey(change => change.ContextQuizId)
+                .HasConstraintName("FK_AssistantPendingChanges_Quizzes_ContextQuizId")
                 .OnDelete(DeleteBehavior.NoAction);
         });
 

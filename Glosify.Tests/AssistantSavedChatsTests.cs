@@ -125,6 +125,120 @@ public class AssistantSavedChatsTests
             generativeAi.LastAgentRequest.SystemInstruction);
     }
 
+    // Opening the creator routes the turn to the quiz-builder agent, whose tool surface
+    // cannot create a second custom quiz.
+    [Fact]
+    public async Task SendChatMessage_RoutesTheOpenCustomQuizToTheBuilderProfile()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        var customQuizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        context.CustomQuizzes.Add(CreateCustomQuiz(customQuizId, quizId, "Verb drills"));
+        await context.SaveChangesAsync();
+        var generativeAi = new CapturingGenerativeAiClient("Added the rows.");
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: generativeAi,
+            tools: new AssistantTools(context));
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(
+            chat.Id,
+            "user-1",
+            "Generate ten conjugation exercises.",
+            contextQuizId: quizId,
+            customQuizId: customQuizId);
+
+        var request = generativeAi.LastAgentRequest;
+        Assert.NotNull(request);
+        Assert.Equal(AssistantAgentProfile.CustomQuizBuilder, request.Profile);
+        Assert.Contains("Verb drills", request.ContextInstruction);
+        Assert.Contains(customQuizId.ToString(), request.ContextInstruction);
+        var toolNames = request.Tools.Select(tool => tool.Name).ToList();
+        Assert.DoesNotContain("create_custom_quiz", toolNames);
+        Assert.Contains("add_text_input", toolNames);
+    }
+
+    [Fact]
+    public async Task SendChatMessage_RoutesAQuizPageToTheQuizAssistantProfile()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await context.SaveChangesAsync();
+        var generativeAi = new CapturingGenerativeAiClient("Queued the words.");
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: generativeAi,
+            tools: new AssistantTools(context));
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(
+            chat.Id,
+            "user-1",
+            "Add ten words about the kitchen.",
+            contextQuizId: quizId);
+
+        var request = generativeAi.LastAgentRequest;
+        Assert.NotNull(request);
+        Assert.Equal(AssistantAgentProfile.QuizAssistant, request.Profile);
+        Assert.Contains(quizId.ToString(), request.ContextInstruction);
+        var toolNames = request.Tools.Select(tool => tool.Name).ToList();
+        Assert.Contains("add_words", toolNames);
+        Assert.Contains("create_custom_quiz", toolNames);
+        // Library management belongs to the librarian, not to the quiz being worked in.
+        Assert.DoesNotContain("move_quiz", toolNames);
+        Assert.DoesNotContain("create_collection", toolNames);
+    }
+
+    [Fact]
+    public async Task SendGlobalMessage_RoutesToTheLibrarianProfile()
+    {
+        await using var context = CreateContext();
+        var generativeAi = new CapturingGenerativeAiClient("Here is your library.");
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: generativeAi,
+            tools: new AssistantTools(context));
+
+        await orchestrator.SendGlobalMessageAsync("user-1", "Organise my collections.");
+
+        var request = generativeAi.LastAgentRequest;
+        Assert.NotNull(request);
+        Assert.Equal(AssistantAgentProfile.Librarian, request.Profile);
+        var toolNames = request.Tools.Select(tool => tool.Name).ToList();
+        Assert.Contains("list_collections", toolNames);
+        Assert.Contains("move_quiz", toolNames);
+        // Word and sentence tools need a quiz in context to act on.
+        Assert.DoesNotContain("add_words", toolNames);
+        Assert.DoesNotContain("list_sentences", toolNames);
+    }
+
+    // An authored agent receives only the context block, so page text must be in it or
+    // "add words from this page" silently stops working.
+    [Fact]
+    public async Task SendGlobalMessage_PutsTheBookPageInTheAgentContextBlock()
+    {
+        await using var context = CreateContext();
+        var documentId = Guid.NewGuid();
+        var page = CreateBookPage(documentId, "user-1", "Pan Tadeusz opens with a longing for Lithuania.");
+        var generativeAi = new CapturingGenerativeAiClient("Queued a quiz from the page.");
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: generativeAi,
+            books: new StaticBookDocumentService(page));
+
+        await orchestrator.SendGlobalMessageAsync(
+            "user-1",
+            "Make a quiz from this page",
+            documentContext: new AssistantDocumentContext(documentId, 3));
+
+        Assert.Contains(
+            "Pan Tadeusz opens with a longing for Lithuania.",
+            generativeAi.LastAgentRequest!.ContextInstruction);
+    }
+
     [Fact]
     public async Task ApplyPendingChanges_UsesSavedMessageContextQuiz()
     {
@@ -321,6 +435,18 @@ public class AssistantSavedChatsTests
         CreatedAt = DateTimeOffset.UtcNow,
     };
 
+    private static CustomQuiz CreateCustomQuiz(Guid id, Guid quizId, string name) => new()
+    {
+        Id = id,
+        QuizId = quizId,
+        Name = name,
+        DefinitionJson = """{"schemaVersion":1,"stylePreset":"editorial","blocks":[]}""",
+        SchemaVersion = 1,
+        IsPlayable = false,
+        CreatedAt = DateTimeOffset.UtcNow,
+        UpdatedAt = DateTimeOffset.UtcNow,
+    };
+
     private static BookPage CreateBookPage(Guid documentId, string userId, string text)
     {
         var document = new BookDocument
@@ -433,6 +559,9 @@ public class AssistantSavedChatsTests
     {
         public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = [];
         public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; } = [];
+        public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; } = [];
+        public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } = [];
+        public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } = [];
 
         public Task<object> ExecuteAsync(string name, string argsJson, AgentToolContext context, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
@@ -442,7 +571,10 @@ public class AssistantSavedChatsTests
     {
         public int Calls { get; private set; }
         public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = [];
-        public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; } =
+        public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; } = [];
+        public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } = [];
+        public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; } = [];
+        public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } =
         [
             new AgentToolDeclaration(
                 "loop",

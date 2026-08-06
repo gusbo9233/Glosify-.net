@@ -6,6 +6,13 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Keeps the Web SDK's content globs (notably **/*.json) from re-collecting the
+         previous build's output and copying it one level deeper on every build, which
+         eventually fails with MSB3021 "path too long". This must live here rather than
+         in a project file: the SDK expands its default item globs when it is imported
+         at the top of the project, so a value set in the project body arrives too late
+         to be applied. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
   </PropertyGroup>
 
 </Project>

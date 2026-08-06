@@ -76,6 +76,233 @@ uses `gpt-5.4-mini`; the other entries display publisher, speed, cost tier, and
 credit multiplier. With only the default deployment configured, the web UI
 displays only `Auto`.
 
+## Assistant agent profiles
+
+Each assistant turn is routed to a profile, chosen in `AssistantOrchestrator`
+from the request context — never by asking a model to pick. A profile fixes two
+things: which tools are offered, and where the instructions come from.
+
+| Profile | Selected when | Agent | Tools |
+|---|---|---|---|
+| `Librarian` | no quiz selected | `glosify-librarian` | 23 |
+| `QuizAssistant` | a quiz is selected | `glosify-quiz-assistant` | 32 |
+| `CustomQuizBuilder` | a custom quiz is open in the creator | `glosify-quiz-builder` | 14 |
+| `General` | no agent configured for the profile | — | in-code declarations |
+
+Each profile's context block carries the per-turn facts alone. That includes the book
+page and saved transcript text, because an authored agent receives only this block —
+omitting them would silently break "add words from this page".
+
+The builder profile exists because the general tool surface let the model call
+`create_custom_quiz` while the user was looking at an open quiz, forking a new
+empty quiz instead of filling in the one on screen. The creation tools are not
+on the builder profile at all, so that outcome is unreachable rather than
+defended against.
+
+Only instructions and tool scoping move to Foundry. Tool handlers, the
+propose-and-Apply pending change flow, chat history in SQL, the model-turn loop,
+and credit metering all stay in this application, because the tools execute
+against the request's `AgentToolContext` and the user's database rows.
+
+### Projects
+
+Assistant work runs in its own resource and project, separate from speaking:
+
+| Purpose | Resource | Project | Region |
+|---|---|---|---|
+| Assistant, repair, vision, page translation | `glosify-assistant-resource` | `glosify-assistant` | swedencentral |
+| Speaking practice | `glosify-foundry` | `glosify-speaking` | eastus |
+
+The assistant project has one deployment, `gpt-5.6-luna` (DataZoneStandard, capacity
+50) — token-billed pay as you go, no provisioned throughput. The assistant model menu
+therefore offers only `Auto`; the Grok entries live in `glosify-foundry` and are not
+reachable from this project.
+
+Both the App Service managed identity and developer accounts need `Foundry User` on
+`glosify-assistant-resource`, exactly as they already have on `glosify-foundry`.
+
+### Authoring the agent
+
+Agents live in the `glosify-assistant` project. Three are published, one per profile:
+`glosify-quiz-builder`, `glosify-quiz-assistant`, and `glosify-librarian`. Only the
+quiz-builder is wired into code so far.
+
+```text
+GenerativeAi__Foundry__Agents__CustomQuizBuilder__Name=glosify-quiz-builder
+GenerativeAi__Foundry__Agents__CustomQuizBuilder__Version=2
+```
+
+Leaving either value empty — the checked-in default — runs the profile on the
+in-code instructions. A missing, unreachable, or non-prompt agent logs a warning
+and falls back the same way, so publishing a broken version degrades the
+assistant's wording rather than breaking the feature. Definitions are cached per
+`name@version` for the process lifetime: publish a new version and bump the
+config, rather than editing a version in place.
+
+An agent may name a model. That is treated as a default only: a user's model
+selection wins, and a model outside `AllowedAssistantDeployments` is ignored
+with a warning, so portal edits cannot route traffic to an unapproved
+deployment.
+
+The agent carries only the static rules. Per-turn facts (backing quiz, open
+custom quiz, languages) are appended by
+`AssistantOrchestrator.BuildCustomQuizBuilderContext`, so instructions must not
+restate them. Starting text for the agent:
+
+```text
+You are Glosify's custom quiz builder. The user is working inside the custom
+quiz creator, looking at one open custom quiz. Every request targets that
+document. The element tools already default to it, so omit custom_quiz_id.
+
+How tools work:
+- get_custom_quiz and list_custom_quiz_templates, list_words, and search_words
+  execute immediately and return their results to you.
+- The element tools propose changes that are queued for the user to review and
+  Apply. You do not call any commit tool. Because the user reviews everything,
+  propose changes freely when they seem helpful.
+- Inspect the open document with get_custom_quiz before configuring or removing
+  elements. Add one element per call; never send a blocks array or a complete
+  document.
+- Word bindings may only reference words already in the backing quiz. Use
+  list_words or search_words to find them, and expected_text for literal answers
+  such as verb endings.
+
+Composition:
+- A playable document needs exactly one submit_button, exactly one
+  feedback_message, and at least one answer control.
+- Every answer control needs a specific learner-visible label containing its
+  question or gap, and multiple answer controls need distinct labels.
+- Text inputs need either an expected word binding or literal expected_text;
+  choice controls need at least two options and valid correct selections.
+- Use stable descriptive element ids and non-overlapping 12-column layout
+  coordinates.
+
+Layout:
+- Prefer compact textbook exercise patterns: a short heading and instruction
+  followed by consecutive rows, with minimal card chrome.
+- A single-line text_input is a compact inline blank. Put {{blank}} in the label
+  exactly where the input belongs, for example "1. ja bed{{blank}} jutro w
+  domu." Never include underscore or dot runs: they create a fake blank beside
+  the real control.
+- For conjugation, cloze, and word transformation, use one text_input per
+  compact row and do not add a separate prompt_label for the same item.
+- For fill-in-the-ending questions, set expected_text to only the literal ending
+  (for example "e" or "esz"), not the full word unless the user asks for it.
+
+Style:
+- Match your response to the request: a short confirmation when you queued
+  changes, a fuller answer when the user asks a question.
+- Do not mention internal tool names, tool calls, ids, JSON, or implementation
+  details.
+```
+
+## Agents own their tools
+
+An agent declares its tools in Foundry as `function` entries on the prompt agent, the
+same way the speaking agents do. Glosify executes them: `AssistantTools.ExecuteAsync`
+dispatches by name against the calling user's rows. So Foundry owns *which* tools exist
+and how they are described to the model, and this application owns what they do.
+
+`FoundryAgentInvoker` reads those declarations from the agent version and
+`FoundryGenerativeAiClient` offers them to the model in place of the in-code list. An
+agent that declares no tools falls back to the in-code declarations, so an unconfigured
+or unreachable agent still works.
+
+Publish tool declarations from the code rather than hand-writing them in the portal, so
+schemas cannot drift from the handlers that receive them. `glosify-quiz-builder` v3
+carries the 14 quiz-builder declarations, generated from
+`AssistantTools.CustomQuizBuilderDeclarations`.
+
+A tool name the running build has no handler for comes back to the model as an unknown
+tool rather than silently doing nothing, which is the failure mode to expect if someone
+adds a tool in the portal ahead of the code.
+
+## Calling tools over MCP (not adopted)
+
+An earlier plan exposed the tools as an MCP server for the agent to call back into.
+Two API constraints ruled it out for this application:
+
+- `tools` cannot be passed on a request that uses `agent_reference`, so the per-request
+  MCP `server_url` that was going to carry a signed per-user session is not possible
+  alongside an agent reference.
+- Declaring the MCP tool on the agent instead needs a static URL, which cannot identify
+  the calling user. Foundry's per-user mechanisms (`x-ms-user-identity`, isolation keys)
+  scope Foundry-side session state and are not forwarded to an MCP server, and OAuth
+  identity passthrough would require Glosify to become an OAuth2 authorization server.
+
+Declaring an MCP tool whose server is unreachable also fails *every* response with
+`external_connector_error` 424 rather than degrading, so the tool must never be attached
+before the endpoint is live.
+
+The MCP endpoint below still exists and works. It is the path to revisit if tool
+execution should ever genuinely leave this application.
+
+### Why the acting user travels in the URL
+
+Foundry's MCP authentication preserves end-user context in exactly one mode, OAuth
+identity passthrough, and its Entra variant requires the user's tenant to match the
+Foundry project's tenant. Glosify authenticates users with ASP.NET Core Identity against
+its own store (`AddDefaultIdentity<ApplicationUser>`), with Google and Microsoft only as
+external logins into local accounts. Those users have no Entra identity, so passthrough
+would require Glosify to become an OAuth2 authorization server.
+
+Instead, key-based auth carries a shared credential and Glosify mints the user context
+itself: each response is created with an MCP tool whose `server_url` embeds a signed,
+short-lived session naming the acting user and their page context.
+
+```text
+POST {project_endpoint}/responses
+  agent_reference: glosify-quiz-builder
+  tools: [{ type: mcp,
+            server_url: https://glosify.../assistant/mcp/s/<session-token>,
+            project_connection_id: glosify-mcp-shared-key,
+            require_approval: never }]
+```
+
+`AssistantMcpSessionCodec` signs the session with HMAC-SHA256 and verifies it in fixed
+time. The token is the real authenticator, so it is deliberately short-lived (30 minutes
+by default): it travels in a URL, and URLs reach logs.
+
+```text
+Assistant__Mcp__SigningKey=<32+ characters, from Key Vault>
+Assistant__Mcp__SharedSecret=<optional header credential Foundry sends>
+Assistant__Mcp__SessionLifetimeMinutes=30
+```
+
+Without a signing key the route returns 404 and nothing is exposed. With one, the
+endpoint filter rejects a wrong shared secret or an invalid, tampered, or expired
+session before the protocol handshake.
+
+### Status
+
+Landed: the MCP endpoint at `/assistant/mcp/s/{token}`, session minting and
+verification, dispatch into the existing tool handlers, and the full quiz-builder tool
+set including the mutating element tools.
+
+A change queued by a Foundry-run tool call has no orchestrator turn to collect it, so it
+is written to `assistant_pending_changes` keyed by the session's conversation id. Each
+call also primes its `AgentToolContext` from that store, which keeps the checks that read
+what a turn already queued — duplicate answer labels, for one — working across separate
+calls.
+
+Still to do:
+
+1. Create responses through `agent_reference` with the per-request MCP tool, replacing
+   the in-process tool loop for the quiz-builder profile. Note that `agent_reference`
+   pins the model: a request that overrides it fails with "Model must match the agent's
+   model". The plan is a hybrid — the default model runs through `agent_reference`, and a
+   user-selected alternative runs the local loop on the agent's instructions — rather
+   than publishing one agent version per model.
+2. Move credit metering from per-model-turn to per-response, since Foundry runs the loop
+   internally and Glosify no longer sees each turn.
+3. Move chat history to Foundry conversations and repoint the chats UI at them.
+4. Read pending changes from the store in the Apply path, so a Foundry-driven
+   conversation can be applied. Today only the in-process loop's changes, written onto
+   the assistant message, are applied.
+
+Local development needs a public tunnel: Agent Service only reaches remote endpoints, so
+`localhost` cannot serve MCP.
+
 ## Identity and RBAC
 
 Local development uses `DefaultAzureCredential`, so authenticate with `az
