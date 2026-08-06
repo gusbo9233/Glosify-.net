@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+
 namespace Glosify.Services.Ai.Assistant.Mcp;
 
 /// <summary>
@@ -28,5 +30,29 @@ public sealed class AssistantMcpOptions
     /// </summary>
     public int SessionLifetimeMinutes { get; set; } = 30;
 
-    public bool IsEnabled => SigningKey.Length >= 32;
+    public const int MinimumSigningKeyLength = 32;
+
+    public bool IsEnabled => SigningKey.Length >= MinimumSigningKeyLength;
+}
+
+/// <summary>
+/// Catches a signing key that is present but too short. Without this the endpoint simply
+/// serves 404s, which is indistinguishable from the feature being switched off — so a
+/// truncated key looks like a deliberate configuration choice rather than a mistake.
+/// </summary>
+public sealed class AssistantMcpOptionsValidator : IValidateOptions<AssistantMcpOptions>
+{
+    public ValidateOptionsResult Validate(string? name, AssistantMcpOptions options)
+    {
+        var key = options.SigningKey;
+        if (key.Length == 0 || key.Length >= AssistantMcpOptions.MinimumSigningKeyLength)
+        {
+            return ValidateOptionsResult.Success;
+        }
+
+        return ValidateOptionsResult.Fail(
+            $"Assistant:Mcp:SigningKey is {key.Length} characters; it must be empty to disable "
+            + $"the MCP endpoint, or at least {AssistantMcpOptions.MinimumSigningKeyLength} "
+            + "characters to enable it.");
+    }
 }

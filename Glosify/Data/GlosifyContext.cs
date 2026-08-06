@@ -69,9 +69,9 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
             entity.Property(user => user.SelectedQuizLanguageCode).HasMaxLength(8);
-            entity.HasCheckConstraint(
+            entity.ToTable(table => table.HasCheckConstraint(
                 "CK_AspNetUsers_SelectedQuizLanguageCode",
-                "[SelectedQuizLanguageCode] IS NULL OR [SelectedQuizLanguageCode] IN ('et', 'de', 'pl', 'uk')");
+                "[SelectedQuizLanguageCode] IS NULL OR [SelectedQuizLanguageCode] IN ('et', 'de', 'pl', 'uk')"));
         });
 
         modelBuilder.Entity<Quiz>(entity =>
@@ -308,9 +308,9 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.Property(transcript => transcript.Title).HasMaxLength(160).IsRequired();
             entity.Property(transcript => transcript.TargetLanguage).HasMaxLength(16).IsRequired();
             entity.Property(transcript => transcript.Stream).HasMaxLength(16).IsRequired();
-            entity.HasCheckConstraint(
+            entity.ToTable(table => table.HasCheckConstraint(
                 "CK_RealtimeTranslationTranscripts_Stream",
-                "[Stream] IN ('translation', 'source')");
+                "[Stream] IN ('translation', 'source')"));
             entity.HasIndex(transcript => new { transcript.UserId, transcript.TargetLanguage, transcript.UpdatedAt });
 
             entity.HasOne<ApplicationUser>()

@@ -359,12 +359,25 @@ the deployed East US SKUs on 2026-07-19: Data Zone Standard for `gpt-5.4-mini` a
 Global Standard for the two Grok 4.1 deployments. Of those, only
 `grok-4-1-fast-non-reasoning` is still routed to, by `Speaking:ModelDeployment`.
 
-> **The `glosify-assistant` rates are provisional.** `gpt-5.6-luna`, `grok-4.3`, and
-> `DeepSeek-V4-Flash` currently carry 2x the `gpt-5.4-mini` rates rather than prices
-> sourced from Azure retail pricing, which does not publish meters for them. They are
-> deliberately high so the monthly budget errs toward stopping early instead of
-> overspending; the visible symptom of leaving them wrong is a premature 503. Replace
-> them with the real per-SKU rates for swedencentral.
+The `glosify-assistant` rates were set on 2026-08-06 as USD list x 9.727 SEK/USD — the
+rate the older rows already use, and above the ~9.55 spot — plus a 15% markup, so the
+budget errs toward stopping early rather than overspending:
+
+| Deployment | SKU | USD in / out | Confidence |
+|---|---|---|---|
+| `gpt-5.6-luna` | DataZoneStandard | $1.10 / $6.60 | Matches observed Azure billing |
+| `grok-4.3` | GlobalStandard | $1.25 / $2.50 | xAI list; Azure matched it for Grok 4.1 |
+| `DeepSeek-V4-Flash` | DataZoneStandard | $0.616 / $1.232 | DeepSeek list x Azure's 4.0x markup |
+
+> Azure publishes no retail meter for any of the three, so the Grok and DeepSeek figures
+> are derived rather than read off a price sheet. Check them against a real invoice line
+> once the assistant has run a full billing period. Data Zone Standard runs 1.10x Global
+> Standard, which is how the `gpt-5.6-luna` and `DeepSeek-V4-Flash` figures are reached.
+
+Note that the credit multipliers in `AssistantModels` are product policy, not a cost
+ratio, and currently run opposite to it: `grok-4.3` bills at 2x credits while costing
+roughly a third of `gpt-5.6-luna` per output token. That is a pricing decision to make
+deliberately, not a bug — but it is worth revisiting.
 
 Recheck Azure retail pricing when a deployment, SKU, region, or price changes. A
 budgeted provider with no matching deployment price fails closed instead of making an

@@ -19,7 +19,10 @@ public static class AssistantMcpEndpoints
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        services.Configure<AssistantMcpOptions>(configuration.GetSection(AssistantMcpOptions.SectionName));
+        services.AddOptions<AssistantMcpOptions>()
+            .Bind(configuration.GetSection(AssistantMcpOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<AssistantMcpOptions>, AssistantMcpOptionsValidator>();
         services.AddSingleton<IAssistantMcpSessionCodec, AssistantMcpSessionCodec>();
         services.AddScoped<IAssistantMcpToolSurface, AssistantMcpToolSurface>();
 

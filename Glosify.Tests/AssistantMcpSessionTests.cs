@@ -10,6 +10,35 @@ public class AssistantMcpSessionTests
     private const string Key = "a-signing-key-that-is-long-enough-32";
 
     [Fact]
+    public void An_empty_signing_key_disables_the_endpoint_without_failing_startup()
+    {
+        var result = new AssistantMcpOptionsValidator()
+            .Validate(null, new AssistantMcpOptions { SigningKey = string.Empty });
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public void A_truncated_signing_key_fails_startup_rather_than_silently_serving_404s()
+    {
+        var result = new AssistantMcpOptionsValidator()
+            .Validate(null, new AssistantMcpOptions { SigningKey = "too-short" });
+
+        Assert.True(result.Failed);
+        Assert.Contains(result.Failures!, failure =>
+            failure.Contains("Assistant:Mcp:SigningKey", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void A_long_enough_signing_key_is_accepted()
+    {
+        var result = new AssistantMcpOptionsValidator()
+            .Validate(null, new AssistantMcpOptions { SigningKey = Key });
+
+        Assert.True(result.Succeeded);
+    }
+
+    [Fact]
     public void Round_trip_preserves_the_acting_user_and_page_context()
     {
         var codec = CreateCodec();

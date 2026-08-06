@@ -67,6 +67,11 @@ builder.Services.AddAuthorization(options =>
 });
 builder.Services.AddMemoryCache();
 
+// Liveness only, deliberately: it must answer while Azure SQL serverless is still
+// resuming, and a dependency check here would report the app unhealthy through a
+// cold start it is designed to wait out.
+builder.Services.AddHealthChecks();
+
 // Rate limiting: strict on credential endpoints (per IP), moderate on the AI
 // assistant (per user), unlimited elsewhere. Counts only POSTs on auth paths so
 // rendering the login page never trips the limiter.
@@ -97,6 +102,26 @@ builder.Services.AddRateLimiter(options =>
             return RateLimitPartition.GetFixedWindowLimiter($"auth:{ip}", _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            });
+        }
+
+        // Must precede the assistant rule, which would otherwise match this path.
+        // Microsoft Foundry calls the MCP endpoint as one shared identity with no user
+        // claim, so partitioning on the caller address would drop every user's tool calls
+        // into a single bucket. The signed session token in the route is per response and
+        // names the acting user, so it isolates them; the limit then bounds how many tool
+        // calls one agent response can make rather than how many any one user can.
+        if (path.StartsWithSegments("/assistant/mcp", out _, out var mcpRemainder))
+        {
+            var session = mcpRemainder.Value?.Trim('/');
+            var partition = string.IsNullOrEmpty(session)
+                ? $"mcp-anon:{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}"
+                : $"mcp:{session}";
+            return RateLimitPartition.GetFixedWindowLimiter(partition, _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 120,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0,
             });
@@ -453,10 +478,12 @@ forwardedHeadersOptions.KnownIPNetworks.Clear();
 forwardedHeadersOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedHeadersOptions);
 
-// Configure the HTTP request pipeline.
-app.UseExceptionHandler("/Home/Error");
+// Configure the HTTP request pipeline. In Development, WebApplication has already added
+// the developer exception page; registering the handler unconditionally would sit inside
+// it and swallow the exception before that page ever saw it.
 if (!app.Environment.IsDevelopment())
 {
+    app.UseExceptionHandler("/Home/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
@@ -507,6 +534,8 @@ app.UseAuthentication();
 app.UseRateLimiter();
 
 app.UseAuthorization();
+
+app.MapHealthChecks("/healthz").AllowAnonymous();
 
 app.MapStaticAssets().AllowAnonymous();
 
