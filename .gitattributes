@@ -4,6 +4,17 @@
 * text=auto
 
 ###############################################################################
+# Served static assets must check out as LF on every platform.
+#
+# The integration tests fetch these files over HTTP and assert on exact
+# substrings that span newlines, so a CRLF checkout (what "text=auto" gives on
+# Windows, including the CI runner) fails those assertions even though the
+# content is unchanged.
+###############################################################################
+*.js  text eol=lf
+*.css text eol=lf
+
+###############################################################################
 # Set default behavior for command prompt diff.
 #
 # This is need for earlier builds of msysgit that does not have it on by
