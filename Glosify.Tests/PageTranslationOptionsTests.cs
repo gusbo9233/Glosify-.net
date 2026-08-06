@@ -14,7 +14,7 @@ public sealed class PageTranslationOptionsTests
         var options = ValidFoundryOptions();
         options.Foundry.PageTranslationDeployment = " ";
 
-        var result = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()))
+        var result = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()), UnbudgetedUsage())
             .Validate(null, options);
 
         Assert.True(result.Failed);
@@ -28,7 +28,7 @@ public sealed class PageTranslationOptionsTests
         var options = ValidFoundryOptions();
         options.Foundry.PageTranslationFallbackDeployment = " ";
 
-        var result = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()))
+        var result = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()), UnbudgetedUsage())
             .Validate(null, options);
 
         Assert.True(result.Failed);
@@ -47,7 +47,7 @@ public sealed class PageTranslationOptionsTests
             PageTranslationModel = " ",
         };
 
-        var result = new GenerativeAiOptionsValidator(Options.Create(gemini))
+        var result = new GenerativeAiOptionsValidator(Options.Create(gemini), UnbudgetedUsage())
             .Validate(null, options);
 
         Assert.True(result.Failed);
@@ -70,6 +70,13 @@ public sealed class PageTranslationOptionsTests
         Assert.Contains(result.Failures, failure =>
             failure.Contains("PageTranslationOutputTokenReserve", StringComparison.Ordinal));
     }
+
+    /// <summary>Budget disabled: these tests exercise deployment shape, not pricing.</summary>
+    private static IOptions<AiUsageOptions> UnbudgetedUsage() =>
+        Options.Create(new AiUsageOptions
+        {
+            MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
+        });
 
     private static GenerativeAiOptions ValidFoundryOptions() => new()
     {

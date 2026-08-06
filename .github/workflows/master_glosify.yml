@@ -26,6 +26,11 @@ jobs:
       - name: Build with dotnet
         run: dotnet build --configuration Release
 
+      # Gates the deploy job, which is what turns a configuration mistake — an unpriced
+      # deployment, say — into a failed build instead of a broken production.
+      - name: Test with dotnet
+        run: dotnet test --configuration Release --no-build
+
       - name: dotnet publish
         run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 

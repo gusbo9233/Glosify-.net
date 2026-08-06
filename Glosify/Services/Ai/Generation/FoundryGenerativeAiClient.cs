@@ -10,7 +10,7 @@ namespace Glosify.Services.Ai.Generation;
 
 public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
 {
-    private const string Provider = "foundry";
+    private const string Provider = AiUsageProviders.Foundry;
     private const int ImageTokenEstimate = 1024;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 

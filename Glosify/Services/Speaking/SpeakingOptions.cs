@@ -1,3 +1,6 @@
+using Glosify.Services.Ai;
+using Microsoft.Extensions.Options;
+
 namespace Glosify.Services.Speaking;
 
 public sealed class SpeakingOptions
@@ -56,6 +59,32 @@ public sealed class SpeakingAgentOptions
     public SpeakingAgentVersion Oksana { get; set; } = new("glosify-oksana", "2");
     public SpeakingAgentVersion Andriy { get; set; } = new("glosify-andriy", "2");
     public SpeakingAgentVersion PanMykola { get; set; } = new("glosify-pan-mykola", "2");
+}
+
+/// <summary>
+/// Speaking practice reserves credits under <see cref="AiUsageProviders.AzureAiFoundry"/>
+/// before every turn, so its deployment must be priced for the same reason the generative
+/// AI deployments must be — an unpriced one fails closed at reservation.
+/// </summary>
+public sealed class SpeakingOptionsValidator(IOptions<AiUsageOptions> aiUsageOptions)
+    : IValidateOptions<SpeakingOptions>
+{
+    public ValidateOptionsResult Validate(string? name, SpeakingOptions options)
+    {
+        var budget = aiUsageOptions.Value.MonthlyBudget;
+        if (!budget.MetersProvider(AiUsageProviders.AzureAiFoundry)
+            || string.IsNullOrWhiteSpace(options.ModelDeployment))
+        {
+            return ValidateOptionsResult.Success;
+        }
+
+        return budget.HasTokenPrice(options.ModelDeployment)
+            ? ValidateOptionsResult.Success
+            : ValidateOptionsResult.Fail(
+                $"AiUsage:MonthlyBudget:Models must price deployment '{options.ModelDeployment.Trim()}', "
+                + "which Speaking:ModelDeployment routes to. Without a price every speaking turn "
+                + "fails at credit reservation.");
+    }
 }
 
 public sealed class SpeakingAgentVersion

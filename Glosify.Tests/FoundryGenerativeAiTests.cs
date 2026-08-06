@@ -20,6 +20,13 @@ public sealed class FoundryGenerativeAiTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    /// <summary>Budget disabled: these tests exercise deployment shape, not pricing.</summary>
+    private static IOptions<AiUsageOptions> UnbudgetedUsage() =>
+        Options.Create(new AiUsageOptions
+        {
+            MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
+        });
+
     [Fact]
     public void History_mapper_preserves_roles_text_calls_results_and_legacy_call_ids()
     {
@@ -686,14 +693,15 @@ public sealed class FoundryGenerativeAiTests
     public void Options_validator_accepts_foundry_and_requires_gemini_credentials_only_for_rollback()
     {
         var foundry = ValidOptions();
-        var noGeminiKey = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()));
+        var noGeminiKey = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()), UnbudgetedUsage());
         Assert.True(noGeminiKey.Validate(null, foundry).Succeeded);
 
         foundry.Provider = GenerativeAiOptions.GeminiProvider;
         Assert.True(noGeminiKey.Validate(null, foundry).Failed);
 
         var withGeminiKey = new GenerativeAiOptionsValidator(
-            Options.Create(new GeminiOptions { ApiKey = "configured-secret" }));
+            Options.Create(new GeminiOptions { ApiKey = "configured-secret" }),
+            UnbudgetedUsage());
         Assert.True(withGeminiKey.Validate(null, foundry).Succeeded);
     }
 
@@ -717,7 +725,7 @@ public sealed class FoundryGenerativeAiTests
         options.Foundry.VisionDeployment = vision;
         options.Foundry.TimeoutSeconds = timeout;
 
-        var result = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()))
+        var result = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()), UnbudgetedUsage())
             .Validate(null, options);
 
         Assert.True(result.Failed);
@@ -756,7 +764,7 @@ public sealed class FoundryGenerativeAiTests
     [Fact]
     public void Options_validator_rejects_unknown_provider_and_assistant_missing_from_allowlist()
     {
-        var validator = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()));
+        var validator = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()), UnbudgetedUsage());
         var options = ValidOptions();
         options.Provider = "Automatic";
         Assert.True(validator.Validate(null, options).Failed);
@@ -769,7 +777,7 @@ public sealed class FoundryGenerativeAiTests
     [Fact]
     public void Options_validator_requires_complete_unique_model_metadata_and_positive_credit_multipliers()
     {
-        var validator = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()));
+        var validator = new GenerativeAiOptionsValidator(Options.Create(new GeminiOptions()), UnbudgetedUsage());
         var options = ValidOptions();
         options.Foundry.AssistantModels[0].CreditMultiplier = 0m;
         Assert.True(validator.Validate(null, options).Failed);

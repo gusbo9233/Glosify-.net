@@ -33,8 +33,48 @@ public sealed class AiMonthlyBudgetOptions
     public decimal LimitSek { get; set; } = 200m;
     public string TimeZoneId { get; set; } = "Europe/Stockholm";
     public decimal ReservationSafetyMultiplier { get; set; } = 1.25m;
-    public List<string> Providers { get; set; } = ["foundry", "azure_ai_foundry"];
+    public List<string> Providers { get; set; } = [AiUsageProviders.Foundry, AiUsageProviders.AzureAiFoundry];
     public List<AiModelPriceOptions> Models { get; set; } = [];
+
+    /// <summary>Whether this budget meters the given credit provider.</summary>
+    public bool MetersProvider(string? provider) =>
+        Enabled
+        && Providers.Any(candidate => string.Equals(
+            candidate?.Trim(),
+            provider?.Trim(),
+            StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// The configured price for a deployment, or null when none is configured. A metered
+    /// provider treats null as fatal: an unpriced deployment cannot be charged, so the
+    /// request fails at credit reservation rather than going unaccounted.
+    /// </summary>
+    public AiModelPriceOptions? FindModelPrice(string? deployment) =>
+        Models.FirstOrDefault(candidate => string.Equals(
+            candidate.Deployment?.Trim(),
+            deployment?.Trim(),
+            StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Whether a deployment can be charged per token. Used by startup validation.</summary>
+    public bool HasTokenPrice(string? deployment) =>
+        FindModelPrice(deployment) is
+        {
+            InputSekPerMillionTokens: > 0,
+            OutputSekPerMillionTokens: > 0,
+        };
+}
+
+/// <summary>
+/// Credit provider names. Shared so that startup validation and the runtime reservation
+/// path cannot disagree about which calls the monthly budget meters.
+/// </summary>
+public static class AiUsageProviders
+{
+    /// <summary>Generative AI through Microsoft Foundry (assistant, repair, vision, translation).</summary>
+    public const string Foundry = "foundry";
+
+    /// <summary>Speaking practice through Microsoft Foundry.</summary>
+    public const string AzureAiFoundry = "azure_ai_foundry";
 }
 
 public sealed class AiModelPriceOptions

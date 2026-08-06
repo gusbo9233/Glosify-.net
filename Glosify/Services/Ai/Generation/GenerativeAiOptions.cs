@@ -65,7 +65,9 @@ public sealed record AssistantModelChoice(
     string CostTier,
     decimal CreditMultiplier);
 
-public sealed class GenerativeAiOptionsValidator(IOptions<GeminiOptions> geminiOptions)
+public sealed class GenerativeAiOptionsValidator(
+    IOptions<GeminiOptions> geminiOptions,
+    IOptions<AiUsageOptions> aiUsageOptions)
     : IValidateOptions<GenerativeAiOptions>
 {
     public ValidateOptionsResult Validate(string? name, GenerativeAiOptions options)
@@ -165,9 +167,49 @@ public sealed class GenerativeAiOptionsValidator(IOptions<GeminiOptions> geminiO
             }
         }
 
+        ValidateBudgetPrices(foundry, failures);
+
         return failures.Count == 0
             ? ValidateOptionsResult.Success
             : ValidateOptionsResult.Fail(failures);
+    }
+
+    /// <summary>
+    /// Every deployment this client can route to must be priced, because the reservation
+    /// that precedes each call fails closed on an unpriced deployment. Catching that here
+    /// turns a repointed project into a failed deploy instead of a 500 per request.
+    /// </summary>
+    private void ValidateBudgetPrices(
+        FoundryGenerativeAiOptions foundry,
+        ICollection<string> failures)
+    {
+        var budget = aiUsageOptions.Value.MonthlyBudget;
+        if (!budget.MetersProvider(AiUsageProviders.Foundry))
+        {
+            return;
+        }
+
+        string[] routable =
+        [
+            foundry.AssistantDeployment,
+            foundry.StructuredDeployment,
+            foundry.VisionDeployment,
+            foundry.PageTranslationDeployment,
+            foundry.PageTranslationFallbackDeployment,
+            .. foundry.AllowedAssistantDeployments ?? [],
+        ];
+
+        foreach (var deployment in routable
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(deployment => !budget.HasTokenPrice(deployment)))
+        {
+            failures.Add(
+                $"AiUsage:MonthlyBudget:Models must price deployment '{deployment}', which "
+                + "GenerativeAi:Foundry can route to. Without a price every request fails at "
+                + "credit reservation.");
+        }
     }
 
     private static bool IsProvider(string? configured, string expected) =>

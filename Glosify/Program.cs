@@ -361,7 +361,10 @@ builder.Services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
 builder.Services.AddAssistantMcp(builder.Configuration);
 
 builder.Services.Configure<SpeechOptions>(builder.Configuration.GetSection(SpeechOptions.SectionName));
-builder.Services.Configure<SpeakingOptions>(builder.Configuration.GetSection(SpeakingOptions.SectionName));
+builder.Services.AddOptions<SpeakingOptions>()
+    .Bind(builder.Configuration.GetSection(SpeakingOptions.SectionName))
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<SpeakingOptions>, SpeakingOptionsValidator>();
 builder.Services.AddSingleton<TokenCredential>(_ =>
     FoundryCredentialFactory.Create(builder.Environment, builder.Configuration));
 builder.Services.AddSingleton(services =>
@@ -528,7 +531,12 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.MapRazorPages().AllowAnonymous();
+// Deliberately not AllowAnonymous: Identity UI protects /Identity/Account/Manage and
+// /Account/Logout through AuthorizeAreaFolder/AuthorizeAreaPage conventions rather than
+// attributes, and IAllowAnonymous metadata short-circuits the authorization middleware,
+// which would silently disable those conventions. The pages that must stay open (Login,
+// Register, ExternalLogin, the 2fa pages) carry their own [AllowAnonymous].
+app.MapRazorPages();
 
 app.MapHub<Glosify.Hubs.ClassroomChatHub>("/hubs/classroom-chat");
 

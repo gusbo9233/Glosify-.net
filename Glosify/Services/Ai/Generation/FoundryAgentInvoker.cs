@@ -58,52 +58,80 @@ internal sealed class FoundryAgentInvoker(
     private readonly ConcurrentDictionary<string, FoundryAuthoredAgent?> _authoredAgents = new(StringComparer.Ordinal);
     private readonly ILogger _logger = loggerFactory.CreateLogger<FoundryAgentInvoker>();
 
-    public async Task<FoundryAuthoredAgent?> TryGetAuthoredAgentAsync(
+    public Task<FoundryAuthoredAgent?> TryGetAuthoredAgentAsync(
         string name,
         string version,
+        CancellationToken cancellationToken) =>
+        GetOrAddAuthoredAgentAsync(
+            $"{name}@{version}",
+            token => FetchAuthoredAgentAsync(name, version, token),
+            cancellationToken);
+
+    /// <summary>
+    /// Caches a definite answer about an agent version and nothing else. Failures are not
+    /// cached: this dictionary lives for the process lifetime, so caching a transient
+    /// error would drop the profile to in-code instructions until the app restarts.
+    /// </summary>
+    internal async Task<FoundryAuthoredAgent?> GetOrAddAuthoredAgentAsync(
+        string key,
+        Func<CancellationToken, Task<FoundryAuthoredAgent?>> fetch,
         CancellationToken cancellationToken)
     {
-        var key = $"{name}@{version}";
         if (_authoredAgents.TryGetValue(key, out var cached))
         {
             return cached;
         }
 
-        FoundryAuthoredAgent? authored = null;
+        FoundryAuthoredAgent? authored;
         try
         {
-            var result = await projectClient
-                .GetProjectAgentsClient()
-                .GetAgentVersionAsync(name, version, cancellationToken);
-            if (result.Value.Definition is DeclarativeAgentDefinition declarative
-                && !string.IsNullOrWhiteSpace(declarative.Instructions))
-            {
-                authored = new FoundryAuthoredAgent(
-                    declarative.Instructions,
-                    declarative.Model,
-                    ReadFunctionTools(result.Value));
-            }
-            else
-            {
-                _logger.LogWarning(
-                    "Foundry agent {AgentName} version {AgentVersion} has no prompt instructions; using in-code instructions.",
-                    name,
-                    version);
-            }
+            authored = await fetch(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // The caller walked away; that says nothing about the agent.
+            throw;
         }
         catch (Exception ex)
         {
             // A missing or unreachable agent must not break the assistant: the caller
-            // still has the full in-code instruction to fall back to.
+            // still has the full in-code instruction to fall back to. The next turn
+            // retries rather than inheriting this failure.
             _logger.LogWarning(
                 ex,
-                "Could not read Foundry agent {AgentName} version {AgentVersion}; using in-code instructions.",
-                name,
-                version);
+                "Could not read Foundry agent {AgentKey}; using in-code instructions.",
+                key);
+            return null;
         }
 
+        // A published version that is not a prompt agent caches as null on purpose: that
+        // is a stable answer until the version is republished, not a failure.
         _authoredAgents[key] = authored;
         return authored;
+    }
+
+    private async Task<FoundryAuthoredAgent?> FetchAuthoredAgentAsync(
+        string name,
+        string version,
+        CancellationToken cancellationToken)
+    {
+        var result = await projectClient
+            .GetProjectAgentsClient()
+            .GetAgentVersionAsync(name, version, cancellationToken);
+        if (result.Value.Definition is DeclarativeAgentDefinition declarative
+            && !string.IsNullOrWhiteSpace(declarative.Instructions))
+        {
+            return new FoundryAuthoredAgent(
+                declarative.Instructions,
+                declarative.Model,
+                ReadFunctionTools(result.Value));
+        }
+
+        _logger.LogWarning(
+            "Foundry agent {AgentName} version {AgentVersion} has no prompt instructions; using in-code instructions.",
+            name,
+            version);
+        return null;
     }
 
     /// <summary>

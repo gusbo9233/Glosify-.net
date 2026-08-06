@@ -312,7 +312,7 @@ public sealed class SpeakingService : ISpeakingService
                     Guid.NewGuid(),
                     "speaking_session",
                     session.Id.ToString()),
-                "azure_ai_foundry",
+                AiUsageProviders.AzureAiFoundry,
                 _speakingOptions.ModelDeployment,
                 estimatedTokens,
                 cancellationToken);

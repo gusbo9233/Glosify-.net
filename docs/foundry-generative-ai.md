@@ -1,11 +1,11 @@
 # Microsoft Foundry generative AI
 
-Glosify routes assistant conversations, typed vocabulary repair, and image text
-extraction through the existing `glosify-speaking` Microsoft Foundry project.
-Vocabulary repair and image extraction remain pinned to `gpt-5.4-mini`.
-Assistant users can select `gpt-5.4-mini` or one of the configured xAI Grok
-deployments. Speaking practice continues to use its existing versioned prompt
-agents.
+Glosify routes assistant conversations, typed vocabulary repair, image text
+extraction, and page translation through the `glosify-assistant` Microsoft Foundry
+project. Vocabulary repair, image extraction, and page translation are pinned to
+`gpt-5.6-luna`. Assistant users can select `gpt-5.6-luna` or `grok-4.3`. Speaking
+practice runs in its own project, `glosify-speaking`, on its existing versioned
+prompt agents.
 
 ## Runtime architecture
 
@@ -37,13 +37,14 @@ Non-secret defaults are checked into `appsettings.json`:
 
 ```text
 GenerativeAi__Provider=Foundry
-GenerativeAi__Foundry__ProjectEndpoint=https://glosify-foundry.services.ai.azure.com/api/projects/glosify-speaking
-GenerativeAi__Foundry__AssistantDeployment=gpt-5.4-mini
-GenerativeAi__Foundry__StructuredDeployment=gpt-5.4-mini
-GenerativeAi__Foundry__VisionDeployment=gpt-5.4-mini
-GenerativeAi__Foundry__AllowedAssistantDeployments__0=gpt-5.4-mini
-GenerativeAi__Foundry__AllowedAssistantDeployments__1=grok-4-1-fast-non-reasoning
-GenerativeAi__Foundry__AllowedAssistantDeployments__2=grok-4-1-fast-reasoning
+GenerativeAi__Foundry__ProjectEndpoint=https://glosify-assistant-resource.services.ai.azure.com/api/projects/glosify-assistant
+GenerativeAi__Foundry__AssistantDeployment=gpt-5.6-luna
+GenerativeAi__Foundry__StructuredDeployment=gpt-5.6-luna
+GenerativeAi__Foundry__VisionDeployment=gpt-5.6-luna
+GenerativeAi__Foundry__PageTranslationDeployment=gpt-5.6-luna
+GenerativeAi__Foundry__PageTranslationFallbackDeployment=DeepSeek-V4-Flash
+GenerativeAi__Foundry__AllowedAssistantDeployments__0=gpt-5.6-luna
+GenerativeAi__Foundry__AllowedAssistantDeployments__1=grok-4.3
 GenerativeAi__Foundry__TimeoutSeconds=180
 ```
 
@@ -52,9 +53,15 @@ speed tier, cost tier, and credit multiplier for each allowlisted deployment:
 
 | Deployment | Display tier | Credit multiplier |
 |---|---|---:|
-| `gpt-5.4-mini` | OpenAI, balanced, standard | 1x |
-| `grok-4-1-fast-non-reasoning` | xAI, fast, standard | 1x |
-| `grok-4-1-fast-reasoning` | xAI, thoughtful, premium | 2x |
+| `gpt-5.6-luna` | OpenAI, balanced, standard | 1x |
+| `grok-4.3` | xAI, thoughtful, premium | 2x |
+
+Every deployment named here must also carry a price under
+`AiUsage:MonthlyBudget:Models`. `GenerativeAiOptionsValidator` enforces that at
+startup, because the credit reservation that precedes each call fails closed on an
+unpriced deployment — without the check, repointing the project turns every
+assistant request into a 500. `SpeakingOptionsValidator` applies the same rule to
+`Speaking:ModelDeployment`.
 
 The multipliers are Glosify product policy, not a representation of exact Azure
 invoice ratios. They can be changed in configuration without changing the
@@ -113,24 +120,37 @@ Assistant work runs in its own resource and project, separate from speaking:
 | Assistant, repair, vision, page translation | `glosify-assistant-resource` | `glosify-assistant` | swedencentral |
 | Speaking practice | `glosify-foundry` | `glosify-speaking` | eastus |
 
-The assistant project has one deployment, `gpt-5.6-luna` (DataZoneStandard, capacity
-50) — token-billed pay as you go, no provisioned throughput. The assistant model menu
-therefore offers only `Auto`; the Grok entries live in `glosify-foundry` and are not
-reachable from this project.
+The assistant project holds three deployments — `gpt-5.6-luna` and `DeepSeek-V4-Flash`
+(DataZoneStandard) and `grok-4.3` (GlobalStandard) — all token-billed pay as you go,
+no provisioned throughput. `gpt-5.6-luna` and `grok-4.3` are allowlisted for the
+assistant model menu; `DeepSeek-V4-Flash` is the page-translation fallback only.
 
 Both the App Service managed identity and developer accounts need `Foundry User` on
-`glosify-assistant-resource`, exactly as they already have on `glosify-foundry`.
+`glosify-assistant-resource`, exactly as they already have on `glosify-foundry`. The
+App Service system-assigned identity holds it as of 2026-08-06; a new environment
+needs the same grant, and its absence shows up as a warning that the agent could not
+be read followed by 502s rather than as anything obviously permission-shaped.
 
 ### Authoring the agent
 
 Agents live in the `glosify-assistant` project. Three are published, one per profile:
-`glosify-quiz-builder`, `glosify-quiz-assistant`, and `glosify-librarian`. Only the
-quiz-builder is wired into code so far.
+`glosify-quiz-builder`, `glosify-quiz-assistant`, and `glosify-librarian`. All three
+are wired into code.
 
 ```text
 GenerativeAi__Foundry__Agents__CustomQuizBuilder__Name=glosify-quiz-builder
-GenerativeAi__Foundry__Agents__CustomQuizBuilder__Version=2
+GenerativeAi__Foundry__Agents__CustomQuizBuilder__Version=3
+GenerativeAi__Foundry__Agents__QuizAssistant__Name=glosify-quiz-assistant
+GenerativeAi__Foundry__Agents__QuizAssistant__Version=3
+GenerativeAi__Foundry__Agents__Librarian__Name=glosify-librarian
+GenerativeAi__Foundry__Agents__Librarian__Version=3
 ```
+
+Run `tools/foundry/export-agents.sh` after publishing a new version and bumping the
+configuration. It writes every configured agent version — assistant and speaking
+both — to `.foundry/agents/`, so the instructions and tool declarations the models
+actually run on have a diffable record here. It is an export only: editing those
+files changes nothing.
 
 Leaving either value empty — the checked-in default — runs the profile on the
 in-code instructions. A missing, unreachable, or non-prompt agent logs a warning
@@ -334,11 +354,22 @@ reservation against reported usage, and failed calls release it. Costs are
 stored as integer micro-SEK to avoid floating-point and per-request öre rounding.
 
 Input and output prices are configured per deployment under
-`AiUsage:MonthlyBudget:Models`. The checked-in rates correspond to the deployed
-East US SKUs on 2026-07-19: Data Zone Standard for `gpt-5.4-mini` and Global
-Standard for the two Grok 4.1 deployments. Recheck Azure retail pricing when a
-deployment, SKU, region, or price changes. A budgeted provider with no matching
-deployment price fails closed instead of making an unaccounted request.
+`AiUsage:MonthlyBudget:Models`. The `gpt-5.4-mini` and Grok 4.1 rates correspond to
+the deployed East US SKUs on 2026-07-19: Data Zone Standard for `gpt-5.4-mini` and
+Global Standard for the two Grok 4.1 deployments. Of those, only
+`grok-4-1-fast-non-reasoning` is still routed to, by `Speaking:ModelDeployment`.
+
+> **The `glosify-assistant` rates are provisional.** `gpt-5.6-luna`, `grok-4.3`, and
+> `DeepSeek-V4-Flash` currently carry 2x the `gpt-5.4-mini` rates rather than prices
+> sourced from Azure retail pricing, which does not publish meters for them. They are
+> deliberately high so the monthly budget errs toward stopping early instead of
+> overspending; the visible symptom of leaving them wrong is a premature 503. Replace
+> them with the real per-SKU rates for swedencentral.
+
+Recheck Azure retail pricing when a deployment, SKU, region, or price changes. A
+budgeted provider with no matching deployment price fails closed instead of making an
+unaccounted request — and since 2026-08-06, startup validation rejects that
+configuration outright rather than letting each request discover it.
 
 Existing controller routes and JSON response shapes are unchanged:
 

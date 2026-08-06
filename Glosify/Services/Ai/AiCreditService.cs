@@ -704,19 +704,12 @@ public sealed class AiCreditService : IAiCreditService
     }
 
     private bool IsBudgetedProvider(string provider) =>
-        _options.MonthlyBudget.Enabled
-        && _options.MonthlyBudget.Providers.Any(candidate =>
-            string.Equals(
-                candidate?.Trim(),
-                provider?.Trim(),
-                StringComparison.OrdinalIgnoreCase));
+        _options.MonthlyBudget.MetersProvider(provider);
 
+    // Startup validation covers every deployment configuration can route to, so reaching
+    // this throw means something bypassed it — fail closed rather than charge nothing.
     private AiModelPriceOptions GetModelPrice(string model) =>
-        _options.MonthlyBudget.Models.FirstOrDefault(candidate =>
-            string.Equals(
-                candidate.Deployment?.Trim(),
-                model?.Trim(),
-                StringComparison.OrdinalIgnoreCase))
+        _options.MonthlyBudget.FindModelPrice(model)
         ?? throw new InvalidOperationException(
             $"No monthly AI budget price is configured for deployment '{model}'.");
 
