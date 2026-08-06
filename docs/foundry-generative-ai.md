@@ -54,7 +54,15 @@ speed tier, cost tier, and credit multiplier for each allowlisted deployment:
 | Deployment | Display tier | Credit multiplier |
 |---|---|---:|
 | `gpt-5.6-luna` | OpenAI, balanced, standard | 1x |
-| `grok-4.3` | xAI, thoughtful, premium | 2x |
+| `grok-4.3` | xAI, thoughtful, standard | 1x |
+
+`grok-4.3` was 2x and premium until 2026-08-06. It was changed because the
+multiplier ran opposite to cost: on a representative turn (8k input, 500 output)
+the two deployments land within about 7% of each other, and on output-heavy turns
+`grok-4.3` is materially cheaper — $2.50 against $6.60 per million output tokens.
+Charging double for the cheaper model pushed users toward the more expensive one.
+The multipliers remain product policy rather than an invoice ratio, but they should
+not invert the underlying cost.
 
 Every deployment named here must also carry a price under
 `AiUsage:MonthlyBudget:Models`. `GenerativeAiOptionsValidator` enforces that at
@@ -374,10 +382,9 @@ budget errs toward stopping early rather than overspending:
 > once the assistant has run a full billing period. Data Zone Standard runs 1.10x Global
 > Standard, which is how the `gpt-5.6-luna` and `DeepSeek-V4-Flash` figures are reached.
 
-Note that the credit multipliers in `AssistantModels` are product policy, not a cost
-ratio, and currently run opposite to it: `grok-4.3` bills at 2x credits while costing
-roughly a third of `gpt-5.6-luna` per output token. That is a pricing decision to make
-deliberately, not a bug — but it is worth revisiting.
+Keep the credit multipliers in `AssistantModels` consistent with these rates. They are
+product policy rather than an invoice ratio, but a multiplier that charges more for the
+cheaper deployment steers users the wrong way — see the note under the model table.
 
 Recheck Azure retail pricing when a deployment, SKU, region, or price changes. A
 budgeted provider with no matching deployment price fails closed instead of making an
