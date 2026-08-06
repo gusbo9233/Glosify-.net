@@ -37,8 +37,13 @@ jobs:
           ConnectionStrings__DefaultConnection: "Server=localhost,1433;Initial Catalog=glosify-tests;Encrypt=False;Integrated Security=true;"
         run: dotnet test --configuration Release --no-build
 
+      # Name the web project explicitly. There is no solution file, so a bare
+      # "dotnet publish" publishes every project in the repo into this one folder,
+      # including Glosify.Tests. Two runtimeconfig.json files leave the Linux host
+      # unable to pick an entry point, and it silently serves the App Service
+      # placeholder page instead of the app.
       - name: dotnet publish
-        run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: dotnet publish Glosify/Glosify.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
