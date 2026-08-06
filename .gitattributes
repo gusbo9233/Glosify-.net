@@ -14,6 +14,11 @@
 *.js  text eol=lf
 *.css text eol=lf
 
+# C# sources too: raw string literals ("""...""") keep the newlines of the file
+# they are written in, so a CRLF checkout puts CRLF inside literals that the
+# tests compare against LF asset content.
+*.cs  text eol=lf
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #
