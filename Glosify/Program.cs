@@ -240,6 +240,20 @@ builder.Services.AddRateLimiter(options =>
             });
         }
 
+        // The demo link is meant to end up on a CV, so it will be crawled. Each wrong
+        // code costs an attacker a request against this window, which makes guessing
+        // the code impractical without affecting an employer who opens the link twice.
+        if (string.Equals(path.Value, "/demo", StringComparison.OrdinalIgnoreCase))
+        {
+            var visitor = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return RateLimitPartition.GetFixedWindowLimiter($"demo:{visitor}", _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+            });
+        }
+
         return RateLimitPartition.GetNoLimiter("default");
     });
 });
@@ -327,6 +341,9 @@ builder.Services.AddOptions<AiUsageOptions>()
 builder.Services.AddSingleton<IValidateOptions<AiUsageOptions>, AiUsageOptionsValidator>();
 builder.Services.AddOptions<ExtensionAuthOptions>()
     .Bind(builder.Configuration.GetSection(ExtensionAuthOptions.SectionName));
+builder.Services.AddOptions<DemoAccountOptions>()
+    .Bind(builder.Configuration.GetSection(DemoAccountOptions.SectionName));
+builder.Services.AddScoped<DemoAccountSeeder>();
 builder.Services.AddOptions<RealtimeTranslationOptions>()
     .Bind(builder.Configuration.GetSection(RealtimeTranslationOptions.SectionName))
     .ValidateOnStart();
@@ -476,6 +493,14 @@ if (builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
     migrationLogger.LogInformation("Glosify database migrations are current.");
 }
 
+// Creates the shared demo account and tops it back up to its credit target. A no-op
+// unless Demo:Enabled is set, and it runs after migrations because it writes to
+// AspNetUsers and AiCreditAccounts.
+{
+    await using var demoScope = app.Services.CreateAsyncScope();
+    await demoScope.ServiceProvider.GetRequiredService<DemoAccountSeeder>().EnsureAsync();
+}
+
 // Azure App Service front ends terminate TLS and forward the client address in
 // X-Forwarded-* headers; without this, RemoteIpAddress is the front end's address
 // and every user shares the same rate-limit partition.
@@ -612,6 +637,11 @@ app.MapControllerRoute(
     name: "login",
     pattern: "login",
     defaults: new { controller = "Account", action = "Login" });
+
+app.MapControllerRoute(
+    name: "demo",
+    pattern: "demo",
+    defaults: new { controller = "Demo", action = "Index" });
 
 app.MapControllerRoute(
     name: "quizzes",
