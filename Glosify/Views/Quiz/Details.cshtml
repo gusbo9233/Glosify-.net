@@ -9,99 +9,65 @@
     ViewData["AssistantPlaceholder"] = "Ask about this quiz...";
 }
 
-<section class="workspace">
-    <section class="workspace-hero">
+@section Styles {
+<link rel="stylesheet" href="~/css/quiz-details.css" asp-append-version="true" />
+}
+
+<section class="workspace quiz-workspace">
+    <section class="workspace-hero quiz-hero">
         <div class="workspace-hero-content">
             <p class="hero-label">@Model.SelectedQuiz.SourceLanguage &rarr; @Model.SelectedQuiz.TargetLanguage</p>
             <h1 class="hero-title">@Model.SelectedQuiz.Name</h1>
+            <p class="hero-meta">
+                <span>@Model.Words.Count @(Model.Words.Count == 1 ? "word" : "words")</span>
+                <span>@Model.Sentences.Count @(Model.Sentences.Count == 1 ? "sentence" : "sentences")</span>
+                <span>@Model.CustomQuizzes.Count() custom</span>
+            </p>
             <div class="hero-actions">
                 <a asp-controller="Quiz" asp-action="Settings" asp-route-id="@Model.SelectedQuiz.Id" class="btn-hero">
                     Start Quiz <span class="material-symbols-outlined">play_circle</span>
                 </a>
-                <form class="share-form visibility-checkbox-form" method="post" asp-controller="Quiz" asp-action="SetQuizVisibility" asp-route-id="@Model.SelectedQuiz.Id">
-                    @Html.AntiForgeryToken()
-                    <label class="visibility-checkbox">
-                        <input type="checkbox" name="isPublic" value="true" @(Model.SelectedQuiz.IsPublic ? "checked" : "") data-submit-on-change />
-                        <input type="hidden" name="isPublic" value="false" />
-                        <span class="visibility-checkbox-box" aria-hidden="true"></span>
-                        <span>Make quiz public</span>
-                    </label>
-                </form>
                 <form class="custom-quiz-new-form" method="post" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
                     @Html.AntiForgeryToken()
                     <button class="btn-hero btn-hero-secondary" type="submit">
                         Build custom quiz <span class="material-symbols-outlined">dashboard_customize</span>
                     </button>
                 </form>
+                <form class="share-form visibility-checkbox-form" method="post" asp-controller="Quiz" asp-action="SetQuizVisibility" asp-route-id="@Model.SelectedQuiz.Id">
+                    @Html.AntiForgeryToken()
+                    <label class="visibility-checkbox">
+                        <input type="checkbox" name="isPublic" value="true" @(Model.SelectedQuiz.IsPublic ? "checked" : "") data-submit-on-change />
+                        <input type="hidden" name="isPublic" value="false" />
+                        <span class="visibility-checkbox-box" aria-hidden="true"></span>
+                        <span>Public</span>
+                    </label>
+                </form>
             </div>
         </div>
     </section>
     @Html.AntiForgeryToken()
-
-    <div class="tool-grid tool-grid-single">
-        <section class="panel">
-            <div class="panel-header">
-                <div class="panel-icon"><span class="material-symbols-outlined">add_circle</span></div>
-                <h2 class="panel-title">Quick Add</h2>
-            </div>
-            <form method="post" asp-controller="Quiz" asp-action="AddWord">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="quizId" value="@Model.SelectedQuiz.Id" />
-                <div class="form-group">
-                    <label class="form-label">Word</label>
-                    <input class="form-input" type="text" name="word" placeholder="e.g. Bibliotheque" required />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Translation</label>
-                    <input class="form-input" type="text" name="translation" placeholder="e.g. Library" required />
-                </div>
-                <button class="btn-submit" type="submit">Add Word</button>
-            </form>
-        </section>
-    </div>
 
     @if (TempData[NotificationKeys.Quiz] is string quizMessage)
     {
         <div class="panel-message success">@quizMessage</div>
     }
 
-    <section class="custom-quiz-library">
-        <div class="collection-header">
-            <div>
-                <h2 class="collection-title">Custom quizzes</h2>
-                <p class="collection-subtitle">Build a freeform exercise from the words in this quiz.</p>
-            </div>
-            <form class="custom-quiz-new-form" method="post" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
-                @Html.AntiForgeryToken()
-                <button class="btn-new-quiz" type="submit">
-                    <span class="material-symbols-outlined">add</span> New custom quiz
-                </button>
-            </form>
+    <form class="quick-add-bar" method="post" asp-controller="Quiz" asp-action="AddWord">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="quizId" value="@Model.SelectedQuiz.Id" />
+        <span class="quick-add-icon" aria-hidden="true"><span class="material-symbols-outlined">add_circle</span></span>
+        <div class="quick-add-fields">
+            <label class="quick-add-field">
+                <span class="quick-add-label">Word</span>
+                <input class="form-input" type="text" name="word" placeholder="e.g. Bibliotheque" required />
+            </label>
+            <label class="quick-add-field">
+                <span class="quick-add-label">Translation</span>
+                <input class="form-input" type="text" name="translation" placeholder="e.g. Library" required />
+            </label>
         </div>
-        <div class="custom-quiz-card-grid">
-            @foreach (var customQuiz in Model.CustomQuizzes)
-            {
-                <article class="custom-quiz-card" data-custom-quiz-card>
-                    <div>
-                        <h3>@customQuiz.Name</h3>
-                        <span class="status-pill @(customQuiz.IsPlayable ? "" : "custom-quiz-draft")">@(customQuiz.IsPlayable ? "Playable" : "Draft")</span>
-                    </div>
-                    <div class="custom-quiz-card-actions">
-                        <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Edit" asp-route-id="@customQuiz.Id">Edit</a>
-                        @if (customQuiz.IsPlayable)
-                        {
-                            <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id">Play</a>
-                        }
-                        <button class="btn-linkish" type="button" data-delete-custom-quiz data-delete-url="@Url.Action("Delete", "CustomQuiz", new { id = customQuiz.Id })">Delete</button>
-                    </div>
-                </article>
-            }
-            @if (!Model.CustomQuizzes.Any())
-            {
-                <div class="empty-state">No custom quizzes yet. Create one by dragging blocks onto a canvas.</div>
-            }
-        </div>
-    </section>
+        <button class="btn-submit quick-add-submit" type="submit">Add word</button>
+    </form>
 
     <section>
         <div class="collection-header">
@@ -171,7 +137,7 @@
                 }
                 @if (!Model.Words.Any())
                 {
-                    <div class="empty-state">No words yet. Add the first word with Quick Add.</div>
+                    <div class="empty-state">No words yet. Add the first word with the bar above.</div>
                 }
             </div>
         </div>
@@ -210,6 +176,44 @@
                     <div class="empty-state">No sentences yet. Ask the assistant to add sentences or extract them from text.</div>
                 }
             </div>
+        </div>
+    </section>
+
+    <section class="custom-quiz-library">
+        <div class="collection-header">
+            <div>
+                <h2 class="collection-title">Custom quizzes</h2>
+                <p class="collection-subtitle">Build a freeform exercise from the words in this quiz.</p>
+            </div>
+            <form class="custom-quiz-new-form" method="post" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
+                @Html.AntiForgeryToken()
+                <button class="btn-new-quiz" type="submit">
+                    <span class="material-symbols-outlined">add</span> New custom quiz
+                </button>
+            </form>
+        </div>
+        <div class="custom-quiz-card-grid">
+            @foreach (var customQuiz in Model.CustomQuizzes)
+            {
+                <article class="custom-quiz-card" data-custom-quiz-card>
+                    <div>
+                        <h3>@customQuiz.Name</h3>
+                        <span class="status-pill @(customQuiz.IsPlayable ? "" : "custom-quiz-draft")">@(customQuiz.IsPlayable ? "Playable" : "Draft")</span>
+                    </div>
+                    <div class="custom-quiz-card-actions">
+                        <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Edit" asp-route-id="@customQuiz.Id">Edit</a>
+                        @if (customQuiz.IsPlayable)
+                        {
+                            <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id">Play</a>
+                        }
+                        <button class="btn-linkish" type="button" data-delete-custom-quiz data-delete-url="@Url.Action("Delete", "CustomQuiz", new { id = customQuiz.Id })">Delete</button>
+                    </div>
+                </article>
+            }
+            @if (!Model.CustomQuizzes.Any())
+            {
+                <div class="empty-state empty-state-slim">No custom quizzes yet. Create one by dragging blocks onto a canvas.</div>
+            }
         </div>
     </section>
 </section>

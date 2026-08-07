@@ -1,0 +1,265 @@
+/* Quiz workspace (Views/Quiz/Details.cshtml) — compact layout so the words
+   are visible without scrolling past the editing tools. */
+
+.quiz-workspace {
+    gap: 24px;
+}
+
+/* ---- Hero ------------------------------------------------------------- */
+
+.quiz-hero {
+    min-height: 0;
+    padding: 30px 36px;
+}
+
+.quiz-hero .workspace-hero-content {
+    max-width: 760px;
+}
+
+.quiz-hero .hero-title {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.quiz-hero .hero-label {
+    margin-bottom: 6px;
+}
+
+.hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    color: var(--on-surface-var);
+    font-size: 13px;
+    font-weight: 700;
+    margin: 0 0 20px;
+}
+
+.hero-meta span + span::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    margin-right: 14px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.6;
+    vertical-align: middle;
+}
+
+.quiz-hero .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+/* One shared control height keeps the row from looking ragged. */
+.quiz-hero .btn-hero,
+.quiz-hero .visibility-checkbox {
+    height: 46px;
+    padding-block: 0;
+}
+
+.quiz-hero .btn-hero {
+    font-size: 14px;
+    padding-inline: 24px;
+    box-shadow: 0 10px 24px rgba(29, 185, 84, 0.2);
+}
+
+.quiz-hero .btn-hero .material-symbols-outlined {
+    font-size: 20px;
+}
+
+/* site.css declares the filled `.btn-hero` background after the secondary
+   variant, so the quiet button has to reclaim its own colours here. */
+.quiz-hero .btn-hero-secondary {
+    border: 1px solid rgba(214, 227, 255, 0.22);
+    background: rgba(17, 32, 54, 0.72);
+    color: var(--on-surface);
+    box-shadow: none;
+}
+
+.quiz-hero .btn-hero-secondary:hover {
+    border-color: rgba(83, 224, 118, 0.45);
+    background: rgba(17, 32, 54, 0.92);
+    box-shadow: none;
+}
+
+.quiz-hero .visibility-checkbox {
+    border-radius: 9999px;
+    padding-inline: 16px;
+}
+
+/* ---- Quick add -------------------------------------------------------- */
+
+.quick-add-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid rgba(61, 74, 61, 0.28);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.quick-add-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 38px;
+    height: 42px;
+    color: var(--primary);
+}
+
+.quick-add-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 1 1 auto;
+    gap: 14px;
+    min-width: 0;
+}
+
+.quick-add-field {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+}
+
+.quick-add-label {
+    color: var(--on-surface-var);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.quick-add-bar .form-input {
+    height: 42px;
+    padding-block: 0;
+}
+
+.quick-add-submit {
+    flex: 0 0 auto;
+    width: auto;
+    height: 42px;
+    padding: 0 26px;
+    font-size: 14px;
+    box-shadow: none;
+}
+
+/* ---- Words ------------------------------------------------------------ */
+
+/* A row of action buttons keeps the cards short, so more words fit on screen. */
+.quiz-workspace .word-card {
+    align-items: center;
+    min-height: 0;
+    padding: 16px 18px;
+}
+
+.quiz-workspace .word-actions {
+    flex-direction: row;
+    gap: 6px;
+}
+
+/* Without this the flex item refuses to shrink and long words run under the
+   action buttons. */
+.quiz-workspace .word-card-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* The row of actions eats into the card, so give the text more room to sit in. */
+.quiz-workspace .word-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+/* ---- Custom quizzes --------------------------------------------------- */
+
+.custom-quiz-library {
+    margin-top: 8px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(188, 203, 185, 0.12);
+}
+
+.custom-quiz-library .collection-title {
+    font-size: 20px;
+}
+
+.custom-quiz-library .btn-new-quiz {
+    height: 42px;
+    padding-block: 0;
+}
+
+/* site.css gives `.empty-state` a 360px stage; this section only needs a line. */
+.empty-state-slim {
+    width: 100%;
+    min-height: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 18px 22px;
+    text-align: left;
+    font-size: 14px;
+}
+
+/* ---- Responsive ------------------------------------------------------- */
+
+@media (max-width: 900px) {
+    .quick-add-bar {
+        flex-wrap: wrap;
+    }
+
+    .quick-add-submit {
+        width: 100%;
+    }
+}
+
+@media (max-width: 700px) {
+    .quiz-hero {
+        padding: 24px 20px;
+    }
+
+    .quiz-hero .hero-title {
+        font-size: 26px;
+    }
+
+    .quiz-hero .hero-actions {
+        display: flex;
+    }
+
+    .quiz-hero .btn-hero {
+        flex: 1 1 180px;
+        width: auto;
+    }
+
+    .quiz-hero .visibility-checkbox-form {
+        flex: 1 0 100%;
+    }
+
+    .quiz-hero .visibility-checkbox {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .quick-add-bar {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .quick-add-icon {
+        display: none;
+    }
+
+    .quick-add-fields {
+        grid-template-columns: 1fr;
+    }
+
+    /* site.css stacks the card on small screens; keep its stretched alignment. */
+    .quiz-workspace .word-card {
+        align-items: stretch;
+    }
+}
