@@ -1,0 +1,32 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@*
+    The default Identity UI layout requires a partial named _LoginPartial and
+    throws at render time when it is missing, which turned every Identity UI
+    page into a 500. The app does not use Identity UI for signing in, so this
+    links to the app's own sign-in page and AccountController.Logout rather
+    than the Identity UI pages.
+*@
+<ul class="navbar-nav">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <li class="nav-item">
+            <a class="nav-link" asp-area="Identity" asp-page="/Account/Manage/Index">
+                @UserManager.GetUserName(User)
+            </a>
+        </li>
+        <li class="nav-item">
+            <form asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit" class="nav-link btn btn-link">Log out</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link" href="/login">Log in</a>
+        </li>
+    }
+</ul>

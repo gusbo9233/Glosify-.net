@@ -29,12 +29,8 @@ jobs:
       # Gates the deploy job, which is what turns a configuration mistake — an unpriced
       # deployment, say — into a failed build instead of a broken production.
       - name: Test with dotnet
-        # appsettings.Development.json is gitignored, so CI has no connection
-        # string and Program.cs refuses to build the host without one. The tests
-        # boot the real app but never open a connection, so a parseable
-        # unreachable string is enough — and keeps prod credentials out of CI.
-        env:
-          ConnectionStrings__DefaultConnection: "Server=localhost,1433;Initial Catalog=glosify-tests;Encrypt=False;Integrated Security=true;"
+        # The connection string comes from TestEnvironment's module initializer, which
+        # also keeps local runs off the production database. Nothing to set here.
         run: dotnet test --configuration Release --no-build
 
       # Name the web project explicitly. There is no solution file, so a bare
