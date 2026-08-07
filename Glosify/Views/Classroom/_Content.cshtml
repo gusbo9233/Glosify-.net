@@ -83,7 +83,7 @@
                     </div>
                     <div>
                         <h3 class="book-title">@(item.Quiz?.Name ?? item.Book?.Title ?? "Removed")</h3>
-                        <p class="book-meta">Shared by @item.SharedByName &middot; @item.SharedAt.ToLocalTime().ToString("MMM d, yyyy")</p>
+                        <p class="book-meta">Shared by @item.SharedByName &middot; <time datetime="@item.SharedAt.ToString("O")" data-local="date">@item.SharedAt.UtcDateTime.ToString("MMM d, yyyy")</time></p>
                     </div>
                 </div>
                 <div class="classroom-content-actions">

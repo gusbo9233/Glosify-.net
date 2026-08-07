@@ -74,7 +74,7 @@
                     <div class="word-icon"><span class="material-symbols-outlined">person</span></div>
                     <div>
                         <h3 class="book-title">@member.DisplayName</h3>
-                        <p class="book-meta">@member.Role &middot; joined @member.JoinedAt.ToLocalTime().ToString("MMM d, yyyy")</p>
+                        <p class="book-meta">@member.Role &middot; joined <time datetime="@member.JoinedAt.ToString("O")" data-local="date">@member.JoinedAt.UtcDateTime.ToString("MMM d, yyyy")</time></p>
                     </div>
                 </div>
                 <div class="classroom-content-actions">

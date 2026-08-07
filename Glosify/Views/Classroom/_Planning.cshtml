@@ -103,7 +103,7 @@
                     <p class="book-meta">
                         @if (lessonInfo.Lesson.ScheduledAt.HasValue)
                         {
-                            @lessonInfo.Lesson.ScheduledAt.Value.ToLocalTime().ToString("dddd MMM d, yyyy HH:mm")
+                            <time datetime="@lessonInfo.Lesson.ScheduledAt.Value.ToString("O")" data-local="weekday">@lessonInfo.Lesson.ScheduledAt.Value.UtcDateTime.ToString("dddd MMM d, yyyy HH:mm")</time>
                         }
                         @if (!string.IsNullOrWhiteSpace(lessonInfo.Lesson.Description))
                         {

@@ -105,7 +105,7 @@
                                     <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
                                     PDF
                                 </span>
-                                <span class="book-added">Added @book.Book.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</span>
+                                <span class="book-added">Added <time datetime="@book.Book.CreatedAt.ToString("O")" data-local="date">@book.Book.CreatedAt.UtcDateTime.ToString("MMM d, yyyy")</time></span>
                             </div>
                             <h3 class="book-title">@book.Book.Title</h3>
                             <div class="book-card-footer">

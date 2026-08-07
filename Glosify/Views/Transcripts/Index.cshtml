@@ -35,7 +35,7 @@
                 <div>
                     <h2>@transcript.Title</h2>
                     <p>@(Glosify.Services.Language.QuizLanguageCatalog.Find(transcript.TargetLanguage)?.Name ?? transcript.TargetLanguage.ToUpperInvariant()) · @transcript.Stream · @transcript.SegmentCount captions</p>
-                    <small>Updated @transcript.UpdatedAt.ToLocalTime().ToString("MMM d, yyyy · HH:mm")</small>
+                    <small>Updated <time datetime="@transcript.UpdatedAt.ToString("O")" data-local="datetime">@transcript.UpdatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></small>
                 </div>
                 <span class="material-symbols-outlined transcript-card-arrow" aria-hidden="true">arrow_forward</span>
             </a>

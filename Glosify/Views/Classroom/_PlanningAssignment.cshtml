@@ -14,7 +14,7 @@
             <p class="book-meta">
                 @if (assignment.DueAt.HasValue)
                 {
-                    <span class="classroom-due @(overdue ? "is-overdue" : null)">Due @assignment.DueAt.Value.ToLocalTime().ToString("MMM d, yyyy HH:mm")</span>
+                    <span class="classroom-due @(overdue ? "is-overdue" : null)">Due <time datetime="@assignment.DueAt.Value.ToString("O")" data-local="datetime">@assignment.DueAt.Value.UtcDateTime.ToString("MMM d, yyyy HH:mm")</time></span>
                 }
                 @if (info.QuizName != null)
                 {

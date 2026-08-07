@@ -35,7 +35,7 @@
                             <td>@row.Mode</td>
                             <td>@score%</td>
                             <td>@row.CorrectCount / @row.TotalItems</td>
-                            <td>@row.CompletedAt.ToLocalTime().ToString("MMM d, yyyy HH:mm")</td>
+                            <td><time datetime="@row.CompletedAt.ToString("O")" data-local="datetime">@row.CompletedAt.UtcDateTime.ToString("MMM d, yyyy HH:mm")</time></td>
                         </tr>
                     }
                 </tbody>

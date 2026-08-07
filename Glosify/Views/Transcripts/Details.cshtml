@@ -39,7 +39,7 @@
         <div>
             <p class="transcripts-eyebrow">@(isSource ? $"Original speech saved for {learningLanguage} learning" : $"Legacy translated captions · learning {learningLanguage}")</p>
             <h1>@Model.Transcript.Title</h1>
-            <p>@Model.Transcript.TotalSegments captions · started @Model.Transcript.CreatedAt.ToLocalTime().ToString("MMM d, yyyy · HH:mm")</p>
+            <p>@Model.Transcript.TotalSegments captions · started <time datetime="@Model.Transcript.CreatedAt.ToString("O")" data-local="datetime">@Model.Transcript.CreatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></p>
         </div>
         <div class="transcript-actions">
             <form method="post" asp-action="Rename" asp-route-id="@Model.Transcript.Id" class="transcript-rename">
@@ -88,7 +88,7 @@
         @foreach (var segment in Model.Transcript.Segments)
         {
             <section class="transcript-segment">
-                <time datetime="@segment.CapturedAt.ToString("O")">@segment.CapturedAt.ToLocalTime().ToString("HH:mm:ss")</time>
+                <time datetime="@segment.CapturedAt.ToString("O")" data-local="time">@segment.CapturedAt.UtcDateTime.ToString("HH:mm:ss")</time>
                 <p>@segment.Text</p>
             </section>
         }

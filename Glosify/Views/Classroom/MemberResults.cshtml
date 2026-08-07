@@ -43,7 +43,7 @@
                             <td>@row.CorrectCount</td>
                             <td>@row.IncorrectCount</td>
                             <td>@row.SkippedCount</td>
-                            <td>@row.CompletedAt.ToLocalTime().ToString("MMM d, yyyy HH:mm")</td>
+                            <td><time datetime="@row.CompletedAt.ToString("O")" data-local="datetime">@row.CompletedAt.UtcDateTime.ToString("MMM d, yyyy HH:mm")</time></td>
                         </tr>
                     }
                 </tbody>
