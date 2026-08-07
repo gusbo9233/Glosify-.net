@@ -24,7 +24,16 @@ if (previews.length > 0) {
             const url = canvas.dataset.pdfUrl;
             if (!url) return;
 
-            document = await pdfjs.getDocument(url).promise;
+            // Range support on the endpoint is only half of it: pdf.js still
+            // prefetches the rest of the document once it has what it needs,
+            // and streams the body besides. A shelf thumbnail is page one at
+            // 112px, so both are pure download. Turning them off leaves it
+            // reading the few ranges the first page actually occupies.
+            document = await pdfjs.getDocument({
+                url,
+                disableAutoFetch: true,
+                disableStream: true
+            }).promise;
             const page = await document.getPage(1);
             const baseViewport = page.getViewport({ scale: 1 });
             const displayWidth = canvas.parentElement?.clientWidth || 112;

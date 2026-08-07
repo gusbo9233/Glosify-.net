@@ -35,6 +35,35 @@ public sealed class BookFileRangeTests
             + "forward-only stream turns range support off without any error.");
     }
 
+    [Fact]
+    public void The_shelf_asks_pdfjs_for_page_one_rather_than_the_whole_book()
+    {
+        // Ranges on the endpoint buy nothing while pdf.js still prefetches and
+        // streams the rest of the file, which is what it does by default.
+        var shelf = File.ReadAllText(Path.Combine(WebRoot(), "js", "books-library.js"));
+
+        Assert.Contains("disableAutoFetch: true", shelf, StringComparison.Ordinal);
+        Assert.Contains("disableStream: true", shelf, StringComparison.Ordinal);
+    }
+
+    private static string WebRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(directory.FullName, "Glosify", "wwwroot");
+            if (Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new InvalidOperationException("Could not locate the Glosify web root.");
+    }
+
     private static BooksController CreateController(Stream pdf)
     {
         var controller = new BooksController(
