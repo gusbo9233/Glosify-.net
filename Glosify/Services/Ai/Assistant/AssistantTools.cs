@@ -2,9 +2,11 @@ using System.Text.Json;
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
+using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Language;
+using Glosify.Services.RealtimeTranslation;
 
 namespace Glosify.Services.Ai.Assistant;
 
@@ -261,6 +263,11 @@ public sealed class AssistantTools : IAssistantTools
             ["transcript_id"] = StringProp("Optional saved transcript id. Omit to use the transcript open in the UI."),
             ["offset"] = IntegerProp("Optional number of caption segments to skip. Defaults to 0."),
             ["limit"] = IntegerProp("Optional maximum segments from 1 to 100. Defaults to 100."),
+            ["stream"] = StringProp(
+                "Optional caption stream: 'source' for the original speech (the default), or 'translation' for the live translation "
+                + "of the same audio, produced by a different model. Request 'translation' only to cross-check a passage where the "
+                + "source text looks garbled or ambiguous; it recovers meaning, not the exact target-language wording. Check "
+                + "available_streams in the response before asking for a stream."),
         }));
 
     private static readonly AgentToolDeclaration MoveQuizDeclaration = new(
@@ -687,7 +694,9 @@ public sealed class AssistantTools : IAssistantTools
                 stream = transcript.Stream,
                 created_at = transcript.CreatedAt,
                 updated_at = transcript.UpdatedAt,
-                segment_count = transcript.Segments.Count,
+                segment_count = transcript.Segments.Count(segment => segment.Stream == transcript.Stream),
+                has_translation_stream = transcript.Segments.Any(segment =>
+                    segment.Stream == RealtimeTranslationTranscriptStreams.Translation),
             })
             .ToListAsync(cancellationToken);
         return new
@@ -727,7 +736,10 @@ public sealed class AssistantTools : IAssistantTools
                 item.Title,
                 item.TargetLanguage,
                 item.Stream,
-                total = item.Segments.Count,
+                sourceTotal = item.Segments.Count(segment =>
+                    segment.Stream == RealtimeTranslationTranscriptStreams.Source),
+                translationTotal = item.Segments.Count(segment =>
+                    segment.Stream == RealtimeTranslationTranscriptStreams.Translation),
             })
             .SingleOrDefaultAsync(cancellationToken);
         if (transcript is null)
@@ -735,9 +747,24 @@ public sealed class AssistantTools : IAssistantTools
             return new { error = "Saved transcript not found." };
         }
 
+        var requestedStream = GetString(args, "stream");
+        var selectedStream = RealtimeTranslationTranscriptService.NormalizeStream(requestedStream)
+            ?? transcript.Stream;
+        var total = selectedStream == RealtimeTranslationTranscriptStreams.Translation
+            ? transcript.translationTotal
+            : transcript.sourceTotal;
+        if (total == 0)
+        {
+            return new
+            {
+                error = $"This transcript has no '{selectedStream}' captions.",
+                available_streams = AvailableStreams(transcript.sourceTotal, transcript.translationTotal),
+            };
+        }
+
         var rows = await _context.RealtimeTranslationTranscriptSegments
             .AsNoTracking()
-            .Where(segment => segment.TranscriptId == transcript.Id)
+            .Where(segment => segment.TranscriptId == transcript.Id && segment.Stream == selectedStream)
             .OrderBy(segment => segment.CapturedAt)
             .ThenBy(segment => segment.SessionId)
             .ThenBy(segment => segment.Sequence)
@@ -767,13 +794,28 @@ public sealed class AssistantTools : IAssistantTools
             title = transcript.Title,
             target_language = transcript.TargetLanguage,
             learning_language = transcript.TargetLanguage,
-            stream = transcript.Stream,
+            stream = selectedStream,
+            available_streams = AvailableStreams(transcript.sourceTotal, transcript.translationTotal),
             captions,
             offset,
-            total_segments = transcript.total,
-            has_more = offset + captions.Count < transcript.total,
+            total_segments = total,
+            has_more = offset + captions.Count < total,
             next_offset = offset + captions.Count,
         };
+    }
+
+    private static string[] AvailableStreams(int sourceTotal, int translationTotal)
+    {
+        var streams = new List<string>(2);
+        if (sourceTotal > 0)
+        {
+            streams.Add(RealtimeTranslationTranscriptStreams.Source);
+        }
+        if (translationTotal > 0)
+        {
+            streams.Add(RealtimeTranslationTranscriptStreams.Translation);
+        }
+        return [.. streams];
     }
 
     private async Task<object> SearchWordsAsync(JsonElement args, AgentToolContext context, CancellationToken ct)

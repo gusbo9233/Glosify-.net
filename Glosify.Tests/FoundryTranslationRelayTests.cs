@@ -117,6 +117,7 @@ public sealed class FoundryTranslationRelayTests
         Assert.NotNull(completed);
         Assert.Equal("Hola mundo", completed.Text);
         Assert.Equal(1, completed.Sequence);
+        Assert.Equal(RealtimeTranslationTranscriptStreams.Translation, completed.Stream);
         Assert.Null(accumulator.Apply(
             "{\"type\":\"response.output_text.done\",\"response_id\":\"r1\",\"text\":\"Hola mundo\"}"u8,
             now));

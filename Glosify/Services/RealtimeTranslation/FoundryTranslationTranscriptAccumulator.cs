@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Security.Cryptography;
+using Glosify.Models.Entities;
 
 namespace Glosify.Services.RealtimeTranslation;
 
@@ -76,7 +77,8 @@ internal sealed class FoundryTranslationTranscriptAccumulator
                 ++_sequence,
                 key,
                 finalText.Trim(),
-                capturedAt);
+                capturedAt,
+                RealtimeTranslationTranscriptStreams.Translation);
         }
         catch (JsonException)
         {

@@ -259,6 +259,41 @@
     opacity: 0.45;
 }
 
+/* ---- Stream switch ----------------------------------------------------- */
+
+.transcript-streams {
+    display: flex;
+    gap: 8px;
+}
+
+.transcript-streams a {
+    border: 1px solid rgba(61, 74, 61, 0.22);
+    border-radius: 9999px;
+    color: var(--on-surface-var);
+    font-size: 13px;
+    font-weight: 750;
+    padding: 8px 16px;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+.transcript-streams a:hover {
+    background: rgba(83, 224, 118, 0.12);
+}
+
+.transcript-streams a.is-active {
+    border-color: transparent;
+    background: rgba(83, 224, 118, 0.16);
+    color: var(--primary);
+}
+
+.transcript-stream-note {
+    color: rgba(188, 203, 185, 0.6);
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0;
+}
+
 /* ---- Reader ----------------------------------------------------------- */
 
 .transcript-reader {

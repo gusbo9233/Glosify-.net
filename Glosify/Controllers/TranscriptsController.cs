@@ -42,7 +42,7 @@ public sealed class TranscriptsController : Controller
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> Details(Guid id, int page = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Details(Guid id, int page = 1, string? stream = null, CancellationToken cancellationToken = default)
     {
         var language = await _preferences.GetSelectedAsync(User.GetUserId(), cancellationToken);
         if (language is null)
@@ -55,6 +55,7 @@ public sealed class TranscriptsController : Controller
             language.Code,
             page,
             DetailPageSize,
+            stream,
             cancellationToken);
         return transcript is null
             ? NotFound()

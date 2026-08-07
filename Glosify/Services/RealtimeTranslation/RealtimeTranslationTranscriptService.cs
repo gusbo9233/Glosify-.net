@@ -42,7 +42,7 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
                 transcript.Stream,
                 transcript.CreatedAt,
                 transcript.UpdatedAt,
-                transcript.Segments.Count))
+                transcript.Segments.Count(segment => segment.Stream == transcript.Stream)))
             .ToListAsync(cancellationToken);
         return new TranscriptLibraryPage(items, page, pageSize, total);
     }
@@ -53,6 +53,7 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
         string quizLanguageCode,
         int page,
         int pageSize,
+        string? stream = null,
         CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page);
@@ -70,7 +71,10 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
                 item.Stream,
                 item.CreatedAt,
                 item.UpdatedAt,
-                SegmentCount = item.Segments.Count,
+                SourceCount = item.Segments.Count(segment =>
+                    segment.Stream == RealtimeTranslationTranscriptStreams.Source),
+                TranslationCount = item.Segments.Count(segment =>
+                    segment.Stream == RealtimeTranslationTranscriptStreams.Translation),
                 HasActiveSession = item.Sessions.Any(session =>
                     session.Status == RealtimeTranslationSessionStatuses.Pending
                     || session.Status == RealtimeTranslationSessionStatuses.Active),
@@ -81,9 +85,13 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             return null;
         }
 
+        var selectedStream = NormalizeStream(stream) ?? transcript.Stream;
+        var totalSegments = selectedStream == RealtimeTranslationTranscriptStreams.Translation
+            ? transcript.TranslationCount
+            : transcript.SourceCount;
         var segments = await _context.RealtimeTranslationTranscriptSegments
             .AsNoTracking()
-            .Where(segment => segment.TranscriptId == transcriptId)
+            .Where(segment => segment.TranscriptId == transcriptId && segment.Stream == selectedStream)
             .OrderBy(segment => segment.CapturedAt)
             .ThenBy(segment => segment.SessionId)
             .ThenBy(segment => segment.Sequence)
@@ -100,8 +108,11 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             segments,
             page,
             pageSize,
-            transcript.SegmentCount,
-            transcript.HasActiveSession);
+            totalSegments,
+            transcript.HasActiveSession,
+            selectedStream,
+            transcript.SourceCount,
+            transcript.TranslationCount);
     }
 
     public async Task<TranscriptTextPage?> GetTextPageAsync(
@@ -122,16 +133,24 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
                 && item.UserId == userId
                 && item.TargetLanguage == quizLanguageCode
                 && item.Segments.Any())
-            .Select(item => new { item.Id, item.Title, item.TargetLanguage, item.Stream, Total = item.Segments.Count })
+            .Select(item => new
+            {
+                item.Id,
+                item.Title,
+                item.TargetLanguage,
+                item.Stream,
+                Total = item.Segments.Count(segment => segment.Stream == item.Stream),
+            })
             .SingleOrDefaultAsync(cancellationToken);
         if (transcript is null)
         {
             return null;
         }
 
+        var primaryStream = transcript.Stream;
         var rows = await _context.RealtimeTranslationTranscriptSegments
             .AsNoTracking()
-            .Where(segment => segment.TranscriptId == transcriptId)
+            .Where(segment => segment.TranscriptId == transcriptId && segment.Stream == primaryStream)
             .OrderBy(segment => segment.CapturedAt)
             .ThenBy(segment => segment.SessionId)
             .ThenBy(segment => segment.Sequence)
@@ -241,15 +260,20 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             return;
         }
 
+        // The source and translation streams number their own segments, so a key is
+        // only a duplicate when the stream matches too.
         var keys = segments.Select(segment => segment.ProviderEventKey).Distinct().ToList();
-        var existing = await _context.RealtimeTranslationTranscriptSegments
+        var stored = await _context.RealtimeTranslationTranscriptSegments
             .Where(segment => segment.SessionId == sessionId && keys.Contains(segment.ProviderEventKey))
-            .Select(segment => segment.ProviderEventKey)
-            .ToHashSetAsync(cancellationToken);
+            .Select(segment => new { segment.Stream, segment.ProviderEventKey })
+            .ToListAsync(cancellationToken);
+        var existing = stored
+            .Select(segment => (segment.Stream, segment.ProviderEventKey))
+            .ToHashSet();
         foreach (var segment in segments)
         {
             var text = segment.Text.Trim();
-            if (text.Length == 0 || existing.Contains(segment.ProviderEventKey))
+            if (text.Length == 0 || !existing.Add((segment.Stream, segment.ProviderEventKey)))
             {
                 continue;
             }
@@ -257,13 +281,13 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             {
                 text = text[..MaximumStoredSegmentCharacters];
             }
-            existing.Add(segment.ProviderEventKey);
             _context.RealtimeTranslationTranscriptSegments.Add(new RealtimeTranslationTranscriptSegment
             {
                 Id = Guid.NewGuid(),
                 TranscriptId = transcriptId,
                 SessionId = sessionId,
                 Sequence = segment.Sequence,
+                Stream = segment.Stream,
                 ProviderEventKey = segment.ProviderEventKey,
                 Text = text,
                 CapturedAt = segment.CapturedAt,
@@ -305,4 +329,11 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
                 && transcript.TargetLanguage == quizLanguageCode,
             cancellationToken)
         ?? throw new RealtimeTranslationNotFoundException("Saved transcript not found.");
+
+    internal static string? NormalizeStream(string? stream) => stream?.Trim().ToLowerInvariant() switch
+    {
+        RealtimeTranslationTranscriptStreams.Source => RealtimeTranslationTranscriptStreams.Source,
+        RealtimeTranslationTranscriptStreams.Translation => RealtimeTranslationTranscriptStreams.Translation,
+        _ => null,
+    };
 }
