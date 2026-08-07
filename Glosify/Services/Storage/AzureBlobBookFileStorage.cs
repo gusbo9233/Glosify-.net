@@ -46,12 +46,23 @@ public sealed class AzureBlobBookFileStorage : IBookFileStorage
         return blobClient.Name;
     }
 
+    /// <summary>
+    /// Opens the blob as a seekable stream.
+    /// </summary>
+    /// <remarks>
+    /// Seekability is what lets the book endpoints answer HTTP range requests:
+    /// FileStreamResult drops enableRangeProcessing without a word when the
+    /// stream cannot seek, and DownloadStreamingAsync hands back a forward-only
+    /// network stream. Every request therefore sent the whole PDF — including
+    /// the ones pdf.js makes to draw a 112px shelf thumbnail, which pulled 13 MB
+    /// onto the library page. OpenReadAsync seeks by issuing its own range
+    /// requests to blob storage, so only the bytes a reader asks for move.
+    /// </remarks>
     public async Task<Stream> OpenReadAsync(string blobName, CancellationToken cancellationToken = default)
     {
         blobName = RequireBlobName(blobName);
         var blobClient = _containerClient.GetBlobClient(blobName);
-        var response = await blobClient.DownloadStreamingAsync(cancellationToken: cancellationToken);
-        return response.Value.Content;
+        return await blobClient.OpenReadAsync(cancellationToken: cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken = default)
