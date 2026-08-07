@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -510,27 +511,41 @@ app.UseResponseCompression();
 // plain path with asp-append-version, so every asset was revalidated on every
 // page view — a conditional request per asset, per navigation.
 //
-// The appended `v` is the SHA-256 of the file, which the endpoint also sends
-// as its ETag. A request whose `v` matches that ETag is therefore asking for
-// content that cannot change while the URL stays the same, which is precisely
-// what immutable promises. A stale `v` from a previous deploy will not match
-// and keeps the no-cache the endpoint chose.
+// A request is safe to cache forever when its `v` is still the version the app
+// would generate for that path right now: the URL then names content that
+// cannot change under it. IFileVersionProvider is what asp-append-version used
+// to build the URL in the first place, so asking it again compares like with
+// like — and a `v` left over from an earlier deploy simply will not match, so
+// it keeps the no-cache the endpoint chose.
+//
+// The ETag is deliberately not used for this. MapStaticAssets gives the
+// brotli and gzip representations their own ETags, computed over the
+// compressed bytes, so an ETag comparison would quietly fail for every
+// browser — which all send Accept-Encoding — and only succeed for clients
+// asking for identity.
 app.Use(async (context, next) =>
 {
-    var requestedFingerprint = context.Request.Query["v"].ToString();
-    if (!string.IsNullOrEmpty(requestedFingerprint) && HttpMethods.IsGet(context.Request.Method))
+    if (HttpMethods.IsGet(context.Request.Method)
+        && context.Request.Query.TryGetValue("v", out var requestedFingerprint)
+        && !string.IsNullOrEmpty(requestedFingerprint))
     {
-        context.Response.OnStarting(static state =>
-        {
-            var (httpContext, fingerprint) = ((HttpContext, string))state;
-            if (httpContext.Response.StatusCode == StatusCodes.Status200OK
-                && FingerprintMatchesETag(fingerprint, httpContext.Response.Headers.ETag.ToString()))
-            {
-                httpContext.Response.Headers.CacheControl = "max-age=31536000, immutable";
-            }
+        var versionProvider = context.RequestServices.GetRequiredService<IFileVersionProvider>();
+        var versionedPath = versionProvider.AddFileVersionToPath(context.Request.PathBase, context.Request.Path);
 
-            return Task.CompletedTask;
-        }, (context, requestedFingerprint));
+        if (CurrentFileVersion(versionedPath) is { } current
+            && string.Equals(current, requestedFingerprint, StringComparison.Ordinal))
+        {
+            context.Response.OnStarting(static state =>
+            {
+                var httpContext = (HttpContext)state;
+                if (httpContext.Response.StatusCode == StatusCodes.Status200OK)
+                {
+                    httpContext.Response.Headers.CacheControl = "max-age=31536000, immutable";
+                }
+
+                return Task.CompletedTask;
+            }, context);
+        }
     }
 
     await next();
@@ -632,27 +647,14 @@ app.Run();
 return 0;
 
 /// <summary>
-/// Whether an asp-append-version fingerprint names exactly the bytes an
-/// endpoint is about to return.
+/// The version <see cref="IFileVersionProvider"/> just appended, or null when
+/// it appended nothing because the file is not under the web root.
 /// </summary>
-/// <remarks>
-/// Both sides are the same SHA-256, spelled differently: the tag helper emits
-/// base64url with the padding dropped, while the ETag is standard base64 in
-/// quotes. A weak ETag only promises semantic equivalence, never the exact
-/// bytes, so it can never justify caching a URL forever.
-/// </remarks>
-static bool FingerprintMatchesETag(string fingerprint, string etag)
+static string? CurrentFileVersion(string versionedPath)
 {
-    var tag = etag.Trim();
-    if (tag.Length == 0 || tag.StartsWith("W/", StringComparison.Ordinal))
-    {
-        return false;
-    }
-
-    return string.Equals(Canonical(fingerprint), Canonical(tag.Trim('"')), StringComparison.Ordinal);
-
-    static string Canonical(string value) =>
-        value.Replace('-', '+').Replace('_', '/').TrimEnd('=');
+    const string marker = "?v=";
+    var index = versionedPath.IndexOf(marker, StringComparison.Ordinal);
+    return index < 0 ? null : versionedPath[(index + marker.Length)..];
 }
 
 static string BuildColdStartFriendlyConnectionString(string connectionString)

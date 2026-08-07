@@ -98,15 +98,36 @@ public class PageDeliveryTests : IClassFixture<WebApplicationFactory<Program>>
 
         Assert.NotEmpty(assets);
 
+        // Every browser sends Accept-Encoding, and MapStaticAssets answers those
+        // with a separate representation carrying its own ETag over the
+        // compressed bytes. Asking for identity here would test the one case no
+        // real client hits.
         foreach (var asset in assets)
         {
-            var response = await client.GetAsync(asset);
+            foreach (var encoding in new[] { "br, gzip", "identity" })
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, asset);
+                request.Headers.AcceptEncoding.ParseAdd(encoding);
 
-            response.EnsureSuccessStatusCode();
-            var cacheControl = response.Headers.CacheControl;
-            Assert.True(
-                cacheControl?.MaxAge == TimeSpan.FromDays(365) && cacheControl.Extensions.Any(e => e.Name == "immutable"),
-                $"{asset} came back as '{cacheControl}', so browsers revalidate it on every page view.");
+                var response = await client.SendAsync(request);
+
+                response.EnsureSuccessStatusCode();
+
+                // Guards the guard: if the host stopped answering with a
+                // compressed representation, the loop above would pass without
+                // ever exercising the case that regressed.
+                if (encoding != "identity")
+                {
+                    Assert.NotEmpty(response.Content.Headers.ContentEncoding);
+                }
+
+                var cacheControl = response.Headers.CacheControl;
+                Assert.True(
+                    cacheControl?.MaxAge == TimeSpan.FromDays(365)
+                    && cacheControl.Extensions.Any(extension => extension.Name == "immutable"),
+                    $"{asset} came back as '{cacheControl}' for Accept-Encoding '{encoding}', "
+                    + "so browsers revalidate it on every page view.");
+            }
         }
     }
 
