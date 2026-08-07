@@ -124,6 +124,61 @@ public sealed class FoundryTranslationRelayTests
     }
 
     [Fact]
+    public void TranscriptAccumulator_StoresDeltaOnlyCaptionsOnceTheyGoQuiet()
+    {
+        var accumulator = new FoundryTranslationTranscriptAccumulator();
+        var start = DateTimeOffset.UtcNow;
+
+        // A caption that only ever arrives as deltas, with no id fields to group on.
+        Assert.Null(accumulator.Apply(
+            "{\"type\":\"session.output_transcript.delta\",\"delta\":\"Dzień \"}"u8,
+            start));
+        Assert.Null(accumulator.Apply(
+            "{\"type\":\"session.output_transcript.delta\",\"delta\":\"dobry\"}"u8,
+            start));
+        Assert.Empty(accumulator.FlushIdle(start));
+
+        var flushed = Assert.Single(
+            accumulator.FlushIdle(start + FoundryTranslationTranscriptAccumulator.IdleFlush));
+        Assert.Equal("Dzień dobry", flushed.Text);
+        Assert.Equal(RealtimeTranslationTranscriptStreams.Translation, flushed.Stream);
+
+        // A later caption reuses the same grouping key, so its stored key must
+        // still be distinct or the write would treat it as a duplicate.
+        Assert.Null(accumulator.Apply(
+            "{\"type\":\"session.output_transcript.delta\",\"delta\":\"Do widzenia\"}"u8,
+            start + TimeSpan.FromSeconds(30)));
+        var second = Assert.Single(accumulator.FlushAll(start + TimeSpan.FromSeconds(31)));
+        Assert.Equal("Do widzenia", second.Text);
+        Assert.NotEqual(flushed.ProviderEventKey, second.ProviderEventKey);
+        Assert.Equal(2, second.Sequence);
+    }
+
+    [Fact]
+    public void TranscriptAccumulator_RecordsEventTypesWithoutCaptionText()
+    {
+        var accumulator = new FoundryTranslationTranscriptAccumulator();
+        var now = DateTimeOffset.UtcNow;
+
+        accumulator.Apply(
+            "{\"type\":\"session.output_transcript.delta\",\"delta\":\"Dzień dobry\"}"u8,
+            now);
+        accumulator.Apply(
+            "{\"type\":\"response.text.done\",\"response_id\":\"r1\",\"text\":\"Good morning\"}"u8,
+            now);
+        accumulator.Apply(
+            "{\"type\":\"session.input_transcript.done\",\"transcript\":\"ignored\"}"u8,
+            now);
+
+        Assert.Equal(
+            ["response.text.done[response_id]", "session.output_transcript.delta[none]"],
+            accumulator.ObservedEventTypes.OrderBy(type => type));
+        Assert.DoesNotContain(
+            accumulator.ObservedEventTypes,
+            type => type.Contains("dobry") || type.Contains("morning"));
+    }
+
+    [Fact]
     public void RelayToken_IsSingleUseAndBoundToSession()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());

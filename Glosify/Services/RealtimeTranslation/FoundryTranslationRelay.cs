@@ -502,36 +502,74 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
         var accumulator = transcriptWriter is null
             ? null
             : new FoundryTranslationTranscriptAccumulator();
-        while (!cancellationToken.IsCancellationRequested
-            && foundrySocket.State == WebSocketState.Open
-            && browserSocket.State == WebSocketState.Open)
+        try
         {
-            var message = await ReceiveTextMessageAsync(
-                foundrySocket,
-                FoundryTranslationProtocol.MaximumFoundryMessageBytes,
-                cancellationToken);
-            if (message is null)
+            while (!cancellationToken.IsCancellationRequested
+                && foundrySocket.State == WebSocketState.Open
+                && browserSocket.State == WebSocketState.Open)
             {
-                return;
+                var message = await ReceiveTextMessageAsync(
+                    foundrySocket,
+                    FoundryTranslationProtocol.MaximumFoundryMessageBytes,
+                    cancellationToken);
+                if (message is null)
+                {
+                    return;
+                }
+                if (accumulator is not null)
+                {
+                    var now = _timeProvider.GetUtcNow();
+                    var segment = accumulator.Apply(message, now);
+                    if (segment is not null)
+                    {
+                        WriteCaption(segment, transcriptWriter!, transcriptState, sessionId);
+                    }
+                    foreach (var idle in accumulator.FlushIdle(now))
+                    {
+                        WriteCaption(idle, transcriptWriter!, transcriptState, sessionId);
+                    }
+                }
+                if (!FoundryTranslationProtocol.ShouldForwardFoundryMessage(message))
+                {
+                    continue;
+                }
+
+                await SendBrowserBytesAsync(browserSocket, browserSendLock, message, cancellationToken);
             }
+        }
+        finally
+        {
             if (accumulator is not null)
             {
-                var segment = accumulator.Apply(message, _timeProvider.GetUtcNow());
-                if (segment is not null && !transcriptWriter!.TryWrite(segment))
+                foreach (var remaining in accumulator.FlushAll(_timeProvider.GetUtcNow()))
                 {
-                    Interlocked.Exchange(ref transcriptState.WarningPending, 1);
-                    _logger.LogWarning(
-                        "Saved caption buffer filled for session {SessionId}",
-                        sessionId);
+                    WriteCaption(remaining, transcriptWriter!, transcriptState, sessionId);
                 }
+                // Records which caption events the translate deployment actually
+                // sends, so segmentation can be corrected without guesswork. Event
+                // types and id-field names only; never caption text.
+                _logger.LogInformation(
+                    "Translation capture for session {SessionId} saw event types {EventTypes}",
+                    sessionId,
+                    string.Join(", ", accumulator.ObservedEventTypes.OrderBy(type => type)));
             }
-            if (!FoundryTranslationProtocol.ShouldForwardFoundryMessage(message))
-            {
-                continue;
-            }
-
-            await SendBrowserBytesAsync(browserSocket, browserSendLock, message, cancellationToken);
         }
+    }
+
+    private void WriteCaption(
+        CapturedTranslationSegment segment,
+        ChannelWriter<CapturedTranslationSegment> writer,
+        RelayTranscriptState transcriptState,
+        Guid sessionId)
+    {
+        if (writer.TryWrite(segment))
+        {
+            return;
+        }
+        Interlocked.Exchange(ref transcriptState.WarningPending, 1);
+        _logger.LogWarning(
+            "Saved caption buffer filled for session {SessionId}",
+            sessionId);
     }
 
     private async Task PumpSourceTranscriptAsync(
@@ -562,12 +600,9 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
             }
 
             var segment = accumulator.Apply(message, _timeProvider.GetUtcNow());
-            if (segment is not null && transcriptWriter is not null && !transcriptWriter.TryWrite(segment))
+            if (segment is not null && transcriptWriter is not null)
             {
-                Interlocked.Exchange(ref transcriptState.WarningPending, 1);
-                _logger.LogWarning(
-                    "Saved caption buffer filled for session {SessionId}",
-                    sessionId);
+                WriteCaption(segment, transcriptWriter, transcriptState, sessionId);
             }
 
             if (browserSocket.State != WebSocketState.Open)
