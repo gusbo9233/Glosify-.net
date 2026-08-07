@@ -86,6 +86,44 @@ public class PageDeliveryTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task Fingerprinted_assets_are_cached_forever_rather_than_revalidated()
+    {
+        var client = CreateClient();
+        var document = await GetDocumentAsync("/");
+
+        var assets = document.QuerySelectorAll("link[rel='stylesheet'], script[src]")
+            .Select(element => element.GetAttribute("href") ?? element.GetAttribute("src") ?? string.Empty)
+            .Where(url => url.Contains("?v=", StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.NotEmpty(assets);
+
+        foreach (var asset in assets)
+        {
+            var response = await client.GetAsync(asset);
+
+            response.EnsureSuccessStatusCode();
+            var cacheControl = response.Headers.CacheControl;
+            Assert.True(
+                cacheControl?.MaxAge == TimeSpan.FromDays(365) && cacheControl.Extensions.Any(e => e.Name == "immutable"),
+                $"{asset} came back as '{cacheControl}', so browsers revalidate it on every page view.");
+        }
+    }
+
+    [Fact]
+    public async Task An_asset_whose_fingerprint_does_not_match_is_still_revalidated()
+    {
+        // A `v` left over from an earlier deploy names bytes the server no longer
+        // has, so the response it does return must not be cached under that URL.
+        var client = CreateClient();
+
+        var response = await client.GetAsync("/css/site.css?v=Sn4CIzuZjNBTMPGXvxjGWA0ZFyCX4Wg8dJDBaLLGSNo");
+
+        response.EnsureSuccessStatusCode();
+        Assert.True(response.Headers.CacheControl?.NoCache);
+    }
+
+    [Fact]
     public async Task Site_stylesheet_does_not_chain_a_font_request_behind_itself()
     {
         var client = CreateClient();

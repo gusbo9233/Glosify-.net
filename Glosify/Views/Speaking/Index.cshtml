@@ -390,7 +390,18 @@
     </article>
 </template>
 
+@section Head {
+    @* The avatar scenes import three.module.js, which in turn imports
+       three.core.js — 367 KB discovered one request at a time, from an origin
+       the browser has not connected to yet. Preloading both alongside the
+       connection warm-up collapses that chain into parallel downloads that
+       start with the page instead of after speaking.js parses. *@
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@@0.180.0/build/three.module.js" crossorigin />
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@@0.180.0/build/three.core.js" crossorigin />
+}
+
 @section Scripts {
-    <script src="~/lib/speech-sdk/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
+    <script src="~/lib/speech-sdk/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js" defer></script>
     <script type="module" src="~/js/speaking.js" asp-append-version="true"></script>
 }

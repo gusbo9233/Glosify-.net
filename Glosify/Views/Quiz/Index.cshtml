@@ -15,6 +15,10 @@
         : $"{currentLanguage} collection.";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/quiz-library.css" asp-append-version="true" />
+}
+
 <section class="select-quiz-page library-page" data-quiz-library data-move-quiz-url="@Url.Action("MoveQuizToCollection", "Quiz")">
     <header class="select-header library-hero">
         <div class="select-heading">
