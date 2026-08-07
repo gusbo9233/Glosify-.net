@@ -15,18 +15,18 @@ namespace Glosify.Controllers;
 public sealed class DemoController : Controller
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly DemoAccountSeeder _seeder;
     private readonly DemoAccountOptions _options;
     private readonly ILogger<DemoController> _logger;
 
     public DemoController(
         SignInManager<ApplicationUser> signInManager,
-        UserManager<ApplicationUser> userManager,
+        DemoAccountSeeder seeder,
         IOptions<DemoAccountOptions> options,
         ILogger<DemoController> logger)
     {
         _signInManager = signInManager;
-        _userManager = userManager;
+        _seeder = seeder;
         _options = options.Value;
         _logger = logger;
     }
@@ -49,14 +49,20 @@ public sealed class DemoController : Controller
             return NotFound();
         }
 
-        var user = await _userManager.FindByEmailAsync(_options.Email);
-        if (user is null)
+        // Seeding here rather than trusting startup: the account is created on the first
+        // visit if it is missing, and any Identity failure is logged from inside a
+        // request, which is the only place Application Insights sees it.
+        var seed = await _seeder.EnsureAsync(HttpContext.RequestAborted);
+        if (seed.User is null)
         {
             _logger.LogError(
-                "The demo access code was correct but the demo account {Email} does not exist. Check the startup seeder logs.",
-                _options.Email);
+                "The demo access code was correct but the demo account {Email} is unavailable: {Error}",
+                _options.Email,
+                seed.Error);
             return NotFound();
         }
+
+        var user = seed.User;
 
         // Replaces whatever cookie the visitor already had, so a signed-in user
         // following the link lands in the demo rather than silently staying themselves.

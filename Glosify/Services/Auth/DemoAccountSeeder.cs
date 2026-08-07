@@ -4,6 +4,13 @@ using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.Auth;
 
+public sealed record DemoAccountSeedResult(ApplicationUser? User, string? Error)
+{
+    public static DemoAccountSeedResult Seeded(ApplicationUser user) => new(user, null);
+
+    public static DemoAccountSeedResult Failed(string error) => new(null, error);
+}
+
 /// <summary>
 /// Keeps the shared demo account present and funded. Runs at startup so a fresh
 /// deployment (or a demo account someone spent down) is usable without a manual
@@ -28,35 +35,42 @@ public sealed class DemoAccountSeeder
         _logger = logger;
     }
 
-    public async Task EnsureAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Returns the demo user, creating and funding it if needed. The failure reason comes
+    /// back to the caller rather than only reaching the log, because App Service attaches
+    /// Application Insights without the SDK and so captures nothing logged during startup.
+    /// </summary>
+    public async Task<DemoAccountSeedResult> EnsureAsync(CancellationToken cancellationToken = default)
     {
         if (!_options.Enabled)
         {
-            return;
+            return DemoAccountSeedResult.Failed("Demo access is turned off (Demo:Enabled is false).");
         }
 
         if (!_options.IsConfigured)
         {
-            _logger.LogWarning(
-                "Demo access is enabled but incomplete (Demo:Email, Demo:Password, Demo:AccessCode and a positive Demo:Credits are all required). The demo account was not seeded.");
-            return;
+            var incomplete =
+                "Demo access is enabled but incomplete (Demo:Email, Demo:Password, Demo:AccessCode and a positive Demo:Credits are all required).";
+            _logger.LogWarning("{Reason} The demo account was not seeded.", incomplete);
+            return DemoAccountSeedResult.Failed(incomplete);
         }
 
-        var user = await EnsureUserAsync(cancellationToken);
+        var (user, error) = await EnsureUserAsync(cancellationToken);
         if (user is null)
         {
-            return;
+            return DemoAccountSeedResult.Failed(error ?? "The demo account could not be created.");
         }
 
         await EnsureCreditsAsync(user.Id, cancellationToken);
+        return DemoAccountSeedResult.Seeded(user);
     }
 
-    private async Task<ApplicationUser?> EnsureUserAsync(CancellationToken cancellationToken)
+    private async Task<(ApplicationUser? User, string? Error)> EnsureUserAsync(CancellationToken cancellationToken)
     {
         var user = await _userManager.FindByEmailAsync(_options.Email);
         if (user is not null)
         {
-            return user;
+            return (user, null);
         }
 
         user = new ApplicationUser
@@ -72,7 +86,7 @@ public sealed class DemoAccountSeeder
         if (result.Succeeded)
         {
             _logger.LogInformation("Created the demo account {Email}.", _options.Email);
-            return user;
+            return (user, null);
         }
 
         // Two instances starting together race here; the loser sees a duplicate-user
@@ -80,14 +94,12 @@ public sealed class DemoAccountSeeder
         var existing = await _userManager.FindByEmailAsync(_options.Email);
         if (existing is not null)
         {
-            return existing;
+            return (existing, null);
         }
 
-        _logger.LogError(
-            "Could not create the demo account {Email}: {Errors}",
-            _options.Email,
-            string.Join("; ", result.Errors.Select(error => $"{error.Code}: {error.Description}")));
-        return null;
+        var errors = string.Join("; ", result.Errors.Select(error => $"{error.Code}: {error.Description}"));
+        _logger.LogError("Could not create the demo account {Email}: {Errors}", _options.Email, errors);
+        return (null, $"Could not create the demo account: {errors}");
     }
 
     private async Task EnsureCreditsAsync(string userId, CancellationToken cancellationToken)
