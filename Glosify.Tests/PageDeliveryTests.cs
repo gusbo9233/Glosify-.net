@@ -55,19 +55,27 @@ public class PageDeliveryTests : IClassFixture<WebApplicationFactory<Program>>
     [Theory]
     [InlineData("/")]
     [InlineData("/login")]
-    public async Task Pages_request_every_web_font_up_front_in_one_stylesheet(string url)
+    public async Task Pages_request_every_web_font_up_front_from_the_head(string url)
     {
         var document = await GetDocumentAsync(url);
 
-        var fontStylesheets = document.QuerySelectorAll("link[rel='stylesheet']")
+        var fontStylesheets = document.QuerySelectorAll("head link[rel='stylesheet']")
             .Select(link => link.GetAttribute("href") ?? string.Empty)
             .Where(href => href.Contains("fonts.googleapis.com", StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
-        var fonts = Assert.Single(fontStylesheets);
-        Assert.Contains("family=Lora", fonts, StringComparison.Ordinal);
-        Assert.Contains("family=Material+Symbols+Outlined", fonts, StringComparison.Ordinal);
-        Assert.Contains("family=Plus+Jakarta+Sans", fonts, StringComparison.Ordinal);
+        // Text and icons are two requests, not a chain, and not one request:
+        // they need different font-display behavior.
+        Assert.Equal(2, fontStylesheets.Length);
+        var text = Assert.Single(fontStylesheets, href => href.Contains("family=Lora", StringComparison.Ordinal));
+        Assert.Contains("family=Plus+Jakarta+Sans", text, StringComparison.Ordinal);
+        Assert.Contains("display=swap", text, StringComparison.Ordinal);
+
+        var icons = Assert.Single(
+            fontStylesheets,
+            href => href.Contains("family=Material+Symbols+Outlined", StringComparison.Ordinal));
+        Assert.Contains("icon_names=", icons, StringComparison.Ordinal);
+        Assert.Contains("display=block", icons, StringComparison.Ordinal);
 
         var preconnects = document.QuerySelectorAll("link[rel='preconnect']")
             .Select(link => link.GetAttribute("href") ?? string.Empty)

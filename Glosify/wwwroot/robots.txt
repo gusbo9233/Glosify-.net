@@ -1,0 +1,19 @@
+# Without this file /robots.txt falls through to MVC routing, which answers a
+# redirect to the login page. Crawlers then read an HTML document as robots
+# directives. Signed-in areas are already unreachable to a crawler; they are
+# listed so nothing wastes a crawl budget discovering that.
+User-agent: *
+Disallow: /Account/
+Disallow: /Admin/
+Disallow: /api/
+Disallow: /Books/
+Disallow: /Classroom/
+Disallow: /CustomQuizzes/
+Disallow: /Explore/
+Disallow: /FlashcardQuiz/
+Disallow: /Quiz/
+Disallow: /Quizzes/
+Disallow: /Speaking/
+Disallow: /Transcripts/
+Disallow: /TypingQuiz/
+Allow: /
