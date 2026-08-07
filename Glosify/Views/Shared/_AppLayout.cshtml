@@ -4,6 +4,13 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Html
 @functions {
+    const string DefaultMetaDescription =
+        "Glosify turns what you read into vocabulary you can use: build word lists from books and "
+        + "transcripts, drill them with quizzes and flashcards, then practice out loud with an AI "
+        + "conversation partner.";
+
+    string MetaDescription => ViewData["Description"] as string ?? DefaultMetaDescription;
+
     string CurrentController => (ViewContext.RouteData.Values["controller"] as string ?? "").ToLowerInvariant();
     string CurrentAction => (ViewContext.RouteData.Values["action"] as string ?? "").ToLowerInvariant();
     string DisplayAccount => User.FindFirstValue(ClaimTypes.Email)
@@ -147,8 +154,13 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
     <title>@ViewData["Title"] - Glosify</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,400..800&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <meta name="description" content="@MetaDescription" />
+    @* One stylesheet request for every family the app uses; css2 requires the
+       families in alphabetical order. The font files come from a second origin,
+       so both are preconnected before the stylesheet is even parsed. *@
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,400..800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/quiz-library.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)

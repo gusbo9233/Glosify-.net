@@ -28,9 +28,11 @@
      data-transcript-id="@Model.TranscriptId"
      data-custom-quiz-id="@Model.CustomQuizId">
     @Html.AntiForgeryToken()
+    @* The accessible name has to contain the button's visible text (WCAG 2.5.3),
+       so it is built from the same title rather than a fixed "Open assistant". *@
     <button class="assistant-fab"
             type="button"
-            aria-label="Open assistant"
+            aria-label="Open @Model.Title"
             aria-controls="@popoverId"
             aria-expanded="false"
             data-assistant-toggle>

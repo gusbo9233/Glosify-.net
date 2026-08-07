@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Threading.RateLimiting;
@@ -40,6 +41,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+
+// Kestrel serves the rendered views uncompressed and nothing in front of it
+// compresses them, so an average page ships ~22 KB of HTML over the wire.
+// Static assets are already compressed at build time by MapStaticAssets, and
+// this middleware skips any response that arrives with a Content-Encoding.
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
 });
 
 builder.Services.AddSignalR();
@@ -487,6 +499,10 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+// Compression has to sit ahead of everything that writes a body, static assets
+// included, so it sees the response before it is sent.
+app.UseResponseCompression();
 
 app.UseHttpsRedirection();
 

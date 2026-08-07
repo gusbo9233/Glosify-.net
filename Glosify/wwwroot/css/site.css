@@ -1,7 +1,10 @@
 /* =============================================================
    Sonic Polyglot / Glosify — Design System Foundations
+   =============================================================
+   Web fonts are requested by a <link> in the layout <head>, not by an
+   @import here: an @import makes the font stylesheet a child request of
+   this file, so the browser cannot start it until site.css has arrived.
    ============================================================= */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,400..800&family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
 
 :root {
     /* Brand colors */
