@@ -91,6 +91,16 @@
             @foreach (var book in Model.Books.Select((book, index) => new { Book = book, Index = index }))
             {
                 <article class="book-card">
+                    @* Outside the card link: a button cannot be nested inside an anchor. *@
+                    <form class="book-delete-form" method="post" asp-controller="Books" asp-action="Delete"
+                          asp-route-id="@book.Book.Id"
+                          data-confirm="Delete &quot;@book.Book.Title&quot; and its pages permanently? Chats that used it are kept.">
+                        @Html.AntiForgeryToken()
+                        <button class="book-delete" type="submit"
+                                aria-label="Delete @book.Book.Title" title="Delete @book.Book.Title">
+                            <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                        </button>
+                    </form>
                     <a class="book-card-link" asp-controller="Books" asp-action="Read" asp-route-id="@book.Book.Id"
                        aria-label="Read @book.Book.Title">
                         <div class="book-cover book-cover-@((book.Index % 4) + 1)" aria-hidden="true">

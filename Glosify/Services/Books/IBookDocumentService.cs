@@ -11,6 +11,13 @@ public interface IBookDocumentService
     Task<Stream> OpenOwnedPdfAsync(Guid documentId, string userId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Permanently removes a book, its extracted pages, and their cached translations.
+    /// Assistant chats pointing at it are detached rather than deleted. Returns false
+    /// when the book does not exist or belongs to someone else.
+    /// </summary>
+    Task<bool> DeleteAsync(Guid documentId, string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Opens a PDF without an ownership check. The caller must have already
     /// authorized access (e.g. via a classroom share link).
     /// </summary>

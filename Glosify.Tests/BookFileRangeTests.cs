@@ -85,6 +85,9 @@ public sealed class BookFileRangeTests
 
     private sealed class StubBookDocumentService(Stream pdf) : IBookDocumentService
     {
+        public Task<bool> DeleteAsync(Guid documentId, string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
         public Task<Stream> OpenOwnedPdfAsync(Guid documentId, string userId, CancellationToken cancellationToken = default) =>
             Task.FromResult(pdf);
 

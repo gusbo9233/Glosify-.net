@@ -60,6 +60,14 @@ public class BooksApiController : ApiControllerBase
         return book == null ? NotFound() : Ok(BookDto.From(book));
     }
 
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        return await _books.DeleteAsync(id, User.GetUserId(), cancellationToken)
+            ? NoContent()
+            : NotFound();
+    }
+
     [HttpGet("{id:guid}/pages/{pageNumber:int}")]
     public async Task<ActionResult<BookPageDto>> Page(Guid id, int pageNumber, CancellationToken cancellationToken)
     {

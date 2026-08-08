@@ -64,6 +64,26 @@ public sealed class BooksController : Controller
         }
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var book = await _books.GetOwnedDocumentAsync(id, userId, cancellationToken);
+        if (book is null)
+        {
+            return NotFound();
+        }
+
+        if (!await _books.DeleteAsync(id, userId, cancellationToken))
+        {
+            return NotFound();
+        }
+
+        TempData[NotificationKeys.Book] = $"Deleted {book.Title}.";
+        return RedirectToAction(nameof(Index));
+    }
+
     [HttpGet]
     public async Task<IActionResult> Read(Guid id, Guid? quizId, CancellationToken cancellationToken)
     {

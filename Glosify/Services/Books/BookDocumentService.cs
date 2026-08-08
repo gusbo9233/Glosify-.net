@@ -14,17 +14,20 @@ public sealed class BookDocumentService : IBookDocumentService
     private readonly IBookFileStorage _storage;
     private readonly IPdfTextExtractionService _pdfTextExtraction;
     private readonly ILanguageContext _languageContext;
+    private readonly ILogger<BookDocumentService> _logger;
 
     public BookDocumentService(
         GlosifyContext context,
         IBookFileStorage storage,
         IPdfTextExtractionService pdfTextExtraction,
-        ILanguageContext languageContext)
+        ILanguageContext languageContext,
+        ILogger<BookDocumentService> logger)
     {
         _context = context;
         _storage = storage;
         _pdfTextExtraction = pdfTextExtraction;
         _languageContext = languageContext;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<BookDocument>> GetUserBooksAsync(
@@ -146,6 +149,52 @@ public sealed class BookDocumentService : IBookDocumentService
             ?? throw new FileNotFoundException("Book not found.");
 
         return await _storage.OpenReadAsync(document.BlobName, cancellationToken);
+    }
+
+    public async Task<bool> DeleteAsync(
+        Guid documentId,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var document = await _context.BookDocuments
+            .FirstOrDefaultAsync(book => book.Id == documentId && book.UserId == userId, cancellationToken);
+        if (document is null)
+        {
+            return false;
+        }
+
+        // assistant_threads.context_book_document_id is NO ACTION, so a chat still
+        // pointing at this book would block the delete. Detach those chats instead of
+        // deleting them: the conversation is worth keeping without its source material.
+        var threads = await _context.AssistantThreads
+            .Where(thread => thread.ContextBookDocumentId == documentId)
+            .ToListAsync(cancellationToken);
+        foreach (var thread in threads)
+        {
+            thread.ContextBookDocumentId = null;
+        }
+
+        // Pages and their cached translations cascade from the document.
+        _context.BookDocuments.Remove(document);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // Deliberately after the commit. A leftover blob is invisible and merely costs
+        // storage, whereas a row surviving a deleted blob breaks the reader for a book
+        // the user can still see.
+        try
+        {
+            await _storage.DeleteIfExistsAsync(document.BlobName, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Deleted book {DocumentId} but could not remove its blob {BlobName}.",
+                documentId,
+                document.BlobName);
+        }
+
+        return true;
     }
 
     public async Task<Stream> OpenPdfUncheckedAsync(
