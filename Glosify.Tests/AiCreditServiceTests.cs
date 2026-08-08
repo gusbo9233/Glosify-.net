@@ -293,6 +293,57 @@ public sealed class AiCreditServiceTests
             august => Assert.Equal("2026-08", august.PeriodKey));
     }
 
+    [Fact]
+    public async Task Concurrency_retry_detaches_only_the_credit_entities()
+    {
+        // The service is registered scoped and shares the request's GlosifyContext, so the
+        // ChangeTracker.Clear() this replaced detached whatever the caller was tracking too.
+        // Callers then mutated detached objects and their SaveChangesAsync silently wrote
+        // nothing: RealtimeTranslationService.BeginMinuteAsync holds a tracked session and
+        // minute across CommitDurationUsageAsync, so a retry there charged the user for a
+        // subtitle minute the session never recorded.
+        //
+        // This exercises the detach seam directly rather than racing a real conflict,
+        // because AiCreditAccount.RowVersion is IsRowVersion() — store-generated on SQL
+        // Server and simply absent on SQLite, so the retry path is not reachable end-to-end
+        // against either test provider.
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var service = CreateService(context);
+
+        // Establish the account, then give the caller an unsaved edit of its own.
+        await service.GetOrCreateAccountAsync("user-1");
+        var account = await context.AiCreditAccounts.SingleAsync(a => a.UserId == "user-1");
+        account.BalanceCredits = 999;
+
+        var quiz = new Quiz
+        {
+            Id = Guid.NewGuid(),
+            Name = "Original name",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            ProcessingStatus = "ready",
+            SourceLanguage = "en",
+            TargetLanguage = "sv",
+            Language = "sv",
+        };
+        context.Quizzes.Add(quiz);
+
+        Assert.Equal(EntityState.Modified, context.Entry(account).State);
+        Assert.Equal(EntityState.Added, context.Entry(quiz).State);
+
+        service.DetachCreditEntities();
+
+        // The credit row is dropped so the next attempt re-reads it...
+        Assert.Equal(EntityState.Detached, context.Entry(account).State);
+        // ...while the caller's pending work is untouched and still saves.
+        Assert.Equal(EntityState.Added, context.Entry(quiz).State);
+
+        await context.SaveChangesAsync();
+        Assert.Equal("Original name", (await context.Quizzes.SingleAsync(q => q.Id == quiz.Id)).Name);
+    }
+
     private static GlosifyContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<GlosifyContext>()

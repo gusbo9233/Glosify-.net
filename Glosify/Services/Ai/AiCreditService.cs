@@ -414,7 +414,7 @@ public sealed class AiCreditService : IAiCreditService
     // Each mutating flow reads the account, applies a delta, and saves once. A
     // concurrent request can invalidate the read (RowVersion conflict) or win the
     // race to insert the account row (key conflict); both are resolved by dropping
-    // the tracked state and re-running the whole read-modify-write.
+    // the tracked credit state and re-running the whole read-modify-write.
     private async Task<T> WithConcurrencyRetryAsync<T>(Func<Task<T>> operation)
     {
         const int maxAttempts = 3;
@@ -426,12 +426,41 @@ public sealed class AiCreditService : IAiCreditService
             }
             catch (DbUpdateException ex) when (IsRetryableCreditConflict(ex))
             {
-                _context.ChangeTracker.Clear();
+                DetachCreditEntities();
                 if (attempt >= maxAttempts)
                 {
                     throw;
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Detaches only the entities this service owns, so the read-modify-write can start
+    /// from a clean read on the next attempt.
+    /// </summary>
+    /// <remarks>
+    /// This deliberately does not call <c>ChangeTracker.Clear()</c>. The service is
+    /// registered scoped and shares the request's <see cref="GlosifyContext"/>, so
+    /// clearing detaches everything the caller is tracking too. That caused silent data
+    /// loss: <c>RealtimeTranslationService.BeginMinuteAsync</c> holds a tracked session
+    /// and minute across <c>CommitDurationUsageAsync</c>, and once they were detached its
+    /// later mutations — including <c>ChargedMinutes += 1</c> — were written by a
+    /// <c>SaveChangesAsync</c> that silently affected no rows, leaving the user charged
+    /// for a minute the session never recorded. <c>CreateSessionAsync</c> lost an Added
+    /// transcript the same way and then wrote a session referencing a row that was never
+    /// inserted.
+    /// </remarks>
+    internal void DetachCreditEntities()
+    {
+        var owned = _context.ChangeTracker
+            .Entries()
+            .Where(entry => entry.Entity is AiCreditAccount or AiMonthlyBudget or AiCreditTransaction)
+            .ToList();
+
+        foreach (var entry in owned)
+        {
+            entry.State = EntityState.Detached;
         }
     }
 
