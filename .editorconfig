@@ -89,20 +89,32 @@ dotnet_naming_rule.types_are_pascal_case.style = pascal_case
 dotnet_naming_symbols.types_and_members.applicable_kinds = class, struct, enum, property, method, event
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 
+; Two things matter here, and both are easy to get wrong.
+; 1. Order: the first rule whose symbol group matches is the one applied, so these
+;    must precede the private-field rule below.
+; 2. required_modifiers is AND, not OR. `const, static readonly` would demand a field
+;    be all three at once and so would match nothing, leaving every
+;    `private static readonly Regex Foo` to be told to rename itself `_foo`.
+;    const and static readonly therefore need separate rules.
+dotnet_naming_rule.constants_are_pascal_case.severity = warning
+dotnet_naming_rule.constants_are_pascal_case.symbols = constants
+dotnet_naming_rule.constants_are_pascal_case.style = pascal_case
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+
+dotnet_naming_rule.static_readonly_fields_are_pascal_case.severity = warning
+dotnet_naming_rule.static_readonly_fields_are_pascal_case.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_fields_are_pascal_case.style = pascal_case
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
+
 dotnet_naming_rule.private_fields_are_underscore_camel.severity = warning
 dotnet_naming_rule.private_fields_are_underscore_camel.symbols = private_fields
 dotnet_naming_rule.private_fields_are_underscore_camel.style = underscore_camel
 dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private
-dotnet_naming_symbols.private_fields.required_modifiers =
 dotnet_naming_style.underscore_camel.required_prefix = _
 dotnet_naming_style.underscore_camel.capitalization = camel_case
-
-dotnet_naming_rule.constants_are_pascal_case.severity = warning
-dotnet_naming_rule.constants_are_pascal_case.symbols = constants
-dotnet_naming_rule.constants_are_pascal_case.style = pascal_case
-dotnet_naming_symbols.constants.applicable_kinds = field
-dotnet_naming_symbols.constants.required_modifiers = const, static readonly
 
 #### Analyzer severities ####
 ; Correctness rules that found real defects in this codebase are errors so they

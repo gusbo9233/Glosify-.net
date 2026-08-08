@@ -16,8 +16,6 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     {
     }
 
-    // Add your DbSets here as you define your models
-    // Example:
     public DbSet<Quiz> Quizzes { get; set; }
     public DbSet<Word> Words { get; set; }
     public DbSet<QuizSentence> QuizSentences { get; set; }
