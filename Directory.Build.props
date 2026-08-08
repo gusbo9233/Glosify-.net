@@ -3,16 +3,33 @@
   <!-- Shared build settings for all projects in the solution; keeps the test
        project from drifting away from the app (framework, nullability). -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- Guarded so a future multi-targeting project can set TargetFrameworks
+         without also inheriting a single TargetFramework. -->
+    <TargetFramework Condition="'$(TargetFrameworks)' == ''">net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- Keeps the Web SDK's content globs (notably **/*.json) from re-collecting the
-         previous build's output and copying it one level deeper on every build, which
-         eventually fails with MSB3021 "path too long". This must live here rather than
-         in a project file: the SDK expands its default item globs when it is imported
-         at the top of the project, so a value set in the project body arrives too late
-         to be applied. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);bin/**;obj/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- The build is clean at warning level 10, so holding that line costs nothing
+         today and stops the first warning from becoming a hundred. Severities for
+         individual analyzer rules live in .editorconfig, next to the reasoning. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- NuGet audit findings are excluded from the above on purpose. A new advisory
+         published against an existing dependency would otherwise turn every build
+         red, including the deploy of a fix that has nothing to do with it. They stay
+         visible as warnings, and CI fails on them in its own dedicated step. -->
+    <WarningsNotAsErrors>NU1900;NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <!-- Normalises embedded paths so the same source produces the same assembly
+         regardless of which agent built it. -->
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
 </Project>

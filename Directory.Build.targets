@@ -5,11 +5,26 @@
        build's bin, copies it into the new output one level deeper, and repeats every
        build until the path is long enough to fail with MSB3021.
 
-       This lives in Directory.Build.targets rather than Directory.Build.props because
-       the removal has to run after the SDK has expanded its globs, and it repeats the
-       exclusion set in DefaultItemExcludes because the SDK's own bin/obj exclusions are
-       written with backslash separators, which are literal characters on macOS and
-       Linux and therefore never match. -->
+       The trigger is a directory literally named "bin\Debug" — one name containing a
+       backslash — which the scaffolding tooling creates on macOS by handing a Windows
+       relative path to a non-MSBuild API. While it exists, the SDK's own
+       "bin\Debug//**" exclude starts matching, and MSBuild's per-subdirectory exclude
+       pruning then stops applying the working bin/**-shaped excludes to the real
+       bin/Debug subtree. Measured on SDK 10.0.102: 1690 stray None items with this file
+       disabled and the directory present, 0 once the directory is removed.
+
+       Kept as a guard rather than a fix, because the scaffolder can recreate the
+       directory at any time. It works where DefaultItemExcludes does not because
+       Remove= matches already-materialised, slash-normalised item strings and so never
+       enters the glob-pruning path where the bug lives.
+
+       Note for future edits: this file is imported after the project body, so a
+       <Compile Include="obj/generated/**"/> added to any .csproj would be silently
+       removed here with no diagnostic. -->
+  <!-- Verified separately: files the SDK adds to @(Compile) inside targets at build
+       time (AssemblyInfo, GlobalUsings) are unaffected, since this runs at
+       evaluation. -->
+
   <ItemGroup>
     <Compile Remove="bin/**;obj/**" />
     <Content Remove="bin/**;obj/**" />
