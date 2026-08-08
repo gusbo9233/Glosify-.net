@@ -400,6 +400,7 @@ builder.Services.Configure<Glosify.Services.Communication.AcsOptions>(
 builder.Services.AddScoped<Glosify.Services.Communication.IAcsTokenService, Glosify.Services.Communication.AcsTokenService>();
 builder.Services.AddScoped<IAiCreditService, AiCreditService>();
 builder.Services.AddSingleton<IExtensionAuthorizationCodeStore, ExtensionAuthorizationCodeStore>();
+builder.Services.AddSingleton<IMobileAuthorizationCodeStore, MobileAuthorizationCodeStore>();
 builder.Services.AddSingleton<IRealtimeTranslationRelayTokenStore, RealtimeTranslationRelayTokenStore>();
 builder.Services.AddSingleton<IFoundryTranslationRelay, FoundryTranslationRelay>();
 builder.Services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();

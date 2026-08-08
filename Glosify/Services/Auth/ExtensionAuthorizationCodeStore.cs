@@ -36,7 +36,7 @@ public sealed class ExtensionAuthorizationCodeStore : IExtensionAuthorizationCod
         {
             throw new ArgumentException("The extension redirect URI is not allowed.", nameof(redirectUri));
         }
-        if (!IsValidCodeChallenge(codeChallenge))
+        if (!Pkce.IsValidChallenge(codeChallenge))
         {
             throw new ArgumentException("A valid S256 PKCE code challenge is required.", nameof(codeChallenge));
         }
@@ -45,7 +45,7 @@ public sealed class ExtensionAuthorizationCodeStore : IExtensionAuthorizationCod
             _options.AuthorizationCodeLifetimeSeconds,
             30,
             300));
-        var code = Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+        var code = Pkce.CreateAuthorizationCode();
         var entry = new AuthorizationCodeEntry(
             userId,
             redirectUri,
@@ -70,16 +70,7 @@ public sealed class ExtensionAuthorizationCodeStore : IExtensionAuthorizationCod
         _cache.Remove(CacheKeyPrefix + code);
         if (_timeProvider.GetUtcNow() > entry.ExpiresAt
             || !string.Equals(entry.RedirectUri, redirectUri, StringComparison.Ordinal)
-            || !IsValidCodeVerifier(codeVerifier))
-        {
-            return false;
-        }
-
-        var actualChallenge = Base64UrlEncode(SHA256.HashData(Encoding.ASCII.GetBytes(codeVerifier)));
-        var expectedBytes = Encoding.ASCII.GetBytes(entry.CodeChallenge);
-        var actualBytes = Encoding.ASCII.GetBytes(actualChallenge);
-        if (expectedBytes.Length != actualBytes.Length
-            || !CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes))
+            || !Pkce.Matches(entry.CodeChallenge, codeVerifier))
         {
             return false;
         }
@@ -88,22 +79,7 @@ public sealed class ExtensionAuthorizationCodeStore : IExtensionAuthorizationCod
         return true;
     }
 
-    internal static string CreateCodeChallenge(string codeVerifier) =>
-        Base64UrlEncode(SHA256.HashData(Encoding.ASCII.GetBytes(codeVerifier)));
-
-    internal static bool IsValidCodeVerifier(string value) =>
-        value is { Length: >= 43 and <= 128 }
-        && value.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '.' or '_' or '~');
-
-    private static bool IsValidCodeChallenge(string? value) =>
-        value is { Length: 43 }
-        && value.All(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
-
-    private static string Base64UrlEncode(ReadOnlySpan<byte> bytes) =>
-        Convert.ToBase64String(bytes)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
+    internal static string CreateCodeChallenge(string codeVerifier) => Pkce.CreateChallenge(codeVerifier);
 
     private sealed record AuthorizationCodeEntry(
         string UserId,
