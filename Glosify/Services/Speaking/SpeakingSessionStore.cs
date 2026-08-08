@@ -70,15 +70,24 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
             _ttl,
             quizContext);
 
+        // Decide under the lock, but dispose outside it: DisposeAsync reaches Foundry to
+        // tear down the remote conversation, and awaiting that is not possible inside a
+        // lock. Discarding the ValueTask instead would leave the remote conversation to
+        // expire on its own and swallow any fault.
+        bool atCapacity;
         lock (_mutationLock)
         {
-            if (CountForUser(userId) >= _maxSessionsPerUser)
+            atCapacity = CountForUser(userId) >= _maxSessionsPerUser;
+            if (!atCapacity)
             {
-                _ = conversation.DisposeAsync();
-                throw new SpeakingSessionLimitException(_maxSessionsPerUser);
+                _sessions[state.Id] = state;
             }
+        }
 
-            _sessions[state.Id] = state;
+        if (atCapacity)
+        {
+            await conversation.DisposeAsync();
+            throw new SpeakingSessionLimitException(_maxSessionsPerUser);
         }
 
         return state;
@@ -95,7 +104,7 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
         if (state.IsExpired(_timeProvider.GetUtcNow()))
         {
             _sessions.TryRemove(sessionId, out _);
-            _ = state.Conversation.DisposeAsync();
+            DisposeDetached(state.Conversation);
             throw new SpeakingSessionExpiredException();
         }
 
@@ -134,6 +143,19 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
 
         await removed.Conversation.DisposeAsync();
     }
+
+    /// <summary>
+    /// Disposes a conversation without awaiting it, for the synchronous <see cref="Get"/> path
+    /// where awaiting is not an option. <c>AsTask</c> consumes the <see cref="ValueTask"/> exactly
+    /// once — it must never be consumed twice — and the continuation observes any fault so a
+    /// failed Foundry teardown cannot resurface later as an unobserved task exception.
+    /// </summary>
+    private static void DisposeDetached(ISpeakingAgentConversation conversation) =>
+        _ = conversation.DisposeAsync().AsTask().ContinueWith(
+            static task => _ = task.Exception,
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
 
     private void EnsureCapacity(string userId)
     {
