@@ -54,6 +54,87 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task CreateChat_StampsTheSelectedLanguage()
+    {
+        await using var context = CreateContext();
+        var orchestrator = CreateOrchestrator(context, languageContext: new StaticLanguageContext("German"));
+
+        var chat = await orchestrator.CreateChatAsync("user-1");
+
+        var thread = await context.AssistantThreads.SingleAsync(t => t.Id == chat.Id);
+        Assert.Equal("German", thread.Language);
+    }
+
+    [Fact]
+    public async Task ListChats_ReturnsOnlyTheSelectedLanguagesChats()
+    {
+        await using var context = CreateContext();
+        context.AssistantThreads.AddRange(
+            CreateThread("user-1", title: "Polish chat"),
+            CreateThread("user-1", title: "German chat", language: "German"));
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context, languageContext: new StaticLanguageContext("German"));
+
+        var chats = await orchestrator.ListChatsAsync("user-1");
+
+        var chat = Assert.Single(chats);
+        Assert.Equal("German chat", chat.Title);
+    }
+
+    // Without a selected language there is nothing to scope to, so hiding every chat
+    // would look like the history had been lost.
+    [Fact]
+    public async Task ListChats_ReturnsEveryChatWhenNoLanguageIsSelected()
+    {
+        await using var context = CreateContext();
+        context.AssistantThreads.AddRange(
+            CreateThread("user-1", title: "Polish chat"),
+            CreateThread("user-1", title: "German chat", language: "German"));
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context, languageContext: new StaticLanguageContext(null));
+
+        var chats = await orchestrator.ListChatsAsync("user-1");
+
+        Assert.Equal(2, chats.Count);
+    }
+
+    // The panel keeps the open chat id across a language switch; the switch has to end
+    // that conversation rather than let the next message land in the old language's chat.
+    [Fact]
+    public async Task SendChatMessage_RefusesAChatFromAnotherLanguage()
+    {
+        await using var context = CreateContext();
+        var languageContext = new StaticLanguageContext("Polish");
+        var orchestrator = CreateOrchestrator(context, languageContext: languageContext);
+        var chat = await orchestrator.CreateChatAsync("user-1");
+
+        languageContext.TrySetLanguage("German");
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Continue where we left off"));
+        Assert.Contains("another language", error.Message);
+    }
+
+    [Fact]
+    public async Task SendGlobalMessage_StartsAFreshThreadAfterALanguageSwitch()
+    {
+        await using var context = CreateContext();
+        var languageContext = new StaticLanguageContext("Polish");
+        var orchestrator = CreateOrchestrator(context, languageContext: languageContext);
+        var polish = await orchestrator.SendGlobalMessageAsync("user-1", "Explain the instrumental case");
+
+        languageContext.TrySetLanguage("German");
+        var german = await orchestrator.SendGlobalMessageAsync("user-1", "Explain the dative case");
+
+        Assert.NotEqual(polish.ThreadId, german.ThreadId);
+        Assert.Equal(
+            "German",
+            (await context.AssistantThreads.SingleAsync(t => t.Id == german.ThreadId)).Language);
+        // The German turn starts clean: only its own question and answer.
+        Assert.Equal(2, await context.AssistantMessages.CountAsync(m => m.ThreadId == german.ThreadId));
+    }
+
+    [Fact]
     public async Task SendChatMessage_AutoTitlesAndPersistsMessages()
     {
         await using var context = CreateContext();
@@ -377,7 +458,8 @@ public class AssistantSavedChatsTests
         IGenerativeAiClient? generativeAi = null,
         IChangeApplier? applier = null,
         IBookDocumentService? books = null,
-        IAssistantTools? tools = null)
+        IAssistantTools? tools = null,
+        ILanguageContext? languageContext = null)
     {
         return new AssistantOrchestrator(
             context,
@@ -386,7 +468,7 @@ public class AssistantSavedChatsTests
             tools ?? new NoopAssistantTools(),
             applier ?? new CapturingChangeApplier(),
             books ?? new NoopBookDocumentService(),
-            new StaticLanguageContext(),
+            languageContext ?? new StaticLanguageContext(),
             new QuizLanguagePreferenceService(context),
             NullLogger<AssistantOrchestrator>.Instance);
     }
@@ -471,11 +553,16 @@ public class AssistantSavedChatsTests
         };
     }
 
-    private static AssistantThread CreateThread(string userId, string title = "New chat", Guid? quizId = null) => new()
+    private static AssistantThread CreateThread(
+        string userId,
+        string title = "New chat",
+        Guid? quizId = null,
+        string? language = "Polish") => new()
     {
         Id = Guid.NewGuid(),
         QuizId = quizId,
         UserId = userId,
+        Language = language,
         Title = title,
         CreatedAt = DateTimeOffset.UtcNow,
         UpdatedAt = DateTimeOffset.UtcNow,
@@ -685,16 +772,18 @@ public class AssistantSavedChatsTests
             throw new NotSupportedException();
     }
 
-    private sealed class StaticLanguageContext : ILanguageContext
+    private sealed class StaticLanguageContext(string? language = "Polish") : ILanguageContext
     {
-        public string? CurrentLanguage => "Polish";
-        public bool HasLanguage => true;
-        public IReadOnlyList<string> SupportedLanguages { get; } = ["Polish"];
+        public string? CurrentLanguage { get; private set; } = language;
+        public bool HasLanguage => CurrentLanguage != null;
+        public IReadOnlyList<string> SupportedLanguages { get; } = ["Polish", "German"];
 
-        public bool TrySetLanguage(string language) => true;
-
-        public void Clear()
+        public bool TrySetLanguage(string language)
         {
+            CurrentLanguage = language;
+            return true;
         }
+
+        public void Clear() => CurrentLanguage = null;
     }
 }

@@ -20,6 +20,13 @@ public class AssistantThread
     [Column("user_id")]
     public string UserId { get; set; } = string.Empty;
 
+    /// <summary>
+    /// The learning language the chat was started in, so the saved chat list only
+    /// shows the conversations belonging to the language the user has selected.
+    /// </summary>
+    [Column("language")]
+    public string? Language { get; set; }
+
     [Column("title")]
     public string Title { get; set; } = string.Empty;
 

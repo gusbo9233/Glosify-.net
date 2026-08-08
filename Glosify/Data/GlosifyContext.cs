@@ -146,8 +146,9 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(t => t.Id);
             entity.Property(t => t.UserId).HasMaxLength(450).IsRequired();
             entity.Property(t => t.Title).HasMaxLength(256);
+            entity.Property(t => t.Language).HasMaxLength(64);
             entity.HasIndex(t => new { t.QuizId, t.UserId });
-            entity.HasIndex(t => new { t.UserId, t.QuizId });
+            entity.HasIndex(t => new { t.UserId, t.QuizId, t.Language });
             entity.HasIndex(t => t.ContextQuizId);
             entity.HasIndex(t => t.ContextTranscriptId);
             entity.HasOne<Quiz>()

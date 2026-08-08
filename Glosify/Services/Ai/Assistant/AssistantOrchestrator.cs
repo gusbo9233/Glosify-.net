@@ -50,8 +50,15 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var threads = await _context.AssistantThreads
-            .Where(thread => thread.UserId == userId && thread.QuizId == null)
+        var language = await ResolveLanguageAsync(userId, cancellationToken);
+        var query = _context.AssistantThreads
+            .Where(thread => thread.UserId == userId && thread.QuizId == null);
+        if (language != null)
+        {
+            query = query.Where(thread => thread.Language == language);
+        }
+
+        var threads = await query
             .OrderByDescending(thread => thread.UpdatedAt)
             .ToListAsync(cancellationToken);
 
@@ -75,6 +82,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             ContextQuizId = contextQuizId,
             ContextTranscriptId = contextTranscriptId,
             UserId = userId,
+            Language = await ResolveLanguageAsync(userId, cancellationToken),
             Title = NewChatTitle,
             CreatedAt = now,
             UpdatedAt = now,
@@ -535,8 +543,17 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     {
         await ValidateContextQuizAsync(contextQuizId, userId, cancellationToken);
 
-        var thread = await _context.AssistantThreads
-            .Where(t => t.UserId == userId && t.QuizId == null)
+        // Only chats in the selected language can be resumed, so switching language
+        // drops into a fresh thread instead of continuing the previous one.
+        var language = await ResolveLanguageAsync(userId, cancellationToken);
+        var query = _context.AssistantThreads
+            .Where(t => t.UserId == userId && t.QuizId == null);
+        if (language != null)
+        {
+            query = query.Where(t => t.Language == language);
+        }
+
+        var thread = await query
             .OrderByDescending(t => t.UpdatedAt)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -557,6 +574,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             QuizId = null,
             ContextQuizId = contextQuizId,
             UserId = userId,
+            Language = language,
             Title = NewChatTitle,
             CreatedAt = now,
             UpdatedAt = now,
@@ -570,7 +588,33 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         var thread = await _context.AssistantThreads
             .FirstOrDefaultAsync(t => t.Id == threadId && t.UserId == userId && t.QuizId == null, ct)
             ?? throw new InvalidOperationException("Chat not found.");
+
+        // The chat list has already dropped this thread, so a request still pointing at
+        // it comes from a page opened before the language changed.
+        var language = await ResolveLanguageAsync(userId, ct);
+        if (language != null && thread.Language != language)
+        {
+            throw new InvalidOperationException(
+                $"That chat belongs to another language. Reload the page to start a {language} chat.");
+        }
+
         return thread;
+    }
+
+    /// <summary>
+    /// The language a chat belongs to. The cookie is what the rest of the app filters on,
+    /// with the account preference as the fallback for the mobile app, which sends a
+    /// bearer token and no cookie.
+    /// </summary>
+    private async Task<string?> ResolveLanguageAsync(string userId, CancellationToken cancellationToken)
+    {
+        var language = _languageContext.CurrentLanguage;
+        if (!string.IsNullOrWhiteSpace(language))
+        {
+            return language;
+        }
+
+        return (await _languagePreferences.GetSelectedAsync(userId, cancellationToken))?.Name;
     }
 
     private async Task<AssistantMessage> LoadOwnedMessageAsync(Guid messageId, string userId, CancellationToken ct)
