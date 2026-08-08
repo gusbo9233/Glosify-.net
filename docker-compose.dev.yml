@@ -1,0 +1,42 @@
+# Local SQL Server for development. Nothing here talks to Azure: the point is that
+# `dotnet run` and `dotnet ef database update` can never reach the live glosifydb.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down        # keeps the data
+#   docker compose -f docker-compose.dev.yml down -v     # throws the database away
+#
+# The image is amd64-only, so on Apple Silicon it runs under Rosetta translation
+# inside the Colima VM (`colima start --arch aarch64 --vm-type vz --vz-rosetta`).
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: glosify-sql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Local_Dev_Only_1"
+      # Developer edition is free for non-production use.
+      MSSQL_PID: "Developer"
+      # The host has 8 GB total; without a cap SQL Server takes everything it can see
+      # and leaves macOS swapping.
+      MSSQL_MEMORY_LIMIT_MB: "2048"
+    ports:
+      - "1433:1433"
+    volumes:
+      - glosify-sql-data:/var/opt/mssql
+    healthcheck:
+      # sqlcmd moved under /opt/mssql-tools18 and now defaults to encrypted
+      # connections, hence -C to trust the container's self-signed certificate.
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q 'SELECT 1' || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  glosify-sql-data:
