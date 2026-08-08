@@ -131,23 +131,28 @@ See the [database diagram](docs/database-diagram.md) for the complete model.
 
 The workflow in `.github/workflows/master_glosify.yml` builds and deploys the
 app to Azure Web App `glosify-app` when `master` is pushed. That is the site
-behind `glosify.se`, and it is the only web app the workflow touches. An older
-`glosify` web app still exists in the same resource group and this workflow does
-not deploy to it; check the `app-name` in the workflow before reading anything
-into a setting or a log found on a web app.
+behind `glosify.se`, and it is now the only web app in the resource group: the
+older `glosify` web app that sat beside it has been deleted, so a setting or a
+log can no longer be read off the wrong site. The SQL server is also called
+`glosify`, which is a different resource.
 
 Use `https://glosify.se` when a client needs a base URL, not the App Service
 hostname. External sign-in builds its Google `redirect_uri` from the request
 host, and only the custom domain is registered with Google, so the App Service
 hostname reaches the app but fails the OAuth request.
 
-Migrations are not applied by the workflow, and `Database:ApplyMigrationsOnStartup`
-is off in production. The startup-flag procedure in the
-[live subtitles guide](docs/live-subtitles-extension.md) applies only migrations
-compiled into the deployed assembly, so it cannot run a migration before the
-deploy that carries it. Applying one ahead of its deploy means running
-`dotnet ef database update` against the production database, which needs a
-firewall rule for the client address.
+Migrations are not applied by the workflow. `Database__ApplyMigrationsOnStartup`
+is on in the `glosify-app` settings, so the app applies whatever is still pending
+each time it starts, under its own managed identity, which holds `db_ddladmin` on
+`glosifydb`. The default in `appsettings.json` stays `false`, so a local run never
+migrates a database on its own.
+
+That only covers the migrations compiled into the deployed assembly, so it cannot
+run a migration before the deploy that carries it. Applying one ahead of its
+deploy means running `dotnet ef database update` against the production database,
+which needs two things: `ConnectionStrings__DefaultConnection` in the environment,
+because `GlosifyContextFactory` otherwise points design-time commands at a local
+LocalDB, and a SQL server firewall rule for the client address.
 
 Practice sessions, opaque Speaking session mappings, and mobile sign-in codes
 are stored in process. The app therefore assumes a single instance, and active

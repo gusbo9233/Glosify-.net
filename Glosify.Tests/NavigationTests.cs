@@ -106,7 +106,7 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         response.EnsureSuccessStatusCode();
         var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
         Assert.Contains(
-            "form-action 'self' https://glosify-f0d9e2g3f4ctc3hy.swedencentral-01.azurewebsites.net",
+            "form-action 'self' https://glosify-app.azurewebsites.net",
             csp);
         Assert.Contains("https://accounts.google.com", csp);
         Assert.Contains("https://login.microsoftonline.com", csp);
