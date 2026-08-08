@@ -19,11 +19,16 @@
 
 ## Guides and source documents
 
-- [Glosify: A Guide to the Codebase, .NET, and Azure](glosify-guide.pdf) — a
-  code-first tour of the application, modern .NET, C#, and the Azure services
-  and operational concepts that support the deployed system; see also its
-  [LaTeX source](glosify-guide.tex).
-- [ASP.NET Core MVC tutorial source](aspnet-mvc-tutorial.tex).
+These are written locally and deliberately not committed: the rendered PDFs and
+their LaTeX sources are covered by `.gitignore`, along with the `tmp/` build
+directory they render through. They are listed here so the set is discoverable,
+but they will not be present in a fresh clone.
+
+- **Glosify: A Guide to the Codebase, .NET, and Azure** (`docs/glosify-guide.pdf`,
+  source `docs/glosify-guide.tex`) — a code-first tour of the application, modern
+  .NET, C#, and the Azure services and operational concepts that support the
+  deployed system.
+- **ASP.NET Core MVC tutorial source** (`docs/aspnet-mvc-tutorial.tex`).
 
 ## Foundry evaluation artifacts
 

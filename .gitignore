@@ -387,3 +387,11 @@ docs/*.aux
 docs/*.out
 docs/*.toc
 .firecrawl/
+
+# Scratch and generated output. These held 877 tracked files (120 MB of LaTeX
+# page renders) before the cleanup, because the rules above only ever covered
+# docs/ and never the directories the build actually wrote to.
+tmp/
+output/
+docs/tmp/
+docs/output/
