@@ -37,7 +37,8 @@ public class AssistantApiController : ApiControllerBase
             User.GetUserId(),
             input?.ContextQuizId,
             cancellationToken,
-            input?.ContextTranscriptId);
+            input?.ContextTranscriptId,
+            input?.ContextBookDocumentId);
         return Ok(chat);
     }
 
@@ -91,7 +92,8 @@ public class AssistantApiController : ApiControllerBase
                     : null,
                 input.CustomQuizId,
                 cancellationToken,
-                input.TranscriptId);
+                input.TranscriptId,
+                input.BookDocumentId);
             return Ok(response);
         }
         catch (InvalidOperationException ex) when (

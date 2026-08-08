@@ -270,6 +270,24 @@ public sealed class AssistantTools : IAssistantTools
                 + "available_streams in the response before asking for a stream."),
         }));
 
+    private static readonly AgentToolDeclaration ListBooksDeclaration = new(
+        "list_books",
+        "List the user's uploaded books with title, page count, language, date, and id. Use this when the user refers to a book without identifying it. Returns up to 50 books per call.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["offset"] = IntegerProp("Optional number of books to skip. Defaults to 0."),
+        }));
+
+    private static readonly AgentToolDeclaration GetBookPagesDeclaration = new(
+        "get_book_pages",
+        "Read a bounded run of pages from one of the user's books. Defaults to the book selected for this chat. Pages come back in order, so ask for the range you need and page forward with next_page while has_more is true.",
+        BuildSchema(new Dictionary<string, object>
+        {
+            ["book_id"] = StringProp("Optional book id. Omit to use the book selected for this chat."),
+            ["from_page"] = IntegerProp("Optional first page number to read, counting from 1. Defaults to 1."),
+            ["limit"] = IntegerProp("Optional maximum pages from 1 to 10. Defaults to 3. A long page may cut the run short; check next_page."),
+        }));
+
     private static readonly AgentToolDeclaration MoveQuizDeclaration = new(
         "move_quiz",
         "Propose moving one of the user's quizzes into a collection. Omit collection_id to move it to the library root. The change is queued until the user clicks Apply.",
@@ -474,6 +492,8 @@ public sealed class AssistantTools : IAssistantTools
         CreateQuizDeclaration,
         ListSavedTranscriptsDeclaration,
         GetSavedTranscriptDeclaration,
+        ListBooksDeclaration,
+        GetBookPagesDeclaration,
         MoveQuizDeclaration,
         RenameCollectionDeclaration,
         MoveCollectionDeclaration,
@@ -542,6 +562,8 @@ public sealed class AssistantTools : IAssistantTools
         CreateCustomQuizDeclaration,
         ListSavedTranscriptsDeclaration,
         GetSavedTranscriptDeclaration,
+        ListBooksDeclaration,
+        GetBookPagesDeclaration,
         .. CustomQuizElementDeclarations,
     ];
 
@@ -561,6 +583,8 @@ public sealed class AssistantTools : IAssistantTools
         MoveCollectionDeclaration,
         ListSavedTranscriptsDeclaration,
         GetSavedTranscriptDeclaration,
+        ListBooksDeclaration,
+        GetBookPagesDeclaration,
         CreateCustomQuizFromContentDeclaration,
         .. CustomQuizElementDeclarations,
     ];
@@ -577,6 +601,10 @@ public sealed class AssistantTools : IAssistantTools
         ListCustomQuizTemplatesDeclaration,
         ListWordsDeclaration,
         SearchWordsDeclaration,
+        // Reading the selected book is safe here and is how a drill gets built from a
+        // textbook page; nothing in this pair can create or strand a quiz.
+        ListBooksDeclaration,
+        GetBookPagesDeclaration,
         AddLabelDeclaration,
         AddTextInputDeclaration,
         AddCheckboxDeclaration,
@@ -621,6 +649,8 @@ public sealed class AssistantTools : IAssistantTools
             "create_vocabulary_quiz" => QueueCreateQuiz(args, context),
             "list_saved_transcripts" => await ListSavedTranscriptsAsync(args, context, cancellationToken),
             "get_saved_transcript" => await GetSavedTranscriptAsync(args, context, cancellationToken),
+            "list_books" => await ListBooksAsync(args, context, cancellationToken),
+            "get_book_pages" => await GetBookPagesAsync(args, context, cancellationToken),
             "create_collection" => QueueCreateCollection(args, context),
             "move_quiz" => await QueueMoveQuizAsync(args, context, cancellationToken),
             "rename_collection" => await QueueRenameCollectionAsync(args, context, cancellationToken),
@@ -801,6 +831,122 @@ public sealed class AssistantTools : IAssistantTools
             total_segments = total,
             has_more = offset + captions.Count < total,
             next_offset = offset + captions.Count,
+        };
+    }
+
+    /// <summary>
+    /// Mirrors BookDocumentService.GetUserBooksAsync so the agent sees exactly the books
+    /// the picker offers. Note the language column holds the display name ("Polish"),
+    /// unlike transcripts, which store the code.
+    /// </summary>
+    private async Task<object> ListBooksAsync(
+        JsonElement args,
+        AgentToolContext context,
+        CancellationToken cancellationToken)
+    {
+        const int pageSize = 50;
+        var offset = GetOffset(args);
+        var language = context.CurrentLanguage;
+        var query = _context.BookDocuments
+            .AsNoTracking()
+            .Where(book => book.UserId == context.UserId);
+        if (!string.IsNullOrWhiteSpace(language))
+        {
+            query = query.Where(book => book.Language == language);
+        }
+
+        var total = await query.CountAsync(cancellationToken);
+        var books = await query
+            .OrderByDescending(book => book.CreatedAt)
+            .Skip(offset)
+            .Take(pageSize)
+            .Select(book => new
+            {
+                id = book.Id,
+                title = book.Title,
+                language = book.Language,
+                page_count = book.PageCount,
+                created_at = book.CreatedAt,
+                updated_at = book.UpdatedAt,
+            })
+            .ToListAsync(cancellationToken);
+        return new
+        {
+            books,
+            total_count = total,
+            offset,
+            has_more = offset + books.Count < total,
+            current_book_id = context.BookDocumentId,
+        };
+    }
+
+    private async Task<object> GetBookPagesAsync(
+        JsonElement args,
+        AgentToolContext context,
+        CancellationToken cancellationToken)
+    {
+        var idText = FirstNonBlank(GetString(args, "book_id"), context.BookDocumentId?.ToString());
+        if (!Guid.TryParse(idText, out var bookId))
+        {
+            return new { error = "Choose a book first or provide a valid book_id." };
+        }
+        var fromPage = GetBoundedInt(args, "from_page", 1, 1, int.MaxValue);
+        var limit = GetBoundedInt(args, "limit", 3, 1, 10);
+
+        // Ownership only, matching the chat's book context: the language column is a
+        // display name and is null on older uploads, so filtering here would hide books
+        // the user legitimately owns and selected.
+        var book = await _context.BookDocuments
+            .AsNoTracking()
+            .Where(item => item.Id == bookId && item.UserId == context.UserId)
+            .Select(item => new { item.Id, item.Title, item.PageCount })
+            .SingleOrDefaultAsync(cancellationToken);
+        if (book is null)
+        {
+            return new { error = "Book not found." };
+        }
+
+        var rows = await _context.BookPages
+            .AsNoTracking()
+            .Where(page => page.BookDocumentId == book.Id && page.PageNumber >= fromPage)
+            .OrderBy(page => page.PageNumber)
+            .Take(limit)
+            .Select(page => new { page.PageNumber, page.Text, page.ExtractionWarning })
+            .ToListAsync(cancellationToken);
+
+        // Same budget as get_saved_transcript: one call must not be able to fill the
+        // context window, however long the pages turn out to be.
+        const int maximumCharacters = 12_000;
+        var pages = new List<object>(rows.Count);
+        var characters = 0;
+        foreach (var row in rows)
+        {
+            if (pages.Count > 0 && characters + row.Text.Length > maximumCharacters)
+            {
+                break;
+            }
+            var text = row.Text.Length <= maximumCharacters
+                ? row.Text
+                : row.Text[..maximumCharacters];
+            pages.Add(new
+            {
+                page_number = row.PageNumber,
+                text,
+                warning = row.ExtractionWarning,
+            });
+            characters += text.Length;
+        }
+
+        var nextPage = pages.Count == 0 ? fromPage : rows[pages.Count - 1].PageNumber + 1;
+        return new
+        {
+            id = book.Id,
+            title = book.Title,
+            pages,
+            from_page = fromPage,
+            page_count = book.PageCount,
+            has_more = nextPage <= book.PageCount,
+            next_page = nextPage,
         };
     }
 

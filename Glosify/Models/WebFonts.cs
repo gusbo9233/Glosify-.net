@@ -27,7 +27,7 @@ public static class WebFonts
         "dashboard_customize", "delete", "description", "diversity_3", "drag_indicator", "east", "edit",
         "edit_note", "error", "event", "explore", "fit_screen", "flag", "folder", "folder_open",
         "folder_shared", "format_align_left", "format_quote", "forum", "graphic_eq", "grid_4x4",
-        "group", "groups", "hourglass_top", "hub", "info", "inventory_2", "keep", "key", "keyboard",
+        "group", "groups", "hourglass_top", "info", "inventory_2", "keep", "key", "keyboard",
         "library_add", "library_books", "local_bar", "lock", "lock_reset", "login", "logout",
         "mark_email_unread", "menu_book", "mic", "mic_off", "neurology", "north_east", "notes",
         "notifications", "outgoing_mail", "person", "person_add", "person_search", "picture_as_pdf",

@@ -4145,38 +4145,21 @@ body { margin: 0; }
     line-height: 1.35;
 }
 
+/* Holds the quiz and material pickers. They wrap rather than squeeze because both
+   selects grow to 16px on touch devices, which overflows a single narrow row. */
 .assistant-context-bar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
     min-height: 28px;
     padding: 0 2px 7px;
-}
-
-.assistant-context-chip {
-    display: inline-flex;
-    align-items: center;
-    min-width: 0;
-    gap: 6px;
-    color: var(--on-surface-variant, #bccbb9);
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.assistant-context-chip span:last-child {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.assistant-context-chip .material-symbols-outlined {
-    color: var(--primary, #53e076);
-    font-size: 15px;
 }
 
 .assistant-context-picker {
     display: inline-flex;
     align-items: center;
+    flex: 1 1 140px;
     min-width: 0;
 }
 
@@ -4186,7 +4169,8 @@ body { margin: 0; }
 }
 
 .assistant-context-picker select {
-    max-width: 150px;
+    width: 100%;
+    max-width: 100%;
     min-height: 28px;
     border: 0;
     border-radius: 5px;
@@ -4199,6 +4183,7 @@ body { margin: 0; }
 }
 
 .assistant-context-picker select option,
+.assistant-context-picker select optgroup,
 .assistant-model-picker select option {
     background: var(--surface-container-highest, #27354c);
     color: var(--on-surface, #d6e3ff);
@@ -5041,7 +5026,54 @@ body { margin: 0; }
 }
 
 .book-card {
+    position: relative;
     min-width: 0;
+}
+
+/* Sits above the card link rather than inside it, so the whole card stays clickable. */
+.book-delete-form {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1;
+}
+
+.book-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 9px;
+    background: rgba(12, 18, 28, 0.55);
+    color: var(--on-surface-variant, #bccbb9);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.book-delete .material-symbols-outlined {
+    font-size: 19px;
+}
+
+.book-card:hover .book-delete,
+.book-delete:focus-visible {
+    opacity: 1;
+}
+
+.book-delete:hover,
+.book-delete:focus-visible {
+    background: rgba(186, 26, 26, 0.85);
+    color: #fff;
+}
+
+/* Touch devices have no hover, so the control would otherwise be unreachable. */
+@media (pointer: coarse) {
+    .book-delete {
+        opacity: 1;
+    }
 }
 
 .book-card-link {

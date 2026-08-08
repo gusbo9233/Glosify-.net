@@ -162,12 +162,9 @@ public class AssistantSavedChatsTests
     {
         await using var context = CreateContext();
         var documentId = Guid.NewGuid();
-        var page = CreateBookPage(documentId, "user-1", "Pan Tadeusz opens with a longing for Lithuania.");
+        var books = await SeedBookAsync(context, CreateBookPage(documentId, "user-1", "Pan Tadeusz opens with a longing for Lithuania."));
         var generativeAi = new CapturingGenerativeAiClient("Queued a quiz from the page.");
-        var orchestrator = CreateOrchestrator(
-            context,
-            generativeAi: generativeAi,
-            books: new StaticBookDocumentService(page));
+        var orchestrator = CreateOrchestrator(context, generativeAi: generativeAi, books: books);
 
         await orchestrator.SendGlobalMessageAsync(
             "user-1",
@@ -178,6 +175,149 @@ public class AssistantSavedChatsTests
         Assert.Contains("Current book page context", generativeAi.LastAgentRequest.SystemInstruction);
         Assert.Contains("Page: 3", generativeAi.LastAgentRequest.SystemInstruction);
         Assert.Contains("Pan Tadeusz opens with a longing for Lithuania.", generativeAi.LastAgentRequest.SystemInstruction);
+    }
+
+    [Fact]
+    public async Task CreateChat_StoresTheSelectedBook()
+    {
+        await using var context = CreateContext();
+        var documentId = Guid.NewGuid();
+        var books = await SeedBookAsync(context, CreateBookPage(documentId, "user-1", "Rozdział pierwszy."));
+        var orchestrator = CreateOrchestrator(context, books: books);
+
+        var chat = await orchestrator.CreateChatAsync("user-1", contextBookDocumentId: documentId);
+
+        var thread = await context.AssistantThreads.SingleAsync(t => t.Id == chat.Id);
+        Assert.Equal(documentId, thread.ContextBookDocumentId);
+        Assert.Equal(documentId, chat.ContextBookDocumentId);
+        Assert.Equal("Polish Reader", chat.ContextBookTitle);
+    }
+
+    [Fact]
+    public async Task CreateChat_RejectsAnotherUsersBook()
+    {
+        await using var context = CreateContext();
+        var documentId = Guid.NewGuid();
+        var books = await SeedBookAsync(context, CreateBookPage(documentId, "owner", "Rozdział pierwszy."));
+        var orchestrator = CreateOrchestrator(context, books: books);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => orchestrator.CreateChatAsync("intruder", contextBookDocumentId: documentId));
+
+        Assert.Equal("That book was not found.", error.Message);
+    }
+
+    // The picker sets the book once; later turns send no book id at all, so the chat has
+    // to supply it or the assistant would forget the book after the first message.
+    [Fact]
+    public async Task SendChatMessage_FallsBackToTheThreadsBookContext()
+    {
+        await using var context = CreateContext();
+        var documentId = Guid.NewGuid();
+        var books = await SeedBookAsync(context, CreateBookPage(documentId, "user-1", "Rozdział pierwszy."));
+        var generativeAi = new CapturingGenerativeAiClient("Read it.");
+        var orchestrator = CreateOrchestrator(context, generativeAi: generativeAi, books: books);
+        var chat = await orchestrator.CreateChatAsync("user-1", contextBookDocumentId: documentId);
+
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", "What is this book about?");
+
+        Assert.NotNull(generativeAi.LastAgentRequest);
+        Assert.Contains("Selected book context", generativeAi.LastAgentRequest.ContextInstruction);
+        Assert.Contains("Polish Reader", generativeAi.LastAgentRequest.ContextInstruction);
+    }
+
+    // Authored agents receive only the context block, so the book has to appear there and
+    // not merely in the fallback system instruction.
+    [Fact]
+    public async Task SendChatMessage_PutsTheSelectedBookInTheAgentContextBlockWithoutItsText()
+    {
+        await using var context = CreateContext();
+        var documentId = Guid.NewGuid();
+        var books = await SeedBookAsync(context, CreateBookPage(documentId, "user-1", "Pan Tadeusz opens with a longing for Lithuania."));
+        var generativeAi = new CapturingGenerativeAiClient("Read it.");
+        var orchestrator = CreateOrchestrator(context, generativeAi: generativeAi, books: books);
+        var chat = await orchestrator.CreateChatAsync("user-1", contextBookDocumentId: documentId);
+
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Summarise it.");
+
+        Assert.NotNull(generativeAi.LastAgentRequest);
+        Assert.Contains("get_book_pages", generativeAi.LastAgentRequest.ContextInstruction);
+        // Selecting a book must not inline it: only the current page the user is reading
+        // is ever pasted in, and that is a separate block.
+        Assert.DoesNotContain(
+            "Pan Tadeusz opens with a longing for Lithuania.",
+            generativeAi.LastAgentRequest.ContextInstruction);
+        Assert.DoesNotContain(
+            "Pan Tadeusz opens with a longing for Lithuania.",
+            generativeAi.LastAgentRequest.SystemInstruction);
+    }
+
+    // The transcript twin of the book fallback. Both are thread-level context that the
+    // client stops resending after the first turn.
+    [Fact]
+    public async Task SendChatMessage_FallsBackToTheThreadsTranscriptContext()
+    {
+        await using var context = CreateContext();
+        var transcriptId = Guid.NewGuid();
+        context.Users.Add(new ApplicationUser { Id = "user-1", SelectedQuizLanguageCode = "pl" });
+        context.RealtimeTranslationTranscripts.Add(new RealtimeTranslationTranscript
+        {
+            Id = transcriptId,
+            UserId = "user-1",
+            Title = "Netflix evening",
+            TargetLanguage = "pl",
+            Stream = RealtimeTranslationTranscriptStreams.Source,
+        });
+        context.RealtimeTranslationTranscriptSegments.Add(new RealtimeTranslationTranscriptSegment
+        {
+            Id = Guid.NewGuid(),
+            TranscriptId = transcriptId,
+            SessionId = Guid.NewGuid(),
+            Sequence = 0,
+            Stream = RealtimeTranslationTranscriptStreams.Source,
+            Text = "Dzień dobry.",
+        });
+        await context.SaveChangesAsync();
+        var generativeAi = new CapturingGenerativeAiClient("Read it.");
+        var orchestrator = CreateOrchestrator(context, generativeAi: generativeAi);
+        var chat = await orchestrator.CreateChatAsync("user-1", contextTranscriptId: transcriptId);
+
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", "What did they say?");
+
+        Assert.NotNull(generativeAi.LastAgentRequest);
+        Assert.Contains("Netflix evening", generativeAi.LastAgentRequest.ContextInstruction);
+    }
+
+    [Fact]
+    public async Task UpdateChat_ClearsBookContextWhenUpdateContextIsSet()
+    {
+        await using var context = CreateContext();
+        var documentId = Guid.NewGuid();
+        var books = await SeedBookAsync(context, CreateBookPage(documentId, "user-1", "Rozdział pierwszy."));
+        var orchestrator = CreateOrchestrator(context, books: books);
+        var chat = await orchestrator.CreateChatAsync("user-1", contextBookDocumentId: documentId);
+
+        await orchestrator.UpdateChatAsync(chat.Id, "user-1", updateContext: true);
+
+        var thread = await context.AssistantThreads.SingleAsync(t => t.Id == chat.Id);
+        Assert.Null(thread.ContextBookDocumentId);
+    }
+
+    // Renaming leaves updateContext false, which must not disturb the bound material.
+    [Fact]
+    public async Task UpdateChat_KeepsBookContextWhenOnlyRenaming()
+    {
+        await using var context = CreateContext();
+        var documentId = Guid.NewGuid();
+        var books = await SeedBookAsync(context, CreateBookPage(documentId, "user-1", "Rozdział pierwszy."));
+        var orchestrator = CreateOrchestrator(context, books: books);
+        var chat = await orchestrator.CreateChatAsync("user-1", contextBookDocumentId: documentId);
+
+        await orchestrator.UpdateChatAsync(chat.Id, "user-1", title: "Reading notes");
+
+        var thread = await context.AssistantThreads.SingleAsync(t => t.Id == chat.Id);
+        Assert.Equal(documentId, thread.ContextBookDocumentId);
+        Assert.Equal("Reading notes", thread.Title);
     }
 
     [Fact]
@@ -303,12 +443,9 @@ public class AssistantSavedChatsTests
     {
         await using var context = CreateContext();
         var documentId = Guid.NewGuid();
-        var page = CreateBookPage(documentId, "user-1", "Pan Tadeusz opens with a longing for Lithuania.");
+        var books = await SeedBookAsync(context, CreateBookPage(documentId, "user-1", "Pan Tadeusz opens with a longing for Lithuania."));
         var generativeAi = new CapturingGenerativeAiClient("Queued a quiz from the page.");
-        var orchestrator = CreateOrchestrator(
-            context,
-            generativeAi: generativeAi,
-            books: new StaticBookDocumentService(page));
+        var orchestrator = CreateOrchestrator(context, generativeAi: generativeAi, books: books);
 
         await orchestrator.SendGlobalMessageAsync(
             "user-1",
@@ -553,6 +690,19 @@ public class AssistantSavedChatsTests
         };
     }
 
+    /// <summary>
+    /// The orchestrator checks ownership through IBookDocumentService but batches chat
+    /// titles straight off the DbContext, so a book has to be present in both for a test
+    /// to match how production behaves.
+    /// </summary>
+    private static async Task<StaticBookDocumentService> SeedBookAsync(GlosifyContext context, BookPage page)
+    {
+        context.BookDocuments.Add(page.BookDocument);
+        context.BookPages.Add(page);
+        await context.SaveChangesAsync();
+        return new StaticBookDocumentService(page);
+    }
+
     private static AssistantThread CreateThread(
         string userId,
         string title = "New chat",
@@ -729,6 +879,9 @@ public class AssistantSavedChatsTests
 
     private sealed class NoopBookDocumentService : IBookDocumentService
     {
+        public Task<bool> DeleteAsync(Guid documentId, string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
         public Task<IReadOnlyList<BookDocument>> GetUserBooksAsync(string userId, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<BookDocument>>([]);
 
@@ -750,6 +903,9 @@ public class AssistantSavedChatsTests
 
     private sealed class StaticBookDocumentService(BookPage page) : IBookDocumentService
     {
+        public Task<bool> DeleteAsync(Guid documentId, string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
+
         public Task<IReadOnlyList<BookDocument>> GetUserBooksAsync(string userId, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<BookDocument>>([page.BookDocument]);
 

@@ -10,6 +10,7 @@ public sealed class AgentToolContext
     public string? FocusedWordId { get; init; }
     public string? FocusedWordLabel { get; init; }
     public Guid? TranscriptId { get; init; }
+    public Guid? BookDocumentId { get; init; }
     public string? PendingCustomQuizRef { get; set; }
     public string? PendingCustomQuizName { get; set; }
     public List<PendingChange> PendingChanges { get; } = [];

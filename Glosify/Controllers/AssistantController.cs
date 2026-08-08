@@ -46,7 +46,8 @@ public class AssistantController : ControllerBase
             userId,
             input?.ContextQuizId,
             cancellationToken,
-            input?.ContextTranscriptId);
+            input?.ContextTranscriptId,
+            input?.ContextBookDocumentId);
         return Ok(chat);
     }
 
@@ -63,7 +64,8 @@ public class AssistantController : ControllerBase
                 input.ContextQuizId,
                 input.UpdateContext,
                 cancellationToken,
-                input.ContextTranscriptId);
+                input.ContextTranscriptId,
+                input.ContextBookDocumentId);
             return Ok(chat);
         }
         catch (InvalidOperationException ex)
@@ -125,7 +127,8 @@ public class AssistantController : ControllerBase
                     : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),
                 input.CustomQuizId,
                 cancellationToken,
-                input.TranscriptId);
+                input.TranscriptId,
+                input.BookDocumentId);
 
             return Ok(response);
         }

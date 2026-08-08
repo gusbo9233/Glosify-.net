@@ -59,6 +59,7 @@ public sealed class AssistantMcpToolSurface : IAssistantMcpToolSurface
             QuizId = session.QuizId,
             CustomQuizId = session.CustomQuizId,
             TranscriptId = session.TranscriptId,
+            BookDocumentId = session.BookDocumentId,
             FocusedWordId = session.FocusedWordId,
             CurrentLanguage = session.CurrentLanguage,
             CurrentLanguageCode = session.CurrentLanguageCode,

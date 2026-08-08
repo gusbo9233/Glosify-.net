@@ -7,6 +7,14 @@
     const pageQuizId = panel.dataset.quizId || null;
     const pageContextLabel = panel.dataset.contextLabel || null;
     const pageTranscriptId = panel.dataset.transcriptId || null;
+    const pageDocumentId = panel.dataset.documentId || null;
+    // "Material" is the book or transcript the chat reads from, as opposed to the quiz,
+    // which is where proposed changes land. The page the panel opened on only seeds it;
+    // from then on the picker owns it, so navigating around never replaces the choice.
+    const pageMaterialKind = pageTranscriptId ? 'transcript' : pageDocumentId ? 'book' : null;
+    const pageMaterialId = pageTranscriptId || pageDocumentId || null;
+    let materialKind = pageMaterialKind;
+    let materialId = pageMaterialId;
     let quizId = pageQuizId;
     let activeThreadId = null;
     let chats = [];
@@ -39,7 +47,7 @@
     const scanStatus = panel.querySelector('[data-assistant-scan-status]');
     const modelSelect = panel.querySelector('[data-assistant-model-select]');
     const quizSelector = panel.querySelector('[data-assistant-quiz-selector]');
-    const contextLabel = panel.querySelector('[data-assistant-context-label]');
+    const materialSelector = panel.querySelector('[data-assistant-material-selector]');
     const chatList = panel.querySelector('[data-assistant-chat-list]');
     const tabButtons = Array.from(panel.querySelectorAll('[data-assistant-tab]'));
     const panes = Array.from(panel.querySelectorAll('[data-assistant-pane]'));
@@ -126,7 +134,7 @@
         icon.textContent = 'auto_awesome';
 
         const title = document.createElement('strong');
-        title.textContent = getActiveChat()?.title || contextLabel?.textContent?.trim() || 'Assistant';
+        title.textContent = getActiveChat()?.title || pageContextLabel || 'Assistant';
 
         const copy = document.createElement('span');
         copy.textContent = message || defaultEmptyText;
@@ -146,6 +154,54 @@
 
     const getActiveChat = () => chats.find(chat => String(chat.id).toLowerCase() === String(activeThreadId).toLowerCase()) || null;
 
+    // The server treats updateContext as all-or-nothing, so every context write has to
+    // carry the complete picture or the fields it omits are cleared.
+    const materialPayload = () => ({
+        contextTranscriptId: materialKind === 'transcript' ? materialId : null,
+        contextBookDocumentId: materialKind === 'book' ? materialId : null,
+    });
+
+    const materialLabel = () => materialSelector?.selectedOptions?.[0]?.dataset.contextLabel || null;
+
+    const persistContext = () => {
+        if (!activeThreadId) {
+            return;
+        }
+        updateChat(activeThreadId, {
+            contextQuizId: quizId,
+            ...materialPayload(),
+            updateContext: true,
+        }).catch(() => {
+            setStatus('Could not save chat context.', true);
+        });
+    };
+
+    const setMaterialContext = (nextKind, nextId, persist = false) => {
+        materialId = nextId || null;
+        materialKind = materialId ? nextKind : null;
+
+        if (materialSelector) {
+            materialSelector.value = materialId ? `${materialKind}:${materialId}` : '';
+            // A book or transcript from another language is not in the list, so the
+            // select would silently fall back to "No material selected" and the next
+            // context write would clear a choice the user never touched.
+            if (materialId && !materialSelector.value) {
+                const option = document.createElement('option');
+                option.value = `${materialKind}:${materialId}`;
+                option.dataset.contextLabel = getActiveChat()?.contextBookTitle
+                    || getActiveChat()?.contextTranscriptTitle
+                    || 'Selected material';
+                option.textContent = option.dataset.contextLabel;
+                materialSelector.appendChild(option);
+                materialSelector.value = option.value;
+            }
+        }
+
+        if (persist) {
+            persistContext();
+        }
+    };
+
     const setQuizContext = (nextQuizId, label, persist = false) => {
         quizId = nextQuizId || null;
         panel.dataset.quizId = quizId || '';
@@ -161,20 +217,8 @@
             quizSelector.value = quizId || '';
         }
 
-        const selectedOption = quizSelector?.selectedOptions?.[0] || null;
-        const selectedLabel = label || selectedOption?.dataset.contextLabel || 'Glosify';
-        if (contextLabel) {
-            contextLabel.textContent = selectedLabel;
-        }
-
-        if (persist && activeThreadId) {
-            updateChat(activeThreadId, {
-                contextQuizId: quizId,
-                contextTranscriptId: pageTranscriptId,
-                updateContext: true,
-            }).catch(() => {
-                setStatus('Could not save chat context.', true);
-            });
+        if (persist) {
+            persistContext();
         }
     };
 
@@ -196,7 +240,7 @@
             headers: requestHeaders(true),
             body: JSON.stringify({
                 contextQuizId: contextQuizId || null,
-                contextTranscriptId: pageTranscriptId,
+                ...materialPayload(),
                 updateContext: true,
             }),
         });
@@ -274,11 +318,26 @@
         const contextQuizName = pageQuizId
             ? pageContextLabel || chat?.contextQuizName || null
             : chat?.contextQuizName || null;
+
+        // The chat's stored material wins over the page. Only a chat with no material of
+        // its own inherits the book or transcript the panel was opened on.
+        const storedKind = chat?.contextTranscriptId
+            ? 'transcript'
+            : chat?.contextBookDocumentId ? 'book' : null;
+        const storedId = chat?.contextTranscriptId || chat?.contextBookDocumentId || null;
+        if (storedId) {
+            setMaterialContext(storedKind, storedId, false);
+        } else {
+            setMaterialContext(pageMaterialKind, pageMaterialId, false);
+        }
+
         setQuizContext(contextQuizId, contextQuizName, false);
-        if (pageQuizId && chat?.contextQuizId !== pageQuizId) {
+        const adoptsPageQuiz = pageQuizId && chat?.contextQuizId !== pageQuizId;
+        const adoptsPageMaterial = !storedId && materialId;
+        if (adoptsPageQuiz || adoptsPageMaterial) {
             await updateChat(threadId, {
-                contextQuizId: pageQuizId,
-                contextTranscriptId: pageTranscriptId,
+                contextQuizId: quizId,
+                ...materialPayload(),
                 updateContext: true,
             });
         }
@@ -316,7 +375,11 @@
             title.textContent = chat.title || 'New chat';
 
             const meta = document.createElement('span');
-            meta.textContent = [formatChatDate(chat.updatedAt), chat.contextQuizName].filter(Boolean).join(' · ');
+            meta.textContent = [
+                formatChatDate(chat.updatedAt),
+                chat.contextQuizName,
+                chat.contextBookTitle || chat.contextTranscriptTitle,
+            ].filter(Boolean).join(' · ');
 
             const preview = document.createElement('span');
             preview.textContent = chat.preview || 'Empty chat';
@@ -681,8 +744,15 @@
 
     quizSelector?.addEventListener('change', async () => {
         const selectedOption = quizSelector.selectedOptions?.[0] || null;
-        setQuizContext(quizSelector.value || null, selectedOption?.dataset.contextLabel || 'Glosify', true);
-        setStatus(quizId ? `Context set to ${contextLabel?.textContent?.trim()}.` : '');
+        const label = selectedOption?.dataset.contextLabel || 'Glosify';
+        setQuizContext(quizSelector.value || null, label, true);
+        setStatus(quizId ? `Quiz set to ${label}.` : 'No quiz selected.');
+    });
+
+    materialSelector?.addEventListener('change', async () => {
+        const [kind, id] = (materialSelector.value || '').split(':');
+        setMaterialContext(kind || null, id || null, true);
+        setStatus(materialId ? `Reading ${materialLabel()}.` : 'No material selected.');
     });
 
     document.addEventListener('keydown', (event) => {
@@ -732,7 +802,8 @@
                     contextQuizId: quizId,
                     focusedWordId,
                     customQuizId,
-                    transcriptId: pageTranscriptId,
+                    transcriptId: materialKind === 'transcript' ? materialId : null,
+                    bookDocumentId: materialKind === 'book' ? materialId : null,
                     model: modelSelect?.value || null,
                     documentContext,
                 }),

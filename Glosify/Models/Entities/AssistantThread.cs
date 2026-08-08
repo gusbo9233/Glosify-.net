@@ -17,6 +17,9 @@ public class AssistantThread
     [Column("context_transcript_id")]
     public Guid? ContextTranscriptId { get; set; }
 
+    [Column("context_book_document_id")]
+    public Guid? ContextBookDocumentId { get; set; }
+
     [Column("user_id")]
     public string UserId { get; set; } = string.Empty;
 

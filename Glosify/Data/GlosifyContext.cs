@@ -151,6 +151,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(t => new { t.UserId, t.QuizId, t.Language });
             entity.HasIndex(t => t.ContextQuizId);
             entity.HasIndex(t => t.ContextTranscriptId);
+            entity.HasIndex(t => t.ContextBookDocumentId);
             entity.HasOne<Quiz>()
                 .WithMany()
                 .HasForeignKey(t => t.QuizId)
@@ -170,6 +171,11 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(t => t.ContextTranscriptId)
                 .HasConstraintName("FK_AssistantThreads_RealtimeTranslationTranscripts_ContextTranscriptId")
+                .OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne<BookDocument>()
+                .WithMany()
+                .HasForeignKey(t => t.ContextBookDocumentId)
+                .HasConstraintName("FK_AssistantThreads_BookDocuments_ContextBookDocumentId")
                 .OnDelete(DeleteBehavior.NoAction);
         });
 

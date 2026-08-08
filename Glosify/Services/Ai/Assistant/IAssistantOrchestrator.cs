@@ -10,7 +10,8 @@ public interface IAssistantOrchestrator
         string userId,
         Guid? contextQuizId = null,
         CancellationToken cancellationToken = default,
-        Guid? contextTranscriptId = null);
+        Guid? contextTranscriptId = null,
+        Guid? contextBookDocumentId = null);
 
     Task<AssistantChatSummary> UpdateChatAsync(
         Guid threadId,
@@ -19,7 +20,8 @@ public interface IAssistantOrchestrator
         Guid? contextQuizId = null,
         bool updateContext = false,
         CancellationToken cancellationToken = default,
-        Guid? contextTranscriptId = null);
+        Guid? contextTranscriptId = null,
+        Guid? contextBookDocumentId = null);
 
     Task DeleteChatAsync(
         Guid threadId,
@@ -41,7 +43,8 @@ public interface IAssistantOrchestrator
         AssistantDocumentContext? documentContext = null,
         Guid? customQuizId = null,
         CancellationToken cancellationToken = default,
-        Guid? transcriptId = null);
+        Guid? transcriptId = null,
+        Guid? bookDocumentId = null);
 
     Task<AssistantTurnResponse> SendMessageAsync(
         Guid quizId,
@@ -118,7 +121,9 @@ public sealed record AssistantChatSummary(
     Guid? ContextQuizId,
     string? ContextQuizName,
     Guid? ContextTranscriptId,
-    string? ContextTranscriptTitle);
+    string? ContextTranscriptTitle,
+    Guid? ContextBookDocumentId,
+    string? ContextBookTitle);
 
 public sealed record AssistantMessageView(
     Guid Id,

@@ -881,6 +881,137 @@ public class AssistantToolsTests
             change => Assert.Equal(PendingChangeKinds.MoveCollection, change.Kind));
     }
 
+    [Fact]
+    public async Task GetBookPages_ReadsARunOfPagesInOrderFromTheSelectedBook()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedBookAsync(db, "user-1", pageCount: 6);
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "get_book_pages", """{"from_page":2,"limit":3}""", context, CancellationToken.None));
+
+        var pages = result.GetProperty("pages").EnumerateArray().ToList();
+        Assert.Equal([2, 3, 4], pages.Select(page => page.GetProperty("page_number").GetInt32()));
+        Assert.Equal("Page 2 text.", pages[0].GetProperty("text").GetString());
+        Assert.True(result.GetProperty("has_more").GetBoolean());
+        Assert.Equal(5, result.GetProperty("next_page").GetInt32());
+    }
+
+    [Fact]
+    public async Task GetBookPages_ReportsNoMoreOnTheLastPage()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedBookAsync(db, "user-1", pageCount: 3);
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "get_book_pages", """{"from_page":3}""", context, CancellationToken.None));
+
+        Assert.Single(result.GetProperty("pages").EnumerateArray());
+        Assert.False(result.GetProperty("has_more").GetBoolean());
+    }
+
+    [Fact]
+    public async Task GetBookPages_RejectsAnotherUsersBook()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedBookAsync(db, "owner", pageCount: 2);
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "intruder", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "get_book_pages", "{}", context, CancellationToken.None));
+
+        Assert.Equal("Book not found.", result.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task GetBookPages_NeedsABookIdWhenNoneIsSelected()
+    {
+        await using var db = CreateContext();
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1" };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "get_book_pages", "{}", context, CancellationToken.None));
+
+        Assert.Equal("Choose a book first or provide a valid book_id.", result.GetProperty("error").GetString());
+    }
+
+    // A single call must not be able to fill the context window, however long the pages
+    // are. The first page always comes back so the model never gets an empty answer.
+    [Fact]
+    public async Task GetBookPages_StopsAtTheCharacterBudget()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedBookAsync(db, "user-1", pageCount: 4, pageText: new string('a', 7_000));
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "get_book_pages", """{"from_page":1,"limit":4}""", context, CancellationToken.None));
+
+        Assert.Single(result.GetProperty("pages").EnumerateArray());
+        Assert.Equal(2, result.GetProperty("next_page").GetInt32());
+        Assert.True(result.GetProperty("has_more").GetBoolean());
+    }
+
+    [Fact]
+    public async Task ListBooks_ReturnsOnlyTheCurrentLanguagesBooks()
+    {
+        await using var db = CreateContext();
+        await SeedBookAsync(db, "user-1", pageCount: 1, title: "Polish Reader", language: "Polish");
+        await SeedBookAsync(db, "user-1", pageCount: 1, title: "German Reader", language: "German");
+        await SeedBookAsync(db, "user-2", pageCount: 1, title: "Someone else's", language: "Polish");
+        var tools = new AssistantTools(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "list_books", "{}", context, CancellationToken.None));
+
+        var book = Assert.Single(result.GetProperty("books").EnumerateArray());
+        Assert.Equal("Polish Reader", book.GetProperty("title").GetString());
+        Assert.Equal(1, result.GetProperty("total_count").GetInt32());
+    }
+
+    private static async Task<Guid> SeedBookAsync(
+        GlosifyContext db,
+        string userId,
+        int pageCount,
+        string title = "Polish Reader",
+        string language = "Polish",
+        string? pageText = null)
+    {
+        var bookId = Guid.NewGuid();
+        db.BookDocuments.Add(new Glosify.Models.Library.BookDocument
+        {
+            Id = bookId,
+            UserId = userId,
+            Title = title,
+            OriginalFileName = "reader.pdf",
+            BlobName = $"books/{bookId}.pdf",
+            Language = language,
+            PageCount = pageCount,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        });
+        for (var pageNumber = 1; pageNumber <= pageCount; pageNumber++)
+        {
+            db.BookPages.Add(new Glosify.Models.Library.BookPage
+            {
+                Id = Guid.NewGuid(),
+                BookDocumentId = bookId,
+                PageNumber = pageNumber,
+                Text = pageText ?? $"Page {pageNumber} text.",
+            });
+        }
+        await db.SaveChangesAsync();
+        return bookId;
+    }
+
     private static GlosifyContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<GlosifyContext>()

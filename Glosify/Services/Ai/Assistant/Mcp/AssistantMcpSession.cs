@@ -25,6 +25,9 @@ public sealed class AssistantMcpSession
     [JsonPropertyName("tid")]
     public Guid? TranscriptId { get; set; }
 
+    [JsonPropertyName("bid")]
+    public Guid? BookDocumentId { get; set; }
+
     [JsonPropertyName("fwid")]
     public string? FocusedWordId { get; set; }
 

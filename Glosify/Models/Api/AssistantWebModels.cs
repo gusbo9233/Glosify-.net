@@ -9,6 +9,7 @@ public sealed class SendMessageInput
     public DocumentContextInput? DocumentContext { get; set; }
     public Guid? CustomQuizId { get; set; }
     public Guid? TranscriptId { get; set; }
+    public Guid? BookDocumentId { get; set; }
 }
 
 public sealed class ChatMutationInput
@@ -17,6 +18,7 @@ public sealed class ChatMutationInput
     public Guid? ContextQuizId { get; set; }
     public bool UpdateContext { get; set; }
     public Guid? ContextTranscriptId { get; set; }
+    public Guid? ContextBookDocumentId { get; set; }
 }
 
 public sealed class DocumentContextInput
