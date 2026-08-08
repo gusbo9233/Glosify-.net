@@ -29,6 +29,25 @@ public sealed class ClassroomServiceTests
     }
 
     [Fact]
+    public async Task GetForUserAsync_ReturnsSelectedLanguageAndUntaggedClassrooms()
+    {
+        await using var context = CreateContext();
+        var service = new ClassroomService(context);
+        var spanish = await service.CreateAsync(OwnerId, "Spanish 101", null, "Spanish");
+        var polish = await service.CreateAsync(OwnerId, "Polish 101", null, "Polish");
+        var untagged = await service.CreateAsync(OwnerId, "Anything goes", null);
+
+        var spanishList = await service.GetForUserAsync(OwnerId, "Spanish");
+        var everything = await service.GetForUserAsync(OwnerId);
+
+        Assert.Equal(
+            new[] { spanish.Id, untagged.Id }.Order(),
+            spanishList.Select(s => s.Classroom.Id).Order());
+        Assert.Equal(3, everything.Count);
+        Assert.Contains(polish.Id, everything.Select(s => s.Classroom.Id));
+    }
+
+    [Fact]
     public async Task JoinByCodeAsync_AddsStudentAndIsIdempotent()
     {
         await using var context = CreateContext();

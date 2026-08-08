@@ -3,6 +3,7 @@ using Glosify.Services.Books;
 using Glosify.Services.Classrooms;
 using Glosify.Services.Communication;
 using Glosify.Services.CustomQuizzes;
+using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ public class ClassroomController : Controller
     private readonly ICustomQuizService _customQuizzes;
     private readonly IAcsTokenService _acsTokens;
     private readonly IHubContext<ClassroomChatHub> _chatHub;
+    private readonly ILanguageContext _languageContext;
     private readonly ILogger<ClassroomController> _logger;
 
     public ClassroomController(
@@ -28,6 +30,7 @@ public class ClassroomController : Controller
         ICustomQuizService customQuizzes,
         IAcsTokenService acsTokens,
         IHubContext<ClassroomChatHub> chatHub,
+        ILanguageContext languageContext,
         ILogger<ClassroomController> logger)
     {
         _classrooms = classrooms;
@@ -36,6 +39,7 @@ public class ClassroomController : Controller
         _customQuizzes = customQuizzes;
         _acsTokens = acsTokens;
         _chatHub = chatHub;
+        _languageContext = languageContext;
         _logger = logger;
     }
 
@@ -45,7 +49,7 @@ public class ClassroomController : Controller
         var userId = User.GetUserId();
         return View(new ClassroomIndexViewModel
         {
-            Classrooms = await _classrooms.GetForUserAsync(userId, cancellationToken),
+            Classrooms = await _classrooms.GetForUserAsync(userId, _languageContext.CurrentLanguage, cancellationToken),
             PendingInvitations = await _classrooms.GetPendingInvitationsForUserAsync(userId, cancellationToken)
         });
     }
@@ -55,7 +59,12 @@ public class ClassroomController : Controller
     {
         try
         {
-            var classroom = await _classrooms.CreateAsync(User.GetUserId(), name ?? string.Empty, description, cancellationToken);
+            var classroom = await _classrooms.CreateAsync(
+                User.GetUserId(),
+                name ?? string.Empty,
+                description,
+                _languageContext.CurrentLanguage,
+                cancellationToken);
             TempData[NotificationKeys.Classroom] = $"Created {classroom.Name}.";
             return RedirectToAction(nameof(Details), new { id = classroom.Id });
         }
@@ -76,7 +85,7 @@ public class ClassroomController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        TempData[NotificationKeys.Classroom] = $"Welcome to {classroom.Name}.";
+        TempData[NotificationKeys.Classroom] = WelcomeMessage(classroom);
         return RedirectToAction(nameof(Details), new { id = classroom.Id });
     }
 
@@ -90,8 +99,24 @@ public class ClassroomController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        TempData[NotificationKeys.Classroom] = $"Welcome to {classroom.Name}.";
+        TempData[NotificationKeys.Classroom] = WelcomeMessage(classroom);
         return RedirectToAction(nameof(Details), new { id = classroom.Id });
+    }
+
+    /// <summary>
+    /// Follows the classroom into its language, so a classroom someone just joined
+    /// is not immediately filtered out of their list.
+    /// </summary>
+    private string WelcomeMessage(Classroom classroom)
+    {
+        if (string.IsNullOrWhiteSpace(classroom.Language)
+            || string.Equals(classroom.Language, _languageContext.CurrentLanguage, StringComparison.Ordinal)
+            || !_languageContext.TrySetLanguage(classroom.Language))
+        {
+            return $"Welcome to {classroom.Name}.";
+        }
+
+        return $"Welcome to {classroom.Name}. Switched you to {classroom.Language}.";
     }
 
     [HttpPost]

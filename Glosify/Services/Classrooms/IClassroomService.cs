@@ -4,8 +4,13 @@ namespace Glosify.Services.Classrooms;
 
 public interface IClassroomService
 {
-    Task<Classroom> CreateAsync(string ownerUserId, string name, string? description, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<ClassroomSummary>> GetForUserAsync(string userId, CancellationToken cancellationToken = default);
+    Task<Classroom> CreateAsync(string ownerUserId, string name, string? description, string? language = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists the user's classrooms, limited to <paramref name="language"/> when one
+    /// is selected. Classrooms without a language stay visible in every language.
+    /// </summary>
+    Task<IReadOnlyList<ClassroomSummary>> GetForUserAsync(string userId, string? language = null, CancellationToken cancellationToken = default);
     Task<Classroom> GetDetailsAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task<ClassroomDetailsPage> GetDetailsPageAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task DeleteClassroomAsync(Guid classroomId, string ownerUserId, CancellationToken cancellationToken = default);

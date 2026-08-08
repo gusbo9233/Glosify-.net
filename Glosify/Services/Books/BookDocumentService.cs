@@ -1,5 +1,6 @@
 using Glosify.Data;
 using Glosify.Models.Library;
+using Glosify.Services.Language;
 using Glosify.Services.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,24 +13,35 @@ public sealed class BookDocumentService : IBookDocumentService
     private readonly GlosifyContext _context;
     private readonly IBookFileStorage _storage;
     private readonly IPdfTextExtractionService _pdfTextExtraction;
+    private readonly ILanguageContext _languageContext;
 
     public BookDocumentService(
         GlosifyContext context,
         IBookFileStorage storage,
-        IPdfTextExtractionService pdfTextExtraction)
+        IPdfTextExtractionService pdfTextExtraction,
+        ILanguageContext languageContext)
     {
         _context = context;
         _storage = storage;
         _pdfTextExtraction = pdfTextExtraction;
+        _languageContext = languageContext;
     }
 
     public async Task<IReadOnlyList<BookDocument>> GetUserBooksAsync(
         string userId,
         CancellationToken cancellationToken = default)
     {
-        return await _context.BookDocuments
+        var query = _context.BookDocuments
             .AsNoTracking()
-            .Where(book => book.UserId == userId)
+            .Where(book => book.UserId == userId);
+
+        var language = _languageContext.CurrentLanguage;
+        if (!string.IsNullOrWhiteSpace(language))
+        {
+            query = query.Where(book => book.Language == language);
+        }
+
+        return await query
             .OrderByDescending(book => book.CreatedAt)
             .ToListAsync(cancellationToken);
     }
@@ -74,6 +86,7 @@ public sealed class BookDocumentService : IBookDocumentService
             Title = Path.GetFileNameWithoutExtension(file.FileName).Trim(),
             OriginalFileName = Path.GetFileName(file.FileName),
             BlobName = blobName,
+            Language = _languageContext.CurrentLanguage,
             PageCount = pages.Count,
             ProcessingStatus = "Ready",
             CreatedAt = now,

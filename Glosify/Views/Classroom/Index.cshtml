@@ -1,7 +1,11 @@
 @model ClassroomIndexViewModel
+@inject Glosify.Services.Language.ILanguageContext LangContext
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = "Classrooms";
+
+    var language = LangContext.CurrentLanguage;
+    var shelfTitle = string.IsNullOrEmpty(language) ? "My classrooms" : $"Your {language} classrooms";
+    ViewData["Title"] = string.IsNullOrEmpty(language) ? "Classrooms" : $"{language} classrooms";
 
     var totalMembers = Model.Classrooms.Sum(summary => summary.MemberCount);
 }
@@ -128,7 +132,7 @@
                     <div>
                         <span>For teachers</span>
                         <h3>Create a classroom</h3>
-                        <p>Set up a home for lessons, quizzes, books, and conversation.</p>
+                        <p>Set up a home for lessons, quizzes, books, and conversation.@(string.IsNullOrEmpty(language) ? "" : $" It will be a {language} classroom.")</p>
                     </div>
                 </div>
 
@@ -183,7 +187,7 @@
         <div class="classroom-section-heading classroom-collection-heading">
             <div>
                 <p>Your learning spaces</p>
-                <h2>My classrooms</h2>
+                <h2>@shelfTitle</h2>
             </div>
             @if (Model.Classrooms.Any())
             {
@@ -239,7 +243,7 @@
                         <i></i>
                         <i></i>
                     </span>
-                    <h3>Learning is better with company</h3>
+                    <h3>@(string.IsNullOrEmpty(language) ? "Learning is better with company" : $"No {language} classrooms yet")</h3>
                     <p>Create your first classroom, or ask your teacher for a join code to find your group.</p>
                     <a href="#classroomName">
                         Create your first space

@@ -20,7 +20,7 @@ public class ClassroomService : IClassroomService
         _context = context;
     }
 
-    public async Task<Classroom> CreateAsync(string ownerUserId, string name, string? description, CancellationToken cancellationToken = default)
+    public async Task<Classroom> CreateAsync(string ownerUserId, string name, string? description, string? language = null, CancellationToken cancellationToken = default)
     {
         name = name.Trim();
         if (string.IsNullOrWhiteSpace(name))
@@ -34,6 +34,7 @@ public class ClassroomService : IClassroomService
             OwnerUserId = ownerUserId,
             Name = name,
             Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim(),
+            Language = string.IsNullOrWhiteSpace(language) ? null : language,
             JoinCode = await GenerateUniqueJoinCodeAsync(cancellationToken),
             JoinCodeEnabled = true,
             GroupCallId = Guid.NewGuid(),
@@ -54,13 +55,21 @@ public class ClassroomService : IClassroomService
         return classroom;
     }
 
-    public async Task<IReadOnlyList<ClassroomSummary>> GetForUserAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ClassroomSummary>> GetForUserAsync(string userId, string? language = null, CancellationToken cancellationToken = default)
     {
+        // Classrooms created before a language was picked stay visible in every
+        // language: a shared space should never vanish for the people in it.
+        var classrooms = _context.Classrooms.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(language))
+        {
+            classrooms = classrooms.Where(c => c.Language == null || c.Language == language);
+        }
+
         return await _context.ClassroomMemberships
             .AsNoTracking()
             .Where(m => m.UserId == userId)
             .Join(
-                _context.Classrooms.AsNoTracking(),
+                classrooms,
                 m => m.ClassroomId,
                 c => c.Id,
                 (m, c) => new { Membership = m, Classroom = c })

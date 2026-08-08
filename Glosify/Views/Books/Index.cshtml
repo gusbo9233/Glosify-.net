@@ -1,7 +1,11 @@
 @model BookLibraryViewModel
+@inject Glosify.Services.Language.ILanguageContext LangContext
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = "Books";
+
+    var language = LangContext.CurrentLanguage;
+    var shelfTitle = string.IsNullOrEmpty(language) ? "Your books" : $"Your {language} books";
+    ViewData["Title"] = string.IsNullOrEmpty(language) ? "Books" : $"{language} books";
 
     var totalPages = Model.Books.Sum(book => book.PageCount);
 }
@@ -75,7 +79,7 @@
         <div class="books-collection-header">
             <div>
                 <p class="books-section-label">Keep reading</p>
-                <h2>Your books</h2>
+                <h2>@shelfTitle</h2>
             </div>
             @if (Model.Books.Any())
             {
@@ -128,8 +132,8 @@
                     <span class="books-empty-icon">
                         <span class="material-symbols-outlined" aria-hidden="true">library_books</span>
                     </span>
-                    <h3>Your shelf is ready</h3>
-                    <p>Upload your first text-based PDF above and start learning from the things you already love to read.</p>
+                    <h3>@(string.IsNullOrEmpty(language) ? "Your shelf is ready" : $"No {language} books yet")</h3>
+                    <p>Upload your first text-based PDF above and start learning from the things you already love to read.@(string.IsNullOrEmpty(language) ? "" : $" It will be added to your {language} shelf.")</p>
                     <label class="books-empty-action" for="bookFile">
                         Choose your first book
                         <span class="material-symbols-outlined" aria-hidden="true">north_east</span>

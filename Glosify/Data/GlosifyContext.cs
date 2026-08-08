@@ -375,9 +375,11 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.Property(b => b.ProcessingStatus).HasMaxLength(64).IsRequired();
             entity.Property(b => b.ProcessingMessage).HasMaxLength(512);
             entity.Property(b => b.PreferredTranslationLanguage).HasMaxLength(64);
+            entity.Property(b => b.Language).HasMaxLength(64);
 
             entity.HasIndex(b => b.UserId);
             entity.HasIndex(b => new { b.UserId, b.CreatedAt });
+            entity.HasIndex(b => new { b.UserId, b.Language });
 
             entity.HasOne<ApplicationUser>()
                 .WithMany()
@@ -431,6 +433,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
             entity.Property(c => c.OwnerUserId).HasMaxLength(450).IsRequired();
             entity.Property(c => c.Name).HasMaxLength(160).IsRequired();
             entity.Property(c => c.Description).HasMaxLength(1024);
+            entity.Property(c => c.Language).HasMaxLength(64);
             entity.Property(c => c.JoinCode).HasMaxLength(8).IsRequired();
 
             entity.HasIndex(c => c.OwnerUserId);

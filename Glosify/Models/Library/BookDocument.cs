@@ -7,6 +7,13 @@ namespace Glosify.Models.Library
         public string Title { get; set; } = string.Empty;
         public string OriginalFileName { get; set; } = string.Empty;
         public string BlobName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The learning language the book belongs to, so the library only shows
+        /// books for the language the reader has selected.
+        /// </summary>
+        public string? Language { get; set; }
+
         public int PageCount { get; set; }
         public string ProcessingStatus { get; set; } = "Ready";
         public string? ProcessingMessage { get; set; }
