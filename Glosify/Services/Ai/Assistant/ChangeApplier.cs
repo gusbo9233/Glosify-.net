@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Glosify.Data;
+using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
-using Glosify.Services.CustomQuizzes;
 
 namespace Glosify.Services.Ai.Assistant;
 
@@ -121,75 +121,75 @@ public sealed class ChangeApplier : IChangeApplier
                     applied += ApplyDeleteSentence(change.Payload, batch) ? 1 : 0;
                     break;
                 case PendingChangeKinds.CreateQuiz:
-                {
-                    var created = await ApplyCreateQuizAsync(change.Payload, userId, cancellationToken);
-                    if (created != null)
                     {
-                        applied++;
-                        createdQuizId ??= created.QuizId;
-                        createdCustomQuizId ??= created.CustomQuizId;
-                        if (created.CustomQuizId.HasValue
-                            && change.Payload.TryGetProperty("custom_quiz", out var customQuiz)
-                            && !string.IsNullOrWhiteSpace(GetString(customQuiz, "draft_ref")))
+                        var created = await ApplyCreateQuizAsync(change.Payload, userId, cancellationToken);
+                        if (created != null)
                         {
-                            var draftRef = GetString(customQuiz, "draft_ref");
-                            customQuizIdsByDraftRef[draftRef] = created.CustomQuizId.Value;
-                            wordIdsByCustomQuizDraftRef[draftRef] = created.StarterWordIds;
+                            applied++;
+                            createdQuizId ??= created.QuizId;
+                            createdCustomQuizId ??= created.CustomQuizId;
+                            if (created.CustomQuizId.HasValue
+                                && change.Payload.TryGetProperty("custom_quiz", out var customQuiz)
+                                && !string.IsNullOrWhiteSpace(GetString(customQuiz, "draft_ref")))
+                            {
+                                var draftRef = GetString(customQuiz, "draft_ref");
+                                customQuizIdsByDraftRef[draftRef] = created.CustomQuizId.Value;
+                                wordIdsByCustomQuizDraftRef[draftRef] = created.StarterWordIds;
+                            }
                         }
+                        break;
                     }
-                    break;
-                }
                 case PendingChangeKinds.CreateCollection:
-                {
-                    var created = await ApplyCreateCollectionAsync(change.Payload, userId, cancellationToken);
-                    if (created.HasValue)
                     {
-                        applied++;
-                        createdCollectionId ??= created;
+                        var created = await ApplyCreateCollectionAsync(change.Payload, userId, cancellationToken);
+                        if (created.HasValue)
+                        {
+                            applied++;
+                            createdCollectionId ??= created;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case PendingChangeKinds.MoveQuiz:
-                    applied += await ApplyMoveQuizAsync(change.Payload, userId) ? 1 : 0;
+                    applied += await ApplyMoveQuizAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
                     break;
                 case PendingChangeKinds.RenameCollection:
-                    applied += await ApplyRenameCollectionAsync(change.Payload, userId) ? 1 : 0;
+                    applied += await ApplyRenameCollectionAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
                     break;
                 case PendingChangeKinds.MoveCollection:
-                    applied += await ApplyMoveCollectionAsync(change.Payload, userId) ? 1 : 0;
+                    applied += await ApplyMoveCollectionAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
                     break;
                 case PendingChangeKinds.CreateCustomQuiz:
-                {
-                    var created = await ApplyCreateCustomQuizAsync(change.Payload, userId, cancellationToken);
-                    if (created.HasValue)
                     {
-                        applied++;
-                        createdCustomQuizId ??= created;
-                        var draftRef = GetString(change.Payload, "draft_ref");
-                        if (!string.IsNullOrWhiteSpace(draftRef))
+                        var created = await ApplyCreateCustomQuizAsync(change.Payload, userId, cancellationToken);
+                        if (created.HasValue)
                         {
-                            customQuizIdsByDraftRef[draftRef] = created.Value;
+                            applied++;
+                            createdCustomQuizId ??= created;
+                            var draftRef = GetString(change.Payload, "draft_ref");
+                            if (!string.IsNullOrWhiteSpace(draftRef))
+                            {
+                                customQuizIdsByDraftRef[draftRef] = created.Value;
+                            }
                         }
+                        break;
                     }
-                    break;
-                }
                 case PendingChangeKinds.AddCustomQuizElement:
-                {
-                    var addedElement = await ApplyAddCustomQuizElementAsync(
-                        change.Payload,
-                        userId,
-                        customQuizIdsByDraftRef,
-                        wordIdsByCustomQuizDraftRef,
-                        cancellationToken);
-                    applied += addedElement ? 1 : 0;
-                    // Counted so the client can tell a finished custom quiz from a bare
-                    // shell and avoid linking the user into an empty editor.
-                    if (addedElement && TargetsCreatedCustomQuiz(change.Payload, createdCustomQuizId, customQuizIdsByDraftRef))
                     {
-                        createdCustomQuizElements++;
+                        var addedElement = await ApplyAddCustomQuizElementAsync(
+                            change.Payload,
+                            userId,
+                            customQuizIdsByDraftRef,
+                            wordIdsByCustomQuizDraftRef,
+                            cancellationToken);
+                        applied += addedElement ? 1 : 0;
+                        // Counted so the client can tell a finished custom quiz from a bare
+                        // shell and avoid linking the user into an empty editor.
+                        if (addedElement && TargetsCreatedCustomQuiz(change.Payload, createdCustomQuizId, customQuizIdsByDraftRef))
+                        {
+                            createdCustomQuizElements++;
+                        }
+                        break;
                     }
-                    break;
-                }
                 case PendingChangeKinds.AddCustomQuizElements:
                     applied += await ApplyAddCustomQuizElementsAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
                     break;

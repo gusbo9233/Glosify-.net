@@ -1,26 +1,25 @@
-namespace Glosify.Models.Library
+namespace Glosify.Models.Library;
+
+public class BookDocument
 {
-    public class BookDocument
-    {
-        public Guid Id { get; set; }
-        public string UserId { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
-        public string OriginalFileName { get; set; } = string.Empty;
-        public string BlobName { get; set; } = string.Empty;
+    public Guid Id { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string OriginalFileName { get; set; } = string.Empty;
+    public string BlobName { get; set; } = string.Empty;
 
-        /// <summary>
-        /// The learning language the book belongs to, so the library only shows
-        /// books for the language the reader has selected.
-        /// </summary>
-        public string? Language { get; set; }
+    /// <summary>
+    /// The learning language the book belongs to, so the library only shows
+    /// books for the language the reader has selected.
+    /// </summary>
+    public string? Language { get; set; }
 
-        public int PageCount { get; set; }
-        public string ProcessingStatus { get; set; } = "Ready";
-        public string? ProcessingMessage { get; set; }
-        public string? PreferredTranslationLanguage { get; set; }
-        public DateTimeOffset CreatedAt { get; set; }
-        public DateTimeOffset UpdatedAt { get; set; }
+    public int PageCount { get; set; }
+    public string ProcessingStatus { get; set; } = "Ready";
+    public string? ProcessingMessage { get; set; }
+    public string? PreferredTranslationLanguage { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
 
-        public ICollection<BookPage> Pages { get; set; } = [];
-    }
+    public ICollection<BookPage> Pages { get; set; } = [];
 }

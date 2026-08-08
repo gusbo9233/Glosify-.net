@@ -1,8 +1,8 @@
 using Glosify.Services;
+using Glosify.Services.Quizzes;
+using Glosify.Services.Typing;
 using Microsoft.Extensions.Caching.Memory;
 using Xunit;
-using Glosify.Services.Typing;
-using Glosify.Services.Quizzes;
 
 namespace Glosify.Tests;
 

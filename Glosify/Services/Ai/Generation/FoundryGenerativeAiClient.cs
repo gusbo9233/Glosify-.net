@@ -1,10 +1,10 @@
+using System.ClientModel;
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
-using System.ClientModel;
 
 namespace Glosify.Services.Ai.Generation;
 

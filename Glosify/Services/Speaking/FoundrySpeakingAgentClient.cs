@@ -3,11 +3,11 @@ using System.Text.Json;
 using Azure.AI.Projects;
 using Azure.AI.Projects.Agents;
 using Azure.Core;
+using Glosify.Services.Ai;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Foundry;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
-using Glosify.Services.Ai;
 using OpenAI.Conversations;
 
 namespace Glosify.Services.Speaking;
@@ -291,9 +291,9 @@ public sealed class FoundrySpeakingAgentClient : ISpeakingAgentClient
                     try
                     {
                         var runOptions = new ChatClientAgentRunOptions(new ChatOptions
-                            {
-                                AllowMultipleToolCalls = false,
-                            });
+                        {
+                            AllowMultipleToolCalls = false,
+                        });
                         SpeakingAgentReply result;
                         Microsoft.Agents.AI.AgentResponse response;
                         if (quizTools is not null)

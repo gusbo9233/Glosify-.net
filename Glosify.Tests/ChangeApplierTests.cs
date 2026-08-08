@@ -2,13 +2,13 @@ using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services;
+using Glosify.Services.Ai.Assistant;
+using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Quizzes;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using Glosify.Services.Ai.Assistant;
-using Glosify.Services.CustomQuizzes;
-using Microsoft.Data.Sqlite;
 
 namespace Glosify.Tests;
 

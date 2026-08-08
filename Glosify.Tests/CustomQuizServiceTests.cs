@@ -166,7 +166,9 @@ public sealed class CustomQuizServiceTests
 
         var exception = await Assert.ThrowsAsync<CustomQuizValidationException>(() => new CustomQuizService(db).CreateAsync(new SaveCustomQuizRequest
         {
-            QuizId = quiz.Id, Name = "Invalid", Document = TextQuiz(foreignWord.Id)
+            QuizId = quiz.Id,
+            Name = "Invalid",
+            Document = TextQuiz(foreignWord.Id)
         }, OwnerId));
 
         Assert.Contains(exception.Errors, error => error.Contains("outside this quiz", StringComparison.OrdinalIgnoreCase));
@@ -417,13 +419,19 @@ public sealed class CustomQuizServiceTests
 
     private static CustomQuizBlockV1 Choice(string id, string type, int order, string correctWordId, string otherWordId) => new()
     {
-        Id = id, Type = type, Order = order, ColumnSpan = 6, Label = $"Choose ({id})",
+        Id = id,
+        Type = type,
+        Order = order,
+        ColumnSpan = 6,
+        Label = $"Choose ({id})",
         Options = [Option($"{id}-correct", correctWordId, true), Option($"{id}-other", otherWordId, false)]
     };
 
     private static CustomQuizOptionV1 Option(string id, string wordId, bool correct) => new()
     {
-        Id = id, Binding = Bind(wordId), IsCorrect = correct
+        Id = id,
+        Binding = Bind(wordId),
+        IsCorrect = correct
     };
 
     private static CustomQuizWordBindingV1 Bind(string wordId) => new() { WordId = wordId, Field = CustomQuizWordFields.Lemma };

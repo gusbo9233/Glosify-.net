@@ -1,8 +1,8 @@
 using Glosify.Data;
 using Glosify.Services;
+using Glosify.Services.Typing;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
-using Glosify.Services.Typing;
 
 namespace Glosify.Tests;
 

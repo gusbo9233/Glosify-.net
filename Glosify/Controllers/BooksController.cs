@@ -94,7 +94,7 @@ public sealed class BooksController : Controller
             return NotFound();
         }
 
-        var quizzes = await _quizzes.GetUserQuizzesAsync(userId);
+        var quizzes = await _quizzes.GetUserQuizzesAsync(userId, cancellationToken);
         var selectedQuizId = quizId.HasValue && quizzes.Any(quiz => quiz.Id == quizId.Value)
             ? quizId
             : null;

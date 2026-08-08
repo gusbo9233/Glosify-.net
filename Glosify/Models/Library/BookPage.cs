@@ -1,13 +1,12 @@
-﻿namespace Glosify.Models.Library
+namespace Glosify.Models.Library;
+
+public class BookPage
 {
-    public class BookPage
-    {
-        public Guid Id { get; set; }
-        public Guid BookDocumentId { get; set; }
-        public int PageNumber { get; set; }
-        public string Text { get; set; } = string.Empty;
-        public string? ExtractionWarning { get; set; }
-        public BookDocument BookDocument { get; set; } = null!;
-        public ICollection<BookPageTranslation> Translations { get; set; } = [];
-    }
+    public Guid Id { get; set; }
+    public Guid BookDocumentId { get; set; }
+    public int PageNumber { get; set; }
+    public string Text { get; set; } = string.Empty;
+    public string? ExtractionWarning { get; set; }
+    public BookDocument BookDocument { get; set; } = null!;
+    public ICollection<BookPageTranslation> Translations { get; set; } = [];
 }

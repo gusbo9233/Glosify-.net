@@ -1,8 +1,8 @@
 using Glosify.Models.Api;
 using Glosify.Services;
 using Glosify.Services.Quizzes;
-using Microsoft.AspNetCore.Mvc;
 using Glosify.Services.Words;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.Controllers.Api;
 

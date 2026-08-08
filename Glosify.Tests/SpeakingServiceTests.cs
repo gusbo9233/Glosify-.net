@@ -910,7 +910,8 @@ public sealed class SpeakingServiceTests
     private sealed class FakeCredits : IAiCreditService
     {
         public List<(Guid ReservationId, AiUsageContext Context, string Provider, string Model, int EstimatedTokens)>
-            Reservations { get; } = [];
+            Reservations
+        { get; } = [];
         public List<(Guid ReservationId, AiTokenUsage Usage)> Commits { get; } = [];
         public List<Guid> Releases { get; } = [];
         public Exception? CommitError { get; init; }

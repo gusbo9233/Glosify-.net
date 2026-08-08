@@ -269,13 +269,13 @@ public sealed class BookPageTranslationServiceTests
                     ],
                 }
                 : new BookPageTranslationAiResponse
-            {
-                DetectedSourceLanguage = "Polish",
-                Segments =
+                {
+                    DetectedSourceLanguage = "Polish",
+                    Segments =
                 [
                     new() { Index = 0, Translation = "Hello there in English." },
                 ],
-            },
+                },
         };
 
         var result = await CreateService(context, client).TranslatePageAsync(

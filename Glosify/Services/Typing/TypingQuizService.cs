@@ -1,7 +1,7 @@
+using System.Text.RegularExpressions;
 using Glosify.Data;
 using Glosify.Services;
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 
 namespace Glosify.Services.Typing;
 

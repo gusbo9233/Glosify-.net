@@ -1,7 +1,7 @@
 using Glosify.Services;
+using Glosify.Services.Language;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Glosify.Services.Language;
 
 namespace Glosify.Controllers;
 

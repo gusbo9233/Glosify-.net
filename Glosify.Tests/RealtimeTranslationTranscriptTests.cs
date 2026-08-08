@@ -203,18 +203,18 @@ public sealed class RealtimeTranslationTranscriptTests
         string userId,
         Guid? transcriptId,
         DateTimeOffset? consent) => new()
-    {
-        Id = id,
-        UserId = userId,
-        TargetLanguage = "pl",
-        Model = "translate",
-        BillingModel = "gpt-realtime-translate+gpt-realtime-whisper",
-        CreditsPerStartedMinute = 16,
-        Status = RealtimeTranslationSessionStatuses.Completed,
-        TranscriptId = transcriptId,
-        TranscriptConsentAt = consent,
-        ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30),
-    };
+        {
+            Id = id,
+            UserId = userId,
+            TargetLanguage = "pl",
+            Model = "translate",
+            BillingModel = "gpt-realtime-translate+gpt-realtime-whisper",
+            CreditsPerStartedMinute = 16,
+            Status = RealtimeTranslationSessionStatuses.Completed,
+            TranscriptId = transcriptId,
+            TranscriptConsentAt = consent,
+            ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(30),
+        };
 
     private static void AddTranscript(
         GlosifyContext context,

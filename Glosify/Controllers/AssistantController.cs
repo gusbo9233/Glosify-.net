@@ -1,11 +1,11 @@
-using Glosify.Models.Api;
 using Glosify.Filters;
+using Glosify.Models.Api;
+using Glosify.Models.CustomQuizzes;
 using Glosify.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
-using Glosify.Models.CustomQuizzes;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.Controllers;
 

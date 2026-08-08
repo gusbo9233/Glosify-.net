@@ -195,7 +195,13 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
                 {
                     try
                     {
-                        await transcriptWriter.WaitAsync(TimeSpan.FromSeconds(5));
+                        // CancellationToken.None on purpose. This runs in the teardown path,
+                        // after relayCancellation.Cancel(), so the caller's token is normally
+                        // already cancelled — forwarding it would abandon the caption flush
+                        // instead of giving it the five seconds this drain exists to provide,
+                        // and the OperationCanceledException would escape the TimeoutException
+                        // catch below and mask whatever was already unwinding.
+                        await transcriptWriter.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
                     }
                     catch (TimeoutException)
                     {

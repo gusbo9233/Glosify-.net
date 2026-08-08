@@ -21,25 +21,25 @@ public sealed class SpeakingOptions
         interactiveMode && avatar == SpeakingAvatarId.Bartender
             ? Agents.BartenderInteractive
             : avatar switch
-    {
-        SpeakingAvatarId.TutorEstonian
-            or SpeakingAvatarId.TutorGerman
-            or SpeakingAvatarId.TutorPolish
-            or SpeakingAvatarId.TutorUkrainian => Agents.Tutor,
-        SpeakingAvatarId.Bartender => Agents.Bartender,
-        SpeakingAvatarId.Kasia => Agents.Kasia,
-        SpeakingAvatarId.Mietek => Agents.Mietek,
-        SpeakingAvatarId.Maarja => Agents.Maarja,
-        SpeakingAvatarId.Karl => Agents.Karl,
-        SpeakingAvatarId.Liis => Agents.Liis,
-        SpeakingAvatarId.Hanna => Agents.Hanna,
-        SpeakingAvatarId.Jonas => Agents.Jonas,
-        SpeakingAvatarId.FrauSchneider => Agents.FrauSchneider,
-        SpeakingAvatarId.Oksana => Agents.Oksana,
-        SpeakingAvatarId.Andriy => Agents.Andriy,
-        SpeakingAvatarId.PanMykola => Agents.PanMykola,
-        _ => throw new ArgumentOutOfRangeException(nameof(avatar)),
-    };
+            {
+                SpeakingAvatarId.TutorEstonian
+                    or SpeakingAvatarId.TutorGerman
+                    or SpeakingAvatarId.TutorPolish
+                    or SpeakingAvatarId.TutorUkrainian => Agents.Tutor,
+                SpeakingAvatarId.Bartender => Agents.Bartender,
+                SpeakingAvatarId.Kasia => Agents.Kasia,
+                SpeakingAvatarId.Mietek => Agents.Mietek,
+                SpeakingAvatarId.Maarja => Agents.Maarja,
+                SpeakingAvatarId.Karl => Agents.Karl,
+                SpeakingAvatarId.Liis => Agents.Liis,
+                SpeakingAvatarId.Hanna => Agents.Hanna,
+                SpeakingAvatarId.Jonas => Agents.Jonas,
+                SpeakingAvatarId.FrauSchneider => Agents.FrauSchneider,
+                SpeakingAvatarId.Oksana => Agents.Oksana,
+                SpeakingAvatarId.Andriy => Agents.Andriy,
+                SpeakingAvatarId.PanMykola => Agents.PanMykola,
+                _ => throw new ArgumentOutOfRangeException(nameof(avatar)),
+            };
 }
 
 public sealed class SpeakingAgentOptions

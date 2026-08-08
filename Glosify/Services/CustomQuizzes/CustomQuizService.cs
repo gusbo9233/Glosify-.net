@@ -103,9 +103,14 @@ public sealed class CustomQuizService : ICustomQuizService
         var now = DateTimeOffset.UtcNow;
         var entity = new CustomQuiz
         {
-            Id = Guid.NewGuid(), QuizId = request.QuizId, Name = name,
+            Id = Guid.NewGuid(),
+            QuizId = request.QuizId,
+            Name = name,
             DefinitionJson = JsonSerializer.Serialize(request.Document, JsonOptions),
-            SchemaVersion = 1, IsPlayable = validation.IsPlayable, CreatedAt = now, UpdatedAt = now
+            SchemaVersion = 1,
+            IsPlayable = validation.IsPlayable,
+            CreatedAt = now,
+            UpdatedAt = now
         };
         _context.CustomQuizzes.Add(entity);
         await _context.SaveChangesAsync(cancellationToken);
@@ -215,7 +220,9 @@ public sealed class CustomQuizService : ICustomQuizService
             CompletedAt = DateTimeOffset.UtcNow,
             Items = grades.Select((grade, index) => new QuizAttemptItem
             {
-                Id = Guid.NewGuid(), Sequence = index, Prompt = grade.BlockId,
+                Id = Guid.NewGuid(),
+                Sequence = index,
+                Prompt = grade.BlockId,
                 ExpectedAnswer = Truncate(string.Join(", ", grade.CorrectValues), 512),
                 GivenAnswer = Truncate(string.Join(", ", supplied[grade.BlockId]), 512),
                 IsCorrect = grade.State == "correct"
@@ -271,9 +278,14 @@ public sealed class CustomQuizService : ICustomQuizService
             var document = RemapWordBindings(Deserialize(source.DefinitionJson), wordIdMap);
             _context.CustomQuizzes.Add(new CustomQuiz
             {
-                Id = Guid.NewGuid(), QuizId = targetQuizId, Name = source.Name,
+                Id = Guid.NewGuid(),
+                QuizId = targetQuizId,
+                Name = source.Name,
                 DefinitionJson = JsonSerializer.Serialize(document, JsonOptions),
-                SchemaVersion = 1, IsPlayable = source.IsPlayable, CreatedAt = now, UpdatedAt = now
+                SchemaVersion = 1,
+                IsPlayable = source.IsPlayable,
+                CreatedAt = now,
+                UpdatedAt = now
             });
         }
     }

@@ -1,8 +1,8 @@
+using System.Security.Claims;
 using Glosify.Models.Api;
 using Glosify.Services;
-using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using Glosify.Services.Ai;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.Controllers.Api;
 

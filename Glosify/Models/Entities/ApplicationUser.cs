@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace Glosify.Models.Entities
+namespace Glosify.Models.Entities;
+
+public class ApplicationUser : IdentityUser
 {
-    public class ApplicationUser : IdentityUser
-    {
-        public string? SelectedQuizLanguageCode { get; set; }
-    }
+    public string? SelectedQuizLanguageCode { get; set; }
 }

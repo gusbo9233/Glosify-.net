@@ -3,17 +3,17 @@ using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Models.Library;
 using Glosify.Services;
+using Glosify.Services.Ai;
+using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Generation;
+using Glosify.Services.Ai.Llm;
 using Glosify.Services.Books;
+using Glosify.Services.Language;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
-using Glosify.Services.Ai;
-using Glosify.Services.Ai.Assistant;
-using Glosify.Services.Ai.Generation;
-using Glosify.Services.Ai.Llm;
-using Glosify.Services.Language;
 
 namespace Glosify.Tests;
 
@@ -708,15 +708,15 @@ public class AssistantSavedChatsTests
         string title = "New chat",
         Guid? quizId = null,
         string? language = "Polish") => new()
-    {
-        Id = Guid.NewGuid(),
-        QuizId = quizId,
-        UserId = userId,
-        Language = language,
-        Title = title,
-        CreatedAt = DateTimeOffset.UtcNow,
-        UpdatedAt = DateTimeOffset.UtcNow,
-    };
+        {
+            Id = Guid.NewGuid(),
+            QuizId = quizId,
+            UserId = userId,
+            Language = language,
+            Title = title,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
 
     private static string StoredText(string text) =>
         JsonSerializer.Serialize(new

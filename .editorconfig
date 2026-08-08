@@ -1,0 +1,133 @@
+; Codifies the style this repository already uses rather than imposing a new one.
+; Verified against the tree before writing: file-scoped namespaces (193 files to 26),
+; `var` throughout, no `this.` prefix, four-space indent, final newline.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,yml,yaml,csproj,props,targets,slnx,libman.json}]
+indent_size = 2
+
+[*.{js,css,html,cshtml}]
+indent_size = 2
+
+[*.md]
+; Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[*.cs]
+indent_size = 4
+
+#### Namespaces and usings ####
+
+csharp_style_namespace_declarations = file_scoped:warning
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:silent
+
+#### `var` ####
+
+csharp_style_var_for_built_in_types = true:silent
+csharp_style_var_when_type_is_apparent = true:silent
+csharp_style_var_elsewhere = true:silent
+
+#### Qualification — this repo never uses `this.` ####
+
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+dotnet_style_qualification_for_event = false:warning
+
+#### Modern C# the codebase already leans on ####
+
+csharp_style_expression_bodied_methods = when_on_single_line:silent
+csharp_style_expression_bodied_properties = true:silent
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_inlined_variable_declaration = true:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_prefer_range_operator = true:suggestion
+csharp_style_prefer_index_operator = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_prefer_compound_assignment = true:suggestion
+dotnet_style_readonly_field = true:suggestion
+
+#### Braces and newlines ####
+
+csharp_prefer_braces = true:suggestion
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+
+#### Naming ####
+
+dotnet_naming_rule.interfaces_start_with_i.severity = warning
+dotnet_naming_rule.interfaces_start_with_i.symbols = interfaces
+dotnet_naming_rule.interfaces_start_with_i.style = prefix_i
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_style.prefix_i.required_prefix = I
+dotnet_naming_style.prefix_i.capitalization = pascal_case
+
+dotnet_naming_rule.types_are_pascal_case.severity = warning
+dotnet_naming_rule.types_are_pascal_case.symbols = types_and_members
+dotnet_naming_rule.types_are_pascal_case.style = pascal_case
+dotnet_naming_symbols.types_and_members.applicable_kinds = class, struct, enum, property, method, event
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+
+dotnet_naming_rule.private_fields_are_underscore_camel.severity = warning
+dotnet_naming_rule.private_fields_are_underscore_camel.symbols = private_fields
+dotnet_naming_rule.private_fields_are_underscore_camel.style = underscore_camel
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_fields.required_modifiers =
+dotnet_naming_style.underscore_camel.required_prefix = _
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+
+dotnet_naming_rule.constants_are_pascal_case.severity = warning
+dotnet_naming_rule.constants_are_pascal_case.symbols = constants
+dotnet_naming_rule.constants_are_pascal_case.style = pascal_case
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const, static readonly
+
+#### Analyzer severities ####
+; Correctness rules that found real defects in this codebase are errors so they
+; cannot regress. The three performance rules below are silenced deliberately:
+; each fired 80-120 times, none identified a real problem at this app's scale,
+; and leaving them noisy would defeat TreatWarningsAsErrors.
+
+dotnet_diagnostic.CA2016.severity = error   ; CancellationToken not forwarded
+dotnet_diagnostic.CA2012.severity = error   ; ValueTask must be awaited
+dotnet_diagnostic.CA2007.severity = none    ; ConfigureAwait — not needed in ASP.NET Core
+dotnet_diagnostic.CA1848.severity = none    ; LoggerMessage delegates: 118 hits, no measurable win here
+dotnet_diagnostic.CA1859.severity = none    ; concrete-type micro-optimisation: 86 hits, hurts readability
+dotnet_diagnostic.CA1861.severity = none    ; constant arrays: 82 hits, mostly inside generated migrations
+dotnet_diagnostic.CA1305.severity = suggestion ; IFormatProvider
+dotnet_diagnostic.CA1304.severity = suggestion ; CultureInfo
+dotnet_diagnostic.CA1311.severity = suggestion ; ToUpperInvariant
+dotnet_diagnostic.CA1707.severity = none    ; underscores in names — test methods use them by convention
+
+[Glosify/Migrations/*.cs]
+; Generated by `dotnet ef migrations add`; not hand-maintained, so style and
+; analyzer rules would only produce noise nobody can act on.
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+
+[Glosify.Tests/**.cs]
+; Test method names are deliberately long snake_case sentences.
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA2007.severity = none

@@ -1,8 +1,7 @@
-namespace Glosify.Models.Entities
+namespace Glosify.Models.Entities;
+
+public enum ClassroomMessageKind
 {
-    public enum ClassroomMessageKind
-    {
-        Announcement = 0,
-        Chat = 1
-    }
+    Announcement = 0,
+    Chat = 1
 }

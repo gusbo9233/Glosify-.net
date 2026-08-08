@@ -1,5 +1,5 @@
-using System.Text.Json;
 using System.Diagnostics.Metrics;
+using System.Text.Json;
 using Azure.Core;
 using Azure.Identity;
 using Glosify.Services.Ai;
@@ -969,7 +969,8 @@ public sealed class FoundryGenerativeAiTests
     private sealed class FakeCredits : IAiCreditService
     {
         public List<(Guid Id, AiUsageContext Context, string Provider, string Model, int Tokens)>
-            Reservations { get; } = [];
+            Reservations
+        { get; } = [];
         public List<(Guid Id, AiTokenUsage Usage)> Commits { get; } = [];
         public List<Guid> Releases { get; } = [];
         public Exception? ReserveError { get; init; }

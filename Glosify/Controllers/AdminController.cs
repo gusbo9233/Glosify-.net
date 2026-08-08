@@ -1,9 +1,9 @@
+using Glosify.Services;
+using Glosify.Services.Ai;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Glosify.Services;
-using Glosify.Services.Ai;
 
 namespace Glosify.Controllers;
 

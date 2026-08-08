@@ -1,8 +1,8 @@
 using Glosify.Data;
 using Glosify.Models;
-using Microsoft.EntityFrameworkCore;
-using Glosify.Services.Language;
 using Glosify.Services.CustomQuizzes;
+using Glosify.Services.Language;
+using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Quizzes;
 
@@ -158,7 +158,7 @@ public class QuizService : IQuizService
     {
         language = language.Trim();
 
-        var publicCollectionIds = await _collectionVisibility.GetPublicCollectionTreeIdsAsync(language);
+        var publicCollectionIds = await _collectionVisibility.GetPublicCollectionTreeIdsAsync(language, cancellationToken);
 
         return await _context.Quizzes
             .AsNoTracking()
@@ -332,6 +332,6 @@ public class QuizService : IQuizService
         }
 
         return quiz.CollectionId.HasValue
-            && await _collectionVisibility.IsCollectionPubliclyReadableAsync(quiz.CollectionId.Value);
+            && await _collectionVisibility.IsCollectionPubliclyReadableAsync(quiz.CollectionId.Value, cancellationToken);
     }
 }

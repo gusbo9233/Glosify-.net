@@ -88,11 +88,17 @@ public sealed class CustomQuizTemplateCatalog : ICustomQuizTemplateCatalog
         var inputIds = words.Select((_, index) => $"lab-input-{index + 1}").ToList();
         blocks.Add(new CustomQuizBlockV1
         {
-            Id = "lab-bank", Type = CustomQuizBlockTypes.WordBank, GridRow = 3, GridColumn = 1, ColumnSpan = 12,
-            Label = "Your word bank", TargetInputIds = inputIds,
+            Id = "lab-bank",
+            Type = CustomQuizBlockTypes.WordBank,
+            GridRow = 3,
+            GridColumn = 1,
+            ColumnSpan = 12,
+            Label = "Your word bank",
+            TargetInputIds = inputIds,
             Options = words.Select((word, index) => new CustomQuizOptionV1
             {
-                Id = $"lab-bank-option-{index + 1}", Binding = Bind(word, CustomQuizWordFields.Lemma),
+                Id = $"lab-bank-option-{index + 1}",
+                Binding = Bind(word, CustomQuizWordFields.Lemma),
             }).ToList(),
         });
         var row = 4;
@@ -113,15 +119,22 @@ public sealed class CustomQuizTemplateCatalog : ICustomQuizTemplateCatalog
 
     private static CustomQuizBlockV1 Prompt(string prefix, int index, Word word, int row, int column, int span) => new()
     {
-        Id = $"{prefix}-prompt-{index + 1}", Type = CustomQuizBlockTypes.PromptLabel,
-        GridRow = row, GridColumn = column, ColumnSpan = span,
+        Id = $"{prefix}-prompt-{index + 1}",
+        Type = CustomQuizBlockTypes.PromptLabel,
+        GridRow = row,
+        GridColumn = column,
+        ColumnSpan = span,
         Binding = Bind(word, CustomQuizWordFields.Translation),
     };
 
     private static CustomQuizBlockV1 Input(string prefix, int index, Word word, int row, int column, int span, string label) => new()
     {
-        Id = $"{prefix}-input-{index + 1}", Type = CustomQuizBlockTypes.TextInput,
-        GridRow = row, GridColumn = column, ColumnSpan = span, Label = label,
+        Id = $"{prefix}-input-{index + 1}",
+        Type = CustomQuizBlockTypes.TextInput,
+        GridRow = row,
+        GridColumn = column,
+        ColumnSpan = span,
+        Label = label,
         ExpectedBinding = Bind(word, CustomQuizWordFields.Lemma),
     };
 
@@ -131,13 +144,20 @@ public sealed class CustomQuizTemplateCatalog : ICustomQuizTemplateCatalog
     {
         blocks.Add(new CustomQuizBlockV1
         {
-            Id = $"{prefix}-submit", Type = CustomQuizBlockTypes.SubmitButton,
-            GridRow = row, GridColumn = 1, ColumnSpan = 4, Text = "Check my answers",
+            Id = $"{prefix}-submit",
+            Type = CustomQuizBlockTypes.SubmitButton,
+            GridRow = row,
+            GridColumn = 1,
+            ColumnSpan = 4,
+            Text = "Check my answers",
         });
         blocks.Add(new CustomQuizBlockV1
         {
-            Id = $"{prefix}-feedback", Type = CustomQuizBlockTypes.FeedbackMessage,
-            GridRow = row, GridColumn = 7, ColumnSpan = 6,
+            Id = $"{prefix}-feedback",
+            Type = CustomQuizBlockTypes.FeedbackMessage,
+            GridRow = row,
+            GridColumn = 7,
+            ColumnSpan = 6,
         });
     }
 

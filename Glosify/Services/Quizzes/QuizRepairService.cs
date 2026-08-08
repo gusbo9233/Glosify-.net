@@ -1,6 +1,6 @@
 using Glosify.Data;
-using Microsoft.EntityFrameworkCore;
 using Glosify.Services.Ai;
+using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Quizzes;
 
@@ -68,7 +68,7 @@ public sealed class QuizRepairService : IQuizRepairService
 
     private async Task<RepairQuizData?> BuildRepairDataAsync(Guid quizId, string userId, CancellationToken cancellationToken)
     {
-        var quiz = await _quizService.GetQuizByIdAsync(quizId, userId);
+        var quiz = await _quizService.GetQuizByIdAsync(quizId, userId, cancellationToken);
         if (quiz == null)
         {
             return null;

@@ -27,39 +27,39 @@ internal static class FoundryMessageMapper
                         contents.Add(new TextContent(part.Text));
                         break;
                     case "function_call":
-                    {
-                        var name = part.Name ?? string.Empty;
-                        var callId = string.IsNullOrWhiteSpace(part.CallId)
-                            ? $"legacy-call-{turnIndex}-{partIndex}"
-                            : part.CallId;
-                        if (!pendingCallIds.TryGetValue(name, out var ids))
                         {
-                            ids = new Queue<string>();
-                            pendingCallIds[name] = ids;
+                            var name = part.Name ?? string.Empty;
+                            var callId = string.IsNullOrWhiteSpace(part.CallId)
+                                ? $"legacy-call-{turnIndex}-{partIndex}"
+                                : part.CallId;
+                            if (!pendingCallIds.TryGetValue(name, out var ids))
+                            {
+                                ids = new Queue<string>();
+                                pendingCallIds[name] = ids;
+                            }
+                            ids.Enqueue(callId);
+                            contents.Add(new FunctionCallContent(
+                                callId,
+                                name,
+                                DeserializeArguments(part.ArgsJson)));
+                            break;
                         }
-                        ids.Enqueue(callId);
-                        contents.Add(new FunctionCallContent(
-                            callId,
-                            name,
-                            DeserializeArguments(part.ArgsJson)));
-                        break;
-                    }
                     case "function_response":
-                    {
-                        var name = part.Name ?? string.Empty;
-                        var callId = part.CallId;
-                        if (string.IsNullOrWhiteSpace(callId)
-                            && pendingCallIds.TryGetValue(name, out var ids)
-                            && ids.Count > 0)
                         {
-                            callId = ids.Dequeue();
+                            var name = part.Name ?? string.Empty;
+                            var callId = part.CallId;
+                            if (string.IsNullOrWhiteSpace(callId)
+                                && pendingCallIds.TryGetValue(name, out var ids)
+                                && ids.Count > 0)
+                            {
+                                callId = ids.Dequeue();
+                            }
+                            callId ??= $"legacy-result-{turnIndex}-{partIndex}";
+                            contents.Add(new FunctionResultContent(
+                                callId,
+                                DeserializeResult(part.ResponseJson)));
+                            break;
                         }
-                        callId ??= $"legacy-result-{turnIndex}-{partIndex}";
-                        contents.Add(new FunctionResultContent(
-                            callId,
-                            DeserializeResult(part.ResponseJson)));
-                        break;
-                    }
                 }
             }
 

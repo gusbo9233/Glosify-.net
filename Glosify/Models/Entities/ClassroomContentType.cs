@@ -1,8 +1,7 @@
-namespace Glosify.Models.Entities
+namespace Glosify.Models.Entities;
+
+public enum ClassroomContentType
 {
-    public enum ClassroomContentType
-    {
-        Quiz = 0,
-        Book = 1
-    }
+    Quiz = 0,
+    Book = 1
 }

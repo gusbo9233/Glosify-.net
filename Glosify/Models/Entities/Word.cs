@@ -1,23 +1,22 @@
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Glosify.Models.Entities
+namespace Glosify.Models.Entities;
+
+[Table("words")]
+public class Word
 {
-    [Table("words")]
-    public class Word
-    {
-        [Column("id")]
-        public string Id { get; set; } = string.Empty;
+    [Column("id")]
+    public string Id { get; set; } = string.Empty;
 
-        [Column("quiz_id")]
-        public Guid QuizId { get; set; }
+    [Column("quiz_id")]
+    public Guid QuizId { get; set; }
 
-        [Column("lemma")]
-        public string Lemma { get; set; } = string.Empty;
+    [Column("lemma")]
+    public string Lemma { get; set; } = string.Empty;
 
-        [Column("translation")]
-        public string Translation { get; set; } = string.Empty;
+    [Column("translation")]
+    public string Translation { get; set; } = string.Empty;
 
-        [Column("created_at")]
-        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
-    }
+    [Column("created_at")]
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

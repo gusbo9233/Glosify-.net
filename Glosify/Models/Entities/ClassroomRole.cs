@@ -1,9 +1,8 @@
-namespace Glosify.Models.Entities
+namespace Glosify.Models.Entities;
+
+public enum ClassroomRole
 {
-    public enum ClassroomRole
-    {
-        Owner = 0,
-        Teacher = 1,
-        Student = 2
-    }
+    Owner = 0,
+    Teacher = 1,
+    Student = 2
 }

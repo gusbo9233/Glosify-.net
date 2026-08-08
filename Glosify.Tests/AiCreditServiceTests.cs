@@ -1,12 +1,12 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services;
+using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Ai.Llm;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Xunit;
-using Glosify.Services.Ai;
 
 namespace Glosify.Tests;
 

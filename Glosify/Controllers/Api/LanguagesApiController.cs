@@ -1,6 +1,6 @@
 using Glosify.Services;
-using Microsoft.AspNetCore.Mvc;
 using Glosify.Services.Language;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.Controllers.Api;
 

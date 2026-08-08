@@ -204,26 +204,26 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
                     }
                     break;
                 case "function_call":
-                {
-                    var fcPart = new Part
                     {
-                        FunctionCall = new FunctionCall
+                        var fcPart = new Part
                         {
-                            Name = part.Name ?? string.Empty,
-                            Args = DeserializeJsonObject(part.ArgsJson),
-                        }
-                    };
-                    if (!string.IsNullOrEmpty(part.ThoughtSignature))
-                    {
-                        try
+                            FunctionCall = new FunctionCall
+                            {
+                                Name = part.Name ?? string.Empty,
+                                Args = DeserializeJsonObject(part.ArgsJson),
+                            }
+                        };
+                        if (!string.IsNullOrEmpty(part.ThoughtSignature))
                         {
-                            fcPart.ThoughtSignature = Convert.FromBase64String(part.ThoughtSignature);
+                            try
+                            {
+                                fcPart.ThoughtSignature = Convert.FromBase64String(part.ThoughtSignature);
+                            }
+                            catch (FormatException) { }
                         }
-                        catch (FormatException) { }
+                        parts.Add(fcPart);
+                        break;
                     }
-                    parts.Add(fcPart);
-                    break;
-                }
                 case "function_response":
                     parts.Add(new Part
                     {

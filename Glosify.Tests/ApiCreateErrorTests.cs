@@ -1,17 +1,17 @@
-using Glosify.Models.Api;
 using System.Security.Claims;
 using Glosify.Controllers.Api;
 using Glosify.Data;
+using Glosify.Models.Api;
 using Glosify.Services;
+using Glosify.Services.Ai;
+using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
+using Glosify.Services.Typing;
+using Glosify.Services.Words;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
-using Glosify.Services.Ai;
-using Glosify.Services.Language;
-using Glosify.Services.Typing;
-using Glosify.Services.Words;
 
 namespace Glosify.Tests;
 
