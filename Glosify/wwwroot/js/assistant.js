@@ -17,6 +17,8 @@
     const chatUrl = (threadId) => `/Assistant/Chats/${threadId}`;
     const applyUrl = (messageId) => `/Assistant/Apply/${messageId}`;
     const rejectUrl = (messageId) => `/Assistant/Reject/${messageId}`;
+    // Session-scoped on purpose: a new browser session starts on a fresh chat
+    // instead of resuming whatever was open days ago.
     const activeChatStorageKey = 'glosify.assistant.activeChatId';
     const modelStorageKey = 'glosify.assistant.model';
 
@@ -251,18 +253,22 @@
         }
 
         await loadChats();
-        const storedChatId = localStorage.getItem(activeChatStorageKey);
+        const storedChatId = sessionStorage.getItem(activeChatStorageKey);
         const storedChat = storedChatId
             ? chats.find(chat => String(chat.id).toLowerCase() === storedChatId.toLowerCase())
             : null;
-        const chat = storedChat || chats[0] || await createChat(quizId);
+        // First open in this session: start empty. Reuse the newest chat when it is
+        // already blank so repeat sessions don't pile up empty threads in the list.
+        const chat = storedChat
+            || (chats[0] && !chats[0].preview ? chats[0] : null)
+            || await createChat(quizId);
         await selectChat(chat.id);
         initialized = true;
     };
 
     const selectChat = async (threadId) => {
         activeThreadId = threadId;
-        localStorage.setItem(activeChatStorageKey, threadId);
+        sessionStorage.setItem(activeChatStorageKey, threadId);
         const chat = getActiveChat();
         const contextQuizId = pageQuizId || chat?.contextQuizId || null;
         const contextQuizName = pageQuizId
