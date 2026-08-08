@@ -394,9 +394,13 @@ public sealed class CustomQuizService : ICustomQuizService
         if (quiz.UserId == userId) return true;
         if (classroomId.HasValue)
         {
-            var member = await _context.ClassroomMemberships.AnyAsync(item => item.ClassroomId == classroomId && item.UserId == userId, cancellationToken);
-            var shared = await _context.ClassroomContents.AnyAsync(item => item.ClassroomId == classroomId && item.QuizId == quiz.Id, cancellationToken);
-            if (member && shared) return true;
+            // One round trip rather than two: this runs on every play authorization.
+            var membershipAndShare = await _context.ClassroomMemberships
+                .Where(item => item.ClassroomId == classroomId && item.UserId == userId)
+                .Select(_ => _context.ClassroomContents
+                    .Any(content => content.ClassroomId == classroomId && content.QuizId == quiz.Id))
+                .FirstOrDefaultAsync(cancellationToken);
+            if (membershipAndShare) return true;
         }
         return quiz.IsPublic || quiz.CollectionId.HasValue && await _collectionVisibility.IsCollectionPubliclyReadableAsync(quiz.CollectionId.Value, cancellationToken);
     }

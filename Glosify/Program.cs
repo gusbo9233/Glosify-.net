@@ -44,6 +44,10 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
 
+// Gives the bearer-token API surface a consistent RFC 7807 error body instead of an
+// empty response, and backs UseStatusCodePages below.
+builder.Services.AddProblemDetails();
+
 // Kestrel serves the rendered views uncompressed and nothing in front of it
 // compresses them, so an average page ships ~22 KB of HTML over the wire.
 // Static assets are already compressed at build time by MapStaticAssets, and
@@ -275,6 +279,18 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.LoginPath = "/login";
+    options.AccessDeniedPath = "/Home/Error";
+    // Stated rather than inherited. The defaults happen to be safe in production because
+    // UseHttpsRedirection plus the forwarded X-Forwarded-Proto make every request HTTPS,
+    // but that leaves the cookie's security depending on middleware ordering.
+    // Development keeps SameAsRequest so the http:// launch profile can still sign in.
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.ExpireTimeSpan = TimeSpan.FromDays(14);
+    options.SlidingExpiration = true;
 });
 
 var authenticationBuilder = builder.Services.AddAuthentication();
@@ -430,7 +446,11 @@ builder.Services.AddSingleton(services =>
         new Uri(endpoint, UriKind.Absolute),
         services.GetRequiredService<TokenCredential>());
 });
-builder.Services.AddHttpClient(nameof(AzureTextToSpeechService));
+// Without a resilience handler this client falls back to HttpClient's 100-second
+// default with no retry and no circuit breaker, so a Speech regional brownout would
+// hold a request thread for the full 100 seconds per call.
+builder.Services.AddHttpClient(nameof(AzureTextToSpeechService))
+    .AddStandardResilienceHandler();
 builder.Services.AddSingleton<ITextToSpeechService, AzureTextToSpeechService>();
 builder.Services.AddSingleton<ISpeechAuthorizationTokenService, SpeechAuthorizationTokenService>();
 builder.Services.AddSingleton<ISpeakingAgentClient, FoundrySpeakingAgentClient>();
@@ -526,6 +546,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+// A bare 404 or 403 otherwise goes back with no body at all. With AddProblemDetails
+// above, API callers get RFC 7807 JSON and browsers get a short plain-text line.
+app.UseStatusCodePages();
+
 // Compression has to sit ahead of everything that writes a body, static assets
 // included, so it sees the response before it is sent.
 app.UseResponseCompression();
@@ -610,6 +634,10 @@ app.Use(async (context, next) =>
     headers["X-Content-Type-Options"] = "nosniff";
     headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     headers["Content-Security-Policy"] = contentSecurityPolicy;
+    // Speaking and the classroom call need the microphone and camera on this origin;
+    // everything else is denied outright rather than left to the browser default.
+    headers["Permissions-Policy"] =
+        "microphone=(self), camera=(self), geolocation=(), payment=(), usb=(), interest-cohort=()";
     await next();
 });
 

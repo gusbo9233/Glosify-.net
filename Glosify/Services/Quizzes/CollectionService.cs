@@ -29,10 +29,14 @@ public class CollectionService : ICollectionService
 
     public async Task<Collection?> GetCollectionAsync(Guid id, string userId, CancellationToken cancellationToken = default)
     {
+        // AsSplitQuery because these are two sibling collection navigations: a single
+        // query returns children x quizzes rows with the parent's columns repeated
+        // across every one of them, which grows multiplicatively with the data.
         return await _context.Collections
             .AsNoTracking()
             .Include(c => c.ChildCollections)
             .Include(c => c.Quizzes)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId, cancellationToken);
     }
 
