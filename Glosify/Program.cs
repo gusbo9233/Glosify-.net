@@ -457,6 +457,7 @@ builder.Services.AddSingleton<ISpeechAuthorizationTokenService, SpeechAuthorizat
 builder.Services.AddSingleton<ISpeakingAgentClient, FoundrySpeakingAgentClient>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ISpeakingSessionStore, SpeakingSessionStore>();
+builder.Services.AddHostedService<SpeakingSessionCleanupService>();
 builder.Services.AddScoped<ISpeakingService, SpeakingService>();
 builder.Services.AddScoped<ISpeakingQuizReader, SpeakingQuizReader>();
 

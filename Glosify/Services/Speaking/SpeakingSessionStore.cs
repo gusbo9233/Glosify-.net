@@ -1,10 +1,17 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.Speaking;
 
 public interface ISpeakingSessionStore
 {
+    /// <summary>
+    /// Drops every session past its TTL, across all users, disposing each conversation.
+    /// </summary>
+    /// <returns>How many sessions were removed.</returns>
+    Task<int> RemoveAllExpiredAsync(CancellationToken cancellationToken = default);
+
     Task<SpeakingSessionState> CreateAsync(
         string userId,
         SpeakingAvatarDefinition avatar,
@@ -29,16 +36,19 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
     private readonly object _mutationLock = new();
     private readonly ISpeakingAgentClient _agentClient;
     private readonly TimeProvider _timeProvider;
+    private readonly ILogger<SpeakingSessionStore> _logger;
     private readonly TimeSpan _ttl;
     private readonly int _maxSessionsPerUser;
 
     public SpeakingSessionStore(
         ISpeakingAgentClient agentClient,
         IOptions<SpeakingOptions> options,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        ILogger<SpeakingSessionStore>? logger = null)
     {
         _agentClient = agentClient;
         _timeProvider = timeProvider;
+        _logger = logger ?? NullLogger<SpeakingSessionStore>.Instance;
         _ttl = TimeSpan.FromMinutes(Math.Clamp(options.Value.SessionTtlMinutes, 5, 240));
         _maxSessionsPerUser = Math.Clamp(options.Value.MaxSessionsPerUser, 1, 10);
     }
@@ -173,22 +183,46 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
             string.Equals(session.UserId, userId, StringComparison.Ordinal)
             && !session.IsExpired(_timeProvider.GetUtcNow()));
 
-    private async Task RemoveExpiredAsync(string userId)
+    private Task RemoveExpiredAsync(string userId) =>
+        RemoveExpiredWhereAsync(session => string.Equals(session.UserId, userId, StringComparison.Ordinal));
+
+    /// <inheritdoc />
+    public async Task<int> RemoveAllExpiredAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return await RemoveExpiredWhereAsync(_ => true);
+    }
+
+    private async Task<int> RemoveExpiredWhereAsync(Func<SpeakingSessionState, bool> predicate)
     {
         var now = _timeProvider.GetUtcNow();
         var expired = _sessions.Values
-            .Where(session =>
-                string.Equals(session.UserId, userId, StringComparison.Ordinal)
-                && session.IsExpired(now))
+            .Where(session => predicate(session) && session.IsExpired(now))
             .ToArray();
 
+        var removed = 0;
         foreach (var state in expired)
         {
             if (_sessions.TryRemove(state.Id, out _))
             {
-                await state.Conversation.DisposeAsync();
+                removed++;
+                // Best effort: one conversation failing to tear down on the Foundry side
+                // must not stop the sweep from reaping the rest.
+                try
+                {
+                    await state.Conversation.DisposeAsync();
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    _logger.LogWarning(
+                        exception,
+                        "Could not dispose the Foundry conversation for expired speaking session {SessionId}",
+                        state.Id);
+                }
             }
         }
+
+        return removed;
     }
 }
 

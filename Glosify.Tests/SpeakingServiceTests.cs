@@ -2,6 +2,7 @@ using Glosify.Services.Ai;
 using Glosify.Services.Speaking;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -737,6 +738,51 @@ public sealed class SpeakingServiceTests
         Assert.Contains("Bill presented: True", conversation.Messages[2]);
         Assert.Contains("Active drinks: lightBeer", conversation.Messages[2]);
         Assert.Equal(3, credits.Commits.Count);
+    }
+
+    [Fact]
+    public async Task Expired_sessions_are_reaped_for_users_who_never_come_back()
+    {
+        // Pruning used to happen only as a side effect of the same user starting another
+        // session, so someone who closed the tab left their session — and the remote Foundry
+        // conversation behind it — alive for the lifetime of the process.
+        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var conversations = new List<FakeConversation>();
+        var agentClient = new FakeAgentClient(() =>
+        {
+            var conversation = new FakeConversation();
+            conversations.Add(conversation);
+            return conversation;
+        });
+        var store = CreateStore(agentClient, clock);
+
+        var first = await store.CreateAsync("learner-a", Bartender, CefrLevel.A2);
+        var second = await store.CreateAsync("learner-b", Bartender, CefrLevel.A2);
+
+        clock.Advance(TimeSpan.FromMinutes(6));
+
+        var removed = await store.RemoveAllExpiredAsync();
+
+        Assert.Equal(2, removed);
+        Assert.Equal(2, conversations.Count);
+        Assert.All(conversations, conversation => Assert.Equal(1, conversation.DisposeCount));
+        Assert.Throws<SpeakingSessionNotFoundException>(() => store.Get(first.Id, "learner-a"));
+        Assert.Throws<SpeakingSessionNotFoundException>(() => store.Get(second.Id, "learner-b"));
+    }
+
+    [Fact]
+    public async Task The_reaper_leaves_live_sessions_alone()
+    {
+        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var conversation = new FakeConversation();
+        var store = CreateStore(new FakeAgentClient(() => conversation), clock);
+        var session = await store.CreateAsync("learner", Bartender, CefrLevel.A2);
+
+        clock.Advance(TimeSpan.FromMinutes(1));
+
+        Assert.Equal(0, await store.RemoveAllExpiredAsync());
+        Assert.Equal(0, conversation.DisposeCount);
+        Assert.Equal(session.Id, store.Get(session.Id, "learner").Id);
     }
 
     private static SpeakingSessionStore CreateStore(
