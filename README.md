@@ -4,7 +4,7 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**[Try the live app](https://glosify.se)** · [Architecture decisions](docs/adr/) · [Automated tests](Glosify.Tests/)
+**[Try the live app](https://glosify.se)** · [Product case study](https://gusbo9233.github.io/Glosify-.net/) · [Architecture decisions](docs/adr/) · [Automated tests](Glosify.Tests/)
 
 Glosify is a language-learning app built with ASP.NET Core MVC. It combines
 vocabulary and sentence quizzes with flashcards, typing practice, speaking
