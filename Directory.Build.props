@@ -15,10 +15,9 @@
          today and stops the first warning from becoming a hundred. Severities for
          individual analyzer rules live in .editorconfig, next to the reasoning. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <!-- NuGet audit findings are excluded from the above on purpose. A new advisory
-         published against an existing dependency would otherwise turn every build
-         red, including the deploy of a fix that has nothing to do with it. They stay
-         visible as warnings, and CI fails on them in its own dedicated step. -->
+    <!-- NuGet audit findings stay as warnings during normal local builds so a newly
+         published advisory does not unexpectedly block unrelated work. CI clears
+         this exception in its dedicated Audit NuGet packages restore step. -->
     <WarningsNotAsErrors>NU1900;NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditMode>all</NuGetAuditMode>
