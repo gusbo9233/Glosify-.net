@@ -14,7 +14,7 @@
                 <div class="panel-icon"><span class="material-symbols-outlined">event</span></div>
                 <h2 class="panel-title">Add a lesson</h2>
             </div>
-            <form method="post" asp-controller="Classroom" asp-action="CreateLesson">
+            <form method="post" asp-controller="ClassroomPlanning" asp-action="CreateLesson">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Classroom.Id" />
                 <div class="form-group">
@@ -40,7 +40,7 @@
                 <div class="panel-icon"><span class="material-symbols-outlined">assignment</span></div>
                 <h2 class="panel-title">Add an assignment</h2>
             </div>
-            <form method="post" asp-controller="Classroom" asp-action="CreateAssignment">
+            <form method="post" asp-controller="ClassroomPlanning" asp-action="CreateAssignment">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Classroom.Id" />
                 <div class="form-group">
@@ -113,7 +113,7 @@
                 </div>
                 @if (Model.IsTeacher)
                 {
-                    <form method="post" asp-controller="Classroom" asp-action="DeleteLesson" data-confirm="Delete this lesson? Its assignments stay, unattached.">
+                    <form method="post" asp-controller="ClassroomPlanning" asp-action="DeleteLesson" data-confirm="Delete this lesson? Its assignments stay, unattached.">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Classroom.Id" />
                         <input type="hidden" name="lessonId" value="@lessonInfo.Lesson.Id" />

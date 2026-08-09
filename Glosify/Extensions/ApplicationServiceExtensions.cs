@@ -83,7 +83,18 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IBookDocumentService, BookDocumentService>();
         services.AddSingleton<IBookPageTranslationCoordinator, BookPageTranslationCoordinator>();
         services.AddScoped<IBookPageTranslationService, BookPageTranslationService>();
-        services.AddScoped<IClassroomService, ClassroomService>();
+        // One classroom service per capability, all sharing the role checks in
+        // IClassroomAccess and the unchecked reads in ClassroomQueries.
+        services.AddScoped<ClassroomQueries>();
+        services.AddScoped<IClassroomAccess, ClassroomAccess>();
+        services.AddScoped<IClassroomDirectory, ClassroomDirectory>();
+        services.AddScoped<IClassroomRoster, ClassroomRoster>();
+        services.AddScoped<IClassroomLibrary, ClassroomLibrary>();
+        services.AddScoped<IClassroomConversation, ClassroomConversation>();
+        services.AddScoped<IClassroomPlanner, ClassroomPlanner>();
+        services.AddScoped<IClassroomResults, ClassroomResults>();
+        services.AddScoped<IClassroomCall, ClassroomCall>();
+        services.AddSingleton<IClassroomCallPresence, Glosify.Hubs.HubClassroomCallPresence>();
         services.AddScoped<IQuizAttemptService, QuizAttemptService>();
         services.AddScoped<ICustomQuizService, CustomQuizService>();
         services.AddSingleton<ICustomQuizTemplateCatalog, CustomQuizTemplateCatalog>();

@@ -50,7 +50,7 @@
         }
         @if (parent.IsTeacher)
         {
-            <form method="post" asp-controller="Classroom" asp-action="DeleteAssignment" data-confirm="Delete this assignment?">
+            <form method="post" asp-controller="ClassroomPlanning" asp-action="DeleteAssignment" data-confirm="Delete this assignment?">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@parent.Classroom.Id" />
                 <input type="hidden" name="assignmentId" value="@assignment.Id" />

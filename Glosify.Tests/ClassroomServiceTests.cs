@@ -15,9 +15,9 @@ public sealed class ClassroomServiceTests
     public async Task CreateAsync_AddsOwnerMembershipAndJoinCode()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
+        var service = new ClassroomServices(context);
 
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", "Intro course");
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", "Intro course");
 
         Assert.Equal(8, classroom.JoinCode.Length);
         Assert.True(classroom.JoinCodeEnabled);
@@ -32,13 +32,13 @@ public sealed class ClassroomServiceTests
     public async Task GetForUserAsync_ReturnsSelectedLanguageAndUntaggedClassrooms()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var spanish = await service.CreateAsync(OwnerId, "Spanish 101", null, "Spanish");
-        var polish = await service.CreateAsync(OwnerId, "Polish 101", null, "Polish");
-        var untagged = await service.CreateAsync(OwnerId, "Anything goes", null);
+        var service = new ClassroomServices(context);
+        var spanish = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null, "Spanish");
+        var polish = await service.Directory.CreateAsync(OwnerId, "Polish 101", null, "Polish");
+        var untagged = await service.Directory.CreateAsync(OwnerId, "Anything goes", null);
 
-        var spanishList = await service.GetForUserAsync(OwnerId, "Spanish");
-        var everything = await service.GetForUserAsync(OwnerId);
+        var spanishList = await service.Directory.GetForUserAsync(OwnerId, "Spanish");
+        var everything = await service.Directory.GetForUserAsync(OwnerId);
 
         Assert.Equal(
             new[] { spanish.Id, untagged.Id }.Order(),
@@ -51,11 +51,11 @@ public sealed class ClassroomServiceTests
     public async Task JoinByCodeAsync_AddsStudentAndIsIdempotent()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
 
-        var joined = await service.JoinByCodeAsync(StudentId, classroom.JoinCode.ToLowerInvariant());
-        var joinedAgain = await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var joined = await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode.ToLowerInvariant());
+        var joinedAgain = await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
 
         Assert.NotNull(joined);
         Assert.NotNull(joinedAgain);
@@ -67,11 +67,11 @@ public sealed class ClassroomServiceTests
     public async Task JoinByCodeAsync_RespectsDisabledCode()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.SetJoinCodeEnabledAsync(classroom.Id, OwnerId, enabled: false);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.SetJoinCodeEnabledAsync(classroom.Id, OwnerId, enabled: false);
 
-        var joined = await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var joined = await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
 
         Assert.Null(joined);
     }
@@ -80,15 +80,15 @@ public sealed class ClassroomServiceTests
     public async Task RequireTeacherAsync_RejectsStudentsAndOutsiders()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
 
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.RequireTeacherAsync(classroom.Id, StudentId));
+            () => service.Access.RequireTeacherAsync(classroom.Id, StudentId));
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.RequireMemberAsync(classroom.Id, OutsiderId));
-        Assert.Equal(ClassroomRole.Owner, (await service.RequireTeacherAsync(classroom.Id, OwnerId)).Role);
+            () => service.Access.RequireMemberAsync(classroom.Id, OutsiderId));
+        Assert.Equal(ClassroomRole.Owner, (await service.Access.RequireTeacherAsync(classroom.Id, OwnerId)).Role);
     }
 
     [Fact]
@@ -97,15 +97,15 @@ public sealed class ClassroomServiceTests
         await using var context = CreateContext();
         AddUser(context, OwnerId, "owner@example.test");
         await context.SaveChangesAsync();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
 
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.PostAnnouncementAsync(classroom.Id, StudentId, "Hi"));
+            () => service.Conversation.PostAnnouncementAsync(classroom.Id, StudentId, "Hi"));
 
-        await service.PostAnnouncementAsync(classroom.Id, OwnerId, "Welcome!");
-        var board = await service.GetBoardAsync(classroom.Id, StudentId);
+        await service.Conversation.PostAnnouncementAsync(classroom.Id, OwnerId, "Welcome!");
+        var board = await service.Conversation.GetBoardAsync(classroom.Id, StudentId);
         Assert.Single(board);
         Assert.Equal("Welcome!", board[0].Body);
     }
@@ -117,22 +117,22 @@ public sealed class ClassroomServiceTests
         AddUser(context, OwnerId, "owner@example.test");
         AddUser(context, StudentId, "student@example.test");
         await context.SaveChangesAsync();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
 
-        await service.InviteByEmailAsync(classroom.Id, OwnerId, "Student@Example.test", ClassroomRole.Teacher);
+        await service.Roster.InviteByEmailAsync(classroom.Id, OwnerId, "Student@Example.test", ClassroomRole.Teacher);
 
-        var pending = await service.GetPendingInvitationsForUserAsync(StudentId);
+        var pending = await service.Roster.GetPendingInvitationsForUserAsync(StudentId);
         var invitation = Assert.Single(pending);
         Assert.Equal(classroom.Id, invitation.ClassroomId);
         Assert.Equal(ClassroomRole.Teacher, invitation.Role);
 
-        var accepted = await service.AcceptInvitationAsync(invitation.Id, StudentId);
+        var accepted = await service.Roster.AcceptInvitationAsync(invitation.Id, StudentId);
 
         Assert.NotNull(accepted);
         var membership = Assert.Single(context.ClassroomMemberships.Where(m => m.UserId == StudentId).ToList());
         Assert.Equal(ClassroomRole.Teacher, membership.Role);
-        Assert.Empty(await service.GetPendingInvitationsForUserAsync(StudentId));
+        Assert.Empty(await service.Roster.GetPendingInvitationsForUserAsync(StudentId));
     }
 
     [Fact]
@@ -142,12 +142,12 @@ public sealed class ClassroomServiceTests
         AddUser(context, StudentId, "student@example.test");
         AddUser(context, OutsiderId, "outsider@example.test");
         await context.SaveChangesAsync();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.InviteByEmailAsync(classroom.Id, OwnerId, "student@example.test", ClassroomRole.Student);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Roster.InviteByEmailAsync(classroom.Id, OwnerId, "student@example.test", ClassroomRole.Student);
         var invitationId = context.ClassroomInvitations.Single().Id;
 
-        var accepted = await service.AcceptInvitationAsync(invitationId, OutsiderId);
+        var accepted = await service.Roster.AcceptInvitationAsync(invitationId, OutsiderId);
 
         Assert.Null(accepted);
         Assert.Empty(context.ClassroomMemberships.Where(m => m.UserId == OutsiderId).ToList());
@@ -157,17 +157,17 @@ public sealed class ClassroomServiceTests
     public async Task ShareQuizAsync_RequiresOwnershipOfQuiz()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
         var foreignQuiz = AddQuiz(context, OutsiderId);
         var ownQuiz = AddQuiz(context, OwnerId);
         await context.SaveChangesAsync();
 
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.ShareQuizAsync(classroom.Id, OwnerId, foreignQuiz.Id));
+            () => service.Library.ShareQuizAsync(classroom.Id, OwnerId, foreignQuiz.Id));
 
-        await service.ShareQuizAsync(classroom.Id, OwnerId, ownQuiz.Id);
-        await service.ShareQuizAsync(classroom.Id, OwnerId, ownQuiz.Id); // idempotent
+        await service.Library.ShareQuizAsync(classroom.Id, OwnerId, ownQuiz.Id);
+        await service.Library.ShareQuizAsync(classroom.Id, OwnerId, ownQuiz.Id); // idempotent
 
         var link = Assert.Single(context.ClassroomContents.ToList());
         Assert.Equal(ownQuiz.Id, link.QuizId);
@@ -177,14 +177,14 @@ public sealed class ClassroomServiceTests
     public async Task RemoveMemberAsync_ProtectsOwner()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
 
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.RemoveMemberAsync(classroom.Id, StudentId, OwnerId));
+            () => service.Roster.RemoveMemberAsync(classroom.Id, StudentId, OwnerId));
 
-        await service.RemoveMemberAsync(classroom.Id, OwnerId, StudentId);
+        await service.Roster.RemoveMemberAsync(classroom.Id, OwnerId, StudentId);
         Assert.Empty(context.ClassroomMemberships.Where(m => m.UserId == StudentId).ToList());
     }
 
@@ -192,12 +192,12 @@ public sealed class ClassroomServiceTests
     public async Task RemoveMemberAsync_RotatesGroupCallId()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
         var originalGroupCallId = classroom.GroupCallId;
 
-        await service.RemoveMemberAsync(classroom.Id, OwnerId, StudentId);
+        await service.Roster.RemoveMemberAsync(classroom.Id, OwnerId, StudentId);
 
         var updated = context.Classrooms.Single(c => c.Id == classroom.Id);
         Assert.NotEqual(originalGroupCallId, updated.GroupCallId);
@@ -207,12 +207,12 @@ public sealed class ClassroomServiceTests
     public async Task LeaveAsync_RotatesGroupCallId()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
         var originalGroupCallId = classroom.GroupCallId;
 
-        await service.LeaveAsync(classroom.Id, StudentId);
+        await service.Roster.LeaveAsync(classroom.Id, StudentId);
 
         var updated = context.Classrooms.Single(c => c.Id == classroom.Id);
         Assert.NotEqual(originalGroupCallId, updated.GroupCallId);
@@ -222,18 +222,18 @@ public sealed class ClassroomServiceTests
     public async Task GetDetailsPageAsync_ReturnsAggregateAndRequiresMembership()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
+        var service = new ClassroomServices(context);
         AddUser(context, OwnerId, "owner@example.com");
         AddUser(context, StudentId, "student@example.com");
         await context.SaveChangesAsync();
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
-        await service.PostAnnouncementAsync(classroom.Id, OwnerId, "Welcome!");
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        await service.Conversation.PostAnnouncementAsync(classroom.Id, OwnerId, "Welcome!");
 
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.GetDetailsPageAsync(classroom.Id, OutsiderId));
+            () => service.Directory.GetDetailsPageAsync(classroom.Id, OutsiderId));
 
-        var page = await service.GetDetailsPageAsync(classroom.Id, StudentId);
+        var page = await service.Directory.GetDetailsPageAsync(classroom.Id, StudentId);
 
         Assert.Equal(classroom.Id, page.Classroom.Id);
         Assert.Equal(ClassroomRole.Student, page.Membership.Role);
@@ -247,9 +247,9 @@ public sealed class ClassroomServiceTests
     public async Task DeleteClassroomAsync_DetachesAttemptsAndRequiresOwner()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
         var quiz = AddQuiz(context, OwnerId);
         context.QuizAttempts.Add(new QuizAttempt
         {
@@ -267,9 +267,9 @@ public sealed class ClassroomServiceTests
         await context.SaveChangesAsync();
 
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.DeleteClassroomAsync(classroom.Id, StudentId));
+            () => service.Directory.DeleteClassroomAsync(classroom.Id, StudentId));
 
-        await service.DeleteClassroomAsync(classroom.Id, OwnerId);
+        await service.Directory.DeleteClassroomAsync(classroom.Id, OwnerId);
 
         Assert.Empty(context.Classrooms.ToList());
         var attempt = Assert.Single(context.QuizAttempts.ToList());
@@ -282,9 +282,9 @@ public sealed class ClassroomServiceTests
         await using var context = CreateContext();
         AddUser(context, StudentId, "student@example.test");
         await context.SaveChangesAsync();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
         var quiz = AddQuiz(context, OwnerId);
         context.QuizAttempts.AddRange(
             new QuizAttempt
@@ -316,17 +316,17 @@ public sealed class ClassroomServiceTests
         await context.SaveChangesAsync();
 
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.GetClassroomResultsAsync(classroom.Id, StudentId));
+            () => service.Results.GetClassroomResultsAsync(classroom.Id, StudentId));
 
-        var results = await service.GetClassroomResultsAsync(classroom.Id, OwnerId);
+        var results = await service.Results.GetClassroomResultsAsync(classroom.Id, OwnerId);
         var row = Assert.Single(results);
         Assert.Equal(8, row.CorrectCount);
 
         // A student can read their own classroom results but not another member's.
-        var own = await service.GetMemberResultsAsync(classroom.Id, StudentId, StudentId);
+        var own = await service.Results.GetMemberResultsAsync(classroom.Id, StudentId, StudentId);
         Assert.Single(own);
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.GetMemberResultsAsync(classroom.Id, StudentId, OwnerId));
+            () => service.Results.GetMemberResultsAsync(classroom.Id, StudentId, OwnerId));
     }
 
     [Fact]
@@ -336,30 +336,30 @@ public sealed class ClassroomServiceTests
         AddUser(context, OwnerId, "owner@example.test");
         AddUser(context, StudentId, "student@example.test");
         await context.SaveChangesAsync();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
 
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.PostChatMessageAsync(classroom.Id, OutsiderId, "hi"));
+            () => service.Conversation.PostChatMessageAsync(classroom.Id, OutsiderId, "hi"));
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.PostChatMessageAsync(classroom.Id, OwnerId, "   "));
+            () => service.Conversation.PostChatMessageAsync(classroom.Id, OwnerId, "   "));
 
-        var posted = await service.PostChatMessageAsync(classroom.Id, OwnerId, "Hello class");
+        var posted = await service.Conversation.PostChatMessageAsync(classroom.Id, OwnerId, "Hello class");
         Assert.Equal("owner@example.test", posted.AuthorName);
 
-        var messages = await service.GetChatMessagesAsync(classroom.Id, StudentId);
+        var messages = await service.Conversation.GetChatMessagesAsync(classroom.Id, StudentId);
         var message = Assert.Single(messages);
         Assert.Equal("Hello class", message.Body);
 
         // Chat messages don't leak onto the announcement board.
-        Assert.Empty(await service.GetBoardAsync(classroom.Id, StudentId));
+        Assert.Empty(await service.Conversation.GetBoardAsync(classroom.Id, StudentId));
 
-        Assert.Equal(1, await service.GetUnreadChatCountAsync(classroom.Id, StudentId));
-        Assert.Equal(0, await service.GetUnreadChatCountAsync(classroom.Id, OwnerId)); // own message
+        Assert.Equal(1, await service.Conversation.GetUnreadChatCountAsync(classroom.Id, StudentId));
+        Assert.Equal(0, await service.Conversation.GetUnreadChatCountAsync(classroom.Id, OwnerId)); // own message
 
-        await service.MarkChatReadAsync(classroom.Id, StudentId);
-        Assert.Equal(0, await service.GetUnreadChatCountAsync(classroom.Id, StudentId));
+        await service.Conversation.MarkChatReadAsync(classroom.Id, StudentId);
+        Assert.Equal(0, await service.Conversation.GetUnreadChatCountAsync(classroom.Id, StudentId));
     }
 
     [Fact]
@@ -368,8 +368,8 @@ public sealed class ClassroomServiceTests
         await using var context = CreateContext();
         AddUser(context, OwnerId, "owner@example.test");
         await context.SaveChangesAsync();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
 
         var now = DateTimeOffset.UtcNow;
         for (var i = 0; i < 5; i++)
@@ -386,10 +386,10 @@ public sealed class ClassroomServiceTests
         }
         await context.SaveChangesAsync();
 
-        var latestTwo = await service.GetChatMessagesAsync(classroom.Id, OwnerId, take: 2);
+        var latestTwo = await service.Conversation.GetChatMessagesAsync(classroom.Id, OwnerId, take: 2);
         Assert.Equal(["message-3", "message-4"], latestTwo.Select(m => m.Body));
 
-        var earlier = await service.GetChatMessagesAsync(classroom.Id, OwnerId, before: latestTwo[0].CreatedAt, take: 2);
+        var earlier = await service.Conversation.GetChatMessagesAsync(classroom.Id, OwnerId, before: latestTwo[0].CreatedAt, take: 2);
         Assert.Equal(["message-1", "message-2"], earlier.Select(m => m.Body));
     }
 
@@ -397,28 +397,28 @@ public sealed class ClassroomServiceTests
     public async Task CoursePlanning_CrudRequiresTeacherAndValidatesReferences()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
         var quiz = AddQuiz(context, OwnerId);
         await context.SaveChangesAsync();
 
         await Assert.ThrowsAsync<ClassroomAccessDeniedException>(
-            () => service.CreateLessonAsync(classroom.Id, StudentId, "Week 1", null, null));
+            () => service.Planner.CreateLessonAsync(classroom.Id, StudentId, "Week 1", null, null));
 
         // An unshared quiz cannot be assigned.
         await Assert.ThrowsAsync<ArgumentException>(
-            () => service.CreateAssignmentAsync(classroom.Id, OwnerId, "Verbs", null, quiz.Id, null, null));
+            () => service.Planner.CreateAssignmentAsync(classroom.Id, OwnerId, "Verbs", null, quiz.Id, null, null));
 
-        await service.ShareQuizAsync(classroom.Id, OwnerId, quiz.Id);
-        var lesson = await service.CreateLessonAsync(classroom.Id, OwnerId, "Week 1", "Intro", DateTimeOffset.UtcNow.AddDays(1));
-        var assignment = await service.CreateAssignmentAsync(
+        await service.Library.ShareQuizAsync(classroom.Id, OwnerId, quiz.Id);
+        var lesson = await service.Planner.CreateLessonAsync(classroom.Id, OwnerId, "Week 1", "Intro", DateTimeOffset.UtcNow.AddDays(1));
+        var assignment = await service.Planner.CreateAssignmentAsync(
             classroom.Id, OwnerId, "Verbs", "Practice all", quiz.Id, lesson.Id, DateTimeOffset.UtcNow.AddDays(7));
 
         Assert.Equal(lesson.Id, assignment.LessonId);
 
         // Deleting the lesson keeps the assignment, unattached.
-        await service.DeleteLessonAsync(classroom.Id, OwnerId, lesson.Id);
+        await service.Planner.DeleteLessonAsync(classroom.Id, OwnerId, lesson.Id);
         var remaining = Assert.Single(context.ClassroomAssignments.ToList());
         Assert.Null(remaining.LessonId);
         Assert.Empty(context.ClassroomLessons.ToList());
@@ -428,14 +428,14 @@ public sealed class ClassroomServiceTests
     public async Task GetScheduleAsync_DerivesCompletionFromClassroomAttempts()
     {
         await using var context = CreateContext();
-        var service = new ClassroomService(context);
-        var classroom = await service.CreateAsync(OwnerId, "Spanish 101", null);
-        await service.JoinByCodeAsync(StudentId, classroom.JoinCode);
+        var service = new ClassroomServices(context);
+        var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
+        await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
         var quiz = AddQuiz(context, OwnerId);
         await context.SaveChangesAsync();
-        await service.ShareQuizAsync(classroom.Id, OwnerId, quiz.Id);
-        var lesson = await service.CreateLessonAsync(classroom.Id, OwnerId, "Week 1", null, null);
-        await service.CreateAssignmentAsync(classroom.Id, OwnerId, "Verbs", null, quiz.Id, lesson.Id, null);
+        await service.Library.ShareQuizAsync(classroom.Id, OwnerId, quiz.Id);
+        var lesson = await service.Planner.CreateLessonAsync(classroom.Id, OwnerId, "Week 1", null, null);
+        await service.Planner.CreateAssignmentAsync(classroom.Id, OwnerId, "Verbs", null, quiz.Id, lesson.Id, null);
 
         // Personal (non-classroom) practice must not count as completion.
         context.QuizAttempts.Add(new QuizAttempt
@@ -452,7 +452,7 @@ public sealed class ClassroomServiceTests
         });
         await context.SaveChangesAsync();
 
-        var schedule = await service.GetScheduleAsync(classroom.Id, StudentId);
+        var schedule = await service.Planner.GetScheduleAsync(classroom.Id, StudentId);
         var info = Assert.Single(Assert.Single(schedule.Lessons).Assignments);
         Assert.False(info.CompletedByMe);
         Assert.Equal(0, info.CompletedStudents);
@@ -473,7 +473,7 @@ public sealed class ClassroomServiceTests
         });
         await context.SaveChangesAsync();
 
-        schedule = await service.GetScheduleAsync(classroom.Id, StudentId);
+        schedule = await service.Planner.GetScheduleAsync(classroom.Id, StudentId);
         info = Assert.Single(Assert.Single(schedule.Lessons).Assignments);
         Assert.True(info.CompletedByMe);
         Assert.Equal(80, info.MyBestScorePercent);

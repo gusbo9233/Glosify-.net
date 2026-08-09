@@ -14,7 +14,7 @@
                 <p class="collection-subtitle">@Model.Classroom.Description</p>
             }
         </div>
-        <a class="btn-main classroom-call-link" asp-controller="Classroom" asp-action="Call" asp-route-id="@Model.Classroom.Id">
+        <a class="btn-main classroom-call-link" asp-controller="ClassroomCall" asp-action="Call" asp-route-id="@Model.Classroom.Id">
             <span data-call-link-label>@(Model.ActiveCallParticipants > 0 ? "Join call" : "Video call")</span>
             <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
             <span class="classroom-call-live" data-call-live hidden="@(Model.ActiveCallParticipants > 0 ? null : "hidden")">

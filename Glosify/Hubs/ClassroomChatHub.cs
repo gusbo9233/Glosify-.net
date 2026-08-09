@@ -27,17 +27,19 @@ public class ClassroomChatHub : Hub
     // disconnect (same single-instance assumption as above).
     private static readonly ConcurrentDictionary<string, (string UserId, Guid ClassroomId)> CallConnections = new();
 
-    private readonly IClassroomService _classrooms;
+    private readonly IClassroomAccess _access;
+    private readonly IClassroomConversation _conversation;
 
-    public ClassroomChatHub(IClassroomService classrooms)
+    public ClassroomChatHub(IClassroomAccess access, IClassroomConversation conversation)
     {
-        _classrooms = classrooms;
+        _access = access;
+        _conversation = conversation;
     }
 
     public async Task JoinClassroom(Guid classroomId)
     {
         var userId = Context.User!.GetUserId();
-        await _classrooms.RequireMemberAsync(classroomId, userId, Context.ConnectionAborted);
+        await _access.RequireMemberAsync(classroomId, userId, Context.ConnectionAborted);
         await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(classroomId), Context.ConnectionAborted);
         Connections[Context.ConnectionId] = (userId, classroomId);
     }
@@ -76,7 +78,7 @@ public class ClassroomChatHub : Hub
     public async Task<int> GetCallParticipants(Guid classroomId)
     {
         var userId = Context.User!.GetUserId();
-        await _classrooms.RequireMemberAsync(classroomId, userId, Context.ConnectionAborted);
+        await _access.RequireMemberAsync(classroomId, userId, Context.ConnectionAborted);
         return GetCallParticipantCount(classroomId);
     }
 
@@ -87,7 +89,7 @@ public class ClassroomChatHub : Hub
     public async Task JoinCall(Guid classroomId)
     {
         var userId = Context.User!.GetUserId();
-        await _classrooms.RequireMemberAsync(classroomId, userId, Context.ConnectionAborted);
+        await _access.RequireMemberAsync(classroomId, userId, Context.ConnectionAborted);
         CallConnections[Context.ConnectionId] = (userId, classroomId);
         await BroadcastCallChangedAsync(Clients.Group(GroupName(classroomId)), classroomId);
     }
@@ -147,7 +149,7 @@ public class ClassroomChatHub : Hub
         ClassroomChatMessage message;
         try
         {
-            message = await _classrooms.PostChatMessageAsync(classroomId, userId, body ?? string.Empty, Context.ConnectionAborted);
+            message = await _conversation.PostChatMessageAsync(classroomId, userId, body ?? string.Empty, Context.ConnectionAborted);
         }
         catch (Exception ex) when (ex is ClassroomAccessDeniedException or ArgumentException)
         {

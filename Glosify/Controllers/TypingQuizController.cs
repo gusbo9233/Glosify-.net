@@ -16,7 +16,7 @@ public class TypingQuizController : Controller
     private readonly ITypingQuizService _typingQuizService;
     private readonly ITypingSessionService _sessionService;
     private readonly ILanguageContext _languageContext;
-    private readonly IClassroomService _classroomService;
+    private readonly IClassroomLibrary _classroomLibrary;
     private readonly IQuizAttemptService _attemptService;
 
     public TypingQuizController(
@@ -24,14 +24,14 @@ public class TypingQuizController : Controller
         ITypingQuizService typingQuizService,
         ITypingSessionService sessionService,
         ILanguageContext languageContext,
-        IClassroomService classroomService,
+        IClassroomLibrary classroomLibrary,
         IQuizAttemptService attemptService)
     {
         _quizService = quizService;
         _typingQuizService = typingQuizService;
         _sessionService = sessionService;
         _languageContext = languageContext;
-        _classroomService = classroomService;
+        _classroomLibrary = classroomLibrary;
         _attemptService = attemptService;
     }
 
@@ -49,7 +49,7 @@ public class TypingQuizController : Controller
             // Classroom-shared quizzes are practicable by members who don't own them.
             try
             {
-                selectedQuiz = await _classroomService.RequireSharedQuizAsync(classroomId.Value, id.Value, userId, cancellationToken);
+                selectedQuiz = await _classroomLibrary.RequireSharedQuizAsync(classroomId.Value, id.Value, userId, cancellationToken);
             }
             catch (ClassroomAccessDeniedException)
             {

@@ -15,20 +15,20 @@ public class FlashcardQuizController : Controller
     private readonly IQuizService _quizService;
     private readonly IWordService _wordService;
     private readonly IFlashcardSessionService _sessionService;
-    private readonly IClassroomService _classroomService;
+    private readonly IClassroomLibrary _classroomLibrary;
     private readonly IQuizAttemptService _attemptService;
 
     public FlashcardQuizController(
         IQuizService quizService,
         IWordService wordService,
         IFlashcardSessionService sessionService,
-        IClassroomService classroomService,
+        IClassroomLibrary classroomLibrary,
         IQuizAttemptService attemptService)
     {
         _quizService = quizService;
         _wordService = wordService;
         _sessionService = sessionService;
-        _classroomService = classroomService;
+        _classroomLibrary = classroomLibrary;
         _attemptService = attemptService;
     }
 
@@ -46,7 +46,7 @@ public class FlashcardQuizController : Controller
             // Classroom-shared quizzes are practicable by members who don't own them.
             try
             {
-                selectedQuiz = await _classroomService.RequireSharedQuizAsync(classroomId.Value, id.Value, userId, cancellationToken);
+                selectedQuiz = await _classroomLibrary.RequireSharedQuizAsync(classroomId.Value, id.Value, userId, cancellationToken);
             }
             catch (ClassroomAccessDeniedException)
             {

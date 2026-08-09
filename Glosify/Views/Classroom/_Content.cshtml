@@ -10,7 +10,7 @@
             </div>
             @if (Model.ShareableQuizzes.Any())
             {
-                <form method="post" asp-controller="Classroom" asp-action="ShareQuiz">
+                <form method="post" asp-controller="ClassroomContent" asp-action="ShareQuiz">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" value="@Model.Classroom.Id" />
                     <div class="form-group">
@@ -40,7 +40,7 @@
             </div>
             @if (Model.ShareableBooks.Any())
             {
-                <form method="post" asp-controller="Classroom" asp-action="ShareBook">
+                <form method="post" asp-controller="ClassroomContent" asp-action="ShareBook">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="id" value="@Model.Classroom.Id" />
                     <div class="form-group">
@@ -100,7 +100,7 @@
                         {
                             <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id" asp-route-classroomId="@Model.Classroom.Id">@customQuiz.Name</a>
                         }
-                        <form method="post" asp-controller="Classroom" asp-action="CopyQuiz">
+                        <form method="post" asp-controller="ClassroomContent" asp-action="CopyQuiz">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@Model.Classroom.Id" />
                             <input type="hidden" name="quizId" value="@item.Quiz.Id" />
@@ -109,13 +109,13 @@
                     }
                     else if (item.ContentType == ClassroomContentType.Book && item.Book != null)
                     {
-                        <a class="btn-secondary" asp-controller="Classroom" asp-action="ContentPdf" asp-route-id="@Model.Classroom.Id" asp-route-bookId="@item.Book.Id" target="_blank" rel="noopener">
+                        <a class="btn-secondary" asp-controller="ClassroomContent" asp-action="ContentPdf" asp-route-id="@Model.Classroom.Id" asp-route-bookId="@item.Book.Id" target="_blank" rel="noopener">
                             Open PDF
                         </a>
                     }
                     @if (Model.IsTeacher)
                     {
-                        <form method="post" asp-controller="Classroom" asp-action="Unshare" data-confirm="Remove this from the classroom?">
+                        <form method="post" asp-controller="ClassroomContent" asp-action="Unshare" data-confirm="Remove this from the classroom?">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@Model.Classroom.Id" />
                             <input type="hidden" name="contentId" value="@item.Id" />

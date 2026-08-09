@@ -8,7 +8,7 @@
                 <div class="panel-icon"><span class="material-symbols-outlined">person_add</span></div>
                 <h2 class="panel-title">Invite by email</h2>
             </div>
-            <form method="post" asp-controller="Classroom" asp-action="Invite">
+            <form method="post" asp-controller="ClassroomMembers" asp-action="Invite">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Classroom.Id" />
                 <div class="form-group">
@@ -41,12 +41,12 @@
                     Joining is currently <strong>@(Model.Classroom.JoinCodeEnabled ? "enabled" : "paused")</strong>.
                 </p>
                 <div class="classroom-invite-actions">
-                    <form method="post" asp-controller="Classroom" asp-action="RegenerateJoinCode">
+                    <form method="post" asp-controller="ClassroomMembers" asp-action="RegenerateJoinCode">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Classroom.Id" />
                         <button class="btn-secondary" type="submit">New code</button>
                     </form>
-                    <form method="post" asp-controller="Classroom" asp-action="ToggleJoinCode">
+                    <form method="post" asp-controller="ClassroomMembers" asp-action="ToggleJoinCode">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Classroom.Id" />
                         <input type="hidden" name="enabled" value="@((!Model.Classroom.JoinCodeEnabled).ToString().ToLowerInvariant())" />
@@ -80,11 +80,11 @@
                 <div class="classroom-content-actions">
                     @if (Model.IsTeacher)
                     {
-                        <a class="btn-secondary" asp-controller="Classroom" asp-action="MemberResults" asp-route-id="@Model.Classroom.Id" asp-route-memberId="@member.UserId">Results</a>
+                        <a class="btn-secondary" asp-controller="ClassroomMembers" asp-action="MemberResults" asp-route-id="@Model.Classroom.Id" asp-route-memberId="@member.UserId">Results</a>
                     }
                     @if (Model.IsOwner && member.Role != ClassroomRole.Owner)
                     {
-                        <form method="post" asp-controller="Classroom" asp-action="ChangeRole">
+                        <form method="post" asp-controller="ClassroomMembers" asp-action="ChangeRole">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@Model.Classroom.Id" />
                             <input type="hidden" name="memberUserId" value="@member.UserId" />
@@ -94,7 +94,7 @@
                     }
                     @if (Model.IsTeacher && member.Role != ClassroomRole.Owner && !(member.Role == ClassroomRole.Teacher && !Model.IsOwner))
                     {
-                        <form method="post" asp-controller="Classroom" asp-action="RemoveMember" data-confirm="Remove @member.DisplayName from the classroom?">
+                        <form method="post" asp-controller="ClassroomMembers" asp-action="RemoveMember" data-confirm="Remove @member.DisplayName from the classroom?">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@Model.Classroom.Id" />
                             <input type="hidden" name="memberUserId" value="@member.UserId" />
