@@ -174,8 +174,9 @@ dotnet ef migrations has-pending-model-changes --project Glosify
 ```
 
 `scripts/dev-db-reset.sh` is only a convenience for dropping the disposable local
-database, recreating it, and running that same migration command. Startup never
-changes schema.
+database, recreating it, and running that same migration command. The script supplies
+its own fixed local-container connection to EF, so user secrets or an inherited
+environment variable cannot redirect it to Azure. Startup never changes schema.
 
 ### Working against the Azure database
 
