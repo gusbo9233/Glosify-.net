@@ -41,6 +41,9 @@ internal interface IAssistantThreadStore
     Task<AssistantHistory> GetChatHistoryAsync(Guid threadId, string userId, CancellationToken cancellationToken);
     Task<AssistantHistory> GetQuizHistoryAsync(Guid quizId, string userId, CancellationToken cancellationToken);
     Task<AssistantHistory> GetGlobalHistoryAsync(string userId, CancellationToken cancellationToken);
+    Task<AssistantThread> GetOrCreateDefaultAsync(string userId, Guid? quizId, CancellationToken cancellationToken);
+    Task<AssistantThread> GetOwnedAsync(Guid threadId, string userId, CancellationToken cancellationToken);
+    Task<List<AssistantMessage>> LoadMessagesAsync(Guid threadId, CancellationToken cancellationToken);
 }
 
 internal interface IAssistantTurnRunner
@@ -162,33 +165,6 @@ internal sealed class AssistantContextResolver(
 internal sealed record DocumentPageContext(string Title, int PageNumber, string Text, string? Warning);
 internal sealed record TranscriptAssistantContext(Guid Id, string Title, string TargetLanguage, string Stream);
 internal sealed record BookAssistantContext(Guid Id, string Title, int PageCount);
-
-// These scoped collaborators define the ownership boundaries used by the façade. The
-// runtime is deliberately private to the feature and can be decomposed behind these
-// seams without changing controllers or saved-chat behavior.
-internal sealed class AssistantThreadStore(AssistantRuntime runtime) : IAssistantThreadStore
-{
-    public Task<IReadOnlyList<AssistantChatSummary>> ListAsync(string userId, CancellationToken cancellationToken) =>
-        runtime.ListChatsAsync(userId, cancellationToken);
-
-    public Task<AssistantChatSummary> CreateAsync(string userId, Guid? quizId, Guid? transcriptId, Guid? bookId, CancellationToken cancellationToken) =>
-        runtime.CreateChatAsync(userId, quizId, cancellationToken, transcriptId, bookId);
-
-    public Task<AssistantChatSummary> UpdateAsync(Guid threadId, string userId, string? title, Guid? quizId, bool updateContext, Guid? transcriptId, Guid? bookId, CancellationToken cancellationToken) =>
-        runtime.UpdateChatAsync(threadId, userId, title, quizId, updateContext, cancellationToken, transcriptId, bookId);
-
-    public Task DeleteAsync(Guid threadId, string userId, CancellationToken cancellationToken) =>
-        runtime.DeleteChatAsync(threadId, userId, cancellationToken);
-
-    public Task<AssistantHistory> GetChatHistoryAsync(Guid threadId, string userId, CancellationToken cancellationToken) =>
-        runtime.GetChatHistoryAsync(threadId, userId, cancellationToken);
-
-    public Task<AssistantHistory> GetQuizHistoryAsync(Guid quizId, string userId, CancellationToken cancellationToken) =>
-        runtime.GetHistoryAsync(quizId, userId, cancellationToken);
-
-    public Task<AssistantHistory> GetGlobalHistoryAsync(string userId, CancellationToken cancellationToken) =>
-        runtime.GetGlobalHistoryAsync(userId, cancellationToken);
-}
 
 internal sealed class AssistantTurnRunner(AssistantRuntime runtime) : IAssistantTurnRunner
 {

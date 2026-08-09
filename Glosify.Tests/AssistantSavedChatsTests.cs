@@ -604,23 +604,25 @@ public class AssistantSavedChatsTests
             books ?? new NoopBookDocumentService(),
             languageContext ?? new StaticLanguageContext(),
             languagePreferences);
+        var presenter = new AssistantMessagePresenter();
+        var threadStore = new AssistantThreadStore(context, contextResolver, presenter);
         var runtime = new AssistantRuntime(
             context,
             generativeAi ?? new StaticGenerativeAiClient("Done."),
             CreateModelResolver(),
             tools ?? new NoopAssistantTools(),
+            threadStore,
             contextResolver,
-            new AssistantMessagePresenter(),
+            presenter,
             new AssistantPromptBuilder(),
             NullLogger<AssistantRuntime>.Instance);
-        var threadStore = new AssistantThreadStore(runtime);
         return new AssistantOrchestrator(
             threadStore,
             new AssistantTurnRunner(runtime),
             new AssistantChangeWorkflow(
                 context,
                 applier ?? new CapturingChangeApplier(),
-                new AssistantMessagePresenter(),
+                presenter,
                 threadStore));
     }
 

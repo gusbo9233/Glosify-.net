@@ -10,13 +10,13 @@ namespace Glosify.Services.Ai.Assistant;
 internal sealed class AssistantRuntime
 {
     private const int MaxToolTurns = 24;
-    private const string NewChatTitle = "New chat";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly GlosifyContext _context;
     private readonly IGenerativeAiClient _generativeAi;
     private readonly IGenerativeAiModelResolver _modelResolver;
     private readonly IAssistantTools _tools;
+    private readonly IAssistantThreadStore _threads;
     private readonly IAssistantContextResolver _contextResolver;
     private readonly IAssistantMessagePresenter _presenter;
     private readonly AssistantPromptBuilder _promptBuilder;
@@ -27,6 +27,7 @@ internal sealed class AssistantRuntime
         IGenerativeAiClient generativeAi,
         IGenerativeAiModelResolver modelResolver,
         IAssistantTools tools,
+        IAssistantThreadStore threads,
         IAssistantContextResolver contextResolver,
         IAssistantMessagePresenter presenter,
         AssistantPromptBuilder promptBuilder,
@@ -36,116 +37,11 @@ internal sealed class AssistantRuntime
         _generativeAi = generativeAi;
         _modelResolver = modelResolver;
         _tools = tools;
+        _threads = threads;
         _contextResolver = contextResolver;
         _presenter = presenter;
         _promptBuilder = promptBuilder;
         _logger = logger;
-    }
-
-    public async Task<IReadOnlyList<AssistantChatSummary>> ListChatsAsync(
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        var language = await _contextResolver.ResolveLanguageAsync(userId, cancellationToken);
-        var query = _context.AssistantThreads
-            .Where(thread => thread.UserId == userId && thread.QuizId == null);
-        if (language != null)
-        {
-            query = query.Where(thread => thread.Language == language);
-        }
-
-        var threads = await query
-            .OrderByDescending(thread => thread.UpdatedAt)
-            .ToListAsync(cancellationToken);
-
-        return await BuildChatSummariesAsync(threads, cancellationToken);
-    }
-
-    public async Task<AssistantChatSummary> CreateChatAsync(
-        string userId,
-        Guid? contextQuizId = null,
-        CancellationToken cancellationToken = default,
-        Guid? contextTranscriptId = null,
-        Guid? contextBookDocumentId = null)
-    {
-        await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
-        await _contextResolver.ResolveTranscriptAsync(contextTranscriptId, userId, cancellationToken);
-        await _contextResolver.ResolveBookAsync(contextBookDocumentId, userId, cancellationToken);
-
-        var now = DateTimeOffset.UtcNow;
-        var thread = new AssistantThread
-        {
-            Id = Guid.NewGuid(),
-            QuizId = null,
-            ContextQuizId = contextQuizId,
-            ContextTranscriptId = contextTranscriptId,
-            ContextBookDocumentId = contextBookDocumentId,
-            UserId = userId,
-            Language = await _contextResolver.ResolveLanguageAsync(userId, cancellationToken),
-            Title = NewChatTitle,
-            CreatedAt = now,
-            UpdatedAt = now,
-        };
-
-        _context.AssistantThreads.Add(thread);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return (await BuildChatSummariesAsync([thread], cancellationToken)).Single();
-    }
-
-    public async Task<AssistantChatSummary> UpdateChatAsync(
-        Guid threadId,
-        string userId,
-        string? title = null,
-        Guid? contextQuizId = null,
-        bool updateContext = false,
-        CancellationToken cancellationToken = default,
-        Guid? contextTranscriptId = null,
-        Guid? contextBookDocumentId = null)
-    {
-        var thread = await LoadOwnedGlobalThreadAsync(threadId, userId, cancellationToken);
-
-        if (title is not null)
-        {
-            thread.Title = _presenter.NormalizeTitle(title);
-        }
-
-        // Deliberately all-or-nothing: the caller sends the complete context it wants the
-        // chat to have, so an omitted field clears rather than keeps the stored value.
-        if (updateContext)
-        {
-            await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
-            await _contextResolver.ResolveTranscriptAsync(contextTranscriptId, userId, cancellationToken);
-            await _contextResolver.ResolveBookAsync(contextBookDocumentId, userId, cancellationToken);
-            thread.ContextQuizId = contextQuizId;
-            thread.ContextTranscriptId = contextTranscriptId;
-            thread.ContextBookDocumentId = contextBookDocumentId;
-        }
-
-        thread.UpdatedAt = DateTimeOffset.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return (await BuildChatSummariesAsync([thread], cancellationToken)).Single();
-    }
-
-    public async Task DeleteChatAsync(
-        Guid threadId,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        var thread = await LoadOwnedGlobalThreadAsync(threadId, userId, cancellationToken);
-        _context.AssistantThreads.Remove(thread);
-        await _context.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task<AssistantHistory> GetChatHistoryAsync(
-        Guid threadId,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        var thread = await LoadOwnedGlobalThreadAsync(threadId, userId, cancellationToken);
-        var messages = await LoadThreadMessagesAsync(thread.Id, cancellationToken);
-        return new AssistantHistory(thread.Id, await MapMessageViewsAsync(messages, cancellationToken));
     }
 
     public async Task<AssistantTurnResponse> SendChatMessageAsync(
@@ -161,7 +57,7 @@ internal sealed class AssistantRuntime
         Guid? transcriptId = null,
         Guid? bookDocumentId = null)
     {
-        var thread = await LoadOwnedGlobalThreadAsync(threadId, userId, cancellationToken);
+        var thread = await _threads.GetOwnedAsync(threadId, userId, cancellationToken);
         return await SendInThreadAsync(
             thread,
             userId,
@@ -185,7 +81,7 @@ internal sealed class AssistantRuntime
         AssistantDocumentContext? documentContext = null,
         CancellationToken cancellationToken = default)
     {
-        var thread = await GetOrCreateDefaultGlobalThreadAsync(userId, quizId, cancellationToken);
+        var thread = await _threads.GetOrCreateDefaultAsync(userId, quizId, cancellationToken);
         return await SendInThreadAsync(
             thread,
             userId,
@@ -207,7 +103,7 @@ internal sealed class AssistantRuntime
         AssistantDocumentContext? documentContext = null,
         CancellationToken cancellationToken = default)
     {
-        var thread = await GetOrCreateDefaultGlobalThreadAsync(userId, null, cancellationToken);
+        var thread = await _threads.GetOrCreateDefaultAsync(userId, null, cancellationToken);
         return await SendInThreadAsync(
             thread,
             userId,
@@ -220,25 +116,6 @@ internal sealed class AssistantRuntime
             cancellationToken,
             thread.ContextTranscriptId,
             thread.ContextBookDocumentId);
-    }
-
-    public async Task<AssistantHistory> GetHistoryAsync(
-        Guid quizId,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        var thread = await GetOrCreateDefaultGlobalThreadAsync(userId, quizId, cancellationToken);
-        var messages = await LoadThreadMessagesAsync(thread.Id, cancellationToken);
-        return new AssistantHistory(thread.Id, await MapMessageViewsAsync(messages, cancellationToken));
-    }
-
-    public async Task<AssistantHistory> GetGlobalHistoryAsync(
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        var thread = await GetOrCreateDefaultGlobalThreadAsync(userId, null, cancellationToken);
-        var messages = await LoadThreadMessagesAsync(thread.Id, cancellationToken);
-        return new AssistantHistory(thread.Id, await MapMessageViewsAsync(messages, cancellationToken));
     }
 
     private async Task<AssistantTurnResponse> SendInThreadAsync(
@@ -267,7 +144,7 @@ internal sealed class AssistantRuntime
         var currentLanguage = contextQuiz?.TargetLanguage
             ?? await _contextResolver.ResolveLanguageAsync(userId, cancellationToken);
 
-        var storedMessages = await LoadThreadMessagesAsync(thread.Id, cancellationToken);
+        var storedMessages = await _threads.LoadMessagesAsync(thread.Id, cancellationToken);
         var history = WindowHistory(storedMessages).Select(MapToTurn).ToList();
         var nextSequence = storedMessages.Count == 0 ? 0 : storedMessages.Max(message => message.Sequence) + 1;
 
@@ -286,7 +163,7 @@ internal sealed class AssistantRuntime
             CreatedAt = now,
         });
 
-        if (string.Equals(thread.Title, NewChatTitle, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(thread.Title, AssistantThreadDefaults.NewChatTitle, StringComparison.OrdinalIgnoreCase))
         {
             thread.Title = _presenter.NormalizeTitle(userMessage);
         }
@@ -476,80 +353,6 @@ internal sealed class AssistantRuntime
             AssistantMessageStatus.Active);
     }
 
-    private async Task<AssistantThread> GetOrCreateDefaultGlobalThreadAsync(
-        string userId,
-        Guid? contextQuizId,
-        CancellationToken cancellationToken)
-    {
-        await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
-
-        // Only chats in the selected language can be resumed, so switching language
-        // drops into a fresh thread instead of continuing the previous one.
-        var language = await _contextResolver.ResolveLanguageAsync(userId, cancellationToken);
-        var query = _context.AssistantThreads
-            .Where(t => t.UserId == userId && t.QuizId == null);
-        if (language != null)
-        {
-            query = query.Where(t => t.Language == language);
-        }
-
-        var thread = await query
-            .OrderByDescending(t => t.UpdatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (thread != null)
-        {
-            if (contextQuizId != thread.ContextQuizId)
-            {
-                thread.ContextQuizId = contextQuizId;
-                thread.UpdatedAt = DateTimeOffset.UtcNow;
-            }
-            return thread;
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        thread = new AssistantThread
-        {
-            Id = Guid.NewGuid(),
-            QuizId = null,
-            ContextQuizId = contextQuizId,
-            UserId = userId,
-            Language = language,
-            Title = NewChatTitle,
-            CreatedAt = now,
-            UpdatedAt = now,
-        };
-        _context.AssistantThreads.Add(thread);
-        return thread;
-    }
-
-    private async Task<AssistantThread> LoadOwnedGlobalThreadAsync(Guid threadId, string userId, CancellationToken ct)
-    {
-        var thread = await _context.AssistantThreads
-            .FirstOrDefaultAsync(t => t.Id == threadId && t.UserId == userId && t.QuizId == null, ct)
-            ?? throw new InvalidOperationException("Chat not found.");
-
-        // The chat list has already dropped this thread, so a request still pointing at
-        // it comes from a page opened before the language changed.
-        var language = await _contextResolver.ResolveLanguageAsync(userId, ct);
-        if (language != null && thread.Language != language)
-        {
-            throw new InvalidOperationException(
-                $"That chat belongs to another language. Reload the page to start a {language} chat.");
-        }
-
-        return thread;
-    }
-
-    private async Task<List<AssistantMessage>> LoadThreadMessagesAsync(Guid threadId, CancellationToken ct)
-    {
-        return await _context.AssistantMessages
-            .AsNoTracking()
-            .Where(message => message.ThreadId == threadId)
-            .OrderBy(message => message.Sequence)
-            .ToListAsync(ct);
-    }
-
     private async Task<CustomQuiz?> ValidateCustomQuizAsync(
         Guid? customQuizId,
         Quiz? quiz,
@@ -573,155 +376,6 @@ internal sealed class AssistantRuntime
                 && item.QuizId == quiz.Id
                 && item.Quiz.UserId == userId, cancellationToken)
             ?? throw new InvalidOperationException("That custom quiz was not found.");
-    }
-
-    private async Task<IReadOnlyList<AssistantChatSummary>> BuildChatSummariesAsync(
-        IReadOnlyList<AssistantThread> threads,
-        CancellationToken cancellationToken)
-    {
-        if (threads.Count == 0)
-        {
-            return [];
-        }
-
-        // "Visible" (HasVisibleContent) can only be decided client-side, but the latest
-        // visible message is virtually always among the last few: tool call/response
-        // turns come in short bursts and every assistant turn ends with a text message.
-        // Fetching a small recent window per thread keeps this from loading entire
-        // conversations just to build 90-character previews.
-        var threadIds = threads.Select(thread => thread.Id).ToList();
-        var recentByThread = await _context.AssistantThreads
-            .AsNoTracking()
-            .Where(thread => threadIds.Contains(thread.Id))
-            .Select(thread => new
-            {
-                thread.Id,
-                Recent = _context.AssistantMessages
-                    .Where(message => message.ThreadId == thread.Id)
-                    .OrderByDescending(message => message.Sequence)
-                    .Take(8)
-                    .ToList()
-            })
-            .ToListAsync(cancellationToken);
-
-        var latestByThread = recentByThread
-            .ToDictionary(entry => entry.Id, entry => entry.Recent.FirstOrDefault(_presenter.HasVisibleContent));
-
-        var contextQuizIds = threads
-            .Select(thread => thread.ContextQuizId)
-            .Where(id => id.HasValue)
-            .Select(id => id!.Value)
-            .Distinct()
-            .ToList();
-        var quizNames = contextQuizIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await _context.Quizzes
-                .Where(quiz => contextQuizIds.Contains(quiz.Id))
-                .ToDictionaryAsync(quiz => quiz.Id, quiz => quiz.Name, cancellationToken);
-        var selectedLanguageCode = await _contextResolver.ResolveLanguageCodeAsync(
-            threads[0].UserId,
-            cancellationToken);
-        var contextTranscriptIds = threads
-            .Select(thread => thread.ContextTranscriptId)
-            .Where(id => id.HasValue)
-            .Select(id => id!.Value)
-            .Distinct()
-            .ToList();
-        var transcriptTitles = contextTranscriptIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await _context.RealtimeTranslationTranscripts
-                .Where(transcript => contextTranscriptIds.Contains(transcript.Id)
-                    && selectedLanguageCode != null
-                    && transcript.TargetLanguage == selectedLanguageCode)
-                .ToDictionaryAsync(transcript => transcript.Id, transcript => transcript.Title, cancellationToken);
-        var contextBookIds = threads
-            .Select(thread => thread.ContextBookDocumentId)
-            .Where(id => id.HasValue)
-            .Select(id => id!.Value)
-            .Distinct()
-            .ToList();
-        // No language filter, matching ValidateBookContextAsync: a book chosen while
-        // another language was selected still belongs to this chat and needs its title.
-        var bookTitles = contextBookIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await _context.BookDocuments
-                .Where(book => contextBookIds.Contains(book.Id))
-                .ToDictionaryAsync(book => book.Id, book => book.Title, cancellationToken);
-
-        return threads
-            .Select(thread =>
-            {
-                latestByThread.TryGetValue(thread.Id, out var latest);
-                var preview = latest == null
-                    ? string.Empty
-                    : _presenter.Truncate(_presenter.ExtractVisibleText(latest), 90);
-                var quizName = thread.ContextQuizId.HasValue && quizNames.TryGetValue(thread.ContextQuizId.Value, out var name)
-                    ? name
-                    : null;
-                var transcriptTitle = thread.ContextTranscriptId.HasValue
-                    && transcriptTitles.TryGetValue(thread.ContextTranscriptId.Value, out var savedTitle)
-                        ? savedTitle
-                        : null;
-                var bookTitle = thread.ContextBookDocumentId.HasValue
-                    && bookTitles.TryGetValue(thread.ContextBookDocumentId.Value, out var storedTitle)
-                        ? storedTitle
-                        : null;
-                return new AssistantChatSummary(
-                    thread.Id,
-                    string.IsNullOrWhiteSpace(thread.Title) ? NewChatTitle : thread.Title,
-                    thread.CreatedAt,
-                    thread.UpdatedAt,
-                    preview,
-                    thread.ContextQuizId,
-                    quizName,
-                    thread.ContextTranscriptId,
-                    transcriptTitle,
-                    thread.ContextBookDocumentId,
-                    bookTitle);
-            })
-            .ToList();
-    }
-
-    private async Task<IReadOnlyList<AssistantMessageView>> MapMessageViewsAsync(
-        IReadOnlyList<AssistantMessage> messages,
-        CancellationToken cancellationToken)
-    {
-        var parsed = messages
-            .Select(message => (Message: message, Changes: _presenter.ParseStoredChanges(message.PendingChangesJson)))
-            .ToList();
-
-        // One label query per distinct context quiz (almost always one) instead of
-        // one query per message.
-        var emptyLabels = (IReadOnlyDictionary<string, AssistantWordLabel>)new Dictionary<string, AssistantWordLabel>();
-        var labelsByQuiz = new Dictionary<Guid, IReadOnlyDictionary<string, AssistantWordLabel>>();
-        foreach (var group in parsed
-            .Where(entry => entry.Message.ContextQuizId.HasValue && entry.Changes.Count > 0)
-            .GroupBy(entry => entry.Message.ContextQuizId!.Value))
-        {
-            labelsByQuiz[group.Key] = await LoadWordLabelsAsync(
-                group.Key,
-                group.SelectMany(entry => entry.Changes),
-                cancellationToken);
-        }
-
-        return parsed
-            .Select(entry =>
-            {
-                var wordLabels = entry.Message.ContextQuizId.HasValue
-                    ? labelsByQuiz.GetValueOrDefault(entry.Message.ContextQuizId.Value, emptyLabels)
-                    : emptyLabels;
-                return new AssistantMessageView(
-                    entry.Message.Id,
-                    entry.Message.Role,
-                    _presenter.ExtractVisibleText(entry.Message),
-                    [],
-                    entry.Changes
-                        .Select(change => _presenter.PresentPendingChange(change, wordLabels))
-                        .ToList(),
-                    entry.Message.Status,
-                    entry.Message.CreatedAt);
-            })
-            .ToList();
     }
 
     private async Task<Word?> LoadFocusedWordAsync(Guid quizId, string? focusedWordId, CancellationToken ct)
