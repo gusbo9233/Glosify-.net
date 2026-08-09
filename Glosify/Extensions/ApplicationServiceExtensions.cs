@@ -139,7 +139,6 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IAssistantContextResolver, AssistantContextResolver>();
         services.AddScoped<IAssistantMessagePresenter, AssistantMessagePresenter>();
         services.AddScoped<AssistantPromptBuilder>();
-        services.AddScoped<AssistantRuntime>();
         services.AddScoped<IAssistantThreadStore, AssistantThreadStore>();
         services.AddScoped<IAssistantTurnRunner, AssistantTurnRunner>();
         services.AddScoped<IAssistantChangeWorkflow, AssistantChangeWorkflow>();

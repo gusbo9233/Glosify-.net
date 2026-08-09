@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Ai.Assistant;
 
-internal sealed class AssistantRuntime
+internal sealed class AssistantTurnRunner : IAssistantTurnRunner
 {
     private const int MaxToolTurns = 24;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -20,9 +20,9 @@ internal sealed class AssistantRuntime
     private readonly IAssistantContextResolver _contextResolver;
     private readonly IAssistantMessagePresenter _presenter;
     private readonly AssistantPromptBuilder _promptBuilder;
-    private readonly ILogger<AssistantRuntime> _logger;
+    private readonly ILogger<AssistantTurnRunner> _logger;
 
-    public AssistantRuntime(
+    public AssistantTurnRunner(
         GlosifyContext context,
         IGenerativeAiClient generativeAi,
         IGenerativeAiModelResolver modelResolver,
@@ -31,7 +31,7 @@ internal sealed class AssistantRuntime
         IAssistantContextResolver contextResolver,
         IAssistantMessagePresenter presenter,
         AssistantPromptBuilder promptBuilder,
-        ILogger<AssistantRuntime> logger)
+        ILogger<AssistantTurnRunner> logger)
     {
         _context = context;
         _generativeAi = generativeAi;
@@ -44,18 +44,18 @@ internal sealed class AssistantRuntime
         _logger = logger;
     }
 
-    public async Task<AssistantTurnResponse> SendChatMessageAsync(
+    public async Task<AssistantTurnResponse> RunChatAsync(
         Guid threadId,
         string userId,
         string userMessage,
-        Guid? contextQuizId = null,
-        string? focusedWordId = null,
-        string? model = null,
-        AssistantDocumentContext? documentContext = null,
-        Guid? customQuizId = null,
-        CancellationToken cancellationToken = default,
-        Guid? transcriptId = null,
-        Guid? bookDocumentId = null)
+        Guid? contextQuizId,
+        string? focusedWordId,
+        string? model,
+        AssistantDocumentContext? documentContext,
+        Guid? customQuizId,
+        Guid? transcriptId,
+        Guid? bookDocumentId,
+        CancellationToken cancellationToken)
     {
         var thread = await _threads.GetOwnedAsync(threadId, userId, cancellationToken);
         return await SendInThreadAsync(
@@ -72,14 +72,14 @@ internal sealed class AssistantRuntime
             bookDocumentId ?? thread.ContextBookDocumentId);
     }
 
-    public async Task<AssistantTurnResponse> SendMessageAsync(
+    public async Task<AssistantTurnResponse> RunQuizAsync(
         Guid quizId,
         string userId,
         string userMessage,
-        string? focusedWordId = null,
-        string? model = null,
-        AssistantDocumentContext? documentContext = null,
-        CancellationToken cancellationToken = default)
+        string? focusedWordId,
+        string? model,
+        AssistantDocumentContext? documentContext,
+        CancellationToken cancellationToken)
     {
         var thread = await _threads.GetOrCreateDefaultAsync(userId, quizId, cancellationToken);
         return await SendInThreadAsync(
@@ -96,12 +96,12 @@ internal sealed class AssistantRuntime
             null);
     }
 
-    public async Task<AssistantTurnResponse> SendGlobalMessageAsync(
+    public async Task<AssistantTurnResponse> RunGlobalAsync(
         string userId,
         string userMessage,
-        string? model = null,
-        AssistantDocumentContext? documentContext = null,
-        CancellationToken cancellationToken = default)
+        string? model,
+        AssistantDocumentContext? documentContext,
+        CancellationToken cancellationToken)
     {
         var thread = await _threads.GetOrCreateDefaultAsync(userId, null, cancellationToken);
         return await SendInThreadAsync(

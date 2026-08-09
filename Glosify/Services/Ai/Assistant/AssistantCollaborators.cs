@@ -165,15 +165,3 @@ internal sealed class AssistantContextResolver(
 internal sealed record DocumentPageContext(string Title, int PageNumber, string Text, string? Warning);
 internal sealed record TranscriptAssistantContext(Guid Id, string Title, string TargetLanguage, string Stream);
 internal sealed record BookAssistantContext(Guid Id, string Title, int PageCount);
-
-internal sealed class AssistantTurnRunner(AssistantRuntime runtime) : IAssistantTurnRunner
-{
-    public Task<AssistantTurnResponse> RunChatAsync(Guid threadId, string userId, string message, Guid? quizId, string? focusedWordId, string? model, AssistantDocumentContext? document, Guid? customQuizId, Guid? transcriptId, Guid? bookId, CancellationToken cancellationToken) =>
-        runtime.SendChatMessageAsync(threadId, userId, message, quizId, focusedWordId, model, document, customQuizId, cancellationToken, transcriptId, bookId);
-
-    public Task<AssistantTurnResponse> RunQuizAsync(Guid quizId, string userId, string message, string? focusedWordId, string? model, AssistantDocumentContext? document, CancellationToken cancellationToken) =>
-        runtime.SendMessageAsync(quizId, userId, message, focusedWordId, model, document, cancellationToken);
-
-    public Task<AssistantTurnResponse> RunGlobalAsync(string userId, string message, string? model, AssistantDocumentContext? document, CancellationToken cancellationToken) =>
-        runtime.SendGlobalMessageAsync(userId, message, model, document, cancellationToken);
-}

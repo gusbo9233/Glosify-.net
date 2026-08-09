@@ -606,7 +606,7 @@ public class AssistantSavedChatsTests
             languagePreferences);
         var presenter = new AssistantMessagePresenter();
         var threadStore = new AssistantThreadStore(context, contextResolver, presenter);
-        var runtime = new AssistantRuntime(
+        var turnRunner = new AssistantTurnRunner(
             context,
             generativeAi ?? new StaticGenerativeAiClient("Done."),
             CreateModelResolver(),
@@ -615,10 +615,10 @@ public class AssistantSavedChatsTests
             contextResolver,
             presenter,
             new AssistantPromptBuilder(),
-            NullLogger<AssistantRuntime>.Instance);
+            NullLogger<AssistantTurnRunner>.Instance);
         return new AssistantOrchestrator(
             threadStore,
-            new AssistantTurnRunner(runtime),
+            turnRunner,
             new AssistantChangeWorkflow(
                 context,
                 applier ?? new CapturingChangeApplier(),
