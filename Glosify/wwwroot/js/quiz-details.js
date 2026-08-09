@@ -28,7 +28,7 @@
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {
-                setMessage(data?.error || 'Repair failed. Please try again.', 'error');
+                setMessage(data?.detail || data?.title || data?.error || 'Repair failed. Please try again.', 'error');
                 return;
             }
 

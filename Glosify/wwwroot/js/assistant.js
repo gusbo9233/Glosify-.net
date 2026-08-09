@@ -241,7 +241,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         });
         if (!response.ok) {
             const data = await response.json().catch(() => null);
-            throw new Error(data?.error || 'Could not create chat.');
+            throw new Error(data?.detail || data?.title || data?.error || 'Could not create chat.');
         }
 
         const chat = await response.json();
@@ -258,7 +258,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         });
         if (!response.ok) {
             const data = await response.json().catch(() => null);
-            throw new Error(data?.error || 'Could not update chat.');
+            throw new Error(data?.detail || data?.title || data?.error || 'Could not update chat.');
         }
 
         const updated = await response.json();
@@ -274,7 +274,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         });
         if (!response.ok) {
             const data = await response.json().catch(() => null);
-            throw new Error(data?.error || 'Could not delete chat.');
+            throw new Error(data?.detail || data?.title || data?.error || 'Could not delete chat.');
         }
 
         chats = removeChat(chats, threadId);
@@ -573,7 +573,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
             });
             if (!response.ok) {
                 const data = await response.json().catch(() => null);
-                setStatus(data?.error || 'Could not apply changes.', true);
+                setStatus(data?.detail || data?.title || data?.error || 'Could not apply changes.', true);
                 applyBtn.disabled = false;
                 rejectBtn.disabled = false;
                 return;
@@ -795,7 +795,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {
-                setStatus(data?.error || 'The assistant could not respond.', true);
+                setStatus(data?.detail || data?.title || data?.error || 'The assistant could not respond.', true);
                 submit.disabled = false;
                 return;
             }
@@ -839,7 +839,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
             });
             const data = await response.json().catch(() => null);
             if (!response.ok || !data?.text) {
-                setScanStatus(data?.error || 'Could not read text from that picture.', true);
+                setScanStatus(data?.detail || data?.title || data?.error || 'Could not read text from that picture.', true);
                 return;
             }
 

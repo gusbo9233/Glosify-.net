@@ -1,6 +1,6 @@
 const readError = async (response, fallback) => {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.error || body?.detail || fallback);
+    throw new Error(body?.detail || body?.title || body?.error || fallback);
 };
 
 export const createAssistantApi = (tokenProvider) => ({
