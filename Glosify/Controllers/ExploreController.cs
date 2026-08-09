@@ -49,7 +49,7 @@ public class ExploreController : Controller
         var collectionCards = summaries
             .Select(summary => new ExploreCollectionCardViewModel
             {
-                Collection = summary.Collection,
+                Collection = CollectionCard.From(summary.Collection),
                 CollectionCount = summary.CollectionCount,
                 QuizCount = summary.QuizCount
             })
@@ -59,7 +59,7 @@ public class ExploreController : Controller
         var quizCards = quizzes
             .Select(quiz => new ExploreQuizCardViewModel
             {
-                Quiz = quiz,
+                Quiz = QuizCard.From(quiz),
                 WordCount = wordCounts.GetValueOrDefault(quiz.Id)
             })
             .ToList();
@@ -81,11 +81,13 @@ public class ExploreController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        var tree = ExploreCollectionNode.From(collection);
+
         return View(new ExploreCollectionViewModel
         {
-            Collection = collection,
-            CollectionCount = CountDescendantCollections(collection),
-            QuizCount = CountQuizzes(collection)
+            Collection = tree,
+            CollectionCount = tree.DescendantCollectionCount,
+            QuizCount = tree.TotalQuizCount
         });
     }
 
@@ -121,8 +123,8 @@ public class ExploreController : Controller
 
         return View(new QuizWorkspaceViewModel
         {
-            SelectedQuiz = selectedQuiz,
-            Words = words,
+            SelectedQuiz = QuizCard.From(selectedQuiz),
+            Words = words.Select(WordRow.From).ToList(),
             CustomQuizzes = await _customQuizService.ListForQuizAsync(selectedQuiz.Id, playableOnly: true, cancellationToken),
             Sentences = sentences.Select(s => new QuizSentenceViewModel
             {
@@ -159,17 +161,5 @@ public class ExploreController : Controller
 
         TempData[NotificationKeys.Quiz] = $"Copied {copied.Name} to your library.";
         return RedirectToAction("Collection", "Quiz", new { id = copied.Id });
-    }
-
-    private static int CountDescendantCollections(Collection collection)
-    {
-        return collection.ChildCollections.Count
-            + collection.ChildCollections.Sum(CountDescendantCollections);
-    }
-
-    private static int CountQuizzes(Collection collection)
-    {
-        return collection.Quizzes.Count
-            + collection.ChildCollections.Sum(CountQuizzes);
     }
 }

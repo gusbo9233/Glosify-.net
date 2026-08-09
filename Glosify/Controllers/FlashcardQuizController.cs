@@ -198,7 +198,7 @@ public class FlashcardQuizController : Controller
 
         return new FlashcardQuizViewModel
         {
-            SelectedQuiz = quiz,
+            SelectedQuiz = QuizCard.From(quiz),
             CurrentCard = currentCard,
             SessionId = session.SessionId,
             QuizId = session.QuizId,

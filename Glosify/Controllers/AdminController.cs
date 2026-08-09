@@ -56,7 +56,7 @@ public sealed class AdminController : Controller
             Search = search,
             Users = rows,
             SelectedUser = selected,
-            RecentTransactions = transactions,
+            RecentTransactions = transactions.Select(AiCreditTransactionRow.From).ToList(),
             Grant = new AiCreditGrantInput
             {
                 UserId = selected?.UserId ?? string.Empty,

@@ -89,8 +89,8 @@ public sealed class CustomQuizController : Controller
         var words = await _words.GetWordsAsync(quiz.Id, cancellationToken);
         return View("Editor", new CustomQuizEditorViewModel
         {
-            Quiz = quiz,
-            Words = words,
+            Quiz = QuizCard.From(quiz),
+            Words = words.Select(WordRow.From).ToList(),
             Templates = _templates.Build(words),
             Editor = editor
         });

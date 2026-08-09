@@ -1,4 +1,3 @@
-using Glosify.Models.Entities;
 namespace Glosify.Models.ViewModels;
 
 public sealed class AiCreditAdminViewModel
@@ -6,7 +5,7 @@ public sealed class AiCreditAdminViewModel
     public string? Search { get; set; }
     public IReadOnlyList<AiCreditUserRow> Users { get; set; } = [];
     public AiCreditUserRow? SelectedUser { get; set; }
-    public IReadOnlyList<AiCreditTransaction> RecentTransactions { get; set; } = [];
+    public IReadOnlyList<AiCreditTransactionRow> RecentTransactions { get; set; } = [];
     public AiCreditGrantInput Grant { get; set; } = new();
 }
 

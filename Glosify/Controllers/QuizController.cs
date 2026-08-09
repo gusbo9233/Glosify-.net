@@ -90,8 +90,8 @@ public class QuizController : Controller
 
         return View(new QuizWorkspaceViewModel
         {
-            SelectedQuiz = selectedQuiz,
-            Words = words,
+            SelectedQuiz = QuizCard.From(selectedQuiz),
+            Words = words.Select(WordRow.From).ToList(),
             CustomQuizzes = await _customQuizService.ListForQuizAsync(selectedQuiz.Id, cancellationToken: cancellationToken),
             Sentences = sentences.Select(s => new QuizSentenceViewModel
             {
@@ -332,11 +332,11 @@ public class QuizController : Controller
 
         return View(new QuizSettingsViewModel
         {
-            SelectedQuiz = selectedQuiz,
+            SelectedQuiz = selectedQuiz is null ? null : QuizCard.From(selectedQuiz),
             AvailableWordCount = availableWordCount,
             AvailableSentenceCount = availableSentenceCount,
             SelectedWordCount = Math.Min(Math.Max(availableWordCount, 1), 20),
-            Words = words
+            Words = words.Select(WordRow.From).ToList()
         });
     }
 
@@ -401,10 +401,10 @@ public class QuizController : Controller
 
         return new QuizIndexViewModel
         {
-            Quizzes = quizzes,
-            Collections = collections,
-            CurrentCollection = currentCollection,
-            ParentCollection = parentCollection,
+            Quizzes = quizzes.Select(QuizCard.From).ToList(),
+            Collections = collections.Select(CollectionCard.From).ToList(),
+            CurrentCollection = currentCollection is null ? null : CollectionCard.From(currentCollection),
+            ParentCollection = parentCollection is null ? null : CollectionCard.From(parentCollection),
             CurrentLanguage = language
         };
     }

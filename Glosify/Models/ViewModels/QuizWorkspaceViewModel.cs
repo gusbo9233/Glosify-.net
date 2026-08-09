@@ -1,20 +1,19 @@
 using Glosify.Models.CustomQuizzes;
-using Glosify.Models.Entities;
 namespace Glosify.Models.ViewModels;
 
 public class QuizIndexViewModel
 {
-    public IReadOnlyList<Quiz> Quizzes { get; set; } = [];
-    public IReadOnlyList<Collection> Collections { get; set; } = [];
-    public Collection? CurrentCollection { get; set; }
-    public Collection? ParentCollection { get; set; }
+    public IReadOnlyList<QuizCard> Quizzes { get; set; } = [];
+    public IReadOnlyList<CollectionCard> Collections { get; set; } = [];
+    public CollectionCard? CurrentCollection { get; set; }
+    public CollectionCard? ParentCollection { get; set; }
     public string CurrentLanguage { get; set; } = string.Empty;
 }
 
 public class QuizWorkspaceViewModel
 {
-    public Quiz SelectedQuiz { get; set; } = null!;
-    public IReadOnlyList<Word> Words { get; set; } = [];
+    public QuizCard SelectedQuiz { get; set; } = null!;
+    public IReadOnlyList<WordRow> Words { get; set; } = [];
     public IReadOnlyList<QuizSentenceViewModel> Sentences { get; set; } = [];
     public IReadOnlyList<CustomQuizSummaryDto> CustomQuizzes { get; set; } = [];
 }
@@ -35,36 +34,36 @@ public class ExploreIndexViewModel
 
 public class ExploreCollectionCardViewModel
 {
-    public Collection Collection { get; set; } = null!;
+    public CollectionCard Collection { get; set; } = null!;
     public int CollectionCount { get; set; }
     public int QuizCount { get; set; }
 }
 
 public class ExploreQuizCardViewModel
 {
-    public Quiz Quiz { get; set; } = null!;
+    public QuizCard Quiz { get; set; } = null!;
     public int WordCount { get; set; }
 }
 
 public class ExploreCollectionViewModel
 {
-    public Collection Collection { get; set; } = null!;
+    public ExploreCollectionNode Collection { get; set; } = null!;
     public int CollectionCount { get; set; }
     public int QuizCount { get; set; }
 }
 
 public class QuizSettingsViewModel
 {
-    public Quiz? SelectedQuiz { get; set; }
+    public QuizCard? SelectedQuiz { get; set; }
     public int AvailableWordCount { get; set; }
     public int AvailableSentenceCount { get; set; }
     public int SelectedWordCount { get; set; }
-    public IReadOnlyList<Word> Words { get; set; } = [];
+    public IReadOnlyList<WordRow> Words { get; set; } = [];
 }
 
 public class FlashcardQuizViewModel
 {
-    public Quiz? SelectedQuiz { get; set; }
+    public QuizCard? SelectedQuiz { get; set; }
     public IReadOnlyList<FlashcardWordViewModel> Cards { get; set; } = [];
     public FlashcardWordViewModel? CurrentCard { get; set; }
     public string SessionState { get; set; } = string.Empty;
@@ -111,7 +110,7 @@ public class FlashcardWordViewModel
 
 public class TypingQuizViewModel
 {
-    public Quiz? SelectedQuiz { get; set; }
+    public QuizCard? SelectedQuiz { get; set; }
     public TypingQuizWordViewModel? CurrentWord { get; set; }
     public string SessionId { get; set; } = string.Empty;
     public Guid QuizId { get; set; }

@@ -1,13 +1,12 @@
 using Glosify.Models.CustomQuizzes;
-using Glosify.Models.Entities;
 using Glosify.Services.CustomQuizzes;
 
 namespace Glosify.Models.ViewModels;
 
 public sealed class CustomQuizEditorViewModel
 {
-    public Quiz Quiz { get; set; } = null!;
-    public IReadOnlyList<Word> Words { get; set; } = [];
+    public QuizCard Quiz { get; set; } = null!;
+    public IReadOnlyList<WordRow> Words { get; set; } = [];
     public CustomQuizEditorDto Editor { get; set; } = null!;
     public IReadOnlyList<CustomQuizTemplateDto> Templates { get; set; } = [];
 }

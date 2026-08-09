@@ -33,7 +33,9 @@ public sealed class BooksController : Controller
         var userId = User.GetUserId();
         return View(new BookLibraryViewModel
         {
-            Books = await _books.GetUserBooksAsync(userId, cancellationToken)
+            Books = (await _books.GetUserBooksAsync(userId, cancellationToken))
+                .Select(BookCard.From)
+                .ToList()
         });
     }
 
@@ -104,8 +106,8 @@ public sealed class BooksController : Controller
 
         return View(new BookReaderViewModel
         {
-            Book = book,
-            Quizzes = quizzes,
+            Book = BookCard.From(book),
+            Quizzes = quizzes.Select(QuizCard.From).ToList(),
             SelectedQuizId = selectedQuizId
         });
     }

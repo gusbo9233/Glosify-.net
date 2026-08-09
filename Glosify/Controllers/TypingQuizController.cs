@@ -217,15 +217,17 @@ public class TypingQuizController : Controller
 
         return new TypingQuizViewModel
         {
-            SelectedQuiz = new Quiz
-            {
-                Id = session.QuizId,
-                Name = session.QuizName,
-                SourceLanguage = session.SourceLanguage,
-                TargetLanguage = session.TargetLanguage,
-                Language = session.TargetLanguage,
-                ProcessingStatus = "Ready"
-            },
+            // The session already carries everything the view shows, so this never was a
+            // real quiz — it was an entity fabricated to satisfy the view model's type.
+            SelectedQuiz = new QuizCard(
+                session.QuizId,
+                session.QuizName,
+                session.SourceLanguage,
+                session.TargetLanguage,
+                ProcessingStatus: "Ready",
+                CreatedAt: default,
+                CollectionId: null,
+                IsPublic: false),
             CurrentWord = currentWord,
             SessionId = session.SessionId,
             QuizId = session.QuizId,
