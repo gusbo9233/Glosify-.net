@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
@@ -22,7 +23,12 @@ public sealed class HealthEndpointTests
     [Fact]
     public async Task ReadinessEndpointAnswersAnonymouslyAndChecksSql()
     {
-        using var factory = new WebApplicationFactory<Program>();
+        // Make the failure deterministic even when CI exposes its healthy migration-
+        // validation database to the process running the test suite.
+        using var factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder => builder.UseSetting(
+                "ConnectionStrings:DefaultConnection",
+                "Server=127.0.0.1,1;Database=unreachable;User Id=sa;Password=NotUsed_1!;Encrypt=False;Connect Timeout=1;"));
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
         var response = await client.GetAsync("/readyz");
