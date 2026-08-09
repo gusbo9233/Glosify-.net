@@ -11,7 +11,7 @@ public interface IClassroomRoster
 {
     Task InviteByEmailAsync(Guid classroomId, string userId, string email, ClassroomRole role, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<PendingInvitationInfo>> GetPendingInvitationsForUserAsync(string userId, CancellationToken cancellationToken = default);
-    Task<Classroom?> AcceptInvitationAsync(Guid invitationId, string userId, CancellationToken cancellationToken = default);
+    Task<ClassroomHeader?> AcceptInvitationAsync(Guid invitationId, string userId, CancellationToken cancellationToken = default);
     Task DeclineInvitationAsync(Guid invitationId, string userId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ClassroomMemberInfo>> GetMembersAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
@@ -106,7 +106,7 @@ public sealed class ClassroomRoster : IClassroomRoster
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Classroom?> AcceptInvitationAsync(Guid invitationId, string userId, CancellationToken cancellationToken = default)
+    public async Task<ClassroomHeader?> AcceptInvitationAsync(Guid invitationId, string userId, CancellationToken cancellationToken = default)
     {
         var email = await GetUserNormalizedEmailAsync(userId, cancellationToken);
         var invitation = await _context.ClassroomInvitations
@@ -134,9 +134,11 @@ public sealed class ClassroomRoster : IClassroomRoster
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return await _context.Classrooms
+        var classroom = await _context.Classrooms
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == invitation.ClassroomId, cancellationToken);
+
+        return classroom is null ? null : ClassroomHeader.From(classroom);
     }
 
     public async Task DeclineInvitationAsync(Guid invitationId, string userId, CancellationToken cancellationToken = default)

@@ -23,7 +23,8 @@ public sealed class ClassroomCallNotStartedException : InvalidOperationException
 }
 
 public sealed record ClassroomCallEntry(
-    Classroom Classroom,
+    ClassroomHeader Classroom,
+    Guid GroupCallId,
     bool IsTeacher,
     int ActiveParticipants);
 
@@ -68,6 +69,7 @@ public sealed class ClassroomCall : IClassroomCall
 
         return new ClassroomCallEntry(
             classroom,
+            await _classrooms.GetGroupCallIdAsync(classroomId, userId, cancellationToken),
             membership.Role is ClassroomRole.Owner or ClassroomRole.Teacher,
             _presence.GetParticipantCount(classroomId));
     }

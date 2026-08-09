@@ -153,14 +153,17 @@ public sealed class ClassroomRoutingTests : IClassFixture<WebApplicationFactory<
 
     private sealed class StubDirectory(Guid classroomId) : IClassroomDirectory
     {
-        public Task<Classroom> GetDetailsAsync(Guid id, string userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new Classroom { Id = classroomId, Name = "Spanish 101", GroupCallId = Guid.NewGuid() });
+        public Task<ClassroomHeader> GetDetailsAsync(Guid id, string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new ClassroomHeader(classroomId, "Spanish 101", null, "Spanish", "ABCD2345", true));
 
-        public Task<Classroom> CreateAsync(string ownerUserId, string name, string? description, string? language = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<Guid> GetGroupCallIdAsync(Guid id, string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(Guid.NewGuid());
+
+        public Task<ClassroomHeader> CreateAsync(string ownerUserId, string name, string? description, string? language = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<IReadOnlyList<ClassroomSummary>> GetForUserAsync(string userId, string? language = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<ClassroomDetailsPage> GetDetailsPageAsync(Guid id, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task DeleteClassroomAsync(Guid id, string ownerUserId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<Classroom?> JoinByCodeAsync(string userId, string code, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<ClassroomHeader?> JoinByCodeAsync(string userId, string code, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<string> RegenerateJoinCodeAsync(Guid id, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task SetJoinCodeEnabledAsync(Guid id, string userId, bool enabled, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }

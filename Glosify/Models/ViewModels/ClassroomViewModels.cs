@@ -1,6 +1,5 @@
 using Glosify.Models.CustomQuizzes;
 using Glosify.Models.Entities;
-using Glosify.Models.Library;
 using Glosify.Services.Classrooms;
 
 namespace Glosify.Models.ViewModels;
@@ -13,7 +12,7 @@ public class ClassroomIndexViewModel
 
 public class ClassroomDetailsViewModel
 {
-    public Classroom Classroom { get; set; } = null!;
+    public ClassroomHeader Classroom { get; set; } = null!;
     public ClassroomRole CurrentRole { get; set; }
     public string ActiveTab { get; set; } = "stream";
     public int ActiveCallParticipants { get; set; }
@@ -28,8 +27,8 @@ public class ClassroomDetailsViewModel
         = new Dictionary<Guid, IReadOnlyList<CustomQuizSummaryDto>>();
 
     // Share pickers for teachers: their own quizzes/books not yet shared here.
-    public IReadOnlyList<Quiz> ShareableQuizzes { get; set; } = [];
-    public IReadOnlyList<BookDocument> ShareableBooks { get; set; } = [];
+    public IReadOnlyList<ClassroomQuizRef> ShareableQuizzes { get; set; } = [];
+    public IReadOnlyList<ClassroomBookRef> ShareableBooks { get; set; } = [];
 
     public bool IsTeacher => CurrentRole is ClassroomRole.Owner or ClassroomRole.Teacher;
     public bool IsOwner => CurrentRole == ClassroomRole.Owner;
@@ -37,7 +36,7 @@ public class ClassroomDetailsViewModel
 
 public class ClassroomCallViewModel
 {
-    public Classroom Classroom { get; set; } = null!;
+    public ClassroomHeader Classroom { get; set; } = null!;
     public bool IsCallingConfigured { get; set; }
     public string DisplayName { get; set; } = string.Empty;
     public bool IsTeacher { get; set; }
@@ -46,7 +45,7 @@ public class ClassroomCallViewModel
 
 public class ClassroomMemberResultsViewModel
 {
-    public Classroom Classroom { get; set; } = null!;
+    public ClassroomHeader Classroom { get; set; } = null!;
     public string MemberUserId { get; set; } = string.Empty;
     public string MemberName { get; set; } = string.Empty;
     public IReadOnlyList<ClassroomAttemptRow> Results { get; set; } = [];

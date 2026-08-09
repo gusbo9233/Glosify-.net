@@ -116,7 +116,7 @@ public sealed class ClassroomController : ClassroomControllerBase
     /// Follows the classroom into its language, so a classroom someone just joined
     /// is not immediately filtered out of their list.
     /// </summary>
-    private string WelcomeMessage(Classroom classroom)
+    private string WelcomeMessage(ClassroomHeader classroom)
     {
         if (string.IsNullOrWhiteSpace(classroom.Language)
             || string.Equals(classroom.Language, _languageContext.CurrentLanguage, StringComparison.Ordinal)
@@ -144,7 +144,7 @@ public sealed class ClassroomController : ClassroomControllerBase
         try
         {
             var page = await _classrooms.GetDetailsPageAsync(id, userId, cancellationToken);
-            var isTeacher = page.Membership.Role is ClassroomRole.Owner or ClassroomRole.Teacher;
+            var isTeacher = page.Role is ClassroomRole.Owner or ClassroomRole.Teacher;
 
             var activeTab = (tab ?? "stream").ToLowerInvariant();
             if (activeTab == "results" && !isTeacher)
@@ -155,7 +155,7 @@ public sealed class ClassroomController : ClassroomControllerBase
             var model = new ClassroomDetailsViewModel
             {
                 Classroom = page.Classroom,
-                CurrentRole = page.Membership.Role,
+                CurrentRole = page.Role,
                 ActiveTab = activeTab,
                 ActiveCallParticipants = _callPresence.GetParticipantCount(id),
                 Board = page.Board,
@@ -189,9 +189,11 @@ public sealed class ClassroomController : ClassroomControllerBase
                 model.ShareableQuizzes = (await _quizzes.GetUserQuizzesAsync(userId, cancellationToken))
                     .Where(q => !sharedQuizIds.Contains(q.Id))
                     .OrderBy(q => q.Name)
+                    .Select(ClassroomQuizRef.From)
                     .ToList();
                 model.ShareableBooks = (await _books.GetUserBooksAsync(userId, cancellationToken))
                     .Where(b => !sharedBookIds.Contains(b.Id))
+                    .Select(ClassroomBookRef.From)
                     .ToList();
                 model.Results = await _results.GetClassroomResultsAsync(id, userId, cancellationToken);
             }

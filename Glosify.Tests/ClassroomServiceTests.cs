@@ -21,7 +21,7 @@ public sealed class ClassroomServiceTests
 
         Assert.Equal(8, classroom.JoinCode.Length);
         Assert.True(classroom.JoinCodeEnabled);
-        Assert.NotEqual(Guid.Empty, classroom.GroupCallId);
+        Assert.NotEqual(Guid.Empty, await service.Directory.GetGroupCallIdAsync(classroom.Id, OwnerId));
 
         var membership = Assert.Single(context.ClassroomMemberships.ToList());
         Assert.Equal(OwnerId, membership.UserId);
@@ -195,7 +195,7 @@ public sealed class ClassroomServiceTests
         var service = new ClassroomServices(context);
         var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
         await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
-        var originalGroupCallId = classroom.GroupCallId;
+        var originalGroupCallId = await service.Directory.GetGroupCallIdAsync(classroom.Id, OwnerId);
 
         await service.Roster.RemoveMemberAsync(classroom.Id, OwnerId, StudentId);
 
@@ -210,7 +210,7 @@ public sealed class ClassroomServiceTests
         var service = new ClassroomServices(context);
         var classroom = await service.Directory.CreateAsync(OwnerId, "Spanish 101", null);
         await service.Directory.JoinByCodeAsync(StudentId, classroom.JoinCode);
-        var originalGroupCallId = classroom.GroupCallId;
+        var originalGroupCallId = await service.Directory.GetGroupCallIdAsync(classroom.Id, OwnerId);
 
         await service.Roster.LeaveAsync(classroom.Id, StudentId);
 
@@ -236,7 +236,7 @@ public sealed class ClassroomServiceTests
         var page = await service.Directory.GetDetailsPageAsync(classroom.Id, StudentId);
 
         Assert.Equal(classroom.Id, page.Classroom.Id);
-        Assert.Equal(ClassroomRole.Student, page.Membership.Role);
+        Assert.Equal(ClassroomRole.Student, page.Role);
         Assert.Single(page.Board);
         Assert.Equal(2, page.Members.Count);
         Assert.Empty(page.Content);

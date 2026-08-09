@@ -57,11 +57,17 @@ public sealed class ClassroomQueries
         var bookIds = links.Where(x => x.Link.BookDocumentId.HasValue).Select(x => x.Link.BookDocumentId!.Value).ToList();
 
         var quizzes = quizIds.Count == 0
-            ? new Dictionary<Guid, Quiz>()
-            : await _context.Quizzes.AsNoTracking().Where(q => quizIds.Contains(q.Id)).ToDictionaryAsync(q => q.Id, cancellationToken);
+            ? new Dictionary<Guid, ClassroomQuizRef>()
+            : await _context.Quizzes.AsNoTracking()
+                .Where(q => quizIds.Contains(q.Id))
+                .Select(q => new ClassroomQuizRef(q.Id, q.Name, q.TargetLanguage))
+                .ToDictionaryAsync(q => q.Id, cancellationToken);
         var books = bookIds.Count == 0
-            ? new Dictionary<Guid, BookDocument>()
-            : await _context.BookDocuments.AsNoTracking().Where(b => bookIds.Contains(b.Id)).ToDictionaryAsync(b => b.Id, cancellationToken);
+            ? new Dictionary<Guid, ClassroomBookRef>()
+            : await _context.BookDocuments.AsNoTracking()
+                .Where(b => bookIds.Contains(b.Id))
+                .Select(b => new ClassroomBookRef(b.Id, b.Title))
+                .ToDictionaryAsync(b => b.Id, cancellationToken);
 
         return links
             .Select(x => new ClassroomContentItem(
@@ -156,7 +162,8 @@ public sealed class ClassroomQueries
         {
             if (!assignment.QuizId.HasValue)
             {
-                return new ClassroomAssignmentInfo(assignment, null, 0, studentCount, false, null);
+                return new ClassroomAssignmentInfo(
+                    ClassroomAssignmentHeader.From(assignment), null, 0, studentCount, false, null);
             }
 
             var quizAttempts = attempts.Where(a => a.QuizId == assignment.QuizId.Value).ToList();
@@ -176,7 +183,7 @@ public sealed class ClassroomQueries
                 });
 
             return new ClassroomAssignmentInfo(
-                assignment,
+                ClassroomAssignmentHeader.From(assignment),
                 quizNames.GetValueOrDefault(assignment.QuizId.Value),
                 completedStudents,
                 studentCount,
@@ -189,7 +196,8 @@ public sealed class ClassroomQueries
             .ToLookup(info => info.Assignment.LessonId);
 
         var lessonInfos = lessons
-            .Select(lesson => new ClassroomLessonInfo(lesson, infosByLesson[lesson.Id].ToList()))
+            .Select(lesson => new ClassroomLessonInfo(
+                ClassroomLessonHeader.From(lesson), infosByLesson[lesson.Id].ToList()))
             .ToList();
 
         return new ClassroomSchedule(lessonInfos, infosByLesson[null].ToList());

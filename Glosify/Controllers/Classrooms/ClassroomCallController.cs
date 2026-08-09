@@ -63,7 +63,7 @@ public sealed class ClassroomCallController : ClassroomControllerBase
                 token = token.Token,
                 expiresOn = token.ExpiresOn,
                 acsUserId = token.AcsUserId,
-                groupCallId = entry.Classroom.GroupCallId
+                groupCallId = entry.GroupCallId
             });
         }
         catch (ClassroomCallNotStartedException ex)

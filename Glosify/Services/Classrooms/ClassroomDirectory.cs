@@ -11,7 +11,7 @@ namespace Glosify.Services.Classrooms;
 /// </summary>
 public interface IClassroomDirectory
 {
-    Task<Classroom> CreateAsync(string ownerUserId, string name, string? description, string? language = null, CancellationToken cancellationToken = default);
+    Task<ClassroomHeader> CreateAsync(string ownerUserId, string name, string? description, string? language = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Lists the user's classrooms, limited to <paramref name="language"/> when one
@@ -19,11 +19,18 @@ public interface IClassroomDirectory
     /// </summary>
     Task<IReadOnlyList<ClassroomSummary>> GetForUserAsync(string userId, string? language = null, CancellationToken cancellationToken = default);
 
-    Task<Classroom> GetDetailsAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
+    Task<ClassroomHeader> GetDetailsAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// The ACS group id for the classroom's call. Deliberately not on
+    /// <see cref="ClassroomHeader"/>: it is call plumbing, and putting it on the record
+    /// every classroom page renders would leak it into markup that has no use for it.
+    /// </summary>
+    Task<Guid> GetGroupCallIdAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
+
     Task<ClassroomDetailsPage> GetDetailsPageAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task DeleteClassroomAsync(Guid classroomId, string ownerUserId, CancellationToken cancellationToken = default);
 
-    Task<Classroom?> JoinByCodeAsync(string userId, string code, CancellationToken cancellationToken = default);
+    Task<ClassroomHeader?> JoinByCodeAsync(string userId, string code, CancellationToken cancellationToken = default);
     Task<string> RegenerateJoinCodeAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task SetJoinCodeEnabledAsync(Guid classroomId, string userId, bool enabled, CancellationToken cancellationToken = default);
 }
@@ -48,7 +55,7 @@ public sealed class ClassroomDirectory : IClassroomDirectory
         _queries = queries;
     }
 
-    public async Task<Classroom> CreateAsync(string ownerUserId, string name, string? description, string? language = null, CancellationToken cancellationToken = default)
+    public async Task<ClassroomHeader> CreateAsync(string ownerUserId, string name, string? description, string? language = null, CancellationToken cancellationToken = default)
     {
         name = name.Trim();
         if (string.IsNullOrWhiteSpace(name))
@@ -80,7 +87,7 @@ public sealed class ClassroomDirectory : IClassroomDirectory
         });
 
         await _context.SaveChangesAsync(cancellationToken);
-        return classroom;
+        return ClassroomHeader.From(classroom);
     }
 
     public async Task<IReadOnlyList<ClassroomSummary>> GetForUserAsync(string userId, string? language = null, CancellationToken cancellationToken = default)
@@ -103,19 +110,38 @@ public sealed class ClassroomDirectory : IClassroomDirectory
                 (m, c) => new { Membership = m, Classroom = c })
             .OrderByDescending(x => x.Classroom.CreatedAt)
             .Select(x => new ClassroomSummary(
-                x.Classroom,
+                new ClassroomHeader(
+                    x.Classroom.Id,
+                    x.Classroom.Name,
+                    x.Classroom.Description,
+                    x.Classroom.Language,
+                    x.Classroom.JoinCode,
+                    x.Classroom.JoinCodeEnabled),
                 x.Membership.Role,
                 _context.ClassroomMemberships.Count(o => o.ClassroomId == x.Classroom.Id)))
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Classroom> GetDetailsAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
+    public async Task<ClassroomHeader> GetDetailsAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
+    {
+        await _access.RequireMemberAsync(classroomId, userId, cancellationToken);
+
+        var classroom = await _context.Classrooms
+            .AsNoTracking()
+            .FirstAsync(c => c.Id == classroomId, cancellationToken);
+
+        return ClassroomHeader.From(classroom);
+    }
+
+    public async Task<Guid> GetGroupCallIdAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
     {
         await _access.RequireMemberAsync(classroomId, userId, cancellationToken);
 
         return await _context.Classrooms
             .AsNoTracking()
-            .FirstAsync(c => c.Id == classroomId, cancellationToken);
+            .Where(c => c.Id == classroomId)
+            .Select(c => c.GroupCallId)
+            .FirstAsync(cancellationToken);
     }
 
     public async Task<ClassroomDetailsPage> GetDetailsPageAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
@@ -127,8 +153,8 @@ public sealed class ClassroomDirectory : IClassroomDirectory
             .FirstAsync(c => c.Id == classroomId, cancellationToken);
 
         return new ClassroomDetailsPage(
-            classroom,
-            membership,
+            ClassroomHeader.From(classroom),
+            membership.Role,
             await _queries.BoardAsync(classroomId, cancellationToken),
             await _queries.MembersAsync(classroomId, cancellationToken),
             await _queries.ContentAsync(classroomId, cancellationToken),
@@ -157,7 +183,7 @@ public sealed class ClassroomDirectory : IClassroomDirectory
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<Classroom?> JoinByCodeAsync(string userId, string code, CancellationToken cancellationToken = default)
+    public async Task<ClassroomHeader?> JoinByCodeAsync(string userId, string code, CancellationToken cancellationToken = default)
     {
         code = code.Trim().ToUpperInvariant();
         if (code.Length == 0)
@@ -187,7 +213,7 @@ public sealed class ClassroomDirectory : IClassroomDirectory
             await _context.SaveChangesAsync(cancellationToken);
         }
 
-        return classroom;
+        return ClassroomHeader.From(classroom);
     }
 
     public async Task<string> RegenerateJoinCodeAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
