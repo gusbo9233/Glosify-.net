@@ -30,7 +30,7 @@ internal sealed class AssistantThreadStore(
             .OrderByDescending(thread => thread.UpdatedAt)
             .ToListAsync(cancellationToken);
 
-        return await BuildChatSummariesAsync(threads, cancellationToken);
+        return await BuildChatSummariesAsync(userId, threads, cancellationToken);
     }
 
     public async Task<AssistantChatSummary> CreateAsync(
@@ -62,7 +62,7 @@ internal sealed class AssistantThreadStore(
         context.AssistantThreads.Add(thread);
         await context.SaveChangesAsync(cancellationToken);
 
-        return (await BuildChatSummariesAsync([thread], cancellationToken)).Single();
+        return (await BuildChatSummariesAsync(userId, [thread], cancellationToken)).Single();
     }
 
     public async Task<AssistantChatSummary> UpdateAsync(
@@ -97,7 +97,7 @@ internal sealed class AssistantThreadStore(
         thread.UpdatedAt = DateTimeOffset.UtcNow;
         await context.SaveChangesAsync(cancellationToken);
 
-        return (await BuildChatSummariesAsync([thread], cancellationToken)).Single();
+        return (await BuildChatSummariesAsync(userId, [thread], cancellationToken)).Single();
     }
 
     public async Task DeleteAsync(Guid threadId, string userId, CancellationToken cancellationToken)
@@ -178,6 +178,7 @@ internal sealed class AssistantThreadStore(
             UpdatedAt = now,
         };
         context.AssistantThreads.Add(thread);
+        await context.SaveChangesAsync(cancellationToken);
         return thread;
     }
 
@@ -224,6 +225,7 @@ internal sealed class AssistantThreadStore(
     }
 
     private async Task<IReadOnlyList<AssistantChatSummary>> BuildChatSummariesAsync(
+        string userId,
         IReadOnlyList<AssistantThread> threads,
         CancellationToken cancellationToken)
     {
@@ -261,12 +263,10 @@ internal sealed class AssistantThreadStore(
         var quizNames = quizIds.Count == 0
             ? new Dictionary<Guid, string>()
             : await context.Quizzes
-                .Where(quiz => quizIds.Contains(quiz.Id))
+                .Where(quiz => quizIds.Contains(quiz.Id) && quiz.UserId == userId)
                 .ToDictionaryAsync(quiz => quiz.Id, quiz => quiz.Name, cancellationToken);
 
-        var selectedLanguageCode = await contextResolver.ResolveLanguageCodeAsync(
-            threads[0].UserId,
-            cancellationToken);
+        var selectedLanguageCode = await contextResolver.ResolveLanguageCodeAsync(userId, cancellationToken);
         var transcriptIds = threads
             .Select(thread => thread.ContextTranscriptId)
             .Where(id => id.HasValue)
@@ -277,6 +277,7 @@ internal sealed class AssistantThreadStore(
             ? new Dictionary<Guid, string>()
             : await context.RealtimeTranslationTranscripts
                 .Where(transcript => transcriptIds.Contains(transcript.Id)
+                    && transcript.UserId == userId
                     && selectedLanguageCode != null
                     && transcript.TargetLanguage == selectedLanguageCode)
                 .ToDictionaryAsync(transcript => transcript.Id, transcript => transcript.Title, cancellationToken);
@@ -290,7 +291,7 @@ internal sealed class AssistantThreadStore(
         var bookTitles = bookIds.Count == 0
             ? new Dictionary<Guid, string>()
             : await context.BookDocuments
-                .Where(book => bookIds.Contains(book.Id))
+                .Where(book => bookIds.Contains(book.Id) && book.UserId == userId)
                 .ToDictionaryAsync(book => book.Id, book => book.Title, cancellationToken);
 
         return threads
@@ -369,11 +370,16 @@ internal sealed class AssistantThreadStore(
             .ToList();
     }
 
-    private async Task<IReadOnlyDictionary<string, AssistantWordLabel>> LoadWordLabelsAsync(
-        Guid quizId,
+    public async Task<IReadOnlyDictionary<string, AssistantWordLabel>> LoadWordLabelsAsync(
+        Guid? quizId,
         IEnumerable<PendingChange> changes,
         CancellationToken cancellationToken)
     {
+        if (!quizId.HasValue)
+        {
+            return new Dictionary<string, AssistantWordLabel>();
+        }
+
         var wordIds = presenter.GetReferencedWordIds(changes);
         if (wordIds.Count == 0)
         {
@@ -381,7 +387,7 @@ internal sealed class AssistantThreadStore(
         }
 
         return await context.Words
-            .Where(word => word.QuizId == quizId && wordIds.Contains(word.Id))
+            .Where(word => word.QuizId == quizId.Value && wordIds.Contains(word.Id))
             .Select(word => new AssistantWordLabel(word.Id, word.Lemma, word.Translation))
             .ToDictionaryAsync(word => word.Id, cancellationToken);
     }

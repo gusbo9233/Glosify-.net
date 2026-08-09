@@ -5,7 +5,6 @@ namespace Glosify.Services.Ai.Assistant;
 
 internal sealed class AssistantMessagePresenter
 {
-    private const string NewChatTitle = "New chat";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public string NormalizeTitle(string? title)
@@ -15,7 +14,7 @@ internal sealed class AssistantMessagePresenter
             (title ?? string.Empty).Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
         if (string.IsNullOrWhiteSpace(cleaned))
         {
-            return NewChatTitle;
+            return AssistantThreadDefaults.NewChatTitle;
         }
 
         return cleaned.Length <= 64 ? cleaned : cleaned[..64] + "...";
@@ -57,7 +56,10 @@ internal sealed class AssistantMessagePresenter
         PendingChange change,
         IReadOnlyDictionary<string, AssistantWordLabel> wordLabels)
     {
-        return new AssistantPendingChangeView(change.Kind, BuildSummary(change, wordLabels), change.Payload.GetRawText());
+        var rawPayload = change.Payload.ValueKind == JsonValueKind.Undefined
+            ? "{}"
+            : change.Payload.GetRawText();
+        return new AssistantPendingChangeView(change.Kind, BuildSummary(change, wordLabels), rawPayload);
     }
 
     private static string BuildSummary(

@@ -31,6 +31,17 @@ public sealed class AssistantCollaboratorTests
     }
 
     [Fact]
+    public void Presenter_tolerates_a_missing_pending_change_payload()
+    {
+        var view = new AssistantMessagePresenter().PresentPendingChange(
+            new PendingChange(PendingChangeKinds.AddWord, default),
+            new Dictionary<string, AssistantWordLabel>());
+
+        Assert.Equal("{}", view.PayloadJson);
+        Assert.Equal(PendingChangeKinds.AddWord, view.Summary);
+    }
+
+    [Fact]
     public void Prompt_builder_composes_language_context_without_services()
     {
         var instruction = new AssistantPromptBuilder().BuildSystemInstruction(

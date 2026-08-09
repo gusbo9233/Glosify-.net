@@ -11,6 +11,7 @@ using Glosify.Services.Books;
 using Glosify.Services.Language;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -34,6 +35,18 @@ public class AssistantSavedChatsTests
         Assert.Null(thread.QuizId);
         Assert.Equal(quizId, thread.ContextQuizId);
         Assert.Equal("New chat", chat.Title);
+    }
+
+    [Fact]
+    public async Task GetGlobalHistory_PersistsItsNewDefaultThread()
+    {
+        await using var context = CreateContext();
+        var orchestrator = CreateOrchestrator(context);
+
+        var history = await orchestrator.GetGlobalHistoryAsync("user-1");
+        context.ChangeTracker.Clear();
+
+        Assert.True(await context.AssistantThreads.AnyAsync(thread => thread.Id == history.ThreadId));
     }
 
     [Fact]
@@ -289,6 +302,36 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task SendQuizMessage_PreservesTheDefaultThreadsTranscriptContext()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        var transcriptId = Guid.NewGuid();
+        context.Users.Add(new ApplicationUser { Id = "user-1", SelectedQuizLanguageCode = "pl" });
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        context.RealtimeTranslationTranscripts.Add(new RealtimeTranslationTranscript
+        {
+            Id = transcriptId,
+            UserId = "user-1",
+            Title = "Saved lesson",
+            TargetLanguage = "pl",
+            Stream = RealtimeTranslationTranscriptStreams.Source,
+        });
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context);
+        var chat = await orchestrator.CreateChatAsync(
+            "user-1",
+            contextQuizId: quizId,
+            contextTranscriptId: transcriptId);
+
+        await orchestrator.SendMessageAsync(quizId, "user-1", "Explain this quiz.");
+
+        context.ChangeTracker.Clear();
+        var thread = await context.AssistantThreads.SingleAsync(candidate => candidate.Id == chat.Id);
+        Assert.Equal(transcriptId, thread.ContextTranscriptId);
+    }
+
+    [Fact]
     public async Task UpdateChat_ClearsBookContextWhenUpdateContextIsSet()
     {
         await using var context = CreateContext();
@@ -516,6 +559,30 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task AssistantMessageStatus_RejectsAStaleConcurrentClaim()
+    {
+        var databaseName = Guid.NewGuid().ToString("N");
+        var databaseRoot = new InMemoryDatabaseRoot();
+        await using var seed = CreateContext(databaseName, databaseRoot);
+        var thread = CreateThread("user-1");
+        var messageId = Guid.NewGuid();
+        seed.AssistantThreads.Add(thread);
+        seed.AssistantMessages.Add(CreateActiveMessageWithPendingChange(messageId, thread.Id));
+        await seed.SaveChangesAsync();
+
+        await using var firstContext = CreateContext(databaseName, databaseRoot);
+        await using var secondContext = CreateContext(databaseName, databaseRoot);
+        var first = await firstContext.AssistantMessages.SingleAsync(message => message.Id == messageId);
+        var second = await secondContext.AssistantMessages.SingleAsync(message => message.Id == messageId);
+
+        first.Status = AssistantMessageStatus.Applied;
+        await firstContext.SaveChangesAsync();
+        second.Status = AssistantMessageStatus.Applied;
+
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => secondContext.SaveChangesAsync());
+    }
+
+    [Fact]
     public async Task ApplyPendingChanges_RevertsClaimWhenApplyFails()
     {
         await using var context = CreateContext();
@@ -582,10 +649,12 @@ public class AssistantSavedChatsTests
             await context.AssistantMessages.CountAsync(message => message.ThreadId == result.ThreadId));
     }
 
-    private static GlosifyContext CreateContext()
+    private static GlosifyContext CreateContext(
+        string? databaseName = null,
+        InMemoryDatabaseRoot? databaseRoot = null)
     {
         var options = new DbContextOptionsBuilder<GlosifyContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .UseInMemoryDatabase(databaseName ?? Guid.NewGuid().ToString("N"), databaseRoot ?? new InMemoryDatabaseRoot())
             .Options;
         return new GlosifyContext(options);
     }

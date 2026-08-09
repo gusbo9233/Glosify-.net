@@ -31,7 +31,17 @@ internal sealed class AssistantChangeWorkflow(
         // a double-click) cannot run the same changes twice. Restore the claim when the
         // apply fails so the user can retry.
         message.Status = AssistantMessageStatus.Applied;
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Another request changed the active status first. This request did not
+            // acquire the claim and must not apply the same change set again.
+            context.ChangeTracker.Clear();
+            return new AssistantApplyResult(0);
+        }
 
         try
         {

@@ -92,8 +92,8 @@ internal sealed class AssistantTurnRunner
             documentContext,
             null,
             cancellationToken,
-            null,
-            null);
+            thread.ContextTranscriptId,
+            thread.ContextBookDocumentId);
     }
 
     public async Task<AssistantTurnResponse> RunGlobalAsync(
@@ -322,7 +322,10 @@ internal sealed class AssistantTurnRunner
         var pendingChangesJson = toolContext.PendingChanges.Count == 0
             ? null
             : JsonSerializer.Serialize(toolContext.PendingChanges, JsonOptions);
-        var wordLabels = await LoadWordLabelsAsync(contextQuizId, toolContext.PendingChanges, cancellationToken);
+        var wordLabels = await _threads.LoadWordLabelsAsync(
+            contextQuizId,
+            toolContext.PendingChanges,
+            cancellationToken);
         var pendingChangeViews = toolContext.PendingChanges
             .Select(change => _presenter.PresentPendingChange(change, wordLabels))
             .ToList();
@@ -426,29 +429,6 @@ internal sealed class AssistantTurnRunner
     {
         var json = JsonSerializer.Serialize(result, JsonOptions);
         return json.Length > 240 ? json[..240] + "..." : json;
-    }
-
-    private async Task<IReadOnlyDictionary<string, AssistantWordLabel>> LoadWordLabelsAsync(
-        Guid? quizId,
-        IEnumerable<PendingChange> changes,
-        CancellationToken cancellationToken)
-    {
-        if (!quizId.HasValue)
-        {
-            return new Dictionary<string, AssistantWordLabel>();
-        }
-
-        var wordIds = _presenter.GetReferencedWordIds(changes);
-
-        if (wordIds.Count == 0)
-        {
-            return new Dictionary<string, AssistantWordLabel>();
-        }
-
-        return await _context.Words
-            .Where(word => word.QuizId == quizId.Value && wordIds.Contains(word.Id))
-            .Select(word => new AssistantWordLabel(word.Id, word.Lemma, word.Translation))
-            .ToDictionaryAsync(word => word.Id, cancellationToken);
     }
 
     private sealed class StoredContent
