@@ -882,7 +882,7 @@ import {
         let message = `Request failed (${response.status}).`;
         try {
             const body = await response.json();
-            message = body.error || body.title || message;
+            message = body.detail || body.title || body.error || message;
         } catch {
             const text = await response.text();
             if (text) {

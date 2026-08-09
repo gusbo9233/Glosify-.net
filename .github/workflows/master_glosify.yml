@@ -1,6 +1,9 @@
 name: Build, migrate, and deploy Glosify
 
 on:
+  pull_request:
+    branches:
+      - master
   push:
     branches:
       - master
@@ -28,10 +31,12 @@ jobs:
       ConnectionStrings__DefaultConnection: Server=localhost,1433;Database=glosify-ci;User Id=sa;Password=Glosify_CI_Only_1!;Encrypt=True;TrustServerCertificate=True
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -98,18 +103,19 @@ jobs:
           --output "${{ runner.temp }}/migration/efbundle"
 
       - name: Upload web artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: glosify-web
           path: ${{ runner.temp }}/myapp
 
       - name: Upload migration artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: glosify-migration
           path: ${{ runner.temp }}/migration/efbundle
 
   deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: build
     environment: production
@@ -119,19 +125,19 @@ jobs:
 
     steps:
       - name: Download web artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: glosify-web
           path: app
 
       - name: Download migration artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: glosify-migration
           path: migration
 
       - name: Login to Azure
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_059CC241545944E3BB4D754796025F63 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_210765179BDB40158ADE7F23514669FF }}

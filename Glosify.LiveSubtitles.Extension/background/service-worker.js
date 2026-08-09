@@ -294,7 +294,7 @@ async function apiError(response) {
   let message = `Glosify request failed (${response.status}).`;
   try {
     const body = await response.json();
-    message = body.error ?? body.detail ?? body.title ?? message;
+    message = body.detail ?? body.title ?? body.error ?? message;
   } catch {
     // Do not surface raw upstream responses; they can contain implementation details.
   }

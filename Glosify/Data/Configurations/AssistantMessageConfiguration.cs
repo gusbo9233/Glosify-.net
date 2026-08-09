@@ -10,7 +10,7 @@ internal sealed class AssistantMessageConfiguration : IEntityTypeConfiguration<A
     {
         entity.HasKey(m => m.Id);
         entity.Property(m => m.Role).HasMaxLength(16).IsRequired();
-        entity.Property(m => m.Status).HasMaxLength(16).IsRequired();
+        entity.Property(m => m.Status).HasMaxLength(16).IsRequired().IsConcurrencyToken();
         entity.HasIndex(m => new { m.ThreadId, m.Sequence }).IsUnique();
         entity.HasIndex(m => m.ContextQuizId);
         entity.HasOne<AssistantThread>()
