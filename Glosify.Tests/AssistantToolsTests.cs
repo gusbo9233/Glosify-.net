@@ -14,7 +14,7 @@ public class AssistantToolsTests
     public void Declarations_SeparateVocabularyAndCustomQuizCreation()
     {
         using var db = CreateContext();
-        var names = new AssistantTools(db).GlobalDeclarations.Select(tool => tool.Name).ToList();
+        var names = AssistantToolFactory.Create(db).GlobalDeclarations.Select(tool => tool.Name).ToList();
 
         Assert.Contains("create_vocabulary_quiz", names);
         Assert.Contains("create_custom_quiz", names);
@@ -34,7 +34,7 @@ public class AssistantToolsTests
     public void CustomQuizBuilderDeclarations_ExcludeEverythingThatCouldLeaveTheOpenQuiz()
     {
         using var db = CreateContext();
-        var names = new AssistantTools(db).CustomQuizBuilderDeclarations.Select(tool => tool.Name).ToList();
+        var names = AssistantToolFactory.Create(db).CustomQuizBuilderDeclarations.Select(tool => tool.Name).ToList();
 
         Assert.DoesNotContain("create_custom_quiz", names);
         Assert.DoesNotContain("create_custom_quiz_from_content", names);
@@ -59,7 +59,7 @@ public class AssistantToolsTests
     public void CustomQuizBuilderDeclarations_StayWellUnderTheGeneralToolSurface()
     {
         using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
 
         var builder = tools.CustomQuizBuilderDeclarations.Count;
         var general = tools.GlobalDeclarations.Count + tools.Declarations.Count;
@@ -74,7 +74,7 @@ public class AssistantToolsTests
         var quizId = Guid.NewGuid();
         db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", QuizId = quizId, CurrentLanguage = "Polish" };
 
         var listed = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
@@ -98,7 +98,7 @@ public class AssistantToolsTests
         var openCustomQuizId = Guid.NewGuid();
         db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", QuizId = quizId, CustomQuizId = openCustomQuizId };
 
         var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
@@ -116,7 +116,7 @@ public class AssistantToolsTests
         var quizId = Guid.NewGuid();
         db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", QuizId = quizId, CustomQuizId = Guid.NewGuid() };
 
         await tools.ExecuteAsync(
@@ -135,7 +135,7 @@ public class AssistantToolsTests
         var quizId = Guid.NewGuid();
         db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", QuizId = quizId };
 
         await tools.ExecuteAsync("create_custom_quiz", """{"name":"Drills"}""", context, CancellationToken.None);
@@ -153,7 +153,7 @@ public class AssistantToolsTests
         var quizId = Guid.NewGuid();
         db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", QuizId = quizId };
 
         await tools.ExecuteAsync("create_custom_quiz", """{"name":"Verb drills"}""", context, CancellationToken.None);
@@ -197,7 +197,7 @@ public class AssistantToolsTests
         await db.SaveChangesAsync();
         var context = new AgentToolContext { UserId = "user-1", QuizId = quizId, CustomQuizId = customQuizId };
 
-        var inspected = JsonSerializer.SerializeToElement(await new AssistantTools(db)
+        var inspected = JsonSerializer.SerializeToElement(await AssistantToolFactory.Create(db)
             .ExecuteAsync("get_custom_quiz", "{}", context, CancellationToken.None));
 
         Assert.False(inspected.TryGetProperty("queued", out _));
@@ -208,7 +208,7 @@ public class AssistantToolsTests
     public async Task CreateQuiz_QueuesBundledCustomQuizFromStarterWords()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
 
         await tools.ExecuteAsync(
@@ -239,7 +239,7 @@ public class AssistantToolsTests
     public async Task CreateCustomQuizFromContent_QueuesShellThenIndividualElements()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
 
         await tools.ExecuteAsync(
@@ -272,7 +272,7 @@ public class AssistantToolsTests
     public async Task AtomicTextInputs_RejectMissingDuplicateAndDrawnBlankLabels()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
         await tools.ExecuteAsync("create_custom_quiz_from_content", """
             {"quiz_name":"Verb source","custom_quiz_name":"Verb questions","source_language":"English","words":[{"word":"być","translation":"to be"}]}
@@ -306,7 +306,7 @@ public class AssistantToolsTests
             UpdatedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             QuizId = quizId,
@@ -329,7 +329,7 @@ public class AssistantToolsTests
     public async Task CreateQuiz_QueuesPendingChangeWithCurrentLanguageDefault()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             UserId = "user-1",
@@ -356,7 +356,7 @@ public class AssistantToolsTests
     public async Task CreateQuiz_FallsBackToCurrentLanguageWhenTargetLanguageIsBlank()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             UserId = "user-1",
@@ -377,7 +377,7 @@ public class AssistantToolsTests
     public async Task CreateCollection_QueuesPendingChangeWithCurrentLanguageDefault()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             UserId = "user-1",
@@ -402,7 +402,7 @@ public class AssistantToolsTests
     public async Task CreateCollection_RejectsInvalidParentCollectionId()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             UserId = "user-1",
@@ -423,7 +423,7 @@ public class AssistantToolsTests
     public async Task AddWord_RequiresQuizContext()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             UserId = "user-1",
@@ -444,7 +444,7 @@ public class AssistantToolsTests
     public async Task AddWords_QueuesOnePendingChangePerWord()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             QuizId = Guid.NewGuid(),
@@ -474,7 +474,7 @@ public class AssistantToolsTests
     public async Task EditWords_QueuesOnePendingChangePerEdit()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             QuizId = Guid.NewGuid(),
@@ -525,7 +525,7 @@ public class AssistantToolsTests
         });
         await db.SaveChangesAsync();
 
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             QuizId = quizId,
@@ -550,7 +550,7 @@ public class AssistantToolsTests
     public async Task AddWords_ReportsSkippedItemsWithReasons()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             QuizId = Guid.NewGuid(),
@@ -589,7 +589,7 @@ public class AssistantToolsTests
             new Word { Id = "w2", QuizId = quizId, Lemma = "b", Translation = "2" },
             new Word { Id = "w3", QuizId = quizId, Lemma = "c", Translation = "3" });
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
 
         var result = await tools.ExecuteAsync("list_words", """{"offset":1}""", context, CancellationToken.None);
@@ -616,7 +616,7 @@ public class AssistantToolsTests
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
 
         var result = await tools.ExecuteAsync("list_sentences", "{}", context, CancellationToken.None);
@@ -641,7 +641,7 @@ public class AssistantToolsTests
             CreatedAt = DateTimeOffset.UtcNow,
         });
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
 
         var result = await tools.ExecuteAsync(
@@ -661,7 +661,7 @@ public class AssistantToolsTests
     public async Task DeleteSentence_UnknownIdReturnsError()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { QuizId = Guid.NewGuid(), UserId = "user-1" };
 
         var result = await tools.ExecuteAsync(
@@ -678,7 +678,7 @@ public class AssistantToolsTests
     public async Task AddSentences_QueuesOnePendingChangePerSentence()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext
         {
             QuizId = Guid.NewGuid(),
@@ -717,7 +717,7 @@ public class AssistantToolsTests
             Translation = "I go home.",
         });
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
         var missingId = Guid.NewGuid();
 
@@ -761,7 +761,7 @@ public class AssistantToolsTests
             new Word { Id = "w1", QuizId = quizId, Lemma = "Haus", Translation = "house" },
             new Word { Id = "w2", QuizId = quizId, Lemma = "Baum", Translation = "tree" });
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
 
         var result = await tools.ExecuteAsync(
@@ -809,7 +809,7 @@ public class AssistantToolsTests
             Translation = "The train arrives soon.",
         });
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
 
         var result = await tools.ExecuteAsync("get_quiz_summary", "{}", context, CancellationToken.None);
@@ -855,7 +855,7 @@ public class AssistantToolsTests
             CollectionId = sourceId,
         });
         await db.SaveChangesAsync();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "French" };
 
         await tools.ExecuteAsync(
@@ -886,7 +886,7 @@ public class AssistantToolsTests
     {
         await using var db = CreateContext();
         var bookId = await SeedBookAsync(db, "user-1", pageCount: 6);
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
 
         var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
@@ -904,7 +904,7 @@ public class AssistantToolsTests
     {
         await using var db = CreateContext();
         var bookId = await SeedBookAsync(db, "user-1", pageCount: 3);
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
 
         var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
@@ -919,7 +919,7 @@ public class AssistantToolsTests
     {
         await using var db = CreateContext();
         var bookId = await SeedBookAsync(db, "owner", pageCount: 2);
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "intruder", BookDocumentId = bookId };
 
         var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
@@ -932,7 +932,7 @@ public class AssistantToolsTests
     public async Task GetBookPages_NeedsABookIdWhenNoneIsSelected()
     {
         await using var db = CreateContext();
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1" };
 
         var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
@@ -948,7 +948,7 @@ public class AssistantToolsTests
     {
         await using var db = CreateContext();
         var bookId = await SeedBookAsync(db, "user-1", pageCount: 4, pageText: new string('a', 7_000));
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
 
         var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
@@ -966,7 +966,7 @@ public class AssistantToolsTests
         await SeedBookAsync(db, "user-1", pageCount: 1, title: "Polish Reader", language: "Polish");
         await SeedBookAsync(db, "user-1", pageCount: 1, title: "German Reader", language: "German");
         await SeedBookAsync(db, "user-2", pageCount: 1, title: "Someone else's", language: "Polish");
-        var tools = new AssistantTools(db);
+        var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
 
         var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(

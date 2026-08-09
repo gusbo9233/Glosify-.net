@@ -50,7 +50,7 @@ public sealed class RealtimeTranslationTranscriptTests
         AddTranscript(context, ownId, "user-1", "Mine", "Hola");
         AddTranscript(context, foreignId, "user-2", "Private", "Secret");
         await context.SaveChangesAsync();
-        var tools = new AssistantTools(context);
+        var tools = AssistantToolFactory.Create(context);
         var toolContext = new AgentToolContext
         {
             UserId = "user-1",
@@ -131,7 +131,7 @@ public sealed class RealtimeTranslationTranscriptTests
             Text = "Good morning",
         });
         await context.SaveChangesAsync();
-        var tools = new AssistantTools(context);
+        var tools = AssistantToolFactory.Create(context);
         var toolContext = new AgentToolContext
         {
             UserId = "user-1",

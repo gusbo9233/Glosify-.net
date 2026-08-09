@@ -18,7 +18,7 @@ public class AssistantMcpToolSurfaceTests
         await using var context = CreateContext();
         var session = await SeedAsync(context);
         var store = new AssistantPendingChangeStore(context);
-        var surface = new AssistantMcpToolSurface(new AssistantTools(context), store);
+        var surface = new AssistantMcpToolSurface(AssistantToolFactory.Create(context), store);
 
         var result = await surface.ExecuteAsync(
             "add_text_input",
@@ -41,7 +41,7 @@ public class AssistantMcpToolSurfaceTests
         await using var context = CreateContext();
         var session = await SeedAsync(context);
         var store = new AssistantPendingChangeStore(context);
-        var surface = new AssistantMcpToolSurface(new AssistantTools(context), store);
+        var surface = new AssistantMcpToolSurface(AssistantToolFactory.Create(context), store);
 
         await surface.ExecuteAsync(
             "add_text_input",
@@ -70,7 +70,7 @@ public class AssistantMcpToolSurfaceTests
         await using var context = CreateContext();
         var session = await SeedAsync(context);
         var store = new AssistantPendingChangeStore(context);
-        var surface = new AssistantMcpToolSurface(new AssistantTools(context), store);
+        var surface = new AssistantMcpToolSurface(AssistantToolFactory.Create(context), store);
         const string args = """{"id":"%ID%","label":"1. ja bed{{blank}} w domu","expected_text":"e"}""";
 
         await surface.ExecuteAsync("add_text_input", args.Replace("%ID%", "row1"), session, CancellationToken.None);
@@ -87,7 +87,7 @@ public class AssistantMcpToolSurfaceTests
         await using var context = CreateContext();
         var session = await SeedAsync(context);
         var surface = new AssistantMcpToolSurface(
-            new AssistantTools(context),
+            AssistantToolFactory.Create(context),
             new AssistantPendingChangeStore(context));
 
         Assert.False(surface.Allows("create_custom_quiz"));

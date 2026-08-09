@@ -361,7 +361,7 @@ public class AssistantSavedChatsTests
         var orchestrator = CreateOrchestrator(
             context,
             generativeAi: generativeAi,
-            tools: new AssistantTools(context));
+            tools: AssistantToolFactory.Create(context));
         var chat = await orchestrator.CreateChatAsync("user-1", quizId);
 
         await orchestrator.SendChatMessageAsync(
@@ -392,7 +392,7 @@ public class AssistantSavedChatsTests
         var orchestrator = CreateOrchestrator(
             context,
             generativeAi: generativeAi,
-            tools: new AssistantTools(context));
+            tools: AssistantToolFactory.Create(context));
         var chat = await orchestrator.CreateChatAsync("user-1", quizId);
 
         await orchestrator.SendChatMessageAsync(
@@ -421,7 +421,7 @@ public class AssistantSavedChatsTests
         var orchestrator = CreateOrchestrator(
             context,
             generativeAi: generativeAi,
-            tools: new AssistantTools(context));
+            tools: AssistantToolFactory.Create(context));
 
         await orchestrator.SendGlobalMessageAsync("user-1", "Organise my collections.");
 

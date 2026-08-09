@@ -129,7 +129,7 @@ public static class ApplicationServiceExtensions
         });
         services.AddScoped<IVocabularyGenerationService, LlmVocabularyGenerationService>();
         services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();
-        services.AddScoped<IAssistantTools, AssistantTools>();
+        services.AddAssistantTools();
         services.AddScoped<IChangeApplier, ChangeApplier>();
         services.AddScoped<IAssistantPendingChangeStore, AssistantPendingChangeStore>();
         services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
