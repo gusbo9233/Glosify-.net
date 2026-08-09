@@ -1,68 +1,31 @@
-@model Glosify.Models.ViewModels.AssistantPanelViewModel
-@inject Glosify.Services.Ai.Generation.IGenerativeAiModelResolver GenerativeAiModels
-@inject Glosify.Services.Quizzes.IQuizService QuizService
-@inject Glosify.Services.Books.IBookDocumentService BookService
-@inject Glosify.Services.RealtimeTranslation.IRealtimeTranslationTranscriptService TranscriptService
-@inject Glosify.Services.Language.IQuizLanguagePreferenceService LanguagePreferences
+@model Glosify.Models.ViewModels.AssistantPanelContentViewModel
 @{
-    var panelKey = Model.QuizId?.ToString("N") ?? "global";
+    var panel = Model.Panel;
+    var panelKey = panel.QuizId?.ToString("N") ?? "global";
     var imageInputId = $"assistantImageInput-{panelKey}";
     var popoverId = $"assistantPopover-{panelKey}";
-    var assistantModels = GenerativeAiModels.AssistantModels
-        .Where(model => !string.Equals(
-            model.Deployment,
-            GenerativeAiModels.DefaultAssistantModel,
-            StringComparison.OrdinalIgnoreCase))
-        .ToArray();
-    IReadOnlyList<Quiz> contextQuizzes = [];
-    IReadOnlyList<Glosify.Models.Library.BookDocument> contextBooks = [];
-    IReadOnlyList<Glosify.Services.RealtimeTranslation.TranscriptLibraryItem> contextTranscripts = [];
-    if (User.Identity?.IsAuthenticated == true)
-    {
-        var contextUserId = User.GetUserId();
-        contextQuizzes = await QuizService.GetUserQuizzesAsync(contextUserId);
-        contextBooks = await BookService.GetUserBooksAsync(contextUserId);
-        // Transcripts are keyed by language code while books use the display name, so the
-        // two lists are fetched separately rather than through one shared filter.
-        var selectedLanguage = await LanguagePreferences.GetSelectedAsync(contextUserId);
-        if (selectedLanguage is not null)
-        {
-            var transcriptLibrary = await TranscriptService.GetLibraryAsync(
-                contextUserId,
-                selectedLanguage.Code,
-                page: 1,
-                pageSize: 50);
-            contextTranscripts = transcriptLibrary.Items;
-        }
-    }
-
-    // The material picker carries two kinds in one control, so the option value encodes
-    // which one it is. Matches the parsing in wwwroot/js/assistant.js.
-    var selectedMaterial = Model.TranscriptId.HasValue
-        ? $"transcript:{Model.TranscriptId}"
-        : Model.DocumentId.HasValue ? $"book:{Model.DocumentId}" : string.Empty;
 }
 
 <div class="assistant-float"
      data-assistant-panel
-     data-quiz-id="@Model.QuizId"
-     data-context-label="@(string.IsNullOrWhiteSpace(Model.ContextLabel) ? "Glosify" : Model.ContextLabel)"
-     data-focused-word-id="@Model.FocusedWordId"
-     data-document-id="@Model.DocumentId"
-     data-current-page="@Model.CurrentPage"
-     data-transcript-id="@Model.TranscriptId"
-     data-custom-quiz-id="@Model.CustomQuizId">
+     data-quiz-id="@panel.QuizId"
+     data-context-label="@(string.IsNullOrWhiteSpace(panel.ContextLabel) ? "Glosify" : panel.ContextLabel)"
+     data-focused-word-id="@panel.FocusedWordId"
+     data-document-id="@panel.DocumentId"
+     data-current-page="@panel.CurrentPage"
+     data-transcript-id="@panel.TranscriptId"
+     data-custom-quiz-id="@panel.CustomQuizId">
     @Html.AntiForgeryToken()
     @* The accessible name has to contain the button's visible text (WCAG 2.5.3),
        so it is built from the same title rather than a fixed "Open assistant". *@
     <button class="assistant-fab"
             type="button"
-            aria-label="Open @Model.Title"
+            aria-label="Open @panel.Title"
             aria-controls="@popoverId"
             aria-expanded="false"
             data-assistant-toggle>
         <span class="material-symbols-outlined" aria-hidden="true">chat_bubble</span>
-        <span class="assistant-fab-label">@Model.Title</span>
+        <span class="assistant-fab-label">@panel.Title</span>
     </button>
 
     <section class="assistant-popover assistant-panel" id="@popoverId" hidden data-assistant-window>
@@ -85,8 +48,8 @@
             <div class="assistant-transcript" data-assistant-transcript>
                 <div class="assistant-empty" data-assistant-empty>
                     <span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span>
-                    <strong>@Model.Title</strong>
-                    <span>@Model.EmptyText</span>
+                    <strong>@panel.Title</strong>
+                    <span>@panel.EmptyText</span>
                 </div>
             </div>
 
@@ -98,11 +61,11 @@
                         <span class="visually-hidden">Quiz context</span>
                         <select aria-label="Quiz context" data-assistant-quiz-selector>
                             <option value="" data-context-label="Glosify">No quiz selected</option>
-                            @foreach (var quiz in contextQuizzes)
+                            @foreach (var quiz in Model.Quizzes)
                             {
                                 <option value="@quiz.Id"
                                         data-context-label="@quiz.Name"
-                                        selected="@(Model.QuizId == quiz.Id)">
+                                        selected="@(panel.QuizId == quiz.Id)">
                                     @quiz.Name (@quiz.SourceLanguage &rarr; @quiz.TargetLanguage)
                                 </option>
                             }
@@ -112,27 +75,27 @@
                         <span class="visually-hidden">Reading material</span>
                         <select aria-label="Reading material" data-assistant-material-selector>
                             <option value="" data-context-label="">No material selected</option>
-                            @if (contextBooks.Count > 0)
+                            @if (Model.Books.Count > 0)
                             {
                                 <optgroup label="Books">
-                                    @foreach (var book in contextBooks)
+                                    @foreach (var book in Model.Books)
                                     {
                                         <option value="book:@book.Id"
                                                 data-context-label="@book.Title"
-                                                selected="@(selectedMaterial == $"book:{book.Id}")">
+                                                selected="@(Model.SelectedMaterial == $"book:{book.Id}")">
                                             @book.Title
                                         </option>
                                     }
                                 </optgroup>
                             }
-                            @if (contextTranscripts.Count > 0)
+                            @if (Model.Transcripts.Count > 0)
                             {
                                 <optgroup label="Transcripts">
-                                    @foreach (var savedTranscript in contextTranscripts)
+                                    @foreach (var savedTranscript in Model.Transcripts)
                                     {
                                         <option value="transcript:@savedTranscript.Id"
                                                 data-context-label="@savedTranscript.Title"
-                                                selected="@(selectedMaterial == $"transcript:{savedTranscript.Id}")">
+                                                selected="@(Model.SelectedMaterial == $"transcript:{savedTranscript.Id}")">
                                             @savedTranscript.Title
                                         </option>
                                     }
@@ -145,12 +108,12 @@
                     <textarea
                         class="form-textarea"
                         data-assistant-textarea
-                        placeholder="@Model.Placeholder"
+                        placeholder="@panel.Placeholder"
                         rows="3"
                         required></textarea>
                     <div class="assistant-composer-toolbar">
                         <div class="assistant-composer-tools">
-                            @if (Model.QuizId.HasValue)
+                            @if (panel.QuizId.HasValue)
                             {
                                 <label class="assistant-icon-tool" for="@imageInputId" aria-label="Picture" title="Picture">
                                     <span class="material-symbols-outlined" aria-hidden="true">add</span>
@@ -162,21 +125,16 @@
                                     accept="image/*"
                                     capture="environment"
                                     data-assistant-image-input
-                                    data-extract-url="@Url.Action("ExtractTextFromImage", "Quiz", new { quizId = Model.QuizId })" />
+                                    data-extract-url="@Url.Action("ExtractTextFromImage", "Quiz", new { quizId = panel.QuizId })" />
                                 <span class="scan-status" data-assistant-scan-status hidden></span>
                             }
                             <label class="assistant-model-picker">
                                 <span class="visually-hidden">Assistant model</span>
                                 <select data-assistant-model-select aria-label="Assistant model">
                                     <option value="">Auto</option>
-                                    @foreach (var assistantModel in assistantModels)
+                                    @foreach (var assistantModel in Model.Models)
                                     {
-                                        var creditMultiplier = assistantModel.CreditMultiplier.ToString(
-                                            "0.##",
-                                            System.Globalization.CultureInfo.InvariantCulture);
-                                        <option value="@assistantModel.Deployment">
-                                            @assistantModel.DisplayName · @assistantModel.Provider · @assistantModel.SpeedTier · @assistantModel.CostTier · @creditMultiplier×
-                                        </option>
+                                        <option value="@assistantModel.Deployment">@assistantModel.Label</option>
                                     }
                                 </select>
                             </label>

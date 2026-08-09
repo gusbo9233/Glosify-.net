@@ -1,0 +1,17 @@
+@model string
+@if (!string.IsNullOrEmpty(Model))
+{
+    <a asp-controller="Languages" asp-action="Index"
+       class="language-context-pill language-context-pill-active">
+        <span class="material-symbols-outlined language-context-icon">translate</span>
+        @Model
+    </a>
+}
+else
+{
+    <a asp-controller="Languages" asp-action="Index"
+       class="language-context-pill language-context-pill-empty">
+        <span class="material-symbols-outlined language-context-icon">translate</span>
+        Pick a language
+    </a>
+}

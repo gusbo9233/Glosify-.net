@@ -1,6 +1,3 @@
-@inject Glosify.Services.Language.ILanguageContext LangContext
-@inject Glosify.Services.Ai.IAiCreditService AiCreditService
-@inject IConfiguration Configuration
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Html
 @functions {
@@ -63,12 +60,6 @@
 
     string AssistantText(string key, string fallback) =>
         ViewData[key] as string ?? fallback;
-
-    bool IsAiCreditAdmin()
-    {
-        var adminEmails = Configuration.GetSection("Admin:Emails").Get<string[]>() ?? [];
-        return adminEmails.Any(email => string.Equals(email, DisplayAccount, StringComparison.OrdinalIgnoreCase));
-    }
 
     IHtmlContent NavIcon(string name)
     {
@@ -174,22 +165,7 @@
                     <a asp-controller="Home" asp-action="Index">Glosify</a>
                 </h1>
                 <p class="brand-tier">Premium Learner</p>
-                @if (!string.IsNullOrEmpty(LangContext.CurrentLanguage))
-                {
-                    <a asp-controller="Languages" asp-action="Index"
-                       class="language-context-pill language-context-pill-active">
-                        <span class="material-symbols-outlined language-context-icon">translate</span>
-                        @LangContext.CurrentLanguage
-                    </a>
-                }
-                else
-                {
-                    <a asp-controller="Languages" asp-action="Index"
-                       class="language-context-pill language-context-pill-empty">
-                        <span class="material-symbols-outlined language-context-icon">translate</span>
-                        Pick a language
-                    </a>
-                }
+                @await Component.InvokeAsync("LanguagePill")
             </div>
 
             <nav class="app-nav">
@@ -244,24 +220,7 @@
                     </button>
                     @if (User.Identity?.IsAuthenticated == true)
                     {
-                        var creditAccount = await AiCreditService.GetOrCreateAccountAsync(User.GetUserId());
-                        @if (IsAiCreditAdmin())
-                        {
-                            <a class="credit-pill" asp-controller="Admin" asp-action="AiCredits" title="AI credits">
-                                <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
-                                <span>@creditAccount.AvailableCredits credits</span>
-                            </a>
-                            <a class="icon-button" asp-controller="Admin" asp-action="AiCredits" aria-label="AI credit admin" title="AI credit admin">
-                                <span class="material-symbols-outlined">settings</span>
-                            </a>
-                        }
-                        else
-                        {
-                            <span class="credit-pill" title="AI credits">
-                                <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
-                                <span>@creditAccount.AvailableCredits credits</span>
-                            </span>
-                        }
+                        @await Component.InvokeAsync("AiCreditPill")
                         <div class="account-block">
                             <div class="account-meta">
                                 <span class="account-meta-eyebrow">Signed in as</span>
@@ -339,18 +298,21 @@
     </nav>
     @if (User.Identity?.IsAuthenticated == true && ViewData["HideAssistantPanel"] is not true)
     {
-        @await Html.PartialAsync("_AssistantPanel", new AssistantPanelViewModel
+        @await Component.InvokeAsync("AssistantPanel", new
         {
-            QuizId = AssistantGuid("AssistantQuizId"),
-            FocusedWordId = ViewData["AssistantFocusedWordId"] as string,
-            DocumentId = AssistantGuid("AssistantDocumentId"),
-            CurrentPage = AssistantInt("AssistantCurrentPage"),
-            CustomQuizId = AssistantGuid("AssistantCustomQuizId"),
-            TranscriptId = AssistantGuid("AssistantTranscriptId"),
-            Title = AssistantText("AssistantTitle", "Assistant"),
-            ContextLabel = AssistantText("AssistantContextLabel", "Glosify"),
-            EmptyText = AssistantText("AssistantEmptyText", "Ask for help anywhere in Glosify."),
-            Placeholder = AssistantText("AssistantPlaceholder", "Ask the assistant...")
+            panel = new AssistantPanelViewModel
+            {
+                QuizId = AssistantGuid("AssistantQuizId"),
+                FocusedWordId = ViewData["AssistantFocusedWordId"] as string,
+                DocumentId = AssistantGuid("AssistantDocumentId"),
+                CurrentPage = AssistantInt("AssistantCurrentPage"),
+                CustomQuizId = AssistantGuid("AssistantCustomQuizId"),
+                TranscriptId = AssistantGuid("AssistantTranscriptId"),
+                Title = AssistantText("AssistantTitle", "Assistant"),
+                ContextLabel = AssistantText("AssistantContextLabel", "Glosify"),
+                EmptyText = AssistantText("AssistantEmptyText", "Ask for help anywhere in Glosify."),
+                Placeholder = AssistantText("AssistantPlaceholder", "Ask the assistant...")
+            }
         })
         <script src="~/js/assistant.js" asp-append-version="true"></script>
     }

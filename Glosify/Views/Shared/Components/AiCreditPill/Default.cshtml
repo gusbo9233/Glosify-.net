@@ -1,0 +1,18 @@
+@model Glosify.ViewComponents.AiCreditPillModel
+@if (Model.IsAdmin)
+{
+    <a class="credit-pill" asp-controller="Admin" asp-action="AiCredits" title="AI credits">
+        <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
+        <span>@Model.AvailableCredits credits</span>
+    </a>
+    <a class="icon-button" asp-controller="Admin" asp-action="AiCredits" aria-label="AI credit admin" title="AI credit admin">
+        <span class="material-symbols-outlined">settings</span>
+    </a>
+}
+else
+{
+    <span class="credit-pill" title="AI credits">
+        <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
+        <span>@Model.AvailableCredits credits</span>
+    </span>
+}
