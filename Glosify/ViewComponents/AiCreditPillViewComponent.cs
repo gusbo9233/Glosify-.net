@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Glosify.Extensions;
 using Glosify.Services.Ai;
 using Microsoft.AspNetCore.Mvc;
 

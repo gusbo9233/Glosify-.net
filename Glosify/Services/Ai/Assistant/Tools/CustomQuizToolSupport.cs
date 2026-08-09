@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Glosify.Models.CustomQuizzes;
 using Glosify.Services.CustomQuizzes;
 using static Glosify.Services.Ai.Assistant.Tools.ToolArguments;
 

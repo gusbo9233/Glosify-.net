@@ -1,4 +1,5 @@
 using Glosify.Models;
+using Glosify.Models.Entities;
 
 namespace Glosify.Services.Quizzes;
 

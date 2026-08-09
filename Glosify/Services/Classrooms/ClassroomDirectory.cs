@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Glosify.Data;
+using Glosify.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Classrooms;

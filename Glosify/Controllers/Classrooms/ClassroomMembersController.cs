@@ -1,4 +1,8 @@
+using Glosify.Extensions;
 using Glosify.Hubs;
+using Glosify.Models;
+using Glosify.Models.Entities;
+using Glosify.Models.ViewModels;
 using Glosify.Services.Classrooms;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;

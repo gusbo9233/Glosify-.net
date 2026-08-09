@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Glosify.Models.Api;
+using Glosify.Models.Entities;
 using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;

@@ -1,3 +1,4 @@
+using Glosify.Models.Entities;
 namespace Glosify.Models.Api;
 
 public sealed record CollectionDto(Guid Id, string Name, string Language, Guid? ParentCollectionId, bool IsPublic)

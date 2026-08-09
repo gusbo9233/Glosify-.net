@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Models.Ai;
 using Glosify.Services.Ai;
 using Microsoft.EntityFrameworkCore;
 

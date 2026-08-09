@@ -1,4 +1,7 @@
+using Glosify.Extensions;
 using Glosify.Models;
+using Glosify.Models.Entities;
+using Glosify.Models.ViewModels;
 using Glosify.Services;
 using Glosify.Services.Classrooms;
 using Glosify.Services.Flashcards;

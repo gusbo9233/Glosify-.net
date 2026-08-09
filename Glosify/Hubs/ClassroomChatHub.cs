@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Glosify.Extensions;
 using Glosify.Services.Classrooms;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;

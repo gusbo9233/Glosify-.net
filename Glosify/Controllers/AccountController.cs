@@ -1,4 +1,6 @@
 using Glosify.Models;
+using Glosify.Models.Entities;
+using Glosify.Models.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

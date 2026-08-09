@@ -1,3 +1,4 @@
+using Glosify.Models.Entities;
 using Glosify.Models.Library;
 
 namespace Glosify.Models.ViewModels;

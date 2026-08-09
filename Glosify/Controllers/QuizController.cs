@@ -1,5 +1,9 @@
+using Glosify.Extensions;
 using Glosify.Filters;
 using Glosify.Models;
+using Glosify.Models.Entities;
+using Glosify.Models.Requests;
+using Glosify.Models.ViewModels;
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.CustomQuizzes;

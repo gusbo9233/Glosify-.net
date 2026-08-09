@@ -1,3 +1,7 @@
+using Glosify.Extensions;
+using Glosify.Models;
+using Glosify.Models.Entities;
+using Glosify.Models.ViewModels;
 using Glosify.Services.Books;
 using Glosify.Services.Classrooms;
 using Glosify.Services.CustomQuizzes;

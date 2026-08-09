@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Glosify.Models.ViewModels;
 using Glosify.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;

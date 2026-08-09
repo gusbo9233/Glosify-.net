@@ -1,5 +1,7 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Glosify.Data;
+using Glosify.Extensions;
+using Glosify.Models.Entities;
 using Glosify.Services.Ai.Assistant.Mcp;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Auth;

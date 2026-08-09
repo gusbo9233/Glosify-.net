@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Glosify.Models.Ai;
 using Glosify.Services.Ai.Generation;
 
 namespace Glosify.Services.Ai;

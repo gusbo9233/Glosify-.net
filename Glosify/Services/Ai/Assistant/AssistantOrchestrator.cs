@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Glosify.Data;
+using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Books;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;

@@ -1,3 +1,4 @@
+using Glosify.Extensions;
 using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

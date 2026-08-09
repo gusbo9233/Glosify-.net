@@ -1,4 +1,6 @@
+using Glosify.Extensions;
 using Glosify.Models.Api;
+using Glosify.Models.Entities;
 using Glosify.Services;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Words;

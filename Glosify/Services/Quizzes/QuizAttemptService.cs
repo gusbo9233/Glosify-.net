@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Models.Entities;
 using Glosify.Services.Flashcards;
 using Glosify.Services.Typing;
 

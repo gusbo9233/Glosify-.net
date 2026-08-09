@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Glosify.Data;
+using Glosify.Models.Entities;
 using Glosify.Services.Ai;
 using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;

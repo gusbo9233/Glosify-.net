@@ -1,3 +1,4 @@
+using Glosify.Models.CustomQuizzes;
 using Glosify.Services.Ai.Generation;
 
 namespace Glosify.Services.Ai.Assistant.Tools;

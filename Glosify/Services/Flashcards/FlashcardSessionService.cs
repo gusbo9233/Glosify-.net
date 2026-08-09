@@ -1,3 +1,4 @@
+using Glosify.Models;
 using Glosify.Services.Quizzes;
 using Microsoft.Extensions.Caching.Memory;
 

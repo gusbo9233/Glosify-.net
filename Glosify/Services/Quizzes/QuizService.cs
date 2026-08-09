@@ -1,5 +1,6 @@
 using Glosify.Data;
 using Glosify.Models;
+using Glosify.Models.Entities;
 using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;

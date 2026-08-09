@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Glosify.Data;
+using Glosify.Models.CustomQuizzes;
+using Glosify.Models.Entities;
 using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;

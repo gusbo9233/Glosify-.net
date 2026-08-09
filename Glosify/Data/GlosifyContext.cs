@@ -1,4 +1,5 @@
 using Glosify.Models;
+using Glosify.Models.Entities;
 using Glosify.Models.Library;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

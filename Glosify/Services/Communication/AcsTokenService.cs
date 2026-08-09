@@ -2,6 +2,7 @@ using Azure.Communication;
 using Azure.Communication.Identity;
 using Azure.Identity;
 using Glosify.Data;
+using Glosify.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 

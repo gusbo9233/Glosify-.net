@@ -1,3 +1,4 @@
+using Glosify.Models.Ai;
 namespace Glosify.Services.Ai;
 
 public interface IVocabularyGenerationService

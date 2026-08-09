@@ -1,3 +1,5 @@
+using Glosify.Models.CustomQuizzes;
+using Glosify.Models.Entities;
 namespace Glosify.Models.ViewModels;
 
 public class QuizIndexViewModel

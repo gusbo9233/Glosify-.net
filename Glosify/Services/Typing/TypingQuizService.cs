@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
 using Glosify.Data;
+using Glosify.Models;
+using Glosify.Models.Entities;
 using Glosify.Services;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,4 +1,5 @@
 using Glosify.Models.CustomQuizzes;
+using Glosify.Models.Entities;
 using Glosify.Models.Library;
 using Glosify.Services.Classrooms;
 

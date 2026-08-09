@@ -1,3 +1,6 @@
+using Glosify.Extensions;
+using Glosify.Models;
+using Glosify.Models.ViewModels;
 using Glosify.Services.Classrooms;
 using Glosify.Services.Communication;
 using Microsoft.AspNetCore.Mvc;

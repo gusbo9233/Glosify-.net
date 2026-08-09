@@ -1,4 +1,6 @@
+using Glosify.Extensions;
 using Glosify.Filters;
+using Glosify.Models;
 using Glosify.Models.Api;
 using Glosify.Services;
 using Glosify.Services.Ai;

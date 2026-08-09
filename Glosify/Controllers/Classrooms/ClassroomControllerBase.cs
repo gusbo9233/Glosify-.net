@@ -1,3 +1,4 @@
+using Glosify.Models;
 using Glosify.Services.Classrooms;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

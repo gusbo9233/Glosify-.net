@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Glosify.Data;
+using Glosify.Models.CustomQuizzes;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
 using static Glosify.Services.Ai.Assistant.Tools.CustomQuizToolSupport;

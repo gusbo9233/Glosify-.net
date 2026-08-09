@@ -1,3 +1,4 @@
+using Glosify.Models.Entities;
 using Glosify.Services.Ai;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Glosify.Extensions;
 using Glosify.Models.Api;
 using Glosify.Services;
 using Glosify.Services.Ai;
