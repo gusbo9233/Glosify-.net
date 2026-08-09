@@ -4,7 +4,7 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**[Try the live app](https://glosify.se)** · [Product case study](https://gusbo9233.github.io/Glosify-.net/) · [Architecture decisions](docs/adr/) · [Automated tests](Glosify.Tests/)
+**[Try the live app](https://glosify.se)** · [Portfolio case study](docs/portfolio-case-study.md) · [Architecture decisions](docs/adr/) · [Automated tests](Glosify.Tests/)
 
 Glosify is a language-learning app built with ASP.NET Core MVC. It combines
 vocabulary and sentence quizzes with flashcards, typing practice, speaking
@@ -22,6 +22,17 @@ real database, authentication, automated tests, Azure services, and a live deplo
 - ASP.NET Core Identity, external sign-in, ownership checks, rate limits, and consistent Problem Details errors.
 - Unit, integration, contract, JavaScript, and Playwright browser tests in GitHub Actions.
 - Azure deployment with managed identity, a migration bundle, liveness, and SQL-backed readiness checks.
+
+## Product screenshots
+
+| Speaking practice | Assistant-driven quiz creation |
+| --- | --- |
+| [![Speaking practice with an AI bartender](docs/screenshots/speaking-practice.png)](docs/screenshots/speaking-practice.png) | [![The assistant creating a vocabulary quiz](docs/screenshots/create-quiz-chat.png)](docs/screenshots/create-quiz-chat.png) |
+| **Book reader and page assistant** | **Live translated subtitles** |
+| [![A book page with the assistant preparing a quiz](docs/screenshots/book-quiz-assistant.png)](docs/screenshots/book-quiz-assistant.png) | [![Translated subtitles over a Chrome video](docs/screenshots/live-subtitles-in-action.png)](docs/screenshots/live-subtitles-in-action.png) |
+
+The [portfolio case study](docs/portfolio-case-study.md) gives a more complete product
+tour and explains the main technical decisions in simple terms.
 
 ## Architecture
 
