@@ -602,6 +602,32 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task ApplyPendingChanges_DoesNotReopenAConcurrentRejectionWhenApplyFails()
+    {
+        var databaseName = Guid.NewGuid().ToString("N");
+        var databaseRoot = new InMemoryDatabaseRoot();
+        await using var context = CreateContext(databaseName, databaseRoot);
+        var messageId = Guid.NewGuid();
+        var thread = CreateThread("user-1");
+        context.AssistantThreads.Add(thread);
+        context.AssistantMessages.Add(CreateActiveMessageWithPendingChange(messageId, thread.Id));
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(
+            context,
+            applier: new RejectingThenThrowingChangeApplier(
+                () => CreateContext(databaseName, databaseRoot),
+                messageId));
+
+        await Assert.ThrowsAsync<InvalidDataException>(
+            () => orchestrator.ApplyGlobalPendingChangesAsync(messageId, "user-1"));
+
+        context.ChangeTracker.Clear();
+        Assert.Equal(
+            AssistantMessageStatus.Rejected,
+            (await context.AssistantMessages.SingleAsync(message => message.Id == messageId)).Status);
+    }
+
+    [Fact]
     public async Task DeleteChat_RemovesMessagesAndBlocksLaterHistory()
     {
         await using var context = CreateContext();
@@ -941,6 +967,25 @@ public class AssistantSavedChatsTests
     {
         public Task<AssistantApplyResult> ApplyAsync(Guid? quizId, string userId, IReadOnlyList<PendingChange> changes, CancellationToken cancellationToken) =>
             throw new InvalidDataException("Simulated apply failure.");
+    }
+
+    private sealed class RejectingThenThrowingChangeApplier(
+        Func<GlosifyContext> createContext,
+        Guid messageId) : IChangeApplier
+    {
+        public async Task<AssistantApplyResult> ApplyAsync(
+            Guid? quizId,
+            string userId,
+            IReadOnlyList<PendingChange> changes,
+            CancellationToken cancellationToken)
+        {
+            await using var concurrentContext = createContext();
+            var message = await concurrentContext.AssistantMessages
+                .SingleAsync(candidate => candidate.Id == messageId, cancellationToken);
+            message.Status = AssistantMessageStatus.Rejected;
+            await concurrentContext.SaveChangesAsync(cancellationToken);
+            throw new InvalidDataException("Simulated apply failure after rejection.");
+        }
     }
 
     private static AssistantMessage CreateActiveMessageWithPendingChange(Guid messageId, Guid threadId) => new()

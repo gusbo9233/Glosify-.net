@@ -54,10 +54,18 @@ internal sealed class AssistantChangeWorkflow(
             context.ChangeTracker.Clear();
             var claimed = await context.AssistantMessages
                 .FirstOrDefaultAsync(candidate => candidate.Id == messageId, CancellationToken.None);
-            if (claimed is not null)
+            if (claimed?.Status == AssistantMessageStatus.Applied)
             {
                 claimed.Status = AssistantMessageStatus.Active;
-                await context.SaveChangesAsync(CancellationToken.None);
+                try
+                {
+                    await context.SaveChangesAsync(CancellationToken.None);
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    // A concurrent reject or other status transition wins over recovery.
+                    context.ChangeTracker.Clear();
+                }
             }
 
             throw;
@@ -76,7 +84,15 @@ internal sealed class AssistantChangeWorkflow(
         }
 
         message.Status = AssistantMessageStatus.Rejected;
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Another status transition won after this request loaded the message.
+            context.ChangeTracker.Clear();
+        }
     }
 
     public async Task ResetAsync(string userId, CancellationToken cancellationToken)
