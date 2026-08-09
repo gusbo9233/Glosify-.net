@@ -263,7 +263,7 @@ internal sealed class AssistantRuntime
             return new AssistantApplyResult(0);
         }
 
-        var changes = ParseStoredChanges(message.PendingChangesJson);
+        var changes = _presenter.ParseStoredChanges(message.PendingChangesJson);
         if (changes.Count == 0)
         {
             return new AssistantApplyResult(0);
@@ -530,7 +530,9 @@ internal sealed class AssistantRuntime
             ? null
             : JsonSerializer.Serialize(toolContext.PendingChanges, JsonOptions);
         var wordLabels = await LoadWordLabelsAsync(contextQuizId, toolContext.PendingChanges, cancellationToken);
-        var pendingChangeViews = toolContext.PendingChanges.Select(change => MapPendingView(change, wordLabels)).ToList();
+        var pendingChangeViews = toolContext.PendingChanges
+            .Select(change => _presenter.PresentPendingChange(change, wordLabels))
+            .ToList();
         var assistantMessageId = Guid.NewGuid();
         var finalMessage = new AssistantMessage
         {
@@ -749,7 +751,9 @@ internal sealed class AssistantRuntime
             .Select(thread =>
             {
                 latestByThread.TryGetValue(thread.Id, out var latest);
-                var preview = latest == null ? string.Empty : Truncate(_presenter.ExtractVisibleText(latest), 90);
+                var preview = latest == null
+                    ? string.Empty
+                    : _presenter.Truncate(_presenter.ExtractVisibleText(latest), 90);
                 var quizName = thread.ContextQuizId.HasValue && quizNames.TryGetValue(thread.ContextQuizId.Value, out var name)
                     ? name
                     : null;
@@ -782,13 +786,13 @@ internal sealed class AssistantRuntime
         CancellationToken cancellationToken)
     {
         var parsed = messages
-            .Select(message => (Message: message, Changes: ParseStoredChanges(message.PendingChangesJson)))
+            .Select(message => (Message: message, Changes: _presenter.ParseStoredChanges(message.PendingChangesJson)))
             .ToList();
 
         // One label query per distinct context quiz (almost always one) instead of
         // one query per message.
-        var emptyLabels = (IReadOnlyDictionary<string, WordLabel>)new Dictionary<string, WordLabel>();
-        var labelsByQuiz = new Dictionary<Guid, IReadOnlyDictionary<string, WordLabel>>();
+        var emptyLabels = (IReadOnlyDictionary<string, AssistantWordLabel>)new Dictionary<string, AssistantWordLabel>();
+        var labelsByQuiz = new Dictionary<Guid, IReadOnlyDictionary<string, AssistantWordLabel>>();
         foreach (var group in parsed
             .Where(entry => entry.Message.ContextQuizId.HasValue && entry.Changes.Count > 0)
             .GroupBy(entry => entry.Message.ContextQuizId!.Value))
@@ -810,7 +814,9 @@ internal sealed class AssistantRuntime
                     entry.Message.Role,
                     _presenter.ExtractVisibleText(entry.Message),
                     [],
-                    entry.Changes.Select(change => MapPendingView(change, wordLabels)).ToList(),
+                    entry.Changes
+                        .Select(change => _presenter.PresentPendingChange(change, wordLabels))
+                        .ToList(),
                     entry.Message.Status,
                     entry.Message.CreatedAt);
             })
@@ -867,280 +873,27 @@ internal sealed class AssistantRuntime
         return json.Length > 240 ? json[..240] + "..." : json;
     }
 
-    private static AssistantPendingChangeView MapPendingView(
-        PendingChange change,
-        IReadOnlyDictionary<string, WordLabel> wordLabels)
-    {
-        return new AssistantPendingChangeView(change.Kind, BuildSummary(change, wordLabels), change.Payload.GetRawText());
-    }
-
-    private async Task<IReadOnlyDictionary<string, WordLabel>> LoadWordLabelsAsync(
+    private async Task<IReadOnlyDictionary<string, AssistantWordLabel>> LoadWordLabelsAsync(
         Guid? quizId,
         IEnumerable<PendingChange> changes,
         CancellationToken cancellationToken)
     {
         if (!quizId.HasValue)
         {
-            return new Dictionary<string, WordLabel>();
+            return new Dictionary<string, AssistantWordLabel>();
         }
 
-        var wordIds = changes
-            .Select(change => GetString(change.Payload, "word_id"))
-            .Where(id => !string.IsNullOrWhiteSpace(id))
-            .Distinct()
-            .ToList();
+        var wordIds = _presenter.GetReferencedWordIds(changes);
 
         if (wordIds.Count == 0)
         {
-            return new Dictionary<string, WordLabel>();
+            return new Dictionary<string, AssistantWordLabel>();
         }
 
         return await _context.Words
             .Where(word => word.QuizId == quizId.Value && wordIds.Contains(word.Id))
-            .Select(word => new WordLabel(word.Id, word.Lemma, word.Translation))
+            .Select(word => new AssistantWordLabel(word.Id, word.Lemma, word.Translation))
             .ToDictionaryAsync(word => word.Id, cancellationToken);
-    }
-
-    private static string BuildSummary(
-        PendingChange change,
-        IReadOnlyDictionary<string, WordLabel> wordLabels)
-    {
-        try
-        {
-            return change.Kind switch
-            {
-                PendingChangeKinds.AddWord => BuildAddWordSummary(change.Payload),
-                PendingChangeKinds.AddSentence => BuildAddSentenceSummary(change.Payload),
-                PendingChangeKinds.EditWord => BuildEditWordSummary(change.Payload, wordLabels),
-                PendingChangeKinds.EditSentence => BuildEditSentenceSummary(change.Payload),
-                PendingChangeKinds.DeleteWord => $"Remove {GetWordDisplay(change.Payload, wordLabels)}",
-                PendingChangeKinds.RepairSentence => BuildRepairSentenceSummary(change.Payload),
-                PendingChangeKinds.DeleteSentence => BuildDeleteSentenceSummary(change.Payload),
-                PendingChangeKinds.CreateQuiz => BuildCreateQuizSummary(change.Payload),
-                PendingChangeKinds.CreateCollection => BuildCreateCollectionSummary(change.Payload),
-                PendingChangeKinds.MoveQuiz => BuildMoveQuizSummary(change.Payload),
-                PendingChangeKinds.RenameCollection => BuildRenameCollectionSummary(change.Payload),
-                PendingChangeKinds.MoveCollection => BuildMoveCollectionSummary(change.Payload),
-                PendingChangeKinds.CreateCustomQuiz => $"Create custom quiz \"{GetString(change.Payload, "name")}\"",
-                PendingChangeKinds.AddCustomQuizElement => BuildAddCustomQuizElementSummary(change.Payload),
-                PendingChangeKinds.AddCustomQuizElements => $"Add custom quiz elements to \"{GetString(change.Payload, "custom_quiz_name")}\"",
-                PendingChangeKinds.ConfigureCustomQuizElement => $"Configure element {GetString(change.Payload, "block_id")} in \"{GetString(change.Payload, "custom_quiz_name")}\"",
-                PendingChangeKinds.RemoveCustomQuizElement => $"Remove element {GetString(change.Payload, "block_id")} from \"{GetString(change.Payload, "custom_quiz_name")}\"",
-                _ => change.Kind,
-            };
-        }
-        catch
-        {
-            return change.Kind;
-        }
-    }
-
-    private static string BuildAddWordSummary(JsonElement payload)
-    {
-        return $"Add {GetString(payload, "word")} -> {GetString(payload, "translation")}";
-    }
-
-    private static string BuildAddCustomQuizElementSummary(JsonElement payload)
-    {
-        if (!payload.TryGetProperty("block", out var block) || block.ValueKind != JsonValueKind.Object)
-        {
-            return "Add custom quiz element";
-        }
-        var type = GetString(block, "type");
-        var id = GetString(block, "id");
-        var visible = GetString(block, "label");
-        if (string.IsNullOrWhiteSpace(visible)) visible = GetString(block, "text");
-        var detail = string.IsNullOrWhiteSpace(visible) ? id : Truncate(visible, 70);
-        return $"Add {type} {detail} to \"{GetString(payload, "custom_quiz_name")}\"";
-    }
-
-    private static string BuildAddSentenceSummary(JsonElement payload)
-    {
-        var text = Truncate(GetString(payload, "text"), 90);
-        var translation = Truncate(GetString(payload, "translation"), 90);
-        return string.IsNullOrWhiteSpace(translation)
-            ? $"Add sentence \"{text}\""
-            : $"Add sentence \"{text}\" ({translation})";
-    }
-
-    private static string BuildEditWordSummary(
-        JsonElement payload,
-        IReadOnlyDictionary<string, WordLabel> wordLabels)
-    {
-        var wordId = GetString(payload, "word_id");
-        wordLabels.TryGetValue(wordId, out var label);
-
-        var originalWord = FirstNonEmpty(GetString(payload, "original_word"), label?.Word);
-        var originalTranslation = FirstNonEmpty(GetString(payload, "original_translation"), label?.Translation);
-        var newWord = FirstNonEmpty(GetString(payload, "word"), originalWord);
-        var newTranslation = FirstNonEmpty(GetString(payload, "translation"), originalTranslation);
-
-        var changes = new List<string>();
-        if (!string.IsNullOrWhiteSpace(originalWord)
-            && !string.IsNullOrWhiteSpace(newWord)
-            && !string.Equals(originalWord, newWord, StringComparison.Ordinal))
-        {
-            changes.Add($"{originalWord} -> {newWord}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(originalTranslation)
-            && !string.IsNullOrWhiteSpace(newTranslation)
-            && !string.Equals(originalTranslation, newTranslation, StringComparison.Ordinal))
-        {
-            changes.Add($"{originalTranslation} -> {newTranslation}");
-        }
-
-        if (changes.Count > 0)
-        {
-            return $"Edit {string.Join("; ", changes)}";
-        }
-
-        if (!string.IsNullOrWhiteSpace(originalWord) || !string.IsNullOrWhiteSpace(originalTranslation))
-        {
-            return $"Edit {FormatWordPair(originalWord, originalTranslation)}";
-        }
-
-        return $"Edit {GetWordDisplay(payload, wordLabels)}";
-    }
-
-    private static string BuildRepairSentenceSummary(JsonElement payload)
-    {
-        var original = Truncate(GetString(payload, "original_text"), 70);
-        var replacement = Truncate(GetString(payload, "new_text"), 70);
-        return $"Replace \"{original}\" with \"{replacement}\"";
-    }
-
-    private static string BuildEditSentenceSummary(JsonElement payload)
-    {
-        var originalText = Truncate(GetString(payload, "original_text"), 60);
-        var newText = Truncate(FirstNonEmpty(GetString(payload, "text"), originalText), 60);
-        var originalTranslation = Truncate(GetString(payload, "original_translation"), 60);
-        var newTranslation = Truncate(
-            FirstNonEmpty(GetString(payload, "translation"), originalTranslation),
-            60);
-
-        var changes = new List<string>();
-        if (!string.Equals(originalText, newText, StringComparison.Ordinal))
-        {
-            changes.Add($"\"{originalText}\" -> \"{newText}\"");
-        }
-        if (!string.Equals(originalTranslation, newTranslation, StringComparison.Ordinal))
-        {
-            changes.Add($"\"{originalTranslation}\" -> \"{newTranslation}\"");
-        }
-
-        return changes.Count == 0
-            ? $"Edit sentence \"{originalText}\""
-            : $"Edit sentence {string.Join("; ", changes)}";
-    }
-
-    private static string BuildDeleteSentenceSummary(JsonElement payload)
-    {
-        var text = Truncate(GetString(payload, "text"), 90);
-        return string.IsNullOrWhiteSpace(text)
-            ? "Remove sentence"
-            : $"Remove sentence \"{text}\"";
-    }
-
-    private static string BuildCreateQuizSummary(JsonElement payload)
-    {
-        var name = GetString(payload, "name");
-        var source = GetString(payload, "source_language");
-        var target = GetString(payload, "target_language");
-        var includesCustomQuiz = payload.TryGetProperty("custom_quiz", out var customQuiz)
-            && customQuiz.ValueKind == JsonValueKind.Object;
-        return includesCustomQuiz
-            ? $"Create quiz \"{name}\" and custom quiz \"{GetString(customQuiz, "name")}\" ({source} -> {target})"
-            : $"Create quiz \"{name}\" ({source} -> {target})";
-    }
-
-    private static string BuildCreateCollectionSummary(JsonElement payload)
-    {
-        var name = GetString(payload, "name");
-        var language = GetString(payload, "language");
-        return $"Create collection \"{name}\" in {language}";
-    }
-
-    private static string BuildMoveQuizSummary(JsonElement payload)
-    {
-        var quizName = GetString(payload, "quiz_name");
-        var collectionName = GetString(payload, "collection_name");
-        return string.IsNullOrWhiteSpace(collectionName)
-            ? $"Move quiz \"{quizName}\" to the library root"
-            : $"Move quiz \"{quizName}\" to collection \"{collectionName}\"";
-    }
-
-    private static string BuildRenameCollectionSummary(JsonElement payload)
-    {
-        var originalName = GetString(payload, "original_name");
-        var name = GetString(payload, "name");
-        return $"Rename collection \"{originalName}\" to \"{name}\"";
-    }
-
-    private static string BuildMoveCollectionSummary(JsonElement payload)
-    {
-        var collectionName = GetString(payload, "collection_name");
-        var parentName = GetString(payload, "parent_collection_name");
-        return string.IsNullOrWhiteSpace(parentName)
-            ? $"Move collection \"{collectionName}\" to the library root"
-            : $"Move collection \"{collectionName}\" under \"{parentName}\"";
-    }
-
-    private static string GetWordDisplay(
-        JsonElement payload,
-        IReadOnlyDictionary<string, WordLabel> wordLabels)
-    {
-        var wordId = GetString(payload, "word_id");
-        if (!string.IsNullOrWhiteSpace(wordId) && wordLabels.TryGetValue(wordId, out var label))
-        {
-            return $"{label.Word} -> {label.Translation}";
-        }
-
-        return "this word";
-    }
-
-    private static string FirstNonEmpty(params string?[] values)
-    {
-        return values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)) ?? string.Empty;
-    }
-
-    private static string FormatWordPair(string? word, string? translation)
-    {
-        if (!string.IsNullOrWhiteSpace(word) && !string.IsNullOrWhiteSpace(translation))
-        {
-            return $"{word} -> {translation}";
-        }
-
-        return string.IsNullOrWhiteSpace(word) ? translation ?? string.Empty : word;
-    }
-
-    private static string Truncate(string? value, int max)
-    {
-        if (string.IsNullOrEmpty(value)) return string.Empty;
-        return value.Length <= max ? value : value[..max] + "...";
-    }
-
-    private static string GetString(JsonElement element, string property)
-    {
-        return element.TryGetProperty(property, out var p) && p.ValueKind == JsonValueKind.String
-            ? p.GetString() ?? string.Empty
-            : string.Empty;
-    }
-
-    private static IReadOnlyList<PendingChange> ParseStoredChanges(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return [];
-        }
-        try
-        {
-            return JsonSerializer.Deserialize<List<PendingChange>>(json, JsonOptions) ?? [];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
     }
 
     private sealed class StoredContent
@@ -1159,5 +912,4 @@ internal sealed class AssistantRuntime
         public string? ThoughtSignature { get; set; }
     }
 
-    private sealed record WordLabel(string Id, string Word, string Translation);
 }

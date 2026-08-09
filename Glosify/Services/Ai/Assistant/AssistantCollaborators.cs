@@ -24,6 +24,12 @@ internal interface IAssistantMessagePresenter
     string NormalizeTitle(string? title);
     string ExtractVisibleText(AssistantMessage message);
     bool HasVisibleContent(AssistantMessage message);
+    string Truncate(string? value, int max);
+    IReadOnlyList<PendingChange> ParseStoredChanges(string? json);
+    IReadOnlyList<string> GetReferencedWordIds(IEnumerable<PendingChange> changes);
+    AssistantPendingChangeView PresentPendingChange(
+        PendingChange change,
+        IReadOnlyDictionary<string, AssistantWordLabel> wordLabels);
 }
 
 internal interface IAssistantThreadStore
@@ -150,61 +156,6 @@ internal sealed class AssistantContextResolver(
             page.PageNumber,
             page.Text,
             page.ExtractionWarning);
-    }
-}
-
-internal sealed class AssistantMessagePresenter : IAssistantMessagePresenter
-{
-    private const string NewChatTitle = "New chat";
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-
-    public string NormalizeTitle(string? title)
-    {
-        var cleaned = string.Join(
-            " ",
-            (title ?? string.Empty).Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-        if (string.IsNullOrWhiteSpace(cleaned))
-        {
-            return NewChatTitle;
-        }
-
-        return cleaned.Length <= 64 ? cleaned : cleaned[..64] + "...";
-    }
-
-    public bool HasVisibleContent(AssistantMessage message) =>
-        !string.IsNullOrWhiteSpace(ExtractVisibleText(message))
-        || !string.IsNullOrWhiteSpace(message.PendingChangesJson);
-
-    public string ExtractVisibleText(AssistantMessage message)
-    {
-        try
-        {
-            var content = JsonSerializer.Deserialize<PresentedContent>(message.ContentJson, JsonOptions);
-            var parts = content?.Parts ?? [];
-            if (parts.Any(part => part.Kind != "text"))
-            {
-                return string.Empty;
-            }
-
-            return string.Join("\n", parts
-                .Select(part => part.Text)
-                .Where(text => !string.IsNullOrWhiteSpace(text)));
-        }
-        catch (JsonException)
-        {
-            return string.Empty;
-        }
-    }
-
-    private sealed class PresentedContent
-    {
-        public List<PresentedPart>? Parts { get; set; }
-    }
-
-    private sealed class PresentedPart
-    {
-        public string Kind { get; set; } = "text";
-        public string? Text { get; set; }
     }
 }
 
