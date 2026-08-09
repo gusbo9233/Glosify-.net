@@ -215,11 +215,9 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Content.ReadAsStringAsync(ct);
             _logger.LogWarning(
-                "Azure Speech synthesis failed with {StatusCode}: {Body}",
-                response.StatusCode,
-                body);
+                "Azure Speech synthesis failed with {StatusCode}.",
+                response.StatusCode);
             throw new HttpRequestException($"Speech synthesis failed with status {(int)response.StatusCode}.");
         }
 
