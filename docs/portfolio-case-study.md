@@ -1,11 +1,12 @@
-# Glosify portfolio case study
+# Glosify project overview and case study
 
 [Open the live application](https://glosify.se) · [Return to the repository README](../README.md)
 
-Glosify is the full-stack project I use to learn how a complete .NET web
-application fits together. It started as a school project and grew into a
-deployed language-learning application with authentication, SQL persistence,
-AI features, browser tests, and an Azure delivery pipeline.
+I am a bachelor's student in Sweden, and Glosify is the main full-stack project
+I use to learn how a complete .NET web application fits together. It started as
+a school project and grew into a deployed language-learning application with
+authentication, SQL persistence, AI features, browser tests, and an Azure
+delivery pipeline.
 
 ## What the application does
 
@@ -33,9 +34,9 @@ application owns and validates every action before changing the scene.
 
 [![The assistant creating a Polish vocabulary quiz](screenshots/create-quiz-chat.png)](screenshots/create-quiz-chat.png)
 
-The assistant can propose changes to a user's learning library. Changes are
-shown for review and remain application-owned: the user can apply or reject
-them instead of letting the model write directly to the database.
+The assistant can suggest changes to a user's learning library. The application
+shows the changes for review, and the user can apply or reject them. The model
+does not write directly to the database.
 
 [![Generated vocabulary and assistant context](screenshots/generated-quiz.png)](screenshots/generated-quiz.png)
 
@@ -86,14 +87,14 @@ flowchart LR
 ```
 
 Controllers deal with HTTP concerns such as routes, request validation, and
-response types. Feature services own application behavior. EF Core is used
+response types. Feature services contain the application logic. EF Core is used
 directly instead of hiding it behind a generic repository layer.
 
-The application remains one web project. Splitting it into several projects
-would add more ceremony without solving a current problem. Internal interfaces
-are used where they create a useful test or responsibility boundary.
+The application remains one web project. I have not split it into extra projects
+because that would not solve a current problem. Internal interfaces are used
+when they make responsibilities clearer or make code easier to test.
 
-## Practices demonstrated in the repository
+## What I have worked with
 
 ### ASP.NET Core
 
@@ -132,7 +133,7 @@ in to Azure with OpenID Connect, applies migrations, and deploys to App Service.
 CodeQL, secret scanning, push protection, Dependabot, and protected-branch
 checks are enabled for the public repository.
 
-## Deliberate limits
+## Current limitations
 
 The portfolio deployment intentionally runs as one App Service instance. Some
 session and coordination state remains in memory. That keeps this learning
@@ -151,6 +152,6 @@ future Redis, SignalR backplane, and data-protection upgrade path.
 - Add distributed state only if the deployment needs multiple instances.
 - Continue moving expected application failures to typed domain outcomes.
 
-The goal is not to make the project look artificially enterprise-sized. It is
-to show that I can explain trade-offs, keep behavior tested, and improve a real
-application without hiding its limitations.
+I have kept the project as one application instead of adding layers only to make
+it look more complex. My goal is to show what I have learned, explain the choices
+I made, test important behavior, and be honest about what still needs work.

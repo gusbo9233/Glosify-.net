@@ -10,13 +10,14 @@ Glosify is a language-learning app built with ASP.NET Core MVC. It combines
 vocabulary and sentence quizzes with flashcards, typing practice, speaking
 exercises, shared collections, PDF reading, and AI-assisted content creation.
 
-I built Glosify to learn how the parts of a complete .NET web application fit
-together. It started as a school project and grew into a portfolio project with a
-real database, authentication, automated tests, Azure services, and a live deployment.
+I am a bachelor's student in Sweden, and I built Glosify to learn how the parts
+of a complete .NET web application fit together. It started as a school project
+and grew into a portfolio project with a real database, authentication,
+automated tests, Azure services, and a live deployment.
 
-## Project highlights
+## What this project includes
 
-- A complete ASP.NET Core 10 MVC application rather than a tutorial-sized CRUD demo.
+- A working ASP.NET Core 10 MVC application with several connected features.
 - Server-rendered MVC pages alongside controller-based JSON APIs and a Chrome extension.
 - SQL Server development and Azure SQL production databases managed with reviewed EF Core migrations.
 - ASP.NET Core Identity, external sign-in, ownership checks, rate limits, and consistent Problem Details errors.
@@ -53,10 +54,10 @@ flowchart LR
     Services --> Storage["Azure Blob Storage"]
 ```
 
-Controllers handle HTTP concerns, while feature services own application behavior.
-EF Core is used directly instead of adding a generic repository layer. The project
-stays in one web application because extra projects would add ceremony without solving
-a current problem.
+Controllers handle HTTP concerns, while feature services contain the application
+logic. EF Core is used directly instead of adding a generic repository layer. I
+have kept the solution as one web application because splitting it into more
+projects would not solve a current problem.
 
 The live portfolio deployment intentionally runs as one App Service instance. The
 limits of that choice and the steps needed before scaling out are documented in
