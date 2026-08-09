@@ -1,6 +1,9 @@
 name: Build, migrate, and deploy Glosify
 
 on:
+  pull_request:
+    branches:
+      - master
   push:
     branches:
       - master
@@ -110,6 +113,7 @@ jobs:
           path: ${{ runner.temp }}/migration/efbundle
 
   deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: build
     environment: production
