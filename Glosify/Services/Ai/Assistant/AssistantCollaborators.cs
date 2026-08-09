@@ -26,38 +26,6 @@ internal interface IAssistantMessagePresenter
     bool HasVisibleContent(AssistantMessage message);
 }
 
-internal sealed class AssistantPromptBuilder
-{
-    public string BuildSystemInstruction(
-        Quiz? quiz,
-        Word? focusedWord,
-        DocumentPageContext? documentPage,
-        CustomQuiz? customQuiz,
-        TranscriptAssistantContext? transcript,
-        BookAssistantContext? book,
-        string? currentLanguage) =>
-        quiz is null
-            ? AssistantRuntime.ComposeGlobalSystemInstruction(currentLanguage, documentPage, transcript, book)
-            : AssistantRuntime.ComposeQuizSystemInstruction(quiz, focusedWord, documentPage, customQuiz, transcript, book);
-
-    public string BuildProfileContext(
-        AssistantAgentProfile profile,
-        Quiz? quiz,
-        Word? focusedWord,
-        DocumentPageContext? documentPage,
-        CustomQuiz? customQuiz,
-        TranscriptAssistantContext? transcript,
-        BookAssistantContext? book,
-        string? currentLanguage) => profile switch
-        {
-            AssistantAgentProfile.CustomQuizBuilder =>
-                AssistantRuntime.ComposeCustomQuizBuilderContext(quiz!, customQuiz!, currentLanguage),
-            AssistantAgentProfile.QuizAssistant =>
-                AssistantRuntime.ComposeQuizAssistantContext(quiz!, focusedWord, documentPage, transcript, book),
-            _ => AssistantRuntime.ComposeLibrarianContext(currentLanguage, documentPage, transcript, book),
-        };
-}
-
 internal interface IAssistantThreadStore
 {
     Task<IReadOnlyList<AssistantChatSummary>> ListAsync(string userId, CancellationToken cancellationToken);
