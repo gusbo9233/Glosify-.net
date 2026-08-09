@@ -67,7 +67,9 @@ public sealed class TtsApiController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "TTS synthesis failed for lang {Lang}.", lang);
+            // The requested language came from the query string. Keeping it out of the
+            // log prevents control characters from creating misleading log entries.
+            _logger.LogError(ex, "TTS synthesis failed.");
             return StatusCode(StatusCodes.Status502BadGateway, "Speech synthesis failed.");
         }
     }
