@@ -66,7 +66,7 @@ jobs:
           ASPNETCORE_URLS: http://127.0.0.1:5099
           GLOSIFY_BROWSER_BASE_URL: http://localhost:5099
         run: |
-          dotnet run --project Glosify/Glosify.csproj --configuration Release --no-build > "${{ runner.temp }}/glosify-browser.log" 2>&1 &
+          dotnet run --project Glosify/Glosify.csproj --configuration Release --no-build --no-launch-profile > "${{ runner.temp }}/glosify-browser.log" 2>&1 &
           app_pid=$!
           trap 'kill "$app_pid" 2>/dev/null || true' EXIT
           for attempt in {1..30}; do
@@ -79,7 +79,10 @@ jobs:
             fi
             sleep 2
           done
-          curl --fail http://localhost:5099/healthz
+          if ! curl --fail http://localhost:5099/healthz; then
+            cat "${{ runner.temp }}/glosify-browser.log"
+            exit 1
+          fi
           dotnet test Glosify.BrowserTests/Glosify.BrowserTests.csproj --configuration Release --no-build --no-restore
 
       - name: Publish web application
