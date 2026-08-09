@@ -17,7 +17,6 @@ internal sealed class AssistantRuntime
     private readonly IGenerativeAiClient _generativeAi;
     private readonly IGenerativeAiModelResolver _modelResolver;
     private readonly IAssistantTools _tools;
-    private readonly IChangeApplier _changeApplier;
     private readonly IAssistantContextResolver _contextResolver;
     private readonly IAssistantMessagePresenter _presenter;
     private readonly AssistantPromptBuilder _promptBuilder;
@@ -28,7 +27,6 @@ internal sealed class AssistantRuntime
         IGenerativeAiClient generativeAi,
         IGenerativeAiModelResolver modelResolver,
         IAssistantTools tools,
-        IChangeApplier changeApplier,
         IAssistantContextResolver contextResolver,
         IAssistantMessagePresenter presenter,
         AssistantPromptBuilder promptBuilder,
@@ -38,7 +36,6 @@ internal sealed class AssistantRuntime
         _generativeAi = generativeAi;
         _modelResolver = modelResolver;
         _tools = tools;
-        _changeApplier = changeApplier;
         _contextResolver = contextResolver;
         _presenter = presenter;
         _promptBuilder = promptBuilder;
@@ -242,87 +239,6 @@ internal sealed class AssistantRuntime
         var thread = await GetOrCreateDefaultGlobalThreadAsync(userId, null, cancellationToken);
         var messages = await LoadThreadMessagesAsync(thread.Id, cancellationToken);
         return new AssistantHistory(thread.Id, await MapMessageViewsAsync(messages, cancellationToken));
-    }
-
-    public async Task<AssistantApplyResult> ApplyPendingChangesAsync(
-        Guid messageId,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        return await ApplyGlobalPendingChangesAsync(messageId, userId, cancellationToken);
-    }
-
-    public async Task<AssistantApplyResult> ApplyGlobalPendingChangesAsync(
-        Guid messageId,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        var message = await LoadOwnedMessageAsync(messageId, userId, cancellationToken);
-        if (message.Status != AssistantMessageStatus.Active)
-        {
-            return new AssistantApplyResult(0);
-        }
-
-        var changes = _presenter.ParseStoredChanges(message.PendingChangesJson);
-        if (changes.Count == 0)
-        {
-            return new AssistantApplyResult(0);
-        }
-
-        // Claim the message before applying so concurrent Apply requests (e.g. a
-        // double-click) cannot run the same changes twice; revert the claim if
-        // applying fails so the user can retry.
-        message.Status = AssistantMessageStatus.Applied;
-        await _context.SaveChangesAsync(cancellationToken);
-
-        try
-        {
-            return await _changeApplier.ApplyAsync(message.ContextQuizId, userId, changes, cancellationToken);
-        }
-        catch
-        {
-            // Drop whatever the failed apply left in the change tracker, then put the
-            // message back to Active with a token that survives client aborts.
-            _context.ChangeTracker.Clear();
-            var claimed = await _context.AssistantMessages
-                .FirstOrDefaultAsync(m => m.Id == messageId, CancellationToken.None);
-            if (claimed != null)
-            {
-                claimed.Status = AssistantMessageStatus.Active;
-                await _context.SaveChangesAsync(CancellationToken.None);
-            }
-            throw;
-        }
-    }
-
-    public async Task RejectPendingChangesAsync(
-        Guid messageId,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        await RejectGlobalPendingChangesAsync(messageId, userId, cancellationToken);
-    }
-
-    public async Task RejectGlobalPendingChangesAsync(
-        Guid messageId,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        var message = await LoadOwnedMessageAsync(messageId, userId, cancellationToken);
-        if (message.Status != AssistantMessageStatus.Active)
-        {
-            return;
-        }
-
-        message.Status = AssistantMessageStatus.Rejected;
-        await _context.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task ResetGlobalSessionAsync(
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        await CreateChatAsync(userId, null, cancellationToken);
     }
 
     private async Task<AssistantTurnResponse> SendInThreadAsync(
@@ -623,21 +539,6 @@ internal sealed class AssistantRuntime
         }
 
         return thread;
-    }
-
-    private async Task<AssistantMessage> LoadOwnedMessageAsync(Guid messageId, string userId, CancellationToken ct)
-    {
-        var message = await _context.AssistantMessages
-            .FirstOrDefaultAsync(m => m.Id == messageId, ct)
-            ?? throw new InvalidOperationException("Message not found.");
-        var thread = await _context.AssistantThreads
-            .FirstOrDefaultAsync(t => t.Id == message.ThreadId, ct)
-            ?? throw new InvalidOperationException("Chat not found.");
-        if (thread.UserId != userId)
-        {
-            throw new UnauthorizedAccessException("Message belongs to a different user.");
-        }
-        return message;
     }
 
     private async Task<List<AssistantMessage>> LoadThreadMessagesAsync(Guid threadId, CancellationToken ct)

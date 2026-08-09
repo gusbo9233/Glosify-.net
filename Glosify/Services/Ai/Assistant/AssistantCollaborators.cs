@@ -201,15 +201,3 @@ internal sealed class AssistantTurnRunner(AssistantRuntime runtime) : IAssistant
     public Task<AssistantTurnResponse> RunGlobalAsync(string userId, string message, string? model, AssistantDocumentContext? document, CancellationToken cancellationToken) =>
         runtime.SendGlobalMessageAsync(userId, message, model, document, cancellationToken);
 }
-
-internal sealed class AssistantChangeWorkflow(AssistantRuntime runtime) : IAssistantChangeWorkflow
-{
-    public Task<AssistantApplyResult> ApplyAsync(Guid messageId, string userId, CancellationToken cancellationToken) =>
-        runtime.ApplyGlobalPendingChangesAsync(messageId, userId, cancellationToken);
-
-    public Task RejectAsync(Guid messageId, string userId, CancellationToken cancellationToken) =>
-        runtime.RejectGlobalPendingChangesAsync(messageId, userId, cancellationToken);
-
-    public Task ResetAsync(string userId, CancellationToken cancellationToken) =>
-        runtime.ResetGlobalSessionAsync(userId, cancellationToken);
-}

@@ -609,15 +609,19 @@ public class AssistantSavedChatsTests
             generativeAi ?? new StaticGenerativeAiClient("Done."),
             CreateModelResolver(),
             tools ?? new NoopAssistantTools(),
-            applier ?? new CapturingChangeApplier(),
             contextResolver,
             new AssistantMessagePresenter(),
             new AssistantPromptBuilder(),
             NullLogger<AssistantRuntime>.Instance);
+        var threadStore = new AssistantThreadStore(runtime);
         return new AssistantOrchestrator(
-            new AssistantThreadStore(runtime),
+            threadStore,
             new AssistantTurnRunner(runtime),
-            new AssistantChangeWorkflow(runtime));
+            new AssistantChangeWorkflow(
+                context,
+                applier ?? new CapturingChangeApplier(),
+                new AssistantMessagePresenter(),
+                threadStore));
     }
 
     private static IGenerativeAiModelResolver CreateModelResolver() =>
