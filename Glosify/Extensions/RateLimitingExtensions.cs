@@ -95,6 +95,25 @@ public static class RateLimitingExtensions
                     });
                 }
 
+                var isBookUpload = HttpMethods.IsPost(context.Request.Method)
+                    && (path.StartsWithSegments("/Books/Upload")
+                        || string.Equals(
+                            path.Value?.TrimEnd('/'),
+                            "/api/books",
+                            StringComparison.OrdinalIgnoreCase));
+                if (isBookUpload)
+                {
+                    var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                        ?? context.Connection.RemoteIpAddress?.ToString()
+                        ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter($"book-upload:{caller}", _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 3,
+                        Window = TimeSpan.FromMinutes(10),
+                        QueueLimit = 0,
+                    });
+                }
+
                 var isBookTranslationPath = path.StartsWithSegments("/Books")
                     && (path.Value?.Contains("/Translation", StringComparison.OrdinalIgnoreCase) ?? false);
                 if (isBookTranslationPath)

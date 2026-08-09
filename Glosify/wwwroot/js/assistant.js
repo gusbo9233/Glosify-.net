@@ -1,3 +1,7 @@
+import { createAssistantApi } from './assistant/api.js';
+import { chooseInitialChat, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
+import { escapeHtml, formatChatDate } from './assistant/presentation.js';
+
 (() => {
     const panel = document.querySelector('[data-assistant-panel]');
     if (!panel) {
@@ -65,12 +69,6 @@
         });
     }
 
-    const escapeHtml = (text) => {
-        const div = document.createElement('div');
-        div.textContent = text ?? '';
-        return div.innerHTML;
-    };
-
     const requestHeaders = (json = false) => {
         const headers = {
             'Accept': 'application/json',
@@ -81,6 +79,7 @@
         }
         return headers;
     };
+    const api = createAssistantApi(() => tokenInput?.value);
 
     const setStatus = (message, isError = false) => {
         if (!message) {
@@ -156,10 +155,7 @@
 
     // The server treats updateContext as all-or-nothing, so every context write has to
     // carry the complete picture or the fields it omits are cleared.
-    const materialPayload = () => ({
-        contextTranscriptId: materialKind === 'transcript' ? materialId : null,
-        contextBookDocumentId: materialKind === 'book' ? materialId : null,
-    });
+    const materialPayload = () => buildMaterialPayload(materialKind, materialId);
 
     const materialLabel = () => materialSelector?.selectedOptions?.[0]?.dataset.contextLabel || null;
 
@@ -223,15 +219,14 @@
     };
 
     const loadChats = async () => {
-        const response = await fetch(chatsUrl, { headers: { 'Accept': 'application/json' } });
-        if (!response.ok) {
+        try {
+            const data = await api.json(chatsUrl);
+            chats = data.chats ?? [];
+            renderChatList();
+            return chats;
+        } catch {
             return [];
         }
-
-        const data = await response.json();
-        chats = data.chats ?? [];
-        renderChatList();
-        return chats;
     };
 
     const createChat = async (contextQuizId = quizId) => {
@@ -250,7 +245,7 @@
         }
 
         const chat = await response.json();
-        chats = [chat, ...chats.filter(existing => existing.id !== chat.id)];
+        chats = upsertChat(chats, chat);
         renderChatList();
         return chat;
     };
@@ -267,7 +262,7 @@
         }
 
         const updated = await response.json();
-        chats = chats.map(chat => chat.id === updated.id ? updated : chat);
+        chats = replaceChat(chats, updated);
         renderChatList();
         return updated;
     };
@@ -282,7 +277,7 @@
             throw new Error(data?.error || 'Could not delete chat.');
         }
 
-        chats = chats.filter(chat => chat.id !== threadId);
+        chats = removeChat(chats, threadId);
         if (activeThreadId === threadId) {
             const next = chats[0] || await createChat(quizId);
             await selectChat(next.id);
@@ -298,13 +293,10 @@
 
         await loadChats();
         const storedChatId = sessionStorage.getItem(activeChatStorageKey);
-        const storedChat = storedChatId
-            ? chats.find(chat => String(chat.id).toLowerCase() === storedChatId.toLowerCase())
-            : null;
+        const storedChat = chooseInitialChat(chats, storedChatId);
         // First open in this session: start empty. Reuse the newest chat when it is
         // already blank so repeat sessions don't pile up empty threads in the list.
         const chat = storedChat
-            || (chats[0] && !chats[0].preview ? chats[0] : null)
             || await createChat(quizId);
         await selectChat(chat.id);
         initialized = true;
@@ -424,13 +416,6 @@
             item.append(main, actions);
             chatList.appendChild(item);
         }
-    };
-
-    const formatChatDate = (value) => {
-        if (!value) return '';
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return '';
-        return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(date);
     };
 
     const renderMessage = (message) => {

@@ -19,6 +19,7 @@ using Glosify.Services.Speech;
 using Glosify.Services.Storage;
 using Glosify.Services.Typing;
 using Glosify.Services.Words;
+using Glosify.Infrastructure.Concurrency;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Extensions;
@@ -102,9 +103,12 @@ public static class ApplicationServiceExtensions
             configuration.GetSection(Glosify.Services.Communication.AcsOptions.SectionName));
         services.AddScoped<Glosify.Services.Communication.IAcsTokenService, Glosify.Services.Communication.AcsTokenService>();
         services.AddScoped<IAiCreditService, AiCreditService>();
+        services.AddScoped<IExternalAccountUserStore, IdentityExternalAccountUserStore>();
+        services.AddScoped<IExternalAccountService, ExternalAccountService>();
         services.AddSingleton<IExtensionAuthorizationCodeStore, ExtensionAuthorizationCodeStore>();
         services.AddSingleton<IMobileAuthorizationCodeStore, MobileAuthorizationCodeStore>();
         services.AddSingleton<IRealtimeTranslationRelayTokenStore, RealtimeTranslationRelayTokenStore>();
+        services.AddSingleton<IKeyedAsyncLock, ReferenceCountedKeyedAsyncLock>();
         services.AddSingleton<IFoundryTranslationRelay, FoundryTranslationRelay>();
         services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();
         services.AddScoped<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>();
@@ -132,6 +136,13 @@ public static class ApplicationServiceExtensions
         services.AddAssistantTools();
         services.AddScoped<IChangeApplier, ChangeApplier>();
         services.AddScoped<IAssistantPendingChangeStore, AssistantPendingChangeStore>();
+        services.AddScoped<IAssistantContextResolver, AssistantContextResolver>();
+        services.AddScoped<IAssistantMessagePresenter, AssistantMessagePresenter>();
+        services.AddScoped<AssistantPromptBuilder>();
+        services.AddScoped<AssistantRuntime>();
+        services.AddScoped<IAssistantThreadStore, AssistantThreadStore>();
+        services.AddScoped<IAssistantTurnRunner, AssistantTurnRunner>();
+        services.AddScoped<IAssistantChangeWorkflow, AssistantChangeWorkflow>();
         services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
         services.AddAssistantMcp(configuration);
 

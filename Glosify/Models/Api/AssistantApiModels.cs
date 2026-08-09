@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Glosify.Models.Api;
 
 public sealed record AssistantChatInput(
@@ -6,7 +8,7 @@ public sealed record AssistantChatInput(
     Guid? ContextBookDocumentId = null);
 
 public sealed record AssistantSendInput(
-    string Message,
+    [param: Required, StringLength(8000)] string Message,
     Guid? ContextQuizId,
     string? FocusedWordId,
     string? Model,

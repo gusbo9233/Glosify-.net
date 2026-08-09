@@ -1,18 +1,20 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Glosify.Models.Api;
 
 public sealed record CreateSpeakingSessionRequest(
-    string? AvatarId,
-    string? CefrLevel,
+    [param: StringLength(80)] string? AvatarId,
+    [param: StringLength(8)] string? CefrLevel,
     Guid? QuizId = null);
 
 public sealed record SendSpeakingTurnRequest(
-    string? Text,
-    string? InputMode,
+    [param: StringLength(4000)] string? Text,
+    [param: StringLength(32)] string? InputMode,
     Guid? PracticePromptId = null);
 
 public sealed record SelectSpeakingQuizRequest(Guid? QuizId);
 
 public sealed record SendSpeakingActionRequest(
-    string? Action,
+    [param: StringLength(64)] string? Action,
     Dictionary<int, int>? Denominations,
-    string? DrinkId);
+    [param: StringLength(80)] string? DrinkId);

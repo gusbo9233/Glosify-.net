@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Glosify.Models.Api;
 using Glosify.Models.Entities;
 using Glosify.Services.Auth;
@@ -32,20 +31,20 @@ public class ExternalAuthApiController : ControllerBase
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAuthenticationSchemeProvider _schemeProvider;
     private readonly IMobileAuthorizationCodeStore _codes;
-    private readonly ILogger<ExternalAuthApiController> _logger;
+    private readonly IExternalAccountService _externalAccounts;
 
     public ExternalAuthApiController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         IAuthenticationSchemeProvider schemeProvider,
         IMobileAuthorizationCodeStore codes,
-        ILogger<ExternalAuthApiController> logger)
+        IExternalAccountService externalAccounts)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _schemeProvider = schemeProvider;
         _codes = codes;
-        _logger = logger;
+        _externalAccounts = externalAccounts;
     }
 
     [HttpGet("google/start")]
@@ -78,39 +77,12 @@ public class ExternalAuthApiController : ControllerBase
             return AppRedirect("error=Google sign-in failed.");
         }
 
-        var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
-        if (user == null)
+        var resolution = await _externalAccounts.ResolveOrCreateAsync(info);
+        if (!resolution.Succeeded)
         {
-            var email = GetExternalLoginEmail(info);
-            if (string.IsNullOrWhiteSpace(email))
-            {
-                return AppRedirect("error=Google did not provide an email address.");
-            }
-
-            user = await _userManager.FindByEmailAsync(email);
-            if (user != null)
-            {
-                var addLoginResult = await _userManager.AddLoginAsync(user, info);
-                if (!addLoginResult.Succeeded)
-                {
-                    _logger.LogWarning("Could not link Google login: {Errors}",
-                        string.Join("; ", addLoginResult.Errors.Select(e => e.Description)));
-                    return AppRedirect("error=Could not link the Google account.");
-                }
-            }
-            else
-            {
-                user = new ApplicationUser { UserName = email, Email = email };
-                var createResult = await _userManager.CreateAsync(user);
-                if (!createResult.Succeeded)
-                {
-                    _logger.LogWarning("Could not create user from Google login: {Errors}",
-                        string.Join("; ", createResult.Errors.Select(e => e.Description)));
-                    return AppRedirect("error=Could not create an account.");
-                }
-                await _userManager.AddLoginAsync(user, info);
-            }
+            return AppRedirect($"error={Uri.EscapeDataString(resolution.ErrorMessage ?? "Google sign-in failed.")}");
         }
+        var user = resolution.User!;
 
         // The challenge was pinned to this sign-in attempt in google/start and came back
         // inside the encrypted external cookie.
@@ -150,12 +122,4 @@ public class ExternalAuthApiController : ControllerBase
     }
 
     private RedirectResult AppRedirect(string query) => Redirect($"{CallbackScheme}?{query}");
-
-    // Only real email claims; preferred_username/upn are not verified email addresses.
-    private static string GetExternalLoginEmail(ExternalLoginInfo info)
-    {
-        return info.Principal.FindFirst(ClaimTypes.Email)?.Value
-            ?? info.Principal.FindFirst("email")?.Value
-            ?? string.Empty;
-    }
 }

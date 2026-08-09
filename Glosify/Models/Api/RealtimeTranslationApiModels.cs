@@ -1,12 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Glosify.Models.Api;
 
 public sealed record CreateRealtimeTranslationSessionRequest(
-    string TargetLanguage,
+    [param: Required, StringLength(64)] string TargetLanguage,
     bool SaveTranscript = false,
     Guid? TranscriptId = null);
 
-public sealed record SetRealtimeTranslationQuizLanguageRequest(string Code);
+public sealed record SetRealtimeTranslationQuizLanguageRequest(
+    [param: Required, StringLength(16)] string Code);
 
 public sealed record RealtimeTranslationHeartbeatRequest(
-    double? FirstCaptionLatencyMs = null,
+    [param: Range(0, 300_000)] double? FirstCaptionLatencyMs = null,
     bool Reconnected = false);

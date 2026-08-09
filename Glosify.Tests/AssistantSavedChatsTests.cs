@@ -590,7 +590,7 @@ public class AssistantSavedChatsTests
         return new GlosifyContext(options);
     }
 
-    private static AssistantOrchestrator CreateOrchestrator(
+    private static IAssistantOrchestrator CreateOrchestrator(
         GlosifyContext context,
         IGenerativeAiClient? generativeAi = null,
         IChangeApplier? applier = null,
@@ -598,16 +598,26 @@ public class AssistantSavedChatsTests
         IAssistantTools? tools = null,
         ILanguageContext? languageContext = null)
     {
-        return new AssistantOrchestrator(
+        var languagePreferences = new QuizLanguagePreferenceService(context);
+        var contextResolver = new AssistantContextResolver(
+            context,
+            books ?? new NoopBookDocumentService(),
+            languageContext ?? new StaticLanguageContext(),
+            languagePreferences);
+        var runtime = new AssistantRuntime(
             context,
             generativeAi ?? new StaticGenerativeAiClient("Done."),
             CreateModelResolver(),
             tools ?? new NoopAssistantTools(),
             applier ?? new CapturingChangeApplier(),
-            books ?? new NoopBookDocumentService(),
-            languageContext ?? new StaticLanguageContext(),
-            new QuizLanguagePreferenceService(context),
-            NullLogger<AssistantOrchestrator>.Instance);
+            contextResolver,
+            new AssistantMessagePresenter(),
+            new AssistantPromptBuilder(),
+            NullLogger<AssistantRuntime>.Instance);
+        return new AssistantOrchestrator(
+            new AssistantThreadStore(runtime),
+            new AssistantTurnRunner(runtime),
+            new AssistantChangeWorkflow(runtime));
     }
 
     private static IGenerativeAiModelResolver CreateModelResolver() =>

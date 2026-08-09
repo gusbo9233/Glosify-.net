@@ -2,14 +2,12 @@ using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
-using Glosify.Services.Books;
-using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Ai.Assistant;
 
-public sealed class AssistantOrchestrator : IAssistantOrchestrator
+internal sealed class AssistantRuntime
 {
     private const int MaxToolTurns = 24;
     private const string NewChatTitle = "New chat";
@@ -21,30 +19,30 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     private readonly IGenerativeAiModelResolver _modelResolver;
     private readonly IAssistantTools _tools;
     private readonly IChangeApplier _changeApplier;
-    private readonly IBookDocumentService _books;
-    private readonly ILanguageContext _languageContext;
-    private readonly IQuizLanguagePreferenceService _languagePreferences;
-    private readonly ILogger<AssistantOrchestrator> _logger;
+    private readonly IAssistantContextResolver _contextResolver;
+    private readonly IAssistantMessagePresenter _presenter;
+    private readonly AssistantPromptBuilder _promptBuilder;
+    private readonly ILogger<AssistantRuntime> _logger;
 
-    public AssistantOrchestrator(
+    public AssistantRuntime(
         GlosifyContext context,
         IGenerativeAiClient generativeAi,
         IGenerativeAiModelResolver modelResolver,
         IAssistantTools tools,
         IChangeApplier changeApplier,
-        IBookDocumentService books,
-        ILanguageContext languageContext,
-        IQuizLanguagePreferenceService languagePreferences,
-        ILogger<AssistantOrchestrator> logger)
+        IAssistantContextResolver contextResolver,
+        IAssistantMessagePresenter presenter,
+        AssistantPromptBuilder promptBuilder,
+        ILogger<AssistantRuntime> logger)
     {
         _context = context;
         _generativeAi = generativeAi;
         _modelResolver = modelResolver;
         _tools = tools;
         _changeApplier = changeApplier;
-        _books = books;
-        _languageContext = languageContext;
-        _languagePreferences = languagePreferences;
+        _contextResolver = contextResolver;
+        _presenter = presenter;
+        _promptBuilder = promptBuilder;
         _logger = logger;
     }
 
@@ -52,7 +50,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var language = await ResolveLanguageAsync(userId, cancellationToken);
+        var language = await _contextResolver.ResolveLanguageAsync(userId, cancellationToken);
         var query = _context.AssistantThreads
             .Where(thread => thread.UserId == userId && thread.QuizId == null);
         if (language != null)
@@ -74,9 +72,9 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         Guid? contextTranscriptId = null,
         Guid? contextBookDocumentId = null)
     {
-        await ValidateContextQuizAsync(contextQuizId, userId, cancellationToken);
-        await ValidateTranscriptContextAsync(contextTranscriptId, userId, cancellationToken);
-        await ValidateBookContextAsync(contextBookDocumentId, userId, cancellationToken);
+        await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
+        await _contextResolver.ResolveTranscriptAsync(contextTranscriptId, userId, cancellationToken);
+        await _contextResolver.ResolveBookAsync(contextBookDocumentId, userId, cancellationToken);
 
         var now = DateTimeOffset.UtcNow;
         var thread = new AssistantThread
@@ -87,7 +85,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             ContextTranscriptId = contextTranscriptId,
             ContextBookDocumentId = contextBookDocumentId,
             UserId = userId,
-            Language = await ResolveLanguageAsync(userId, cancellationToken),
+            Language = await _contextResolver.ResolveLanguageAsync(userId, cancellationToken),
             Title = NewChatTitle,
             CreatedAt = now,
             UpdatedAt = now,
@@ -113,16 +111,16 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
         if (title is not null)
         {
-            thread.Title = BuildExplicitTitle(title);
+            thread.Title = _presenter.NormalizeTitle(title);
         }
 
         // Deliberately all-or-nothing: the caller sends the complete context it wants the
         // chat to have, so an omitted field clears rather than keeps the stored value.
         if (updateContext)
         {
-            await ValidateContextQuizAsync(contextQuizId, userId, cancellationToken);
-            await ValidateTranscriptContextAsync(contextTranscriptId, userId, cancellationToken);
-            await ValidateBookContextAsync(contextBookDocumentId, userId, cancellationToken);
+            await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
+            await _contextResolver.ResolveTranscriptAsync(contextTranscriptId, userId, cancellationToken);
+            await _contextResolver.ResolveBookAsync(contextBookDocumentId, userId, cancellationToken);
             thread.ContextQuizId = contextQuizId;
             thread.ContextTranscriptId = contextTranscriptId;
             thread.ContextBookDocumentId = contextBookDocumentId;
@@ -342,16 +340,17 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         Guid? bookDocumentId)
     {
         var now = DateTimeOffset.UtcNow;
-        var contextQuiz = await ValidateContextQuizAsync(contextQuizId, userId, cancellationToken);
+        var contextQuiz = await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
         var contextCustomQuiz = await ValidateCustomQuizAsync(customQuizId, contextQuiz, userId, cancellationToken);
         var focusedWord = contextQuiz is null ? null : await LoadFocusedWordAsync(contextQuiz.Id, focusedWordId, cancellationToken);
         var documentPage = documentContext is null
             ? null
-            : await LoadDocumentPageContextAsync(documentContext, userId, cancellationToken);
-        var transcriptContext = await ValidateTranscriptContextAsync(transcriptId, userId, cancellationToken);
-        var bookContext = await ValidateBookContextAsync(bookDocumentId, userId, cancellationToken);
-        var selectedQuizLanguage = await _languagePreferences.GetSelectedAsync(userId, cancellationToken);
-        var currentLanguage = contextQuiz?.TargetLanguage ?? selectedQuizLanguage?.Name;
+            : await _contextResolver.ResolveDocumentPageAsync(documentContext, userId, cancellationToken);
+        var transcriptContext = await _contextResolver.ResolveTranscriptAsync(transcriptId, userId, cancellationToken);
+        var bookContext = await _contextResolver.ResolveBookAsync(bookDocumentId, userId, cancellationToken);
+        var selectedLanguageCode = await _contextResolver.ResolveLanguageCodeAsync(userId, cancellationToken);
+        var currentLanguage = contextQuiz?.TargetLanguage
+            ?? await _contextResolver.ResolveLanguageAsync(userId, cancellationToken);
 
         var storedMessages = await LoadThreadMessagesAsync(thread.Id, cancellationToken);
         var history = WindowHistory(storedMessages).Select(MapToTurn).ToList();
@@ -374,7 +373,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
         if (string.Equals(thread.Title, NewChatTitle, StringComparison.OrdinalIgnoreCase))
         {
-            thread.Title = BuildAutoTitle(userMessage);
+            thread.Title = _presenter.NormalizeTitle(userMessage);
         }
 
         thread.ContextQuizId = contextQuizId;
@@ -392,16 +391,21 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             CustomQuizId = contextCustomQuiz?.Id,
             UserId = userId,
             CurrentLanguage = currentLanguage,
-            CurrentLanguageCode = selectedQuizLanguage?.Code,
+            CurrentLanguageCode = selectedLanguageCode,
             FocusedWordId = focusedWord?.Id,
             FocusedWordLabel = focusedWord == null ? null : $"{focusedWord.Lemma} -> {focusedWord.Translation}",
             TranscriptId = transcriptContext?.Id,
             BookDocumentId = bookContext?.Id,
         };
 
-        var systemInstruction = contextQuiz is null
-            ? BuildGlobalSystemInstruction(currentLanguage, documentPage, transcriptContext, bookContext)
-            : BuildSystemInstruction(contextQuiz, focusedWord, documentPage, contextCustomQuiz, transcriptContext, bookContext);
+        var systemInstruction = _promptBuilder.BuildSystemInstruction(
+            contextQuiz,
+            focusedWord,
+            documentPage,
+            contextCustomQuiz,
+            transcriptContext,
+            bookContext,
+            currentLanguage);
 
         // The page the user is on selects the profile, which fixes both the tool set and
         // which authored agent supplies the instructions. Each profile falls back to the
@@ -412,14 +416,15 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                 ? (AssistantAgentProfile.QuizAssistant, _tools.QuizAssistantDeclarations)
                 : (AssistantAgentProfile.Librarian, _tools.LibrarianDeclarations);
 
-        var contextInstruction = profile switch
-        {
-            AssistantAgentProfile.CustomQuizBuilder =>
-                BuildCustomQuizBuilderContext(contextQuiz!, contextCustomQuiz!, currentLanguage),
-            AssistantAgentProfile.QuizAssistant =>
-                BuildQuizAssistantContext(contextQuiz!, focusedWord, documentPage, transcriptContext, bookContext),
-            _ => BuildLibrarianContext(currentLanguage, documentPage, transcriptContext, bookContext),
-        };
+        var contextInstruction = _promptBuilder.BuildProfileContext(
+            profile,
+            contextQuiz,
+            focusedWord,
+            documentPage,
+            contextCustomQuiz,
+            transcriptContext,
+            bookContext,
+            currentLanguage);
         var selectedModel = _modelResolver.ResolveAssistantModel(model);
         var toolEvents = new List<AssistantToolEvent>();
 
@@ -559,11 +564,11 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         Guid? contextQuizId,
         CancellationToken cancellationToken)
     {
-        await ValidateContextQuizAsync(contextQuizId, userId, cancellationToken);
+        await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
 
         // Only chats in the selected language can be resumed, so switching language
         // drops into a fresh thread instead of continuing the previous one.
-        var language = await ResolveLanguageAsync(userId, cancellationToken);
+        var language = await _contextResolver.ResolveLanguageAsync(userId, cancellationToken);
         var query = _context.AssistantThreads
             .Where(t => t.UserId == userId && t.QuizId == null);
         if (language != null)
@@ -609,7 +614,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
 
         // The chat list has already dropped this thread, so a request still pointing at
         // it comes from a page opened before the language changed.
-        var language = await ResolveLanguageAsync(userId, ct);
+        var language = await _contextResolver.ResolveLanguageAsync(userId, ct);
         if (language != null && thread.Language != language)
         {
             throw new InvalidOperationException(
@@ -617,22 +622,6 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         }
 
         return thread;
-    }
-
-    /// <summary>
-    /// The language a chat belongs to. The cookie is what the rest of the app filters on,
-    /// with the account preference as the fallback for the mobile app, which sends a
-    /// bearer token and no cookie.
-    /// </summary>
-    private async Task<string?> ResolveLanguageAsync(string userId, CancellationToken cancellationToken)
-    {
-        var language = _languageContext.CurrentLanguage;
-        if (!string.IsNullOrWhiteSpace(language))
-        {
-            return language;
-        }
-
-        return (await _languagePreferences.GetSelectedAsync(userId, cancellationToken))?.Name;
     }
 
     private async Task<AssistantMessage> LoadOwnedMessageAsync(Guid messageId, string userId, CancellationToken ct)
@@ -659,19 +648,6 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             .ToListAsync(ct);
     }
 
-    private async Task<Quiz?> ValidateContextQuizAsync(Guid? quizId, string userId, CancellationToken cancellationToken)
-    {
-        if (!quizId.HasValue)
-        {
-            return null;
-        }
-
-        return await _context.Quizzes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(q => q.Id == quizId.Value && q.UserId == userId, cancellationToken)
-            ?? throw new QuizNotFoundException();
-    }
-
     private async Task<CustomQuiz?> ValidateCustomQuizAsync(
         Guid? customQuizId,
         Quiz? quiz,
@@ -695,59 +671,6 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                 && item.QuizId == quiz.Id
                 && item.Quiz.UserId == userId, cancellationToken)
             ?? throw new InvalidOperationException("That custom quiz was not found.");
-    }
-
-    private async Task<TranscriptAssistantContext?> ValidateTranscriptContextAsync(
-        Guid? transcriptId,
-        string userId,
-        CancellationToken cancellationToken)
-    {
-        if (!transcriptId.HasValue)
-        {
-            return null;
-        }
-
-        var selectedLanguage = await _languagePreferences.GetSelectedAsync(userId, cancellationToken);
-        if (selectedLanguage is null)
-        {
-            throw new InvalidOperationException("Choose a Glosify quiz language before using saved transcripts.");
-        }
-
-        return await _context.RealtimeTranslationTranscripts
-            .AsNoTracking()
-            .Where(transcript => transcript.Id == transcriptId.Value
-                && transcript.UserId == userId
-                && transcript.TargetLanguage == selectedLanguage.Code)
-            .Select(transcript => new TranscriptAssistantContext(
-                transcript.Id,
-                transcript.Title,
-                transcript.TargetLanguage,
-                transcript.Stream))
-            .SingleOrDefaultAsync(cancellationToken)
-            ?? throw new InvalidOperationException("That saved transcript was not found.");
-    }
-
-    /// <summary>
-    /// Resolves a chosen book to the metadata the agent needs. Ownership is the only
-    /// check on purpose: <see cref="BookDocument.Language"/> stores the display name
-    /// while transcripts store the code, and books uploaded before that column existed
-    /// are null. Filtering here would make those books unreachable even though the
-    /// picker listed them; the language filter belongs to the listing, not the lookup.
-    /// </summary>
-    private async Task<BookAssistantContext?> ValidateBookContextAsync(
-        Guid? bookDocumentId,
-        string userId,
-        CancellationToken cancellationToken)
-    {
-        if (!bookDocumentId.HasValue)
-        {
-            return null;
-        }
-
-        var book = await _books.GetOwnedDocumentAsync(bookDocumentId.Value, userId, cancellationToken)
-            ?? throw new InvalidOperationException("That book was not found.");
-
-        return new BookAssistantContext(book.Id, book.Title, book.PageCount);
     }
 
     private async Task<IReadOnlyList<AssistantChatSummary>> BuildChatSummariesAsync(
@@ -780,7 +703,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             .ToListAsync(cancellationToken);
 
         var latestByThread = recentByThread
-            .ToDictionary(entry => entry.Id, entry => entry.Recent.FirstOrDefault(HasVisibleContent));
+            .ToDictionary(entry => entry.Id, entry => entry.Recent.FirstOrDefault(_presenter.HasVisibleContent));
 
         var contextQuizIds = threads
             .Select(thread => thread.ContextQuizId)
@@ -793,7 +716,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             : await _context.Quizzes
                 .Where(quiz => contextQuizIds.Contains(quiz.Id))
                 .ToDictionaryAsync(quiz => quiz.Id, quiz => quiz.Name, cancellationToken);
-        var selectedLanguage = await _languagePreferences.GetSelectedAsync(
+        var selectedLanguageCode = await _contextResolver.ResolveLanguageCodeAsync(
             threads[0].UserId,
             cancellationToken);
         var contextTranscriptIds = threads
@@ -806,8 +729,8 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             ? new Dictionary<Guid, string>()
             : await _context.RealtimeTranslationTranscripts
                 .Where(transcript => contextTranscriptIds.Contains(transcript.Id)
-                    && selectedLanguage != null
-                    && transcript.TargetLanguage == selectedLanguage.Code)
+                    && selectedLanguageCode != null
+                    && transcript.TargetLanguage == selectedLanguageCode)
                 .ToDictionaryAsync(transcript => transcript.Id, transcript => transcript.Title, cancellationToken);
         var contextBookIds = threads
             .Select(thread => thread.ContextBookDocumentId)
@@ -827,7 +750,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             .Select(thread =>
             {
                 latestByThread.TryGetValue(thread.Id, out var latest);
-                var preview = latest == null ? string.Empty : Truncate(ExtractVisibleText(latest), 90);
+                var preview = latest == null ? string.Empty : Truncate(_presenter.ExtractVisibleText(latest), 90);
                 var quizName = thread.ContextQuizId.HasValue && quizNames.TryGetValue(thread.ContextQuizId.Value, out var name)
                     ? name
                     : null;
@@ -886,7 +809,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
                 return new AssistantMessageView(
                     entry.Message.Id,
                     entry.Message.Role,
-                    ExtractVisibleText(entry.Message),
+                    _presenter.ExtractVisibleText(entry.Message),
                     [],
                     entry.Changes.Select(change => MapPendingView(change, wordLabels)).ToList(),
                     entry.Message.Status,
@@ -907,35 +830,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
             .FirstOrDefaultAsync(word => word.Id == focusedWordId && word.QuizId == quizId, ct);
     }
 
-    private async Task<DocumentPageContext> LoadDocumentPageContextAsync(
-        AssistantDocumentContext documentContext,
-        string userId,
-        CancellationToken cancellationToken)
-    {
-        if (documentContext.PageNumber < 1)
-        {
-            throw new InvalidOperationException("Choose a valid book page.");
-        }
-
-        var page = await _books.GetOwnedPageAsync(
-            documentContext.DocumentId,
-            documentContext.PageNumber,
-            userId,
-            cancellationToken);
-
-        if (page == null)
-        {
-            throw new InvalidOperationException("That book page was not found.");
-        }
-
-        return new DocumentPageContext(
-            page.BookDocument.Title,
-            page.PageNumber,
-            page.Text,
-            page.ExtractionWarning);
-    }
-
-    private static string BuildSystemInstruction(
+    internal static string ComposeQuizSystemInstruction(
         Quiz quiz,
         Word? focusedWord,
         DocumentPageContext? documentPage,
@@ -1015,7 +910,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     /// how elements are composed, what makes a document playable, style rules — lives in
     /// the agent's own instructions in Foundry, not here.
     /// </summary>
-    private static string BuildCustomQuizBuilderContext(
+    internal static string ComposeCustomQuizBuilderContext(
         Quiz quiz,
         CustomQuiz customQuiz,
         string? currentLanguage)
@@ -1033,7 +928,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     /// included because an authored agent receives only this text: leaving them out would
     /// silently break "add words from this page".
     /// </summary>
-    private static string BuildQuizAssistantContext(
+    internal static string ComposeQuizAssistantContext(
         Quiz quiz,
         Word? focusedWord,
         DocumentPageContext? documentPage,
@@ -1058,7 +953,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     }
 
     /// <summary>Per-turn facts for the library agent, which has no quiz in context.</summary>
-    private static string BuildLibrarianContext(
+    internal static string ComposeLibrarianContext(
         string? currentLanguage,
         DocumentPageContext? documentPage,
         TranscriptAssistantContext? transcriptContext,
@@ -1076,7 +971,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         """;
     }
 
-    private static string BuildGlobalSystemInstruction(
+    internal static string ComposeGlobalSystemInstruction(
         string? currentLanguage,
         DocumentPageContext? documentPage,
         TranscriptAssistantContext? transcriptContext,
@@ -1198,7 +1093,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     // previous full exchange.
     private const int MaxHistoryMessages = 80;
 
-    private static IReadOnlyList<AssistantMessage> WindowHistory(List<AssistantMessage> messages)
+    private IReadOnlyList<AssistantMessage> WindowHistory(List<AssistantMessage> messages)
     {
         if (messages.Count <= MaxHistoryMessages)
         {
@@ -1210,7 +1105,7 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         // Providers reject histories where a function response has no preceding call,
         // so advance the window start to the first plain-text user message.
         var start = window.FindIndex(message =>
-            message.Role == AssistantMessageRole.User && !string.IsNullOrWhiteSpace(ExtractVisibleText(message)));
+            message.Role == AssistantMessageRole.User && !string.IsNullOrWhiteSpace(_presenter.ExtractVisibleText(message)));
         return start <= 0 ? window : window.Skip(start).ToList();
     }
 
@@ -1477,44 +1372,6 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
         return string.IsNullOrWhiteSpace(word) ? translation ?? string.Empty : word;
     }
 
-    private static string BuildAutoTitle(string message)
-    {
-        return BuildExplicitTitle(message);
-    }
-
-    private static string BuildExplicitTitle(string title)
-    {
-        var cleaned = string.Join(" ", title.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
-        return string.IsNullOrWhiteSpace(cleaned) ? NewChatTitle : Truncate(cleaned, 64);
-    }
-
-    private static bool HasVisibleContent(AssistantMessage message)
-    {
-        return !string.IsNullOrWhiteSpace(ExtractVisibleText(message))
-            || !string.IsNullOrWhiteSpace(message.PendingChangesJson);
-    }
-
-    private static string ExtractVisibleText(AssistantMessage message)
-    {
-        try
-        {
-            var content = JsonSerializer.Deserialize<StoredContent>(message.ContentJson, JsonOptions);
-            var parts = content?.Parts ?? [];
-            if (parts.Any(part => part.Kind != "text"))
-            {
-                return string.Empty;
-            }
-
-            return string.Join("\n", parts
-                .Select(part => part.Text)
-                .Where(text => !string.IsNullOrWhiteSpace(text)));
-        }
-        catch (JsonException)
-        {
-            return string.Empty;
-        }
-    }
-
     private static string Truncate(string? value, int max)
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
@@ -1561,8 +1418,4 @@ public sealed class AssistantOrchestrator : IAssistantOrchestrator
     }
 
     private sealed record WordLabel(string Id, string Word, string Translation);
-    private sealed record DocumentPageContext(string Title, int PageNumber, string Text, string? Warning);
-    private sealed record TranscriptAssistantContext(Guid Id, string Title, string TargetLanguage, string Stream);
-
-    private sealed record BookAssistantContext(Guid Id, string Title, int PageCount);
 }

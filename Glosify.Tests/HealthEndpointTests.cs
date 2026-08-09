@@ -18,4 +18,16 @@ public sealed class HealthEndpointTests
         response.EnsureSuccessStatusCode();
         Assert.Equal("Healthy", await response.Content.ReadAsStringAsync());
     }
+
+    [Fact]
+    public async Task ReadinessEndpointAnswersAnonymouslyAndChecksSql()
+    {
+        using var factory = new WebApplicationFactory<Program>();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var response = await client.GetAsync("/readyz");
+
+        Assert.Equal(System.Net.HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal("Unhealthy", await response.Content.ReadAsStringAsync());
+    }
 }

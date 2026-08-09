@@ -1852,7 +1852,7 @@ namespace Glosify.Migrations
                     b.HasOne("Glosify.Models.Entities.Collection", "Collection")
                         .WithMany("Quizzes")
                         .HasForeignKey("CollectionId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .HasConstraintName("FK_Quizzes_Collections_CollectionId");
 
                     b.HasOne("Glosify.Models.Entities.ApplicationUser", null)

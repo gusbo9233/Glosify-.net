@@ -64,7 +64,7 @@ public class QuizService : IQuizService
 
             if (!collectionExists)
             {
-                throw new InvalidOperationException("Collection not found for this user and language.");
+                throw new QuizCollectionNotFoundException();
             }
         }
 

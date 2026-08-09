@@ -1,7 +1,4 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy ASP.Net Core app to Azure Web App - glosify
+name: Build, migrate, and deploy Glosify
 
 on:
   push:
@@ -11,55 +8,125 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
+    services:
+      sql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: Glosify_CI_Only_1!
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Glosify_CI_Only_1!' -C -Q 'SELECT 1'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      ConnectionStrings__DefaultConnection: Server=localhost,1433;Database=glosify-ci;User Id=sa;Password=Glosify_CI_Only_1!;Encrypt=True;TrustServerCertificate=True
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up .NET Core
+      - name: Set up .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.x'
+          dotnet-version: 10.0.x
 
-      - name: Build with dotnet
-        run: dotnet build --configuration Release
+      - name: Restore tools and packages
+        run: |
+          dotnet tool restore
+          dotnet restore Glosify.slnx
 
-      # Gates the deploy job, which is what turns a configuration mistake — an unpriced
-      # deployment, say — into a failed build instead of a broken production.
-      - name: Test with dotnet
-        # The connection string comes from TestEnvironment's module initializer, which
-        # also keeps local runs off the production database. Nothing to set here.
-        run: dotnet test --configuration Release --no-build
+      - name: Build
+        run: dotnet build Glosify.slnx --configuration Release --no-restore
 
-      # Name the web project explicitly. There is no solution file, so a bare
-      # "dotnet publish" publishes every project in the repo into this one folder,
-      # including Glosify.Tests. Two runtimeconfig.json files leave the Linux host
-      # unable to pick an entry point, and it silently serves the App Service
-      # placeholder page instead of the app.
-      - name: dotnet publish
-        run: dotnet publish Glosify/Glosify.csproj -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+      - name: Verify database migrations from empty SQL Server
+        run: |
+          dotnet ef database update --project Glosify/Glosify.csproj --configuration Release --no-build
+          dotnet ef migrations has-pending-model-changes --project Glosify/Glosify.csproj --configuration Release --no-build
 
-      - name: Upload artifact for deployment job
+      - name: Test
+        run: dotnet test Glosify.Tests/Glosify.Tests.csproj --configuration Release --no-build --no-restore
+
+      - name: Test browser extension JavaScript
+        run: npm test --prefix Glosify.LiveSubtitles.Extension
+
+      - name: Test assistant state modules
+        run: npm test --prefix Glosify.ClientTests
+
+      - name: Install Playwright Chromium
+        run: pwsh Glosify.BrowserTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Run browser journeys
+        env:
+          ASPNETCORE_ENVIRONMENT: Testing
+          ASPNETCORE_URLS: http://127.0.0.1:5099
+          GLOSIFY_BROWSER_BASE_URL: http://localhost:5099
+        run: |
+          dotnet run --project Glosify/Glosify.csproj --configuration Release --no-build > "${{ runner.temp }}/glosify-browser.log" 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:5099/healthz > /dev/null; then
+              break
+            fi
+            if ! kill -0 "$app_pid" 2>/dev/null; then
+              cat "${{ runner.temp }}/glosify-browser.log"
+              exit 1
+            fi
+            sleep 2
+          done
+          curl --fail http://localhost:5099/healthz
+          dotnet test Glosify.BrowserTests/Glosify.BrowserTests.csproj --configuration Release --no-build --no-restore
+
+      - name: Publish web application
+        run: dotnet publish Glosify/Glosify.csproj --configuration Release --no-build --output "${{ runner.temp }}/myapp"
+
+      - name: Build EF migration bundle
+        run: >-
+          dotnet ef migrations bundle
+          --project Glosify/Glosify.csproj
+          --configuration Release
+          --no-build
+          --target-runtime linux-x64
+          --output "${{ runner.temp }}/migration/efbundle"
+
+      - name: Upload web artifact
         uses: actions/upload-artifact@v4
         with:
-          name: .net-app
-          path: ${{env.DOTNET_ROOT}}/myapp
+          name: glosify-web
+          path: ${{ runner.temp }}/myapp
+
+      - name: Upload migration artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: glosify-migration
+          path: ${{ runner.temp }}/migration/efbundle
 
   deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     needs: build
+    environment: production
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download web artifact
         uses: actions/download-artifact@v4
         with:
-          name: .net-app
-      
+          name: glosify-web
+          path: app
+
+      - name: Download migration artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: glosify-migration
+          path: migration
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -67,11 +134,16 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_210765179BDB40158ADE7F23514669FF }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_EE07FD7E4DAF4E32BF67F3AFE307E71F }}
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
+      - name: Apply reviewed database migrations
+        env:
+          PRODUCTION_SQL_CONNECTION_STRING: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
+        run: |
+          chmod +x migration/efbundle
+          migration/efbundle --connection "$PRODUCTION_SQL_CONNECTION_STRING"
+
+      - name: Deploy Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'glosify-app'
-          slot-name: 'Production'
-          package: .
-          
+          app-name: glosify-app
+          slot-name: Production
+          package: app

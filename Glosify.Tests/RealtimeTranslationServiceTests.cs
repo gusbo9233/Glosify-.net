@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Infrastructure.Concurrency;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Ai.Llm;
@@ -352,7 +353,8 @@ public sealed class RealtimeTranslationServiceTests
                 ],
             }),
             timeProvider,
-            NullLogger<RealtimeTranslationService>.Instance);
+            NullLogger<RealtimeTranslationService>.Instance,
+            new ReferenceCountedKeyedAsyncLock());
     }
 
     private sealed class FakeRelayTokenStore(bool fail = false) : IRealtimeTranslationRelayTokenStore

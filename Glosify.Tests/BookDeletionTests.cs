@@ -106,6 +106,32 @@ public sealed class BookDeletionTests
         Assert.Empty(await context.BookDocuments.ToListAsync());
     }
 
+    [Fact]
+    public async Task FailedDatabaseSave_DeletesTheUploadedBlob()
+    {
+        await using var context = CreateFailingSaveContext();
+        var storage = new UploadingBookFileStorage();
+        var service = new BookDocumentService(
+            context,
+            storage,
+            new SinglePagePdfTextExtractionService(),
+            new StaticLanguageContext(),
+            NullLogger<BookDocumentService>.Instance);
+        var bytes = "%PDF-1.7 test"u8.ToArray();
+        await using var stream = new MemoryStream(bytes);
+        var file = new FormFile(stream, 0, bytes.Length, "file", "reader.pdf")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "application/pdf",
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.UploadAsync("user-1", file));
+
+        Assert.NotNull(storage.UploadedBlob);
+        Assert.Equal(storage.UploadedBlob, Assert.Single(storage.Deleted));
+    }
+
     private static BookDocumentService CreateService(GlosifyContext context, IBookFileStorage storage) =>
         new(context,
             storage,
@@ -175,6 +201,14 @@ public sealed class BookDeletionTests
         return new GlosifyContext(options);
     }
 
+    private static GlosifyContext CreateFailingSaveContext()
+    {
+        var options = new DbContextOptionsBuilder<GlosifyContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
+            .Options;
+        return new FailingSaveContext(options);
+    }
+
     private sealed class RecordingBookFileStorage : IBookFileStorage
     {
         public List<string> Deleted { get; } = [];
@@ -216,10 +250,52 @@ public sealed class BookDeletionTests
             throw new NotSupportedException();
     }
 
+    private sealed class UploadingBookFileStorage : IBookFileStorage
+    {
+        public string? UploadedBlob { get; private set; }
+        public List<string> Deleted { get; } = [];
+
+        public Task<string> UploadAsync(Stream content, string blobName, string contentType, CancellationToken cancellationToken = default)
+        {
+            UploadedBlob = blobName;
+            return Task.FromResult(blobName);
+        }
+
+        public Task DeleteIfExistsAsync(string blobName, CancellationToken cancellationToken = default)
+        {
+            Deleted.Add(blobName);
+            return Task.CompletedTask;
+        }
+
+        public Task<Stream> OpenReadAsync(string blobName, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
+
+        public Task<BlobProperties> GetPropertiesAsync(string blobName, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+    }
+
     private sealed class UnusedPdfTextExtractionService : IPdfTextExtractionService
     {
         public Task<IReadOnlyList<ExtractedPdfPage>> ExtractPagesAsync(Stream pdf, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+    }
+
+    private sealed class SinglePagePdfTextExtractionService : IPdfTextExtractionService
+    {
+        public Task<IReadOnlyList<ExtractedPdfPage>> ExtractPagesAsync(Stream pdf, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<ExtractedPdfPage>>([
+                new ExtractedPdfPage(1, "Page text", null),
+            ]);
+    }
+
+    private sealed class FailingSaveContext(DbContextOptions<GlosifyContext> options)
+        : GlosifyContext(options)
+    {
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+            Task.FromException<int>(new InvalidOperationException("Database save failed."));
     }
 
     private sealed class StaticLanguageContext : ILanguageContext

@@ -1,10 +1,5 @@
 using Glosify.Services;
-using Glosify.Services.Ai;
-using Glosify.Services.Ai.Generation;
-using Glosify.Services.Books;
-using Glosify.Services.Quizzes;
-using Glosify.Services.RealtimeTranslation;
-using Glosify.Services.Speaking;
+using Glosify.Infrastructure.Api;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -15,7 +10,7 @@ namespace Glosify.Filters;
 /// controllers don't repeat the same catch ladder: insufficient credits → 402,
 /// exhausted application budget → 503, unknown quiz → 404, foreign resource → 403,
 /// dependency warm-up → 503, and any other failure → 500. All bodies use the
-/// <c>{ "error": message }</c> shape.
+/// application's Problem Details contract.
 /// Apply to actions or controllers that call AI services and return JSON;
 /// exceptions an action catches itself never reach this filter.
 /// </summary>
@@ -36,56 +31,33 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
             return;
         }
 
-        context.Result = exception switch
+        var error = ApiExceptionMapper.Map(exception);
+        if (error is not null)
         {
-            InsufficientAiCreditsException => Error(StatusCodes.Status402PaymentRequired, exception.Message),
-            MonthlyAiBudgetExceededException =>
-                Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
-            GenerativeAiValidationException => Error(StatusCodes.Status400BadRequest, exception.Message),
-            GenerativeAiDependencyUnavailableException =>
-                Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
-            GenerativeAiTimeoutException => Error(StatusCodes.Status504GatewayTimeout, exception.Message),
-            GenerativeAiUpstreamException => Error(StatusCodes.Status502BadGateway, exception.Message),
-            BookPageTranslationValidationException =>
-                Error(StatusCodes.Status400BadRequest, exception.Message),
-            BookPageTranslationNotFoundException =>
-                Error(StatusCodes.Status404NotFound, exception.Message),
-            BookPageTranslationUnavailableException =>
-                Error(StatusCodes.Status422UnprocessableEntity, exception.Message),
-            RealtimeTranslationValidationException =>
-                Error(StatusCodes.Status400BadRequest, exception.Message),
-            RealtimeTranslationNotFoundException =>
-                Error(StatusCodes.Status404NotFound, exception.Message),
-            RealtimeTranslationConflictException =>
-                Error(StatusCodes.Status409Conflict, exception.Message),
-            RealtimeTranslationExpiredException =>
-                Error(StatusCodes.Status410Gone, exception.Message),
-            RealtimeTranslationUnavailableException =>
-                Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
-            RealtimeTranslationUpstreamException =>
-                Error(StatusCodes.Status502BadGateway, exception.Message),
-            SpeakingValidationException => Error(StatusCodes.Status400BadRequest, exception.Message),
-            SpeakingQuizNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),
-            SpeakingSessionNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),
-            SpeakingSessionExpiredException => Error(StatusCodes.Status410Gone, exception.Message),
-            SpeakingSessionInvalidatedException => Error(StatusCodes.Status410Gone, exception.Message),
-            SpeakingSessionBusyException => Error(StatusCodes.Status409Conflict, exception.Message),
-            SpeakingSessionLimitException => Error(StatusCodes.Status409Conflict, exception.Message),
-            SpeakingDependencyUnavailableException => Error(StatusCodes.Status503ServiceUnavailable, exception.Message),
-            SpeakingUpstreamException => Error(StatusCodes.Status502BadGateway, exception.Message),
-            QuizNotFoundException => Error(StatusCodes.Status404NotFound, exception.Message),
-            UnauthorizedAccessException => new ForbidResult(),
-            _ when ServiceWarmupMessage.IsDatabaseWarmupFailure(exception) =>
-                Warmup(context, ServiceWarmupMessage.Dependencies),
-            _ when ServiceWarmupMessage.IsLlmWarmupFailure(exception) =>
-                Warmup(context, ServiceWarmupMessage.LlmAssistant),
-            _ => Unexpected(context),
-        };
+            context.Result = Error(context, error.Value);
+        }
+        else if (ServiceWarmupMessage.IsDatabaseWarmupFailure(exception))
+        {
+            context.Result = Warmup(context, ServiceWarmupMessage.Dependencies);
+        }
+        else if (ServiceWarmupMessage.IsLlmWarmupFailure(exception))
+        {
+            context.Result = Warmup(context, ServiceWarmupMessage.LlmAssistant);
+        }
+        else
+        {
+            context.Result = Unexpected(context);
+        }
+
         context.ExceptionHandled = true;
     }
 
-    private static ObjectResult Error(int statusCode, string message)
-        => new(new { error = message }) { StatusCode = statusCode };
+    private static Microsoft.AspNetCore.Mvc.ObjectResult Error(ExceptionContext context, ApiError error) =>
+        GlosifyProblemDetails.Result(
+            context.HttpContext,
+            error.StatusCode,
+            error.Code,
+            error.Detail);
 
     private static ObjectResult Warmup(ExceptionContext context, string message)
     {
@@ -93,7 +65,11 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
             context.Exception,
             "Dependency warm-up interrupted {Action}",
             context.ActionDescriptor.DisplayName);
-        return Error(StatusCodes.Status503ServiceUnavailable, message);
+        return GlosifyProblemDetails.Result(
+            context.HttpContext,
+            StatusCodes.Status503ServiceUnavailable,
+            ApiErrorCodes.DependencyUnavailable,
+            message);
     }
 
     private static ObjectResult Unexpected(ExceptionContext context)
@@ -102,7 +78,11 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
             context.Exception,
             "AI-backed action {Action} failed",
             context.ActionDescriptor.DisplayName);
-        return Error(StatusCodes.Status500InternalServerError, UnexpectedErrorMessage);
+        return GlosifyProblemDetails.Result(
+            context.HttpContext,
+            StatusCodes.Status500InternalServerError,
+            ApiErrorCodes.Unexpected,
+            UnexpectedErrorMessage);
     }
 
     private static ILogger GetLogger(ExceptionContext context)

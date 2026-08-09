@@ -60,7 +60,7 @@ public class CollectionService : ICollectionService
 
             if (!parentExists)
             {
-                throw new InvalidOperationException("Parent collection not found for this user and language.");
+                throw new CollectionParentNotFoundException();
             }
         }
 
@@ -72,7 +72,7 @@ public class CollectionService : ICollectionService
 
         if (siblingNameExists)
         {
-            throw new InvalidOperationException("A collection with this name already exists here.");
+            throw new CollectionNameConflictException();
         }
 
         var collection = new Collection

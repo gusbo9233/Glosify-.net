@@ -31,37 +31,15 @@ public class CollectionsApiController : ApiControllerBase
     [HttpPost]
     public async Task<ActionResult<CollectionDto>> Create([FromBody] CreateCollectionRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Language))
-        {
-            return BadRequest("Name and Language are required.");
-        }
+        var collection = await _collectionService.CreateCollectionAsync(
+            request.Name.Trim(), request.Language.Trim(), User.GetUserId(), request.ParentCollectionId, cancellationToken: cancellationToken);
 
-        try
-        {
-            var collection = await _collectionService.CreateCollectionAsync(
-                request.Name.Trim(), request.Language.Trim(), User.GetUserId(), request.ParentCollectionId, cancellationToken: cancellationToken);
-
-            return Ok(CollectionDto.From(collection));
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase))
-        {
-            return Conflict(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            // Unknown or foreign parent collection id.
-            return BadRequest(ex.Message);
-        }
+        return Ok(CollectionDto.From(collection));
     }
 
     [HttpPut("{id:guid}/name")]
     public async Task<IActionResult> Rename(Guid id, [FromBody] RenameCollectionRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return BadRequest("Name is required.");
-        }
-
         var renamed = await _collectionService.RenameCollectionAsync(id, request.Name.Trim(), User.GetUserId(), cancellationToken: cancellationToken);
         return renamed ? NoContent() : NotFound();
     }

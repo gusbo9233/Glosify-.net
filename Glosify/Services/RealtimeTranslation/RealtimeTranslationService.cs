@@ -1,5 +1,5 @@
-using System.Collections.Concurrent;
 using Glosify.Data;
+using Glosify.Infrastructure.Concurrency;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai;
 using Glosify.Services.Language;
@@ -10,8 +10,6 @@ namespace Glosify.Services.RealtimeTranslation;
 
 public sealed class RealtimeTranslationService : IRealtimeTranslationService
 {
-    private static readonly ConcurrentDictionary<string, SemaphoreSlim> Locks = new(StringComparer.Ordinal);
-
     private readonly GlosifyContext _context;
     private readonly IAiCreditService _credits;
     private readonly IRealtimeTranslationRelayTokenStore _relayTokens;
@@ -19,6 +17,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
     private readonly RealtimeTranslationOptions _options;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<RealtimeTranslationService> _logger;
+    private readonly IKeyedAsyncLock _keyedLock;
 
     public RealtimeTranslationService(
         GlosifyContext context,
@@ -27,7 +26,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         IQuizLanguagePreferenceService languagePreferences,
         IOptions<RealtimeTranslationOptions> options,
         TimeProvider timeProvider,
-        ILogger<RealtimeTranslationService> logger)
+        ILogger<RealtimeTranslationService> logger,
+        IKeyedAsyncLock keyedLock)
     {
         _context = context;
         _credits = credits;
@@ -36,6 +36,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         _options = options.Value;
         _timeProvider = timeProvider;
         _logger = logger;
+        _keyedLock = keyedLock;
     }
 
     public async Task<RealtimeTranslationCatalog> GetCatalogAsync(
@@ -93,9 +94,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                     "Choose a quiz language in Glosify before saving an original speech transcript.");
             }
         }
-        var gate = GetLock("user:" + userId);
-        await gate.WaitAsync(cancellationToken);
-        try
+        await using (await _keyedLock.AcquireAsync("user:" + userId, cancellationToken))
         {
             var hasActiveSession = await _context.RealtimeTranslationSessions.AnyAsync(session =>
                 session.UserId == userId
@@ -235,10 +234,6 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 await _context.SaveChangesAsync(cancellationToken);
                 throw;
             }
-        }
-        finally
-        {
-            gate.Release();
         }
     }
 
@@ -565,22 +560,14 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             session.ChargedMinutes,
             session.CreditsCharged);
 
-    private static SemaphoreSlim GetLock(string key) => Locks.GetOrAdd(key, _ => new SemaphoreSlim(1, 1));
-
-    private static async Task<T> WithSessionLockAsync<T>(
+    private async Task<T> WithSessionLockAsync<T>(
         Guid sessionId,
         Func<Task<T>> action,
         CancellationToken cancellationToken)
     {
-        var gate = GetLock("session:" + sessionId.ToString("N"));
-        await gate.WaitAsync(cancellationToken);
-        try
-        {
-            return await action();
-        }
-        finally
-        {
-            gate.Release();
-        }
+        await using var lease = await _keyedLock.AcquireAsync(
+            "session:" + sessionId.ToString("N"),
+            cancellationToken);
+        return await action();
     }
 }

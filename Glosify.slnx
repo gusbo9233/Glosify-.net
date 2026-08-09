@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="Glosify/Glosify.csproj" />
   <Project Path="Glosify.Tests/Glosify.Tests.csproj" />
+  <Project Path="Glosify.BrowserTests/Glosify.BrowserTests.csproj" />
 </Solution>

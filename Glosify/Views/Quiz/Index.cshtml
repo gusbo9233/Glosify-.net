@@ -197,8 +197,8 @@
         <form method="post" asp-controller="Quiz" asp-action="CreateCollection">
             @Html.AntiForgeryToken()
             <div class="form-group">
-                <label class="form-label">Collection Name</label>
-                <input class="form-input" type="text" name="Name" placeholder="e.g. Travel phrases" required />
+                <label class="form-label" for="collectionName">Collection Name</label>
+                <input class="form-input" id="collectionName" type="text" name="Name" placeholder="e.g. Travel phrases" required />
             </div>
             <input type="hidden" name="ParentCollectionId" value="@currentCollectionId" />
             <div class="modal-actions">
@@ -220,12 +220,12 @@
             @Html.AntiForgeryToken()
             <input type="hidden" name="CollectionId" value="@currentCollectionId" />
             <div class="form-group">
-                <label class="form-label">Quiz Name</label>
-                <input class="form-input" type="text" name="Name" placeholder="e.g. French Basics" required />
+                <label class="form-label" for="quizName">Quiz Name</label>
+                <input class="form-input" id="quizName" type="text" name="Name" placeholder="e.g. French Basics" required />
             </div>
             <div class="form-group">
-                <label class="form-label">Source Language</label>
-                <select class="select-input" name="SourceLanguage" required>
+                <label class="form-label" for="quizSourceLanguage">Source Language</label>
+                <select class="select-input" id="quizSourceLanguage" name="SourceLanguage" required>
                     <option value="">Select language...</option>
                     <option>English</option>
                     <option>Swedish</option>

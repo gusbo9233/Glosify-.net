@@ -26,18 +26,20 @@ shared collections, PDF text extraction, and AI-assisted content creation.
 - Azure Blob Storage and Azure Monitor OpenTelemetry
 - Gemini as an explicit deployment-level rollback
 - PdfPig for PDF text extraction
-- xUnit, ASP.NET Core MVC testing, and AngleSharp
+- xUnit, ASP.NET Core MVC testing, AngleSharp, and Playwright
 
 ## Repository layout
 
 ```text
 Glosify/                  Web application
 Glosify.Tests/            Automated tests
+Glosify.BrowserTests/     Chromium user-journey tests
+Glosify.ClientTests/      Dependency-free JavaScript module tests
 Glosify/Migrations/       EF Core migrations
 Glosify/wwwroot/          Static assets
 scripts/                  Development helper scripts
 .foundry/                 Speaking-agent evaluations, datasets, and rubrics
-docs/                     Product, architecture, and operations documentation
+docs/adr/                 Architecture decision records
 .github/workflows/        Azure deployment workflow
 ```
 
@@ -56,10 +58,6 @@ Local Azure access uses `DefaultAzureCredential`; run `az login` before using
 Foundry, Speech, or Blob Storage features. Production uses managed identity and
 does not require Foundry or Speech keys.
 
-See the detailed configuration references for
-[generative AI](docs/foundry-generative-ai.md#configuration) and
-[Speaking](docs/azure-speaking-practice.md#application-configuration).
-
 ## Local development
 
 Development runs against a SQL Server container on your own machine, never against
@@ -72,9 +70,10 @@ the Azure database. Nothing in this section costs money or requires a network.
    colima start --arch aarch64 --vm-type vz --vz-rosetta --cpu 4 --memory 4 --disk 40
    ```
 
-2. Start the database:
+2. Restore the repository-pinned EF tool and start the database:
 
    ```bash
+   dotnet tool restore
    docker compose -f docker-compose.dev.yml up -d
    ```
 
@@ -94,7 +93,7 @@ the Azure database. Nothing in this section costs money or requires a network.
    ```
 
 5. Run the app and register a local account at
-   `https://localhost:7032/Identity/Account/Register`:
+   `https://localhost:7032/Account/Register`:
 
    ```bash
    dotnet run --project Glosify
@@ -109,19 +108,20 @@ falls back to email and password. An account whose email is listed under
 Azure-backed features — Foundry, Speech, Blob Storage — still need `az login` and a
 network. Everything else, including the whole assistant UI, works offline.
 
-### Why `dev-db-reset.sh` instead of `dotnet ef database update`
+### Database lifecycle
 
-The migration history starts mid-life: no migration creates `Quizzes` and the other
-original tables, because the production database predates the first migration. So
-migrations cannot build a database from nothing, and `dotnet ef database update`
-fails on the first `ALTER` against an empty one.
+The checked-in history starts with one complete `InitialCreate` migration. A new
+database is supported directly—there is no generated-schema shortcut and no forged
+migration history:
 
-`scripts/dev-db-reset.sh` creates the schema from the current model with
-`dotnet ef dbcontext script`, then records every existing migration as applied. The
-result matches the model and accepts future migrations normally, so once it has run
-`dotnet ef database update` behaves as usual. Re-run the script whenever you want a
-clean database; `docker compose -f docker-compose.dev.yml down -v` throws the data
-away entirely.
+```bash
+dotnet ef database update --project Glosify
+dotnet ef migrations has-pending-model-changes --project Glosify
+```
+
+`scripts/dev-db-reset.sh` is only a convenience for dropping the disposable local
+database, recreating it, and running that same migration command. Startup never
+changes schema.
 
 ### Working against the Azure database
 
@@ -133,19 +133,34 @@ ConnectionStrings__DefaultConnection='Server=tcp:glosify.database.windows.net,14
   dotnet ef migrations script <previous> <latest> --project Glosify
 ```
 
-Review the SQL and apply it deliberately. `Database:ApplyMigrationsOnStartup` stays
-`false` so nothing migrates production by merely starting up.
+Review the SQL and apply it deliberately. There is no startup-migration switch, so
+starting the web process can never change schema.
 
 ## Tests
 
-Run the test suite with:
+Run the deterministic .NET and JavaScript suites with:
 
 ```bash
-dotnet test
+dotnet test Glosify.Tests/Glosify.Tests.csproj
+npm test --prefix Glosify.ClientTests
+npm test --prefix Glosify.LiveSubtitles.Extension
 ```
 
 The suite covers navigation, authorisation, sharing, quizzes, assistant flows,
 AI credits, Speaking sessions and APIs, Foundry usage, and Speech tokens.
+
+The CI browser job starts the app against an empty migrated SQL Server database and
+runs four Chromium journeys. For a local run, install Chromium once and provide the
+test host:
+
+```bash
+pwsh Glosify.BrowserTests/bin/Debug/net10.0/playwright.ps1 install chromium
+GLOSIFY_BROWSER_BASE_URL=http://localhost:5099 \
+  dotnet test Glosify.BrowserTests/Glosify.BrowserTests.csproj
+```
+
+On a Mac without PowerShell, set `GLOSIFY_BROWSER_EXECUTABLE_PATH` to an installed
+Chromium/Chrome executable instead.
 
 Live Foundry smoke tests are opt-in:
 
@@ -155,27 +170,15 @@ dotnet test Glosify.slnx -c Release \
   --filter Category=LiveFoundry
 ```
 
-They use `DefaultAzureCredential`. See the
-[Foundry validation guide](docs/foundry-generative-ai.md#validation-and-live-smoke-tests)
-for optional overrides.
-
-## Documentation
-
-Start with the [documentation index](docs/README.md).
-
-- [Azure-powered speaking practice](docs/azure-speaking-practice.md)
-- [Foundry generative AI](docs/foundry-generative-ai.md)
-- [Live Subtitles Chrome extension](docs/live-subtitles-extension.md)
-- [Database diagram](docs/database-diagram.md)
-- [Rewarded ads for AI credits](docs/rewarded-ads-for-credits.md)
+They use `DefaultAzureCredential`; provider-specific values can be supplied with
+the same environment-variable names as the corresponding `appsettings.json`
+sections.
 
 ## Database
 
 The EF Core context is `Glosify.Data.GlosifyContext`. The database includes
 Identity and application tables for quizzes, words, sentences, collections,
 assistant messages, AI credits, and book documents.
-
-See the [database diagram](docs/database-diagram.md) for the complete model.
 
 ## Deployment
 
@@ -191,26 +194,17 @@ hostname. External sign-in builds its Google `redirect_uri` from the request
 host, and only the custom domain is registered with Google, so the App Service
 hostname reaches the app but fails the OAuth request.
 
-Migrations are not applied by the workflow. `Database__ApplyMigrationsOnStartup`
-is on in the `glosify-app` settings, so the app applies whatever is still pending
-each time it starts, under its own managed identity, which holds `db_ddladmin` on
-`glosifydb`. The default in `appsettings.json` stays `false`, so a local run never
-migrates a database on its own.
+CI proves the migration history against an empty SQL Server database, checks for
+pending model changes, and builds an EF migration bundle. Deployment executes that
+reviewed bundle before publishing the web artifact. The deployment identity uses the
+passwordless `PRODUCTION_SQL_CONNECTION_STRING` secret and owns schema changes.
+The GitHub OIDC identity `identity-glosify` holds `db_ddladmin`; the web app's
+`glosify-app` managed identity is runtime-only and holds only `db_datareader` and
+`db_datawriter`.
 
-That only covers the migrations compiled into the deployed assembly, so it cannot
-run a migration before the deploy that carries it. Applying one ahead of its
-deploy means running `dotnet ef database update` against the production database,
-which needs two things: `ConnectionStrings__DefaultConnection` in the environment,
-because `GlosifyContextFactory` otherwise points design-time commands at a local
-LocalDB, and a SQL server firewall rule for the client address.
-
-Practice sessions, opaque Speaking session mappings, and mobile sign-in codes
-are stored in process. The app therefore assumes a single instance, and active
-sessions are lost when it restarts.
-
-Production settings, managed-identity roles, telemetry, and the temporary Gemini
-rollback procedure are documented in the [Foundry guide](docs/foundry-generative-ai.md)
-and [Speaking guide](docs/azure-speaking-practice.md).
+The portfolio deployment intentionally remains single-instance. Its in-memory state,
+failure semantics, and Redis/SignalR/data-protection upgrade path are recorded in
+[ADR 0001](docs/adr/0001-single-instance-state.md).
 
 ## Public repository hygiene
 

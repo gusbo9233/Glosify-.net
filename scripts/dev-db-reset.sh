@@ -3,16 +3,8 @@
 #
 #   ./scripts/dev-db-reset.sh
 #
-# Why this exists instead of `dotnet ef database update`: the migration history in this
-# repo starts mid-life. No migration ever creates Quizzes, words, and the other original
-# tables, because the production database predates the first migration. Running the
-# migrations against an empty database therefore fails on the first ALTER.
-#
-# So the schema is created from the *current model* with `dotnet ef dbcontext script`,
-# and every existing migration is then recorded as already applied. The result is a
-# database that matches the model and accepts future migrations normally.
-#
-# This affects local development only. Production keeps applying migrations in order.
+# The checked-in migration history starts with a complete InitialCreate migration, so
+# local development and CI exercise the same supported path as a new deployment.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -40,42 +32,11 @@ echo "==> Dropping and recreating [$DB]"
     END
     CREATE DATABASE [$DB];" >/dev/null
 
-echo "==> Scripting the current model"
-SCHEMA=$(mktemp -t glosify-schema)
-trap 'rm -f "$SCHEMA"' EXIT
-dotnet ef dbcontext script --project Glosify/Glosify.csproj --no-build -o "$SCHEMA" >/dev/null
-# sqlcmd chokes on the UTF-8 BOM that the scripter emits.
-perl -i -pe 's/^\x{ef}\x{bb}\x{bf}// if $. == 1' "$SCHEMA"
-
-# The model and the real database disagree here. Migration 20260529191258_AddCollections
-# created FK_Quizzes_Collections_CollectionId with NO ACTION, but the model leaves the
-# optional relationship unconfigured, so the scripter emits EF's SET NULL default. That
-# gives AspNetUsers two delete paths into Quizzes (direct, and via Collections) and SQL
-# Server rejects the whole batch with "may cause cycles or multiple cascade paths".
-# Production has NO ACTION, so that is what local development should have too.
-perl -i -pe 's/(FK_Quizzes_Collections_CollectionId.*?)\s+ON DELETE SET NULL/$1/' "$SCHEMA"
-
-echo "==> Creating the schema"
-# sqlcmd reads the script from stdin; `-i /dev/stdin` does not work through docker exec.
-# It also reports errors on stdout, so failures are surfaced rather than discarded.
-"${SQLCMD[@]}" -d "$DB" < "$SCHEMA"
-
-echo "==> Recording existing migrations as applied"
-PRODUCT_VERSION=$(dotnet ef --version 2>/dev/null | tail -1 | tr -d '[:space:]')
-{
-    echo "SET NOCOUNT ON;"
-    echo "CREATE TABLE [__EFMigrationsHistory] ("
-    echo "  [MigrationId] nvarchar(150) NOT NULL,"
-    echo "  [ProductVersion] nvarchar(32) NOT NULL,"
-    echo "  CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId]));"
-    for file in Glosify/Migrations/*.cs; do
-        case "$file" in
-            *.Designer.cs | *ModelSnapshot.cs) continue ;;
-        esac
-        id=$(basename "$file" .cs)
-        echo "INSERT INTO [__EFMigrationsHistory] VALUES (N'$id', N'$PRODUCT_VERSION');"
-    done
-} | "${SQLCMD[@]}" -d "$DB"
+echo "==> Applying EF Core migrations"
+dotnet tool restore >/dev/null
+dotnet ef database update \
+    --project Glosify/Glosify.csproj \
+    --no-build
 
 COUNT=$("${SQLCMD[@]}" -d "$DB" -h -1 -W \
     -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM sys.tables;" | tr -d '[:space:]')
@@ -83,6 +44,6 @@ MIGRATIONS=$("${SQLCMD[@]}" -d "$DB" -h -1 -W \
     -Q "SET NOCOUNT ON; SELECT COUNT(*) FROM [__EFMigrationsHistory];" | tr -d '[:space:]')
 
 echo
-echo "Done. [$DB] has $COUNT tables and $MIGRATIONS migrations recorded as applied."
+echo "Done. [$DB] has $COUNT tables and $MIGRATIONS migration(s) recorded as applied."
 echo "Run 'dotnet run --project Glosify' and register a local account at"
-echo "https://localhost:7032/Identity/Account/Register to sign in."
+echo "https://localhost:7032/Account/Register to sign in."

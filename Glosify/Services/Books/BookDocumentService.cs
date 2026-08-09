@@ -78,7 +78,7 @@ public sealed class BookDocumentService : IBookDocumentService
         }
         catch
         {
-            await _storage.DeleteIfExistsAsync(blobName, CancellationToken.None);
+            await TryDeleteUploadedBlobAsync(blobName);
             throw;
         }
 
@@ -109,9 +109,19 @@ public sealed class BookDocumentService : IBookDocumentService
             document.Title = "Untitled book";
         }
 
-        _context.BookDocuments.Add(document);
-        await _context.SaveChangesAsync(cancellationToken);
-        return document;
+        try
+        {
+            _context.BookDocuments.Add(document);
+            await _context.SaveChangesAsync(cancellationToken);
+            return document;
+        }
+        catch
+        {
+            // Blob storage and SQL cannot share a transaction. Compensate the completed
+            // upload when persistence fails so an invisible orphan is not left behind.
+            await TryDeleteUploadedBlobAsync(blobName);
+            throw;
+        }
     }
 
     public async Task<BookDocument?> GetOwnedDocumentAsync(
@@ -233,6 +243,21 @@ public sealed class BookDocumentService : IBookDocumentService
         if (!hasPdfExtension && !hasPdfContentType)
         {
             throw new ArgumentException("Only PDF files can be uploaded.");
+        }
+    }
+
+    private async Task TryDeleteUploadedBlobAsync(string blobName)
+    {
+        try
+        {
+            await _storage.DeleteIfExistsAsync(blobName, CancellationToken.None);
+        }
+        catch (Exception cleanupException)
+        {
+            _logger.LogWarning(
+                cleanupException,
+                "Could not compensate failed book upload by deleting blob {BlobName}.",
+                blobName);
         }
     }
 }

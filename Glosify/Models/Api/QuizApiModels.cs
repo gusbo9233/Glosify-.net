@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Glosify.Models.Entities;
 namespace Glosify.Models.Api;
 
@@ -38,12 +39,19 @@ public sealed record SentenceDto(Guid Id, string Text, string Translation, int W
 
 public sealed record SetVisibilityRequest(bool IsPublic);
 
-public sealed record RepairSentenceRequest(string Text);
+public sealed record RepairSentenceRequest(
+    [param: Required, StringLength(4000)] string Text);
 
 public sealed record RepairResultDto(string Message);
 
 public sealed record ExtractedTextDto(string Text);
 
-public sealed record CreateQuizRequest(string Name, string SourceLanguage, string TargetLanguage, Guid? CollectionId);
+public sealed record CreateQuizRequest(
+    [param: Required, StringLength(160)] string Name,
+    [param: Required, StringLength(64)] string SourceLanguage,
+    [param: Required, StringLength(64)] string TargetLanguage,
+    Guid? CollectionId);
 
-public sealed record AddWordRequest(string Word, string Translation);
+public sealed record AddWordRequest(
+    [param: Required, StringLength(200)] string Word,
+    [param: Required, StringLength(500)] string Translation);

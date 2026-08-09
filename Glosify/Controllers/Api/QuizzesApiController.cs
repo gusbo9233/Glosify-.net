@@ -71,29 +71,14 @@ public class QuizzesApiController : ApiControllerBase
     [HttpPost]
     public async Task<ActionResult<QuizSummaryDto>> Create([FromBody] CreateQuizRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Name) ||
-            string.IsNullOrWhiteSpace(request.SourceLanguage) ||
-            string.IsNullOrWhiteSpace(request.TargetLanguage))
-        {
-            return BadRequest("Name, SourceLanguage and TargetLanguage are required.");
-        }
+        var quiz = await _quizService.CreateQuizAsync(
+            request.Name.Trim(),
+            request.SourceLanguage.Trim(),
+            request.TargetLanguage.Trim(),
+            User.GetUserId(),
+            request.CollectionId, cancellationToken: cancellationToken);
 
-        try
-        {
-            var quiz = await _quizService.CreateQuizAsync(
-                request.Name.Trim(),
-                request.SourceLanguage.Trim(),
-                request.TargetLanguage.Trim(),
-                User.GetUserId(),
-                request.CollectionId, cancellationToken: cancellationToken);
-
-            return CreatedAtAction(nameof(Get), new { id = quiz.Id }, QuizSummaryDto.From(quiz));
-        }
-        catch (InvalidOperationException ex)
-        {
-            // Unknown or foreign collection id.
-            return BadRequest(ex.Message);
-        }
+        return CreatedAtAction(nameof(Get), new { id = quiz.Id }, QuizSummaryDto.From(quiz));
     }
 
     [HttpDelete("{id:guid}")]
@@ -118,11 +103,6 @@ public class QuizzesApiController : ApiControllerBase
     [HttpPost("{id:guid}/words")]
     public async Task<IActionResult> AddWord(Guid id, [FromBody] AddWordRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Word) || string.IsNullOrWhiteSpace(request.Translation))
-        {
-            return BadRequest("Word and Translation are required.");
-        }
-
         var quiz = await _quizService.GetQuizByIdAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         if (quiz == null)
         {
@@ -212,11 +192,6 @@ public class QuizzesApiController : ApiControllerBase
     [AiServiceExceptionFilter]
     public async Task<IActionResult> RepairSentence(Guid id, [FromBody] RepairSentenceRequest request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Text))
-        {
-            return BadRequest("Choose a sentence to repair.");
-        }
-
         var result = await _quizRepairService.RepairSentenceAsync(id, request.Text, User.GetUserId(), cancellationToken);
         return result.Status switch
         {

@@ -983,8 +983,8 @@ body {
         position: absolute;
         inset: 0;
         background:
-            linear-gradient(90deg, rgba(4, 19, 41, 0.98), rgba(4, 19, 41, 0.78), rgba(4, 19, 41, 0.38)),
-            url("https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1600&q=80") center/cover;
+            radial-gradient(circle at 82% 22%, rgba(45, 122, 191, 0.48), transparent 30%),
+            linear-gradient(90deg, #041329, #0a2a4d 62%, #174c73);
     }
 
     .workspace-hero-content {

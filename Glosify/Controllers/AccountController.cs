@@ -1,6 +1,7 @@
 using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Models.ViewModels;
+using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -14,15 +15,18 @@ public class AccountController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAuthenticationSchemeProvider _schemeProvider;
+    private readonly IExternalAccountService _externalAccounts;
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
-        IAuthenticationSchemeProvider schemeProvider)
+        IAuthenticationSchemeProvider schemeProvider,
+        IExternalAccountService externalAccounts)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _schemeProvider = schemeProvider;
+        _externalAccounts = externalAccounts;
     }
 
     [HttpGet]
@@ -30,7 +34,7 @@ public class AccountController : Controller
     {
         if (User.Identity?.IsAuthenticated == true && string.IsNullOrWhiteSpace(externalLoginError))
         {
-            return LocalRedirect(Url.IsLocalUrl(returnUrl) ? returnUrl! : "/");
+            return LocalRedirect(SafeLocalReturnUrl(returnUrl));
         }
 
         if (!string.IsNullOrWhiteSpace(externalLoginError))
@@ -58,7 +62,7 @@ public class AccountController : Controller
         var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
 
         if (result.Succeeded)
-            return LocalRedirect(returnUrl ?? "/");
+            return LocalRedirect(SafeLocalReturnUrl(returnUrl));
 
         if (result.IsLockedOut)
         {
@@ -128,61 +132,18 @@ public class AccountController : Controller
 
         var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false);
         if (result.Succeeded)
-            return LocalRedirect(returnUrl ?? "/");
+            return LocalRedirect(SafeLocalReturnUrl(returnUrl));
 
-        // First time — create the user
-        var email = GetExternalLoginEmail(info);
-        if (string.IsNullOrWhiteSpace(email))
+        var resolution = await _externalAccounts.ResolveOrCreateAsync(info);
+        if (!resolution.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, $"{info.ProviderDisplayName ?? info.LoginProvider} did not provide an email address.");
+            ModelState.AddModelError(string.Empty, resolution.ErrorMessage ?? "External login failed.");
             await SetLoginViewDataAsync(returnUrl);
             return View("Login", new LoginViewModel());
         }
 
-        var existingUser = await _userManager.FindByEmailAsync(email);
-        if (existingUser != null)
-        {
-            // Only Google guarantees the email in its claims is verified. Other providers
-            // (notably Microsoft work/school tenants) let tenant admins put arbitrary
-            // addresses in the email claims, so auto-linking them to an existing account
-            // would allow account takeover.
-            if (!string.Equals(info.LoginProvider, "Google", StringComparison.OrdinalIgnoreCase))
-            {
-                ModelState.AddModelError(
-                    string.Empty,
-                    "An account with this email already exists. Sign in with the method you originally used.");
-                await SetLoginViewDataAsync(returnUrl);
-                return View("Login", new LoginViewModel());
-            }
-
-            var addLoginResult = await _userManager.AddLoginAsync(existingUser, info);
-            if (addLoginResult.Succeeded)
-            {
-                await _signInManager.SignInAsync(existingUser, isPersistent: false);
-                return LocalRedirect(returnUrl ?? "/");
-            }
-
-            foreach (var error in addLoginResult.Errors)
-                ModelState.AddModelError(string.Empty, error.Description);
-
-            await SetLoginViewDataAsync(returnUrl);
-            return View("Login", new LoginViewModel());
-        }
-
-        var user = new ApplicationUser { UserName = email, Email = email };
-        var createResult = await _userManager.CreateAsync(user);
-        if (createResult.Succeeded)
-        {
-            await _userManager.AddLoginAsync(user, info);
-            await _signInManager.SignInAsync(user, isPersistent: false);
-            return LocalRedirect(returnUrl ?? "/");
-        }
-
-        foreach (var error in createResult.Errors)
-            ModelState.AddModelError(string.Empty, error.Description);
-
-        await SetLoginViewDataAsync(returnUrl);
-        return View("Login", new LoginViewModel());
+        await _signInManager.SignInAsync(resolution.User!, isPersistent: false);
+        return LocalRedirect(SafeLocalReturnUrl(returnUrl));
     }
 
     [HttpGet]
@@ -193,7 +154,7 @@ public class AccountController : Controller
 
     private async Task SetLoginViewDataAsync(string? returnUrl)
     {
-        ViewData["ReturnUrl"] = returnUrl;
+        ViewData["ReturnUrl"] = Url.IsLocalUrl(returnUrl) ? returnUrl : null;
         ViewData["GoogleLoginEnabled"] = await IsExternalLoginProviderConfigured("Google");
         ViewData["MicrosoftLoginEnabled"] = await IsExternalLoginProviderConfigured("Microsoft");
     }
@@ -204,13 +165,6 @@ public class AccountController : Controller
         return schemes.Any(scheme => string.Equals(scheme.Name, provider, StringComparison.OrdinalIgnoreCase));
     }
 
-    // Only real email claims. preferred_username/upn are not email addresses and are
-    // attacker-controlled in multi-tenant Microsoft sign-in, so they must never be
-    // used to match or create accounts.
-    private static string GetExternalLoginEmail(ExternalLoginInfo info)
-    {
-        return info.Principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-            ?? info.Principal.FindFirst("email")?.Value
-            ?? string.Empty;
-    }
+    private string SafeLocalReturnUrl(string? returnUrl) =>
+        Url.IsLocalUrl(returnUrl) ? returnUrl! : "/";
 }

@@ -33,10 +33,9 @@ public class ApiCreateErrorTests
         var foreignCollectionId = context.Collections.Single().Id;
         var controller = CreateQuizzesController(context);
 
-        var result = await controller.Create(new CreateQuizRequest(
-            "Basics", "English", "Polish", foreignCollectionId));
-
-        Assert.IsType<BadRequestObjectResult>(result.Result);
+        await Assert.ThrowsAsync<QuizCollectionNotFoundException>(() =>
+            controller.Create(new CreateQuizRequest(
+                "Basics", "English", "Polish", foreignCollectionId)));
     }
 
     [Fact]
@@ -54,9 +53,8 @@ public class ApiCreateErrorTests
         await context.SaveChangesAsync();
         var controller = CreateCollectionsController(context);
 
-        var result = await controller.Create(new CreateCollectionRequest("Food", "Polish", null));
-
-        Assert.IsType<ConflictObjectResult>(result.Result);
+        await Assert.ThrowsAsync<CollectionNameConflictException>(() =>
+            controller.Create(new CreateCollectionRequest("Food", "Polish", null)));
     }
 
     [Fact]
@@ -65,9 +63,8 @@ public class ApiCreateErrorTests
         await using var context = CreateContext();
         var controller = CreateCollectionsController(context);
 
-        var result = await controller.Create(new CreateCollectionRequest("Food", "Polish", Guid.NewGuid()));
-
-        Assert.IsType<BadRequestObjectResult>(result.Result);
+        await Assert.ThrowsAsync<CollectionParentNotFoundException>(() =>
+            controller.Create(new CreateCollectionRequest("Food", "Polish", Guid.NewGuid())));
     }
 
     private const string UserId = "user-1";

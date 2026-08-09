@@ -31,7 +31,10 @@ internal sealed class QuizConfiguration : IEntityTypeConfiguration<Quiz>
             .WithMany(c => c.Quizzes)
             .HasForeignKey(q => q.CollectionId)
             .HasConstraintName("FK_Quizzes_Collections_CollectionId")
-            .OnDelete(DeleteBehavior.SetNull);
+            // A user owns both collections and quizzes. Cascading through both paths
+            // would give SQL Server multiple cascade paths, so collection deletion is
+            // handled explicitly by the application before the collection is removed.
+            .OnDelete(DeleteBehavior.NoAction);
 
     }
 }

@@ -1,6 +1,8 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Glosify.Data;
 using Glosify.Extensions;
+using Glosify.Infrastructure.Api;
+using Glosify.Infrastructure.Health;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Assistant.Mcp;
 using Glosify.Services.Ai.Generation;
@@ -9,24 +11,40 @@ using Glosify.Services.RealtimeTranslation;
 using Glosify.Services.Speaking;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Browser tests run the built app in the Testing environment rather than from a
+// publish directory. Explicitly load the development manifest so those tests exercise
+// the real JavaScript and CSS assets instead of receiving empty placeholder responses.
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    builder.WebHost.UseStaticWebAssets();
+}
 
 // Add services to the container.
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+    options.Filters.Add<ApiProblemDetailsResultFilter>();
+    options.Filters.AddService<ApiExceptionFilter>();
+});
+builder.Services.AddScoped<ApiExceptionFilter>();
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = GlosifyProblemDetails.ValidationResult;
 });
 
 // Gives the bearer-token API surface a consistent RFC 7807 error body instead of an
 // empty response, and backs UseStatusCodePages below.
 builder.Services.AddProblemDetails();
+builder.Services.AddOpenApi();
 
 // Kestrel serves the rendered views uncompressed and nothing in front of it
 // compresses them, so an average page ships ~22 KB of HTML over the wire.
@@ -67,7 +85,8 @@ builder.Services.AddMemoryCache();
 // Liveness only, deliberately: it must answer while Azure SQL serverless is still
 // resuming, and a dependency check here would report the app unhealthy through a
 // cold start it is designed to wait out.
-builder.Services.AddHealthChecks();
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseReadinessHealthCheck>("database", tags: ["ready"]);
 
 builder.Services.AddGlosifyRateLimiting();
 
@@ -115,26 +134,13 @@ builder.Services.AddDbContext<GlosifyContext>(options =>
                 errorNumbersToAdd: null);
         }
     )
-    .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
 );
 
 var app = builder.Build();
 
-if (builder.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
-{
-    await using var migrationScope = app.Services.CreateAsyncScope();
-    var migrationLogger = migrationScope.ServiceProvider
-        .GetRequiredService<ILoggerFactory>()
-        .CreateLogger("DatabaseMigration");
-    migrationLogger.LogInformation("Applying pending Glosify database migrations.");
-    var migrationContext = migrationScope.ServiceProvider.GetRequiredService<GlosifyContext>();
-    await migrationContext.Database.MigrateAsync();
-    migrationLogger.LogInformation("Glosify database migrations are current.");
-}
-
 // Creates the shared demo account and tops it back up to its credit target. A no-op
-// unless Demo:Enabled is set, and it runs after migrations because it writes to
-// AspNetUsers and AiCreditAccounts.
+// unless Demo:Enabled is set. Database migrations are applied by deployment tooling
+// before the application starts, so runtime identities never need schema permissions.
 {
     await using var demoScope = app.Services.CreateAsyncScope();
     await demoScope.ServiceProvider.GetRequiredService<DemoAccountSeeder>().EnsureAsync();
@@ -169,9 +175,13 @@ if (!app.Environment.IsDevelopment())
 // above, API callers get RFC 7807 JSON and browsers get a short plain-text line.
 app.UseStatusCodePages();
 
-// Compression has to sit ahead of everything that writes a body, static assets
-// included, so it sees the response before it is sent.
-app.UseResponseCompression();
+// Static assets already have build-time compressed representations. Wrapping their
+// send-file responses in dynamic compression can produce a Content-Encoding header
+// with an empty body on some hosts, so dynamic compression is reserved for routed
+// HTML/JSON responses (whose URLs do not have file extensions).
+app.UseWhen(
+    context => !Path.HasExtension(context.Request.Path),
+    branch => branch.UseResponseCompression());
 
 // MapStaticAssets publishes two routes per file: a fingerprinted one
 // (css/site.3ty2x2i68v.css) marked immutable, and the plain path, marked
@@ -243,7 +253,19 @@ app.UseRateLimiter();
 
 app.UseAuthorization();
 
-app.MapHealthChecks("/healthz").AllowAnonymous();
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+{
+    app.MapOpenApi().AllowAnonymous();
+}
+
+app.MapHealthChecks("/healthz", new HealthCheckOptions
+{
+    Predicate = _ => false,
+}).AllowAnonymous();
+app.MapHealthChecks("/readyz", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+}).AllowAnonymous();
 
 app.MapStaticAssets().AllowAnonymous();
 
