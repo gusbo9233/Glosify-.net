@@ -45,6 +45,12 @@ jobs:
           dotnet tool restore
           dotnet restore Glosify.slnx
 
+      - name: Audit NuGet packages
+        run: >-
+          dotnet restore Glosify.slnx
+          --force-evaluate
+          -p:WarningsNotAsErrors=
+
       - name: Build
         run: dotnet build Glosify.slnx --configuration Release --no-restore
 
