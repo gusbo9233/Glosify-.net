@@ -7,8 +7,8 @@ namespace Glosify.Services.Ai.Assistant;
 internal sealed class AssistantChangeWorkflow(
     GlosifyContext context,
     IChangeApplier changeApplier,
-    IAssistantMessagePresenter presenter,
-    IAssistantThreadStore threads) : IAssistantChangeWorkflow
+    AssistantMessagePresenter presenter,
+    AssistantThreadStore threads)
 {
     public async Task<AssistantApplyResult> ApplyAsync(
         Guid messageId,

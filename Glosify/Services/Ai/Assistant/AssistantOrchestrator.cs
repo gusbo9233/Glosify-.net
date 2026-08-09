@@ -5,9 +5,9 @@ namespace Glosify.Services.Ai.Assistant;
 /// workflows are separate scoped collaborators; routes and public DTOs remain stable.
 /// </summary>
 internal sealed class AssistantOrchestrator(
-    IAssistantThreadStore threads,
-    IAssistantTurnRunner turns,
-    IAssistantChangeWorkflow changes) : IAssistantOrchestrator
+    AssistantThreadStore threads,
+    AssistantTurnRunner turns,
+    AssistantChangeWorkflow changes) : IAssistantOrchestrator
 {
     public Task<IReadOnlyList<AssistantChatSummary>> ListChatsAsync(string userId, CancellationToken cancellationToken = default) =>
         threads.ListAsync(userId, cancellationToken);

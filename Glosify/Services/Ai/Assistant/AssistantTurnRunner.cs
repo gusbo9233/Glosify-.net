@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Ai.Assistant;
 
-internal sealed class AssistantTurnRunner : IAssistantTurnRunner
+internal sealed class AssistantTurnRunner
 {
     private const int MaxToolTurns = 24;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -16,9 +16,9 @@ internal sealed class AssistantTurnRunner : IAssistantTurnRunner
     private readonly IGenerativeAiClient _generativeAi;
     private readonly IGenerativeAiModelResolver _modelResolver;
     private readonly IAssistantTools _tools;
-    private readonly IAssistantThreadStore _threads;
-    private readonly IAssistantContextResolver _contextResolver;
-    private readonly IAssistantMessagePresenter _presenter;
+    private readonly AssistantThreadStore _threads;
+    private readonly AssistantContextResolver _contextResolver;
+    private readonly AssistantMessagePresenter _presenter;
     private readonly AssistantPromptBuilder _promptBuilder;
     private readonly ILogger<AssistantTurnRunner> _logger;
 
@@ -27,9 +27,9 @@ internal sealed class AssistantTurnRunner : IAssistantTurnRunner
         IGenerativeAiClient generativeAi,
         IGenerativeAiModelResolver modelResolver,
         IAssistantTools tools,
-        IAssistantThreadStore threads,
-        IAssistantContextResolver contextResolver,
-        IAssistantMessagePresenter presenter,
+        AssistantThreadStore threads,
+        AssistantContextResolver contextResolver,
+        AssistantMessagePresenter presenter,
         AssistantPromptBuilder promptBuilder,
         ILogger<AssistantTurnRunner> logger)
     {

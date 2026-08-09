@@ -136,12 +136,12 @@ public static class ApplicationServiceExtensions
         services.AddAssistantTools();
         services.AddScoped<IChangeApplier, ChangeApplier>();
         services.AddScoped<IAssistantPendingChangeStore, AssistantPendingChangeStore>();
-        services.AddScoped<IAssistantContextResolver, AssistantContextResolver>();
-        services.AddScoped<IAssistantMessagePresenter, AssistantMessagePresenter>();
+        services.AddScoped<AssistantContextResolver>();
+        services.AddScoped<AssistantMessagePresenter>();
         services.AddScoped<AssistantPromptBuilder>();
-        services.AddScoped<IAssistantThreadStore, AssistantThreadStore>();
-        services.AddScoped<IAssistantTurnRunner, AssistantTurnRunner>();
-        services.AddScoped<IAssistantChangeWorkflow, AssistantChangeWorkflow>();
+        services.AddScoped<AssistantThreadStore>();
+        services.AddScoped<AssistantTurnRunner>();
+        services.AddScoped<AssistantChangeWorkflow>();
         services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
         services.AddAssistantMcp(configuration);
 

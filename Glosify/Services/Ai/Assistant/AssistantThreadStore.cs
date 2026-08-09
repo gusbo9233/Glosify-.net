@@ -11,8 +11,8 @@ internal static class AssistantThreadDefaults
 
 internal sealed class AssistantThreadStore(
     GlosifyContext context,
-    IAssistantContextResolver contextResolver,
-    IAssistantMessagePresenter presenter) : IAssistantThreadStore
+    AssistantContextResolver contextResolver,
+    AssistantMessagePresenter presenter)
 {
     public async Task<IReadOnlyList<AssistantChatSummary>> ListAsync(
         string userId,

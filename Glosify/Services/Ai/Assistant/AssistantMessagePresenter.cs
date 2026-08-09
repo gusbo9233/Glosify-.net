@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Glosify.Services.Ai.Assistant;
 
-internal sealed class AssistantMessagePresenter : IAssistantMessagePresenter
+internal sealed class AssistantMessagePresenter
 {
     private const string NewChatTitle = "New chat";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

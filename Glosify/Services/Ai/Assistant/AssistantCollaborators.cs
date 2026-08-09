@@ -9,62 +9,11 @@ using System.Text.Json;
 
 namespace Glosify.Services.Ai.Assistant;
 
-internal interface IAssistantContextResolver
-{
-    Task<string?> ResolveLanguageAsync(string userId, CancellationToken cancellationToken);
-    Task<string?> ResolveLanguageCodeAsync(string userId, CancellationToken cancellationToken);
-    Task<Quiz?> ResolveQuizAsync(Guid? quizId, string userId, CancellationToken cancellationToken);
-    Task<TranscriptAssistantContext?> ResolveTranscriptAsync(Guid? transcriptId, string userId, CancellationToken cancellationToken);
-    Task<BookAssistantContext?> ResolveBookAsync(Guid? bookDocumentId, string userId, CancellationToken cancellationToken);
-    Task<DocumentPageContext> ResolveDocumentPageAsync(AssistantDocumentContext document, string userId, CancellationToken cancellationToken);
-}
-
-internal interface IAssistantMessagePresenter
-{
-    string NormalizeTitle(string? title);
-    string ExtractVisibleText(AssistantMessage message);
-    bool HasVisibleContent(AssistantMessage message);
-    string Truncate(string? value, int max);
-    IReadOnlyList<PendingChange> ParseStoredChanges(string? json);
-    IReadOnlyList<string> GetReferencedWordIds(IEnumerable<PendingChange> changes);
-    AssistantPendingChangeView PresentPendingChange(
-        PendingChange change,
-        IReadOnlyDictionary<string, AssistantWordLabel> wordLabels);
-}
-
-internal interface IAssistantThreadStore
-{
-    Task<IReadOnlyList<AssistantChatSummary>> ListAsync(string userId, CancellationToken cancellationToken);
-    Task<AssistantChatSummary> CreateAsync(string userId, Guid? quizId, Guid? transcriptId, Guid? bookId, CancellationToken cancellationToken);
-    Task<AssistantChatSummary> UpdateAsync(Guid threadId, string userId, string? title, Guid? quizId, bool updateContext, Guid? transcriptId, Guid? bookId, CancellationToken cancellationToken);
-    Task DeleteAsync(Guid threadId, string userId, CancellationToken cancellationToken);
-    Task<AssistantHistory> GetChatHistoryAsync(Guid threadId, string userId, CancellationToken cancellationToken);
-    Task<AssistantHistory> GetQuizHistoryAsync(Guid quizId, string userId, CancellationToken cancellationToken);
-    Task<AssistantHistory> GetGlobalHistoryAsync(string userId, CancellationToken cancellationToken);
-    Task<AssistantThread> GetOrCreateDefaultAsync(string userId, Guid? quizId, CancellationToken cancellationToken);
-    Task<AssistantThread> GetOwnedAsync(Guid threadId, string userId, CancellationToken cancellationToken);
-    Task<List<AssistantMessage>> LoadMessagesAsync(Guid threadId, CancellationToken cancellationToken);
-}
-
-internal interface IAssistantTurnRunner
-{
-    Task<AssistantTurnResponse> RunChatAsync(Guid threadId, string userId, string message, Guid? quizId, string? focusedWordId, string? model, AssistantDocumentContext? document, Guid? customQuizId, Guid? transcriptId, Guid? bookId, CancellationToken cancellationToken);
-    Task<AssistantTurnResponse> RunQuizAsync(Guid quizId, string userId, string message, string? focusedWordId, string? model, AssistantDocumentContext? document, CancellationToken cancellationToken);
-    Task<AssistantTurnResponse> RunGlobalAsync(string userId, string message, string? model, AssistantDocumentContext? document, CancellationToken cancellationToken);
-}
-
-internal interface IAssistantChangeWorkflow
-{
-    Task<AssistantApplyResult> ApplyAsync(Guid messageId, string userId, CancellationToken cancellationToken);
-    Task RejectAsync(Guid messageId, string userId, CancellationToken cancellationToken);
-    Task ResetAsync(string userId, CancellationToken cancellationToken);
-}
-
 internal sealed class AssistantContextResolver(
     GlosifyContext context,
     IBookDocumentService books,
     ILanguageContext languageContext,
-    IQuizLanguagePreferenceService languagePreferences) : IAssistantContextResolver
+    IQuizLanguagePreferenceService languagePreferences)
 {
     public async Task<string?> ResolveLanguageAsync(string userId, CancellationToken cancellationToken)
     {
