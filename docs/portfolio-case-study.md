@@ -2,11 +2,10 @@
 
 [Open the live application](https://glosify.se) · [Return to the repository README](../README.md)
 
-I am a bachelor's student in Sweden, and Glosify is the main full-stack project
-I use to learn how a complete .NET web application fits together. It started as
-a school project and grew into a deployed language-learning application with
-authentication, SQL persistence, AI features, browser tests, and an Azure
-delivery pipeline.
+Glosify is the main full-stack project I use to learn how a complete .NET web
+application fits together. It started as a school project and grew into a
+deployed language-learning application with authentication, SQL persistence,
+AI features, browser tests, and an Azure delivery pipeline.
 
 ## What the application does
 
@@ -61,24 +60,34 @@ explicit context.
 
 [![Live Subtitles extension settings](screenshots/live-subtitles-settings.png)](screenshots/live-subtitles-settings.png)
 
-The Manifest V3 extension uses the same Glosify account and credit balance as
-the website. It captures audio from the active tab and opens a short-lived,
-authenticated WebSocket relay. Audio is relayed in memory and is not stored.
-Saving an original-language transcript is a separate user choice.
+The Manifest V3 extension is integrated with the Glosify web application. The
+user connects it through the website using a one-time, PKCE-protected code. The
+extension exchanges that code for Identity bearer credentials and then uses the
+same account, APIs, and AI credit balance as the website.
+
+The extension captures audio from the active tab and opens a short-lived,
+authenticated WebSocket relay through Glosify. The translated text is displayed
+over the current page. Audio is relayed in memory and is not stored. Saving the
+original-language transcript is a separate user choice; saved transcripts can
+be managed in the website and selected as context for the assistant.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    Browser["Browser"] --> MVC["MVC controllers and Razor views"]
-    Extension["Chrome extension"] --> API["Bearer-authenticated JSON APIs"]
+    Browser["Browser"]
+    Extension["Chrome extension"]
 
     subgraph WebApp["ASP.NET Core 10 application"]
-        MVC --> Services["Feature services"]
-        API --> Services
+        MVC["MVC controllers and Razor views"] --> Services["Feature services"]
+        API["Bearer-authenticated JSON APIs"] --> Services
+        Relay --> Services
         Services --> EF["Entity Framework Core"]
     end
 
+    Browser --> MVC
+    Extension --> API
+    Extension --> Relay["Short-lived WebSocket relay"]
     EF --> SQL["SQL Server / Azure SQL"]
     Services --> Foundry["Microsoft Foundry"]
     Services --> Speech["Azure AI Speech"]
