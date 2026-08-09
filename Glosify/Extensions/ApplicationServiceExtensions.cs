@@ -1,0 +1,158 @@
+using Azure.AI.Projects;
+using Azure.Core;
+using Glosify.Services;
+using Glosify.Services.Ai;
+using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Assistant.Mcp;
+using Glosify.Services.Ai.Generation;
+using Glosify.Services.Ai.Llm;
+using Glosify.Services.Auth;
+using Glosify.Services.Books;
+using Glosify.Services.Classrooms;
+using Glosify.Services.CustomQuizzes;
+using Glosify.Services.Flashcards;
+using Glosify.Services.Language;
+using Glosify.Services.Quizzes;
+using Glosify.Services.RealtimeTranslation;
+using Glosify.Services.Speaking;
+using Glosify.Services.Speech;
+using Glosify.Services.Storage;
+using Glosify.Services.Typing;
+using Glosify.Services.Words;
+using Microsoft.Extensions.Options;
+
+namespace Glosify.Extensions;
+
+public static class ApplicationServiceExtensions
+{
+    /// <summary>
+    /// Options binding and the application service graph.
+    /// </summary>
+    public static IServiceCollection AddGlosifyServices(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IWebHostEnvironment environment)
+    {
+        services.AddHttpContextAccessor();
+        services.AddScoped<ILanguageContext, CookieLanguageContext>();
+        services.AddScoped<IQuizLanguagePreferenceService, QuizLanguagePreferenceService>();
+
+        services.AddOptions<GeminiOptions>()
+            .Bind(configuration.GetSection("Gemini"));
+        services.AddOptions<GenerativeAiOptions>()
+            .Bind(configuration.GetSection(GenerativeAiOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<GenerativeAiOptions>, GenerativeAiOptionsValidator>();
+        services.AddOptions<AiUsageOptions>()
+            .Bind(configuration.GetSection("AiUsage"))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<AiUsageOptions>, AiUsageOptionsValidator>();
+        services.AddOptions<ExtensionAuthOptions>()
+            .Bind(configuration.GetSection(ExtensionAuthOptions.SectionName));
+        services.AddOptions<DemoAccountOptions>()
+            .Bind(configuration.GetSection(DemoAccountOptions.SectionName));
+        services.AddScoped<DemoAccountSeeder>();
+        services.AddOptions<RealtimeTranslationOptions>()
+            .Bind(configuration.GetSection(RealtimeTranslationOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<RealtimeTranslationOptions>, RealtimeTranslationOptionsValidator>();
+        // Keep the legacy Gemini credential alias only while the explicit rollback
+        // provider is available. All model and timeout settings use standard ASP.NET
+        // double-underscore configuration binding.
+        services.Configure<GeminiOptions>(options =>
+        {
+            var apiKey = configuration["GEMINI_API_KEY"];
+            if (!string.IsNullOrWhiteSpace(apiKey))
+            {
+                options.ApiKey = apiKey;
+            }
+        });
+
+        // Register application services
+        services.Configure<BlobStorageOptions>(configuration.GetSection("BlobStorage"));
+        services.AddScoped<IQuizService, QuizService>();
+        services.AddScoped<ICollectionService, CollectionService>();
+        services.AddScoped<IQuizRepairService, QuizRepairService>();
+        services.AddScoped<IWordService, WordService>();
+        services.AddSingleton<IQuizSessionRegistry, QuizSessionRegistry>();
+        services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
+        services.AddScoped<ITypingQuizService, TypingQuizService>();
+        services.AddScoped<ITypingSessionService, TypingSessionService>();
+        services.AddSingleton<IBookFileStorage, AzureBlobBookFileStorage>();
+        services.AddScoped<IPdfTextExtractionService, PdfPigTextExtractionService>();
+        services.AddScoped<IBookDocumentService, BookDocumentService>();
+        services.AddSingleton<IBookPageTranslationCoordinator, BookPageTranslationCoordinator>();
+        services.AddScoped<IBookPageTranslationService, BookPageTranslationService>();
+        services.AddScoped<IClassroomService, ClassroomService>();
+        services.AddScoped<IQuizAttemptService, QuizAttemptService>();
+        services.AddScoped<ICustomQuizService, CustomQuizService>();
+        services.AddSingleton<ICustomQuizTemplateCatalog, CustomQuizTemplateCatalog>();
+        services.Configure<Glosify.Services.Communication.AcsOptions>(
+            configuration.GetSection(Glosify.Services.Communication.AcsOptions.SectionName));
+        services.AddScoped<Glosify.Services.Communication.IAcsTokenService, Glosify.Services.Communication.AcsTokenService>();
+        services.AddScoped<IAiCreditService, AiCreditService>();
+        services.AddSingleton<IExtensionAuthorizationCodeStore, ExtensionAuthorizationCodeStore>();
+        services.AddSingleton<IMobileAuthorizationCodeStore, MobileAuthorizationCodeStore>();
+        services.AddSingleton<IRealtimeTranslationRelayTokenStore, RealtimeTranslationRelayTokenStore>();
+        services.AddSingleton<IFoundryTranslationRelay, FoundryTranslationRelay>();
+        services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();
+        services.AddScoped<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>();
+        services.AddHostedService<RealtimeTranslationCleanupService>();
+        // The Gemini model factory remains only for the explicit deployment-level
+        // rollback path during the Foundry soak.
+        services.AddSingleton<IGeminiModelFactory, GeminiModelFactory>();
+        services.AddSingleton<IGenerativeAiModelResolver, GenerativeAiModelResolver>();
+        services.AddSingleton<IFoundryAgentInvoker, FoundryAgentInvoker>();
+        services.AddScoped<FoundryGenerativeAiClient>();
+        services.AddScoped<GeminiGenerativeAiClient>();
+        services.AddScoped<IGenerativeAiClient>(services =>
+        {
+            var provider = services.GetRequiredService<IOptions<GenerativeAiOptions>>()
+                .Value.Provider.Trim();
+            return string.Equals(
+                provider,
+                GenerativeAiOptions.GeminiProvider,
+                StringComparison.OrdinalIgnoreCase)
+                ? services.GetRequiredService<GeminiGenerativeAiClient>()
+                : services.GetRequiredService<FoundryGenerativeAiClient>();
+        });
+        services.AddScoped<IVocabularyGenerationService, LlmVocabularyGenerationService>();
+        services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();
+        services.AddScoped<IAssistantTools, AssistantTools>();
+        services.AddScoped<IChangeApplier, ChangeApplier>();
+        services.AddScoped<IAssistantPendingChangeStore, AssistantPendingChangeStore>();
+        services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
+        services.AddAssistantMcp(configuration);
+
+        services.Configure<SpeechOptions>(configuration.GetSection(SpeechOptions.SectionName));
+        services.AddOptions<SpeakingOptions>()
+            .Bind(configuration.GetSection(SpeakingOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<SpeakingOptions>, SpeakingOptionsValidator>();
+        services.AddSingleton<TokenCredential>(_ =>
+            FoundryCredentialFactory.Create(environment, configuration));
+        services.AddSingleton(services =>
+        {
+            var endpoint = services.GetRequiredService<IOptions<GenerativeAiOptions>>()
+                .Value.Foundry.ProjectEndpoint;
+            return new AIProjectClient(
+                new Uri(endpoint, UriKind.Absolute),
+                services.GetRequiredService<TokenCredential>());
+        });
+        // Without a resilience handler this client falls back to HttpClient's 100-second
+        // default with no retry and no circuit breaker, so a Speech regional brownout would
+        // hold a request thread for the full 100 seconds per call.
+        services.AddHttpClient(nameof(AzureTextToSpeechService))
+            .AddStandardResilienceHandler();
+        services.AddSingleton<ITextToSpeechService, AzureTextToSpeechService>();
+        services.AddSingleton<ISpeechAuthorizationTokenService, SpeechAuthorizationTokenService>();
+        services.AddSingleton<ISpeakingAgentClient, FoundrySpeakingAgentClient>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<ISpeakingSessionStore, SpeakingSessionStore>();
+        services.AddHostedService<SpeakingSessionCleanupService>();
+        services.AddScoped<ISpeakingService, SpeakingService>();
+        services.AddScoped<ISpeakingQuizReader, SpeakingQuizReader>();
+
+        return services;
+    }
+}
