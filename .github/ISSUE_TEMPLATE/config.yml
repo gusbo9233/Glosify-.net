@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/gusbo9233/Glosify-.net/security/advisories/new
+    about: Send security reports privately instead of opening a public issue.

@@ -1,8 +1,62 @@
 # Glosify
 
-Glosify is an ASP.NET Core MVC language-learning app. It combines vocabulary
-and sentence quizzes with flashcards, typing practice, avatar conversations,
-shared collections, PDF text extraction, and AI-assisted content creation.
+[![Build, test, and deploy](https://github.com/gusbo9233/Glosify-.net/actions/workflows/master_glosify.yml/badge.svg)](https://github.com/gusbo9233/Glosify-.net/actions/workflows/master_glosify.yml)
+[![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+**[Try the live app](https://glosify.se)** · [Architecture decisions](docs/adr/) · [Automated tests](Glosify.Tests/)
+
+Glosify is a language-learning app built with ASP.NET Core MVC. It combines
+vocabulary and sentence quizzes with flashcards, typing practice, speaking
+exercises, shared collections, PDF reading, and AI-assisted content creation.
+
+I built Glosify to learn how the parts of a complete .NET web application fit
+together. It started as a school project and grew into a portfolio project with a
+real database, authentication, automated tests, Azure services, and a live deployment.
+
+## Project highlights
+
+- A complete ASP.NET Core 10 MVC application rather than a tutorial-sized CRUD demo.
+- Server-rendered MVC pages alongside controller-based JSON APIs and a Chrome extension.
+- SQL Server development and Azure SQL production databases managed with reviewed EF Core migrations.
+- ASP.NET Core Identity, external sign-in, ownership checks, rate limits, and consistent Problem Details errors.
+- Unit, integration, contract, JavaScript, and Playwright browser tests in GitHub Actions.
+- Azure deployment with managed identity, a migration bundle, liveness, and SQL-backed readiness checks.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Browser["Browser"] --> MVC["MVC controllers and views"]
+    Extension["Chrome extension"] --> API["JSON API controllers"]
+
+    subgraph App["ASP.NET Core application"]
+        MVC --> Services["Feature services"]
+        API --> Services
+        Services --> EF["Entity Framework Core"]
+    end
+
+    EF --> SQL["SQL Server / Azure SQL"]
+    Services --> Foundry["Microsoft Foundry"]
+    Services --> Speech["Azure AI Speech"]
+    Services --> Storage["Azure Blob Storage"]
+```
+
+Controllers handle HTTP concerns, while feature services own application behavior.
+EF Core is used directly instead of adding a generic repository layer. The project
+stays in one web application because extra projects would add ceremony without solving
+a current problem.
+
+The live portfolio deployment intentionally runs as one App Service instance. The
+limits of that choice and the steps needed before scaling out are documented in
+[ADR 0001](docs/adr/0001-single-instance-state.md).
+
+## Development approach
+
+I use analyzers, automated tests, CodeRabbit, and AI coding tools to help with
+implementation and review. I still review the changes, record important trade-offs in
+ADRs, and rely on deterministic CI checks before deployment. The goal is to understand
+the code and its behavior, not just generate more code.
 
 ## Features
 

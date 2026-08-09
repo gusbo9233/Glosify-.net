@@ -1,0 +1,28 @@
+name: Feature request
+description: Suggest an improvement to Glosify
+title: "Feature: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Explain the user need before describing the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Suggested approach
+      description: Describe the smallest useful version of the feature.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Done when
+      description: List the behavior that would show the feature is complete.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
