@@ -133,9 +133,7 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
             {
                 _logger.LogWarning(
                     ex,
-                    "Dragon HD Omni synthesis failed for {Language}; falling back to {Voice}.",
-                    languageCode,
-                    voice);
+                    "Dragon HD Omni synthesis failed; falling back to the standard voice.");
             }
         }
 
