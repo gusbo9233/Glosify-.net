@@ -43,8 +43,8 @@ them instead of letting the model write directly to the database.
 
 [![A typing quiz](screenshots/quiz-practice.png)](screenshots/quiz-practice.png)
 
-Vocabulary can be practised in both directions. Session state tracks progress,
-while the saved quiz data remains in SQL Server.
+Vocabulary can be practised in both directions. Each practice session tracks
+progress, while the saved quiz data remains in SQL Server.
 
 ### Books and context
 
