@@ -10,15 +10,16 @@ Glosify is a language-learning app built with ASP.NET Core MVC. It combines
 vocabulary and sentence quizzes with flashcards, typing practice, speaking
 exercises, shared collections, PDF reading, and AI-assisted content creation.
 
-I am a bachelor's student in Sweden, and I built Glosify to learn how the parts
-of a complete .NET web application fit together. It started as a school project
-and grew into a portfolio project with a real database, authentication,
-automated tests, Azure services, and a live deployment.
+I built Glosify to learn how the parts of a complete .NET web application fit
+together. It started as a school project and grew into a portfolio project with
+a real database, authentication, automated tests, Azure services, and a live
+deployment.
 
 ## What this project includes
 
 - A working ASP.NET Core 10 MVC application with several connected features.
-- Server-rendered MVC pages alongside controller-based JSON APIs and a Chrome extension.
+- A Manifest V3 Chrome extension that connects to the same account and APIs to
+  turn Chrome tab audio into live translated subtitles.
 - SQL Server development and Azure SQL production databases managed with reviewed EF Core migrations.
 - ASP.NET Core Identity, external sign-in, ownership checks, rate limits, and consistent Problem Details errors.
 - Unit, integration, contract, JavaScript, and Playwright browser tests in GitHub Actions.
@@ -32,6 +33,16 @@ automated tests, Azure services, and a live deployment.
 | **Book reader and page assistant** | **Live translated subtitles** |
 | [![A book page with the assistant preparing a quiz](docs/screenshots/book-quiz-assistant.png)](docs/screenshots/book-quiz-assistant.png) | [![Translated subtitles over a Chrome video](docs/screenshots/live-subtitles-in-action.png)](docs/screenshots/live-subtitles-in-action.png) |
 
+### Live Subtitles integration
+
+The Chrome extension is part of Glosify rather than a separate demo. A user
+connects it through the website, then the extension uses the same account, APIs,
+and AI credit balance as the MVC application. It captures audio from the active
+tab and sends it through a short-lived authenticated WebSocket relay so translated
+text can appear over the page. Audio is not stored. Saving the original-language
+transcript is optional; saved transcripts can be managed in Glosify and selected
+as context for the assistant.
+
 The [portfolio case study](docs/portfolio-case-study.md) gives a more complete product
 tour and explains the main technical decisions in simple terms.
 
@@ -39,15 +50,19 @@ tour and explains the main technical decisions in simple terms.
 
 ```mermaid
 flowchart LR
-    Browser["Browser"] --> MVC["MVC controllers and views"]
-    Extension["Chrome extension"] --> API["JSON API controllers"]
+    Browser["Browser"]
+    Extension["Chrome extension"]
 
     subgraph App["ASP.NET Core application"]
-        MVC --> Services["Feature services"]
-        API --> Services
+        MVC["MVC controllers and views"] --> Services["Feature services"]
+        API["JSON API controllers"] --> Services
+        Relay["Short-lived WebSocket relay"] --> Services
         Services --> EF["Entity Framework Core"]
     end
 
+    Browser --> MVC
+    Extension --> API
+    Extension --> Relay
     EF --> SQL["SQL Server / Azure SQL"]
     Services --> Foundry["Microsoft Foundry"]
     Services --> Speech["Azure AI Speech"]
@@ -77,6 +92,8 @@ the code and its behavior, not just generate more code.
 - AI-assisted vocabulary generation, image text extraction, and quiz repair.
 - Assistant conversations with selectable context: a quiz to act on, plus a book
   or saved transcript to read from.
+- Live translated subtitles for Chrome tab audio, integrated with Glosify
+  authentication, AI credits, saved transcripts, and assistant context.
 - Azure-powered speaking practice with animated language-specific avatars,
   typed chat, pronunciation assessment, coaching, and validated scene actions.
 - PDF uploads and deletion backed by Azure Blob Storage, with extracted page text.
@@ -101,6 +118,8 @@ Glosify/                  Web application
 Glosify.Tests/            Automated tests
 Glosify.BrowserTests/     Chromium user-journey tests
 Glosify.ClientTests/      Dependency-free JavaScript module tests
+Glosify.LiveSubtitles.Extension/
+                          Manifest V3 Chrome extension and JavaScript tests
 Glosify/Migrations/       EF Core migrations
 Glosify/wwwroot/          Static assets
 scripts/                  Development helper scripts
