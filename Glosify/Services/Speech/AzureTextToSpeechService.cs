@@ -7,6 +7,7 @@ using Azure.Core;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using Glosify.Services.Storage;
+using Glosify.Services.Ai;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.Speech;
@@ -24,19 +25,22 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
     private readonly TokenCredential _credential;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<AzureTextToSpeechService> _logger;
+    private readonly IPaidServiceGate _paidServices;
 
     public AzureTextToSpeechService(
         IOptions<SpeechOptions> speechOptions,
-        IOptions<BlobStorageOptions> blobOptions,
+        GlosifyBlobServiceClient blobs,
         TokenCredential credential,
         IHttpClientFactory httpClientFactory,
-        ILogger<AzureTextToSpeechService> logger)
+        ILogger<AzureTextToSpeechService> logger,
+        IPaidServiceGate paidServices)
     {
         _speech = speechOptions.Value;
         _credential = credential;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-        _container = TryCreateContainer(blobOptions.Value, _speech.BlobContainer, credential, logger);
+        _paidServices = paidServices;
+        _container = TryCreateContainer(blobs, _speech.BlobContainer, logger);
     }
 
     public bool IsConfigured =>
@@ -90,6 +94,7 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
         string? voicePreference = null,
         CancellationToken cancellationToken = default)
     {
+        await _paidServices.EnsureAvailableAsync(cancellationToken);
         if (!IsConfigured)
         {
             throw new InvalidOperationException("Azure Speech is not configured.");
@@ -324,9 +329,8 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
     }
 
     private static BlobContainerClient? TryCreateContainer(
-        BlobStorageOptions options,
+        GlosifyBlobServiceClient blobs,
         string containerName,
-        TokenCredential credential,
         ILogger logger)
     {
         if (string.IsNullOrWhiteSpace(containerName))
@@ -336,25 +340,13 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
 
         try
         {
-            if (!string.IsNullOrWhiteSpace(options.ConnectionString))
-            {
-                return new BlobContainerClient(options.ConnectionString, containerName);
-            }
-
-            var serviceUri = !string.IsNullOrWhiteSpace(options.ServiceUri)
-                ? options.ServiceUri
-                : !string.IsNullOrWhiteSpace(options.AccountName)
-                    ? $"https://{options.AccountName}.blob.core.windows.net"
-                    : null;
-
-            if (serviceUri is null)
+            var container = blobs.GetContainerOrDefault(containerName);
+            if (container is null)
             {
                 logger.LogInformation("TTS blob cache disabled: BlobStorage not configured.");
                 return null;
             }
-
-            var service = new BlobServiceClient(new Uri(serviceUri, UriKind.Absolute), credential);
-            return service.GetBlobContainerClient(containerName);
+            return container;
         }
         catch (Exception ex)
         {

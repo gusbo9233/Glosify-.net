@@ -24,6 +24,8 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("/Home")]
     [InlineData("/Home/Index")]
     [InlineData("/Home/Privacy")]
+    [InlineData("/Home/Terms")]
+    [InlineData("/Home/Support")]
     [InlineData("/login")]
     [InlineData("/Account/Login")]
     [InlineData("/Account/Register")]
@@ -35,6 +37,29 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
 
         response.EnsureSuccessStatusCode();
         Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType?.ToString());
+    }
+
+    [Fact]
+    public async Task PublicAuthAndLegalPagesExposeTheStoreDisclosuresAndWorkingLinks()
+    {
+        var client = CreateClient();
+        var login = await (await client.GetAsync("/login")).Content.ReadAsStringAsync();
+        var register = await (await client.GetAsync("/Account/Register?returnUrl=%2Fextension%2Fconnect%3Fstate%3Dtest")).Content.ReadAsStringAsync();
+        var privacy = await (await client.GetAsync("/Home/Privacy")).Content.ReadAsStringAsync();
+        var terms = await (await client.GetAsync("/Home/Terms")).Content.ReadAsStringAsync();
+        var support = await (await client.GetAsync("/Home/Support")).Content.ReadAsStringAsync();
+
+        Assert.Contains("receive 25 credits once when you sign in with Google or Microsoft", login);
+        Assert.Contains("Password accounts do not receive automatic trial credits", login);
+        Assert.Contains("25-credit trial", register);
+        Assert.Contains("returnUrl=%2Fextension%2Fconnect%3Fstate%3Dtest", register);
+        Assert.DoesNotContain("href=\"#\"", login);
+        Assert.DoesNotContain("href=\"#\"", register);
+        Assert.Contains("Chrome Web Store Limited Use", privacy);
+        Assert.Contains("Tab audio is not written to Glosify storage", privacy);
+        Assert.Contains("Transcript saving is off by default", privacy);
+        Assert.Contains("Paid features close", terms);
+        Assert.Contains("Do not send passwords", support);
     }
 
     [Theory]

@@ -1,4 +1,5 @@
 using Azure.Core;
+using Glosify.Services.Ai;
 using Glosify.Services.Speaking;
 using Microsoft.Extensions.Options;
 
@@ -11,13 +12,16 @@ public sealed class SpeechAuthorizationTokenService : ISpeechAuthorizationTokenS
 
     private readonly SpeechOptions _options;
     private readonly TokenCredential _credential;
+    private readonly IPaidServiceGate _paidServices;
 
     public SpeechAuthorizationTokenService(
         IOptions<SpeechOptions> options,
-        TokenCredential credential)
+        TokenCredential credential,
+        IPaidServiceGate paidServices)
     {
         _options = options.Value;
         _credential = credential;
+        _paidServices = paidServices;
     }
 
     public bool IsConfigured =>
@@ -27,6 +31,7 @@ public sealed class SpeechAuthorizationTokenService : ISpeechAuthorizationTokenS
     public async Task<SpeechAuthorizationToken> GetTokenAsync(
         CancellationToken cancellationToken = default)
     {
+        await _paidServices.EnsureAvailableAsync(cancellationToken);
         if (!IsConfigured)
         {
             throw new SpeakingDependencyUnavailableException(

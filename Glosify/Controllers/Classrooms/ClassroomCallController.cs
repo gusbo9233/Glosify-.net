@@ -3,6 +3,8 @@ using Glosify.Models;
 using Glosify.Models.ViewModels;
 using Glosify.Services.Classrooms;
 using Glosify.Services.Communication;
+using Glosify.Filters;
+using Glosify.Services.Ai;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.Controllers.Classrooms;
@@ -51,6 +53,8 @@ public sealed class ClassroomCallController : ClassroomControllerBase
     }
 
     [HttpPost]
+    [RequirePaidServices]
+    [AiServiceExceptionFilter]
     public async Task<IActionResult> CallToken(Guid id, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -73,6 +77,10 @@ public sealed class ClassroomCallController : ClassroomControllerBase
         catch (ClassroomAccessDeniedException)
         {
             return NotFound();
+        }
+        catch (PaidServicesBudgetExhaustedException)
+        {
+            throw;
         }
         catch (InvalidOperationException ex)
         {

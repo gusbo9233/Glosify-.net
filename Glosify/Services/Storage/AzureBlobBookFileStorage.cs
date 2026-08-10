@@ -1,18 +1,20 @@
-using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Microsoft.Extensions.Options;
+using Glosify.Services.Ai;
 
 namespace Glosify.Services.Storage;
 
 public sealed class AzureBlobBookFileStorage : IBookFileStorage
 {
     private readonly BlobContainerClient _containerClient;
+    private readonly IPaidServiceGate _paidServices;
 
-    public AzureBlobBookFileStorage(IOptions<BlobStorageOptions> options)
+    public AzureBlobBookFileStorage(
+        GlosifyBlobServiceClient blobs,
+        IPaidServiceGate paidServices)
     {
-        var storageOptions = options.Value;
-        _containerClient = CreateContainerClient(storageOptions);
+        _containerClient = blobs.GetRequiredDefaultContainer();
+        _paidServices = paidServices;
     }
 
     public async Task<string> UploadAsync(
@@ -21,6 +23,7 @@ public sealed class AzureBlobBookFileStorage : IBookFileStorage
         string contentType,
         CancellationToken cancellationToken = default)
     {
+        await _paidServices.EnsureAvailableAsync(cancellationToken);
         if (content is null)
         {
             throw new ArgumentNullException(nameof(content));
@@ -85,49 +88,6 @@ public sealed class AzureBlobBookFileStorage : IBookFileStorage
         var blobClient = _containerClient.GetBlobClient(blobName);
         var response = await blobClient.GetPropertiesAsync(cancellationToken: cancellationToken);
         return response.Value;
-    }
-
-    private static BlobContainerClient CreateContainerClient(BlobStorageOptions options)
-    {
-        var containerName = RequireContainerName(options.ContainerName);
-
-        if (!string.IsNullOrWhiteSpace(options.ConnectionString))
-        {
-            return new BlobContainerClient(options.ConnectionString, containerName);
-        }
-
-        var serviceUri = GetServiceUri(options);
-        var serviceClient = new BlobServiceClient(
-            new Uri(serviceUri, UriKind.Absolute),
-            new DefaultAzureCredential());
-
-        return serviceClient.GetBlobContainerClient(containerName);
-    }
-
-    private static string GetServiceUri(BlobStorageOptions options)
-    {
-        if (!string.IsNullOrWhiteSpace(options.ServiceUri))
-        {
-            return options.ServiceUri;
-        }
-
-        if (!string.IsNullOrWhiteSpace(options.AccountName))
-        {
-            return $"https://{options.AccountName}.blob.core.windows.net";
-        }
-
-        throw new InvalidOperationException(
-            "Blob storage is not configured. Set BlobStorage:AccountName, BlobStorage:ServiceUri, or BlobStorage:ConnectionString.");
-    }
-
-    private static string RequireContainerName(string containerName)
-    {
-        if (string.IsNullOrWhiteSpace(containerName))
-        {
-            throw new InvalidOperationException("BlobStorage:ContainerName must be configured.");
-        }
-
-        return containerName.Trim();
     }
 
     private static string RequireBlobName(string blobName)

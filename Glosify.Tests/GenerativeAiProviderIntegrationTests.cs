@@ -54,6 +54,9 @@ public sealed class GenerativeAiProviderIntegrationTests
                     {
                         ["GenerativeAi:Provider"] = provider,
                         ["Gemini:ApiKey"] = "rollback-test-key",
+                        // This test isolates adapter selection. Separate validator tests
+                        // prove that a budgeted Gemini rollback fails closed without prices.
+                        ["AiUsage:MonthlyBudget:Enabled"] = "false",
                     }));
             });
         using var scope = factory.Services.CreateScope();

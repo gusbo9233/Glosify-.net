@@ -82,6 +82,13 @@ public sealed class GenerativeAiOptionsValidator(
         if (IsProvider(options.Provider, GenerativeAiOptions.GeminiProvider))
         {
             var geminiFailures = new List<string>();
+            var budget = aiUsageOptions.Value.MonthlyBudget;
+            if (budget.Enabled && !budget.MetersProvider(AiUsageProviders.Gemini))
+            {
+                geminiFailures.Add(
+                    "GenerativeAi:Provider cannot use Gemini while the monthly budget is enabled unless "
+                    + "AiUsage:MonthlyBudget:Providers includes 'gemini' and every Gemini model has a price.");
+            }
             if (string.IsNullOrWhiteSpace(geminiOptions.Value.ApiKey))
             {
                 geminiFailures.Add(
@@ -90,6 +97,25 @@ public sealed class GenerativeAiOptionsValidator(
             if (string.IsNullOrWhiteSpace(geminiOptions.Value.PageTranslationModel))
             {
                 geminiFailures.Add("Gemini:PageTranslationModel must not be empty.");
+            }
+            if (budget.MetersProvider(AiUsageProviders.Gemini))
+            {
+                string[] routable =
+                [
+                    geminiOptions.Value.StructuredModel,
+                    geminiOptions.Value.AssistantModel,
+                    geminiOptions.Value.VisionModel,
+                    geminiOptions.Value.PageTranslationModel,
+                ];
+                foreach (var model in routable
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .Select(value => value.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Where(model => !budget.HasTokenPrice(model)))
+                {
+                    geminiFailures.Add(
+                        $"AiUsage:MonthlyBudget:Models must price Gemini model '{model}'.");
+                }
             }
             return geminiFailures.Count == 0
                 ? ValidateOptionsResult.Success

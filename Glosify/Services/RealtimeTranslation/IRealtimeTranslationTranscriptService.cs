@@ -65,7 +65,7 @@ public sealed record TranscriptTextPageRequest(
 
 /// <summary>
 /// A window of transcript text plus everything needed to name it: which page it belongs
-/// to, the wall-clock span of that page, and whether the character budget truncated it.
+/// to, the wall-clock span of that page, and whether the request returned its remainder.
 /// <see cref="StartsAt"/> and <see cref="EndsAt"/> describe the whole window that was
 /// read, not only the segments that fit, so a truncated page still reports its real end.
 /// </summary>
@@ -88,7 +88,7 @@ public sealed record TranscriptTextPage(
     int SourceSegmentCount,
     int TranslationSegmentCount)
 {
-    /// <summary>Where to resume: inside this page when it was truncated, otherwise the next page.</summary>
+    /// <summary>Where to resume when the character budget or explicit limit cut the page short.</summary>
     public int NextOffset => Offset + Segments.Count;
 }
 

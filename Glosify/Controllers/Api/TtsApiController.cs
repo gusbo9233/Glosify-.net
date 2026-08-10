@@ -1,4 +1,6 @@
 using Glosify.Services.Speech;
+using Glosify.Filters;
+using Glosify.Services.Ai;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -25,6 +27,8 @@ public sealed class TtsApiController : ControllerBase
     }
 
     [HttpGet]
+    [RequirePaidServices]
+    [AiServiceExceptionFilter]
     public async Task<IActionResult> Get(
         [FromQuery] string text,
         [FromQuery] string lang,
@@ -64,6 +68,10 @@ public sealed class TtsApiController : ControllerBase
         catch (NotSupportedException ex)
         {
             return StatusCode(StatusCodes.Status501NotImplemented, ex.Message);
+        }
+        catch (PaidServicesBudgetExhaustedException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

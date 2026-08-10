@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "build:dev": "node scripts/build.mjs development",
+    "build:store": "node scripts/build.mjs store",
+    "validate:store": "node scripts/validate-store.mjs artifacts/store",
+    "package:store": "node scripts/package-store.mjs"
   }
 }

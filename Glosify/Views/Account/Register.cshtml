@@ -2,6 +2,7 @@
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = "Create Account";
+    var returnUrl = ViewData["ReturnUrl"] as string ?? "/";
 }
 
 <main class="auth-shell">
@@ -17,6 +18,7 @@
         <header class="auth-card-header">
             <h2>Create Account</h2>
             <p>Start your language immersion journey today.</p>
+            <p><strong>25-credit trial:</strong> available once after you link and sign in with Google or Microsoft. Creating a password account alone does not add trial credits.</p>
         </header>
 
         @if (!ViewData.ModelState.IsValid)
@@ -29,7 +31,7 @@
             </div>
         }
 
-        <form asp-controller="Account" asp-action="Register" method="post" class="auth-form">
+        <form asp-controller="Account" asp-action="Register" asp-route-returnUrl="@returnUrl" method="post" class="auth-form">
             @Html.AntiForgeryToken()
 
             <div class="field">
@@ -61,13 +63,13 @@
 
         <footer class="auth-footer">
             Already have an account?
-            <a asp-controller="Account" asp-action="Login">Sign In</a>
+            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl">Sign In</a>
         </footer>
     </section>
 
     <nav class="legal-links" aria-label="Legal">
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
-        <a href="#">Support</a>
+        <a asp-controller="Home" asp-action="Privacy">Privacy Policy</a>
+        <a asp-controller="Home" asp-action="Terms">Terms of Service</a>
+        <a asp-controller="Home" asp-action="Support">Support</a>
     </nav>
 </main>

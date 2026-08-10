@@ -21,6 +21,7 @@
         <header class="auth-card-header">
             <h2>Welcome Back</h2>
             <p>Please enter your details to resume your journey.</p>
+            <p><strong>Trial offer:</strong> receive 25 credits once when you sign in with Google or Microsoft. Password accounts do not receive automatic trial credits.</p>
         </header>
 
         @if (!ViewData.ModelState.IsValid)
@@ -106,13 +107,13 @@
 
         <footer class="auth-footer">
             Don't have an account?
-            <a asp-controller="Account" asp-action="Register">Create Account</a>
+            <a asp-controller="Account" asp-action="Register" asp-route-returnUrl="@returnUrl">Create Account</a>
         </footer>
     </section>
 
     <nav class="legal-links" aria-label="Legal">
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
-        <a href="#">Support</a>
+        <a asp-controller="Home" asp-action="Privacy">Privacy Policy</a>
+        <a asp-controller="Home" asp-action="Terms">Terms of Service</a>
+        <a asp-controller="Home" asp-action="Support">Support</a>
     </nav>
 </main>

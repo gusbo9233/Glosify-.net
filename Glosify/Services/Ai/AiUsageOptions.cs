@@ -30,7 +30,7 @@ public sealed class AiUsageOptions
 public sealed class AiMonthlyBudgetOptions
 {
     public bool Enabled { get; set; } = true;
-    public decimal LimitSek { get; set; } = 200m;
+    public decimal LimitSek { get; set; } = 300m;
     public string TimeZoneId { get; set; } = "Europe/Stockholm";
     public decimal ReservationSafetyMultiplier { get; set; } = 1.25m;
     public List<string> Providers { get; set; } = [AiUsageProviders.Foundry, AiUsageProviders.AzureAiFoundry];
@@ -75,6 +75,9 @@ public static class AiUsageProviders
 
     /// <summary>Speaking practice through Microsoft Foundry.</summary>
     public const string AzureAiFoundry = "azure_ai_foundry";
+
+    /// <summary>Explicit rollback through the Google Gemini API.</summary>
+    public const string Gemini = "gemini";
 }
 
 public sealed class AiModelPriceOptions

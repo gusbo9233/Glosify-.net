@@ -29,6 +29,20 @@ public static class RateLimitingExtensions
             {
                 var path = context.Request.Path;
 
+                var isRegistration = HttpMethods.IsPost(context.Request.Method)
+                    && (string.Equals(path.Value?.TrimEnd('/'), "/Account/Register", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(path.Value?.TrimEnd('/'), "/api/auth/register", StringComparison.OrdinalIgnoreCase));
+                if (isRegistration)
+                {
+                    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter($"register:{ip}", _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromHours(1),
+                        QueueLimit = 0,
+                    });
+                }
+
                 var isAuthPath = path.StartsWithSegments("/login")
                     || path.StartsWithSegments("/Account")
                     || path.StartsWithSegments("/api/auth")

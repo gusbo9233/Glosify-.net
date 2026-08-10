@@ -120,8 +120,9 @@ if (string.IsNullOrWhiteSpace(connectionString))
 }
 var sqlConnectionString = BuildColdStartFriendlyConnectionString(connectionString);
 
-// Configure SQL Server database
-builder.Services.AddDbContext<GlosifyContext>(options =>
+// Configure SQL Server database. The factory gives budget-closure writes their own
+// change tracker, so returning a 503 cannot flush unrelated request state.
+void ConfigureGlosifyContext(DbContextOptionsBuilder options) =>
     options.UseSqlServer(
         sqlConnectionString,
         sqlOptions =>
@@ -132,9 +133,11 @@ builder.Services.AddDbContext<GlosifyContext>(options =>
                 maxRetryCount: 10,
                 maxRetryDelay: TimeSpan.FromSeconds(30),
                 errorNumbersToAdd: null);
-        }
-    )
-);
+        });
+builder.Services.AddDbContext<GlosifyContext>(ConfigureGlosifyContext);
+builder.Services.AddDbContextFactory<GlosifyContext>(
+    ConfigureGlosifyContext,
+    ServiceLifetime.Scoped);
 
 var app = builder.Build();
 

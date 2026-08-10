@@ -13,6 +13,7 @@ public static class ApiErrorCodes
     public const string UnprocessableEntity = "unprocessable_entity";
     public const string RateLimited = "rate_limited";
     public const string DependencyUnavailable = "dependency_unavailable";
+    public const string PaidServicesBudgetExhausted = "paid_services_budget_exhausted";
     public const string UpstreamFailure = "upstream_failure";
     public const string Timeout = "timeout";
     public const string Unexpected = "unexpected_error";

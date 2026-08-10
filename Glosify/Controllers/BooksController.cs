@@ -5,6 +5,8 @@ using Glosify.Models.ViewModels;
 using Glosify.Services;
 using Glosify.Services.Books;
 using Glosify.Services.Quizzes;
+using Glosify.Filters;
+using Glosify.Services.Ai;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -41,6 +43,8 @@ public sealed class BooksController : Controller
 
     [HttpPost]
     [RequestSizeLimit(26 * 1024 * 1024)]
+    [RequirePaidServices]
+    [AiServiceExceptionFilter]
     public async Task<IActionResult> Upload(IFormFile? file, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -60,6 +64,10 @@ public sealed class BooksController : Controller
         {
             TempData[NotificationKeys.Book] = ex.Message;
             return RedirectToAction(nameof(Index));
+        }
+        catch (PaidServicesBudgetExhaustedException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

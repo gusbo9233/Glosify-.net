@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Glosify.Controllers;
+using Glosify.Extensions;
 using Glosify.Models.Entities;
 using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Authentication;
@@ -16,6 +17,63 @@ namespace Glosify.Tests;
 
 public sealed class AccountReturnUrlTests
 {
+    [Fact]
+    public void ExternalOauthFailure_PreservesTheFullLocalPkceReturnUrl()
+    {
+        const string returnUrl = "/extension/connect?redirect_uri=https%3A%2F%2Fakepdpjieiokffdapibipomhbplikock.chromiumapp.org%2Fglosify&state=a-b_c&code_challenge=challenge&code_challenge_method=S256";
+        var callback = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(
+            "/Account/ExternalLoginCallback",
+            "returnUrl",
+            returnUrl);
+
+        var failurePath = AuthenticationExtensions.BuildExternalLoginFailurePath("Google", callback);
+        var parsed = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(
+            new Uri($"https://glosify.se{failurePath}").Query);
+
+        Assert.Equal("Google", parsed["externalLoginError"]);
+        Assert.Equal(returnUrl, parsed["returnUrl"]);
+    }
+
+    [Fact]
+    public void Register_PreservesAValidatedExtensionReturnUrl()
+    {
+        var actionContext = new ActionContext(
+            new DefaultHttpContext(),
+            new RouteData(),
+            new ControllerActionDescriptor());
+        var controller = new AccountController(null!, null!, null!, null!)
+        {
+            ControllerContext = new ControllerContext(actionContext),
+            Url = new UrlHelper(actionContext),
+        };
+        const string returnUrl = "/extension/connect?redirect_uri=https%3A%2F%2Fakepdpjieiokffdapibipomhbplikock.chromiumapp.org%2Fglosify&state=state&code_challenge=challenge";
+
+        var result = controller.Register(returnUrl);
+
+        Assert.IsType<ViewResult>(result);
+        Assert.Equal(returnUrl, controller.ViewData["ReturnUrl"]);
+    }
+
+    [Theory]
+    [InlineData("https://attacker.example/register")]
+    [InlineData("//attacker.example/register")]
+    public void Register_DropsAnExternalReturnUrl(string returnUrl)
+    {
+        var actionContext = new ActionContext(
+            new DefaultHttpContext(),
+            new RouteData(),
+            new ControllerActionDescriptor());
+        var controller = new AccountController(null!, null!, null!, null!)
+        {
+            ControllerContext = new ControllerContext(actionContext),
+            Url = new UrlHelper(actionContext),
+        };
+
+        controller.Register(returnUrl);
+
+        Assert.Null(controller.ViewData["ReturnUrl"]);
+    }
+
     [Theory]
     [InlineData("https://attacker.example/steal")]
     [InlineData("//attacker.example/steal")]

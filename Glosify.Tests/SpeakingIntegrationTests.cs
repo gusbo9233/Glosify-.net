@@ -694,6 +694,8 @@ public sealed class SpeakingIntegrationTests
             {
                 services.RemoveAll<IAiCreditService>();
                 services.AddSingleton<IAiCreditService, PageCredits>();
+                services.RemoveAll<IPaidServiceGate>();
+                services.AddSingleton<IPaidServiceGate, AlwaysAvailablePaidServiceGate>();
                 services.RemoveAll<ISpeakingService>();
                 services.AddSingleton<ISpeakingService, FakeSpeakingService>();
                 services.PostConfigure<SpeakingOptions>(

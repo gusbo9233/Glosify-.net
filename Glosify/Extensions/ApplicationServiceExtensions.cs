@@ -12,6 +12,7 @@ using Glosify.Services.Classrooms;
 using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Flashcards;
 using Glosify.Services.Language;
+using Glosify.Services.Legal;
 using Glosify.Services.Quizzes;
 using Glosify.Services.RealtimeTranslation;
 using Glosify.Services.Speaking;
@@ -35,6 +36,21 @@ public static class ApplicationServiceExtensions
         IWebHostEnvironment environment)
     {
         services.AddHttpContextAccessor();
+        var legalOptions = services.AddOptions<LegalOptions>()
+            .Bind(configuration.GetSection(LegalOptions.SectionName));
+        if (!environment.IsDevelopment() && !environment.IsEnvironment("Testing"))
+        {
+            legalOptions
+                .Validate(
+                    options => !string.IsNullOrWhiteSpace(options.ControllerName),
+                    "Legal:ControllerName is required outside development.")
+                .Validate(
+                    options => !string.IsNullOrWhiteSpace(options.ContactEmail)
+                        && new System.ComponentModel.DataAnnotations.EmailAddressAttribute()
+                            .IsValid(options.ContactEmail),
+                    "Legal:ContactEmail must be a valid public email outside development.")
+                .ValidateOnStart();
+        }
         services.AddScoped<ILanguageContext, CookieLanguageContext>();
         services.AddScoped<IQuizLanguagePreferenceService, QuizLanguagePreferenceService>();
 
@@ -79,7 +95,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
         services.AddScoped<ITypingQuizService, TypingQuizService>();
         services.AddScoped<ITypingSessionService, TypingSessionService>();
-        services.AddSingleton<IBookFileStorage, AzureBlobBookFileStorage>();
+        services.AddScoped<IBookFileStorage, AzureBlobBookFileStorage>();
         services.AddScoped<IPdfTextExtractionService, PdfPigTextExtractionService>();
         services.AddScoped<IBookDocumentService, BookDocumentService>();
         services.AddSingleton<IBookPageTranslationCoordinator, BookPageTranslationCoordinator>();
@@ -103,6 +119,8 @@ public static class ApplicationServiceExtensions
             configuration.GetSection(Glosify.Services.Communication.AcsOptions.SectionName));
         services.AddScoped<Glosify.Services.Communication.IAcsTokenService, Glosify.Services.Communication.AcsTokenService>();
         services.AddScoped<IAiCreditService, AiCreditService>();
+        services.AddScoped<IPaidServiceGate, PaidServiceGate>();
+        services.AddScoped<ITrialEligibilityService, TrialEligibilityService>();
         services.AddScoped<IExternalAccountUserStore, IdentityExternalAccountUserStore>();
         services.AddScoped<IExternalAccountService, ExternalAccountService>();
         services.AddSingleton<IExtensionAuthorizationCodeStore, ExtensionAuthorizationCodeStore>();
@@ -152,6 +170,7 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IValidateOptions<SpeakingOptions>, SpeakingOptionsValidator>();
         services.AddSingleton<TokenCredential>(_ =>
             FoundryCredentialFactory.Create(environment, configuration));
+        services.AddSingleton<GlosifyBlobServiceClient>();
         services.AddSingleton(services =>
         {
             var endpoint = services.GetRequiredService<IOptions<GenerativeAiOptions>>()
@@ -165,8 +184,8 @@ public static class ApplicationServiceExtensions
         // hold a request thread for the full 100 seconds per call.
         services.AddHttpClient(nameof(AzureTextToSpeechService))
             .AddStandardResilienceHandler();
-        services.AddSingleton<ITextToSpeechService, AzureTextToSpeechService>();
-        services.AddSingleton<ISpeechAuthorizationTokenService, SpeechAuthorizationTokenService>();
+        services.AddScoped<ITextToSpeechService, AzureTextToSpeechService>();
+        services.AddScoped<ISpeechAuthorizationTokenService, SpeechAuthorizationTokenService>();
         services.AddSingleton<ISpeakingAgentClient, FoundrySpeakingAgentClient>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ISpeakingSessionStore, SpeakingSessionStore>();

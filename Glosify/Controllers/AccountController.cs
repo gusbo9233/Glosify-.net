@@ -75,14 +75,16 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public IActionResult Register()
+    public IActionResult Register(string? returnUrl = null)
     {
+        SetRegisterViewData(returnUrl);
         return View();
     }
 
     [HttpPost]
-    public async Task<IActionResult> Register(RegisterViewModel model)
+    public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
     {
+        SetRegisterViewData(returnUrl);
         if (!ModelState.IsValid)
             return View(model);
 
@@ -92,7 +94,7 @@ public class AccountController : Controller
         if (result.Succeeded)
         {
             await _signInManager.SignInAsync(user, isPersistent: false);
-            return RedirectToAction("Index", "Home");
+            return LocalRedirect(SafeLocalReturnUrl(returnUrl));
         }
 
         foreach (var error in result.Errors)
@@ -128,7 +130,7 @@ public class AccountController : Controller
     {
         var info = await _signInManager.GetExternalLoginInfoAsync();
         if (info == null)
-            return RedirectToAction("Login");
+            return RedirectToAction(nameof(Login), new { returnUrl });
 
         var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false);
         if (result.Succeeded)
@@ -158,6 +160,9 @@ public class AccountController : Controller
         ViewData["GoogleLoginEnabled"] = await IsExternalLoginProviderConfigured("Google");
         ViewData["MicrosoftLoginEnabled"] = await IsExternalLoginProviderConfigured("Microsoft");
     }
+
+    private void SetRegisterViewData(string? returnUrl) =>
+        ViewData["ReturnUrl"] = Url.IsLocalUrl(returnUrl) ? returnUrl : null;
 
     private async Task<bool> IsExternalLoginProviderConfigured(string provider)
     {
