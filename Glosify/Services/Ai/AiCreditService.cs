@@ -657,15 +657,16 @@ public sealed class AiCreditService : IAiCreditService
                 cancellationToken);
         var price = GetModelPrice(reservation.Model ?? string.Empty);
         var calculatedMicros = CalculateActualBudgetMicros(usage, price);
+        var configuredLimit = GetConfiguredLimitMicros();
         var chargeCapacity = Math.Max(
             0,
-            budget.LimitMicros - budget.SpentMicros - Math.Max(0, budget.ReservedMicros - reservedMicros));
+            configuredLimit - budget.SpentMicros - Math.Max(0, budget.ReservedMicros - reservedMicros));
         var actualMicros = Math.Min(calculatedMicros, chargeCapacity);
         var overrunMicros = Math.Max(0, calculatedMicros - chargeCapacity);
         budget.ReservedMicros = Math.Max(0, budget.ReservedMicros - reservedMicros);
         budget.SpentMicros += actualMicros;
         budget.OverrunMicros += overrunMicros;
-        budget.LimitMicros = GetConfiguredLimitMicros();
+        budget.LimitMicros = configuredLimit;
         budget.UpdatedAt = _timeProvider.GetUtcNow();
         if (calculatedMicros > chargeCapacity)
         {
@@ -694,15 +695,16 @@ public sealed class AiCreditService : IAiCreditService
             * Math.Max(0, actualDurationSeconds)
             / 60m
             * MicrosPerSek);
+        var configuredLimit = GetConfiguredLimitMicros();
         var chargeCapacity = Math.Max(
             0,
-            budget.LimitMicros - budget.SpentMicros - Math.Max(0, budget.ReservedMicros - reservedMicros));
+            configuredLimit - budget.SpentMicros - Math.Max(0, budget.ReservedMicros - reservedMicros));
         var actualMicros = Math.Min(calculatedMicros, chargeCapacity);
         var overrunMicros = Math.Max(0, calculatedMicros - chargeCapacity);
         budget.ReservedMicros = Math.Max(0, budget.ReservedMicros - reservedMicros);
         budget.SpentMicros += actualMicros;
         budget.OverrunMicros += overrunMicros;
-        budget.LimitMicros = GetConfiguredLimitMicros();
+        budget.LimitMicros = configuredLimit;
         budget.UpdatedAt = _timeProvider.GetUtcNow();
         if (calculatedMicros > chargeCapacity)
         {

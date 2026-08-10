@@ -306,6 +306,66 @@ public sealed class AiCreditServiceTests
     }
 
     [Fact]
+    public async Task MonthlyBudget_CommitUsesALoweredConfiguredLimit()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var options = CreateUsageOptions(
+            monthlyLimitSek: 200m,
+            inputSekPerMillionTokens: 1_000_000m,
+            outputSekPerMillionTokens: 1_000_000m);
+        var service = CreateService(context, usageOptions: options);
+
+        var reservation = await service.ReserveAsync(
+            UsageContext("user-1"),
+            "foundry",
+            "test-model",
+            100);
+        options.MonthlyBudget.LimitSek = 75m;
+        await service.CommitUsageAsync(
+            reservation.ReservationId,
+            new AiTokenUsage(50, 50, 0, 0, 100));
+
+        var budget = await context.AiMonthlyBudgets.SingleAsync();
+        Assert.Equal(75_000_000, budget.LimitMicros);
+        Assert.Equal(75_000_000, budget.SpentMicros);
+        Assert.Equal(25_000_000, budget.OverrunMicros);
+        Assert.Equal(0, budget.AvailableMicros);
+        Assert.NotNull(budget.ExhaustedAt);
+    }
+
+    [Fact]
+    public async Task MonthlyBudget_DurationCommitUsesALoweredConfiguredLimit()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var options = CreateUsageOptions(
+            monthlyLimitSek: 200m,
+            inputSekPerMillionTokens: 1m,
+            outputSekPerMillionTokens: 1m,
+            audioSekPerMinute: 100m);
+        var service = CreateService(context, usageOptions: options);
+
+        var reservation = await service.ReserveDurationAsync(
+            new AiUsageContext("user-1", AiUsageFeatures.RealtimeTranslation, "subtitle_minute", Guid.NewGuid()),
+            "foundry",
+            "test-model",
+            60,
+            8);
+        options.MonthlyBudget.LimitSek = 75m;
+        await service.CommitDurationUsageAsync(reservation.ReservationId, 60);
+
+        var budget = await context.AiMonthlyBudgets.SingleAsync();
+        Assert.Equal(75_000_000, budget.LimitMicros);
+        Assert.Equal(75_000_000, budget.SpentMicros);
+        Assert.Equal(25_000_000, budget.OverrunMicros);
+        Assert.Equal(0, budget.AvailableMicros);
+        Assert.NotNull(budget.ExhaustedAt);
+    }
+
+    [Fact]
     public async Task MonthlyBudget_ReleaseReturnsTheSharedReservation()
     {
         await using var context = CreateContext();
@@ -424,7 +484,8 @@ public sealed class AiCreditServiceTests
         decimal outputSekPerMillionTokens = 1m,
         decimal? audioSekPerMinute = null,
         TimeProvider? timeProvider = null,
-        ITrialEligibilityService? trialEligibility = null)
+        ITrialEligibilityService? trialEligibility = null,
+        AiUsageOptions? usageOptions = null)
     {
         var generativeAiOptions = new GenerativeAiOptions
         {
@@ -452,34 +513,45 @@ public sealed class AiCreditServiceTests
         return new AiCreditService(
             context,
             new TestDbContextFactory(context),
-            Options.Create(new AiUsageOptions
-            {
-                TrialGrantCredits = 25,
-                CreditsPerThousandTokens = 1,
-                MonthlyBudget = new AiMonthlyBudgetOptions
-                {
-                    Enabled = true,
-                    LimitSek = monthlyLimitSek,
-                    TimeZoneId = "Europe/Stockholm",
-                    ReservationSafetyMultiplier = 1m,
-                    Providers = ["foundry", "azure_ai_foundry"],
-                    Models =
-                    [
-                        new AiModelPriceOptions
-                        {
-                            Deployment = "test-model",
-                            InputSekPerMillionTokens = inputSekPerMillionTokens,
-                            OutputSekPerMillionTokens = outputSekPerMillionTokens,
-                            AudioSekPerMinute = audioSekPerMinute,
-                        },
-                    ],
-                },
-            }),
+            Options.Create(usageOptions ?? CreateUsageOptions(
+                monthlyLimitSek,
+                inputSekPerMillionTokens,
+                outputSekPerMillionTokens,
+                audioSekPerMinute)),
             resolver,
             trialEligibility ?? new MutableTrialEligibilityService { IsEligible = true },
             timeProvider ?? new ManualTimeProvider(
                 new DateTimeOffset(2026, 7, 19, 12, 0, 0, TimeSpan.Zero)));
     }
+
+    private static AiUsageOptions CreateUsageOptions(
+        decimal monthlyLimitSek,
+        decimal inputSekPerMillionTokens,
+        decimal outputSekPerMillionTokens,
+        decimal? audioSekPerMinute = null) =>
+        new()
+        {
+            TrialGrantCredits = 25,
+            CreditsPerThousandTokens = 1,
+            MonthlyBudget = new AiMonthlyBudgetOptions
+            {
+                Enabled = true,
+                LimitSek = monthlyLimitSek,
+                TimeZoneId = "Europe/Stockholm",
+                ReservationSafetyMultiplier = 1m,
+                Providers = ["foundry", "azure_ai_foundry"],
+                Models =
+                [
+                    new AiModelPriceOptions
+                    {
+                        Deployment = "test-model",
+                        InputSekPerMillionTokens = inputSekPerMillionTokens,
+                        OutputSekPerMillionTokens = outputSekPerMillionTokens,
+                        AudioSekPerMinute = audioSekPerMinute,
+                    },
+                ],
+            },
+        };
 
     private static AiUsageContext UsageContext(string userId) =>
         new(userId, AiUsageFeatures.Assistant, "test", Guid.NewGuid());

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Net;
 using Glosify.Controllers;
 using Glosify.Extensions;
 using Glosify.Models.Entities;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
 using Xunit;
 
@@ -28,7 +30,29 @@ public sealed class AccountReturnUrlTests
 
         Assert.NotEmpty(action.GetCustomAttributes(
             typeof(ValidateAntiForgeryTokenAttribute),
-            inherit: true));
+            inherit: false));
+    }
+
+    [Fact]
+    public async Task RegisterPost_WithoutAntiforgeryToken_IsRejectedByMvcPipeline()
+    {
+        using var factory = new WebApplicationFactory<Program>();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+            BaseAddress = new Uri("https://localhost"),
+        });
+
+        var response = await client.PostAsync(
+            "/Account/Register",
+            new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Email"] = "csrf-probe@example.test",
+                ["Password"] = "NeverSubmitted1!",
+                ["ConfirmPassword"] = "NeverSubmitted1!",
+            }));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

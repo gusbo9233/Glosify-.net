@@ -5,7 +5,6 @@ using Glosify.Models.ViewModels;
 using Glosify.Services;
 using Glosify.Services.Books;
 using Glosify.Services.Quizzes;
-using Glosify.Filters;
 using Glosify.Services.Ai;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,15 +17,18 @@ public sealed class BooksController : Controller
     private readonly IBookDocumentService _books;
     private readonly IQuizService _quizzes;
     private readonly ILogger<BooksController> _logger;
+    private readonly IPaidServiceGate _paidServices;
 
     public BooksController(
         IBookDocumentService books,
         IQuizService quizzes,
-        ILogger<BooksController> logger)
+        ILogger<BooksController> logger,
+        IPaidServiceGate paidServices)
     {
         _books = books;
         _quizzes = quizzes;
         _logger = logger;
+        _paidServices = paidServices;
     }
 
     [HttpGet]
@@ -43,10 +45,17 @@ public sealed class BooksController : Controller
 
     [HttpPost]
     [RequestSizeLimit(26 * 1024 * 1024)]
-    [RequirePaidServices]
-    [AiServiceExceptionFilter]
     public async Task<IActionResult> Upload(IFormFile? file, CancellationToken cancellationToken)
     {
+        var paidStatus = await _paidServices.GetStatusAsync(cancellationToken);
+        if (!paidStatus.Available)
+        {
+            TempData[NotificationKeys.Book] = PaidServicesUnavailableMessage(
+                paidStatus.Reason,
+                paidStatus.ResetsAtUtc);
+            return RedirectToAction(nameof(Index));
+        }
+
         var userId = User.GetUserId();
         if (file is null)
         {
@@ -65,9 +74,10 @@ public sealed class BooksController : Controller
             TempData[NotificationKeys.Book] = ex.Message;
             return RedirectToAction(nameof(Index));
         }
-        catch (PaidServicesBudgetExhaustedException)
+        catch (PaidServicesBudgetExhaustedException ex)
         {
-            throw;
+            TempData[NotificationKeys.Book] = PaidServicesUnavailableMessage(ex.Reason, ex.ResetsAtUtc);
+            return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
         {
@@ -76,6 +86,9 @@ public sealed class BooksController : Controller
             return RedirectToAction(nameof(Index));
         }
     }
+
+    private static string PaidServicesUnavailableMessage(string? reason, DateTimeOffset resetsAtUtc) =>
+        $"{reason ?? PaidServiceGate.BudgetExhaustedReason} Paid features reopen at {resetsAtUtc:yyyy-MM-dd HH:mm} UTC.";
 
     [HttpPost]
     [ValidateAntiForgeryToken]

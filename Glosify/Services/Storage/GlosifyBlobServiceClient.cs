@@ -1,5 +1,6 @@
 using Azure.Core;
 using Azure.Storage.Blobs;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.Storage;
@@ -15,10 +16,11 @@ public sealed class GlosifyBlobServiceClient
 
     public GlosifyBlobServiceClient(
         IOptions<BlobStorageOptions> options,
-        TokenCredential credential)
+        TokenCredential credential,
+        IHostEnvironment environment)
     {
         _options = options.Value;
-        _serviceClient = CreateServiceClient(_options, credential);
+        _serviceClient = CreateServiceClient(_options, credential, environment);
     }
 
     public BlobContainerClient GetRequiredDefaultContainer()
@@ -44,11 +46,14 @@ public sealed class GlosifyBlobServiceClient
 
     private static BlobServiceClient? CreateServiceClient(
         BlobStorageOptions options,
-        TokenCredential credential)
+        TokenCredential credential,
+        IHostEnvironment environment)
     {
         if (!string.IsNullOrWhiteSpace(options.ConnectionString))
         {
-            return new BlobServiceClient(options.ConnectionString);
+            var client = new BlobServiceClient(options.ConnectionString);
+            RequireSecureEndpoint(client.Uri, environment);
+            return client;
         }
 
         var serviceUri = !string.IsNullOrWhiteSpace(options.ServiceUri)
@@ -56,9 +61,26 @@ public sealed class GlosifyBlobServiceClient
             : !string.IsNullOrWhiteSpace(options.AccountName)
                 ? $"https://{options.AccountName}.blob.core.windows.net"
                 : null;
-        return serviceUri is null
-            ? null
-            : new BlobServiceClient(new Uri(serviceUri, UriKind.Absolute), credential);
+        if (serviceUri is null)
+        {
+            return null;
+        }
+
+        var uri = new Uri(serviceUri, UriKind.Absolute);
+        RequireSecureEndpoint(uri, environment);
+        return new BlobServiceClient(uri, credential);
+    }
+
+    private static void RequireSecureEndpoint(Uri uri, IHostEnvironment environment)
+    {
+        if (uri.Scheme == Uri.UriSchemeHttps
+            || (environment.IsDevelopment() && uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException(
+            "Blob storage must use HTTPS. HTTP is allowed only for a loopback emulator in Development.");
     }
 
     private static string RequireContainerName(string containerName)

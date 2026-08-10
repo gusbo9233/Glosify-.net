@@ -294,7 +294,8 @@ public class AzureTextToSpeechServiceTests
         var sharedCredential = credential ?? new StubTokenCredential("unused");
         var blobs = new GlosifyBlobServiceClient(
             Options.Create(new BlobStorageOptions()),
-            sharedCredential);
+            sharedCredential,
+            new StubHostEnvironment(Microsoft.Extensions.Hosting.Environments.Production));
         return new AzureTextToSpeechService(
             Options.Create(speech),
             blobs,

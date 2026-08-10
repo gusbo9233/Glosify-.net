@@ -293,14 +293,20 @@
         if (!call) {
             return;
         }
-        const response = await fetch("/api/service-status/paid-features", {
-            credentials: "same-origin",
-            cache: "no-store"
-        });
-        if (!response.ok) {
+        let response;
+        let paid;
+        try {
+            response = await fetch("/api/service-status/paid-features", {
+                credentials: "same-origin",
+                cache: "no-store"
+            });
+            if (!response.ok) {
+                return;
+            }
+            paid = await response.json();
+        } catch {
             return;
         }
-        const paid = await response.json();
         if (paid.available !== false || !call) {
             return;
         }
