@@ -1,10 +1,8 @@
 using System.Text.Json;
-using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Language;
 using Glosify.Services.RealtimeTranslation;
-using Microsoft.EntityFrameworkCore;
 using static Glosify.Services.Ai.Assistant.Tools.ToolArguments;
 using static Glosify.Services.Ai.Assistant.Tools.ToolSchema;
 
@@ -14,12 +12,17 @@ internal sealed class GetSavedTranscriptTool : IAssistantTool
 {
     private static readonly AgentToolDeclaration DeclarationValue = new(
         "get_saved_transcript",
-        "Read a bounded page of finalized text from one of the user's saved transcripts. New transcripts contain original source speech; legacy transcripts may contain translations. Defaults to the transcript open in the UI. Page through with offset while has_more is true when the user's request needs more text.",
+        "Read one page of a saved transcript. Pages are the same pages the user sees in the transcript reader, "
+        + $"{RealtimeTranslationTranscriptService.DetailPageSize} captions each, so \"the first page\" means page 1 to both of you. "
+        + "New transcripts contain original source speech; legacy transcripts may contain translations. Defaults to the "
+        + "transcript open in the UI. Page forward while has_more is true.",
         BuildSchema(new Dictionary<string, object>
         {
             ["transcript_id"] = StringProp("Optional saved transcript id. Omit to use the transcript open in the UI."),
-            ["offset"] = IntegerProp("Optional number of caption segments to skip. Defaults to 0."),
-            ["limit"] = IntegerProp("Optional maximum segments from 1 to 100. Defaults to 100."),
+            ["page"] = IntegerProp("Optional 1-based page number, matching the page numbers shown in the reader. Defaults to page 1. A page beyond the end is clamped to the last page."),
+            ["at_time"] = StringProp("Optional ISO-8601 timestamp, copied from a captured_at or starts_at value. Returns the page covering that moment. Use this — not page or offset — to look at the same passage in the other stream, because the two streams number their captions separately."),
+            ["offset"] = IntegerProp("Optional number of captions to skip. Only needed to resume a page that came back with page_complete false; use next_offset from that response."),
+            ["limit"] = IntegerProp($"Optional maximum captions from 1 to {RealtimeTranslationTranscriptService.DetailPageSize}. Defaults to a full page."),
             ["stream"] = StringProp(
                 "Optional caption stream: 'source' for the original speech (the default), or 'translation' for the live translation "
                 + "of the same audio, produced by a different model. Request 'translation' only to cross-check a passage where the "
@@ -29,9 +32,9 @@ internal sealed class GetSavedTranscriptTool : IAssistantTool
 
     public AgentToolDeclaration Declaration => DeclarationValue;
 
-    private readonly GlosifyContext _context;
+    private readonly IRealtimeTranslationTranscriptService _transcripts;
 
-    public GetSavedTranscriptTool(GlosifyContext context) => _context = context;
+    public GetSavedTranscriptTool(IRealtimeTranslationTranscriptService transcripts) => _transcripts = transcripts;
 
     public async Task<object> ExecuteAsync(
         JsonElement args,
@@ -43,96 +46,62 @@ internal sealed class GetSavedTranscriptTool : IAssistantTool
         {
             return new { error = "Choose a saved transcript first or provide a valid transcript_id." };
         }
-        var offset = GetOffset(args);
-        var limit = GetBoundedInt(args, "limit", 100, 1, 100);
         var languageCode = QuizLanguageCatalog.Find(
             context.CurrentLanguageCode ?? context.CurrentLanguage)?.Code;
-        var transcript = await _context.RealtimeTranslationTranscripts
-            .AsNoTracking()
-            .Where(item => item.Id == transcriptId
-                && item.UserId == context.UserId
-                && languageCode != null
-                && item.TargetLanguage == languageCode
-                && item.Segments.Any())
-            .Select(item => new
-            {
-                item.Id,
-                item.Title,
-                item.TargetLanguage,
-                item.Stream,
-                sourceTotal = item.Segments.Count(segment =>
-                    segment.Stream == RealtimeTranslationTranscriptStreams.Source),
-                translationTotal = item.Segments.Count(segment =>
-                    segment.Stream == RealtimeTranslationTranscriptStreams.Translation),
-            })
-            .SingleOrDefaultAsync(cancellationToken);
-        if (transcript is null)
+        if (languageCode is null)
         {
             return new { error = "Saved transcript not found." };
         }
 
-        var requestedStream = GetString(args, "stream");
-        var selectedStream = RealtimeTranslationTranscriptService.NormalizeStream(requestedStream)
-            ?? transcript.Stream;
-        var total = selectedStream == RealtimeTranslationTranscriptStreams.Translation
-            ? transcript.translationTotal
-            : transcript.sourceTotal;
-        if (total == 0)
+        var page = await _transcripts.GetTextPageAsync(
+            transcriptId,
+            context.UserId,
+            languageCode,
+            new TranscriptTextPageRequest(
+                Page: GetOptionalInt(args, "page"),
+                Offset: GetOptionalInt(args, "offset"),
+                AtTime: GetTimestamp(args, "at_time"),
+                Stream: GetString(args, "stream"),
+                Limit: GetOptionalInt(args, "limit")),
+            cancellationToken);
+        if (page is null)
+        {
+            return new { error = "Saved transcript not found." };
+        }
+        if (page.TotalSegments == 0)
         {
             return new
             {
-                error = $"This transcript has no '{selectedStream}' captions.",
-                available_streams = AvailableStreams(transcript.sourceTotal, transcript.translationTotal),
+                error = $"This transcript has no '{page.SelectedStream}' captions.",
+                available_streams = AvailableStreams(page.SourceSegmentCount, page.TranslationSegmentCount),
             };
-        }
-
-        var rows = await _context.RealtimeTranslationTranscriptSegments
-            .AsNoTracking()
-            .Where(segment => segment.TranscriptId == transcript.Id && segment.Stream == selectedStream)
-            .OrderBy(segment => segment.CapturedAt)
-            .ThenBy(segment => segment.SessionId)
-            .ThenBy(segment => segment.Sequence)
-            .Skip(offset)
-            .Take(limit)
-            .Select(segment => new { segment.CapturedAt, segment.Text })
-            .ToListAsync(cancellationToken);
-        const int maximumCharacters = 12_000;
-        var captions = new List<object>(rows.Count);
-        var characters = 0;
-        foreach (var row in rows)
-        {
-            if (captions.Count > 0 && characters + row.Text.Length > maximumCharacters)
-            {
-                break;
-            }
-            var text = row.Text.Length <= maximumCharacters
-                ? row.Text
-                : row.Text[..maximumCharacters];
-            captions.Add(new { captured_at = row.CapturedAt, text });
-            characters += text.Length;
         }
 
         return new
         {
-            id = transcript.Id,
-            title = transcript.Title,
-            target_language = transcript.TargetLanguage,
-            learning_language = transcript.TargetLanguage,
-            stream = selectedStream,
-            available_streams = AvailableStreams(transcript.sourceTotal, transcript.translationTotal),
-            captions,
-            offset,
-            total_segments = total,
-            has_more = offset + captions.Count < total,
-            next_offset = offset + captions.Count,
+            id = page.Id,
+            title = page.Title,
+            target_language = page.TargetLanguage,
+            learning_language = page.TargetLanguage,
+            stream = page.SelectedStream,
+            available_streams = AvailableStreams(page.SourceSegmentCount, page.TranslationSegmentCount),
+            captions = page.Segments
+                .Select(segment => new { captured_at = segment.CapturedAt, text = segment.Text })
+                .ToList(),
+            page_number = page.Page,
+            page_size = page.PageSize,
+            total_pages = page.TotalPages,
+            starts_at = page.StartsAt,
+            ends_at = page.EndsAt,
+            // False when the character budget cut the page short. The rest of the same
+            // page is at next_offset; the page number has not moved on.
+            page_complete = page.PageComplete,
+            offset = page.Offset,
+            total_segments = page.TotalSegments,
+            has_more = page.HasMore,
+            next_offset = page.NextOffset,
         };
     }
-
-    /// <summary>
-    /// Mirrors BookDocumentService.GetUserBooksAsync so the agent sees exactly the books
-    /// the picker offers. Note the language column holds the display name ("Polish"),
-    /// unlike transcripts, which store the code.
-    /// </summary>
 
     private static string[] AvailableStreams(int sourceTotal, int translationTotal)
     {

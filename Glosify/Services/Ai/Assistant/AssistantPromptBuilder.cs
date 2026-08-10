@@ -1,5 +1,6 @@
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.RealtimeTranslation;
 
 namespace Glosify.Services.Ai.Assistant;
 
@@ -272,12 +273,18 @@ internal sealed class AssistantPromptBuilder
         """;
     }
 
+    /// <summary>
+    /// Names the transcript and its pages without inlining any of it, the same bargain
+    /// books make. The page numbers here are the reader's own pages, so a user who says
+    /// "the first page" is naming something the model can fetch exactly.
+    /// </summary>
     private static string BuildTranscriptInstruction(TranscriptAssistantContext? transcript)
     {
         if (transcript is null)
         {
             return string.Empty;
         }
+        var pageSize = RealtimeTranslationTranscriptService.DetailPageSize;
         return $"""
 
         Current saved transcript context:
@@ -286,10 +293,33 @@ internal sealed class AssistantPromptBuilder
         - Learning language: {transcript.TargetLanguage}
         - Stored stream: {transcript.Stream}
         - A source stream contains the original-language speech captured while translating into the learning language.
-        - Sessions saved after this feature shipped also store the live translation of the same audio, produced by a different model. When a passage of source speech looks garbled or ambiguous, call get_saved_transcript again with stream "translation" for that offset to check what was meant. The translation recovers meaning, not exact wording, so treat a disagreement between the streams as a sign the passage is uncertain rather than as a correction.
+        - The transcript is read in pages of {pageSize} captions — the same pages the user sees in the reader. Source: {PageCount(transcript.SourceSegmentCount, pageSize)}. Translation: {PageCount(transcript.TranslationSegmentCount, pageSize)}.
+        - Page numbers are per stream. The two streams have different caption counts, so page 3 of the source and page 3 of the translation are different moments.{BuildViewedTranscriptPage(transcript, pageSize)}
+        - Sessions saved after this feature shipped also store the live translation of the same audio, produced by a different model. When a passage of source speech looks garbled or ambiguous, call get_saved_transcript again with stream "translation" and the at_time of that passage — not its page or offset — to check what was meant. The translation recovers meaning, not exact wording, so treat a disagreement between the streams as a sign the passage is uncertain rather than as a correction.
         - When the user says "this transcript", "this session", or "what I watched", they mean this saved transcript.
-        - The transcript text is not included automatically. Call get_saved_transcript with this id and page through it when the request requires its text.
+        - The transcript text is not included automatically. Call get_saved_transcript with this id and the page the user named when the request requires its text.
         - Reading a transcript never authorizes a change. Use the normal proposed-change tools only when the user asks to create or modify learning material.
+        """;
+    }
+
+    private static string PageCount(int segments, int pageSize) => segments == 0
+        ? "no captions"
+        : $"{Math.Max(1, (int)Math.Ceiling(segments / (double)pageSize))} page(s), {segments} captions";
+
+    private static string BuildViewedTranscriptPage(TranscriptAssistantContext transcript, int pageSize)
+    {
+        if (transcript.ViewedPage is not int page)
+        {
+            return string.Empty;
+        }
+        var stream = transcript.ViewedStream ?? transcript.Stream;
+        var segments = stream == RealtimeTranslationTranscriptStreams.Translation
+            ? transcript.TranslationSegmentCount
+            : transcript.SourceSegmentCount;
+        var total = Math.Max(1, (int)Math.Ceiling(segments / (double)pageSize));
+        return $"""
+
+        - The user is reading page {Math.Min(page, total)} of {total} of the {stream} stream right now. "This page" and "here" mean that page; "the first page" means page 1 of that stream. Call get_saved_transcript with that page number to read it.
         """;
     }
 

@@ -55,6 +55,7 @@ internal sealed class AssistantTurnRunner
         Guid? customQuizId,
         Guid? transcriptId,
         Guid? bookDocumentId,
+        AssistantTranscriptPageContext? transcriptPageContext,
         CancellationToken cancellationToken)
     {
         var thread = await _threads.GetOwnedAsync(threadId, userId, cancellationToken);
@@ -69,7 +70,8 @@ internal sealed class AssistantTurnRunner
             customQuizId,
             cancellationToken,
             transcriptId ?? thread.ContextTranscriptId,
-            bookDocumentId ?? thread.ContextBookDocumentId);
+            bookDocumentId ?? thread.ContextBookDocumentId,
+            transcriptPageContext);
     }
 
     public async Task<AssistantTurnResponse> RunQuizAsync(
@@ -129,7 +131,8 @@ internal sealed class AssistantTurnRunner
         Guid? customQuizId,
         CancellationToken cancellationToken,
         Guid? transcriptId,
-        Guid? bookDocumentId)
+        Guid? bookDocumentId,
+        AssistantTranscriptPageContext? transcriptPageContext = null)
     {
         var now = DateTimeOffset.UtcNow;
         var contextQuiz = await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
@@ -138,7 +141,11 @@ internal sealed class AssistantTurnRunner
         var documentPage = documentContext is null
             ? null
             : await _contextResolver.ResolveDocumentPageAsync(documentContext, userId, cancellationToken);
-        var transcriptContext = await _contextResolver.ResolveTranscriptAsync(transcriptId, userId, cancellationToken);
+        var transcriptContext = await _contextResolver.ResolveTranscriptAsync(
+            transcriptId,
+            transcriptPageContext,
+            userId,
+            cancellationToken);
         var bookContext = await _contextResolver.ResolveBookAsync(bookDocumentId, userId, cancellationToken);
         var selectedLanguageCode = await _contextResolver.ResolveLanguageCodeAsync(userId, cancellationToken);
         var currentLanguage = contextQuiz?.TargetLanguage

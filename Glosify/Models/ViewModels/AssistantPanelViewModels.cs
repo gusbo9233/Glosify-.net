@@ -13,6 +13,14 @@ public class AssistantPanelViewModel
     public int? CurrentPage { get; set; }
     public Guid? CustomQuizId { get; set; }
     public Guid? TranscriptId { get; set; }
+
+    /// <summary>
+    /// The transcript page on screen, set only by the transcript reader. The picker can
+    /// point the chat at a different transcript, so the panel also carries
+    /// <see cref="TranscriptId"/> to check the page still belongs to it.
+    /// </summary>
+    public int? TranscriptPage { get; set; }
+    public string? TranscriptStream { get; set; }
     public string Title { get; set; } = "Assistant";
     public string ContextLabel { get; set; } = string.Empty;
     public string EmptyText { get; set; } = "Start a conversation.";

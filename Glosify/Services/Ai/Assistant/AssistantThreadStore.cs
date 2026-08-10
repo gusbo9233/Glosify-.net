@@ -41,7 +41,7 @@ internal sealed class AssistantThreadStore(
         CancellationToken cancellationToken)
     {
         await contextResolver.ResolveQuizAsync(quizId, userId, cancellationToken);
-        await contextResolver.ResolveTranscriptAsync(transcriptId, userId, cancellationToken);
+        await contextResolver.ResolveTranscriptAsync(transcriptId, null, userId, cancellationToken);
         await contextResolver.ResolveBookAsync(bookId, userId, cancellationToken);
 
         var now = DateTimeOffset.UtcNow;
@@ -87,7 +87,7 @@ internal sealed class AssistantThreadStore(
         if (updateContext)
         {
             await contextResolver.ResolveQuizAsync(quizId, userId, cancellationToken);
-            await contextResolver.ResolveTranscriptAsync(transcriptId, userId, cancellationToken);
+            await contextResolver.ResolveTranscriptAsync(transcriptId, null, userId, cancellationToken);
             await contextResolver.ResolveBookAsync(bookId, userId, cancellationToken);
             thread.ContextQuizId = quizId;
             thread.ContextTranscriptId = transcriptId;

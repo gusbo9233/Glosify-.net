@@ -199,6 +199,29 @@ public sealed class AssistantToolSurfaceRegressionTests
         }
     }
 
+    /// <summary>
+    /// The transcript reader and the model page the same transcript, so the tool has to
+    /// offer the page coordinate the user names — and at_time, the only coordinate the
+    /// source and translation streams share.
+    /// </summary>
+    [Fact]
+    public void Get_saved_transcript_accepts_page_and_time_coordinates()
+    {
+        using var context = CreateContext();
+        var declaration = Assert.Single(
+            AssistantToolFactory.Create(context).GlobalDeclarations,
+            item => item.Name == "get_saved_transcript");
+
+        var properties = System.Text.Json.JsonSerializer
+            .SerializeToElement(declaration.ParametersJsonSchema)
+            .GetProperty("properties");
+
+        Assert.True(properties.TryGetProperty("page", out _));
+        Assert.True(properties.TryGetProperty("at_time", out _));
+        Assert.True(properties.TryGetProperty("offset", out _));
+        Assert.True(properties.TryGetProperty("stream", out _));
+    }
+
     private static void AssertSurface(
         string[] expected,
         Func<IAssistantTools, IReadOnlyList<Glosify.Services.Ai.Generation.AgentToolDeclaration>> surface)

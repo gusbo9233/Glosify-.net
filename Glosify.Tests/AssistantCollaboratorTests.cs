@@ -85,7 +85,11 @@ public sealed class AssistantCollaboratorTests
             Guid.Parse("33333333-3333-3333-3333-333333333333"),
             "Lesson recording",
             "pl",
-            "source");
+            "source",
+            SourceSegmentCount: 250,
+            TranslationSegmentCount: 130,
+            ViewedPage: 2,
+            ViewedStream: "source");
         var book = new BookAssistantContext(
             Guid.Parse("44444444-4444-4444-4444-444444444444"),
             "Course book",
@@ -104,11 +108,11 @@ public sealed class AssistantCollaboratorTests
         Assert.Equal(
             new[]
             {
-                "36D23F3A5F9189D7EB9020C390B9B5791ED3AF2C0020FCAD2C0430E26AB00EEA",
-                "951D227C139F9A42A70FB9AA9F14ECE928A29DA6C222ED3921E0EFD1965CCEB3",
+                "208C0B11F827EF6851BC8FB555E42B6CC14F4340D77FEB942F67BA9A9662BE1E",
+                "96FE5C9904C61149757B59AE315C3E626DEF784B9C11F1D65E91728EDC6C0DB9",
                 "94C2DBA88F160B2FBEB785E1B4BA929BA3D3670FFA1F8F5268098DDCCEC68324",
-                "5939496F9AF4B8FC4A36314E828A156AC577A72CDFACEAF5E296CB7CBF1394C3",
-                "23A2B9DF6982AD52D9A0112B1381DBBC187A141BE9AA42361B43EA85C1AC0E0E",
+                "47F90D3A481CBF8015B8406C9EB75DFFCC24CA4E421B94F9680F1ECA2B58BFDD",
+                "1928F190C44056DFF9488BCA93C043E529591A16D85C15480BC14AEE4338E8E4",
             },
             outputs.Select(Fingerprint));
     }

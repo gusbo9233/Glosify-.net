@@ -77,7 +77,8 @@ internal abstract class ChromeServicesBase
     Task<Stream> IBookDocumentService.OpenPdfUncheckedAsync(Guid documentId, CancellationToken cancellationToken) => throw Unused();
 
     Task<TranscriptDetailPage?> IRealtimeTranslationTranscriptService.GetDetailAsync(Guid transcriptId, string userId, string quizLanguageCode, int page, int pageSize, string? stream, CancellationToken cancellationToken) => throw Unused();
-    Task<TranscriptTextPage?> IRealtimeTranslationTranscriptService.GetTextPageAsync(Guid transcriptId, string userId, string quizLanguageCode, int offset, int limit, int maximumCharacters, CancellationToken cancellationToken) => throw Unused();
+    Task<TranscriptTextPage?> IRealtimeTranslationTranscriptService.GetTextPageAsync(Guid transcriptId, string userId, string quizLanguageCode, TranscriptTextPageRequest request, CancellationToken cancellationToken) => throw Unused();
+    Task<IReadOnlyList<TranscriptPageSpan>> IRealtimeTranslationTranscriptService.GetPageSpansAsync(Guid transcriptId, string userId, string quizLanguageCode, string? stream, int pageSize, CancellationToken cancellationToken) => throw Unused();
     Task IRealtimeTranslationTranscriptService.RenameAsync(Guid transcriptId, string userId, string quizLanguageCode, string title, CancellationToken cancellationToken) => throw Unused();
     Task IRealtimeTranslationTranscriptService.DeleteAsync(Guid transcriptId, string userId, string quizLanguageCode, CancellationToken cancellationToken) => throw Unused();
     Task IRealtimeTranslationTranscriptService.AppendAsync(Guid sessionId, IReadOnlyList<CapturedTranslationSegment> segments, CancellationToken cancellationToken) => throw Unused();

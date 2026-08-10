@@ -4,6 +4,7 @@ using Glosify.Services.Ai.Generation;
 using Glosify.Services.Books;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
+using Glosify.Services.RealtimeTranslation;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -43,6 +44,7 @@ internal sealed class AssistantContextResolver(
 
     public async Task<TranscriptAssistantContext?> ResolveTranscriptAsync(
         Guid? transcriptId,
+        AssistantTranscriptPageContext? viewedPage,
         string userId,
         CancellationToken cancellationToken)
     {
@@ -57,7 +59,7 @@ internal sealed class AssistantContextResolver(
             throw new InvalidOperationException("Choose a Glosify quiz language before using saved transcripts.");
         }
 
-        return await context.RealtimeTranslationTranscripts
+        var resolved = await context.RealtimeTranslationTranscripts
             .AsNoTracking()
             .Where(transcript => transcript.Id == transcriptId.Value
                 && transcript.UserId == userId
@@ -66,9 +68,26 @@ internal sealed class AssistantContextResolver(
                 transcript.Id,
                 transcript.Title,
                 transcript.TargetLanguage,
-                transcript.Stream))
+                transcript.Stream,
+                transcript.Segments.Count(segment =>
+                    segment.Stream == RealtimeTranslationTranscriptStreams.Source),
+                transcript.Segments.Count(segment =>
+                    segment.Stream == RealtimeTranslationTranscriptStreams.Translation),
+                null,
+                null))
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new InvalidOperationException("That saved transcript was not found.");
+
+        // A page the user is not on is worse than no page at all, so a page number that
+        // cannot be real is dropped rather than repeated to the model.
+        return viewedPage is null || viewedPage.Page < 1
+            ? resolved
+            : resolved with
+            {
+                ViewedPage = viewedPage.Page,
+                ViewedStream = RealtimeTranslationTranscriptService.NormalizeStream(viewedPage.Stream)
+                    ?? resolved.Stream,
+            };
     }
 
     public async Task<BookAssistantContext?> ResolveBookAsync(
@@ -112,5 +131,13 @@ internal sealed class AssistantContextResolver(
 }
 
 internal sealed record DocumentPageContext(string Title, int PageNumber, string Text, string? Warning);
-internal sealed record TranscriptAssistantContext(Guid Id, string Title, string TargetLanguage, string Stream);
+internal sealed record TranscriptAssistantContext(
+    Guid Id,
+    string Title,
+    string TargetLanguage,
+    string Stream,
+    int SourceSegmentCount,
+    int TranslationSegmentCount,
+    int? ViewedPage,
+    string? ViewedStream);
 internal sealed record BookAssistantContext(Guid Id, string Title, int PageCount);

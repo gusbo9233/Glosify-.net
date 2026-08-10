@@ -129,7 +129,10 @@ public class AssistantController : ControllerBase
                 input.CustomQuizId,
                 cancellationToken,
                 input.TranscriptId,
-                input.BookDocumentId);
+                input.BookDocumentId,
+                input.TranscriptContext is null
+                    ? null
+                    : new AssistantTranscriptPageContext(input.TranscriptContext.Page, input.TranscriptContext.Stream));
 
             return Ok(response);
         }

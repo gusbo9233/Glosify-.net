@@ -4,7 +4,7 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**[Try the live app](https://glosify.se)** · [Portfolio case study](docs/portfolio-case-study.md) · [Architecture decisions](docs/adr/) · [Automated tests](Glosify.Tests/)
+**[Try the live app](https://glosify.se)** · [Portfolio case study](docs/portfolio-case-study.md) · [Architecture guide](docs/ARCHITECTURE.md) · [Architecture decisions](docs/adr/) · [Automated tests](Glosify.Tests/)
 
 Glosify is a language-learning app built with ASP.NET Core MVC. It combines
 vocabulary and sentence quizzes with flashcards, typing practice, speaking
@@ -41,7 +41,10 @@ and AI credit balance as the MVC application. It captures audio from the active
 tab and sends it through a short-lived authenticated WebSocket relay so translated
 text can appear over the page. Audio is not stored. Saving the original-language
 transcript is optional; saved transcripts can be managed in Glosify and selected
-as context for the assistant.
+as context for the assistant. A long session is paged for reading, and the
+assistant reads those same pages; because the original speech and the live
+translation are transcribed separately and do not share caption counts, page
+numbers are per stream and a passage is matched across the two by timestamp.
 
 The [portfolio case study](docs/portfolio-case-study.md) gives a more complete product
 tour and explains the main technical decisions in simple terms.
@@ -78,6 +81,10 @@ The live portfolio deployment intentionally runs as one App Service instance. Th
 limits of that choice and the steps needed before scaling out are documented in
 [ADR 0001](docs/adr/0001-single-instance-state.md).
 
+The [architecture guide](docs/ARCHITECTURE.md) covers this in depth: layering rules,
+the composition root, the request pipeline, the authentication surfaces, the failure
+contract, the data model, per-feature designs, and the accepted limits.
+
 ## Development approach
 
 I use analyzers, automated tests, CodeRabbit, and AI coding tools to help with
@@ -91,7 +98,9 @@ the code and its behavior, not just generate more code.
 - Vocabulary and sentence practice with flashcard and typing modes.
 - AI-assisted vocabulary generation, image text extraction, and quiz repair.
 - Assistant conversations with selectable context: a quiz to act on, plus a book
-  or saved transcript to read from.
+  or saved transcript to read from. A transcript is read in the same 100-caption
+  pages the reader shows, so "summarize the first page" means one thing to the
+  user and to the assistant.
 - Live translated subtitles for Chrome tab audio, integrated with Glosify
   authentication, AI credits, saved transcripts, and assistant context.
 - Azure-powered speaking practice with animated language-specific avatars,

@@ -1,5 +1,6 @@
 using Glosify.Data;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.RealtimeTranslation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Glosify.Tests;
@@ -18,6 +19,8 @@ internal static class AssistantToolFactory
     public static IAssistantTools Create(GlosifyContext context) =>
         new ServiceCollection()
             .AddSingleton(context)
+            .AddSingleton<TimeProvider>(TimeProvider.System)
+            .AddSingleton<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>()
             .AddAssistantTools()
             .BuildServiceProvider()
             .GetRequiredService<IAssistantTools>();

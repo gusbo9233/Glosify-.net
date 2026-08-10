@@ -3,6 +3,8 @@
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Model.Transcript.Title;
     ViewData["AssistantTranscriptId"] = Model.Transcript.Id;
+    ViewData["AssistantTranscriptPage"] = Model.Transcript.Page;
+    ViewData["AssistantTranscriptStream"] = Model.Transcript.SelectedStream;
     ViewData["AssistantTitle"] = "Transcript assistant";
     ViewData["AssistantContextLabel"] = Model.Transcript.Title;
     ViewData["AssistantEmptyText"] = "Ask about this transcript or use it with your existing quizzes.";
@@ -98,12 +100,44 @@
     {
         <nav class="transcript-pagination" aria-label="Transcript text pages">
             <a class="@(Model.Transcript.Page <= 1 ? "is-disabled" : "")"
+               asp-route-id="@Model.Transcript.Id" asp-route-page="1"
+               asp-route-stream="@Model.Transcript.SelectedStream">First</a>
+            <a class="@(Model.Transcript.Page <= 1 ? "is-disabled" : "")"
                asp-route-id="@Model.Transcript.Id" asp-route-page="@(Model.Transcript.Page - 1)"
                asp-route-stream="@Model.Transcript.SelectedStream">Previous</a>
             <span>Page @Model.Transcript.Page of @totalPages</span>
             <a class="@(Model.Transcript.Page >= totalPages ? "is-disabled" : "")"
                asp-route-id="@Model.Transcript.Id" asp-route-page="@(Model.Transcript.Page + 1)"
                asp-route-stream="@Model.Transcript.SelectedStream">Next</a>
+            <a class="@(Model.Transcript.Page >= totalPages ? "is-disabled" : "")"
+               asp-route-id="@Model.Transcript.Id" asp-route-page="@totalPages"
+               asp-route-stream="@Model.Transcript.SelectedStream">Last</a>
         </nav>
+
+        @* A long session is dozens of pages, so Next-by-Next is not a way to get around.
+           A plain GET form keeps the jump working without script. *@
+        <form class="transcript-jump" method="get" asp-action="Details" asp-route-id="@Model.Transcript.Id">
+            <input type="hidden" name="stream" value="@Model.Transcript.SelectedStream" />
+            <label for="transcript-jump-page">Jump to page</label>
+            @if (Model.PageSpans.Count > 0)
+            {
+                <select id="transcript-jump-page" name="page">
+                    @foreach (var span in Model.PageSpans)
+                    {
+                        <option value="@span.Page" selected="@(span.Page == Model.Transcript.Page)"
+                                data-local-range="time"
+                                data-range-label="Page @span.Page"
+                                data-range-start="@span.StartsAt.ToString("O")"
+                                data-range-end="@span.EndsAt.ToString("O")">Page @span.Page · @span.StartsAt.UtcDateTime.ToString("HH:mm:ss")–@span.EndsAt.UtcDateTime.ToString("HH:mm:ss")</option>
+                    }
+                </select>
+            }
+            else
+            {
+                <input id="transcript-jump-page" name="page" type="number" inputmode="numeric"
+                       min="1" max="@totalPages" value="@Model.Transcript.Page" />
+            }
+            <button type="submit">Go</button>
+        </form>
     }
 </section>

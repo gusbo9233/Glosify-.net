@@ -14,6 +14,7 @@ public sealed class SendMessageInput
     public Guid? CustomQuizId { get; set; }
     public Guid? TranscriptId { get; set; }
     public Guid? BookDocumentId { get; set; }
+    public TranscriptContextInput? TranscriptContext { get; set; }
 }
 
 public sealed class ChatMutationInput
@@ -24,6 +25,20 @@ public sealed class ChatMutationInput
     public bool UpdateContext { get; set; }
     public Guid? ContextTranscriptId { get; set; }
     public Guid? ContextBookDocumentId { get; set; }
+}
+
+/// <summary>
+/// The transcript page the reader is showing, if the assistant was opened from it. Unlike
+/// <see cref="DocumentContextInput"/> this carries no id: the transcript is already named
+/// by TranscriptId, and the client only sends a page for the transcript it is displaying.
+/// </summary>
+public sealed class TranscriptContextInput
+{
+    [Range(1, int.MaxValue)]
+    public int Page { get; set; }
+
+    [StringLength(20)]
+    public string? Stream { get; set; }
 }
 
 public sealed class DocumentContextInput
