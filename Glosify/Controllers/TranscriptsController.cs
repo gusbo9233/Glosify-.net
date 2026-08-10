@@ -13,7 +13,12 @@ namespace Glosify.Controllers;
 public sealed class TranscriptsController : Controller
 {
     private const int LibraryPageSize = 24;
-    private const int DetailPageSize = 100;
+
+    /// <summary>
+    /// Deliberately not a local constant: the assistant reads the same pages through
+    /// get_saved_transcript, so "page 3" has to mean one thing on both sides.
+    /// </summary>
+    private const int DetailPageSize = RealtimeTranslationTranscriptService.DetailPageSize;
     private readonly IRealtimeTranslationTranscriptService _transcripts;
     private readonly IQuizLanguagePreferenceService _preferences;
 
@@ -58,9 +63,18 @@ public sealed class TranscriptsController : Controller
             DetailPageSize,
             stream,
             cancellationToken);
-        return transcript is null
-            ? NotFound()
-            : View(new TranscriptDetailViewModel { Transcript = transcript });
+        if (transcript is null)
+        {
+            return NotFound();
+        }
+        var spans = await _transcripts.GetPageSpansAsync(
+            id,
+            User.GetUserId(),
+            language.Code,
+            transcript.SelectedStream,
+            DetailPageSize,
+            cancellationToken);
+        return View(new TranscriptDetailViewModel { Transcript = transcript, PageSpans = spans });
     }
 
     [HttpPost("{id:guid}/rename")]

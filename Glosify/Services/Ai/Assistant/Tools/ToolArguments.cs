@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -74,6 +75,41 @@ internal static class ToolArguments
         }
 
         return Math.Clamp(parsed, min, max);
+    }
+
+    // Distinguishes "not asked for" from a value, which GetBoundedInt cannot: a tool that
+    // accepts several mutually exclusive coordinates has to know which one was supplied.
+    internal static int? GetOptionalInt(JsonElement element, string property)
+    {
+        if (!element.TryGetProperty(property, out var value))
+        {
+            return null;
+        }
+        return value.ValueKind switch
+        {
+            JsonValueKind.Number when value.TryGetInt32(out var parsed) => parsed,
+            JsonValueKind.String when int.TryParse(value.GetString(), out var parsed) => parsed,
+            _ => null,
+        };
+    }
+
+    // Timestamps come back to us as strings the model copied out of an earlier tool
+    // result, so anything round-trippable counts; an unparseable value is ignored rather
+    // than treated as an error.
+    internal static DateTimeOffset? GetTimestamp(JsonElement element, string property)
+    {
+        var text = GetString(element, property);
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+        return DateTimeOffset.TryParse(
+            text,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+            out var parsed)
+            ? parsed
+            : null;
     }
 
     internal static string? GetString(JsonElement element, string property)

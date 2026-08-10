@@ -44,7 +44,8 @@ public interface IAssistantOrchestrator
         Guid? customQuizId = null,
         CancellationToken cancellationToken = default,
         Guid? transcriptId = null,
-        Guid? bookDocumentId = null);
+        Guid? bookDocumentId = null,
+        AssistantTranscriptPageContext? transcriptPageContext = null);
 
     Task<AssistantTurnResponse> SendMessageAsync(
         Guid quizId,
@@ -135,3 +136,12 @@ public sealed record AssistantMessageView(
     DateTimeOffset CreatedAt);
 
 public sealed record AssistantDocumentContext(Guid DocumentId, int PageNumber);
+
+/// <summary>
+/// Which page of a saved transcript the user is looking at while they type. Unlike a book
+/// page this is not inlined into the prompt — a transcript page is up to 100 captions —
+/// but naming it is what lets "this page" and "the first page" mean the same thing to the
+/// user and to the model, which reads the very same pages through get_saved_transcript.
+/// Null whenever the assistant is open somewhere other than the transcript reader.
+/// </summary>
+public sealed record AssistantTranscriptPageContext(int Page, string? Stream);

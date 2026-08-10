@@ -6,6 +6,7 @@ using Glosify.Services.Ai.Generation;
 using Glosify.Services.Books;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
+using Glosify.Services.RealtimeTranslation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -57,6 +58,58 @@ public sealed class AssistantCollaboratorTests
         Assert.Contains("language-learning assistant", instruction);
     }
 
+    /// <summary>
+    /// The page contract in words, next to the hash pin above: the hash catches any drift
+    /// at all, these assertions say what the prompt actually has to promise.
+    /// </summary>
+    [Theory]
+    [InlineData(2, "source", "reading page 2 of 3 of the source stream")]
+    [InlineData(1, "translation", "reading page 1 of 2 of the translation stream")]
+    public void Prompt_builder_names_the_page_the_user_is_reading(
+        int viewedPage,
+        string viewedStream,
+        string expected)
+    {
+        var instruction = BuildTranscriptPrompt(viewedPage, viewedStream);
+
+        Assert.Contains("pages of 100 captions", instruction);
+        Assert.Contains("Source: 3 page(s), 250 captions", instruction);
+        Assert.Contains("Translation: 2 page(s), 130 captions", instruction);
+        Assert.Contains(expected, instruction);
+        // Offsets and page numbers are not comparable across streams; only time is.
+        Assert.Contains("at_time of that passage — not its page or offset", instruction);
+    }
+
+    [Theory]
+    [InlineData(0, "source")]
+    [InlineData(4, "source")]
+    [InlineData(3, "translation")]
+    public void Prompt_builder_omits_a_page_the_user_cannot_be_reading(int viewedPage, string viewedStream)
+    {
+        var instruction = BuildTranscriptPrompt(viewedPage, viewedStream);
+
+        Assert.Contains("Current saved transcript context", instruction);
+        Assert.DoesNotContain("right now", instruction);
+    }
+
+    private static string BuildTranscriptPrompt(int viewedPage, string viewedStream) =>
+        new AssistantPromptBuilder().BuildSystemInstruction(
+            quiz: null,
+            focusedWord: null,
+            documentPage: null,
+            customQuiz: null,
+            transcript: new TranscriptAssistantContext(
+                Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                "Lesson recording",
+                "pl",
+                "source",
+                SourceSegmentCount: 250,
+                TranslationSegmentCount: 130,
+                ViewedPage: viewedPage,
+                ViewedStream: viewedStream),
+            book: null,
+            currentLanguage: "Polish");
+
     [Fact]
     public void Prompt_builder_preserves_exact_instruction_text()
     {
@@ -85,7 +138,11 @@ public sealed class AssistantCollaboratorTests
             Guid.Parse("33333333-3333-3333-3333-333333333333"),
             "Lesson recording",
             "pl",
-            "source");
+            "source",
+            SourceSegmentCount: 250,
+            TranslationSegmentCount: 130,
+            ViewedPage: 2,
+            ViewedStream: "source");
         var book = new BookAssistantContext(
             Guid.Parse("44444444-4444-4444-4444-444444444444"),
             "Course book",
@@ -104,11 +161,11 @@ public sealed class AssistantCollaboratorTests
         Assert.Equal(
             new[]
             {
-                "36D23F3A5F9189D7EB9020C390B9B5791ED3AF2C0020FCAD2C0430E26AB00EEA",
-                "951D227C139F9A42A70FB9AA9F14ECE928A29DA6C222ED3921E0EFD1965CCEB3",
+                "208C0B11F827EF6851BC8FB555E42B6CC14F4340D77FEB942F67BA9A9662BE1E",
+                "96FE5C9904C61149757B59AE315C3E626DEF784B9C11F1D65E91728EDC6C0DB9",
                 "94C2DBA88F160B2FBEB785E1B4BA929BA3D3670FFA1F8F5268098DDCCEC68324",
-                "5939496F9AF4B8FC4A36314E828A156AC577A72CDFACEAF5E296CB7CBF1394C3",
-                "23A2B9DF6982AD52D9A0112B1381DBBC187A141BE9AA42361B43EA85C1AC0E0E",
+                "47F90D3A481CBF8015B8406C9EB75DFFCC24CA4E421B94F9680F1ECA2B58BFDD",
+                "1928F190C44056DFF9488BCA93C043E529591A16D85C15480BC14AEE4338E8E4",
             },
             outputs.Select(Fingerprint));
     }
@@ -139,6 +196,81 @@ public sealed class AssistantCollaboratorTests
         Assert.Equal(ownedQuiz.Id, (await resolver.ResolveQuizAsync(ownedQuiz.Id, "owner", CancellationToken.None))?.Id);
         await Assert.ThrowsAsync<QuizNotFoundException>(() =>
             resolver.ResolveQuizAsync(ownedQuiz.Id, "another-user", CancellationToken.None));
+    }
+
+    /// <summary>
+    /// The viewed page arrives from the browser, so the resolver checks it against the
+    /// chosen stream's real length. An unusable page is dropped rather than clamped: a
+    /// clamped page would tell the model the user is reading the last page when they are
+    /// not, and "this page" would then resolve to text they never saw.
+    /// </summary>
+    [Theory]
+    [InlineData(2, "source", 2)]
+    [InlineData(2, "translation", 2)]
+    [InlineData(0, "source", null)]
+    [InlineData(4, "source", null)]
+    // The streams have different lengths, so page 3 exists in one and not the other.
+    [InlineData(3, "source", 3)]
+    [InlineData(3, "translation", null)]
+    public async Task Context_resolver_keeps_only_a_viewed_page_that_exists(
+        int viewedPage,
+        string viewedStream,
+        int? expected)
+    {
+        await using var context = CreateContext();
+        var transcriptId = Guid.NewGuid();
+        AddTranscriptWithSegments(context, transcriptId, sourceSegments: 250, translationSegments: 130);
+        await context.SaveChangesAsync();
+        var resolver = new AssistantContextResolver(
+            context,
+            new NoopBookService(),
+            new FixedLanguageContext("Polish"),
+            new FixedLanguagePreference());
+
+        var resolved = await resolver.ResolveTranscriptAsync(
+            transcriptId,
+            new AssistantTranscriptPageContext(viewedPage, viewedStream),
+            "owner",
+            CancellationToken.None);
+
+        Assert.Equal(expected, resolved!.ViewedPage);
+        Assert.Equal(250, resolved.SourceSegmentCount);
+        Assert.Equal(130, resolved.TranslationSegmentCount);
+    }
+
+    private static void AddTranscriptWithSegments(
+        GlosifyContext context,
+        Guid transcriptId,
+        int sourceSegments,
+        int translationSegments)
+    {
+        context.RealtimeTranslationTranscripts.Add(new RealtimeTranslationTranscript
+        {
+            Id = transcriptId,
+            UserId = "owner",
+            Title = "Lesson recording",
+            TargetLanguage = "pl",
+            Stream = RealtimeTranslationTranscriptStreams.Source,
+        });
+        Add(RealtimeTranslationTranscriptStreams.Source, sourceSegments);
+        Add(RealtimeTranslationTranscriptStreams.Translation, translationSegments);
+
+        void Add(string stream, int count)
+        {
+            for (var index = 0; index < count; index++)
+            {
+                context.RealtimeTranslationTranscriptSegments.Add(new RealtimeTranslationTranscriptSegment
+                {
+                    Id = Guid.NewGuid(),
+                    TranscriptId = transcriptId,
+                    SessionId = Guid.NewGuid(),
+                    Sequence = index,
+                    Stream = stream,
+                    ProviderEventKey = $"{stream}:{index}",
+                    Text = $"{stream} {index}",
+                });
+            }
+        }
     }
 
     private static GlosifyContext CreateContext() => new(

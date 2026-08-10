@@ -17,6 +17,9 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
     // from then on the picker owns it, so navigating around never replaces the choice.
     const pageMaterialKind = pageTranscriptId ? 'transcript' : pageDocumentId ? 'book' : null;
     const pageMaterialId = pageTranscriptId || pageDocumentId || null;
+    // Only the transcript reader sets these, and only for the transcript it is showing.
+    const pageTranscriptPage = Number(panel.dataset.transcriptPage || 0);
+    const pageTranscriptStream = panel.dataset.transcriptStream || null;
     let materialKind = pageMaterialKind;
     let materialId = pageMaterialId;
     let quizId = pageQuizId;
@@ -765,6 +768,13 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         const documentContext = documentId
             ? { documentId, pageNumber: Number.isFinite(currentPage) ? currentPage : 1 }
             : null;
+        // The picker can move the chat to another transcript while the reader still shows
+        // this one, and then the page on screen is not the selected material's page.
+        const transcriptContext = materialKind === 'transcript'
+            && materialId === pageTranscriptId
+            && pageTranscriptPage > 0
+            ? { page: pageTranscriptPage, stream: pageTranscriptStream }
+            : null;
 
         renderMessage({
             id: `local-${Date.now()}`,
@@ -791,6 +801,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
                     bookDocumentId: materialKind === 'book' ? materialId : null,
                     model: modelSelect?.value || null,
                     documentContext,
+                    transcriptContext,
                 }),
             });
             const data = await response.json().catch(() => null);
