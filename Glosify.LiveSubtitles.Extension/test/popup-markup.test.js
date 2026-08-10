@@ -9,5 +9,8 @@ test("popup offers quiz-language selection and only the transcript checkbox", as
 
   assert.match(markup, /<select id="quiz-language">/);
   assert.match(markup, /<input id="save-transcript" type="checkbox">/);
+  assert.match(markup, /audio is streamed through Glosify to Microsoft Foundry/);
+  assert.match(markup, /Audio is not stored/);
+  assert.match(markup, /until you delete the transcript or account/);
   assert.doesNotMatch(markup, /id="bilingual"/);
 });

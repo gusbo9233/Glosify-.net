@@ -18,6 +18,7 @@ let refreshToken = null;
 let billingBusy = false;
 let heartbeatBusy = false;
 let relaySwitchBusy = false;
+let paidStatusBusy = false;
 let stopping = false;
 
 const state = {
@@ -34,6 +35,7 @@ const state = {
   currentMinute: 0,
   nextMinuteReserved: false,
   stopAtBoundary: false,
+  stopAtBoundaryReason: null,
   sessionStartedAt: 0,
   connectionStartedAt: 0,
   lastHeartbeatAt: 0,
@@ -42,6 +44,10 @@ const state = {
   reconnectReported: false,
   error: null,
   notice: null,
+  paidServicesAvailable: true,
+  paidServicesReason: null,
+  paidServicesResetAtUtc: null,
+  lastPaidStatusAt: 0,
 };
 
 const initialization = restoreLocalState();
@@ -213,6 +219,10 @@ async function signOut() {
     catalog: null,
     saveTranscript: false,
     transcriptId: null,
+    paidServicesAvailable: true,
+    paidServicesReason: null,
+    paidServicesResetAtUtc: null,
+    lastPaidStatusAt: 0,
     error: null,
     notice: null,
   });
@@ -292,13 +302,17 @@ async function apiFetch(path, options = {}, retry = true) {
 
 async function apiError(response) {
   let message = `Glosify request failed (${response.status}).`;
+  let code = null;
+  let resetsAtUtc = null;
   try {
     const body = await response.json();
     message = body.detail ?? body.title ?? body.error ?? message;
+    code = body.code ?? null;
+    resetsAtUtc = body.resetsAtUtc ?? null;
   } catch {
     // Do not surface raw upstream responses; they can contain implementation details.
   }
-  return new ApiRequestError(response.status, message);
+  return new ApiRequestError(response.status, message, code, resetsAtUtc);
 }
 
 async function refreshAccountState() {
@@ -317,6 +331,7 @@ async function refreshAccountState() {
     const catalog = await apiFetch("/api/realtime-translation/catalog");
     state.catalog = catalog;
     state.availableCredits = catalog.availableCredits;
+    await refreshPaidServiceStatus();
     if (!catalog.languages.some(language => language.code === state.targetLanguage)) {
       state.targetLanguage = catalog.languages[0]?.code ?? "en";
       await chrome.storage.local.set({ [STORAGE_KEYS.targetLanguage]: state.targetLanguage });
@@ -328,7 +343,7 @@ async function refreshAccountState() {
       state.transcriptId = null;
     }
     if (!state.sessionId) {
-      state.status = "ready";
+      state.status = state.paidServicesAvailable ? "ready" : "budget_exhausted";
     }
     state.error = null;
   } catch (error) {
@@ -449,6 +464,13 @@ async function startSession() {
   if (!state.signedIn || !state.catalog) {
     throw new Error(state.error || "Connect your Glosify account first.");
   }
+  if (!state.paidServicesAvailable) {
+    throw new ApiRequestError(
+      503,
+      budgetUnavailableMessage(),
+      "paid_services_budget_exhausted",
+      state.paidServicesResetAtUtc);
+  }
   if (state.saveTranscript && !canSaveTranscript()) {
     throw new Error(saveTranscriptUnavailableMessage());
   }
@@ -501,6 +523,7 @@ async function startSession() {
     state.currentMinute = 1;
     state.nextMinuteReserved = false;
     state.stopAtBoundary = false;
+    state.stopAtBoundaryReason = null;
     state.sessionStartedAt = Date.now();
     state.lastHeartbeatAt = Date.now();
     state.status = "subtitling";
@@ -510,9 +533,10 @@ async function startSession() {
     broadcastState();
   } catch (error) {
     const normalized = normalizeError(error);
+    const budgetClosed = rememberBudgetClosure(normalized);
     await stopSession(
-      normalized.message,
-      normalized.status === 402 ? "insufficient_credits" : "error");
+      budgetClosed ? budgetUnavailableMessage(normalized.resetsAtUtc) : normalized.message,
+      budgetClosed ? "budget_exhausted" : normalized.status === 402 ? "insufficient_credits" : "error");
     throw error;
   }
 }
@@ -540,6 +564,23 @@ async function processTick() {
   }
 
   const now = Date.now();
+  if (!paidStatusBusy && now - state.lastPaidStatusAt >= 15_000) {
+    paidStatusBusy = true;
+    try {
+      await refreshPaidServiceStatus();
+      if (!state.paidServicesAvailable) {
+        state.stopAtBoundary = true;
+        state.stopAtBoundaryReason = "budget";
+        state.notice = `${budgetUnavailableMessage()} Subtitles will stop at the end of this paid minute.`;
+        await sendToTab({ type: "overlay:status", text: state.notice });
+        broadcastState();
+      }
+    } catch {
+      // The minute reservation is still the authoritative fail-closed check.
+    } finally {
+      paidStatusBusy = false;
+    }
+  }
   if (!heartbeatBusy
       && now - state.lastHeartbeatAt >= (state.catalog?.heartbeatSeconds ?? 15) * 1000) {
     heartbeatBusy = true;
@@ -593,9 +634,14 @@ async function processTick() {
         state.nextMinuteReserved = true;
         state.availableCredits = result.availableCredits;
       } catch (error) {
-        if (normalizeError(error).status === 402) {
+        const normalized = normalizeError(error);
+        if (normalized.status === 402 || normalized.code === "paid_services_budget_exhausted") {
+          rememberBudgetClosure(normalized);
           state.stopAtBoundary = true;
-          state.notice = "Subtitles will stop at the end of this paid minute: not enough credits.";
+          state.stopAtBoundaryReason = normalized.status === 402 ? "credits" : "budget";
+          state.notice = normalized.status === 402
+            ? "Subtitles will stop at the end of this paid minute: not enough credits."
+            : `${budgetUnavailableMessage(normalized.resetsAtUtc)} Subtitles will stop at the end of this paid minute.`;
           await sendToTab({ type: "overlay:status", text: state.notice });
         } else {
           throw error;
@@ -613,19 +659,27 @@ async function processTick() {
       await authorizeOffscreenMinute(action.minuteIndex);
       broadcastState();
     } else if (action.type === "stop") {
+      const budgetStopped = state.stopAtBoundaryReason === "budget";
       await stopSession(
-        state.stopAtBoundary ? "Subtitles stopped because your Glosify credits ran out." : "The next minute was not authorized.",
-        state.stopAtBoundary ? "insufficient_credits" : "error");
+        budgetStopped
+          ? budgetUnavailableMessage()
+          : state.stopAtBoundary
+            ? "Subtitles stopped because your Glosify credits ran out."
+            : "The next minute was not authorized.",
+        budgetStopped ? "budget_exhausted" : state.stopAtBoundary ? "insufficient_credits" : "error");
     } else if (action.type === "reconnect") {
       await reconnectRelaySession();
     }
   } catch (error) {
     const normalized = normalizeError(error);
+    const budgetClosed = rememberBudgetClosure(normalized);
     await stopSession(
-      normalized.status === 402
+      budgetClosed
+        ? budgetUnavailableMessage(normalized.resetsAtUtc)
+        : normalized.status === 402
         ? "Subtitles stopped because your Glosify credits ran out."
         : normalized.message,
-      normalized.status === 402 ? "insufficient_credits" : "error");
+      budgetClosed ? "budget_exhausted" : normalized.status === 402 ? "insufficient_credits" : "error");
   } finally {
     billingBusy = false;
   }
@@ -711,6 +765,7 @@ async function stopSession(message, finalStatus) {
       currentMinute: 0,
       nextMinuteReserved: false,
       stopAtBoundary: false,
+      stopAtBoundaryReason: null,
       sessionStartedAt: 0,
       connectionStartedAt: 0,
       lastHeartbeatAt: 0,
@@ -804,6 +859,9 @@ function publicState() {
     currentMinute: state.currentMinute,
     error: state.error,
     notice: state.notice,
+    paidServicesAvailable: state.paidServicesAvailable,
+    paidServicesReason: state.paidServicesReason,
+    paidServicesResetAtUtc: state.paidServicesResetAtUtc,
   };
 }
 
@@ -828,6 +886,35 @@ function saveTranscriptUnavailableMessage() {
   return selected
     ? `Check anytime to transcribe original speech as ${selected.name} and save it in your private Glosify account.`
     : "Check anytime to save. Glosify will use the quiz language shown above.";
+}
+
+async function refreshPaidServiceStatus() {
+  const status = await apiFetch("/api/service-status/paid-features");
+  state.paidServicesAvailable = status.available !== false;
+  state.paidServicesReason = status.reason ?? null;
+  state.paidServicesResetAtUtc = status.resetsAtUtc ?? null;
+  state.lastPaidStatusAt = Date.now();
+  return status;
+}
+
+function budgetUnavailableMessage(resetOverride = null) {
+  const value = resetOverride ?? state.paidServicesResetAtUtc;
+  const reset = value ? new Date(value) : null;
+  const suffix = reset && !Number.isNaN(reset.valueOf())
+    ? ` They reopen ${reset.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}.`
+    : " They reopen at the start of next month.";
+  return `${state.paidServicesReason ?? "Glosify's monthly paid-services budget has been reached."}${suffix}`;
+}
+
+function rememberBudgetClosure(error) {
+  if (error?.code !== "paid_services_budget_exhausted") {
+    return false;
+  }
+  state.paidServicesAvailable = false;
+  state.paidServicesReason = error.message || state.paidServicesReason;
+  state.paidServicesResetAtUtc = error.resetsAtUtc ?? state.paidServicesResetAtUtc;
+  state.lastPaidStatusAt = Date.now();
+  return true;
 }
 
 function broadcastState() {
@@ -865,8 +952,10 @@ function normalizeError(error) {
 }
 
 class ApiRequestError extends Error {
-  constructor(status, message) {
+  constructor(status, message, code = null, resetsAtUtc = null) {
     super(message);
     this.status = status;
+    this.code = code;
+    this.resetsAtUtc = resetsAtUtc;
   }
 }

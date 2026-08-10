@@ -15,7 +15,7 @@ internal sealed class GetSavedTranscriptTool : IAssistantTool
         "Read one page of a saved transcript. Pages are the same pages the user sees in the transcript reader, "
         + $"{RealtimeTranslationTranscriptService.DetailPageSize} captions each, so \"the first page\" means page 1 to both of you. "
         + "New transcripts contain original source speech; legacy transcripts may contain translations. Defaults to the "
-        + "transcript open in the UI. When page_complete is false the character budget cut the page short: omit page and "
+        + "transcript open in the UI. When page_complete is false the character budget or requested limit cut the page short: omit page and "
         + "at_time and call again with next_offset to finish that same page. Move on to the next page only once "
         + "page_complete is true and has_more is still true.",
         BuildSchema(new Dictionary<string, object>
@@ -97,7 +97,7 @@ internal sealed class GetSavedTranscriptTool : IAssistantTool
             total_pages = page.TotalPages,
             starts_at = page.StartsAt,
             ends_at = page.EndsAt,
-            // False when the character budget cut the page short. The rest of the same
+            // False when the character budget or requested limit cut the page short. The rest of the same
             // page is at next_offset; the page number has not moved on.
             page_complete = page.PageComplete,
             offset = page.Offset,

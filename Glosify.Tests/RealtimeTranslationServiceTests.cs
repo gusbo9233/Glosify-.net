@@ -275,7 +275,7 @@ public sealed class RealtimeTranslationServiceTests
         var options = new DbContextOptionsBuilder<GlosifyContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
             .Options;
-        return new GlosifyContext(options);
+        return new FactoryBackedGlosifyContext(options);
     }
 
     private static async Task SeedUserAsync(GlosifyContext context)
@@ -320,12 +320,14 @@ public sealed class RealtimeTranslationServiceTests
             Options.Create(new GeminiOptions()));
         var credits = new AiCreditService(
             context,
+            new TestDbContextFactory(context),
             Options.Create(new AiUsageOptions
             {
                 TrialGrantCredits = 25,
                 MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
             }),
             resolver,
+            new AlwaysEligibleTrialService(),
             timeProvider);
         return new RealtimeTranslationService(
             context,
@@ -355,6 +357,12 @@ public sealed class RealtimeTranslationServiceTests
             timeProvider,
             NullLogger<RealtimeTranslationService>.Instance,
             new ReferenceCountedKeyedAsyncLock());
+    }
+
+    private sealed class AlwaysEligibleTrialService : Glosify.Services.Auth.ITrialEligibilityService
+    {
+        public Task<bool> IsEligibleAsync(string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
     }
 
     private sealed class FakeRelayTokenStore(bool fail = false) : IRealtimeTranslationRelayTokenStore

@@ -34,6 +34,7 @@ public sealed class SpeakingApiController : ControllerBase
     }
 
     [HttpPost("speech-token")]
+    [RequirePaidServices]
     public async Task<IActionResult> SpeechToken(CancellationToken cancellationToken)
     {
         var token = await _speechTokens.GetTokenAsync(cancellationToken);
@@ -48,6 +49,7 @@ public sealed class SpeakingApiController : ControllerBase
     }
 
     [HttpPost("sessions")]
+    [RequirePaidServices]
     public async Task<IActionResult> CreateSession(
         [FromBody] CreateSpeakingSessionRequest request,
         CancellationToken cancellationToken)
@@ -83,6 +85,7 @@ public sealed class SpeakingApiController : ControllerBase
     }
 
     [HttpPost("sessions/{sessionId:guid}/turns")]
+    [RequirePaidServices]
     public async Task<IActionResult> SendTurn(
         Guid sessionId,
         [FromBody] SendSpeakingTurnRequest request,
@@ -118,6 +121,7 @@ public sealed class SpeakingApiController : ControllerBase
     }
 
     [HttpPost("sessions/{sessionId:guid}/actions")]
+    [RequirePaidServices]
     public async Task<IActionResult> SendAction(
         Guid sessionId,
         [FromBody] SendSpeakingActionRequest request,

@@ -291,12 +291,18 @@ public class AzureTextToSpeechServiceTests
         TokenCredential? credential = null)
     {
         var factory = new StubHttpClientFactory(handler);
+        var sharedCredential = credential ?? new StubTokenCredential("unused");
+        var blobs = new GlosifyBlobServiceClient(
+            Options.Create(new BlobStorageOptions()),
+            sharedCredential,
+            new StubHostEnvironment(Microsoft.Extensions.Hosting.Environments.Production));
         return new AzureTextToSpeechService(
             Options.Create(speech),
-            Options.Create(new BlobStorageOptions()),
-            credential ?? new StubTokenCredential("unused"),
+            blobs,
+            sharedCredential,
             factory,
-            NullLogger<AzureTextToSpeechService>.Instance);
+            NullLogger<AzureTextToSpeechService>.Instance,
+            new AlwaysAvailablePaidServiceGate());
     }
 
     private sealed class StubHttpClientFactory : IHttpClientFactory

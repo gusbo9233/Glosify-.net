@@ -705,6 +705,29 @@ public sealed class FoundryGenerativeAiTests
         Assert.True(withGeminiKey.Validate(null, foundry).Succeeded);
     }
 
+    [Fact]
+    public void Options_validator_rejects_gemini_rollback_when_the_enabled_budget_cannot_price_it()
+    {
+        var options = ValidOptions();
+        options.Provider = GenerativeAiOptions.GeminiProvider;
+        var usage = new AiUsageOptions
+        {
+            MonthlyBudget = new AiMonthlyBudgetOptions
+            {
+                Enabled = true,
+                Providers = [AiUsageProviders.Foundry],
+            },
+        };
+        var validator = new GenerativeAiOptionsValidator(
+            Options.Create(new GeminiOptions { ApiKey = "configured-secret" }),
+            Options.Create(usage));
+
+        var result = validator.Validate(null, options);
+
+        Assert.True(result.Failed);
+        Assert.Contains(result.Failures, failure => failure.Contains("includes 'gemini'", StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData("http://example.test/project", "gpt-5.4-mini", "gpt-5.4-mini", "gpt-5.4-mini", 180)]
     [InlineData("https://example.test/project", "", "gpt-5.4-mini", "gpt-5.4-mini", 180)]

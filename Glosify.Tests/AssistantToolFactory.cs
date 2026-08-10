@@ -20,6 +20,7 @@ internal static class AssistantToolFactory
     public static IAssistantTools Create(GlosifyContext context) =>
         new ServiceCollection()
             .AddSingleton(context)
+            .AddMemoryCache()
             .AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(2026, 8, 10, 12, 0, 0, TimeSpan.Zero)))
             .AddSingleton<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>()
             .AddAssistantTools()

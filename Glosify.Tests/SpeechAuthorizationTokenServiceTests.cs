@@ -22,7 +22,8 @@ public sealed class SpeechAuthorizationTokenServiceTests
                 Region = "swedencentral",
                 Key = "must-not-be-used",
             }),
-            credential);
+            credential,
+            new AlwaysAvailablePaidServiceGate());
 
         var result = await service.GetTokenAsync();
 
@@ -40,7 +41,8 @@ public sealed class SpeechAuthorizationTokenServiceTests
     {
         var service = new SpeechAuthorizationTokenService(
             Options.Create(new SpeechOptions { Key = "legacy-key" }),
-            new StubTokenCredential(new AccessToken(string.Empty, DateTimeOffset.MinValue)));
+            new StubTokenCredential(new AccessToken(string.Empty, DateTimeOffset.MinValue)),
+            new AlwaysAvailablePaidServiceGate());
 
         await Assert.ThrowsAsync<SpeakingDependencyUnavailableException>(
             () => service.GetTokenAsync());
@@ -55,7 +57,8 @@ public sealed class SpeechAuthorizationTokenServiceTests
                 ResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/speech",
                 Region = "swedencentral",
             }),
-            new StubTokenCredential(new InvalidOperationException("identity unavailable")));
+            new StubTokenCredential(new InvalidOperationException("identity unavailable")),
+            new AlwaysAvailablePaidServiceGate());
 
         var exception = await Assert.ThrowsAsync<SpeakingDependencyUnavailableException>(
             () => service.GetTokenAsync());

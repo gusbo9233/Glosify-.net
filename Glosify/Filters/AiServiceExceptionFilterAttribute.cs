@@ -1,5 +1,6 @@
 using Glosify.Services;
 using Glosify.Infrastructure.Api;
+using Glosify.Services.Ai;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -32,7 +33,16 @@ public sealed class AiServiceExceptionFilterAttribute : ExceptionFilterAttribute
         }
 
         var error = ApiExceptionMapper.Map(exception);
-        if (error is not null)
+        if (exception is PaidServicesBudgetExhaustedException exhausted)
+        {
+            context.Result = GlosifyProblemDetails.Result(
+                context.HttpContext,
+                StatusCodes.Status503ServiceUnavailable,
+                ApiErrorCodes.PaidServicesBudgetExhausted,
+                exhausted.Reason,
+                new Dictionary<string, object?> { ["resetsAtUtc"] = exhausted.ResetsAtUtc });
+        }
+        else if (error is not null)
         {
             context.Result = Error(context, error.Value);
         }

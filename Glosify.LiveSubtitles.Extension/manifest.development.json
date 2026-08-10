@@ -1,0 +1,8 @@
+{
+  "name": "Glosify Live Subtitles DEV",
+  "host_permissions": [
+    "https://glosify.se/*",
+    "https://localhost/*",
+    "http://localhost/*"
+  ]
+}

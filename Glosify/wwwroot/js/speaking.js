@@ -895,6 +895,26 @@ import {
         throw error;
     }
 
+    async function pollPaidServiceStatus() {
+        try {
+            const response = await apiFetch("/api/service-status/paid-features");
+            const paid = await response.json();
+            if (paid.available !== false) {
+                return;
+            }
+            state.token = null;
+            cancelRecognition();
+            stopSpeaking();
+            const reset = paid.resetsAtUtc ? new Date(paid.resetsAtUtc) : null;
+            const resetText = reset && !Number.isNaN(reset.valueOf())
+                ? reset.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+                : "the start of next month";
+            setStatus(`Paid speaking features are paused until ${resetText}.`, true);
+        } catch {
+            // Individual paid requests still fail closed at the controller and provider.
+        }
+    }
+
     async function createSession({ announce = true, speakOpening = false } = {}) {
         state.ready = false;
         state.sessionId = null;
@@ -1986,6 +2006,7 @@ import {
     });
 
     window.addEventListener("pagehide", () => {
+        window.clearInterval(paidServicePollHandle);
         cancelRecognition();
         stopSpeaking();
         if (!state.sessionId || !antiforgeryToken) {
@@ -2003,5 +2024,8 @@ import {
     updateSelectionUi();
     updateCharacterCount();
     setBusy(true);
+    const paidServicePollHandle = window.setInterval(() => {
+        void pollPaidServiceStatus();
+    }, 15000);
     void createSession({ announce: false });
 })();

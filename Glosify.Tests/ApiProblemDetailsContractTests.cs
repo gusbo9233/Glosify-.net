@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Glosify.Filters;
+using Glosify.Infrastructure.Api;
+using Glosify.Services.Ai;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -8,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -70,6 +74,26 @@ public sealed class ApiProblemDetailsContractTests
     }
 
     [Fact]
+    public async Task ClosedPaidServiceGateUsesTheStableHttpProblemDetailsContract()
+    {
+        var resetsAtUtc = new DateTimeOffset(2026, 8, 31, 22, 0, 0, TimeSpan.Zero);
+        using var factory = CreateFactory(new ClosedPaidServiceGate(resetsAtUtc));
+        var response = await factory.CreateClient().GetAsync("/_contract/paid");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(
+            ApiErrorCodes.PaidServicesBudgetExhausted,
+            json.RootElement.GetProperty("code").GetString());
+        Assert.Equal(
+            "Paid features are unavailable because Glosify's monthly application budget has been reached.",
+            json.RootElement.GetProperty("error").GetString());
+        Assert.Equal(503, json.RootElement.GetProperty("status").GetInt32());
+        Assert.Equal(resetsAtUtc, json.RootElement.GetProperty("resetsAtUtc").GetDateTimeOffset());
+    }
+
+    [Fact]
     public async Task OpenApiDocument_IsAvailableInTesting()
     {
         using var factory = CreateFactory();
@@ -81,15 +105,32 @@ public sealed class ApiProblemDetailsContractTests
         Assert.True(json.RootElement.GetProperty("paths").TryGetProperty("/api/quizzes", out _));
     }
 
-    private static WebApplicationFactory<Program> CreateFactory() =>
+    private static WebApplicationFactory<Program> CreateFactory(IPaidServiceGate? paidServiceGate = null) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
             builder.ConfigureTestServices(services =>
             {
                 services.AddControllers().AddApplicationPart(typeof(ContractProbeController).Assembly);
+                if (paidServiceGate is not null)
+                {
+                    services.RemoveAll<IPaidServiceGate>();
+                    services.AddSingleton(paidServiceGate);
+                }
             });
         });
+
+    private sealed class ClosedPaidServiceGate(DateTimeOffset resetsAtUtc) : IPaidServiceGate
+    {
+        public Task<PaidServiceStatus> GetStatusAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(new PaidServiceStatus(
+                false,
+                "Paid features are unavailable because Glosify's monthly application budget has been reached.",
+                resetsAtUtc));
+
+        public Task EnsureAvailableAsync(CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+    }
 
 }
 
@@ -110,6 +151,10 @@ public sealed class ContractProbeController : ControllerBase
 
     [HttpGet("unexpected")]
     public IActionResult Unexpected() => throw new InvalidOperationException("private failure detail");
+
+    [HttpGet("paid")]
+    [RequirePaidServices]
+    public IActionResult Paid() => Ok();
 }
 
 public sealed class ContractProbeRequest

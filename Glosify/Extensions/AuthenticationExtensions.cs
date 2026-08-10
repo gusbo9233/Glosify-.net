@@ -3,6 +3,7 @@ using Glosify.Models;
 using Glosify.Models.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace Glosify.Extensions;
 
@@ -68,7 +69,9 @@ public static class AuthenticationExtensions
                     logger.LogWarning(context.Failure, "Google external login failed.");
 
                     context.HandleResponse();
-                    context.Response.Redirect("/login?externalLoginError=Google");
+                    context.Response.Redirect(BuildExternalLoginFailurePath(
+                        "Google",
+                        context.Properties?.RedirectUri));
                     return Task.CompletedTask;
                 };
             });
@@ -88,12 +91,33 @@ public static class AuthenticationExtensions
                     logger.LogWarning(context.Failure, "Microsoft external login failed.");
 
                     context.HandleResponse();
-                    context.Response.Redirect("/login?externalLoginError=Microsoft");
+                    context.Response.Redirect(BuildExternalLoginFailurePath(
+                        "Microsoft",
+                        context.Properties?.RedirectUri));
                     return Task.CompletedTask;
                 };
             });
         }
 
         return services;
+    }
+
+    internal static string BuildExternalLoginFailurePath(string provider, string? callbackRedirectUri)
+    {
+        string? returnUrl = null;
+        var queryIndex = callbackRedirectUri?.IndexOf('?') ?? -1;
+        if (queryIndex >= 0 && queryIndex < callbackRedirectUri!.Length - 1)
+        {
+            var query = QueryHelpers.ParseQuery(callbackRedirectUri[(queryIndex + 1)..]);
+            returnUrl = query.TryGetValue("returnUrl", out var value)
+                ? value.FirstOrDefault()
+                : null;
+        }
+
+        return QueryHelpers.AddQueryString("/login", new Dictionary<string, string?>
+        {
+            ["externalLoginError"] = provider,
+            ["returnUrl"] = returnUrl,
+        });
     }
 }

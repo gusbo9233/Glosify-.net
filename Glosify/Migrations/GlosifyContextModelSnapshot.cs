@@ -181,7 +181,17 @@ namespace Glosify.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<DateTimeOffset?>("ExhaustedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ExhaustedReason")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<long>("LimitMicros")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("OverrunMicros")
                         .HasColumnType("bigint");
 
                     b.Property<long>("ReservedMicros")
@@ -311,8 +321,8 @@ namespace Glosify.Migrations
                         .HasColumnName("sequence");
 
                     b.Property<string>("Status")
-                        .IsRequired()
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)")
                         .HasColumnName("status");

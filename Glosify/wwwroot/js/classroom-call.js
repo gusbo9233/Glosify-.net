@@ -35,6 +35,7 @@
     let localVideoStream = null;
     let localRenderer = null;
     let timerHandle = null;
+    let budgetPollHandle = null;
     let connectedAt = null;
     const remoteTiles = new Map(); // participant -> { tile, videoHost, renderers: Map<stream, renderer> }
 
@@ -288,6 +289,54 @@
         timer.textContent = "";
     }
 
+    async function pollPaidServiceStatus() {
+        if (!call) {
+            return;
+        }
+        let response;
+        let paid;
+        try {
+            response = await fetch("/api/service-status/paid-features", {
+                credentials: "same-origin",
+                cache: "no-store"
+            });
+            if (!response.ok) {
+                return;
+            }
+            paid = await response.json();
+        } catch {
+            return;
+        }
+        if (paid.available !== false || !call) {
+            return;
+        }
+        const reset = paid.resetsAtUtc ? new Date(paid.resetsAtUtc) : null;
+        const resetText = reset && !Number.isNaN(reset.valueOf())
+            ? reset.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+            : "the start of next month";
+        const active = call;
+        call = null;
+        cleanUp();
+        setStatus(`The Glosify paid-services budget was reached. Calls reopen ${resetText}.`);
+        hangUpCall(active);
+    }
+
+    function startBudgetPolling() {
+        if (budgetPollHandle) {
+            return;
+        }
+        budgetPollHandle = setInterval(() => {
+            void pollPaidServiceStatus();
+        }, 15000);
+    }
+
+    function stopBudgetPolling() {
+        if (budgetPollHandle) {
+            clearInterval(budgetPollHandle);
+            budgetPollHandle = null;
+        }
+    }
+
     // Incremented on every join attempt and on hang-up, so an in-flight join
     // notices it was cancelled after each await and backs out.
     let joinSession = 0;
@@ -442,6 +491,7 @@
                     if (!timerHandle) {
                         startTimer();
                     }
+                    startBudgetPolling();
                 } else if (joined.state === "Disconnected") {
                     cleanUp();
                 } else {
@@ -462,6 +512,7 @@
         localTile.hidden = true;
         call = null;
         stopTimer();
+        stopBudgetPolling();
         notifyLeftCall();
 
         lobby.hidden = false;

@@ -11,6 +11,7 @@ internal sealed class AiMonthlyBudgetConfiguration : IEntityTypeConfiguration<Ai
         entity.HasKey(budget => budget.PeriodKey);
         entity.Property(budget => budget.PeriodKey).HasMaxLength(7);
         entity.Property(budget => budget.RowVersion).IsRowVersion();
+        entity.Property(budget => budget.ExhaustedReason).HasMaxLength(200);
         entity.Ignore(budget => budget.AvailableMicros);
 
     }

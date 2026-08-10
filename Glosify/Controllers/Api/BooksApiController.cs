@@ -3,6 +3,8 @@ using Glosify.Models.Api;
 using Glosify.Models.Library;
 using Glosify.Services;
 using Glosify.Services.Books;
+using Glosify.Filters;
+using Glosify.Services.Ai;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.Controllers.Api;
@@ -31,6 +33,8 @@ public class BooksApiController : ApiControllerBase
 
     [HttpPost]
     [RequestSizeLimit(26 * 1024 * 1024)]
+    [RequirePaidServices]
+    [AiServiceExceptionFilter]
     public async Task<ActionResult<BookDto>> Upload(IFormFile? file, CancellationToken cancellationToken)
     {
         if (file is null)
@@ -46,6 +50,10 @@ public class BooksApiController : ApiControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
+        }
+        catch (PaidServicesBudgetExhaustedException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

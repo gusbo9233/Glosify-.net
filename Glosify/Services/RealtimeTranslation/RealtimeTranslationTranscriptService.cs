@@ -1,6 +1,7 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Glosify.Services.RealtimeTranslation;
 
@@ -23,11 +24,16 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
     private const int MaximumStoredSegmentCharacters = 12_000;
     private readonly GlosifyContext _context;
     private readonly TimeProvider _timeProvider;
+    private readonly IMemoryCache _cache;
 
-    public RealtimeTranslationTranscriptService(GlosifyContext context, TimeProvider timeProvider)
+    public RealtimeTranslationTranscriptService(
+        GlosifyContext context,
+        TimeProvider timeProvider,
+        IMemoryCache cache)
     {
         _context = context;
         _timeProvider = timeProvider;
+        _cache = cache;
     }
 
     public async Task<TranscriptLibraryPage> GetLibraryAsync(
@@ -186,7 +192,10 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
         }
         else
         {
-            skip = Math.Max(0, request.Offset ?? 0);
+            var requestedOffset = Math.Max(0, request.Offset ?? 0);
+            skip = total > 0 && requestedOffset >= total
+                ? (totalPages - 1) * DetailPageSize
+                : requestedOffset;
         }
 
         // A read never crosses a page boundary, even when it starts mid-page to resume a
@@ -198,6 +207,8 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             .Select(segment => new TranscriptTextSegment(segment.Sequence, segment.Text, segment.CapturedAt))
             .ToListAsync(cancellationToken);
         var bounded = BoundByCharacters(rows, maximumCharacters);
+        var pageStart = skip / DetailPageSize * DetailPageSize;
+        var pageEnd = Math.Min(pageStart + DetailPageSize, total);
 
         return new TranscriptTextPage(
             transcript.Id,
@@ -211,7 +222,7 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             totalPages,
             skip,
             total,
-            bounded.Count == rows.Count,
+            skip + bounded.Count >= pageEnd,
             skip + bounded.Count < total,
             rows.Count == 0 ? null : rows[0].CapturedAt,
             rows.Count == 0 ? null : rows[^1].CapturedAt,
@@ -234,25 +245,36 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
         CancellationToken cancellationToken = default)
     {
         pageSize = Math.Clamp(pageSize, 1, 200);
-        var storedStream = await _context.RealtimeTranslationTranscripts
+        var transcript = await _context.RealtimeTranslationTranscripts
             .AsNoTracking()
             .Where(item => item.Id == transcriptId
                 && item.UserId == userId
                 && item.TargetLanguage == quizLanguageCode)
-            .Select(item => item.Stream)
+            .Select(item => new { item.Stream, item.UpdatedAt })
             .SingleOrDefaultAsync(cancellationToken);
-        if (storedStream is null)
+        if (transcript is null)
         {
             return [];
         }
 
-        var selectedStream = NormalizeStream(stream) ?? storedStream;
+        var selectedStream = NormalizeStream(stream) ?? transcript.Stream;
+        var cacheKey = new TranscriptPageSpanCacheKey(
+            transcriptId,
+            selectedStream,
+            pageSize,
+            transcript.UpdatedAt);
+        if (_cache.TryGetValue<IReadOnlyList<TranscriptPageSpan>>(cacheKey, out var cached))
+        {
+            return cached!;
+        }
+
         var timestamps = await SegmentsInReadingOrder(transcriptId, selectedStream)
             .Take(MaximumIndexedSegments + 1)
             .Select(segment => segment.CapturedAt)
             .ToListAsync(cancellationToken);
         if (timestamps.Count > MaximumIndexedSegments)
         {
+            _cache.Set(cacheKey, Array.Empty<TranscriptPageSpan>(), TimeSpan.FromMinutes(10));
             return [];
         }
 
@@ -262,6 +284,7 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             var last = Math.Min(index + pageSize, timestamps.Count) - 1;
             spans.Add(new TranscriptPageSpan((index / pageSize) + 1, timestamps[index], timestamps[last]));
         }
+        _cache.Set(cacheKey, spans, TimeSpan.FromMinutes(10));
         return spans;
     }
 
@@ -278,6 +301,12 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             .OrderBy(segment => segment.CapturedAt)
             .ThenBy(segment => segment.SessionId)
             .ThenBy(segment => segment.Sequence);
+
+    private readonly record struct TranscriptPageSpanCacheKey(
+        Guid TranscriptId,
+        string Stream,
+        int PageSize,
+        DateTimeOffset UpdatedAt);
 
     /// <summary>
     /// Stops one read filling a context window, however long the captions turn out to be.

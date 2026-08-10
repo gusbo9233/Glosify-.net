@@ -1,9 +1,12 @@
 using System.Security.Claims;
 using Glosify.Controllers;
 using Glosify.Models.Library;
+using Glosify.Models;
+using Glosify.Services.Ai;
 using Glosify.Services.Books;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -46,6 +49,29 @@ public sealed class BookFileRangeTests
         Assert.Contains("disableStream: true", shelf, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task ClosedPaidServiceGateRedirectsUploadWithAReadableMessage()
+    {
+        var resetsAtUtc = new DateTimeOffset(2026, 8, 31, 22, 0, 0, TimeSpan.Zero);
+        var httpContext = new DefaultHttpContext();
+        var controller = new BooksController(
+            books: null!,
+            quizzes: null!,
+            NullLogger<BooksController>.Instance,
+            new ClosedPaidServiceGate(resetsAtUtc))
+        {
+            ControllerContext = new ControllerContext { HttpContext = httpContext },
+            TempData = new TempDataDictionary(httpContext, new InMemoryTempDataProvider()),
+        };
+
+        var result = await controller.Upload(file: null, CancellationToken.None);
+
+        Assert.Equal(nameof(BooksController.Index), Assert.IsType<RedirectToActionResult>(result).ActionName);
+        var message = Assert.IsType<string>(controller.TempData[NotificationKeys.Book]);
+        Assert.Contains("monthly application budget", message, StringComparison.Ordinal);
+        Assert.Contains("2026-08-31 22:00 UTC", message, StringComparison.Ordinal);
+    }
+
     private static string WebRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -69,7 +95,8 @@ public sealed class BookFileRangeTests
         var controller = new BooksController(
             new StubBookDocumentService(pdf),
             quizzes: null!, // The File action never reaches the quiz service.
-            NullLogger<BooksController>.Instance);
+            NullLogger<BooksController>.Instance,
+            new AlwaysAvailablePaidServiceGate());
 
         var user = new ClaimsPrincipal(new ClaimsIdentity(
             [new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString())],
@@ -81,6 +108,25 @@ public sealed class BookFileRangeTests
         };
 
         return controller;
+    }
+
+    private sealed class ClosedPaidServiceGate(DateTimeOffset resetsAtUtc) : IPaidServiceGate
+    {
+        public Task<PaidServiceStatus> GetStatusAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(new PaidServiceStatus(false, PaidServiceGate.BudgetExhaustedReason, resetsAtUtc));
+
+        public Task EnsureAvailableAsync(CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+    }
+
+    private sealed class InMemoryTempDataProvider : ITempDataProvider
+    {
+        private Dictionary<string, object> _values = [];
+
+        public IDictionary<string, object> LoadTempData(HttpContext context) => _values;
+
+        public void SaveTempData(HttpContext context, IDictionary<string, object> values) =>
+            _values = new Dictionary<string, object>(values, StringComparer.Ordinal);
     }
 
     private sealed class StubBookDocumentService(Stream pdf) : IBookDocumentService

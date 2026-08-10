@@ -48,6 +48,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
     }
 
     [HttpPost("sessions")]
+    [RequirePaidServices]
     public async Task<ActionResult<RealtimeTranslationSessionCreated>> CreateSession(
         [FromBody] CreateRealtimeTranslationSessionRequest request,
         CancellationToken cancellationToken)
@@ -63,6 +64,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
     }
 
     [HttpPost("sessions/{sessionId:guid}/minutes/{minuteIndex:int}/reserve")]
+    [RequirePaidServices]
     public async Task<ActionResult<RealtimeTranslationMinuteResult>> ReserveMinute(
         Guid sessionId,
         int minuteIndex,
@@ -77,6 +79,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
     }
 
     [HttpPost("sessions/{sessionId:guid}/minutes/{minuteIndex:int}/begin")]
+    [RequirePaidServices]
     public async Task<ActionResult<RealtimeTranslationMinuteResult>> BeginMinute(
         Guid sessionId,
         int minuteIndex,

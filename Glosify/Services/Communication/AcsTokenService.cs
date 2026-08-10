@@ -3,6 +3,7 @@ using Azure.Communication.Identity;
 using Azure.Identity;
 using Glosify.Data;
 using Glosify.Models.Entities;
+using Glosify.Services.Ai;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -13,11 +14,16 @@ public sealed class AcsTokenService : IAcsTokenService
     private readonly GlosifyContext _context;
     private readonly AcsOptions _options;
     private readonly Lazy<CommunicationIdentityClient> _client;
+    private readonly IPaidServiceGate _paidServices;
 
-    public AcsTokenService(GlosifyContext context, IOptions<AcsOptions> options)
+    public AcsTokenService(
+        GlosifyContext context,
+        IOptions<AcsOptions> options,
+        IPaidServiceGate paidServices)
     {
         _context = context;
         _options = options.Value;
+        _paidServices = paidServices;
         _client = new Lazy<CommunicationIdentityClient>(
             () => !string.IsNullOrWhiteSpace(_options.Endpoint)
                 ? new CommunicationIdentityClient(new Uri(_options.Endpoint), new DefaultAzureCredential())
@@ -28,6 +34,7 @@ public sealed class AcsTokenService : IAcsTokenService
 
     public async Task<AcsCallToken> GetCallTokenAsync(string userId, CancellationToken cancellationToken = default)
     {
+        await _paidServices.EnsureAvailableAsync(cancellationToken);
         if (!IsConfigured)
         {
             throw new InvalidOperationException("Video calling is not configured on this server.");
@@ -63,6 +70,7 @@ public sealed class AcsTokenService : IAcsTokenService
         var token = await _client.Value.GetTokenAsync(
             new CommunicationUserIdentifier(identity.AcsUserId),
             [CommunicationTokenScope.VoIP],
+            TimeSpan.FromHours(1),
             cancellationToken);
 
         return new AcsCallToken(token.Value.Token, token.Value.ExpiresOn, identity.AcsUserId);

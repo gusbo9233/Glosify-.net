@@ -143,11 +143,12 @@ function render() {
     catalog: currentState.catalog,
   });
   elements.saveTranscriptHelp.textContent = currentState.saveTranscriptHelp
-    ?? "Stores finalized original-language speech in your private Glosify account for this session only.";
+    ?? "Optional and off by default. Stores finalized original-language speech in your private Glosify account until you delete the transcript or account.";
 
   const canStart = !busy
     && !currentState.active
     && currentState.catalog
+    && currentState.paidServicesAvailable !== false
     && languages.length > 0
     && currentState.availableCredits >= price;
   elements.start.classList.toggle("hidden", currentState.active);
@@ -167,8 +168,16 @@ function describeStatus(state) {
     case "subtitling": return `Subtitling · paid minute ${state.currentMinute}`;
     case "reconnecting": return "Reconnecting after the 30-minute session limit…";
     case "insufficient_credits": return "Stopped: insufficient Glosify credits.";
+    case "budget_exhausted": return `Paid features reopen ${formatReset(state.paidServicesResetAtUtc)}.`;
     default: return null;
   }
+}
+
+function formatReset(value) {
+  const reset = value ? new Date(value) : null;
+  return reset && !Number.isNaN(reset.valueOf())
+    ? reset.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+    : "at the start of next month";
 }
 
 function setMessage(element, text) {

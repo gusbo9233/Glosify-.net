@@ -4,6 +4,7 @@ using Glosify.Models.Entities;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
@@ -30,7 +31,7 @@ public sealed class RealtimeTranslationTranscriptTests
             Session(optedInSession, "user-1", transcriptId, DateTimeOffset.UtcNow),
             Session(privateSession, "user-1", null, null));
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, Clock());
+        var service = new RealtimeTranslationTranscriptService(context, Clock(), Cache());
         var segment = new CapturedTranslationSegment(1, "response:item:0", "Hola", DateTimeOffset.UtcNow);
 
         await service.AppendAsync(optedInSession, [segment]);
@@ -91,7 +92,7 @@ public sealed class RealtimeTranslationTranscriptTests
         context.RealtimeTranslationSessions.Add(
             Session(sessionId, "user-1", transcriptId, DateTimeOffset.UtcNow));
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, Clock());
+        var service = new RealtimeTranslationTranscriptService(context, Clock(), Cache());
         // Both accumulators number their own segments, so the streams collide on key.
         var source = new CapturedTranslationSegment(1, "item:0", "Dzień dobry", DateTimeOffset.UtcNow);
         var translation = source with
@@ -178,7 +179,7 @@ public sealed class RealtimeTranslationTranscriptTests
             Text = "Good morning",
         });
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, Clock());
+        var service = new RealtimeTranslationTranscriptService(context, Clock(), Cache());
 
         var fallback = await service.GetDetailAsync(transcriptId, "user-1", "pl", 1, 50);
         var translated = await service.GetDetailAsync(transcriptId, "user-1", "pl", 1, 50, "translation");
@@ -223,7 +224,7 @@ public sealed class RealtimeTranslationTranscriptTests
         var transcriptId = Guid.NewGuid();
         AddPagedTranscript(context, transcriptId, sourceSegments: 250, translationSegments: 0);
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, Clock());
+        var service = new RealtimeTranslationTranscriptService(context, Clock(), Cache());
         var tools = AssistantToolFactory.Create(context);
 
         var reader = await service.GetDetailAsync(
@@ -353,13 +354,48 @@ public sealed class RealtimeTranslationTranscriptTests
     }
 
     [Fact]
+    public async Task AssistantTools_AnExplicitLimitDoesNotMarkAnUnfinishedPageComplete()
+    {
+        await using var context = CreateContext();
+        var transcriptId = Guid.NewGuid();
+        AddPagedTranscript(context, transcriptId, sourceSegments: 150, translationSegments: 0);
+        await context.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(context);
+
+        var limited = await ReadAsync(tools, Context(transcriptId), new { page = 1, limit = 10 });
+
+        Assert.Equal(10, limited.GetProperty("captions").EnumerateArray().Count());
+        Assert.False(limited.GetProperty("page_complete").GetBoolean());
+        Assert.Equal(10, limited.GetProperty("next_offset").GetInt32());
+        Assert.True(limited.GetProperty("has_more").GetBoolean());
+    }
+
+    [Fact]
+    public async Task AssistantTools_ClampAnOffsetBeyondTheEndToTheLastPage()
+    {
+        await using var context = CreateContext();
+        var transcriptId = Guid.NewGuid();
+        AddPagedTranscript(context, transcriptId, sourceSegments: 250, translationSegments: 0);
+        await context.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(context);
+
+        var beyond = await ReadAsync(tools, Context(transcriptId), new { offset = 5_000 });
+
+        Assert.Equal(3, beyond.GetProperty("page_number").GetInt32());
+        Assert.Equal(3, beyond.GetProperty("total_pages").GetInt32());
+        Assert.Equal(200, beyond.GetProperty("offset").GetInt32());
+        Assert.Equal(50, beyond.GetProperty("captions").EnumerateArray().Count());
+        Assert.False(beyond.GetProperty("has_more").GetBoolean());
+    }
+
+    [Fact]
     public async Task Detail_ClampsAPageBeyondTheEndToTheLastPage()
     {
         await using var context = CreateContext();
         var transcriptId = Guid.NewGuid();
         AddPagedTranscript(context, transcriptId, sourceSegments: 150, translationSegments: 0);
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, Clock());
+        var service = new RealtimeTranslationTranscriptService(context, Clock(), Cache());
 
         var page = await service.GetDetailAsync(
             transcriptId,
@@ -379,7 +415,7 @@ public sealed class RealtimeTranslationTranscriptTests
         var transcriptId = Guid.NewGuid();
         AddPagedTranscript(context, transcriptId, sourceSegments: 250, translationSegments: 130);
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, Clock());
+        var service = new RealtimeTranslationTranscriptService(context, Clock(), Cache());
 
         var source = await service.GetPageSpansAsync(
             transcriptId,
@@ -393,12 +429,19 @@ public sealed class RealtimeTranslationTranscriptTests
             "pl",
             "translation",
             RealtimeTranslationTranscriptService.DetailPageSize);
+        var sourceAgain = await service.GetPageSpansAsync(
+            transcriptId,
+            "user-1",
+            "pl",
+            null,
+            RealtimeTranslationTranscriptService.DetailPageSize);
 
         Assert.Equal([1, 2, 3], source.Select(span => span.Page));
         Assert.Equal([1, 2], translation.Select(span => span.Page));
         Assert.Equal(Origin, source[0].StartsAt);
         Assert.Equal(Origin.AddSeconds(99 * 2), source[0].EndsAt);
         Assert.Equal(Origin.AddSeconds(100 * 2), source[1].StartsAt);
+        Assert.Same(source, sourceAgain);
     }
 
     private static readonly DateTimeOffset Origin = new(2026, 8, 10, 14, 0, 0, TimeSpan.Zero);
@@ -409,6 +452,8 @@ public sealed class RealtimeTranslationTranscriptTests
     /// it, and a paging test should not start failing because a read path later does too.
     /// </summary>
     private static TimeProvider Clock() => new FakeTimeProvider(Origin);
+
+    private static IMemoryCache Cache() => new MemoryCache(new MemoryCacheOptions());
 
     private static AgentToolContext Context(Guid transcriptId) => new()
     {

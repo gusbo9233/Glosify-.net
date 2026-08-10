@@ -82,7 +82,7 @@ public sealed class AiServiceExceptionFilterTests
                 0,
                 1),
             StatusCodes.Status503ServiceUnavailable,
-            "AI is temporarily unavailable because this request would exceed the application's monthly budget."
+            "Paid features are unavailable because Glosify's monthly application budget has been reached."
         },
         {
             new SpeakingSessionInvalidatedException(

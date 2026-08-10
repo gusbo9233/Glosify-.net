@@ -18,7 +18,7 @@ public static class ApiExceptionMapper
         CollectionNameConflictException => Error(409, ApiErrorCodes.CollectionNameConflict, exception),
         QuizCollectionNotFoundException => Error(400, ApiErrorCodes.QuizCollectionNotFound, exception),
         InsufficientAiCreditsException => Error(402, ApiErrorCodes.PaymentRequired, exception),
-        MonthlyAiBudgetExceededException => Error(503, ApiErrorCodes.DependencyUnavailable, exception),
+        PaidServicesBudgetExhaustedException => Error(503, ApiErrorCodes.PaidServicesBudgetExhausted, exception),
         GenerativeAiValidationException => Error(400, ApiErrorCodes.ValidationFailed, exception),
         GenerativeAiDependencyUnavailableException => Error(503, ApiErrorCodes.DependencyUnavailable, exception),
         GenerativeAiTimeoutException => Error(504, ApiErrorCodes.Timeout, exception),

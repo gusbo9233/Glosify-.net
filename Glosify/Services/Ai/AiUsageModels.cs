@@ -47,15 +47,32 @@ public sealed class InsufficientAiCreditsException : InvalidOperationException
     public int RequiredCredits { get; }
 }
 
-public sealed class MonthlyAiBudgetExceededException : InvalidOperationException
+public class PaidServicesBudgetExhaustedException : InvalidOperationException
+{
+    public PaidServicesBudgetExhaustedException(string reason, DateTimeOffset resetsAtUtc)
+        : base(reason)
+    {
+        Reason = reason;
+        ResetsAtUtc = resetsAtUtc;
+    }
+
+    public string Reason { get; }
+    public DateTimeOffset ResetsAtUtc { get; }
+}
+
+public sealed class MonthlyAiBudgetExceededException : PaidServicesBudgetExhaustedException
 {
     public MonthlyAiBudgetExceededException(
         string periodKey,
         long limitMicros,
         long spentMicros,
         long reservedMicros,
-        long requiredMicros)
-        : base("AI is temporarily unavailable because this request would exceed the application's monthly budget.")
+        long requiredMicros,
+        DateTimeOffset? resetsAtUtc = null,
+        string? reason = null)
+        : base(
+            reason ?? PaidServiceGate.BudgetExhaustedReason,
+            resetsAtUtc ?? DateTimeOffset.MaxValue)
     {
         PeriodKey = periodKey;
         LimitMicros = limitMicros;

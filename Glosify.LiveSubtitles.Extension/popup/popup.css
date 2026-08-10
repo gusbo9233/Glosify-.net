@@ -111,6 +111,14 @@ select:focus { border-color: #8872ff; }
 .switch-row input:disabled { cursor: not-allowed; }
 .price-row { color: #aab3c5; font-size: 12px; }
 .price-row strong { color: #eef2ff; }
+.service-disclosure {
+  padding: 10px;
+  border: 1px solid rgba(135, 112, 255, .25);
+  border-radius: 9px;
+  background: rgba(112, 88, 243, .08);
+  color: #c8cfdd;
+  font-size: 11px;
+}
 
 button {
   border: 0;

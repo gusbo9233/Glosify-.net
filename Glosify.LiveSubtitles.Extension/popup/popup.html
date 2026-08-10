@@ -45,7 +45,7 @@
         <label class="switch-row" for="save-transcript">
           <span>
             <strong>Save original speech transcript</strong>
-            <small id="save-transcript-help">Stores finalized original-language speech in your private Glosify account for this session only</small>
+            <small id="save-transcript-help">Optional and off by default. Stores finalized original-language speech in your private Glosify account until you delete the transcript or account.</small>
           </span>
           <input id="save-transcript" type="checkbox">
         </label>
@@ -55,6 +55,7 @@
           <strong id="price">8 credits/min</strong>
         </div>
 
+        <p class="service-disclosure">When you start, this tab’s audio is streamed through Glosify to Microsoft Foundry for live translation. Audio is not stored. Each started minute consumes credits.</p>
         <button id="start" class="primary">Start subtitles</button>
         <button id="stop" class="danger hidden">Stop subtitles</button>
         <button id="view-transcripts" class="secondary" type="button">View saved transcripts</button>

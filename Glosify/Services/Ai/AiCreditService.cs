@@ -1,7 +1,9 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Auth;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.Ai;
@@ -11,20 +13,26 @@ public sealed class AiCreditService : IAiCreditService
     private const decimal MicrosPerSek = 1_000_000m;
 
     private readonly GlosifyContext _context;
+    private readonly IDbContextFactory<GlosifyContext> _contextFactory;
     private readonly AiUsageOptions _options;
     private readonly IGenerativeAiModelResolver _modelResolver;
+    private readonly ITrialEligibilityService _trialEligibility;
     private readonly TimeProvider _timeProvider;
     private readonly TimeZoneInfo _budgetTimeZone;
 
     public AiCreditService(
         GlosifyContext context,
+        IDbContextFactory<GlosifyContext> contextFactory,
         IOptions<AiUsageOptions> options,
         IGenerativeAiModelResolver modelResolver,
+        ITrialEligibilityService trialEligibility,
         TimeProvider? timeProvider = null)
     {
         _context = context;
+        _contextFactory = contextFactory;
         _options = options.Value;
         _modelResolver = modelResolver;
+        _trialEligibility = trialEligibility;
         _timeProvider = timeProvider ?? TimeProvider.System;
         _budgetTimeZone = _options.MonthlyBudget.Enabled
             ? TimeZoneInfo.FindSystemTimeZoneById(_options.MonthlyBudget.TimeZoneId)
@@ -495,11 +503,16 @@ public sealed class AiCreditService : IAiCreditService
         return account;
     }
 
-    private Task ApplyTrialGrantIfNeededAsync(AiCreditAccount account, CancellationToken cancellationToken)
+    private async Task ApplyTrialGrantIfNeededAsync(AiCreditAccount account, CancellationToken cancellationToken)
     {
         if (account.TrialGrantedAt.HasValue || _options.TrialGrantCredits <= 0)
         {
-            return Task.CompletedTask;
+            return;
+        }
+
+        if (!await _trialEligibility.IsEligibleAsync(account.UserId, cancellationToken))
+        {
+            return;
         }
 
         var now = _timeProvider.GetUtcNow();
@@ -517,7 +530,6 @@ public sealed class AiCreditService : IAiCreditService
             Note = "One-time trial grant.",
             CreatedAt = now,
         });
-        return Task.CompletedTask;
     }
 
     private async Task<AiCreditTransaction?> LoadReservationAsync(
@@ -588,14 +600,9 @@ public sealed class AiCreditService : IAiCreditService
         var amountMicros = CalculateEstimatedBudgetMicros(estimatedTokens, price);
         var periodKey = GetBudgetPeriodKey();
         var budget = await GetOrCreateMonthlyBudgetAsync(periodKey, cancellationToken);
-        if (budget.AvailableMicros < amountMicros)
+        if (budget.ExhaustedAt.HasValue || budget.AvailableMicros < amountMicros)
         {
-            throw new MonthlyAiBudgetExceededException(
-                periodKey,
-                budget.LimitMicros,
-                budget.SpentMicros,
-                budget.ReservedMicros,
-                amountMicros);
+            await MarkExhaustedAndThrowAsync(budget, amountMicros, cancellationToken);
         }
 
         budget.ReservedMicros += amountMicros;
@@ -623,14 +630,9 @@ public sealed class AiCreditService : IAiCreditService
             * _options.MonthlyBudget.ReservationSafetyMultiplier);
         var periodKey = GetBudgetPeriodKey();
         var budget = await GetOrCreateMonthlyBudgetAsync(periodKey, cancellationToken);
-        if (budget.AvailableMicros < amountMicros)
+        if (budget.ExhaustedAt.HasValue || budget.AvailableMicros < amountMicros)
         {
-            throw new MonthlyAiBudgetExceededException(
-                periodKey,
-                budget.LimitMicros,
-                budget.SpentMicros,
-                budget.ReservedMicros,
-                amountMicros);
+            await MarkExhaustedAndThrowAsync(budget, amountMicros, cancellationToken);
         }
 
         budget.ReservedMicros += amountMicros;
@@ -654,11 +656,22 @@ public sealed class AiCreditService : IAiCreditService
                 item => item.PeriodKey == reservation.BudgetPeriodKey,
                 cancellationToken);
         var price = GetModelPrice(reservation.Model ?? string.Empty);
-        var actualMicros = CalculateActualBudgetMicros(usage, price);
+        var calculatedMicros = CalculateActualBudgetMicros(usage, price);
+        var configuredLimit = GetConfiguredLimitMicros();
+        var chargeCapacity = Math.Max(
+            0,
+            configuredLimit - budget.SpentMicros - Math.Max(0, budget.ReservedMicros - reservedMicros));
+        var actualMicros = Math.Min(calculatedMicros, chargeCapacity);
+        var overrunMicros = Math.Max(0, calculatedMicros - chargeCapacity);
         budget.ReservedMicros = Math.Max(0, budget.ReservedMicros - reservedMicros);
         budget.SpentMicros += actualMicros;
-        budget.LimitMicros = GetConfiguredLimitMicros();
+        budget.OverrunMicros += overrunMicros;
+        budget.LimitMicros = configuredLimit;
         budget.UpdatedAt = _timeProvider.GetUtcNow();
+        if (calculatedMicros > chargeCapacity)
+        {
+            MarkExhausted(budget);
+        }
         return new BudgetCharge(reservedMicros, actualMicros);
     }
 
@@ -677,15 +690,26 @@ public sealed class AiCreditService : IAiCreditService
             item => item.PeriodKey == reservation.BudgetPeriodKey,
             cancellationToken);
         var price = GetDurationModelPrice(reservation.Model ?? string.Empty);
-        var actualMicros = ToMicros(
+        var calculatedMicros = ToMicros(
             price.AudioSekPerMinute!.Value
             * Math.Max(0, actualDurationSeconds)
             / 60m
             * MicrosPerSek);
+        var configuredLimit = GetConfiguredLimitMicros();
+        var chargeCapacity = Math.Max(
+            0,
+            configuredLimit - budget.SpentMicros - Math.Max(0, budget.ReservedMicros - reservedMicros));
+        var actualMicros = Math.Min(calculatedMicros, chargeCapacity);
+        var overrunMicros = Math.Max(0, calculatedMicros - chargeCapacity);
         budget.ReservedMicros = Math.Max(0, budget.ReservedMicros - reservedMicros);
         budget.SpentMicros += actualMicros;
-        budget.LimitMicros = GetConfiguredLimitMicros();
+        budget.OverrunMicros += overrunMicros;
+        budget.LimitMicros = configuredLimit;
         budget.UpdatedAt = _timeProvider.GetUtcNow();
+        if (calculatedMicros > chargeCapacity)
+        {
+            MarkExhausted(budget);
+        }
         return new BudgetCharge(reservedMicros, actualMicros);
     }
 
@@ -731,6 +755,103 @@ public sealed class AiCreditService : IAiCreditService
         };
         _context.AiMonthlyBudgets.Add(budget);
         return budget;
+    }
+
+    private async Task MarkExhaustedAndThrowAsync(
+        AiMonthlyBudget budget,
+        long requiredMicros,
+        CancellationToken cancellationToken)
+    {
+        if (!budget.ExhaustedAt.HasValue)
+        {
+            MarkExhausted(budget);
+            await PersistBudgetExhaustionAsync(budget, cancellationToken);
+        }
+
+        var exception = new MonthlyAiBudgetExceededException(
+            budget.PeriodKey,
+            budget.LimitMicros,
+            budget.SpentMicros,
+            budget.ReservedMicros,
+            requiredMicros,
+            GetBudgetResetAtUtc(),
+            budget.ExhaustedReason);
+
+        // The isolated context owns the durable exhaustion row. Drop every pending entity
+        // owned by this service so a caller that catches the exception cannot accidentally
+        // persist an account or trial grant prepared before the budget check. This must also
+        // run when the budget was already exhausted. Unrelated caller changes stay tracked.
+        DetachCreditEntities();
+        throw exception;
+    }
+
+    private async Task PersistBudgetExhaustionAsync(
+        AiMonthlyBudget source,
+        CancellationToken cancellationToken)
+    {
+        const int maximumAttempts = 3;
+        for (var attempt = 1; attempt <= maximumAttempts; attempt++)
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            var budget = await context.AiMonthlyBudgets
+                .SingleOrDefaultAsync(item => item.PeriodKey == source.PeriodKey, cancellationToken);
+            if (budget is null)
+            {
+                budget = new AiMonthlyBudget
+                {
+                    PeriodKey = source.PeriodKey,
+                    LimitMicros = source.LimitMicros,
+                    SpentMicros = source.SpentMicros,
+                    ReservedMicros = source.ReservedMicros,
+                    OverrunMicros = source.OverrunMicros,
+                    ExhaustedAt = source.ExhaustedAt,
+                    ExhaustedReason = source.ExhaustedReason,
+                    CreatedAt = source.CreatedAt,
+                    UpdatedAt = source.UpdatedAt,
+                };
+                context.AiMonthlyBudgets.Add(budget);
+            }
+            else if (!budget.ExhaustedAt.HasValue)
+            {
+                budget.LimitMicros = source.LimitMicros;
+                budget.ExhaustedAt = source.ExhaustedAt;
+                budget.ExhaustedReason = source.ExhaustedReason;
+                budget.UpdatedAt = source.UpdatedAt;
+            }
+            else
+            {
+                return;
+            }
+
+            try
+            {
+                await context.SaveChangesAsync(cancellationToken);
+                return;
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < maximumAttempts)
+            {
+                // Another reservation changed or closed the row; reload on retry.
+            }
+            catch (DbUpdateException exception)
+                when (attempt < maximumAttempts && IsUniquePeriodRace(exception))
+            {
+                // Two first requests attempted to create the same monthly row.
+            }
+        }
+
+        throw new DbUpdateConcurrencyException(
+            $"Could not persist closure of monthly budget '{source.PeriodKey}'.");
+    }
+
+    private static bool IsUniquePeriodRace(DbUpdateException exception) =>
+        exception.InnerException is SqlException { Number: 2601 or 2627 };
+
+    private void MarkExhausted(AiMonthlyBudget budget)
+    {
+        var now = _timeProvider.GetUtcNow();
+        budget.ExhaustedAt ??= now;
+        budget.ExhaustedReason ??= PaidServiceGate.BudgetExhaustedReason;
+        budget.UpdatedAt = now;
     }
 
     private bool IsBudgetedProvider(string provider) =>
@@ -792,6 +913,22 @@ public sealed class AiCreditService : IAiCreditService
             _timeProvider.GetUtcNow(),
             _budgetTimeZone);
         return localNow.ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    private DateTimeOffset GetBudgetResetAtUtc()
+    {
+        var localNow = TimeZoneInfo.ConvertTime(_timeProvider.GetUtcNow(), _budgetTimeZone);
+        var nextMonth = new DateTime(
+            localNow.Year,
+            localNow.Month,
+            1,
+            0,
+            0,
+            0,
+            DateTimeKind.Unspecified).AddMonths(1);
+        return new DateTimeOffset(
+            TimeZoneInfo.ConvertTimeToUtc(nextMonth, _budgetTimeZone),
+            TimeSpan.Zero);
     }
 
     private static long ToMicros(decimal micros) =>

@@ -4,6 +4,7 @@ using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Ai.Llm;
+using Glosify.Services.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -25,6 +26,29 @@ public sealed class AiCreditServiceTests
 
         Assert.Equal(25, first.AvailableCredits);
         Assert.Equal(25, second.AvailableCredits);
+        Assert.Single(await context.AiCreditTransactions.Where(t => t.Kind == AiCreditTransactionKinds.TrialGrant).ToListAsync());
+    }
+
+    [Fact]
+    public async Task GetOrCreateAccount_PasswordAccountStaysEligibleForALaterOauthLink()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var eligibility = new MutableTrialEligibilityService();
+        var service = CreateService(context, trialEligibility: eligibility);
+
+        var passwordOnly = await service.GetOrCreateAccountAsync("user-1");
+        Assert.Equal(0, passwordOnly.AvailableCredits);
+        Assert.Null(passwordOnly.TrialGrantedAt);
+
+        eligibility.IsEligible = true;
+        var linked = await service.GetOrCreateAccountAsync("user-1");
+        var repeated = await service.GetOrCreateAccountAsync("user-1");
+
+        Assert.Equal(25, linked.AvailableCredits);
+        Assert.Equal(25, repeated.AvailableCredits);
+        Assert.NotNull(linked.TrialGrantedAt);
         Assert.Single(await context.AiCreditTransactions.Where(t => t.Kind == AiCreditTransactionKinds.TrialGrant).ToListAsync());
     }
 
@@ -197,14 +221,47 @@ public sealed class AiCreditServiceTests
             outputSekPerMillionTokens: 1_000_000m);
 
         await service.ReserveAsync(UsageContext("user-1"), "foundry", "test-model", 100);
+        var callerQuiz = new Quiz
+        {
+            Id = Guid.NewGuid(),
+            Name = "Caller work survives",
+            UserId = "user-2",
+            CreatedAt = DateTimeOffset.UtcNow,
+            ProcessingStatus = "ready",
+            SourceLanguage = "en",
+            TargetLanguage = "sv",
+            Language = "sv",
+        };
+        context.Quizzes.Add(callerQuiz);
         var exception = await Assert.ThrowsAsync<MonthlyAiBudgetExceededException>(() =>
             service.ReserveAsync(UsageContext("user-2"), "foundry", "test-model", 101));
 
         Assert.Equal("2026-07", exception.PeriodKey);
         Assert.Equal(200_000_000, exception.LimitMicros);
         Assert.Equal(100_000_000, exception.ReservedMicros);
+        Assert.Equal(EntityState.Added, context.Entry(callerQuiz).State);
+        await context.SaveChangesAsync();
         var budget = await context.AiMonthlyBudgets.SingleAsync();
         Assert.Equal(100_000_000, budget.AvailableMicros);
+        Assert.NotNull(budget.ExhaustedAt);
+        Assert.Equal(PaidServiceGate.BudgetExhaustedReason, budget.ExhaustedReason);
+        Assert.Equal("Caller work survives", (await context.Quizzes.SingleAsync(
+            quiz => quiz.Id == callerQuiz.Id)).Name);
+        Assert.Null(await context.AiCreditAccounts.SingleOrDefaultAsync(
+            account => account.UserId == "user-2"));
+        Assert.Empty(await context.AiCreditTransactions
+            .Where(transaction => transaction.UserId == "user-2")
+            .ToListAsync());
+
+        var repeated = await Assert.ThrowsAsync<MonthlyAiBudgetExceededException>(() =>
+            service.ReserveAsync(UsageContext("user-2"), "foundry", "test-model", 1));
+        Assert.Equal(new DateTimeOffset(2026, 7, 31, 22, 0, 0, TimeSpan.Zero), repeated.ResetsAtUtc);
+        await context.SaveChangesAsync();
+        Assert.Null(await context.AiCreditAccounts.SingleOrDefaultAsync(
+            account => account.UserId == "user-2"));
+        Assert.Empty(await context.AiCreditTransactions
+            .Where(transaction => transaction.UserId == "user-2")
+            .ToListAsync());
     }
 
     [Fact]
@@ -239,6 +296,94 @@ public sealed class AiCreditServiceTests
         var release = await context.AiCreditTransactions
             .SingleAsync(item => item.Kind == AiCreditTransactionKinds.Release);
         Assert.Equal(50_000_000, release.BudgetAmountMicros);
+    }
+
+    [Fact]
+    public async Task MonthlyBudget_RecordsModeledOverrunWithoutLettingTheEnforcementLedgerExceedItsLimit()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var service = CreateService(
+            context,
+            monthlyLimitSek: 200m,
+            inputSekPerMillionTokens: 1_000_000m,
+            outputSekPerMillionTokens: 1_000_000m);
+
+        var reservation = await service.ReserveAsync(
+            UsageContext("user-1"),
+            "foundry",
+            "test-model",
+            100);
+        await service.CommitUsageAsync(
+            reservation.ReservationId,
+            new AiTokenUsage(125, 125, 0, 0, 250));
+
+        var budget = await context.AiMonthlyBudgets.SingleAsync();
+        Assert.Equal(200_000_000, budget.SpentMicros);
+        Assert.Equal(50_000_000, budget.OverrunMicros);
+        Assert.Equal(0, budget.AvailableMicros);
+        Assert.NotNull(budget.ExhaustedAt);
+    }
+
+    [Fact]
+    public async Task MonthlyBudget_CommitUsesALoweredConfiguredLimit()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var options = CreateUsageOptions(
+            monthlyLimitSek: 200m,
+            inputSekPerMillionTokens: 1_000_000m,
+            outputSekPerMillionTokens: 1_000_000m);
+        var service = CreateService(context, usageOptions: options);
+
+        var reservation = await service.ReserveAsync(
+            UsageContext("user-1"),
+            "foundry",
+            "test-model",
+            100);
+        options.MonthlyBudget.LimitSek = 75m;
+        await service.CommitUsageAsync(
+            reservation.ReservationId,
+            new AiTokenUsage(50, 50, 0, 0, 100));
+
+        var budget = await context.AiMonthlyBudgets.SingleAsync();
+        Assert.Equal(75_000_000, budget.LimitMicros);
+        Assert.Equal(75_000_000, budget.SpentMicros);
+        Assert.Equal(25_000_000, budget.OverrunMicros);
+        Assert.Equal(0, budget.AvailableMicros);
+        Assert.NotNull(budget.ExhaustedAt);
+    }
+
+    [Fact]
+    public async Task MonthlyBudget_DurationCommitUsesALoweredConfiguredLimit()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var options = CreateUsageOptions(
+            monthlyLimitSek: 200m,
+            inputSekPerMillionTokens: 1m,
+            outputSekPerMillionTokens: 1m,
+            audioSekPerMinute: 100m);
+        var service = CreateService(context, usageOptions: options);
+
+        var reservation = await service.ReserveDurationAsync(
+            new AiUsageContext("user-1", AiUsageFeatures.RealtimeTranslation, "subtitle_minute", Guid.NewGuid()),
+            "foundry",
+            "test-model",
+            60,
+            8);
+        options.MonthlyBudget.LimitSek = 75m;
+        await service.CommitDurationUsageAsync(reservation.ReservationId, 60);
+
+        var budget = await context.AiMonthlyBudgets.SingleAsync();
+        Assert.Equal(75_000_000, budget.LimitMicros);
+        Assert.Equal(75_000_000, budget.SpentMicros);
+        Assert.Equal(25_000_000, budget.OverrunMicros);
+        Assert.Equal(0, budget.AvailableMicros);
+        Assert.NotNull(budget.ExhaustedAt);
     }
 
     [Fact]
@@ -349,7 +494,7 @@ public sealed class AiCreditServiceTests
         var options = new DbContextOptionsBuilder<GlosifyContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
             .Options;
-        return new GlosifyContext(options);
+        return new FactoryBackedGlosifyContext(options);
     }
 
     private static AiCreditService CreateService(
@@ -359,7 +504,9 @@ public sealed class AiCreditServiceTests
         decimal inputSekPerMillionTokens = 1m,
         decimal outputSekPerMillionTokens = 1m,
         decimal? audioSekPerMinute = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        ITrialEligibilityService? trialEligibility = null,
+        AiUsageOptions? usageOptions = null)
     {
         var generativeAiOptions = new GenerativeAiOptions
         {
@@ -386,33 +533,46 @@ public sealed class AiCreditServiceTests
             Options.Create(new GeminiOptions()));
         return new AiCreditService(
             context,
-            Options.Create(new AiUsageOptions
-            {
-                TrialGrantCredits = 25,
-                CreditsPerThousandTokens = 1,
-                MonthlyBudget = new AiMonthlyBudgetOptions
-                {
-                    Enabled = true,
-                    LimitSek = monthlyLimitSek,
-                    TimeZoneId = "Europe/Stockholm",
-                    ReservationSafetyMultiplier = 1m,
-                    Providers = ["foundry", "azure_ai_foundry"],
-                    Models =
-                    [
-                        new AiModelPriceOptions
-                        {
-                            Deployment = "test-model",
-                            InputSekPerMillionTokens = inputSekPerMillionTokens,
-                            OutputSekPerMillionTokens = outputSekPerMillionTokens,
-                            AudioSekPerMinute = audioSekPerMinute,
-                        },
-                    ],
-                },
-            }),
+            new TestDbContextFactory(context),
+            Options.Create(usageOptions ?? CreateUsageOptions(
+                monthlyLimitSek,
+                inputSekPerMillionTokens,
+                outputSekPerMillionTokens,
+                audioSekPerMinute)),
             resolver,
+            trialEligibility ?? new MutableTrialEligibilityService { IsEligible = true },
             timeProvider ?? new ManualTimeProvider(
                 new DateTimeOffset(2026, 7, 19, 12, 0, 0, TimeSpan.Zero)));
     }
+
+    private static AiUsageOptions CreateUsageOptions(
+        decimal monthlyLimitSek,
+        decimal inputSekPerMillionTokens,
+        decimal outputSekPerMillionTokens,
+        decimal? audioSekPerMinute = null) =>
+        new()
+        {
+            TrialGrantCredits = 25,
+            CreditsPerThousandTokens = 1,
+            MonthlyBudget = new AiMonthlyBudgetOptions
+            {
+                Enabled = true,
+                LimitSek = monthlyLimitSek,
+                TimeZoneId = "Europe/Stockholm",
+                ReservationSafetyMultiplier = 1m,
+                Providers = ["foundry", "azure_ai_foundry"],
+                Models =
+                [
+                    new AiModelPriceOptions
+                    {
+                        Deployment = "test-model",
+                        InputSekPerMillionTokens = inputSekPerMillionTokens,
+                        OutputSekPerMillionTokens = outputSekPerMillionTokens,
+                        AudioSekPerMinute = audioSekPerMinute,
+                    },
+                ],
+            },
+        };
 
     private static AiUsageContext UsageContext(string userId) =>
         new(userId, AiUsageFeatures.Assistant, "test", Guid.NewGuid());
@@ -424,5 +584,13 @@ public sealed class AiCreditServiceTests
         public override DateTimeOffset GetUtcNow() => _now;
 
         public void Advance(TimeSpan duration) => _now += duration;
+    }
+
+    private sealed class MutableTrialEligibilityService : ITrialEligibilityService
+    {
+        public bool IsEligible { get; set; }
+
+        public Task<bool> IsEligibleAsync(string userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(IsEligible);
     }
 }
