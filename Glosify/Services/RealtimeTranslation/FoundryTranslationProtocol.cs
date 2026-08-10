@@ -55,12 +55,6 @@ internal static class FoundryTranslationProtocol
             type = "session.update",
             session = new
             {
-                // Text only. Without this the deployment also streams synthesised speech for
-                // every translated segment, which this relay receives, reassembles and parses
-                // before ShouldForwardFoundryMessage throws it away — nothing downstream
-                // consumes it, since the extension reads transcript events only. On a
-                // single-core instance that was most of the relay's allocation and CPU.
-                output_modalities = new[] { "text" },
                 audio = new
                 {
                     output = new { language = targetLanguage },
