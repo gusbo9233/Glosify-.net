@@ -18,6 +18,20 @@ namespace Glosify.Tests;
 public sealed class AccountReturnUrlTests
 {
     [Fact]
+    public void RegisterPost_RequiresExplicitAntiforgeryValidation()
+    {
+        var action = typeof(AccountController)
+            .GetMethods()
+            .Single(method =>
+                method.Name == nameof(AccountController.Register)
+                && method.GetCustomAttributes(typeof(HttpPostAttribute), inherit: true).Length > 0);
+
+        Assert.NotEmpty(action.GetCustomAttributes(
+            typeof(ValidateAntiForgeryTokenAttribute),
+            inherit: true));
+    }
+
+    [Fact]
     public void ExternalOauthFailure_PreservesTheFullLocalPkceReturnUrl()
     {
         const string returnUrl = "/extension/connect?redirect_uri=https%3A%2F%2Fakepdpjieiokffdapibipomhbplikock.chromiumapp.org%2Fglosify&state=a-b_c&code_challenge=challenge&code_challenge_method=S256";
