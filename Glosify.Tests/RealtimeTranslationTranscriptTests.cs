@@ -310,19 +310,25 @@ public sealed class RealtimeTranslationTranscriptTests
         var tools = AssistantToolFactory.Create(context);
         var toolContext = Context(transcriptId);
 
-        var first = await ReadAsync(tools, toolContext, new { page = 1 });
-        var resumed = await ReadAsync(
-            tools,
-            toolContext,
-            new { offset = first.GetProperty("next_offset").GetInt32() });
+        var resumed = await ReadAsync(tools, toolContext, new { page = 1 });
+        Assert.False(resumed.GetProperty("page_complete").GetBoolean());
 
-        Assert.False(first.GetProperty("page_complete").GetBoolean());
+        // The boundary is only reachable from the last read that still starts inside page
+        // 1, so follow next_offset all the way there. Asserting on an earlier read proves
+        // nothing: the character budget stops it well short of caption 99 either way.
+        var offset = resumed.GetProperty("next_offset").GetInt32();
+        while (offset < RealtimeTranslationTranscriptService.DetailPageSize)
+        {
+            resumed = await ReadAsync(tools, toolContext, new { offset });
+            offset = resumed.GetProperty("next_offset").GetInt32();
+        }
+
         Assert.Equal(1, resumed.GetProperty("page_number").GetInt32());
+        Assert.True(resumed.GetProperty("page_complete").GetBoolean());
         // Page 1 is captions 0..99, so nothing it returns may be captioned later than 99.
-        var pageOneEnds = Origin.AddSeconds(99 * 2);
-        Assert.True(resumed.GetProperty("ends_at").GetDateTimeOffset() <= pageOneEnds);
-        // Caption 100 is the first caption of page 2; padding means it can only appear
-        // here if the read genuinely crossed the boundary.
+        Assert.Equal(Origin.AddSeconds(99 * 2), resumed.GetProperty("ends_at").GetDateTimeOffset());
+        // Caption 100 opens page 2; the padding means this substring can only appear if
+        // the read genuinely crossed the boundary.
         Assert.DoesNotContain(
             "source caption 100",
             resumed.GetProperty("captions").ToString(),
