@@ -25,11 +25,9 @@ public sealed class FoundryTranslationRelayTests
         Assert.Equal(
             "wss://glosify-foundry.openai.azure.com/openai/v1/realtime/translations?model=glosify-realtime-translate",
             uri.ToString());
-        Assert.Contains("\"type\":\"session.update\"", update);
-        Assert.Contains("\"language\":\"es\"", update);
-        // Text only: the relay discards synthesised audio anyway, so asking for it just
-        // burns bandwidth, CPU and allocations on the single-core instance.
-        Assert.Contains("\"output_modalities\":[\"text\"]", update);
+        Assert.Equal(
+            "{\"type\":\"session.update\",\"session\":{\"audio\":{\"output\":{\"language\":\"es\"}}}}",
+            update);
     }
 
     [Fact]
