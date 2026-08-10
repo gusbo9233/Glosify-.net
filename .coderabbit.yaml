@@ -1,0 +1,228 @@
+# CodeRabbit guidance for Glosify.
+# Reviews are assertive but advisory while the rules are being tuned. Change
+# request_changes_workflow to true only when the review signal is reliable.
+
+language: en-US
+
+tone_instructions: >
+  Be direct, constructive, and concise. Explain why important findings matter
+  and suggest a concrete fix in clear language. Avoid unexplained jargon and
+  low-value style comments.
+
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  review_status: true
+  review_details: true
+  poem: false
+  enable_prompt_for_ai_agents: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_filters:
+    - "!**/obj/**"
+    - "!**/bin/**"
+    - "!**/wwwroot/lib/**"
+    - "!**/*.min.js"
+    - "!**/*.min.css"
+    - "!**/Migrations/*.Designer.cs"
+    - "!**/Migrations/*ModelSnapshot.cs"
+
+  path_instructions:
+    - path: "Glosify/**/*.cs"
+      instructions: >
+        Review this as one deliberately modular ASP.NET Core 10 MVC application,
+        following the repository's ADRs and established feature-slice structure.
+        Prioritize correctness, security, authorization, stable HTTP contracts,
+        data integrity, resource
+        lifetime, cancellation, testability, and maintainability. Do not suggest
+        separate Domain/Application/Infrastructure assemblies, a generic repository
+        or unit-of-work wrapper over EF Core, or CQRS/MediatR unless a changed design
+        creates a concrete need that the current feature-slice structure cannot meet.
+        Avoid style-only comments already covered by formatting or analyzers.
+
+    - path: "Glosify/Controllers/**/*.cs"
+      instructions: >
+        Controllers handle HTTP orchestration: model binding and validation, caller
+        identity, service calls, and response shaping. Flag direct GlosifyContext
+        access, business rules, persistence logic, or ownership decisions in a
+        controller. Multiple service calls are acceptable for composing a read model
+        or implementing a clear HTTP flow; do not enforce an arbitrary call count.
+        Flag multi-service mutations when no service clearly owns the transaction.
+        JSON endpoints should rely on the shared Problem Details mapping instead of
+        duplicating exception-to-status rules. MVC actions may handle an expected
+        failure when they need to choose a view, redirect, TempData message, or file
+        response. Use ClaimsPrincipalExtensions when an action needs the user id.
+
+    - path: "Glosify/Controllers/Api/**/*.cs"
+      instructions: >
+        Bearer-protected application endpoints should inherit ApiControllerBase,
+        which supplies ApiController, Identity.Bearer authorization, and the
+        antiforgery opt-out. ExtensionAuthApiController, ExternalAuthApiController,
+        and RealtimeTranslationRelayController are intentional anonymous bootstrap
+        or single-use-token endpoints and therefore inherit ControllerBase. For any
+        anonymous API endpoint, require a narrow documented reason, least-privilege
+        tokens or OAuth protections where applicable, rate limiting, and tests. Flag
+        accidental removal of authorization from protected endpoints. Preserve
+        successful response DTOs and the shared Problem Details contract, including
+        stable code and the temporary error compatibility property.
+
+    - path: "Glosify/Services/**/*.cs"
+      instructions: >
+        Services contain use-case and integration logic. A service that owns a
+        database mutation should own its transaction boundary and call
+        SaveChangesAsync; EF Core services may use GlosifyContext directly and must
+        not be wrapped in a generic repository. Do not force read-only, pure, or
+        external-provider collaborators to depend on GlosifyContext. Expected
+        failures should use typed domain exceptions rather than exception-message
+        inspection or HTTP result types. Prefer interfaces only where substitution is
+        useful. Check cancellation-token propagation, async disposal, outbound HTTP
+        client usage, retry safety, and compensation after partially completed
+        external operations. DbContext consumers must not be singleton services.
+
+    - path: "Glosify/Data/**/*.cs"
+      instructions: >
+        GlosifyContext is an IdentityDbContext<ApplicationUser>. Keep entity mapping
+        in Data/Configurations with one IEntityTypeConfiguration per entity rather
+        than growing OnModelCreating. Review ownership filters, delete behavior,
+        nullability, indexes, uniqueness, query shape, and accidental tracking or
+        N+1 queries. Model changes must be accompanied by a migration. Do not suggest
+        a generic repository abstraction over the DbContext.
+
+    - path: "Glosify/Migrations/*.cs"
+      instructions: >
+        Review the handwritten Up and Down operations without nitpicking normal EF
+        generated structure. Flag destructive or irreversible changes, unsafe
+        nullability and default transitions, incorrect foreign-key delete behavior,
+        and schema changes that do not match the model. Conditional table or column
+        existence guards require a clearly documented exceptional reason; they must
+        not silently mark an unapplied schema change as applied. Designer files and
+        the model snapshot are excluded separately as generated metadata.
+
+    - path: "Glosify/Program.cs"
+      instructions: >
+        Treat this as the composition root and review DI lifetimes, required options,
+        middleware order, and endpoint authorization carefully. Preserve these
+        project-specific invariants: forwarded headers run before anything that uses
+        scheme or client IP; the production exception handler is not registered in
+        Development; authentication runs before the per-user rate limiter and before
+        authorization. Only flag Use or Map reordering when it can change behavior,
+        and explain the concrete effect. Required configuration should use options
+        validation and ValidateOnStart. Startup must not apply database migrations or
+        otherwise modify the schema.
+
+    - path: "Glosify/Extensions/**/*.cs"
+      instructions: >
+        These files organize dependency-injection, authentication, rate-limiting, and
+        pipeline registration called from Program.cs. Keep feature business logic in
+        Services. Check that service lifetimes match their dependencies, named rate
+        limits use the intended identity or IP partition, and security defaults are
+        not weakened.
+
+    - path: "Glosify/Models/Entities/**/*.cs"
+      instructions: >
+        These are EF persistence types. Keep HTTP, JSON, Razor formatting, and other
+        presentation concerns out of them. API contracts belong in Models/Api and
+        Razor-facing projections belong in Models/ViewModels. Do not return entities
+        directly from public API actions or pass them directly to views.
+
+    - path: "Glosify/Models/Api/**/*.cs"
+      instructions: >
+        These types are request and response contracts for JSON clients. Validate
+        request DTOs with DataAnnotations or explicit validation, keep successful
+        response shapes compatible, avoid exposing EF entities or internal exception
+        details, and update contract tests when a public contract changes.
+
+    - path: "Glosify/Models/ViewModels/**/*.cs"
+      instructions: >
+        These are Razor-facing shapes. Keep persistence operations, EF navigation
+        properties, and business rules out of view models. Prefer explicit projections
+        over passing entities to views.
+
+    - path: "Glosify/Infrastructure/Api/**/*.cs"
+      instructions: >
+        ApiExceptionMapper and GlosifyProblemDetails are the central API error
+        contract. Both the global ApiExceptionFilter and the MVC AI filter may use
+        that shared mapping. Flag duplicated exception-to-status mappings elsewhere,
+        missing stable error codes, leaked internal exception details, or responses
+        that stop using application/problem+json. Unexpected exceptions must default
+        to a safe 500 response and be logged with structured context.
+
+    - path: "Glosify/Views/**/*.cshtml"
+      instructions: >
+        Keep views focused on presentation. Flag unencoded output, unsafe HTML or URL
+        construction, missing antiforgery protection on cookie-authenticated forms,
+        authorization that exists only in the UI, direct persistence access, or large
+        blocks of business logic. Prefer strongly typed view models, partials, tag
+        helpers, and accessible form controls.
+
+    - path: "Glosify/wwwroot/js/**/*.js"
+      instructions: >
+        Review browser code for DOM injection, unsafe innerHTML use, missing fetch
+        error handling, race conditions, leaked event listeners or object URLs, and
+        inaccessible interactions. Keep API, state, presentation, and entry concerns
+        separated where the feature already uses modules. Preserve the Problem Details
+        error compatibility expected by existing clients. Prefer tests for extracted
+        pure state functions instead of source-string behavioral assertions.
+
+    - path: "Glosify.Tests/**/*.cs"
+      instructions: >
+        These are xUnit unit, integration, and API contract tests. Prefer observable
+        behavior over implementation details. Use WebApplicationFactory where the
+        HTTP pipeline matters and TimeProvider fakes instead of Thread.Sleep or the
+        system clock. Keep tests deterministic and credential-free by default. For
+        API failures, assert status, application/problem+json, stable code, compatible
+        error, and validation errors where relevant. Tests may access internal types
+        through the existing InternalsVisibleTo declaration.
+
+    - path: "Glosify.BrowserTests/**/*.cs"
+      instructions: >
+        These Playwright tests cover employer-visible user journeys against a running
+        app. Flag brittle selectors, hardcoded sleeps, order dependence, external paid
+        service calls, and shared mutable test data. Prefer accessible roles, labels,
+        stable test ids where needed, Playwright auto-waiting, and isolated data.
+
+    - path: "Glosify.ClientTests/**/*.js"
+      instructions: >
+        These use the built-in node:test runner. Do not suggest Jest or Mocha without a
+        concrete need. Keep pure-function tests fast and deterministic, and use browser
+        tests for behavior that depends on the DOM or a live ASP.NET Core application.
+
+    - path: "Glosify.LiveSubtitles.Extension/**/*.js"
+      instructions: >
+        This is a Manifest V3 Chrome extension integrated with the Glosify bearer-token
+        API and realtime subtitle relay. Protect the authorization-code and PKCE flow,
+        validate message senders and payloads, keep host permissions minimal, avoid
+        exposing tokens in URLs or logs, and preserve extension-to-app contracts.
+        Check service-worker lifecycle assumptions and cleanup of sockets, streams,
+        tabs, and listeners. Use the existing node:test suite for pure behavior and
+        browser-level coverage for the integration when practical.
+
+    - path: ".github/workflows/**/*.{yml,yaml}"
+      instructions: >
+        Review CI and deployment changes for least-privilege permissions, untrusted
+        pull-request input, secret exposure, action pinning, deterministic tests, and
+        correct artifact boundaries. Migration validation must build a new database,
+        check for pending model changes, and produce the migration bundle before
+        deployment. Deployment must run the bundle before the web app is deployed.
+        Keep vulnerable-package auditing explicit and failing rather than relying only
+        on warning output from restore.
+
+    - path: "**/*.csproj"
+      instructions: >
+        Package versions are centrally managed through Directory.Packages.props. Flag
+        Version attributes on PackageReference items, accidental target-framework
+        drift from .NET 10, secrets or machine-specific paths, and test dependencies
+        added to production projects.
+
+    - path: "{README.md,docs/**/*.md}"
+      instructions: >
+        Treat documentation as employer-visible and keep claims specific, modest, and
+        verifiable from the repository. Flag stale commands, paths, feature lists,
+        deployment descriptions, or architecture claims. Use clear professional
+        language and explain tradeoffs without pretending the portfolio deployment is
+        a large distributed production system. Keep the Live Subtitles extension and
+        its application integration visible where relevant.
