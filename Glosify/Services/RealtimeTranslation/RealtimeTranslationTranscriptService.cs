@@ -189,9 +189,12 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             skip = Math.Max(0, request.Offset ?? 0);
         }
 
+        // A read never crosses a page boundary, even when it starts mid-page to resume a
+        // page the character budget cut short. Reading on into the next page would label
+        // the result with the page it started in and a span that runs past that page's end.
         var rows = await segments
             .Skip(skip)
-            .Take(limit)
+            .Take(Math.Min(limit, DetailPageSize - (skip % DetailPageSize)))
             .Select(segment => new TranscriptTextSegment(segment.Sequence, segment.Text, segment.CapturedAt))
             .ToListAsync(cancellationToken);
         var bounded = BoundByCharacters(rows, maximumCharacters);

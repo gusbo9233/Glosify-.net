@@ -6,6 +6,7 @@ using Glosify.Services.Ai.Generation;
 using Glosify.Services.Books;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
+using Glosify.Services.RealtimeTranslation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -56,6 +57,58 @@ public sealed class AssistantCollaboratorTests
         Assert.Contains("Polish", instruction);
         Assert.Contains("language-learning assistant", instruction);
     }
+
+    /// <summary>
+    /// The page contract in words, next to the hash pin above: the hash catches any drift
+    /// at all, these assertions say what the prompt actually has to promise.
+    /// </summary>
+    [Theory]
+    [InlineData(2, "source", "reading page 2 of 3 of the source stream")]
+    [InlineData(1, "translation", "reading page 1 of 2 of the translation stream")]
+    public void Prompt_builder_names_the_page_the_user_is_reading(
+        int viewedPage,
+        string viewedStream,
+        string expected)
+    {
+        var instruction = BuildTranscriptPrompt(viewedPage, viewedStream);
+
+        Assert.Contains("pages of 100 captions", instruction);
+        Assert.Contains("Source: 3 page(s), 250 captions", instruction);
+        Assert.Contains("Translation: 2 page(s), 130 captions", instruction);
+        Assert.Contains(expected, instruction);
+        // Offsets and page numbers are not comparable across streams; only time is.
+        Assert.Contains("at_time of that passage — not its page or offset", instruction);
+    }
+
+    [Theory]
+    [InlineData(0, "source")]
+    [InlineData(4, "source")]
+    [InlineData(3, "translation")]
+    public void Prompt_builder_omits_a_page_the_user_cannot_be_reading(int viewedPage, string viewedStream)
+    {
+        var instruction = BuildTranscriptPrompt(viewedPage, viewedStream);
+
+        Assert.Contains("Current saved transcript context", instruction);
+        Assert.DoesNotContain("right now", instruction);
+    }
+
+    private static string BuildTranscriptPrompt(int viewedPage, string viewedStream) =>
+        new AssistantPromptBuilder().BuildSystemInstruction(
+            quiz: null,
+            focusedWord: null,
+            documentPage: null,
+            customQuiz: null,
+            transcript: new TranscriptAssistantContext(
+                Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                "Lesson recording",
+                "pl",
+                "source",
+                SourceSegmentCount: 250,
+                TranslationSegmentCount: 130,
+                ViewedPage: viewedPage,
+                ViewedStream: viewedStream),
+            book: null,
+            currentLanguage: "Polish");
 
     [Fact]
     public void Prompt_builder_preserves_exact_instruction_text()
@@ -143,6 +196,81 @@ public sealed class AssistantCollaboratorTests
         Assert.Equal(ownedQuiz.Id, (await resolver.ResolveQuizAsync(ownedQuiz.Id, "owner", CancellationToken.None))?.Id);
         await Assert.ThrowsAsync<QuizNotFoundException>(() =>
             resolver.ResolveQuizAsync(ownedQuiz.Id, "another-user", CancellationToken.None));
+    }
+
+    /// <summary>
+    /// The viewed page arrives from the browser, so the resolver checks it against the
+    /// chosen stream's real length. An unusable page is dropped rather than clamped: a
+    /// clamped page would tell the model the user is reading the last page when they are
+    /// not, and "this page" would then resolve to text they never saw.
+    /// </summary>
+    [Theory]
+    [InlineData(2, "source", 2)]
+    [InlineData(2, "translation", 2)]
+    [InlineData(0, "source", null)]
+    [InlineData(4, "source", null)]
+    // The streams have different lengths, so page 3 exists in one and not the other.
+    [InlineData(3, "source", 3)]
+    [InlineData(3, "translation", null)]
+    public async Task Context_resolver_keeps_only_a_viewed_page_that_exists(
+        int viewedPage,
+        string viewedStream,
+        int? expected)
+    {
+        await using var context = CreateContext();
+        var transcriptId = Guid.NewGuid();
+        AddTranscriptWithSegments(context, transcriptId, sourceSegments: 250, translationSegments: 130);
+        await context.SaveChangesAsync();
+        var resolver = new AssistantContextResolver(
+            context,
+            new NoopBookService(),
+            new FixedLanguageContext("Polish"),
+            new FixedLanguagePreference());
+
+        var resolved = await resolver.ResolveTranscriptAsync(
+            transcriptId,
+            new AssistantTranscriptPageContext(viewedPage, viewedStream),
+            "owner",
+            CancellationToken.None);
+
+        Assert.Equal(expected, resolved!.ViewedPage);
+        Assert.Equal(250, resolved.SourceSegmentCount);
+        Assert.Equal(130, resolved.TranslationSegmentCount);
+    }
+
+    private static void AddTranscriptWithSegments(
+        GlosifyContext context,
+        Guid transcriptId,
+        int sourceSegments,
+        int translationSegments)
+    {
+        context.RealtimeTranslationTranscripts.Add(new RealtimeTranslationTranscript
+        {
+            Id = transcriptId,
+            UserId = "owner",
+            Title = "Lesson recording",
+            TargetLanguage = "pl",
+            Stream = RealtimeTranslationTranscriptStreams.Source,
+        });
+        Add(RealtimeTranslationTranscriptStreams.Source, sourceSegments);
+        Add(RealtimeTranslationTranscriptStreams.Translation, translationSegments);
+
+        void Add(string stream, int count)
+        {
+            for (var index = 0; index < count; index++)
+            {
+                context.RealtimeTranslationTranscriptSegments.Add(new RealtimeTranslationTranscriptSegment
+                {
+                    Id = Guid.NewGuid(),
+                    TranscriptId = transcriptId,
+                    SessionId = Guid.NewGuid(),
+                    Sequence = index,
+                    Stream = stream,
+                    ProviderEventKey = $"{stream}:{index}",
+                    Text = $"{stream} {index}",
+                });
+            }
+        }
     }
 
     private static GlosifyContext CreateContext() => new(

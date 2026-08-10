@@ -4,6 +4,7 @@ using Glosify.Models.Entities;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -29,7 +30,7 @@ public sealed class RealtimeTranslationTranscriptTests
             Session(optedInSession, "user-1", transcriptId, DateTimeOffset.UtcNow),
             Session(privateSession, "user-1", null, null));
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, TimeProvider.System);
+        var service = new RealtimeTranslationTranscriptService(context, Clock());
         var segment = new CapturedTranslationSegment(1, "response:item:0", "Hola", DateTimeOffset.UtcNow);
 
         await service.AppendAsync(optedInSession, [segment]);
@@ -90,7 +91,7 @@ public sealed class RealtimeTranslationTranscriptTests
         context.RealtimeTranslationSessions.Add(
             Session(sessionId, "user-1", transcriptId, DateTimeOffset.UtcNow));
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, TimeProvider.System);
+        var service = new RealtimeTranslationTranscriptService(context, Clock());
         // Both accumulators number their own segments, so the streams collide on key.
         var source = new CapturedTranslationSegment(1, "item:0", "Dzień dobry", DateTimeOffset.UtcNow);
         var translation = source with
@@ -177,7 +178,7 @@ public sealed class RealtimeTranslationTranscriptTests
             Text = "Good morning",
         });
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, TimeProvider.System);
+        var service = new RealtimeTranslationTranscriptService(context, Clock());
 
         var fallback = await service.GetDetailAsync(transcriptId, "user-1", "pl", 1, 50);
         var translated = await service.GetDetailAsync(transcriptId, "user-1", "pl", 1, 50, "translation");
@@ -222,7 +223,7 @@ public sealed class RealtimeTranslationTranscriptTests
         var transcriptId = Guid.NewGuid();
         AddPagedTranscript(context, transcriptId, sourceSegments: 250, translationSegments: 0);
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, TimeProvider.System);
+        var service = new RealtimeTranslationTranscriptService(context, Clock());
         var tools = AssistantToolFactory.Create(context);
 
         var reader = await service.GetDetailAsync(
@@ -298,6 +299,37 @@ public sealed class RealtimeTranslationTranscriptTests
     }
 
     [Fact]
+    public async Task AssistantTools_ResumingATruncatedPageNeverCrossesIntoTheNextPage()
+    {
+        await using var context = CreateContext();
+        var transcriptId = Guid.NewGuid();
+        // Two pages of captions too long to return in one call, so resuming page 1 by
+        // offset would otherwise read on into page 2 while still reporting page 1.
+        AddPagedTranscript(context, transcriptId, sourceSegments: 200, translationSegments: 0, captionLength: 500);
+        await context.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(context);
+        var toolContext = Context(transcriptId);
+
+        var first = await ReadAsync(tools, toolContext, new { page = 1 });
+        var resumed = await ReadAsync(
+            tools,
+            toolContext,
+            new { offset = first.GetProperty("next_offset").GetInt32() });
+
+        Assert.False(first.GetProperty("page_complete").GetBoolean());
+        Assert.Equal(1, resumed.GetProperty("page_number").GetInt32());
+        // Page 1 is captions 0..99, so nothing it returns may be captioned later than 99.
+        var pageOneEnds = Origin.AddSeconds(99 * 2);
+        Assert.True(resumed.GetProperty("ends_at").GetDateTimeOffset() <= pageOneEnds);
+        // Caption 100 is the first caption of page 2; padding means it can only appear
+        // here if the read genuinely crossed the boundary.
+        Assert.DoesNotContain(
+            "source caption 100",
+            resumed.GetProperty("captions").ToString(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AssistantTools_ClampAPageBeyondTheEnd()
     {
         await using var context = CreateContext();
@@ -321,7 +353,7 @@ public sealed class RealtimeTranslationTranscriptTests
         var transcriptId = Guid.NewGuid();
         AddPagedTranscript(context, transcriptId, sourceSegments: 150, translationSegments: 0);
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, TimeProvider.System);
+        var service = new RealtimeTranslationTranscriptService(context, Clock());
 
         var page = await service.GetDetailAsync(
             transcriptId,
@@ -341,7 +373,7 @@ public sealed class RealtimeTranslationTranscriptTests
         var transcriptId = Guid.NewGuid();
         AddPagedTranscript(context, transcriptId, sourceSegments: 250, translationSegments: 130);
         await context.SaveChangesAsync();
-        var service = new RealtimeTranslationTranscriptService(context, TimeProvider.System);
+        var service = new RealtimeTranslationTranscriptService(context, Clock());
 
         var source = await service.GetPageSpansAsync(
             transcriptId,
@@ -364,6 +396,13 @@ public sealed class RealtimeTranslationTranscriptTests
     }
 
     private static readonly DateTimeOffset Origin = new(2026, 8, 10, 14, 0, 0, TimeSpan.Zero);
+
+    /// <summary>
+    /// A fixed clock, so nothing here depends on when the suite happens to run. The read
+    /// paths do not consult it today, but AppendAsync and RenameAsync stamp UpdatedAt with
+    /// it, and a paging test should not start failing because a read path later does too.
+    /// </summary>
+    private static TimeProvider Clock() => new FakeTimeProvider(Origin);
 
     private static AgentToolContext Context(Guid transcriptId) => new()
     {

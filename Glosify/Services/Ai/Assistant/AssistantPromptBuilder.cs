@@ -316,10 +316,15 @@ internal sealed class AssistantPromptBuilder
         var segments = stream == RealtimeTranslationTranscriptStreams.Translation
             ? transcript.TranslationSegmentCount
             : transcript.SourceSegmentCount;
-        var total = Math.Max(1, (int)Math.Ceiling(segments / (double)pageSize));
+        var total = (int)Math.Ceiling(segments / (double)pageSize);
+        if (page < 1 || page > total)
+        {
+            // Say nothing rather than name a page the user cannot be on.
+            return string.Empty;
+        }
         return $"""
 
-        - The user is reading page {Math.Min(page, total)} of {total} of the {stream} stream right now. "This page" and "here" mean that page; "the first page" means page 1 of that stream. Call get_saved_transcript with that page number to read it.
+        - The user is reading page {page} of {total} of the {stream} stream right now. "This page" and "here" mean that page; "the first page" means page 1 of that stream. Call get_saved_transcript with that page number to read it.
         """;
     }
 

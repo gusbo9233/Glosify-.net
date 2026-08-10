@@ -15,7 +15,9 @@ internal sealed class GetSavedTranscriptTool : IAssistantTool
         "Read one page of a saved transcript. Pages are the same pages the user sees in the transcript reader, "
         + $"{RealtimeTranslationTranscriptService.DetailPageSize} captions each, so \"the first page\" means page 1 to both of you. "
         + "New transcripts contain original source speech; legacy transcripts may contain translations. Defaults to the "
-        + "transcript open in the UI. Page forward while has_more is true.",
+        + "transcript open in the UI. When page_complete is false the character budget cut the page short: omit page and "
+        + "at_time and call again with next_offset to finish that same page. Move on to the next page only once "
+        + "page_complete is true and has_more is still true.",
         BuildSchema(new Dictionary<string, object>
         {
             ["transcript_id"] = StringProp("Optional saved transcript id. Omit to use the transcript open in the UI."),
@@ -24,8 +26,10 @@ internal sealed class GetSavedTranscriptTool : IAssistantTool
             ["offset"] = IntegerProp("Optional number of captions to skip. Only needed to resume a page that came back with page_complete false; use next_offset from that response."),
             ["limit"] = IntegerProp($"Optional maximum captions from 1 to {RealtimeTranslationTranscriptService.DetailPageSize}. Defaults to a full page."),
             ["stream"] = StringProp(
-                "Optional caption stream: 'source' for the original speech (the default), or 'translation' for the live translation "
-                + "of the same audio, produced by a different model. Request 'translation' only to cross-check a passage where the "
+                "Optional caption stream: 'source' for the original speech, or 'translation' for the live translation "
+                + "of the same audio, produced by a different model. Omitted, it reads the transcript's own stored stream, which is "
+                + "'source' for anything recorded recently but 'translation' on legacy transcripts — check the stream field in the "
+                + "response before treating captions as original speech. Request 'translation' only to cross-check a passage where the "
                 + "source text looks garbled or ambiguous; it recovers meaning, not the exact target-language wording. Check "
                 + "available_streams in the response before asking for a stream."),
         }));

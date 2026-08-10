@@ -2,6 +2,7 @@ using Glosify.Data;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Glosify.Tests;
 
@@ -19,7 +20,7 @@ internal static class AssistantToolFactory
     public static IAssistantTools Create(GlosifyContext context) =>
         new ServiceCollection()
             .AddSingleton(context)
-            .AddSingleton<TimeProvider>(TimeProvider.System)
+            .AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(2026, 8, 10, 12, 0, 0, TimeSpan.Zero)))
             .AddSingleton<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>()
             .AddAssistantTools()
             .BuildServiceProvider()

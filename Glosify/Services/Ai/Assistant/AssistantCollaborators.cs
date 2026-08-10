@@ -78,16 +78,24 @@ internal sealed class AssistantContextResolver(
             .SingleOrDefaultAsync(cancellationToken)
             ?? throw new InvalidOperationException("That saved transcript was not found.");
 
-        // A page the user is not on is worse than no page at all, so a page number that
-        // cannot be real is dropped rather than repeated to the model.
-        return viewedPage is null || viewedPage.Page < 1
+        // A page the user is not on is worse than no page at all: telling the model "the
+        // user is reading page 7" when they are not makes "this page" resolve to text they
+        // never saw. The page number arrives from the client, so it is checked against the
+        // chosen stream's real length and dropped — not clamped — when it cannot be real.
+        if (viewedPage is null)
+        {
+            return resolved;
+        }
+        var viewedStream = RealtimeTranslationTranscriptService.NormalizeStream(viewedPage.Stream)
+            ?? resolved.Stream;
+        var segments = viewedStream == RealtimeTranslationTranscriptStreams.Translation
+            ? resolved.TranslationSegmentCount
+            : resolved.SourceSegmentCount;
+        var pages = (int)Math.Ceiling(
+            segments / (double)RealtimeTranslationTranscriptService.DetailPageSize);
+        return viewedPage.Page < 1 || viewedPage.Page > pages
             ? resolved
-            : resolved with
-            {
-                ViewedPage = viewedPage.Page,
-                ViewedStream = RealtimeTranslationTranscriptService.NormalizeStream(viewedPage.Stream)
-                    ?? resolved.Stream,
-            };
+            : resolved with { ViewedPage = viewedPage.Page, ViewedStream = viewedStream };
     }
 
     public async Task<BookAssistantContext?> ResolveBookAsync(
