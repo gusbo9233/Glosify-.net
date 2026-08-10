@@ -766,13 +766,9 @@ public sealed class AiCreditService : IAiCreditService
         {
             MarkExhausted(budget);
             await PersistBudgetExhaustionAsync(budget, cancellationToken);
-            // The isolated context now owns the durable row. Detach this request's copy
-            // so a caller that catches the exception cannot collide with the inserted or
-            // rowversion-updated entity. Other pending request changes stay untouched.
-            _context.Entry(budget).State = EntityState.Detached;
         }
 
-        throw new MonthlyAiBudgetExceededException(
+        var exception = new MonthlyAiBudgetExceededException(
             budget.PeriodKey,
             budget.LimitMicros,
             budget.SpentMicros,
@@ -780,6 +776,13 @@ public sealed class AiCreditService : IAiCreditService
             requiredMicros,
             GetBudgetResetAtUtc(),
             budget.ExhaustedReason);
+
+        // The isolated context owns the durable exhaustion row. Drop every pending entity
+        // owned by this service so a caller that catches the exception cannot accidentally
+        // persist an account or trial grant prepared before the budget check. This must also
+        // run when the budget was already exhausted. Unrelated caller changes stay tracked.
+        DetachCreditEntities();
+        throw exception;
     }
 
     private async Task PersistBudgetExhaustionAsync(

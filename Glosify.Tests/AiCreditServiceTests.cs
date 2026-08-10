@@ -221,17 +221,32 @@ public sealed class AiCreditServiceTests
             outputSekPerMillionTokens: 1_000_000m);
 
         await service.ReserveAsync(UsageContext("user-1"), "foundry", "test-model", 100);
+        var callerQuiz = new Quiz
+        {
+            Id = Guid.NewGuid(),
+            Name = "Caller work survives",
+            UserId = "user-2",
+            CreatedAt = DateTimeOffset.UtcNow,
+            ProcessingStatus = "ready",
+            SourceLanguage = "en",
+            TargetLanguage = "sv",
+            Language = "sv",
+        };
+        context.Quizzes.Add(callerQuiz);
         var exception = await Assert.ThrowsAsync<MonthlyAiBudgetExceededException>(() =>
             service.ReserveAsync(UsageContext("user-2"), "foundry", "test-model", 101));
 
         Assert.Equal("2026-07", exception.PeriodKey);
         Assert.Equal(200_000_000, exception.LimitMicros);
         Assert.Equal(100_000_000, exception.ReservedMicros);
-        context.ChangeTracker.Clear();
+        Assert.Equal(EntityState.Added, context.Entry(callerQuiz).State);
+        await context.SaveChangesAsync();
         var budget = await context.AiMonthlyBudgets.SingleAsync();
         Assert.Equal(100_000_000, budget.AvailableMicros);
         Assert.NotNull(budget.ExhaustedAt);
         Assert.Equal(PaidServiceGate.BudgetExhaustedReason, budget.ExhaustedReason);
+        Assert.Equal("Caller work survives", (await context.Quizzes.SingleAsync(
+            quiz => quiz.Id == callerQuiz.Id)).Name);
         Assert.Null(await context.AiCreditAccounts.SingleOrDefaultAsync(
             account => account.UserId == "user-2"));
         Assert.Empty(await context.AiCreditTransactions
@@ -241,6 +256,12 @@ public sealed class AiCreditServiceTests
         var repeated = await Assert.ThrowsAsync<MonthlyAiBudgetExceededException>(() =>
             service.ReserveAsync(UsageContext("user-2"), "foundry", "test-model", 1));
         Assert.Equal(new DateTimeOffset(2026, 7, 31, 22, 0, 0, TimeSpan.Zero), repeated.ResetsAtUtc);
+        await context.SaveChangesAsync();
+        Assert.Null(await context.AiCreditAccounts.SingleOrDefaultAsync(
+            account => account.UserId == "user-2"));
+        Assert.Empty(await context.AiCreditTransactions
+            .Where(transaction => transaction.UserId == "user-2")
+            .ToListAsync());
     }
 
     [Fact]
