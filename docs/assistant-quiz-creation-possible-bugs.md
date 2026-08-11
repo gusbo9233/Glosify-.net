@@ -373,3 +373,27 @@ Regression coverage now includes incomplete-turn history persistence, relational
 rollback/success/retry behavior, stale collection propagation, lease ownership/renewal/
 expiry takeover, stable conflict Problem Details, and ordered/recoverable client context
 writes. The dated baseline and source links above intentionally remain unchanged.
+
+## Latest patch review (2026-08-11)
+
+This follow-up reviews the uncommitted analytics/credit patch layered on `c4039d3`. It
+records the patch's actual scope without changing the dated baseline above.
+
+| Area | Status | Finding / resolution |
+|---|---|---|
+| Provider cost settlement | Fixed in this follow-up | Once Foundry has returned usage, any failure before normal usage settlement completes—including response validation, a credit-commit failure, or caller cancellation—now commits a normal learner `usage_debit` from an independent EF context. The independent path first detaches uncertain request-scoped credit state, so a failed first save cannot later flush a duplicate debit or budget charge. The generic release path is reserved for failures before confirmed provider usage exists. Focused tests cover validation rejection, normal commit failure, cancellation during commit, clean-context recovery, and idempotency. |
+| Analytics SQL completeness audit | Fixed in documentation | The audit now consistently reads `invocation_stats.settled_usages`; the stale `debits` reference would otherwise make the SQL fail with an invalid-column error. Its diagnostic text says “missing usage settlement”; under the current billing policy a terminal usage settlement is a normal `usage_debit`. |
+| Turn-lease release | Fixed in this follow-up | `AssistantTurnRunner` catches and logs release failures in `finally`. A successfully saved response and an original turn exception are both preserved; the ownership-checked lease remains unavailable only until its existing expiry. Regression tests cover both outcomes. |
+| Background analytics queue | Accepted best-effort tradeoff | One bounded, in-process, single-reader queue removes invocation/tool analytics saves from the learner's critical path and batches each turn for Azure SQL. Capacity saturation, a batch save failure, or App Service shutdown/recycle can drop records; the queue is not a durable audit log and currently reports loss through logs rather than a dedicated drop/backlog metric. |
+| Assistant output-token cap | Unchanged; not fixed by this patch | `AiUsage:AssistantOutputTokenReserve` remains `16384`. The analytics/credit patch does not retune `MaxOutputTokens`, and it does not establish that every remaining length-truncation case is solved; any further cap/model-output change remains separate work. |
+
+The independent usage-charge fallback is still best-effort when SQL itself is unavailable. If both
+the normal settlement and the fallback settlement fail, the application logs the failure
+and preserves the original user-facing exception, but the reservation can require later
+operator reconciliation. No durable reconciliation worker is introduced by this fix.
+
+Verification after the follow-up fixes completed with **739 passed, 0 failed and 4
+opt-in live Foundry tests skipped** in the application test suite, **5/5 browser tests**,
+and **9/9 JavaScript tests**. The focused credit/Foundry/Speaking filter passed **131/131**.
+The application Release build succeeded, EF Core reported no pending model changes, and
+`git diff --check` passed.

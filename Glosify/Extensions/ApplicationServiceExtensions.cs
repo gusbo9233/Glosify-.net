@@ -182,6 +182,11 @@ public static class ApplicationServiceExtensions
         services.AddScoped<AssistantPromptBuilder>();
         services.AddScoped<AssistantTelemetryDeletionQueue>();
         services.AddScoped<AssistantThreadStore>();
+        services.AddSingleton<AssistantAnalyticsBackgroundWriter>();
+        services.AddSingleton<IAssistantAnalyticsBatchWriter>(services =>
+            services.GetRequiredService<AssistantAnalyticsBackgroundWriter>());
+        services.AddHostedService<AssistantAnalyticsBackgroundWriter>(services =>
+            services.GetRequiredService<AssistantAnalyticsBackgroundWriter>());
         services.AddScoped<AssistantAnalyticsStore>();
         services.AddScoped<AssistantFeedbackService>();
         services.AddOptions<AssistantAnalyticsOptions>()

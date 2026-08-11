@@ -226,7 +226,7 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                 messages,
                 tools,
                 outputReserve,
-                enableSensitiveData: true,
+                enableSensitiveData: false,
                 token),
             cancellationToken,
             validateResponse: ValidateAgentResponse);
@@ -459,17 +459,30 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(_options.TimeoutSeconds));
 
+        AiTokenUsage? returnedUsage = null;
+        var normalUsageSettled = false;
+        var responseRejected = false;
         try
         {
             var response = await operation(timeout.Token);
-            validateResponse?.Invoke(response);
             var usage = ExtractUsage(response.Usage, estimatedTokens);
+            returnedUsage = usage;
+            try
+            {
+                validateResponse?.Invoke(response);
+            }
+            catch
+            {
+                responseRejected = true;
+                throw;
+            }
             try
             {
                 await _credits.CommitUsageAsync(
                     reservation.ReservationId,
                     usage,
                     cancellationToken);
+                normalUsageSettled = true;
             }
             catch
             {
@@ -505,29 +518,70 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
         }
         catch (Exception ex)
         {
+            var requiresUsageSettlement = returnedUsage is not null && !normalUsageSettled;
             try
             {
-                await _credits.ReleaseAsync(reservation.ReservationId, CancellationToken.None);
-                GenerativeAiTelemetry.CreditReleases.Add(
-                    1,
-                    GenerativeAiTelemetry.Tags(
+                if (requiresUsageSettlement)
+                {
+                    var confirmedUsage = returnedUsage!;
+                    await _credits.CommitUsageIndependentlyAsync(
+                        reservation.ReservationId,
+                        confirmedUsage,
+                        CancellationToken.None);
+                    GenerativeAiTelemetry.CreditCommits.Add(
+                        1,
+                        GenerativeAiTelemetry.Tags(
+                            usageContext.Feature,
+                            Provider,
+                            deployment,
+                            "failure_usage_committed"));
+                    var confirmedUsageTags = GenerativeAiTelemetry.Tags(
                         usageContext.Feature,
                         Provider,
                         deployment,
-                        "released"));
+                        responseRejected ? "rejected_response" : "usage_commit_failed");
+                    RecordUsage(confirmedUsage, confirmedUsageTags);
+                    activity?.SetTag("ai.input_tokens", confirmedUsage.PromptTokens);
+                    activity?.SetTag("ai.output_tokens", confirmedUsage.CandidateTokens);
+                    activity?.SetTag("ai.total_tokens", confirmedUsage.TotalTokens);
+                }
+                else if (!normalUsageSettled)
+                {
+                    await _credits.ReleaseAsync(reservation.ReservationId, CancellationToken.None);
+                    GenerativeAiTelemetry.CreditReleases.Add(
+                        1,
+                        GenerativeAiTelemetry.Tags(
+                            usageContext.Feature,
+                            Provider,
+                            deployment,
+                            "released"));
+                }
             }
-            catch (Exception releaseException)
+            catch (Exception settlementException)
             {
-                GenerativeAiTelemetry.CreditReleases.Add(
-                    1,
-                    GenerativeAiTelemetry.Tags(
-                        usageContext.Feature,
-                        Provider,
-                        deployment,
-                        "release_failed"));
+                if (requiresUsageSettlement)
+                {
+                    GenerativeAiTelemetry.CreditCommits.Add(
+                        1,
+                        GenerativeAiTelemetry.Tags(
+                            usageContext.Feature,
+                            Provider,
+                            deployment,
+                            "failure_usage_commit_failed"));
+                }
+                else
+                {
+                    GenerativeAiTelemetry.CreditReleases.Add(
+                        1,
+                        GenerativeAiTelemetry.Tags(
+                            usageContext.Feature,
+                            Provider,
+                            deployment,
+                            "release_failed"));
+                }
                 _logger.LogError(
-                    releaseException,
-                    "Could not release a failed Microsoft Foundry credit reservation.");
+                    settlementException,
+                    "Could not settle a failed Microsoft Foundry credit reservation.");
             }
             var translated = TranslateException(
                 ex,

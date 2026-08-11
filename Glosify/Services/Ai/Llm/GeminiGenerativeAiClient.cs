@@ -357,10 +357,12 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
             estimatedTokens,
             cancellationToken);
 
+        AiTokenUsage? returnedUsage = null;
         try
         {
             var response = await generativeModel.GenerateContent(request, cancellationToken: cancellationToken);
             var usage = ExtractUsage(response, estimatedTokens);
+            returnedUsage = usage;
             await _credits.CommitUsageAsync(
                 reservation.ReservationId,
                 usage,
@@ -369,7 +371,27 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
         }
         catch
         {
-            await _credits.ReleaseAsync(reservation.ReservationId, CancellationToken.None);
+            try
+            {
+                if (returnedUsage is not null)
+                {
+                    await _credits.CommitUsageIndependentlyAsync(
+                        reservation.ReservationId,
+                        returnedUsage,
+                        CancellationToken.None);
+                }
+                else
+                {
+                    await _credits.ReleaseAsync(reservation.ReservationId, CancellationToken.None);
+                }
+            }
+            catch (Exception settlementException)
+            {
+                _logger.LogError(
+                    settlementException,
+                    "Could not settle failed Gemini credit reservation {ReservationId}.",
+                    reservation.ReservationId);
+            }
             throw;
         }
     }

@@ -166,7 +166,19 @@ internal sealed class AssistantTurnRunner
         }
         finally
         {
-            await _turnLeases.ReleaseAsync(thread.Id, leaseId, CancellationToken.None);
+            try
+            {
+                await _turnLeases.ReleaseAsync(thread.Id, leaseId, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Could not release assistant turn lease {LeaseId} for thread {ThreadId}. " +
+                    "The lease will expire automatically.",
+                    leaseId,
+                    thread.Id);
+            }
         }
     }
 
@@ -248,6 +260,8 @@ internal sealed class AssistantTurnRunner
         AgentInvocationMetadata? lastMetadata = null;
         AgentToolContext? toolContext = null;
         string? resolvedModel = null;
+        var analyticsInvocations = new List<AssistantModelInvocation>();
+        var analyticsExecutions = new List<AssistantToolExecution>();
 
         try
         {
@@ -357,13 +371,13 @@ internal sealed class AssistantTurnRunner
                     Provider = ResolveProviderName(),
                     RequestedModel = selectedModel,
                     ActualModel = selectedModel,
-                    RequestJson = AssistantAnalyticsJson.Serialize(agentRequest),
+                    RequestJson = _analytics.SerializePayload(agentRequest),
                     Status = AssistantInvocationStatus.Started,
                     StartedAt = _timeProvider.GetUtcNow(),
                     TraceId = invocationActivity?.TraceId.ToHexString(),
                     SpanId = invocationActivity?.SpanId.ToHexString(),
                 };
-                await _analytics.StartInvocationAsync(invocation, cancellationToken);
+                analyticsInvocations.Add(invocation);
 
                 AgentTurnResult turn;
                 var invocationStartedAt = Stopwatch.GetTimestamp();
@@ -380,34 +394,22 @@ internal sealed class AssistantTurnRunner
                             thread.Id.ToString(),
                             turnId),
                         cancellationToken);
-                    await _analytics.CompleteInvocationAsync(
-                        invocationId,
+                    _analytics.CompleteInvocation(
+                        invocation,
                         turn,
                         Stopwatch.GetElapsedTime(invocationStartedAt).TotalMilliseconds,
-                        invocationActivity,
-                        cancellationToken);
+                        invocationActivity);
                     AssistantAnalyticsTelemetry.CompleteInvocation(invocationActivity, turn);
                     lastMetadata = turn.Metadata;
                 }
                 catch (Exception ex)
                 {
                     AssistantAnalyticsTelemetry.Fail(invocationActivity, ex);
-                    try
-                    {
-                        await _analytics.FailInvocationAsync(
-                            invocationId,
-                            ex,
-                            Stopwatch.GetElapsedTime(invocationStartedAt).TotalMilliseconds,
-                            invocationActivity,
-                            CancellationToken.None);
-                    }
-                    catch (Exception analyticsException)
-                    {
-                        _logger.LogError(
-                            analyticsException,
-                            "Could not finalize failed assistant invocation {InvocationId}.",
-                            invocationId);
-                    }
+                    _analytics.FailInvocation(
+                        invocation,
+                        ex,
+                        Stopwatch.GetElapsedTime(invocationStartedAt).TotalMilliseconds,
+                        invocationActivity);
                     if (!cancellationToken.IsCancellationRequested)
                     {
                         _logger.LogWarning(ex, "Generative AI turn failed for assistant thread {ThreadId}", thread.Id);
@@ -460,31 +462,29 @@ internal sealed class AssistantTurnRunner
                     var executionId = Guid.NewGuid();
                     var changesBefore = toolContext.PendingChanges.Count;
                     using var toolActivity = AssistantAnalyticsTelemetry.StartTool(turnId, invocationId, call.Name);
-                    toolActivity?.SetTag("gen_ai.tool.call.arguments", safeArgumentsJson);
-                    await _analytics.StartToolAsync(new AssistantToolExecution
+                    var execution = new AssistantToolExecution
                     {
                         Id = executionId,
                         TurnId = turnId,
                         InvocationId = invocationId,
                         Sequence = toolSequence++,
                         ToolName = call.Name,
-                        ArgumentsJson = safeArgumentsJson,
+                        ArgumentsJson = _analytics.StoreJson(safeArgumentsJson),
                         Status = AssistantInvocationStatus.Started,
                         StartedAt = _timeProvider.GetUtcNow(),
-                    }, cancellationToken);
+                    };
+                    analyticsExecutions.Add(execution);
                     var toolStartedAt = Stopwatch.GetTimestamp();
                     try
                     {
                         var result = await _tools.ExecuteAsync(call.Name, call.ArgsJson, toolContext, cancellationToken);
                         var resultJson = AssistantAnalyticsJson.Serialize(result);
                         var proposedChanges = Math.Max(0, toolContext.PendingChanges.Count - changesBefore);
-                        await _analytics.CompleteToolAsync(
-                            executionId,
+                        _analytics.CompleteTool(
+                            execution,
                             resultJson,
                             proposedChanges,
-                            Stopwatch.GetElapsedTime(toolStartedAt).TotalMilliseconds,
-                            cancellationToken);
-                        toolActivity?.SetTag("gen_ai.tool.call.result", resultJson);
+                            Stopwatch.GetElapsedTime(toolStartedAt).TotalMilliseconds);
                         toolActivity?.SetTag("assistant.outcome", "success");
                         toolActivity?.SetStatus(ActivityStatusCode.Ok);
                         toolEvents.Add(new AssistantToolEvent(call.Name, safeArgumentsJson, SummarizeResult(result)));
@@ -499,21 +499,10 @@ internal sealed class AssistantTurnRunner
                     catch (Exception ex)
                     {
                         AssistantAnalyticsTelemetry.Fail(toolActivity, ex);
-                        try
-                        {
-                            await _analytics.FailToolAsync(
-                                executionId,
-                                ex,
-                                Stopwatch.GetElapsedTime(toolStartedAt).TotalMilliseconds,
-                                CancellationToken.None);
-                        }
-                        catch (Exception analyticsException)
-                        {
-                            _logger.LogError(
-                                analyticsException,
-                                "Could not finalize failed assistant tool execution {ExecutionId}.",
-                                executionId);
-                        }
+                        _analytics.FailTool(
+                            execution,
+                            ex,
+                            Stopwatch.GetElapsedTime(toolStartedAt).TotalMilliseconds);
                         throw;
                     }
                 }
@@ -580,6 +569,11 @@ internal sealed class AssistantTurnRunner
             turnEntity.CompletedAt = _timeProvider.GetUtcNow();
             turnEntity.ServerDurationMs = Stopwatch.GetElapsedTime(turnStartedAt).TotalMilliseconds;
             await _context.SaveChangesAsync(cancellationToken);
+            await SaveAnalyticsSafelyAsync(
+                turnId,
+                analyticsInvocations,
+                analyticsExecutions,
+                cancellationToken);
             turnActivity?.SetTag("gen_ai.provider.name", turnEntity.Provider);
             turnActivity?.SetTag("gen_ai.response.model", turnEntity.ActualModel);
             turnActivity?.SetTag("gen_ai.response.id", turnEntity.ProviderResponseId);
@@ -634,7 +628,28 @@ internal sealed class AssistantTurnRunner
                     "Could not finalize failed assistant turn {TurnId}.",
                     turnId);
             }
+            await SaveAnalyticsSafelyAsync(
+                turnId,
+                analyticsInvocations,
+                analyticsExecutions,
+                CancellationToken.None);
             throw;
+        }
+    }
+
+    private async Task SaveAnalyticsSafelyAsync(
+        Guid turnId,
+        IReadOnlyCollection<AssistantModelInvocation> invocations,
+        IReadOnlyCollection<AssistantToolExecution> executions,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _analytics.SubmitBatchAsync(invocations, executions, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not persist analytics for assistant turn {TurnId}.", turnId);
         }
     }
 

@@ -259,6 +259,82 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task Lease_release_failure_does_not_replace_a_successful_turn_response()
+    {
+        await using var context = CreateContext();
+        var leases = new ThrowingReleaseAssistantTurnLeaseService();
+        var orchestrator = CreateOrchestrator(context, turnLeases: leases);
+
+        var response = await orchestrator.SendGlobalMessageAsync("user-1", "Keep the answer.");
+
+        Assert.Equal("Done.", response.AssistantText);
+        Assert.Equal(1, leases.ReleaseCalls);
+        Assert.Equal(
+            AssistantTurnStatus.Completed,
+            (await context.AssistantTurns.SingleAsync(turn => turn.Id == response.TurnId)).Status);
+    }
+
+    [Fact]
+    public async Task Lease_release_failure_does_not_replace_the_original_turn_failure()
+    {
+        await using var context = CreateContext();
+        var leases = new ThrowingReleaseAssistantTurnLeaseService();
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: new CancellingGenerativeAiClient(),
+            turnLeases: leases);
+
+        var exception = await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            orchestrator.SendGlobalMessageAsync("user-1", "Keep the original failure."));
+
+        Assert.Equal("Simulated caller cancellation.", exception.Message);
+        Assert.Equal(1, leases.ReleaseCalls);
+    }
+
+    [Fact]
+    public async Task Analytics_save_failure_does_not_fail_a_completed_turn()
+    {
+        var interceptor = new FailAnalyticsSaveInterceptor();
+        await using var context = CreateContext(saveChangesInterceptor: interceptor);
+        var orchestrator = CreateOrchestrator(context);
+
+        var response = await orchestrator.SendGlobalMessageAsync("user-1", "Keep the useful answer.");
+
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync();
+        Assert.True(interceptor.FailedAnalyticsSave);
+        Assert.Equal(response.TurnId, turn.Id);
+        Assert.Equal(AssistantTurnStatus.Completed, turn.Status);
+        Assert.Equal(2, await context.AssistantMessages.CountAsync());
+        Assert.Empty(await context.AssistantModelInvocations.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Multi_call_turn_persists_analytics_in_one_batch()
+    {
+        var interceptor = new CountAnalyticsSavesInterceptor();
+        await using var context = CreateContext(saveChangesInterceptor: interceptor);
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: new OneToolThenAnswerGenerativeAiClient(),
+            tools: new LoopAssistantTools());
+
+        await orchestrator.SendGlobalMessageAsync("user-1", "Look this up and answer.");
+
+        Assert.Equal(1, interceptor.AnalyticsSaveCount);
+        var invocations = await context.AssistantModelInvocations.ToListAsync();
+        var execution = await context.AssistantToolExecutions.SingleAsync();
+        Assert.Equal(2, invocations.Count);
+        Assert.All(invocations, invocation =>
+        {
+            Assert.Equal("{}", invocation.RequestJson);
+            Assert.Equal("{}", invocation.ResponseJson);
+        });
+        Assert.Equal("{}", execution.ArgumentsJson);
+        Assert.Equal("{}", execution.ResultJson);
+    }
+
+    [Fact]
     public async Task Cancelled_provider_call_retains_input_and_marks_turn_cancelled()
     {
         await using var context = CreateContext();
@@ -918,7 +994,8 @@ public class AssistantSavedChatsTests
         IChangeApplier? applier = null,
         IBookDocumentService? books = null,
         IAssistantTools? tools = null,
-        ILanguageContext? languageContext = null)
+        ILanguageContext? languageContext = null,
+        IAssistantTurnLeaseService? turnLeases = null)
     {
         var languagePreferences = new QuizLanguagePreferenceService(context);
         var contextResolver = new AssistantContextResolver(
@@ -937,7 +1014,10 @@ public class AssistantSavedChatsTests
                 context,
                 timeProvider,
                 Options.Create(new AssistantAnalyticsOptions())));
-        var analytics = new AssistantAnalyticsStore(new TestDbContextFactory(context), timeProvider);
+        var analytics = new AssistantAnalyticsStore(
+            new TestAssistantAnalyticsBatchWriter(new TestDbContextFactory(context)),
+            timeProvider,
+            Options.Create(new AssistantAnalyticsOptions()));
         var turnRunner = new AssistantTurnRunner(
             context,
             generativeAi ?? new StaticGenerativeAiClient("Done."),
@@ -947,7 +1027,7 @@ public class AssistantSavedChatsTests
             contextResolver,
             presenter,
             new AssistantPromptBuilder(),
-            new NoopAssistantTurnLeaseService(),
+            turnLeases ?? new NoopAssistantTurnLeaseService(),
             analytics,
             timeProvider,
             NullLogger<AssistantTurnRunner>.Instance);
@@ -1272,6 +1352,43 @@ public class AssistantSavedChatsTests
             Task.CompletedTask;
     }
 
+    private sealed class ThrowingReleaseAssistantTurnLeaseService : IAssistantTurnLeaseService
+    {
+        public int ReleaseCalls { get; private set; }
+
+        public Task<Guid?> TryAcquireAsync(Guid threadId, string userId, CancellationToken cancellationToken) =>
+            Task.FromResult<Guid?>(Guid.NewGuid());
+
+        public Task<bool> RenewAsync(Guid threadId, Guid leaseId, CancellationToken cancellationToken) =>
+            Task.FromResult(true);
+
+        public Task ReleaseAsync(Guid threadId, Guid leaseId, CancellationToken cancellationToken)
+        {
+            ReleaseCalls++;
+            return Task.FromException(new InvalidOperationException("Simulated lease release failure."));
+        }
+    }
+
+    private sealed class TestAssistantAnalyticsBatchWriter(
+        IDbContextFactory<GlosifyContext> contextFactory) : IAssistantAnalyticsBatchWriter
+    {
+        public async ValueTask SubmitAsync(
+            IReadOnlyCollection<AssistantModelInvocation> invocations,
+            IReadOnlyCollection<AssistantToolExecution> executions,
+            CancellationToken cancellationToken)
+        {
+            if (invocations.Count == 0 && executions.Count == 0)
+            {
+                return;
+            }
+
+            await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+            context.AssistantModelInvocations.AddRange(invocations);
+            context.AssistantToolExecutions.AddRange(executions);
+            await context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
     private sealed class FailFinalMessageSaveOnceInterceptor : SaveChangesInterceptor
     {
         public bool FailedFinalMessageSave { get; private set; }
@@ -1288,6 +1405,46 @@ public class AssistantSavedChatsTests
             {
                 FailedFinalMessageSave = true;
                 throw new DbUpdateException("Simulated final assistant message persistence failure.");
+            }
+
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
+        }
+    }
+
+    private sealed class FailAnalyticsSaveInterceptor : SaveChangesInterceptor
+    {
+        public bool FailedAnalyticsSave { get; private set; }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (!FailedAnalyticsSave
+                && eventData.Context?.ChangeTracker.Entries<AssistantModelInvocation>().Any(entry =>
+                    entry.State == EntityState.Added) == true)
+            {
+                FailedAnalyticsSave = true;
+                throw new DbUpdateException("Simulated assistant analytics persistence failure.");
+            }
+
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
+        }
+    }
+
+    private sealed class CountAnalyticsSavesInterceptor : SaveChangesInterceptor
+    {
+        public int AnalyticsSaveCount { get; private set; }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (eventData.Context?.ChangeTracker.Entries<AssistantModelInvocation>().Any(entry =>
+                entry.State == EntityState.Added) == true)
+            {
+                AnalyticsSaveCount++;
             }
 
             return base.SavingChangesAsync(eventData, result, cancellationToken);

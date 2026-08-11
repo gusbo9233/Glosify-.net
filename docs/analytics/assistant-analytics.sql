@@ -4,6 +4,10 @@ Glosify assistant analytics query pack (Azure SQL)
 Set the parameters below before running a turn-level query. Content capture begins at
 the AddAssistantAnalyticsCapture deployment; legacy rows intentionally remain nullable.
 BudgetAmountMicros on usage_debit is the price-card estimate for one model invocation.
+Provider responses with confirmed usage are recorded as normal learner usage even when
+the application later rejects the response.
+Raw invocation and tool payload columns contain {} when the default
+AssistantAnalytics:CaptureContent=false setting is used.
 */
 DECLARE @From datetimeoffset = DATEADD(day, -30, SYSDATETIMEOFFSET());
 DECLARE @To datetimeoffset = SYSDATETIMEOFFSET();
@@ -208,7 +212,7 @@ SELECT
         CASE WHEN t.status <> 'started' AND t.completed_at IS NULL THEN 'missing completion timestamp' END,
         CASE WHEN t.status = 'completed' AND final_message.id IS NULL THEN 'missing final output' END,
         CASE WHEN t.status = 'completed' AND t.final_message_id IS NULL THEN 'missing final message id' END,
-        CASE WHEN invocation_stats.completed_invocations > 0 AND invocation_stats.debits = 0 THEN 'missing usage debit' END,
+        CASE WHEN invocation_stats.completed_invocations > 0 AND invocation_stats.settled_usages = 0 THEN 'missing usage settlement' END,
         CASE WHEN t.trace_id IS NULL THEN 'missing trace id' END
     ) AS gaps
 FROM assistant_turns t
@@ -223,9 +227,10 @@ OUTER APPLY (
     SELECT
         COUNT_BIG(*) AS invocations,
         SUM(CASE WHEN i.status = 'completed' THEN 1 ELSE 0 END) AS completed_invocations,
-        SUM(CASE WHEN tx.Kind = 'usage_debit' THEN 1 ELSE 0 END) AS debits
+        SUM(CASE WHEN tx.Kind = 'usage_debit' THEN 1 ELSE 0 END) AS settled_usages
     FROM assistant_model_invocations i
-    LEFT JOIN AiCreditTransactions tx ON tx.OperationId = i.id AND tx.Kind = 'usage_debit'
+    LEFT JOIN AiCreditTransactions tx
+        ON tx.OperationId = i.id AND tx.Kind = 'usage_debit'
     WHERE i.turn_id = t.id
 ) invocation_stats
 WHERE t.started_at >= @From AND t.started_at < @To
@@ -235,7 +240,7 @@ WHERE t.started_at >= @From AND t.started_at < @To
       OR (t.status = 'started' AND t.started_at < DATEADD(minute, -15, @To))
       OR (t.status <> 'started' AND t.completed_at IS NULL)
       OR (t.status = 'completed' AND (final_message.id IS NULL OR t.final_message_id IS NULL))
-      OR (invocation_stats.completed_invocations > 0 AND invocation_stats.debits = 0)
+      OR (invocation_stats.completed_invocations > 0 AND invocation_stats.settled_usages = 0)
       OR t.trace_id IS NULL
   )
 ORDER BY t.started_at DESC;

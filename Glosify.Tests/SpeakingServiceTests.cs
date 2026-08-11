@@ -249,7 +249,7 @@ public sealed class SpeakingServiceTests
     }
 
     [Fact]
-    public async Task Turn_releases_reservation_when_agent_or_schema_fails()
+    public async Task Turn_charges_estimated_usage_when_returned_schema_is_invalid()
     {
         var incomplete = ValidTurn();
         incomplete.ReplyPolish = " ";
@@ -262,7 +262,27 @@ public sealed class SpeakingServiceTests
             service.SendTurnAsync(sessionId, "learner", "Hej", SpeakingInputMode.Text));
 
         var reservation = Assert.Single(credits.Reservations);
+        var charged = Assert.Single(credits.IndependentCommits);
+        Assert.Equal(reservation.ReservationId, charged.ReservationId);
+        Assert.Equal(reservation.EstimatedTokens, charged.Usage.TotalTokens);
+        Assert.Empty(credits.Releases);
+        Assert.Empty(credits.Commits);
+    }
+
+    [Fact]
+    public async Task Turn_releases_reservation_when_agent_fails_before_returning_usage()
+    {
+        var conversation = new FakeConversation((_, _) =>
+            Task.FromException<SpeakingAgentTurn>(new InvalidOperationException("provider failed")));
+        var credits = new FakeCredits();
+        var (service, sessionId) = await CreateServiceAsync(conversation, credits);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SendTurnAsync(sessionId, "learner", "Hej", SpeakingInputMode.Text));
+
+        var reservation = Assert.Single(credits.Reservations);
         Assert.Equal(reservation.ReservationId, Assert.Single(credits.Releases));
+        Assert.Empty(credits.IndependentCommits);
         Assert.Empty(credits.Commits);
     }
 
@@ -605,7 +625,8 @@ public sealed class SpeakingServiceTests
                 SpeakingInputMode.Text));
 
         Assert.IsType<SpeakingUpstreamException>(exception.InnerException);
-        Assert.Single(credits.Releases);
+        Assert.Single(credits.IndependentCommits);
+        Assert.Empty(credits.Releases);
         Assert.Empty(credits.Commits);
         Assert.Equal(1, conversation.DisposeCount);
         Assert.Equal(1, session.TurnGate.CurrentCount);
@@ -648,7 +669,8 @@ public sealed class SpeakingServiceTests
                 SpeakingInputMode.Text));
 
         Assert.Same(commitError, exception.InnerException);
-        Assert.Single(credits.Releases);
+        Assert.Single(credits.IndependentCommits);
+        Assert.Empty(credits.Releases);
         Assert.Empty(credits.Commits);
         Assert.Equal(1, conversation.DisposeCount);
         await Assert.ThrowsAsync<SpeakingSessionNotFoundException>(() =>
@@ -959,6 +981,7 @@ public sealed class SpeakingServiceTests
             Reservations
         { get; } = [];
         public List<(Guid ReservationId, AiTokenUsage Usage)> Commits { get; } = [];
+        public List<(Guid ReservationId, AiTokenUsage Usage)> IndependentCommits { get; } = [];
         public List<Guid> Releases { get; } = [];
         public Exception? CommitError { get; init; }
 
@@ -985,6 +1008,15 @@ public sealed class SpeakingServiceTests
             }
 
             Commits.Add((reservationId, usage));
+            return Task.CompletedTask;
+        }
+
+        public Task CommitUsageIndependentlyAsync(
+            Guid reservationId,
+            AiTokenUsage usage,
+            CancellationToken cancellationToken = default)
+        {
+            IndependentCommits.Add((reservationId, usage));
             return Task.CompletedTask;
         }
 

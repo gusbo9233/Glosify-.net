@@ -47,9 +47,7 @@ dependencies
 | extend
     turnId = tostring(customDimensions["assistant.turn.id"]),
     invocationId = tostring(customDimensions["assistant.invocation.id"]),
-    toolName = tostring(customDimensions["gen_ai.tool.name"]),
-    args = tostring(customDimensions["gen_ai.tool.call.arguments"]),
-    result = tostring(customDimensions["gen_ai.tool.call.result"])
+    toolName = tostring(customDimensions["gen_ai.tool.name"])
 | summarize
     executions = sum(itemCount),
     failures = sumif(itemCount, success == false),

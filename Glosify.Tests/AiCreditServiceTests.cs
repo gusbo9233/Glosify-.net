@@ -149,6 +149,66 @@ public sealed class AiCreditServiceTests
     }
 
     [Fact]
+    public async Task CommitUsageIndependently_DropsUncertainTrackedState_ChargesUsageAndIsIdempotent()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var service = CreateService(
+            context,
+            monthlyLimitSek: 200m,
+            inputSekPerMillionTokens: 1_000_000m,
+            outputSekPerMillionTokens: 1_000_000m);
+
+        var reservation = await service.ReserveAsync(
+            UsageContext("user-1"),
+            "foundry",
+            "test-model",
+            100);
+
+        // Model the state left behind when the request-scoped SaveChanges fails after
+        // CommitUsageCoreAsync has already mutated its tracked entities.
+        var uncertainAccount = await context.AiCreditAccounts.SingleAsync();
+        uncertainAccount.BalanceCredits = -999;
+        uncertainAccount.ReservedCredits = 999;
+        var uncertainBudget = await context.AiMonthlyBudgets.SingleAsync();
+        uncertainBudget.SpentMicros = 199_000_000;
+        context.AiCreditTransactions.Add(new AiCreditTransaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = "user-1",
+            ReservationId = reservation.ReservationId,
+            Kind = AiCreditTransactionKinds.UsageDebit,
+            CreditAmount = -999,
+        });
+
+        await service.CommitUsageIndependentlyAsync(
+            reservation.ReservationId,
+            new AiTokenUsage(25, 25, 0, 0, 50));
+        await service.CommitUsageIndependentlyAsync(
+            reservation.ReservationId,
+            new AiTokenUsage(25, 25, 0, 0, 50));
+
+        var account = await service.GetOrCreateAccountAsync("user-1");
+        Assert.Equal(24, account.BalanceCredits);
+        Assert.Equal(0, account.ReservedCredits);
+
+        var budget = await context.AiMonthlyBudgets.SingleAsync();
+        Assert.Equal(50_000_000, budget.SpentMicros);
+        Assert.Equal(0, budget.ReservedMicros);
+
+        var usageDebit = await context.AiCreditTransactions
+            .SingleAsync(transaction => transaction.Kind == AiCreditTransactionKinds.UsageDebit);
+        Assert.Equal(-1, usageDebit.CreditAmount);
+        Assert.Equal(50, usageDebit.TotalTokens);
+        Assert.Equal(50_000_000, usageDebit.BudgetAmountMicros);
+        var release = await context.AiCreditTransactions
+            .SingleAsync(transaction => transaction.Kind == AiCreditTransactionKinds.Release);
+        Assert.Equal(0, release.CreditAmount);
+        Assert.Equal(50_000_000, release.BudgetAmountMicros);
+    }
+
+    [Fact]
     public async Task Reservation_debit_and_release_keep_turn_and_invocation_correlation()
     {
         await using var context = CreateContext();
