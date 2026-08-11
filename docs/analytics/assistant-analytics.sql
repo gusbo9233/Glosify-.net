@@ -212,7 +212,7 @@ SELECT
         CASE WHEN t.status <> 'started' AND t.completed_at IS NULL THEN 'missing completion timestamp' END,
         CASE WHEN t.status = 'completed' AND final_message.id IS NULL THEN 'missing final output' END,
         CASE WHEN t.status = 'completed' AND t.final_message_id IS NULL THEN 'missing final message id' END,
-        CASE WHEN invocation_stats.settled_usages < invocation_stats.completed_invocations THEN 'missing usage settlement' END,
+        CASE WHEN invocation_stats.settled_completed_invocations < invocation_stats.completed_invocations THEN 'missing usage settlement' END,
         CASE WHEN t.trace_id IS NULL THEN 'missing trace id' END
     ) AS gaps
 FROM assistant_turns t
@@ -227,10 +227,16 @@ OUTER APPLY (
     SELECT
         COUNT_BIG(*) AS invocations,
         SUM(CASE WHEN i.status = 'completed' THEN 1 ELSE 0 END) AS completed_invocations,
-        SUM(CASE WHEN tx.Kind = 'usage_debit' THEN 1 ELSE 0 END) AS settled_usages
+        SUM(CASE
+            WHEN i.status = 'completed' AND settlement.has_usage_debit = 1 THEN 1
+            ELSE 0
+        END) AS settled_completed_invocations
     FROM assistant_model_invocations i
-    LEFT JOIN AiCreditTransactions tx
-        ON tx.OperationId = i.id AND tx.Kind = 'usage_debit'
+    OUTER APPLY (
+        SELECT TOP (1) 1 AS has_usage_debit
+        FROM AiCreditTransactions tx
+        WHERE tx.OperationId = i.id AND tx.Kind = 'usage_debit'
+    ) settlement
     WHERE i.turn_id = t.id
 ) invocation_stats
 WHERE t.started_at >= @From AND t.started_at < @To
@@ -240,7 +246,7 @@ WHERE t.started_at >= @From AND t.started_at < @To
       OR (t.status = 'started' AND t.started_at < DATEADD(minute, -15, @To))
       OR (t.status <> 'started' AND t.completed_at IS NULL)
       OR (t.status = 'completed' AND (final_message.id IS NULL OR t.final_message_id IS NULL))
-      OR invocation_stats.settled_usages < invocation_stats.completed_invocations
+      OR invocation_stats.settled_completed_invocations < invocation_stats.completed_invocations
       OR t.trace_id IS NULL
   )
 ORDER BY t.started_at DESC;
