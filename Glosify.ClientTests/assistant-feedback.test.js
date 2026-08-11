@@ -29,6 +29,16 @@ test('feedback normalization de-duplicates reasons and removes empty comments', 
     });
 });
 
+test('feedback normalization handles an unrated turn and omitted details', () => {
+    assert.equal(normalizeFeedback(null), null);
+    assert.equal(normalizeFeedback(undefined), null);
+    assert.deepEqual(normalizeFeedback({ rating: 'down' }), {
+        rating: 'down',
+        reasonCodes: [],
+        comment: null,
+    });
+});
+
 test('client duration validation accepts only the server contract range', () => {
     assert.equal(validClientDuration(0), true);
     assert.equal(validClientDuration(900000), true);

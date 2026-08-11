@@ -591,8 +591,12 @@ import {
         details.append(reasonList, comment, detailActions);
 
         const sync = () => {
-            up.classList.toggle('is-selected', current?.rating === 'up');
-            down.classList.toggle('is-selected', current?.rating === 'down');
+            const upSelected = current?.rating === 'up';
+            const downSelected = current?.rating === 'down';
+            up.classList.toggle('is-selected', upSelected);
+            down.classList.toggle('is-selected', downSelected);
+            up.setAttribute('aria-pressed', String(upSelected));
+            down.setAttribute('aria-pressed', String(downSelected));
             details.hidden = !current;
             reasonList.innerHTML = '';
             if (!current) {

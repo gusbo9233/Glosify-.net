@@ -55,6 +55,7 @@ dependencies
 | order by executions desc
 
 // User feedback and Foundry continuous-evaluation scores. Free-text comments never enter telemetry.
+let feedbackEvaluations = materialize(
 union
     (customEvents | where timestamp > ago(30d) | where name == "gen_ai.evaluation.result"),
     (dependencies | where timestamp > ago(30d) | where name == "gen_ai.evaluation.result")
@@ -65,9 +66,18 @@ union
     label = tostring(customDimensions["gen_ai.evaluation.score.label"]),
     reasons = tostring(customDimensions["assistant.feedback.reasons"]),
     responseId = tostring(customDimensions["gen_ai.response.id"]),
-    conversationId = tostring(customDimensions["gen_ai.conversation.id"])
-| summarize samples = count(), averageScore = avg(score), labels = make_set(label), reasonCodes = make_set(reasons)
+    conversationId = tostring(customDimensions["gen_ai.conversation.id"]));
+feedbackEvaluations
+| summarize samples = count(), averageScore = avg(score), labels = make_set(label)
   by evaluator, turnId, responseId, conversationId, operation_Id
+| join kind=leftouter (
+    feedbackEvaluations
+    | extend reasonCode = split(reasons, ",")
+    | mv-expand reasonCode to typeof(string)
+    | where isnotempty(reasonCode)
+    | summarize reasonCodes = make_set(reasonCode)
+      by evaluator, turnId, responseId, conversationId, operation_Id
+) on evaluator, turnId, responseId, conversationId, operation_Id
 | order by evaluator asc, turnId asc
 
 // Inspect a complete trace. Replace the operation id with assistant_turns.trace_id.
@@ -92,5 +102,5 @@ dependencies
 | where operation_Id in (roots | project operation_Id)
 | summarize modelSpans = countif(tostring(customDimensions["gen_ai.operation.name"]) == "chat") by operation_Id
 | join kind=rightouter roots on operation_Id
-| where isempty(turnId) or rootSpans != 1 or modelSpans == 0
+| where isempty(turnId) or rootSpans != 1 or (successfulRoots > 0 and modelSpans == 0)
 | order by operation_Id desc

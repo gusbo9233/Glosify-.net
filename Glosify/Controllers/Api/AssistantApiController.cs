@@ -149,50 +149,20 @@ public class AssistantApiController : ApiControllerBase
         [FromBody] AssistantFeedbackInput input,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            return Ok(await _orchestrator.SaveFeedbackAsync(
-                turnId,
-                User.GetUserId(),
-                input.Rating,
-                input.ReasonCodes,
-                input.Comment,
-                cancellationToken));
-        }
-        catch (AssistantFeedbackValidationException ex)
-        {
-            return GlosifyProblemDetails.Result(
-                HttpContext,
-                StatusCodes.Status400BadRequest,
-                ApiErrorCodes.BadRequest,
-                ex.Message);
-        }
-        catch (AssistantTurnNotFoundException)
-        {
-            return FeedbackTurnNotFound();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return FeedbackTurnNotFound();
-        }
+        return Ok(await _orchestrator.SaveFeedbackAsync(
+            turnId,
+            User.GetUserId(),
+            input.Rating,
+            input.ReasonCodes,
+            input.Comment,
+            cancellationToken));
     }
 
     [HttpDelete("turns/{turnId:guid}/feedback")]
     public async Task<IActionResult> DeleteFeedback(Guid turnId, CancellationToken cancellationToken)
     {
-        try
-        {
-            await _orchestrator.DeleteFeedbackAsync(turnId, User.GetUserId(), cancellationToken);
-            return NoContent();
-        }
-        catch (AssistantTurnNotFoundException)
-        {
-            return FeedbackTurnNotFound();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return FeedbackTurnNotFound();
-        }
+        await _orchestrator.DeleteFeedbackAsync(turnId, User.GetUserId(), cancellationToken);
+        return NoContent();
     }
 
     [HttpPut("turns/{turnId:guid}/client-metrics")]
@@ -201,36 +171,11 @@ public class AssistantApiController : ApiControllerBase
         [FromBody] AssistantClientMetricsInput input,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            await _orchestrator.RecordClientDurationAsync(
-                turnId,
-                User.GetUserId(),
-                input.ClientDurationMs,
-                cancellationToken);
-            return NoContent();
-        }
-        catch (AssistantFeedbackValidationException ex)
-        {
-            return GlosifyProblemDetails.Result(
-                HttpContext,
-                StatusCodes.Status400BadRequest,
-                ApiErrorCodes.BadRequest,
-                ex.Message);
-        }
-        catch (AssistantTurnNotFoundException)
-        {
-            return FeedbackTurnNotFound();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return FeedbackTurnNotFound();
-        }
+        await _orchestrator.RecordClientDurationAsync(
+            turnId,
+            User.GetUserId(),
+            input.ClientDurationMs,
+            cancellationToken);
+        return NoContent();
     }
-
-    private ObjectResult FeedbackTurnNotFound() => GlosifyProblemDetails.Result(
-        HttpContext,
-        StatusCodes.Status404NotFound,
-        ApiErrorCodes.NotFound,
-        "Assistant turn not found.");
 }

@@ -340,7 +340,7 @@ public class AssistantSavedChatsTests
         Assert.Equal(["clear", "saved_time"], feedback.Reasons.Select(reason => reason.ReasonCode).Order());
         Assert.Equal(["clear", "saved_time"], updatedFeedback.ReasonCodes);
         Assert.Equal(1234.5, (await context.AssistantTurns.SingleAsync()).ClientDurationMs);
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+        await Assert.ThrowsAsync<AssistantTurnNotFoundException>(() =>
             orchestrator.SaveFeedbackAsync(result.TurnId, "user-2", "up", [], null));
 
         var history = await orchestrator.GetGlobalHistoryAsync("user-1");
@@ -851,13 +851,19 @@ public class AssistantSavedChatsTests
         var deletions = await context.AssistantTelemetryDeletionRequests.ToListAsync();
         Assert.Equal(6, deletions.Count);
         Assert.Equal(
-            ["AppDependencies", "AppEvents", "AppExceptions", "AppGenAIContent", "AppRequests", "AppTraces"],
-            deletions.Select(deletion => deletion.TableName).Order());
+            [
+                ("AppDependencies", "OperationId"),
+                ("AppEvents", "OperationId"),
+                ("AppExceptions", "OperationId"),
+                ("AppGenAIContent", "TraceId"),
+                ("AppRequests", "OperationId"),
+                ("AppTraces", "OperationId"),
+            ],
+            deletions
+                .Select(deletion => (deletion.TableName, deletion.DimensionName))
+                .OrderBy(deletion => deletion.TableName));
         Assert.All(deletions, deletion =>
         {
-            Assert.Equal(
-                deletion.TableName == "AppGenAIContent" ? "TraceId" : "OperationId",
-                deletion.DimensionName);
             Assert.Equal(turn.TraceId, deletion.DimensionValue);
             Assert.Equal(AssistantTelemetryDeletionStatus.Pending, deletion.Status);
         });

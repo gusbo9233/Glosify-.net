@@ -156,6 +156,29 @@ public sealed class AssistantTelemetryDeletionServiceTests
     }
 
     [Fact]
+    public async Task Exhausted_expired_submission_lease_becomes_a_terminal_failure()
+    {
+        var clock = new FakeTimeProvider(Origin);
+        var handler = new RecordingHandler(_ => throw new InvalidOperationException("No request expected."));
+        await using var services = CreateServices(out var scopeFactory);
+        var request = NewRequest(clock.GetUtcNow().AddMinutes(-1));
+        request.Status = AssistantTelemetryDeletionStatus.Submitting;
+        request.LeaseId = Guid.NewGuid();
+        request.AttemptCount = AssistantTelemetryDeletionService.MaxAttempts;
+        await SeedAsync(services, request);
+        using var clients = new StubHttpClientFactory(handler);
+        var worker = CreateWorker(scopeFactory, clients, clock);
+
+        await worker.ProcessBatchAsync(default);
+
+        var failed = await LoadSingleAsync(services);
+        Assert.Equal(AssistantTelemetryDeletionStatus.Failed, failed.Status);
+        Assert.Null(failed.LeaseId);
+        Assert.Equal(clock.GetUtcNow(), failed.CompletedAt);
+        Assert.Empty(handler.Requests);
+    }
+
+    [Fact]
     public async Task Concurrent_workers_atomically_claim_a_pending_submission_once()
     {
         var clock = new FakeTimeProvider(Origin);
@@ -255,7 +278,7 @@ public sealed class AssistantTelemetryDeletionServiceTests
         services.AddScoped<GlosifyContext>(_ =>
         {
             var options = new DbContextOptionsBuilder<GlosifyContext>()
-                .UseSqlite($"Data Source={databasePath}")
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
                 .Options;
             return new SqlitePurgeContext(options);
         });

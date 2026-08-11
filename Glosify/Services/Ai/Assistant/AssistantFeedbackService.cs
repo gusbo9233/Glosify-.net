@@ -149,16 +149,21 @@ internal sealed class AssistantFeedbackService(GlosifyContext context, TimeProvi
         string userId,
         CancellationToken cancellationToken)
     {
-        var turn = await context.AssistantTurns
-            .SingleOrDefaultAsync(candidate => candidate.Id == turnId, cancellationToken)
+        var match = await context.AssistantTurns
+            .Where(candidate => candidate.Id == turnId)
+            .Select(candidate => new
+            {
+                Turn = candidate,
+                Owned = context.AssistantThreads.Any(thread =>
+                    thread.Id == candidate.ThreadId && thread.UserId == userId),
+            })
+            .SingleOrDefaultAsync(cancellationToken)
             ?? throw new AssistantTurnNotFoundException();
-        var owned = await context.AssistantThreads
-            .AnyAsync(thread => thread.Id == turn.ThreadId && thread.UserId == userId, cancellationToken);
-        if (!owned)
+        if (!match.Owned)
         {
-            throw new UnauthorizedAccessException("Assistant turn belongs to a different user.");
+            throw new AssistantTurnNotFoundException();
         }
-        return turn;
+        return match.Turn;
     }
 
     internal static AssistantFeedbackView Map(AssistantFeedback feedback) => new(

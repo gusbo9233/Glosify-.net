@@ -92,6 +92,7 @@ internal sealed class AssistantTelemetryDeletionService(
         var now = timeProvider.GetUtcNow();
 
         await RecoverExpiredSubmissionLeasesAsync(context, now, cancellationToken);
+        context.ChangeTracker.Clear();
         await SubmitPendingRequestsAsync(context, now, cancellationToken);
         await PollSubmittedRequestsAsync(context, now, cancellationToken);
     }

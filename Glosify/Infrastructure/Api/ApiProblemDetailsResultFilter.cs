@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace Glosify.Infrastructure.Api;
 
-public sealed class ApiProblemDetailsResultFilter : IAsyncResultFilter
+public sealed class ApiProblemDetailsResultFilter : IAsyncAlwaysRunResultFilter
 {
     public async Task OnResultExecutionAsync(ResultExecutingContext context, ResultExecutionDelegate next)
     {
@@ -34,9 +34,18 @@ public sealed class ApiProblemDetailsResultFilter : IAsyncResultFilter
 
         switch (result)
         {
-            case ObjectResult { Value: ProblemDetails }:
-                statusCode = 0;
-                return false;
+            case ObjectResult { Value: ProblemDetails problem } objectResult:
+                statusCode = problem.Status ?? objectResult.StatusCode ?? StatusCodes.Status500InternalServerError;
+                if (statusCode < 400 || problem.Extensions.ContainsKey("code"))
+                {
+                    return false;
+                }
+
+                detail = problem.Detail;
+                extensions = problem.Extensions
+                    .Where(extension => extension.Key is not "error" and not "traceId")
+                    .ToDictionary(extension => extension.Key, extension => extension.Value);
+                return true;
             case ObjectResult objectResult when (objectResult.StatusCode ?? 200) >= 400:
                 statusCode = objectResult.StatusCode!.Value;
                 ReadLegacyBody(objectResult.Value, out detail, out extensions);

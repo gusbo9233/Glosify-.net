@@ -53,77 +53,35 @@ public sealed class AssistantAnalyticsControllerTests
         Assert.Equal("Missed the requested change.", orchestrator.Comment);
     }
 
-    [Fact]
-    public async Task FeedbackValidation_UsesSharedProblemDetailsContract()
-    {
-        var orchestrator = new RecordingOrchestrator
-        {
-            SaveFeedbackException = new AssistantFeedbackValidationException("Unsupported feedback reason."),
-        };
-        var controller = CreateMobileController(orchestrator);
-
-        var result = await controller.SaveFeedback(
-            Guid.NewGuid(),
-            new AssistantFeedbackInput("down", ["made_up"], null),
-            default);
-
-        var problem = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(StatusCodes.Status400BadRequest, problem.StatusCode);
-        var details = Assert.IsType<ProblemDetails>(problem.Value);
-        Assert.Equal(ApiErrorCodes.BadRequest, details.Extensions["code"]);
-        Assert.Equal("Unsupported feedback reason.", details.Detail);
-    }
-
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task FeedbackOwnershipFailure_IsIndistinguishableFromMissingTurn(bool mobile)
+    public async Task FeedbackExceptions_UseTheSharedProblemDetailsContract(bool missingTurn)
     {
         var orchestrator = new RecordingOrchestrator
         {
-            SaveFeedbackException = new UnauthorizedAccessException(),
+            SaveFeedbackException = missingTurn
+                ? new AssistantTurnNotFoundException()
+                : new AssistantFeedbackValidationException("Unsupported feedback reason."),
         };
+        using var factory = CreateAuthenticatedFactory(orchestrator);
 
-        IActionResult result = mobile
-            ? await CreateMobileController(orchestrator).SaveFeedback(
-                Guid.NewGuid(),
-                new AssistantFeedbackInput("up", [], null),
-                default)
-            : await CreateWebController(orchestrator).SaveFeedback(
-                Guid.NewGuid(),
-                new AssistantFeedbackInput("up", [], null),
-                default);
+        var response = await factory.CreateClient().PutAsJsonAsync(
+            $"/api/assistant/turns/{Guid.NewGuid()}/feedback",
+            new AssistantFeedbackInput("down", ["made_up"], null));
 
-        var problem = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(StatusCodes.Status404NotFound, problem.StatusCode);
-        var details = Assert.IsType<ProblemDetails>(problem.Value);
-        Assert.Equal(ApiErrorCodes.NotFound, details.Extensions["code"]);
-        Assert.Equal("Assistant turn not found.", details.Detail);
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task MissingFeedbackTurn_UsesTheMaskedNotFoundContract(bool mobile)
-    {
-        var orchestrator = new RecordingOrchestrator
-        {
-            SaveFeedbackException = new AssistantTurnNotFoundException(),
-        };
-
-        IActionResult result = mobile
-            ? await CreateMobileController(orchestrator).SaveFeedback(
-                Guid.NewGuid(),
-                new AssistantFeedbackInput("up", [], null),
-                default)
-            : await CreateWebController(orchestrator).SaveFeedback(
-                Guid.NewGuid(),
-                new AssistantFeedbackInput("up", [], null),
-                default);
-
-        var problem = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(StatusCodes.Status404NotFound, problem.StatusCode);
-        Assert.Equal("Assistant turn not found.", Assert.IsType<ProblemDetails>(problem.Value).Detail);
+        Assert.Equal(
+            missingTurn ? HttpStatusCode.NotFound : HttpStatusCode.BadRequest,
+            response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var problem = Assert.IsType<ProblemDetails>(
+            await response.Content.ReadFromJsonAsync<ProblemDetails>());
+        Assert.Equal(
+            missingTurn ? ApiErrorCodes.NotFound : ApiErrorCodes.BadRequest,
+            problem.Extensions["code"]?.ToString());
+        Assert.Equal(
+            missingTurn ? "Assistant turn not found." : "Unsupported feedback reason.",
+            problem.Detail);
     }
 
     [Theory]
@@ -191,6 +149,10 @@ public sealed class AssistantAnalyticsControllerTests
             new AssistantFeedbackInput("up", [], null));
 
         Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+        Assert.Equal("application/problem+json", rejected.Content.Headers.ContentType?.MediaType);
+        var rejection = Assert.IsType<ProblemDetails>(
+            await rejected.Content.ReadFromJsonAsync<ProblemDetails>());
+        Assert.Equal(ApiErrorCodes.BadRequest, rejection.Extensions["code"]?.ToString());
         Assert.Equal(0, orchestrator.SaveFeedbackCount);
 
         var antiforgery = factory.Services.GetRequiredService<IAntiforgery>();
@@ -239,6 +201,24 @@ public sealed class AssistantAnalyticsControllerTests
 
         Assert.Equal(HttpStatusCode.OK, authenticated.StatusCode);
         Assert.Equal(UserId, orchestrator.UserId);
+    }
+
+    [Fact]
+    public async Task BearerClientMetrics_RejectsOutOfRangeDurationWithValidationProblemDetails()
+    {
+        var orchestrator = new RecordingOrchestrator();
+        using var factory = CreateAuthenticatedFactory(orchestrator);
+
+        var response = await factory.CreateClient().PutAsJsonAsync(
+            $"/api/assistant/turns/{Guid.NewGuid()}/client-metrics",
+            new AssistantClientMetricsInput(900_001));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var problem = Assert.IsType<ProblemDetails>(
+            await response.Content.ReadFromJsonAsync<ProblemDetails>());
+        Assert.Equal(ApiErrorCodes.ValidationFailed, problem.Extensions["code"]?.ToString());
+        Assert.Null(orchestrator.ClientDurationMs);
     }
 
     private static AssistantController CreateWebController(IAssistantOrchestrator orchestrator)

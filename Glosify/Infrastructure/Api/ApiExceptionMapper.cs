@@ -19,6 +19,11 @@ public static class ApiExceptionMapper
         CollectionNameConflictException => Error(409, ApiErrorCodes.CollectionNameConflict, exception),
         QuizCollectionNotFoundException => Error(400, ApiErrorCodes.QuizCollectionNotFound, exception),
         AssistantTurnInProgressException => Error(409, ApiErrorCodes.Conflict, exception),
+        AssistantFeedbackValidationException => Error(400, ApiErrorCodes.BadRequest, exception),
+        AssistantTurnNotFoundException => new ApiError(
+            404,
+            ApiErrorCodes.NotFound,
+            "Assistant turn not found."),
         InsufficientAiCreditsException => Error(402, ApiErrorCodes.PaymentRequired, exception),
         PaidServicesBudgetExhaustedException => Error(503, ApiErrorCodes.PaidServicesBudgetExhausted, exception),
         GenerativeAiValidationException => Error(400, ApiErrorCodes.ValidationFailed, exception),

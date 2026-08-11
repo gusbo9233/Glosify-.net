@@ -51,13 +51,14 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
             GenerationConfig = generationConfig,
         };
 
-        var response = await GenerateChargedAsync(
+        var generation = await GenerateChargedAsync(
             generativeModel,
             selectedModel,
             usageContext,
             apiRequest,
             outputTokenReserve,
             cancellationToken);
+        var response = generation.Response;
         LogUsage("json", selectedModel, response);
 
         var text = response?.Text ?? string.Empty;
@@ -116,13 +117,14 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
             GenerationConfig = generationConfig,
         };
 
-        var response = await GenerateChargedAsync(
+        var generation = await GenerateChargedAsync(
             generativeModel,
             _options.VisionModel,
             usageContext,
             apiRequest,
             outputTokenReserve,
             cancellationToken);
+        var response = generation.Response;
         LogUsage("image-text-extraction", _options.VisionModel, response);
 
         return response?.Text ?? string.Empty;
@@ -155,13 +157,14 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
             GenerationConfig = CreateGenerationConfig(assistantModel, 0.3f, outputTokenReserve),
         };
 
-        var response = await GenerateChargedAsync(
+        var generation = await GenerateChargedAsync(
             generativeModel,
             assistantModel,
             usageContext,
             apiRequest,
             outputTokenReserve,
             cancellationToken);
+        var response = generation.Response;
         LogUsage("agent-turn", assistantModel, response);
 
         var text = response?.Text ?? string.Empty;
@@ -192,9 +195,7 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
                 AiUsageProviders.Gemini,
                 assistantModel,
                 response?.ResponseId,
-                ExtractUsage(
-                    response,
-                    Math.Max(1, EstimatePromptTokens(apiRequest)) + Math.Max(0, outputTokenReserve)),
+                generation.Usage,
                 EffectiveRequestJson: JsonSerializer.Serialize(new
                 {
                     instructions = request.SystemInstruction,
@@ -335,7 +336,7 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
         return config;
     }
 
-    private async Task<GenerateContentResponse?> GenerateChargedAsync(
+    private async Task<ChargedGeneration> GenerateChargedAsync(
         GenerativeModel generativeModel,
         string modelName,
         AiUsageContext usageContext,
@@ -359,11 +360,12 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
         try
         {
             var response = await generativeModel.GenerateContent(request, cancellationToken: cancellationToken);
+            var usage = ExtractUsage(response, estimatedTokens);
             await _credits.CommitUsageAsync(
                 reservation.ReservationId,
-                ExtractUsage(response, estimatedTokens),
+                usage,
                 cancellationToken);
-            return response;
+            return new ChargedGeneration(response, usage);
         }
         catch
         {
@@ -371,6 +373,8 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
             throw;
         }
     }
+
+    private sealed record ChargedGeneration(GenerateContentResponse? Response, AiTokenUsage Usage);
 
     // Gemini charges a flat per-tile cost for images (258 tokens/tile); four tiles covers
     // the photo sizes the app accepts without counting the base64 payload as text.

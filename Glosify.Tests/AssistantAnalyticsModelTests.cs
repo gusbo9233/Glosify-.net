@@ -113,6 +113,13 @@ public sealed class AssistantAnalyticsModelTests
                 Kind = AiCreditTransactionKinds.UsageDebit,
                 OperationId = null,
                 AssistantTurnId = null,
+            },
+            new AiCreditTransaction
+            {
+                UserId = user.Id,
+                Kind = AiCreditTransactionKinds.UsageDebit,
+                OperationId = invocation.Id,
+                AssistantTurnId = turn.Id,
             });
         await context.SaveChangesAsync();
 
@@ -128,7 +135,12 @@ public sealed class AssistantAnalyticsModelTests
         Assert.Empty(await verification.AssistantFeedback.ToListAsync());
         Assert.Empty(await verification.AssistantFeedbackReasons.ToListAsync());
         Assert.Empty(await verification.AssistantMessages.ToListAsync());
-        Assert.Single(await verification.AiCreditTransactions.ToListAsync());
+        var transactions = await verification.AiCreditTransactions.ToListAsync();
+        Assert.Equal(2, transactions.Count);
+        var legacyTransaction = Assert.Single(transactions, transaction => transaction.OperationId is null);
+        Assert.Null(legacyTransaction.AssistantTurnId);
+        var linkedTransaction = Assert.Single(transactions, transaction => transaction.OperationId == invocation.Id);
+        Assert.Equal(turn.Id, linkedTransaction.AssistantTurnId);
     }
 
     [Fact]
