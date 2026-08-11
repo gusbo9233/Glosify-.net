@@ -15,6 +15,80 @@ namespace Glosify.Tests;
 public class ChangeApplierTests
 {
     [Fact]
+    public async Task Workflow_rolls_back_quiz_and_keeps_proposal_active_when_a_later_change_fails()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using var db = new SqliteGlosifyContext(options);
+        await db.Database.EnsureCreatedAsync();
+        var messageId = await SeedProposalAsync(db,
+        [
+            new PendingChange(PendingChangeKinds.CreateQuiz, JsonSerializer.SerializeToElement(new
+            {
+                name = "Must roll back",
+                source_language = "English",
+                target_language = "Polish",
+            })),
+            new PendingChange(PendingChangeKinds.CreateCollection, JsonSerializer.SerializeToElement(new
+            {
+                name = "Child",
+                language = "Polish",
+                parent_collection_id = Guid.NewGuid(),
+            })),
+        ]);
+        var workflow = new AssistantChangeWorkflow(
+            db,
+            CreateApplier(db),
+            new AssistantMessagePresenter(),
+            null!);
+
+        await Assert.ThrowsAsync<CollectionParentNotFoundException>(
+            () => workflow.ApplyAsync(messageId, "user-1", CancellationToken.None));
+
+        db.ChangeTracker.Clear();
+        Assert.Empty(await db.Quizzes.ToListAsync());
+        Assert.Equal(
+            AssistantMessageStatus.Active,
+            (await db.AssistantMessages.SingleAsync(message => message.Id == messageId)).Status);
+    }
+
+    [Fact]
+    public async Task Workflow_commits_creation_and_second_apply_does_not_duplicate_it()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using var db = new SqliteGlosifyContext(options);
+        await db.Database.EnsureCreatedAsync();
+        var messageId = await SeedProposalAsync(db,
+        [
+            new PendingChange(PendingChangeKinds.CreateQuiz, JsonSerializer.SerializeToElement(new
+            {
+                name = "Travel",
+                source_language = "English",
+                target_language = "Polish",
+            })),
+        ]);
+        var workflow = new AssistantChangeWorkflow(
+            db,
+            CreateApplier(db),
+            new AssistantMessagePresenter(),
+            null!);
+
+        var first = await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
+        var second = await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
+
+        Assert.Equal(1, first.Applied);
+        Assert.Equal("Travel", first.CreatedQuiz?.Name);
+        Assert.Equal(0, second.Applied);
+        Assert.Single(await db.Quizzes.ToListAsync());
+        Assert.Equal(
+            AssistantMessageStatus.Applied,
+            (await db.AssistantMessages.SingleAsync(message => message.Id == messageId)).Status);
+    }
+
+    [Fact]
     public async Task ApplyAsync_RollsBackAllChanges_WhenLaterCustomQuizChangeFails()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -146,11 +220,33 @@ public class ChangeApplierTests
 
         Assert.Equal(1, result.Applied);
         Assert.NotNull(result.CreatedQuizId);
+        Assert.Equal(result.CreatedQuizId, result.CreatedQuiz?.Id);
+        Assert.Equal("Book page", result.CreatedQuiz?.Name);
+        Assert.Equal("English", result.CreatedQuiz?.SourceLanguage);
+        Assert.Equal("Polish", result.CreatedQuiz?.TargetLanguage);
         Assert.NotNull(result.CreatedCustomQuizId);
         var word = await db.Words.SingleAsync(item => item.QuizId == result.CreatedQuizId);
         var custom = await new CustomQuizService(db).GetForEditorAsync(result.CreatedCustomQuizId!.Value, "user-1");
         Assert.True(custom!.IsPlayable);
         Assert.Equal(word.Id, custom.Document.Blocks.Single(block => block.Id == "answer").ExpectedBinding!.WordId);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_PropagatesAStaleCollectionAndCreatesNothing()
+    {
+        await using var db = CreateContext();
+        var change = new PendingChange(PendingChangeKinds.CreateQuiz, JsonSerializer.SerializeToElement(new
+        {
+            name = "Travel",
+            source_language = "English",
+            target_language = "Polish",
+            collection_id = Guid.NewGuid(),
+        }));
+
+        await Assert.ThrowsAsync<QuizCollectionNotFoundException>(
+            () => CreateApplier(db).ApplyAsync(null, "user-1", [change], CancellationToken.None));
+
+        Assert.Empty(await db.Quizzes.ToListAsync());
     }
 
     private static PendingChange AtomicElement(string draftRef, object block) =>
@@ -420,6 +516,41 @@ public class ChangeApplierTests
             new QuizService(db, null!),
             new CollectionService(db),
             NullLogger<ChangeApplier>.Instance);
+    }
+
+    private static async Task<Guid> SeedProposalAsync(
+        GlosifyContext db,
+        IReadOnlyList<PendingChange> changes)
+    {
+        var threadId = Guid.NewGuid();
+        var messageId = Guid.NewGuid();
+        db.Users.Add(new ApplicationUser
+        {
+            Id = "user-1",
+            UserName = "user-1",
+            NormalizedUserName = "USER-1",
+        });
+        db.AssistantThreads.Add(new AssistantThread
+        {
+            Id = threadId,
+            UserId = "user-1",
+            Title = "Apply test",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        });
+        db.AssistantMessages.Add(new AssistantMessage
+        {
+            Id = messageId,
+            ThreadId = threadId,
+            Sequence = 0,
+            Role = AssistantMessageRole.Model,
+            ContentJson = "{\"parts\":[]}",
+            PendingChangesJson = JsonSerializer.Serialize(changes),
+            Status = AssistantMessageStatus.Active,
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        return messageId;
     }
 
     private static GlosifyContext CreateContext()

@@ -1,5 +1,5 @@
 import { createAssistantApi } from './assistant/api.js';
-import { chooseInitialChat, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
+import { chooseInitialChat, createRecoverablePromiseQueue, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
 import { escapeHtml, formatChatDate } from './assistant/presentation.js';
 
 (() => {
@@ -162,16 +162,28 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
 
     const materialLabel = () => materialSelector?.selectedOptions?.[0]?.dataset.contextLabel || null;
 
+    const contextWrites = createRecoverablePromiseQueue(({ threadId, payload }) => updateChat(threadId, payload));
+
+    const enqueueContextWrite = (snapshot) => contextWrites(snapshot).then(
+        () => true,
+        () => {
+            setStatus('Could not save chat context.', true);
+            return false;
+        });
+
     const persistContext = () => {
         if (!activeThreadId) {
-            return;
+            return Promise.resolve(true);
         }
-        updateChat(activeThreadId, {
-            contextQuizId: quizId,
-            ...materialPayload(),
-            updateContext: true,
-        }).catch(() => {
-            setStatus('Could not save chat context.', true);
+        // Capture the whole context at invocation time. Later picker changes must not
+        // alter this queued request before it reaches the server.
+        return enqueueContextWrite({
+            threadId: activeThreadId,
+            payload: {
+                contextQuizId: quizId,
+                ...materialPayload(),
+                updateContext: true,
+            },
         });
     };
 
@@ -197,8 +209,9 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         }
 
         if (persist) {
-            persistContext();
+            return persistContext();
         }
+        return Promise.resolve(true);
     };
 
     const setQuizContext = (nextQuizId, label, persist = false) => {
@@ -217,8 +230,9 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         }
 
         if (persist) {
-            persistContext();
+            return persistContext();
         }
+        return Promise.resolve(true);
     };
 
     const loadChats = async () => {
@@ -329,17 +343,23 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         setQuizContext(contextQuizId, contextQuizName, false);
         const adoptsPageQuiz = pageQuizId && chat?.contextQuizId !== pageQuizId;
         const adoptsPageMaterial = !storedId && materialId;
+        let contextPersisted = true;
         if (adoptsPageQuiz || adoptsPageMaterial) {
-            await updateChat(threadId, {
-                contextQuizId: quizId,
-                ...materialPayload(),
-                updateContext: true,
+            contextPersisted = await enqueueContextWrite({
+                threadId,
+                payload: {
+                    contextQuizId: quizId,
+                    ...materialPayload(),
+                    updateContext: true,
+                },
             });
         }
         renderChatList();
         await loadHistory(threadId);
         switchPane('chat');
-        setStatus('');
+        if (contextPersisted) {
+            setStatus('');
+        }
     };
 
     const renderChatList = () => {
@@ -359,6 +379,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         for (const chat of chats) {
             const item = document.createElement('article');
             item.className = 'assistant-chat-item';
+            item.dataset.assistantChatItem = '';
             item.classList.toggle('is-active', chat.id === activeThreadId);
 
             const main = document.createElement('button');
@@ -500,6 +521,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
     const renderPendingChanges = (message) => {
         const card = document.createElement('div');
         card.className = 'assistant-pending-card';
+        card.dataset.assistantPendingCard = '';
         card.dataset.messageId = message.id;
         const isSentenceFix = message.pendingChanges.every(change => change.kind === 'repair_sentence');
         const isLibraryChange = message.pendingChanges.every(change => change.kind === 'create_quiz' || change.kind === 'create_collection');
@@ -584,10 +606,17 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
             const data = await response.json();
             replaceActionsWithTag(card, `Applied (${data.applied})`, 'success');
             if (data.createdQuizId) {
-                await refreshQuizSelector(data.createdQuizId);
+                const contextSaved = await selectCreatedQuiz(data.createdQuiz || {
+                    id: data.createdQuizId,
+                    name: 'Created quiz',
+                    sourceLanguage: '',
+                    targetLanguage: '',
+                });
                 renderQuizCreatedMessage(data.createdQuizId);
                 renderCustomQuizCreatedMessage(data.createdCustomQuizId, data.createdCustomQuizElements);
-                setStatus(data.createdCustomQuizId ? 'Quiz and custom quiz created.' : 'Quiz created.');
+                setStatus(contextSaved
+                    ? data.createdCustomQuizId ? 'Quiz and custom quiz created.' : 'Quiz created.'
+                    : 'Quiz created, but its chat context could not be saved.', !contextSaved);
             } else if (data.createdCustomQuizId) {
                 renderCustomQuizCreatedMessage(data.createdCustomQuizId, data.createdCustomQuizElements);
                 setStatus(data.createdCustomQuizElements
@@ -646,34 +675,22 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         }
     };
 
-    const refreshQuizSelector = async (createdQuizId) => {
-        if (!quizSelector) {
-            return;
-        }
-
-        const response = await fetch('/api/quizzes', {
-            headers: { 'Accept': 'application/json' },
-        });
-        if (!response.ok) {
-            return;
-        }
-
-        const quizzes = await response.json();
-        quizSelector.innerHTML = '<option value="" data-context-label="Glosify">No quiz selected</option>';
-        let selectedLabel = null;
-        for (const quiz of quizzes ?? []) {
-            const option = document.createElement('option');
-            option.value = quiz.id;
-            option.dataset.contextLabel = quiz.name;
-            option.textContent = `${quiz.name} (${quiz.sourceLanguage} -> ${quiz.targetLanguage})`;
-            option.selected = String(quiz.id).toLowerCase() === String(createdQuizId).toLowerCase();
-            if (option.selected) {
-                selectedLabel = quiz.name;
+    const selectCreatedQuiz = async (createdQuiz) => {
+        if (quizSelector) {
+            let option = Array.from(quizSelector.options)
+                .find(candidate => candidate.value.toLowerCase() === createdQuiz.id.toLowerCase());
+            if (!option) {
+                option = document.createElement('option');
+                option.value = createdQuiz.id;
+                quizSelector.appendChild(option);
             }
-            quizSelector.appendChild(option);
+            option.dataset.contextLabel = createdQuiz.name;
+            option.textContent = createdQuiz.sourceLanguage && createdQuiz.targetLanguage
+                ? `${createdQuiz.name} (${createdQuiz.sourceLanguage} -> ${createdQuiz.targetLanguage})`
+                : createdQuiz.name;
         }
 
-        setQuizContext(createdQuizId, selectedLabel, true);
+        return setQuizContext(createdQuiz.id, createdQuiz.name, true);
     };
 
     tabButtons.forEach(tab => {
@@ -733,14 +750,18 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
     quizSelector?.addEventListener('change', async () => {
         const selectedOption = quizSelector.selectedOptions?.[0] || null;
         const label = selectedOption?.dataset.contextLabel || 'Glosify';
-        setQuizContext(quizSelector.value || null, label, true);
-        setStatus(quizId ? `Quiz set to ${label}.` : 'No quiz selected.');
+        const contextPersisted = await setQuizContext(quizSelector.value || null, label, true);
+        if (contextPersisted) {
+            setStatus(quizId ? `Quiz set to ${label}.` : 'No quiz selected.');
+        }
     });
 
     materialSelector?.addEventListener('change', async () => {
         const [kind, id] = (materialSelector.value || '').split(':');
-        setMaterialContext(kind || null, id || null, true);
-        setStatus(materialId ? `Reading ${materialLabel()}.` : 'No material selected.');
+        const contextPersisted = await setMaterialContext(kind || null, id || null, true);
+        if (contextPersisted) {
+            setStatus(materialId ? `Reading ${materialLabel()}.` : 'No material selected.');
+        }
     });
 
     document.addEventListener('keydown', (event) => {

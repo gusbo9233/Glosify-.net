@@ -133,7 +133,7 @@
                             <label class="assistant-model-picker">
                                 <span class="visually-hidden">Assistant model</span>
                                 <select data-assistant-model-select aria-label="Assistant model">
-                                    <option value="">Auto</option>
+                                    <option value="">Auto · @Model.DefaultModelLabel</option>
                                     @foreach (var assistantModel in Model.Models)
                                     {
                                         <option value="@assistantModel.Deployment">@assistantModel.Label</option>

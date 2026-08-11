@@ -5,6 +5,7 @@ using Glosify.Models.CustomQuizzes;
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -138,7 +139,8 @@ public class AssistantController : ControllerBase
         }
         catch (InvalidOperationException ex) when (
             ex is not InsufficientAiCreditsException
-            and not MonthlyAiBudgetExceededException)
+            and not MonthlyAiBudgetExceededException
+            and not AssistantTurnInProgressException)
         {
             return BadRequest(new { error = ex.Message });
         }
@@ -175,7 +177,10 @@ public class AssistantController : ControllerBase
             var applied = await _orchestrator.ApplyGlobalPendingChangesAsync(messageId, userId, cancellationToken);
             return Ok(applied);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException ex) when (
+            ex is not CollectionParentNotFoundException
+            and not CollectionNameConflictException
+            and not QuizCollectionNotFoundException)
         {
             return NotFound(new { error = ex.Message });
         }
@@ -243,7 +248,8 @@ public class AssistantController : ControllerBase
         }
         catch (InvalidOperationException ex) when (
             ex is not InsufficientAiCreditsException
-            and not MonthlyAiBudgetExceededException)
+            and not MonthlyAiBudgetExceededException
+            and not AssistantTurnInProgressException)
         {
             return BadRequest(new { error = ex.Message });
         }
@@ -259,7 +265,10 @@ public class AssistantController : ControllerBase
             var applied = await _orchestrator.ApplyPendingChangesAsync(messageId, userId, cancellationToken);
             return Ok(applied);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException ex) when (
+            ex is not CollectionParentNotFoundException
+            and not CollectionNameConflictException
+            and not QuizCollectionNotFoundException)
         {
             return NotFound(new { error = ex.Message });
         }

@@ -5,6 +5,7 @@ using Glosify.Models.CustomQuizzes;
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.Controllers.Api;
@@ -99,7 +100,8 @@ public class AssistantApiController : ApiControllerBase
         }
         catch (InvalidOperationException ex) when (
             ex is not InsufficientAiCreditsException
-            and not MonthlyAiBudgetExceededException)
+            and not MonthlyAiBudgetExceededException
+            and not AssistantTurnInProgressException)
         {
             return BadRequest(ex.Message);
         }
@@ -113,7 +115,10 @@ public class AssistantApiController : ApiControllerBase
             var applied = await _orchestrator.ApplyGlobalPendingChangesAsync(messageId, User.GetUserId(), cancellationToken);
             return Ok(applied);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException ex) when (
+            ex is not CollectionParentNotFoundException
+            and not CollectionNameConflictException
+            and not QuizCollectionNotFoundException)
         {
             return NotFound(ex.Message);
         }
