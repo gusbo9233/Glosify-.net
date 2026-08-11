@@ -95,15 +95,36 @@ public interface IAssistantOrchestrator
     Task ResetGlobalSessionAsync(
         string userId,
         CancellationToken cancellationToken = default);
+
+    Task<AssistantFeedbackView> SaveFeedbackAsync(
+        Guid turnId,
+        string userId,
+        string rating,
+        IReadOnlyCollection<string>? reasonCodes,
+        string? comment,
+        CancellationToken cancellationToken = default);
+
+    Task DeleteFeedbackAsync(
+        Guid turnId,
+        string userId,
+        CancellationToken cancellationToken = default);
+
+    Task RecordClientDurationAsync(
+        Guid turnId,
+        string userId,
+        double clientDurationMs,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed record AssistantTurnResponse(
     Guid ThreadId,
+    Guid TurnId,
     Guid AssistantMessageId,
     string AssistantText,
     IReadOnlyList<AssistantToolEvent> ToolEvents,
     IReadOnlyList<AssistantPendingChangeView> PendingChanges,
-    string Status);
+    string Status,
+    AssistantFeedbackView? Feedback = null);
 
 public sealed record AssistantToolEvent(string Name, string ArgsJson, string ResultSummary);
 
@@ -128,12 +149,21 @@ public sealed record AssistantChatSummary(
 
 public sealed record AssistantMessageView(
     Guid Id,
+    Guid? TurnId,
     string Role,
     string Text,
     IReadOnlyList<AssistantToolEvent> ToolEvents,
     IReadOnlyList<AssistantPendingChangeView> PendingChanges,
     string Status,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    bool CanRate,
+    AssistantFeedbackView? Feedback = null);
+
+public sealed record AssistantFeedbackView(
+    string Rating,
+    IReadOnlyList<string> ReasonCodes,
+    string? Comment,
+    DateTimeOffset UpdatedAt);
 
 public sealed record AssistantDocumentContext(Guid DocumentId, int PageNumber);
 

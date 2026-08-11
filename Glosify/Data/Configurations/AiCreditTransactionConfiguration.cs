@@ -22,6 +22,8 @@ internal sealed class AiCreditTransactionConfiguration : IEntityTypeConfiguratio
         entity.Property(transaction => transaction.BudgetPeriodKey).HasMaxLength(7);
         entity.HasIndex(transaction => new { transaction.UserId, transaction.CreatedAt });
         entity.HasIndex(transaction => transaction.ReservationId);
+        entity.HasIndex(transaction => transaction.OperationId);
+        entity.HasIndex(transaction => transaction.AssistantTurnId);
         entity.HasIndex(transaction => transaction.BudgetPeriodKey);
 
         entity.HasOne<ApplicationUser>()

@@ -12,12 +12,18 @@ internal sealed class AssistantMessageConfiguration : IEntityTypeConfiguration<A
         entity.Property(m => m.Role).HasMaxLength(16).IsRequired();
         entity.Property(m => m.Status).HasMaxLength(16).IsRequired().IsConcurrencyToken();
         entity.HasIndex(m => new { m.ThreadId, m.Sequence }).IsUnique();
+        entity.HasIndex(m => m.TurnId);
         entity.HasIndex(m => m.ContextQuizId);
         entity.HasOne<AssistantThread>()
             .WithMany()
             .HasForeignKey(m => m.ThreadId)
             .HasConstraintName("FK_AssistantMessages_AssistantThreads_ThreadId")
             .OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne<AssistantTurn>()
+            .WithMany()
+            .HasForeignKey(m => m.TurnId)
+            .HasConstraintName("FK_AssistantMessages_AssistantTurns_TurnId")
+            .OnDelete(DeleteBehavior.NoAction);
         entity.HasOne<Quiz>()
             .WithMany()
             .HasForeignKey(m => m.ContextQuizId)

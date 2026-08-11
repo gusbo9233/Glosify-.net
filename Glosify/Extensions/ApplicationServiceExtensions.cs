@@ -180,7 +180,14 @@ public static class ApplicationServiceExtensions
         services.AddScoped<AssistantContextResolver>();
         services.AddScoped<AssistantMessagePresenter>();
         services.AddScoped<AssistantPromptBuilder>();
+        services.AddScoped<AssistantTelemetryDeletionQueue>();
         services.AddScoped<AssistantThreadStore>();
+        services.AddScoped<AssistantAnalyticsStore>();
+        services.AddScoped<AssistantFeedbackService>();
+        services.Configure<AssistantAnalyticsOptions>(
+            configuration.GetSection(AssistantAnalyticsOptions.SectionName));
+        services.AddHttpClient(AssistantTelemetryDeletionService.HttpClientName);
+        services.AddHostedService<AssistantTelemetryDeletionService>();
         services.AddScoped<IAssistantTurnLeaseService, AssistantTurnLeaseService>();
         services.AddScoped<AssistantTurnRunner>();
         services.AddScoped<AssistantChangeWorkflow>();

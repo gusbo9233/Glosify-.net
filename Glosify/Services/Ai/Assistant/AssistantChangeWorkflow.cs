@@ -73,6 +73,7 @@ internal sealed class AssistantChangeWorkflow(
             changes,
             cancellationToken);
         message.Status = AssistantMessageStatus.Applied;
+        await UpdateTurnOutcomeAsync(message.TurnId, AssistantChangeOutcome.Applied, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
         return result;
     }
@@ -89,6 +90,7 @@ internal sealed class AssistantChangeWorkflow(
         }
 
         message.Status = AssistantMessageStatus.Rejected;
+        await UpdateTurnOutcomeAsync(message.TurnId, AssistantChangeOutcome.Rejected, cancellationToken);
         try
         {
             await context.SaveChangesAsync(cancellationToken);
@@ -122,5 +124,26 @@ internal sealed class AssistantChangeWorkflow(
         }
 
         return message;
+    }
+
+    private async Task UpdateTurnOutcomeAsync(
+        Guid? turnId,
+        string outcome,
+        CancellationToken cancellationToken)
+    {
+        if (!turnId.HasValue)
+        {
+            return;
+        }
+
+        var turn = await context.AssistantTurns
+            .SingleOrDefaultAsync(candidate => candidate.Id == turnId.Value, cancellationToken);
+        if (turn is null)
+        {
+            return;
+        }
+
+        turn.ChangeOutcome = outcome;
+        turn.ChangeOutcomeAt = DateTimeOffset.UtcNow;
     }
 }

@@ -186,7 +186,23 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
             });
         }
 
-        return new AgentTurnResult(text, functionCalls);
+        return new AgentTurnResult(text, functionCalls)
+        {
+            Metadata = new AgentInvocationMetadata(
+                AiUsageProviders.Gemini,
+                assistantModel,
+                response?.ResponseId,
+                ExtractUsage(response, 0),
+                EffectiveRequestJson: JsonSerializer.Serialize(new
+                {
+                    instructions = request.SystemInstruction,
+                    contextInstruction = request.ContextInstruction,
+                    history = request.History,
+                    tools = request.Tools,
+                    model = assistantModel,
+                    profile = request.Profile.ToString(),
+                }, JsonOptions)),
+        };
     }
 
     private static Content BuildContent(AgentTurn turn)

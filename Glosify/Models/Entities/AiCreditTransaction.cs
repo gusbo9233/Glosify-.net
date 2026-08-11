@@ -5,6 +5,8 @@ public sealed class AiCreditTransaction
     public Guid Id { get; set; } = Guid.NewGuid();
     public string UserId { get; set; } = string.Empty;
     public Guid? ReservationId { get; set; }
+    public Guid? OperationId { get; set; }
+    public Guid? AssistantTurnId { get; set; }
     public string Kind { get; set; } = AiCreditTransactionKinds.UsageDebit;
     public int CreditAmount { get; set; }
     public int BalanceAfterCredits { get; set; }

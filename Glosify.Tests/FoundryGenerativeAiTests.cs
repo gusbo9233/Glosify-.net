@@ -153,6 +153,7 @@ public sealed class FoundryGenerativeAiTests
             call => Assert.Equal("call-b", call.CallId));
         var reservation = Assert.Single(credits.Reservations);
         Assert.Equal("foundry", reservation.Provider);
+        Assert.True(invoker.EnableSensitiveData);
         Assert.Equal("gpt-5.4-mini", reservation.Model);
         Assert.Equal(
             new AiTokenUsage(91, 27, 3, 0, 118),
@@ -226,6 +227,7 @@ public sealed class FoundryGenerativeAiTests
             new AiTokenUsage(18, 4, 0, 0, 22),
             Assert.Single(credits.Commits).Usage);
         Assert.Empty(credits.Releases);
+        Assert.False(invoker.EnableSensitiveData);
     }
 
     [Fact]
@@ -341,6 +343,7 @@ public sealed class FoundryGenerativeAiTests
             Assert.Single(invoker.Messages).Contents.OfType<DataContent>());
         Assert.Equal(expectedType, data.MediaType);
         Assert.Single(credits.Commits);
+        Assert.False(invoker.EnableSensitiveData);
     }
 
     [Fact]
@@ -940,6 +943,7 @@ public sealed class FoundryGenerativeAiTests
         public IReadOnlyList<AITool> Tools { get; private set; } = [];
         public string? Deployment { get; private set; }
         public string? Instructions { get; private set; }
+        public bool EnableSensitiveData { get; private set; }
         public FoundryAuthoredAgent? AuthoredAgent { get; set; }
         public List<string> AuthoredLookups { get; } = [];
 
@@ -949,12 +953,14 @@ public sealed class FoundryGenerativeAiTests
             IReadOnlyList<ChatMessage> messages,
             IReadOnlyList<AITool> tools,
             int maxOutputTokens,
+            bool enableSensitiveData,
             CancellationToken cancellationToken)
         {
             Deployment = deployment;
             Instructions = instructions;
             Messages = messages;
             Tools = tools;
+            EnableSensitiveData = enableSensitiveData;
             return Error is null
                 ? Task.FromResult(Response)
                 : Task.FromException<AgentResponse>(Error);

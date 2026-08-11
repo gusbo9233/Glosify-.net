@@ -1,5 +1,6 @@
 using Glosify.Extensions;
 using Glosify.Filters;
+using Glosify.Infrastructure.Api;
 using Glosify.Models.Api;
 using Glosify.Models.CustomQuizzes;
 using Glosify.Services;
@@ -141,4 +142,95 @@ public class AssistantApiController : ApiControllerBase
             return NotFound(ex.Message);
         }
     }
+
+    [HttpPut("turns/{turnId:guid}/feedback")]
+    public async Task<IActionResult> SaveFeedback(
+        Guid turnId,
+        [FromBody] AssistantFeedbackInput input,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _orchestrator.SaveFeedbackAsync(
+                turnId,
+                User.GetUserId(),
+                input.Rating,
+                input.ReasonCodes,
+                input.Comment,
+                cancellationToken));
+        }
+        catch (ArgumentException ex)
+        {
+            return GlosifyProblemDetails.Result(
+                HttpContext,
+                StatusCodes.Status400BadRequest,
+                ApiErrorCodes.BadRequest,
+                ex.Message);
+        }
+        catch (InvalidOperationException)
+        {
+            return FeedbackTurnNotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return FeedbackTurnNotFound();
+        }
+    }
+
+    [HttpDelete("turns/{turnId:guid}/feedback")]
+    public async Task<IActionResult> DeleteFeedback(Guid turnId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _orchestrator.DeleteFeedbackAsync(turnId, User.GetUserId(), cancellationToken);
+            return NoContent();
+        }
+        catch (InvalidOperationException)
+        {
+            return FeedbackTurnNotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return FeedbackTurnNotFound();
+        }
+    }
+
+    [HttpPut("turns/{turnId:guid}/client-metrics")]
+    public async Task<IActionResult> SaveClientMetrics(
+        Guid turnId,
+        [FromBody] AssistantClientMetricsInput input,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _orchestrator.RecordClientDurationAsync(
+                turnId,
+                User.GetUserId(),
+                input.ClientDurationMs,
+                cancellationToken);
+            return NoContent();
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            return GlosifyProblemDetails.Result(
+                HttpContext,
+                StatusCodes.Status400BadRequest,
+                ApiErrorCodes.BadRequest,
+                ex.Message);
+        }
+        catch (InvalidOperationException)
+        {
+            return FeedbackTurnNotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return FeedbackTurnNotFound();
+        }
+    }
+
+    private ObjectResult FeedbackTurnNotFound() => GlosifyProblemDetails.Result(
+        HttpContext,
+        StatusCodes.Status404NotFound,
+        ApiErrorCodes.NotFound,
+        "Assistant turn not found.");
 }

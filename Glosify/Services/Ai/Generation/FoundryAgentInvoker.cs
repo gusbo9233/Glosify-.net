@@ -16,6 +16,7 @@ public interface IFoundryAgentInvoker
         IReadOnlyList<ChatMessage> messages,
         IReadOnlyList<AITool> tools,
         int maxOutputTokens,
+        bool enableSensitiveData,
         CancellationToken cancellationToken);
 
     Task<AgentResponse<T>> RunStructuredAsync<T>(
@@ -199,9 +200,10 @@ internal sealed class FoundryAgentInvoker(
         IReadOnlyList<ChatMessage> messages,
         IReadOnlyList<AITool> tools,
         int maxOutputTokens,
+        bool enableSensitiveData,
         CancellationToken cancellationToken)
     {
-        var agent = CreateAgent(deployment, instructions, tools, maxOutputTokens);
+        var agent = CreateAgent(deployment, instructions, tools, maxOutputTokens, enableSensitiveData);
         return agent.RunAsync(
             messages,
             session: null,
@@ -216,7 +218,7 @@ internal sealed class FoundryAgentInvoker(
         int maxOutputTokens,
         CancellationToken cancellationToken)
     {
-        var agent = CreateAgent(deployment, instructions, [], maxOutputTokens);
+        var agent = CreateAgent(deployment, instructions, [], maxOutputTokens, enableSensitiveData: false);
         return agent.RunAsync<T>(
             prompt,
             session: null,
@@ -225,11 +227,12 @@ internal sealed class FoundryAgentInvoker(
             cancellationToken);
     }
 
-    private ChatClientAgent CreateAgent(
+    private AIAgent CreateAgent(
         string deployment,
         string instructions,
         IReadOnlyList<AITool> tools,
-        int maxOutputTokens)
+        int maxOutputTokens,
+        bool enableSensitiveData)
     {
         var options = new ChatClientAgentOptions
         {
@@ -249,6 +252,11 @@ internal sealed class FoundryAgentInvoker(
             options,
             clientFactory: null,
             loggerFactory,
-            services: null);
+            services: null)
+            .AsBuilder()
+            .UseOpenTelemetry(
+                GenerativeAiTelemetry.ActivitySourceName,
+                telemetry => telemetry.EnableSensitiveData = enableSensitiveData)
+            .Build();
     }
 }

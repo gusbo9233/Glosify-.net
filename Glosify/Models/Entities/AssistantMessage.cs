@@ -11,6 +11,9 @@ public class AssistantMessage
     [Column("thread_id")]
     public Guid ThreadId { get; set; }
 
+    [Column("turn_id")]
+    public Guid? TurnId { get; set; }
+
     [Column("context_quiz_id")]
     public Guid? ContextQuizId { get; set; }
 

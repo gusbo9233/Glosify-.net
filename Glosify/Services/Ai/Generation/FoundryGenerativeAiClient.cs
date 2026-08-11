@@ -108,6 +108,7 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                 [new ChatMessage(ChatRole.User, [new TextContent(prompt)])],
                 [],
                 outputReserve,
+                enableSensitiveData: false,
                 token),
             cancellationToken,
             validateResponse: response =>
@@ -182,6 +183,7 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                 messages,
                 [],
                 outputReserve,
+                enableSensitiveData: false,
                 token),
             cancellationToken);
 
@@ -224,6 +226,7 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                 messages,
                 tools,
                 outputReserve,
+                enableSensitiveData: true,
                 token),
             cancellationToken);
 
@@ -250,20 +253,32 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                     deployment));
         }
 
-        return new AgentTurnResult(response.Text ?? string.Empty, calls);
+        var configuredAgent = ResolveConfiguredAgent(request.Profile);
+        return new AgentTurnResult(response.Text ?? string.Empty, calls)
+        {
+            Metadata = new AgentInvocationMetadata(
+                Provider,
+                deployment,
+                response.ResponseId,
+                ExtractUsage(response.Usage, 0),
+                configuredAgent?.Name,
+                configuredAgent?.Version,
+                JsonSerializer.Serialize(new
+                {
+                    instructions = instruction,
+                    history = request.History,
+                    tools = declarations,
+                    model = deployment,
+                    profile = request.Profile.ToString(),
+                }, JsonOptions)),
+        };
     }
 
     private async Task<FoundryAuthoredAgent?> ResolveAuthoredAgentAsync(
         AssistantAgentProfile profile,
         CancellationToken cancellationToken)
     {
-        var configured = profile switch
-        {
-            AssistantAgentProfile.CustomQuizBuilder => _options.Agents.CustomQuizBuilder,
-            AssistantAgentProfile.QuizAssistant => _options.Agents.QuizAssistant,
-            AssistantAgentProfile.Librarian => _options.Agents.Librarian,
-            _ => null,
-        };
+        var configured = ResolveConfiguredAgent(profile);
 
         return configured is null || !configured.IsConfigured
             ? null
@@ -271,6 +286,17 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                 configured.Name.Trim(),
                 configured.Version.Trim(),
                 cancellationToken);
+    }
+
+    private FoundryAgentVersionOptions? ResolveConfiguredAgent(AssistantAgentProfile profile)
+    {
+        return profile switch
+        {
+            AssistantAgentProfile.CustomQuizBuilder => _options.Agents.CustomQuizBuilder,
+            AssistantAgentProfile.QuizAssistant => _options.Agents.QuizAssistant,
+            AssistantAgentProfile.Librarian => _options.Agents.Librarian,
+            _ => null,
+        };
     }
 
     // The user's model choice always wins. An authored agent may name a model, but it is

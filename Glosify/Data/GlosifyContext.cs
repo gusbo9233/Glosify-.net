@@ -23,6 +23,12 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<AssistantThread> AssistantThreads { get; set; }
     public DbSet<AssistantMessage> AssistantMessages { get; set; }
     public DbSet<AssistantPendingChange> AssistantPendingChanges { get; set; }
+    public DbSet<AssistantTurn> AssistantTurns { get; set; }
+    public DbSet<AssistantModelInvocation> AssistantModelInvocations { get; set; }
+    public DbSet<AssistantToolExecution> AssistantToolExecutions { get; set; }
+    public DbSet<AssistantFeedback> AssistantFeedback { get; set; }
+    public DbSet<AssistantFeedbackReason> AssistantFeedbackReasons { get; set; }
+    public DbSet<AssistantTelemetryDeletionRequest> AssistantTelemetryDeletionRequests { get; set; }
     public DbSet<AiCreditAccount> AiCreditAccounts { get; set; }
     public DbSet<AiCreditTransaction> AiCreditTransactions { get; set; }
     public DbSet<AiMonthlyBudget> AiMonthlyBudgets { get; set; }

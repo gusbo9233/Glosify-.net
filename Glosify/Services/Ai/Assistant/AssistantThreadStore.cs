@@ -12,7 +12,8 @@ internal static class AssistantThreadDefaults
 internal sealed class AssistantThreadStore(
     GlosifyContext context,
     AssistantContextResolver contextResolver,
-    AssistantMessagePresenter presenter)
+    AssistantMessagePresenter presenter,
+    AssistantTelemetryDeletionQueue telemetryDeletionQueue)
 {
     public async Task<IReadOnlyList<AssistantChatSummary>> ListAsync(
         string userId,
@@ -103,6 +104,7 @@ internal sealed class AssistantThreadStore(
     public async Task DeleteAsync(Guid threadId, string userId, CancellationToken cancellationToken)
     {
         var thread = await GetOwnedAsync(threadId, userId, cancellationToken);
+        await telemetryDeletionQueue.QueueThreadAsync(thread.Id, cancellationToken);
         context.AssistantThreads.Remove(thread);
         await context.SaveChangesAsync(cancellationToken);
     }
@@ -333,6 +335,24 @@ internal sealed class AssistantThreadStore(
         IReadOnlyList<AssistantMessage> messages,
         CancellationToken cancellationToken)
     {
+        var turnIds = messages
+            .Where(message => message.TurnId.HasValue)
+            .Select(message => message.TurnId!.Value)
+            .Distinct()
+            .ToList();
+        var feedbackByTurn = turnIds.Count == 0
+            ? new Dictionary<Guid, AssistantFeedback>()
+            : await context.AssistantFeedback
+                .AsNoTracking()
+                .Include(feedback => feedback.Reasons)
+                .Where(feedback => turnIds.Contains(feedback.TurnId))
+                .ToDictionaryAsync(feedback => feedback.TurnId, cancellationToken);
+        var finalMessageByTurn = turnIds.Count == 0
+            ? new Dictionary<Guid, Guid?>()
+            : await context.AssistantTurns
+                .AsNoTracking()
+                .Where(turn => turnIds.Contains(turn.Id))
+                .ToDictionaryAsync(turn => turn.Id, turn => turn.FinalMessageId, cancellationToken);
         var parsed = messages
             .Select(message => (Message: message, Changes: presenter.ParseStoredChanges(message.PendingChangesJson)))
             .ToList();
@@ -358,6 +378,7 @@ internal sealed class AssistantThreadStore(
                     : emptyLabels;
                 return new AssistantMessageView(
                     entry.Message.Id,
+                    entry.Message.TurnId,
                     entry.Message.Role,
                     presenter.ExtractVisibleText(entry.Message),
                     [],
@@ -365,7 +386,14 @@ internal sealed class AssistantThreadStore(
                         .Select(change => presenter.PresentPendingChange(change, wordLabels))
                         .ToList(),
                     entry.Message.Status,
-                    entry.Message.CreatedAt);
+                    entry.Message.CreatedAt,
+                    entry.Message.TurnId is Guid candidateTurnId
+                        && finalMessageByTurn.GetValueOrDefault(candidateTurnId) == entry.Message.Id,
+                    entry.Message.TurnId is Guid turnId
+                        && finalMessageByTurn.GetValueOrDefault(turnId) == entry.Message.Id
+                        && feedbackByTurn.TryGetValue(turnId, out var feedback)
+                            ? AssistantFeedbackService.Map(feedback)
+                            : null);
             })
             .ToList();
     }

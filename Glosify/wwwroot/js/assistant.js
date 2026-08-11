@@ -1,6 +1,7 @@
 import { createAssistantApi } from './assistant/api.js';
 import { chooseInitialChat, createRecoverablePromiseQueue, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
 import { escapeHtml, formatChatDate } from './assistant/presentation.js';
+import { feedbackReasons, normalizeFeedback, validClientDuration } from './assistant/feedback.js';
 
 (() => {
     const panel = document.querySelector('[data-assistant-panel]');
@@ -32,6 +33,8 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
     const chatUrl = (threadId) => `/Assistant/Chats/${threadId}`;
     const applyUrl = (messageId) => `/Assistant/Apply/${messageId}`;
     const rejectUrl = (messageId) => `/Assistant/Reject/${messageId}`;
+    const feedbackUrl = (turnId) => `/Assistant/Turns/${turnId}/Feedback`;
+    const clientMetricsUrl = (turnId) => `/Assistant/Turns/${turnId}/ClientMetrics`;
     // Session-scoped on purpose: a new browser session starts on a fresh chat
     // instead of resuming whatever was open days ago.
     const activeChatStorageKey = 'glosify.assistant.activeChatId';
@@ -453,6 +456,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         const row = document.createElement('article');
         row.className = `assistant-message assistant-message-${message.role}`;
         row.dataset.messageId = message.id;
+        if (message.turnId) row.dataset.turnId = message.turnId;
 
         if (message.text) {
             const body = document.createElement('div');
@@ -466,8 +470,134 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
             row.appendChild(card);
         }
 
+        if (message.role === 'model' && message.turnId && message.canRate === true) {
+            row.appendChild(renderFeedback(message.turnId, message.feedback));
+        }
+
         transcript.appendChild(row);
         transcript.scrollTop = transcript.scrollHeight;
+    };
+
+    const renderFeedback = (turnId, initialFeedback) => {
+        const container = document.createElement('div');
+        container.className = 'assistant-feedback';
+        let current = normalizeFeedback(initialFeedback);
+
+        const prompt = document.createElement('span');
+        prompt.className = 'assistant-feedback-prompt';
+        prompt.textContent = 'Was this helpful?';
+
+        const voteActions = document.createElement('div');
+        voteActions.className = 'assistant-feedback-votes';
+        const details = document.createElement('div');
+        details.className = 'assistant-feedback-details';
+        details.hidden = !current;
+
+        const save = async (next) => {
+            const previous = current;
+            current = next;
+            sync();
+            try {
+                const saved = await api.json(feedbackUrl(turnId), {
+                    method: 'PUT',
+                    body: JSON.stringify(next),
+                }, 'Could not save feedback.');
+                current = normalizeFeedback(saved);
+                sync();
+            } catch (error) {
+                current = previous;
+                sync();
+                setStatus(error.message, true);
+            }
+        };
+
+        const makeVote = (rating, icon, label) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'assistant-feedback-vote';
+            button.title = label;
+            button.setAttribute('aria-label', label);
+            button.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${icon}</span>`;
+            button.addEventListener('click', () => {
+                const sameRating = current?.rating === rating;
+                void save({
+                    rating,
+                    reasonCodes: sameRating ? current.reasonCodes : [],
+                    comment: sameRating ? current.comment : null,
+                });
+            });
+            voteActions.appendChild(button);
+            return button;
+        };
+
+        const up = makeVote('up', 'thumb_up', 'Helpful');
+        const down = makeVote('down', 'thumb_down', 'Not helpful');
+
+        const reasonList = document.createElement('div');
+        reasonList.className = 'assistant-feedback-reasons';
+        const comment = document.createElement('textarea');
+        comment.className = 'assistant-feedback-comment';
+        comment.maxLength = 1000;
+        comment.rows = 2;
+        comment.placeholder = 'Optional details';
+        const detailActions = document.createElement('div');
+        detailActions.className = 'assistant-feedback-detail-actions';
+        const saveDetails = document.createElement('button');
+        saveDetails.type = 'button';
+        saveDetails.className = 'btn-secondary';
+        saveDetails.textContent = 'Save details';
+        saveDetails.addEventListener('click', () => {
+            if (!current) return;
+            const reasonCodes = Array.from(reasonList.querySelectorAll('input:checked'))
+                .map(input => input.value);
+            void save({ rating: current.rating, reasonCodes, comment: comment.value.trim() || null });
+        });
+        const clear = document.createElement('button');
+        clear.type = 'button';
+        clear.className = 'assistant-feedback-clear';
+        clear.textContent = 'Clear';
+        clear.addEventListener('click', async () => {
+            const previous = current;
+            current = null;
+            sync();
+            try {
+                await api.json(feedbackUrl(turnId), { method: 'DELETE' }, 'Could not clear feedback.');
+            } catch (error) {
+                current = previous;
+                sync();
+                setStatus(error.message, true);
+            }
+        });
+        detailActions.append(saveDetails, clear);
+        details.append(reasonList, comment, detailActions);
+
+        const sync = () => {
+            up.classList.toggle('is-selected', current?.rating === 'up');
+            down.classList.toggle('is-selected', current?.rating === 'down');
+            details.hidden = !current;
+            reasonList.innerHTML = '';
+            if (!current) {
+                comment.value = '';
+                return;
+            }
+            for (const [code, label] of feedbackReasons[current.rating] || []) {
+                const chip = document.createElement('label');
+                chip.className = 'assistant-feedback-reason';
+                const input = document.createElement('input');
+                input.type = 'checkbox';
+                input.value = code;
+                input.checked = current.reasonCodes.includes(code);
+                const text = document.createElement('span');
+                text.textContent = label;
+                chip.append(input, text);
+                reasonList.appendChild(chip);
+            }
+            comment.value = current.comment || '';
+        };
+
+        container.append(prompt, voteActions, details);
+        sync();
+        return container;
     };
 
     const renderQuizCreatedMessage = (createdQuizId) => {
@@ -808,6 +938,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         textarea.value = '';
         submit.disabled = true;
         setStatus('Thinking...');
+        const clientStartedAt = performance.now();
 
         try {
             const response = await fetch(chatSendUrl(activeThreadId), {
@@ -833,12 +964,22 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
             }
             renderMessage({
                 id: data.assistantMessageId,
+                turnId: data.turnId,
                 role: 'model',
                 text: data.assistantText,
                 toolEvents: data.toolEvents,
                 pendingChanges: data.pendingChanges,
                 status: data.status,
+                feedback: data.feedback,
+                canRate: true,
             });
+            const clientDurationMs = performance.now() - clientStartedAt;
+            if (data.turnId && validClientDuration(clientDurationMs)) {
+                void api.json(clientMetricsUrl(data.turnId), {
+                    method: 'PUT',
+                    body: JSON.stringify({ clientDurationMs }),
+                }).catch(() => { /* Timing is best-effort and never blocks the reply. */ });
+            }
             await loadChats();
             setStatus('');
         } catch (err) {

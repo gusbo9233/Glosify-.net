@@ -17,3 +17,11 @@ public sealed record AssistantSendInput(
     Guid? CustomQuizId,
     Guid? TranscriptId = null,
     Guid? BookDocumentId = null);
+
+public sealed record AssistantFeedbackInput(
+    [param: Required] string Rating,
+    IReadOnlyList<string>? ReasonCodes,
+    [param: StringLength(1000)] string? Comment);
+
+public sealed record AssistantClientMetricsInput(
+    [param: Range(0, 900000)] double ClientDurationMs);
