@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
@@ -21,6 +22,8 @@ internal sealed class AssistantTurnRunner
     private readonly AssistantMessagePresenter _presenter;
     private readonly AssistantPromptBuilder _promptBuilder;
     private readonly IAssistantTurnLeaseService _turnLeases;
+    private readonly AssistantAnalyticsStore _analytics;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<AssistantTurnRunner> _logger;
 
     public AssistantTurnRunner(
@@ -33,6 +36,8 @@ internal sealed class AssistantTurnRunner
         AssistantMessagePresenter presenter,
         AssistantPromptBuilder promptBuilder,
         IAssistantTurnLeaseService turnLeases,
+        AssistantAnalyticsStore analytics,
+        TimeProvider timeProvider,
         ILogger<AssistantTurnRunner> logger)
     {
         _context = context;
@@ -44,6 +49,8 @@ internal sealed class AssistantTurnRunner
         _presenter = presenter;
         _promptBuilder = promptBuilder;
         _turnLeases = turnLeases;
+        _analytics = analytics;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
@@ -178,22 +185,32 @@ internal sealed class AssistantTurnRunner
         Guid? bookDocumentId,
         AssistantTranscriptPageContext? transcriptPageContext = null)
     {
-        var now = DateTimeOffset.UtcNow;
-        var contextQuiz = await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
-        var contextCustomQuiz = await ValidateCustomQuizAsync(customQuizId, contextQuiz, userId, cancellationToken);
-        var focusedWord = contextQuiz is null ? null : await LoadFocusedWordAsync(contextQuiz.Id, focusedWordId, cancellationToken);
-        var documentPage = documentContext is null
-            ? null
-            : await _contextResolver.ResolveDocumentPageAsync(documentContext, userId, cancellationToken);
-        var transcriptContext = await _contextResolver.ResolveTranscriptAsync(
-            transcriptId,
-            transcriptPageContext,
-            userId,
-            cancellationToken);
-        var bookContext = await _contextResolver.ResolveBookAsync(bookDocumentId, userId, cancellationToken);
-        var selectedLanguageCode = await _contextResolver.ResolveLanguageCodeAsync(userId, cancellationToken);
-        var currentLanguage = contextQuiz?.TargetLanguage
-            ?? await _contextResolver.ResolveLanguageAsync(userId, cancellationToken);
+        var turnId = Guid.NewGuid();
+        var turnStartedAt = Stopwatch.GetTimestamp();
+        var now = _timeProvider.GetUtcNow();
+        var preliminaryProfile = customQuizId.HasValue
+            ? AssistantAgentProfile.CustomQuizBuilder
+            : contextQuizId.HasValue
+                ? AssistantAgentProfile.QuizAssistant
+                : AssistantAgentProfile.Librarian;
+        using var turnActivity = AssistantAnalyticsTelemetry.StartTurn(
+            turnId,
+            thread.Id,
+            null,
+            preliminaryProfile.ToString(),
+            model);
+
+        var turnEntity = new AssistantTurn
+        {
+            Id = turnId,
+            ThreadId = thread.Id,
+            Profile = preliminaryProfile.ToString(),
+            RequestedModel = model,
+            Status = AssistantTurnStatus.Started,
+            StartedAt = now,
+            TraceId = turnActivity?.TraceId.ToHexString(),
+        };
+        _context.AssistantTurns.Add(turnEntity);
 
         var storedMessages = await _threads.LoadMessagesAsync(thread.Id, cancellationToken);
         var history = WindowHistory(storedMessages).Select(MapToTurn).ToList();
@@ -206,6 +223,7 @@ internal sealed class AssistantTurnRunner
         {
             Id = Guid.NewGuid(),
             ThreadId = thread.Id,
+            TurnId = turnId,
             ContextQuizId = contextQuizId,
             Sequence = nextSequence++,
             Role = AssistantMessageRole.User,
@@ -219,203 +237,411 @@ internal sealed class AssistantTurnRunner
             thread.Title = _presenter.NormalizeTitle(userMessage);
         }
 
-        thread.ContextQuizId = contextQuizId;
-        thread.ContextTranscriptId = transcriptContext?.Id;
-        thread.ContextBookDocumentId = bookContext?.Id;
         thread.UpdatedAt = now;
 
-        // Persist the user's message (and title/context updates) before calling the
-        // LLM so a failed turn does not erase what the user typed from history.
+        // This is deliberately the first fallible work after ownership and sequence
+        // resolution. Context, model, prompt, provider, and tool failures must all leave
+        // the submitted text and a finalizable turn behind.
         await _context.SaveChangesAsync(cancellationToken);
 
-        var toolContext = new AgentToolContext
+        var toolSequence = 0;
+        AgentInvocationMetadata? lastMetadata = null;
+        AgentToolContext? toolContext = null;
+        string? resolvedModel = null;
+
+        try
         {
-            QuizId = contextQuiz?.Id,
-            CustomQuizId = contextCustomQuiz?.Id,
-            UserId = userId,
-            CurrentLanguage = currentLanguage,
-            CurrentLanguageCode = selectedLanguageCode,
-            FocusedWordId = focusedWord?.Id,
-            FocusedWordLabel = focusedWord == null ? null : $"{focusedWord.Lemma} -> {focusedWord.Translation}",
-            TranscriptId = transcriptContext?.Id,
-            BookDocumentId = bookContext?.Id,
-        };
+            var contextQuiz = await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
+            var contextCustomQuiz = await ValidateCustomQuizAsync(customQuizId, contextQuiz, userId, cancellationToken);
+            var focusedWord = contextQuiz is null
+                ? null
+                : await LoadFocusedWordAsync(contextQuiz.Id, focusedWordId, cancellationToken);
+            var documentPage = documentContext is null
+                ? null
+                : await _contextResolver.ResolveDocumentPageAsync(documentContext, userId, cancellationToken);
+            var transcriptContext = await _contextResolver.ResolveTranscriptAsync(
+                transcriptId,
+                transcriptPageContext,
+                userId,
+                cancellationToken);
+            var bookContext = await _contextResolver.ResolveBookAsync(bookDocumentId, userId, cancellationToken);
+            var selectedLanguageCode = await _contextResolver.ResolveLanguageCodeAsync(userId, cancellationToken);
+            var currentLanguage = contextQuiz?.TargetLanguage
+                ?? await _contextResolver.ResolveLanguageAsync(userId, cancellationToken);
 
-        var systemInstruction = _promptBuilder.BuildSystemInstruction(
-            contextQuiz,
-            focusedWord,
-            documentPage,
-            contextCustomQuiz,
-            transcriptContext,
-            bookContext,
-            currentLanguage);
+            // The page the user is on selects the profile, which fixes both the tool set and
+            // which authored agent supplies the instructions. Each profile falls back to the
+            // in-code instruction and declarations when no agent is configured for it.
+            var (profile, declarations) = contextCustomQuiz is not null && contextQuiz is not null
+                ? (AssistantAgentProfile.CustomQuizBuilder, _tools.CustomQuizBuilderDeclarations)
+                : contextQuiz is not null
+                    ? (AssistantAgentProfile.QuizAssistant, _tools.QuizAssistantDeclarations)
+                    : (AssistantAgentProfile.Librarian, _tools.LibrarianDeclarations);
+            var selectedModel = _modelResolver.ResolveAssistantModel(model);
+            resolvedModel = selectedModel;
+            var subjectId = await _context.Users
+                .AsNoTracking()
+                .Where(user => user.Id == userId)
+                .Select(user => (Guid?)user.AssistantTelemetrySubjectId)
+                .SingleOrDefaultAsync(cancellationToken);
+            turnActivity?.SetTag("enduser.pseudo.id", subjectId?.ToString());
+            turnActivity?.SetTag("assistant.profile", profile.ToString());
+            turnActivity?.SetTag("gen_ai.request.model", selectedModel);
+            turnEntity.Profile = profile.ToString();
+            thread.ContextQuizId = contextQuizId;
+            thread.ContextTranscriptId = transcriptContext?.Id;
+            thread.ContextBookDocumentId = bookContext?.Id;
 
-        // The page the user is on selects the profile, which fixes both the tool set and
-        // which authored agent supplies the instructions. Each profile falls back to the
-        // in-code instruction and declarations when no agent is configured for it.
-        var (profile, declarations) = contextCustomQuiz is not null && contextQuiz is not null
-            ? (AssistantAgentProfile.CustomQuizBuilder, _tools.CustomQuizBuilderDeclarations)
-            : contextQuiz is not null
-                ? (AssistantAgentProfile.QuizAssistant, _tools.QuizAssistantDeclarations)
-                : (AssistantAgentProfile.Librarian, _tools.LibrarianDeclarations);
-
-        var contextInstruction = _promptBuilder.BuildProfileContext(
-            profile,
-            contextQuiz,
-            focusedWord,
-            documentPage,
-            contextCustomQuiz,
-            transcriptContext,
-            bookContext,
-            currentLanguage);
-        var selectedModel = _modelResolver.ResolveAssistantModel(model);
-        var toolEvents = new List<AssistantToolEvent>();
-        var completedTurnMessages = new List<AssistantMessage>();
-
-        AgentTurnResult? finalTurn = null;
-        for (var loop = 0; loop < MaxToolTurns; loop++)
-        {
-            if (!await _turnLeases.RenewAsync(thread.Id, leaseId, cancellationToken))
+            toolContext = new AgentToolContext
             {
-                throw new AssistantTurnInProgressException();
+                QuizId = contextQuiz?.Id,
+                CustomQuizId = contextCustomQuiz?.Id,
+                UserId = userId,
+                CurrentLanguage = currentLanguage,
+                CurrentLanguageCode = selectedLanguageCode,
+                FocusedWordId = focusedWord?.Id,
+                FocusedWordLabel = focusedWord == null ? null : $"{focusedWord.Lemma} -> {focusedWord.Translation}",
+                TranscriptId = transcriptContext?.Id,
+                BookDocumentId = bookContext?.Id,
+            };
+
+            var systemInstruction = _promptBuilder.BuildSystemInstruction(
+                contextQuiz,
+                focusedWord,
+                documentPage,
+                contextCustomQuiz,
+                transcriptContext,
+                bookContext,
+                currentLanguage);
+
+            var contextInstruction = _promptBuilder.BuildProfileContext(
+                profile,
+                contextQuiz,
+                focusedWord,
+                documentPage,
+                contextCustomQuiz,
+                transcriptContext,
+                bookContext,
+                currentLanguage);
+            var toolEvents = new List<AssistantToolEvent>();
+            var completedTurnMessages = new List<AssistantMessage>();
+
+            AgentTurnResult? finalTurn = null;
+            for (var loop = 0; loop < MaxToolTurns; loop++)
+            {
+                if (!await _turnLeases.RenewAsync(thread.Id, leaseId, cancellationToken))
+                {
+                    throw new AssistantTurnInProgressException();
+                }
+
+                var agentRequest = new AgentRequest(
+                    systemInstruction,
+                    history,
+                    declarations,
+                    selectedModel,
+                    profile,
+                    contextInstruction);
+                var invocationId = Guid.NewGuid();
+                using var invocationActivity = AssistantAnalyticsTelemetry.StartInvocation(
+                    turnId,
+                    invocationId,
+                    loop,
+                    profile.ToString(),
+                    selectedModel);
+                var invocation = new AssistantModelInvocation
+                {
+                    Id = invocationId,
+                    TurnId = turnId,
+                    Sequence = loop,
+                    Profile = profile.ToString(),
+                    Provider = ResolveProviderName(),
+                    RequestedModel = selectedModel,
+                    ActualModel = selectedModel,
+                    RequestJson = AssistantAnalyticsJson.Serialize(agentRequest),
+                    Status = AssistantInvocationStatus.Started,
+                    StartedAt = _timeProvider.GetUtcNow(),
+                    TraceId = invocationActivity?.TraceId.ToHexString(),
+                    SpanId = invocationActivity?.SpanId.ToHexString(),
+                };
+                await _analytics.StartInvocationAsync(invocation, cancellationToken);
+
+                AgentTurnResult turn;
+                var invocationStartedAt = Stopwatch.GetTimestamp();
+                try
+                {
+                    turn = await _generativeAi.RunAgentTurnAsync(
+                        agentRequest,
+                        new AiUsageContext(
+                            userId,
+                            AiUsageFeatures.Assistant,
+                            "assistant_turn",
+                            invocationId,
+                            "assistant_thread",
+                            thread.Id.ToString(),
+                            turnId),
+                        cancellationToken);
+                    await _analytics.CompleteInvocationAsync(
+                        invocationId,
+                        turn,
+                        Stopwatch.GetElapsedTime(invocationStartedAt).TotalMilliseconds,
+                        invocationActivity,
+                        cancellationToken);
+                    AssistantAnalyticsTelemetry.CompleteInvocation(invocationActivity, turn);
+                    lastMetadata = turn.Metadata;
+                }
+                catch (Exception ex)
+                {
+                    AssistantAnalyticsTelemetry.Fail(invocationActivity, ex);
+                    try
+                    {
+                        await _analytics.FailInvocationAsync(
+                            invocationId,
+                            ex,
+                            Stopwatch.GetElapsedTime(invocationStartedAt).TotalMilliseconds,
+                            invocationActivity,
+                            CancellationToken.None);
+                    }
+                    catch (Exception analyticsException)
+                    {
+                        _logger.LogError(
+                            analyticsException,
+                            "Could not finalize failed assistant invocation {InvocationId}.",
+                            invocationId);
+                    }
+                    if (!cancellationToken.IsCancellationRequested)
+                    {
+                        _logger.LogWarning(ex, "Generative AI turn failed for assistant thread {ThreadId}", thread.Id);
+                    }
+                    throw;
+                }
+
+                if (turn.FunctionCalls.Count == 0)
+                {
+                    finalTurn = turn;
+                    break;
+                }
+
+                var modelParts = new List<StoredPart>();
+                if (!string.IsNullOrWhiteSpace(turn.Text))
+                {
+                    modelParts.Add(new StoredPart { Kind = "text", Text = turn.Text });
+                }
+                foreach (var call in turn.FunctionCalls)
+                {
+                    modelParts.Add(new StoredPart
+                    {
+                        Kind = "function_call",
+                        Name = call.Name,
+                        ArgsJson = call.ArgsJson,
+                        CallId = call.CallId,
+                        ThoughtSignature = call.ThoughtSignature,
+                    });
+                }
+
+                var modelTurn = new AgentTurn(AssistantMessageRole.Model, SerializeContent(modelParts));
+                history.Add(modelTurn);
+                completedTurnMessages.Add(new AssistantMessage
+                {
+                    Id = Guid.NewGuid(),
+                    ThreadId = thread.Id,
+                    TurnId = turnId,
+                    ContextQuizId = contextQuizId,
+                    Sequence = nextSequence++,
+                    Role = AssistantMessageRole.Model,
+                    ContentJson = modelTurn.ContentJson,
+                    Status = AssistantMessageStatus.Active,
+                    CreatedAt = _timeProvider.GetUtcNow(),
+                });
+
+                var responseParts = new List<StoredPart>();
+                foreach (var call in turn.FunctionCalls)
+                {
+                    var safeArgumentsJson = AssistantAnalyticsJson.RedactSecrets(call.ArgsJson);
+                    var executionId = Guid.NewGuid();
+                    var changesBefore = toolContext.PendingChanges.Count;
+                    using var toolActivity = AssistantAnalyticsTelemetry.StartTool(turnId, invocationId, call.Name);
+                    toolActivity?.SetTag("gen_ai.tool.call.arguments", safeArgumentsJson);
+                    await _analytics.StartToolAsync(new AssistantToolExecution
+                    {
+                        Id = executionId,
+                        TurnId = turnId,
+                        InvocationId = invocationId,
+                        Sequence = toolSequence++,
+                        ToolName = call.Name,
+                        ArgumentsJson = safeArgumentsJson,
+                        Status = AssistantInvocationStatus.Started,
+                        StartedAt = _timeProvider.GetUtcNow(),
+                    }, cancellationToken);
+                    var toolStartedAt = Stopwatch.GetTimestamp();
+                    try
+                    {
+                        var result = await _tools.ExecuteAsync(call.Name, call.ArgsJson, toolContext, cancellationToken);
+                        var resultJson = AssistantAnalyticsJson.Serialize(result);
+                        var proposedChanges = Math.Max(0, toolContext.PendingChanges.Count - changesBefore);
+                        await _analytics.CompleteToolAsync(
+                            executionId,
+                            resultJson,
+                            proposedChanges,
+                            Stopwatch.GetElapsedTime(toolStartedAt).TotalMilliseconds,
+                            cancellationToken);
+                        toolActivity?.SetTag("gen_ai.tool.call.result", resultJson);
+                        toolActivity?.SetTag("assistant.outcome", "success");
+                        toolActivity?.SetStatus(ActivityStatusCode.Ok);
+                        toolEvents.Add(new AssistantToolEvent(call.Name, safeArgumentsJson, SummarizeResult(result)));
+                        responseParts.Add(new StoredPart
+                        {
+                            Kind = "function_response",
+                            Name = call.Name,
+                            ResponseJson = resultJson,
+                            CallId = call.CallId,
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        AssistantAnalyticsTelemetry.Fail(toolActivity, ex);
+                        try
+                        {
+                            await _analytics.FailToolAsync(
+                                executionId,
+                                ex,
+                                Stopwatch.GetElapsedTime(toolStartedAt).TotalMilliseconds,
+                                CancellationToken.None);
+                        }
+                        catch (Exception analyticsException)
+                        {
+                            _logger.LogError(
+                                analyticsException,
+                                "Could not finalize failed assistant tool execution {ExecutionId}.",
+                                executionId);
+                        }
+                        throw;
+                    }
+                }
+
+                var toolTurn = new AgentTurn(AssistantMessageRole.User, SerializeContent(responseParts));
+                history.Add(toolTurn);
+                completedTurnMessages.Add(new AssistantMessage
+                {
+                    Id = Guid.NewGuid(),
+                    ThreadId = thread.Id,
+                    TurnId = turnId,
+                    ContextQuizId = contextQuizId,
+                    Sequence = nextSequence++,
+                    Role = AssistantMessageRole.User,
+                    ContentJson = toolTurn.ContentJson,
+                    Status = AssistantMessageStatus.Active,
+                    CreatedAt = _timeProvider.GetUtcNow(),
+                });
             }
 
-            var agentRequest = new AgentRequest(
-                systemInstruction,
-                history,
-                declarations,
-                selectedModel,
-                profile,
-                contextInstruction);
+            var finalText = finalTurn?.Text ?? "I hit my tool-call limit before finishing. Please try a smaller request.";
+            var pendingChangesJson = toolContext.PendingChanges.Count == 0
+                ? null
+                : JsonSerializer.Serialize(toolContext.PendingChanges, JsonOptions);
+            var wordLabels = await _threads.LoadWordLabelsAsync(
+                contextQuizId,
+                toolContext.PendingChanges,
+                cancellationToken);
+            var pendingChangeViews = toolContext.PendingChanges
+                .Select(change => _presenter.PresentPendingChange(change, wordLabels))
+                .ToList();
+            var assistantMessageId = Guid.NewGuid();
+            var finalMessage = new AssistantMessage
+            {
+                Id = assistantMessageId,
+                ThreadId = thread.Id,
+                TurnId = turnId,
+                ContextQuizId = contextQuizId,
+                Sequence = nextSequence,
+                Role = AssistantMessageRole.Model,
+                ContentJson = SerializeContent([new StoredPart { Kind = "text", Text = finalText }]),
+                PendingChangesJson = pendingChangesJson,
+                Status = AssistantMessageStatus.Active,
+                CreatedAt = _timeProvider.GetUtcNow(),
+            };
 
-            AgentTurnResult turn;
+            // Intermediate model/tool rows stay detached until the turn has a final
+            // assistant message and durable PendingChangesJson. This prevents a separate
+            // credit save on the shared context from committing an unreplayable prefix.
+            _context.AssistantMessages.AddRange(completedTurnMessages);
+            _context.AssistantMessages.Add(finalMessage);
+            thread.UpdatedAt = finalMessage.CreatedAt;
+            turnEntity.Status = AssistantTurnStatus.Completed;
+            turnEntity.ErrorCategory = finalTurn is null ? "tool_limit_reached" : null;
+            turnEntity.Provider = lastMetadata?.Provider ?? ResolveProviderName();
+            turnEntity.ActualModel = lastMetadata?.Model ?? selectedModel;
+            turnEntity.ProviderResponseId = lastMetadata?.ResponseId;
+            turnEntity.ToolCallCount = toolSequence;
+            turnEntity.ProposedChangeCount = toolContext.PendingChanges.Count;
+            turnEntity.ChangeOutcome = toolContext.PendingChanges.Count == 0
+                ? null
+                : AssistantChangeOutcome.Proposed;
+            turnEntity.FinalMessageId = assistantMessageId;
+            turnEntity.CompletedAt = _timeProvider.GetUtcNow();
+            turnEntity.ServerDurationMs = Stopwatch.GetElapsedTime(turnStartedAt).TotalMilliseconds;
+            await _context.SaveChangesAsync(cancellationToken);
+            turnActivity?.SetTag("gen_ai.provider.name", turnEntity.Provider);
+            turnActivity?.SetTag("gen_ai.response.model", turnEntity.ActualModel);
+            turnActivity?.SetTag("gen_ai.response.id", turnEntity.ProviderResponseId);
+            turnActivity?.SetTag("assistant.tool_call_count", turnEntity.ToolCallCount);
+            turnActivity?.SetTag("assistant.proposed_change_count", turnEntity.ProposedChangeCount);
+            turnActivity?.SetTag("assistant.outcome", turnEntity.ErrorCategory ?? "success");
+            turnActivity?.SetStatus(ActivityStatusCode.Ok);
+
+            return new AssistantTurnResponse(
+                thread.Id,
+                turnId,
+                assistantMessageId,
+                finalText,
+                toolEvents,
+                pendingChangeViews,
+                AssistantMessageStatus.Active);
+        }
+        catch (Exception ex)
+        {
+            // If the completion save failed, its buffered message inserts remain tracked.
+            // Detach only this turn's pending messages so failure finalization can persist
+            // without retrying the write that already failed.
+            foreach (var entry in _context.ChangeTracker
+                .Entries<AssistantMessage>()
+                .Where(entry => entry.State == EntityState.Added
+                    && entry.Entity.TurnId == turnId)
+                .ToList())
+            {
+                entry.State = EntityState.Detached;
+            }
+
+            turnEntity.Status = ex is OperationCanceledException
+                ? AssistantTurnStatus.Cancelled
+                : AssistantTurnStatus.Failed;
+            turnEntity.ErrorCategory = AssistantAnalyticsErrors.Classify(ex);
+            turnEntity.Provider = lastMetadata?.Provider ?? ResolveProviderName();
+            turnEntity.ActualModel = lastMetadata?.Model ?? resolvedModel ?? model;
+            turnEntity.ProviderResponseId = lastMetadata?.ResponseId;
+            turnEntity.ToolCallCount = toolSequence;
+            turnEntity.ProposedChangeCount = toolContext?.PendingChanges.Count ?? 0;
+            turnEntity.CompletedAt = _timeProvider.GetUtcNow();
+            turnEntity.ServerDurationMs = Stopwatch.GetElapsedTime(turnStartedAt).TotalMilliseconds;
+            AssistantAnalyticsTelemetry.Fail(turnActivity, ex);
             try
             {
-                turn = await _generativeAi.RunAgentTurnAsync(
-                    agentRequest,
-                    new AiUsageContext(
-                        userId,
-                        AiUsageFeatures.Assistant,
-                        "assistant_turn",
-                        Guid.NewGuid(),
-                        "assistant_thread",
-                        thread.Id.ToString()),
-                    cancellationToken);
+                await _context.SaveChangesAsync(CancellationToken.None);
             }
-            catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+            catch (Exception analyticsException)
             {
-                _logger.LogWarning(ex, "Generative AI turn failed for assistant thread {ThreadId}", thread.Id);
-                throw;
+                _logger.LogError(
+                    analyticsException,
+                    "Could not finalize failed assistant turn {TurnId}.",
+                    turnId);
             }
-
-            if (turn.FunctionCalls.Count == 0)
-            {
-                finalTurn = turn;
-                break;
-            }
-
-            var modelParts = new List<StoredPart>();
-            if (!string.IsNullOrWhiteSpace(turn.Text))
-            {
-                modelParts.Add(new StoredPart { Kind = "text", Text = turn.Text });
-            }
-            foreach (var call in turn.FunctionCalls)
-            {
-                modelParts.Add(new StoredPart
-                {
-                    Kind = "function_call",
-                    Name = call.Name,
-                    ArgsJson = call.ArgsJson,
-                    CallId = call.CallId,
-                    ThoughtSignature = call.ThoughtSignature,
-                });
-            }
-
-            var modelTurn = new AgentTurn(AssistantMessageRole.Model, SerializeContent(modelParts));
-            history.Add(modelTurn);
-            completedTurnMessages.Add(new AssistantMessage
-            {
-                Id = Guid.NewGuid(),
-                ThreadId = thread.Id,
-                ContextQuizId = contextQuizId,
-                Sequence = nextSequence++,
-                Role = AssistantMessageRole.Model,
-                ContentJson = modelTurn.ContentJson,
-                Status = AssistantMessageStatus.Active,
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
-
-            var responseParts = new List<StoredPart>();
-            foreach (var call in turn.FunctionCalls)
-            {
-                var result = await _tools.ExecuteAsync(call.Name, call.ArgsJson, toolContext, cancellationToken);
-                var resultJson = JsonSerializer.Serialize(result, JsonOptions);
-                toolEvents.Add(new AssistantToolEvent(call.Name, call.ArgsJson, SummarizeResult(result)));
-                responseParts.Add(new StoredPart
-                {
-                    Kind = "function_response",
-                    Name = call.Name,
-                    ResponseJson = resultJson,
-                    CallId = call.CallId,
-                });
-            }
-
-            var toolTurn = new AgentTurn(AssistantMessageRole.User, SerializeContent(responseParts));
-            history.Add(toolTurn);
-            completedTurnMessages.Add(new AssistantMessage
-            {
-                Id = Guid.NewGuid(),
-                ThreadId = thread.Id,
-                ContextQuizId = contextQuizId,
-                Sequence = nextSequence++,
-                Role = AssistantMessageRole.User,
-                ContentJson = toolTurn.ContentJson,
-                Status = AssistantMessageStatus.Active,
-                CreatedAt = DateTimeOffset.UtcNow,
-            });
+            throw;
         }
-
-        var finalText = finalTurn?.Text ?? "I hit my tool-call limit before finishing. Please try a smaller request.";
-        var pendingChangesJson = toolContext.PendingChanges.Count == 0
-            ? null
-            : JsonSerializer.Serialize(toolContext.PendingChanges, JsonOptions);
-        var wordLabels = await _threads.LoadWordLabelsAsync(
-            contextQuizId,
-            toolContext.PendingChanges,
-            cancellationToken);
-        var pendingChangeViews = toolContext.PendingChanges
-            .Select(change => _presenter.PresentPendingChange(change, wordLabels))
-            .ToList();
-        var assistantMessageId = Guid.NewGuid();
-        var finalMessage = new AssistantMessage
-        {
-            Id = assistantMessageId,
-            ThreadId = thread.Id,
-            ContextQuizId = contextQuizId,
-            Sequence = nextSequence,
-            Role = AssistantMessageRole.Model,
-            ContentJson = SerializeContent([new StoredPart { Kind = "text", Text = finalText }]),
-            PendingChangesJson = pendingChangesJson,
-            Status = AssistantMessageStatus.Active,
-            CreatedAt = DateTimeOffset.UtcNow,
-        };
-
-        // Intermediate model/tool rows stay detached until the turn has a final
-        // assistant message and durable PendingChangesJson. This prevents a separate
-        // credit save on the shared context from committing an unreplayable prefix.
-        _context.AssistantMessages.AddRange(completedTurnMessages);
-        _context.AssistantMessages.Add(finalMessage);
-        thread.UpdatedAt = finalMessage.CreatedAt;
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return new AssistantTurnResponse(
-            thread.Id,
-            assistantMessageId,
-            finalText,
-            toolEvents,
-            pendingChangeViews,
-            AssistantMessageStatus.Active);
     }
+
+    private string ResolveProviderName() =>
+        _generativeAi is Glosify.Services.Ai.Llm.GeminiGenerativeAiClient
+            ? AiUsageProviders.Gemini
+            : AiUsageProviders.Foundry;
 
     private async Task<CustomQuiz?> ValidateCustomQuizAsync(
         Guid? customQuizId,

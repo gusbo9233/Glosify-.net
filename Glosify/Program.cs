@@ -108,7 +108,11 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNEC
             .AddMeter(SpeakingTelemetry.MeterName)
             .AddMeter(GenerativeAiTelemetry.MeterName)
             .AddMeter(RealtimeTranslationTelemetry.MeterName))
-        .UseAzureMonitor();
+        .UseAzureMonitor(options =>
+        {
+            options.SamplingRatio = 1.0F;
+            options.TracesPerSecond = null;
+        });
 }
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

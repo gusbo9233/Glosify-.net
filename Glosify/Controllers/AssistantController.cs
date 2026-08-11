@@ -1,5 +1,6 @@
 using Glosify.Extensions;
 using Glosify.Filters;
+using Glosify.Infrastructure.Api;
 using Glosify.Models.Api;
 using Glosify.Models.CustomQuizzes;
 using Glosify.Services;
@@ -212,6 +213,43 @@ public class AssistantController : ControllerBase
         var userId = User.GetUserId();
         await _orchestrator.ResetGlobalSessionAsync(userId, cancellationToken);
         return Ok();
+    }
+
+    [HttpPut("~/Assistant/Turns/{turnId:guid}/Feedback")]
+    public async Task<IActionResult> SaveFeedback(
+        Guid turnId,
+        [FromBody] AssistantFeedbackInput input,
+        CancellationToken cancellationToken)
+    {
+        var feedback = await _orchestrator.SaveFeedbackAsync(
+            turnId,
+            User.GetUserId(),
+            input.Rating,
+            input.ReasonCodes,
+            input.Comment,
+            cancellationToken);
+        return Ok(feedback);
+    }
+
+    [HttpDelete("~/Assistant/Turns/{turnId:guid}/Feedback")]
+    public async Task<IActionResult> DeleteFeedback(Guid turnId, CancellationToken cancellationToken)
+    {
+        await _orchestrator.DeleteFeedbackAsync(turnId, User.GetUserId(), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("~/Assistant/Turns/{turnId:guid}/ClientMetrics")]
+    public async Task<IActionResult> SaveClientMetrics(
+        Guid turnId,
+        [FromBody] AssistantClientMetricsInput input,
+        CancellationToken cancellationToken)
+    {
+        await _orchestrator.RecordClientDurationAsync(
+            turnId,
+            User.GetUserId(),
+            input.ClientDurationMs,
+            cancellationToken);
+        return NoContent();
     }
 
     [HttpGet("History")]

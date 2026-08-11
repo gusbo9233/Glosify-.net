@@ -1,5 +1,6 @@
 using Glosify.Extensions;
 using Glosify.Filters;
+using Glosify.Infrastructure.Api;
 using Glosify.Models.Api;
 using Glosify.Models.CustomQuizzes;
 using Glosify.Services;
@@ -140,5 +141,41 @@ public class AssistantApiController : ApiControllerBase
         {
             return NotFound(ex.Message);
         }
+    }
+
+    [HttpPut("turns/{turnId:guid}/feedback")]
+    public async Task<IActionResult> SaveFeedback(
+        Guid turnId,
+        [FromBody] AssistantFeedbackInput input,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await _orchestrator.SaveFeedbackAsync(
+            turnId,
+            User.GetUserId(),
+            input.Rating,
+            input.ReasonCodes,
+            input.Comment,
+            cancellationToken));
+    }
+
+    [HttpDelete("turns/{turnId:guid}/feedback")]
+    public async Task<IActionResult> DeleteFeedback(Guid turnId, CancellationToken cancellationToken)
+    {
+        await _orchestrator.DeleteFeedbackAsync(turnId, User.GetUserId(), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("turns/{turnId:guid}/client-metrics")]
+    public async Task<IActionResult> SaveClientMetrics(
+        Guid turnId,
+        [FromBody] AssistantClientMetricsInput input,
+        CancellationToken cancellationToken)
+    {
+        await _orchestrator.RecordClientDurationAsync(
+            turnId,
+            User.GetUserId(),
+            input.ClientDurationMs,
+            cancellationToken);
+        return NoContent();
     }
 }

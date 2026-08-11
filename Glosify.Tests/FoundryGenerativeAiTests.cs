@@ -153,6 +153,7 @@ public sealed class FoundryGenerativeAiTests
             call => Assert.Equal("call-b", call.CallId));
         var reservation = Assert.Single(credits.Reservations);
         Assert.Equal("foundry", reservation.Provider);
+        Assert.True(invoker.EnableSensitiveData);
         Assert.Equal("gpt-5.4-mini", reservation.Model);
         Assert.Equal(
             new AiTokenUsage(91, 27, 3, 0, 118),
@@ -201,6 +202,25 @@ public sealed class FoundryGenerativeAiTests
     }
 
     [Fact]
+    public async Task Assistant_turn_uses_the_same_estimated_usage_for_credits_and_analytics_when_provider_usage_is_missing()
+    {
+        var invoker = new FakeInvoker
+        {
+            Response = Response([new TextContent("Done.")]),
+        };
+        var credits = new FakeCredits();
+        var client = CreateClient(invoker, credits);
+
+        var result = await client.RunAgentTurnAsync(
+            new AgentRequest("Help.", [], [], "gpt-5.4-mini"),
+            Usage(AiUsageFeatures.Assistant));
+
+        var committed = Assert.Single(credits.Commits).Usage;
+        Assert.True(committed.TotalTokens > 0);
+        Assert.Equal(committed, result.Metadata!.Usage);
+    }
+
+    [Fact]
     public async Task Json_output_uses_plain_response_mode_and_returns_the_typed_result()
     {
         var invoker = new FakeInvoker
@@ -226,6 +246,7 @@ public sealed class FoundryGenerativeAiTests
             new AiTokenUsage(18, 4, 0, 0, 22),
             Assert.Single(credits.Commits).Usage);
         Assert.Empty(credits.Releases);
+        Assert.False(invoker.EnableSensitiveData);
     }
 
     [Fact]
@@ -341,6 +362,7 @@ public sealed class FoundryGenerativeAiTests
             Assert.Single(invoker.Messages).Contents.OfType<DataContent>());
         Assert.Equal(expectedType, data.MediaType);
         Assert.Single(credits.Commits);
+        Assert.False(invoker.EnableSensitiveData);
     }
 
     [Fact]
@@ -471,7 +493,7 @@ public sealed class FoundryGenerativeAiTests
         };
         var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
 
-        await client.RunAgentTurnAsync(
+        var result = await client.RunAgentTurnAsync(
             new AgentRequest(
                 "In-code fallback instruction.",
                 [],
@@ -485,6 +507,8 @@ public sealed class FoundryGenerativeAiTests
         Assert.Contains("You build custom quiz elements.", invoker.Instructions);
         Assert.Contains("The open custom quiz is \"Verb drills\".", invoker.Instructions);
         Assert.DoesNotContain("In-code fallback instruction.", invoker.Instructions);
+        Assert.Equal("glosify-quiz-builder", result.Metadata!.AgentName);
+        Assert.Equal("3", result.Metadata.AgentVersion);
     }
 
     // The assistant has to keep working before the agent is authored in Foundry, and
@@ -495,7 +519,7 @@ public sealed class FoundryGenerativeAiTests
         var invoker = new FakeInvoker { AuthoredAgent = null };
         var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
 
-        await client.RunAgentTurnAsync(
+        var result = await client.RunAgentTurnAsync(
             new AgentRequest(
                 "In-code fallback instruction.",
                 [],
@@ -506,6 +530,8 @@ public sealed class FoundryGenerativeAiTests
             Usage(AiUsageFeatures.Assistant));
 
         Assert.Equal("In-code fallback instruction.", invoker.Instructions);
+        Assert.Null(result.Metadata!.AgentName);
+        Assert.Null(result.Metadata.AgentVersion);
     }
 
     [Fact]
@@ -940,6 +966,7 @@ public sealed class FoundryGenerativeAiTests
         public IReadOnlyList<AITool> Tools { get; private set; } = [];
         public string? Deployment { get; private set; }
         public string? Instructions { get; private set; }
+        public bool EnableSensitiveData { get; private set; }
         public FoundryAuthoredAgent? AuthoredAgent { get; set; }
         public List<string> AuthoredLookups { get; } = [];
 
@@ -949,12 +976,14 @@ public sealed class FoundryGenerativeAiTests
             IReadOnlyList<ChatMessage> messages,
             IReadOnlyList<AITool> tools,
             int maxOutputTokens,
+            bool enableSensitiveData,
             CancellationToken cancellationToken)
         {
             Deployment = deployment;
             Instructions = instructions;
             Messages = messages;
             Tools = tools;
+            EnableSensitiveData = enableSensitiveData;
             return Error is null
                 ? Task.FromResult(Response)
                 : Task.FromException<AgentResponse>(Error);

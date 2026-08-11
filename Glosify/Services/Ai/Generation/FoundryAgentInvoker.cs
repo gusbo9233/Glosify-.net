@@ -16,6 +16,7 @@ public interface IFoundryAgentInvoker
         IReadOnlyList<ChatMessage> messages,
         IReadOnlyList<AITool> tools,
         int maxOutputTokens,
+        bool enableSensitiveData,
         CancellationToken cancellationToken);
 
     Task<AgentResponse<T>> RunStructuredAsync<T>(
@@ -193,31 +194,32 @@ internal sealed class FoundryAgentInvoker(
             ? value.GetString()
             : null;
 
-    public Task<AgentResponse> RunAsync(
+    public async Task<AgentResponse> RunAsync(
         string deployment,
         string instructions,
         IReadOnlyList<ChatMessage> messages,
         IReadOnlyList<AITool> tools,
         int maxOutputTokens,
+        bool enableSensitiveData,
         CancellationToken cancellationToken)
     {
-        var agent = CreateAgent(deployment, instructions, tools, maxOutputTokens);
-        return agent.RunAsync(
+        using var agent = CreateAgent(deployment, instructions, tools, maxOutputTokens, enableSensitiveData);
+        return await agent.Value.RunAsync(
             messages,
             session: null,
             options: null,
             cancellationToken);
     }
 
-    public Task<AgentResponse<T>> RunStructuredAsync<T>(
+    public async Task<AgentResponse<T>> RunStructuredAsync<T>(
         string deployment,
         string instructions,
         string prompt,
         int maxOutputTokens,
         CancellationToken cancellationToken)
     {
-        var agent = CreateAgent(deployment, instructions, [], maxOutputTokens);
-        return agent.RunAsync<T>(
+        using var agent = CreateAgent(deployment, instructions, [], maxOutputTokens, enableSensitiveData: false);
+        return await agent.Value.RunAsync<T>(
             prompt,
             session: null,
             JsonOptions,
@@ -225,11 +227,12 @@ internal sealed class FoundryAgentInvoker(
             cancellationToken);
     }
 
-    private ChatClientAgent CreateAgent(
+    private OwnedAgent CreateAgent(
         string deployment,
         string instructions,
         IReadOnlyList<AITool> tools,
-        int maxOutputTokens)
+        int maxOutputTokens,
+        bool enableSensitiveData)
     {
         var options = new ChatClientAgentOptions
         {
@@ -245,10 +248,31 @@ internal sealed class FoundryAgentInvoker(
             },
         };
 
-        return projectClient.AsAIAgent(
+        var innerAgent = projectClient.AsAIAgent(
             options,
             clientFactory: null,
             loggerFactory,
             services: null);
+        var instrumentedAgent = innerAgent
+            .AsBuilder()
+            .UseOpenTelemetry(
+                GenerativeAiTelemetry.ActivitySourceName,
+                telemetry => telemetry.EnableSensitiveData = enableSensitiveData)
+            .Build();
+        return new OwnedAgent(instrumentedAgent, innerAgent.ChatClient as IDisposable);
+    }
+
+    private sealed class OwnedAgent(AIAgent value, IDisposable? innerClient) : IDisposable
+    {
+        public AIAgent Value { get; } = value;
+
+        public void Dispose()
+        {
+            (Value as IDisposable)?.Dispose();
+            if (!ReferenceEquals(Value, innerClient))
+            {
+                innerClient?.Dispose();
+            }
+        }
     }
 }

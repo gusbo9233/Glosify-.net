@@ -180,7 +180,24 @@ public static class ApplicationServiceExtensions
         services.AddScoped<AssistantContextResolver>();
         services.AddScoped<AssistantMessagePresenter>();
         services.AddScoped<AssistantPromptBuilder>();
+        services.AddScoped<AssistantTelemetryDeletionQueue>();
         services.AddScoped<AssistantThreadStore>();
+        services.AddScoped<AssistantAnalyticsStore>();
+        services.AddScoped<AssistantFeedbackService>();
+        services.AddOptions<AssistantAnalyticsOptions>()
+            .Bind(configuration.GetSection(AssistantAnalyticsOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<AssistantAnalyticsOptions>, AssistantAnalyticsOptionsValidator>();
+        services.AddHttpClient(
+                AssistantTelemetryDeletionService.HttpClientName,
+                client => client.BaseAddress = new Uri("https://management.azure.com"))
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.DisableForUnsafeHttpMethods();
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+            });
+        services.AddHostedService<AssistantTelemetryDeletionService>();
         services.AddScoped<IAssistantTurnLeaseService, AssistantTurnLeaseService>();
         services.AddScoped<AssistantTurnRunner>();
         services.AddScoped<AssistantChangeWorkflow>();

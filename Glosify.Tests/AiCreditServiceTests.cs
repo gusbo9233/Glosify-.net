@@ -149,6 +149,38 @@ public sealed class AiCreditServiceTests
     }
 
     [Fact]
+    public async Task Reservation_debit_and_release_keep_turn_and_invocation_correlation()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var service = CreateService(context);
+        var turnId = Guid.NewGuid();
+        var invocationId = Guid.NewGuid();
+        var usage = new AiUsageContext(
+            "user-1",
+            AiUsageFeatures.Assistant,
+            "assistant_turn",
+            invocationId,
+            "assistant_thread",
+            Guid.NewGuid().ToString(),
+            turnId);
+
+        var reservation = await service.ReserveAsync(usage, "foundry", "test-model", 2_500);
+        await service.CommitUsageAsync(reservation.ReservationId, new AiTokenUsage(900, 200, 0, 0, 1_100));
+
+        var correlated = await context.AiCreditTransactions
+            .Where(transaction => transaction.ReservationId == reservation.ReservationId)
+            .ToListAsync();
+        Assert.NotEmpty(correlated);
+        Assert.All(correlated, transaction => Assert.Equal(invocationId, transaction.OperationId));
+        Assert.All(correlated, transaction => Assert.Equal(turnId, transaction.AssistantTurnId));
+        var debit = Assert.Single(correlated, transaction => transaction.Kind == AiCreditTransactionKinds.UsageDebit);
+        Assert.True(debit.BudgetAmountMicros > 0);
+        Assert.Single(correlated, transaction => transaction.Kind == AiCreditTransactionKinds.Release);
+    }
+
+    [Fact]
     public async Task DurationUsage_ChargesEightCreditsPerStartedMinute()
     {
         await using var context = CreateContext();

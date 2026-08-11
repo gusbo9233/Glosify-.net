@@ -7,7 +7,8 @@ namespace Glosify.Services.Ai.Assistant;
 internal sealed class AssistantOrchestrator(
     AssistantThreadStore threads,
     AssistantTurnRunner turns,
-    AssistantChangeWorkflow changes) : IAssistantOrchestrator
+    AssistantChangeWorkflow changes,
+    AssistantFeedbackService feedback) : IAssistantOrchestrator
 {
     public Task<IReadOnlyList<AssistantChatSummary>> ListChatsAsync(string userId, CancellationToken cancellationToken = default) =>
         threads.ListAsync(userId, cancellationToken);
@@ -53,4 +54,13 @@ internal sealed class AssistantOrchestrator(
 
     public Task ResetGlobalSessionAsync(string userId, CancellationToken cancellationToken = default) =>
         changes.ResetAsync(userId, cancellationToken);
+
+    public Task<AssistantFeedbackView> SaveFeedbackAsync(Guid turnId, string userId, string rating, IReadOnlyCollection<string>? reasonCodes, string? comment, CancellationToken cancellationToken = default) =>
+        feedback.UpsertAsync(turnId, userId, rating, reasonCodes, comment, cancellationToken);
+
+    public Task DeleteFeedbackAsync(Guid turnId, string userId, CancellationToken cancellationToken = default) =>
+        feedback.DeleteAsync(turnId, userId, cancellationToken);
+
+    public Task RecordClientDurationAsync(Guid turnId, string userId, double clientDurationMs, CancellationToken cancellationToken = default) =>
+        feedback.RecordClientDurationAsync(turnId, userId, clientDurationMs, cancellationToken);
 }

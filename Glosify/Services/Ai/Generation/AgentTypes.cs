@@ -44,7 +44,19 @@ public sealed record AgentTurn(string Role, string ContentJson);
 
 public sealed record AgentTurnResult(
     string Text,
-    IReadOnlyList<AgentFunctionCall> FunctionCalls);
+    IReadOnlyList<AgentFunctionCall> FunctionCalls)
+{
+    public AgentInvocationMetadata? Metadata { get; init; }
+}
+
+public sealed record AgentInvocationMetadata(
+    string Provider,
+    string Model,
+    string? ResponseId,
+    AiTokenUsage Usage,
+    string? AgentName = null,
+    string? AgentVersion = null,
+    string? EffectiveRequestJson = null);
 
 public sealed record AgentFunctionCall(string Name, string ArgsJson, string? ThoughtSignature = null)
 {

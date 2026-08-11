@@ -6,7 +6,8 @@ public sealed record AiUsageContext(
     string Operation,
     Guid OperationId,
     string? RelatedEntityType = null,
-    string? RelatedEntityId = null);
+    string? RelatedEntityId = null,
+    Guid? AssistantTurnId = null);
 
 public sealed record AiTokenUsage(
     int PromptTokens,

@@ -11,9 +11,11 @@ using Glosify.Services.Books;
 using Glosify.Services.Language;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -189,6 +191,166 @@ public class AssistantSavedChatsTests
             .ToListAsync());
         Assert.Equal(AssistantMessageRole.User, message.Role);
         Assert.Null(message.PendingChangesJson);
+        var turn = await context.AssistantTurns.SingleAsync();
+        Assert.Equal(AssistantTurnStatus.Failed, turn.Status);
+        Assert.Equal(message.TurnId, (Guid?)turn.Id);
+        Assert.Equal(2, await context.AssistantModelInvocations.CountAsync());
+        Assert.All(
+            await context.AssistantModelInvocations.OrderBy(invocation => invocation.Sequence).ToListAsync(),
+            invocation => Assert.Equal(turn.Id, invocation.TurnId));
+        Assert.Equal(
+            AssistantInvocationStatus.Failed,
+            (await context.AssistantModelInvocations.SingleAsync(invocation => invocation.Sequence == 1)).Status);
+        var toolExecution = await context.AssistantToolExecutions.SingleAsync();
+        Assert.Equal(AssistantInvocationStatus.Completed, toolExecution.Status);
+        Assert.Equal(1, toolExecution.ProposedChangeCount);
+    }
+
+    [Fact]
+    public async Task Context_resolution_failure_still_persists_input_and_finalizes_turn()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context);
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            orchestrator.SendChatMessageAsync(
+                chat.Id,
+                "user-1",
+                "Build this custom quiz.",
+                contextQuizId: quizId,
+                customQuizId: Guid.NewGuid()));
+
+        context.ChangeTracker.Clear();
+        var message = Assert.Single(await context.AssistantMessages.ToListAsync());
+        var turn = await context.AssistantTurns.SingleAsync();
+        Assert.Equal(AssistantMessageRole.User, message.Role);
+        Assert.Contains("Build this custom quiz.", message.ContentJson);
+        Assert.Equal(turn.Id, message.TurnId);
+        Assert.Equal(AssistantTurnStatus.Failed, turn.Status);
+        Assert.Equal("unhandled_error", turn.ErrorCategory);
+        Assert.NotNull(turn.CompletedAt);
+        Assert.Empty(context.AssistantModelInvocations);
+    }
+
+    [Fact]
+    public async Task Final_message_save_failure_detaches_pending_output_and_finalizes_turn_as_failed()
+    {
+        var interceptor = new FailFinalMessageSaveOnceInterceptor();
+        await using var context = CreateContext(saveChangesInterceptor: interceptor);
+        var orchestrator = CreateOrchestrator(context);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() =>
+            orchestrator.SendGlobalMessageAsync("user-1", "Retain this input."));
+
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync();
+        var message = Assert.Single(await context.AssistantMessages.ToListAsync());
+        Assert.True(interceptor.FailedFinalMessageSave);
+        Assert.Equal(AssistantTurnStatus.Failed, turn.Status);
+        Assert.Equal("unhandled_error", turn.ErrorCategory);
+        Assert.NotNull(turn.CompletedAt);
+        Assert.Equal(AssistantMessageRole.User, message.Role);
+        Assert.Contains("Retain this input.", message.ContentJson);
+        Assert.Equal(turn.Id, message.TurnId);
+    }
+
+    [Fact]
+    public async Task Cancelled_provider_call_retains_input_and_marks_turn_cancelled()
+    {
+        await using var context = CreateContext();
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: new CancellingGenerativeAiClient());
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            orchestrator.SendGlobalMessageAsync("user-1", "Keep this even if I leave."));
+
+        context.ChangeTracker.Clear();
+        var message = Assert.Single(await context.AssistantMessages.ToListAsync());
+        var turn = await context.AssistantTurns.SingleAsync();
+        var invocation = await context.AssistantModelInvocations.SingleAsync();
+        Assert.Equal(turn.Id, message.TurnId);
+        Assert.Equal(AssistantTurnStatus.Cancelled, turn.Status);
+        Assert.Equal("cancelled", turn.ErrorCategory);
+        Assert.Equal(AssistantInvocationStatus.Cancelled, invocation.Status);
+        Assert.NotNull(turn.CompletedAt);
+        Assert.NotNull(invocation.CompletedAt);
+    }
+
+    [Fact]
+    public async Task Multi_call_turn_uses_one_turn_id_and_distinct_invocation_ids()
+    {
+        await using var context = CreateContext();
+        var generativeAi = new OneToolThenAnswerGenerativeAiClient();
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: generativeAi,
+            tools: new LoopAssistantTools());
+
+        var result = await orchestrator.SendGlobalMessageAsync("user-1", "Look this up and answer.");
+
+        var turn = await context.AssistantTurns.SingleAsync();
+        var invocations = await context.AssistantModelInvocations
+            .OrderBy(invocation => invocation.Sequence)
+            .ToListAsync();
+        var execution = await context.AssistantToolExecutions.SingleAsync();
+        Assert.Equal(result.TurnId, turn.Id);
+        Assert.Equal(AssistantTurnStatus.Completed, turn.Status);
+        Assert.Equal(result.AssistantMessageId, turn.FinalMessageId);
+        Assert.Equal(2, invocations.Count);
+        Assert.Equal(2, invocations.Select(invocation => invocation.Id).Distinct().Count());
+        Assert.All(invocations, invocation => Assert.Equal(turn.Id, invocation.TurnId));
+        Assert.Equal(invocations[0].Id, execution.InvocationId);
+        Assert.Equal(
+            invocations.Select(invocation => invocation.Id),
+            generativeAi.UsageContexts.Select(usage => usage.OperationId));
+        Assert.All(generativeAi.UsageContexts, usage => Assert.Equal(turn.Id, usage.AssistantTurnId));
+        Assert.All(
+            await context.AssistantMessages.Where(message => message.ThreadId == result.ThreadId).ToListAsync(),
+            message => Assert.Equal(turn.Id, message.TurnId));
+    }
+
+    [Fact]
+    public async Task Feedback_is_idempotent_owned_and_only_attached_to_the_final_message()
+    {
+        await using var context = CreateContext();
+        var orchestrator = CreateOrchestrator(context);
+        var result = await orchestrator.SendGlobalMessageAsync("user-1", "Help me.");
+
+        await orchestrator.SaveFeedbackAsync(
+            result.TurnId,
+            "user-1",
+            AssistantFeedbackRating.Up,
+            ["helpful", "clear"],
+            "Nice answer");
+        var updatedFeedback = await orchestrator.SaveFeedbackAsync(
+            result.TurnId,
+            "user-1",
+            AssistantFeedbackRating.Up,
+            ["clear", "saved_time"],
+            "Even better");
+        await orchestrator.RecordClientDurationAsync(result.TurnId, "user-1", 1234.5);
+
+        var feedback = await context.AssistantFeedback.Include(item => item.Reasons).SingleAsync();
+        Assert.Equal("Even better", feedback.Comment);
+        Assert.Equal(["clear", "saved_time"], feedback.Reasons.Select(reason => reason.ReasonCode).Order());
+        Assert.Equal(["clear", "saved_time"], updatedFeedback.ReasonCodes);
+        Assert.Equal(1234.5, (await context.AssistantTurns.SingleAsync()).ClientDurationMs);
+        await Assert.ThrowsAsync<AssistantTurnNotFoundException>(() =>
+            orchestrator.SaveFeedbackAsync(result.TurnId, "user-2", "up", [], null));
+
+        var history = await orchestrator.GetGlobalHistoryAsync("user-1");
+        var final = Assert.Single(history.Messages, message => message.CanRate);
+        Assert.Equal(result.AssistantMessageId, final.Id);
+        Assert.Equal("up", final.Feedback?.Rating);
+
+        await orchestrator.DeleteFeedbackAsync(result.TurnId, "user-1");
+        await orchestrator.DeleteFeedbackAsync(result.TurnId, "user-1");
+        Assert.Empty(context.AssistantFeedback);
     }
 
     [Fact]
@@ -674,6 +836,40 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task DeleteChat_queues_trace_purge_before_removing_analytics()
+    {
+        await using var context = CreateContext();
+        var orchestrator = CreateOrchestrator(context);
+        var result = await orchestrator.SendGlobalMessageAsync("user-1", "Hello");
+        var turn = await context.AssistantTurns.SingleAsync(candidate => candidate.Id == result.TurnId);
+        turn.TraceId = "0123456789abcdef0123456789abcdef";
+        await context.SaveChangesAsync();
+
+        await orchestrator.DeleteChatAsync(result.ThreadId, "user-1");
+
+        Assert.Empty(context.AssistantTurns);
+        var deletions = await context.AssistantTelemetryDeletionRequests.ToListAsync();
+        Assert.Equal(6, deletions.Count);
+        Assert.Equal(
+            [
+                ("AppDependencies", "OperationId"),
+                ("AppEvents", "OperationId"),
+                ("AppExceptions", "OperationId"),
+                ("AppGenAIContent", "TraceId"),
+                ("AppRequests", "OperationId"),
+                ("AppTraces", "OperationId"),
+            ],
+            deletions
+                .Select(deletion => (deletion.TableName, deletion.DimensionName))
+                .OrderBy(deletion => deletion.TableName));
+        Assert.All(deletions, deletion =>
+        {
+            Assert.Equal(turn.TraceId, deletion.DimensionValue);
+            Assert.Equal(AssistantTelemetryDeletionStatus.Pending, deletion.Status);
+        });
+    }
+
+    [Fact]
     public async Task Assistant_stops_after_twenty_four_model_tool_turns()
     {
         await using var context = CreateContext();
@@ -692,18 +888,28 @@ public class AssistantSavedChatsTests
         Assert.Equal(24, tools.Calls);
         Assert.Contains("tool-call limit", result.AssistantText);
         Assert.Equal(
+            "tool_limit_reached",
+            (await context.AssistantTurns.SingleAsync(turn => turn.Id == result.TurnId)).ErrorCategory);
+        Assert.Equal(
             50,
             await context.AssistantMessages.CountAsync(message => message.ThreadId == result.ThreadId));
     }
 
     private static GlosifyContext CreateContext(
         string? databaseName = null,
-        InMemoryDatabaseRoot? databaseRoot = null)
+        InMemoryDatabaseRoot? databaseRoot = null,
+        SaveChangesInterceptor? saveChangesInterceptor = null)
     {
-        var options = new DbContextOptionsBuilder<GlosifyContext>()
-            .UseInMemoryDatabase(databaseName ?? Guid.NewGuid().ToString("N"), databaseRoot ?? new InMemoryDatabaseRoot())
-            .Options;
-        return new GlosifyContext(options);
+        var builder = new DbContextOptionsBuilder<GlosifyContext>()
+            .UseInMemoryDatabase(
+                databaseName ?? Guid.NewGuid().ToString("N"),
+                databaseRoot ?? new InMemoryDatabaseRoot());
+        if (saveChangesInterceptor is not null)
+        {
+            builder.AddInterceptors(saveChangesInterceptor);
+        }
+        var options = builder.Options;
+        return new FactoryBackedGlosifyContext(options);
     }
 
     private static IAssistantOrchestrator CreateOrchestrator(
@@ -721,7 +927,17 @@ public class AssistantSavedChatsTests
             languageContext ?? new StaticLanguageContext(),
             languagePreferences);
         var presenter = new AssistantMessagePresenter();
-        var threadStore = new AssistantThreadStore(context, contextResolver, presenter);
+        var timeProvider = new FakeTimeProvider(
+            new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero));
+        var threadStore = new AssistantThreadStore(
+            context,
+            contextResolver,
+            presenter,
+            new AssistantTelemetryDeletionQueue(
+                context,
+                timeProvider,
+                Options.Create(new AssistantAnalyticsOptions())));
+        var analytics = new AssistantAnalyticsStore(new TestDbContextFactory(context), timeProvider);
         var turnRunner = new AssistantTurnRunner(
             context,
             generativeAi ?? new StaticGenerativeAiClient("Done."),
@@ -732,6 +948,8 @@ public class AssistantSavedChatsTests
             presenter,
             new AssistantPromptBuilder(),
             new NoopAssistantTurnLeaseService(),
+            analytics,
+            timeProvider,
             NullLogger<AssistantTurnRunner>.Instance);
         return new AssistantOrchestrator(
             threadStore,
@@ -740,7 +958,9 @@ public class AssistantSavedChatsTests
                 context,
                 applier ?? new CapturingChangeApplier(),
                 presenter,
-                threadStore));
+                threadStore,
+                timeProvider),
+            new AssistantFeedbackService(context, timeProvider));
     }
 
     private static IGenerativeAiModelResolver CreateModelResolver() =>
@@ -925,6 +1145,44 @@ public class AssistantSavedChatsTests
         }
     }
 
+    private sealed class OneToolThenAnswerGenerativeAiClient : IGenerativeAiClient
+    {
+        private int _calls;
+        public List<AiUsageContext> UsageContexts { get; } = [];
+
+        public Task<T> GenerateStructuredAsync<T>(string prompt, AiUsageContext usageContext, string? model = null, CancellationToken cancellationToken = default) =>
+            Task.FromException<T>(new NotSupportedException());
+
+        public Task<string> ExtractTextFromImageAsync(byte[] imageBytes, string contentType, string prompt, AiUsageContext usageContext, CancellationToken cancellationToken = default) =>
+            Task.FromResult(string.Empty);
+
+        public Task<AgentTurnResult> RunAgentTurnAsync(
+            AgentRequest request,
+            AiUsageContext usageContext,
+            CancellationToken cancellationToken = default)
+        {
+            UsageContexts.Add(usageContext);
+            _calls++;
+            var result = _calls == 1
+                ? new AgentTurnResult(string.Empty,
+                [
+                    new AgentFunctionCall("loop", "{}") { CallId = "lookup-1" },
+                ])
+                : new AgentTurnResult("Done.", []);
+            return Task.FromResult(result with
+            {
+                Metadata = new AgentInvocationMetadata(
+                    "foundry",
+                    "test-model",
+                    $"response-{_calls}",
+                    new AiTokenUsage(10, 5, 0, 0, 15),
+                    "glosify-librarian",
+                    "3",
+                    JsonSerializer.Serialize(request)),
+            });
+        }
+    }
+
     private sealed class ToolThenThrowingGenerativeAiClient : IGenerativeAiClient
     {
         private int _calls;
@@ -945,6 +1203,21 @@ public class AssistantSavedChatsTests
                 ]))
                 : Task.FromException<AgentTurnResult>(new InvalidDataException("Simulated upstream failure."));
         }
+    }
+
+    private sealed class CancellingGenerativeAiClient : IGenerativeAiClient
+    {
+        public Task<T> GenerateStructuredAsync<T>(string prompt, AiUsageContext usageContext, string? model = null, CancellationToken cancellationToken = default) =>
+            Task.FromException<T>(new NotSupportedException());
+
+        public Task<string> ExtractTextFromImageAsync(byte[] imageBytes, string contentType, string prompt, AiUsageContext usageContext, CancellationToken cancellationToken = default) =>
+            Task.FromResult(string.Empty);
+
+        public Task<AgentTurnResult> RunAgentTurnAsync(
+            AgentRequest request,
+            AiUsageContext usageContext,
+            CancellationToken cancellationToken = default) =>
+            Task.FromException<AgentTurnResult>(new OperationCanceledException("Simulated caller cancellation."));
     }
 
     private sealed class SavingMutationAssistantTools(GlosifyContext context) : IAssistantTools
@@ -997,6 +1270,28 @@ public class AssistantSavedChatsTests
 
         public Task ReleaseAsync(Guid threadId, Guid leaseId, CancellationToken cancellationToken) =>
             Task.CompletedTask;
+    }
+
+    private sealed class FailFinalMessageSaveOnceInterceptor : SaveChangesInterceptor
+    {
+        public bool FailedFinalMessageSave { get; private set; }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (!FailedFinalMessageSave
+                && eventData.Context?.ChangeTracker.Entries<AssistantMessage>().Any(entry =>
+                    entry.State == EntityState.Added
+                    && entry.Entity.Role == AssistantMessageRole.Model) == true)
+            {
+                FailedFinalMessageSave = true;
+                throw new DbUpdateException("Simulated final assistant message persistence failure.");
+            }
+
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
+        }
     }
 
     private sealed class LoopAssistantTools : IAssistantTools
