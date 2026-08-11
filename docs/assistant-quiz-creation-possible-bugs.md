@@ -376,7 +376,7 @@ writes. The dated baseline and source links above intentionally remain unchanged
 
 ## Latest patch review (2026-08-11)
 
-This follow-up reviews the uncommitted analytics/credit patch layered on `c4039d3`. It
+This follow-up reviews the analytics/credit patch layered on `c4039d3`. It
 records the patch's actual scope without changing the dated baseline above.
 
 | Area | Status | Finding / resolution |

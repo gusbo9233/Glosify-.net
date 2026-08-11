@@ -212,7 +212,7 @@ SELECT
         CASE WHEN t.status <> 'started' AND t.completed_at IS NULL THEN 'missing completion timestamp' END,
         CASE WHEN t.status = 'completed' AND final_message.id IS NULL THEN 'missing final output' END,
         CASE WHEN t.status = 'completed' AND t.final_message_id IS NULL THEN 'missing final message id' END,
-        CASE WHEN invocation_stats.completed_invocations > 0 AND invocation_stats.settled_usages = 0 THEN 'missing usage settlement' END,
+        CASE WHEN invocation_stats.settled_usages < invocation_stats.completed_invocations THEN 'missing usage settlement' END,
         CASE WHEN t.trace_id IS NULL THEN 'missing trace id' END
     ) AS gaps
 FROM assistant_turns t
@@ -240,7 +240,7 @@ WHERE t.started_at >= @From AND t.started_at < @To
       OR (t.status = 'started' AND t.started_at < DATEADD(minute, -15, @To))
       OR (t.status <> 'started' AND t.completed_at IS NULL)
       OR (t.status = 'completed' AND (final_message.id IS NULL OR t.final_message_id IS NULL))
-      OR (invocation_stats.completed_invocations > 0 AND invocation_stats.settled_usages = 0)
+      OR invocation_stats.settled_usages < invocation_stats.completed_invocations
       OR t.trace_id IS NULL
   )
 ORDER BY t.started_at DESC;

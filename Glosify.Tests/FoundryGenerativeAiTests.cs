@@ -806,6 +806,19 @@ public sealed class FoundryGenerativeAiTests
         Assert.Single(commitFailure.IndependentCommits);
         Assert.Empty(commitFailure.Releases);
 
+        var independentCommitFailure = new FakeCredits
+        {
+            CommitError = new InvalidOperationException("sensitive database detail"),
+            IndependentCommitError = new InvalidOperationException("sensitive recovery detail"),
+        };
+        await Assert.ThrowsAsync<GenerativeAiUpstreamException>(() =>
+            CreateClient(new FakeInvoker(), independentCommitFailure).RunAgentTurnAsync(
+                new AgentRequest("Help.", [], [], "gpt-5.4-mini"),
+                Usage(AiUsageFeatures.Assistant)));
+        Assert.Empty(independentCommitFailure.Commits);
+        Assert.Empty(independentCommitFailure.IndependentCommits);
+        Assert.Empty(independentCommitFailure.Releases);
+
         var releaseFailure = new FakeCredits
         {
             ReleaseError = new InvalidOperationException("sensitive release detail"),
@@ -829,6 +842,9 @@ public sealed class FoundryGenerativeAiTests
         Assert.Contains(measurements, measurement =>
             measurement.Instrument == "glosify.ai.credit_commits"
             && (string?)measurement.Tags["ai.outcome"] == "failure_usage_committed");
+        Assert.Contains(measurements, measurement =>
+            measurement.Instrument == "glosify.ai.credit_commits"
+            && (string?)measurement.Tags["ai.outcome"] == "failure_usage_commit_failed");
         Assert.Contains(measurements, measurement =>
             measurement.Instrument == "glosify.ai.input_tokens"
             && (string?)measurement.Tags["ai.outcome"] == "usage_commit_failed");
@@ -1153,6 +1169,7 @@ public sealed class FoundryGenerativeAiTests
         public List<Guid> Releases { get; } = [];
         public Exception? ReserveError { get; init; }
         public Exception? CommitError { get; init; }
+        public Exception? IndependentCommitError { get; init; }
         public Exception? ReleaseError { get; init; }
         public Action? BeforeCommit { get; init; }
 
@@ -1193,6 +1210,11 @@ public sealed class FoundryGenerativeAiTests
             AiTokenUsage usage,
             CancellationToken cancellationToken = default)
         {
+            if (IndependentCommitError is not null)
+            {
+                return Task.FromException(IndependentCommitError);
+            }
+
             IndependentCommits.Add((reservationId, usage));
             return Task.CompletedTask;
         }
