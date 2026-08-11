@@ -1,9 +1,7 @@
 using System.Net.WebSockets;
 using System.Text.Json;
 using System.Threading.Channels;
-using Glosify.Data;
 using Glosify.Models.Entities;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.RealtimeTranslation;
@@ -18,27 +16,26 @@ public interface IEconomicalTranslationRelay
 
 public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
 {
-    private const int PcmBytesPerSecond = 24_000 * sizeof(short);
     private readonly IRealtimeSpeechTranscriber _speech;
     private readonly IEconomicalSubtitleTranslator _translator;
+    private readonly RealtimeTranslationRelayAuthorizationMonitor _authorizationMonitor;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly RealtimeTranslationOptions _options;
-    private readonly TimeProvider _timeProvider;
     private readonly ILogger<EconomicalTranslationRelay> _logger;
 
     public EconomicalTranslationRelay(
         IRealtimeSpeechTranscriber speech,
         IEconomicalSubtitleTranslator translator,
+        RealtimeTranslationRelayAuthorizationMonitor authorizationMonitor,
         IServiceScopeFactory scopeFactory,
         IOptions<RealtimeTranslationOptions> options,
-        TimeProvider timeProvider,
         ILogger<EconomicalTranslationRelay> logger)
     {
         _speech = speech;
         _translator = translator;
+        _authorizationMonitor = authorizationMonitor;
         _scopeFactory = scopeFactory;
         _options = options.Value;
-        _timeProvider = timeProvider;
         _logger = logger;
     }
 
@@ -87,8 +84,10 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
                 "glosify.relay.ready",
                 null,
                 relayToken);
-            var session = await WaitForSessionStartAsync(authorization, relayToken);
-            var billing = new RelayBillingState(session.ChargedMinutes);
+            var session = await _authorizationMonitor.WaitForSessionStartAsync(
+                authorization,
+                relayToken);
+            var billing = new RealtimeTranslationRelayBillingState(session.ChargedMinutes);
             if (transcripts is not null)
             {
                 transcriptWriter = WriteTranscriptsAsync(
@@ -114,7 +113,7 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
                 recognized.Reader,
                 transcripts?.Writer,
                 relayToken);
-            var authorizationMonitor = MonitorAuthorizationAsync(
+            var authorizationMonitor = _authorizationMonitor.MonitorAuthorizationAsync(
                 authorization,
                 session.StartedAt.Value,
                 billing,
@@ -223,7 +222,7 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
         WebSocket browserSocket,
         ChannelWriter<byte[]> audio,
         DateTimeOffset startedAt,
-        RelayBillingState billing,
+        RealtimeTranslationRelayBillingState billing,
         CancellationToken cancellationToken)
     {
         long forwardedBytes = 0;
@@ -245,7 +244,7 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
                         cancellationToken);
                     return;
                 }
-                await WaitForAudioCapacityAsync(
+                await _authorizationMonitor.WaitForAudioCapacityAsync(
                     forwardedBytes + bytes.Length,
                     startedAt,
                     billing,
@@ -304,133 +303,6 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
                     RealtimeTranslationTranscriptStreams.Translation), cancellationToken);
             }
         }
-    }
-
-    private async Task<RelaySessionState> WaitForSessionStartAsync(
-        RealtimeTranslationRelayAuthorization authorization,
-        CancellationToken cancellationToken)
-    {
-        var deadline = _timeProvider.GetUtcNow().AddSeconds(_options.RelayStartupTimeoutSeconds);
-        while (_timeProvider.GetUtcNow() < deadline)
-        {
-            var state = await LoadSessionStateAsync(authorization, cancellationToken);
-            if (state is null || IsTerminal(state.Status) || state.ExpiresAt <= _timeProvider.GetUtcNow())
-            {
-                throw new RealtimeTranslationExpiredException(
-                    "The live subtitle session ended before audio started.");
-            }
-            if (state.StartedAt is not null && state.ChargedMinutes >= 1)
-            {
-                return state;
-            }
-            await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
-        }
-        throw new RealtimeTranslationExpiredException(
-            "The first live subtitle minute was not authorized in time.");
-    }
-
-    private async Task MonitorAuthorizationAsync(
-        RealtimeTranslationRelayAuthorization authorization,
-        DateTimeOffset startedAt,
-        RelayBillingState billing,
-        CancellationToken cancellationToken)
-    {
-        var databaseFailures = 0;
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            try
-            {
-                var now = _timeProvider.GetUtcNow();
-                var state = await LoadSessionStateAsync(authorization, cancellationToken);
-                if (state is null
-                    || IsTerminal(state.Status)
-                    || state.ExpiresAt <= now
-                    || state.LastHeartbeatAt < now.AddSeconds(-Math.Max(30, _options.StaleSessionSeconds)))
-                {
-                    throw new RealtimeTranslationExpiredException(
-                        "The live subtitle session is no longer authorized.");
-                }
-                var expectedMinute = Math.Max(1, (int)Math.Floor((now - startedAt).TotalMinutes) + 1);
-                var boundary = startedAt.AddMinutes(expectedMinute - 1);
-                if (expectedMinute > _options.MaxSessionMinutes)
-                {
-                    throw new RealtimeTranslationExpiredException(
-                        "The live subtitle session reached its time limit.");
-                }
-                if (state.ChargedMinutes < expectedMinute
-                    && now > boundary.AddSeconds(_options.RelayBillingGraceSeconds))
-                {
-                    throw new RealtimeTranslationExpiredException(
-                        "The current live subtitle minute was not authorized.");
-                }
-                Volatile.Write(ref billing.ChargedMinutes, state.ChargedMinutes);
-                databaseFailures = 0;
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                return;
-            }
-            catch (RealtimeTranslationExpiredException)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                databaseFailures++;
-                _logger.LogWarning(
-                    exception,
-                    "Could not verify economical subtitle billing for session {SessionId}",
-                    authorization.SessionId);
-                if (databaseFailures >= 3)
-                {
-                    throw new RealtimeTranslationUpstreamException(
-                        "Glosify could not verify the live subtitle session.");
-                }
-            }
-            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-        }
-    }
-
-    private async Task WaitForAudioCapacityAsync(
-        long requestedBytes,
-        DateTimeOffset startedAt,
-        RelayBillingState billing,
-        CancellationToken cancellationToken)
-    {
-        while (true)
-        {
-            var paidBytes = (long)Volatile.Read(ref billing.ChargedMinutes) * 60 * PcmBytesPerSecond;
-            var elapsedSeconds = Math.Max(0, (_timeProvider.GetUtcNow() - startedAt).TotalSeconds);
-            var realtimeBytes = (long)((elapsedSeconds + 2) * PcmBytesPerSecond);
-            if (requestedBytes <= Math.Min(paidBytes, realtimeBytes))
-            {
-                return;
-            }
-            await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken);
-        }
-    }
-
-    private async Task<RelaySessionState?> LoadSessionStateAsync(
-        RealtimeTranslationRelayAuthorization authorization,
-        CancellationToken cancellationToken)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
-        return await context.RealtimeTranslationSessions
-            .AsNoTracking()
-            .Where(session => session.Id == authorization.SessionId
-                && session.UserId == authorization.UserId
-                && session.TargetLanguage == authorization.TargetLanguage
-                && session.TranslationMode == authorization.TranslationMode
-                && session.SourceLanguage == authorization.SourceLanguage
-                && (session.TranscriptId != null) == authorization.SaveTranscript)
-            .Select(session => new RelaySessionState(
-                session.Status,
-                session.StartedAt,
-                session.LastHeartbeatAt,
-                session.ExpiresAt,
-                session.ChargedMinutes))
-            .SingleOrDefaultAsync(cancellationToken);
     }
 
     private async Task WriteTranscriptsAsync(
@@ -527,20 +399,4 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
         }
     }
 
-    private static bool IsTerminal(string status) =>
-        status is RealtimeTranslationSessionStatuses.Completed
-            or RealtimeTranslationSessionStatuses.Interrupted
-            or RealtimeTranslationSessionStatuses.Failed;
-
-    private sealed record RelaySessionState(
-        string Status,
-        DateTimeOffset? StartedAt,
-        DateTimeOffset LastHeartbeatAt,
-        DateTimeOffset ExpiresAt,
-        int ChargedMinutes);
-
-    private sealed class RelayBillingState(int chargedMinutes)
-    {
-        public int ChargedMinutes = chargedMinutes;
-    }
 }

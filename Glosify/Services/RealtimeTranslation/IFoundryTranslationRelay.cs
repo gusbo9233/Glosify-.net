@@ -9,3 +9,11 @@ public interface IFoundryTranslationRelay
         RealtimeTranslationRelayAuthorization authorization,
         CancellationToken cancellationToken = default);
 }
+
+public interface IEnhancedTranslationRelay
+{
+    Task RelayAsync(
+        WebSocket browserSocket,
+        RealtimeTranslationRelayAuthorization authorization,
+        CancellationToken cancellationToken = default);
+}

@@ -147,8 +147,10 @@ public static class ApplicationServiceExtensions
         });
         services.AddSingleton<IRealtimeTextTranslator, AzureRealtimeTextTranslator>();
         services.AddSingleton<IEconomicalSubtitleTranslator, EconomicalSubtitleTranslator>();
+        services.AddSingleton<RealtimeTranslationRelayAuthorizationMonitor>();
+        services.AddSingleton<IEnhancedTranslationRelay, FoundryTranslationRelay>();
         services.AddSingleton<IEconomicalTranslationRelay, EconomicalTranslationRelay>();
-        services.AddSingleton<IFoundryTranslationRelay, FoundryTranslationRelay>();
+        services.AddSingleton<IFoundryTranslationRelay, RealtimeTranslationRelayRouter>();
         services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();
         services.AddScoped<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>();
         services.AddHostedService<RealtimeTranslationCleanupService>();

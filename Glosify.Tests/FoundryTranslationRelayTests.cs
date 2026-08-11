@@ -1,3 +1,4 @@
+using System.Net.WebSockets;
 using System.Text;
 using Glosify.Controllers.Api;
 using Glosify.Services.RealtimeTranslation;
@@ -287,6 +288,53 @@ public sealed class FoundryTranslationRelayTests
             ["glosify-realtime", "relay-token.invalid"]));
     }
 
+    [Theory]
+    [InlineData(RealtimeTranslationModes.Enhanced, 1, 0)]
+    [InlineData(RealtimeTranslationModes.Economical, 0, 1)]
+    public async Task RelayRouter_DelegatesToTheAuthorizedMode(
+        string mode,
+        int expectedEnhancedCalls,
+        int expectedEconomicalCalls)
+    {
+        var enhanced = new RecordingEnhancedRelay();
+        var economical = new RecordingEconomicalRelay();
+        var router = new RealtimeTranslationRelayRouter(enhanced, economical);
+        using var socket = new ClientWebSocket();
+        var authorization = new RealtimeTranslationRelayAuthorization(
+            Guid.NewGuid(),
+            "user-1",
+            "sv",
+            mode,
+            mode == RealtimeTranslationModes.Economical ? "pl" : null,
+            SaveTranscript: false,
+            TranscriptSourceLanguage: null);
+
+        await router.RelayAsync(socket, authorization);
+
+        Assert.Equal(expectedEnhancedCalls, enhanced.Calls);
+        Assert.Equal(expectedEconomicalCalls, economical.Calls);
+    }
+
+    [Fact]
+    public void RelayRouter_RejectsUnknownMode()
+    {
+        var router = new RealtimeTranslationRelayRouter(
+            new RecordingEnhancedRelay(),
+            new RecordingEconomicalRelay());
+        using var socket = new ClientWebSocket();
+        var authorization = new RealtimeTranslationRelayAuthorization(
+            Guid.NewGuid(),
+            "user-1",
+            "sv",
+            "unknown",
+            SourceLanguage: null,
+            SaveTranscript: false,
+            TranscriptSourceLanguage: null);
+
+        Assert.Throws<RealtimeTranslationValidationException>(
+            () => router.RelayAsync(socket, authorization));
+    }
+
     private static RealtimeTranslationRelayTokenStore CreateTokenStore(
         IMemoryCache cache,
         TimeProvider timeProvider) =>
@@ -300,5 +348,33 @@ public sealed class FoundryTranslationRelayTests
         private DateTimeOffset _now = now;
         public override DateTimeOffset GetUtcNow() => _now;
         public void Advance(TimeSpan duration) => _now += duration;
+    }
+
+    private sealed class RecordingEnhancedRelay : IEnhancedTranslationRelay
+    {
+        public int Calls { get; private set; }
+
+        public Task RelayAsync(
+            WebSocket browserSocket,
+            RealtimeTranslationRelayAuthorization authorization,
+            CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class RecordingEconomicalRelay : IEconomicalTranslationRelay
+    {
+        public int Calls { get; private set; }
+
+        public Task RelayAsync(
+            WebSocket browserSocket,
+            RealtimeTranslationRelayAuthorization authorization,
+            CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.CompletedTask;
+        }
     }
 }
