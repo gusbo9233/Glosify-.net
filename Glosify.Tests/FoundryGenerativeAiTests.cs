@@ -153,7 +153,7 @@ public sealed class FoundryGenerativeAiTests
             call => Assert.Equal("call-b", call.CallId));
         var reservation = Assert.Single(credits.Reservations);
         Assert.Equal("foundry", reservation.Provider);
-        Assert.True(invoker.EnableSensitiveData);
+        Assert.False(invoker.EnableSensitiveData);
         Assert.Equal("gpt-5.4-mini", reservation.Model);
         Assert.Equal(
             new AiTokenUsage(91, 27, 3, 0, 118),
@@ -193,7 +193,8 @@ public sealed class FoundryGenerativeAiTests
         Assert.Contains("too large to finish", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Single(credits.Reservations);
         Assert.Empty(credits.Commits);
-        Assert.Single(credits.Releases);
+        Assert.Equal(2148, Assert.Single(credits.IndependentCommits).Usage.TotalTokens);
+        Assert.Empty(credits.Releases);
     }
 
     [Fact]
@@ -219,7 +220,8 @@ public sealed class FoundryGenerativeAiTests
         Assert.Contains("finish preparing", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Single(credits.Reservations);
         Assert.Empty(credits.Commits);
-        Assert.Single(credits.Releases);
+        Assert.Single(credits.IndependentCommits);
+        Assert.Empty(credits.Releases);
     }
 
     [Fact]
@@ -311,7 +313,7 @@ public sealed class FoundryGenerativeAiTests
     }
 
     [Fact]
-    public async Task Invalid_json_output_releases_the_reservation()
+    public async Task Invalid_json_output_charges_the_confirmed_usage()
     {
         var invoker = new FakeInvoker
         {
@@ -326,11 +328,12 @@ public sealed class FoundryGenerativeAiTests
                 Usage(AiUsageFeatures.PageTranslation)));
 
         Assert.Empty(credits.Commits);
-        Assert.Single(credits.Releases);
+        Assert.Single(credits.IndependentCommits);
+        Assert.Empty(credits.Releases);
     }
 
     [Fact]
-    public async Task Structured_refusal_is_typed_and_releases_the_reservation()
+    public async Task Structured_refusal_is_typed_and_charges_the_confirmed_usage()
     {
         var invoker = new FakeInvoker
         {
@@ -352,11 +355,12 @@ public sealed class FoundryGenerativeAiTests
                 Usage(AiUsageFeatures.Repair)));
 
         Assert.Empty(credits.Commits);
-        Assert.Single(credits.Releases);
+        Assert.Equal(13, Assert.Single(credits.IndependentCommits).Usage.TotalTokens);
+        Assert.Empty(credits.Releases);
     }
 
     [Fact]
-    public async Task Invalid_structured_schema_releases_the_reservation_and_is_sanitized()
+    public async Task Invalid_structured_schema_charges_confirmed_usage_and_is_sanitized()
     {
         var invoker = new FakeInvoker { StructuredJson = "{" };
         var credits = new FakeCredits();
@@ -368,12 +372,13 @@ public sealed class FoundryGenerativeAiTests
                 Usage(AiUsageFeatures.Repair)));
 
         Assert.Equal("The AI service could not produce a valid structured response.", exception.Message);
-        Assert.Single(credits.Releases);
+        Assert.Single(credits.IndependentCommits);
+        Assert.Empty(credits.Releases);
         Assert.Empty(credits.Commits);
     }
 
     [Fact]
-    public async Task Empty_structured_response_is_typed_and_releases_the_reservation()
+    public async Task Empty_structured_response_is_typed_and_charges_confirmed_usage()
     {
         var invoker = new FakeInvoker
         {
@@ -389,7 +394,8 @@ public sealed class FoundryGenerativeAiTests
                 Usage(AiUsageFeatures.Repair)));
 
         Assert.Empty(credits.Commits);
-        Assert.Single(credits.Releases);
+        Assert.Equal(7, Assert.Single(credits.IndependentCommits).Usage.TotalTokens);
+        Assert.Empty(credits.Releases);
     }
 
     [Theory]
@@ -494,6 +500,57 @@ public sealed class FoundryGenerativeAiTests
                 Usage(AiUsageFeatures.Assistant)));
         Assert.Equal("The AI service is temporarily unavailable. Please try again.", exception.Message);
         Assert.Single(failedCredits.Releases);
+    }
+
+    [Fact]
+    public async Task Usage_commit_failure_charges_returned_usage_from_an_independent_scope()
+    {
+        var invoker = new FakeInvoker
+        {
+            Response = Response(
+                [new TextContent("Done.")],
+                new UsageDetails
+                {
+                    InputTokenCount = 19,
+                    OutputTokenCount = 6,
+                    TotalTokenCount = 25,
+                }),
+        };
+        var credits = new FakeCredits
+        {
+            CommitError = new InvalidOperationException("database commit failed"),
+        };
+
+        await Assert.ThrowsAsync<GenerativeAiUpstreamException>(() =>
+            CreateClient(invoker, credits).RunAgentTurnAsync(
+                new AgentRequest("Help.", [], [], "gpt-5.4-mini"),
+                Usage(AiUsageFeatures.Assistant)));
+
+        Assert.Empty(credits.Commits);
+        Assert.Equal(
+            new AiTokenUsage(19, 6, 0, 0, 25),
+            Assert.Single(credits.IndependentCommits).Usage);
+        Assert.Empty(credits.Releases);
+    }
+
+    [Fact]
+    public async Task Cancellation_during_usage_commit_still_charges_returned_usage()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var credits = new FakeCredits
+        {
+            BeforeCommit = cancellation.Cancel,
+            CommitError = new OperationCanceledException(cancellation.Token),
+        };
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            CreateClient(new FakeInvoker(), credits).RunAgentTurnAsync(
+                new AgentRequest("Help.", [], [], "gpt-5.4-mini"),
+                Usage(AiUsageFeatures.Assistant),
+                cancellation.Token));
+
+        Assert.Single(credits.IndependentCommits);
+        Assert.Empty(credits.Releases);
     }
 
     [Fact]
@@ -746,7 +803,21 @@ public sealed class FoundryGenerativeAiTests
             CreateClient(new FakeInvoker(), commitFailure).RunAgentTurnAsync(
                 new AgentRequest("Help.", [], [], "gpt-5.4-mini"),
                 Usage(AiUsageFeatures.Assistant)));
-        Assert.Single(commitFailure.Releases);
+        Assert.Single(commitFailure.IndependentCommits);
+        Assert.Empty(commitFailure.Releases);
+
+        var independentCommitFailure = new FakeCredits
+        {
+            CommitError = new InvalidOperationException("sensitive database detail"),
+            IndependentCommitError = new InvalidOperationException("sensitive recovery detail"),
+        };
+        await Assert.ThrowsAsync<GenerativeAiUpstreamException>(() =>
+            CreateClient(new FakeInvoker(), independentCommitFailure).RunAgentTurnAsync(
+                new AgentRequest("Help.", [], [], "gpt-5.4-mini"),
+                Usage(AiUsageFeatures.Assistant)));
+        Assert.Empty(independentCommitFailure.Commits);
+        Assert.Empty(independentCommitFailure.IndependentCommits);
+        Assert.Empty(independentCommitFailure.Releases);
 
         var releaseFailure = new FakeCredits
         {
@@ -768,6 +839,15 @@ public sealed class FoundryGenerativeAiTests
         Assert.Contains(measurements, measurement =>
             measurement.Instrument == "glosify.ai.credit_commits"
             && (string?)measurement.Tags["ai.outcome"] == "commit_failed");
+        Assert.Contains(measurements, measurement =>
+            measurement.Instrument == "glosify.ai.credit_commits"
+            && (string?)measurement.Tags["ai.outcome"] == "failure_usage_committed");
+        Assert.Contains(measurements, measurement =>
+            measurement.Instrument == "glosify.ai.credit_commits"
+            && (string?)measurement.Tags["ai.outcome"] == "failure_usage_commit_failed");
+        Assert.Contains(measurements, measurement =>
+            measurement.Instrument == "glosify.ai.input_tokens"
+            && (string?)measurement.Tags["ai.outcome"] == "usage_commit_failed");
         Assert.Contains(measurements, measurement =>
             measurement.Instrument == "glosify.ai.credit_releases"
             && (string?)measurement.Tags["ai.outcome"] == "release_failed");
@@ -1085,10 +1165,13 @@ public sealed class FoundryGenerativeAiTests
             Reservations
         { get; } = [];
         public List<(Guid Id, AiTokenUsage Usage)> Commits { get; } = [];
+        public List<(Guid Id, AiTokenUsage Usage)> IndependentCommits { get; } = [];
         public List<Guid> Releases { get; } = [];
         public Exception? ReserveError { get; init; }
         public Exception? CommitError { get; init; }
+        public Exception? IndependentCommitError { get; init; }
         public Exception? ReleaseError { get; init; }
+        public Action? BeforeCommit { get; init; }
 
         public Task<AiCreditReservation> ReserveAsync(
             AiUsageContext context,
@@ -1112,12 +1195,27 @@ public sealed class FoundryGenerativeAiTests
             AiTokenUsage usage,
             CancellationToken cancellationToken = default)
         {
+            BeforeCommit?.Invoke();
             if (CommitError is not null)
             {
                 return Task.FromException(CommitError);
             }
 
             Commits.Add((reservationId, usage));
+            return Task.CompletedTask;
+        }
+
+        public Task CommitUsageIndependentlyAsync(
+            Guid reservationId,
+            AiTokenUsage usage,
+            CancellationToken cancellationToken = default)
+        {
+            if (IndependentCommitError is not null)
+            {
+                return Task.FromException(IndependentCommitError);
+            }
+
+            IndependentCommits.Add((reservationId, usage));
             return Task.CompletedTask;
         }
 

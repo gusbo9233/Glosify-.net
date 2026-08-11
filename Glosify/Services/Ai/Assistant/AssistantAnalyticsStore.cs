@@ -1,149 +1,107 @@
 using System.Diagnostics;
-using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.Ai.Assistant;
 
 internal sealed class AssistantAnalyticsStore
 {
-    private readonly IDbContextFactory<GlosifyContext> _contextFactory;
+    private readonly IAssistantAnalyticsBatchWriter _writer;
     private readonly TimeProvider _timeProvider;
+    private readonly bool _captureContent;
 
     public AssistantAnalyticsStore(
-        IDbContextFactory<GlosifyContext> contextFactory,
-        TimeProvider timeProvider)
+        IAssistantAnalyticsBatchWriter writer,
+        TimeProvider timeProvider,
+        IOptions<AssistantAnalyticsOptions> options)
     {
-        _contextFactory = contextFactory;
+        _writer = writer;
         _timeProvider = timeProvider;
+        _captureContent = options.Value.CaptureContent;
     }
 
-    public async Task StartInvocationAsync(
+    public void CompleteInvocation(
         AssistantModelInvocation invocation,
-        CancellationToken cancellationToken)
-    {
-        await UseContextAsync(async context =>
-        {
-            context.AssistantModelInvocations.Add(invocation);
-            await context.SaveChangesAsync(cancellationToken);
-        }, cancellationToken);
-    }
-
-    public async Task CompleteInvocationAsync(
-        Guid invocationId,
         AgentTurnResult result,
         double durationMs,
-        Activity? activity,
-        CancellationToken cancellationToken)
+        Activity? activity)
     {
-        await UseContextAsync(async context =>
-        {
-            var invocation = await context.AssistantModelInvocations
-                .SingleAsync(candidate => candidate.Id == invocationId, cancellationToken);
-            var metadata = result.Metadata;
-            invocation.Status = AssistantInvocationStatus.Completed;
-            invocation.CompletedAt = _timeProvider.GetUtcNow();
-            invocation.DurationMs = durationMs;
-            invocation.ResponseJson = AssistantAnalyticsJson.Serialize(result);
-            invocation.RequestJson = string.IsNullOrWhiteSpace(metadata?.EffectiveRequestJson)
-                ? invocation.RequestJson
-                : AssistantAnalyticsJson.RedactSecrets(metadata.EffectiveRequestJson);
-            invocation.Provider = metadata?.Provider ?? invocation.Provider;
-            invocation.ActualModel = metadata?.Model ?? invocation.ActualModel;
-            invocation.AgentName = metadata?.AgentName ?? invocation.AgentName;
-            invocation.AgentVersion = metadata?.AgentVersion ?? invocation.AgentVersion;
-            invocation.ProviderResponseId = metadata?.ResponseId;
-            invocation.PromptTokens = metadata?.Usage.PromptTokens;
-            invocation.CandidateTokens = metadata?.Usage.CandidateTokens;
-            invocation.ThoughtTokens = metadata?.Usage.ThoughtTokens;
-            invocation.ToolPromptTokens = metadata?.Usage.ToolPromptTokens;
-            invocation.TotalTokens = metadata?.Usage.TotalTokens;
-            invocation.TraceId = activity?.TraceId.ToHexString() ?? invocation.TraceId;
-            invocation.SpanId = activity?.SpanId.ToHexString() ?? invocation.SpanId;
-            await context.SaveChangesAsync(cancellationToken);
-        }, cancellationToken);
+        var metadata = result.Metadata;
+        invocation.Status = AssistantInvocationStatus.Completed;
+        invocation.CompletedAt = _timeProvider.GetUtcNow();
+        invocation.DurationMs = durationMs;
+        invocation.ResponseJson = SerializePayload(result);
+        invocation.RequestJson = !_captureContent || string.IsNullOrWhiteSpace(metadata?.EffectiveRequestJson)
+            ? invocation.RequestJson
+            : AssistantAnalyticsJson.RedactSecrets(metadata.EffectiveRequestJson);
+        invocation.Provider = metadata?.Provider ?? invocation.Provider;
+        invocation.ActualModel = metadata?.Model ?? invocation.ActualModel;
+        invocation.AgentName = metadata?.AgentName ?? invocation.AgentName;
+        invocation.AgentVersion = metadata?.AgentVersion ?? invocation.AgentVersion;
+        invocation.ProviderResponseId = metadata?.ResponseId;
+        invocation.PromptTokens = metadata?.Usage.PromptTokens;
+        invocation.CandidateTokens = metadata?.Usage.CandidateTokens;
+        invocation.ThoughtTokens = metadata?.Usage.ThoughtTokens;
+        invocation.ToolPromptTokens = metadata?.Usage.ToolPromptTokens;
+        invocation.TotalTokens = metadata?.Usage.TotalTokens;
+        invocation.TraceId = activity?.TraceId.ToHexString() ?? invocation.TraceId;
+        invocation.SpanId = activity?.SpanId.ToHexString() ?? invocation.SpanId;
     }
 
-    public async Task FailInvocationAsync(
-        Guid invocationId,
+    public void FailInvocation(
+        AssistantModelInvocation invocation,
         Exception exception,
         double durationMs,
-        Activity? activity,
-        CancellationToken cancellationToken)
+        Activity? activity)
     {
-        await UseContextAsync(async context =>
-        {
-            var invocation = await context.AssistantModelInvocations
-                .SingleAsync(candidate => candidate.Id == invocationId, cancellationToken);
-            invocation.Status = exception is OperationCanceledException
-                ? AssistantInvocationStatus.Cancelled
-                : AssistantInvocationStatus.Failed;
-            invocation.ErrorCategory = AssistantAnalyticsErrors.Classify(exception);
-            invocation.CompletedAt = _timeProvider.GetUtcNow();
-            invocation.DurationMs = durationMs;
-            invocation.TraceId = activity?.TraceId.ToHexString() ?? invocation.TraceId;
-            invocation.SpanId = activity?.SpanId.ToHexString() ?? invocation.SpanId;
-            await context.SaveChangesAsync(cancellationToken);
-        }, cancellationToken);
+        invocation.Status = exception is OperationCanceledException
+            ? AssistantInvocationStatus.Cancelled
+            : AssistantInvocationStatus.Failed;
+        invocation.ErrorCategory = AssistantAnalyticsErrors.Classify(exception);
+        invocation.CompletedAt = _timeProvider.GetUtcNow();
+        invocation.DurationMs = durationMs;
+        invocation.TraceId = activity?.TraceId.ToHexString() ?? invocation.TraceId;
+        invocation.SpanId = activity?.SpanId.ToHexString() ?? invocation.SpanId;
     }
 
-    public async Task StartToolAsync(AssistantToolExecution execution, CancellationToken cancellationToken)
-    {
-        await UseContextAsync(async context =>
-        {
-            context.AssistantToolExecutions.Add(execution);
-            await context.SaveChangesAsync(cancellationToken);
-        }, cancellationToken);
-    }
-
-    public async Task CompleteToolAsync(
-        Guid executionId,
+    public void CompleteTool(
+        AssistantToolExecution execution,
         string resultJson,
         int proposedChangeCount,
-        double durationMs,
-        CancellationToken cancellationToken)
+        double durationMs)
     {
-        await UseContextAsync(async context =>
-        {
-            var execution = await context.AssistantToolExecutions
-                .SingleAsync(candidate => candidate.Id == executionId, cancellationToken);
-            execution.Status = AssistantInvocationStatus.Completed;
-            execution.ResultJson = resultJson;
-            execution.ProposedChangeCount = proposedChangeCount;
-            execution.DurationMs = durationMs;
-            execution.CompletedAt = _timeProvider.GetUtcNow();
-            await context.SaveChangesAsync(cancellationToken);
-        }, cancellationToken);
+        execution.Status = AssistantInvocationStatus.Completed;
+        execution.ResultJson = StoreJson(resultJson);
+        execution.ProposedChangeCount = proposedChangeCount;
+        execution.DurationMs = durationMs;
+        execution.CompletedAt = _timeProvider.GetUtcNow();
     }
 
-    public async Task FailToolAsync(
-        Guid executionId,
+    public void FailTool(
+        AssistantToolExecution execution,
         Exception exception,
-        double durationMs,
-        CancellationToken cancellationToken)
+        double durationMs)
     {
-        await UseContextAsync(async context =>
-        {
-            var execution = await context.AssistantToolExecutions
-                .SingleAsync(candidate => candidate.Id == executionId, cancellationToken);
-            execution.Status = exception is OperationCanceledException
-                ? AssistantInvocationStatus.Cancelled
-                : AssistantInvocationStatus.Failed;
-            execution.ErrorCategory = AssistantAnalyticsErrors.Classify(exception);
-            execution.DurationMs = durationMs;
-            execution.CompletedAt = _timeProvider.GetUtcNow();
-            await context.SaveChangesAsync(cancellationToken);
-        }, cancellationToken);
+        execution.Status = exception is OperationCanceledException
+            ? AssistantInvocationStatus.Cancelled
+            : AssistantInvocationStatus.Failed;
+        execution.ErrorCategory = AssistantAnalyticsErrors.Classify(exception);
+        execution.DurationMs = durationMs;
+        execution.CompletedAt = _timeProvider.GetUtcNow();
     }
 
-    private async Task UseContextAsync(
-        Func<GlosifyContext, Task> action,
-        CancellationToken cancellationToken)
-    {
-        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
-        await action(context);
-    }
+    public ValueTask SubmitBatchAsync(
+        IReadOnlyCollection<AssistantModelInvocation> invocations,
+        IReadOnlyCollection<AssistantToolExecution> executions,
+        CancellationToken cancellationToken) =>
+        _writer.SubmitAsync(invocations, executions, cancellationToken);
+
+    public string SerializePayload<T>(T value) =>
+        _captureContent ? AssistantAnalyticsJson.Serialize(value) : "{}";
+
+    public string StoreJson(string json) =>
+        _captureContent ? AssistantAnalyticsJson.RedactSecrets(json) : "{}";
 }
 
 internal static class AssistantAnalyticsErrors

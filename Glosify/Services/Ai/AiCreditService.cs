@@ -197,6 +197,27 @@ public sealed class AiCreditService : IAiCreditService
         return true;
     }
 
+    public async Task CommitUsageIndependentlyAsync(
+        Guid reservationId,
+        AiTokenUsage usage,
+        CancellationToken cancellationToken = default)
+    {
+        // A failed SaveChanges leaves mutated account/budget rows and Added transaction
+        // entities tracked by the scoped context. Detach only credit-owned state so a
+        // later request save cannot flush those uncertain mutations a second time.
+        DetachCreditEntities();
+
+        await using var isolatedContext = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var isolatedService = new AiCreditService(
+            isolatedContext,
+            _contextFactory,
+            Options.Create(_options),
+            _modelResolver,
+            _trialEligibility,
+            _timeProvider);
+        await isolatedService.CommitUsageAsync(reservationId, usage, cancellationToken);
+    }
+
     public Task<AiDurationCreditReservation> ReserveDurationAsync(
         AiUsageContext usageContext,
         string provider,

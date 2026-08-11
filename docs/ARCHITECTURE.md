@@ -756,11 +756,12 @@ sequenceDiagram
     L->>L: check monthly SEK budget
     L-->>S: reservationId (Reserved += required)
     S->>P: call
-    alt success
+    alt provider returned usage
         S->>L: CommitUsageAsync(reservationId, actualUsage)
         L->>L: Reserved -= reserved; Balance -= actual
         L->>L: write usage_debit (+ release row if over-reserved)
-    else failure
+        Note over S,L: Charge remains even if local validation or later handling fails
+    else failed before confirmed provider usage
         S->>L: ReleaseAsync(reservationId)
         L->>L: Reserved -= reserved; write release row
     end
@@ -772,6 +773,11 @@ Design points:
   billing for realtime audio (`ReserveDurationAsync` /
   `CommitDurationUsageAsync`). The duration methods are default interface methods
   throwing `NotSupportedException`, so a substitute implementation opts in.
+- **Provider work is billable.** Once a provider response supplies usage—or a
+  completed speaking turn requires the configured estimate—the learner receives a
+  normal usage debit even if local validation rejects the result. A failure before
+  confirmed billable work releases the reservation. Recovery after a request-scoped
+  save failure uses an independent context and detaches uncertain tracked credit state.
 - **A second, independent ceiling.** Beyond per-user credits there is a monthly
   **SEK budget** (`AiUsage:MonthlyBudget`) with per-deployment input/output
   prices, a `ReservationSafetyMultiplier` of 1.25, and a `Europe/Stockholm`

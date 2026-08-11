@@ -317,6 +317,7 @@ public sealed class SpeakingService : ISpeakingService
                 estimatedTokens,
                 cancellationToken);
             var transactionalAgentDispatched = false;
+            AiTokenUsage? returnedUsage = null;
 
             try
             {
@@ -326,6 +327,14 @@ public sealed class SpeakingService : ISpeakingService
                     candidate,
                     cancellationToken,
                     quizCandidate);
+                returnedUsage = agentTurn.Usage is { TotalTokens: > 0 }
+                    ? agentTurn.Usage
+                    : new AiTokenUsage(
+                        Math.Max(1, estimatedTokens - outputReserve),
+                        outputReserve,
+                        0,
+                        0,
+                        estimatedTokens);
                 NormalizeAndValidate(agentTurn.Reply);
 
                 IReadOnlyList<SpeakingSceneCommand> toolCommands = [];
@@ -339,15 +348,10 @@ public sealed class SpeakingService : ISpeakingService
                     toolCommands = agentTurn.SceneCommands ?? [];
                 }
 
-                var usage = agentTurn.Usage is { TotalTokens: > 0 }
-                    ? agentTurn.Usage
-                    : new AiTokenUsage(
-                        Math.Max(1, estimatedTokens - outputReserve),
-                        outputReserve,
-                        0,
-                        0,
-                        estimatedTokens);
-                await _credits.CommitUsageAsync(reservation.ReservationId, usage, cancellationToken);
+                await _credits.CommitUsageAsync(
+                    reservation.ReservationId,
+                    returnedUsage,
+                    cancellationToken);
 
                 if (candidate is not null)
                 {
@@ -373,7 +377,16 @@ public sealed class SpeakingService : ISpeakingService
             }
             catch (Exception ex)
             {
-                await ReleaseReservationSafelyAsync(reservation.ReservationId);
+                if (returnedUsage is not null)
+                {
+                    await CommitUsageAfterFailureSafelyAsync(
+                        reservation.ReservationId,
+                        returnedUsage);
+                }
+                else
+                {
+                    await ReleaseReservationSafelyAsync(reservation.ReservationId);
+                }
                 if (transactionalAgentDispatched)
                 {
                     await InvalidateSessionSafelyAsync(session);
@@ -661,6 +674,26 @@ public sealed class SpeakingService : ISpeakingService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Could not release speaking credit reservation {ReservationId}.", reservationId);
+        }
+    }
+
+    private async Task CommitUsageAfterFailureSafelyAsync(
+        Guid reservationId,
+        AiTokenUsage usage)
+    {
+        try
+        {
+            await _credits.CommitUsageIndependentlyAsync(
+                reservationId,
+                usage,
+                CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Could not charge confirmed speaking usage for reservation {ReservationId}.",
+                reservationId);
         }
     }
 

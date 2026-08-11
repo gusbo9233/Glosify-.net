@@ -13,6 +13,7 @@ namespace Glosify.Services.Ai.Assistant;
 public sealed class AssistantAnalyticsOptions
 {
     public const string SectionName = "AssistantAnalytics";
+    public bool CaptureContent { get; set; }
     public string LogAnalyticsWorkspaceResourceId { get; set; } = string.Empty;
     public int PurgeIntervalSeconds { get; set; } = 60;
     public List<string> PurgeTables { get; set; } =
