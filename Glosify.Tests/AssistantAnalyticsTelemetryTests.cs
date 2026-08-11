@@ -73,6 +73,9 @@ public sealed class AssistantAnalyticsTelemetryTests
         var evaluationTags = evaluation.Tags.ToDictionary(tag => tag.Key, tag => tag.Value);
         Assert.Equal(0, evaluationTags["gen_ai.evaluation.score.value"]);
         Assert.Equal("incorrect", evaluationTags["assistant.feedback.reasons"]);
+        Assert.Equal(0, feedback.GetTagItem("gen_ai.evaluation.score.value"));
+        Assert.Equal("down", feedback.GetTagItem("gen_ai.evaluation.score.label"));
+        Assert.Equal("incorrect", feedback.GetTagItem("assistant.feedback.reasons"));
         Assert.DoesNotContain(feedback.TagObjects, tag => tag.Key.Contains("comment", StringComparison.OrdinalIgnoreCase));
     }
 

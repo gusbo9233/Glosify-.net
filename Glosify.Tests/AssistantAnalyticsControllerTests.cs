@@ -6,6 +6,7 @@ using Glosify.Controllers.Api;
 using Glosify.Infrastructure.Api;
 using Glosify.Models.Api;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Generation;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -103,6 +104,28 @@ public sealed class AssistantAnalyticsControllerTests
                 Guid.NewGuid(),
                 new AssistantFeedbackInput("up", [], null),
                 default));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Send_DoesNotMaskSafeAiFailuresAsRawBadRequests(bool mobile)
+    {
+        var failure = new GenerativeAiStructuredOutputException(
+            "The assistant response was too large to finish. Please try a smaller request.");
+        var orchestrator = new RecordingOrchestrator { SendException = failure };
+
+        var thrown = await Assert.ThrowsAsync<GenerativeAiStructuredOutputException>(() => mobile
+            ? CreateMobileController(orchestrator).Send(
+                Guid.NewGuid(),
+                new AssistantSendInput("Create a quiz.", null, null, null, null, null, null),
+                default)
+            : CreateWebController(orchestrator).ChatSend(
+                Guid.NewGuid(),
+                new SendMessageInput { Message = "Create a quiz." },
+                default));
+
+        Assert.Same(failure, thrown);
     }
 
     [Fact]
@@ -286,6 +309,7 @@ public sealed class AssistantAnalyticsControllerTests
     {
         public AssistantFeedbackView Feedback { get; set; } = new("up", [], null, DateTimeOffset.UtcNow);
         public Exception? SaveFeedbackException { get; set; }
+        public Exception? SendException { get; set; }
         public Guid TurnId { get; private set; }
         public string? UserId { get; private set; }
         public string? Rating { get; private set; }
@@ -339,7 +363,8 @@ public sealed class AssistantAnalyticsControllerTests
         public Task<AssistantChatSummary> UpdateChatAsync(Guid threadId, string userId, string? title = null, Guid? contextQuizId = null, bool updateContext = false, CancellationToken cancellationToken = default, Guid? contextTranscriptId = null, Guid? contextBookDocumentId = null) => throw new NotSupportedException();
         public Task DeleteChatAsync(Guid threadId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AssistantHistory> GetChatHistoryAsync(Guid threadId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<AssistantTurnResponse> SendChatMessageAsync(Guid threadId, string userId, string userMessage, Guid? contextQuizId = null, string? focusedWordId = null, string? model = null, AssistantDocumentContext? documentContext = null, Guid? customQuizId = null, CancellationToken cancellationToken = default, Guid? transcriptId = null, Guid? bookDocumentId = null, AssistantTranscriptPageContext? transcriptPageContext = null) => throw new NotSupportedException();
+        public Task<AssistantTurnResponse> SendChatMessageAsync(Guid threadId, string userId, string userMessage, Guid? contextQuizId = null, string? focusedWordId = null, string? model = null, AssistantDocumentContext? documentContext = null, Guid? customQuizId = null, CancellationToken cancellationToken = default, Guid? transcriptId = null, Guid? bookDocumentId = null, AssistantTranscriptPageContext? transcriptPageContext = null) =>
+            Task.FromException<AssistantTurnResponse>(SendException ?? new NotSupportedException());
         public Task<AssistantTurnResponse> SendMessageAsync(Guid quizId, string userId, string userMessage, string? focusedWordId = null, string? model = null, AssistantDocumentContext? documentContext = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AssistantTurnResponse> SendGlobalMessageAsync(string userId, string userMessage, string? model = null, AssistantDocumentContext? documentContext = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AssistantHistory> GetHistoryAsync(Guid quizId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();

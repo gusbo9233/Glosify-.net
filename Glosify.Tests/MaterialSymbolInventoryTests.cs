@@ -41,6 +41,8 @@ public sealed class MaterialSymbolInventoryTests
         ("forum", "classroom-chat.js — empty chat"),
         ("mic", "classroom-call.js — setControlState(muteButton, ...)"),
         ("mic_off", "classroom-call.js — muted participant and setControlState"),
+        ("thumb_down", "assistant.js — feedback vote"),
+        ("thumb_up", "assistant.js — feedback vote"),
         ("videocam", "classroom-call.js — setControlState(cameraButton, ...)"),
         ("videocam_off", "classroom-call.js — setControlState(cameraButton, ...)"),
     ];

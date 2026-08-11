@@ -6,6 +6,7 @@ using Glosify.Models.CustomQuizzes;
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Generation;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Mvc;
 
@@ -102,7 +103,9 @@ public class AssistantApiController : ApiControllerBase
         catch (InvalidOperationException ex) when (
             ex is not InsufficientAiCreditsException
             and not MonthlyAiBudgetExceededException
-            and not AssistantTurnInProgressException)
+            and not AssistantTurnInProgressException
+            and not GenerativeAiDependencyUnavailableException
+            and not GenerativeAiUpstreamException)
         {
             return BadRequest(ex.Message);
         }

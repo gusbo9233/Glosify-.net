@@ -18,6 +18,7 @@ namespace Glosify.Services.Ai.Assistant.Tools;
 internal static class ToolArguments
 {
     internal static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonElement EmptyObject = JsonSerializer.SerializeToElement(new { });
 
     internal const int ListPageSize = 200;
 
@@ -35,15 +36,18 @@ internal static class ToolArguments
     {
         if (string.IsNullOrWhiteSpace(argsJson))
         {
-            return JsonDocument.Parse("{}").RootElement;
+            return EmptyObject;
         }
         try
         {
-            return JsonDocument.Parse(argsJson).RootElement;
+            using var document = JsonDocument.Parse(argsJson);
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                ? document.RootElement.Clone()
+                : EmptyObject;
         }
         catch (JsonException)
         {
-            return JsonDocument.Parse("{}").RootElement;
+            return EmptyObject;
         }
     }
 

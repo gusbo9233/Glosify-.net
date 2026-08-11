@@ -162,6 +162,67 @@ public sealed class FoundryGenerativeAiTests
     }
 
     [Fact]
+    public async Task Assistant_turn_rejects_length_truncated_tool_call_before_commit()
+    {
+        var response = Response(
+            [
+                new FunctionCallContent(
+                    "call-a",
+                    "create_vocabulary_quiz",
+                    new Dictionary<string, object?>
+                    {
+                        ["name"] = "Polish lyrics",
+                        ["source_language"] = "English",
+                    }),
+            ],
+            new UsageDetails
+            {
+                InputTokenCount = 100,
+                OutputTokenCount = 2048,
+                TotalTokenCount = 2148,
+            });
+        response.FinishReason = ChatFinishReason.Length;
+        var credits = new FakeCredits();
+        var client = CreateClient(new FakeInvoker { Response = response }, credits);
+
+        var exception = await Assert.ThrowsAsync<GenerativeAiStructuredOutputException>(() =>
+            client.RunAgentTurnAsync(
+                new AgentRequest("Help.", [], [], "gpt-5.4-mini"),
+                Usage(AiUsageFeatures.Assistant)));
+
+        Assert.Contains("too large to finish", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Single(credits.Reservations);
+        Assert.Empty(credits.Commits);
+        Assert.Single(credits.Releases);
+    }
+
+    [Fact]
+    public async Task Assistant_turn_rejects_tool_call_without_arguments_before_commit()
+    {
+        var call = new FunctionCallContent(
+            "call-a",
+            "create_vocabulary_quiz",
+            new Dictionary<string, object?> { ["name"] = "Polish lyrics" })
+        {
+            Arguments = null!,
+        };
+        var credits = new FakeCredits();
+        var client = CreateClient(
+            new FakeInvoker { Response = Response([call]) },
+            credits);
+
+        var exception = await Assert.ThrowsAsync<GenerativeAiStructuredOutputException>(() =>
+            client.RunAgentTurnAsync(
+                new AgentRequest("Help.", [], [], "gpt-5.4-mini"),
+                Usage(AiUsageFeatures.Assistant)));
+
+        Assert.Contains("finish preparing", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Single(credits.Reservations);
+        Assert.Empty(credits.Commits);
+        Assert.Single(credits.Releases);
+    }
+
+    [Fact]
     public async Task Assistant_turn_rejects_models_outside_the_allowlist_before_charging()
     {
         var credits = new FakeCredits();
