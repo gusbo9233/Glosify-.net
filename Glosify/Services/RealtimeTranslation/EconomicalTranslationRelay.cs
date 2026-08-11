@@ -125,21 +125,34 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
                 speechPump,
                 translationPump,
                 authorizationMonitor);
-            if (completed == browserPump)
+            try
             {
-                await browserPump;
-                audio.Writer.TryComplete();
-                await speechPump;
-                await translationPump;
-            }
-            else
-            {
-                await completed;
-                if (!relayToken.IsCancellationRequested)
+                if (completed == browserPump)
                 {
-                    throw new RealtimeTranslationUpstreamException(
-                        "Economical subtitles ended unexpectedly.");
+                    await browserPump;
+                    audio.Writer.TryComplete();
+                    await speechPump;
+                    await translationPump;
                 }
+                else
+                {
+                    await completed;
+                    if (!relayToken.IsCancellationRequested)
+                    {
+                        throw new RealtimeTranslationUpstreamException(
+                            "Economical subtitles ended unexpectedly.");
+                    }
+                }
+            }
+            finally
+            {
+                audio.Writer.TryComplete();
+                relayCancellation.Cancel();
+                await IgnoreCancellationAsync(Task.WhenAll(
+                    browserPump,
+                    speechPump,
+                    translationPump,
+                    authorizationMonitor));
             }
         }
         catch (OperationCanceledException) when (relayToken.IsCancellationRequested)
@@ -339,9 +352,13 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
                 }
                 var expectedMinute = Math.Max(1, (int)Math.Floor((now - startedAt).TotalMinutes) + 1);
                 var boundary = startedAt.AddMinutes(expectedMinute - 1);
-                if (expectedMinute > _options.MaxSessionMinutes
-                    || (state.ChargedMinutes < expectedMinute
-                        && now > boundary.AddSeconds(_options.RelayBillingGraceSeconds)))
+                if (expectedMinute > _options.MaxSessionMinutes)
+                {
+                    throw new RealtimeTranslationExpiredException(
+                        "The live subtitle session reached its time limit.");
+                }
+                if (state.ChargedMinutes < expectedMinute
+                    && now > boundary.AddSeconds(_options.RelayBillingGraceSeconds))
                 {
                     throw new RealtimeTranslationExpiredException(
                         "The current live subtitle minute was not authorized.");
@@ -491,6 +508,22 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
         catch (WebSocketException)
         {
             // The other peer already closed the transport.
+        }
+    }
+
+    private static async Task IgnoreCancellationAsync(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when another relay task completes first.
+        }
+        catch (WebSocketException)
+        {
+            // Expected when cancellation races a peer closure.
         }
     }
 

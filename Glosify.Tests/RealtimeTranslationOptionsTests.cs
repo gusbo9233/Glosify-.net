@@ -136,7 +136,7 @@ public sealed class RealtimeTranslationOptionsTests
             }), ExtensionAuth());
         var options = ValidOptions();
         options.EconomicalEnabled = true;
-        options.SpeechEndpoint = "https://glosify-speech.cognitiveservices.azure.com/";
+        options.SpeechEndpoint = "https://glosify-speech.cognitiveservices.azure.com/sts/v1.0/";
         options.TranslatorEndpoint = "https://example.test/";
         options.Languages[0].TranslatorCode = "es";
         options.SourceLanguages = Enumerable.Range(1, 5)
@@ -153,6 +153,7 @@ public sealed class RealtimeTranslationOptionsTests
         var result = validator.Validate(null, options);
 
         Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure => failure.Contains("SpeechEndpoint", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("between 1 and 4", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("TranslatorEndpoint", StringComparison.Ordinal));
     }

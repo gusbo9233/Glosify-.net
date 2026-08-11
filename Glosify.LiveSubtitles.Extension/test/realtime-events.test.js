@@ -11,7 +11,10 @@ test("economical finalized segments normalize into committed translation events"
     text: "God morgon",
   }, { sessionId: "s1", targetLanguage: "sv", nextSequence: () => 99 });
 
-  assert.deepEqual(event, {
+  assert.equal(typeof event.clientTimestamp, "number");
+  assert.ok(Number.isFinite(event.clientTimestamp));
+  const { clientTimestamp, ...stableFields } = event;
+  assert.deepEqual(stableFields, {
     sessionId: "s1",
     stream: "translation",
     language: "sv",
@@ -19,7 +22,6 @@ test("economical finalized segments normalize into committed translation events"
     sequence: 7,
     delta: "God morgon",
     isFinal: true,
-    clientTimestamp: event.clientTimestamp,
   });
 });
 

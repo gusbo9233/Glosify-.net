@@ -14,6 +14,9 @@ namespace Glosify.Tests;
 
 public sealed class RealtimeTranslationServiceTests
 {
+    private static readonly DateTimeOffset TestNow =
+        new(2026, 8, 11, 8, 0, 0, TimeSpan.Zero);
+
     [Fact]
     public async Task EconomicalSession_UsesFourCreditsAndExistingSpeechForSavedTranscript()
     {
@@ -22,7 +25,7 @@ public sealed class RealtimeTranslationServiceTests
         var tokens = new FakeRelayTokenStore();
         var service = CreateService(
             context,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            new ManualTimeProvider(TestNow),
             tokens,
             options =>
             {
@@ -66,7 +69,7 @@ public sealed class RealtimeTranslationServiceTests
         await SeedUserAsync(context);
         var service = CreateService(
             context,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            new ManualTimeProvider(TestNow),
             new FakeRelayTokenStore(),
             options =>
             {
@@ -100,7 +103,7 @@ public sealed class RealtimeTranslationServiceTests
         await SeedUserAsync(context);
         var service = CreateService(
             context,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            new ManualTimeProvider(TestNow),
             new FakeRelayTokenStore());
 
         var catalog = await service.GetCatalogAsync("user-1");
@@ -180,7 +183,7 @@ public sealed class RealtimeTranslationServiceTests
         await SeedUserAsync(context);
         var service = CreateService(
             context,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            new ManualTimeProvider(TestNow),
             new FakeRelayTokenStore());
         var first = await service.CreateSessionAsync("user-1", "pl", saveTranscript: true);
         await service.EndSessionAsync("user-1", first.SessionId);
@@ -204,7 +207,7 @@ public sealed class RealtimeTranslationServiceTests
         var relayTokens = new FakeRelayTokenStore();
         var service = CreateService(
             context,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            new ManualTimeProvider(TestNow),
             relayTokens);
 
         user.SelectedQuizLanguageCode = null;
@@ -231,7 +234,7 @@ public sealed class RealtimeTranslationServiceTests
         await SeedUserAsync(context);
         var service = CreateService(
             context,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            new ManualTimeProvider(TestNow),
             new FakeRelayTokenStore());
 
         var created = await service.CreateSessionAsync("user-1", "pl", saveTranscript: true);
@@ -258,7 +261,7 @@ public sealed class RealtimeTranslationServiceTests
             Stream = RealtimeTranslationTranscriptStreams.Source,
         });
         await context.SaveChangesAsync();
-        var service = CreateService(context, new ManualTimeProvider(DateTimeOffset.UtcNow), new FakeRelayTokenStore());
+        var service = CreateService(context, new ManualTimeProvider(TestNow), new FakeRelayTokenStore());
 
         await Assert.ThrowsAsync<RealtimeTranslationNotFoundException>(() => service.CreateSessionAsync(
             "user-1",
@@ -272,7 +275,7 @@ public sealed class RealtimeTranslationServiceTests
     {
         await using var context = CreateContext();
         await SeedUserAsync(context);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestNow);
         var service = CreateService(context, clock, new FakeRelayTokenStore());
         var created = await service.CreateSessionAsync("user-1", "es");
         await service.BeginMinuteAsync("user-1", created.SessionId, 1);
@@ -294,7 +297,7 @@ public sealed class RealtimeTranslationServiceTests
     {
         await using var context = CreateContext();
         await SeedUserAsync(context);
-        var service = CreateService(context, new ManualTimeProvider(DateTimeOffset.UtcNow), new FakeRelayTokenStore());
+        var service = CreateService(context, new ManualTimeProvider(TestNow), new FakeRelayTokenStore());
         await service.CreateSessionAsync("user-1", "es");
 
         await Assert.ThrowsAsync<RealtimeTranslationConflictException>(() =>
@@ -306,7 +309,7 @@ public sealed class RealtimeTranslationServiceTests
     {
         await using var context = CreateContext();
         await SeedUserAsync(context);
-        var service = CreateService(context, new ManualTimeProvider(DateTimeOffset.UtcNow), new FakeRelayTokenStore());
+        var service = CreateService(context, new ManualTimeProvider(TestNow), new FakeRelayTokenStore());
         var created = await service.CreateSessionAsync("user-1", "es");
         await service.BeginMinuteAsync("user-1", created.SessionId, 1);
 
@@ -321,7 +324,7 @@ public sealed class RealtimeTranslationServiceTests
         await SeedUserAsync(context);
         var service = CreateService(
             context,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            new ManualTimeProvider(TestNow),
             new FakeRelayTokenStore(fail: true));
 
         await Assert.ThrowsAsync<RealtimeTranslationUpstreamException>(() =>
@@ -338,7 +341,7 @@ public sealed class RealtimeTranslationServiceTests
     {
         await using var context = CreateContext();
         await SeedUserAsync(context);
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestNow);
         var service = CreateService(context, clock, new FakeRelayTokenStore());
         await service.CreateSessionAsync("user-1", "es");
         clock.Advance(TimeSpan.FromMinutes(3));
@@ -473,7 +476,7 @@ public sealed class RealtimeTranslationServiceTests
             }
             return new RealtimeTranslationRelayGrant(
                 "relay-token",
-                DateTimeOffset.UtcNow.AddMinutes(1));
+                TestNow.AddMinutes(1));
         }
 
         public bool TryRedeem(

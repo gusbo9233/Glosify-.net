@@ -134,8 +134,11 @@ public sealed class AzureRealtimeSpeechTranscriber : IRealtimeSpeechTranscriber
                     locale,
                     _timeProvider.GetUtcNow())))
             {
-                failure = new RealtimeTranslationUpstreamException(
-                    "Economical subtitles could not keep up with the incoming speech.");
+                Interlocked.CompareExchange(
+                    ref failure,
+                    new RealtimeTranslationUpstreamException(
+                        "Economical subtitles could not keep up with the incoming speech."),
+                    null);
                 stopped.TrySetResult();
             }
         };
@@ -143,8 +146,11 @@ public sealed class AzureRealtimeSpeechTranscriber : IRealtimeSpeechTranscriber
         {
             if (eventArgs.Reason == CancellationReason.Error)
             {
-                failure = new RealtimeTranslationUpstreamException(
-                    "Azure Speech ended economical transcription.");
+                Interlocked.CompareExchange(
+                    ref failure,
+                    new RealtimeTranslationUpstreamException(
+                        "Azure Speech ended economical transcription."),
+                    null);
             }
             stopped.TrySetResult();
         };
@@ -156,9 +162,9 @@ public sealed class AzureRealtimeSpeechTranscriber : IRealtimeSpeechTranscriber
             await foreach (var bytes in audio.ReadAllAsync(cancellationToken))
             {
                 pushStream.Write(bytes);
-                if (failure is not null)
+                if (Volatile.Read(ref failure) is { } currentFailure)
                 {
-                    throw failure;
+                    throw currentFailure;
                 }
             }
             pushStream.Close();
@@ -171,14 +177,14 @@ public sealed class AzureRealtimeSpeechTranscriber : IRealtimeSpeechTranscriber
                 // StopContinuousRecognitionAsync below performs the bounded final flush.
             }
             await recognizer.StopContinuousRecognitionAsync();
-            if (failure is not null)
+            if (Volatile.Read(ref failure) is { } finalFailure)
             {
-                throw failure;
+                throw finalFailure;
             }
         }
         finally
         {
-            output.TryComplete(failure);
+            output.TryComplete(Volatile.Read(ref failure));
         }
     }
 
@@ -292,15 +298,42 @@ public sealed class AzureRealtimeTextTranslator : IRealtimeTextTranslator
         if (!response.IsSuccessStatusCode)
         {
             throw new RealtimeTranslationUpstreamException(
-                "Azure Translator could not translate the current subtitle.");
+                $"Azure Translator could not translate the current subtitle (HTTP {(int)response.StatusCode}).");
         }
 
         await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(body, cancellationToken: cancellationToken);
-        var translated = document.RootElement[0].GetProperty("translations")[0].GetProperty("text").GetString();
-        return !string.IsNullOrWhiteSpace(translated)
-            ? translated
-            : throw new RealtimeTranslationUpstreamException(
-                "Azure Translator returned an empty subtitle.");
+        JsonDocument document;
+        try
+        {
+            document = await JsonDocument.ParseAsync(body, cancellationToken: cancellationToken);
+        }
+        catch (JsonException)
+        {
+            throw new RealtimeTranslationUpstreamException(
+                "Azure Translator returned an invalid response.");
+        }
+        using (document)
+        {
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Array
+                || root.GetArrayLength() == 0
+                || root[0].ValueKind != JsonValueKind.Object
+                || !root[0].TryGetProperty("translations", out var translations)
+                || translations.ValueKind != JsonValueKind.Array
+                || translations.GetArrayLength() == 0
+                || translations[0].ValueKind != JsonValueKind.Object
+                || !translations[0].TryGetProperty("text", out var textElement)
+                || textElement.ValueKind != JsonValueKind.String)
+            {
+                throw new RealtimeTranslationUpstreamException(
+                    "Azure Translator returned an invalid response.");
+            }
+
+            var translated = textElement.GetString();
+            return !string.IsNullOrWhiteSpace(translated)
+                ? translated
+                : throw new RealtimeTranslationUpstreamException(
+                    "Azure Translator returned an empty subtitle.");
+        }
     }
 }

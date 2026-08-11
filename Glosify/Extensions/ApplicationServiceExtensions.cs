@@ -129,13 +129,18 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IRealtimeTranslationRelayTokenStore, RealtimeTranslationRelayTokenStore>();
         services.AddSingleton<IKeyedAsyncLock, ReferenceCountedKeyedAsyncLock>();
         services.AddSingleton<IRealtimeSpeechTranscriber, AzureRealtimeSpeechTranscriber>();
-        services.AddHttpClient(AzureRealtimeTextTranslator.HttpClientName, (services, client) =>
+        var translatorTimeout = TimeSpan.FromSeconds(Math.Clamp(
+            configuration.GetValue<int?>(
+                $"{RealtimeTranslationOptions.SectionName}:TranslatorTimeoutSeconds") ?? 5,
+            1,
+            30));
+        services.AddHttpClient(AzureRealtimeTextTranslator.HttpClientName)
+        .AddStandardResilienceHandler(options =>
         {
-            var seconds = services.GetRequiredService<IOptions<RealtimeTranslationOptions>>()
-                .Value.TranslatorTimeoutSeconds;
-            client.Timeout = TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 30));
-        }).AddStandardResilienceHandler(options =>
-        {
+            // The standard handler owns timeouts and deliberately sets
+            // HttpClient.Timeout to infinite.
+            options.TotalRequestTimeout.Timeout = translatorTimeout;
+            options.AttemptTimeout.Timeout = translatorTimeout;
             // Translation is billed per POST. Retrying an ambiguous failure can
             // submit and charge the same phrase more than once.
             options.Retry.DisableForUnsafeHttpMethods();

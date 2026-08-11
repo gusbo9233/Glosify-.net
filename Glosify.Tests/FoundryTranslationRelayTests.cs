@@ -9,6 +9,9 @@ namespace Glosify.Tests;
 
 public sealed class FoundryTranslationRelayTests
 {
+    private static readonly DateTimeOffset TestNow =
+        new(2026, 8, 11, 8, 0, 0, TimeSpan.Zero);
+
     [Fact]
     public void Protocol_UsesDedicatedTranslationEndpointAndLanguageConfiguration()
     {
@@ -56,7 +59,7 @@ public sealed class FoundryTranslationRelayTests
     public void SourceAccumulator_PersistsOnlyFinalOriginalSpeech()
     {
         var accumulator = new FoundrySourceTranscriptAccumulator();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestNow;
 
         Assert.Null(accumulator.Apply(
             "{\"type\":\"conversation.item.input_audio_transcription.delta\",\"item_id\":\"i1\",\"delta\":\"Dzień \"}"u8,
@@ -103,7 +106,7 @@ public sealed class FoundryTranslationRelayTests
     public void TranscriptAccumulator_PersistsOnlyFinalTranslatedText()
     {
         var accumulator = new FoundryTranslationTranscriptAccumulator();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestNow;
 
         Assert.Null(accumulator.Apply(
             "{\"type\":\"response.text.delta\",\"response_id\":\"r1\",\"delta\":\"Hola \"}"u8,
@@ -128,7 +131,7 @@ public sealed class FoundryTranslationRelayTests
     public void TranscriptAccumulator_StoresDeltaOnlyCaptionsOnceTheyGoQuiet()
     {
         var accumulator = new FoundryTranslationTranscriptAccumulator();
-        var start = DateTimeOffset.UtcNow;
+        var start = TestNow;
 
         // A caption that only ever arrives as deltas, with no id fields to group on.
         Assert.Null(accumulator.Apply(
@@ -159,7 +162,7 @@ public sealed class FoundryTranslationRelayTests
     public void TranscriptAccumulator_RecordsEventTypesWithoutCaptionText()
     {
         var accumulator = new FoundryTranslationTranscriptAccumulator();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestNow;
 
         accumulator.Apply(
             "{\"type\":\"session.output_transcript.delta\",\"delta\":\"Dzień dobry\"}"u8,
@@ -183,7 +186,7 @@ public sealed class FoundryTranslationRelayTests
     public void RelayToken_IsSingleUseAndBoundToSession()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestNow);
         var store = CreateTokenStore(cache, clock);
         var sessionId = Guid.NewGuid();
         var grant = store.Create(
@@ -208,7 +211,7 @@ public sealed class FoundryTranslationRelayTests
     public void RelayToken_BindsEconomicalModeAndRequestedSourceLanguage()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var store = CreateTokenStore(cache, TimeProvider.System);
+        var store = CreateTokenStore(cache, new ManualTimeProvider(TestNow));
         var sessionId = Guid.NewGuid();
         var grant = store.Create(
             sessionId,
@@ -229,7 +232,7 @@ public sealed class FoundryTranslationRelayTests
     public void RelayToken_WrongSessionConsumesGrantAndExpiredGrantFails()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestNow);
         var store = CreateTokenStore(cache, clock);
         var sessionId = Guid.NewGuid();
         var wrongSessionGrant = store.Create(
@@ -260,7 +263,7 @@ public sealed class FoundryTranslationRelayTests
     public void RelayToken_RequiresSupportedSourceLanguageWhenSaving()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var store = CreateTokenStore(cache, TimeProvider.System);
+        var store = CreateTokenStore(cache, new ManualTimeProvider(TestNow));
 
         Assert.Throws<ArgumentException>(() => store.Create(
             Guid.NewGuid(),

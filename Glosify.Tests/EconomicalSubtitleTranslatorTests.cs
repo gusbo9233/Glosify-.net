@@ -9,12 +9,15 @@ namespace Glosify.Tests;
 
 public sealed class EconomicalSubtitleTranslatorTests
 {
+    private static readonly DateTimeOffset TestNow =
+        new(2026, 8, 11, 8, 0, 0, TimeSpan.Zero);
+
     [Fact]
     public async Task FinalizedSegments_AreTranslatedInCallOrder()
     {
         var client = new FakeTranslator();
         var sut = new EconomicalSubtitleTranslator(client);
-        var now = DateTimeOffset.UtcNow;
+        var now = TestNow;
 
         var first = await sut.TranslateAsync(
             new RecognizedSpeechSegment(1, "Dzień dobry", "pl", "pl-PL", now),
@@ -38,7 +41,7 @@ public sealed class EconomicalSubtitleTranslatorTests
         var sut = new EconomicalSubtitleTranslator(client);
 
         var result = await sut.TranslateAsync(
-            new RecognizedSpeechSegment(1, "Hej", "sv", "sv-SE", DateTimeOffset.UtcNow),
+            new RecognizedSpeechSegment(1, "Hej", "sv", "sv-SE", TestNow),
             "sv",
             CancellationToken.None);
 
@@ -64,6 +67,9 @@ public sealed class EconomicalSubtitleTranslatorTests
 
 public sealed class AzureRealtimeTextTranslatorTests
 {
+    private static readonly DateTimeOffset TestNow =
+        new(2026, 8, 11, 8, 0, 0, TimeSpan.Zero);
+
     private const string TranslatorResourceId =
         "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/glosify/providers/Microsoft.CognitiveServices/accounts/glosify-translator";
 
@@ -106,6 +112,43 @@ public sealed class AzureRealtimeTextTranslatorTests
             handler.RequestUri?.AbsoluteUri);
         Assert.Null(handler.ResourceId);
         Assert.Null(handler.Region);
+    }
+
+    [Fact]
+    public async Task UpstreamFailure_IncludesStatusWithoutLeakingResponseContent()
+    {
+        var handler = new CapturingHandler
+        {
+            StatusCode = HttpStatusCode.TooManyRequests,
+            ResponseBody = "submitted subtitle text must not escape",
+        };
+        var sut = CreateTranslator(handler, options =>
+            options.TranslatorEndpoint =
+                "https://glosify-translator.cognitiveservices.azure.com/");
+
+        var exception = await Assert.ThrowsAsync<RealtimeTranslationUpstreamException>(() =>
+            sut.TranslateAsync("private subtitle", "pl", "en", CancellationToken.None));
+
+        Assert.Contains("HTTP 429", exception.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("submitted subtitle", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("{}")]
+    [InlineData("[{\"translations\":[] }]")]
+    [InlineData("not-json")]
+    public async Task MalformedSuccessResponse_MapsToUpstreamException(string responseBody)
+    {
+        var handler = new CapturingHandler { ResponseBody = responseBody };
+        var sut = CreateTranslator(handler, options =>
+            options.TranslatorEndpoint =
+                "https://glosify-translator.cognitiveservices.azure.com/");
+
+        var exception = await Assert.ThrowsAsync<RealtimeTranslationUpstreamException>(() =>
+            sut.TranslateAsync("Dzień dobry", "pl", "en", CancellationToken.None));
+
+        Assert.Contains("invalid response", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     private static AzureRealtimeTextTranslator CreateTranslator(
@@ -155,6 +198,9 @@ public sealed class AzureRealtimeTextTranslatorTests
 
     private sealed class CapturingHandler : HttpMessageHandler
     {
+        public HttpStatusCode StatusCode { get; init; } = HttpStatusCode.OK;
+        public string ResponseBody { get; init; } =
+            "[{\"translations\":[{\"text\":\"translated\"}]}]";
         public Uri? RequestUri { get; private set; }
         public string? Authorization { get; private set; }
         public string? ResourceId { get; private set; }
@@ -168,10 +214,10 @@ public sealed class AzureRealtimeTextTranslatorTests
             Authorization = request.Headers.Authorization?.ToString();
             ResourceId = ReadHeader(request, "Ocp-Apim-ResourceId");
             Region = ReadHeader(request, "Ocp-Apim-Subscription-Region");
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            return Task.FromResult(new HttpResponseMessage(StatusCode)
             {
                 Content = new StringContent(
-                    "[{\"translations\":[{\"text\":\"translated\"}]}]",
+                    ResponseBody,
                     Encoding.UTF8,
                     "application/json"),
             });
@@ -184,7 +230,7 @@ public sealed class AzureRealtimeTextTranslatorTests
     private sealed class StubTokenCredential : TokenCredential
     {
         private static readonly AccessToken Token =
-            new("entra-token", DateTimeOffset.UtcNow.AddHours(1));
+            new("entra-token", TestNow.AddHours(1));
 
         public override AccessToken GetToken(
             TokenRequestContext requestContext,

@@ -208,7 +208,9 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 || (options.EconomicalEnabled && string.IsNullOrWhiteSpace(language.TranslatorCode))
                 || !codes.Add(language.Code.Trim()))
             {
-                failures.Add("RealtimeTranslation:Languages must contain unique non-empty codes and names.");
+                failures.Add(options.EconomicalEnabled
+                    ? "RealtimeTranslation:Languages must contain unique non-empty codes, names, and Translator codes."
+                    : "RealtimeTranslation:Languages must contain unique non-empty codes and names.");
                 break;
             }
         }
@@ -254,6 +256,7 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
 
     internal static bool TryValidateCognitiveEndpoint(string? value, [NotNullWhen(true)] out Uri? endpoint) =>
         TryValidateHttpsEndpoint(value, out endpoint)
+        && (endpoint.AbsolutePath == "/" || endpoint.AbsolutePath.Length == 0)
         && endpoint.Host.EndsWith(".cognitiveservices.azure.com", StringComparison.OrdinalIgnoreCase);
 
     internal static bool TryValidateTranslatorEndpoint(
