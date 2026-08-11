@@ -34,6 +34,14 @@
       </div>
 
       <div class="panel controls">
+        <label for="translation-mode">Subtitle mode</label>
+        <select id="translation-mode"></select>
+
+        <div id="source-language-group" class="control-group">
+          <label for="source-language">Spoken language</label>
+          <select id="source-language"></select>
+        </div>
+
         <label for="quiz-language">Glosify quiz language</label>
         <select id="quiz-language">
           <option value="">Choose a quiz language…</option>
@@ -55,7 +63,7 @@
           <strong id="price">8 credits/min</strong>
         </div>
 
-        <p class="service-disclosure">When you start, this tab’s audio is streamed through Glosify to Microsoft Foundry for live translation. Audio is not stored. Each started minute consumes credits.</p>
+        <p id="service-disclosure" class="service-disclosure">When you start, this tab’s audio is streamed through Glosify to Microsoft services for live subtitles. Audio is not stored. Each started minute consumes credits.</p>
         <button id="start" class="primary">Start subtitles</button>
         <button id="stop" class="danger hidden">Stop subtitles</button>
         <button id="view-transcripts" class="secondary" type="button">View saved transcripts</button>

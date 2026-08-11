@@ -5,7 +5,15 @@ public static class RealtimeTranslationConstants
     public const string Provider = "foundry";
 }
 
+public static class RealtimeTranslationModes
+{
+    public const string Economical = "economical";
+    public const string Enhanced = "enhanced";
+}
+
 public sealed record RealtimeTranslationLanguage(string Code, string Name);
+public sealed record RealtimeTranslationSourceLanguage(string Code, string Name, string? Locale);
+public sealed record RealtimeTranslationMode(string Code, string Name, string Description, int CreditsPerMinute);
 public sealed record RealtimeTranslationSelectedQuizLanguage(string Code, string Name);
 
 public sealed record RealtimeTranslationCatalog(
@@ -19,7 +27,10 @@ public sealed record RealtimeTranslationCatalog(
     int RenewalLeadSeconds,
     int HeartbeatSeconds,
     string Model,
-    int AvailableCredits);
+    int AvailableCredits,
+    IReadOnlyList<RealtimeTranslationMode> Modes,
+    IReadOnlyList<RealtimeTranslationSourceLanguage> SourceLanguages,
+    bool EconomicalEnabled);
 
 public sealed record RealtimeTranslationSessionCreated(
     Guid SessionId,
@@ -54,8 +65,10 @@ public sealed record RealtimeTranslationRelayAuthorization(
     Guid SessionId,
     string UserId,
     string TargetLanguage,
+    string TranslationMode,
+    string? SourceLanguage,
     bool SaveTranscript,
-    string? SourceLanguage);
+    string? TranscriptSourceLanguage);
 
 public sealed class RealtimeTranslationValidationException(string message) : InvalidOperationException(message);
 public sealed class RealtimeTranslationConflictException(string message) : InvalidOperationException(message);

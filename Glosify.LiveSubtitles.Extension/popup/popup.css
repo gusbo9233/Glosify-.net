@@ -75,6 +75,7 @@ p { color: #adb6c9; font-size: 13px; line-height: 1.45; }
 }
 
 .controls { display: grid; gap: 11px; }
+.control-group { display: grid; gap: 11px; }
 label { color: #c8cfdd; font-size: 12px; font-weight: 650; }
 
 select {

@@ -10,6 +10,21 @@ export function normalizeRealtimeEvent(event, context) {
     return null;
   }
 
+  if (event.type === "glosify.translation.segment"
+      && typeof event.text === "string"
+      && event.text.trim()) {
+    return {
+      sessionId: context.sessionId,
+      stream: "translation",
+      language: event.targetLanguage ?? context.targetLanguage,
+      sourceLanguage: event.sourceLanguage ?? null,
+      sequence: Number.isInteger(event.sequence) ? event.sequence : context.nextSequence(),
+      delta: event.text,
+      isFinal: true,
+      clientTimestamp: Date.now(),
+    };
+  }
+
   const translationEventTypes = new Set([
     "session.output_transcript.delta",
     "session.output_transcript.done",

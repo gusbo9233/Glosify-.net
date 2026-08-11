@@ -31,6 +31,20 @@ test("reconnect preserves the opted-in transcript id", () => {
   });
 });
 
+test("economical sessions include mode and source language", () => {
+  assert.deepEqual(buildTranscriptSessionRequest({
+    targetLanguage: "sv",
+    translationMode: "economical",
+    sourceLanguage: "pl",
+    saveTranscript: false,
+  }), {
+    targetLanguage: "sv",
+    translationMode: "economical",
+    sourceLanguage: "pl",
+    saveTranscript: false,
+  });
+});
+
 test("stopping clears consent and transcript identity", () => {
   const state = clearTranscriptStorageState({ saveTranscript: true, transcriptId: "saved" });
   assert.equal(state.saveTranscript, false);
@@ -51,6 +65,10 @@ test("source saving switches the displayed and preflight rate to sixteen credits
   const catalog = { creditsPerMinute: 8, savedTranscriptCreditsPerMinute: 16 };
   assert.equal(getEffectiveCreditsPerMinute(catalog, false), 8);
   assert.equal(getEffectiveCreditsPerMinute(catalog, true), 16);
+  assert.equal(getEffectiveCreditsPerMinute({
+    ...catalog,
+    modes: [{ code: "economical", creditsPerMinute: 4 }],
+  }, true, "economical"), 4);
 });
 
 test("the transcript toggle is not gated by active state or language matching", () => {

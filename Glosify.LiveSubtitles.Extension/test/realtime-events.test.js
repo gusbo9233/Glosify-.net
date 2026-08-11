@@ -2,6 +2,29 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { appendBounded, normalizeRealtimeEvent } from "../lib/realtime-events.js";
 
+test("economical finalized segments normalize into committed translation events", () => {
+  const event = normalizeRealtimeEvent({
+    type: "glosify.translation.segment",
+    sequence: 7,
+    sourceLanguage: "pl",
+    targetLanguage: "sv",
+    text: "God morgon",
+  }, { sessionId: "s1", targetLanguage: "sv", nextSequence: () => 99 });
+
+  assert.equal(typeof event.clientTimestamp, "number");
+  assert.ok(Number.isFinite(event.clientTimestamp));
+  const { clientTimestamp, ...stableFields } = event;
+  assert.deepEqual(stableFields, {
+    sessionId: "s1",
+    stream: "translation",
+    language: "sv",
+    sourceLanguage: "pl",
+    sequence: 7,
+    delta: "God morgon",
+    isFinal: true,
+  });
+});
+
 test("translation deltas normalize without retaining provider payloads", () => {
   let sequence = 0;
   const event = normalizeRealtimeEvent(

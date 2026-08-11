@@ -5,19 +5,18 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Azure.Core;
 using Azure.Identity;
-using Glosify.Data;
 using Glosify.Models.Entities;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.RealtimeTranslation;
 
-public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
+public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
 {
     private const string FoundryTokenScope = "https://ai.azure.com/.default";
     private const int PcmBytesPerSecond = 24_000 * sizeof(short);
 
     private readonly TokenCredential _credential;
+    private readonly RealtimeTranslationRelayAuthorizationMonitor _authorizationMonitor;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly RealtimeTranslationOptions _options;
     private readonly TimeProvider _timeProvider;
@@ -25,12 +24,14 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
 
     public FoundryTranslationRelay(
         TokenCredential credential,
+        RealtimeTranslationRelayAuthorizationMonitor authorizationMonitor,
         IServiceScopeFactory scopeFactory,
         IOptions<RealtimeTranslationOptions> options,
         TimeProvider timeProvider,
         ILogger<FoundryTranslationRelay> logger)
     {
         _credential = credential;
+        _authorizationMonitor = authorizationMonitor;
         _scopeFactory = scopeFactory;
         _options = options.Value;
         _timeProvider = timeProvider;
@@ -48,7 +49,6 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
             throw new RealtimeTranslationUnavailableException(
                 "Live subtitles are not enabled on this Glosify deployment.");
         }
-
         var foundryUri = FoundryTranslationProtocol.BuildWebSocketUri(_options);
         using var foundrySocket = new ClientWebSocket();
         using var sourceSocket = authorization.SaveTranscript ? new ClientWebSocket() : null;
@@ -104,7 +104,7 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
             await WaitForFoundrySessionUpdatedAsync(foundrySocket, relayToken);
             if (sourceSocket is not null)
             {
-                var sourceLanguage = authorization.SourceLanguage
+                var sourceLanguage = authorization.TranscriptSourceLanguage
                     ?? throw new InvalidOperationException(
                         "Saved source transcription is missing its quiz language.");
                 await sourceSocket.ConnectAsync(
@@ -120,8 +120,10 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
                 await WaitForFoundrySessionUpdatedAsync(sourceSocket, relayToken);
             }
             await SendBrowserControlAsync(browserSocket, "glosify.relay.ready", null, relayToken);
-            var sessionState = await WaitForSessionStartAsync(authorization, relayToken);
-            var billingState = new RelayBillingState(sessionState.ChargedMinutes);
+            var sessionState = await _authorizationMonitor.WaitForSessionStartAsync(
+                authorization,
+                relayToken);
+            var billingState = new RealtimeTranslationRelayBillingState(sessionState.ChargedMinutes);
             var transcriptState = new RelayTranscriptState();
             Channel<CapturedTranslationSegment>? transcriptChannel = null;
             Task? transcriptWriter = null;
@@ -166,7 +168,7 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
                     transcriptChannel?.Writer,
                     transcriptState,
                     relayToken);
-            var authorizationMonitor = MonitorAuthorizationAsync(
+            var authorizationMonitor = _authorizationMonitor.MonitorAuthorizationAsync(
                 authorization,
                 sessionState.StartedAt.Value,
                 billingState,
@@ -274,125 +276,12 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
         }
     }
 
-    private async Task<RelaySessionState> WaitForSessionStartAsync(
-        RealtimeTranslationRelayAuthorization authorization,
-        CancellationToken cancellationToken)
-    {
-        var deadline = _timeProvider.GetUtcNow().AddSeconds(_options.RelayStartupTimeoutSeconds);
-        while (_timeProvider.GetUtcNow() < deadline)
-        {
-            var state = await LoadSessionStateAsync(authorization, cancellationToken);
-            if (state is null || IsTerminal(state.Status) || state.ExpiresAt <= _timeProvider.GetUtcNow())
-            {
-                throw new RealtimeTranslationExpiredException(
-                    "The live subtitle session ended before audio started.");
-            }
-            if (state.StartedAt is { } startedAt && state.ChargedMinutes >= 1)
-            {
-                return state;
-            }
-            await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
-        }
-
-        throw new RealtimeTranslationExpiredException(
-            "The first live subtitle minute was not authorized in time.");
-    }
-
-    private async Task MonitorAuthorizationAsync(
-        RealtimeTranslationRelayAuthorization authorization,
-        DateTimeOffset startedAt,
-        RelayBillingState billingState,
-        CancellationToken cancellationToken)
-    {
-        var consecutiveDatabaseFailures = 0;
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            try
-            {
-                var now = _timeProvider.GetUtcNow();
-                var state = await LoadSessionStateAsync(authorization, cancellationToken);
-                if (state is null
-                    || IsTerminal(state.Status)
-                    || state.ExpiresAt <= now
-                    || state.LastHeartbeatAt < now.AddSeconds(-Math.Max(30, _options.StaleSessionSeconds)))
-                {
-                    throw new RealtimeTranslationExpiredException(
-                        "The live subtitle session is no longer authorized.");
-                }
-
-                var elapsed = now - startedAt;
-                var expectedMinute = Math.Max(1, (int)Math.Floor(elapsed.TotalMinutes) + 1);
-                if (expectedMinute > _options.MaxSessionMinutes)
-                {
-                    throw new RealtimeTranslationExpiredException(
-                        "The live subtitle session reached its time limit.");
-                }
-
-                var boundary = startedAt.AddMinutes(expectedMinute - 1);
-                if (state.ChargedMinutes < expectedMinute
-                    && now > boundary.AddSeconds(_options.RelayBillingGraceSeconds))
-                {
-                    throw new RealtimeTranslationExpiredException(
-                        "The current live subtitle minute was not authorized.");
-                }
-
-                Volatile.Write(ref billingState.ChargedMinutes, state.ChargedMinutes);
-                consecutiveDatabaseFailures = 0;
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                return;
-            }
-            catch (RealtimeTranslationExpiredException)
-            {
-                throw;
-            }
-            catch (Exception exception)
-            {
-                consecutiveDatabaseFailures += 1;
-                _logger.LogWarning(
-                    exception,
-                    "Could not verify billing for subtitle relay session {SessionId}",
-                    authorization.SessionId);
-                if (consecutiveDatabaseFailures >= 3)
-                {
-                    throw new RealtimeTranslationUpstreamException(
-                        "Glosify could not verify the live subtitle session.");
-                }
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
-        }
-    }
-
-    private async Task<RelaySessionState?> LoadSessionStateAsync(
-        RealtimeTranslationRelayAuthorization authorization,
-        CancellationToken cancellationToken)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
-        return await context.RealtimeTranslationSessions
-            .AsNoTracking()
-            .Where(session => session.Id == authorization.SessionId
-                && session.UserId == authorization.UserId
-                && session.TargetLanguage == authorization.TargetLanguage
-                && (session.TranscriptId != null) == authorization.SaveTranscript)
-            .Select(session => new RelaySessionState(
-                session.Status,
-                session.StartedAt,
-                session.LastHeartbeatAt,
-                session.ExpiresAt,
-                session.ChargedMinutes,
-                session.TranscriptId))
-            .SingleOrDefaultAsync(cancellationToken);
-    }
-
     private async Task PumpBrowserToFoundryAsync(
         WebSocket browserSocket,
         WebSocket foundrySocket,
         WebSocket? sourceSocket,
         DateTimeOffset startedAt,
-        RelayBillingState billingState,
+        RealtimeTranslationRelayBillingState billingState,
         CancellationToken cancellationToken)
     {
         long forwardedAudioBytes = 0;
@@ -423,7 +312,7 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
                     return;
                 }
 
-                await WaitForAudioCapacityAsync(
+                await _authorizationMonitor.WaitForAudioCapacityAsync(
                     forwardedAudioBytes + audioByteCount,
                     startedAt,
                     billingState,
@@ -468,29 +357,6 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
                     cancellationToken);
                 await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
             }
-        }
-    }
-
-    private async Task WaitForAudioCapacityAsync(
-        long requestedAudioBytes,
-        DateTimeOffset startedAt,
-        RelayBillingState billingState,
-        CancellationToken cancellationToken)
-    {
-        while (true)
-        {
-            var paidBytes = (long)Volatile.Read(ref billingState.ChargedMinutes)
-                * 60
-                * PcmBytesPerSecond;
-            var elapsedSeconds = Math.Max(0, (_timeProvider.GetUtcNow() - startedAt).TotalSeconds);
-            // A small transport window keeps ordinary realtime packets smooth,
-            // while the paid-minute cap remains absolute.
-            var realtimeBytes = (long)((elapsedSeconds + 2) * PcmBytesPerSecond);
-            if (requestedAudioBytes <= Math.Min(paidBytes, realtimeBytes))
-            {
-                return;
-            }
-            await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken);
         }
     }
 
@@ -767,24 +633,6 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
         {
             // Expected when cancellation races a peer closure.
         }
-    }
-
-    private static bool IsTerminal(string status) =>
-        status is RealtimeTranslationSessionStatuses.Completed
-            or RealtimeTranslationSessionStatuses.Interrupted
-            or RealtimeTranslationSessionStatuses.Failed;
-
-    private sealed record RelaySessionState(
-        string Status,
-        DateTimeOffset? StartedAt,
-        DateTimeOffset LastHeartbeatAt,
-        DateTimeOffset ExpiresAt,
-        int ChargedMinutes,
-        Guid? TranscriptId);
-
-    private sealed class RelayBillingState(int chargedMinutes)
-    {
-        public int ChargedMinutes = chargedMinutes;
     }
 
     private sealed class RelayTranscriptState

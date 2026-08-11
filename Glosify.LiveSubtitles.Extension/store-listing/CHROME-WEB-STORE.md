@@ -21,9 +21,9 @@ Translate audio from the Chrome tab you choose into live subtitles using your Gl
 
 **Detailed description**
 
-Glosify Live Subtitles adds real-time translated captions to the Chrome tab you explicitly choose. Connect an existing Glosify account, select the subtitle language, review the per-minute credit price, and press Start subtitles. The extension captures only that tab's audio, keeps the audio playing locally, and places the translated caption overlay over the page.
+Glosify Live Subtitles adds real-time translated captions to the Chrome tab you explicitly choose. Connect an existing Glosify account, choose Economical or Enhanced subtitles, select the spoken and subtitle languages, review the per-minute credit price, and press Start subtitles. The extension captures only that tab's audio, keeps the audio playing locally, and places the translated caption overlay over the page.
 
-Tab audio is streamed through Glosify to Microsoft Foundry for live processing and is not stored. Transcript saving is separate, off by default, and stores only finalized original-language speech in the user's private Glosify account until the user deletes the transcript or account.
+In Enhanced mode, tab audio is streamed through Glosify to Microsoft Foundry. In Economical mode, tab audio is streamed through Glosify to Azure Speech and finalized recognized phrases are sent to Azure Translator. Tab audio is not stored. Transcript saving is separate, off by default, and stores only finalized original-language speech in the user's private Glosify account until the user deletes the transcript or account.
 
 This is an unlisted BETA pilot. Paid features may close for the rest of the Europe/Stockholm month when Glosify's application budget is reached. The extension displays the reset time and stops at a paid-minute boundary.
 
@@ -67,7 +67,7 @@ The extension's single purpose is to capture audio from a user-selected Chrome t
 2. Open a regular HTTPS page that is playing speech audio, such as a video page.
 3. Open the extension and choose **Connect Glosify**. The browser is directed to Glosify's existing `/extension/connect` PKCE login flow.
 4. Sign in with the temporary password reviewer account entered only in the Chrome Web Store dashboard. That account is manually credited; its credentials must never be added to this repository or listing text.
-5. Select a quiz language and subtitle language. Confirm transcript saving is unchecked.
+5. Select a subtitle mode, spoken language, quiz language, and subtitle language. Confirm transcript saving is unchecked.
 6. Read the audio/Microsoft/credit disclosure and press **Start subtitles**. Captions appear in an overlay on the page.
 7. Stop the session. Optionally enable transcript saving for a second session, then use **View saved transcripts** to verify and delete it.
 8. Budget-exhaustion behavior can be reviewed using the supplied test account/environment instructions in the dashboard: blocked paid calls return HTTP 503 with code `paid_services_budget_exhausted` and a reset timestamp, while login, legal pages, reads, deletion, health, and admin diagnostics remain available.
@@ -78,7 +78,7 @@ The extension's single purpose is to capture audio from a user-selected Chrome t
 - Small promotional tile: `store-listing/assets/promo-440x280.png`
 - Screenshots: `store-listing/assets/screenshot-live-1280x800.png`, `store-listing/assets/screenshot-settings-1280x800.png`
 
-The screenshots are deterministic frames around the actual extension screenshots in `docs/screenshots`; they do not depict features that are absent from the product. The operator's personal email is redacted from the settings screenshot and replaced with the obvious reviewer placeholder.
+The screenshots are deterministic frames around the actual extension screenshots in `docs/screenshots`; they do not depict features that are absent from the product. The settings screenshot uses the obvious reviewer placeholder instead of the operator's personal email.
 
 ## Manual dashboard checklist
 

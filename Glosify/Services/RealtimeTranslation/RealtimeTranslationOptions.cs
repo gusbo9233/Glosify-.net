@@ -22,6 +22,15 @@ public sealed class RealtimeTranslationOptions
     public int RelayBillingGraceSeconds { get; set; } = 3;
     public string FoundryEndpoint { get; set; } = string.Empty;
     public string Deployment { get; set; } = "gpt-realtime-translate";
+    public bool EconomicalEnabled { get; set; }
+    public int EconomicalCreditsPerStartedMinute { get; set; } = 4;
+    public string EconomicalBillingModel { get; set; } = "azure-speech-standard+azure-translator-nmt";
+    public string SpeechEndpoint { get; set; } = string.Empty;
+    public string TranslatorEndpoint { get; set; } = "https://api.cognitive.microsofttranslator.com/";
+    public string TranslatorResourceId { get; set; } = string.Empty;
+    public string TranslatorRegion { get; set; } = string.Empty;
+    public int TranslatorTimeoutSeconds { get; set; } = 5;
+    public List<RealtimeTranslationSourceLanguageOptions> SourceLanguages { get; set; } = [];
     public bool SavedSourceTranscriptsEnabled { get; set; }
     public string SourceTranscriptionDeployment { get; set; } = "gpt-realtime-whisper";
     public string SavedTranscriptBillingModel { get; set; } = "gpt-realtime-translate+gpt-realtime-whisper";
@@ -32,12 +41,27 @@ public sealed class RealtimeTranslationOptions
     public RealtimeTranslationLanguageOptions? FindLanguage(string? code) =>
         Languages.FirstOrDefault(language => language.Enabled
             && string.Equals(language.Code, code?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    public RealtimeTranslationSourceLanguageOptions? FindSourceLanguage(string? code) =>
+        SourceLanguages.FirstOrDefault(language => language.Enabled
+            && string.Equals(language.Code, code?.Trim(), StringComparison.OrdinalIgnoreCase));
 }
 
 public sealed class RealtimeTranslationLanguageOptions
 {
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
+    public string TranslatorCode { get; set; } = string.Empty;
+    public bool Enabled { get; set; } = true;
+}
+
+public sealed class RealtimeTranslationSourceLanguageOptions
+{
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Locale { get; set; } = string.Empty;
+    public string TranslatorCode { get; set; } = string.Empty;
+    public bool AutoDetect { get; set; }
     public bool Enabled { get; set; } = true;
 }
 
@@ -74,6 +98,58 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
         if (string.IsNullOrWhiteSpace(options.Deployment))
         {
             failures.Add("RealtimeTranslation:Deployment is required.");
+        }
+        if (options.EconomicalEnabled)
+        {
+            if (!TryValidateCognitiveEndpoint(options.SpeechEndpoint, out _))
+            {
+                failures.Add("RealtimeTranslation:SpeechEndpoint must be an Azure AI HTTPS custom endpoint.");
+            }
+            if (!TryValidateTranslatorEndpoint(
+                    options.TranslatorEndpoint,
+                    out _,
+                    out var usesGlobalTranslatorEndpoint))
+            {
+                failures.Add(
+                    "RealtimeTranslation:TranslatorEndpoint must be the Azure Translator global endpoint or an Azure AI custom-domain root.");
+            }
+            if (usesGlobalTranslatorEndpoint
+                && !TryValidateCognitiveResourceId(options.TranslatorResourceId))
+            {
+                failures.Add(
+                    "RealtimeTranslation:TranslatorResourceId must identify the Azure AI resource used with the global Translator endpoint.");
+            }
+            if (string.IsNullOrWhiteSpace(options.EconomicalBillingModel))
+            {
+                failures.Add("RealtimeTranslation:EconomicalBillingModel is required when economical subtitles are enabled.");
+            }
+            if (options.EconomicalCreditsPerStartedMinute <= 0)
+            {
+                failures.Add("RealtimeTranslation:EconomicalCreditsPerStartedMinute must be greater than zero.");
+            }
+            if (options.TranslatorTimeoutSeconds is < 1 or > 30)
+            {
+                failures.Add("RealtimeTranslation:TranslatorTimeoutSeconds must be between 1 and 30.");
+            }
+
+            var enabledSources = options.SourceLanguages.Where(language => language.Enabled).ToArray();
+            if (enabledSources.Length == 0
+                || enabledSources.Any(language => string.IsNullOrWhiteSpace(language.Code)
+                    || string.IsNullOrWhiteSpace(language.Name)
+                    || string.IsNullOrWhiteSpace(language.Locale)
+                    || string.IsNullOrWhiteSpace(language.TranslatorCode))
+                || enabledSources.Select(language => language.Code.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count()
+                    != enabledSources.Length)
+            {
+                failures.Add(
+                    "RealtimeTranslation:SourceLanguages must contain unique enabled codes with names, Speech locales, and Translator codes.");
+            }
+            var autoDetectCount = enabledSources.Count(language => language.AutoDetect);
+            if (autoDetectCount is < 1 or > 4)
+            {
+                failures.Add(
+                    "RealtimeTranslation:SourceLanguages must mark between 1 and 4 enabled languages for at-start auto detection.");
+            }
         }
         if (options.SavedSourceTranscriptsEnabled
             && string.IsNullOrWhiteSpace(options.SourceTranscriptionDeployment))
@@ -129,9 +205,12 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
         {
             if (string.IsNullOrWhiteSpace(language.Code)
                 || string.IsNullOrWhiteSpace(language.Name)
+                || (options.EconomicalEnabled && string.IsNullOrWhiteSpace(language.TranslatorCode))
                 || !codes.Add(language.Code.Trim()))
             {
-                failures.Add("RealtimeTranslation:Languages must contain unique non-empty codes and names.");
+                failures.Add(options.EconomicalEnabled
+                    ? "RealtimeTranslation:Languages must contain unique non-empty codes, names, and Translator codes."
+                    : "RealtimeTranslation:Languages must contain unique non-empty codes and names.");
                 break;
             }
         }
@@ -158,18 +237,85 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
                     string.Equals(model.Deployment?.Trim(), options.SavedTranscriptBillingModel.Trim(), StringComparison.OrdinalIgnoreCase))
                 : null;
+            var economicalDurationPrice = options.EconomicalEnabled
+                ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
+                    string.Equals(model.Deployment?.Trim(), options.EconomicalBillingModel.Trim(), StringComparison.OrdinalIgnoreCase))
+                : null;
             if (!foundryIsBudgeted || durationPrice?.AudioSekPerMinute is not > 0
-                || (options.SavedSourceTranscriptsEnabled && savedDurationPrice?.AudioSekPerMinute is not > 0))
+                || (options.SavedSourceTranscriptsEnabled && savedDurationPrice?.AudioSekPerMinute is not > 0)
+                || (options.EconomicalEnabled && economicalDurationPrice?.AudioSekPerMinute is not > 0))
             {
-                failures.Add(options.SavedSourceTranscriptsEnabled
-                    ? $"AiUsage:MonthlyBudget must include provider 'foundry' and positive AudioSekPerMinute prices for '{options.Deployment}' and '{options.SavedTranscriptBillingModel}'."
-                    : $"AiUsage:MonthlyBudget must include provider 'foundry' and a positive AudioSekPerMinute price for '{options.Deployment}'.");
+                failures.Add("AiUsage:MonthlyBudget must include provider 'foundry' and positive AudioSekPerMinute prices for every enabled realtime subtitle billing model.");
             }
         }
 
         return failures.Count == 0
             ? ValidateOptionsResult.Success
             : ValidateOptionsResult.Fail(failures);
+    }
+
+    internal static bool TryValidateCognitiveEndpoint(string? value, [NotNullWhen(true)] out Uri? endpoint) =>
+        TryValidateHttpsEndpoint(value, out endpoint)
+        && (endpoint.AbsolutePath == "/" || endpoint.AbsolutePath.Length == 0)
+        && endpoint.Host.EndsWith(".cognitiveservices.azure.com", StringComparison.OrdinalIgnoreCase);
+
+    internal static bool TryValidateTranslatorEndpoint(
+        string? value,
+        [NotNullWhen(true)] out Uri? endpoint,
+        out bool usesGlobalEndpoint)
+    {
+        usesGlobalEndpoint = false;
+        if (!TryValidateHttpsEndpoint(value, out endpoint)
+            || (endpoint.AbsolutePath != "/" && endpoint.AbsolutePath.Length != 0))
+        {
+            endpoint = null;
+            return false;
+        }
+
+        if (string.Equals(
+                endpoint.Host,
+                "api.cognitive.microsofttranslator.com",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            usesGlobalEndpoint = true;
+            return true;
+        }
+
+        if (endpoint.Host.EndsWith(
+                ".cognitiveservices.azure.com",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        endpoint = null;
+        return false;
+    }
+
+    internal static bool TryValidateCognitiveResourceId(string? value)
+    {
+        var resourceId = value?.Trim();
+        return !string.IsNullOrWhiteSpace(resourceId)
+            && resourceId.StartsWith("/subscriptions/", StringComparison.OrdinalIgnoreCase)
+            && resourceId.Contains("/resourceGroups/", StringComparison.OrdinalIgnoreCase)
+            && resourceId.Contains(
+                "/providers/Microsoft.CognitiveServices/accounts/",
+                StringComparison.OrdinalIgnoreCase)
+            && !resourceId.Any(char.IsWhiteSpace);
+    }
+
+    internal static bool TryValidateHttpsEndpoint(string? value, [NotNullWhen(true)] out Uri? endpoint)
+    {
+        if (!Uri.TryCreate(value?.Trim(), UriKind.Absolute, out endpoint)
+            || endpoint.Scheme != Uri.UriSchemeHttps
+            || !string.IsNullOrEmpty(endpoint.UserInfo)
+            || !string.IsNullOrEmpty(endpoint.Query)
+            || !string.IsNullOrEmpty(endpoint.Fragment))
+        {
+            endpoint = null;
+            return false;
+        }
+        return true;
     }
 
     internal static bool TryValidateFoundryEndpoint(

@@ -1,3 +1,4 @@
+using System.Net.WebSockets;
 using System.Text;
 using Glosify.Controllers.Api;
 using Glosify.Services.RealtimeTranslation;
@@ -9,6 +10,9 @@ namespace Glosify.Tests;
 
 public sealed class FoundryTranslationRelayTests
 {
+    private static readonly DateTimeOffset TestNow =
+        new(2026, 8, 11, 8, 0, 0, TimeSpan.Zero);
+
     [Fact]
     public void Protocol_UsesDedicatedTranslationEndpointAndLanguageConfiguration()
     {
@@ -56,7 +60,7 @@ public sealed class FoundryTranslationRelayTests
     public void SourceAccumulator_PersistsOnlyFinalOriginalSpeech()
     {
         var accumulator = new FoundrySourceTranscriptAccumulator();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestNow;
 
         Assert.Null(accumulator.Apply(
             "{\"type\":\"conversation.item.input_audio_transcription.delta\",\"item_id\":\"i1\",\"delta\":\"Dzień \"}"u8,
@@ -103,7 +107,7 @@ public sealed class FoundryTranslationRelayTests
     public void TranscriptAccumulator_PersistsOnlyFinalTranslatedText()
     {
         var accumulator = new FoundryTranslationTranscriptAccumulator();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestNow;
 
         Assert.Null(accumulator.Apply(
             "{\"type\":\"response.text.delta\",\"response_id\":\"r1\",\"delta\":\"Hola \"}"u8,
@@ -128,7 +132,7 @@ public sealed class FoundryTranslationRelayTests
     public void TranscriptAccumulator_StoresDeltaOnlyCaptionsOnceTheyGoQuiet()
     {
         var accumulator = new FoundryTranslationTranscriptAccumulator();
-        var start = DateTimeOffset.UtcNow;
+        var start = TestNow;
 
         // A caption that only ever arrives as deltas, with no id fields to group on.
         Assert.Null(accumulator.Apply(
@@ -159,7 +163,7 @@ public sealed class FoundryTranslationRelayTests
     public void TranscriptAccumulator_RecordsEventTypesWithoutCaptionText()
     {
         var accumulator = new FoundryTranslationTranscriptAccumulator();
-        var now = DateTimeOffset.UtcNow;
+        var now = TestNow;
 
         accumulator.Apply(
             "{\"type\":\"session.output_transcript.delta\",\"delta\":\"Dzień dobry\"}"u8,
@@ -183,37 +187,63 @@ public sealed class FoundryTranslationRelayTests
     public void RelayToken_IsSingleUseAndBoundToSession()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestNow);
         var store = CreateTokenStore(cache, clock);
         var sessionId = Guid.NewGuid();
         var grant = store.Create(
             sessionId,
             "user-1",
             "es",
+            translationMode: RealtimeTranslationModes.Enhanced,
+            sourceLanguage: null,
             saveTranscript: true,
-            sourceLanguage: "Polish");
+            transcriptSourceLanguage: "Polish");
 
         Assert.True(store.TryRedeem(sessionId, grant.Token, out var authorization));
         Assert.Equal("user-1", authorization.UserId);
         Assert.Equal("es", authorization.TargetLanguage);
+        Assert.Equal(RealtimeTranslationModes.Enhanced, authorization.TranslationMode);
         Assert.True(authorization.SaveTranscript);
-        Assert.Equal("pl", authorization.SourceLanguage);
+        Assert.Equal("pl", authorization.TranscriptSourceLanguage);
         Assert.False(store.TryRedeem(sessionId, grant.Token, out _));
+    }
+
+    [Fact]
+    public void RelayToken_BindsEconomicalModeAndRequestedSourceLanguage()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var store = CreateTokenStore(cache, new ManualTimeProvider(TestNow));
+        var sessionId = Guid.NewGuid();
+        var grant = store.Create(
+            sessionId,
+            "user-1",
+            "sv",
+            RealtimeTranslationModes.Economical,
+            "pl",
+            saveTranscript: false,
+            transcriptSourceLanguage: null);
+
+        Assert.True(store.TryRedeem(sessionId, grant.Token, out var authorization));
+        Assert.Equal(RealtimeTranslationModes.Economical, authorization.TranslationMode);
+        Assert.Equal("pl", authorization.SourceLanguage);
+        Assert.Null(authorization.TranscriptSourceLanguage);
     }
 
     [Fact]
     public void RelayToken_WrongSessionConsumesGrantAndExpiredGrantFails()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestNow);
         var store = CreateTokenStore(cache, clock);
         var sessionId = Guid.NewGuid();
         var wrongSessionGrant = store.Create(
             sessionId,
             "user-1",
             "es",
+            translationMode: RealtimeTranslationModes.Enhanced,
+            sourceLanguage: null,
             saveTranscript: false,
-            sourceLanguage: null);
+            transcriptSourceLanguage: null);
 
         Assert.False(store.TryRedeem(Guid.NewGuid(), wrongSessionGrant.Token, out _));
         Assert.False(store.TryRedeem(sessionId, wrongSessionGrant.Token, out _));
@@ -222,8 +252,10 @@ public sealed class FoundryTranslationRelayTests
             sessionId,
             "user-1",
             "es",
+            translationMode: RealtimeTranslationModes.Enhanced,
+            sourceLanguage: null,
             saveTranscript: false,
-            sourceLanguage: null);
+            transcriptSourceLanguage: null);
         clock.Advance(TimeSpan.FromMinutes(3));
         Assert.False(store.TryRedeem(sessionId, expiredGrant.Token, out _));
     }
@@ -232,14 +264,16 @@ public sealed class FoundryTranslationRelayTests
     public void RelayToken_RequiresSupportedSourceLanguageWhenSaving()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
-        var store = CreateTokenStore(cache, TimeProvider.System);
+        var store = CreateTokenStore(cache, new ManualTimeProvider(TestNow));
 
         Assert.Throws<ArgumentException>(() => store.Create(
             Guid.NewGuid(),
             "user-1",
             "es",
+            translationMode: RealtimeTranslationModes.Enhanced,
+            sourceLanguage: null,
             saveTranscript: true,
-            sourceLanguage: "sv"));
+            transcriptSourceLanguage: "sv"));
     }
 
     [Fact]
@@ -252,6 +286,53 @@ public sealed class FoundryTranslationRelayTests
             ["relay-token." + token, "relay-token." + new string('B', 43)]));
         Assert.Null(RealtimeTranslationRelayController.ReadRelayToken(
             ["glosify-realtime", "relay-token.invalid"]));
+    }
+
+    [Theory]
+    [InlineData(RealtimeTranslationModes.Enhanced, 1, 0)]
+    [InlineData(RealtimeTranslationModes.Economical, 0, 1)]
+    public async Task RelayRouter_DelegatesToTheAuthorizedMode(
+        string mode,
+        int expectedEnhancedCalls,
+        int expectedEconomicalCalls)
+    {
+        var enhanced = new RecordingEnhancedRelay();
+        var economical = new RecordingEconomicalRelay();
+        var router = new RealtimeTranslationRelayRouter(enhanced, economical);
+        using var socket = new ClientWebSocket();
+        var authorization = new RealtimeTranslationRelayAuthorization(
+            Guid.NewGuid(),
+            "user-1",
+            "sv",
+            mode,
+            mode == RealtimeTranslationModes.Economical ? "pl" : null,
+            SaveTranscript: false,
+            TranscriptSourceLanguage: null);
+
+        await router.RelayAsync(socket, authorization);
+
+        Assert.Equal(expectedEnhancedCalls, enhanced.Calls);
+        Assert.Equal(expectedEconomicalCalls, economical.Calls);
+    }
+
+    [Fact]
+    public async Task RelayRouter_RejectsUnknownMode()
+    {
+        var router = new RealtimeTranslationRelayRouter(
+            new RecordingEnhancedRelay(),
+            new RecordingEconomicalRelay());
+        using var socket = new ClientWebSocket();
+        var authorization = new RealtimeTranslationRelayAuthorization(
+            Guid.NewGuid(),
+            "user-1",
+            "sv",
+            "unknown",
+            SourceLanguage: null,
+            SaveTranscript: false,
+            TranscriptSourceLanguage: null);
+
+        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(
+            () => router.RelayAsync(socket, authorization));
     }
 
     private static RealtimeTranslationRelayTokenStore CreateTokenStore(
@@ -267,5 +348,33 @@ public sealed class FoundryTranslationRelayTests
         private DateTimeOffset _now = now;
         public override DateTimeOffset GetUtcNow() => _now;
         public void Advance(TimeSpan duration) => _now += duration;
+    }
+
+    private sealed class RecordingEnhancedRelay : IEnhancedTranslationRelay
+    {
+        public int Calls { get; private set; }
+
+        public Task RelayAsync(
+            WebSocket browserSocket,
+            RealtimeTranslationRelayAuthorization authorization,
+            CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class RecordingEconomicalRelay : IEconomicalTranslationRelay
+    {
+        public int Calls { get; private set; }
+
+        public Task RelayAsync(
+            WebSocket browserSocket,
+            RealtimeTranslationRelayAuthorization authorization,
+            CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.CompletedTask;
+        }
     }
 }

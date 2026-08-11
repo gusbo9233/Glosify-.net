@@ -110,7 +110,16 @@ internal static class FoundryTranslationProtocol
         ReadOnlySpan<byte> payload,
         out int audioByteCount)
     {
-        audioByteCount = 0;
+        var valid = TryDecodeBrowserAudio(payload, out var audio);
+        audioByteCount = audio.Length;
+        return valid;
+    }
+
+    internal static bool TryDecodeBrowserAudio(
+        ReadOnlySpan<byte> payload,
+        out byte[] audioBytes)
+    {
+        audioBytes = [];
         try
         {
             using var document = JsonDocument.Parse(payload.ToArray());
@@ -126,9 +135,14 @@ internal static class FoundryTranslationProtocol
             }
 
             var decoded = GC.AllocateUninitializedArray<byte>((audioText.Length * 3 + 3) / 4);
-            return Convert.TryFromBase64String(audioText, decoded, out audioByteCount)
-                && audioByteCount > 0
-                && audioByteCount % sizeof(short) == 0;
+            if (!Convert.TryFromBase64String(audioText, decoded, out var audioByteCount)
+                || audioByteCount <= 0
+                || audioByteCount % sizeof(short) != 0)
+            {
+                return false;
+            }
+            audioBytes = decoded.AsSpan(0, audioByteCount).ToArray();
+            return true;
         }
         catch (JsonException)
         {

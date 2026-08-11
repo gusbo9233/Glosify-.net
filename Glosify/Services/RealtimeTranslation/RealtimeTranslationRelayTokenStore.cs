@@ -11,8 +11,10 @@ public interface IRealtimeTranslationRelayTokenStore
         Guid sessionId,
         string userId,
         string targetLanguage,
+        string translationMode,
+        string? sourceLanguage,
         bool saveTranscript,
-        string? sourceLanguage);
+        string? transcriptSourceLanguage);
 
     bool TryRedeem(
         Guid sessionId,
@@ -42,17 +44,23 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         Guid sessionId,
         string userId,
         string targetLanguage,
+        string translationMode,
+        string? sourceLanguage,
         bool saveTranscript,
-        string? sourceLanguage)
+        string? transcriptSourceLanguage)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetLanguage);
 
-        var canonicalSourceLanguage = saveTranscript
-            ? QuizLanguageCatalog.Find(sourceLanguage)?.Code
+        if (translationMode is not (RealtimeTranslationModes.Economical or RealtimeTranslationModes.Enhanced))
+        {
+            throw new ArgumentException("Unsupported subtitle mode.", nameof(translationMode));
+        }
+        var canonicalTranscriptSourceLanguage = saveTranscript
+            ? QuizLanguageCatalog.Find(transcriptSourceLanguage)?.Code
                 ?? throw new ArgumentException(
                     "Saved source transcription requires a supported quiz language.",
-                    nameof(sourceLanguage))
+                    nameof(transcriptSourceLanguage))
             : null;
 
         var lifetime = TimeSpan.FromSeconds(Math.Clamp(
@@ -65,8 +73,10 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
             sessionId,
             userId,
             targetLanguage,
+            translationMode,
+            sourceLanguage,
             saveTranscript,
-            canonicalSourceLanguage,
+            canonicalTranscriptSourceLanguage,
             expiresAt);
         _cache.Set(CacheKeyPrefix + HashToken(token), entry, lifetime);
         return new RealtimeTranslationRelayGrant(token, expiresAt);
@@ -101,8 +111,10 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
             entry.SessionId,
             entry.UserId,
             entry.TargetLanguage,
+            entry.TranslationMode,
+            entry.SourceLanguage,
             entry.SaveTranscript,
-            entry.SourceLanguage);
+            entry.TranscriptSourceLanguage);
         return true;
     }
 
@@ -123,7 +135,9 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         Guid SessionId,
         string UserId,
         string TargetLanguage,
-        bool SaveTranscript,
+        string TranslationMode,
         string? SourceLanguage,
+        bool SaveTranscript,
+        string? TranscriptSourceLanguage,
         DateTimeOffset ExpiresAt);
 }

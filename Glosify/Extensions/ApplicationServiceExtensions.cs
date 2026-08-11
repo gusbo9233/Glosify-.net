@@ -21,6 +21,7 @@ using Glosify.Services.Storage;
 using Glosify.Services.Typing;
 using Glosify.Services.Words;
 using Glosify.Infrastructure.Concurrency;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Extensions;
@@ -127,7 +128,29 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IMobileAuthorizationCodeStore, MobileAuthorizationCodeStore>();
         services.AddSingleton<IRealtimeTranslationRelayTokenStore, RealtimeTranslationRelayTokenStore>();
         services.AddSingleton<IKeyedAsyncLock, ReferenceCountedKeyedAsyncLock>();
-        services.AddSingleton<IFoundryTranslationRelay, FoundryTranslationRelay>();
+        services.AddSingleton<IRealtimeSpeechTranscriber, AzureRealtimeSpeechTranscriber>();
+        var translatorTimeout = TimeSpan.FromSeconds(Math.Clamp(
+            configuration.GetValue<int?>(
+                $"{RealtimeTranslationOptions.SectionName}:TranslatorTimeoutSeconds") ?? 5,
+            1,
+            30));
+        services.AddHttpClient(AzureRealtimeTextTranslator.HttpClientName)
+        .AddStandardResilienceHandler(options =>
+        {
+            // The standard handler owns timeouts and deliberately sets
+            // HttpClient.Timeout to infinite.
+            options.TotalRequestTimeout.Timeout = translatorTimeout;
+            options.AttemptTimeout.Timeout = translatorTimeout;
+            // Translation is billed per POST. Retrying an ambiguous failure can
+            // submit and charge the same phrase more than once.
+            options.Retry.DisableForUnsafeHttpMethods();
+        });
+        services.AddSingleton<IRealtimeTextTranslator, AzureRealtimeTextTranslator>();
+        services.AddSingleton<IEconomicalSubtitleTranslator, EconomicalSubtitleTranslator>();
+        services.AddSingleton<RealtimeTranslationRelayAuthorizationMonitor>();
+        services.AddSingleton<IEnhancedTranslationRelay, FoundryTranslationRelay>();
+        services.AddSingleton<IEconomicalTranslationRelay, EconomicalTranslationRelay>();
+        services.AddSingleton<IFoundryTranslationRelay, RealtimeTranslationRelayRouter>();
         services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();
         services.AddScoped<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>();
         services.AddHostedService<RealtimeTranslationCleanupService>();

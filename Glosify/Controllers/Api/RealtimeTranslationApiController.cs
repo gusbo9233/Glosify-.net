@@ -59,6 +59,8 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
             request.TargetLanguage,
             request.SaveTranscript,
             request.TranscriptId,
+            request.TranslationMode,
+            request.SourceLanguage,
             cancellationToken);
         return Ok(created);
     }

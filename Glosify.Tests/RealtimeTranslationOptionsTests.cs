@@ -89,6 +89,103 @@ public sealed class RealtimeTranslationOptionsTests
         Assert.Contains(result.Failures!, failure => failure.Contains("FoundryEndpoint", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void EconomicalFeature_RequiresManagedIdentityEndpointsAndAutoDetectCandidates()
+    {
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions
+            {
+                MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
+            }), ExtensionAuth());
+        var options = ValidOptions();
+        options.EconomicalEnabled = true;
+
+        var invalid = validator.Validate(null, options);
+
+        Assert.False(invalid.Succeeded);
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("SpeechEndpoint", StringComparison.Ordinal));
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("SourceLanguages", StringComparison.Ordinal));
+
+        options.SpeechEndpoint = "https://glosify-speech.cognitiveservices.azure.com/";
+        options.TranslatorResourceId =
+            "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/glosify/providers/Microsoft.CognitiveServices/accounts/glosify-translator";
+        options.TranslatorRegion = "swedencentral";
+        options.SourceLanguages =
+        [
+            new RealtimeTranslationSourceLanguageOptions
+            {
+                Code = "pl",
+                Name = "Polish",
+                Locale = "pl-PL",
+                TranslatorCode = "pl",
+                AutoDetect = true,
+            },
+        ];
+        options.Languages[0].TranslatorCode = "es";
+
+        Assert.True(validator.Validate(null, options).Succeeded);
+    }
+
+    [Fact]
+    public void EconomicalFeature_RejectsMoreThanFourAtStartCandidatesAndNonAzureTranslatorHosts()
+    {
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions
+            {
+                MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
+            }), ExtensionAuth());
+        var options = ValidOptions();
+        options.EconomicalEnabled = true;
+        options.SpeechEndpoint = "https://glosify-speech.cognitiveservices.azure.com/sts/v1.0/";
+        options.TranslatorEndpoint = "https://example.test/";
+        options.Languages[0].TranslatorCode = "es";
+        options.SourceLanguages = Enumerable.Range(1, 5)
+            .Select(index => new RealtimeTranslationSourceLanguageOptions
+            {
+                Code = $"l{index}",
+                Name = $"Language {index}",
+                Locale = $"l{index}-XX",
+                TranslatorCode = $"l{index}",
+                AutoDetect = true,
+            })
+            .ToList();
+
+        var result = validator.Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure => failure.Contains("SpeechEndpoint", StringComparison.Ordinal));
+        Assert.Contains(result.Failures!, failure => failure.Contains("between 1 and 4", StringComparison.Ordinal));
+        Assert.Contains(result.Failures!, failure => failure.Contains("TranslatorEndpoint", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void EconomicalFeature_CustomTranslatorDomainDoesNotRequireGlobalResourceHeaders()
+    {
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions
+            {
+                MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
+            }), ExtensionAuth());
+        var options = ValidOptions();
+        options.EconomicalEnabled = true;
+        options.SpeechEndpoint = "https://glosify-speech.cognitiveservices.azure.com/";
+        options.TranslatorEndpoint = "https://glosify-translator.cognitiveservices.azure.com/";
+        options.Languages[0].TranslatorCode = "es";
+        options.SourceLanguages =
+        [
+            new RealtimeTranslationSourceLanguageOptions
+            {
+                Code = "pl",
+                Name = "Polish",
+                Locale = "pl-PL",
+                TranslatorCode = "pl",
+                AutoDetect = true,
+            },
+        ];
+
+        Assert.True(validator.Validate(null, options).Succeeded);
+    }
+
     private static RealtimeTranslationOptions ValidOptions() => new()
     {
         Enabled = true,
