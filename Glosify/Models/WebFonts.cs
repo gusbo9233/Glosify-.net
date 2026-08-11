@@ -34,7 +34,7 @@ public static class WebFonts
         "play_circle", "progress_activity", "psychology", "public", "quiz", "remove", "replay",
         "rotate_right", "school", "science", "search", "send", "settings", "share", "short_text",
         "shot_bar", "stacks", "style", "subject", "subtitles", "subtitles_off", "swap_horiz",
-        "task_alt", "timer", "translate", "travel_explore", "tune", "undo", "upload_file", "videocam",
+        "task_alt", "thumb_down", "thumb_up", "timer", "translate", "travel_explore", "tune", "undo", "upload_file", "videocam",
         "videocam_off", "view_column_2", "volume_up", "waving_hand", "west",
     ];
 

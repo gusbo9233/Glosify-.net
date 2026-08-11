@@ -89,6 +89,9 @@ internal static class AssistantAnalyticsTelemetry
             TryParseParent(traceId));
         activity?.SetTag("gen_ai.evaluation.name", "user_feedback");
         activity?.SetTag("assistant.turn.id", turnId.ToString());
+        activity?.SetTag("gen_ai.evaluation.score.value", rating == AssistantFeedbackRating.Up ? 1 : 0);
+        activity?.SetTag("gen_ai.evaluation.score.label", rating);
+        activity?.SetTag("assistant.feedback.reasons", string.Join(',', reasons));
         activity?.AddEvent(new ActivityEvent(
             "gen_ai.evaluation.result",
             tags: new ActivityTagsCollection

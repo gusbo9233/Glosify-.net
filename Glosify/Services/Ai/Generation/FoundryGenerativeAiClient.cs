@@ -228,14 +228,15 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                 outputReserve,
                 enableSensitiveData: true,
                 token),
-            cancellationToken);
+            cancellationToken,
+            validateResponse: ValidateAgentResponse);
 
         var calls = response.Messages
             .SelectMany(message => message.Contents)
             .OfType<FunctionCallContent>()
             .Select((call, index) => new AgentFunctionCall(
                 call.Name,
-                JsonSerializer.Serialize(call.Arguments, JsonOptions))
+                SerializeToolArguments(call))
             {
                 CallId = string.IsNullOrWhiteSpace(call.CallId)
                     ? $"foundry-call-{index}"
@@ -272,6 +273,42 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                     profile = request.Profile.ToString(),
                 }, JsonOptions)),
         };
+    }
+
+    private static string SerializeToolArguments(FunctionCallContent call)
+    {
+        if (call.Arguments is null || call.Exception is not null)
+        {
+            throw new GenerativeAiStructuredOutputException(
+                "The assistant could not finish preparing that action. Please try again.",
+                call.Exception);
+        }
+
+        var json = JsonSerializer.Serialize(call.Arguments, JsonOptions);
+        using var document = JsonDocument.Parse(json);
+        if (document.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new GenerativeAiStructuredOutputException(
+                "The assistant could not finish preparing that action. Please try again.");
+        }
+
+        return json;
+    }
+
+    private static void ValidateAgentResponse(AgentResponse response)
+    {
+        if (response.FinishReason == ChatFinishReason.Length)
+        {
+            throw new GenerativeAiStructuredOutputException(
+                "The assistant response was too large to finish. Please try a smaller request.");
+        }
+
+        foreach (var call in response.Messages
+            .SelectMany(message => message.Contents)
+            .OfType<FunctionCallContent>())
+        {
+            _ = SerializeToolArguments(call);
+        }
     }
 
     private async Task<FoundryAuthoredAgent?> ResolveAuthoredAgentAsync(

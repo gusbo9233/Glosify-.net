@@ -6,7 +6,7 @@ public sealed class AiUsageOptions
 {
     public int TrialGrantCredits { get; set; } = 25;
     public int CreditsPerThousandTokens { get; set; } = 1;
-    public int AssistantOutputTokenReserve { get; set; } = 2048;
+    public int AssistantOutputTokenReserve { get; set; } = 16384;
     public int RepairOutputTokenReserve { get; set; } = 1024;
     public int ImageExtractionOutputTokenReserve { get; set; } = 1024;
     public int SpeakingOutputTokenReserve { get; set; } = 768;

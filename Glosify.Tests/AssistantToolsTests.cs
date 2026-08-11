@@ -28,6 +28,27 @@ public class AssistantToolsTests
         Assert.DoesNotContain("create_quiz", names);
     }
 
+    [Theory]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("\"text\"")]
+    [InlineData("{not-json")]
+    public async Task CreateVocabularyQuiz_TreatsNonObjectArgumentsAsMissingFields(string argsJson)
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            argsJson,
+            context,
+            CancellationToken.None));
+
+        Assert.Equal("name and source_language are required.", result.GetProperty("error").GetString());
+        Assert.Empty(context.PendingChanges);
+    }
+
     // Scoping the creator's tools is what makes "generate exercises" unable to fork a new
     // custom quiz: the tool that would do it is not on the agent at all.
     [Fact]
