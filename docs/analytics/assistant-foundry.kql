@@ -30,13 +30,13 @@ dependencies
     inputTokens = tolong(customDimensions["gen_ai.usage.input_tokens"]),
     outputTokens = tolong(customDimensions["gen_ai.usage.output_tokens"])
 | summarize
-    calls = count(),
-    failures = countif(success == false),
-    inputTokens = sum(inputTokens),
-    outputTokens = sum(outputTokens),
-    p50 = percentile(duration, 50),
-    p95 = percentile(duration, 95),
-    p99 = percentile(duration, 99)
+    calls = sum(itemCount),
+    failures = sumif(itemCount, success == false),
+    inputTokens = sum(inputTokens * itemCount),
+    outputTokens = sum(outputTokens * itemCount),
+    p50 = percentilew(duration, itemCount, 50),
+    p95 = percentilew(duration, itemCount, 95),
+    p99 = percentilew(duration, itemCount, 99)
   by agent, agentVersion, model
 | order by calls desc
 
@@ -50,7 +50,11 @@ dependencies
     toolName = tostring(customDimensions["gen_ai.tool.name"]),
     args = tostring(customDimensions["gen_ai.tool.call.arguments"]),
     result = tostring(customDimensions["gen_ai.tool.call.result"])
-| summarize executions = count(), failures = countif(success == false), p95 = percentile(duration, 95) by toolName
+| summarize
+    executions = sum(itemCount),
+    failures = sumif(itemCount, success == false),
+    p95 = percentilew(duration, itemCount, 95)
+  by toolName
 | extend failureRatePct = round(100.0 * failures / executions, 2)
 | order by executions desc
 
@@ -95,12 +99,26 @@ let roots = materialize(
     | where timestamp > ago(24h)
     | where name == "assistant.turn"
     | extend turnId = tostring(customDimensions["assistant.turn.id"])
-    | summarize rootSpans = count(), successfulRoots = countif(success == true) by operation_Id, turnId
+    | summarize rootSpans = count(), successfulRoots = countif(success == true)
+      by rootOperationId = operation_Id, rootTurnId = turnId
 );
-dependencies
-| where timestamp > ago(24h)
-| where operation_Id in (roots | project operation_Id)
-| summarize modelSpans = countif(tostring(customDimensions["gen_ai.operation.name"]) == "chat") by operation_Id
-| join kind=rightouter roots on operation_Id
+let modelSpans = materialize(
+    dependencies
+    | where timestamp > ago(24h)
+    | where tostring(customDimensions["gen_ai.operation.name"]) == "chat"
+    | extend modelTurnId = tostring(customDimensions["assistant.turn.id"])
+    | where isnotempty(modelTurnId)
+    | summarize modelSpans = count(), modelTurnId = take_any(modelTurnId)
+      by modelOperationId = operation_Id
+);
+roots
+| join kind=fullouter modelSpans on $left.rootOperationId == $right.modelOperationId
+| extend
+    operation_Id = coalesce(rootOperationId, modelOperationId),
+    turnId = coalesce(rootTurnId, modelTurnId),
+    rootSpans = coalesce(rootSpans, 0),
+    successfulRoots = coalesce(successfulRoots, 0),
+    modelSpans = coalesce(modelSpans, 0)
 | where isempty(turnId) or rootSpans != 1 or (successfulRoots > 0 and modelSpans == 0)
+| project operation_Id, turnId, rootSpans, successfulRoots, modelSpans
 | order by operation_Id desc
