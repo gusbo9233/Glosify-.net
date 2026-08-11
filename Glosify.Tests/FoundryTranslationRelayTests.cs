@@ -316,7 +316,7 @@ public sealed class FoundryTranslationRelayTests
     }
 
     [Fact]
-    public void RelayRouter_RejectsUnknownMode()
+    public async Task RelayRouter_RejectsUnknownMode()
     {
         var router = new RealtimeTranslationRelayRouter(
             new RecordingEnhancedRelay(),
@@ -331,7 +331,7 @@ public sealed class FoundryTranslationRelayTests
             SaveTranscript: false,
             TranscriptSourceLanguage: null);
 
-        Assert.Throws<RealtimeTranslationValidationException>(
+        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(
             () => router.RelayAsync(socket, authorization));
     }
 
