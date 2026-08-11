@@ -379,6 +379,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         for (const chat of chats) {
             const item = document.createElement('article');
             item.className = 'assistant-chat-item';
+            item.dataset.assistantChatItem = '';
             item.classList.toggle('is-active', chat.id === activeThreadId);
 
             const main = document.createElement('button');

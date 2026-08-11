@@ -133,7 +133,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await AssertNoPageErrorsAsync();
         await Page.Locator("[data-assistant-tab='chats']").ClickAsync();
         await Expect(Page.Locator("[data-assistant-new-chat]")).ToBeVisibleAsync();
-        await Expect(Page.Locator(".assistant-chat-item")).ToHaveCountAsync(1);
+        await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
 
         await Page.Locator("[data-assistant-new-chat]").ClickAsync();
         // Creating a chat renders the list once when the POST completes and again after
@@ -142,25 +142,25 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         // Playwright is hovering it.
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
         await Page.Locator("[data-assistant-tab='chats']").ClickAsync();
-        await Expect(Page.Locator(".assistant-chat-item")).ToHaveCountAsync(2);
+        await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(2);
 
         async void RenameDialog(object? _, IDialog dialog) => await dialog.AcceptAsync("Employer demo chat");
         Page.Dialog += RenameDialog;
-        await Page.Locator(".assistant-chat-item").First.HoverAsync();
-        await Page.Locator(".assistant-chat-item").First
+        await Page.Locator("[data-assistant-chat-item]").First.HoverAsync();
+        await Page.Locator("[data-assistant-chat-item]").First
             .Locator("button[aria-label='Rename chat']")
             .ClickAsync();
         Page.Dialog -= RenameDialog;
-        await Expect(Page.Locator(".assistant-chat-item").First).ToContainTextAsync("Employer demo chat");
+        await Expect(Page.Locator("[data-assistant-chat-item]").First).ToContainTextAsync("Employer demo chat");
 
         async void DeleteDialog(object? _, IDialog dialog) => await dialog.AcceptAsync();
         Page.Dialog += DeleteDialog;
-        await Page.Locator(".assistant-chat-item").First.HoverAsync();
-        await Page.Locator(".assistant-chat-item").First
+        await Page.Locator("[data-assistant-chat-item]").First.HoverAsync();
+        await Page.Locator("[data-assistant-chat-item]").First
             .Locator("button[aria-label='Delete chat']")
             .ClickAsync();
         Page.Dialog -= DeleteDialog;
-        await Expect(Page.Locator(".assistant-chat-item")).ToHaveCountAsync(1);
+        await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
         await Page.Locator("[data-assistant-tab='chats']").ClickAsync();
         await Page.Locator(".assistant-chat-main").ClickAsync();
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();

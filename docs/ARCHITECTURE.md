@@ -611,7 +611,7 @@ each job. In that clean environment, the first step proves a new database can be
 built from migrations alone; when run manually against an existing server it only
 updates that server to the latest migration. The second step proves the model and
 the migrations have not drifted apart. Both run on pull requests, so a schema
-change cannot merge without a matching migration.
+change represented by the EF model cannot merge without a matching migration.
 
 ### Concurrency and integrity
 
