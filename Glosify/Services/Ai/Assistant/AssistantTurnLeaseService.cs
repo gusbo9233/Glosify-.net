@@ -43,10 +43,13 @@ internal sealed class AssistantTurnLeaseService(
         Guid leaseId,
         CancellationToken cancellationToken)
     {
-        var expiresAt = timeProvider.GetUtcNow().UtcDateTime.Add(LeaseDuration);
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var expiresAt = now.Add(LeaseDuration);
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var affected = await context.AssistantThreads
-            .Where(thread => thread.Id == threadId && thread.ActiveTurnId == leaseId)
+            .Where(thread => thread.Id == threadId
+                && thread.ActiveTurnId == leaseId
+                && thread.ActiveTurnExpiresAt > now)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(thread => thread.ActiveTurnExpiresAt, expiresAt), cancellationToken);
         return affected == 1;

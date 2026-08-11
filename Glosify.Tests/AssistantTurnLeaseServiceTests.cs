@@ -82,4 +82,19 @@ public sealed class AssistantTurnLeaseServiceTests : IAsyncLifetime
         Assert.Equal(successor, thread.ActiveTurnId);
         Assert.Equal(_clock.GetUtcNow().UtcDateTime.Add(AssistantTurnLeaseService.LeaseDuration), thread.ActiveTurnExpiresAt);
     }
+
+    [Fact]
+    public async Task Expired_lease_cannot_be_renewed_without_takeover()
+    {
+        var owner = Assert.IsType<Guid>(await _leases.TryAcquireAsync(_threadId, "user-1", default));
+        var originalExpiry = _clock.GetUtcNow().UtcDateTime.Add(AssistantTurnLeaseService.LeaseDuration);
+        _clock.Advance(AssistantTurnLeaseService.LeaseDuration.Add(TimeSpan.FromSeconds(1)));
+
+        Assert.False(await _leases.RenewAsync(_threadId, owner, default));
+
+        await using var verification = new TestDbContextFactory(_root).CreateDbContext();
+        var thread = await verification.AssistantThreads.AsNoTracking().SingleAsync(item => item.Id == _threadId);
+        Assert.Equal(owner, thread.ActiveTurnId);
+        Assert.Equal(originalExpiry, thread.ActiveTurnExpiresAt);
+    }
 }

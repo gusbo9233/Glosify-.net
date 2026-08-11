@@ -171,6 +171,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         var assistantMessageId = Guid.NewGuid();
         var apiQuizRequests = 0;
         var applyAttempts = 0;
+        var failContextPatch = false;
         string? contextPatch = null;
         Page.Request += (_, request) =>
         {
@@ -232,6 +233,21 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             }
 
             contextPatch = route.Request.PostData;
+            if (failContextPatch)
+            {
+                await route.FulfillAsync(new RouteFulfillOptions
+                {
+                    Status = 503,
+                    ContentType = "application/problem+json",
+                    Body = JsonSerializer.Serialize(new
+                    {
+                        status = 503,
+                        code = "temporarily_unavailable",
+                        detail = "Context persistence is temporarily unavailable.",
+                    }),
+                });
+                return;
+            }
             var threadId = new Uri(route.Request.Url).Segments.Last().Trim('/');
             await route.FulfillAsync(new RouteFulfillOptions
             {
@@ -260,9 +276,9 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
         await Page.Locator("[data-assistant-textarea]").FillAsync("Create a travel quiz");
         await Page.Locator("[data-assistant-submit]").ClickAsync();
-        await Expect(Page.Locator(".assistant-pending-card")).ToBeVisibleAsync();
+        await Expect(Page.Locator("[data-assistant-pending-card]")).ToBeVisibleAsync();
 
-        var pendingCard = Page.Locator(".assistant-pending-card");
+        var pendingCard = Page.Locator("[data-assistant-pending-card]");
         var applyButton = pendingCard.GetByRole(AriaRole.Button, new() { Name = "Apply", Exact = true });
         var rejectButton = pendingCard.GetByRole(AriaRole.Button, new() { Name = "Reject", Exact = true });
         await applyButton.ClickAsync();
@@ -282,6 +298,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             Assert.True(patchJson.RootElement.GetProperty("updateContext").GetBoolean());
         }
         Assert.Equal(0, apiQuizRequests);
+
+        failContextPatch = true;
+        await Page.Locator("[data-assistant-quiz-selector]").SelectOptionAsync("");
+        await Expect(Page.Locator("[data-assistant-status]")).ToContainTextAsync("Could not save chat context");
 
         await Page.GetByRole(AriaRole.Link, new() { Name = "Open quiz" }).ClickAsync();
         await Expect(Page).ToHaveURLAsync(new Regex($"/Quizzes/Details/{createdQuizId}$", RegexOptions.IgnoreCase));

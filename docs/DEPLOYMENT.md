@@ -109,7 +109,11 @@ priced by the budget configuration.
 The Gemini provider is only a rollback seam. Do not set
 `GenerativeAi__Provider=Gemini` unless all Gemini models have configured budget
 prices, `gemini` is included in the budgeted providers, and the Gemini
-credential is configured. Startup is intentionally fail-closed otherwise.
+credential is configured. Store that credential only as the App Service secret
+setting `Gemini__ApiKey` (preferred) or the temporary legacy alias
+`GEMINI_API_KEY`; rotate it at the provider, update the App Service setting, and
+restart/verify the app without writing the value to source, logs, or command
+output. Startup is intentionally fail-closed otherwise.
 
 Useful read-only checks:
 
@@ -220,8 +224,14 @@ After code deployment, and only with production-change approval, run the
 idempotent operator script:
 
 ```bash
-./scripts/configure-production-observability.sh
+GLOSIFY_SUBSCRIPTION_ID=b08575d2-a820-4e76-baae-2d55f215cc10 \
+  ./scripts/configure-production-observability.sh
 ```
+
+The script pins every command to that explicit subscription, requires exactly
+one matching Log Analytics workspace, and verifies that the code-based
+OpenTelemetry application-log path is configured without printing its secret
+connection string. It stops before mutation when any prerequisite is missing.
 
 It sets App Service Health Check to `/healthz` (never `/readyz`) and creates or
 updates diagnostic setting `glosify-app-operational` for Log Analytics workspace

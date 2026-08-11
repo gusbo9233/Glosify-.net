@@ -163,7 +163,7 @@ project currently has: there is one deployable, one database, and one team. The
 boundaries that would otherwise be assembly boundaries are enforced by namespace
 and folder instead:
 
-```
+```text
 Glosify/
   Program.cs              Composition root + pipeline (the only place both are visible)
   Extensions/             Registration helpers called by Program.cs
@@ -222,11 +222,14 @@ The rules, as the code actually observes them:
    `QuizService`). Interfaces exist where there is a substitution need — a fake in
    tests, a provider swap, a second implementation — not reflexively for every
    class.
-5. **Exceptions are the failure channel across the layer boundary.** Services
-   throw domain exceptions (`QuizNotFoundException`,
-   `InsufficientAiCreditsException`, `SpeakingSessionExpiredException`, …); a
-   single MVC filter maps them onto HTTP status codes (§8). Controllers do not
-   translate error shapes individually.
+5. **Exceptions are the failure channel across the layer boundary.** Expected
+   service failures use typed exceptions such as `QuizNotFoundException`,
+   `InsufficientAiCreditsException`, and `SpeakingSessionExpiredException`; the
+   shared mapper and MVC filters translate supported types into stable Problem
+   Details responses (§8). Preconditions that are not part of that typed domain
+   contract can still surface as ordinary exceptions and receive the sanitized
+   unexpected-error response. Controllers do not translate error shapes
+   individually.
 
 ### Feature slices
 
@@ -277,15 +280,16 @@ The rule the graph follows: **scoped by default; singleton only for things that
 are genuinely process-wide and hold no `DbContext`.**
 
 - **Scoped** — anything that touches `GlosifyContext`: every feature service,
-  `AiCreditService`, the assistant collaborators, `IGenerativeAiClient`
-  implementations.
+  `AiCreditService`, the assistant collaborators, and `IGenerativeAiClient`
+  implementations. The request-scoped storage and speech adapters
+  `IBookFileStorage`, `ITextToSpeechService`, and
+  `ISpeechAuthorizationTokenService` are scoped as well.
 - **Singleton** — process-wide state and stateless clients:
   `IQuizSessionRegistry`, `ISpeakingSessionStore`,
   `IExtensionAuthorizationCodeStore`, `IMobileAuthorizationCodeStore`,
   `IRealtimeTranslationRelayTokenStore`, `IKeyedAsyncLock`,
-  `IFoundryTranslationRelay`, `IBookFileStorage`, `IClassroomCallPresence`,
-  `ICustomQuizTemplateCatalog`, `ITextToSpeechService`,
-  `ISpeechAuthorizationTokenService`, `ISpeakingAgentClient`,
+  `IFoundryTranslationRelay`, `IClassroomCallPresence`,
+  `ICustomQuizTemplateCatalog`, `ISpeakingAgentClient`,
   `IFoundryAgentInvoker`, `TokenCredential`, `AIProjectClient`, `TimeProvider`.
 - **Hosted services** — `RealtimeTranslationCleanupService` and
   `SpeakingSessionCleanupService` sweep expired process-local sessions.
@@ -594,11 +598,11 @@ Notable modelling choices:
 
 The checked-in history starts from a single complete `InitialCreate`
 (`20260809100614_InitialCreate`). There is no generated-schema shortcut and no
-forged history — CI proves it every run:
+forged history — CI proves it every run from the repository root:
 
-```
-dotnet ef database update            # against an empty SQL Server service container
-dotnet ef migrations has-pending-model-changes
+```bash
+dotnet ef database update --project Glosify/Glosify.csproj --configuration Release --no-build
+dotnet ef migrations has-pending-model-changes --project Glosify/Glosify.csproj --configuration Release --no-build
 ```
 
 The first step proves a new database can be built from migrations alone; the
@@ -718,9 +722,13 @@ flowchart LR
 - **Structured output is validated, not trusted.** Model responses that become
   data go through validation that throws `GenerativeAiValidationException` → 400
   rather than persisting a malformed shape.
-- **Credentials are never keys in production.** `FoundryCredentialFactory` builds
-  `DefaultAzureCredential` locally (hence `az login`) and managed identity in
-  Azure.
+- **Foundry and Speech credentials are never keys in production.**
+  `FoundryCredentialFactory` builds `DefaultAzureCredential` locally (hence
+  `az login`) and uses managed identity in Azure. The explicit Gemini rollback
+  provider is the exception: it requires `Gemini__ApiKey` (preferred) or the
+  temporary legacy `GEMINI_API_KEY` App Service secret setting. Rotate that key
+  at the provider and replace the App Service setting without checking it into
+  source or emitting it in logs.
 - **Telemetry per surface.** `GenerativeAiTelemetry`, `SpeakingTelemetry`, and
   `RealtimeTranslationTelemetry` each expose an `ActivitySource` and a `Meter`,
   registered with OpenTelemetry only when an Application Insights connection

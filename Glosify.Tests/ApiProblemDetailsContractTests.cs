@@ -60,6 +60,8 @@ public sealed class ApiProblemDetailsContractTests
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(ApiErrorCodes.Conflict, json.RootElement.GetProperty("code").GetString());
         Assert.Equal(409, json.RootElement.GetProperty("status").GetInt32());
+        Assert.False(
+            string.IsNullOrWhiteSpace(json.RootElement.GetProperty("error").GetString()));
     }
 
     [Fact]

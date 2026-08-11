@@ -343,8 +343,9 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         setQuizContext(contextQuizId, contextQuizName, false);
         const adoptsPageQuiz = pageQuizId && chat?.contextQuizId !== pageQuizId;
         const adoptsPageMaterial = !storedId && materialId;
+        let contextPersisted = true;
         if (adoptsPageQuiz || adoptsPageMaterial) {
-            await enqueueContextWrite({
+            contextPersisted = await enqueueContextWrite({
                 threadId,
                 payload: {
                     contextQuizId: quizId,
@@ -356,7 +357,9 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
         renderChatList();
         await loadHistory(threadId);
         switchPane('chat');
-        setStatus('');
+        if (contextPersisted) {
+            setStatus('');
+        }
     };
 
     const renderChatList = () => {
@@ -517,6 +520,7 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
     const renderPendingChanges = (message) => {
         const card = document.createElement('div');
         card.className = 'assistant-pending-card';
+        card.dataset.assistantPendingCard = '';
         card.dataset.messageId = message.id;
         const isSentenceFix = message.pendingChanges.every(change => change.kind === 'repair_sentence');
         const isLibraryChange = message.pendingChanges.every(change => change.kind === 'create_quiz' || change.kind === 'create_collection');
@@ -745,14 +749,18 @@ import { escapeHtml, formatChatDate } from './assistant/presentation.js';
     quizSelector?.addEventListener('change', async () => {
         const selectedOption = quizSelector.selectedOptions?.[0] || null;
         const label = selectedOption?.dataset.contextLabel || 'Glosify';
-        await setQuizContext(quizSelector.value || null, label, true);
-        setStatus(quizId ? `Quiz set to ${label}.` : 'No quiz selected.');
+        const contextPersisted = await setQuizContext(quizSelector.value || null, label, true);
+        if (contextPersisted) {
+            setStatus(quizId ? `Quiz set to ${label}.` : 'No quiz selected.');
+        }
     });
 
     materialSelector?.addEventListener('change', async () => {
         const [kind, id] = (materialSelector.value || '').split(':');
-        await setMaterialContext(kind || null, id || null, true);
-        setStatus(materialId ? `Reading ${materialLabel()}.` : 'No material selected.');
+        const contextPersisted = await setMaterialContext(kind || null, id || null, true);
+        if (contextPersisted) {
+            setStatus(materialId ? `Reading ${materialLabel()}.` : 'No material selected.');
+        }
     });
 
     document.addEventListener('keydown', (event) => {

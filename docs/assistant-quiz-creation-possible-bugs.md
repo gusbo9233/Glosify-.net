@@ -336,17 +336,20 @@ also verified every fixed-commit source link and line range in this report. No a
 code was changed, so these results establish the pre-existing baseline rather than proving
 that the possible defects below have been fixed.
 
-Missing high-value regression coverage:
+Later remediation added regression coverage for:
 
-1. browser Send -> proposal -> Apply -> quiz selector/link;
-2. Foundry failure after a mutating tool and after the next credit save;
-3. stale collection between proposal and Apply;
-4. concurrent Sends to one thread;
-5. process-loss recovery after the Applied claim;
-6. ambiguous-commit fault injection/idempotency;
-7. authored tool parity/profile enforcement against the live/exported agent;
-8. a canary across model-version upgrades;
-9. App Service diagnostic-setting ingestion verification.
+- browser Send -> proposal -> Apply -> quiz selector/link;
+- Foundry failure after a mutating tool and after the next shared-context save;
+- stale collection between proposal and Apply.
+
+High-value coverage still missing:
+
+1. concurrent Sends to one thread through the complete HTTP/runner path;
+2. process-loss recovery after the Applied claim;
+3. ambiguous-commit fault injection/idempotency;
+4. authored tool parity/profile enforcement against the live/exported agent;
+5. a canary across model-version upgrades;
+6. App Service diagnostic-setting ingestion verification.
 
 No application fixes were made in this task.
 
