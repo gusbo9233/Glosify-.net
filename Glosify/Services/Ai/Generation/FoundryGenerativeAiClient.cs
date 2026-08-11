@@ -253,14 +253,14 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                     deployment));
         }
 
-        var configuredAgent = ResolveConfiguredAgent(request.Profile);
+        var configuredAgent = authored is null ? null : ResolveConfiguredAgent(request.Profile);
         return new AgentTurnResult(response.Text ?? string.Empty, calls)
         {
             Metadata = new AgentInvocationMetadata(
                 Provider,
                 deployment,
                 response.ResponseId,
-                ExtractUsage(response.Usage, 0),
+                ExtractUsage(response.Usage, estimatedPromptTokens + outputReserve),
                 configuredAgent?.Name,
                 configuredAgent?.Version,
                 JsonSerializer.Serialize(new

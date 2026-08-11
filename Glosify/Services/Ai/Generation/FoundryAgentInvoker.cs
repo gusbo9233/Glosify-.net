@@ -194,7 +194,7 @@ internal sealed class FoundryAgentInvoker(
             ? value.GetString()
             : null;
 
-    public Task<AgentResponse> RunAsync(
+    public async Task<AgentResponse> RunAsync(
         string deployment,
         string instructions,
         IReadOnlyList<ChatMessage> messages,
@@ -204,14 +204,21 @@ internal sealed class FoundryAgentInvoker(
         CancellationToken cancellationToken)
     {
         var agent = CreateAgent(deployment, instructions, tools, maxOutputTokens, enableSensitiveData);
-        return agent.RunAsync(
-            messages,
-            session: null,
-            options: null,
-            cancellationToken);
+        try
+        {
+            return await agent.RunAsync(
+                messages,
+                session: null,
+                options: null,
+                cancellationToken);
+        }
+        finally
+        {
+            (agent as IDisposable)?.Dispose();
+        }
     }
 
-    public Task<AgentResponse<T>> RunStructuredAsync<T>(
+    public async Task<AgentResponse<T>> RunStructuredAsync<T>(
         string deployment,
         string instructions,
         string prompt,
@@ -219,12 +226,19 @@ internal sealed class FoundryAgentInvoker(
         CancellationToken cancellationToken)
     {
         var agent = CreateAgent(deployment, instructions, [], maxOutputTokens, enableSensitiveData: false);
-        return agent.RunAsync<T>(
-            prompt,
-            session: null,
-            JsonOptions,
-            options: null,
-            cancellationToken);
+        try
+        {
+            return await agent.RunAsync<T>(
+                prompt,
+                session: null,
+                JsonOptions,
+                options: null,
+                cancellationToken);
+        }
+        finally
+        {
+            (agent as IDisposable)?.Dispose();
+        }
     }
 
     private AIAgent CreateAgent(

@@ -159,7 +159,7 @@ public class AssistantApiController : ApiControllerBase
                 input.Comment,
                 cancellationToken));
         }
-        catch (ArgumentException ex)
+        catch (AssistantFeedbackValidationException ex)
         {
             return GlosifyProblemDetails.Result(
                 HttpContext,
@@ -210,7 +210,7 @@ public class AssistantApiController : ApiControllerBase
                 cancellationToken);
             return NoContent();
         }
-        catch (ArgumentOutOfRangeException ex)
+        catch (AssistantFeedbackValidationException ex)
         {
             return GlosifyProblemDetails.Result(
                 HttpContext,

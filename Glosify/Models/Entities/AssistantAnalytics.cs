@@ -287,5 +287,8 @@ public sealed class AssistantTelemetryDeletionRequest
 public static class AssistantTelemetryDeletionStatus
 {
     public const string Pending = "pending";
+    public const string Submitting = "submitting";
     public const string Submitted = "submitted";
+    public const string Completed = "completed";
+    public const string Failed = "failed";
 }

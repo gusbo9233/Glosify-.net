@@ -598,6 +598,18 @@ internal sealed class AssistantTurnRunner
         }
         catch (Exception ex)
         {
+            // If the completion save failed, its buffered message inserts remain tracked.
+            // Detach only this turn's pending messages so failure finalization can persist
+            // without retrying the write that already failed.
+            foreach (var entry in _context.ChangeTracker
+                .Entries<AssistantMessage>()
+                .Where(entry => entry.State == EntityState.Added
+                    && entry.Entity.TurnId == turnId)
+                .ToList())
+            {
+                entry.State = EntityState.Detached;
+            }
+
             turnEntity.Status = ex is OperationCanceledException
                 ? AssistantTurnStatus.Cancelled
                 : AssistantTurnStatus.Failed;

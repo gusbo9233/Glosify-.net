@@ -41,7 +41,8 @@ public class ChangeApplierTests
             db,
             CreateApplier(db),
             new AssistantMessagePresenter(),
-            null!);
+            null!,
+            TimeProvider.System);
 
         await Assert.ThrowsAsync<CollectionParentNotFoundException>(
             () => workflow.ApplyAsync(messageId, "user-1", CancellationToken.None));
@@ -74,7 +75,8 @@ public class ChangeApplierTests
             db,
             CreateApplier(db),
             new AssistantMessagePresenter(),
-            null!);
+            null!,
+            TimeProvider.System);
 
         var first = await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
         var second = await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);

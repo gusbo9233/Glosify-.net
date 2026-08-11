@@ -11,7 +11,7 @@ public sealed class AssistantAnalyticsModelTests
     [Fact]
     public async Task Legacy_rows_remain_nullable_and_chat_delete_cascades_analytics()
     {
-        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await using var connection = new SqliteConnection("Data Source=:memory:;Foreign Keys=True");
         await connection.OpenAsync();
         var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
         await using var context = new GlosifyContext(options);
@@ -116,16 +116,19 @@ public sealed class AssistantAnalyticsModelTests
             });
         await context.SaveChangesAsync();
 
-        context.AssistantThreads.Remove(thread);
+        context.ChangeTracker.Clear();
+        context.AssistantThreads.Remove(
+            await context.AssistantThreads.SingleAsync(candidate => candidate.Id == thread.Id));
         await context.SaveChangesAsync();
 
-        Assert.Empty(await context.AssistantTurns.ToListAsync());
-        Assert.Empty(await context.AssistantModelInvocations.ToListAsync());
-        Assert.Empty(await context.AssistantToolExecutions.ToListAsync());
-        Assert.Empty(await context.AssistantFeedback.ToListAsync());
-        Assert.Empty(await context.AssistantFeedbackReasons.ToListAsync());
-        Assert.Empty(await context.AssistantMessages.ToListAsync());
-        Assert.Single(await context.AiCreditTransactions.ToListAsync());
+        await using var verification = new GlosifyContext(options);
+        Assert.Empty(await verification.AssistantTurns.ToListAsync());
+        Assert.Empty(await verification.AssistantModelInvocations.ToListAsync());
+        Assert.Empty(await verification.AssistantToolExecutions.ToListAsync());
+        Assert.Empty(await verification.AssistantFeedback.ToListAsync());
+        Assert.Empty(await verification.AssistantFeedbackReasons.ToListAsync());
+        Assert.Empty(await verification.AssistantMessages.ToListAsync());
+        Assert.Single(await verification.AiCreditTransactions.ToListAsync());
     }
 
     [Fact]

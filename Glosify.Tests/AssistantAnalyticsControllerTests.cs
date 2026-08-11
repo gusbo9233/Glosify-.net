@@ -6,6 +6,7 @@ using Glosify.Controllers.Api;
 using Glosify.Infrastructure.Api;
 using Glosify.Models.Api;
 using Glosify.Services.Ai.Assistant;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
@@ -57,7 +58,7 @@ public sealed class AssistantAnalyticsControllerTests
     {
         var orchestrator = new RecordingOrchestrator
         {
-            SaveFeedbackException = new ArgumentException("Unsupported feedback reason."),
+            SaveFeedbackException = new AssistantFeedbackValidationException("Unsupported feedback reason."),
         };
         var controller = CreateMobileController(orchestrator);
 
@@ -133,14 +134,45 @@ public sealed class AssistantAnalyticsControllerTests
     }
 
     [Fact]
-    public async Task WebFeedback_RequiresAntiforgeryTokenAfterAuthorization()
+    public async Task WebFeedback_BlocksMissingAntiforgeryTokenAndAllowsValidToken()
     {
-        using var factory = CreateAuthenticatedFactory(new RecordingOrchestrator());
-        var response = await factory.CreateClient().PutAsJsonAsync(
-            $"/Assistant/Turns/{Guid.NewGuid()}/Feedback",
+        var orchestrator = new RecordingOrchestrator();
+        using var factory = CreateAuthenticatedFactory(orchestrator);
+        var client = factory.CreateClient();
+        var turnId = Guid.NewGuid();
+        var rejected = await client.PutAsJsonAsync(
+            $"/Assistant/Turns/{turnId}/Feedback",
             new AssistantFeedbackInput("up", [], null));
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+        Assert.Equal(0, orchestrator.SaveFeedbackCount);
+
+        var antiforgery = factory.Services.GetRequiredService<IAntiforgery>();
+        var tokenContext = new DefaultHttpContext
+        {
+            RequestServices = factory.Services,
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+                [new Claim(ClaimTypes.NameIdentifier, UserId)],
+                authenticationType: "test")),
+        };
+        var tokens = antiforgery.GetAndStoreTokens(tokenContext);
+        var cookie = tokenContext.Response.Headers.SetCookie
+            .Select(value => value?.Split(';', 2)[0])
+            .Single(value => !string.IsNullOrWhiteSpace(value));
+        using var acceptedRequest = new HttpRequestMessage(
+            HttpMethod.Put,
+            $"/Assistant/Turns/{turnId}/Feedback")
+        {
+            Content = JsonContent.Create(new AssistantFeedbackInput("up", [], null)),
+        };
+        acceptedRequest.Headers.Add("Cookie", cookie);
+        acceptedRequest.Headers.Add(tokens.HeaderName!, tokens.RequestToken!);
+
+        var accepted = await client.SendAsync(acceptedRequest);
+
+        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
+        Assert.Equal(1, orchestrator.SaveFeedbackCount);
+        Assert.Equal(turnId, orchestrator.TurnId);
     }
 
     [Fact]
@@ -235,6 +267,7 @@ public sealed class AssistantAnalyticsControllerTests
         public string? Comment { get; private set; }
         public double? ClientDurationMs { get; private set; }
         public int DeleteCount { get; private set; }
+        public int SaveFeedbackCount { get; private set; }
 
         public Task<AssistantFeedbackView> SaveFeedbackAsync(
             Guid turnId,
@@ -249,6 +282,7 @@ public sealed class AssistantAnalyticsControllerTests
             Rating = rating;
             ReasonCodes = reasonCodes;
             Comment = comment;
+            SaveFeedbackCount++;
             return SaveFeedbackException is null
                 ? Task.FromResult(Feedback)
                 : Task.FromException<AssistantFeedbackView>(SaveFeedbackException);

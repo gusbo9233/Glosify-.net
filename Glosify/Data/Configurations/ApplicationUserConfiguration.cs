@@ -10,7 +10,7 @@ internal sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Ap
     {
         entity.Property(user => user.SelectedQuizLanguageCode).HasMaxLength(8);
         entity.Property(user => user.AssistantTelemetrySubjectId)
-            .HasDefaultValueSql("NEWSEQUENTIALID()");
+            .HasDefaultValueSql("NEWID()");
         entity.HasIndex(user => user.AssistantTelemetrySubjectId).IsUnique();
         entity.ToTable(table => table.HasCheckConstraint(
             "CK_AspNetUsers_SelectedQuizLanguageCode",

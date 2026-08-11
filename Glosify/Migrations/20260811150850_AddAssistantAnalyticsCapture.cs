@@ -22,7 +22,7 @@ namespace Glosify.Migrations
                 table: "AspNetUsers",
                 type: "uniqueidentifier",
                 nullable: false,
-                defaultValueSql: "NEWSEQUENTIALID()");
+                defaultValueSql: "NEWID()");
 
             migrationBuilder.AddColumn<Guid>(
                 name: "AssistantTurnId",

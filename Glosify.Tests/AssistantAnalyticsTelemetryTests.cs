@@ -49,7 +49,11 @@ public sealed class AssistantAnalyticsTelemetryTests
                 });
         }
 
-        var invocationSpan = Assert.Single(stopped, activity => activity.DisplayName == "assistant.model.invoke");
+        var invocationSpan = Assert.Single(
+            stopped,
+            activity => activity.DisplayName == "assistant.model.invoke"
+                && (string?)activity.GetTagItem("assistant.turn.id") == turnId.ToString()
+                && (string?)activity.GetTagItem("assistant.invocation.id") == invocationId.ToString());
         Assert.Equal(turnId.ToString(), invocationSpan.GetTagItem("assistant.turn.id"));
         Assert.Equal(invocationId.ToString(), invocationSpan.GetTagItem("assistant.invocation.id"));
         Assert.Equal("glosify-librarian", invocationSpan.GetTagItem("gen_ai.agent.name"));
@@ -61,8 +65,10 @@ public sealed class AssistantAnalyticsTelemetryTests
             "0123456789abcdef0123456789abcdef",
             "down",
             ["incorrect"]);
-        var feedback = Assert.Single(stopped);
-        Assert.Equal("gen_ai.evaluation.result", feedback.DisplayName);
+        var feedback = Assert.Single(
+            stopped,
+            activity => activity.DisplayName == "gen_ai.evaluation.result"
+                && (string?)activity.GetTagItem("assistant.turn.id") == turnId.ToString());
         Assert.Equal(0, feedback.GetTagItem("gen_ai.evaluation.score.value"));
         Assert.Single(feedback.Events, item => item.Name == "gen_ai.evaluation.result");
         Assert.DoesNotContain(feedback.TagObjects, tag => tag.Key.Contains("comment", StringComparison.OrdinalIgnoreCase));
@@ -87,5 +93,22 @@ public sealed class AssistantAnalyticsTelemetryTests
         Assert.DoesNotContain("Server=private", json);
         Assert.Contains("not-a-secret-pagination-token", json);
         Assert.Equal(2, json.Split("[REDACTED]", StringSplitOptions.None).Length - 1);
+    }
+
+    [Fact]
+    public void Analytics_json_redacts_secret_fields_inside_json_encoded_strings()
+    {
+        var encodedContent = """{"parts":[{"metadata":{"apiKey":"nested-secret"},"text":"Keep this text."}]}""";
+
+        var json = AssistantAnalyticsJson.Serialize(new
+        {
+            contentJson = encodedContent,
+            malformed = "{not-json",
+        });
+
+        Assert.DoesNotContain("nested-secret", json);
+        Assert.Contains("[REDACTED]", json);
+        Assert.Contains("Keep this text.", json);
+        Assert.Contains("{not-json", json);
     }
 }

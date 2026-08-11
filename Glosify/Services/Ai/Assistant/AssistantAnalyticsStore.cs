@@ -8,8 +8,7 @@ namespace Glosify.Services.Ai.Assistant;
 
 internal sealed class AssistantAnalyticsStore
 {
-    private readonly IDbContextFactory<GlosifyContext>? _contextFactory;
-    private readonly GlosifyContext? _sharedContext;
+    private readonly IDbContextFactory<GlosifyContext> _contextFactory;
     private readonly TimeProvider _timeProvider;
 
     public AssistantAnalyticsStore(
@@ -19,16 +18,6 @@ internal sealed class AssistantAnalyticsStore
         _contextFactory = contextFactory;
         _timeProvider = timeProvider;
     }
-
-    private AssistantAnalyticsStore(GlosifyContext sharedContext, TimeProvider timeProvider)
-    {
-        _sharedContext = sharedContext;
-        _timeProvider = timeProvider;
-    }
-
-    internal static AssistantAnalyticsStore ForSharedTestContext(
-        GlosifyContext context,
-        TimeProvider timeProvider) => new(context, timeProvider);
 
     public async Task StartInvocationAsync(
         AssistantModelInvocation invocation,
@@ -152,13 +141,7 @@ internal sealed class AssistantAnalyticsStore
         Func<GlosifyContext, Task> action,
         CancellationToken cancellationToken)
     {
-        if (_sharedContext is not null)
-        {
-            await action(_sharedContext);
-            return;
-        }
-
-        await using var context = await _contextFactory!.CreateDbContextAsync(cancellationToken);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         await action(context);
     }
 }
@@ -197,7 +180,7 @@ internal static class AssistantAnalyticsJson
         try
         {
             var node = System.Text.Json.Nodes.JsonNode.Parse(json);
-            Redact(node);
+            node = Redact(node);
             return node?.ToJsonString(Options) ?? json;
         }
         catch (System.Text.Json.JsonException)
@@ -206,7 +189,7 @@ internal static class AssistantAnalyticsJson
         }
     }
 
-    private static void Redact(System.Text.Json.Nodes.JsonNode? node)
+    private static System.Text.Json.Nodes.JsonNode? Redact(System.Text.Json.Nodes.JsonNode? node)
     {
         if (node is System.Text.Json.Nodes.JsonObject objectNode)
         {
@@ -221,16 +204,50 @@ internal static class AssistantAnalyticsJson
                 }
                 else
                 {
-                    Redact(property.Value);
+                    var redacted = Redact(property.Value);
+                    if (!ReferenceEquals(redacted, property.Value))
+                    {
+                        objectNode[property.Key] = redacted;
+                    }
                 }
             }
         }
         else if (node is System.Text.Json.Nodes.JsonArray arrayNode)
         {
-            foreach (var item in arrayNode)
+            for (var index = 0; index < arrayNode.Count; index++)
             {
-                Redact(item);
+                var item = arrayNode[index];
+                var redacted = Redact(item);
+                if (!ReferenceEquals(redacted, item))
+                {
+                    arrayNode[index] = redacted;
+                }
             }
         }
+        else if (node is System.Text.Json.Nodes.JsonValue valueNode
+            && valueNode.TryGetValue<string>(out var encodedJson)
+            && LooksLikeJson(encodedJson))
+        {
+            try
+            {
+                var encodedNode = System.Text.Json.Nodes.JsonNode.Parse(encodedJson);
+                encodedNode = Redact(encodedNode);
+                return encodedNode is null
+                    ? node
+                    : System.Text.Json.Nodes.JsonValue.Create(encodedNode.ToJsonString(Options));
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                return node;
+            }
+        }
+
+        return node;
+    }
+
+    private static bool LooksLikeJson(string value)
+    {
+        var trimmed = value.AsSpan().TrimStart();
+        return !trimmed.IsEmpty && trimmed[0] is '{' or '[';
     }
 }

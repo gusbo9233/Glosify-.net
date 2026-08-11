@@ -28,7 +28,7 @@ internal sealed class AssistantFeedbackService(GlosifyContext context, TimeProvi
         var normalizedRating = rating?.Trim().ToLowerInvariant() ?? string.Empty;
         if (normalizedRating is not AssistantFeedbackRating.Up and not AssistantFeedbackRating.Down)
         {
-            throw new ArgumentException("Rating must be either 'up' or 'down'.", nameof(rating));
+            throw new AssistantFeedbackValidationException("Rating must be either 'up' or 'down'.");
         }
 
         var allowedReasons = normalizedRating == AssistantFeedbackRating.Up
@@ -42,21 +42,22 @@ internal sealed class AssistantFeedbackService(GlosifyContext context, TimeProvi
         var invalidReason = normalizedReasons.FirstOrDefault(reason => !allowedReasons.Contains(reason));
         if (invalidReason is not null)
         {
-            throw new ArgumentException(
-                $"Reason '{invalidReason}' is not valid for a {normalizedRating} rating.",
-                nameof(reasonCodes));
+            throw new AssistantFeedbackValidationException(
+                $"Reason '{invalidReason}' is not valid for a {normalizedRating} rating.");
         }
 
         var normalizedComment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
         if (normalizedComment is { Length: > 1000 })
         {
-            throw new ArgumentException("Feedback comments cannot exceed 1000 characters.", nameof(comment));
+            throw new AssistantFeedbackValidationException(
+                "Feedback comments cannot exceed 1000 characters.");
         }
 
         var ownedTurn = await LoadOwnedTurnAsync(turnId, userId, cancellationToken);
         if (ownedTurn.Status != AssistantTurnStatus.Completed)
         {
-            throw new ArgumentException("Feedback can only be saved for a completed assistant turn.", nameof(turnId));
+            throw new AssistantFeedbackValidationException(
+                "Feedback can only be saved for a completed assistant turn.");
         }
 
         var now = timeProvider.GetUtcNow();
@@ -88,6 +89,10 @@ internal sealed class AssistantFeedbackService(GlosifyContext context, TimeProvi
             .Where(reason => !desiredReasons.Contains(reason.ReasonCode))
             .ToList();
         context.AssistantFeedbackReasons.RemoveRange(removedReasons);
+        foreach (var removedReason in removedReasons)
+        {
+            feedback.Reasons.Remove(removedReason);
+        }
         foreach (var reason in normalizedReasons.Where(reason =>
             feedback.Reasons.All(existing => existing.ReasonCode != reason)))
         {
@@ -130,8 +135,7 @@ internal sealed class AssistantFeedbackService(GlosifyContext context, TimeProvi
     {
         if (!double.IsFinite(clientDurationMs) || clientDurationMs < 0 || clientDurationMs > 900_000)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(clientDurationMs),
+            throw new AssistantFeedbackValidationException(
                 "Client duration must be between 0 and 900000 milliseconds.");
         }
 
@@ -163,3 +167,5 @@ internal sealed class AssistantFeedbackService(GlosifyContext context, TimeProvi
         feedback.Comment,
         feedback.UpdatedAt);
 }
+
+internal sealed class AssistantFeedbackValidationException(string message) : Exception(message);

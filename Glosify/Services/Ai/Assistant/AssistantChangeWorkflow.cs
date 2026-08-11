@@ -9,7 +9,8 @@ internal sealed class AssistantChangeWorkflow(
     GlosifyContext context,
     IChangeApplier changeApplier,
     AssistantMessagePresenter presenter,
-    AssistantThreadStore threads)
+    AssistantThreadStore threads,
+    TimeProvider timeProvider)
 {
     public async Task<AssistantApplyResult> ApplyAsync(
         Guid messageId,
@@ -144,6 +145,6 @@ internal sealed class AssistantChangeWorkflow(
         }
 
         turn.ChangeOutcome = outcome;
-        turn.ChangeOutcomeAt = DateTimeOffset.UtcNow;
+        turn.ChangeOutcomeAt = timeProvider.GetUtcNow();
     }
 }

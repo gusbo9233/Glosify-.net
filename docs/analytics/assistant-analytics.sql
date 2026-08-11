@@ -89,6 +89,14 @@ WHERE turn_id = @TurnId
 ORDER BY sequence;
 
 /* Token and estimated price-card cost totals. SEK = micros / 1,000,000. */
+WITH invocation_costs AS (
+    SELECT
+        OperationId,
+        SUM(COALESCE(BudgetAmountMicros, 0)) AS budget_amount_micros
+    FROM AiCreditTransactions
+    WHERE Kind = 'usage_debit'
+    GROUP BY OperationId
+)
 SELECT
     t.id AS turn_id,
     th.user_id,
@@ -99,25 +107,33 @@ SELECT
     SUM(COALESCE(i.prompt_tokens, 0)) AS prompt_tokens,
     SUM(COALESCE(i.candidate_tokens, 0)) AS candidate_tokens,
     SUM(COALESCE(i.total_tokens, 0)) AS total_tokens,
-    SUM(CASE WHEN tx.Kind = 'usage_debit' THEN COALESCE(tx.BudgetAmountMicros, 0) ELSE 0 END) AS estimated_cost_micros,
-    CAST(SUM(CASE WHEN tx.Kind = 'usage_debit' THEN COALESCE(tx.BudgetAmountMicros, 0) ELSE 0 END) / 1000000.0 AS decimal(18,6)) AS estimated_cost_sek
+    SUM(COALESCE(tx.budget_amount_micros, 0)) AS estimated_cost_micros,
+    CAST(SUM(COALESCE(tx.budget_amount_micros, 0)) / 1000000.0 AS decimal(18,6)) AS estimated_cost_sek
 FROM assistant_turns t
 JOIN assistant_threads th ON th.id = t.thread_id
 LEFT JOIN assistant_model_invocations i ON i.turn_id = t.id
-LEFT JOIN AiCreditTransactions tx ON tx.OperationId = i.id AND tx.Kind = 'usage_debit'
+LEFT JOIN invocation_costs tx ON tx.OperationId = i.id
 WHERE t.started_at >= @From AND t.started_at < @To
 GROUP BY t.id, th.user_id, t.profile, COALESCE(i.provider, t.provider), COALESCE(i.actual_model, t.actual_model)
 ORDER BY t.id;
 
 /* Server, client, provider, and tool latency percentiles. */
 WITH latency AS (
-    SELECT 'server' AS stage, server_duration_ms AS duration_ms FROM assistant_turns WHERE started_at >= @From AND started_at < @To
+    SELECT 'server' AS stage, server_duration_ms AS duration_ms
+    FROM assistant_turns
+    WHERE started_at >= @From AND started_at < @To
     UNION ALL
-    SELECT 'client', client_duration_ms FROM assistant_turns WHERE started_at >= @From AND started_at < @To
+    SELECT 'client', client_duration_ms
+    FROM assistant_turns
+    WHERE started_at >= @From AND started_at < @To
     UNION ALL
-    SELECT 'provider', duration_ms FROM assistant_model_invocations WHERE started_at >= @From AND started_at < @To
+    SELECT 'provider', duration_ms
+    FROM assistant_model_invocations
+    WHERE started_at >= @From AND started_at < @To
     UNION ALL
-    SELECT 'tool', duration_ms FROM assistant_tool_executions WHERE started_at >= @From AND started_at < @To
+    SELECT 'tool', duration_ms
+    FROM assistant_tool_executions
+    WHERE started_at >= @From AND started_at < @To
 ), percentiles AS (
     SELECT DISTINCT
         stage,
@@ -128,7 +144,9 @@ WITH latency AS (
     FROM latency
     WHERE duration_ms IS NOT NULL
 )
-SELECT * FROM percentiles ORDER BY stage;
+SELECT *
+FROM percentiles
+ORDER BY stage;
 
 /* Tool use and failure rate. */
 SELECT

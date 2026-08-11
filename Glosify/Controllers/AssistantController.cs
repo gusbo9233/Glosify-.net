@@ -232,7 +232,7 @@ public class AssistantController : ControllerBase
                 cancellationToken);
             return Ok(feedback);
         }
-        catch (ArgumentException ex)
+        catch (AssistantFeedbackValidationException ex)
         {
             return GlosifyProblemDetails.Result(
                 HttpContext,
@@ -240,13 +240,9 @@ public class AssistantController : ControllerBase
                 ApiErrorCodes.BadRequest,
                 ex.Message);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
-            return GlosifyProblemDetails.Result(
-                HttpContext,
-                StatusCodes.Status404NotFound,
-                ApiErrorCodes.NotFound,
-                ex.Message);
+            return FeedbackTurnNotFound();
         }
         catch (UnauthorizedAccessException)
         {
@@ -287,7 +283,7 @@ public class AssistantController : ControllerBase
                 cancellationToken);
             return NoContent();
         }
-        catch (ArgumentOutOfRangeException ex)
+        catch (AssistantFeedbackValidationException ex)
         {
             return GlosifyProblemDetails.Result(
                 HttpContext,

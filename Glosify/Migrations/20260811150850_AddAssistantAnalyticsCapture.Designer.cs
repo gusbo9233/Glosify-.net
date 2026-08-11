@@ -238,7 +238,7 @@ namespace Glosify.Migrations
                     b.Property<Guid>("AssistantTelemetrySubjectId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWSEQUENTIALID()");
+                        .HasDefaultValueSql("NEWID()");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()

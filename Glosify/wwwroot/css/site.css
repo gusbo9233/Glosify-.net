@@ -4492,6 +4492,11 @@ body { margin: 0; }
     color: var(--primary, #53e076);
 }
 
+.assistant-feedback-reason input:focus-visible + span {
+    outline: 2px solid var(--primary, #53e076);
+    outline-offset: 2px;
+}
+
 .assistant-feedback-comment {
     width: 100%;
     resize: vertical;

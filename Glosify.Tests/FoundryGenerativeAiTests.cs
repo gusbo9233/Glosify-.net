@@ -202,6 +202,25 @@ public sealed class FoundryGenerativeAiTests
     }
 
     [Fact]
+    public async Task Assistant_turn_uses_the_same_estimated_usage_for_credits_and_analytics_when_provider_usage_is_missing()
+    {
+        var invoker = new FakeInvoker
+        {
+            Response = Response([new TextContent("Done.")]),
+        };
+        var credits = new FakeCredits();
+        var client = CreateClient(invoker, credits);
+
+        var result = await client.RunAgentTurnAsync(
+            new AgentRequest("Help.", [], [], "gpt-5.4-mini"),
+            Usage(AiUsageFeatures.Assistant));
+
+        var committed = Assert.Single(credits.Commits).Usage;
+        Assert.True(committed.TotalTokens > 0);
+        Assert.Equal(committed, result.Metadata!.Usage);
+    }
+
+    [Fact]
     public async Task Json_output_uses_plain_response_mode_and_returns_the_typed_result()
     {
         var invoker = new FakeInvoker
@@ -474,7 +493,7 @@ public sealed class FoundryGenerativeAiTests
         };
         var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
 
-        await client.RunAgentTurnAsync(
+        var result = await client.RunAgentTurnAsync(
             new AgentRequest(
                 "In-code fallback instruction.",
                 [],
@@ -488,6 +507,8 @@ public sealed class FoundryGenerativeAiTests
         Assert.Contains("You build custom quiz elements.", invoker.Instructions);
         Assert.Contains("The open custom quiz is \"Verb drills\".", invoker.Instructions);
         Assert.DoesNotContain("In-code fallback instruction.", invoker.Instructions);
+        Assert.Equal("glosify-quiz-builder", result.Metadata!.AgentName);
+        Assert.Equal("3", result.Metadata.AgentVersion);
     }
 
     // The assistant has to keep working before the agent is authored in Foundry, and
@@ -498,7 +519,7 @@ public sealed class FoundryGenerativeAiTests
         var invoker = new FakeInvoker { AuthoredAgent = null };
         var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
 
-        await client.RunAgentTurnAsync(
+        var result = await client.RunAgentTurnAsync(
             new AgentRequest(
                 "In-code fallback instruction.",
                 [],
@@ -509,6 +530,8 @@ public sealed class FoundryGenerativeAiTests
             Usage(AiUsageFeatures.Assistant));
 
         Assert.Equal("In-code fallback instruction.", invoker.Instructions);
+        Assert.Null(result.Metadata!.AgentName);
+        Assert.Null(result.Metadata.AgentVersion);
     }
 
     [Fact]

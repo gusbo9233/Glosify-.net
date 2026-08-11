@@ -11,9 +11,11 @@ using Glosify.Services.Books;
 using Glosify.Services.Language;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -235,6 +237,28 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task Final_message_save_failure_detaches_pending_output_and_finalizes_turn_as_failed()
+    {
+        var interceptor = new FailFinalMessageSaveOnceInterceptor();
+        await using var context = CreateContext(saveChangesInterceptor: interceptor);
+        var orchestrator = CreateOrchestrator(context);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() =>
+            orchestrator.SendGlobalMessageAsync("user-1", "Retain this input."));
+
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync();
+        var message = Assert.Single(await context.AssistantMessages.ToListAsync());
+        Assert.True(interceptor.FailedFinalMessageSave);
+        Assert.Equal(AssistantTurnStatus.Failed, turn.Status);
+        Assert.Equal("unhandled_error", turn.ErrorCategory);
+        Assert.NotNull(turn.CompletedAt);
+        Assert.Equal(AssistantMessageRole.User, message.Role);
+        Assert.Contains("Retain this input.", message.ContentJson);
+        Assert.Equal(turn.Id, message.TurnId);
+    }
+
+    [Fact]
     public async Task Cancelled_provider_call_retains_input_and_marks_turn_cancelled()
     {
         await using var context = CreateContext();
@@ -303,7 +327,7 @@ public class AssistantSavedChatsTests
             AssistantFeedbackRating.Up,
             ["helpful", "clear"],
             "Nice answer");
-        await orchestrator.SaveFeedbackAsync(
+        var updatedFeedback = await orchestrator.SaveFeedbackAsync(
             result.TurnId,
             "user-1",
             AssistantFeedbackRating.Up,
@@ -314,6 +338,7 @@ public class AssistantSavedChatsTests
         var feedback = await context.AssistantFeedback.Include(item => item.Reasons).SingleAsync();
         Assert.Equal("Even better", feedback.Comment);
         Assert.Equal(["clear", "saved_time"], feedback.Reasons.Select(reason => reason.ReasonCode).Order());
+        Assert.Equal(["clear", "saved_time"], updatedFeedback.ReasonCodes);
         Assert.Equal(1234.5, (await context.AssistantTurns.SingleAsync()).ClientDurationMs);
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             orchestrator.SaveFeedbackAsync(result.TurnId, "user-2", "up", [], null));
@@ -860,12 +885,19 @@ public class AssistantSavedChatsTests
 
     private static GlosifyContext CreateContext(
         string? databaseName = null,
-        InMemoryDatabaseRoot? databaseRoot = null)
+        InMemoryDatabaseRoot? databaseRoot = null,
+        SaveChangesInterceptor? saveChangesInterceptor = null)
     {
-        var options = new DbContextOptionsBuilder<GlosifyContext>()
-            .UseInMemoryDatabase(databaseName ?? Guid.NewGuid().ToString("N"), databaseRoot ?? new InMemoryDatabaseRoot())
-            .Options;
-        return new GlosifyContext(options);
+        var builder = new DbContextOptionsBuilder<GlosifyContext>()
+            .UseInMemoryDatabase(
+                databaseName ?? Guid.NewGuid().ToString("N"),
+                databaseRoot ?? new InMemoryDatabaseRoot());
+        if (saveChangesInterceptor is not null)
+        {
+            builder.AddInterceptors(saveChangesInterceptor);
+        }
+        var options = builder.Options;
+        return new FactoryBackedGlosifyContext(options);
     }
 
     private static IAssistantOrchestrator CreateOrchestrator(
@@ -883,7 +915,8 @@ public class AssistantSavedChatsTests
             languageContext ?? new StaticLanguageContext(),
             languagePreferences);
         var presenter = new AssistantMessagePresenter();
-        var timeProvider = TimeProvider.System;
+        var timeProvider = new FakeTimeProvider(
+            new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero));
         var threadStore = new AssistantThreadStore(
             context,
             contextResolver,
@@ -892,7 +925,7 @@ public class AssistantSavedChatsTests
                 context,
                 timeProvider,
                 Options.Create(new AssistantAnalyticsOptions())));
-        var analytics = AssistantAnalyticsStore.ForSharedTestContext(context, timeProvider);
+        var analytics = new AssistantAnalyticsStore(new TestDbContextFactory(context), timeProvider);
         var turnRunner = new AssistantTurnRunner(
             context,
             generativeAi ?? new StaticGenerativeAiClient("Done."),
@@ -913,7 +946,8 @@ public class AssistantSavedChatsTests
                 context,
                 applier ?? new CapturingChangeApplier(),
                 presenter,
-                threadStore),
+                threadStore,
+                timeProvider),
             new AssistantFeedbackService(context, timeProvider));
     }
 
@@ -1224,6 +1258,28 @@ public class AssistantSavedChatsTests
 
         public Task ReleaseAsync(Guid threadId, Guid leaseId, CancellationToken cancellationToken) =>
             Task.CompletedTask;
+    }
+
+    private sealed class FailFinalMessageSaveOnceInterceptor : SaveChangesInterceptor
+    {
+        public bool FailedFinalMessageSave { get; private set; }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (!FailedFinalMessageSave
+                && eventData.Context?.ChangeTracker.Entries<AssistantMessage>().Any(entry =>
+                    entry.State == EntityState.Added
+                    && entry.Entity.Role == AssistantMessageRole.Model) == true)
+            {
+                FailedFinalMessageSave = true;
+                throw new DbUpdateException("Simulated final assistant message persistence failure.");
+            }
+
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
+        }
     }
 
     private sealed class LoopAssistantTools : IAssistantTools

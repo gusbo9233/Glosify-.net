@@ -1,5 +1,7 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using Azure.Core;
 using Glosify.Data;
 using Glosify.Models.Entities;
@@ -19,6 +21,23 @@ public sealed class AssistantAnalyticsOptions
     ];
 }
 
+internal sealed class AssistantAnalyticsOptionsValidator : IValidateOptions<AssistantAnalyticsOptions>
+{
+    public ValidateOptionsResult Validate(string? name, AssistantAnalyticsOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(options.LogAnalyticsWorkspaceResourceId))
+        {
+            return ValidateOptionsResult.Success;
+        }
+
+        return AssistantTelemetryDeletionService.IsValidWorkspaceResourceId(
+            options.LogAnalyticsWorkspaceResourceId)
+            ? ValidateOptionsResult.Success
+            : ValidateOptionsResult.Fail(
+                $"{AssistantAnalyticsOptions.SectionName}:LogAnalyticsWorkspaceResourceId must be an Azure Log Analytics workspace resource ID path.");
+    }
+}
+
 internal sealed class AssistantTelemetryDeletionService(
     IServiceScopeFactory scopeFactory,
     IHttpClientFactory httpClientFactory,
@@ -28,6 +47,11 @@ internal sealed class AssistantTelemetryDeletionService(
     ILogger<AssistantTelemetryDeletionService> logger) : BackgroundService
 {
     internal const string HttpClientName = "AssistantTelemetryPurge";
+    internal const int MaxAttempts = 5;
+    private const string ApiVersion = "2025-07-01";
+    private static readonly Uri ManagementEndpoint = new("https://management.azure.com");
+    private static readonly TimeSpan SubmissionLease = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan PollInterval = TimeSpan.FromMinutes(1);
     private readonly AssistantAnalyticsOptions _options = options.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -53,7 +77,9 @@ internal sealed class AssistantTelemetryDeletionService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Assistant telemetry deletion processing failed.");
+                logger.LogError(
+                    "Assistant telemetry deletion processing failed with {ErrorType}.",
+                    ex.GetType().Name);
             }
         }
         while (await timer.WaitForNextTickAsync(stoppingToken));
@@ -64,22 +90,72 @@ internal sealed class AssistantTelemetryDeletionService(
         await using var scope = scopeFactory.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
         var now = timeProvider.GetUtcNow();
+
+        await RecoverExpiredSubmissionLeasesAsync(context, now, cancellationToken);
+        await SubmitPendingRequestsAsync(context, now, cancellationToken);
+        await PollSubmittedRequestsAsync(context, now, cancellationToken);
+    }
+
+    private async Task RecoverExpiredSubmissionLeasesAsync(
+        GlosifyContext context,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var expired = await context.AssistantTelemetryDeletionRequests
+            .Where(request => request.Status == AssistantTelemetryDeletionStatus.Submitting
+                && request.NextAttemptAt <= now)
+            .Take(100)
+            .ToListAsync(cancellationToken);
+
+        foreach (var request in expired)
+        {
+            if (request.AttemptCount >= MaxAttempts)
+            {
+                MarkTerminalFailure(request, now, "Azure purge submission lease expired.");
+            }
+            else
+            {
+                request.Status = AssistantTelemetryDeletionStatus.Pending;
+                request.NextAttemptAt = now;
+                request.LastError = "Azure purge submission lease expired; the request will be retried.";
+            }
+        }
+
+        if (expired.Count > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private async Task SubmitPendingRequestsAsync(
+        GlosifyContext context,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
         var pending = await context.AssistantTelemetryDeletionRequests
             .Where(request => request.Status == AssistantTelemetryDeletionStatus.Pending
                 && request.NextAttemptAt <= now)
             .OrderBy(request => request.CreatedAt)
             .Take(100)
             .ToListAsync(cancellationToken);
-        if (pending.Count == 0)
-        {
-            return;
-        }
 
         foreach (var group in pending.GroupBy(request => new { request.TableName, request.DimensionName }))
         {
+            foreach (var request in group)
+            {
+                request.Status = AssistantTelemetryDeletionStatus.Submitting;
+                request.AttemptCount++;
+                request.NextAttemptAt = now.Add(SubmissionLease);
+                request.LastError = null;
+            }
+
+            // Persist the lease before the irreversible external POST so another worker
+            // cannot submit the same batch concurrently.
+            await context.SaveChangesAsync(cancellationToken);
+
             try
             {
-                var operationId = await SubmitPurgeAsync(
+                var statusLocation = await SubmitPurgeAsync(
                     group.Key.TableName,
                     group.Key.DimensionName,
                     group.Select(request => request.DimensionValue).Distinct().ToArray(),
@@ -87,30 +163,107 @@ internal sealed class AssistantTelemetryDeletionService(
                 foreach (var request in group)
                 {
                     request.Status = AssistantTelemetryDeletionStatus.Submitted;
-                    request.AzureOperationId = operationId;
-                    request.CompletedAt = now;
+                    request.AzureOperationId = statusLocation;
+                    request.NextAttemptAt = now.Add(PollInterval);
+                    request.CompletedAt = null;
                     request.LastError = null;
                 }
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                var safeError = SafeError(ex);
+                foreach (var request in group)
+                {
+                    if (!IsTransient(ex) || request.AttemptCount >= MaxAttempts)
+                    {
+                        MarkTerminalFailure(request, now, safeError);
+                    }
+                    else
+                    {
+                        request.Status = AssistantTelemetryDeletionStatus.Pending;
+                        request.NextAttemptAt = now.Add(RetryDelay(request.AttemptCount));
+                        request.LastError = safeError;
+                    }
+                }
+                logger.LogWarning(
+                    "Could not submit assistant telemetry purge for {Count} correlation values: {Error}",
+                    group.Count(),
+                    safeError);
+            }
+
+            await context.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private async Task PollSubmittedRequestsAsync(
+        GlosifyContext context,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var submitted = await context.AssistantTelemetryDeletionRequests
+            .Where(request => request.Status == AssistantTelemetryDeletionStatus.Submitted
+                && request.NextAttemptAt <= now
+                && request.AzureOperationId != null)
+            .OrderBy(request => request.CreatedAt)
+            .Take(100)
+            .ToListAsync(cancellationToken);
+
+        foreach (var group in submitted.GroupBy(request => request.AzureOperationId!))
+        {
+            try
+            {
+                var status = await GetPurgeStatusAsync(group.Key, cancellationToken);
+                if (string.Equals(status, "completed", StringComparison.OrdinalIgnoreCase))
+                {
+                    foreach (var request in group)
+                    {
+                        request.Status = AssistantTelemetryDeletionStatus.Completed;
+                        request.CompletedAt = now;
+                        request.LastError = null;
+                    }
+                }
+                else if (string.Equals(status, "pending", StringComparison.OrdinalIgnoreCase))
+                {
+                    foreach (var request in group)
+                    {
+                        request.NextAttemptAt = now.Add(PollInterval);
+                        request.LastError = null;
+                    }
+                }
+                else
+                {
+                    throw new TelemetryPurgeException(
+                        "Azure returned an unsupported purge status.",
+                        isTransient: false);
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                var safeError = SafeError(ex);
                 foreach (var request in group)
                 {
                     request.AttemptCount++;
-                    request.LastError = ex.Message.Length <= 2000 ? ex.Message : ex.Message[..2000];
-                    request.NextAttemptAt = now.AddMinutes(Math.Min(60, Math.Pow(2, request.AttemptCount)));
+                    if (!IsTransient(ex) || request.AttemptCount >= MaxAttempts)
+                    {
+                        MarkTerminalFailure(request, now, safeError);
+                    }
+                    else
+                    {
+                        request.NextAttemptAt = now.Add(RetryDelay(request.AttemptCount));
+                        request.LastError = safeError;
+                    }
                 }
                 logger.LogWarning(
-                    ex,
-                    "Could not submit assistant telemetry purge for {Count} correlation values.",
-                    group.Count());
+                    "Could not poll assistant telemetry purge status for {Count} correlation values: {Error}",
+                    group.Count(),
+                    safeError);
             }
-        }
 
-        await context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+        }
     }
 
-    private async Task<string?> SubmitPurgeAsync(
+    private async Task<string> SubmitPurgeAsync(
         string tableName,
         string dimensionName,
         IReadOnlyList<string> dimensionValues,
@@ -120,7 +273,10 @@ internal sealed class AssistantTelemetryDeletionService(
             new TokenRequestContext(["https://management.azure.com/.default"]),
             cancellationToken);
         var client = httpClientFactory.CreateClient(HttpClientName);
-        var endpoint = $"{_options.LogAnalyticsWorkspaceResourceId.TrimEnd('/')}/purge?api-version=2025-07-01";
+        var workspacePath = _options.LogAnalyticsWorkspaceResourceId.TrimEnd('/');
+        var endpoint = new Uri(
+            ManagementEndpoint,
+            $"{workspacePath}/purge?api-version={ApiVersion}");
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
         request.Content = JsonContent.Create(new
@@ -132,15 +288,133 @@ internal sealed class AssistantTelemetryDeletionService(
             },
         });
         using var response = await client.SendAsync(request, cancellationToken);
-        var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            throw new HttpRequestException(
-                $"Azure rejected the {tableName} purge request with {(int)response.StatusCode}: {responseText}");
+            throw HttpFailure("submit", response.StatusCode);
         }
 
-        return response.Headers.TryGetValues("x-ms-status-location", out var locations)
+        var statusLocation = response.Headers.TryGetValues("x-ms-status-location", out var locations)
             ? locations.FirstOrDefault()
             : null;
+        return NormalizeStatusLocation(statusLocation, workspacePath);
+    }
+
+    private async Task<string> GetPurgeStatusAsync(
+        string statusLocation,
+        CancellationToken cancellationToken)
+    {
+        var token = await credential.GetTokenAsync(
+            new TokenRequestContext(["https://management.azure.com/.default"]),
+            cancellationToken);
+        var client = httpClientFactory.CreateClient(HttpClientName);
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            new Uri(ManagementEndpoint, statusLocation));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
+        using var response = await client.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw HttpFailure("poll", response.StatusCode);
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<PurgeStatusResponse>(
+            cancellationToken: cancellationToken);
+        return string.IsNullOrWhiteSpace(result?.Status)
+            ? throw new TelemetryPurgeException(
+                "Azure returned an empty purge status.",
+                isTransient: false)
+            : result.Status;
+    }
+
+    private static TelemetryPurgeException HttpFailure(string operation, HttpStatusCode statusCode) =>
+        new(
+            $"Azure purge {operation} failed with HTTP {(int)statusCode}.",
+            statusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests
+                || (int)statusCode >= 500);
+
+    private static string NormalizeStatusLocation(string? statusLocation, string workspacePath)
+    {
+        if (string.IsNullOrWhiteSpace(statusLocation)
+            || !Uri.TryCreate(ManagementEndpoint, statusLocation, out var absolute)
+            || absolute.Scheme != Uri.UriSchemeHttps
+            || !string.Equals(absolute.Host, ManagementEndpoint.Host, StringComparison.OrdinalIgnoreCase)
+            || !absolute.AbsolutePath.StartsWith(
+                $"{workspacePath}/operations/",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new TelemetryPurgeException(
+                "Azure returned an invalid purge status location.",
+                isTransient: false);
+        }
+
+        var relative = absolute.PathAndQuery;
+        if (relative.Length > 512)
+        {
+            throw new TelemetryPurgeException(
+                "Azure returned an oversized purge status location.",
+                isTransient: false);
+        }
+
+        return relative;
+    }
+
+    internal static bool IsValidWorkspaceResourceId(string resourceId)
+    {
+        if (string.IsNullOrWhiteSpace(resourceId)
+            || !resourceId.StartsWith("/", StringComparison.Ordinal)
+            || resourceId.Contains('?')
+            || resourceId.Contains('#')
+            || resourceId.Contains('\\')
+            || resourceId.Contains("://", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var segments = resourceId.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+        return segments.Length == 8
+            && string.Equals(segments[0], "subscriptions", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(segments[2], "resourceGroups", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(segments[4], "providers", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(segments[5], "Microsoft.OperationalInsights", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(segments[6], "workspaces", StringComparison.OrdinalIgnoreCase)
+            && segments[1].Length > 0
+            && segments[3].Length > 0
+            && segments[7].Length > 0;
+    }
+
+    private static void MarkTerminalFailure(
+        AssistantTelemetryDeletionRequest request,
+        DateTimeOffset now,
+        string error)
+    {
+        request.Status = AssistantTelemetryDeletionStatus.Failed;
+        request.CompletedAt = now;
+        request.LastError = Truncate(error, 2000);
+    }
+
+    private static bool IsTransient(Exception exception) =>
+        exception is not TelemetryPurgeException purge || purge.IsTransient;
+
+    private static string SafeError(Exception exception) => Truncate(exception switch
+    {
+        TelemetryPurgeException purge => purge.Message,
+        OperationCanceledException => "Azure purge operation was cancelled.",
+        HttpRequestException => "Azure purge endpoint could not be reached.",
+        Azure.Identity.AuthenticationFailedException => "Azure authentication failed for the purge operation.",
+        _ => $"Azure purge operation failed with {exception.GetType().Name}.",
+    }, 2000);
+
+    private static string Truncate(string value, int maxLength) =>
+        value.Length <= maxLength ? value : value[..maxLength];
+
+    private static TimeSpan RetryDelay(int attemptCount) =>
+        TimeSpan.FromMinutes(Math.Min(60, Math.Pow(2, Math.Max(1, attemptCount))));
+
+    private sealed record PurgeStatusResponse(
+        [property: JsonPropertyName("status")] string Status);
+
+    private sealed class TelemetryPurgeException(string message, bool isTransient) : Exception(message)
+    {
+        public bool IsTransient { get; } = isTransient;
     }
 }

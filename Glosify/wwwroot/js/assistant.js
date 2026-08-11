@@ -517,7 +517,11 @@ import { feedbackReasons, normalizeFeedback, validClientDuration } from './assis
             button.className = 'assistant-feedback-vote';
             button.title = label;
             button.setAttribute('aria-label', label);
-            button.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${icon}</span>`;
+            const iconElement = document.createElement('span');
+            iconElement.className = 'material-symbols-outlined';
+            iconElement.setAttribute('aria-hidden', 'true');
+            iconElement.textContent = icon;
+            button.appendChild(iconElement);
             button.addEventListener('click', () => {
                 const sameRating = current?.rating === rating;
                 void save({
