@@ -31,7 +31,7 @@ public sealed class RealtimeTranslationRelayAuthorizationMonitor(
             {
                 return state;
             }
-            await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
+            await Task.Delay(TimeSpan.FromMilliseconds(250), timeProvider, cancellationToken);
         }
 
         throw new RealtimeTranslationExpiredException(
@@ -100,7 +100,7 @@ public sealed class RealtimeTranslationRelayAuthorizationMonitor(
                 }
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            await Task.Delay(TimeSpan.FromSeconds(1), timeProvider, cancellationToken);
         }
     }
 
@@ -121,7 +121,7 @@ public sealed class RealtimeTranslationRelayAuthorizationMonitor(
             {
                 return;
             }
-            await Task.Delay(TimeSpan.FromMilliseconds(50), cancellationToken);
+            await Task.Delay(TimeSpan.FromMilliseconds(50), timeProvider, cancellationToken);
         }
     }
 

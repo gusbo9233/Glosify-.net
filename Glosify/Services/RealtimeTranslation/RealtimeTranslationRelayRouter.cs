@@ -6,11 +6,11 @@ public sealed class RealtimeTranslationRelayRouter(
     IEnhancedTranslationRelay enhancedRelay,
     IEconomicalTranslationRelay economicalRelay) : IFoundryTranslationRelay
 {
-    public Task RelayAsync(
+    public async Task RelayAsync(
         WebSocket browserSocket,
         RealtimeTranslationRelayAuthorization authorization,
         CancellationToken cancellationToken = default) =>
-        authorization.TranslationMode switch
+        await (authorization.TranslationMode switch
         {
             RealtimeTranslationModes.Enhanced =>
                 enhancedRelay.RelayAsync(browserSocket, authorization, cancellationToken),
@@ -18,5 +18,5 @@ public sealed class RealtimeTranslationRelayRouter(
                 economicalRelay.RelayAsync(browserSocket, authorization, cancellationToken),
             _ => throw new RealtimeTranslationValidationException(
                 "The requested live subtitle mode is not supported."),
-        };
+        });
 }
