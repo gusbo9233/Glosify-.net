@@ -11,6 +11,8 @@ public interface IRealtimeTranslationService
         string targetLanguage,
         bool saveTranscript = false,
         Guid? transcriptId = null,
+        string? translationMode = null,
+        string? sourceLanguage = null,
         CancellationToken cancellationToken = default);
 
     Task<RealtimeTranslationMinuteResult> ReserveMinuteAsync(

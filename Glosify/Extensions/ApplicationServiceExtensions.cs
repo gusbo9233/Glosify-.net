@@ -21,6 +21,7 @@ using Glosify.Services.Storage;
 using Glosify.Services.Typing;
 using Glosify.Services.Words;
 using Glosify.Infrastructure.Concurrency;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Extensions;
@@ -127,6 +128,21 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IMobileAuthorizationCodeStore, MobileAuthorizationCodeStore>();
         services.AddSingleton<IRealtimeTranslationRelayTokenStore, RealtimeTranslationRelayTokenStore>();
         services.AddSingleton<IKeyedAsyncLock, ReferenceCountedKeyedAsyncLock>();
+        services.AddSingleton<IRealtimeSpeechTranscriber, AzureRealtimeSpeechTranscriber>();
+        services.AddHttpClient(AzureRealtimeTextTranslator.HttpClientName, (services, client) =>
+        {
+            var seconds = services.GetRequiredService<IOptions<RealtimeTranslationOptions>>()
+                .Value.TranslatorTimeoutSeconds;
+            client.Timeout = TimeSpan.FromSeconds(Math.Clamp(seconds, 1, 30));
+        }).AddStandardResilienceHandler(options =>
+        {
+            // Translation is billed per POST. Retrying an ambiguous failure can
+            // submit and charge the same phrase more than once.
+            options.Retry.DisableForUnsafeHttpMethods();
+        });
+        services.AddSingleton<IRealtimeTextTranslator, AzureRealtimeTextTranslator>();
+        services.AddSingleton<IEconomicalSubtitleTranslator, EconomicalSubtitleTranslator>();
+        services.AddSingleton<IEconomicalTranslationRelay, EconomicalTranslationRelay>();
         services.AddSingleton<IFoundryTranslationRelay, FoundryTranslationRelay>();
         services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();
         services.AddScoped<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>();

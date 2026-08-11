@@ -88,6 +88,39 @@ public sealed class ShippedConfigurationTests
                 $"RealtimeTranslation:SavedTranscriptBillingModel '{options.SavedTranscriptBillingModel}' "
                 + "has no AudioSekPerMinute price.");
         }
+        if (options.EconomicalEnabled)
+        {
+            Assert.True(
+                budget.FindModelPrice(options.EconomicalBillingModel)?.AudioSekPerMinute is >= 0.35m,
+                $"RealtimeTranslation:EconomicalBillingModel '{options.EconomicalBillingModel}' "
+                + "must retain the conservative 0.35 SEK/minute safety price until invoice data justifies a reviewed change.");
+        }
+    }
+
+    [Fact]
+    public void EconomicalSubtitleConfigurationRetainsTheReviewedSafetyLimits()
+    {
+        using var factory = new WebApplicationFactory<Program>();
+        using var scope = factory.Services.CreateScope();
+        var services = scope.ServiceProvider;
+        var options = services.GetRequiredService<IOptions<RealtimeTranslationOptions>>().Value;
+        var budget = services.GetRequiredService<IOptions<AiUsageOptions>>().Value.MonthlyBudget;
+
+        Assert.Equal(
+            ["de", "et", "pl", "uk"],
+            options.SourceLanguages
+                .Where(language => language.Enabled && language.AutoDetect)
+                .Select(language => language.Code)
+                .Order(StringComparer.OrdinalIgnoreCase));
+        Assert.All(
+            options.SourceLanguages.Where(language => language.Enabled),
+            language => Assert.False(string.IsNullOrWhiteSpace(language.TranslatorCode)));
+        Assert.All(
+            options.Languages.Where(language => language.Enabled),
+            language => Assert.False(string.IsNullOrWhiteSpace(language.TranslatorCode)));
+        Assert.True(
+            budget.FindModelPrice(options.EconomicalBillingModel)?.AudioSekPerMinute is >= 0.35m,
+            "Economical subtitles must retain the reviewed 0.35 SEK/minute safety price until invoice data justifies a reviewed change.");
     }
 
     [Fact]

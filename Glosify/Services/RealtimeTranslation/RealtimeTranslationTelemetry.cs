@@ -16,6 +16,8 @@ public static class RealtimeTranslationTelemetry
     public static readonly Counter<long> CreditFailures = Meter.CreateCounter<long>("translation.credit.failures");
     public static readonly Counter<long> UpstreamFailures = Meter.CreateCounter<long>("translation.upstream.failures");
     public static readonly Counter<long> Reconnects = Meter.CreateCounter<long>("translation.reconnects");
+    public static readonly Counter<long> TranslatedCharacters =
+        Meter.CreateCounter<long>("translation.characters.translated", "characters");
     public static readonly Histogram<double> FirstCaptionLatency =
         Meter.CreateHistogram<double>("translation.first_caption.latency", "ms");
 }

@@ -18,6 +18,7 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
     private const int PcmBytesPerSecond = 24_000 * sizeof(short);
 
     private readonly TokenCredential _credential;
+    private readonly IEconomicalTranslationRelay _economicalRelay;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly RealtimeTranslationOptions _options;
     private readonly TimeProvider _timeProvider;
@@ -25,12 +26,14 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
 
     public FoundryTranslationRelay(
         TokenCredential credential,
+        IEconomicalTranslationRelay economicalRelay,
         IServiceScopeFactory scopeFactory,
         IOptions<RealtimeTranslationOptions> options,
         TimeProvider timeProvider,
         ILogger<FoundryTranslationRelay> logger)
     {
         _credential = credential;
+        _economicalRelay = economicalRelay;
         _scopeFactory = scopeFactory;
         _options = options.Value;
         _timeProvider = timeProvider;
@@ -47,6 +50,11 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
         {
             throw new RealtimeTranslationUnavailableException(
                 "Live subtitles are not enabled on this Glosify deployment.");
+        }
+        if (authorization.TranslationMode == RealtimeTranslationModes.Economical)
+        {
+            await _economicalRelay.RelayAsync(browserSocket, authorization, cancellationToken);
+            return;
         }
 
         var foundryUri = FoundryTranslationProtocol.BuildWebSocketUri(_options);
@@ -104,7 +112,7 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
             await WaitForFoundrySessionUpdatedAsync(foundrySocket, relayToken);
             if (sourceSocket is not null)
             {
-                var sourceLanguage = authorization.SourceLanguage
+                var sourceLanguage = authorization.TranscriptSourceLanguage
                     ?? throw new InvalidOperationException(
                         "Saved source transcription is missing its quiz language.");
                 await sourceSocket.ConnectAsync(
@@ -376,6 +384,8 @@ public sealed class FoundryTranslationRelay : IFoundryTranslationRelay
             .Where(session => session.Id == authorization.SessionId
                 && session.UserId == authorization.UserId
                 && session.TargetLanguage == authorization.TargetLanguage
+                && session.TranslationMode == authorization.TranslationMode
+                && session.SourceLanguage == authorization.SourceLanguage
                 && (session.TranscriptId != null) == authorization.SaveTranscript)
             .Select(session => new RelaySessionState(
                 session.Status,

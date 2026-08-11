@@ -15,6 +15,85 @@ namespace Glosify.Tests;
 public sealed class RealtimeTranslationServiceTests
 {
     [Fact]
+    public async Task EconomicalSession_UsesFourCreditsAndExistingSpeechForSavedTranscript()
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var tokens = new FakeRelayTokenStore();
+        var service = CreateService(
+            context,
+            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            tokens,
+            options =>
+            {
+                options.EconomicalEnabled = true;
+                options.EconomicalCreditsPerStartedMinute = 4;
+                options.EconomicalBillingModel = "azure-speech-standard+azure-translator-nmt";
+                options.SourceLanguages =
+                [
+                    new RealtimeTranslationSourceLanguageOptions
+                    {
+                        Code = "pl",
+                        Name = "Polish",
+                        Locale = "pl-PL",
+                        TranslatorCode = "pl",
+                        AutoDetect = true,
+                    },
+                ];
+            });
+
+        var created = await service.CreateSessionAsync(
+            "user-1",
+            "es",
+            saveTranscript: true,
+            translationMode: RealtimeTranslationModes.Economical,
+            sourceLanguage: "pl");
+
+        Assert.Equal(4, created.CreditsPerMinute);
+        var session = await context.RealtimeTranslationSessions.SingleAsync();
+        Assert.Equal(RealtimeTranslationModes.Economical, session.TranslationMode);
+        Assert.Equal("pl", session.SourceLanguage);
+        Assert.Equal("azure-speech-standard+azure-translator-nmt", session.BillingModel);
+        Assert.Null(session.SourceTranscriptionDeployment);
+        Assert.Equal(RealtimeTranslationModes.Economical, tokens.LastTranslationMode);
+        Assert.Equal("pl", tokens.LastRequestedSourceLanguage);
+    }
+
+    [Fact]
+    public async Task EconomicalSavedTranscript_RejectsAutoDetection()
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var service = CreateService(
+            context,
+            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            new FakeRelayTokenStore(),
+            options =>
+            {
+                options.EconomicalEnabled = true;
+                options.SourceLanguages =
+                [
+                    new RealtimeTranslationSourceLanguageOptions
+                    {
+                        Code = "pl",
+                        Name = "Polish",
+                        Locale = "pl-PL",
+                        TranslatorCode = "pl",
+                        AutoDetect = true,
+                    },
+                ];
+            });
+
+        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(() =>
+            service.CreateSessionAsync(
+                "user-1",
+                "es",
+                saveTranscript: true,
+                translationMode: RealtimeTranslationModes.Economical,
+                sourceLanguage: "auto"));
+    }
+
+    [Fact]
     public async Task Catalog_ReturnsAllQuizLanguagesAndThePersistedSelection()
     {
         await using var context = CreateContext();
@@ -60,6 +139,8 @@ public sealed class RealtimeTranslationServiceTests
         Assert.Null(created.TranscriptId);
         Assert.Empty(context.RealtimeTranslationTranscripts);
         var liveSession = await context.RealtimeTranslationSessions.SingleAsync();
+        Assert.Equal(RealtimeTranslationModes.Enhanced, liveSession.TranslationMode);
+        Assert.Null(liveSession.SourceLanguage);
         Assert.Null(liveSession.SourceTranscriptionDeployment);
         Assert.Equal("glosify-realtime-translate", liveSession.BillingModel);
         Assert.Equal(8, liveSession.CreditsPerStartedMinute);
@@ -293,7 +374,8 @@ public sealed class RealtimeTranslationServiceTests
     private static RealtimeTranslationService CreateService(
         GlosifyContext context,
         TimeProvider timeProvider,
-        IRealtimeTranslationRelayTokenStore relayTokens)
+        IRealtimeTranslationRelayTokenStore relayTokens,
+        Action<RealtimeTranslationOptions>? configure = null)
     {
         var generativeOptions = new GenerativeAiOptions
         {
@@ -329,31 +411,33 @@ public sealed class RealtimeTranslationServiceTests
             resolver,
             new AlwaysEligibleTrialService(),
             timeProvider);
+        var realtimeOptions = new RealtimeTranslationOptions
+        {
+            Enabled = true,
+            Model = "gpt-realtime-translate",
+            Deployment = "glosify-realtime-translate",
+            SavedSourceTranscriptsEnabled = true,
+            SourceTranscriptionDeployment = "gpt-realtime-whisper",
+            SavedTranscriptBillingModel = "gpt-realtime-translate+gpt-realtime-whisper",
+            FoundryEndpoint = "https://glosify-foundry.openai.azure.com/",
+            CreditsPerStartedMinute = 8,
+            SavedTranscriptCreditsPerStartedMinute = 16,
+            MaxSessionMinutes = 30,
+            ReservationExpirySeconds = 120,
+            StaleSessionSeconds = 60,
+            Languages =
+            [
+                new RealtimeTranslationLanguageOptions { Code = "es", Name = "Spanish" },
+                new RealtimeTranslationLanguageOptions { Code = "pl", Name = "Polish" },
+            ],
+        };
+        configure?.Invoke(realtimeOptions);
         return new RealtimeTranslationService(
             context,
             credits,
             relayTokens,
             new QuizLanguagePreferenceService(context),
-            Options.Create(new RealtimeTranslationOptions
-            {
-                Enabled = true,
-                Model = "gpt-realtime-translate",
-                Deployment = "glosify-realtime-translate",
-                SavedSourceTranscriptsEnabled = true,
-                SourceTranscriptionDeployment = "gpt-realtime-whisper",
-                SavedTranscriptBillingModel = "gpt-realtime-translate+gpt-realtime-whisper",
-                FoundryEndpoint = "https://glosify-foundry.openai.azure.com/",
-                CreditsPerStartedMinute = 8,
-                SavedTranscriptCreditsPerStartedMinute = 16,
-                MaxSessionMinutes = 30,
-                ReservationExpirySeconds = 120,
-                StaleSessionSeconds = 60,
-                Languages =
-                [
-                    new RealtimeTranslationLanguageOptions { Code = "es", Name = "Spanish" },
-                    new RealtimeTranslationLanguageOptions { Code = "pl", Name = "Polish" },
-                ],
-            }),
+            Options.Create(realtimeOptions),
             timeProvider,
             NullLogger<RealtimeTranslationService>.Instance,
             new ReferenceCountedKeyedAsyncLock());
@@ -368,15 +452,21 @@ public sealed class RealtimeTranslationServiceTests
     private sealed class FakeRelayTokenStore(bool fail = false) : IRealtimeTranslationRelayTokenStore
     {
         public string? LastSourceLanguage { get; private set; }
+        public string? LastTranslationMode { get; private set; }
+        public string? LastRequestedSourceLanguage { get; private set; }
 
         public RealtimeTranslationRelayGrant Create(
             Guid sessionId,
             string userId,
             string targetLanguage,
+            string translationMode,
+            string? sourceLanguage,
             bool saveTranscript,
-            string? sourceLanguage)
+            string? transcriptSourceLanguage)
         {
-            LastSourceLanguage = sourceLanguage;
+            LastSourceLanguage = transcriptSourceLanguage;
+            LastTranslationMode = translationMode;
+            LastRequestedSourceLanguage = sourceLanguage;
             if (fail)
             {
                 throw new RealtimeTranslationUpstreamException("Microsoft Foundry unavailable.");

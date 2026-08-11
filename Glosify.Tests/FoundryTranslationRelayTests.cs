@@ -190,15 +190,39 @@ public sealed class FoundryTranslationRelayTests
             sessionId,
             "user-1",
             "es",
+            translationMode: RealtimeTranslationModes.Enhanced,
+            sourceLanguage: null,
             saveTranscript: true,
-            sourceLanguage: "Polish");
+            transcriptSourceLanguage: "Polish");
 
         Assert.True(store.TryRedeem(sessionId, grant.Token, out var authorization));
         Assert.Equal("user-1", authorization.UserId);
         Assert.Equal("es", authorization.TargetLanguage);
+        Assert.Equal(RealtimeTranslationModes.Enhanced, authorization.TranslationMode);
         Assert.True(authorization.SaveTranscript);
-        Assert.Equal("pl", authorization.SourceLanguage);
+        Assert.Equal("pl", authorization.TranscriptSourceLanguage);
         Assert.False(store.TryRedeem(sessionId, grant.Token, out _));
+    }
+
+    [Fact]
+    public void RelayToken_BindsEconomicalModeAndRequestedSourceLanguage()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var store = CreateTokenStore(cache, TimeProvider.System);
+        var sessionId = Guid.NewGuid();
+        var grant = store.Create(
+            sessionId,
+            "user-1",
+            "sv",
+            RealtimeTranslationModes.Economical,
+            "pl",
+            saveTranscript: false,
+            transcriptSourceLanguage: null);
+
+        Assert.True(store.TryRedeem(sessionId, grant.Token, out var authorization));
+        Assert.Equal(RealtimeTranslationModes.Economical, authorization.TranslationMode);
+        Assert.Equal("pl", authorization.SourceLanguage);
+        Assert.Null(authorization.TranscriptSourceLanguage);
     }
 
     [Fact]
@@ -212,8 +236,10 @@ public sealed class FoundryTranslationRelayTests
             sessionId,
             "user-1",
             "es",
+            translationMode: RealtimeTranslationModes.Enhanced,
+            sourceLanguage: null,
             saveTranscript: false,
-            sourceLanguage: null);
+            transcriptSourceLanguage: null);
 
         Assert.False(store.TryRedeem(Guid.NewGuid(), wrongSessionGrant.Token, out _));
         Assert.False(store.TryRedeem(sessionId, wrongSessionGrant.Token, out _));
@@ -222,8 +248,10 @@ public sealed class FoundryTranslationRelayTests
             sessionId,
             "user-1",
             "es",
+            translationMode: RealtimeTranslationModes.Enhanced,
+            sourceLanguage: null,
             saveTranscript: false,
-            sourceLanguage: null);
+            transcriptSourceLanguage: null);
         clock.Advance(TimeSpan.FromMinutes(3));
         Assert.False(store.TryRedeem(sessionId, expiredGrant.Token, out _));
     }
@@ -238,8 +266,10 @@ public sealed class FoundryTranslationRelayTests
             Guid.NewGuid(),
             "user-1",
             "es",
+            translationMode: RealtimeTranslationModes.Enhanced,
+            sourceLanguage: null,
             saveTranscript: true,
-            sourceLanguage: "sv"));
+            transcriptSourceLanguage: "sv"));
     }
 
     [Fact]

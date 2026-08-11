@@ -10,9 +10,13 @@ const elements = {
   credits: document.querySelector("#credits"),
   quizLanguage: document.querySelector("#quiz-language"),
   language: document.querySelector("#language"),
+  translationMode: document.querySelector("#translation-mode"),
+  sourceLanguage: document.querySelector("#source-language"),
+  sourceLanguageGroup: document.querySelector("#source-language-group"),
   saveTranscript: document.querySelector("#save-transcript"),
   saveTranscriptHelp: document.querySelector("#save-transcript-help"),
   price: document.querySelector("#price"),
+  serviceDisclosure: document.querySelector("#service-disclosure"),
   start: document.querySelector("#start"),
   stop: document.querySelector("#stop"),
   viewTranscripts: document.querySelector("#view-transcripts"),
@@ -31,6 +35,12 @@ elements.stop.addEventListener("click", () => run("popup:stop"));
 elements.language.addEventListener("change", () => run("popup:set-target", {
   targetLanguage: elements.language.value,
 }));
+elements.translationMode.addEventListener("change", () => run("popup:set-mode", {
+  translationMode: elements.translationMode.value,
+}));
+elements.sourceLanguage.addEventListener("change", () => run("popup:set-source", {
+  sourceLanguage: elements.sourceLanguage.value,
+}));
 elements.quizLanguage.addEventListener("change", () => run("popup:set-quiz-language", {
   code: elements.quizLanguage.value,
 }));
@@ -42,9 +52,11 @@ elements.saveTranscript.addEventListener("change", () => {
     quizLanguageCode: elements.quizLanguage.value,
   }, true, {
     saveTranscript: enabled,
-    effectiveCreditsPerMinute: enabled
-      ? catalog?.savedTranscriptCreditsPerMinute ?? 16
-      : catalog?.creditsPerMinute ?? 8,
+    effectiveCreditsPerMinute: currentState?.translationMode === "economical"
+      ? catalog?.modes?.find(mode => mode.code === "economical")?.creditsPerMinute ?? 4
+      : enabled
+        ? catalog?.savedTranscriptCreditsPerMinute ?? 16
+        : catalog?.creditsPerMinute ?? 8,
   });
 });
 elements.viewTranscripts.addEventListener("click", () => run("popup:open-transcripts", {}, false));
@@ -102,6 +114,37 @@ function render() {
   const price = currentState.effectiveCreditsPerMinute ?? currentState.catalog?.creditsPerMinute ?? 8;
   elements.price.textContent = `${price} credits/min`;
 
+  const modes = currentState.catalog?.modes
+    ?? [{ code: "enhanced", name: "Enhanced", description: "Best translation quality", creditsPerMinute: 8 }];
+  const modeSignature = modes.map(mode => `${mode.code}:${mode.creditsPerMinute}`).join(",");
+  if (elements.translationMode.dataset.signature !== modeSignature) {
+    elements.translationMode.replaceChildren(...modes.map(mode => {
+      const option = document.createElement("option");
+      option.value = mode.code;
+      option.textContent = `${mode.name} — ${mode.description}`;
+      return option;
+    }));
+    elements.translationMode.dataset.signature = modeSignature;
+  }
+  elements.translationMode.value = currentState.translationMode ?? "enhanced";
+  elements.translationMode.disabled = busy || currentState.active;
+
+  const economical = currentState.translationMode === "economical";
+  const sourceLanguages = currentState.catalog?.sourceLanguages ?? [];
+  const sourceSignature = sourceLanguages.map(language => language.code).join(",");
+  if (elements.sourceLanguage.dataset.signature !== sourceSignature) {
+    elements.sourceLanguage.replaceChildren(...sourceLanguages.map(language => {
+      const option = document.createElement("option");
+      option.value = language.code;
+      option.textContent = language.name;
+      return option;
+    }));
+    elements.sourceLanguage.dataset.signature = sourceSignature;
+  }
+  elements.sourceLanguage.value = currentState.sourceLanguage ?? "auto";
+  elements.sourceLanguage.disabled = busy || currentState.active;
+  elements.sourceLanguageGroup.classList.toggle("hidden", !economical);
+
   const quizLanguages = currentState.catalog?.quizLanguages ?? [];
   const quizSignature = quizLanguages.map(language => language.code).join(",");
   if (elements.quizLanguage.dataset.signature !== quizSignature) {
@@ -144,12 +187,16 @@ function render() {
   });
   elements.saveTranscriptHelp.textContent = currentState.saveTranscriptHelp
     ?? "Optional and off by default. Stores finalized original-language speech in your private Glosify account until you delete the transcript or account.";
+  elements.serviceDisclosure.textContent = economical
+    ? "When you start, this tab’s audio is streamed through Glosify to Azure Speech, and finalized phrases are sent to Azure Translator. Audio is not stored. Each started minute consumes credits."
+    : "When you start, this tab’s audio is streamed through Glosify to Microsoft Foundry for enhanced live translation. Audio is not stored. Each started minute consumes credits.";
 
   const canStart = !busy
     && !currentState.active
     && currentState.catalog
     && currentState.paidServicesAvailable !== false
     && languages.length > 0
+    && (!economical || sourceLanguages.some(language => language.code === currentState.sourceLanguage))
     && currentState.availableCredits >= price;
   elements.start.classList.toggle("hidden", currentState.active);
   elements.stop.classList.toggle("hidden", !currentState.active);

@@ -5,6 +5,8 @@ public sealed class RealtimeTranslationSession
     public Guid Id { get; set; } = Guid.NewGuid();
     public string UserId { get; set; } = string.Empty;
     public string TargetLanguage { get; set; } = string.Empty;
+    public string TranslationMode { get; set; } = "enhanced";
+    public string? SourceLanguage { get; set; }
     public string Model { get; set; } = string.Empty;
     public string? SourceTranscriptionDeployment { get; set; }
     public string BillingModel { get; set; } = string.Empty;

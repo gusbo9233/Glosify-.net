@@ -53,6 +53,28 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         var quizLanguages = QuizLanguageCatalog.All
             .Select(language => new RealtimeTranslationLanguage(language.Code, language.Name))
             .ToArray();
+        var modes = new List<RealtimeTranslationMode>();
+        if (_options.EconomicalEnabled)
+        {
+            modes.Add(new RealtimeTranslationMode(
+                RealtimeTranslationModes.Economical,
+                "Economical",
+                "Fast translation with lower credit usage",
+                _options.EconomicalCreditsPerStartedMinute));
+        }
+        modes.Add(new RealtimeTranslationMode(
+            RealtimeTranslationModes.Enhanced,
+            "Enhanced",
+            "Best translation quality",
+            _options.CreditsPerStartedMinute));
+        var sourceLanguages = _options.SourceLanguages
+            .Where(language => language.Enabled)
+            .Select(language => new RealtimeTranslationSourceLanguage(
+                language.Code,
+                language.Name,
+                language.Locale))
+            .Prepend(new RealtimeTranslationSourceLanguage("auto", "Auto detect", null))
+            .ToArray();
         return new RealtimeTranslationCatalog(
             languages,
             quizLanguages,
@@ -66,7 +88,10 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             _options.RenewalLeadSeconds,
             _options.HeartbeatSeconds,
             _options.Model,
-            account.AvailableCredits);
+            account.AvailableCredits,
+            modes,
+            sourceLanguages,
+            _options.EconomicalEnabled);
     }
 
     public async Task<RealtimeTranslationSessionCreated> CreateSessionAsync(
@@ -74,11 +99,40 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         string targetLanguage,
         bool saveTranscript = false,
         Guid? transcriptId = null,
+        string? translationMode = null,
+        string? sourceLanguage = null,
         CancellationToken cancellationToken = default)
     {
         EnsureEnabled();
         var language = _options.FindLanguage(targetLanguage)
             ?? throw new RealtimeTranslationValidationException("Choose a supported target language.");
+        var mode = string.IsNullOrWhiteSpace(translationMode)
+            ? RealtimeTranslationModes.Enhanced
+            : translationMode.Trim().ToLowerInvariant();
+        if (mode is not (RealtimeTranslationModes.Economical or RealtimeTranslationModes.Enhanced))
+        {
+            throw new RealtimeTranslationValidationException("Choose economical or enhanced subtitles.");
+        }
+        if (mode == RealtimeTranslationModes.Economical && !_options.EconomicalEnabled)
+        {
+            throw new RealtimeTranslationUnavailableException(
+                "Economical subtitles are not enabled on this Glosify deployment.");
+        }
+        var canonicalSourceLanguage = (string?)null;
+        if (mode == RealtimeTranslationModes.Economical)
+        {
+            if (string.Equals(sourceLanguage?.Trim(), "auto", StringComparison.OrdinalIgnoreCase))
+            {
+                canonicalSourceLanguage = "auto";
+            }
+            else
+            {
+                var selectedSourceLanguage = _options.FindSourceLanguage(sourceLanguage)
+                    ?? throw new RealtimeTranslationValidationException(
+                        "Choose a supported source language for economical subtitles.");
+                canonicalSourceLanguage = selectedSourceLanguage.Code;
+            }
+        }
         QuizLanguage? selectedQuizLanguage = null;
         if (saveTranscript)
         {
@@ -92,6 +146,13 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             {
                 throw new RealtimeTranslationValidationException(
                     "Choose a quiz language in Glosify before saving an original speech transcript.");
+            }
+            if (mode == RealtimeTranslationModes.Economical
+                && (canonicalSourceLanguage == "auto"
+                    || !string.Equals(canonicalSourceLanguage, selectedQuizLanguage.Code, StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new RealtimeTranslationValidationException(
+                    "Saved economical transcripts require an explicit source language matching your Glosify quiz language.");
             }
         }
         await using (await _keyedLock.AcquireAsync("user:" + userId, cancellationToken))
@@ -156,16 +217,24 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 TargetLanguage = language.Code,
-                Model = _options.Deployment,
-                SourceTranscriptionDeployment = transcript is null
-                    ? null
-                    : _options.SourceTranscriptionDeployment,
-                BillingModel = transcript is null
-                    ? _options.Deployment
-                    : _options.SavedTranscriptBillingModel,
-                CreditsPerStartedMinute = transcript is null
-                    ? _options.CreditsPerStartedMinute
-                    : _options.SavedTranscriptCreditsPerStartedMinute,
+                TranslationMode = mode,
+                SourceLanguage = canonicalSourceLanguage,
+                Model = mode == RealtimeTranslationModes.Economical
+                    ? _options.EconomicalBillingModel
+                    : _options.Deployment,
+                SourceTranscriptionDeployment = mode == RealtimeTranslationModes.Enhanced && transcript is not null
+                    ? _options.SourceTranscriptionDeployment
+                    : null,
+                BillingModel = mode == RealtimeTranslationModes.Economical
+                    ? _options.EconomicalBillingModel
+                    : transcript is null
+                        ? _options.Deployment
+                        : _options.SavedTranscriptBillingModel,
+                CreditsPerStartedMinute = mode == RealtimeTranslationModes.Economical
+                    ? _options.EconomicalCreditsPerStartedMinute
+                    : transcript is null
+                        ? _options.CreditsPerStartedMinute
+                        : _options.SavedTranscriptCreditsPerStartedMinute,
                 TranscriptId = transcript?.Id,
                 TranscriptConsentAt = transcript is null ? null : now,
                 Status = RealtimeTranslationSessionStatuses.Pending,
@@ -210,6 +279,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                     session.Id,
                     userId,
                     language.Code,
+                    mode,
+                    canonicalSourceLanguage,
                     transcript is not null,
                     selectedQuizLanguage?.Code);
                 var account = await _credits.GetOrCreateAccountAsync(userId, cancellationToken);
