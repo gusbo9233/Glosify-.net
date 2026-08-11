@@ -192,7 +192,9 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
                 AiUsageProviders.Gemini,
                 assistantModel,
                 response?.ResponseId,
-                ExtractUsage(response, 0),
+                ExtractUsage(
+                    response,
+                    Math.Max(1, EstimatePromptTokens(apiRequest)) + Math.Max(0, outputTokenReserve)),
                 EffectiveRequestJson: JsonSerializer.Serialize(new
                 {
                     instructions = request.SystemInstruction,

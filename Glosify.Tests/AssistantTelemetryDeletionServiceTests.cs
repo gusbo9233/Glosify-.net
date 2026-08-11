@@ -6,6 +6,7 @@ using Glosify.Models.Entities;
 using Glosify.Services.Ai.Assistant;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -124,6 +125,84 @@ public sealed class AssistantTelemetryDeletionServiceTests
         Assert.Single(handler.Requests);
     }
 
+    [Fact]
+    public async Task Expired_submission_lease_is_recovered_and_reclaimed_before_posting()
+    {
+        var clock = new FakeTimeProvider(Origin);
+        var handler = new RecordingHandler(_ =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.Accepted);
+            response.Headers.Add(
+                "x-ms-status-location",
+                $"https://management.azure.com{WorkspacePath}/operations/op-recovered?api-version=2025-07-01");
+            return response;
+        });
+        await using var services = CreateServices(out var scopeFactory);
+        var request = NewRequest(clock.GetUtcNow().AddMinutes(-1));
+        request.Status = AssistantTelemetryDeletionStatus.Submitting;
+        request.LeaseId = Guid.NewGuid();
+        request.AttemptCount = 1;
+        await SeedAsync(services, request);
+        using var clients = new StubHttpClientFactory(handler);
+        var worker = CreateWorker(scopeFactory, clients, clock);
+
+        await worker.ProcessBatchAsync(default);
+
+        var recovered = await LoadSingleAsync(services);
+        Assert.Equal(AssistantTelemetryDeletionStatus.Submitted, recovered.Status);
+        Assert.Null(recovered.LeaseId);
+        Assert.Equal(2, recovered.AttemptCount);
+        Assert.Single(handler.Requests);
+    }
+
+    [Fact]
+    public async Task Concurrent_workers_atomically_claim_a_pending_submission_once()
+    {
+        var clock = new FakeTimeProvider(Origin);
+        var databasePath = Path.Combine(Path.GetTempPath(), $"glosify-purge-{Guid.NewGuid():N}.db");
+        try
+        {
+            await using var services = await CreateSqliteServicesAsync(databasePath);
+            var scopeFactory = services.GetRequiredService<IServiceScopeFactory>();
+            await SeedAsync(services, NewRequest(clock.GetUtcNow()));
+            using var handler = new BlockingAcceptedHandler();
+            using var clients = new StubHttpClientFactory(handler, disposeHandler: false);
+            var firstWorker = CreateWorker(scopeFactory, clients, clock);
+            var secondWorker = CreateWorker(scopeFactory, clients, clock);
+
+            var first = firstWorker.ProcessBatchAsync(default);
+            var enteredOrCompleted = await Task.WhenAny(
+                handler.Entered.Task,
+                first,
+                Task.Delay(TimeSpan.FromSeconds(5)));
+            if (enteredOrCompleted == first)
+            {
+                await first;
+            }
+            Assert.Same(handler.Entered.Task, enteredOrCompleted);
+            var second = secondWorker.ProcessBatchAsync(default);
+            try
+            {
+                await second.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            finally
+            {
+                handler.Release.TrySetResult();
+            }
+            await first.WaitAsync(TimeSpan.FromSeconds(5));
+
+            Assert.Equal(1, handler.RequestCount);
+            var submitted = await LoadSingleAsync(services);
+            Assert.Equal(AssistantTelemetryDeletionStatus.Submitted, submitted.Status);
+            Assert.Equal(1, submitted.AttemptCount);
+            Assert.Null(submitted.LeaseId);
+        }
+        finally
+        {
+            File.Delete(databasePath);
+        }
+    }
+
     [Theory]
     [InlineData(WorkspacePath, true)]
     [InlineData("", true)]
@@ -170,6 +249,36 @@ public sealed class AssistantTelemetryDeletionServiceTests
         return provider;
     }
 
+    private static async Task<ServiceProvider> CreateSqliteServicesAsync(string databasePath)
+    {
+        var services = new ServiceCollection();
+        services.AddScoped<GlosifyContext>(_ =>
+        {
+            var options = new DbContextOptionsBuilder<GlosifyContext>()
+                .UseSqlite($"Data Source={databasePath}")
+                .Options;
+            return new SqlitePurgeContext(options);
+        });
+        var provider = services.BuildServiceProvider();
+        await using var scope = provider.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<GlosifyContext>().Database.EnsureCreatedAsync();
+        return provider;
+    }
+
+    private sealed class SqlitePurgeContext(DbContextOptions<GlosifyContext> options)
+        : GlosifyContext(options)
+    {
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            var converter = new DateTimeOffsetToBinaryConverter();
+            var request = modelBuilder.Entity<AssistantTelemetryDeletionRequest>();
+            request.Property(item => item.NextAttemptAt).HasConversion(converter);
+            request.Property(item => item.CreatedAt).HasConversion(converter);
+            request.Property(item => item.CompletedAt).HasConversion(converter);
+        }
+    }
+
     private static AssistantTelemetryDeletionRequest NewRequest(DateTimeOffset now) => new()
     {
         Id = Guid.NewGuid(),
@@ -200,16 +309,17 @@ public sealed class AssistantTelemetryDeletionServiceTests
             .SingleAsync();
     }
 
-    private sealed class StubHttpClientFactory(HttpMessageHandler handler) : IHttpClientFactory, IDisposable
+    private sealed class StubHttpClientFactory(
+        HttpMessageHandler handler,
+        bool disposeHandler = true) : IHttpClientFactory, IDisposable
     {
-        private readonly HttpClient _client = new(handler, disposeHandler: false);
+        private readonly HttpClient _client = new(handler, disposeHandler);
 
         public HttpClient CreateClient(string name) => _client;
 
         public void Dispose()
         {
             _client.Dispose();
-            handler.Dispose();
         }
     }
 
@@ -228,6 +338,31 @@ public sealed class AssistantTelemetryDeletionServiceTests
     }
 
     private sealed record RecordedRequest(HttpMethod Method, Uri Uri);
+
+    private sealed class BlockingAcceptedHandler : HttpMessageHandler
+    {
+        private int _requestCount;
+
+        public TaskCompletionSource Entered { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        public int RequestCount => Volatile.Read(ref _requestCount);
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Interlocked.Increment(ref _requestCount);
+            Entered.TrySetResult();
+            await Release.Task.WaitAsync(cancellationToken);
+            var response = new HttpResponseMessage(HttpStatusCode.Accepted);
+            response.Headers.Add(
+                "x-ms-status-location",
+                $"https://management.azure.com{WorkspacePath}/operations/op-concurrent?api-version=2025-07-01");
+            return response;
+        }
+    }
 
     private sealed class StubTokenCredential : TokenCredential
     {

@@ -8,6 +8,7 @@ using Glosify.Services.Quizzes;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -42,7 +43,7 @@ public class ChangeApplierTests
             CreateApplier(db),
             new AssistantMessagePresenter(),
             null!,
-            TimeProvider.System);
+            new FakeTimeProvider(new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero)));
 
         await Assert.ThrowsAsync<CollectionParentNotFoundException>(
             () => workflow.ApplyAsync(messageId, "user-1", CancellationToken.None));
@@ -76,7 +77,7 @@ public class ChangeApplierTests
             CreateApplier(db),
             new AssistantMessagePresenter(),
             null!,
-            TimeProvider.System);
+            new FakeTimeProvider(new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero)));
 
         var first = await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
         var second = await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);

@@ -26,3 +26,11 @@ export const normalizeFeedback = (feedback) => feedback ? {
 
 export const validClientDuration = (milliseconds) =>
     Number.isFinite(milliseconds) && milliseconds >= 0 && milliseconds <= 900000;
+
+export const createLatestRequestGate = () => {
+    let latestRequest = 0;
+    return {
+        next: () => ++latestRequest,
+        isCurrent: request => request === latestRequest,
+    };
+};

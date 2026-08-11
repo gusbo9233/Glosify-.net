@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Glosify.Migrations
 {
     [DbContext(typeof(GlosifyContext))]
-    [Migration("20260811150850_AddAssistantAnalyticsCapture")]
+    [Migration("20260811165214_AddAssistantAnalyticsCapture")]
     partial class AddAssistantAnalyticsCapture
     {
         /// <inheritdoc />
@@ -653,6 +653,10 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(2000)")
                         .HasColumnName("last_error");
 
+                    b.Property<Guid?>("LeaseId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("lease_id");
+
                     b.Property<DateTimeOffset>("NextAttemptAt")
                         .HasColumnType("datetimeoffset")
                         .HasColumnName("next_attempt_at");
@@ -673,7 +677,8 @@ namespace Glosify.Migrations
 
                     b.HasIndex("Status", "NextAttemptAt");
 
-                    b.HasIndex("TableName", "DimensionName", "DimensionValue", "Status");
+                    b.HasIndex("TableName", "DimensionName", "DimensionValue")
+                        .IsUnique();
 
                     b.ToTable("assistant_telemetry_deletion_requests");
                 });

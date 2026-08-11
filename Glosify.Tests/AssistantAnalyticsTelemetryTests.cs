@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Collections.Concurrent;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Generation;
@@ -11,12 +12,12 @@ public sealed class AssistantAnalyticsTelemetryTests
     [Fact]
     public void Correlation_and_genai_fields_are_emitted_without_feedback_comments()
     {
-        var stopped = new List<Activity>();
+        var stopped = new ConcurrentQueue<Activity>();
         using var listener = new ActivityListener
         {
             ShouldListenTo = source => source.Name == GenerativeAiTelemetry.ActivitySourceName,
             Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = activity => stopped.Add(activity),
+            ActivityStopped = stopped.Enqueue,
         };
         ActivitySource.AddActivityListener(listener);
         var turnId = Guid.NewGuid();
@@ -59,7 +60,6 @@ public sealed class AssistantAnalyticsTelemetryTests
         Assert.Equal("glosify-librarian", invocationSpan.GetTagItem("gen_ai.agent.name"));
         Assert.Equal("resp-1", invocationSpan.GetTagItem("gen_ai.response.id"));
 
-        stopped.Clear();
         AssistantAnalyticsTelemetry.RecordFeedback(
             turnId,
             "0123456789abcdef0123456789abcdef",
@@ -69,8 +69,10 @@ public sealed class AssistantAnalyticsTelemetryTests
             stopped,
             activity => activity.DisplayName == "gen_ai.evaluation.result"
                 && (string?)activity.GetTagItem("assistant.turn.id") == turnId.ToString());
-        Assert.Equal(0, feedback.GetTagItem("gen_ai.evaluation.score.value"));
-        Assert.Single(feedback.Events, item => item.Name == "gen_ai.evaluation.result");
+        var evaluation = Assert.Single(feedback.Events, item => item.Name == "gen_ai.evaluation.result");
+        var evaluationTags = evaluation.Tags.ToDictionary(tag => tag.Key, tag => tag.Value);
+        Assert.Equal(0, evaluationTags["gen_ai.evaluation.score.value"]);
+        Assert.Equal("incorrect", evaluationTags["assistant.feedback.reasons"]);
         Assert.DoesNotContain(feedback.TagObjects, tag => tag.Key.Contains("comment", StringComparison.OrdinalIgnoreCase));
     }
 

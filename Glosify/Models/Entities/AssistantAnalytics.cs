@@ -271,6 +271,9 @@ public sealed class AssistantTelemetryDeletionRequest
     [Column("next_attempt_at")]
     public DateTimeOffset NextAttemptAt { get; set; }
 
+    [Column("lease_id")]
+    public Guid? LeaseId { get; set; }
+
     [Column("azure_operation_id")]
     public string? AzureOperationId { get; set; }
 

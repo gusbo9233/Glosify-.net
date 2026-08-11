@@ -151,7 +151,7 @@ internal sealed class AssistantFeedbackService(GlosifyContext context, TimeProvi
     {
         var turn = await context.AssistantTurns
             .SingleOrDefaultAsync(candidate => candidate.Id == turnId, cancellationToken)
-            ?? throw new InvalidOperationException("Assistant turn not found.");
+            ?? throw new AssistantTurnNotFoundException();
         var owned = await context.AssistantThreads
             .AnyAsync(thread => thread.Id == turn.ThreadId && thread.UserId == userId, cancellationToken);
         if (!owned)
@@ -169,3 +169,5 @@ internal sealed class AssistantFeedbackService(GlosifyContext context, TimeProvi
 }
 
 internal sealed class AssistantFeedbackValidationException(string message) : Exception(message);
+
+internal sealed class AssistantTurnNotFoundException() : Exception("Assistant turn not found.");

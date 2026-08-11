@@ -151,6 +151,14 @@ public sealed class AssistantAnalyticsModelTests
             context.Model.FindEntityType(typeof(AssistantFeedback))!.GetIndexes(),
             index => index.IsUnique && index.Properties.Single().Name == nameof(AssistantFeedback.TurnId));
         Assert.Contains(
+            context.Model.FindEntityType(typeof(AssistantTelemetryDeletionRequest))!.GetIndexes(),
+            index => index.IsUnique && index.Properties.Select(property => property.Name).SequenceEqual(
+                [
+                    nameof(AssistantTelemetryDeletionRequest.TableName),
+                    nameof(AssistantTelemetryDeletionRequest.DimensionName),
+                    nameof(AssistantTelemetryDeletionRequest.DimensionValue),
+                ]));
+        Assert.Contains(
             context.Model.FindEntityType(typeof(AiCreditTransaction))!.GetIndexes(),
             index => index.Properties.Single().Name == nameof(AiCreditTransaction.OperationId));
         Assert.Contains(

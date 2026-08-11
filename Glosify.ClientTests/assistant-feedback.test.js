@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { feedbackReasons, normalizeFeedback, validClientDuration } from '../Glosify/wwwroot/js/assistant/feedback.js';
+import {
+    createLatestRequestGate,
+    feedbackReasons,
+    normalizeFeedback,
+    validClientDuration,
+} from '../Glosify/wwwroot/js/assistant/feedback.js';
 
 test('feedback reason sets preserve the approved analytics codes', () => {
     assert.deepEqual(feedbackReasons.up.map(([code]) => code), [
@@ -30,4 +35,13 @@ test('client duration validation accepts only the server contract range', () => 
     assert.equal(validClientDuration(-1), false);
     assert.equal(validClientDuration(Number.NaN), false);
     assert.equal(validClientDuration(900001), false);
+});
+
+test('feedback request gate rejects stale save responses', () => {
+    const gate = createLatestRequestGate();
+    const first = gate.next();
+    const second = gate.next();
+
+    assert.equal(gate.isCurrent(first), false);
+    assert.equal(gate.isCurrent(second), true);
 });

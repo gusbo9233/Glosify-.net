@@ -1,7 +1,12 @@
 import { createAssistantApi } from './assistant/api.js';
 import { chooseInitialChat, createRecoverablePromiseQueue, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
 import { escapeHtml, formatChatDate } from './assistant/presentation.js';
-import { feedbackReasons, normalizeFeedback, validClientDuration } from './assistant/feedback.js';
+import {
+    createLatestRequestGate,
+    feedbackReasons,
+    normalizeFeedback,
+    validClientDuration,
+} from './assistant/feedback.js';
 
 (() => {
     const panel = document.querySelector('[data-assistant-panel]');
@@ -482,6 +487,8 @@ import { feedbackReasons, normalizeFeedback, validClientDuration } from './assis
         const container = document.createElement('div');
         container.className = 'assistant-feedback';
         let current = normalizeFeedback(initialFeedback);
+        const requests = createLatestRequestGate();
+        const writeFeedback = createRecoverablePromiseQueue(operation => operation());
 
         const prompt = document.createElement('span');
         prompt.className = 'assistant-feedback-prompt';
@@ -494,17 +501,20 @@ import { feedbackReasons, normalizeFeedback, validClientDuration } from './assis
         details.hidden = !current;
 
         const save = async (next) => {
+            const request = requests.next();
             const previous = current;
             current = next;
             sync();
             try {
-                const saved = await api.json(feedbackUrl(turnId), {
+                const saved = await writeFeedback(() => api.json(feedbackUrl(turnId), {
                     method: 'PUT',
                     body: JSON.stringify(next),
-                }, 'Could not save feedback.');
+                }, 'Could not save feedback.'));
+                if (!requests.isCurrent(request)) return;
                 current = normalizeFeedback(saved);
                 sync();
             } catch (error) {
+                if (!requests.isCurrent(request)) return;
                 current = previous;
                 sync();
                 setStatus(error.message, true);
@@ -561,12 +571,17 @@ import { feedbackReasons, normalizeFeedback, validClientDuration } from './assis
         clear.className = 'assistant-feedback-clear';
         clear.textContent = 'Clear';
         clear.addEventListener('click', async () => {
+            const request = requests.next();
             const previous = current;
             current = null;
             sync();
             try {
-                await api.json(feedbackUrl(turnId), { method: 'DELETE' }, 'Could not clear feedback.');
+                await writeFeedback(() => api.json(
+                    feedbackUrl(turnId),
+                    { method: 'DELETE' },
+                    'Could not clear feedback.'));
             } catch (error) {
+                if (!requests.isCurrent(request)) return;
                 current = previous;
                 sync();
                 setStatus(error.message, true);

@@ -10,4 +10,4 @@ Rolling this migration back is not correlation-neutral. The rollback drops the s
 
 ## Telemetry deletion lifecycle
 
-Chat deletion queues one purge record per Azure Monitor table and correlation dimension. The worker leases each batch before submitting it, validates that Azure's status URL remains under the configured Log Analytics workspace, and polls until Azure reports `completed`. Transient submission and polling failures use bounded retries; exhausted or permanent failures remain in SQL with status `failed` for operator review.
+Chat deletion queues one unique purge record per Azure Monitor table and correlation dimension. The worker atomically claims pending rows with a conditional database update and a per-batch lease ID before submitting them. A second worker cannot claim those rows, while an expired lease is returned to the retry queue after a crash. The worker validates that Azure's status URL remains under the configured Log Analytics workspace and polls until Azure reports `completed`. Transient submission and polling failures use bounded retries; exhausted or permanent failures remain in SQL with status `failed` for operator review.

@@ -116,6 +116,7 @@ internal sealed class AssistantTelemetryDeletionService(
             else
             {
                 request.Status = AssistantTelemetryDeletionStatus.Pending;
+                request.LeaseId = null;
                 request.NextAttemptAt = now;
                 request.LastError = "Azure purge submission lease expired; the request will be retried.";
             }
@@ -133,6 +134,7 @@ internal sealed class AssistantTelemetryDeletionService(
         CancellationToken cancellationToken)
     {
         var pending = await context.AssistantTelemetryDeletionRequests
+            .AsNoTracking()
             .Where(request => request.Status == AssistantTelemetryDeletionStatus.Pending
                 && request.NextAttemptAt <= now)
             .OrderBy(request => request.CreatedAt)
@@ -141,28 +143,27 @@ internal sealed class AssistantTelemetryDeletionService(
 
         foreach (var group in pending.GroupBy(request => new { request.TableName, request.DimensionName }))
         {
-            foreach (var request in group)
+            var claimed = await ClaimPendingRequestsAsync(
+                context,
+                group.Select(request => request.Id).ToArray(),
+                now,
+                cancellationToken);
+            if (claimed.Count == 0)
             {
-                request.Status = AssistantTelemetryDeletionStatus.Submitting;
-                request.AttemptCount++;
-                request.NextAttemptAt = now.Add(SubmissionLease);
-                request.LastError = null;
+                continue;
             }
-
-            // Persist the lease before the irreversible external POST so another worker
-            // cannot submit the same batch concurrently.
-            await context.SaveChangesAsync(cancellationToken);
 
             try
             {
                 var statusLocation = await SubmitPurgeAsync(
                     group.Key.TableName,
                     group.Key.DimensionName,
-                    group.Select(request => request.DimensionValue).Distinct().ToArray(),
+                    claimed.Select(request => request.DimensionValue).Distinct().ToArray(),
                     cancellationToken);
-                foreach (var request in group)
+                foreach (var request in claimed)
                 {
                     request.Status = AssistantTelemetryDeletionStatus.Submitted;
+                    request.LeaseId = null;
                     request.AzureOperationId = statusLocation;
                     request.NextAttemptAt = now.Add(PollInterval);
                     request.CompletedAt = null;
@@ -172,8 +173,9 @@ internal sealed class AssistantTelemetryDeletionService(
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 var safeError = SafeError(ex);
-                foreach (var request in group)
+                foreach (var request in claimed)
                 {
+                    request.LeaseId = null;
                     if (!IsTransient(ex) || request.AttemptCount >= MaxAttempts)
                     {
                         MarkTerminalFailure(request, now, safeError);
@@ -187,12 +189,58 @@ internal sealed class AssistantTelemetryDeletionService(
                 }
                 logger.LogWarning(
                     "Could not submit assistant telemetry purge for {Count} correlation values: {Error}",
-                    group.Count(),
+                    claimed.Count,
                     safeError);
             }
 
             await context.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private static async Task<List<AssistantTelemetryDeletionRequest>> ClaimPendingRequestsAsync(
+        GlosifyContext context,
+        IReadOnlyCollection<Guid> requestIds,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var claimId = Guid.NewGuid();
+        var leaseExpiresAt = now.Add(SubmissionLease);
+
+        if (context.Database.IsRelational())
+        {
+            await context.AssistantTelemetryDeletionRequests
+                .Where(request => requestIds.Contains(request.Id)
+                    && request.Status == AssistantTelemetryDeletionStatus.Pending
+                    && request.NextAttemptAt <= now)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(request => request.Status, AssistantTelemetryDeletionStatus.Submitting)
+                    .SetProperty(request => request.LeaseId, claimId)
+                    .SetProperty(request => request.AttemptCount, request => request.AttemptCount + 1)
+                    .SetProperty(request => request.NextAttemptAt, leaseExpiresAt)
+                    .SetProperty(request => request.LastError, (string?)null),
+                    cancellationToken);
+        }
+        else
+        {
+            var candidates = await context.AssistantTelemetryDeletionRequests
+                .Where(request => requestIds.Contains(request.Id)
+                    && request.Status == AssistantTelemetryDeletionStatus.Pending
+                    && request.NextAttemptAt <= now)
+                .ToListAsync(cancellationToken);
+            foreach (var request in candidates)
+            {
+                request.Status = AssistantTelemetryDeletionStatus.Submitting;
+                request.LeaseId = claimId;
+                request.AttemptCount++;
+                request.NextAttemptAt = leaseExpiresAt;
+                request.LastError = null;
+            }
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        return await context.AssistantTelemetryDeletionRequests
+            .Where(request => request.LeaseId == claimId)
+            .ToListAsync(cancellationToken);
     }
 
     private async Task PollSubmittedRequestsAsync(
@@ -218,6 +266,7 @@ internal sealed class AssistantTelemetryDeletionService(
                     foreach (var request in group)
                     {
                         request.Status = AssistantTelemetryDeletionStatus.Completed;
+                        request.LeaseId = null;
                         request.CompletedAt = now;
                         request.LastError = null;
                     }
@@ -388,6 +437,7 @@ internal sealed class AssistantTelemetryDeletionService(
         string error)
     {
         request.Status = AssistantTelemetryDeletionStatus.Failed;
+        request.LeaseId = null;
         request.CompletedAt = now;
         request.LastError = Truncate(error, 2000);
     }

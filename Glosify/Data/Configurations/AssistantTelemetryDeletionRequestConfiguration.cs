@@ -21,7 +21,6 @@ internal sealed class AssistantTelemetryDeletionRequestConfiguration : IEntityTy
             request.TableName,
             request.DimensionName,
             request.DimensionValue,
-            request.Status,
-        });
+        }).IsUnique();
     }
 }

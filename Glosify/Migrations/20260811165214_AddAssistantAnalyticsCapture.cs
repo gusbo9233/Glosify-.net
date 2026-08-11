@@ -47,6 +47,7 @@ namespace Glosify.Migrations
                     status = table.Column<string>(type: "nvarchar(16)", maxLength: 16, nullable: false),
                     attempt_count = table.Column<int>(type: "int", nullable: false),
                     next_attempt_at = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    lease_id = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     azure_operation_id = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     last_error = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
                     created_at = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -250,9 +251,10 @@ namespace Glosify.Migrations
                 columns: new[] { "status", "next_attempt_at" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_assistant_telemetry_deletion_requests_table_name_dimension_name_dimension_value_status",
+                name: "IX_assistant_telemetry_deletion_requests_table_name_dimension_name_dimension_value",
                 table: "assistant_telemetry_deletion_requests",
-                columns: new[] { "table_name", "dimension_name", "dimension_value", "status" });
+                columns: new[] { "table_name", "dimension_name", "dimension_value" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_assistant_tool_executions_invocation_id",

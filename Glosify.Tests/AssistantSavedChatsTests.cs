@@ -849,7 +849,10 @@ public class AssistantSavedChatsTests
 
         Assert.Empty(context.AssistantTurns);
         var deletions = await context.AssistantTelemetryDeletionRequests.ToListAsync();
-        Assert.Equal(new AssistantAnalyticsOptions().PurgeTables.Count, deletions.Count);
+        Assert.Equal(6, deletions.Count);
+        Assert.Equal(
+            ["AppDependencies", "AppEvents", "AppExceptions", "AppGenAIContent", "AppRequests", "AppTraces"],
+            deletions.Select(deletion => deletion.TableName).Order());
         Assert.All(deletions, deletion =>
         {
             Assert.Equal(
@@ -878,6 +881,9 @@ public class AssistantSavedChatsTests
         Assert.Equal(24, generativeAi.Calls);
         Assert.Equal(24, tools.Calls);
         Assert.Contains("tool-call limit", result.AssistantText);
+        Assert.Equal(
+            "tool_limit_reached",
+            (await context.AssistantTurns.SingleAsync(turn => turn.Id == result.TurnId)).ErrorCategory);
         Assert.Equal(
             50,
             await context.AssistantMessages.CountAsync(message => message.ThreadId == result.ThreadId));

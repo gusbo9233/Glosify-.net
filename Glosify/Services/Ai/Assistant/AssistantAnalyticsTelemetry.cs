@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
 
 namespace Glosify.Services.Ai.Assistant;
@@ -87,16 +88,13 @@ internal static class AssistantAnalyticsTelemetry
             ActivityKind.Internal,
             TryParseParent(traceId));
         activity?.SetTag("gen_ai.evaluation.name", "user_feedback");
-        activity?.SetTag("gen_ai.evaluation.score.value", rating == "up" ? 1 : 0);
-        activity?.SetTag("gen_ai.evaluation.score.label", rating);
         activity?.SetTag("assistant.turn.id", turnId.ToString());
-        activity?.SetTag("assistant.feedback.reasons", string.Join(',', reasons));
         activity?.AddEvent(new ActivityEvent(
             "gen_ai.evaluation.result",
             tags: new ActivityTagsCollection
             {
                 ["gen_ai.evaluation.name"] = "user_feedback",
-                ["gen_ai.evaluation.score.value"] = rating == "up" ? 1 : 0,
+                ["gen_ai.evaluation.score.value"] = rating == AssistantFeedbackRating.Up ? 1 : 0,
                 ["gen_ai.evaluation.score.label"] = rating,
                 ["assistant.turn.id"] = turnId.ToString(),
                 ["assistant.feedback.reasons"] = string.Join(',', reasons),

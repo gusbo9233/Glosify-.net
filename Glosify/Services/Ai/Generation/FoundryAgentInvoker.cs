@@ -203,19 +203,12 @@ internal sealed class FoundryAgentInvoker(
         bool enableSensitiveData,
         CancellationToken cancellationToken)
     {
-        var agent = CreateAgent(deployment, instructions, tools, maxOutputTokens, enableSensitiveData);
-        try
-        {
-            return await agent.RunAsync(
-                messages,
-                session: null,
-                options: null,
-                cancellationToken);
-        }
-        finally
-        {
-            (agent as IDisposable)?.Dispose();
-        }
+        using var agent = CreateAgent(deployment, instructions, tools, maxOutputTokens, enableSensitiveData);
+        return await agent.Value.RunAsync(
+            messages,
+            session: null,
+            options: null,
+            cancellationToken);
     }
 
     public async Task<AgentResponse<T>> RunStructuredAsync<T>(
@@ -225,23 +218,16 @@ internal sealed class FoundryAgentInvoker(
         int maxOutputTokens,
         CancellationToken cancellationToken)
     {
-        var agent = CreateAgent(deployment, instructions, [], maxOutputTokens, enableSensitiveData: false);
-        try
-        {
-            return await agent.RunAsync<T>(
-                prompt,
-                session: null,
-                JsonOptions,
-                options: null,
-                cancellationToken);
-        }
-        finally
-        {
-            (agent as IDisposable)?.Dispose();
-        }
+        using var agent = CreateAgent(deployment, instructions, [], maxOutputTokens, enableSensitiveData: false);
+        return await agent.Value.RunAsync<T>(
+            prompt,
+            session: null,
+            JsonOptions,
+            options: null,
+            cancellationToken);
     }
 
-    private AIAgent CreateAgent(
+    private OwnedAgent CreateAgent(
         string deployment,
         string instructions,
         IReadOnlyList<AITool> tools,
@@ -262,15 +248,31 @@ internal sealed class FoundryAgentInvoker(
             },
         };
 
-        return projectClient.AsAIAgent(
+        var innerAgent = projectClient.AsAIAgent(
             options,
             clientFactory: null,
             loggerFactory,
-            services: null)
+            services: null);
+        var instrumentedAgent = innerAgent
             .AsBuilder()
             .UseOpenTelemetry(
                 GenerativeAiTelemetry.ActivitySourceName,
                 telemetry => telemetry.EnableSensitiveData = enableSensitiveData)
             .Build();
+        return new OwnedAgent(instrumentedAgent, innerAgent.ChatClient as IDisposable);
+    }
+
+    private sealed class OwnedAgent(AIAgent value, IDisposable? innerClient) : IDisposable
+    {
+        public AIAgent Value { get; } = value;
+
+        public void Dispose()
+        {
+            (Value as IDisposable)?.Dispose();
+            if (!ReferenceEquals(Value, innerClient))
+            {
+                innerClient?.Dispose();
+            }
+        }
     }
 }

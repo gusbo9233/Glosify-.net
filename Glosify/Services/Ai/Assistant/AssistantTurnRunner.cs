@@ -567,6 +567,7 @@ internal sealed class AssistantTurnRunner
             _context.AssistantMessages.Add(finalMessage);
             thread.UpdatedAt = finalMessage.CreatedAt;
             turnEntity.Status = AssistantTurnStatus.Completed;
+            turnEntity.ErrorCategory = finalTurn is null ? "tool_limit_reached" : null;
             turnEntity.Provider = lastMetadata?.Provider ?? ResolveProviderName();
             turnEntity.ActualModel = lastMetadata?.Model ?? selectedModel;
             turnEntity.ProviderResponseId = lastMetadata?.ResponseId;
@@ -584,7 +585,7 @@ internal sealed class AssistantTurnRunner
             turnActivity?.SetTag("gen_ai.response.id", turnEntity.ProviderResponseId);
             turnActivity?.SetTag("assistant.tool_call_count", turnEntity.ToolCallCount);
             turnActivity?.SetTag("assistant.proposed_change_count", turnEntity.ProposedChangeCount);
-            turnActivity?.SetTag("assistant.outcome", "success");
+            turnActivity?.SetTag("assistant.outcome", turnEntity.ErrorCategory ?? "success");
             turnActivity?.SetStatus(ActivityStatusCode.Ok);
 
             return new AssistantTurnResponse(

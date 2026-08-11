@@ -387,16 +387,21 @@ internal sealed class AssistantThreadStore(
                         .ToList(),
                     entry.Message.Status,
                     entry.Message.CreatedAt,
-                    entry.Message.TurnId is Guid candidateTurnId
-                        && finalMessageByTurn.GetValueOrDefault(candidateTurnId) == entry.Message.Id,
+                    IsFinalTurnMessage(entry.Message, finalMessageByTurn),
                     entry.Message.TurnId is Guid turnId
-                        && finalMessageByTurn.GetValueOrDefault(turnId) == entry.Message.Id
+                        && IsFinalTurnMessage(entry.Message, finalMessageByTurn)
                         && feedbackByTurn.TryGetValue(turnId, out var feedback)
                             ? AssistantFeedbackService.Map(feedback)
                             : null);
             })
             .ToList();
     }
+
+    private static bool IsFinalTurnMessage(
+        AssistantMessage message,
+        IReadOnlyDictionary<Guid, Guid?> finalMessageByTurn) =>
+        message.TurnId is Guid turnId
+        && finalMessageByTurn.GetValueOrDefault(turnId) == message.Id;
 
     public async Task<IReadOnlyDictionary<string, AssistantWordLabel>> LoadWordLabelsAsync(
         Guid? quizId,

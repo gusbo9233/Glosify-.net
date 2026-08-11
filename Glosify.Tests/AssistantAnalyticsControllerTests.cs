@@ -101,6 +101,52 @@ public sealed class AssistantAnalyticsControllerTests
         Assert.Equal("Assistant turn not found.", details.Detail);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task MissingFeedbackTurn_UsesTheMaskedNotFoundContract(bool mobile)
+    {
+        var orchestrator = new RecordingOrchestrator
+        {
+            SaveFeedbackException = new AssistantTurnNotFoundException(),
+        };
+
+        IActionResult result = mobile
+            ? await CreateMobileController(orchestrator).SaveFeedback(
+                Guid.NewGuid(),
+                new AssistantFeedbackInput("up", [], null),
+                default)
+            : await CreateWebController(orchestrator).SaveFeedback(
+                Guid.NewGuid(),
+                new AssistantFeedbackInput("up", [], null),
+                default);
+
+        var problem = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status404NotFound, problem.StatusCode);
+        Assert.Equal("Assistant turn not found.", Assert.IsType<ProblemDetails>(problem.Value).Detail);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task UnexpectedFeedbackFailure_IsNotMaskedAsMissingTurn(bool mobile)
+    {
+        var orchestrator = new RecordingOrchestrator
+        {
+            SaveFeedbackException = new InvalidOperationException("database invariant failed"),
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => mobile
+            ? CreateMobileController(orchestrator).SaveFeedback(
+                Guid.NewGuid(),
+                new AssistantFeedbackInput("up", [], null),
+                default)
+            : CreateWebController(orchestrator).SaveFeedback(
+                Guid.NewGuid(),
+                new AssistantFeedbackInput("up", [], null),
+                default));
+    }
+
     [Fact]
     public async Task MobileClientTiming_ForwardsAuthenticatedOwnerAndReturnsNoContent()
     {

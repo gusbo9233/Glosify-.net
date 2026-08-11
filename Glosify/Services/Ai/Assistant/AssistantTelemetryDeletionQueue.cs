@@ -15,6 +15,8 @@ internal sealed class AssistantTelemetryDeletionQueue(
     TimeProvider timeProvider,
     IOptions<AssistantAnalyticsOptions> options)
 {
+    private const int LookupBatchSize = 500;
+
     public async Task QueueThreadAsync(Guid threadId, CancellationToken cancellationToken) =>
         await QueueAsync(
             context.AssistantTurns.Where(turn => turn.ThreadId == threadId),
@@ -48,11 +50,19 @@ internal sealed class AssistantTelemetryDeletionQueue(
                 DimensionName = GetTraceDimension(table),
             })
             .ToArray();
-        var existing = await context.AssistantTelemetryDeletionRequests
-            .Where(request => traceIds.Contains(request.DimensionValue)
-                && tables.Contains(request.TableName))
-            .Select(request => new { request.TableName, request.DimensionName, request.DimensionValue })
-            .ToListAsync(cancellationToken);
+        var existing = new List<(string TableName, string DimensionName, string DimensionValue)>();
+        foreach (var traceIdBatch in traceIds.Chunk(LookupBatchSize))
+        {
+            existing.AddRange(await context.AssistantTelemetryDeletionRequests
+                .Where(request => traceIdBatch.Contains(request.DimensionValue)
+                    && tables.Contains(request.TableName))
+                .Select(request => new ValueTuple<string, string, string>(
+                    request.TableName,
+                    request.DimensionName,
+                    request.DimensionValue))
+                .ToListAsync(cancellationToken));
+        }
+
         var existingSet = existing
             .Select(request => $"{request.TableName}\n{request.DimensionName}\n{request.DimensionValue}")
             .Concat(context.AssistantTelemetryDeletionRequests.Local

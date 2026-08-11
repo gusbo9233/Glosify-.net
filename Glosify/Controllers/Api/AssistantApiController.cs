@@ -167,7 +167,7 @@ public class AssistantApiController : ApiControllerBase
                 ApiErrorCodes.BadRequest,
                 ex.Message);
         }
-        catch (InvalidOperationException)
+        catch (AssistantTurnNotFoundException)
         {
             return FeedbackTurnNotFound();
         }
@@ -185,7 +185,7 @@ public class AssistantApiController : ApiControllerBase
             await _orchestrator.DeleteFeedbackAsync(turnId, User.GetUserId(), cancellationToken);
             return NoContent();
         }
-        catch (InvalidOperationException)
+        catch (AssistantTurnNotFoundException)
         {
             return FeedbackTurnNotFound();
         }
@@ -218,7 +218,7 @@ public class AssistantApiController : ApiControllerBase
                 ApiErrorCodes.BadRequest,
                 ex.Message);
         }
-        catch (InvalidOperationException)
+        catch (AssistantTurnNotFoundException)
         {
             return FeedbackTurnNotFound();
         }
