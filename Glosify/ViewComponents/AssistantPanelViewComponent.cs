@@ -50,10 +50,19 @@ public sealed class AssistantPanelViewComponent : ViewComponent
     public async Task<IViewComponentResult> InvokeAsync(AssistantPanelViewModel panel)
     {
         var models = ModelOptions();
+        var defaultModelLabel = models.FirstOrDefault(model => string.Equals(
+            model.Deployment,
+            _models.DefaultAssistantModel,
+            StringComparison.OrdinalIgnoreCase))?.Label ?? "default model";
 
         if (UserClaimsPrincipal.Identity?.IsAuthenticated != true)
         {
-            return View(new AssistantPanelContentViewModel { Panel = panel, Models = models });
+            return View(new AssistantPanelContentViewModel
+            {
+                Panel = panel,
+                DefaultModelLabel = defaultModelLabel,
+                Models = models,
+            });
         }
 
         var userId = UserClaimsPrincipal.GetUserId();
@@ -81,6 +90,7 @@ public sealed class AssistantPanelViewComponent : ViewComponent
         return View(new AssistantPanelContentViewModel
         {
             Panel = panel,
+            DefaultModelLabel = defaultModelLabel,
             Models = models,
             Quizzes = quizzes,
             Books = books,
@@ -140,14 +150,10 @@ public sealed class AssistantPanelViewComponent : ViewComponent
 
     private IReadOnlyList<AssistantModelOption> ModelOptions() =>
         _models.AssistantModels
-            .Where(model => !string.Equals(
-                model.Deployment,
-                _models.DefaultAssistantModel,
-                StringComparison.OrdinalIgnoreCase))
             .Select(model => new AssistantModelOption(
                 model.Deployment,
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"{model.DisplayName} · {model.Provider} · {model.SpeedTier} · {model.CostTier} · {model.CreditMultiplier:0.##}×")))
+                    $"{model.DisplayName} · {model.Provider} · {model.SpeedTier} · {model.CostTier} · {model.CreditMultiplier:0.##}× credits")))
             .ToArray();
 }

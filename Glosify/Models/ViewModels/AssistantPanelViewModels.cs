@@ -35,6 +35,7 @@ public class AssistantPanelViewModel
 public sealed class AssistantPanelContentViewModel
 {
     public required AssistantPanelViewModel Panel { get; init; }
+    public string DefaultModelLabel { get; init; } = "default model";
     public IReadOnlyList<AssistantModelOption> Models { get; init; } = [];
     public IReadOnlyList<AssistantQuizOption> Quizzes { get; init; } = [];
     public IReadOnlyList<AssistantMaterialOption> Books { get; init; } = [];

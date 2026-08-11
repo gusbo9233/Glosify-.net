@@ -346,7 +346,7 @@ High-value coverage still missing:
 
 1. concurrent Sends to one thread through the complete HTTP/runner path;
 2. process-loss recovery after the Applied claim;
-3. ambiguous-commit fault injection/idempotency;
+3. ambiguous-commit fault injection;
 4. authored tool parity/profile enforcement against the live/exported agent;
 5. a canary across model-version upgrades;
 6. App Service diagnostic-setting ingestion verification.

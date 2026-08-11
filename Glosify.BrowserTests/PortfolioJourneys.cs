@@ -136,8 +136,13 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.Locator(".assistant-chat-item")).ToHaveCountAsync(1);
 
         await Page.Locator("[data-assistant-new-chat]").ClickAsync();
-        await Expect(Page.Locator(".assistant-chat-item")).ToHaveCountAsync(2);
+        // Creating a chat renders the list once when the POST completes and again after
+        // selection/history loading. Wait for the operation's final pane transition so
+        // the Chats click below cannot race that second render and replace the row while
+        // Playwright is hovering it.
+        await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
         await Page.Locator("[data-assistant-tab='chats']").ClickAsync();
+        await Expect(Page.Locator(".assistant-chat-item")).ToHaveCountAsync(2);
 
         async void RenameDialog(object? _, IDialog dialog) => await dialog.AcceptAsync("Employer demo chat");
         Page.Dialog += RenameDialog;
@@ -274,6 +279,18 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await RegisterAndSelectPolishAsync();
         await Page.GotoAsync("/Quizzes");
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
+        var modelSelector = Page.Locator("[data-assistant-model-select]");
+        await Expect(modelSelector.Locator("option")).ToHaveCountAsync(5);
+        await Expect(modelSelector.Locator("option[value='']"))
+            .ToContainTextAsync("Auto · GPT-5.6 Luna · OpenAI · Balanced · Cost ≈1× · 1× credits");
+        await Expect(modelSelector.Locator("option[value='gpt-5.6-luna']"))
+            .ToContainTextAsync("Cost ≈1× · 1× credits");
+        await Expect(modelSelector.Locator("option[value='grok-4.3']"))
+            .ToContainTextAsync("Cost ≈1× · 1× credits");
+        await Expect(modelSelector.Locator("option[value='gpt-5.6-sol']"))
+            .ToContainTextAsync("Most powerful · Cost ≈5× · 5× credits");
+        await Expect(modelSelector.Locator("option[value='DeepSeek-V4-Flash']"))
+            .ToContainTextAsync("Economy · Cost ≈0.25× · 0.25× credits");
         await Page.Locator("[data-assistant-textarea]").FillAsync("Create a travel quiz");
         await Page.Locator("[data-assistant-submit]").ClickAsync();
         await Expect(Page.Locator("[data-assistant-pending-card]")).ToBeVisibleAsync();

@@ -228,8 +228,9 @@ The rules, as the code actually observes them:
    shared mapper and MVC filters translate supported types into stable Problem
    Details responses (§8). Preconditions that are not part of that typed domain
    contract can still surface as ordinary exceptions and receive the sanitized
-   unexpected-error response. Controllers do not translate error shapes
-   individually.
+   unexpected-error response. Some controller actions still map expected validation
+   and not-found failures locally; supported exceptions left unhandled by an action
+   flow through the shared mapper and filters.
 
 ### Feature slices
 
@@ -605,9 +606,12 @@ dotnet ef database update --project Glosify/Glosify.csproj --configuration Relea
 dotnet ef migrations has-pending-model-changes --project Glosify/Glosify.csproj --configuration Release --no-build
 ```
 
-The first step proves a new database can be built from migrations alone; the
-second proves the model and the migrations have not drifted apart. Both run on
-pull requests, so a schema change cannot merge without a matching migration.
+CI runs these commands against the fresh SQL Server service container created for
+each job. In that clean environment, the first step proves a new database can be
+built from migrations alone; when run manually against an existing server it only
+updates that server to the latest migration. The second step proves the model and
+the migrations have not drifted apart. Both run on pull requests, so a schema
+change cannot merge without a matching migration.
 
 ### Concurrency and integrity
 

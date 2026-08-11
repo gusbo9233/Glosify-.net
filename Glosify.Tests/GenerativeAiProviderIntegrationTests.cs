@@ -17,9 +17,7 @@ public sealed class GenerativeAiProviderIntegrationTests
 
         var resolver = factory.Services.GetRequiredService<IGenerativeAiModelResolver>();
 
-        // Both entries must exist as deployments in the glosify-assistant project.
-        // DeepSeek-V4-Flash is deployed there too but is page-translation fallback only,
-        // so it is deliberately absent from the user-selectable menu.
+        // All entries must exist as deployments in the glosify-assistant project.
         Assert.Equal("gpt-5.6-luna", resolver.DefaultAssistantModel);
         Assert.Collection(
             resolver.AssistantModels,
@@ -27,6 +25,7 @@ public sealed class GenerativeAiProviderIntegrationTests
             {
                 Assert.Equal("gpt-5.6-luna", model.Deployment);
                 Assert.Equal("OpenAI", model.Provider);
+                Assert.Equal("Cost ≈1×", model.CostTier);
                 Assert.Equal(1m, model.CreditMultiplier);
             },
             model =>
@@ -35,7 +34,24 @@ public sealed class GenerativeAiProviderIntegrationTests
                 Assert.Equal("xAI", model.Provider);
                 // 1x, not 2x: grok-4.3 costs less per output token than the default
                 // deployment, so charging double steered users to the pricier model.
+                Assert.Equal("Cost ≈1×", model.CostTier);
                 Assert.Equal(1m, model.CreditMultiplier);
+            },
+            model =>
+            {
+                Assert.Equal("gpt-5.6-sol", model.Deployment);
+                Assert.Equal("OpenAI", model.Provider);
+                Assert.Equal("Most powerful", model.SpeedTier);
+                Assert.Equal("Cost ≈5×", model.CostTier);
+                Assert.Equal(5m, model.CreditMultiplier);
+            },
+            model =>
+            {
+                Assert.Equal("DeepSeek-V4-Flash", model.Deployment);
+                Assert.Equal("DeepSeek", model.Provider);
+                Assert.Equal("Economy", model.SpeedTier);
+                Assert.Equal("Cost ≈0.25×", model.CostTier);
+                Assert.Equal(0.25m, model.CreditMultiplier);
             });
     }
 
