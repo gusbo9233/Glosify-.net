@@ -38,4 +38,10 @@ public class AssistantThread
 
     [Column("updated_at")]
     public DateTimeOffset UpdatedAt { get; set; }
+
+    [Column("active_turn_id")]
+    public Guid? ActiveTurnId { get; set; }
+
+    [Column("active_turn_expires_at")]
+    public DateTime? ActiveTurnExpiresAt { get; set; }
 }

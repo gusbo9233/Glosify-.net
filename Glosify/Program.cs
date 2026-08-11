@@ -82,9 +82,8 @@ builder.Services.AddAuthorization(options =>
 });
 builder.Services.AddMemoryCache();
 
-// Liveness only, deliberately: it must answer while Azure SQL serverless is still
-// resuming, and a dependency check here would report the app unhealthy through a
-// cold start it is designed to wait out.
+// Liveness only, deliberately: a transient SQL outage must not cause App Service
+// Health Check to recycle an otherwise sound web worker.
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseReadinessHealthCheck>("database", tags: ["ready"]);
 
@@ -118,7 +117,7 @@ if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException(
         "Connection string 'DefaultConnection' is not configured. Set ConnectionStrings__DefaultConnection in the host environment or appsettings.Development.json for local development.");
 }
-var sqlConnectionString = BuildColdStartFriendlyConnectionString(connectionString);
+var sqlConnectionString = BuildResilientSqlConnectionString(connectionString);
 
 // Configure SQL Server database. The factory gives budget-closure writes their own
 // change tracker, so returning a 503 cannot flush unrelated request state.
@@ -127,7 +126,8 @@ void ConfigureGlosifyContext(DbContextOptionsBuilder options) =>
         sqlConnectionString,
         sqlOptions =>
         {
-            // Azure SQL serverless cold-starts can take 60s+; first query after auto-pause must wait it out.
+            // Keep enough headroom for transient Azure SQL/network delays and retry
+            // throttling without changing the configured Basic 5-DTU database tier.
             sqlOptions.CommandTimeout(120);
             sqlOptions.EnableRetryOnFailure(
                 maxRetryCount: 10,
@@ -332,7 +332,7 @@ static string? CurrentFileVersion(string versionedPath)
     return index < 0 ? null : versionedPath[(index + marker.Length)..];
 }
 
-static string BuildColdStartFriendlyConnectionString(string connectionString)
+static string BuildResilientSqlConnectionString(string connectionString)
 {
     var builder = new SqlConnectionStringBuilder(connectionString);
     if (builder.ConnectTimeout < 120)

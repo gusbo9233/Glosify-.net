@@ -205,9 +205,46 @@ curl --fail --show-error https://glosify-app.azurewebsites.net/readyz
 ```
 
 Both should return `Healthy`. `/healthz` checks that the host is serving;
-`/readyz` also checks Azure SQL. The serverless database may need more than a
-minute to resume after being idle, so a brief readiness delay is not by itself
-a failed deployment.
+`/readyz` also checks the provisioned Basic 5-DTU Azure SQL database. A brief
+readiness failure during a transient SQL or network event is not by itself an
+App Service liveness failure.
+
+The production App Service is Linux B1 with one worker. Azure SQL is Basic
+5-DTU, has no auto-pause, and is not serverless. Application telemetry is
+registered in code through OpenTelemetry when
+`APPLICATIONINSIGHTS_CONNECTION_STRING` is configured.
+
+### Platform health and diagnostic logs
+
+After code deployment, and only with production-change approval, run the
+idempotent operator script:
+
+```bash
+./scripts/configure-production-observability.sh
+```
+
+It sets App Service Health Check to `/healthz` (never `/readyz`) and creates or
+updates diagnostic setting `glosify-app-operational` for Log Analytics workspace
+`ws-b08575d2-swedencent`. The setting uses resource-specific tables and enables
+HTTP, console, audit, IP security audit, platform, authentication, and metric
+categories. It intentionally excludes `AppServiceAppLogs` because code-based
+OpenTelemetry already exports application logs.
+
+Verify the applied configuration:
+
+```bash
+az webapp config show --resource-group glosify --name glosify-app \
+  --query healthCheckPath --output tsv
+
+app_id="$(az webapp show --resource-group glosify --name glosify-app --query id --output tsv)"
+az monitor diagnostic-settings show \
+  --resource "$app_id" \
+  --name glosify-app-operational
+```
+
+The health path must be `/healthz`. Confirm `/readyz` separately as dependency
+readiness, then verify resource-specific ingestion in the workspace after logs
+have had time to arrive. The workspace retention target is 30 days.
 
 ### Public and authentication surfaces
 

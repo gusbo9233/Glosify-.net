@@ -1,6 +1,7 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace Glosify.Services.Ai.Assistant;
 
@@ -11,6 +12,45 @@ internal sealed class AssistantChangeWorkflow(
     AssistantThreadStore threads)
 {
     public async Task<AssistantApplyResult> ApplyAsync(
+        Guid messageId,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        if (!context.Database.IsRelational())
+        {
+            return await ApplyCoreAsync(messageId, userId, cancellationToken);
+        }
+
+        var strategy = context.Database.CreateExecutionStrategy();
+        try
+        {
+            return await Microsoft.EntityFrameworkCore.Storage.RelationalExecutionStrategyExtensions
+                .ExecuteInTransactionAsync<AssistantApplyResult>(
+                strategy,
+                async token =>
+                {
+                    // A commit failure can cause the execution strategy to invoke this
+                    // delegate again. Never reuse accepted entity state from the prior try.
+                    context.ChangeTracker.Clear();
+                    return await ApplyCoreAsync(messageId, userId, token);
+                },
+                token => context.AssistantMessages
+                    .AsNoTracking()
+                    .AnyAsync(message => message.Id == messageId
+                        && message.Status == AssistantMessageStatus.Applied, token),
+                IsolationLevel.ReadCommitted,
+                cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // The status concurrency token makes one Apply transaction the winner. The
+            // losing transaction is rolled back, including any quiz data it attempted.
+            context.ChangeTracker.Clear();
+            return new AssistantApplyResult(0);
+        }
+    }
+
+    private async Task<AssistantApplyResult> ApplyCoreAsync(
         Guid messageId,
         string userId,
         CancellationToken cancellationToken)
@@ -27,49 +67,14 @@ internal sealed class AssistantChangeWorkflow(
             return new AssistantApplyResult(0);
         }
 
-        // Claim the message before applying so concurrent Apply requests (for example,
-        // a double-click) cannot run the same changes twice. Restore the claim when the
-        // apply fails so the user can retry.
+        var result = await changeApplier.ApplyAsync(
+            message.ContextQuizId,
+            userId,
+            changes,
+            cancellationToken);
         message.Status = AssistantMessageStatus.Applied;
-        try
-        {
-            await context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            // Another request changed the active status first. This request did not
-            // acquire the claim and must not apply the same change set again.
-            context.ChangeTracker.Clear();
-            return new AssistantApplyResult(0);
-        }
-
-        try
-        {
-            return await changeApplier.ApplyAsync(message.ContextQuizId, userId, changes, cancellationToken);
-        }
-        catch
-        {
-            // Discard changes left in the tracker by the failed operation. Compensation
-            // must survive a disconnected client, so it deliberately ignores the request token.
-            context.ChangeTracker.Clear();
-            var claimed = await context.AssistantMessages
-                .FirstOrDefaultAsync(candidate => candidate.Id == messageId, CancellationToken.None);
-            if (claimed?.Status == AssistantMessageStatus.Applied)
-            {
-                claimed.Status = AssistantMessageStatus.Active;
-                try
-                {
-                    await context.SaveChangesAsync(CancellationToken.None);
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    // A concurrent reject or other status transition wins over recovery.
-                    context.ChangeTracker.Clear();
-                }
-            }
-
-            throw;
-        }
+        await context.SaveChangesAsync(cancellationToken);
+        return result;
     }
 
     public async Task RejectAsync(

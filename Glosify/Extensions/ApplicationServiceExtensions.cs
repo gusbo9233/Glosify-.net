@@ -181,6 +181,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<AssistantMessagePresenter>();
         services.AddScoped<AssistantPromptBuilder>();
         services.AddScoped<AssistantThreadStore>();
+        services.AddScoped<IAssistantTurnLeaseService, AssistantTurnLeaseService>();
         services.AddScoped<AssistantTurnRunner>();
         services.AddScoped<AssistantChangeWorkflow>();
         services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();

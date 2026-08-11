@@ -18,4 +18,11 @@ public sealed record AssistantApplyResult(
     Guid? CreatedQuizId = null,
     Guid? CreatedCollectionId = null,
     Guid? CreatedCustomQuizId = null,
-    int CreatedCustomQuizElements = 0);
+    int CreatedCustomQuizElements = 0,
+    AssistantCreatedQuizSummary? CreatedQuiz = null);
+
+public sealed record AssistantCreatedQuizSummary(
+    Guid Id,
+    string Name,
+    string SourceLanguage,
+    string TargetLanguage);

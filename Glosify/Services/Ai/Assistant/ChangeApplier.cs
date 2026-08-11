@@ -40,6 +40,14 @@ public sealed class ChangeApplier : IChangeApplier
             return await ApplyCoreAsync(quizId, userId, changes, cancellationToken);
         }
 
+        // AssistantChangeWorkflow owns the production transaction so the message status
+        // and applied data commit atomically. Direct callers (including focused service
+        // tests) still get the all-or-nothing behavior this service has always promised.
+        if (_context.Database.CurrentTransaction is not null)
+        {
+            return await ApplyCoreAsync(quizId, userId, changes, cancellationToken);
+        }
+
         // Every service used below shares this scoped DbContext. Their intermediate
         // SaveChanges calls therefore participate in this transaction, so a failed
         // later change cannot leave a partially-created quiz or custom quiz behind.
@@ -91,6 +99,7 @@ public sealed class ChangeApplier : IChangeApplier
 
         var applied = 0;
         Guid? createdQuizId = null;
+        AssistantCreatedQuizSummary? createdQuiz = null;
         Guid? createdCollectionId = null;
         Guid? createdCustomQuizId = null;
         var customQuizIdsByDraftRef = new Dictionary<string, Guid>(StringComparer.Ordinal);
@@ -129,6 +138,11 @@ public sealed class ChangeApplier : IChangeApplier
                         {
                             applied++;
                             createdQuizId ??= created.QuizId;
+                            createdQuiz ??= new AssistantCreatedQuizSummary(
+                                created.QuizId,
+                                created.Name,
+                                created.SourceLanguage,
+                                created.TargetLanguage);
                             createdCustomQuizId ??= created.CustomQuizId;
                             if (created.CustomQuizId.HasValue
                                 && change.Payload.TryGetProperty("custom_quiz", out var customQuiz)
@@ -217,7 +231,8 @@ public sealed class ChangeApplier : IChangeApplier
             createdQuizId,
             createdCollectionId,
             createdCustomQuizId,
-            createdCustomQuizElements);
+            createdCustomQuizElements,
+            createdQuiz);
     }
 
     /// <summary>
@@ -481,38 +496,36 @@ public sealed class ChangeApplier : IChangeApplier
             return null;
         }
 
-        try
-        {
-            var quiz = await _quizService.CreateQuizAsync(
-                name.Trim(),
-                sourceLanguage.Trim(),
-                targetLanguage.Trim(),
-                userId,
-                collectionId, cancellationToken: ct);
+        var quiz = await _quizService.CreateQuizAsync(
+            name.Trim(),
+            sourceLanguage.Trim(),
+            targetLanguage.Trim(),
+            userId,
+            collectionId, cancellationToken: ct);
 
-            var starterWords = AddStarterWords(payload, quiz);
-            Guid? customQuizId = null;
-            if (payload.TryGetProperty("custom_quiz", out var customQuiz)
-                && customQuiz.ValueKind == JsonValueKind.Object)
-            {
-                await _context.SaveChangesAsync(ct);
-                var customName = GetString(customQuiz, "name");
-                var document = ParseCustomQuizDocument(customQuiz, starterWords);
-                var createdCustom = await new CustomQuizService(_context).CreateAsync(new SaveCustomQuizRequest
-                {
-                    QuizId = quiz.Id,
-                    Name = string.IsNullOrWhiteSpace(customName) ? $"{quiz.Name} custom quiz" : customName,
-                    Document = document,
-                }, userId, ct);
-                customQuizId = createdCustom.Id;
-            }
-            return new CreatedQuizResult(quiz.Id, customQuizId, starterWords);
-        }
-        catch (InvalidOperationException ex)
+        var starterWords = AddStarterWords(payload, quiz);
+        Guid? customQuizId = null;
+        if (payload.TryGetProperty("custom_quiz", out var customQuiz)
+            && customQuiz.ValueKind == JsonValueKind.Object)
         {
-            _logger.LogWarning(ex, "Assistant could not create quiz {QuizName} for user {UserId}", name, userId);
-            return null;
+            await _context.SaveChangesAsync(ct);
+            var customName = GetString(customQuiz, "name");
+            var document = ParseCustomQuizDocument(customQuiz, starterWords);
+            var createdCustom = await new CustomQuizService(_context).CreateAsync(new SaveCustomQuizRequest
+            {
+                QuizId = quiz.Id,
+                Name = string.IsNullOrWhiteSpace(customName) ? $"{quiz.Name} custom quiz" : customName,
+                Document = document,
+            }, userId, ct);
+            customQuizId = createdCustom.Id;
         }
+        return new CreatedQuizResult(
+            quiz.Id,
+            quiz.Name,
+            quiz.SourceLanguage,
+            quiz.TargetLanguage,
+            customQuizId,
+            starterWords);
     }
 
     private async Task<Guid?> ApplyCreateCustomQuizAsync(JsonElement payload, string userId, CancellationToken ct)
@@ -524,20 +537,13 @@ public sealed class ChangeApplier : IChangeApplier
             return null;
         }
 
-        try
+        var created = await new CustomQuizService(_context).CreateAsync(new SaveCustomQuizRequest
         {
-            var created = await new CustomQuizService(_context).CreateAsync(new SaveCustomQuizRequest
-            {
-                QuizId = quizId.Value,
-                Name = name,
-                Document = ParseCustomQuizDocument(payload),
-            }, userId, ct);
-            return created.Id;
-        }
-        catch (QuizNotFoundException)
-        {
-            return null;
-        }
+            QuizId = quizId.Value,
+            Name = name,
+            Document = ParseCustomQuizDocument(payload),
+        }, userId, ct);
+        return created.Id;
     }
 
     private async Task<bool> ApplyAddCustomQuizElementsAsync(JsonElement payload, string userId, CancellationToken ct)
@@ -678,20 +684,12 @@ public sealed class ChangeApplier : IChangeApplier
             return null;
         }
 
-        try
-        {
-            var collection = await _collectionService.CreateCollectionAsync(
-                name.Trim(),
-                language.Trim(),
-                userId,
-                parentCollectionId, cancellationToken: ct);
-            return collection.Id;
-        }
-        catch (InvalidOperationException ex)
-        {
-            _logger.LogWarning(ex, "Assistant could not create collection {CollectionName} for user {UserId}", name, userId);
-            return null;
-        }
+        var collection = await _collectionService.CreateCollectionAsync(
+            name.Trim(),
+            language.Trim(),
+            userId,
+            parentCollectionId, cancellationToken: ct);
+        return collection.Id;
     }
 
     private async Task<bool> ApplyMoveQuizAsync(JsonElement payload, string userId, CancellationToken cancellationToken = default)
@@ -954,6 +952,9 @@ public sealed class ChangeApplier : IChangeApplier
 
     private sealed record CreatedQuizResult(
         Guid QuizId,
+        string Name,
+        string SourceLanguage,
+        string TargetLanguage,
         Guid? CustomQuizId,
         IReadOnlyDictionary<string, string> StarterWordIds);
 

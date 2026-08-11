@@ -20,6 +20,7 @@ internal sealed class AssistantTurnRunner
     private readonly AssistantContextResolver _contextResolver;
     private readonly AssistantMessagePresenter _presenter;
     private readonly AssistantPromptBuilder _promptBuilder;
+    private readonly IAssistantTurnLeaseService _turnLeases;
     private readonly ILogger<AssistantTurnRunner> _logger;
 
     public AssistantTurnRunner(
@@ -31,6 +32,7 @@ internal sealed class AssistantTurnRunner
         AssistantContextResolver contextResolver,
         AssistantMessagePresenter presenter,
         AssistantPromptBuilder promptBuilder,
+        IAssistantTurnLeaseService turnLeases,
         ILogger<AssistantTurnRunner> logger)
     {
         _context = context;
@@ -41,6 +43,7 @@ internal sealed class AssistantTurnRunner
         _contextResolver = contextResolver;
         _presenter = presenter;
         _promptBuilder = promptBuilder;
+        _turnLeases = turnLeases;
         _logger = logger;
     }
 
@@ -129,6 +132,47 @@ internal sealed class AssistantTurnRunner
         string? model,
         AssistantDocumentContext? documentContext,
         Guid? customQuizId,
+        CancellationToken cancellationToken,
+        Guid? transcriptId,
+        Guid? bookDocumentId,
+        AssistantTranscriptPageContext? transcriptPageContext = null)
+    {
+        var leaseId = await _turnLeases.TryAcquireAsync(thread.Id, userId, cancellationToken)
+            ?? throw new AssistantTurnInProgressException();
+
+        try
+        {
+            return await SendLeasedThreadAsync(
+                thread,
+                userId,
+                userMessage,
+                contextQuizId,
+                focusedWordId,
+                model,
+                documentContext,
+                customQuizId,
+                leaseId,
+                cancellationToken,
+                transcriptId,
+                bookDocumentId,
+                transcriptPageContext);
+        }
+        finally
+        {
+            await _turnLeases.ReleaseAsync(thread.Id, leaseId, CancellationToken.None);
+        }
+    }
+
+    private async Task<AssistantTurnResponse> SendLeasedThreadAsync(
+        AssistantThread thread,
+        string userId,
+        string userMessage,
+        Guid? contextQuizId,
+        string? focusedWordId,
+        string? model,
+        AssistantDocumentContext? documentContext,
+        Guid? customQuizId,
+        Guid leaseId,
         CancellationToken cancellationToken,
         Guid? transcriptId,
         Guid? bookDocumentId,
@@ -226,10 +270,16 @@ internal sealed class AssistantTurnRunner
             currentLanguage);
         var selectedModel = _modelResolver.ResolveAssistantModel(model);
         var toolEvents = new List<AssistantToolEvent>();
+        var completedTurnMessages = new List<AssistantMessage>();
 
         AgentTurnResult? finalTurn = null;
         for (var loop = 0; loop < MaxToolTurns; loop++)
         {
+            if (!await _turnLeases.RenewAsync(thread.Id, leaseId, cancellationToken))
+            {
+                throw new AssistantTurnInProgressException();
+            }
+
             var agentRequest = new AgentRequest(
                 systemInstruction,
                 history,
@@ -283,7 +333,7 @@ internal sealed class AssistantTurnRunner
 
             var modelTurn = new AgentTurn(AssistantMessageRole.Model, SerializeContent(modelParts));
             history.Add(modelTurn);
-            _context.AssistantMessages.Add(new AssistantMessage
+            completedTurnMessages.Add(new AssistantMessage
             {
                 Id = Guid.NewGuid(),
                 ThreadId = thread.Id,
@@ -312,7 +362,7 @@ internal sealed class AssistantTurnRunner
 
             var toolTurn = new AgentTurn(AssistantMessageRole.User, SerializeContent(responseParts));
             history.Add(toolTurn);
-            _context.AssistantMessages.Add(new AssistantMessage
+            completedTurnMessages.Add(new AssistantMessage
             {
                 Id = Guid.NewGuid(),
                 ThreadId = thread.Id,
@@ -350,6 +400,10 @@ internal sealed class AssistantTurnRunner
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
+        // Intermediate model/tool rows stay detached until the turn has a final
+        // assistant message and durable PendingChangesJson. This prevents a separate
+        // credit save on the shared context from committing an unreplayable prefix.
+        _context.AssistantMessages.AddRange(completedTurnMessages);
         _context.AssistantMessages.Add(finalMessage);
         thread.UpdatedAt = finalMessage.CreatedAt;
         await _context.SaveChangesAsync(cancellationToken);

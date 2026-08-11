@@ -4,6 +4,7 @@ using System.Text.Json;
 using Glosify.Filters;
 using Glosify.Infrastructure.Api;
 using Glosify.Services.Ai;
+using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
@@ -46,6 +47,19 @@ public sealed class ApiProblemDetailsContractTests
         Assert.Equal(
             "A collection with this name already exists here.",
             json.RootElement.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task ConcurrentAssistantTurnUsesStableConflictProblemDetails()
+    {
+        using var factory = CreateFactory();
+        var response = await factory.CreateClient().GetAsync("/_contract/assistant-conflict");
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(ApiErrorCodes.Conflict, json.RootElement.GetProperty("code").GetString());
+        Assert.Equal(409, json.RootElement.GetProperty("status").GetInt32());
     }
 
     [Fact]
@@ -145,6 +159,9 @@ public sealed class ContractProbeController : ControllerBase
 
     [HttpGet("conflict")]
     public IActionResult ConflictProbe() => throw new CollectionNameConflictException();
+
+    [HttpGet("assistant-conflict")]
+    public IActionResult AssistantConflictProbe() => throw new AssistantTurnInProgressException();
 
     [HttpGet("not-found")]
     public IActionResult NotFoundProbe() => NotFound("Missing probe.");

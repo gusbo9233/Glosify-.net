@@ -171,6 +171,27 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task Failed_turn_does_not_persist_buffered_model_or_tool_history()
+    {
+        await using var context = CreateContext();
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: new ToolThenThrowingGenerativeAiClient(),
+            tools: new SavingMutationAssistantTools(context));
+        var chat = await orchestrator.CreateChatAsync("user-1");
+
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Create a travel quiz."));
+
+        context.ChangeTracker.Clear();
+        var message = Assert.Single(await context.AssistantMessages
+            .Where(candidate => candidate.ThreadId == chat.Id)
+            .ToListAsync());
+        Assert.Equal(AssistantMessageRole.User, message.Role);
+        Assert.Null(message.PendingChangesJson);
+    }
+
+    [Fact]
     public async Task SendGlobalMessage_IncludesBookPageContext()
     {
         await using var context = CreateContext();
@@ -710,6 +731,7 @@ public class AssistantSavedChatsTests
             contextResolver,
             presenter,
             new AssistantPromptBuilder(),
+            new NoopAssistantTurnLeaseService(),
             NullLogger<AssistantTurnRunner>.Instance);
         return new AssistantOrchestrator(
             threadStore,
@@ -903,6 +925,56 @@ public class AssistantSavedChatsTests
         }
     }
 
+    private sealed class ToolThenThrowingGenerativeAiClient : IGenerativeAiClient
+    {
+        private int _calls;
+
+        public Task<T> GenerateStructuredAsync<T>(string prompt, AiUsageContext usageContext, string? model = null, CancellationToken cancellationToken = default) =>
+            Task.FromException<T>(new NotSupportedException());
+
+        public Task<string> ExtractTextFromImageAsync(byte[] imageBytes, string contentType, string prompt, AiUsageContext usageContext, CancellationToken cancellationToken = default) =>
+            Task.FromResult(string.Empty);
+
+        public Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, AiUsageContext usageContext, CancellationToken cancellationToken = default)
+        {
+            _calls++;
+            return _calls == 1
+                ? Task.FromResult(new AgentTurnResult(string.Empty,
+                [
+                    new AgentFunctionCall("queue_change", "{}") { CallId = "call-1" },
+                ]))
+                : Task.FromException<AgentTurnResult>(new InvalidDataException("Simulated upstream failure."));
+        }
+    }
+
+    private sealed class SavingMutationAssistantTools(GlosifyContext context) : IAssistantTools
+    {
+        private static readonly AgentToolDeclaration Declaration = new(
+            "queue_change",
+            "Queues a test change.",
+            new { type = "object", properties = new { } });
+
+        public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = [Declaration];
+        public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; } = [Declaration];
+        public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; } = [Declaration];
+        public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } = [Declaration];
+        public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } = [Declaration];
+
+        public async Task<object> ExecuteAsync(
+            string name,
+            string argsJson,
+            AgentToolContext toolContext,
+            CancellationToken cancellationToken)
+        {
+            toolContext.PendingChanges.Add(new PendingChange(
+                PendingChangeKinds.CreateCollection,
+                JsonSerializer.SerializeToElement(new { name = "Travel", language = "Polish" })));
+            // This represents a credit/accounting save on the runner's shared context.
+            await context.SaveChangesAsync(cancellationToken);
+            return new { queued = true };
+        }
+    }
+
     private sealed class NoopAssistantTools : IAssistantTools
     {
         public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = [];
@@ -913,6 +985,18 @@ public class AssistantSavedChatsTests
 
         public Task<object> ExecuteAsync(string name, string argsJson, AgentToolContext context, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
+    }
+
+    private sealed class NoopAssistantTurnLeaseService : IAssistantTurnLeaseService
+    {
+        public Task<Guid?> TryAcquireAsync(Guid threadId, string userId, CancellationToken cancellationToken) =>
+            Task.FromResult<Guid?>(Guid.NewGuid());
+
+        public Task<bool> RenewAsync(Guid threadId, Guid leaseId, CancellationToken cancellationToken) =>
+            Task.FromResult(true);
+
+        public Task ReleaseAsync(Guid threadId, Guid leaseId, CancellationToken cancellationToken) =>
+            Task.CompletedTask;
     }
 
     private sealed class LoopAssistantTools : IAssistantTools

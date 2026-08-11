@@ -1,6 +1,7 @@
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Books;
 using Glosify.Services.Quizzes;
 using Glosify.Services.RealtimeTranslation;
@@ -17,6 +18,7 @@ public static class ApiExceptionMapper
         CollectionParentNotFoundException => Error(400, ApiErrorCodes.CollectionParentNotFound, exception),
         CollectionNameConflictException => Error(409, ApiErrorCodes.CollectionNameConflict, exception),
         QuizCollectionNotFoundException => Error(400, ApiErrorCodes.QuizCollectionNotFound, exception),
+        AssistantTurnInProgressException => Error(409, ApiErrorCodes.Conflict, exception),
         InsufficientAiCreditsException => Error(402, ApiErrorCodes.PaymentRequired, exception),
         PaidServicesBudgetExhaustedException => Error(503, ApiErrorCodes.PaidServicesBudgetExhausted, exception),
         GenerativeAiValidationException => Error(400, ApiErrorCodes.ValidationFailed, exception),
