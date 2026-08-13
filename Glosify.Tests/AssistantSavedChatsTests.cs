@@ -379,7 +379,8 @@ public class AssistantSavedChatsTests
         var toolResponse = Assert.Single(responseParts);
         Assert.Equal("loop", toolResponse.GetProperty("name").GetString());
         Assert.Equal("lookup-1", toolResponse.GetProperty("callId").GetString());
-        Assert.Contains("\"ok\":true", toolResponse.GetProperty("responseJson").GetString());
+        using var toolResult = JsonDocument.Parse(toolResponse.GetProperty("responseJson").GetString()!);
+        Assert.True(toolResult.RootElement.GetProperty("ok").GetBoolean());
 
         var execution = await context.AssistantToolExecutions.SingleAsync();
         Assert.NotEqual("{}", execution.ResultJson);
