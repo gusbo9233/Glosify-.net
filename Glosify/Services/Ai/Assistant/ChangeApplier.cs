@@ -750,6 +750,10 @@ public sealed class ChangeApplier : IChangeApplier
             return idsByWord;
         }
 
+        // A payload can be applied long after it was proposed, so the same text arriving in
+        // both collections is filtered here too rather than trusted to have been caught when
+        // the proposal was built. Storing it twice is never what was asked for.
+        var sentenceTexts = StarterSentenceTexts(payload);
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var item in wordsElement.EnumerateArray())
         {
@@ -759,6 +763,10 @@ public sealed class ChangeApplier : IChangeApplier
             }
 
             var word = GetString(item, "word").Trim();
+            if (sentenceTexts.Contains(Tools.ToolArguments.NormalizeForDuplicateMatch(word)))
+            {
+                continue;
+            }
             var translation = GetString(item, "translation").Trim();
             if (string.IsNullOrWhiteSpace(word)
                 || string.IsNullOrWhiteSpace(translation)
@@ -778,6 +786,33 @@ public sealed class ChangeApplier : IChangeApplier
             idsByWord[word] = id;
         }
         return idsByWord;
+    }
+
+    /// <summary>The trimmed text of every valid starter sentence in a create-quiz payload.</summary>
+    private static HashSet<string> StarterSentenceTexts(JsonElement payload)
+    {
+        var texts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!payload.TryGetProperty("sentences", out var sentencesElement)
+            || sentencesElement.ValueKind != JsonValueKind.Array)
+        {
+            return texts;
+        }
+
+        foreach (var item in sentencesElement.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var text = Tools.ToolArguments.NormalizeForDuplicateMatch(GetString(item, "text"));
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                texts.Add(text);
+            }
+        }
+
+        return texts;
     }
 
     /// <summary>

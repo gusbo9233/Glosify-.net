@@ -561,6 +561,50 @@ public class ChangeApplierTests
         Assert.Equal("The train leaves at eight.", sentences[0].Translation);
     }
 
+    // A stored proposal can be applied long after it was built, so the durable boundary
+    // filters the overlap too rather than trusting the tool to have caught it.
+    [Fact]
+    public async Task ApplyCreateQuiz_DoesNotPersistASentenceAsAWordToo()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using var db = new SqliteGlosifyContext(options);
+        await db.Database.EnsureCreatedAsync();
+        var messageId = await SeedProposalAsync(db,
+        [
+            new PendingChange(PendingChangeKinds.CreateQuiz, JsonSerializer.SerializeToElement(new
+            {
+                name = "Travel Polish",
+                source_language = "English",
+                target_language = "Polish",
+                words = new[]
+                {
+                    new { word = "dom", translation = "house" },
+                    new { word = "To jest moj dom.", translation = "This is my house." },
+                },
+                sentences = new[]
+                {
+                    new { text = "To jest moj dom.", translation = "This is my house." },
+                },
+            })),
+        ]);
+        var workflow = new AssistantChangeWorkflow(
+            db,
+            CreateApplier(db),
+            new AssistantMessagePresenter(),
+            null!,
+            new FakeTimeProvider(new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero)));
+
+        await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
+
+        db.ChangeTracker.Clear();
+        var word = Assert.Single(await db.Words.ToListAsync());
+        Assert.Equal("dom", word.Lemma);
+        var sentence = Assert.Single(await db.QuizSentences.ToListAsync());
+        Assert.Equal("To jest moj dom.", sentence.Text);
+    }
+
     [Fact]
     public async Task ApplyCreateQuiz_DeduplicatesStarterSentenceText()
     {

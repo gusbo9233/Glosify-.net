@@ -73,6 +73,7 @@ internal sealed class CreateQuizTool : IAssistantTool
         var collectionId = GetNullableGuidString(args, "collection_id");
         var (words, skippedWords) = Cap(GetWordDrafts(args, "words"));
         var (sentences, skippedSentences) = Cap(GetSentenceDrafts(args, "sentences"));
+        (words, skippedWords) = DropWordsAlreadyProposedAsSentences(words, sentences, skippedWords);
 
         // Creation carries both content types in one call, so it needs the same guard the add
         // tools have: without it, this is the one path that can still file content under a type
@@ -153,6 +154,55 @@ internal sealed class CreateQuizTool : IAssistantTool
             skipped_words = skippedWords,
             skipped_sentences = skippedSentences,
         };
+    }
+
+    /// <summary>
+    /// Removes starter words that the same proposal already carries as sentences.
+    /// </summary>
+    /// <remarks>
+    /// Each collection deduplicates against itself, so without this a sentence sent in both
+    /// arrays is stored twice — once as vocabulary and once as a sentence. The content guard
+    /// does not catch it, because a request for words <em>and</em> sentences resolves to
+    /// <see cref="AssistantContentKind.Both"/> and legitimately permits either kind.
+    /// <para>
+    /// Exact text matching only. Nothing here judges whether a string looks like a sentence:
+    /// a multiword phrase the model sent only as a word stays vocabulary, which is the
+    /// behaviour that must not regress.
+    /// </para>
+    /// </remarks>
+    private static (IReadOnlyList<WordDraft> Words, IReadOnlyList<SkippedItem> Skipped)
+        DropWordsAlreadyProposedAsSentences(
+            IReadOnlyList<WordDraft> words,
+            IReadOnlyList<SentenceDraft> sentences,
+            IReadOnlyList<SkippedItem> skipped)
+    {
+        if (words.Count == 0 || sentences.Count == 0)
+        {
+            return (words, skipped);
+        }
+
+        var sentenceTexts = sentences
+            .Select(sentence => NormalizeForDuplicateMatch(sentence.Text))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var kept = new List<WordDraft>(words.Count);
+        var dropped = new List<SkippedItem>();
+        for (var index = 0; index < words.Count; index++)
+        {
+            if (sentenceTexts.Contains(NormalizeForDuplicateMatch(words[index].Word)))
+            {
+                dropped.Add(new SkippedItem(
+                    index,
+                    "Already proposed as a sentence. A sentence is stored once, as a sentence."));
+                continue;
+            }
+
+            kept.Add(words[index]);
+        }
+
+        return dropped.Count == 0
+            ? (words, skipped)
+            : (kept, [.. skipped, .. dropped]);
     }
 
     private static (IReadOnlyList<T> Kept, IReadOnlyList<SkippedItem> Skipped) Cap<T>(
