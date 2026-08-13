@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     createLatestRequestGate,
+    feedbackFormValues,
+    feedbackPanelState,
     feedbackReasons,
     normalizeFeedback,
     validClientDuration,
@@ -54,4 +56,53 @@ test('feedback request gate rejects stale save responses', () => {
 
     assert.equal(gate.isCurrent(first), false);
     assert.equal(gate.isCurrent(second), true);
+});
+
+test('no rating shows neither the detail form nor the thanks', () => {
+    assert.deepEqual(feedbackPanelState(null, false), {
+        showDetails: false,
+        showThanks: false,
+    });
+    assert.deepEqual(feedbackPanelState(null, true), {
+        showDetails: false,
+        showThanks: false,
+    });
+});
+
+test('a rating opens the detail form so reasons can be added', () => {
+    assert.deepEqual(feedbackPanelState({ rating: 'down' }, false), {
+        showDetails: true,
+        showThanks: false,
+    });
+});
+
+// Re-rendering the same open form on success read as the button doing nothing, which is the
+// bug this replaces: saving details has to visibly conclude.
+test('saving details closes the form and thanks the user', () => {
+    assert.deepEqual(feedbackPanelState({ rating: 'down' }, true), {
+        showDetails: false,
+        showThanks: true,
+    });
+});
+
+test('the form shows the persisted feedback when there is no draft', () => {
+    assert.deepEqual(
+        feedbackFormValues({ rating: 'down', reasonCodes: ['incorrect'], comment: 'Stored' }, null),
+        { reasonCodes: ['incorrect'], comment: 'Stored' });
+});
+
+// A failed save reverts the rating to the last persisted value. The words the user just tried
+// to send must not revert with it, or they have to retype them to retry.
+test('an unsent draft survives a failed save and outranks the persisted value', () => {
+    assert.deepEqual(
+        feedbackFormValues(
+            { rating: 'down', reasonCodes: ['incorrect'], comment: 'Stored' },
+            { reasonCodes: ['too_slow', 'confusing'], comment: 'added phrases to words' }),
+        { reasonCodes: ['too_slow', 'confusing'], comment: 'added phrases to words' });
+});
+
+test('an empty comment renders as an empty field rather than null', () => {
+    assert.deepEqual(
+        feedbackFormValues({ rating: 'up', reasonCodes: [], comment: null }, null),
+        { reasonCodes: [], comment: '' });
 });

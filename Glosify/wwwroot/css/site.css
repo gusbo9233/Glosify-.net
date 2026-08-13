@@ -4508,6 +4508,15 @@ body { margin: 0; }
     justify-content: flex-end;
 }
 
+/* Sits inline after the vote buttons, where the detail form was. */
+.assistant-feedback-note {
+    color: var(--primary, #7ddc8a);
+}
+
+.assistant-feedback-note[hidden] {
+    display: none;
+}
+
 .assistant-tool-list {
     list-style: none;
     padding: 0;
