@@ -42,8 +42,22 @@ internal sealed class AddWordsTool : IAssistantTool
             return new { error = "At least one valid word and translation is required.", skipped };
         }
 
-        foreach (var word in words)
+        // Anything this turn already proposed as a sentence is not queued again as vocabulary.
+        var sentenceKeys = QueuedSentenceKeys(context);
+        var skippedDuplicates = new List<SkippedItem>();
+        var queued = 0;
+        for (var index = 0; index < words.Count; index++)
         {
+            var word = words[index];
+            if (sentenceKeys.Contains(NormalizeForDuplicateMatch(word.Word)))
+            {
+                skippedDuplicates.Add(new SkippedItem(
+                    index,
+                    $"\"{word.Word}\" is already proposed as a sentence. "
+                    + "A sentence is stored once, as a sentence."));
+                continue;
+            }
+
             var payload = JsonSerializer.SerializeToElement(new
             {
                 kind = PendingChangeKinds.AddWord,
@@ -51,8 +65,15 @@ internal sealed class AddWordsTool : IAssistantTool
                 translation = word.Translation,
             }, JsonOptions);
             context.PendingChanges.Add(new PendingChange(PendingChangeKinds.AddWord, payload));
+            queued++;
         }
 
-        return new { queued = true, kind = "add_words", count = words.Count, skipped };
+        return new
+        {
+            queued = true,
+            kind = "add_words",
+            count = queued,
+            skipped = (IReadOnlyList<SkippedItem>)[.. skipped, .. skippedDuplicates],
+        };
     }
 }

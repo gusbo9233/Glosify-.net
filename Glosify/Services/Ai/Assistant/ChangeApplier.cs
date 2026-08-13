@@ -279,6 +279,18 @@ public sealed class ChangeApplier : IChangeApplier
         public List<QuizSentence> Sentences { get; } = [];
         public Dictionary<Guid, QuizSentence> SentencesById { get; } = new();
         public HashSet<string> SentenceTexts { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Normalized text of every sentence this quiz will hold once the proposal is applied:
+        /// the ones already stored plus the ones being added.
+        /// </summary>
+        /// <remarks>
+        /// Separate from <see cref="SentenceTexts"/>, which is the exact-text set that sentence
+        /// insertion dedupes against and must keep its existing semantics. This one exists to
+        /// stop the same text being filed as vocabulary as well, and is built from the whole
+        /// proposal so the answer does not depend on the order the model made its calls in.
+        /// </remarks>
+        public HashSet<string> SentenceMatchKeys { get; } = new(StringComparer.OrdinalIgnoreCase);
         public HashSet<string> DeletedWordIds { get; } = new(StringComparer.Ordinal);
     }
 
@@ -315,11 +327,14 @@ public sealed class ChangeApplier : IChangeApplier
             batch.WordLemmas.UnionWith(lemmas);
         }
 
+        // AddWord is in this list because a word may not repeat a sentence the quiz already
+        // holds, which cannot be known without loading them.
         var needsSentences = changes.Any(change => change.Kind
             is PendingChangeKinds.AddSentence
             or PendingChangeKinds.EditSentence
             or PendingChangeKinds.DeleteSentence
-            or PendingChangeKinds.RepairSentence);
+            or PendingChangeKinds.RepairSentence
+            or PendingChangeKinds.AddWord);
         if (needsSentences)
         {
             var sentences = await _context.QuizSentences
@@ -330,6 +345,21 @@ public sealed class ChangeApplier : IChangeApplier
             {
                 batch.SentencesById[sentence.Id] = sentence;
                 batch.SentenceTexts.Add(sentence.Text);
+                batch.SentenceMatchKeys.Add(Tools.ToolArguments.NormalizeForDuplicateMatch(sentence.Text));
+            }
+        }
+
+        // The sentences this proposal is about to add count too, so a word and a sentence
+        // queued in the same turn cannot both be stored whichever call came first. Only
+        // sentences that will actually persist are included: one missing its translation is
+        // skipped on insert, and displacing a word for it would lose the content entirely.
+        foreach (var change in changes.Where(change => change.Kind == PendingChangeKinds.AddSentence))
+        {
+            var text = Tools.ToolArguments.NormalizeForDuplicateMatch(GetString(change.Payload, "text"));
+            var translation = GetString(change.Payload, "translation").Trim();
+            if (!string.IsNullOrWhiteSpace(text) && !string.IsNullOrWhiteSpace(translation))
+            {
+                batch.SentenceMatchKeys.Add(text);
             }
         }
 
@@ -341,6 +371,11 @@ public sealed class ChangeApplier : IChangeApplier
         var newWord = GetString(payload, "word");
         var translation = GetString(payload, "translation");
         if (string.IsNullOrWhiteSpace(newWord) || string.IsNullOrWhiteSpace(translation))
+        {
+            return false;
+        }
+
+        if (batch.SentenceMatchKeys.Contains(Tools.ToolArguments.NormalizeForDuplicateMatch(newWord)))
         {
             return false;
         }

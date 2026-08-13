@@ -44,6 +44,15 @@ internal sealed class AddWordTool : IAssistantTool
             return new { error = "word and translation are required." };
         }
 
+        if (QueuedSentenceKeys(context).Contains(NormalizeForDuplicateMatch(word)))
+        {
+            return new
+            {
+                error = $"\"{word.Trim()}\" is already proposed as a sentence in this turn. "
+                    + "A sentence is stored once, as a sentence.",
+            };
+        }
+
         var payload = JsonSerializer.SerializeToElement(new
         {
             kind = PendingChangeKinds.AddWord,

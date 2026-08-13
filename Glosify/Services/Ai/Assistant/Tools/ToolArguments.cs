@@ -219,6 +219,35 @@ internal static class ToolArguments
         return collapsed.TrimEnd('.', '!', '?', '…', ' ');
     }
 
+    /// <summary>
+    /// Match keys for the sentences already queued in this turn.
+    /// </summary>
+    /// <remarks>
+    /// Lets a word tool refuse content the turn has already proposed as a sentence, so the
+    /// review card does not offer the user a word that Apply would drop anyway. Only covers
+    /// sentences queued before the word: the apply boundary is what makes the result
+    /// independent of the order the model called its tools in.
+    /// </remarks>
+    internal static HashSet<string> QueuedSentenceKeys(AgentToolContext context)
+    {
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var change in context.PendingChanges)
+        {
+            if (change.Kind != PendingChangeKinds.AddSentence)
+            {
+                continue;
+            }
+
+            var text = NormalizeForDuplicateMatch(GetString(change.Payload, "text"));
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                keys.Add(text);
+            }
+        }
+
+        return keys;
+    }
+
     internal static bool ContainsWord(string sentence, string word)
     {
         if (string.IsNullOrWhiteSpace(sentence) || string.IsNullOrWhiteSpace(word))

@@ -605,6 +605,97 @@ public class ChangeApplierTests
         Assert.Equal("To jest moj dom.", sentence.Text);
     }
 
+    // The tool-level check only sees sentences queued before the word. Apply is what makes the
+    // outcome independent of the order the model made its calls in.
+    // The tool-level check only sees sentences queued before the word. Apply is what makes the
+    // outcome independent of the order the model made its calls in.
+    [Fact]
+    public async Task ApplyAsync_AddWord_IsSkippedWhenTheSameProposalAddsItAsASentence()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var applier = CreateApplier(db);
+        // Word first: the tool could not have known a sentence was coming.
+        var changes = new[]
+        {
+            new PendingChange(
+                PendingChangeKinds.AddWord,
+                JsonSerializer.SerializeToElement(new { word = "To jest moj dom.", translation = "This is my house." })),
+            new PendingChange(
+                PendingChangeKinds.AddSentence,
+                JsonSerializer.SerializeToElement(new { text = "To jest moj dom.", translation = "This is my house." })),
+        };
+
+        var result = await applier.ApplyAsync(quizId, "user-1", changes, CancellationToken.None);
+
+        Assert.Equal(1, result.Applied);
+        Assert.Empty(db.Words.Where(word => word.QuizId == quizId));
+        Assert.Single(db.QuizSentences.Where(sentence => sentence.QuizId == quizId));
+    }
+
+    // A sentence stored by an earlier turn counts too, not just one in the same proposal.
+    [Fact]
+    public async Task ApplyAsync_AddWord_IsSkippedWhenTheQuizAlreadyHasItAsASentence()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.QuizSentences.Add(new QuizSentence
+        {
+            Id = Guid.NewGuid(),
+            QuizId = quizId,
+            Text = "To jest moj dom.",
+            Translation = "This is my house.",
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        var applier = CreateApplier(db);
+        var changes = new[]
+        {
+            new PendingChange(
+                PendingChangeKinds.AddWord,
+                JsonSerializer.SerializeToElement(new { word = "To jest moj dom", translation = "This is my house." })),
+            new PendingChange(
+                PendingChangeKinds.AddWord,
+                JsonSerializer.SerializeToElement(new { word = "dom", translation = "house" })),
+        };
+
+        var result = await applier.ApplyAsync(quizId, "user-1", changes, CancellationToken.None);
+
+        Assert.Equal(1, result.Applied);
+        var word = Assert.Single(db.Words.Where(item => item.QuizId == quizId));
+        Assert.Equal("dom", word.Lemma);
+    }
+
+    // Ordinary vocabulary must keep working; the check only fires on an actual sentence match.
+    [Fact]
+    public async Task ApplyAsync_AddWord_StillAddsAPhraseThatIsNotAStoredSentence()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.QuizSentences.Add(new QuizSentence
+        {
+            Id = Guid.NewGuid(),
+            QuizId = quizId,
+            Text = "By the way, I am late.",
+            Translation = "Nawiasem mowiac, jestem spozniony.",
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        var applier = CreateApplier(db);
+        var change = new PendingChange(
+            PendingChangeKinds.AddWord,
+            JsonSerializer.SerializeToElement(new { word = "by the way", translation = "nawiasem mowiac" }));
+
+        var result = await applier.ApplyAsync(quizId, "user-1", [change], CancellationToken.None);
+
+        Assert.Equal(1, result.Applied);
+        Assert.Single(db.Words.Where(item => item.QuizId == quizId));
+    }
+
     // A sentence missing its translation is never stored, so it must not displace a matching
     // word either — otherwise the content disappears from both tables.
     [Fact]

@@ -666,6 +666,65 @@ public class AssistantToolsTests
         Assert.Equal("English", payload.GetProperty("source_language").GetString());
     }
 
+    // Adding to an existing quiz spreads the two content types across separate calls, so the
+    // same text proposed as both must not be queued twice within one turn.
+    [Fact]
+    public async Task AddWords_DoesNotQueueAWordAlreadyProposedAsASentence()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId };
+
+        await tools.ExecuteAsync(
+            "add_sentences",
+            """{"sentences":[{"text":"To jest moj dom.","translation":"This is my house."}]}""",
+            context,
+            CancellationToken.None);
+        var result = await tools.ExecuteAsync(
+            "add_words",
+            """
+            {"words":[{"word":"dom","translation":"house"},
+                      {"word":"To jest  moj dom","translation":"This is my house."}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        var kinds = context.PendingChanges.Select(change => change.Kind).ToArray();
+        Assert.Equal([PendingChangeKinds.AddSentence, PendingChangeKinds.AddWord], kinds);
+        Assert.Equal(
+            "dom",
+            context.PendingChanges[1].Payload.GetProperty("word").GetString());
+        Assert.Contains("already proposed as a sentence", JsonSerializer.Serialize(result));
+    }
+
+    [Fact]
+    public async Task AddWord_RefusesASingleWordAlreadyProposedAsASentence()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId };
+
+        await tools.ExecuteAsync(
+            "add_sentence",
+            """{"text":"To jest moj dom.","translation":"This is my house."}""",
+            context,
+            CancellationToken.None);
+        var result = await tools.ExecuteAsync(
+            "add_word",
+            """{"word":"To jest moj dom.","translation":"This is my house."}""",
+            context,
+            CancellationToken.None);
+
+        Assert.Single(context.PendingChanges);
+        Assert.Contains("already proposed as a sentence", JsonSerializer.Serialize(result));
+    }
+
     [Fact]
     public async Task SentenceIntent_RejectsWordStorageAtTheExecutionBoundary()
     {
