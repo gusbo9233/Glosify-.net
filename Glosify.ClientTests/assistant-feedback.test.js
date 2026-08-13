@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     createLatestRequestGate,
+    feedbackFormValues,
     feedbackPanelState,
     feedbackReasons,
     normalizeFeedback,
@@ -82,4 +83,26 @@ test('saving details closes the form and thanks the user', () => {
         showDetails: false,
         showThanks: true,
     });
+});
+
+test('the form shows the persisted feedback when there is no draft', () => {
+    assert.deepEqual(
+        feedbackFormValues({ rating: 'down', reasonCodes: ['incorrect'], comment: 'Stored' }, null),
+        { reasonCodes: ['incorrect'], comment: 'Stored' });
+});
+
+// A failed save reverts the rating to the last persisted value. The words the user just tried
+// to send must not revert with it, or they have to retype them to retry.
+test('an unsent draft survives a failed save and outranks the persisted value', () => {
+    assert.deepEqual(
+        feedbackFormValues(
+            { rating: 'down', reasonCodes: ['incorrect'], comment: 'Stored' },
+            { reasonCodes: ['too_slow', 'confusing'], comment: 'added phrases to words' }),
+        { reasonCodes: ['too_slow', 'confusing'], comment: 'added phrases to words' });
+});
+
+test('an empty comment renders as an empty field rather than null', () => {
+    assert.deepEqual(
+        feedbackFormValues({ rating: 'up', reasonCodes: [], comment: null }, null),
+        { reasonCodes: [], comment: '' });
 });

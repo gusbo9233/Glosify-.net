@@ -36,6 +36,22 @@ export const feedbackPanelState = (feedback, acknowledged) => ({
     showThanks: Boolean(feedback) && acknowledged,
 });
 
+/**
+ * What the detail form should show: the user's unsaved edits when there are any, otherwise
+ * what the server has stored.
+ *
+ * A failed save reverts the rating to the last persisted value, and the form must not revert
+ * with it — the reasons and comment the user just tried to send are the ones they need back in
+ * front of them to retry.
+ */
+export const feedbackFormValues = (feedback, draft) => {
+    const source = draft ?? feedback;
+    return {
+        reasonCodes: source?.reasonCodes ?? [],
+        comment: source?.comment ?? '',
+    };
+};
+
 export const validClientDuration = (milliseconds) =>
     Number.isFinite(milliseconds) && milliseconds >= 0 && milliseconds <= 900000;
 

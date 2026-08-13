@@ -3,6 +3,7 @@ import { chooseInitialChat, createRecoverablePromiseQueue, materialPayload as bu
 import { escapeHtml, formatChatDate } from './assistant/presentation.js';
 import {
     createLatestRequestGate,
+    feedbackFormValues,
     feedbackPanelState,
     feedbackReasons,
     normalizeFeedback,
@@ -491,6 +492,10 @@ import {
         // Set once the user saves details, so the form closes and stays closed until they
         // change their mind rather than reopening on every re-render.
         let acknowledged = false;
+        // The reasons and comment the user last tried to send. Held until the server accepts
+        // them, so a failed save leaves their words in the form rather than reverting the
+        // fields along with the rating.
+        let draft = null;
         const requests = createLatestRequestGate();
         const writeFeedback = createRecoverablePromiseQueue(operation => operation());
 
@@ -542,8 +547,10 @@ import {
             button.addEventListener('click', () => {
                 const sameRating = current?.rating === rating;
                 // Reopens the form: pressing a vote again is how the user gets back to the
-                // reasons and comment after thanking them for the last one.
+                // reasons and comment after thanking them for the last one. A new rating has a
+                // different reason set, so an unsent draft from the old one is discarded.
                 acknowledged = false;
+                draft = null;
                 void save({
                     rating,
                     reasonCodes: sameRating ? current.reasonCodes : [],
@@ -575,14 +582,14 @@ import {
             const reasonCodes = Array.from(reasonList.querySelectorAll('input:checked'))
                 .map(input => input.value);
             saveDetails.disabled = true;
+            // Held across the request so a rejected save re-renders the user's words rather
+            // than the last thing the server accepted.
+            draft = { reasonCodes, comment: comment.value.trim() || null };
             try {
                 // Only close on a save the server accepted. A failure leaves the form open with
                 // the user's words still in it, next to the error, so nothing has to be retyped.
-                if (await save({
-                    rating: current.rating,
-                    reasonCodes,
-                    comment: comment.value.trim() || null,
-                })) {
+                if (await save({ rating: current.rating, ...draft })) {
+                    draft = null;
                     acknowledged = true;
                     sync();
                 }
@@ -599,6 +606,7 @@ import {
             const previous = current;
             current = null;
             acknowledged = false;
+            draft = null;
             sync();
             try {
                 await writeFeedback(() => api.json(
@@ -638,19 +646,20 @@ import {
                 comment.value = '';
                 return;
             }
+            const values = feedbackFormValues(current, draft);
             for (const [code, label] of feedbackReasons[current.rating] || []) {
                 const chip = document.createElement('label');
                 chip.className = 'assistant-feedback-reason';
                 const input = document.createElement('input');
                 input.type = 'checkbox';
                 input.value = code;
-                input.checked = current.reasonCodes.includes(code);
+                input.checked = values.reasonCodes.includes(code);
                 const text = document.createElement('span');
                 text.textContent = label;
                 chip.append(input, text);
                 reasonList.appendChild(chip);
             }
-            comment.value = current.comment || '';
+            comment.value = values.comment;
         };
 
         container.append(prompt, voteActions, note, details);
