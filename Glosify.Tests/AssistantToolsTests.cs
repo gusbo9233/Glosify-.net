@@ -1595,6 +1595,52 @@ public class AssistantToolsTests
         Assert.Contains("gerund", result.GetProperty("hint").GetString());
     }
 
+    // A term that exists only before from_page must never be reported as absent: "this
+    // word is nowhere in the book" is what would let the assistant tell a learner their
+    // textbook does not cover something it covers on page 2.
+    [Fact]
+    public async Task SearchBookPages_CountsTermsOverTheWholeBookNotOnlyFromThePageSearched()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1",
+            "Aspekt czasownika.",
+            "Nic tutaj.",
+            "Nic tutaj tez.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"aspekt","from_page":2}""", context, CancellationToken.None));
+
+        Assert.Equal(0, result.GetProperty("match_count").GetInt32());
+        var term = Assert.Single(result.GetProperty("term_pages").EnumerateArray());
+        Assert.Equal(1, term.GetProperty("page_count").GetInt32());
+        Assert.DoesNotContain("nowhere in the book", result.GetProperty("hint").GetString());
+    }
+
+    // Dropping the surplus keeps a long query useful, but the model has to be told which
+    // words the AND it got was actually built from.
+    [Fact]
+    public async Task SearchBookPages_ReportsTermsDroppedBeyondTheCap()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1", "alfa beta gamma delta epsilon.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages",
+            """{"query":"alfa beta gamma delta epsilon"}""",
+            context,
+            CancellationToken.None));
+
+        Assert.Equal(4, result.GetProperty("terms").GetArrayLength());
+        Assert.Equal(
+            ["epsilon"],
+            result.GetProperty("ignored_terms").EnumerateArray().Select(term => term.GetString()));
+        Assert.Equal(1, result.GetProperty("match_count").GetInt32());
+    }
+
     [Fact]
     public async Task SearchBookPages_SaysSoWhenTermsExistButNeverShareAPage()
     {

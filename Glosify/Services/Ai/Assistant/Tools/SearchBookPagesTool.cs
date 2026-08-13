@@ -24,10 +24,10 @@ internal sealed class SearchBookPagesTool : IAssistantTool
         "Search the text of one of the user's books and get back the page numbers that match, each with a short snippet. Defaults to the book selected for this chat. Use this instead of paging through the book with get_book_pages when the user asks about a topic, word, or exercise whose page you do not know, then call get_book_pages for the pages worth reading in full.",
         BuildSchema(new Dictionary<string, object>
         {
-            ["query"] = StringProp("Text to look for. Several words are treated as an AND: only pages containing all of them match, so keep it short and distinctive."),
+            ["query"] = StringProp("Text to look for. Several words are treated as an AND: only pages containing all of them match, so keep it short and distinctive. At most four words are used; any beyond that are dropped and listed back in ignored_terms."),
             ["book_id"] = StringProp("Optional book id. Omit to use the book selected for this chat."),
-            ["from_page"] = IntegerProp("Optional first page number to search from, counting from 1. Defaults to 1."),
-            ["limit"] = IntegerProp("Optional maximum matching pages from 1 to 20. Defaults to 8."),
+            ["from_page"] = IntegerProp("Optional first page number to search from, counting from 1. Defaults to 1. This narrows the search to part of the book; it is not a way to page through results, because matches come back ranked rather than in page order."),
+            ["limit"] = IntegerProp("Optional maximum matching pages from 1 to 20. Defaults to 8. When more pages match than this, narrow the query instead of raising the limit."),
         }, required: ["query"]));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
@@ -64,16 +64,21 @@ internal sealed class SearchBookPagesTool : IAssistantTool
         {
             return new { error = "query is required." };
         }
-        var terms = search
+        var requested = search
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(term => term.ToLowerInvariant())
             .Distinct(StringComparer.Ordinal)
-            .Take(MaximumTerms)
             .ToList();
-        if (terms.Count == 0)
+        if (requested.Count == 0)
         {
             return new { error = "query is required." };
         }
+        // Over the cap the extra terms are dropped rather than refused: a long query still
+        // returns useful pages, and refusing would cost a round-trip to learn a limit. What
+        // must not happen is dropping them silently, because then the AND the model was
+        // promised is not the AND it got — so the surplus comes back in ignored_terms.
+        var terms = requested.Take(MaximumTerms).ToList();
+        var ignoredTerms = requested.Skip(MaximumTerms).ToList();
 
         var fromPage = GetBoundedInt(args, "from_page", 1, 1, int.MaxValue);
         var limit = GetBoundedInt(args, "limit", 8, 1, 20);
@@ -90,10 +95,10 @@ internal sealed class SearchBookPagesTool : IAssistantTool
             return new { error = "Book not found." };
         }
 
-        var pages = _context.BookPages
+        var bookPages = _context.BookPages
             .AsNoTracking()
-            .Where(page => page.BookDocumentId == book.Id && page.PageNumber >= fromPage);
-        var query = pages;
+            .Where(page => page.BookDocumentId == book.Id);
+        var query = bookPages.Where(page => page.PageNumber >= fromPage);
         foreach (var term in terms)
         {
             var needle = term;
@@ -104,7 +109,15 @@ internal sealed class SearchBookPagesTool : IAssistantTool
         if (totalMatches == 0)
         {
             return await DescribeMissAsync(
-                pages, book.Id, book.Title, book.PageCount, search, terms, fromPage, cancellationToken);
+                bookPages,
+                book.Id,
+                book.Title,
+                book.PageCount,
+                search,
+                terms,
+                ignoredTerms,
+                fromPage,
+                cancellationToken);
         }
 
         // Ranking happens here rather than in SQL because counting occurrences in a
@@ -153,12 +166,15 @@ internal sealed class SearchBookPagesTool : IAssistantTool
             query = search,
             terms,
             matches,
+            ignored_terms = ignoredTerms,
             from_page = fromPage,
             page_count = book.PageCount,
             match_count = totalMatches,
             returned_count = matches.Count,
             has_more = matches.Count < totalMatches,
-            ranked_by = "Pages with the most hits first, not the earliest pages.",
+            ranked_by = totalMatches > CandidateWindow
+                ? $"Most hits first, chosen from the first {CandidateWindow} matching pages only. {totalMatches} pages match, so a denser page later in the book cannot be seen from here — narrow the query rather than paging."
+                : "Most hits first, across every matching page.",
         };
     }
 
@@ -168,21 +184,27 @@ internal sealed class SearchBookPagesTool : IAssistantTool
     /// book" and "try the stem, or the term the book actually uses".
     /// </summary>
     private async Task<object> DescribeMissAsync(
-        IQueryable<BookPage> pages,
+        IQueryable<BookPage> bookPages,
         Guid bookId,
         string title,
         int pageCount,
         string search,
         IReadOnlyList<string> terms,
+        IReadOnlyList<string> ignoredTerms,
         int fromPage,
         CancellationToken cancellationToken)
     {
+        // Counted over the whole book, never over the from_page window the search used.
+        // Scoping these to the window made the tool report a term as absent when it was
+        // only earlier in the book, which is the one thing a miss must never say: it is
+        // what would let the model tell a user their textbook does not cover something.
         var termPages = new List<object>(terms.Count);
         var missing = new List<string>();
         foreach (var term in terms)
         {
             var needle = term;
-            var hitPages = await pages.CountAsync(page => page.Text.ToLower().Contains(needle), cancellationToken);
+            var hitPages = await bookPages.CountAsync(
+                page => page.Text.ToLower().Contains(needle), cancellationToken);
             termPages.Add(new { term, page_count = hitPages });
             if (hitPages == 0)
             {
@@ -194,7 +216,9 @@ internal sealed class SearchBookPagesTool : IAssistantTool
             ? "None of these terms appear anywhere in the book. The book may use different wording, or be written in another language than your query — try the terms the book itself would use, or a shorter stem of the word."
             : missing.Count > 0
                 ? $"No page has all of them: {string.Join(", ", missing)} appear nowhere in the book. Search again without those terms, or replace them with a shorter stem or the wording the book uses."
-                : "Every term appears in the book, but never together on one page. Search for the most distinctive term on its own.";
+                : fromPage > 1
+                    ? $"Every term appears in the book, but no page from page {fromPage} onward has all of them. The counts above cover the whole book, so search again from page 1 before concluding anything is missing."
+                    : "Every term appears in the book, but never together on one page. Search for the most distinctive term on its own.";
 
         AssistantAnalyticsTelemetry.RecordBookSearch(
             terms.Count,
@@ -210,12 +234,14 @@ internal sealed class SearchBookPagesTool : IAssistantTool
             query = search,
             terms,
             matches = Array.Empty<object>(),
+            ignored_terms = ignoredTerms,
             from_page = fromPage,
             page_count = pageCount,
             match_count = 0,
             returned_count = 0,
             has_more = false,
             term_pages = termPages,
+            term_pages_cover = "the whole book, not only the pages from from_page onward",
             hint,
         };
     }
