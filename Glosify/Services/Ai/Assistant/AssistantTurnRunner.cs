@@ -321,6 +321,7 @@ internal sealed class AssistantTurnRunner
             turnActivity?.SetTag("assistant.intent.content", intent.ContentKind.ToString());
             turnActivity?.SetTag("gen_ai.request.model", selectedModel);
             turnEntity.Profile = profile.ToString();
+            RecordTurnInputs(turnEntity, intent, allowedToolNames);
             // Chats that predate the column, and any the store could not resolve a language
             // for, settle on one here rather than re-deciding every turn.
             thread.ConversationLanguage ??= replyLanguage;
@@ -382,7 +383,11 @@ internal sealed class AssistantTurnRunner
                     selectedModel,
                     profile,
                     contextInstruction,
-                    allowedToolNames);
+                    allowedToolNames,
+                    // Composing the effective request means serializing the instruction, the
+                    // whole replayed history and every tool schema. Ask for it only when the
+                    // store will keep it.
+                    _analytics.CaptureContent);
                 var invocationId = Guid.NewGuid();
                 using var invocationActivity = AssistantAnalyticsTelemetry.StartInvocation(
                     turnId,
@@ -676,6 +681,56 @@ internal sealed class AssistantTurnRunner
                 CancellationToken.None);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Records what the model was actually offered this turn onto the tracked turn row.
+    /// </summary>
+    /// <remarks>
+    /// In-memory only: the turn row is already tracked, so these land on the save the turn
+    /// was going to make anyway and cost no extra round trip. Nothing here can be worth
+    /// failing a turn the user is waiting on, so a fault is logged and dropped.
+    /// </remarks>
+    private void RecordTurnInputs(
+        AssistantTurn turnEntity,
+        AssistantIntent intent,
+        IReadOnlySet<string> allowedToolNames)
+    {
+        try
+        {
+            turnEntity.PromptVersion = AssistantPromptBuilder.Version;
+            turnEntity.IntentArtifact = intent.ArtifactKind.ToString();
+            turnEntity.IntentContent = intent.ContentKind.ToString();
+            turnEntity.AllowedTools = FormatAllowedTools(allowedToolNames);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not record turn inputs for assistant turn {TurnId}.", turnEntity.Id);
+        }
+    }
+
+    // Sorted so two turns offering the same surface produce the same string, and truncated
+    // on a separator so a longer future surface stays parseable instead of overflowing the
+    // column and failing the save that finalizes the turn.
+    private const int AllowedToolsMaxLength = 2048;
+
+    private static string? FormatAllowedTools(IReadOnlySet<string> allowedToolNames)
+    {
+        if (allowedToolNames.Count == 0)
+        {
+            return null;
+        }
+
+        var names = allowedToolNames.ToArray();
+        Array.Sort(names, StringComparer.Ordinal);
+        var joined = string.Join(',', names);
+        if (joined.Length <= AllowedToolsMaxLength)
+        {
+            return joined;
+        }
+
+        var cut = joined.LastIndexOf(',', AllowedToolsMaxLength - 1);
+        return cut <= 0 ? joined[..AllowedToolsMaxLength] : joined[..cut];
     }
 
     private async Task SaveAnalyticsSafelyAsync(

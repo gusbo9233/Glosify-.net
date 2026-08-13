@@ -268,14 +268,16 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                 ExtractUsage(response.Usage, estimatedPromptTokens + outputReserve),
                 configuredAgent?.Name,
                 configuredAgent?.Version,
-                JsonSerializer.Serialize(new
-                {
-                    instructions = instruction,
-                    history = request.History,
-                    tools = declarations,
-                    model = deployment,
-                    profile = request.Profile.ToString(),
-                }, JsonOptions)),
+                request.CaptureEffectiveRequest
+                    ? JsonSerializer.Serialize(new
+                    {
+                        instructions = instruction,
+                        history = request.History,
+                        tools = declarations,
+                        model = deployment,
+                        profile = request.Profile.ToString(),
+                    }, JsonOptions)
+                    : null),
         };
     }
 

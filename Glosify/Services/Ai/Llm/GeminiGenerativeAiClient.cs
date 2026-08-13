@@ -197,15 +197,17 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
                 assistantModel,
                 response?.ResponseId,
                 generation.Usage,
-                EffectiveRequestJson: JsonSerializer.Serialize(new
-                {
-                    instructions = request.SystemInstruction,
-                    contextInstruction = request.ContextInstruction,
-                    history = request.History,
-                    tools = declarations,
-                    model = assistantModel,
-                    profile = request.Profile.ToString(),
-                }, JsonOptions)),
+                EffectiveRequestJson: request.CaptureEffectiveRequest
+                    ? JsonSerializer.Serialize(new
+                    {
+                        instructions = request.SystemInstruction,
+                        contextInstruction = request.ContextInstruction,
+                        history = request.History,
+                        tools = declarations,
+                        model = assistantModel,
+                        profile = request.Profile.ToString(),
+                    }, JsonOptions)
+                    : null),
         };
     }
 

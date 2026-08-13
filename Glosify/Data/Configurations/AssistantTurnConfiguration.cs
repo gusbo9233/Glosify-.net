@@ -18,6 +18,12 @@ internal sealed class AssistantTurnConfiguration : IEntityTypeConfiguration<Assi
         entity.Property(turn => turn.ChangeOutcome).HasMaxLength(16);
         entity.Property(turn => turn.TraceId).HasMaxLength(32);
         entity.Property(turn => turn.ProviderResponseId).HasMaxLength(256);
+        entity.Property(turn => turn.PromptVersion).HasMaxLength(32);
+        entity.Property(turn => turn.IntentArtifact).HasMaxLength(32);
+        entity.Property(turn => turn.IntentContent).HasMaxLength(32);
+        // Long enough for the widest profile surface with room to grow. Truncated rather
+        // than rejected on write, so a future tool list can never fail a turn.
+        entity.Property(turn => turn.AllowedTools).HasMaxLength(2048);
         entity.HasIndex(turn => new { turn.ThreadId, turn.StartedAt });
         entity.HasIndex(turn => new { turn.Status, turn.StartedAt });
         entity.HasIndex(turn => new { turn.Provider, turn.ActualModel, turn.StartedAt });

@@ -107,6 +107,17 @@ the code and its behavior, not just generate more code.
   sentences, or both), narrows the tools offered to that decision, and rejects any
   returned call outside the turn's allowlist. The handlers check the same decision
   again, so an explicit sentence request cannot be stored as vocabulary.
+- Every assistant turn records the prompt version that composed its instructions,
+  the resolved intent, and the exact tool surface it was offered, so a completed
+  turn can be read back as a decision rather than only as an outcome. These are
+  metadata about routing, not conversation content, and are always captured.
+  Request and response bodies sit behind `AssistantAnalytics:CaptureContent`,
+  which is on: `assistant_model_invocations.request_json` then holds the
+  instruction, the replayed history and every tool schema exactly as the model
+  received them, which is what makes a completed turn replayable rather than only
+  summarizable. Secrets are redacted on the way in. Turning the flag off skips
+  composing that payload entirely rather than serializing one the store discards;
+  it also means turns captured while off cannot be reconstructed later.
 - A standard quiz can be created with starter words and standalone sentences in
   one reviewed proposal; both are written by the same Apply transaction.
 - Target, source/translation, and reply languages are separate durable
