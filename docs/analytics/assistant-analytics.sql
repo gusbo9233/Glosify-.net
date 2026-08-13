@@ -6,8 +6,13 @@ the AddAssistantAnalyticsCapture deployment; legacy rows intentionally remain nu
 BudgetAmountMicros on usage_debit is the price-card estimate for one model invocation.
 Provider responses with confirmed usage are recorded as normal learner usage even when
 the application later rejects the response.
-Raw invocation and tool payload columns contain {} when the default
-AssistantAnalytics:CaptureContent=false setting is used.
+Raw invocation and tool payload columns contain {} for turns recorded while
+AssistantAnalytics:CaptureContent was off. It is on by default from the
+AddAssistantTurnRoutingCapture deployment onwards, so older turns and newer ones
+differ here; filter on request_json <> '{}' when a query needs the real payload.
+Routing columns on assistant_turns (prompt_version, intent_artifact,
+intent_content, allowed_tools) are captured regardless of that setting and are
+null for turns predating that same deployment.
 */
 DECLARE @From datetimeoffset = DATEADD(day, -30, SYSDATETIMEOFFSET());
 DECLARE @To datetimeoffset = SYSDATETIMEOFFSET();
@@ -165,6 +170,66 @@ FROM assistant_tool_executions
 WHERE started_at >= @From AND started_at < @To
 GROUP BY tool_name
 ORDER BY executions DESC;
+
+/* Routing: how requests were read, and what the model was offered when it was read
+   that way. A profile/intent pair whose turns rarely reach an applied outcome is the
+   signal that narrowing removed a tool the request actually needed. */
+SELECT
+    prompt_version,
+    profile,
+    COALESCE(intent_artifact, 'unrecorded') AS intent_artifact,
+    COALESCE(intent_content, 'unrecorded') AS intent_content,
+    COUNT_BIG(*) AS turns,
+    SUM(CASE WHEN change_outcome = 'applied' THEN 1 ELSE 0 END) AS applied,
+    SUM(CASE WHEN change_outcome = 'rejected' THEN 1 ELSE 0 END) AS rejected,
+    CAST(100.0 * SUM(CASE WHEN change_outcome = 'applied' THEN 1 ELSE 0 END)
+        / NULLIF(SUM(CASE WHEN change_outcome IS NOT NULL THEN 1 ELSE 0 END), 0) AS decimal(5,2))
+        AS applied_rate_pct,
+    AVG(CAST(tool_call_count AS float)) AS avg_tool_calls
+FROM assistant_turns
+WHERE started_at >= @From AND started_at < @To
+GROUP BY prompt_version, profile, intent_artifact, intent_content
+ORDER BY turns DESC;
+
+/* Distinct offered tool surfaces. A surface that never produces an applied change is
+   either never needed or missing something the request required. */
+SELECT
+    profile,
+    allowed_tools,
+    COUNT_BIG(*) AS turns,
+    SUM(CASE WHEN change_outcome = 'applied' THEN 1 ELSE 0 END) AS applied
+FROM assistant_turns
+WHERE started_at >= @From AND started_at < @To AND allowed_tools IS NOT NULL
+GROUP BY profile, allowed_tools
+ORDER BY turns DESC;
+
+/* Training-set readiness: completed turns whose full model input was captured, which
+   is what a turn needs to be replayable rather than only summarizable. */
+SELECT
+    t.prompt_version,
+    COUNT(DISTINCT t.id) AS completed_turns,
+    COUNT(DISTINCT CASE WHEN i.request_json <> '{}' THEN t.id END) AS turns_with_captured_input,
+    COUNT(DISTINCT CASE WHEN f.id IS NOT NULL THEN t.id END) AS rated_turns,
+    COUNT(DISTINCT CASE WHEN t.change_outcome IN ('applied', 'rejected') THEN t.id END) AS outcome_labelled_turns
+FROM assistant_turns t
+LEFT JOIN assistant_model_invocations i ON i.turn_id = t.id
+LEFT JOIN assistant_feedback f ON f.turn_id = t.id
+WHERE t.status = 'completed' AND t.started_at >= @From AND t.started_at < @To
+GROUP BY t.prompt_version
+ORDER BY completed_turns DESC;
+
+/* Storage growth from content capture. Watch this over the first week; nothing prunes
+   assistant_model_invocations today. */
+SELECT
+    CAST(started_at AS date) AS [day],
+    COUNT_BIG(*) AS invocations,
+    SUM(DATALENGTH(request_json)) / 1048576.0 AS request_mb,
+    SUM(DATALENGTH(response_json)) / 1048576.0 AS response_mb,
+    MAX(DATALENGTH(request_json)) / 1024.0 AS largest_request_kb
+FROM assistant_model_invocations
+WHERE started_at >= @From AND started_at < @To
+GROUP BY CAST(started_at AS date)
+ORDER BY [day] DESC;
 
 /* Proposed/applied/rejected outcomes. */
 SELECT
