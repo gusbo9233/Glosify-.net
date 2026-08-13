@@ -17,12 +17,17 @@ internal sealed class CreateCustomQuizFromContentTool : IAssistantTool
         {
             ["quiz_name"] = StringProp("Name of the backing vocabulary quiz."),
             ["custom_quiz_name"] = StringProp("Name shown for the custom quiz."),
-            ["source_language"] = StringProp("Language the user already knows."),
+            ["source_language"] = StringProp(
+                "Language the user already knows. Defaults to the translation language the "
+                + "conversation has established, so it can be omitted rather than asked about."),
             ["target_language"] = StringProp("Language being learned. Defaults to the current app language."),
             ["collection_id"] = StringProp("Optional collection id for the backing quiz."),
             ["template_id"] = StringProp("Optional id from list_custom_quiz_templates. Sets the visual style for the custom quiz."),
             ["words"] = WordArrayProp("Starter vocabulary needed by the custom quiz."),
-        }, required: ["quiz_name", "custom_quiz_name", "source_language", "words"]));
+        // source_language is absent here because the handler resolves it from context. The
+        // published v4 agent still marks it required, which is harmless in both directions:
+        // the model keeps sending a value, and an omitted one now resolves instead of failing.
+        }, required: ["quiz_name", "custom_quiz_name", "words"]));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
 

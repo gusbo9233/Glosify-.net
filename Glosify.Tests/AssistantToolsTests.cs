@@ -552,6 +552,36 @@ public class AssistantToolsTests
         Assert.Single(payload.GetProperty("sentences").EnumerateArray().ToArray());
     }
 
+    // A custom quiz binds its elements to starter words, so those words are structure rather
+    // than requested vocabulary. Blocking them on a sentence request would make "an interactive
+    // quiz with sentences from this page" impossible to build.
+    [Fact]
+    public async Task SentenceIntent_StillAllowsStructuralWordsOnACustomQuizCreation()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Polish",
+            RequestedContentKind = AssistantContentKind.Sentences,
+        };
+
+        await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """
+            {"name":"Chapter 3","source_language":"English",
+             "words":[{"word":"dom","translation":"house"}],
+             "custom_quiz":{"name":"Chapter 3 drill","blocks":[
+                {"type":"text_input","id":"q1","label":"1. To jest moj {{blank}}","expected_text":"dom"}]}}
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
+    }
+
     // The prompt tells the model it may omit a language the conversation established. That has
     // to hold for the custom-quiz creation path too, or the turn dies on a required field.
     [Fact]

@@ -76,14 +76,12 @@ internal sealed class CreateQuizTool : IAssistantTool
 
         // Creation carries both content types in one call, so it needs the same guard the add
         // tools have: without it, this is the one path that can still file content under a type
-        // the user did not ask for.
+        // the user did not ask for. A sentence is never structural, so that check is
+        // unconditional; the words check is deferred until custom_quiz is known, because a
+        // custom quiz's starter words are its bindings rather than requested vocabulary.
         if (sentences.Count > 0 && WrongContentKind(context, AssistantContentKind.Sentences) is { } sentenceMismatch)
         {
             return sentenceMismatch;
-        }
-        if (words.Count > 0 && WrongContentKind(context, AssistantContentKind.Words) is { } wordMismatch)
-        {
-            return wordMismatch;
         }
 
         JsonElement? customQuiz = null;
@@ -107,6 +105,13 @@ internal sealed class CreateQuizTool : IAssistantTool
                 return InvalidCustomQuizPrompts(promptError);
             }
             customQuiz = customQuizElement.Clone();
+        }
+
+        if (customQuiz is null
+            && words.Count > 0
+            && WrongContentKind(context, AssistantContentKind.Words) is { } wordMismatch)
+        {
+            return wordMismatch;
         }
 
         if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(sourceLanguage))
