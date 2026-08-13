@@ -595,6 +595,15 @@ public sealed class ChangeApplier : IChangeApplier
 
         batch.SentencesById.Remove(sentenceId.Value);
         batch.Sentences.Remove(sentence);
+        // The text has to leave the dedupe set as well, or re-adding it later in the same
+        // proposal is refused as a duplicate of the row this just deleted — which is how
+        // "delete that sentence and add it back with a better translation" lost the sentence
+        // altogether. Only once no remaining row still carries the text.
+        if (!batch.Sentences.Any(remaining =>
+            string.Equals(remaining.Text, sentence.Text, StringComparison.OrdinalIgnoreCase)))
+        {
+            batch.SentenceTexts.Remove(sentence.Text);
+        }
         _context.QuizSentences.Remove(sentence);
         return true;
     }

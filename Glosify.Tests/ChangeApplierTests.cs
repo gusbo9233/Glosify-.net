@@ -740,6 +740,42 @@ public class ChangeApplierTests
         Assert.Empty(db.Words.Where(item => item.QuizId == quizId));
     }
 
+    // Deleting a sentence and adding it back in the same turn — to fix its translation — was
+    // refused as a duplicate of the row just deleted, so the sentence disappeared entirely.
+    [Fact]
+    public async Task ApplyAsync_DeletingAndReAddingASentenceInOneProposalKeepsIt()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        var sentenceId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.QuizSentences.Add(new QuizSentence
+        {
+            Id = sentenceId,
+            QuizId = quizId,
+            Text = "To jest moj dom.",
+            Translation = "Bad translation.",
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        var applier = CreateApplier(db);
+        var changes = new[]
+        {
+            new PendingChange(
+                PendingChangeKinds.DeleteSentence,
+                JsonSerializer.SerializeToElement(new { sentence_id = sentenceId })),
+            new PendingChange(
+                PendingChangeKinds.AddSentence,
+                JsonSerializer.SerializeToElement(new { text = "To jest moj dom.", translation = "This is my house." })),
+        };
+
+        var result = await applier.ApplyAsync(quizId, "user-1", changes, CancellationToken.None);
+
+        Assert.Equal(2, result.Applied);
+        var sentence = Assert.Single(db.QuizSentences.Where(item => item.QuizId == quizId));
+        Assert.Equal("This is my house.", sentence.Translation);
+    }
+
     // Ordinary vocabulary must keep working; the check only fires on an actual sentence match.
     [Fact]
     public async Task ApplyAsync_AddWord_StillAddsAPhraseThatIsNotAStoredSentence()

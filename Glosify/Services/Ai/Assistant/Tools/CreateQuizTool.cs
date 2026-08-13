@@ -71,9 +71,20 @@ internal sealed class CreateQuizTool : IAssistantTool
         var sourceLanguage = FirstNonBlank(GetString(args, "source_language"), context.SourceLanguage);
         var targetLanguage = FirstNonBlank(GetString(args, "target_language"), context.CurrentLanguage);
         var collectionId = GetNullableGuidString(args, "collection_id");
-        var (words, skippedWords) = Cap(GetWordDrafts(args, "words"));
-        var (sentences, skippedSentences) = Cap(GetSentenceDrafts(args, "sentences"));
-        (words, skippedWords) = DropWordsAlreadyProposedAsSentences(words, sentences, skippedWords);
+        // Every skipped report is in request-array coordinates. The source map has to be built
+        // from the parse failures alone, before any later stage adds entries of its own:
+        // mixing coordinate systems in one list is what made the reported positions wrong.
+        var parsedWords = GetWordDrafts(args, "words");
+        var wordIndexes = SourceIndexes(parsedWords.Words.Count, parsedWords.Skipped);
+        var (words, skippedWords) = Cap(parsedWords.Words, parsedWords.Skipped, wordIndexes);
+
+        var parsedSentences = GetSentenceDrafts(args, "sentences");
+        var sentenceIndexes = SourceIndexes(parsedSentences.Sentences.Count, parsedSentences.Skipped);
+        var (sentences, skippedSentences) =
+            Cap(parsedSentences.Sentences, parsedSentences.Skipped, sentenceIndexes);
+
+        (words, skippedWords) =
+            DropWordsAlreadyProposedAsSentences(words, sentences, skippedWords, wordIndexes);
 
         // Creation carries both content types in one call, so it needs the same guard the add
         // tools have: without it, this is the one path that can still file content under a type
@@ -174,7 +185,8 @@ internal sealed class CreateQuizTool : IAssistantTool
         DropWordsAlreadyProposedAsSentences(
             IReadOnlyList<WordDraft> words,
             IReadOnlyList<SentenceDraft> sentences,
-            IReadOnlyList<SkippedItem> skipped)
+            IReadOnlyList<SkippedItem> skipped,
+            int[] sourceIndexes)
     {
         if (words.Count == 0 || sentences.Count == 0)
         {
@@ -185,7 +197,6 @@ internal sealed class CreateQuizTool : IAssistantTool
             .Select(sentence => NormalizeForDuplicateMatch(sentence.Text))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var sourceIndexes = SourceIndexes(words.Count, skipped);
         var kept = new List<WordDraft>(words.Count);
         var dropped = new List<SkippedItem>();
         for (var index = 0; index < words.Count; index++)
@@ -208,21 +219,23 @@ internal sealed class CreateQuizTool : IAssistantTool
     }
 
     private static (IReadOnlyList<T> Kept, IReadOnlyList<SkippedItem> Skipped) Cap<T>(
-        (IReadOnlyList<T> Items, IReadOnlyList<SkippedItem> Skipped) parsed)
+        IReadOnlyList<T> items,
+        IReadOnlyList<SkippedItem> skipped,
+        int[] sourceIndexes)
     {
-        if (parsed.Items.Count <= MaxStarterItems)
+        if (items.Count <= MaxStarterItems)
         {
-            return (parsed.Items, parsed.Skipped);
+            return (items, skipped);
         }
 
-        var skipped = parsed.Skipped.ToList();
-        for (var index = MaxStarterItems; index < parsed.Items.Count; index++)
+        var capped = skipped.ToList();
+        for (var index = MaxStarterItems; index < items.Count; index++)
         {
-            skipped.Add(new SkippedItem(
-                index,
+            capped.Add(new SkippedItem(
+                sourceIndexes[index],
                 $"Only the first {MaxStarterItems} items are accepted in one proposal."));
         }
 
-        return (parsed.Items.Take(MaxStarterItems).ToArray(), skipped);
+        return (items.Take(MaxStarterItems).ToArray(), capped);
     }
 }

@@ -494,6 +494,40 @@ public class AssistantToolsTests
         Assert.Equal("by the way", word.GetProperty("word").GetString());
     }
 
+    // Parse failures and cap overflow both report positions in the request array. Building the
+    // source map from a list that the cap had already appended to mixed two coordinate systems
+    // and named an unrelated word.
+    [Fact]
+    public async Task CreateVocabularyQuiz_ReportsEverySkipAgainstTheRequestIndex()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+        // One invalid entry, then 101 valid words: request indexes 1..101. The duplicate is
+        // request index 50, and the 101st valid word overflows the 100-item cap.
+        var words = new List<string> { """{"word":"","translation":"invalid"}""" };
+        for (var i = 1; i <= 101; i++)
+        {
+            words.Add($$"""{"word":"w{{i}}","translation":"t{{i}}"}""");
+        }
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            $$"""
+            {"name":"Big","source_language":"English",
+             "words":[{{string.Join(",", words)}}],
+             "sentences":[{"text":"w50","translation":"fiftieth"}]}
+            """,
+            context,
+            CancellationToken.None));
+
+        var skipped = result.GetProperty("skipped_words").EnumerateArray()
+            .Select(item => item.GetProperty("Index").GetInt32())
+            .ToArray();
+        // 0 = the invalid entry, 101 = the capped overflow word, 50 = the duplicate.
+        Assert.Equal([0, 101, 50], skipped);
+    }
+
     [Fact]
     public async Task CreateVocabularyQuiz_SkipsInvalidStarterSentences()
     {
