@@ -101,6 +101,17 @@ the code and its behavior, not just generate more code.
   or saved transcript to read from. A transcript is read in the same 100-caption
   pages the reader shows, so "summarize the first page" means one thing to the
   user and to the assistant.
+- Application-owned assistant routing. Before the model is called, Glosify reads
+  the request for an explicit artifact ("quiz" means a standard quiz; "custom" or
+  "multiple choice" means the interactive builder) and content type (words,
+  sentences, or both), narrows the tools offered to that decision, and rejects any
+  returned call outside the turn's allowlist. The handlers check the same decision
+  again, so an explicit sentence request cannot be stored as vocabulary.
+- A standard quiz can be created with starter words and standalone sentences in
+  one reviewed proposal; both are written by the same Apply transaction.
+- Target, source/translation, and reply languages are separate durable
+  preferences, so the assistant does not re-ask about a language the conversation
+  already established.
 - Live translated subtitles for Chrome tab audio, integrated with Glosify
   authentication, AI credits, saved transcripts, and assistant context.
 - Azure-powered speaking practice with animated language-specific avatars,
@@ -132,7 +143,7 @@ Glosify.LiveSubtitles.Extension/
 Glosify/Migrations/       EF Core migrations
 Glosify/wwwroot/          Static assets
 scripts/                  Development helper scripts
-.foundry/                 Speaking-agent evaluations, datasets, and rubrics
+.foundry/                 Authored agent exports, evaluations, datasets, rubrics
 docs/adr/                 Architecture decision records
 .github/workflows/        Azure deployment workflow
 ```
@@ -151,6 +162,32 @@ Secrets belong in user secrets, which live outside the repository folder:
 Local Azure access uses `DefaultAzureCredential`; run `az login` before using
 Foundry, Speech, or Blob Storage features. Production uses managed identity and
 does not require Foundry or Speech keys.
+
+### Publishing an authored agent version
+
+Assistant tools are defined in Foundry. When an authored agent declares function
+tools, that list replaces the in-code declarations for the turn, and the
+application then narrows it to the tools the request is allowed to use — it can
+subtract from the authored surface but never add to it. A tool changed only in C#
+therefore has no effect in production until a new agent version is published.
+
+Published versions are immutable, so changes ship as a new version:
+
+1. Publish the new version from the export in `.foundry/agents/` (for example
+   `glosify-librarian-v4.json`).
+2. Update the matching `Agents` pin in `Glosify/appsettings.json` only after the
+   publish succeeds.
+3. Restart the app. Authored definitions are cached per `name@version` for the
+   process lifetime.
+
+The pin lives in the deployed `appsettings.json`, not in App Service settings, so
+a pin change ships with the code that depends on it. Keep it that way: pointing
+production at an agent whose tools the running build does not yet handle means
+the model proposes content the old code silently drops.
+
+`glosify-librarian:4` and `glosify-quiz-assistant:4` are published and the pins
+are on version 4; both take effect on the next deployment.
+`glosify-quiz-builder` is unchanged on version 3.
 
 ## Local development
 
@@ -245,7 +282,7 @@ The suite covers navigation, authorisation, sharing, quizzes, assistant flows,
 AI credits, Speaking sessions and APIs, Foundry usage, and Speech tokens.
 
 The CI browser job starts the app against an empty migrated SQL Server database and
-runs four Chromium journeys. For a local run, install Chromium once and provide the
+runs five Chromium journeys. For a local run, install Chromium once and provide the
 test host:
 
 ```bash
@@ -276,6 +313,9 @@ Identity and application tables for quizzes, words, sentences, collections,
 assistant messages, AI credits, and book documents.
 
 ## Deployment
+
+Use the [production deployment runbook](docs/DEPLOYMENT.md) for release,
+verification, failure-recovery, and Chrome Web Store sequencing steps.
 
 The workflow in `.github/workflows/master_glosify.yml` builds and deploys the
 app to Azure Web App `glosify-app` when `master` is pushed. That is the site

@@ -28,7 +28,11 @@ internal sealed class AssistantPromptBuilder
         CustomQuiz? customQuiz,
         TranscriptAssistantContext? transcript,
         BookAssistantContext? book,
-        string? currentLanguage) => profile switch
+        string? currentLanguage,
+        string? sourceLanguage = null,
+        string? replyLanguage = null)
+    {
+        var context = profile switch
         {
             AssistantAgentProfile.CustomQuizBuilder =>
                 ComposeCustomQuizBuilderContext(quiz!, customQuiz!, currentLanguage),
@@ -36,6 +40,56 @@ internal sealed class AssistantPromptBuilder
                 ComposeQuizAssistantContext(quiz!, focusedWord, documentPage, transcript, book),
             _ => ComposeLibrarianContext(currentLanguage, documentPage, transcript, book),
         };
+
+        return context + BuildLanguageInstruction(currentLanguage, sourceLanguage, replyLanguage);
+    }
+
+    /// <summary>
+    /// States the three languages a turn involves and closes the question the assistant kept
+    /// re-opening.
+    /// </summary>
+    /// <remarks>
+    /// Target, translation and reply are separate facts — someone can study Polish, translate
+    /// into English, and prefer to be answered in Swedish. Supplying each one explicitly is
+    /// what makes "do you want English?" an unnecessary question rather than a reasonable one;
+    /// a value the application genuinely does not have is left out, and asking about that one
+    /// stays correct.
+    /// </remarks>
+    private static string BuildLanguageInstruction(
+        string? currentLanguage,
+        string? sourceLanguage,
+        string? replyLanguage)
+    {
+        var lines = new List<string>(4);
+        if (!string.IsNullOrWhiteSpace(currentLanguage))
+        {
+            lines.Add($"- Target learning language: {currentLanguage}");
+        }
+        if (!string.IsNullOrWhiteSpace(sourceLanguage))
+        {
+            lines.Add($"- Source/translation language: {sourceLanguage}");
+        }
+        if (!string.IsNullOrWhiteSpace(replyLanguage))
+        {
+            lines.Add($"- Reply language: {replyLanguage}");
+        }
+        if (lines.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        lines.Add(
+            "- These are already established. Use them without asking the user to confirm "
+            + "them, and only raise a language question when this turn contradicts them or "
+            + "needs a language listed here as unknown.");
+
+        return $"""
+
+
+        Languages:
+        {string.Join("\n", lines)}
+        """;
+    }
 
     private static string ComposeQuizSystemInstruction(
         Quiz quiz,

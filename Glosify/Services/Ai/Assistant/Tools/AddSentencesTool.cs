@@ -31,6 +31,11 @@ internal sealed class AddSentencesTool : IAssistantTool
             return QuizContextRequired();
         }
 
+        if (WrongContentKind(context, AssistantContentKind.Sentences) is { } mismatch)
+        {
+            return mismatch;
+        }
+
         var (sentences, skipped) = GetSentenceDrafts(args, "sentences");
         if (sentences.Count == 0)
         {

@@ -15,7 +15,9 @@ internal sealed class CreateQuizTool : IAssistantTool
         BuildSchema(new Dictionary<string, object>
         {
             ["name"] = StringProp("Quiz name."),
-            ["source_language"] = StringProp("Language the user already knows."),
+            ["source_language"] = StringProp(
+                "Language the user already knows. Defaults to the translation language the "
+                + "conversation has established, so it can be omitted rather than asked about."),
             ["target_language"] = StringProp("Language being learned. Defaults to the current app language when available."),
             ["collection_id"] = StringProp("Optional id of the collection that should contain the quiz."),
             ["words"] = new Dictionary<string, object>
@@ -33,7 +35,20 @@ internal sealed class CreateQuizTool : IAssistantTool
                     ["required"] = new[] { "word", "translation" },
                 },
             },
-        }, required: ["name", "source_language"]));
+            ["sentences"] = SentenceArrayProp(
+                "Optional standalone example sentences for the new quiz. Full sentences belong "
+                + "here, never in words."),
+        }, required: ["name"]));
+
+    /// <summary>
+    /// The most starter words or sentences one proposal may carry.
+    /// </summary>
+    /// <remarks>
+    /// A whole-chapter extraction can otherwise put hundreds of generated items into one
+    /// tool argument, one pending payload and one review card. The overflow is reported as
+    /// skipped rather than dropped silently, so the model can propose the rest separately.
+    /// </remarks>
+    private const int MaxStarterItems = 100;
 
     public AgentToolDeclaration Declaration => DeclarationValue;
 
@@ -53,10 +68,11 @@ internal sealed class CreateQuizTool : IAssistantTool
     private static object QueueCreateQuiz(JsonElement args, AgentToolContext context)
     {
         var name = GetString(args, "name");
-        var sourceLanguage = GetString(args, "source_language");
+        var sourceLanguage = FirstNonBlank(GetString(args, "source_language"), context.SourceLanguage);
         var targetLanguage = FirstNonBlank(GetString(args, "target_language"), context.CurrentLanguage);
         var collectionId = GetNullableGuidString(args, "collection_id");
-        var (words, skippedWords) = GetWordDrafts(args, "words");
+        var (words, skippedWords) = Cap(GetWordDrafts(args, "words"));
+        var (sentences, skippedSentences) = Cap(GetSentenceDrafts(args, "sentences"));
         JsonElement? customQuiz = null;
         if (args.TryGetProperty("custom_quiz", out var customQuizElement)
             && customQuizElement.ValueKind != JsonValueKind.Null)
@@ -103,6 +119,7 @@ internal sealed class CreateQuizTool : IAssistantTool
             target_language = targetLanguage.Trim(),
             collection_id = collectionId.Value,
             words,
+            sentences,
             custom_quiz = customQuiz,
         }, JsonOptions);
 
@@ -113,7 +130,29 @@ internal sealed class CreateQuizTool : IAssistantTool
             kind = PendingChangeKinds.CreateQuiz,
             name = name.Trim(),
             includes_custom_quiz = customQuiz.HasValue,
-            skipped = skippedWords,
+            word_count = words.Count,
+            sentence_count = sentences.Count,
+            skipped_words = skippedWords,
+            skipped_sentences = skippedSentences,
         };
+    }
+
+    private static (IReadOnlyList<T> Kept, IReadOnlyList<SkippedItem> Skipped) Cap<T>(
+        (IReadOnlyList<T> Items, IReadOnlyList<SkippedItem> Skipped) parsed)
+    {
+        if (parsed.Items.Count <= MaxStarterItems)
+        {
+            return (parsed.Items, parsed.Skipped);
+        }
+
+        var skipped = parsed.Skipped.ToList();
+        for (var index = MaxStarterItems; index < parsed.Items.Count; index++)
+        {
+            skipped.Add(new SkippedItem(
+                index,
+                $"Only the first {MaxStarterItems} items are accepted in one proposal."));
+        }
+
+        return (parsed.Items.Take(MaxStarterItems).ToArray(), skipped);
     }
 }

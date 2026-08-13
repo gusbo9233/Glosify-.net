@@ -210,10 +210,40 @@ internal sealed class AssistantMessagePresenter
         var target = GetString(payload, "target_language");
         var includesCustomQuiz = payload.TryGetProperty("custom_quiz", out var customQuiz)
             && customQuiz.ValueKind == JsonValueKind.Object;
+        var contents = DescribeStarterContent(payload);
         return includesCustomQuiz
-            ? $"Create quiz \"{name}\" and custom quiz \"{GetString(customQuiz, "name")}\" ({source} -> {target})"
-            : $"Create quiz \"{name}\" ({source} -> {target})";
+            ? $"Create quiz \"{name}\"{contents} and custom quiz \"{GetString(customQuiz, "name")}\" ({source} -> {target})"
+            : $"Create quiz \"{name}\"{contents} ({source} -> {target})";
     }
+
+    /// <summary>
+    /// The " with 12 words and 3 sentences" clause of a create-quiz summary.
+    /// </summary>
+    /// <remarks>
+    /// Counts rather than the content itself: a proposal can carry a hundred of each, and the
+    /// stored payload stays the authoritative detail behind the card. An empty collection is
+    /// left out entirely so a word-only quiz reads as it always has.
+    /// </remarks>
+    private static string DescribeStarterContent(JsonElement payload)
+    {
+        var parts = new List<string>(2);
+        AppendCount(parts, CountArray(payload, "words"), "word");
+        AppendCount(parts, CountArray(payload, "sentences"), "sentence");
+        return parts.Count == 0 ? string.Empty : $" with {string.Join(" and ", parts)}";
+
+        static void AppendCount(List<string> parts, int count, string noun)
+        {
+            if (count > 0)
+            {
+                parts.Add($"{count} {noun}{(count == 1 ? string.Empty : "s")}");
+            }
+        }
+    }
+
+    private static int CountArray(JsonElement payload, string property) =>
+        payload.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.Array
+            ? value.GetArrayLength()
+            : 0;
 
     private static string BuildCreateCollectionSummary(JsonElement payload)
     {

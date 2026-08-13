@@ -36,6 +36,9 @@ public sealed class AssistantToolSurfaceRegressionTests
             "delete_word",
             "repair_sentence",
             "delete_sentence",
+            // Standard creation is reachable from a selected quiz as of the intent-routing
+            // change: "create another normal quiz" had no path but create_custom_quiz before.
+            "create_vocabulary_quiz",
             "create_custom_quiz",
             "list_saved_transcripts",
             "get_saved_transcript",

@@ -203,9 +203,13 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
         // still runs them: the handlers are matched by name, so a tool the agent declares
         // that this build has no handler for is reported back as unknown rather than
         // silently doing nothing.
-        var declarations = authored?.Tools is { Count: > 0 } authoredTools
-            ? authoredTools
-            : request.Tools;
+        //
+        // What the application keeps is which of those tools this particular turn may use:
+        // the allowlist can only remove entries, so an authored agent can never widen the
+        // surface the page context and resolved intent decided on.
+        var declarations = AgentToolFilter.Narrow(
+            authored?.Tools is { Count: > 0 } authoredTools ? authoredTools : request.Tools,
+            request.AllowedToolNames);
 
         var messages = FoundryMessageMapper.MapHistory(request.History);
         var tools = FoundryMessageMapper.MapTools(declarations);

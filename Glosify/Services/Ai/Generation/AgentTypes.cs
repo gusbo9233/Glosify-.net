@@ -32,13 +32,36 @@ public enum AssistantAgentProfile
 /// Only the facts that change per turn (open quiz, languages). Appended to a persisted
 /// agent's authored instructions, which carry everything static.
 /// </param>
+/// <param name="AllowedToolNames">
+/// The tool names this turn may offer, or null for no restriction.
+/// </param>
+/// <remarks>
+/// A persisted agent owns which tools exist and how they are described, and that stays true:
+/// <paramref name="AllowedToolNames"/> can only remove entries from whichever declaration list
+/// is in force. It never adds one, and never replaces an authored schema — an authored tool
+/// the application did not allow for this turn is simply not offered.
+/// </remarks>
 public sealed record AgentRequest(
     string SystemInstruction,
     IReadOnlyList<AgentTurn> History,
     IReadOnlyList<AgentToolDeclaration> Tools,
     string? Model = null,
     AssistantAgentProfile Profile = AssistantAgentProfile.General,
-    string? ContextInstruction = null);
+    string? ContextInstruction = null,
+    IReadOnlySet<string>? AllowedToolNames = null);
+
+/// <summary>
+/// Applies a turn's tool allowlist to whichever declaration list is in force.
+/// </summary>
+public static class AgentToolFilter
+{
+    public static IReadOnlyList<AgentToolDeclaration> Narrow(
+        IReadOnlyList<AgentToolDeclaration> declarations,
+        IReadOnlySet<string>? allowedNames) =>
+        allowedNames is null
+            ? declarations
+            : declarations.Where(tool => allowedNames.Contains(tool.Name)).ToArray();
+}
 
 public sealed record AgentTurn(string Role, string ContentJson);
 

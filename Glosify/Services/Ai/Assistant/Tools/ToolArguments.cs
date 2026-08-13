@@ -171,6 +171,33 @@ internal static class ToolArguments
         };
     }
 
+    /// <summary>
+    /// Refuses a mutation that would file content under the type the user did not ask for,
+    /// or null when the request permits it.
+    /// </summary>
+    /// <remarks>
+    /// The last line of defence for the sentences-stored-as-words failure. It has to sit at
+    /// the execution boundary rather than in tool selection alone, because the offered tool
+    /// list is not the only source of calls: a published agent declares its own tools, and a
+    /// resumed chat replays a surface that no longer applies. Recoverable by design — nothing
+    /// is queued and the model gets told which storage to use, so the existing tool loop can
+    /// simply try again.
+    /// </remarks>
+    internal static object? WrongContentKind(AgentToolContext context, AssistantContentKind storing)
+    {
+        var requested = context.RequestedContentKind;
+        if (requested == AssistantContentKind.Auto
+            || requested == AssistantContentKind.Both
+            || requested == storing)
+        {
+            return null;
+        }
+
+        return storing == AssistantContentKind.Words
+            ? new { error = "The user asked for sentences. Use add_sentence or add_sentences, not word storage." }
+            : new { error = "The user asked for words. Use add_word or add_words, not sentence storage." };
+    }
+
     internal static bool ContainsWord(string sentence, string word)
     {
         if (string.IsNullOrWhiteSpace(sentence) || string.IsNullOrWhiteSpace(word))

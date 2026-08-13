@@ -32,6 +32,11 @@ internal sealed class AddSentenceTool : IAssistantTool
             return QuizContextRequired();
         }
 
+        if (WrongContentKind(context, AssistantContentKind.Sentences) is { } mismatch)
+        {
+            return mismatch;
+        }
+
         var text = GetString(args, "text");
         var translation = GetString(args, "translation");
         if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(translation))

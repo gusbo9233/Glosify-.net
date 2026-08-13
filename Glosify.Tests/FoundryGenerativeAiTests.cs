@@ -629,6 +629,65 @@ public sealed class FoundryGenerativeAiTests
         Assert.Equal("3", result.Metadata.AgentVersion);
     }
 
+    // Tools are defined in Foundry, but which of them a given turn may use is the
+    // application's call: the per-turn allowlist subtracts from the authored surface.
+    [Fact]
+    public async Task Authored_tools_are_narrowed_by_the_per_turn_allowlist()
+    {
+        var invoker = new FakeInvoker
+        {
+            AuthoredAgent = new FoundryAuthoredAgent(
+                "You build custom quiz elements.",
+                null,
+                [Declaration("add_word"), Declaration("add_sentence")]),
+        };
+        var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
+
+        await client.RunAgentTurnAsync(
+            new AgentRequest(
+                "In-code fallback instruction.",
+                [],
+                [],
+                Model: null,
+                Profile: AssistantAgentProfile.CustomQuizBuilder,
+                ContextInstruction: null,
+                AllowedToolNames: new HashSet<string> { "add_sentence" }),
+            Usage(AiUsageFeatures.Assistant));
+
+        Assert.Equal(["add_sentence"], invoker.Tools.Select(tool => tool.Name));
+    }
+
+    // The allowlist is a filter, never a source. A name the published agent does not declare
+    // cannot appear just because the application would have permitted it.
+    [Fact]
+    public async Task The_allowlist_cannot_broaden_the_authored_surface()
+    {
+        var invoker = new FakeInvoker
+        {
+            AuthoredAgent = new FoundryAuthoredAgent(
+                "You build custom quiz elements.",
+                null,
+                [Declaration("add_sentence")]),
+        };
+        var client = CreateClient(invoker, new FakeCredits(), ConfigureQuizBuilderAgent);
+
+        await client.RunAgentTurnAsync(
+            new AgentRequest(
+                "In-code fallback instruction.",
+                [],
+                [Declaration("delete_word")],
+                Model: null,
+                Profile: AssistantAgentProfile.CustomQuizBuilder,
+                ContextInstruction: null,
+                AllowedToolNames: new HashSet<string> { "add_sentence", "delete_word" }),
+            Usage(AiUsageFeatures.Assistant));
+
+        Assert.Equal(["add_sentence"], invoker.Tools.Select(tool => tool.Name));
+    }
+
+    private static AgentToolDeclaration Declaration(string name) =>
+        new(name, name, new { type = "object", properties = new { } });
+
     // The assistant has to keep working before the agent is authored in Foundry, and
     // has to survive the project being unreachable.
     [Fact]

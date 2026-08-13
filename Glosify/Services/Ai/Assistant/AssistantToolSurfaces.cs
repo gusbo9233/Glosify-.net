@@ -109,6 +109,11 @@ internal static class AssistantToolSurfaces
         typeof(DeleteWordTool),
         typeof(RepairSentenceTool),
         typeof(DeleteSentenceTool),
+        // Creating another standard quiz from inside a selected one used to be impossible:
+        // only the custom builder was reachable here, so "make me another quiz" had nowhere
+        // to go but create_custom_quiz. Its neighbour is deliberate — the two creation tools
+        // are described against each other in the prompt.
+        typeof(CreateQuizTool),
         typeof(CreateCustomQuizTool),
         typeof(ListSavedTranscriptsTool),
         typeof(GetSavedTranscriptTool),
