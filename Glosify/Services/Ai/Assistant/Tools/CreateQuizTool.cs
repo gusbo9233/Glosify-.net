@@ -191,9 +191,13 @@ internal sealed class CreateQuizTool : IAssistantTool
         {
             if (sentenceTexts.Contains(NormalizeForDuplicateMatch(words[index].Word)))
             {
+                // The word itself is named rather than left to the index. Positions here are
+                // into the parsed list, not the raw arguments array, so a preceding invalid
+                // entry shifts them; the text is what makes the report actionable either way.
                 dropped.Add(new SkippedItem(
                     index,
-                    "Already proposed as a sentence. A sentence is stored once, as a sentence."));
+                    $"\"{words[index].Word}\" is already proposed as a sentence. "
+                    + "A sentence is stored once, as a sentence."));
                 continue;
             }
 

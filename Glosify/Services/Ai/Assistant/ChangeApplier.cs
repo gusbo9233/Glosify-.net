@@ -805,8 +805,12 @@ public sealed class ChangeApplier : IChangeApplier
                 continue;
             }
 
+            // Only sentences that will actually be stored may displace a word. A sentence
+            // missing its translation is skipped below, so counting it here would drop the
+            // matching word and store neither: the content would vanish entirely.
             var text = Tools.ToolArguments.NormalizeForDuplicateMatch(GetString(item, "text"));
-            if (!string.IsNullOrWhiteSpace(text))
+            var translation = GetString(item, "translation").Trim();
+            if (!string.IsNullOrWhiteSpace(text) && !string.IsNullOrWhiteSpace(translation))
             {
                 texts.Add(text);
             }

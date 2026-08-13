@@ -605,6 +605,42 @@ public class ChangeApplierTests
         Assert.Equal("To jest moj dom.", sentence.Text);
     }
 
+    // A sentence missing its translation is never stored, so it must not displace a matching
+    // word either — otherwise the content disappears from both tables.
+    [Fact]
+    public async Task ApplyCreateQuiz_KeepsAWordWhoseMatchingSentenceIsNotPersistable()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using var db = new SqliteGlosifyContext(options);
+        await db.Database.EnsureCreatedAsync();
+        var messageId = await SeedProposalAsync(db,
+        [
+            new PendingChange(PendingChangeKinds.CreateQuiz, JsonSerializer.SerializeToElement(new
+            {
+                name = "Travel Polish",
+                source_language = "English",
+                target_language = "Polish",
+                words = new[] { new { word = "To jest moj dom.", translation = "This is my house." } },
+                sentences = new[] { new { text = "To jest moj dom.", translation = "   " } },
+            })),
+        ]);
+        var workflow = new AssistantChangeWorkflow(
+            db,
+            CreateApplier(db),
+            new AssistantMessagePresenter(),
+            null!,
+            new FakeTimeProvider(new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero)));
+
+        await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
+
+        db.ChangeTracker.Clear();
+        Assert.Empty(await db.QuizSentences.ToListAsync());
+        var word = Assert.Single(await db.Words.ToListAsync());
+        Assert.Equal("To jest moj dom.", word.Lemma);
+    }
+
     [Fact]
     public async Task ApplyCreateQuiz_DeduplicatesStarterSentenceText()
     {
