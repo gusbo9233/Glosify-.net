@@ -345,25 +345,107 @@ public sealed class ChangeApplier : IChangeApplier
             {
                 batch.SentencesById[sentence.Id] = sentence;
                 batch.SentenceTexts.Add(sentence.Text);
-                batch.SentenceMatchKeys.Add(Tools.ToolArguments.NormalizeForDuplicateMatch(sentence.Text));
             }
         }
 
-        // The sentences this proposal is about to add count too, so a word and a sentence
-        // queued in the same turn cannot both be stored whichever call came first. Only
-        // sentences that will actually persist are included: one missing its translation is
-        // skipped on insert, and displacing a word for it would lose the content entirely.
-        foreach (var change in changes.Where(change => change.Kind == PendingChangeKinds.AddSentence))
-        {
-            var text = Tools.ToolArguments.NormalizeForDuplicateMatch(GetString(change.Payload, "text"));
-            var translation = GetString(change.Payload, "translation").Trim();
-            if (!string.IsNullOrWhiteSpace(text) && !string.IsNullOrWhiteSpace(translation))
-            {
-                batch.SentenceMatchKeys.Add(text);
-            }
-        }
+        ProjectSentenceMatchKeys(batch, changes);
 
         return batch;
+    }
+
+    /// <summary>
+    /// Fills <see cref="QuizContentBatch.SentenceMatchKeys"/> with the sentences the quiz will
+    /// hold once this proposal has been applied.
+    /// </summary>
+    /// <remarks>
+    /// A word is judged against the outcome rather than the starting point. Otherwise the two
+    /// interesting cases both go wrong: a sentence the proposal deletes would keep blocking a
+    /// word that should replace it — "delete that sentence and add it as vocabulary instead"
+    /// is an ordinary request — and a sentence the proposal introduces by editing would not
+    /// block one, letting the same text land in both tables.
+    /// <para>
+    /// Changes are walked in order so a deletion followed by an edit behaves the way the apply
+    /// loop behaves: the edit finds nothing and does nothing.
+    /// </para>
+    /// </remarks>
+    private static void ProjectSentenceMatchKeys(
+        QuizContentBatch batch,
+        IReadOnlyList<PendingChange> changes)
+    {
+        var projected = batch.Sentences.ToDictionary(
+            sentence => sentence.Id,
+            sentence => sentence.Text);
+        var added = new List<string>();
+
+        foreach (var change in changes)
+        {
+            switch (change.Kind)
+            {
+                case PendingChangeKinds.AddSentence:
+                {
+                    // Only a sentence that will actually be inserted may displace a word; one
+                    // missing its translation is skipped, and the content would vanish.
+                    var text = GetString(change.Payload, "text").Trim();
+                    var translation = GetString(change.Payload, "translation").Trim();
+                    if (!string.IsNullOrWhiteSpace(text) && !string.IsNullOrWhiteSpace(translation))
+                    {
+                        added.Add(text);
+                    }
+                    break;
+                }
+
+                case PendingChangeKinds.EditSentence:
+                {
+                    var id = GetNullableGuid(change.Payload, "sentence_id");
+                    var text = GetString(change.Payload, "text").Trim();
+                    if (id.HasValue && !string.IsNullOrWhiteSpace(text) && projected.ContainsKey(id.Value))
+                    {
+                        projected[id.Value] = text;
+                    }
+                    break;
+                }
+
+                case PendingChangeKinds.DeleteSentence:
+                {
+                    var id = GetNullableGuid(change.Payload, "sentence_id");
+                    if (id.HasValue)
+                    {
+                        projected.Remove(id.Value);
+                    }
+                    break;
+                }
+
+                case PendingChangeKinds.RepairSentence:
+                {
+                    var original = GetString(change.Payload, "original_text");
+                    var replacement = GetString(change.Payload, "new_text").Trim();
+                    if (string.IsNullOrWhiteSpace(original) || string.IsNullOrWhiteSpace(replacement))
+                    {
+                        break;
+                    }
+
+                    // Repair replaces every exact text match, which is how the apply loop
+                    // selects its targets.
+                    foreach (var id in projected
+                        .Where(entry => string.Equals(entry.Value, original, StringComparison.Ordinal))
+                        .Select(entry => entry.Key)
+                        .ToArray())
+                    {
+                        projected[id] = replacement;
+                    }
+                    break;
+                }
+            }
+        }
+
+        foreach (var text in projected.Values.Concat(added))
+        {
+            var key = Tools.ToolArguments.NormalizeForDuplicateMatch(text);
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                batch.SentenceMatchKeys.Add(key);
+            }
+        }
     }
 
     private bool ApplyAddWord(JsonElement payload, Quiz quiz, QuizContentBatch batch)

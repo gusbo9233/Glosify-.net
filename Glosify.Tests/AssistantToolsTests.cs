@@ -700,6 +700,40 @@ public class AssistantToolsTests
         Assert.Contains("already proposed as a sentence", JsonSerializer.Serialize(result));
     }
 
+    // The skipped list mixes parse failures and duplicate drops, so both must index the
+    // request the model sent rather than the compacted list of valid drafts.
+    [Fact]
+    public async Task AddWords_ReportsSkippedDuplicatesAgainstTheRequestIndex()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId };
+
+        await tools.ExecuteAsync(
+            "add_sentences",
+            """{"sentences":[{"text":"To jest moj dom.","translation":"This is my house."}]}""",
+            context,
+            CancellationToken.None);
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "add_words",
+            """
+            {"words":[{"word":"","translation":"invalid, dropped by parsing"},
+                      {"word":"To jest moj dom.","translation":"This is my house."},
+                      {"word":"dom","translation":"house"}]}
+            """,
+            context,
+            CancellationToken.None));
+
+        var skipped = result.GetProperty("skipped").EnumerateArray().ToArray();
+        Assert.Equal(2, skipped.Length);
+        Assert.Equal(0, skipped[0].GetProperty("Index").GetInt32());
+        // The duplicate is item 1 of the request, not item 0 of the compacted valid list.
+        Assert.Equal(1, skipped[1].GetProperty("Index").GetInt32());
+    }
+
     [Fact]
     public async Task AddWord_RefusesASingleWordAlreadyProposedAsASentence()
     {

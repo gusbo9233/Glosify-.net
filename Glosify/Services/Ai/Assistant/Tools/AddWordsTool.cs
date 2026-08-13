@@ -44,6 +44,7 @@ internal sealed class AddWordsTool : IAssistantTool
 
         // Anything this turn already proposed as a sentence is not queued again as vocabulary.
         var sentenceKeys = QueuedSentenceKeys(context);
+        var sourceIndexes = SourceIndexes(words.Count, skipped);
         var skippedDuplicates = new List<SkippedItem>();
         var queued = 0;
         for (var index = 0; index < words.Count; index++)
@@ -52,7 +53,7 @@ internal sealed class AddWordsTool : IAssistantTool
             if (sentenceKeys.Contains(NormalizeForDuplicateMatch(word.Word)))
             {
                 skippedDuplicates.Add(new SkippedItem(
-                    index,
+                    sourceIndexes[index],
                     $"\"{word.Word}\" is already proposed as a sentence. "
                     + "A sentence is stored once, as a sentence."));
                 continue;

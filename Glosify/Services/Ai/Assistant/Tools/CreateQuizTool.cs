@@ -185,17 +185,15 @@ internal sealed class CreateQuizTool : IAssistantTool
             .Select(sentence => NormalizeForDuplicateMatch(sentence.Text))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+        var sourceIndexes = SourceIndexes(words.Count, skipped);
         var kept = new List<WordDraft>(words.Count);
         var dropped = new List<SkippedItem>();
         for (var index = 0; index < words.Count; index++)
         {
             if (sentenceTexts.Contains(NormalizeForDuplicateMatch(words[index].Word)))
             {
-                // The word itself is named rather than left to the index. Positions here are
-                // into the parsed list, not the raw arguments array, so a preceding invalid
-                // entry shifts them; the text is what makes the report actionable either way.
                 dropped.Add(new SkippedItem(
-                    index,
+                    sourceIndexes[index],
                     $"\"{words[index].Word}\" is already proposed as a sentence. "
                     + "A sentence is stored once, as a sentence."));
                 continue;

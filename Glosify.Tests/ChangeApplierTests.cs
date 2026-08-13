@@ -669,6 +669,77 @@ public class ChangeApplierTests
         Assert.Equal("dom", word.Lemma);
     }
 
+    // "Delete that sentence and add it as vocabulary instead" is an ordinary request. Judging
+    // the word against the starting state would silently drop it.
+    [Fact]
+    public async Task ApplyAsync_AddWord_IsAllowedWhenTheSameProposalDeletesThatSentence()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        var sentenceId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.QuizSentences.Add(new QuizSentence
+        {
+            Id = sentenceId,
+            QuizId = quizId,
+            Text = "To jest moj dom.",
+            Translation = "This is my house.",
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        var applier = CreateApplier(db);
+        var changes = new[]
+        {
+            new PendingChange(
+                PendingChangeKinds.DeleteSentence,
+                JsonSerializer.SerializeToElement(new { sentence_id = sentenceId })),
+            new PendingChange(
+                PendingChangeKinds.AddWord,
+                JsonSerializer.SerializeToElement(new { word = "To jest moj dom.", translation = "This is my house." })),
+        };
+
+        var result = await applier.ApplyAsync(quizId, "user-1", changes, CancellationToken.None);
+
+        Assert.Equal(2, result.Applied);
+        var word = Assert.Single(db.Words.Where(item => item.QuizId == quizId));
+        Assert.Equal("To jest moj dom.", word.Lemma);
+        Assert.Empty(db.QuizSentences.Where(item => item.QuizId == quizId));
+    }
+
+    // The mirror case: a sentence the proposal edits into existence must block the word.
+    [Fact]
+    public async Task ApplyAsync_AddWord_IsSkippedWhenAnEditProducesThatSentence()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        var sentenceId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.QuizSentences.Add(new QuizSentence
+        {
+            Id = sentenceId,
+            QuizId = quizId,
+            Text = "Stary tekst.",
+            Translation = "Old text.",
+            CreatedAt = DateTimeOffset.UtcNow,
+        });
+        await db.SaveChangesAsync();
+        var applier = CreateApplier(db);
+        var changes = new[]
+        {
+            new PendingChange(
+                PendingChangeKinds.EditSentence,
+                JsonSerializer.SerializeToElement(new { sentence_id = sentenceId, text = "To jest moj dom." })),
+            new PendingChange(
+                PendingChangeKinds.AddWord,
+                JsonSerializer.SerializeToElement(new { word = "To jest moj dom.", translation = "This is my house." })),
+        };
+
+        var result = await applier.ApplyAsync(quizId, "user-1", changes, CancellationToken.None);
+
+        Assert.Equal(1, result.Applied);
+        Assert.Empty(db.Words.Where(item => item.QuizId == quizId));
+    }
+
     // Ordinary vocabulary must keep working; the check only fires on an actual sentence match.
     [Fact]
     public async Task ApplyAsync_AddWord_StillAddsAPhraseThatIsNotAStoredSentence()
