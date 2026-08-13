@@ -198,6 +198,27 @@ internal static class ToolArguments
             : new { error = "The user asked for words. Use add_word or add_words, not sentence storage." };
     }
 
+    /// <summary>
+    /// The comparison key for deciding whether two proposed strings are the same content.
+    /// </summary>
+    /// <remarks>
+    /// Used only to detect the same text sent as both a word and a sentence in one proposal.
+    /// Trailing sentence punctuation and repeated inner whitespace are ignored, because a
+    /// model that repeats itself across two fields rarely repeats itself character for
+    /// character. This never inspects shape: a string is only ever dropped because an actual
+    /// proposed sentence matches it, so multiword vocabulary is unaffected.
+    /// </remarks>
+    internal static string NormalizeForDuplicateMatch(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var collapsed = Regex.Replace(value.Trim(), @"\s+", " ");
+        return collapsed.TrimEnd('.', '!', '?', '…', ' ');
+    }
+
     internal static bool ContainsWord(string sentence, string word)
     {
         if (string.IsNullOrWhiteSpace(sentence) || string.IsNullOrWhiteSpace(word))

@@ -437,6 +437,63 @@ public class AssistantToolsTests
         Assert.Empty(payload.GetProperty("sentences").EnumerateArray().ToArray());
     }
 
+    // "a quiz with words and example sentences" resolves to Both, which legitimately permits
+    // either kind, so the content guard cannot catch a sentence sent in both arrays. Without
+    // the cross-check it was stored twice: once as vocabulary, once as a sentence.
+    [Fact]
+    public async Task CreateVocabularyQuiz_DoesNotStoreASentenceAsVocabularyToo()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Polish",
+            RequestedContentKind = AssistantContentKind.Both,
+        };
+
+        var result = await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """
+            {"name":"Travel Polish","source_language":"English",
+             "words":[{"word":"dom","translation":"house"},
+                      {"word":"To jest  moj dom","translation":"This is my house."}],
+             "sentences":[{"text":"To jest moj dom.","translation":"This is my house."}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        var word = Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
+        Assert.Equal("dom", word.GetProperty("word").GetString());
+        Assert.Single(payload.GetProperty("sentences").EnumerateArray().ToArray());
+        Assert.Contains("skipped_words", JsonSerializer.Serialize(result));
+    }
+
+    // The cross-check matches text exactly. It must not start removing multiword vocabulary
+    // that merely resembles the sentences alongside it.
+    [Fact]
+    public async Task CreateVocabularyQuiz_KeepsPhrasesThatAreNotAlsoSentences()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+
+        await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """
+            {"name":"Travel Polish","source_language":"English",
+             "words":[{"word":"by the way","translation":"nawiasem mowiac"}],
+             "sentences":[{"text":"By the way, I am late.","translation":"Nawiasem mowiac, jestem spozniony."}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        var word = Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
+        Assert.Equal("by the way", word.GetProperty("word").GetString());
+    }
+
     [Fact]
     public async Task CreateVocabularyQuiz_SkipsInvalidStarterSentences()
     {
