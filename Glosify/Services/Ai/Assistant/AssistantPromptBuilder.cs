@@ -138,7 +138,7 @@ internal sealed class AssistantPromptBuilder
         {customQuizInstruction}
 
         How tools work:
-        - Read-only tools (list_words, search_words, get_word, get_quiz_summary, list_sentences, list_quizzes, list_collections, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz, list_saved_transcripts, get_saved_transcript, list_books, get_book_pages) execute immediately and return their results to you.
+        - Read-only tools (list_words, search_words, get_word, get_quiz_summary, list_sentences, list_quizzes, list_collections, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz, list_saved_transcripts, get_saved_transcript, list_books, get_book_pages, search_book_pages) execute immediately and return their results to you.
         - Mutating tools, including the custom quiz element tools, propose changes that are queued for the user to review and Apply. You do NOT need to call any commit tool. Because the user reviews everything, you can propose changes freely when they seem helpful.
         - Queued changes are still valid targets for your later tool calls in the same turn. A custom quiz you just queued with create_custom_quiz can take element calls immediately; the queued shell and its elements are linked and applied together. Never end your turn on a bare quiz shell and never ask the user to apply something first so you can continue: applying a shell with no elements just gives them an empty custom quiz. Finish the whole document in this turn.
         - When adding or editing more than one word, prefer add_words or edit_words over repeated single-word calls.
@@ -259,7 +259,7 @@ internal sealed class AssistantPromptBuilder
         {bookInstruction}
 
         How tools work:
-        - Read-only tools (list_collections, list_quizzes, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz, list_saved_transcripts, get_saved_transcript, list_books, get_book_pages) execute immediately and return their results to you.
+        - Read-only tools (list_collections, list_quizzes, list_custom_quizzes, list_custom_quiz_templates, get_custom_quiz, list_saved_transcripts, get_saved_transcript, list_books, get_book_pages, search_book_pages) execute immediately and return their results to you.
         - Mutating tools, including custom quiz creation and element tools, propose changes that are queued for the user to review and Apply. Because the user reviews everything, you can propose changes freely when they seem helpful.
         - Queued changes are still valid targets for your later tool calls in the same turn. A custom quiz you just queued with create_custom_quiz or create_custom_quiz_from_content can take element calls immediately; the queued shells and their elements are linked and applied together. Never end your turn on a bare quiz shell and never ask the user to apply something first so you can continue: applying a shell with no elements just gives them an empty custom quiz. Finish the whole document in this turn.
         - Use list_collections and list_quizzes before proposing library changes unless the user gave an exact id through the UI.
@@ -323,6 +323,10 @@ internal sealed class AssistantPromptBuilder
         - The user chose this book as the source material for this chat.
         - When the user says "the book", "this book", or refers to a page number without naming a source, they mean this book.
         - The book text is not included automatically. Call get_book_pages with this id and page through it when the request requires its text.
+        - The whole book is searchable, not just its opening pages. When you do not already know which page holds what the user is asking about, call search_book_pages first to find the page numbers, then read those pages with get_book_pages. Never answer "I can only see the beginning of the book" and never assume the book is about whatever page 1 happens to contain.
+        - search_book_pages matches literal text, so search in the language the book is written in, not the language the user asked in. Translate the user's terms first: a question asked in English about a Polish book must be searched with the Polish words the book itself would print.
+        - One search that misses is not an answer. The result tells you how many pages each term appears on: drop or replace the terms with a count of zero, try a shorter stem of a word instead of an inflected form, or try the term the book would use for the concept. Only tell the user something is absent after the terms themselves came back with no pages at all.
+        - A textbook carries its own index. When the user asks where something is covered, or asks about a chapter or unit, consider searching for the contents page, reading it, and going straight to the page it names.
         - Reading a book never authorizes a change. Use the normal proposed-change tools only when the user asks to create or modify learning material.
         """;
     }

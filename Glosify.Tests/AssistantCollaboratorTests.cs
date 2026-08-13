@@ -164,14 +164,18 @@ public sealed class AssistantCollaboratorTests
         Assert.Equal(
             new[]
             {
-                "208C0B11F827EF6851BC8FB555E42B6CC14F4340D77FEB942F67BA9A9662BE1E",
-                "96FE5C9904C61149757B59AE315C3E626DEF784B9C11F1D65E91728EDC6C0DB9",
-                // The last four changed with the Languages block appended to every profile
-                // context; the two system instructions above are untouched.
+                "325A0F9D8F33F0D86B1F17914A1A2A029F089D2FB13FE6D9C648EBED8D9178BD",
+                "DE6B95D7285605BD058CD67BC473A3BBDF2FF219E14548BCCAAFD110BC3615C9",
+                // Every instruction that carries a selected book changed with
+                // search_book_pages and the search strategy that followed it: the book
+                // block now tells the model to search in the book's own language, to read
+                // a miss rather than treat it as an answer, and to navigate by the
+                // contents page. The custom quiz builder context below is the one that
+                // never names a book, so its hash is untouched.
                 "58253A6DBBD49404DC47EF8ED32AC61A68755989F87D918DEC311F2F7A74F884",
-                "336374BC6904CBD0E4DBA2ED9F311E96AE35238FE270AD5D19AA5C7CE8C24958",
-                "9A21CF6C9855EB46060881054BBF1A145FBBCCC2BEE224082A6EED3667A8EBE4",
-                "163FC5C7850AE9A3A619C2E16C71DE68E345B26B22B3D039AFEF374BF866A63A",
+                "639B007443B865B88D09939EA27376450BB1FCF80580EE2110053FF64006609F",
+                "BAC61621A43D44053D4CAFD2B71F44C75A7DF2A9DDBAEAFEC6C6EFAB52E5AB30",
+                "810D824FD5DF69EAE8ACA19B4A5FA0A7A4B2FB8EBA3396BE8BD0CD14E905705A",
             },
             outputs.Select(Fingerprint));
     }

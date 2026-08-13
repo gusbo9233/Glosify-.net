@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Generation;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -1491,6 +1493,277 @@ public class AssistantToolsTests
         Assert.True(result.GetProperty("has_more").GetBoolean());
     }
 
+    // The reason this tool exists: a book runs to hundreds of pages, so the model has to be
+    // able to find page 140 without paging there three pages at a time from page 1.
+    [Fact]
+    public async Task SearchBookPages_FindsMatchesDeepInTheBook()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedBookAsync(db, "user-1", pageCount: 200);
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"Page 140"}""", context, CancellationToken.None));
+
+        var match = Assert.Single(result.GetProperty("matches").EnumerateArray());
+        Assert.Equal(140, match.GetProperty("page_number").GetInt32());
+        Assert.Contains("Page 140 text.", match.GetProperty("snippet").GetString());
+        Assert.Equal(1, result.GetProperty("match_count").GetInt32());
+        Assert.False(result.GetProperty("has_more").GetBoolean());
+    }
+
+    // Several words are an AND, so a page holding only one of them is not a match.
+    [Fact]
+    public async Task SearchBookPages_RequiresEveryTermOnTheSamePage()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1",
+            "Odmiana czasownika w czasie przyszłym.",
+            "Odmiana rzeczownika.",
+            "Czasownik nieregularny.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"odmiana czasownika"}""", context, CancellationToken.None));
+
+        var match = Assert.Single(result.GetProperty("matches").EnumerateArray());
+        Assert.Equal(1, match.GetProperty("page_number").GetInt32());
+    }
+
+    [Fact]
+    public async Task SearchBookPages_CapsMatchesAndReportsMore()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedBookAsync(db, "user-1", pageCount: 30, pageText: "shared text");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"shared","limit":5}""", context, CancellationToken.None));
+
+        Assert.Equal(5, result.GetProperty("matches").GetArrayLength());
+        Assert.Equal(30, result.GetProperty("match_count").GetInt32());
+        Assert.True(result.GetProperty("has_more").GetBoolean());
+    }
+
+    // The whole point of ranking: a page late in the book that is really about the term
+    // must outrank earlier pages that mention it once, or the tool reintroduces the
+    // "assistant only sees the beginning" bug one layer up.
+    [Fact]
+    public async Task SearchBookPages_RanksDenselyMatchingPagesAboveEarlierOnes()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1",
+            "A passing mention of aspekt here.",
+            "Another passing mention of aspekt.",
+            "Aspekt dokonany i aspekt niedokonany. Aspekt decyduje o znaczeniu, a aspekt jest kluczowy.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"aspekt"}""", context, CancellationToken.None));
+
+        var matches = result.GetProperty("matches").EnumerateArray().ToList();
+        Assert.Equal(3, matches[0].GetProperty("page_number").GetInt32());
+        Assert.Equal(4, matches[0].GetProperty("hits").GetInt32());
+        Assert.Equal([3, 1, 2], matches.Select(match => match.GetProperty("page_number").GetInt32()));
+    }
+
+    // A miss has to teach the model what to try next, which is what keeps it searching
+    // instead of announcing that the book does not cover the topic.
+    [Fact]
+    public async Task SearchBookPages_ReportsWhichTermFailedWhenNothingMatches()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1",
+            "Odmiana czasownika w czasie przeszłym.",
+            "Odmiana rzeczownika.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"odmiana gerund"}""", context, CancellationToken.None));
+
+        Assert.Equal(0, result.GetProperty("match_count").GetInt32());
+        var termPages = result.GetProperty("term_pages").EnumerateArray().ToList();
+        Assert.Equal(2, termPages.Single(term => term.GetProperty("term").GetString() == "odmiana")
+            .GetProperty("page_count").GetInt32());
+        Assert.Equal(0, termPages.Single(term => term.GetProperty("term").GetString() == "gerund")
+            .GetProperty("page_count").GetInt32());
+        Assert.Contains("gerund", result.GetProperty("hint").GetString());
+    }
+
+    // A term that exists only before from_page must never be reported as absent: "this
+    // word is nowhere in the book" is what would let the assistant tell a learner their
+    // textbook does not cover something it covers on page 2.
+    [Fact]
+    public async Task SearchBookPages_CountsTermsOverTheWholeBookNotOnlyFromThePageSearched()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1",
+            "Aspekt czasownika.",
+            "Nic tutaj.",
+            "Nic tutaj tez.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"aspekt","from_page":2}""", context, CancellationToken.None));
+
+        Assert.Equal(0, result.GetProperty("match_count").GetInt32());
+        var term = Assert.Single(result.GetProperty("term_pages").EnumerateArray());
+        Assert.Equal(1, term.GetProperty("page_count").GetInt32());
+        Assert.DoesNotContain("nowhere in the book", result.GetProperty("hint").GetString());
+    }
+
+    // Dropping the surplus keeps a long query useful, but the model has to be told which
+    // words the AND it got was actually built from.
+    [Fact]
+    public async Task SearchBookPages_ReportsTermsDroppedBeyondTheCap()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1", "alfa beta gamma delta epsilon.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages",
+            """{"query":"alfa beta gamma delta epsilon"}""",
+            context,
+            CancellationToken.None));
+
+        Assert.Equal(4, result.GetProperty("terms").GetArrayLength());
+        Assert.Equal(
+            ["epsilon"],
+            result.GetProperty("ignored_terms").EnumerateArray().Select(term => term.GetString()));
+        Assert.Equal(1, result.GetProperty("match_count").GetInt32());
+    }
+
+    [Fact]
+    public async Task SearchBookPages_SaysSoWhenTermsExistButNeverShareAPage()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1", "Tylko odmiana.", "Tylko czasownik.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"odmiana czasownik"}""", context, CancellationToken.None));
+
+        Assert.Equal(0, result.GetProperty("match_count").GetInt32());
+        Assert.Contains("never together", result.GetProperty("hint").GetString());
+    }
+
+    [Fact]
+    public async Task SearchBookPages_SaysTheBookNeverUsesAnyOfTheTerms()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1", "Odmiana czasownika.", "Odmiana rzeczownika.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"conjugation tense"}""", context, CancellationToken.None));
+
+        Assert.Equal(0, result.GetProperty("match_count").GetInt32());
+        Assert.Contains("another language", result.GetProperty("hint").GetString());
+    }
+
+    // The metrics that decide whether retrieval is working have to survive
+    // AssistantAnalytics:CaptureContent being off, which is how production runs. These are
+    // span tags rather than stored tool arguments precisely so they do not depend on it.
+    [Fact]
+    public async Task SearchBookPages_RecordsMatchCountsOnTheToolSpan()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1", "Aspekt i aspekt.", "Nic tutaj.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+        using var listener = ListenToAssistantSpans(out var stopped);
+
+        using (StartToolSpan())
+        {
+            await tools.ExecuteAsync(
+                "search_book_pages", """{"query":"aspekt"}""", context, CancellationToken.None);
+        }
+
+        var span = Assert.Single(stopped);
+        Assert.Equal(1, span.GetTagItem("assistant.search.term_count"));
+        Assert.Equal(1, span.GetTagItem("assistant.search.match_count"));
+        Assert.Equal(1, span.GetTagItem("assistant.search.returned_count"));
+        Assert.Equal(0, span.GetTagItem("assistant.search.zero_page_terms"));
+        Assert.Equal(2, span.GetTagItem("assistant.search.top_page_hits"));
+    }
+
+    [Fact]
+    public async Task SearchBookPages_RecordsAMissAndWhichTermsWereAbsent()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1", "Odmiana czasownika.", "Odmiana rzeczownika.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+        using var listener = ListenToAssistantSpans(out var stopped);
+
+        using (StartToolSpan())
+        {
+            await tools.ExecuteAsync(
+                "search_book_pages", """{"query":"odmiana gerund"}""", context, CancellationToken.None);
+        }
+
+        var span = Assert.Single(stopped);
+        Assert.Equal(2, span.GetTagItem("assistant.search.term_count"));
+        Assert.Equal(0, span.GetTagItem("assistant.search.match_count"));
+        Assert.Equal(1, span.GetTagItem("assistant.search.zero_page_terms"));
+    }
+
+    private static ActivityListener ListenToAssistantSpans(out List<Activity> stopped)
+    {
+        var captured = new List<Activity>();
+        stopped = captured;
+        var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == GenerativeAiTelemetry.ActivitySourceName,
+            Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStopped = captured.Add,
+        };
+        ActivitySource.AddActivityListener(listener);
+        return listener;
+    }
+
+    /// <summary>The span the turn runner has open while a tool executes.</summary>
+    private static Activity? StartToolSpan() =>
+        AssistantAnalyticsTelemetry.StartTool(Guid.NewGuid(), Guid.NewGuid(), "search_book_pages");
+
+    [Fact]
+    public async Task SearchBookPages_RejectsAnotherUsersBook()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedBookAsync(db, "owner", pageCount: 2);
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "intruder", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"page"}""", context, CancellationToken.None));
+
+        Assert.Equal("Book not found.", result.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task SearchBookPages_NeedsAQuery()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedBookAsync(db, "user-1", pageCount: 2);
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+
+        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "search_book_pages", """{"query":"   "}""", context, CancellationToken.None));
+
+        Assert.Equal("query is required.", result.GetProperty("error").GetString());
+    }
+
     [Fact]
     public async Task ListBooks_ReturnsOnlyTheCurrentLanguagesBooks()
     {
@@ -1539,6 +1812,24 @@ public class AssistantToolsTests
                 PageNumber = pageNumber,
                 Text = pageText ?? $"Page {pageNumber} text.",
             });
+        }
+        await db.SaveChangesAsync();
+        return bookId;
+    }
+
+    /// <summary>Seeds a book whose pages have distinct text, one string per page.</summary>
+    private static async Task<Guid> SeedPagesAsync(
+        GlosifyContext db,
+        string userId,
+        params string[] pageTexts)
+    {
+        var bookId = await SeedBookAsync(db, userId, pageCount: pageTexts.Length);
+        var pages = await db.BookPages
+            .Where(page => page.BookDocumentId == bookId)
+            .ToListAsync();
+        foreach (var page in pages)
+        {
+            page.Text = pageTexts[page.PageNumber - 1];
         }
         await db.SaveChangesAsync();
         return bookId;

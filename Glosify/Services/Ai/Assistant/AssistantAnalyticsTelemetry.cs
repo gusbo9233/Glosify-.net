@@ -59,6 +59,31 @@ internal static class AssistantAnalyticsTelemetry
         return activity;
     }
 
+    /// <summary>
+    /// Numbers describing how a book search went, tagged onto the ambient execute_tool
+    /// span.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately counts only. Whether retrieval is working is a question about
+    /// match_count, not about what the user asked, so nothing here needs the query text —
+    /// which means this survives <c>AssistantAnalytics:CaptureContent</c> being off and
+    /// does not widen what the telemetry knows about a user.
+    /// </remarks>
+    internal static void RecordBookSearch(
+        int termCount,
+        int matchCount,
+        int returnedCount,
+        int zeroPageTerms,
+        int topPageHits)
+    {
+        var activity = Activity.Current;
+        activity?.SetTag("assistant.search.term_count", termCount);
+        activity?.SetTag("assistant.search.match_count", matchCount);
+        activity?.SetTag("assistant.search.returned_count", returnedCount);
+        activity?.SetTag("assistant.search.zero_page_terms", zeroPageTerms);
+        activity?.SetTag("assistant.search.top_page_hits", topPageHits);
+    }
+
     internal static void CompleteInvocation(Activity? activity, AgentTurnResult result)
     {
         var metadata = result.Metadata;

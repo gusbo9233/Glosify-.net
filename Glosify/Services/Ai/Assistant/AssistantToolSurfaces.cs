@@ -65,6 +65,7 @@ internal static class AssistantToolSurfaces
         typeof(GetSavedTranscriptTool),
         typeof(ListBooksTool),
         typeof(GetBookPagesTool),
+        typeof(SearchBookPagesTool),
         typeof(MoveQuizTool),
         typeof(RenameCollectionTool),
         typeof(MoveCollectionTool),
@@ -119,6 +120,7 @@ internal static class AssistantToolSurfaces
         typeof(GetSavedTranscriptTool),
         typeof(ListBooksTool),
         typeof(GetBookPagesTool),
+        typeof(SearchBookPagesTool),
         .. CustomQuizElements,
     ];
 
@@ -140,6 +142,7 @@ internal static class AssistantToolSurfaces
         typeof(GetSavedTranscriptTool),
         typeof(ListBooksTool),
         typeof(GetBookPagesTool),
+        typeof(SearchBookPagesTool),
         typeof(CreateCustomQuizFromContentTool),
         .. CustomQuizElements,
     ];
@@ -157,9 +160,10 @@ internal static class AssistantToolSurfaces
         typeof(ListWordsTool),
         typeof(SearchWordsTool),
         // Reading the selected book is safe here and is how a drill gets built from a
-        // textbook page; nothing in this pair can create or strand a quiz.
+        // textbook page; nothing in this group can create or strand a quiz.
         typeof(ListBooksTool),
         typeof(GetBookPagesTool),
+        typeof(SearchBookPagesTool),
         typeof(AddLabelTool),
         typeof(AddTextInputTool),
         typeof(AddCheckboxTool),
