@@ -107,10 +107,12 @@ the code and its behavior, not just generate more code.
   sentences, or both), narrows the tools offered to that decision, and rejects any
   returned call outside the turn's allowlist. The handlers check the same decision
   again, so an explicit sentence request cannot be stored as vocabulary.
-- Every assistant turn records the prompt version that composed its instructions,
-  the resolved intent, and the exact tool surface it was offered, so a completed
-  turn can be read back as a decision rather than only as an outcome. These are
-  metadata about routing, not conversation content, and are always captured.
+- An assistant turn that reaches routing resolution records the prompt version
+  that composed its instructions, the resolved intent, and the exact tool surface
+  it was offered, so a completed turn can be read back as a decision rather than
+  only as an outcome. A turn that fails earlier leaves those fields null and still
+  finalizes. They are routing metadata rather than conversation content, so they
+  do not depend on the content-capture setting below.
   Request and response bodies sit behind `AssistantAnalytics:CaptureContent`,
   which is on: `assistant_model_invocations.request_json` then holds the
   instruction, the replayed history and every tool schema exactly as the model

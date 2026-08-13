@@ -366,12 +366,20 @@ public class AssistantSavedChatsTests
         });
 
         // The second call must carry the first call's result, or the trajectory is not
-        // replayable as the tool loop the model actually saw.
-        Assert.True(
-            JsonDocument.Parse(invocations[1].RequestJson).RootElement.GetProperty("history")
-                .EnumerateArray().Count()
-            > JsonDocument.Parse(invocations[0].RequestJson).RootElement.GetProperty("history")
-                .EnumerateArray().Count());
+        // replayable as the tool loop the model actually saw. History merely growing would
+        // also be satisfied by storing the call without its response, so assert the
+        // response part itself.
+        var responseParts = JsonDocument.Parse(invocations[1].RequestJson).RootElement
+            .GetProperty("history")
+            .EnumerateArray()
+            .SelectMany(turn => JsonDocument.Parse(turn.GetProperty("contentJson").GetString()!)
+                .RootElement.GetProperty("parts").EnumerateArray())
+            .Where(part => part.GetProperty("kind").GetString() == "function_response")
+            .ToList();
+        var toolResponse = Assert.Single(responseParts);
+        Assert.Equal("loop", toolResponse.GetProperty("name").GetString());
+        Assert.Equal("lookup-1", toolResponse.GetProperty("callId").GetString());
+        Assert.Contains("\"ok\":true", toolResponse.GetProperty("responseJson").GetString());
 
         var execution = await context.AssistantToolExecutions.SingleAsync();
         Assert.NotEqual("{}", execution.ResultJson);
