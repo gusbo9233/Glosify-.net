@@ -73,6 +73,19 @@ internal sealed class CreateQuizTool : IAssistantTool
         var collectionId = GetNullableGuidString(args, "collection_id");
         var (words, skippedWords) = Cap(GetWordDrafts(args, "words"));
         var (sentences, skippedSentences) = Cap(GetSentenceDrafts(args, "sentences"));
+
+        // Creation carries both content types in one call, so it needs the same guard the add
+        // tools have: without it, this is the one path that can still file content under a type
+        // the user did not ask for.
+        if (sentences.Count > 0 && WrongContentKind(context, AssistantContentKind.Sentences) is { } sentenceMismatch)
+        {
+            return sentenceMismatch;
+        }
+        if (words.Count > 0 && WrongContentKind(context, AssistantContentKind.Words) is { } wordMismatch)
+        {
+            return wordMismatch;
+        }
+
         JsonElement? customQuiz = null;
         if (args.TryGetProperty("custom_quiz", out var customQuizElement)
             && customQuizElement.ValueKind != JsonValueKind.Null)

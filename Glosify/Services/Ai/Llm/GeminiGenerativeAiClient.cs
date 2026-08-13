@@ -202,7 +202,7 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
                     instructions = request.SystemInstruction,
                     contextInstruction = request.ContextInstruction,
                     history = request.History,
-                    tools = request.Tools,
+                    tools = declarations,
                     model = assistantModel,
                     profile = request.Profile.ToString(),
                 }, JsonOptions)),

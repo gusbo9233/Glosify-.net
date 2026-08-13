@@ -185,9 +185,9 @@ a pin change ships with the code that depends on it. Keep it that way: pointing
 production at an agent whose tools the running build does not yet handle means
 the model proposes content the old code silently drops.
 
-`glosify-librarian:4` and `glosify-quiz-assistant:4` are published and the pins
-are on version 4; both take effect on the next deployment.
-`glosify-quiz-builder` is unchanged on version 3.
+The `Agents` pins in [`appsettings.json`](Glosify/appsettings.json) are the
+record of which version each profile runs, and `.foundry/agents/` holds the
+exported definition for each one. Check those rather than this paragraph.
 
 ## Local development
 

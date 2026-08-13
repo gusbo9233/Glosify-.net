@@ -178,6 +178,7 @@ internal sealed class AssistantThreadStore(
             ContextQuizId = quizId,
             UserId = userId,
             Language = language,
+            ConversationLanguage = contextResolver.ResolveInitialConversationLanguage(),
             Title = AssistantThreadDefaults.NewChatTitle,
             CreatedAt = now,
             UpdatedAt = now,

@@ -498,6 +498,87 @@ public class AssistantToolsTests
         Assert.Contains("source_language", JsonSerializer.Serialize(result));
     }
 
+    // Creation carries both content types at once, so it needs the guard the add tools have.
+    [Fact]
+    public async Task WordIntent_RejectsStarterSentencesOnCreation()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Polish",
+            RequestedContentKind = AssistantContentKind.Words,
+        };
+
+        var result = await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """
+            {"name":"Travel Polish","source_language":"English",
+             "words":[{"word":"dom","translation":"house"}],
+             "sentences":[{"text":"To jest dom.","translation":"This is a house."}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        Assert.Empty(context.PendingChanges);
+        Assert.Contains("word", JsonSerializer.Serialize(result), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BothIntent_AllowsStarterWordsAndSentencesOnCreation()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Polish",
+            RequestedContentKind = AssistantContentKind.Both,
+        };
+
+        await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """
+            {"name":"Travel Polish","source_language":"English",
+             "words":[{"word":"dom","translation":"house"}],
+             "sentences":[{"text":"To jest dom.","translation":"This is a house."}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
+        Assert.Single(payload.GetProperty("sentences").EnumerateArray().ToArray());
+    }
+
+    // The prompt tells the model it may omit a language the conversation established. That has
+    // to hold for the custom-quiz creation path too, or the turn dies on a required field.
+    [Fact]
+    public async Task CreateCustomQuizFromContent_DefaultsSourceLanguageFromContext()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Polish",
+            SourceLanguage = "English",
+        };
+
+        await tools.ExecuteAsync(
+            "create_custom_quiz_from_content",
+            """
+            {"quiz_name":"Chapter 3","custom_quiz_name":"Chapter 3 drill",
+             "words":[{"word":"dom","translation":"house"}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = context.PendingChanges[0].Payload;
+        Assert.Equal("English", payload.GetProperty("source_language").GetString());
+    }
+
     [Fact]
     public async Task SentenceIntent_RejectsWordStorageAtTheExecutionBoundary()
     {
