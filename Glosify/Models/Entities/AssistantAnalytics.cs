@@ -77,6 +77,28 @@ public sealed class AssistantTurn
     [Column("intent_content")]
     public string? IntentContent { get; set; }
 
+    /// <summary>The resolved operation intent, or null when the turn failed before routing.</summary>
+    [Column("intent_operation")]
+    public string? IntentOperation { get; set; }
+
+    /// <summary>The language being learned, as this turn resolved it.</summary>
+    /// <remarks>
+    /// The three languages are stamped per turn because their sources are mutable current
+    /// state: a quiz's target language, the user's preferences, the thread's conversation
+    /// language. Reading them back later reports what those settings say now, not what this
+    /// turn was actually built with, so a preference change would silently rewrite history.
+    /// </remarks>
+    [Column("target_language")]
+    public string? TargetLanguage { get; set; }
+
+    /// <summary>The language translations are written in, or null when genuinely unknown.</summary>
+    [Column("source_language")]
+    public string? SourceLanguage { get; set; }
+
+    /// <summary>The language the assistant was told to answer in.</summary>
+    [Column("reply_language")]
+    public string? ReplyLanguage { get; set; }
+
     /// <summary>
     /// The tool names this turn was allowed to offer, comma separated and sorted.
     /// </summary>

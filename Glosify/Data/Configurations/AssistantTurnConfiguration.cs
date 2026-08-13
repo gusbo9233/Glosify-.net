@@ -21,6 +21,12 @@ internal sealed class AssistantTurnConfiguration : IEntityTypeConfiguration<Assi
         entity.Property(turn => turn.PromptVersion).HasMaxLength(32);
         entity.Property(turn => turn.IntentArtifact).HasMaxLength(32);
         entity.Property(turn => turn.IntentContent).HasMaxLength(32);
+        entity.Property(turn => turn.IntentOperation).HasMaxLength(32);
+        entity.Property(turn => turn.TargetLanguage).HasMaxLength(64);
+        entity.Property(turn => turn.SourceLanguage).HasMaxLength(64);
+        entity.Property(turn => turn.ReplyLanguage).HasMaxLength(64);
+        // Language balance is validated per language, so the dataset queries group on these.
+        entity.HasIndex(turn => new { turn.TargetLanguage, turn.StartedAt });
         // Long enough for the widest profile surface with room to grow. Truncated rather
         // than rejected on write, so a future tool list can never fail a turn.
         entity.Property(turn => turn.AllowedTools).HasMaxLength(2048);

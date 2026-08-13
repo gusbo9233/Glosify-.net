@@ -25,6 +25,49 @@ public sealed class AssistantIntentResolverTests
         Assert.Equal(expected, _resolver.Resolve(message).ContentKind);
 
     [Theory]
+    [InlineData("Create a Polish travel quiz.", AssistantOperationKind.Create)]
+    [InlineData("Generate a quiz from this page.", AssistantOperationKind.Create)]
+    [InlineData("Make a new quiz about food.", AssistantOperationKind.Create)]
+    [InlineData("Add five words to this quiz.", AssistantOperationKind.Add)]
+    [InlineData("Include a few more sentences.", AssistantOperationKind.Add)]
+    // Creation names the turn even when the same sentence says what to put in the new artifact.
+    [InlineData("Create a quiz and add ten words.", AssistantOperationKind.Create)]
+    // Neither verb is about producing content here.
+    [InlineData("Why does this take the dative case?", AssistantOperationKind.Auto)]
+    [InlineData("Start with the dative case, please.", AssistantOperationKind.Auto)]
+    [InlineData("Make sure the translations are right.", AssistantOperationKind.Auto)]
+    public void Operation_intent_prefers_creation_over_addition(
+        string message,
+        AssistantOperationKind expected) =>
+        Assert.Equal(expected, _resolver.Resolve(message).OperationKind);
+
+    // Operation is recorded, never enforced: it must not remove a tool the page allowed.
+    [Theory]
+    [InlineData("Create a quiz with five words.")]
+    [InlineData("Add five words.")]
+    [InlineData("Why does this take the dative case?")]
+    public void Operation_intent_never_narrows_the_tool_surface(string message)
+    {
+        IReadOnlyList<AgentToolDeclaration> declarations =
+        [
+            new("add_word", "Adds a word.", new { }),
+            new("create_vocabulary_quiz", "Creates a quiz.", new { }),
+        ];
+        var intent = _resolver.Resolve(message);
+
+        var allowed = AssistantToolNarrowing.AllowedNames(
+            declarations,
+            intent,
+            AssistantAgentProfile.QuizAssistant);
+        var withoutOperation = AssistantToolNarrowing.AllowedNames(
+            declarations,
+            intent with { OperationKind = AssistantOperationKind.Auto },
+            AssistantAgentProfile.QuizAssistant);
+
+        Assert.Equal(withoutOperation.OrderBy(name => name), allowed.OrderBy(name => name));
+    }
+
+    [Theory]
     [InlineData("Create a normal Polish quiz about travel.", AssistantArtifactKind.StandardQuiz)]
     [InlineData("Create a quiz about travel.", AssistantArtifactKind.StandardQuiz)]
     [InlineData("Create a custom multiple-choice quiz.", AssistantArtifactKind.CustomQuiz)]

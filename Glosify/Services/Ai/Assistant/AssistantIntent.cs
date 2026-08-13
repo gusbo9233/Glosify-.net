@@ -19,6 +19,22 @@ public enum AssistantArtifactKind
     CustomQuiz,
 }
 
+/// <summary>Whether a request asks for a new artifact or for additions to an existing one.</summary>
+/// <remarks>
+/// Recorded, never enforced. Unlike artifact and content this does not narrow the tool
+/// surface: creation and addition already separate cleanly by which tools the page offers,
+/// so acting on a misread here would remove a capability for no gain. It exists because a
+/// router target has to state the operation, and the request is the only place it is stated
+/// before tools run.
+/// </remarks>
+public enum AssistantOperationKind
+{
+    /// <summary>The request does not say.</summary>
+    Auto,
+    Create,
+    Add,
+}
+
 /// <summary>
 /// What the application has decided a turn is asking for, before the model is invoked.
 /// </summary>
@@ -31,8 +47,9 @@ public enum AssistantArtifactKind
 /// </remarks>
 public sealed record AssistantIntent(
     AssistantArtifactKind ArtifactKind,
-    AssistantContentKind ContentKind)
+    AssistantContentKind ContentKind,
+    AssistantOperationKind OperationKind = AssistantOperationKind.Auto)
 {
     public static readonly AssistantIntent Unknown =
-        new(AssistantArtifactKind.Auto, AssistantContentKind.Auto);
+        new(AssistantArtifactKind.Auto, AssistantContentKind.Auto, AssistantOperationKind.Auto);
 }

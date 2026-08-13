@@ -27,7 +27,26 @@ internal sealed partial class AssistantIntentResolver
             return AssistantIntent.Unknown;
         }
 
-        return new AssistantIntent(ResolveArtifact(userMessage), ResolveContent(userMessage));
+        return new AssistantIntent(
+            ResolveArtifact(userMessage),
+            ResolveContent(userMessage),
+            ResolveOperation(userMessage));
+    }
+
+    // Creation wins over addition because naming a new artifact describes the turn even when
+    // the same sentence also says what to put in it: "create a quiz and add ten words" is one
+    // creation, not an addition. Nothing narrows on this, so an unrecognised phrasing costs a
+    // dataset label rather than a capability.
+    private static AssistantOperationKind ResolveOperation(string message)
+    {
+        if (CreateTerms().IsMatch(message))
+        {
+            return AssistantOperationKind.Create;
+        }
+
+        return AddTerms().IsMatch(message)
+            ? AssistantOperationKind.Add
+            : AssistantOperationKind.Auto;
     }
 
     private static AssistantArtifactKind ResolveArtifact(string message)
@@ -81,4 +100,14 @@ internal sealed partial class AssistantIntentResolver
 
     [GeneratedRegex(@"\b(sentences?|phrases in context)\b", RegexOptions.IgnoreCase)]
     private static partial Regex SentenceTerms();
+
+    // "start" and "new" only count next to an artifact noun: "start with the dative case" is a
+    // lesson request, not a creation.
+    [GeneratedRegex(
+        @"\b(create|generate|build)\b|\b(make|start)\s+(a|an|another|one)\b|\bnew\s+(quiz|quizzes|collection|list)\b",
+        RegexOptions.IgnoreCase)]
+    private static partial Regex CreateTerms();
+
+    [GeneratedRegex(@"\b(add|append|insert|include|extend)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex AddTerms();
 }
