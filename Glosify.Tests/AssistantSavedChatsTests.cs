@@ -334,6 +334,49 @@ public class AssistantSavedChatsTests
         Assert.Equal("{}", execution.ResultJson);
     }
 
+    // With capture on, an invocation row has to hold the model's whole input: the
+    // instruction, the replayed history and the tool schemas. A turn is only replayable if
+    // all three survive, and the instruction is the one that cannot be rebuilt afterwards
+    // because it is composed from context that moves on.
+    [Fact]
+    public async Task Capture_on_stores_the_instruction_history_and_tool_schemas()
+    {
+        await using var context = CreateContext();
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: new OneToolThenAnswerGenerativeAiClient(),
+            tools: new LoopAssistantTools(),
+            captureContent: true);
+
+        await orchestrator.SendGlobalMessageAsync("user-1", "Look this up and answer.");
+
+        context.ChangeTracker.Clear();
+        var invocations = await context.AssistantModelInvocations
+            .OrderBy(invocation => invocation.Sequence)
+            .ToListAsync();
+        Assert.Equal(2, invocations.Count);
+        Assert.All(invocations, invocation =>
+        {
+            Assert.NotEqual("{}", invocation.RequestJson);
+            using var request = JsonDocument.Parse(invocation.RequestJson);
+            var root = request.RootElement;
+            Assert.False(string.IsNullOrWhiteSpace(root.GetProperty("instructions").GetString()));
+            Assert.NotEmpty(root.GetProperty("tools").EnumerateArray());
+            Assert.NotEmpty(root.GetProperty("history").EnumerateArray());
+        });
+
+        // The second call must carry the first call's result, or the trajectory is not
+        // replayable as the tool loop the model actually saw.
+        Assert.True(
+            JsonDocument.Parse(invocations[1].RequestJson).RootElement.GetProperty("history")
+                .EnumerateArray().Count()
+            > JsonDocument.Parse(invocations[0].RequestJson).RootElement.GetProperty("history")
+                .EnumerateArray().Count());
+
+        var execution = await context.AssistantToolExecutions.SingleAsync();
+        Assert.NotEqual("{}", execution.ResultJson);
+    }
+
     [Fact]
     public async Task Cancelled_provider_call_retains_input_and_marks_turn_cancelled()
     {
@@ -620,6 +663,131 @@ public class AssistantSavedChatsTests
         var thread = await context.AssistantThreads.SingleAsync(t => t.Id == chat.Id);
         Assert.Equal(documentId, thread.ContextBookDocumentId);
         Assert.Equal("Reading notes", thread.Title);
+    }
+
+    // A completed turn has to be readable as a decision, not just an outcome: which
+    // instructions composed it, what the request was taken to mean, and which tools it could
+    // actually choose between. The tool surface is narrowed per turn, so the registry alone
+    // does not answer the last one.
+    [Fact]
+    public async Task SendChatMessage_RecordsPromptVersionIntentAndTheOfferedToolSurface()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context, tools: new WordAndSentenceAssistantTools());
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Add sentences from this page.");
+
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync(candidate => candidate.ThreadId == chat.Id);
+        Assert.Equal(AssistantPromptBuilder.Version, turn.PromptVersion);
+        Assert.Equal(nameof(AssistantArtifactKind.Auto), turn.IntentArtifact);
+        Assert.Equal(nameof(AssistantContentKind.Sentences), turn.IntentContent);
+        // The narrowed surface, not the registry: a sentences request never offered add_word.
+        Assert.Equal("add_sentence", turn.AllowedTools);
+    }
+
+    [Fact]
+    public async Task SendChatMessage_RecordsTheOfferedToolSurfaceSortedForComparison()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context, tools: new WordAndSentenceAssistantTools());
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Help me study.");
+
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync(candidate => candidate.ThreadId == chat.Id);
+        Assert.Equal("add_sentence,add_word", turn.AllowedTools);
+    }
+
+    // A turn that fails before routing is resolved still finalizes; the columns stay null
+    // rather than carrying a value the turn never used.
+    [Fact]
+    public async Task SendChatMessage_LeavesRoutingCaptureNullWhenTheTurnFailsBeforeRouting()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context);
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Edit it.", customQuizId: Guid.NewGuid()));
+
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync(candidate => candidate.ThreadId == chat.Id);
+        Assert.Equal(AssistantTurnStatus.Failed, turn.Status);
+        Assert.Null(turn.PromptVersion);
+        Assert.Null(turn.IntentArtifact);
+        Assert.Null(turn.AllowedTools);
+    }
+
+    // The capture is in-memory onto an already tracked row, so it must ride on the saves the
+    // turn was going to make anyway: the pre-flight save, the completion save, and the
+    // analytics batch, which this harness routes through the same context.
+    [Fact]
+    public async Task SendChatMessage_RecordsRoutingWithoutAnExtraDatabaseRoundTrip()
+    {
+        var saves = new CountSavesInterceptor();
+        await using var context = CreateContext(saveChangesInterceptor: saves);
+        var quizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context, tools: new WordAndSentenceAssistantTools());
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+        saves.Reset();
+
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Help me study.");
+
+        Assert.Equal(3, saves.SaveCount);
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync(candidate => candidate.ThreadId == chat.Id);
+        Assert.NotNull(turn.AllowedTools);
+    }
+
+    // Composing the effective request serializes the instruction, the whole replayed history
+    // and every tool schema. With content capture off the store discards it, so the client
+    // must not be asked to build it.
+    [Fact]
+    public async Task SendChatMessage_DoesNotComposeTheEffectiveRequestWhenContentCaptureIsOff()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await context.SaveChangesAsync();
+        var generativeAi = new CapturingGenerativeAiClient("Done.");
+        var orchestrator = CreateOrchestrator(context, generativeAi: generativeAi);
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Help me study.");
+
+        Assert.NotNull(generativeAi.LastAgentRequest);
+        Assert.False(generativeAi.LastAgentRequest.CaptureEffectiveRequest);
+    }
+
+    [Fact]
+    public async Task SendChatMessage_ComposesTheEffectiveRequestWhenContentCaptureIsOn()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await context.SaveChangesAsync();
+        var generativeAi = new CapturingGenerativeAiClient("Done.");
+        var orchestrator = CreateOrchestrator(context, generativeAi: generativeAi, captureContent: true);
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Help me study.");
+
+        Assert.NotNull(generativeAi.LastAgentRequest);
+        Assert.True(generativeAi.LastAgentRequest.CaptureEffectiveRequest);
     }
 
     [Fact]
@@ -995,7 +1163,8 @@ public class AssistantSavedChatsTests
         IBookDocumentService? books = null,
         IAssistantTools? tools = null,
         ILanguageContext? languageContext = null,
-        IAssistantTurnLeaseService? turnLeases = null)
+        IAssistantTurnLeaseService? turnLeases = null,
+        bool captureContent = false)
     {
         var languagePreferences = new QuizLanguagePreferenceService(context);
         var contextResolver = new AssistantContextResolver(
@@ -1017,7 +1186,7 @@ public class AssistantSavedChatsTests
         var analytics = new AssistantAnalyticsStore(
             new TestAssistantAnalyticsBatchWriter(new TestDbContextFactory(context)),
             timeProvider,
-            Options.Create(new AssistantAnalyticsOptions()));
+            Options.Create(new AssistantAnalyticsOptions { CaptureContent = captureContent }));
         var turnRunner = new AssistantTurnRunner(
             context,
             generativeAi ?? new StaticGenerativeAiClient("Done."),
@@ -1228,6 +1397,11 @@ public class AssistantSavedChatsTests
 
     private sealed class OneToolThenAnswerGenerativeAiClient : IGenerativeAiClient
     {
+        // Mirrors what the real clients compose, including honouring the capture flag, so
+        // tests read the shape production actually stores.
+        private static readonly JsonSerializerOptions EffectiveRequestOptions =
+            new(JsonSerializerDefaults.Web);
+
         private int _calls;
         public List<AiUsageContext> UsageContexts { get; } = [];
 
@@ -1259,7 +1433,19 @@ public class AssistantSavedChatsTests
                     new AiTokenUsage(10, 5, 0, 0, 15),
                     "glosify-librarian",
                     "3",
-                    JsonSerializer.Serialize(request)),
+                    request.CaptureEffectiveRequest
+                        ? JsonSerializer.Serialize(
+                            new
+                            {
+                                instructions = request.SystemInstruction,
+                                contextInstruction = request.ContextInstruction,
+                                history = request.History,
+                                tools = request.Tools,
+                                model = request.Model,
+                                profile = request.Profile.ToString(),
+                            },
+                            EffectiveRequestOptions)
+                        : null),
             });
         }
     }
@@ -1299,6 +1485,26 @@ public class AssistantSavedChatsTests
             AiUsageContext usageContext,
             CancellationToken cancellationToken = default) =>
             Task.FromException<AgentTurnResult>(new OperationCanceledException("Simulated caller cancellation."));
+    }
+
+    private sealed class WordAndSentenceAssistantTools : IAssistantTools
+    {
+        private static readonly IReadOnlyList<AgentToolDeclaration> Surface =
+        [
+            new("add_word", "Adds a word.", new { type = "object", properties = new { } }),
+            new("add_sentence", "Adds a sentence.", new { type = "object", properties = new { } }),
+        ];
+
+        public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = Surface;
+        public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; } = Surface;
+        public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; } = Surface;
+        public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } = Surface;
+        public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } = Surface;
+
+        public string? ResolveCanonicalName(string name) => name;
+
+        public Task<object> ExecuteAsync(string name, string argsJson, AgentToolContext context, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 
     private sealed class SavingMutationAssistantTools(GlosifyContext context) : IAssistantTools
@@ -1433,6 +1639,22 @@ public class AssistantSavedChatsTests
                 throw new DbUpdateException("Simulated assistant analytics persistence failure.");
             }
 
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
+        }
+    }
+
+    private sealed class CountSavesInterceptor : SaveChangesInterceptor
+    {
+        public int SaveCount { get; private set; }
+
+        public void Reset() => SaveCount = 0;
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            SaveCount++;
             return base.SavingChangesAsync(eventData, result, cancellationToken);
         }
     }

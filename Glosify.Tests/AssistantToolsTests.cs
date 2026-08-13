@@ -1672,8 +1672,9 @@ public class AssistantToolsTests
     }
 
     // The metrics that decide whether retrieval is working have to survive
-    // AssistantAnalytics:CaptureContent being off, which is how production runs. These are
-    // span tags rather than stored tool arguments precisely so they do not depend on it.
+    // AssistantAnalytics:CaptureContent being off. It is on by default now, but it is a
+    // switch: these are span tags rather than stored tool arguments precisely so the
+    // retrieval numbers do not depend on which way it is set.
     [Fact]
     public async Task SearchBookPages_RecordsMatchCountsOnTheToolSpan()
     {

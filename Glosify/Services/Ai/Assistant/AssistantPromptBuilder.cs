@@ -6,6 +6,19 @@ namespace Glosify.Services.Ai.Assistant;
 
 internal sealed class AssistantPromptBuilder
 {
+    /// <summary>
+    /// Identifies the instruction text this class composes. Bump it whenever the wording of
+    /// a system instruction or profile context changes.
+    /// </summary>
+    /// <remarks>
+    /// Recorded on every turn so completed turns stay attributable to the instructions that
+    /// produced them. The composed instruction itself is per-turn and carries user context,
+    /// so it is not stored here; the version is what makes a turn comparable to another turn
+    /// after the prompt has moved on. An authored Foundry agent supplies its own instructions
+    /// and its own version, which is recorded separately as agent_version.
+    /// </remarks>
+    public const string Version = "2026-08-13.1";
+
     private const string InlineBlankMarker = "{{blank}}";
 
     public string BuildSystemInstruction(

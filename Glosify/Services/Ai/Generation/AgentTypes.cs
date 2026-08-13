@@ -35,6 +35,10 @@ public enum AssistantAgentProfile
 /// <param name="AllowedToolNames">
 /// The tool names this turn may offer, or null for no restriction.
 /// </param>
+/// <param name="CaptureEffectiveRequest">
+/// Whether the client should return the composed request as
+/// <see cref="AgentInvocationMetadata.EffectiveRequestJson"/>.
+/// </param>
 /// <remarks>
 /// A persisted agent owns which tools exist and how they are described, and that stays true:
 /// <paramref name="AllowedToolNames"/> can only remove entries from whichever declaration list
@@ -48,7 +52,8 @@ public sealed record AgentRequest(
     string? Model = null,
     AssistantAgentProfile Profile = AssistantAgentProfile.General,
     string? ContextInstruction = null,
-    IReadOnlySet<string>? AllowedToolNames = null);
+    IReadOnlySet<string>? AllowedToolNames = null,
+    bool CaptureEffectiveRequest = false);
 
 /// <summary>
 /// Applies a turn's tool allowlist to whichever declaration list is in force.
@@ -79,6 +84,12 @@ public sealed record AgentInvocationMetadata(
     AiTokenUsage Usage,
     string? AgentName = null,
     string? AgentVersion = null,
+    /// <summary>
+    /// The composed request, populated only when the caller asked for it via
+    /// <see cref="AgentRequest.CaptureEffectiveRequest"/>. It restates the instruction, the
+    /// whole replayed history and every tool schema, so building it unconditionally would
+    /// serialize the largest object in the turn on a path that usually discards it.
+    /// </summary>
     string? EffectiveRequestJson = null);
 
 public sealed record AgentFunctionCall(string Name, string ArgsJson, string? ThoughtSignature = null)

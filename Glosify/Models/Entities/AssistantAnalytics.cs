@@ -61,6 +61,32 @@ public sealed class AssistantTurn
 
     [Column("provider_response_id")]
     public string? ProviderResponseId { get; set; }
+
+    /// <summary>
+    /// The <see cref="Glosify.Services.Ai.Assistant.AssistantPromptBuilder"/> revision that
+    /// composed this turn's instructions.
+    /// </summary>
+    [Column("prompt_version")]
+    public string? PromptVersion { get; set; }
+
+    /// <summary>The resolved artifact intent, or null when the turn failed before routing.</summary>
+    [Column("intent_artifact")]
+    public string? IntentArtifact { get; set; }
+
+    /// <summary>The resolved content intent, or null when the turn failed before routing.</summary>
+    [Column("intent_content")]
+    public string? IntentContent { get; set; }
+
+    /// <summary>
+    /// The tool names this turn was allowed to offer, comma separated and sorted.
+    /// </summary>
+    /// <remarks>
+    /// The offered surface is narrowed per turn from page context and intent, so the tool
+    /// registry alone does not say what the model could choose between. Without this a
+    /// completed turn cannot be read back as a decision, only as an outcome.
+    /// </remarks>
+    [Column("allowed_tools")]
+    public string? AllowedTools { get; set; }
 }
 
 public static class AssistantTurnStatus

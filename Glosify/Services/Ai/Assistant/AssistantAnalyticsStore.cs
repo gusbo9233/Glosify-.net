@@ -21,6 +21,12 @@ internal sealed class AssistantAnalyticsStore
         _captureContent = options.Value.CaptureContent;
     }
 
+    /// <summary>
+    /// Whether request and response bodies are stored. Callers use this to skip composing
+    /// payloads this store would discard.
+    /// </summary>
+    public bool CaptureContent => _captureContent;
+
     public void CompleteInvocation(
         AssistantModelInvocation invocation,
         AgentTurnResult result,
