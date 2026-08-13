@@ -9,6 +9,11 @@ internal sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Ap
     public void Configure(EntityTypeBuilder<ApplicationUser> entity)
     {
         entity.Property(user => user.SelectedQuizLanguageCode).HasMaxLength(8);
+        // Names rather than codes, matching Quiz.SourceLanguage/TargetLanguage, and with no
+        // check constraint: the four-language restriction below is about what Glosify teaches,
+        // not about what a learner already speaks or wants to be answered in.
+        entity.Property(user => user.PreferredSourceLanguage).HasMaxLength(64);
+        entity.Property(user => user.PreferredAssistantLanguage).HasMaxLength(64);
         entity.Property(user => user.AssistantTelemetrySubjectId)
             .HasDefaultValueSql("NEWID()");
         entity.HasIndex(user => user.AssistantTelemetrySubjectId).IsUnique();

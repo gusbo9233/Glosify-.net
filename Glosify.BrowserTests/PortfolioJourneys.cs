@@ -194,7 +194,16 @@ public sealed class PortfolioJourneys : IAsyncLifetime
                 assistantMessageId,
                 assistantText = "I prepared a travel quiz.",
                 toolEvents = Array.Empty<object>(),
-                pendingChanges = new[] { new { kind = "create_quiz", summary = "Create Travel Polish" } },
+                // Both content types in one standard-quiz proposal, which is the shape the
+                // review card has to render since starter sentences became part of creation.
+                pendingChanges = new[]
+                {
+                    new
+                    {
+                        kind = "create_quiz",
+                        summary = "Create quiz \"Travel Polish\" with 5 words and 5 sentences (English -> Polish)",
+                    },
+                },
                 status = "active",
             }),
         }));
@@ -296,6 +305,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.Locator("[data-assistant-pending-card]")).ToBeVisibleAsync();
 
         var pendingCard = Page.Locator("[data-assistant-pending-card]");
+        // The card has to name a standard quiz and account for both content types, so an
+        // unwanted custom quiz or a silently dropped set of sentences is visible before Apply.
+        await Expect(pendingCard).ToContainTextAsync("5 words and 5 sentences");
+        await Expect(pendingCard).Not.ToContainTextAsync("custom quiz");
         var applyButton = pendingCard.GetByRole(AriaRole.Button, new() { Name = "Apply", Exact = true });
         var rejectButton = pendingCard.GetByRole(AriaRole.Button, new() { Name = "Reject", Exact = true });
         await applyButton.ClickAsync();

@@ -512,6 +512,135 @@ public class ChangeApplierTests
         Assert.Equal(destinationId, source.ParentCollectionId);
     }
 
+    // A standard quiz proposed with both content types has to arrive whole. Words and
+    // sentences are staged by different helpers, so nothing but a real transaction proves
+    // they commit as one unit.
+    [Fact]
+    public async Task ApplyCreateQuiz_PersistsStarterWordsAndSentencesInOneTransaction()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using var db = new SqliteGlosifyContext(options);
+        await db.Database.EnsureCreatedAsync();
+        var messageId = await SeedProposalAsync(db,
+        [
+            new PendingChange(PendingChangeKinds.CreateQuiz, JsonSerializer.SerializeToElement(new
+            {
+                name = "Travel Polish",
+                source_language = "English",
+                target_language = "Polish",
+                words = new[] { new { word = "pociag", translation = "train" } },
+                sentences = new[]
+                {
+                    new { text = "Pociag odjezdza o osmej.", translation = "The train leaves at eight." },
+                    new { text = "To jest moj dom.", translation = "This is my house." },
+                },
+            })),
+        ]);
+        var workflow = new AssistantChangeWorkflow(
+            db,
+            CreateApplier(db),
+            new AssistantMessagePresenter(),
+            null!,
+            new FakeTimeProvider(new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero)));
+
+        var result = await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
+
+        db.ChangeTracker.Clear();
+        var quiz = Assert.Single(await db.Quizzes.ToListAsync());
+        Assert.Equal("Travel Polish", result.CreatedQuiz?.Name);
+        var word = Assert.Single(await db.Words.Where(w => w.QuizId == quiz.Id).ToListAsync());
+        Assert.Equal("pociag", word.Lemma);
+        var sentences = await db.QuizSentences
+            .Where(sentence => sentence.QuizId == quiz.Id)
+            .OrderBy(sentence => sentence.Text)
+            .ToListAsync();
+        Assert.Equal(2, sentences.Count);
+        Assert.Equal("Pociag odjezdza o osmej.", sentences[0].Text);
+        Assert.Equal("The train leaves at eight.", sentences[0].Translation);
+    }
+
+    [Fact]
+    public async Task ApplyCreateQuiz_DeduplicatesStarterSentenceText()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using var db = new SqliteGlosifyContext(options);
+        await db.Database.EnsureCreatedAsync();
+        var messageId = await SeedProposalAsync(db,
+        [
+            new PendingChange(PendingChangeKinds.CreateQuiz, JsonSerializer.SerializeToElement(new
+            {
+                name = "Travel Polish",
+                source_language = "English",
+                target_language = "Polish",
+                sentences = new[]
+                {
+                    new { text = "To jest dom.", translation = "This is a house." },
+                    new { text = "to jest dom.", translation = "This is a house." },
+                    new { text = "  ", translation = "Blank text is skipped." },
+                },
+            })),
+        ]);
+        var workflow = new AssistantChangeWorkflow(
+            db,
+            CreateApplier(db),
+            new AssistantMessagePresenter(),
+            null!,
+            new FakeTimeProvider(new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero)));
+
+        await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
+
+        db.ChangeTracker.Clear();
+        var sentence = Assert.Single(await db.QuizSentences.ToListAsync());
+        Assert.Equal("To jest dom.", sentence.Text);
+    }
+
+    // The quiz row is created by a service call and the sentences are staged afterwards, so a
+    // failure later in the proposal must not leave a quiz holding only half its content.
+    [Fact]
+    public async Task ApplyCreateQuiz_RollsBackQuizWordsAndSentencesTogether()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using var db = new SqliteGlosifyContext(options);
+        await db.Database.EnsureCreatedAsync();
+        var messageId = await SeedProposalAsync(db,
+        [
+            new PendingChange(PendingChangeKinds.CreateQuiz, JsonSerializer.SerializeToElement(new
+            {
+                name = "Must roll back",
+                source_language = "English",
+                target_language = "Polish",
+                words = new[] { new { word = "dom", translation = "house" } },
+                sentences = new[] { new { text = "To jest dom.", translation = "This is a house." } },
+            })),
+            new PendingChange(PendingChangeKinds.CreateCollection, JsonSerializer.SerializeToElement(new
+            {
+                name = "Child",
+                language = "Polish",
+                parent_collection_id = Guid.NewGuid(),
+            })),
+        ]);
+        var workflow = new AssistantChangeWorkflow(
+            db,
+            CreateApplier(db),
+            new AssistantMessagePresenter(),
+            null!,
+            new FakeTimeProvider(new DateTimeOffset(2026, 8, 11, 12, 0, 0, TimeSpan.Zero)));
+
+        await Assert.ThrowsAsync<CollectionParentNotFoundException>(
+            () => workflow.ApplyAsync(messageId, "user-1", CancellationToken.None));
+
+        db.ChangeTracker.Clear();
+        Assert.Empty(await db.Quizzes.ToListAsync());
+        Assert.Empty(await db.Words.ToListAsync());
+        Assert.Empty(await db.QuizSentences.ToListAsync());
+    }
+
     private static ChangeApplier CreateApplier(GlosifyContext db)
     {
         return new ChangeApplier(

@@ -143,7 +143,8 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
         var generativeModel = GetModel(assistantModel, jsonMode: false);
 
         var contents = request.History.Select(BuildContent).ToList();
-        var tools = request.Tools.Count == 0 ? null : BuildTools(request.Tools);
+        var declarations = AgentToolFilter.Narrow(request.Tools, request.AllowedToolNames);
+        var tools = declarations.Count == 0 ? null : BuildTools(declarations);
         var systemInstruction = string.IsNullOrWhiteSpace(request.SystemInstruction)
             ? null
             : new Content(request.SystemInstruction, role: "system");
@@ -201,7 +202,7 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
                     instructions = request.SystemInstruction,
                     contextInstruction = request.ContextInstruction,
                     history = request.History,
-                    tools = request.Tools,
+                    tools = declarations,
                     model = assistantModel,
                     profile = request.Profile.ToString(),
                 }, JsonOptions)),

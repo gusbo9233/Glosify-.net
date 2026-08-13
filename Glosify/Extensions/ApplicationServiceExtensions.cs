@@ -180,6 +180,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<AssistantContextResolver>();
         services.AddScoped<AssistantMessagePresenter>();
         services.AddScoped<AssistantPromptBuilder>();
+        services.AddSingleton<AssistantIntentResolver>();
         services.AddScoped<AssistantTelemetryDeletionQueue>();
         services.AddScoped<AssistantThreadStore>();
         services.AddSingleton<AssistantAnalyticsBackgroundWriter>();

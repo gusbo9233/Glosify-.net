@@ -504,6 +504,7 @@ public sealed class ChangeApplier : IChangeApplier
             collectionId, cancellationToken: ct);
 
         var starterWords = AddStarterWords(payload, quiz);
+        AddStarterSentences(payload, quiz);
         Guid? customQuizId = null;
         if (payload.TryGetProperty("custom_quiz", out var customQuiz)
             && customQuiz.ValueKind == JsonValueKind.Object)
@@ -777,6 +778,50 @@ public sealed class ChangeApplier : IChangeApplier
             idsByWord[word] = id;
         }
         return idsByWord;
+    }
+
+    /// <summary>
+    /// Adds the sentences a create-quiz proposal carried, alongside its starter words.
+    /// </summary>
+    /// <remarks>
+    /// Sentences are a separate collection from words on purpose: a full sentence stored as
+    /// vocabulary is the bug this exists to prevent. Like <see cref="AddStarterWords"/> this
+    /// only stages the rows — the caller's transaction owns when they become durable.
+    /// </remarks>
+    private void AddStarterSentences(JsonElement payload, Quiz quiz)
+    {
+        if (!payload.TryGetProperty("sentences", out var sentencesElement)
+            || sentencesElement.ValueKind != JsonValueKind.Array)
+        {
+            return;
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in sentencesElement.EnumerateArray())
+        {
+            if (item.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var text = GetString(item, "text").Trim();
+            var translation = GetString(item, "translation").Trim();
+            if (string.IsNullOrWhiteSpace(text)
+                || string.IsNullOrWhiteSpace(translation)
+                || !seen.Add(text))
+            {
+                continue;
+            }
+
+            _context.QuizSentences.Add(new QuizSentence
+            {
+                Id = Guid.NewGuid(),
+                QuizId = quiz.Id,
+                Text = text,
+                Translation = translation,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+        }
     }
 
     private static CustomQuizDocumentV1 ParseCustomQuizDocument(

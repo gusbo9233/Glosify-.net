@@ -31,6 +31,11 @@ internal sealed class AddWordsTool : IAssistantTool
             return QuizContextRequired();
         }
 
+        if (WrongContentKind(context, AssistantContentKind.Words) is { } mismatch)
+        {
+            return mismatch;
+        }
+
         var (words, skipped) = GetWordDrafts(args, "words");
         if (words.Count == 0)
         {

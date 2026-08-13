@@ -6,6 +6,7 @@ using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Text.Json;
 
 namespace Glosify.Services.Ai.Assistant;
@@ -28,6 +29,91 @@ internal sealed class AssistantContextResolver(
 
     public async Task<string?> ResolveLanguageCodeAsync(string userId, CancellationToken cancellationToken) =>
         (await languagePreferences.GetSelectedAsync(userId, cancellationToken))?.Code;
+
+    /// <summary>
+    /// The language quiz content should be translated into.
+    /// </summary>
+    /// <remarks>
+    /// The selected quiz wins, because changing an existing quiz has to stay consistent with
+    /// the translations already in it. Null means genuinely unknown, and only then is asking
+    /// the user the right move.
+    /// </remarks>
+    public async Task<string?> ResolveSourceLanguageAsync(
+        Quiz? selectedQuiz,
+        string userId,
+        AssistantThread? thread,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(selectedQuiz?.SourceLanguage))
+        {
+            return selectedQuiz.SourceLanguage;
+        }
+
+        var preferred = await context.Users
+            .AsNoTracking()
+            .Where(user => user.Id == userId)
+            .Select(user => user.PreferredSourceLanguage)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return string.IsNullOrWhiteSpace(preferred)
+            ? NullIfBlank(thread?.ConversationLanguage)
+            : preferred;
+    }
+
+    /// <summary>
+    /// The language the assistant should reply in.
+    /// </summary>
+    /// <remarks>
+    /// Always resolves to something. A conversation that has been running in one language is
+    /// the strongest evidence available, and a product default beats interrupting the user to
+    /// ask a question they have already answered by typing.
+    /// </remarks>
+    public async Task<string> ResolveReplyLanguageAsync(
+        string userId,
+        AssistantThread? thread,
+        CancellationToken cancellationToken)
+    {
+        if (NullIfBlank(thread?.ConversationLanguage) is { } conversationLanguage)
+        {
+            return conversationLanguage;
+        }
+
+        var preferred = await context.Users
+            .AsNoTracking()
+            .Where(user => user.Id == userId)
+            .Select(user => user.PreferredAssistantLanguage)
+            .SingleOrDefaultAsync(cancellationToken);
+
+        return NullIfBlank(preferred) ?? DefaultReplyLanguage;
+    }
+
+    /// <summary>
+    /// The reply language a new chat starts in, taken from the UI the user is reading.
+    /// </summary>
+    public string ResolveInitialConversationLanguage()
+    {
+        // The neutral parent, so en-GB and en-US both read as "English" rather than as two
+        // different reply languages. The invariant culture names nothing and falls through.
+        var culture = CultureInfo.CurrentUICulture;
+        if (string.IsNullOrEmpty(culture.Name))
+        {
+            return DefaultReplyLanguage;
+        }
+
+        try
+        {
+            return new CultureInfo(culture.TwoLetterISOLanguageName).EnglishName;
+        }
+        catch (CultureNotFoundException)
+        {
+            return DefaultReplyLanguage;
+        }
+    }
+
+    private const string DefaultReplyLanguage = "English";
+
+    private static string? NullIfBlank(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
 
     public async Task<Quiz?> ResolveQuizAsync(Guid? quizId, string userId, CancellationToken cancellationToken)
     {

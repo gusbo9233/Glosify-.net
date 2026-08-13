@@ -156,6 +156,9 @@ public sealed class AssistantCollaboratorTests
             builder.BuildProfileContext(AssistantAgentProfile.CustomQuizBuilder, quiz, focusedWord, document, customQuiz, transcript, book, "Polish"),
             builder.BuildProfileContext(AssistantAgentProfile.QuizAssistant, quiz, focusedWord, document, customQuiz, transcript, book, "Polish"),
             builder.BuildProfileContext(AssistantAgentProfile.Librarian, null, null, document, null, transcript, book, "Polish"),
+            // The three languages a turn involves, stated so the assistant stops asking about
+            // ones the conversation already settled.
+            builder.BuildProfileContext(AssistantAgentProfile.Librarian, null, null, document, null, transcript, book, "Polish", "English", "Swedish"),
         };
 
         Assert.Equal(
@@ -163,9 +166,12 @@ public sealed class AssistantCollaboratorTests
             {
                 "208C0B11F827EF6851BC8FB555E42B6CC14F4340D77FEB942F67BA9A9662BE1E",
                 "96FE5C9904C61149757B59AE315C3E626DEF784B9C11F1D65E91728EDC6C0DB9",
-                "94C2DBA88F160B2FBEB785E1B4BA929BA3D3670FFA1F8F5268098DDCCEC68324",
-                "47F90D3A481CBF8015B8406C9EB75DFFCC24CA4E421B94F9680F1ECA2B58BFDD",
-                "1928F190C44056DFF9488BCA93C043E529591A16D85C15480BC14AEE4338E8E4",
+                // The last four changed with the Languages block appended to every profile
+                // context; the two system instructions above are untouched.
+                "58253A6DBBD49404DC47EF8ED32AC61A68755989F87D918DEC311F2F7A74F884",
+                "336374BC6904CBD0E4DBA2ED9F311E96AE35238FE270AD5D19AA5C7CE8C24958",
+                "9A21CF6C9855EB46060881054BBF1A145FBBCCC2BEE224082A6EED3667A8EBE4",
+                "163FC5C7850AE9A3A619C2E16C71DE68E345B26B22B3D039AFEF374BF866A63A",
             },
             outputs.Select(Fingerprint));
     }

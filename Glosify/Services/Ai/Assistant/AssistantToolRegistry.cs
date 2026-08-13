@@ -48,6 +48,9 @@ public sealed class AssistantToolRegistry : IAssistantTools
     public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; }
     public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; }
 
+    public string? ResolveCanonicalName(string name) =>
+        _byName.TryGetValue(name, out var tool) ? tool.Name : null;
+
     public Task<object> ExecuteAsync(
         string name,
         string argsJson,

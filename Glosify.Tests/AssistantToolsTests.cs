@@ -395,6 +395,333 @@ public class AssistantToolsTests
     }
 
     [Fact]
+    public async Task CreateVocabularyQuiz_QueuesStarterWordsAndSentencesSeparately()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+
+        await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """
+            {"name":"Travel Polish","source_language":"English",
+             "words":[{"word":"pociag","translation":"train"}],
+             "sentences":[{"text":"Pociag odjezdza o osmej.","translation":"The train leaves at eight."}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        var word = Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
+        Assert.Equal("pociag", word.GetProperty("word").GetString());
+        var sentence = Assert.Single(payload.GetProperty("sentences").EnumerateArray().ToArray());
+        Assert.Equal("Pociag odjezdza o osmej.", sentence.GetProperty("text").GetString());
+        Assert.Equal("The train leaves at eight.", sentence.GetProperty("translation").GetString());
+    }
+
+    [Fact]
+    public async Task CreateVocabularyQuiz_AllowsWordOnlyPayload()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+
+        await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """{"name":"Travel Polish","source_language":"English","words":[{"word":"dom","translation":"house"}]}""",
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
+        Assert.Empty(payload.GetProperty("sentences").EnumerateArray().ToArray());
+    }
+
+    [Fact]
+    public async Task CreateVocabularyQuiz_SkipsInvalidStarterSentences()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+
+        var result = await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """
+            {"name":"Travel Polish","source_language":"English",
+             "sentences":[{"text":"To jest dom.","translation":"This is a house."},
+                          {"text":"Brakuje tlumaczenia."}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Single(payload.GetProperty("sentences").EnumerateArray().ToArray());
+        Assert.Contains("skipped_sentences", JsonSerializer.Serialize(result));
+    }
+
+    [Fact]
+    public async Task CreateVocabularyQuiz_DefaultsSourceLanguageFromContext()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Polish",
+            SourceLanguage = "English",
+        };
+
+        await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """{"name":"Travel Polish"}""",
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Equal("English", payload.GetProperty("source_language").GetString());
+    }
+
+    [Fact]
+    public async Task CreateVocabularyQuiz_StillRequiresASourceLanguageFromSomewhere()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
+
+        var result = await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """{"name":"Travel Polish"}""",
+            context,
+            CancellationToken.None);
+
+        Assert.Empty(context.PendingChanges);
+        Assert.Contains("source_language", JsonSerializer.Serialize(result));
+    }
+
+    // Creation carries both content types at once, so it needs the guard the add tools have.
+    [Fact]
+    public async Task WordIntent_RejectsStarterSentencesOnCreation()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Polish",
+            RequestedContentKind = AssistantContentKind.Words,
+        };
+
+        var result = await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """
+            {"name":"Travel Polish","source_language":"English",
+             "words":[{"word":"dom","translation":"house"}],
+             "sentences":[{"text":"To jest dom.","translation":"This is a house."}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        Assert.Empty(context.PendingChanges);
+        Assert.Contains("word", JsonSerializer.Serialize(result), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BothIntent_AllowsStarterWordsAndSentencesOnCreation()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Polish",
+            RequestedContentKind = AssistantContentKind.Both,
+        };
+
+        await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """
+            {"name":"Travel Polish","source_language":"English",
+             "words":[{"word":"dom","translation":"house"}],
+             "sentences":[{"text":"To jest dom.","translation":"This is a house."}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
+        Assert.Single(payload.GetProperty("sentences").EnumerateArray().ToArray());
+    }
+
+    // A custom quiz binds its elements to starter words, so those words are structure rather
+    // than requested vocabulary. Blocking them on a sentence request would make "an interactive
+    // quiz with sentences from this page" impossible to build.
+    [Fact]
+    public async Task SentenceIntent_StillAllowsStructuralWordsOnACustomQuizCreation()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Polish",
+            RequestedContentKind = AssistantContentKind.Sentences,
+        };
+
+        await tools.ExecuteAsync(
+            "create_vocabulary_quiz",
+            """
+            {"name":"Chapter 3","source_language":"English",
+             "words":[{"word":"dom","translation":"house"}],
+             "custom_quiz":{"name":"Chapter 3 drill","blocks":[
+                {"type":"text_input","id":"q1","label":"1. To jest moj {{blank}}","expected_text":"dom"}]}}
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
+    }
+
+    // The prompt tells the model it may omit a language the conversation established. That has
+    // to hold for the custom-quiz creation path too, or the turn dies on a required field.
+    [Fact]
+    public async Task CreateCustomQuizFromContent_DefaultsSourceLanguageFromContext()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            CurrentLanguage = "Polish",
+            SourceLanguage = "English",
+        };
+
+        await tools.ExecuteAsync(
+            "create_custom_quiz_from_content",
+            """
+            {"quiz_name":"Chapter 3","custom_quiz_name":"Chapter 3 drill",
+             "words":[{"word":"dom","translation":"house"}]}
+            """,
+            context,
+            CancellationToken.None);
+
+        var payload = context.PendingChanges[0].Payload;
+        Assert.Equal("English", payload.GetProperty("source_language").GetString());
+    }
+
+    [Fact]
+    public async Task SentenceIntent_RejectsWordStorageAtTheExecutionBoundary()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            QuizId = quizId,
+            RequestedContentKind = AssistantContentKind.Sentences,
+        };
+
+        var single = await tools.ExecuteAsync(
+            "add_word",
+            """{"word":"To jest moj dom.","translation":"This is my house."}""",
+            context,
+            CancellationToken.None);
+        var batch = await tools.ExecuteAsync(
+            "add_words",
+            """{"words":[{"word":"To jest moj dom.","translation":"This is my house."}]}""",
+            context,
+            CancellationToken.None);
+
+        Assert.Empty(context.PendingChanges);
+        Assert.Contains("sentence", JsonSerializer.Serialize(single), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("sentence", JsonSerializer.Serialize(batch), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task WordIntent_RejectsSentenceStorageAtTheExecutionBoundary()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            QuizId = quizId,
+            RequestedContentKind = AssistantContentKind.Words,
+        };
+
+        var result = await tools.ExecuteAsync(
+            "add_sentences",
+            """{"sentences":[{"text":"To jest dom.","translation":"This is a house."}]}""",
+            context,
+            CancellationToken.None);
+
+        Assert.Empty(context.PendingChanges);
+        Assert.Contains("word", JsonSerializer.Serialize(result), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task BothIntent_AllowsWordsAndSentencesTogether()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            QuizId = quizId,
+            RequestedContentKind = AssistantContentKind.Both,
+        };
+
+        await tools.ExecuteAsync(
+            "add_word",
+            """{"word":"dom","translation":"house"}""",
+            context,
+            CancellationToken.None);
+        await tools.ExecuteAsync(
+            "add_sentence",
+            """{"text":"To jest dom.","translation":"This is a house."}""",
+            context,
+            CancellationToken.None);
+
+        Assert.Equal(
+            [PendingChangeKinds.AddWord, PendingChangeKinds.AddSentence],
+            context.PendingChanges.Select(change => change.Kind));
+    }
+
+    [Fact]
+    public async Task MultiwordPhrase_IsStillStoredAsAWord()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext
+        {
+            UserId = "user-1",
+            QuizId = quizId,
+            RequestedContentKind = AssistantContentKind.Words,
+        };
+
+        await tools.ExecuteAsync(
+            "add_word",
+            """{"word":"by the way","translation":"nawiasem mowiac"}""",
+            context,
+            CancellationToken.None);
+
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Equal("by the way", payload.GetProperty("word").GetString());
+    }
+
+    [Fact]
     public async Task CreateCollection_QueuesPendingChangeWithCurrentLanguageDefault()
     {
         await using var db = CreateContext();

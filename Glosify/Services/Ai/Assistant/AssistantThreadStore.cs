@@ -55,6 +55,9 @@ internal sealed class AssistantThreadStore(
             ContextBookDocumentId = bookId,
             UserId = userId,
             Language = await contextResolver.ResolveLanguageAsync(userId, cancellationToken),
+            // The language the user is reading the app in, which is a far better first guess
+            // than asking them to confirm one in the first reply.
+            ConversationLanguage = contextResolver.ResolveInitialConversationLanguage(),
             Title = AssistantThreadDefaults.NewChatTitle,
             CreatedAt = now,
             UpdatedAt = now,
@@ -175,6 +178,7 @@ internal sealed class AssistantThreadStore(
             ContextQuizId = quizId,
             UserId = userId,
             Language = language,
+            ConversationLanguage = contextResolver.ResolveInitialConversationLanguage(),
             Title = AssistantThreadDefaults.NewChatTitle,
             CreatedAt = now,
             UpdatedAt = now,

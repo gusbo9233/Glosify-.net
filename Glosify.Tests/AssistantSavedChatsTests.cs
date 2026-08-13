@@ -1027,6 +1027,7 @@ public class AssistantSavedChatsTests
             contextResolver,
             presenter,
             new AssistantPromptBuilder(),
+            new AssistantIntentResolver(),
             turnLeases ?? new NoopAssistantTurnLeaseService(),
             analytics,
             timeProvider,
@@ -1313,6 +1314,8 @@ public class AssistantSavedChatsTests
         public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } = [Declaration];
         public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } = [Declaration];
 
+        public string? ResolveCanonicalName(string name) => name;
+
         public async Task<object> ExecuteAsync(
             string name,
             string argsJson,
@@ -1335,6 +1338,8 @@ public class AssistantSavedChatsTests
         public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; } = [];
         public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } = [];
         public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } = [];
+
+        public string? ResolveCanonicalName(string name) => name;
 
         public Task<object> ExecuteAsync(string name, string argsJson, AgentToolContext context, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
@@ -1465,6 +1470,8 @@ public class AssistantSavedChatsTests
                 "Continues the test loop.",
                 new { type = "object", properties = new { } }),
         ];
+
+        public string? ResolveCanonicalName(string name) => name;
 
         public Task<object> ExecuteAsync(
             string name,

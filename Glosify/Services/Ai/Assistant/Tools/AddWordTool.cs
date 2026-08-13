@@ -32,6 +32,11 @@ internal sealed class AddWordTool : IAssistantTool
             return QuizContextRequired();
         }
 
+        if (WrongContentKind(context, AssistantContentKind.Words) is { } mismatch)
+        {
+            return mismatch;
+        }
+
         var word = GetString(args, "word");
         var translation = GetString(args, "translation");
         if (string.IsNullOrWhiteSpace(word) || string.IsNullOrWhiteSpace(translation))

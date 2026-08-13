@@ -13,6 +13,7 @@ internal sealed class AssistantThreadConfiguration : IEntityTypeConfiguration<As
         entity.Property(t => t.UserId).HasMaxLength(450).IsRequired();
         entity.Property(t => t.Title).HasMaxLength(256);
         entity.Property(t => t.Language).HasMaxLength(64);
+        entity.Property(t => t.ConversationLanguage).HasMaxLength(64);
         entity.HasIndex(t => new { t.QuizId, t.UserId });
         entity.HasIndex(t => new { t.UserId, t.QuizId, t.Language });
         entity.HasIndex(t => t.ContextQuizId);

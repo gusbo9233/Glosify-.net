@@ -30,6 +30,17 @@ public class AssistantThread
     [Column("language")]
     public string? Language { get; set; }
 
+    /// <summary>
+    /// The language this conversation is held in, which is not necessarily the language being
+    /// learned or the one quizzes translate into.
+    /// </summary>
+    /// <remarks>
+    /// Recorded once when the chat starts so the assistant stops asking. <see cref="Language"/>
+    /// stays the learning-language grouping key and is unaffected.
+    /// </remarks>
+    [Column("conversation_language")]
+    public string? ConversationLanguage { get; set; }
+
     [Column("title")]
     public string Title { get; set; } = string.Empty;
 

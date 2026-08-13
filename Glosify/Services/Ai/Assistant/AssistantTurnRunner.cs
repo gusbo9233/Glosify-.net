@@ -21,6 +21,7 @@ internal sealed class AssistantTurnRunner
     private readonly AssistantContextResolver _contextResolver;
     private readonly AssistantMessagePresenter _presenter;
     private readonly AssistantPromptBuilder _promptBuilder;
+    private readonly AssistantIntentResolver _intentResolver;
     private readonly IAssistantTurnLeaseService _turnLeases;
     private readonly AssistantAnalyticsStore _analytics;
     private readonly TimeProvider _timeProvider;
@@ -35,6 +36,7 @@ internal sealed class AssistantTurnRunner
         AssistantContextResolver contextResolver,
         AssistantMessagePresenter presenter,
         AssistantPromptBuilder promptBuilder,
+        AssistantIntentResolver intentResolver,
         IAssistantTurnLeaseService turnLeases,
         AssistantAnalyticsStore analytics,
         TimeProvider timeProvider,
@@ -48,6 +50,7 @@ internal sealed class AssistantTurnRunner
         _contextResolver = contextResolver;
         _presenter = presenter;
         _promptBuilder = promptBuilder;
+        _intentResolver = intentResolver;
         _turnLeases = turnLeases;
         _analytics = analytics;
         _timeProvider = timeProvider;
@@ -282,6 +285,15 @@ internal sealed class AssistantTurnRunner
             var selectedLanguageCode = await _contextResolver.ResolveLanguageCodeAsync(userId, cancellationToken);
             var currentLanguage = contextQuiz?.TargetLanguage
                 ?? await _contextResolver.ResolveLanguageAsync(userId, cancellationToken);
+            var sourceLanguage = await _contextResolver.ResolveSourceLanguageAsync(
+                contextQuiz,
+                userId,
+                thread,
+                cancellationToken);
+            var replyLanguage = await _contextResolver.ResolveReplyLanguageAsync(
+                userId,
+                thread,
+                cancellationToken);
 
             // The page the user is on selects the profile, which fixes both the tool set and
             // which authored agent supplies the instructions. Each profile falls back to the
@@ -291,6 +303,11 @@ internal sealed class AssistantTurnRunner
                 : contextQuiz is not null
                     ? (AssistantAgentProfile.QuizAssistant, _tools.QuizAssistantDeclarations)
                     : (AssistantAgentProfile.Librarian, _tools.LibrarianDeclarations);
+            // The page says which surface is reachable; the request says which part of it the
+            // user actually asked for. Narrowing on both is what stops "create a quiz" landing
+            // in the custom builder and sentence requests landing in word storage.
+            var intent = _intentResolver.Resolve(userMessage);
+            var allowedToolNames = AssistantToolNarrowing.AllowedNames(declarations, intent, profile);
             var selectedModel = _modelResolver.ResolveAssistantModel(model);
             resolvedModel = selectedModel;
             var subjectId = await _context.Users
@@ -300,8 +317,13 @@ internal sealed class AssistantTurnRunner
                 .SingleOrDefaultAsync(cancellationToken);
             turnActivity?.SetTag("enduser.pseudo.id", subjectId?.ToString());
             turnActivity?.SetTag("assistant.profile", profile.ToString());
+            turnActivity?.SetTag("assistant.intent.artifact", intent.ArtifactKind.ToString());
+            turnActivity?.SetTag("assistant.intent.content", intent.ContentKind.ToString());
             turnActivity?.SetTag("gen_ai.request.model", selectedModel);
             turnEntity.Profile = profile.ToString();
+            // Chats that predate the column, and any the store could not resolve a language
+            // for, settle on one here rather than re-deciding every turn.
+            thread.ConversationLanguage ??= replyLanguage;
             thread.ContextQuizId = contextQuizId;
             thread.ContextTranscriptId = transcriptContext?.Id;
             thread.ContextBookDocumentId = bookContext?.Id;
@@ -313,10 +335,13 @@ internal sealed class AssistantTurnRunner
                 UserId = userId,
                 CurrentLanguage = currentLanguage,
                 CurrentLanguageCode = selectedLanguageCode,
+                SourceLanguage = sourceLanguage,
+                ReplyLanguage = replyLanguage,
                 FocusedWordId = focusedWord?.Id,
                 FocusedWordLabel = focusedWord == null ? null : $"{focusedWord.Lemma} -> {focusedWord.Translation}",
                 TranscriptId = transcriptContext?.Id,
                 BookDocumentId = bookContext?.Id,
+                RequestedContentKind = intent.ContentKind,
             };
 
             var systemInstruction = _promptBuilder.BuildSystemInstruction(
@@ -336,7 +361,9 @@ internal sealed class AssistantTurnRunner
                 contextCustomQuiz,
                 transcriptContext,
                 bookContext,
-                currentLanguage);
+                currentLanguage,
+                sourceLanguage,
+                replyLanguage);
             var toolEvents = new List<AssistantToolEvent>();
             var completedTurnMessages = new List<AssistantMessage>();
 
@@ -354,7 +381,8 @@ internal sealed class AssistantTurnRunner
                     declarations,
                     selectedModel,
                     profile,
-                    contextInstruction);
+                    contextInstruction,
+                    allowedToolNames);
                 var invocationId = Guid.NewGuid();
                 using var invocationActivity = AssistantAnalyticsTelemetry.StartInvocation(
                     turnId,
@@ -477,7 +505,20 @@ internal sealed class AssistantTurnRunner
                     var toolStartedAt = Stopwatch.GetTimestamp();
                     try
                     {
-                        var result = await _tools.ExecuteAsync(call.Name, call.ArgsJson, toolContext, cancellationToken);
+                        // History outlives tool surfaces, and an authored agent can declare a
+                        // tool this turn never offered. A name outside the allowlist is
+                        // answered, not dispatched, so the model can correct itself while the
+                        // rejection stays visible in tool analytics.
+                        var canonicalName = _tools.ResolveCanonicalName(call.Name);
+                        var allowed = canonicalName is not null && allowedToolNames.Contains(canonicalName);
+                        if (!allowed)
+                        {
+                            toolActivity?.SetTag("assistant.tool.rejected", true);
+                        }
+
+                        var result = allowed
+                            ? await _tools.ExecuteAsync(call.Name, call.ArgsJson, toolContext, cancellationToken)
+                            : new { error = $"The tool {call.Name} is not available for this request." };
                         var resultJson = AssistantAnalyticsJson.Serialize(result);
                         var proposedChanges = Math.Max(0, toolContext.PendingChanges.Count - changesBefore);
                         _analytics.CompleteTool(
