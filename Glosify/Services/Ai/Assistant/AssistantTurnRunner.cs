@@ -321,7 +321,13 @@ internal sealed class AssistantTurnRunner
             turnActivity?.SetTag("assistant.intent.content", intent.ContentKind.ToString());
             turnActivity?.SetTag("gen_ai.request.model", selectedModel);
             turnEntity.Profile = profile.ToString();
-            RecordTurnInputs(turnEntity, intent, allowedToolNames);
+            RecordTurnInputs(
+                turnEntity,
+                intent,
+                allowedToolNames,
+                currentLanguage,
+                sourceLanguage,
+                replyLanguage);
             // Chats that predate the column, and any the store could not resolve a language
             // for, settle on one here rather than re-deciding every turn.
             thread.ConversationLanguage ??= replyLanguage;
@@ -694,14 +700,21 @@ internal sealed class AssistantTurnRunner
     private void RecordTurnInputs(
         AssistantTurn turnEntity,
         AssistantIntent intent,
-        IReadOnlySet<string> allowedToolNames)
+        IReadOnlySet<string> allowedToolNames,
+        string? targetLanguage,
+        string? sourceLanguage,
+        string? replyLanguage)
     {
         try
         {
             turnEntity.PromptVersion = AssistantPromptBuilder.Version;
             turnEntity.IntentArtifact = intent.ArtifactKind.ToString();
             turnEntity.IntentContent = intent.ContentKind.ToString();
+            turnEntity.IntentOperation = intent.OperationKind.ToString();
             turnEntity.AllowedTools = FormatAllowedTools(allowedToolNames);
+            turnEntity.TargetLanguage = Truncate(targetLanguage, LanguageMaxLength);
+            turnEntity.SourceLanguage = Truncate(sourceLanguage, LanguageMaxLength);
+            turnEntity.ReplyLanguage = Truncate(replyLanguage, LanguageMaxLength);
         }
         catch (Exception ex)
         {
@@ -713,6 +726,15 @@ internal sealed class AssistantTurnRunner
     // on a separator so a longer future surface stays parseable instead of overflowing the
     // column and failing the save that finalizes the turn.
     private const int AllowedToolsMaxLength = 2048;
+
+    // A language name reaching this length is already not a language name. Truncating keeps a
+    // malformed preference from failing the save that finalizes the turn.
+    private const int LanguageMaxLength = 64;
+
+    private static string? Truncate(string? value, int maxLength) =>
+        string.IsNullOrWhiteSpace(value) ? null
+        : value.Length <= maxLength ? value
+        : value[..maxLength];
 
     private static string? FormatAllowedTools(IReadOnlySet<string> allowedToolNames)
     {

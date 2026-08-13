@@ -11,8 +11,11 @@ AssistantAnalytics:CaptureContent was off. It is on by default from the
 AddAssistantTurnRoutingCapture deployment onwards, so older turns and newer ones
 differ here; filter on request_json <> '{}' when a query needs the real payload.
 Routing columns on assistant_turns (prompt_version, intent_artifact,
-intent_content, allowed_tools) are captured regardless of that setting and are
-null for turns predating that same deployment.
+intent_content, intent_operation, allowed_tools) and the three stamped languages
+(target_language, source_language, reply_language) are captured regardless of
+that setting and are null for turns predating their deployment. The languages are
+stamped per turn on purpose: their sources are mutable, so joining to a quiz or a
+user preference reports what that setting says now rather than what the turn used.
 */
 DECLARE @From datetimeoffset = DATEADD(day, -30, SYSDATETIMEOFFSET());
 DECLARE @To datetimeoffset = SYSDATETIMEOFFSET();
@@ -179,6 +182,7 @@ SELECT
     profile,
     COALESCE(intent_artifact, 'unrecorded') AS intent_artifact,
     COALESCE(intent_content, 'unrecorded') AS intent_content,
+    COALESCE(intent_operation, 'unrecorded') AS intent_operation,
     COUNT_BIG(*) AS turns,
     SUM(CASE WHEN change_outcome = 'applied' THEN 1 ELSE 0 END) AS applied,
     SUM(CASE WHEN change_outcome = 'rejected' THEN 1 ELSE 0 END) AS rejected,
@@ -188,7 +192,68 @@ SELECT
     AVG(CAST(tool_call_count AS float)) AS avg_tool_calls
 FROM assistant_turns
 WHERE started_at >= @From AND started_at < @To
-GROUP BY prompt_version, profile, intent_artifact, intent_content
+GROUP BY prompt_version, profile, intent_artifact, intent_content, intent_operation
+ORDER BY turns DESC;
+
+/* Cost per accepted proposal. The number a model change is judged on: a cheaper model that
+   produces the wrong artifact costs more through retries and corrections than a dearer one
+   that lands first time. Turns proposing nothing are excluded from the rate but still carry
+   their cost, because clarifying turns are part of what an accepted proposal costs. */
+WITH invocation_cost AS (
+    /* Collapsed to one row per invocation first. Joining transactions directly to
+       invocations would duplicate an invocation whenever it carries more than one debit,
+       inflating every token and call total summed alongside it. */
+    SELECT OperationId, SUM(COALESCE(BudgetAmountMicros, 0)) AS cost_micros
+    FROM AiCreditTransactions
+    WHERE Kind = 'usage_debit' AND OperationId IS NOT NULL
+    GROUP BY OperationId
+), turn_cost AS (
+    SELECT
+        t.id,
+        t.profile,
+        t.actual_model,
+        t.change_outcome,
+        COUNT(i.id) AS model_calls,
+        SUM(COALESCE(c.cost_micros, 0)) AS cost_micros,
+        SUM(COALESCE(i.total_tokens, 0)) AS total_tokens
+    FROM assistant_turns t
+    LEFT JOIN assistant_model_invocations i ON i.turn_id = t.id
+    LEFT JOIN invocation_cost c ON c.OperationId = i.id
+    WHERE t.started_at >= @From AND t.started_at < @To
+    GROUP BY t.id, t.profile, t.actual_model, t.change_outcome
+)
+SELECT
+    profile,
+    actual_model,
+    COUNT_BIG(*) AS turns,
+    SUM(CASE WHEN change_outcome = 'applied' THEN 1 ELSE 0 END) AS accepted_proposals,
+    CAST(SUM(cost_micros) / 1000000.0 AS decimal(18,6)) AS total_cost_sek,
+    CAST(SUM(cost_micros) / 1000000.0
+        / NULLIF(SUM(CASE WHEN change_outcome = 'applied' THEN 1 ELSE 0 END), 0)
+        AS decimal(18,6)) AS cost_sek_per_accepted_proposal,
+    CAST(1.0 * SUM(model_calls)
+        / NULLIF(SUM(CASE WHEN change_outcome = 'applied' THEN 1 ELSE 0 END), 0)
+        AS decimal(10,2)) AS model_calls_per_accepted_proposal,
+    CAST(1.0 * SUM(total_tokens)
+        / NULLIF(SUM(CASE WHEN change_outcome = 'applied' THEN 1 ELSE 0 END), 0)
+        AS decimal(12,1)) AS tokens_per_accepted_proposal
+FROM turn_cost
+GROUP BY profile, actual_model
+ORDER BY turns DESC;
+
+/* Language balance. Coverage has to be checked per language rather than in aggregate,
+   because a dataset dominated by one language reads as healthy overall while leaving the
+   others untrained. Stamped per turn, so a later preference change cannot move a row. */
+SELECT
+    COALESCE(target_language, 'unrecorded') AS target_language,
+    COALESCE(source_language, 'unrecorded') AS source_language,
+    COALESCE(reply_language, 'unrecorded') AS reply_language,
+    COUNT_BIG(*) AS turns,
+    SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
+    SUM(CASE WHEN change_outcome = 'applied' THEN 1 ELSE 0 END) AS applied
+FROM assistant_turns
+WHERE started_at >= @From AND started_at < @To
+GROUP BY target_language, source_language, reply_language
 ORDER BY turns DESC;
 
 /* Distinct offered tool surfaces. A surface that never produces an applied change is

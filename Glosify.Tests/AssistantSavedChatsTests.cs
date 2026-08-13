@@ -698,6 +698,78 @@ public class AssistantSavedChatsTests
         Assert.Equal("add_sentence", turn.AllowedTools);
     }
 
+    // The three languages come from a quiz, a user preference and a thread, all of which the
+    // user can change afterwards. Stamping them on the turn is what stops a later preference
+    // change from silently rewriting what this turn was built with.
+    [Fact]
+    public async Task SendChatMessage_StampsTheLanguagesTheTurnWasBuiltWith()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        var quiz = CreateQuiz(quizId, "user-1");
+        quiz.TargetLanguage = "Polish";
+        quiz.SourceLanguage = "Swedish";
+        context.Quizzes.Add(quiz);
+        context.Users.Add(new ApplicationUser { Id = "user-1", PreferredAssistantLanguage = "German" });
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context);
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Add five words.", contextQuizId: quizId);
+
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync(candidate => candidate.ThreadId == chat.Id);
+        Assert.Equal("Polish", turn.TargetLanguage);
+        Assert.Equal("Swedish", turn.SourceLanguage);
+        Assert.False(string.IsNullOrWhiteSpace(turn.ReplyLanguage));
+    }
+
+    // The point of stamping: the row keeps the turn's own languages after the preferences it
+    // was derived from have moved on.
+    [Fact]
+    public async Task SendChatMessage_KeepsStampedLanguagesWhenThePreferenceChangesLater()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        var quiz = CreateQuiz(quizId, "user-1");
+        quiz.TargetLanguage = "Polish";
+        quiz.SourceLanguage = "Swedish";
+        context.Quizzes.Add(quiz);
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context);
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Add five words.", contextQuizId: quizId);
+
+        var stored = await context.Quizzes.SingleAsync(candidate => candidate.Id == quizId);
+        stored.SourceLanguage = "French";
+        await context.SaveChangesAsync();
+
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync(candidate => candidate.ThreadId == chat.Id);
+        Assert.Equal("Swedish", turn.SourceLanguage);
+    }
+
+    [Theory]
+    [InlineData("Create a Polish travel quiz.", "Create")]
+    [InlineData("Add five words to this quiz.", "Add")]
+    [InlineData("Create a quiz and add ten words.", "Create")]
+    [InlineData("Why does this take the dative case?", "Auto")]
+    public async Task SendChatMessage_RecordsTheRequestedOperation(string message, string expected)
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await context.SaveChangesAsync();
+        var orchestrator = CreateOrchestrator(context);
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(chat.Id, "user-1", message);
+
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync(candidate => candidate.ThreadId == chat.Id);
+        Assert.Equal(expected, turn.IntentOperation);
+    }
+
     [Fact]
     public async Task SendChatMessage_RecordsTheOfferedToolSurfaceSortedForComparison()
     {
