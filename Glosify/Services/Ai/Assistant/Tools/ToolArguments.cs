@@ -220,21 +220,16 @@ internal static class ToolArguments
     }
 
     /// <summary>
-    /// Match keys for the sentences already queued in this turn.
-    /// </summary>
-    /// <remarks>
-    /// Lets a word tool refuse content the turn has already proposed as a sentence, so the
-    /// review card does not offer the user a word that Apply would drop anyway. Only covers
-    /// sentences queued before the word: the apply boundary is what makes the result
-    /// independent of the order the model called its tools in.
-    /// </remarks>
-    /// <summary>
     /// Maps each parsed draft back to its position in the request array.
     /// </summary>
     /// <remarks>
     /// The draft lists are compacted: an invalid entry is reported in <c>skipped</c> and then
     /// absent, so positions in the parsed list drift from the request the model sent. A later
     /// skip reported against a parsed position would therefore name the wrong item.
+    /// <para>
+    /// <paramref name="skipped"/> must contain only parse failures. Feeding it a list that a
+    /// later stage has already appended to mixes two coordinate systems and corrupts the map.
+    /// </para>
     /// </remarks>
     internal static int[] SourceIndexes(int parsedCount, IReadOnlyList<SkippedItem> skipped)
     {
@@ -254,6 +249,15 @@ internal static class ToolArguments
         return indexes;
     }
 
+    /// <summary>
+    /// Match keys for the sentences already queued in this turn.
+    /// </summary>
+    /// <remarks>
+    /// Lets a word tool refuse content the turn has already proposed as a sentence, so the
+    /// review card does not offer the user a word that Apply would drop anyway. Only covers
+    /// sentences queued before the word: the apply boundary is what makes the result
+    /// independent of the order the model called its tools in.
+    /// </remarks>
     internal static HashSet<string> QueuedSentenceKeys(AgentToolContext context)
     {
         var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

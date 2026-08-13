@@ -15,6 +15,9 @@ namespace Glosify.Tests;
 
 public class ChangeApplierTests
 {
+    private static readonly DateTimeOffset SeededAt =
+        new(2026, 8, 11, 12, 0, 0, TimeSpan.Zero);
+
     [Fact]
     public async Task Workflow_rolls_back_quiz_and_keeps_proposal_active_when_a_later_change_fails()
     {
@@ -648,7 +651,7 @@ public class ChangeApplierTests
             QuizId = quizId,
             Text = "To jest moj dom.",
             Translation = "This is my house.",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SeededAt,
         });
         await db.SaveChangesAsync();
         var applier = CreateApplier(db);
@@ -684,7 +687,7 @@ public class ChangeApplierTests
             QuizId = quizId,
             Text = "To jest moj dom.",
             Translation = "This is my house.",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SeededAt,
         });
         await db.SaveChangesAsync();
         var applier = CreateApplier(db);
@@ -720,7 +723,7 @@ public class ChangeApplierTests
             QuizId = quizId,
             Text = "Stary tekst.",
             Translation = "Old text.",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SeededAt,
         });
         await db.SaveChangesAsync();
         var applier = CreateApplier(db);
@@ -740,6 +743,134 @@ public class ChangeApplierTests
         Assert.Empty(db.Words.Where(item => item.QuizId == quizId));
     }
 
+    // Deleting a sentence and adding it back in the same turn — to fix its translation — was
+    // refused as a duplicate of the row just deleted, so the sentence disappeared entirely.
+    [Fact]
+    public async Task ApplyAsync_DeletingAndReAddingASentenceInOneProposalKeepsIt()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        var sentenceId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.QuizSentences.Add(new QuizSentence
+        {
+            Id = sentenceId,
+            QuizId = quizId,
+            Text = "To jest moj dom.",
+            Translation = "Bad translation.",
+            CreatedAt = SeededAt,
+        });
+        await db.SaveChangesAsync();
+        var applier = CreateApplier(db);
+        var changes = new[]
+        {
+            new PendingChange(
+                PendingChangeKinds.DeleteSentence,
+                JsonSerializer.SerializeToElement(new { sentence_id = sentenceId })),
+            new PendingChange(
+                PendingChangeKinds.AddSentence,
+                JsonSerializer.SerializeToElement(new { text = "To jest moj dom.", translation = "This is my house." })),
+        };
+
+        var result = await applier.ApplyAsync(quizId, "user-1", changes, CancellationToken.None);
+
+        Assert.Equal(2, result.Applied);
+        var sentence = Assert.Single(db.QuizSentences.Where(item => item.QuizId == quizId));
+        Assert.Equal("This is my house.", sentence.Translation);
+    }
+
+    // Editing a sentence away from a text left that text claimed, so adding it back later in
+    // the same proposal was refused by a row that no longer holds it.
+    [Fact]
+    public async Task ApplyAsync_EditingASentenceFreesTheTextItNoLongerHolds()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        var sentenceId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.QuizSentences.Add(new QuizSentence
+        {
+            Id = sentenceId,
+            QuizId = quizId,
+            Text = "Stary tekst.",
+            Translation = "Old text.",
+            CreatedAt = SeededAt,
+        });
+        await db.SaveChangesAsync();
+        var applier = CreateApplier(db);
+        var changes = new[]
+        {
+            new PendingChange(
+                PendingChangeKinds.EditSentence,
+                JsonSerializer.SerializeToElement(new { sentence_id = sentenceId, text = "Nowy tekst." })),
+            new PendingChange(
+                PendingChangeKinds.AddSentence,
+                JsonSerializer.SerializeToElement(new { text = "Stary tekst.", translation = "Old text, kept." })),
+        };
+
+        var result = await applier.ApplyAsync(quizId, "user-1", changes, CancellationToken.None);
+
+        Assert.Equal(2, result.Applied);
+        var texts = db.QuizSentences.Where(item => item.QuizId == quizId)
+            .Select(item => item.Text).OrderBy(text => text).ToArray();
+        Assert.Equal(["Nowy tekst.", "Stary tekst."], texts);
+    }
+
+    // A staged insert is not among the loaded rows, so releasing a text has to account for it
+    // or the same sentence can be inserted twice.
+    [Fact]
+    public async Task ApplyAsync_AStagedSentenceStillClaimsItsTextWhenAnotherRowIsDeleted()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        var firstId = Guid.NewGuid();
+        var secondId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.QuizSentences.Add(new QuizSentence
+        {
+            Id = firstId,
+            QuizId = quizId,
+            Text = "Do usuniecia.",
+            Translation = "To delete.",
+            CreatedAt = SeededAt,
+        });
+        db.QuizSentences.Add(new QuizSentence
+        {
+            Id = secondId,
+            QuizId = quizId,
+            Text = "Druga.",
+            Translation = "Second.",
+            CreatedAt = SeededAt,
+        });
+        await db.SaveChangesAsync();
+        var applier = CreateApplier(db);
+        var changes = new[]
+        {
+            new PendingChange(
+                PendingChangeKinds.DeleteSentence,
+                JsonSerializer.SerializeToElement(new { sentence_id = firstId })),
+            new PendingChange(
+                PendingChangeKinds.AddSentence,
+                JsonSerializer.SerializeToElement(new { text = "Do usuniecia.", translation = "Re-added." })),
+            // Retargets the second row onto the staged text, then deletes it. The staged insert
+            // must keep the text claimed so the final add cannot duplicate it.
+            new PendingChange(
+                PendingChangeKinds.EditSentence,
+                JsonSerializer.SerializeToElement(new { sentence_id = secondId, text = "Do usuniecia." })),
+            new PendingChange(
+                PendingChangeKinds.DeleteSentence,
+                JsonSerializer.SerializeToElement(new { sentence_id = secondId })),
+            new PendingChange(
+                PendingChangeKinds.AddSentence,
+                JsonSerializer.SerializeToElement(new { text = "Do usuniecia.", translation = "Duplicate." })),
+        };
+
+        await applier.ApplyAsync(quizId, "user-1", changes, CancellationToken.None);
+
+        var sentence = Assert.Single(db.QuizSentences.Where(item => item.QuizId == quizId));
+        Assert.Equal("Re-added.", sentence.Translation);
+    }
+
     // Ordinary vocabulary must keep working; the check only fires on an actual sentence match.
     [Fact]
     public async Task ApplyAsync_AddWord_StillAddsAPhraseThatIsNotAStoredSentence()
@@ -753,7 +884,7 @@ public class ChangeApplierTests
             QuizId = quizId,
             Text = "By the way, I am late.",
             Translation = "Nawiasem mowiac, jestem spozniony.",
-            CreatedAt = DateTimeOffset.UtcNow,
+            CreatedAt = SeededAt,
         });
         await db.SaveChangesAsync();
         var applier = CreateApplier(db);

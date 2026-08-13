@@ -278,7 +278,23 @@ public sealed class ChangeApplier : IChangeApplier
         public HashSet<string> WordLemmas { get; } = new(StringComparer.OrdinalIgnoreCase);
         public List<QuizSentence> Sentences { get; } = [];
         public Dictionary<Guid, QuizSentence> SentencesById { get; } = new();
+        /// <summary>
+        /// The text of every sentence the quiz currently holds, counting rows staged by this
+        /// proposal. Sentence insertion deduplicates against it.
+        /// </summary>
+        /// <remarks>
+        /// Only meaningful if it tracks the current state: a text left behind after its row was
+        /// deleted or rewritten blocks a legitimate re-add, and a text dropped while a staged
+        /// row still carries it admits a duplicate. Every mutation goes through
+        /// <see cref="ReleaseSentenceText"/> or adds here, never one without the other.
+        /// </remarks>
         public HashSet<string> SentenceTexts { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Text of sentences this proposal has staged for insert. They are not in
+        /// <see cref="Sentences"/>, which holds only rows loaded from the database.
+        /// </summary>
+        public HashSet<string> StagedSentenceTexts { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Normalized text of every sentence this quiz will hold once the proposal is applied:
@@ -492,6 +508,9 @@ public sealed class ChangeApplier : IChangeApplier
             return false;
         }
 
+        // Staged rows are not in batch.Sentences, so a later delete or edit has to be told
+        // about them or it would release a text this insert still needs.
+        batch.StagedSentenceTexts.Add(text);
         _context.QuizSentences.Add(new QuizSentence
         {
             Id = Guid.NewGuid(),
@@ -539,8 +558,12 @@ public sealed class ChangeApplier : IChangeApplier
 
         if (!string.IsNullOrWhiteSpace(newText))
         {
+            var replaced = sentence.Text;
             sentence.Text = newText.Trim();
             batch.SentenceTexts.Add(sentence.Text);
+            // The text this row used to hold is only still spoken for if something else holds
+            // it; otherwise it stays in the set and blocks a legitimate re-add of it later.
+            ReleaseSentenceText(batch, replaced);
         }
         if (!string.IsNullOrWhiteSpace(newTranslation))
         {
@@ -582,7 +605,40 @@ public sealed class ChangeApplier : IChangeApplier
             sentence.Text = newText;
             sentence.Translation = newTranslation;
         }
+
+        if (matches.Count > 0)
+        {
+            // Repair rewrote rows without telling the dedupe set, so the repaired text was not
+            // registered and the text it replaced lingered.
+            batch.SentenceTexts.Add(newText);
+            ReleaseSentenceText(batch, original);
+        }
+
         return matches.Count;
+    }
+
+    /// <summary>
+    /// Drops a text from the dedupe set once nothing in the quiz carries it any more.
+    /// </summary>
+    /// <remarks>
+    /// Checks staged inserts as well as loaded rows: a sentence added earlier in this proposal
+    /// is not in <see cref="QuizContentBatch.Sentences"/>, and forgetting it would let the same
+    /// text be inserted twice.
+    /// </remarks>
+    private static void ReleaseSentenceText(QuizContentBatch batch, string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        var stillUsed = batch.Sentences.Any(remaining =>
+            string.Equals(remaining.Text, text, StringComparison.OrdinalIgnoreCase))
+            || batch.StagedSentenceTexts.Contains(text);
+        if (!stillUsed)
+        {
+            batch.SentenceTexts.Remove(text);
+        }
     }
 
     private bool ApplyDeleteSentence(JsonElement payload, QuizContentBatch batch)
@@ -595,6 +651,11 @@ public sealed class ChangeApplier : IChangeApplier
 
         batch.SentencesById.Remove(sentenceId.Value);
         batch.Sentences.Remove(sentence);
+        // The text has to leave the dedupe set as well, or re-adding it later in the same
+        // proposal is refused as a duplicate of the row this just deleted — which is how
+        // "delete that sentence and add it back with a better translation" lost the sentence
+        // altogether.
+        ReleaseSentenceText(batch, sentence.Text);
         _context.QuizSentences.Remove(sentence);
         return true;
     }
