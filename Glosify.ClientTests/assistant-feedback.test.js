@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     createLatestRequestGate,
+    feedbackPanelState,
     feedbackReasons,
     normalizeFeedback,
     validClientDuration,
@@ -54,4 +55,31 @@ test('feedback request gate rejects stale save responses', () => {
 
     assert.equal(gate.isCurrent(first), false);
     assert.equal(gate.isCurrent(second), true);
+});
+
+test('no rating shows neither the detail form nor the thanks', () => {
+    assert.deepEqual(feedbackPanelState(null, false), {
+        showDetails: false,
+        showThanks: false,
+    });
+    assert.deepEqual(feedbackPanelState(null, true), {
+        showDetails: false,
+        showThanks: false,
+    });
+});
+
+test('a rating opens the detail form so reasons can be added', () => {
+    assert.deepEqual(feedbackPanelState({ rating: 'down' }, false), {
+        showDetails: true,
+        showThanks: false,
+    });
+});
+
+// Re-rendering the same open form on success read as the button doing nothing, which is the
+// bug this replaces: saving details has to visibly conclude.
+test('saving details closes the form and thanks the user', () => {
+    assert.deepEqual(feedbackPanelState({ rating: 'down' }, true), {
+        showDetails: false,
+        showThanks: true,
+    });
 });
