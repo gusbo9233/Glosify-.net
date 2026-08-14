@@ -80,11 +80,17 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
             emitPartials: true,
             cancellationToken: CancellationToken.None);
 
-        Assert.Equal("Dzień", (await output.Reader.ReadAsync()).Text);
+        var initialPartial = await output.Reader.ReadAsync();
+        Assert.Equal("Dzień", initialPartial.Text);
+        Assert.False(initialPartial.IsFinal);
         var revisedPartial = await output.Reader.ReadAsync();
         Assert.Equal("Dzień dob", revisedPartial.Text);
         Assert.False(revisedPartial.IsFinal);
-        Assert.Equal("Dzień dobry", (await output.Reader.ReadAsync()).Text);
+        Assert.Equal(initialPartial.Sequence, revisedPartial.Sequence);
+        var finalSegment = await output.Reader.ReadAsync();
+        Assert.Equal("Dzień dobry", finalSegment.Text);
+        Assert.Equal(initialPartial.Sequence, finalSegment.Sequence);
+        Assert.True(finalSegment.IsFinal);
         Assert.False(output.Reader.TryRead(out _));
     }
 
