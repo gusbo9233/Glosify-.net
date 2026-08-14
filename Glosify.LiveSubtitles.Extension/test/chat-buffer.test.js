@@ -48,6 +48,20 @@ test("Enhanced subtitles commit completed sentences as separate chat bubbles", (
   ]);
 });
 
+test("Enhanced subtitles commit a sentence ending at the delta boundary", () => {
+  const chat = new ChatBuffer();
+  const result = chat.apply({
+    stream: "translation",
+    delta: "Good morning.",
+    isFinal: false,
+    clientTimestamp: 237,
+  });
+
+  assert.deepEqual(result, { changed: true, committed: true });
+  assert.deepEqual(chat.messages, [{ text: "Good morning.", timestamp: 237 }]);
+  assert.equal(chat.translation, "");
+});
+
 test("Enhanced subtitles split unusually long speech at a word boundary", () => {
   const chat = new ChatBuffer({ maximumBubbleCharacters: 12 });
   chat.apply({
