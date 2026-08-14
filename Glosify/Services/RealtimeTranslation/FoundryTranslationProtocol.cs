@@ -29,26 +29,6 @@ internal static class FoundryTranslationProtocol
         return builder.Uri;
     }
 
-    internal static Uri BuildSourceTranscriptionWebSocketUri(RealtimeTranslationOptions options)
-    {
-        if (!RealtimeTranslationOptionsValidator.TryValidateFoundryEndpoint(
-                options.FoundryEndpoint,
-                out var endpoint))
-        {
-            throw new RealtimeTranslationUnavailableException(
-                "Live subtitles are not configured on this Glosify deployment.");
-        }
-
-        var builder = new UriBuilder(endpoint)
-        {
-            Scheme = "wss",
-            Port = -1,
-            Path = "openai/v1/realtime",
-            Query = "intent=transcription",
-        };
-        return builder.Uri;
-    }
-
     internal static byte[] CreateSessionUpdate(string targetLanguage) =>
         JsonSerializer.SerializeToUtf8Bytes(new
         {
@@ -61,47 +41,6 @@ internal static class FoundryTranslationProtocol
                 },
             },
         });
-
-    internal static byte[] CreateSourceTranscriptionSessionUpdate(
-        RealtimeTranslationOptions options,
-        string sourceLanguage) =>
-        JsonSerializer.SerializeToUtf8Bytes(new
-        {
-            type = "session.update",
-            session = new
-            {
-                type = "transcription",
-                audio = new
-                {
-                    input = new
-                    {
-                        format = new { type = "audio/pcm", rate = 24_000 },
-                        turn_detection = (object?)null,
-                        transcription = new
-                        {
-                            model = options.SourceTranscriptionDeployment,
-                            language = sourceLanguage,
-                            delay = options.SourceTranscriptionDelay,
-                        },
-                    },
-                },
-            },
-        });
-
-    internal static byte[] CreateSourceAudioAppend(ReadOnlySpan<byte> browserPayload)
-    {
-        using var document = JsonDocument.Parse(browserPayload.ToArray());
-        var audio = document.RootElement.GetProperty("audio").GetString()
-            ?? throw new JsonException("Audio payload is missing.");
-        return JsonSerializer.SerializeToUtf8Bytes(new
-        {
-            type = "input_audio_buffer.append",
-            audio,
-        });
-    }
-
-    internal static byte[] CreateSourceAudioCommit() =>
-        JsonSerializer.SerializeToUtf8Bytes(new { type = "input_audio_buffer.commit" });
 
     internal static bool IsAllowedBrowserMessage(ReadOnlySpan<byte> payload) =>
         TryGetBrowserAudioByteCount(payload, out _);

@@ -30,11 +30,10 @@ public sealed class RealtimeTranslationOptions
     public string TranslatorResourceId { get; set; } = string.Empty;
     public string TranslatorRegion { get; set; } = string.Empty;
     public int TranslatorTimeoutSeconds { get; set; } = 5;
+    public ElevenLabsRealtimeSpeechOptions ElevenLabs { get; set; } = new();
     public List<RealtimeTranslationSourceLanguageOptions> SourceLanguages { get; set; } = [];
     public bool SavedSourceTranscriptsEnabled { get; set; }
-    public string SourceTranscriptionDeployment { get; set; } = "gpt-realtime-whisper";
-    public string SavedTranscriptBillingModel { get; set; } = "gpt-realtime-translate+gpt-realtime-whisper";
-    public string SourceTranscriptionDelay { get; set; } = "medium";
+    public string SavedTranscriptBillingModel { get; set; } = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime";
     public int SavedTranscriptCreditsPerStartedMinute { get; set; } = 16;
     public List<RealtimeTranslationLanguageOptions> Languages { get; set; } = [];
 
@@ -45,6 +44,19 @@ public sealed class RealtimeTranslationOptions
     public RealtimeTranslationSourceLanguageOptions? FindSourceLanguage(string? code) =>
         SourceLanguages.FirstOrDefault(language => language.Enabled
             && string.Equals(language.Code, code?.Trim(), StringComparison.OrdinalIgnoreCase));
+}
+
+public sealed class ElevenLabsRealtimeSpeechOptions
+{
+    public bool Enabled { get; set; }
+    public string Endpoint { get; set; } = "wss://api.elevenlabs.io/v1/speech-to-text/realtime";
+    public string ApiKey { get; set; } = string.Empty;
+    public string Model { get; set; } = "scribe_v2_realtime";
+    public int CreditsPerStartedMinute { get; set; } = 6;
+    public string BillingModel { get; set; } = "elevenlabs-scribe-v2-realtime+azure-translator-nmt";
+    public bool EnableLogging { get; set; } = true;
+    public double VadSilenceThresholdSeconds { get; set; } = 1.5;
+    public double VadThreshold { get; set; } = 0.4;
 }
 
 public sealed class RealtimeTranslationLanguageOptions
@@ -61,6 +73,7 @@ public sealed class RealtimeTranslationSourceLanguageOptions
     public string Name { get; set; } = string.Empty;
     public string Locale { get; set; } = string.Empty;
     public string TranslatorCode { get; set; } = string.Empty;
+    public string ScribeCode { get; set; } = string.Empty;
     public bool AutoDetect { get; set; }
     public bool Enabled { get; set; } = true;
 }
@@ -105,6 +118,17 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
             {
                 failures.Add("RealtimeTranslation:SpeechEndpoint must be an Azure AI HTTPS custom endpoint.");
             }
+            if (string.IsNullOrWhiteSpace(options.EconomicalBillingModel))
+            {
+                failures.Add("RealtimeTranslation:EconomicalBillingModel is required when economical subtitles are enabled.");
+            }
+            if (options.EconomicalCreditsPerStartedMinute <= 0)
+            {
+                failures.Add("RealtimeTranslation:EconomicalCreditsPerStartedMinute must be greater than zero.");
+            }
+        }
+        if (options.EconomicalEnabled || options.ElevenLabs.Enabled)
+        {
             if (!TryValidateTranslatorEndpoint(
                     options.TranslatorEndpoint,
                     out _,
@@ -119,52 +143,79 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 failures.Add(
                     "RealtimeTranslation:TranslatorResourceId must identify the Azure AI resource used with the global Translator endpoint.");
             }
-            if (string.IsNullOrWhiteSpace(options.EconomicalBillingModel))
-            {
-                failures.Add("RealtimeTranslation:EconomicalBillingModel is required when economical subtitles are enabled.");
-            }
-            if (options.EconomicalCreditsPerStartedMinute <= 0)
-            {
-                failures.Add("RealtimeTranslation:EconomicalCreditsPerStartedMinute must be greater than zero.");
-            }
             if (options.TranslatorTimeoutSeconds is < 1 or > 30)
             {
                 failures.Add("RealtimeTranslation:TranslatorTimeoutSeconds must be between 1 and 30.");
             }
+            if (options.ElevenLabs.Enabled)
+            {
+                if (!TryValidateElevenLabsEndpoint(options.ElevenLabs.Endpoint, out _))
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:Endpoint must be a secure ElevenLabs WebSocket endpoint.");
+                }
+                if (string.IsNullOrWhiteSpace(options.ElevenLabs.ApiKey))
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:ApiKey is required when ElevenLabs subtitles are enabled.");
+                }
+                if (!string.Equals(
+                        options.ElevenLabs.Model?.Trim(),
+                        "scribe_v2_realtime",
+                        StringComparison.Ordinal))
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:Model must be scribe_v2_realtime.");
+                }
+                if (options.ElevenLabs.CreditsPerStartedMinute <= 0)
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:CreditsPerStartedMinute must be greater than zero when specified.");
+                }
+                if (string.IsNullOrWhiteSpace(options.ElevenLabs.BillingModel))
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:BillingModel is required when ElevenLabs subtitles are enabled.");
+                }
+                if (options.ElevenLabs.VadSilenceThresholdSeconds is < 0.3 or > 5)
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:VadSilenceThresholdSeconds must be between 0.3 and 5.");
+                }
+                if (options.ElevenLabs.VadThreshold is <= 0 or >= 1)
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:VadThreshold must be greater than zero and less than one.");
+                }
+            }
 
             var enabledSources = options.SourceLanguages.Where(language => language.Enabled).ToArray();
-            if (enabledSources.Length == 0
+            if (options.EconomicalEnabled && (enabledSources.Length == 0
                 || enabledSources.Any(language => string.IsNullOrWhiteSpace(language.Code)
                     || string.IsNullOrWhiteSpace(language.Name)
                     || string.IsNullOrWhiteSpace(language.Locale)
                     || string.IsNullOrWhiteSpace(language.TranslatorCode))
                 || enabledSources.Select(language => language.Code.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count()
-                    != enabledSources.Length)
+                    != enabledSources.Length))
             {
                 failures.Add(
-                    "RealtimeTranslation:SourceLanguages must contain unique enabled codes with names, Speech locales, and Translator codes.");
+                    "RealtimeTranslation:SourceLanguages must contain unique Azure Speech language mappings when the legacy economical provider is enabled.");
             }
             var autoDetectCount = enabledSources.Count(language => language.AutoDetect);
-            if (autoDetectCount is < 1 or > 4)
+            if (options.EconomicalEnabled && autoDetectCount is (< 1 or > 4))
             {
                 failures.Add(
                     "RealtimeTranslation:SourceLanguages must mark between 1 and 4 enabled languages for at-start auto detection.");
             }
         }
-        if (options.SavedSourceTranscriptsEnabled
-            && string.IsNullOrWhiteSpace(options.SourceTranscriptionDeployment))
+        if (options.SavedSourceTranscriptsEnabled && !options.ElevenLabs.Enabled)
         {
-            failures.Add("RealtimeTranslation:SourceTranscriptionDeployment is required.");
+            failures.Add("RealtimeTranslation:ElevenLabs must be enabled when saved source transcripts are enabled.");
         }
         if (options.SavedSourceTranscriptsEnabled
             && string.IsNullOrWhiteSpace(options.SavedTranscriptBillingModel))
         {
             failures.Add("RealtimeTranslation:SavedTranscriptBillingModel is required.");
-        }
-        if (options.SavedSourceTranscriptsEnabled
-            && options.SourceTranscriptionDelay is not ("minimal" or "low" or "medium" or "high" or "xhigh"))
-        {
-            failures.Add("RealtimeTranslation:SourceTranscriptionDelay must be minimal, low, medium, high, or xhigh.");
         }
         if (options.CreditsPerStartedMinute <= 0)
         {
@@ -205,10 +256,11 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
         {
             if (string.IsNullOrWhiteSpace(language.Code)
                 || string.IsNullOrWhiteSpace(language.Name)
-                || (options.EconomicalEnabled && string.IsNullOrWhiteSpace(language.TranslatorCode))
+                || ((options.EconomicalEnabled || options.ElevenLabs.Enabled)
+                    && string.IsNullOrWhiteSpace(language.TranslatorCode))
                 || !codes.Add(language.Code.Trim()))
             {
-                failures.Add(options.EconomicalEnabled
+                failures.Add(options.EconomicalEnabled || options.ElevenLabs.Enabled
                     ? "RealtimeTranslation:Languages must contain unique non-empty codes, names, and Translator codes."
                     : "RealtimeTranslation:Languages must contain unique non-empty codes and names.");
                 break;
@@ -241,11 +293,26 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
                     string.Equals(model.Deployment?.Trim(), options.EconomicalBillingModel.Trim(), StringComparison.OrdinalIgnoreCase))
                 : null;
+            var elevenLabsIsBudgeted = !options.ElevenLabs.Enabled
+                || _aiUsageOptions.MonthlyBudget.Providers.Any(provider =>
+                    string.Equals(
+                        provider?.Trim(),
+                        RealtimeTranslationConstants.ElevenLabsProvider,
+                        StringComparison.OrdinalIgnoreCase));
+            var elevenLabsDurationPrice = options.ElevenLabs.Enabled
+                ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
+                    string.Equals(
+                        model.Deployment?.Trim(),
+                        options.ElevenLabs.BillingModel.Trim(),
+                        StringComparison.OrdinalIgnoreCase))
+                : null;
             if (!foundryIsBudgeted || durationPrice?.AudioSekPerMinute is not > 0
                 || (options.SavedSourceTranscriptsEnabled && savedDurationPrice?.AudioSekPerMinute is not > 0)
-                || (options.EconomicalEnabled && economicalDurationPrice?.AudioSekPerMinute is not > 0))
+                || (options.EconomicalEnabled && economicalDurationPrice?.AudioSekPerMinute is not > 0)
+                || !elevenLabsIsBudgeted
+                || (options.ElevenLabs.Enabled && elevenLabsDurationPrice?.AudioSekPerMinute is not > 0))
             {
-                failures.Add("AiUsage:MonthlyBudget must include provider 'foundry' and positive AudioSekPerMinute prices for every enabled realtime subtitle billing model.");
+                failures.Add("AiUsage:MonthlyBudget must include every enabled realtime subtitle provider and positive AudioSekPerMinute prices for every enabled realtime subtitle billing model.");
             }
         }
 
@@ -258,6 +325,28 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
         TryValidateHttpsEndpoint(value, out endpoint)
         && (endpoint.AbsolutePath == "/" || endpoint.AbsolutePath.Length == 0)
         && endpoint.Host.EndsWith(".cognitiveservices.azure.com", StringComparison.OrdinalIgnoreCase);
+
+    internal static bool TryValidateElevenLabsEndpoint(
+        string? value,
+        [NotNullWhen(true)] out Uri? endpoint)
+    {
+        if (!Uri.TryCreate(value?.Trim(), UriKind.Absolute, out endpoint)
+            || endpoint.Scheme != "wss"
+            || !string.IsNullOrEmpty(endpoint.UserInfo)
+            || !string.IsNullOrEmpty(endpoint.Query)
+            || !string.IsNullOrEmpty(endpoint.Fragment)
+            || !(string.Equals(endpoint.Host, "elevenlabs.io", StringComparison.OrdinalIgnoreCase)
+                || endpoint.Host.EndsWith(".elevenlabs.io", StringComparison.OrdinalIgnoreCase))
+            || !string.Equals(
+                endpoint.AbsolutePath.TrimEnd('/'),
+                "/v1/speech-to-text/realtime",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            endpoint = null;
+            return false;
+        }
+        return true;
+    }
 
     internal static bool TryValidateTranslatorEndpoint(
         string? value,

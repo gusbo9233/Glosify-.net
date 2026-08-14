@@ -79,6 +79,15 @@ public static class ApplicationServiceExtensions
             .Bind(configuration.GetSection(RealtimeTranslationOptions.SectionName))
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<RealtimeTranslationOptions>, RealtimeTranslationOptionsValidator>();
+        services.Configure<RealtimeTranslationOptions>(options =>
+        {
+            var elevenLabsApiKey = configuration["Elevenlabs_key"]
+                ?? configuration["ELEVENLABS_API_KEY"];
+            if (!string.IsNullOrWhiteSpace(elevenLabsApiKey))
+            {
+                options.ElevenLabs.ApiKey = elevenLabsApiKey;
+            }
+        });
         // Keep the legacy Gemini credential alias only while the explicit rollback
         // provider is available. All model and timeout settings use standard ASP.NET
         // double-underscore configuration binding.
@@ -134,7 +143,10 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IMobileAuthorizationCodeStore, MobileAuthorizationCodeStore>();
         services.AddSingleton<IRealtimeTranslationRelayTokenStore, RealtimeTranslationRelayTokenStore>();
         services.AddSingleton<IKeyedAsyncLock, ReferenceCountedKeyedAsyncLock>();
-        services.AddSingleton<IRealtimeSpeechTranscriber, AzureRealtimeSpeechTranscriber>();
+        services.AddSingleton<AzureRealtimeSpeechTranscriber>();
+        services.AddSingleton<IElevenLabsRealtimeWebSocketFactory, ElevenLabsRealtimeWebSocketFactory>();
+        services.AddSingleton<ElevenLabsRealtimeSpeechTranscriber>();
+        services.AddSingleton<IRealtimeSpeechTranscriber, RealtimeSpeechTranscriberRouter>();
         var translatorTimeout = TimeSpan.FromSeconds(Math.Clamp(
             configuration.GetValue<int?>(
                 $"{RealtimeTranslationOptions.SectionName}:TranslatorTimeoutSeconds") ?? 5,
@@ -151,11 +163,19 @@ public static class ApplicationServiceExtensions
             // submit and charge the same phrase more than once.
             options.Retry.DisableForUnsafeHttpMethods();
         });
+        services.AddHttpClient(AzureTranslatorLanguageCatalog.HttpClientName, client =>
+            client.BaseAddress = new Uri("https://api.cognitive.microsofttranslator.com/"))
+        .AddStandardResilienceHandler(options =>
+        {
+            options.TotalRequestTimeout.Timeout = translatorTimeout;
+            options.AttemptTimeout.Timeout = translatorTimeout;
+        });
+        services.AddSingleton<IRealtimeTranslationLanguageCatalog, AzureTranslatorLanguageCatalog>();
         services.AddSingleton<IRealtimeTextTranslator, AzureRealtimeTextTranslator>();
         services.AddSingleton<IEconomicalSubtitleTranslator, EconomicalSubtitleTranslator>();
         services.AddSingleton<RealtimeTranslationRelayAuthorizationMonitor>();
         services.AddSingleton<IEnhancedTranslationRelay, FoundryTranslationRelay>();
-        services.AddSingleton<IEconomicalTranslationRelay, EconomicalTranslationRelay>();
+        services.AddSingleton<IScribeTranslationRelay, ScribeTranslationRelay>();
         services.AddSingleton<IFoundryTranslationRelay, RealtimeTranslationRelayRouter>();
         services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();
         services.AddScoped<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>();

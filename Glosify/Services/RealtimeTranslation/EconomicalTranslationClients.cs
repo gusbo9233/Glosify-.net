@@ -14,11 +14,13 @@ public sealed record RecognizedSpeechSegment(
     string Text,
     string SourceLanguage,
     string SourceLocale,
-    DateTimeOffset CapturedAt);
+    DateTimeOffset CapturedAt,
+    bool IsAutoDetected = false);
 
 public interface IRealtimeSpeechTranscriber
 {
     Task TranscribeAsync(
+        string speechProvider,
         string sourceLanguage,
         ChannelReader<byte[]> audio,
         ChannelWriter<RecognizedSpeechSegment> output,
@@ -65,7 +67,7 @@ public sealed class EconomicalSubtitleTranslator(IRealtimeTextTranslator transla
             ? segment.Text
             : await translator.TranslateAsync(
                 segment.Text,
-                segment.SourceLanguage,
+                segment.IsAutoDetected ? "auto" : segment.SourceLanguage,
                 targetLanguage,
                 cancellationToken);
         return new TranslatedSubtitleSegment(
@@ -95,11 +97,17 @@ public sealed class AzureRealtimeSpeechTranscriber : IRealtimeSpeechTranscriber
     }
 
     public async Task TranscribeAsync(
+        string speechProvider,
         string sourceLanguage,
         ChannelReader<byte[]> audio,
         ChannelWriter<RecognizedSpeechSegment> output,
         CancellationToken cancellationToken)
     {
+        if (speechProvider != RealtimeSpeechProviders.Azure)
+        {
+            throw new RealtimeTranslationValidationException(
+                "Azure Speech received an unsupported speech provider.");
+        }
         if (!RealtimeTranslationOptionsValidator.TryValidateCognitiveEndpoint(
                 _options.SpeechEndpoint,
                 out var endpoint))
@@ -132,7 +140,8 @@ public sealed class AzureRealtimeSpeechTranscriber : IRealtimeSpeechTranscriber
                     eventArgs.Result.Text.Trim(),
                     code,
                     locale,
-                    _timeProvider.GetUtcNow())))
+                    _timeProvider.GetUtcNow(),
+                    sourceLanguage == "auto")))
             {
                 Interlocked.CompareExchange(
                     ref failure,
@@ -256,22 +265,27 @@ public sealed class AzureRealtimeTextTranslator : IRealtimeTextTranslator
                 out var usesGlobalEndpoint))
         {
             throw new RealtimeTranslationUnavailableException(
-                "Economical text translation is not configured.");
+                "Scribe text translation is not configured.");
         }
 
-        var sourceTranslatorCode = _options.FindSourceLanguage(sourceLanguage)?.TranslatorCode;
-        var targetTranslatorCode = _options.FindLanguage(targetLanguage)?.TranslatorCode;
-        if (string.IsNullOrWhiteSpace(sourceTranslatorCode)
-            || string.IsNullOrWhiteSpace(targetTranslatorCode))
+        var sourceTranslatorCode = string.Equals(sourceLanguage, "auto", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : _options.FindSourceLanguage(sourceLanguage)?.TranslatorCode ?? sourceLanguage?.Trim();
+        var targetTranslatorCode = _options.FindLanguage(targetLanguage)?.TranslatorCode
+            ?? targetLanguage?.Trim();
+        if (string.IsNullOrWhiteSpace(targetTranslatorCode))
         {
             throw new RealtimeTranslationUnavailableException(
-                "Economical subtitle language mapping is not configured.");
+                "Scribe subtitle language mapping is not configured.");
         }
 
         var requestUri = new Uri(
             endpoint,
             $"{(usesGlobalEndpoint ? string.Empty : "translator/text/v3.0/")}translate"
-            + $"?api-version=3.0&from={Uri.EscapeDataString(sourceTranslatorCode)}"
+            + "?api-version=3.0"
+            + (string.IsNullOrWhiteSpace(sourceTranslatorCode)
+                ? string.Empty
+                : $"&from={Uri.EscapeDataString(sourceTranslatorCode)}")
             + $"&to={Uri.EscapeDataString(targetTranslatorCode)}");
         var token = await _credential.GetTokenAsync(
             new TokenRequestContext([CognitiveScope]),

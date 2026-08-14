@@ -910,7 +910,7 @@ book pages are treated as untrusted input.
 ### 11.7 Realtime translation and the extension
 
 The most involved data path in the system: a Chrome extension captures tab audio
-and the app proxies it to a Foundry realtime model.
+and the app proxies it through one of two server-selected subtitle pipelines.
 
 ```mermaid
 sequenceDiagram
@@ -919,8 +919,9 @@ sequenceDiagram
     participant Off as Offscreen document
     participant Api as RealtimeTranslationApiController
     participant Relay as RealtimeTranslationRelayController
-    participant FR as FoundryTranslationRelay
-    participant F as Foundry realtime
+    participant Router as Relay/provider routers
+    participant Up as Foundry or ElevenLabs
+    participant Tr as Azure Translator
     participant DB as SQL
 
     P->>SW: start
@@ -930,21 +931,36 @@ sequenceDiagram
     SW->>Off: create offscreen doc, tabCapture
     Off->>Relay: WSS …/stream, token in subprotocol
     Relay->>Relay: TryRedeem(token) → authorization
-    Relay->>FR: RelayAsync(browserSocket, authorization)
-    FR->>F: upstream socket
+    Relay->>Router: RelayAsync(browserSocket, canonical authorization)
+    Router->>Up: stream PCM audio
     loop while streaming
-        Off->>FR: PCM audio frames
-        F-->>FR: translated text events
-        FR-->>Off: events → content script overlay
-        FR->>DB: RealtimeTranslationMinute (per started minute)
+        Off->>Relay: PCM audio frames
+        Up-->>Router: translated events or finalized speech
+        Router->>Tr: finalized speech (Scribe mode only)
+        Router-->>Off: translation events → content script overlay
+        Router->>DB: RealtimeTranslationMinute (per started minute)
     end
-    FR->>DB: finalize session; optional transcript
+    Router->>DB: finalize session; optional transcript
 ```
 
-- **Audio is not stored.** Saving the original-language transcript is opt-in
+- **Modes are first-class catalog choices.** Scribe uses ElevenLabs
+  `scribe_v2_realtime` plus Azure Translator; Enhanced uses Microsoft Foundry
+  realtime translation. The server
+  derives and persists the canonical speech provider from the mode and carries
+  it in the single-use relay authorization.
+- **Scribe is fail-closed.** Its API key remains server-side, only finalized VAD
+  commits are translated, and an upstream failure ends that Scribe session
+  without silently switching providers.
+
+- **Audio is not stored by Glosify.** Saving the original-language transcript is opt-in
   (`SavedSourceTranscriptsEnabled`) and costs double
   (`SavedTranscriptCreditsPerStartedMinute: 16` vs `CreditsPerStartedMinute: 8`)
-  because it runs a second deployment for source transcription.
+  because Enhanced tees the same PCM audio to Scribe for finalized source
+  transcription. Scribe subtitle sessions reuse their existing finalized text.
+- **Languages are catalog-driven.** The server caches Azure Translator's current
+  target-language catalog for 24 hours and supplies it to the extension, with a
+  configured fallback. Scribe receives no language hint by default; users may
+  optionally select a compatible ISO hint when Scribe is active.
 - **Billing is per started minute**, written as `RealtimeTranslationMinute` rows
   as the session runs, with a `RelayBillingGraceSeconds` allowance — so a
   disconnect mid-session has already been paid for what it used.

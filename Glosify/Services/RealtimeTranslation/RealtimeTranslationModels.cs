@@ -3,12 +3,21 @@ namespace Glosify.Services.RealtimeTranslation;
 public static class RealtimeTranslationConstants
 {
     public const string Provider = "foundry";
+    public const string ElevenLabsProvider = "elevenlabs";
 }
 
 public static class RealtimeTranslationModes
 {
     public const string Economical = "economical";
+    public const string Scribe = "scribe";
     public const string Enhanced = "enhanced";
+}
+
+public static class RealtimeSpeechProviders
+{
+    public const string Azure = "azure";
+    public const string ElevenLabs = "elevenlabs";
+    public const string Foundry = "foundry";
 }
 
 public sealed record RealtimeTranslationLanguage(string Code, string Name);
@@ -29,8 +38,7 @@ public sealed record RealtimeTranslationCatalog(
     string Model,
     int AvailableCredits,
     IReadOnlyList<RealtimeTranslationMode> Modes,
-    IReadOnlyList<RealtimeTranslationSourceLanguage> SourceLanguages,
-    bool EconomicalEnabled);
+    IReadOnlyList<RealtimeTranslationSourceLanguage> SourceLanguages);
 
 public sealed record RealtimeTranslationSessionCreated(
     Guid SessionId,
@@ -66,6 +74,7 @@ public sealed record RealtimeTranslationRelayAuthorization(
     string UserId,
     string TargetLanguage,
     string TranslationMode,
+    string SpeechProvider,
     string? SourceLanguage,
     bool SaveTranscript,
     string? TranscriptSourceLanguage);

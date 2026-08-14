@@ -18,7 +18,7 @@ public sealed class RealtimeTranslationServiceTests
         new(2026, 8, 11, 8, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public async Task EconomicalSession_UsesFourCreditsAndExistingSpeechForSavedTranscript()
+    public async Task EconomicalMode_IsNoLongerAccepted()
     {
         await using var context = CreateContext();
         await SeedUserAsync(context);
@@ -45,25 +45,94 @@ public sealed class RealtimeTranslationServiceTests
                 ];
             });
 
+        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(() =>
+            service.CreateSessionAsync(
+                "user-1",
+                "es",
+                translationMode: RealtimeTranslationModes.Economical));
+        Assert.Empty(context.RealtimeTranslationSessions);
+    }
+
+    [Fact]
+    public async Task ElevenLabsSession_UsesProviderPriceBillingAndRelayAuthorization()
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var tokens = new FakeRelayTokenStore();
+        var service = CreateService(
+            context,
+            new ManualTimeProvider(TestNow),
+            tokens,
+            options =>
+            {
+                options.ElevenLabs.Enabled = true;
+                options.ElevenLabs.CreditsPerStartedMinute = 7;
+                options.SourceLanguages =
+                [
+                    new RealtimeTranslationSourceLanguageOptions
+                    {
+                        Code = "pl",
+                        Name = "Polish",
+                        Locale = "pl-PL",
+                        TranslatorCode = "pl",
+                        ScribeCode = "pl",
+                        AutoDetect = true,
+                    },
+                ];
+            });
+
+        var catalog = await service.GetCatalogAsync("user-1");
+        Assert.Equal(
+            [(RealtimeTranslationModes.Scribe, 7), (RealtimeTranslationModes.Enhanced, 8)],
+            catalog.Modes.Select(mode => (mode.Code, mode.CreditsPerMinute)).ToArray());
+
+        var created = await service.CreateSessionAsync(
+            "user-1",
+            "es",
+            translationMode: RealtimeTranslationModes.Scribe);
+        var begun = await service.BeginMinuteAsync("user-1", created.SessionId, 1);
+
+        Assert.Equal(7, created.CreditsPerMinute);
+        Assert.Equal(7, begun.CreditsCharged);
+        var session = await context.RealtimeTranslationSessions.SingleAsync();
+        Assert.Equal(RealtimeTranslationModes.Scribe, session.TranslationMode);
+        Assert.Equal(RealtimeSpeechProviders.ElevenLabs, session.SpeechProvider);
+        Assert.Equal("auto", session.SourceLanguage);
+        Assert.Equal("scribe_v2_realtime", session.Model);
+        Assert.Equal("elevenlabs-scribe-v2-realtime+azure-translator-nmt", session.BillingModel);
+        Assert.Equal(RealtimeSpeechProviders.ElevenLabs, tokens.LastSpeechProvider);
+        Assert.Equal("auto", tokens.LastRequestedSourceLanguage);
+        var transaction = await context.AiCreditTransactions.SingleAsync(transaction =>
+            transaction.Kind == AiCreditTransactionKinds.UsageDebit);
+        Assert.Equal(RealtimeTranslationConstants.ElevenLabsProvider, transaction.Provider);
+    }
+
+    [Fact]
+    public async Task EnhancedSavedTranscript_UsesScribeWithOptionalLanguageHint()
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var tokens = new FakeRelayTokenStore();
+        var service = CreateService(context, new ManualTimeProvider(TestNow), tokens);
+
         var created = await service.CreateSessionAsync(
             "user-1",
             "es",
             saveTranscript: true,
-            translationMode: RealtimeTranslationModes.Economical,
+            translationMode: RealtimeTranslationModes.Enhanced,
             sourceLanguage: "pl");
 
-        Assert.Equal(4, created.CreditsPerMinute);
+        Assert.Equal(16, created.CreditsPerMinute);
         var session = await context.RealtimeTranslationSessions.SingleAsync();
-        Assert.Equal(RealtimeTranslationModes.Economical, session.TranslationMode);
+        Assert.Equal(RealtimeSpeechProviders.Foundry, session.SpeechProvider);
         Assert.Equal("pl", session.SourceLanguage);
-        Assert.Equal("azure-speech-standard+azure-translator-nmt", session.BillingModel);
-        Assert.Null(session.SourceTranscriptionDeployment);
-        Assert.Equal(RealtimeTranslationModes.Economical, tokens.LastTranslationMode);
+        Assert.Equal("scribe_v2_realtime", session.SourceTranscriptionDeployment);
+        Assert.Equal("gpt-realtime-translate+elevenlabs-scribe-v2-realtime", session.BillingModel);
         Assert.Equal("pl", tokens.LastRequestedSourceLanguage);
     }
 
     [Fact]
-    public async Task EconomicalSavedTranscript_RejectsAutoDetection()
+    public async Task ElevenLabsSession_RejectsUnknownOrDisabledMode()
     {
         await using var context = CreateContext();
         await SeedUserAsync(context);
@@ -73,6 +142,7 @@ public sealed class RealtimeTranslationServiceTests
             new FakeRelayTokenStore(),
             options =>
             {
+                options.ElevenLabs.Enabled = false;
                 options.EconomicalEnabled = true;
                 options.SourceLanguages =
                 [
@@ -91,9 +161,14 @@ public sealed class RealtimeTranslationServiceTests
             service.CreateSessionAsync(
                 "user-1",
                 "es",
-                saveTranscript: true,
-                translationMode: RealtimeTranslationModes.Economical,
-                sourceLanguage: "auto"));
+                translationMode: "unknown",
+                sourceLanguage: "pl"));
+        await Assert.ThrowsAsync<RealtimeTranslationUnavailableException>(() =>
+            service.CreateSessionAsync(
+                "user-1",
+                "es",
+                translationMode: RealtimeTranslationModes.Scribe,
+                sourceLanguage: "pl"));
     }
 
     [Fact]
@@ -113,6 +188,8 @@ public sealed class RealtimeTranslationServiceTests
             catalog.QuizLanguages.Select(language => (language.Code, language.Name)).ToArray());
         Assert.Equal("pl", catalog.SelectedQuizLanguage?.Code);
         Assert.Equal("Polish", catalog.SelectedQuizLanguage?.Name);
+        Assert.Equal("auto", catalog.SourceLanguages[0].Code);
+        Assert.Contains(catalog.SourceLanguages, language => language.Code == "es");
     }
 
     [Fact]
@@ -143,6 +220,7 @@ public sealed class RealtimeTranslationServiceTests
         Assert.Empty(context.RealtimeTranslationTranscripts);
         var liveSession = await context.RealtimeTranslationSessions.SingleAsync();
         Assert.Equal(RealtimeTranslationModes.Enhanced, liveSession.TranslationMode);
+        Assert.Equal(RealtimeSpeechProviders.Foundry, liveSession.SpeechProvider);
         Assert.Null(liveSession.SourceLanguage);
         Assert.Null(liveSession.SourceTranscriptionDeployment);
         Assert.Equal("glosify-realtime-translate", liveSession.BillingModel);
@@ -172,7 +250,8 @@ public sealed class RealtimeTranslationServiceTests
         Assert.All(sessions, session => Assert.Equal(first.TranscriptId, session.TranscriptId));
         Assert.All(sessions, session => Assert.NotNull(session.TranscriptConsentAt));
         Assert.All(sessions, session => Assert.Equal(16, session.CreditsPerStartedMinute));
-        Assert.All(sessions, session => Assert.Equal("gpt-realtime-whisper", session.SourceTranscriptionDeployment));
+        Assert.All(sessions, session => Assert.Equal("auto", session.SourceLanguage));
+        Assert.All(sessions, session => Assert.Equal("scribe_v2_realtime", session.SourceTranscriptionDeployment));
         Assert.Equal(16, first.CreditsPerMinute);
     }
 
@@ -420,11 +499,16 @@ public sealed class RealtimeTranslationServiceTests
             Model = "gpt-realtime-translate",
             Deployment = "glosify-realtime-translate",
             SavedSourceTranscriptsEnabled = true,
-            SourceTranscriptionDeployment = "gpt-realtime-whisper",
-            SavedTranscriptBillingModel = "gpt-realtime-translate+gpt-realtime-whisper",
+            SavedTranscriptBillingModel = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime",
             FoundryEndpoint = "https://glosify-foundry.openai.azure.com/",
             CreditsPerStartedMinute = 8,
             SavedTranscriptCreditsPerStartedMinute = 16,
+            ElevenLabs = new ElevenLabsRealtimeSpeechOptions
+            {
+                Enabled = true,
+                ApiKey = "test-key",
+                CreditsPerStartedMinute = 6,
+            },
             MaxSessionMinutes = 30,
             ReservationExpirySeconds = 120,
             StaleSessionSeconds = 60,
@@ -440,10 +524,21 @@ public sealed class RealtimeTranslationServiceTests
             credits,
             relayTokens,
             new QuizLanguagePreferenceService(context),
+            new StaticRealtimeTranslationLanguageCatalog(realtimeOptions),
             Options.Create(realtimeOptions),
             timeProvider,
             NullLogger<RealtimeTranslationService>.Instance,
             new ReferenceCountedKeyedAsyncLock());
+    }
+
+    private sealed class StaticRealtimeTranslationLanguageCatalog(RealtimeTranslationOptions options)
+        : IRealtimeTranslationLanguageCatalog
+    {
+        public Task<IReadOnlyList<RealtimeTranslationLanguage>> GetLanguagesAsync(
+            CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<RealtimeTranslationLanguage>>(
+                options.Languages.Where(language => language.Enabled)
+                    .Select(language => new RealtimeTranslationLanguage(language.Code, language.Name))
+                    .ToArray());
     }
 
     private sealed class AlwaysEligibleTrialService : Glosify.Services.Auth.ITrialEligibilityService
@@ -456,6 +551,7 @@ public sealed class RealtimeTranslationServiceTests
     {
         public string? LastSourceLanguage { get; private set; }
         public string? LastTranslationMode { get; private set; }
+        public string? LastSpeechProvider { get; private set; }
         public string? LastRequestedSourceLanguage { get; private set; }
 
         public RealtimeTranslationRelayGrant Create(
@@ -463,12 +559,14 @@ public sealed class RealtimeTranslationServiceTests
             string userId,
             string targetLanguage,
             string translationMode,
+            string speechProvider,
             string? sourceLanguage,
             bool saveTranscript,
             string? transcriptSourceLanguage)
         {
             LastSourceLanguage = transcriptSourceLanguage;
             LastTranslationMode = translationMode;
+            LastSpeechProvider = speechProvider;
             LastRequestedSourceLanguage = sourceLanguage;
             if (fail)
             {

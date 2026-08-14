@@ -21,9 +21,9 @@ Translate audio from the Chrome tab you choose into live subtitles using your Gl
 
 **Detailed description**
 
-Glosify Live Subtitles adds real-time translated captions to the Chrome tab you explicitly choose. Connect an existing Glosify account, choose Economical or Enhanced subtitles, select the spoken and subtitle languages, review the per-minute credit price, and press Start subtitles. The extension captures only that tab's audio, keeps the audio playing locally, and places the translated caption overlay over the page.
+Glosify Live Subtitles adds real-time translated captions to the Chrome tab you explicitly choose. Connect an existing Glosify account, choose ElevenLabs Scribe v2 or Enhanced subtitles, optionally select a spoken-language hint, choose the subtitle language, review the per-minute credit price, and press Start subtitles. Automatic spoken-language detection is the default. The extension captures only that tab's audio, keeps the audio playing locally, and places the translated caption overlay over the page.
 
-In Enhanced mode, tab audio is streamed through Glosify to Microsoft Foundry. In Economical mode, tab audio is streamed through Glosify to Azure Speech and finalized recognized phrases are sent to Azure Translator. Tab audio is not stored. Transcript saving is separate, off by default, and stores only finalized original-language speech in the user's private Glosify account until the user deletes the transcript or account.
+In Enhanced mode, tab audio is streamed through Glosify to Microsoft Foundry. In ElevenLabs Scribe v2 mode, it is streamed through Glosify to ElevenLabs and finalized phrases are sent to Azure Translator. If transcript saving is enabled in Enhanced mode, the same audio is also sent to Scribe for the finalized source transcript. Standard ElevenLabs API logging is enabled and ElevenLabs may retain service-log data under its policy. Tab audio is not stored by Glosify. Transcript saving is separate, off by default, and stores only finalized original-language speech in the user's private Glosify account until the user deletes the transcript or account.
 
 This is an unlisted BETA pilot. Paid features may close for the rest of the Europe/Stockholm month when Glosify's application budget is reached. The extension displays the reset time and stops at a paid-minute boundary.
 
@@ -57,7 +57,7 @@ The extension's single purpose is to capture audio from a user-selected Chrome t
 
 **Data sale / advertising / unrelated use:** No. Data is not sold, used for personalised advertising, or transferred for lending or unrelated purposes.
 
-**Processors:** Microsoft Azure and Microsoft Foundry provide hosting, authentication infrastructure, storage, monitoring, speech, and realtime translation processing. Google or Microsoft processes authentication data when the user chooses that sign-in provider.
+**Processors:** Microsoft Azure and Microsoft Foundry provide hosting, authentication infrastructure, storage, monitoring, and realtime translation processing. ElevenLabs provides optional Scribe v2 speech processing in Scribe subtitle mode and when source-transcript saving is enabled for Enhanced mode. Google or Microsoft processes authentication data when the user chooses that sign-in provider.
 
 **Limited Use:** Glosify's use and transfer of information received from Google APIs adheres to the Chrome Web Store User Data Policy, including Limited Use requirements.
 
@@ -67,8 +67,8 @@ The extension's single purpose is to capture audio from a user-selected Chrome t
 2. Open a regular HTTPS page that is playing speech audio, such as a video page.
 3. Open the extension and choose **Connect Glosify**. The browser is directed to Glosify's existing `/extension/connect` PKCE login flow.
 4. Sign in with the temporary password reviewer account entered only in the Chrome Web Store dashboard. That account is manually credited; its credentials must never be added to this repository or listing text.
-5. Select a subtitle mode, spoken language, quiz language, and subtitle language. Confirm transcript saving is unchecked.
-6. Read the audio/Microsoft/credit disclosure and press **Start subtitles**. Captions appear in an overlay on the page.
+5. Select a subtitle mode, optionally choose a spoken-language hint (Auto detect is the default), and choose the quiz and subtitle languages. Confirm transcript saving is unchecked.
+6. Read the mode-specific provider and credit disclosure and press **Start subtitles**. Captions appear in an overlay on the page.
 7. Stop the session. Optionally enable transcript saving for a second session, then use **View saved transcripts** to verify and delete it.
 8. Budget-exhaustion behavior can be reviewed using the supplied test account/environment instructions in the dashboard: blocked paid calls return HTTP 503 with code `paid_services_budget_exhausted` and a reset timestamp, while login, legal pages, reads, deletion, health, and admin diagnostics remain available.
 

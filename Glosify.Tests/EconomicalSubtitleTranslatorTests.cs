@@ -115,6 +115,23 @@ public sealed class AzureRealtimeTextTranslatorTests
     }
 
     [Fact]
+    public async Task AutoDetectedSourceAndDynamicTarget_DoNotRequireStaticMappings()
+    {
+        var handler = new CapturingHandler();
+        var sut = CreateTranslator(handler, options =>
+        {
+            options.TranslatorEndpoint = "https://api.cognitive.microsofttranslator.com/";
+            options.TranslatorResourceId = TranslatorResourceId;
+        });
+
+        await sut.TranslateAsync("Bonjour", "auto", "fr", CancellationToken.None);
+
+        Assert.Equal(
+            "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=fr",
+            handler.RequestUri?.AbsoluteUri);
+    }
+
+    [Fact]
     public async Task UpstreamFailure_IncludesStatusWithoutLeakingResponseContent()
     {
         var handler = new CapturingHandler

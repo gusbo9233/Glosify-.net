@@ -14,6 +14,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
     private readonly IAiCreditService _credits;
     private readonly IRealtimeTranslationRelayTokenStore _relayTokens;
     private readonly IQuizLanguagePreferenceService _languagePreferences;
+    private readonly IRealtimeTranslationLanguageCatalog _languageCatalog;
     private readonly RealtimeTranslationOptions _options;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<RealtimeTranslationService> _logger;
@@ -24,6 +25,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         IAiCreditService credits,
         IRealtimeTranslationRelayTokenStore relayTokens,
         IQuizLanguagePreferenceService languagePreferences,
+        IRealtimeTranslationLanguageCatalog languageCatalog,
         IOptions<RealtimeTranslationOptions> options,
         TimeProvider timeProvider,
         ILogger<RealtimeTranslationService> logger,
@@ -33,6 +35,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         _credits = credits;
         _relayTokens = relayTokens;
         _languagePreferences = languagePreferences;
+        _languageCatalog = languageCatalog;
         _options = options.Value;
         _timeProvider = timeProvider;
         _logger = logger;
@@ -46,33 +49,33 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         EnsureEnabled();
         var account = await _credits.GetOrCreateAccountAsync(userId, cancellationToken);
         var selectedQuizLanguage = await _languagePreferences.GetSelectedAsync(userId, cancellationToken);
-        var languages = _options.Languages
-            .Where(language => language.Enabled)
-            .Select(language => new RealtimeTranslationLanguage(language.Code, language.Name))
-            .ToArray();
+        var languages = await _languageCatalog.GetLanguagesAsync(cancellationToken);
         var quizLanguages = QuizLanguageCatalog.All
             .Select(language => new RealtimeTranslationLanguage(language.Code, language.Name))
             .ToArray();
         var modes = new List<RealtimeTranslationMode>();
-        if (_options.EconomicalEnabled)
+        if (_options.ElevenLabs.Enabled)
         {
             modes.Add(new RealtimeTranslationMode(
-                RealtimeTranslationModes.Economical,
-                "Economical",
-                "Fast translation with lower credit usage",
-                _options.EconomicalCreditsPerStartedMinute));
+                RealtimeTranslationModes.Scribe,
+                "ElevenLabs Scribe v2",
+                "Scribe v2 speech recognition with Azure translation",
+                _options.ElevenLabs.CreditsPerStartedMinute));
         }
         modes.Add(new RealtimeTranslationMode(
             RealtimeTranslationModes.Enhanced,
             "Enhanced",
             "Best translation quality",
             _options.CreditsPerStartedMinute));
-        var sourceLanguages = _options.SourceLanguages
-            .Where(language => language.Enabled)
+        var sourceLanguages = languages
             .Select(language => new RealtimeTranslationSourceLanguage(
-                language.Code,
+                NormalizeScribeHint(language.Code),
                 language.Name,
-                language.Locale))
+                null))
+            .Where(language => language.Code.Length is 2 or 3
+                && language.Code.All(char.IsAsciiLetterLower))
+            .DistinctBy(language => language.Code, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(language => language.Name, StringComparer.OrdinalIgnoreCase)
             .Prepend(new RealtimeTranslationSourceLanguage("auto", "Auto detect", null))
             .ToArray();
         return new RealtimeTranslationCatalog(
@@ -90,8 +93,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             _options.Model,
             account.AvailableCredits,
             modes,
-            sourceLanguages,
-            _options.EconomicalEnabled);
+            sourceLanguages);
     }
 
     public async Task<RealtimeTranslationSessionCreated> CreateSessionAsync(
@@ -104,34 +106,42 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         CancellationToken cancellationToken = default)
     {
         EnsureEnabled();
-        var language = _options.FindLanguage(targetLanguage)
+        var languages = await _languageCatalog.GetLanguagesAsync(cancellationToken);
+        var language = languages.FirstOrDefault(item =>
+                string.Equals(item.Code, targetLanguage?.Trim(), StringComparison.OrdinalIgnoreCase))
             ?? throw new RealtimeTranslationValidationException("Choose a supported target language.");
         var mode = string.IsNullOrWhiteSpace(translationMode)
             ? RealtimeTranslationModes.Enhanced
             : translationMode.Trim().ToLowerInvariant();
-        if (mode is not (RealtimeTranslationModes.Economical or RealtimeTranslationModes.Enhanced))
+        if (mode is not (RealtimeTranslationModes.Scribe or RealtimeTranslationModes.Enhanced))
         {
-            throw new RealtimeTranslationValidationException("Choose economical or enhanced subtitles.");
+            throw new RealtimeTranslationValidationException(
+                "Choose ElevenLabs Scribe v2 or Enhanced subtitles.");
         }
-        if (mode == RealtimeTranslationModes.Economical && !_options.EconomicalEnabled)
+        if (mode == RealtimeTranslationModes.Scribe && !_options.ElevenLabs.Enabled)
         {
             throw new RealtimeTranslationUnavailableException(
-                "Economical subtitles are not enabled on this Glosify deployment.");
+                "ElevenLabs Scribe v2 is not enabled on this Glosify deployment.");
         }
-        var canonicalSourceLanguage = (string?)null;
-        if (mode == RealtimeTranslationModes.Economical)
+        var canonicalSpeechProvider = mode switch
         {
-            if (string.Equals(sourceLanguage?.Trim(), "auto", StringComparison.OrdinalIgnoreCase))
-            {
-                canonicalSourceLanguage = "auto";
-            }
-            else
-            {
-                var selectedSourceLanguage = _options.FindSourceLanguage(sourceLanguage)
-                    ?? throw new RealtimeTranslationValidationException(
-                        "Choose a supported source language for economical subtitles.");
-                canonicalSourceLanguage = selectedSourceLanguage.Code;
-            }
+            RealtimeTranslationModes.Scribe => RealtimeSpeechProviders.ElevenLabs,
+            _ => RealtimeSpeechProviders.Foundry,
+        };
+        var usesScribe = mode == RealtimeTranslationModes.Scribe || saveTranscript;
+        var canonicalSourceLanguage = usesScribe
+            ? string.IsNullOrWhiteSpace(sourceLanguage)
+                || string.Equals(sourceLanguage.Trim(), "auto", StringComparison.OrdinalIgnoreCase)
+                    ? "auto"
+                    : NormalizeScribeHint(sourceLanguage)
+            : null;
+        if (canonicalSourceLanguage is not null and not "auto"
+            && !languages.Select(language => NormalizeScribeHint(language.Code)).Contains(
+                canonicalSourceLanguage,
+                StringComparer.OrdinalIgnoreCase))
+        {
+            throw new RealtimeTranslationValidationException(
+                "Choose a supported spoken-language hint or use automatic detection.");
         }
         QuizLanguage? selectedQuizLanguage = null;
         if (saveTranscript)
@@ -147,12 +157,10 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 throw new RealtimeTranslationValidationException(
                     "Choose a quiz language in Glosify before saving an original speech transcript.");
             }
-            if (mode == RealtimeTranslationModes.Economical
-                && (canonicalSourceLanguage == "auto"
-                    || !string.Equals(canonicalSourceLanguage, selectedQuizLanguage.Code, StringComparison.OrdinalIgnoreCase)))
+            if (!_options.ElevenLabs.Enabled)
             {
-                throw new RealtimeTranslationValidationException(
-                    "Saved economical transcripts require an explicit source language matching your Glosify quiz language.");
+                throw new RealtimeTranslationUnavailableException(
+                    "Saved transcripts require ElevenLabs Scribe v2 on this Glosify deployment.");
             }
         }
         await using (await _keyedLock.AcquireAsync("user:" + userId, cancellationToken))
@@ -218,20 +226,21 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 UserId = userId,
                 TargetLanguage = language.Code,
                 TranslationMode = mode,
+                SpeechProvider = canonicalSpeechProvider,
                 SourceLanguage = canonicalSourceLanguage,
-                Model = mode == RealtimeTranslationModes.Economical
-                    ? _options.EconomicalBillingModel
+                Model = mode == RealtimeTranslationModes.Scribe
+                    ? _options.ElevenLabs.Model
                     : _options.Deployment,
                 SourceTranscriptionDeployment = mode == RealtimeTranslationModes.Enhanced && transcript is not null
-                    ? _options.SourceTranscriptionDeployment
+                    ? _options.ElevenLabs.Model
                     : null,
-                BillingModel = mode == RealtimeTranslationModes.Economical
-                    ? _options.EconomicalBillingModel
+                BillingModel = mode == RealtimeTranslationModes.Scribe
+                    ? _options.ElevenLabs.BillingModel
                     : transcript is null
                         ? _options.Deployment
                         : _options.SavedTranscriptBillingModel,
-                CreditsPerStartedMinute = mode == RealtimeTranslationModes.Economical
-                    ? _options.EconomicalCreditsPerStartedMinute
+                CreditsPerStartedMinute = mode == RealtimeTranslationModes.Scribe
+                    ? _options.ElevenLabs.CreditsPerStartedMinute
                     : transcript is null
                         ? _options.CreditsPerStartedMinute
                         : _options.SavedTranscriptCreditsPerStartedMinute,
@@ -280,6 +289,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                     userId,
                     language.Code,
                     mode,
+                    canonicalSpeechProvider,
                     canonicalSourceLanguage,
                     transcript is not null,
                     selectedQuizLanguage?.Code);
@@ -307,6 +317,9 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             }
         }
     }
+
+    private static string NormalizeScribeHint(string code) =>
+        code.Trim().Split('-', 2)[0].ToLowerInvariant();
 
     public async Task<RealtimeTranslationMinuteResult> ReserveMinuteAsync(
         string userId,
@@ -550,7 +563,9 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 session.Id,
                 "RealtimeTranslationSession",
                 $"{session.Id:N}:{minuteIndex}"),
-            RealtimeTranslationConstants.Provider,
+            session.SpeechProvider == RealtimeSpeechProviders.ElevenLabs
+                ? RealtimeTranslationConstants.ElevenLabsProvider
+                : RealtimeTranslationConstants.Provider,
             session.BillingModel,
             60,
             session.CreditsPerStartedMinute,

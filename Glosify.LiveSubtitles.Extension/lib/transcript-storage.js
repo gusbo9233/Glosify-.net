@@ -12,8 +12,8 @@ export function buildTranscriptSessionRequest({
   if (translationMode) {
     request.translationMode = translationMode;
   }
-  if (translationMode === "economical") {
-    request.sourceLanguage = sourceLanguage;
+  if (translationMode === "scribe" || saveTranscript) {
+    request.sourceLanguage = sourceLanguage || "auto";
   }
   if (request.saveTranscript && transcriptId) {
     request.transcriptId = transcriptId;
@@ -32,9 +32,13 @@ export function canSaveSourceTranscript(catalog) {
     && catalog.selectedQuizLanguage);
 }
 
-export function getEffectiveCreditsPerMinute(catalog, saveTranscript, translationMode = "enhanced") {
-  if (translationMode === "economical") {
-    return catalog?.modes?.find(mode => mode.code === "economical")?.creditsPerMinute ?? 4;
+export function getEffectiveCreditsPerMinute(
+  catalog,
+  saveTranscript,
+  translationMode = "enhanced") {
+  if (translationMode === "scribe") {
+    return catalog?.modes?.find(mode => mode.code === translationMode)?.creditsPerMinute
+      ?? (translationMode === "scribe" ? 6 : 4);
   }
   return saveTranscript
     ? catalog?.savedTranscriptCreditsPerMinute ?? 16
@@ -43,4 +47,14 @@ export function getEffectiveCreditsPerMinute(catalog, saveTranscript, translatio
 
 export function isTranscriptToggleDisabled({ busy, catalog }) {
   return Boolean(busy || catalog?.savedSourceTranscriptsEnabled === false);
+}
+
+export function selectAvailableTranslationMode(modes, requestedMode) {
+  if (modes?.some(mode => mode.code === requestedMode)) {
+    return requestedMode;
+  }
+  return modes?.find(mode => mode.code === "scribe")?.code
+    ?? modes?.find(mode => mode.code === "enhanced")?.code
+    ?? modes?.[0]?.code
+    ?? "enhanced";
 }
