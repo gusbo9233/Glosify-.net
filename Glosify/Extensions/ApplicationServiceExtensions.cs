@@ -20,6 +20,7 @@ using Glosify.Services.Speech;
 using Glosify.Services.Storage;
 using Glosify.Services.Typing;
 using Glosify.Services.Words;
+using Glosify.Services.Payments;
 using Glosify.Infrastructure.Concurrency;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
@@ -65,6 +66,10 @@ public static class ApplicationServiceExtensions
             .Bind(configuration.GetSection("AiUsage"))
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<AiUsageOptions>, AiUsageOptionsValidator>();
+        services.AddOptions<StripeOptions>()
+            .Bind(configuration.GetSection(StripeOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<StripeOptions>, StripeOptionsValidator>();
         services.AddOptions<ExtensionAuthOptions>()
             .Bind(configuration.GetSection(ExtensionAuthOptions.SectionName));
         services.AddOptions<DemoAccountOptions>()
@@ -120,6 +125,7 @@ public static class ApplicationServiceExtensions
             configuration.GetSection(Glosify.Services.Communication.AcsOptions.SectionName));
         services.AddScoped<Glosify.Services.Communication.IAcsTokenService, Glosify.Services.Communication.AcsTokenService>();
         services.AddScoped<IAiCreditService, AiCreditService>();
+        services.AddScoped<IStripePaymentService, StripePaymentService>();
         services.AddScoped<IPaidServiceGate, PaidServiceGate>();
         services.AddScoped<ITrialEligibilityService, TrialEligibilityService>();
         services.AddScoped<IExternalAccountUserStore, IdentityExternalAccountUserStore>();

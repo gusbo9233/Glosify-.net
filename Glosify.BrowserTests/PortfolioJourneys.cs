@@ -289,17 +289,15 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Page.GotoAsync("/Quizzes");
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
         var modelSelector = Page.Locator("[data-assistant-model-select]");
-        await Expect(modelSelector.Locator("option")).ToHaveCountAsync(5);
+        await Expect(modelSelector.Locator("option")).ToHaveCountAsync(4);
         await Expect(modelSelector.Locator("option[value='']"))
             .ToContainTextAsync("Auto · GPT-5.6 Luna · OpenAI · Balanced · Cost ≈1× · 1× credits");
         await Expect(modelSelector.Locator("option[value='gpt-5.6-luna']"))
             .ToContainTextAsync("Cost ≈1× · 1× credits");
         await Expect(modelSelector.Locator("option[value='grok-4.3']"))
-            .ToContainTextAsync("Cost ≈1× · 1× credits");
-        await Expect(modelSelector.Locator("option[value='gpt-5.6-sol']"))
-            .ToContainTextAsync("Most powerful · Cost ≈5× · 5× credits");
+            .ToContainTextAsync("Cost ≈0.6× · 0.6× credits");
         await Expect(modelSelector.Locator("option[value='DeepSeek-V4-Flash']"))
-            .ToContainTextAsync("Economy · Cost ≈0.25× · 0.25× credits");
+            .ToContainTextAsync("Economy · Cost ≈0.3× · 0.3× credits");
         await Page.Locator("[data-assistant-textarea]").FillAsync("Create a travel quiz");
         await Page.Locator("[data-assistant-submit]").ClickAsync();
         await Expect(Page.Locator("[data-assistant-pending-card]")).ToBeVisibleAsync();

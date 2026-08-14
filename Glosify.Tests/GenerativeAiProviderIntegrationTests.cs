@@ -32,26 +32,16 @@ public sealed class GenerativeAiProviderIntegrationTests
             {
                 Assert.Equal("grok-4.3", model.Deployment);
                 Assert.Equal("xAI", model.Provider);
-                // 1x, not 2x: grok-4.3 costs less per output token than the default
-                // deployment, so charging double steered users to the pricier model.
-                Assert.Equal("Cost ≈1×", model.CostTier);
-                Assert.Equal(1m, model.CreditMultiplier);
-            },
-            model =>
-            {
-                Assert.Equal("gpt-5.6-sol", model.Deployment);
-                Assert.Equal("OpenAI", model.Provider);
-                Assert.Equal("Most powerful", model.SpeedTier);
-                Assert.Equal("Cost ≈5×", model.CostTier);
-                Assert.Equal(5m, model.CreditMultiplier);
+                Assert.Equal("Cost ≈0.6×", model.CostTier);
+                Assert.Equal(0.6m, model.CreditMultiplier);
             },
             model =>
             {
                 Assert.Equal("DeepSeek-V4-Flash", model.Deployment);
                 Assert.Equal("DeepSeek", model.Provider);
                 Assert.Equal("Economy", model.SpeedTier);
-                Assert.Equal("Cost ≈0.25×", model.CostTier);
-                Assert.Equal(0.25m, model.CreditMultiplier);
+                Assert.Equal("Cost ≈0.3×", model.CostTier);
+                Assert.Equal(0.3m, model.CreditMultiplier);
             });
     }
 

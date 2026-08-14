@@ -70,6 +70,55 @@ public sealed class AiCreditServiceTests
     }
 
     [Fact]
+    public async Task StripePurchaseGrant_IsIdempotentAcrossWebhookRetries()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var service = CreateService(context);
+
+        var first = await service.GrantStripePurchaseAsync("user-1", "purchase-1", 10, "Stripe purchase");
+        var second = await service.GrantStripePurchaseAsync("user-1", "purchase-1", 10, "Stripe purchase");
+
+        var account = await service.GetOrCreateAccountAsync("user-1");
+        Assert.True(first);
+        Assert.False(second);
+        Assert.Equal(35, account.BalanceCredits);
+        Assert.Single(await context.AiCreditTransactions
+            .Where(transaction => transaction.Kind == AiCreditTransactionKinds.StripePurchase)
+            .ToListAsync());
+    }
+
+    [Fact]
+    public async Task StripePaymentAdjustment_IsIdempotentAndCanRevokeSpentCredits()
+    {
+        await using var context = CreateContext();
+        context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
+        await context.SaveChangesAsync();
+        var service = CreateService(context);
+
+        await service.GrantStripePurchaseAsync("user-1", "purchase-1", 10, "Stripe purchase");
+        var first = await service.ApplyStripePaymentAdjustmentAsync(
+            "user-1",
+            "refund:re_1",
+            -40,
+            "Full refund");
+        var second = await service.ApplyStripePaymentAdjustmentAsync(
+            "user-1",
+            "refund:re_1",
+            -40,
+            "Full refund");
+
+        var account = await service.GetOrCreateAccountAsync("user-1");
+        Assert.True(first);
+        Assert.False(second);
+        Assert.Equal(-5, account.BalanceCredits);
+        var adjustment = await context.AiCreditTransactions.SingleAsync(transaction =>
+            transaction.Kind == AiCreditTransactionKinds.StripeAdjustment);
+        Assert.Equal(-40, adjustment.CreditAmount);
+    }
+
+    [Fact]
     public async Task Reserve_BlocksWhenAvailableCreditsAreTooLow()
     {
         await using var context = CreateContext();

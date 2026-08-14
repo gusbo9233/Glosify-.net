@@ -32,6 +32,8 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<AiCreditAccount> AiCreditAccounts { get; set; }
     public DbSet<AiCreditTransaction> AiCreditTransactions { get; set; }
     public DbSet<AiMonthlyBudget> AiMonthlyBudgets { get; set; }
+    public DbSet<StripeCreditPurchase> StripeCreditPurchases { get; set; }
+    public DbSet<StripePaymentEvent> StripePaymentEvents { get; set; }
     public DbSet<RealtimeTranslationSession> RealtimeTranslationSessions { get; set; }
     public DbSet<RealtimeTranslationMinute> RealtimeTranslationMinutes { get; set; }
     public DbSet<RealtimeTranslationTranscript> RealtimeTranslationTranscripts { get; set; }

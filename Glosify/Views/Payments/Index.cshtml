@@ -1,0 +1,53 @@
+@model PaymentIndexViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = "Get credits";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/payments.css" asp-append-version="true" />
+}
+
+<div class="content-page">
+    <div class="page-heading">
+        <p class="eyebrow">Glosify credits</p>
+        <h1>Keep your learning loop going.</h1>
+        <p>Credits power Glosify’s AI-assisted learning features and live subtitles.</p>
+    </div>
+
+    @if (TempData["PaymentsMessage"] is string message)
+    {
+        <div class="alert alert-info" role="status">@message</div>
+    }
+
+    @if (!Model.IsEnabled || Model.Packages.Count == 0)
+    {
+        <section class="empty-state" aria-live="polite">
+            <h2>Payments are not available yet</h2>
+            <p>This Glosify deployment has not been connected to Stripe.</p>
+        </section>
+    }
+    else
+    {
+        <div class="card-grid">
+            @foreach (var package in Model.Packages)
+            {
+                <article class="surface-card">
+                    <p class="eyebrow">Credit pack</p>
+                    <h2>@package.DisplayName</h2>
+                    <p class="display-number">@package.Credits credits</p>
+                    <p>@package.DisplayPrice</p>
+                    <form asp-action="CreateCheckoutSession" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="packageKey" value="@package.Key" />
+                        <button class="home-button home-button-primary" type="submit">
+                            Continue to secure checkout
+                            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+                        </button>
+                    </form>
+                </article>
+            }
+        </div>
+        <p class="muted-copy">Checkout is hosted by Stripe. Glosify never receives or stores card details.</p>
+    }
+</div>

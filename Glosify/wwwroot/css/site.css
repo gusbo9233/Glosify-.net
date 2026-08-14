@@ -3622,6 +3622,11 @@ body { margin: 0; }
     background: var(--surface-container-high);
 }
 
+.credit-pill-buy {
+    border-color: color-mix(in srgb, var(--primary) 35%, var(--outline-variant));
+    color: var(--primary);
+}
+
 .account-block {
     display: flex;
     align-items: center;

@@ -185,6 +185,23 @@ public static class RateLimitingExtensions
                     });
                 }
 
+                if (HttpMethods.IsPost(context.Request.Method)
+                    && string.Equals(
+                        path.Value?.TrimEnd('/'),
+                        "/Payments/CreateCheckoutSession",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                        ?? context.Connection.RemoteIpAddress?.ToString()
+                        ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter($"stripe-checkout:{caller}", _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromMinutes(10),
+                        QueueLimit = 0,
+                    });
+                }
+
                 if (path.StartsWithSegments("/Classroom") && HttpMethods.IsPost(context.Request.Method))
                 {
                     var member = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value

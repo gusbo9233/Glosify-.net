@@ -37,4 +37,6 @@ public static class AiCreditTransactionKinds
     public const string Reservation = "reservation";
     public const string UsageDebit = "usage_debit";
     public const string Release = "release";
+    public const string StripePurchase = "stripe_purchase";
+    public const string StripeAdjustment = "stripe_adjustment";
 }

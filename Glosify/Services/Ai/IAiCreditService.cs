@@ -61,4 +61,30 @@ public interface IAiCreditService
         int credits,
         string note,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Adds credits for a Stripe purchase exactly once. The purchase id is persisted
+    /// on the ledger transaction so webhook retries cannot duplicate fulfillment.
+    /// </summary>
+    Task<bool> GrantStripePurchaseAsync(
+        string targetUserId,
+        string purchaseId,
+        int credits,
+        string note,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException(
+            "This AI credit service cannot fulfill Stripe purchases.");
+
+    /// <summary>
+    /// Applies an idempotent credit adjustment caused by a Stripe refund or dispute.
+    /// A negative delta revokes credits; a positive delta restores them.
+    /// </summary>
+    Task<bool> ApplyStripePaymentAdjustmentAsync(
+        string targetUserId,
+        string adjustmentId,
+        int creditDelta,
+        string note,
+        CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException(
+            "This AI credit service cannot reconcile Stripe payment adjustments.");
 }

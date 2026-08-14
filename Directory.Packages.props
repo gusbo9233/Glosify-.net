@@ -40,6 +40,7 @@
   <ItemGroup Label="Other runtime dependencies">
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
     <PackageVersion Include="PdfPig" Version="0.1.14" />
+    <PackageVersion Include="Stripe.net" Version="52.1.1" />
   </ItemGroup>
 
   <ItemGroup Label="Test">
