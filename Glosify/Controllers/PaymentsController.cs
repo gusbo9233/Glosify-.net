@@ -45,6 +45,7 @@ public sealed class PaymentsController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateCheckoutSession(
         string packageKey,
         CancellationToken cancellationToken)
