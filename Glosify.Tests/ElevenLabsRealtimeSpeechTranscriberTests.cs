@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -55,6 +56,35 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
         Assert.Equal("pl-PL", segment.SourceLocale);
         Assert.False(segment.IsAutoDetected);
         Assert.True(segment.IsFinal);
+        Assert.False(output.Reader.TryRead(out _));
+    }
+
+    [Fact]
+    public async Task Transcribe_EmitsRevisedPartialAtThrottleInterval()
+    {
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 8, 14, 12, 0, 0, TimeSpan.Zero));
+        var socket = new ScriptedWebSocket(
+            "pl",
+            beforeSecondPartial: () => clock.Advance(TimeSpan.FromMilliseconds(750)));
+        var transcriber = CreateTranscriber(new RecordingFactory(socket), clock);
+        var audio = Channel.CreateUnbounded<byte[]>();
+        var output = Channel.CreateUnbounded<RecognizedSpeechSegment>();
+        await audio.Writer.WriteAsync([1, 2]);
+        audio.Writer.Complete();
+
+        await transcriber.TranscribeAsync(
+            RealtimeSpeechProviders.ElevenLabs,
+            "pl",
+            audio.Reader,
+            output.Writer,
+            emitPartials: true,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("Dzień", (await output.Reader.ReadAsync()).Text);
+        var revisedPartial = await output.Reader.ReadAsync();
+        Assert.Equal("Dzień dob", revisedPartial.Text);
+        Assert.False(revisedPartial.IsFinal);
+        Assert.Equal("Dzień dobry", (await output.Reader.ReadAsync()).Text);
         Assert.False(output.Reader.TryRead(out _));
     }
 
@@ -167,7 +197,8 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
     }
 
     private static ElevenLabsRealtimeSpeechTranscriber CreateTranscriber(
-        IElevenLabsRealtimeWebSocketFactory factory) =>
+        IElevenLabsRealtimeWebSocketFactory factory,
+        TimeProvider? timeProvider = null) =>
         new(
             factory,
             Options.Create(new RealtimeTranslationOptions
@@ -190,7 +221,8 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
                     },
                 ],
             }),
-            TimeProvider.System);
+            timeProvider ?? new FakeTimeProvider(
+                new DateTimeOffset(2026, 8, 14, 12, 0, 0, TimeSpan.Zero)));
 
     private static JsonElement Parse(byte[] payload) =>
         JsonDocument.Parse(payload).RootElement.Clone();
@@ -213,7 +245,8 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
 
     private sealed class ScriptedWebSocket(
         string detectedLanguage,
-        bool providerError = false) : WebSocket
+        bool providerError = false,
+        Action? beforeSecondPartial = null) : WebSocket
     {
         private readonly Channel<Frame> _received = Channel.CreateUnbounded<Frame>();
         private WebSocketState _state = WebSocketState.Open;
@@ -260,6 +293,7 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
             try
             {
                 var frame = await _received.Reader.ReadAsync(cancellationToken);
+                frame.BeforeRead?.Invoke();
                 if (frame.MessageType == WebSocketMessageType.Close)
                 {
                     _state = WebSocketState.CloseReceived;
@@ -301,7 +335,9 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
                 else
                 {
                     Enqueue(new { message_type = "partial_transcript", text = "Dzień" });
-                    Enqueue(new { message_type = "partial_transcript", text = "Dzień dob" });
+                    Enqueue(
+                        new { message_type = "partial_transcript", text = "Dzień dob" },
+                        beforeSecondPartial);
                     Enqueue(new { message_type = "committed_transcript", text = "Dzień dobry" });
                     Enqueue(new
                     {
@@ -316,11 +352,15 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
             return Task.CompletedTask;
         }
 
-        private void Enqueue(object message) =>
+        private void Enqueue(object message, Action? beforeRead = null) =>
             _received.Writer.TryWrite(new Frame(
                 JsonSerializer.SerializeToUtf8Bytes(message),
-                WebSocketMessageType.Text));
+                WebSocketMessageType.Text,
+                beforeRead));
 
-        private sealed record Frame(byte[] Payload, WebSocketMessageType MessageType);
+        private sealed record Frame(
+            byte[] Payload,
+            WebSocketMessageType MessageType,
+            Action? BeforeRead = null);
     }
 }
