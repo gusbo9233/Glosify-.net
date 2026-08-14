@@ -108,7 +108,8 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 authorization.SourceLanguage,
                 audio.Reader,
                 recognized.Writer,
-                relayToken);
+                emitPartials: true,
+                cancellationToken: relayToken);
             var translationPump = TranslateAndSendAsync(
                 browserSocket,
                 authorization,
@@ -268,8 +269,29 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         ChannelWriter<CapturedTranslationSegment>? transcripts,
         CancellationToken cancellationToken)
     {
-        await foreach (var segment in recognized.ReadAllAsync(cancellationToken))
+        RecognizedSpeechSegment? pending = null;
+        while (pending is not null || await recognized.WaitToReadAsync(cancellationToken))
         {
+            if (pending is null && !recognized.TryRead(out pending))
+            {
+                continue;
+            }
+
+            var segment = pending;
+            pending = null;
+            while (!segment.IsFinal && recognized.TryRead(out var newer))
+            {
+                if (newer.Sequence == segment.Sequence)
+                {
+                    segment = newer;
+                }
+                else
+                {
+                    pending = newer;
+                    break;
+                }
+            }
+
             var result = await _translator.TranslateAsync(
                 segment,
                 authorization.TargetLanguage,
@@ -277,7 +299,9 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
 
             var payload = JsonSerializer.SerializeToUtf8Bytes(new
             {
-                type = "glosify.translation.segment",
+                type = segment.IsFinal
+                    ? "glosify.translation.segment"
+                    : "glosify.translation.partial",
                 sequence = segment.Sequence,
                 sourceLanguage = result.SourceLanguage,
                 targetLanguage = result.TargetLanguage,
@@ -290,7 +314,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 cancellationToken);
             RealtimeTranslationTelemetry.TranslatedCharacters.Add(result.SourceText.Length);
 
-            if (transcripts is not null)
+            if (transcripts is not null && segment.IsFinal)
             {
                 await transcripts.WriteAsync(new CapturedTranslationSegment(
                     segment.Sequence,

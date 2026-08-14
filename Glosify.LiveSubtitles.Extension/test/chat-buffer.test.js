@@ -20,6 +20,22 @@ test("builds one live message from deltas and commits it on done", () => {
   assert.equal(chat.translation, "");
 });
 
+test("Scribe revisions replace live text before the finalized segment commits", () => {
+  const chat = new ChatBuffer();
+  chat.apply({ stream: "translation", delta: "Good", replace: true, isFinal: false });
+  chat.apply({ stream: "translation", delta: "Good morning", replace: true, isFinal: false });
+  chat.apply({
+    stream: "translation",
+    delta: "Good morning!",
+    replace: true,
+    isFinal: true,
+    clientTimestamp: 321,
+  });
+
+  assert.equal(chat.translation, "");
+  assert.deepEqual(chat.messages, [{ text: "Good morning!", timestamp: 321 }]);
+});
+
 test("ignores source speech so the overlay remains translation-only", () => {
   const chat = new ChatBuffer();
   chat.apply({ stream: "source", delta: "Good morning", isFinal: false });

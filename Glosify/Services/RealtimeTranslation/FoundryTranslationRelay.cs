@@ -160,7 +160,8 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                     authorization.SourceLanguage ?? "auto",
                     sourceAudio.Reader,
                     sourceSegments.Writer,
-                    relayToken);
+                    emitPartials: false,
+                    cancellationToken: relayToken);
             var sourceToTranscript = sourceSegments is null
                 ? Task.Delay(Timeout.InfiniteTimeSpan, relayToken)
                 : PumpScribeTranscriptAsync(

@@ -21,8 +21,24 @@ test("Scribe finalized segments normalize into committed translation events", ()
     sourceLanguage: "pl",
     sequence: 7,
     delta: "God morgon",
+    replace: true,
     isFinal: true,
   });
+});
+
+test("Scribe partial translations replace the mutable live line", () => {
+  const event = normalizeRealtimeEvent({
+    type: "glosify.translation.partial",
+    sequence: 3,
+    sourceLanguage: "de",
+    targetLanguage: "en",
+    text: "Good morning",
+  }, { sessionId: "s1", targetLanguage: "en", nextSequence: () => 99 });
+
+  assert.equal(event.delta, "Good morning");
+  assert.equal(event.replace, true);
+  assert.equal(event.isFinal, false);
+  assert.equal(event.sequence, 3);
 });
 
 test("translation deltas normalize without retaining provider payloads", () => {

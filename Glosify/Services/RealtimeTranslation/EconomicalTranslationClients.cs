@@ -15,7 +15,8 @@ public sealed record RecognizedSpeechSegment(
     string SourceLanguage,
     string SourceLocale,
     DateTimeOffset CapturedAt,
-    bool IsAutoDetected = false);
+    bool IsAutoDetected = false,
+    bool IsFinal = true);
 
 public interface IRealtimeSpeechTranscriber
 {
@@ -24,6 +25,7 @@ public interface IRealtimeSpeechTranscriber
         string sourceLanguage,
         ChannelReader<byte[]> audio,
         ChannelWriter<RecognizedSpeechSegment> output,
+        bool emitPartials,
         CancellationToken cancellationToken);
 }
 
@@ -101,6 +103,7 @@ public sealed class AzureRealtimeSpeechTranscriber : IRealtimeSpeechTranscriber
         string sourceLanguage,
         ChannelReader<byte[]> audio,
         ChannelWriter<RecognizedSpeechSegment> output,
+        bool emitPartials,
         CancellationToken cancellationToken)
     {
         if (speechProvider != RealtimeSpeechProviders.Azure)

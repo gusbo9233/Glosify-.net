@@ -14,7 +14,7 @@
 
       if (event.delta) {
         this.translation = appendBounded(
-          this.translation,
+          event.replace ? "" : this.translation,
           event.delta,
           this.maximumTranslationCharacters);
       }
