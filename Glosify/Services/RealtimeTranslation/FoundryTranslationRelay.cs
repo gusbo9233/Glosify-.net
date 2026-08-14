@@ -181,6 +181,7 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                 browserToFoundry,
                 foundryToBrowser,
                 sourceTranscription,
+                sourceToTranscript,
                 authorizationMonitor);
             try
             {
