@@ -111,6 +111,8 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
         using var relayCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         WebSocket? socket = null;
         Exception? failure = null;
+        Task? receiveTask = null;
+        Task? sendTask = null;
         try
         {
             socket = await _socketFactory.ConnectAsync(
@@ -118,13 +120,13 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
                 _options.ElevenLabs.ApiKey.Trim(),
                 relayCancellation.Token);
             var finalCommit = new FinalCommitTracker();
-            var receiveTask = ReceiveTranscriptsAsync(
+            receiveTask = ReceiveTranscriptsAsync(
                 socket,
                 sourceLanguage,
                 output,
                 finalCommit,
                 relayCancellation.Token);
-            var sendTask = SendAudioAsync(socket, audio, relayCancellation.Token);
+            sendTask = SendAudioAsync(socket, audio, relayCancellation.Token);
 
             var completed = await Task.WhenAny(sendTask, receiveTask);
             if (completed == receiveTask)
@@ -188,12 +190,39 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
         finally
         {
             relayCancellation.Cancel();
+            await DrainProviderTasksQuietlyAsync(sendTask, receiveTask);
             if (socket is not null)
             {
                 await CloseOutputQuietlyAsync(socket);
                 socket.Dispose();
             }
             output.TryComplete(failure);
+        }
+    }
+
+    private static async Task DrainProviderTasksQuietlyAsync(params Task?[] tasks)
+    {
+        foreach (var task in tasks)
+        {
+            if (task is null)
+            {
+                continue;
+            }
+            try
+            {
+                await task;
+            }
+            catch (Exception exception) when (exception
+                is OperationCanceledException
+                or WebSocketException
+                or ObjectDisposedException
+                or RealtimeTranslationUpstreamException
+                or JsonException
+                or ChannelClosedException)
+            {
+                // The selected task already reported the provider outcome. Draining the
+                // other task prevents disposal races and observes its teardown failure.
+            }
         }
     }
 

@@ -35,49 +35,6 @@ public sealed class FoundryTranslationRelayTests
     }
 
     [Fact]
-    public void Protocol_UsesWhisperTranscriptionEndpointWithQuizLanguageHint()
-    {
-        var options = new RealtimeTranslationOptions
-        {
-            FoundryEndpoint = "https://glosify-foundry.openai.azure.com/",
-            SourceTranscriptionDeployment = "gpt-realtime-whisper",
-            SourceTranscriptionDelay = "medium",
-        };
-
-        var uri = FoundryTranslationProtocol.BuildSourceTranscriptionWebSocketUri(options);
-        var update = Encoding.UTF8.GetString(
-            FoundryTranslationProtocol.CreateSourceTranscriptionSessionUpdate(options, "pl"));
-
-        Assert.Equal(
-            "wss://glosify-foundry.openai.azure.com/openai/v1/realtime?intent=transcription",
-            uri.ToString());
-        Assert.Contains("\"model\":\"gpt-realtime-whisper\"", update);
-        Assert.Contains("\"language\":\"pl\"", update);
-        Assert.Contains("\"delay\":\"medium\"", update);
-    }
-
-    [Fact]
-    public void SourceAccumulator_PersistsOnlyFinalOriginalSpeech()
-    {
-        var accumulator = new FoundrySourceTranscriptAccumulator();
-        var now = TestNow;
-
-        Assert.Null(accumulator.Apply(
-            "{\"type\":\"conversation.item.input_audio_transcription.delta\",\"item_id\":\"i1\",\"delta\":\"Dzień \"}"u8,
-            now));
-        var completed = accumulator.Apply(
-            "{\"type\":\"conversation.item.input_audio_transcription.completed\",\"item_id\":\"i1\",\"transcript\":\"Dzień dobry\"}"u8,
-            now);
-
-        Assert.NotNull(completed);
-        Assert.Equal("Dzień dobry", completed.Text);
-        Assert.StartsWith("source:item:i1", completed.ProviderEventKey);
-        Assert.Null(accumulator.Apply(
-            "{\"type\":\"conversation.item.input_audio_transcription.completed\",\"item_id\":\"i1\",\"transcript\":\"Dzień dobry\"}"u8,
-            now));
-    }
-
-    [Fact]
     public void Protocol_AcceptsOnlyBoundedInputAudioMessages()
     {
         Assert.True(FoundryTranslationProtocol.IsAllowedBrowserMessage(
@@ -321,11 +278,11 @@ public sealed class FoundryTranslationRelayTests
     public async Task RelayRouter_DelegatesToTheAuthorizedMode(
         string mode,
         int expectedEnhancedCalls,
-        int expectedEconomicalCalls)
+        int expectedScribeCalls)
     {
         var enhanced = new RecordingEnhancedRelay();
-        var economical = new RecordingEconomicalRelay();
-        var router = new RealtimeTranslationRelayRouter(enhanced, economical);
+        var scribe = new RecordingScribeRelay();
+        var router = new RealtimeTranslationRelayRouter(enhanced, scribe);
         using var socket = new ClientWebSocket();
         var authorization = new RealtimeTranslationRelayAuthorization(
             Guid.NewGuid(),
@@ -344,7 +301,7 @@ public sealed class FoundryTranslationRelayTests
         await router.RelayAsync(socket, authorization);
 
         Assert.Equal(expectedEnhancedCalls, enhanced.Calls);
-        Assert.Equal(expectedEconomicalCalls, economical.Calls);
+        Assert.Equal(expectedScribeCalls, scribe.Calls);
     }
 
     [Fact]
@@ -352,7 +309,7 @@ public sealed class FoundryTranslationRelayTests
     {
         var router = new RealtimeTranslationRelayRouter(
             new RecordingEnhancedRelay(),
-            new RecordingEconomicalRelay());
+            new RecordingScribeRelay());
         using var socket = new ClientWebSocket();
         var authorization = new RealtimeTranslationRelayAuthorization(
             Guid.NewGuid(), "user-1", "sv", RealtimeTranslationModes.Economical,
@@ -367,7 +324,7 @@ public sealed class FoundryTranslationRelayTests
     {
         var router = new RealtimeTranslationRelayRouter(
             new RecordingEnhancedRelay(),
-            new RecordingEconomicalRelay());
+            new RecordingScribeRelay());
         using var socket = new ClientWebSocket();
         var authorization = new RealtimeTranslationRelayAuthorization(
             Guid.NewGuid(),
@@ -412,7 +369,7 @@ public sealed class FoundryTranslationRelayTests
         }
     }
 
-    private sealed class RecordingEconomicalRelay : IEconomicalTranslationRelay
+    private sealed class RecordingScribeRelay : IScribeTranslationRelay
     {
         public int Calls { get; private set; }
 

@@ -92,8 +92,9 @@ these are configured together:
 - The `glosify-app` managed identity has the least-privilege Cognitive Services
   data-plane role required on the Translator resource.
 - `RealtimeTranslation__ElevenLabs__Enabled=true`
-- The API key is supplied as an App Service secret or .NET user secret; never
-  commit it. The application accepts the existing production alias
+- In production, the API key must be supplied as an App Service setting; use a
+  .NET user secret only for local development. Never commit it. The application
+  accepts the existing production alias
   `Elevenlabs_key`, the conventional `ELEVENLABS_API_KEY`, and the canonical
   .NET configuration name `RealtimeTranslation__ElevenLabs__ApiKey`.
 - `RealtimeTranslation__ElevenLabs__Endpoint` remains a validated
@@ -307,9 +308,9 @@ For a release affecting live subtitles, perform one short Enhanced session and,
 when enabled, one ElevenLabs Scribe v2 session on a regular HTTPS page. Confirm the
 mode-specific audio disclosure is visible, subtitles start and stop, credits
 are consumed at the displayed rate, transcript saving starts off, and an
-opted-in transcript can be deleted. Test Scribe once with an explicit spoken
-language hint and once with auto detection. Enable transcript saving during an
-Enhanced session and confirm Scribe supplies the finalized source transcript.
+opted-in transcript can be deleted. Test Scribe once with an explicit
+spoken-language hint and once with automatic detection. Enable transcript saving
+during an Enhanced session and confirm Scribe supplies the finalized source transcript.
 Also verify an invalid ElevenLabs key ends the affected session without fallback.
 
 ## Failure handling and rollback

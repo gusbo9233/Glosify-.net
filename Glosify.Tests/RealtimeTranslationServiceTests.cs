@@ -172,40 +172,6 @@ public sealed class RealtimeTranslationServiceTests
     }
 
     [Fact]
-    public async Task EconomicalSavedTranscript_RejectsAutoDetection()
-    {
-        await using var context = CreateContext();
-        await SeedUserAsync(context);
-        var service = CreateService(
-            context,
-            new ManualTimeProvider(TestNow),
-            new FakeRelayTokenStore(),
-            options =>
-            {
-                options.EconomicalEnabled = true;
-                options.SourceLanguages =
-                [
-                    new RealtimeTranslationSourceLanguageOptions
-                    {
-                        Code = "pl",
-                        Name = "Polish",
-                        Locale = "pl-PL",
-                        TranslatorCode = "pl",
-                        AutoDetect = true,
-                    },
-                ];
-            });
-
-        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(() =>
-            service.CreateSessionAsync(
-                "user-1",
-                "es",
-                saveTranscript: true,
-                translationMode: RealtimeTranslationModes.Economical,
-                sourceLanguage: "auto"));
-    }
-
-    [Fact]
     public async Task Catalog_ReturnsAllQuizLanguagesAndThePersistedSelection()
     {
         await using var context = CreateContext();
@@ -284,6 +250,7 @@ public sealed class RealtimeTranslationServiceTests
         Assert.All(sessions, session => Assert.Equal(first.TranscriptId, session.TranscriptId));
         Assert.All(sessions, session => Assert.NotNull(session.TranscriptConsentAt));
         Assert.All(sessions, session => Assert.Equal(16, session.CreditsPerStartedMinute));
+        Assert.All(sessions, session => Assert.Equal("auto", session.SourceLanguage));
         Assert.All(sessions, session => Assert.Equal("scribe_v2_realtime", session.SourceTranscriptionDeployment));
         Assert.Equal(16, first.CreditsPerMinute);
     }

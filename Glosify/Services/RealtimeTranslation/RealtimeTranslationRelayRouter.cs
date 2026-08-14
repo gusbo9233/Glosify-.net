@@ -4,7 +4,7 @@ namespace Glosify.Services.RealtimeTranslation;
 
 public sealed class RealtimeTranslationRelayRouter(
     IEnhancedTranslationRelay enhancedRelay,
-    IEconomicalTranslationRelay economicalRelay) : IFoundryTranslationRelay
+    IScribeTranslationRelay scribeRelay) : IFoundryTranslationRelay
 {
     public async Task RelayAsync(
         WebSocket browserSocket,
@@ -15,7 +15,7 @@ public sealed class RealtimeTranslationRelayRouter(
             RealtimeTranslationModes.Enhanced =>
                 enhancedRelay.RelayAsync(browserSocket, authorization, cancellationToken),
             RealtimeTranslationModes.Scribe =>
-                economicalRelay.RelayAsync(browserSocket, authorization, cancellationToken),
+                scribeRelay.RelayAsync(browserSocket, authorization, cancellationToken),
             _ => throw new RealtimeTranslationValidationException(
                 "The requested live subtitle mode is not supported."),
         });

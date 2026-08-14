@@ -47,6 +47,29 @@ public sealed class AzureTranslatorLanguageCatalogTests
         Assert.Equal(["de", "pl"], languages.Select(language => language.Code).ToArray());
     }
 
+    [Fact]
+    public async Task Catalog_UsesLastKnownLanguagesWhenARefreshFails()
+    {
+        var handler = new SequencedHandler(
+            (HttpStatusCode.OK, """{"translation":{"sv":{"name":"Swedish"}}}"""),
+            (HttpStatusCode.ServiceUnavailable, "{}"));
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var catalog = CreateCatalog(handler, cache, new RealtimeTranslationOptions
+        {
+            Languages =
+            [
+                new RealtimeTranslationLanguageOptions { Code = "de", Name = "German" },
+            ],
+        });
+
+        _ = await catalog.GetLanguagesAsync();
+        cache.Remove("realtime-translation:translator-languages:v1");
+        var languages = await catalog.GetLanguagesAsync();
+
+        Assert.Equal(["sv"], languages.Select(language => language.Code).ToArray());
+        Assert.Equal(2, handler.Calls);
+    }
+
     private static AzureTranslatorLanguageCatalog CreateCatalog(
         HttpMessageHandler handler,
         IMemoryCache cache,
@@ -78,6 +101,25 @@ public sealed class AzureTranslatorLanguageCatalogTests
             return Task.FromResult(new HttpResponseMessage(statusCode)
             {
                 Content = new StringContent(body, Encoding.UTF8, "application/json"),
+            });
+        }
+    }
+
+    private sealed class SequencedHandler(
+        params (HttpStatusCode StatusCode, string Body)[] responses) : HttpMessageHandler
+    {
+        private readonly Queue<(HttpStatusCode StatusCode, string Body)> _responses = new(responses);
+        public int Calls { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Calls++;
+            var response = _responses.Dequeue();
+            return Task.FromResult(new HttpResponseMessage(response.StatusCode)
+            {
+                Content = new StringContent(response.Body, Encoding.UTF8, "application/json"),
             });
         }
     }

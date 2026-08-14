@@ -252,6 +252,50 @@ public sealed class RealtimeTranslationOptionsTests
         Assert.True(validator.Validate(null, options).Succeeded);
     }
 
+    [Theory]
+    [InlineData("ws://api.elevenlabs.io/v1/speech-to-text/realtime")]
+    [InlineData("wss://user:password@api.elevenlabs.io/v1/speech-to-text/realtime")]
+    [InlineData("wss://api.elevenlabs.io/v1/speech-to-text/realtime?debug=true")]
+    [InlineData("wss://api.elevenlabs.io/v1/speech-to-text/realtime#fragment")]
+    [InlineData("wss://elevenlabs.io.attacker.test/v1/speech-to-text/realtime")]
+    [InlineData("wss://api.elevenlabs.io/v1/text-to-speech/realtime")]
+    public void ElevenLabsFeature_RejectsUnsafeEndpointVariants(string endpoint)
+    {
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions
+            {
+                MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
+            }), ExtensionAuth());
+        var options = ValidOptions();
+        ConfigureScribe(options);
+        options.ElevenLabs.Endpoint = endpoint;
+
+        var result = validator.Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure => failure.Contains("ElevenLabs:Endpoint", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void ElevenLabsFeature_RejectsOutOfRangeVadThreshold(double threshold)
+    {
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions
+            {
+                MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
+            }), ExtensionAuth());
+        var options = ValidOptions();
+        ConfigureScribe(options);
+        options.ElevenLabs.VadThreshold = threshold;
+
+        var result = validator.Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure => failure.Contains("VadThreshold", StringComparison.Ordinal));
+    }
+
     private static void ConfigureScribe(RealtimeTranslationOptions options)
     {
         ConfigureSpeechRecognitionTranslation(options);

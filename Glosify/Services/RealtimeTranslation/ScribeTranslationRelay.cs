@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.RealtimeTranslation;
 
-public interface IEconomicalTranslationRelay
+public interface IScribeTranslationRelay
 {
     Task RelayAsync(
         WebSocket browserSocket,
@@ -14,22 +14,22 @@ public interface IEconomicalTranslationRelay
         CancellationToken cancellationToken = default);
 }
 
-public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
+public sealed class ScribeTranslationRelay : IScribeTranslationRelay
 {
     private readonly IRealtimeSpeechTranscriber _speech;
     private readonly IEconomicalSubtitleTranslator _translator;
     private readonly RealtimeTranslationRelayAuthorizationMonitor _authorizationMonitor;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly RealtimeTranslationOptions _options;
-    private readonly ILogger<EconomicalTranslationRelay> _logger;
+    private readonly ILogger<ScribeTranslationRelay> _logger;
 
-    public EconomicalTranslationRelay(
+    public ScribeTranslationRelay(
         IRealtimeSpeechTranscriber speech,
         IEconomicalSubtitleTranslator translator,
         RealtimeTranslationRelayAuthorizationMonitor authorizationMonitor,
         IServiceScopeFactory scopeFactory,
         IOptions<RealtimeTranslationOptions> options,
-        ILogger<EconomicalTranslationRelay> logger)
+        ILogger<ScribeTranslationRelay> logger)
     {
         _speech = speech;
         _translator = translator;

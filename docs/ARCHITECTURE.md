@@ -934,7 +934,7 @@ sequenceDiagram
     Relay->>Router: RelayAsync(browserSocket, canonical authorization)
     Router->>Up: stream PCM audio
     loop while streaming
-        Off->>Router: PCM audio frames
+        Off->>Relay: PCM audio frames
         Up-->>Router: translated events or finalized speech
         Router->>Tr: finalized speech (Scribe mode only)
         Router-->>Off: translation events → content script overlay

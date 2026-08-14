@@ -175,7 +175,7 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IEconomicalSubtitleTranslator, EconomicalSubtitleTranslator>();
         services.AddSingleton<RealtimeTranslationRelayAuthorizationMonitor>();
         services.AddSingleton<IEnhancedTranslationRelay, FoundryTranslationRelay>();
-        services.AddSingleton<IEconomicalTranslationRelay, EconomicalTranslationRelay>();
+        services.AddSingleton<IScribeTranslationRelay, ScribeTranslationRelay>();
         services.AddSingleton<IFoundryTranslationRelay, RealtimeTranslationRelayRouter>();
         services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();
         services.AddScoped<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>();

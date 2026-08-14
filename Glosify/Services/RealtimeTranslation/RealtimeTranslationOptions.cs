@@ -33,9 +33,7 @@ public sealed class RealtimeTranslationOptions
     public ElevenLabsRealtimeSpeechOptions ElevenLabs { get; set; } = new();
     public List<RealtimeTranslationSourceLanguageOptions> SourceLanguages { get; set; } = [];
     public bool SavedSourceTranscriptsEnabled { get; set; }
-    public string SourceTranscriptionDeployment { get; set; } = "gpt-realtime-whisper";
     public string SavedTranscriptBillingModel { get; set; } = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime";
-    public string SourceTranscriptionDelay { get; set; } = "medium";
     public int SavedTranscriptCreditsPerStartedMinute { get; set; } = 16;
     public List<RealtimeTranslationLanguageOptions> Languages { get; set; } = [];
 

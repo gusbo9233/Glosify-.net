@@ -127,6 +127,7 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
         await task;
         Assert.True(output.Reader.Completion.IsCompletedSuccessfully);
         Assert.False(output.Reader.TryRead(out _));
+        Assert.False(socket.DisposeWhileReceiving);
     }
 
     private static ElevenLabsRealtimeSpeechTranscriber CreateTranscriber(
@@ -180,8 +181,10 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
     {
         private readonly Channel<Frame> _received = Channel.CreateUnbounded<Frame>();
         private WebSocketState _state = WebSocketState.Open;
+        private int _activeReceives;
 
         public List<byte[]> Sent { get; } = [];
+        public bool DisposeWhileReceiving { get; private set; }
         public override WebSocketCloseStatus? CloseStatus { get; }
         public override string? CloseStatusDescription { get; }
         public override WebSocketState State => _state;
@@ -207,23 +210,36 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
             return Task.CompletedTask;
         }
 
-        public override void Dispose() => _state = WebSocketState.Closed;
+        public override void Dispose()
+        {
+            DisposeWhileReceiving = Volatile.Read(ref _activeReceives) > 0;
+            _state = WebSocketState.Closed;
+        }
 
         public override async Task<WebSocketReceiveResult> ReceiveAsync(
             ArraySegment<byte> buffer,
             CancellationToken cancellationToken)
         {
-            var frame = await _received.Reader.ReadAsync(cancellationToken);
-            if (frame.MessageType == WebSocketMessageType.Close)
+            Interlocked.Increment(ref _activeReceives);
+            try
             {
-                _state = WebSocketState.CloseReceived;
-                return new WebSocketReceiveResult(0, WebSocketMessageType.Close, true);
+                var frame = await _received.Reader.ReadAsync(cancellationToken);
+                if (frame.MessageType == WebSocketMessageType.Close)
+                {
+                    _state = WebSocketState.CloseReceived;
+                    return new WebSocketReceiveResult(0, WebSocketMessageType.Close, true);
+                }
+                frame.Payload.AsSpan().CopyTo(buffer.AsSpan());
+                return new WebSocketReceiveResult(
+                    frame.Payload.Length,
+                    frame.MessageType,
+                    true);
             }
-            frame.Payload.AsSpan().CopyTo(buffer.AsSpan());
-            return new WebSocketReceiveResult(
-                frame.Payload.Length,
-                frame.MessageType,
-                true);
+            finally
+            {
+                await Task.Yield();
+                Interlocked.Decrement(ref _activeReceives);
+            }
         }
 
         public override Task SendAsync(

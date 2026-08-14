@@ -71,24 +71,28 @@ public sealed class ShippedConfigurationTests
 
         var options = services.GetRequiredService<IOptions<RealtimeTranslationOptions>>().Value;
         var budget = services.GetRequiredService<IOptions<AiUsageOptions>>().Value.MonthlyBudget;
-        if (!options.Enabled || !budget.MetersProvider(AiUsageProviders.Foundry))
+        if (!options.Enabled)
         {
             return;
         }
 
-        // Realtime translation bills by audio minute rather than tokens.
-        Assert.True(
-            budget.FindModelPrice(options.Deployment)?.AudioSekPerMinute is > 0,
-            $"RealtimeTranslation:Deployment '{options.Deployment}' has no AudioSekPerMinute price.");
-
-        if (options.SavedSourceTranscriptsEnabled)
+        if (budget.MetersProvider(AiUsageProviders.Foundry))
         {
+            // Realtime translation bills by audio minute rather than tokens.
             Assert.True(
-                budget.FindModelPrice(options.SavedTranscriptBillingModel)?.AudioSekPerMinute is > 0,
-                $"RealtimeTranslation:SavedTranscriptBillingModel '{options.SavedTranscriptBillingModel}' "
-                + "has no AudioSekPerMinute price.");
+                budget.FindModelPrice(options.Deployment)?.AudioSekPerMinute is > 0,
+                $"RealtimeTranslation:Deployment '{options.Deployment}' has no AudioSekPerMinute price.");
+
+            if (options.SavedSourceTranscriptsEnabled)
+            {
+                Assert.True(
+                    budget.FindModelPrice(options.SavedTranscriptBillingModel)?.AudioSekPerMinute is > 0,
+                    $"RealtimeTranslation:SavedTranscriptBillingModel '{options.SavedTranscriptBillingModel}' "
+                    + "has no AudioSekPerMinute price.");
+            }
         }
-        if (options.ElevenLabs.Enabled)
+        if (options.ElevenLabs.Enabled
+            && budget.MetersProvider(RealtimeTranslationConstants.ElevenLabsProvider))
         {
             Assert.True(
                 budget.FindModelPrice(options.ElevenLabs.BillingModel)?.AudioSekPerMinute is >= 0.35m,

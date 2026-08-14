@@ -141,6 +141,7 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                 browserSocket,
                 foundrySocket,
                 sourceAudio?.Writer,
+                transcriptState,
                 sessionState.StartedAt!.Value,
                 billingState,
                 relayToken);
@@ -292,6 +293,7 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         WebSocket browserSocket,
         WebSocket foundrySocket,
         ChannelWriter<byte[]>? sourceAudio,
+        RelayTranscriptState transcriptState,
         DateTimeOffset startedAt,
         RealtimeTranslationRelayBillingState billingState,
         CancellationToken cancellationToken)
@@ -331,9 +333,12 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                     WebSocketMessageType.Text,
                     endOfMessage: true,
                     cancellationToken);
-                if (sourceAudio is not null)
+                if (sourceAudio is not null
+                    && !sourceAudio.TryWrite(audioBytes)
+                    && Interlocked.Exchange(ref transcriptState.WarningPending, 1) == 0)
                 {
-                    await sourceAudio.WriteAsync(audioBytes, cancellationToken);
+                    _logger.LogWarning(
+                        "Scribe source-audio buffer filled; live subtitles will continue with a transcript gap.");
                 }
                 forwardedAudioBytes += audioBytes.Length;
             }
