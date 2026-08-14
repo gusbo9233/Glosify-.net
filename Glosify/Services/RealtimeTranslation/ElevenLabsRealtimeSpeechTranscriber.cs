@@ -15,6 +15,7 @@ public sealed class RealtimeSpeechTranscriberRouter(
         string sourceLanguage,
         ChannelReader<byte[]> audio,
         ChannelWriter<RecognizedSpeechSegment> output,
+        bool emitPartials,
         CancellationToken cancellationToken) =>
         speechProvider switch
         {
@@ -23,12 +24,14 @@ public sealed class RealtimeSpeechTranscriberRouter(
                 sourceLanguage,
                 audio,
                 output,
+                emitPartials,
                 cancellationToken),
             RealtimeSpeechProviders.ElevenLabs => elevenLabs.TranscribeAsync(
                 speechProvider,
                 sourceLanguage,
                 audio,
                 output,
+                emitPartials,
                 cancellationToken),
             _ => throw new RealtimeTranslationValidationException(
                 "The requested speech provider is not supported."),
@@ -70,6 +73,7 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
     internal const int AudioSampleRate = 24_000;
     private const int MaximumProviderMessageBytes = 256 * 1024;
     private static readonly TimeSpan FinalCommitTimeout = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan PartialEmissionInterval = TimeSpan.FromMilliseconds(750);
 
     private readonly IElevenLabsRealtimeWebSocketFactory _socketFactory;
     private readonly RealtimeTranslationOptions _options;
@@ -90,6 +94,7 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
         string sourceLanguage,
         ChannelReader<byte[]> audio,
         ChannelWriter<RecognizedSpeechSegment> output,
+        bool emitPartials,
         CancellationToken cancellationToken)
     {
         if (speechProvider != RealtimeSpeechProviders.ElevenLabs)
@@ -125,6 +130,7 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
                 sourceLanguage,
                 output,
                 finalCommit,
+                emitPartials,
                 relayCancellation.Token);
             sendTask = SendAudioAsync(socket, audio, relayCancellation.Token);
 
@@ -283,9 +289,12 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
         string requestedSourceLanguage,
         ChannelWriter<RecognizedSpeechSegment> output,
         FinalCommitTracker finalCommit,
+        bool emitPartials,
         CancellationToken cancellationToken)
     {
         var sequence = 0;
+        var lastPartialText = string.Empty;
+        var lastPartialAt = DateTimeOffset.MinValue;
         while (!cancellationToken.IsCancellationRequested
             && socket.State is WebSocketState.Open or WebSocketState.CloseSent)
         {
@@ -304,12 +313,11 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
                 throw new RealtimeTranslationUpstreamException(
                     "ElevenLabs Scribe v2 could not continue transcription.");
             }
-            if (messageType != "committed_transcript_with_timestamps")
+            if (messageType is not "partial_transcript" and not "committed_transcript_with_timestamps")
             {
                 continue;
             }
 
-            finalCommit.NotifyCommitted();
             var text = root.TryGetProperty("text", out var textElement)
                 ? textElement.GetString()?.Trim()
                 : null;
@@ -317,6 +325,35 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
             {
                 continue;
             }
+
+            var now = _timeProvider.GetUtcNow();
+            if (messageType == "partial_transcript")
+            {
+                if (!emitPartials)
+                {
+                    continue;
+                }
+                if (string.Equals(text, lastPartialText, StringComparison.Ordinal)
+                    || now - lastPartialAt < PartialEmissionInterval)
+                {
+                    continue;
+                }
+
+                var partialSource = ResolveSourceLanguage(requestedSourceLanguage, null);
+                await output.WriteAsync(new RecognizedSpeechSegment(
+                    sequence + 1,
+                    text,
+                    partialSource.Code,
+                    partialSource.Locale,
+                    now,
+                    requestedSourceLanguage == "auto",
+                    IsFinal: false), cancellationToken);
+                lastPartialText = text;
+                lastPartialAt = now;
+                continue;
+            }
+
+            finalCommit.NotifyCommitted();
             var detectedLanguage = root.TryGetProperty("language_code", out var languageElement)
                 ? languageElement.GetString()
                 : null;
@@ -326,8 +363,11 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
                 text,
                 source.Code,
                 source.Locale,
-                _timeProvider.GetUtcNow(),
-                requestedSourceLanguage == "auto"), cancellationToken);
+                now,
+                requestedSourceLanguage == "auto",
+                IsFinal: true), cancellationToken);
+            lastPartialText = string.Empty;
+            lastPartialAt = DateTimeOffset.MinValue;
         }
     }
 

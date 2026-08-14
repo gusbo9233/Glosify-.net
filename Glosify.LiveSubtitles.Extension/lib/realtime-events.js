@@ -10,7 +10,8 @@ export function normalizeRealtimeEvent(event, context) {
     return null;
   }
 
-  if (event.type === "glosify.translation.segment"
+  if ((event.type === "glosify.translation.segment"
+      || event.type === "glosify.translation.partial")
       && typeof event.text === "string"
       && event.text.trim()) {
     return {
@@ -20,7 +21,8 @@ export function normalizeRealtimeEvent(event, context) {
       sourceLanguage: event.sourceLanguage ?? null,
       sequence: Number.isInteger(event.sequence) ? event.sequence : context.nextSequence(),
       delta: event.text,
-      isFinal: true,
+      replace: true,
+      isFinal: event.type === "glosify.translation.segment",
       clientTimestamp: Date.now(),
     };
   }

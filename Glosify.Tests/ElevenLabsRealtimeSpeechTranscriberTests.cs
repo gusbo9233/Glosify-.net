@@ -11,7 +11,7 @@ namespace Glosify.Tests;
 public sealed class ElevenLabsRealtimeSpeechTranscriberTests
 {
     [Fact]
-    public async Task Transcribe_SendsPcmAndEmitsOnlyTimestampedCommittedTranscript()
+    public async Task Transcribe_SendsPcmAndEmitsThrottledPartialThenTimestampedCommit()
     {
         var socket = new ScriptedWebSocket("pl");
         var factory = new RecordingFactory(socket);
@@ -26,7 +26,8 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
             "pl",
             audio.Reader,
             output.Writer,
-            CancellationToken.None);
+            emitPartials: true,
+            cancellationToken: CancellationToken.None);
 
         Assert.Equal("test-key", factory.ApiKey);
         Assert.Contains("model_id=scribe_v2_realtime", factory.Endpoint!.Query);
@@ -42,12 +43,18 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
         Assert.Equal("input_audio_chunk", messages[1].GetProperty("message_type").GetString());
         Assert.True(messages[1].GetProperty("commit").GetBoolean());
 
+        var partial = await output.Reader.ReadAsync();
+        Assert.Equal(1, partial.Sequence);
+        Assert.Equal("Dzień", partial.Text);
+        Assert.False(partial.IsFinal);
+
         var segment = await output.Reader.ReadAsync();
         Assert.Equal(1, segment.Sequence);
         Assert.Equal("Dzień dobry", segment.Text);
         Assert.Equal("pl", segment.SourceLanguage);
         Assert.Equal("pl-PL", segment.SourceLocale);
         Assert.False(segment.IsAutoDetected);
+        Assert.True(segment.IsFinal);
         Assert.False(output.Reader.TryRead(out _));
     }
 
@@ -78,11 +85,38 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
             "auto",
             audio.Reader,
             output.Writer,
-            CancellationToken.None);
+            emitPartials: true,
+            cancellationToken: CancellationToken.None);
 
+        _ = await output.Reader.ReadAsync();
         var segment = await output.Reader.ReadAsync();
         Assert.Equal("fr", segment.SourceLanguage);
         Assert.True(segment.IsAutoDetected);
+        Assert.True(segment.IsFinal);
+    }
+
+    [Fact]
+    public async Task FinalOnlyMode_IgnoresPartialsForEnhancedTranscriptCapture()
+    {
+        var socket = new ScriptedWebSocket("pl");
+        var transcriber = CreateTranscriber(new RecordingFactory(socket));
+        var audio = Channel.CreateUnbounded<byte[]>();
+        var output = Channel.CreateUnbounded<RecognizedSpeechSegment>();
+        await audio.Writer.WriteAsync([1, 2]);
+        audio.Writer.Complete();
+
+        await transcriber.TranscribeAsync(
+            RealtimeSpeechProviders.ElevenLabs,
+            "pl",
+            audio.Reader,
+            output.Writer,
+            emitPartials: false,
+            cancellationToken: CancellationToken.None);
+
+        var segment = await output.Reader.ReadAsync();
+        Assert.Equal("Dzień dobry", segment.Text);
+        Assert.True(segment.IsFinal);
+        Assert.False(output.Reader.TryRead(out _));
     }
 
     [Fact]
@@ -101,7 +135,8 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
                 "pl",
                 audio.Reader,
                 output.Writer,
-                CancellationToken.None));
+                emitPartials: true,
+                cancellationToken: CancellationToken.None));
 
         Assert.DoesNotContain("secret-provider-detail", exception.Message);
         Assert.Contains("ElevenLabs Scribe v2", exception.Message);
@@ -121,7 +156,8 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
             "pl",
             audio.Reader,
             output.Writer,
-            cancellation.Token);
+            emitPartials: true,
+            cancellationToken: cancellation.Token);
         cancellation.Cancel();
 
         await task;
@@ -265,6 +301,7 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
                 else
                 {
                     Enqueue(new { message_type = "partial_transcript", text = "Dzień" });
+                    Enqueue(new { message_type = "partial_transcript", text = "Dzień dob" });
                     Enqueue(new { message_type = "committed_transcript", text = "Dzień dobry" });
                     Enqueue(new
                     {
