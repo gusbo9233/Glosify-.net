@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { appendBounded, normalizeRealtimeEvent } from "../lib/realtime-events.js";
 
-test("economical finalized segments normalize into committed translation events", () => {
+test("Scribe finalized segments normalize into committed translation events", () => {
   const event = normalizeRealtimeEvent({
     type: "glosify.translation.segment",
     sequence: 7,

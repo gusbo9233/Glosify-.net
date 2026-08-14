@@ -52,8 +52,9 @@ elements.saveTranscript.addEventListener("change", () => {
     quizLanguageCode: elements.quizLanguage.value,
   }, true, {
     saveTranscript: enabled,
-    effectiveCreditsPerMinute: currentState?.translationMode === "economical"
-      ? catalog?.modes?.find(mode => mode.code === "economical")?.creditsPerMinute ?? 4
+    effectiveCreditsPerMinute: currentState?.translationMode === "scribe"
+      ? catalog?.modes?.find(mode => mode.code === currentState?.translationMode)?.creditsPerMinute
+        ?? (currentState?.translationMode === "scribe" ? 6 : 4)
       : enabled
         ? catalog?.savedTranscriptCreditsPerMinute ?? 16
         : catalog?.creditsPerMinute ?? 8,
@@ -129,9 +130,9 @@ function render() {
   elements.translationMode.value = currentState.translationMode ?? "enhanced";
   elements.translationMode.disabled = busy || currentState.active;
 
-  const economical = currentState.translationMode === "economical";
+  const usesScribe = currentState.translationMode === "scribe" || currentState.saveTranscript;
   const sourceLanguages = currentState.catalog?.sourceLanguages ?? [];
-  const sourceSignature = sourceLanguages.map(language => language.code).join(",");
+  const sourceSignature = sourceLanguages.map(language => `${language.code}:${language.name}`).join(",");
   if (elements.sourceLanguage.dataset.signature !== sourceSignature) {
     elements.sourceLanguage.replaceChildren(...sourceLanguages.map(language => {
       const option = document.createElement("option");
@@ -143,7 +144,7 @@ function render() {
   }
   elements.sourceLanguage.value = currentState.sourceLanguage ?? "auto";
   elements.sourceLanguage.disabled = busy || currentState.active;
-  elements.sourceLanguageGroup.classList.toggle("hidden", !economical);
+  elements.sourceLanguageGroup.classList.toggle("hidden", !usesScribe);
 
   const quizLanguages = currentState.catalog?.quizLanguages ?? [];
   const quizSignature = quizLanguages.map(language => language.code).join(",");
@@ -187,16 +188,18 @@ function render() {
   });
   elements.saveTranscriptHelp.textContent = currentState.saveTranscriptHelp
     ?? "Optional and off by default. Stores finalized original-language speech in your private Glosify account until you delete the transcript or account.";
-  elements.serviceDisclosure.textContent = economical
-    ? "When you start, this tab’s audio is streamed through Glosify to Azure Speech, and finalized phrases are sent to Azure Translator. Audio is not stored. Each started minute consumes credits."
-    : "When you start, this tab’s audio is streamed through Glosify to Microsoft Foundry for enhanced live translation. Audio is not stored. Each started minute consumes credits.";
+  elements.serviceDisclosure.textContent = currentState.translationMode === "scribe"
+    ? "When you start, this tab’s audio is streamed through Glosify to ElevenLabs Scribe v2, and finalized phrases are sent to Azure Translator. ElevenLabs may retain standard API logs under its service policy. Glosify does not store tab audio. Each started minute consumes credits."
+    : currentState.saveTranscript
+      ? "When you start, this tab’s audio is streamed through Glosify to Microsoft Foundry for enhanced live translation and to ElevenLabs Scribe v2 for the saved source transcript. ElevenLabs may retain standard API logs under its service policy. Glosify does not store tab audio. Each started minute consumes credits."
+      : "When you start, this tab’s audio is streamed through Glosify to Microsoft Foundry for enhanced live translation. Audio is not stored. Each started minute consumes credits.";
 
   const canStart = !busy
     && !currentState.active
     && currentState.catalog
     && currentState.paidServicesAvailable !== false
     && languages.length > 0
-    && (!economical || sourceLanguages.some(language => language.code === currentState.sourceLanguage))
+    && (!usesScribe || sourceLanguages.some(language => language.code === currentState.sourceLanguage))
     && currentState.availableCredits >= price;
   elements.start.classList.toggle("hidden", currentState.active);
   elements.stop.classList.toggle("hidden", !currentState.active);

@@ -6,6 +6,7 @@ public sealed class RealtimeTranslationSession
     public string UserId { get; set; } = string.Empty;
     public string TargetLanguage { get; set; } = string.Empty;
     public string TranslationMode { get; set; } = "enhanced";
+    public string SpeechProvider { get; set; } = "foundry";
     public string? SourceLanguage { get; set; }
     public string Model { get; set; } = string.Empty;
     public string? SourceTranscriptionDeployment { get; set; }

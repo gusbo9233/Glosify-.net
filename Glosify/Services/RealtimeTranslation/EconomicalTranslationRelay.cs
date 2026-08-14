@@ -44,12 +44,13 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
         RealtimeTranslationRelayAuthorization authorization,
         CancellationToken cancellationToken = default)
     {
-        if (!_options.EconomicalEnabled
-            || authorization.TranslationMode != RealtimeTranslationModes.Economical
+        var supportedMode = authorization.TranslationMode == RealtimeTranslationModes.Scribe
+            && _options.ElevenLabs.Enabled;
+        if (!supportedMode
             || string.IsNullOrWhiteSpace(authorization.SourceLanguage))
         {
             throw new RealtimeTranslationUnavailableException(
-                "Economical subtitles are not configured on this Glosify deployment.");
+                "The selected speech recognition mode is not configured on this Glosify deployment.");
         }
 
         using var relayCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -103,6 +104,7 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
                 billing,
                 relayToken);
             var speechPump = _speech.TranscribeAsync(
+                authorization.SpeechProvider,
                 authorization.SourceLanguage,
                 audio.Reader,
                 recognized.Writer,
@@ -139,7 +141,7 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
                     if (!relayToken.IsCancellationRequested)
                     {
                         throw new RealtimeTranslationUpstreamException(
-                            "Economical subtitles ended unexpectedly.");
+                            "The selected subtitle mode ended unexpectedly.");
                     }
                 }
             }
@@ -180,20 +182,20 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
             RealtimeTranslationTelemetry.UpstreamFailures.Add(1);
             _logger.LogWarning(
                 exception,
-                "Economical subtitle transport failed for session {SessionId}",
+                "Speech-recognition subtitle transport failed for session {SessionId}",
                 authorization.SessionId);
             throw new RealtimeTranslationUpstreamException(
-                "The economical subtitle connection ended.");
+                "The selected subtitle connection ended.");
         }
         catch (Exception exception)
         {
             RealtimeTranslationTelemetry.UpstreamFailures.Add(1);
             _logger.LogWarning(
                 exception,
-                "Economical subtitle provider failed for session {SessionId}",
+                "Speech-recognition subtitle provider failed for session {SessionId}",
                 authorization.SessionId);
             throw new RealtimeTranslationUpstreamException(
-                "A Microsoft service ended economical subtitles.");
+                "The selected subtitle provider ended the session.");
         }
         finally
         {
@@ -210,7 +212,7 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
                 catch (TimeoutException)
                 {
                     _logger.LogWarning(
-                        "Timed out while flushing economical captions for session {SessionId}",
+                        "Timed out while flushing speech-recognition captions for session {SessionId}",
                         authorization.SessionId);
                 }
             }
@@ -292,12 +294,12 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
             {
                 await transcripts.WriteAsync(new CapturedTranslationSegment(
                     segment.Sequence,
-                    $"economical:source:{segment.Sequence}",
+                    $"scribe:source:{segment.Sequence}",
                     result.SourceText,
                     result.CapturedAt), cancellationToken);
                 await transcripts.WriteAsync(new CapturedTranslationSegment(
                     segment.Sequence,
-                    $"economical:translation:{segment.Sequence}",
+                    $"scribe:translation:{segment.Sequence}",
                     result.TranslatedText,
                     result.CapturedAt,
                     RealtimeTranslationTranscriptStreams.Translation), cancellationToken);
@@ -328,7 +330,7 @@ public sealed class EconomicalTranslationRelay : IEconomicalTranslationRelay
             {
                 _logger.LogWarning(
                     exception,
-                    "Could not store economical captions for session {SessionId}",
+                    "Could not store Scribe captions for session {SessionId}",
                     sessionId);
             }
             finally

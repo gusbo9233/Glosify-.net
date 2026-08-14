@@ -45,6 +45,12 @@ as context for the assistant. A long session is paged for reading, and the
 assistant reads those same pages; because the original speech and the live
 translation are transcribed separately and do not share caption counts, page
 numbers are per stream and a passage is matched across the two by timestamp.
+The subtitle mode is selected explicitly: ElevenLabs Scribe v2 uses automatic
+realtime recognition followed by Azure Translator, and Enhanced uses Microsoft
+Foundry realtime translation. Subtitle targets are refreshed from Azure
+Translator's language catalog. Spoken-language detection defaults to automatic;
+Scribe also accepts an optional language hint. When an Enhanced session saves a
+source transcript, the same audio is transcribed by Scribe.
 
 The [portfolio case study](docs/portfolio-case-study.md) gives a more complete product
 tour and explains the main technical decisions in simple terms.
@@ -69,6 +75,7 @@ flowchart LR
     EF --> SQL["SQL Server / Azure SQL"]
     Services --> Foundry["Microsoft Foundry"]
     Services --> Speech["Azure AI Speech"]
+    Services --> ElevenLabs["ElevenLabs Scribe v2"]
     Services --> Storage["Azure Blob Storage"]
 ```
 
@@ -138,7 +145,7 @@ the code and its behavior, not just generate more code.
 - .NET 10 and ASP.NET Core MVC
 - Entity Framework Core 10 with SQL Server or Azure SQL
 - ASP.NET Core Identity
-- Microsoft Foundry and Azure AI Speech
+- Microsoft Foundry, Azure AI Speech, and ElevenLabs Scribe v2
 - Azure Blob Storage and Azure Monitor OpenTelemetry
 - Gemini as an explicit deployment-level rollback
 - PdfPig for PDF text extraction

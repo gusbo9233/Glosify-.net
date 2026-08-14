@@ -80,10 +80,9 @@ cost controls, verify the following Azure App Service settings:
   intended. Production code then uses `ManagedIdentityCredential` for Foundry.
 - The `glosify-app` system-assigned identity is enabled.
 
-Economical subtitles remain disabled until all of these are configured together:
+Scribe subtitles and Enhanced transcript saving remain disabled until all of
+these are configured together:
 
-- `RealtimeTranslation__EconomicalEnabled=true`
-- `RealtimeTranslation__SpeechEndpoint` is the Azure Speech custom-domain root.
 - `RealtimeTranslation__TranslatorEndpoint` is either the exact global
   Translator endpoint or an Azure AI custom-domain root.
 - With the global endpoint, `RealtimeTranslation__TranslatorResourceId` is the
@@ -91,13 +90,30 @@ Economical subtitles remain disabled until all of these are configured together:
   resource ID. Set `RealtimeTranslation__TranslatorRegion` as well when the
   selected Azure resource type requires the regional routing header.
 - The `glosify-app` managed identity has the least-privilege Cognitive Services
-  data-plane role required on both resources.
+  data-plane role required on the Translator resource.
+- `RealtimeTranslation__ElevenLabs__Enabled=true`
+- The API key is supplied as an App Service secret or .NET user secret; never
+  commit it. The application accepts the existing production alias
+  `Elevenlabs_key`, the conventional `ELEVENLABS_API_KEY`, and the canonical
+  .NET configuration name `RealtimeTranslation__ElevenLabs__ApiKey`.
+- `RealtimeTranslation__ElevenLabs__Endpoint` remains a validated
+  `wss://*.elevenlabs.io/v1/speech-to-text/realtime` endpoint and
+  `RealtimeTranslation__ElevenLabs__Model=scribe_v2_realtime`.
+- Azure Translator is configured as described above because finalized Scribe
+  phrases still use Azure text translation.
+- `AiUsage__MonthlyBudget__Providers` includes `elevenlabs`, and the configured
+  Scribe billing model has a conservative positive `AudioSekPerMinute` entry.
+- The combined Enhanced-plus-Scribe transcript billing model also has a
+  conservative positive `AudioSekPerMinute` entry.
 
-Do not lower the economical `AudioSekPerMinute` safety price below `0.35`
-without comparing metered Speech audio time and Translator characters against
-an actual Azure invoice. Auto detection intentionally contains only Estonian,
-German, Polish, and Ukrainian so it stays within Azure Speech's four-language
-at-start limit.
+The server refreshes subtitle targets from Azure Translator's public Languages
+API and caches the result for 24 hours, falling back to the configured language
+list if the catalog is temporarily unavailable. Spoken-language detection is
+automatic by default. The optional hint list is derived from compatible ISO
+codes in that catalog and appears only when Scribe processes audio.
+
+Standard ElevenLabs API logging is enabled for this release. The public privacy
+and extension disclosures must be deployed before enabling the mode.
 
 The checked-in [`appsettings.json`](../Glosify/appsettings.json) is the default
 for the 300 SEK monthly application ledger. If
@@ -288,10 +304,13 @@ extension and confirm that Connect Glosify:
 4. shows the correct credit balance after connection.
 
 For a release affecting live subtitles, perform one short Enhanced session and,
-when enabled, one Economical session on a regular HTTPS page. Confirm the
+when enabled, one ElevenLabs Scribe v2 session on a regular HTTPS page. Confirm the
 mode-specific audio disclosure is visible, subtitles start and stop, credits
 are consumed at the displayed rate, transcript saving starts off, and an
-opted-in transcript can be deleted.
+opted-in transcript can be deleted. Test Scribe once with an explicit spoken
+language hint and once with auto detection. Enable transcript saving during an
+Enhanced session and confirm Scribe supplies the finalized source transcript.
+Also verify an invalid ElevenLabs key ends the affected session without fallback.
 
 ## Failure handling and rollback
 

@@ -195,7 +195,8 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "es",
             translationMode: RealtimeTranslationModes.Enhanced,
-            sourceLanguage: null,
+            speechProvider: RealtimeSpeechProviders.Foundry,
+            sourceLanguage: "de",
             saveTranscript: true,
             transcriptSourceLanguage: "Polish");
 
@@ -204,12 +205,24 @@ public sealed class FoundryTranslationRelayTests
         Assert.Equal("es", authorization.TargetLanguage);
         Assert.Equal(RealtimeTranslationModes.Enhanced, authorization.TranslationMode);
         Assert.True(authorization.SaveTranscript);
+        Assert.Equal("de", authorization.SourceLanguage);
         Assert.Equal("pl", authorization.TranscriptSourceLanguage);
         Assert.False(store.TryRedeem(sessionId, grant.Token, out _));
     }
 
     [Fact]
-    public void RelayToken_BindsEconomicalModeAndRequestedSourceLanguage()
+    public void RelayToken_RejectsRemovedEconomicalMode()
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var store = CreateTokenStore(cache, new ManualTimeProvider(TestNow));
+        var sessionId = Guid.NewGuid();
+        Assert.Throws<ArgumentException>(() => store.Create(
+            sessionId, "user-1", "sv", RealtimeTranslationModes.Economical,
+            RealtimeSpeechProviders.Azure, "auto", false, null));
+    }
+
+    [Fact]
+    public void RelayToken_BindsScribeModeToElevenLabsProvider()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
         var store = CreateTokenStore(cache, new ManualTimeProvider(TestNow));
@@ -218,15 +231,26 @@ public sealed class FoundryTranslationRelayTests
             sessionId,
             "user-1",
             "sv",
-            RealtimeTranslationModes.Economical,
-            "pl",
+            RealtimeTranslationModes.Scribe,
+            RealtimeSpeechProviders.ElevenLabs,
+            "auto",
             saveTranscript: false,
             transcriptSourceLanguage: null);
 
         Assert.True(store.TryRedeem(sessionId, grant.Token, out var authorization));
-        Assert.Equal(RealtimeTranslationModes.Economical, authorization.TranslationMode);
-        Assert.Equal("pl", authorization.SourceLanguage);
-        Assert.Null(authorization.TranscriptSourceLanguage);
+        Assert.Equal(RealtimeTranslationModes.Scribe, authorization.TranslationMode);
+        Assert.Equal(RealtimeSpeechProviders.ElevenLabs, authorization.SpeechProvider);
+        Assert.Equal("auto", authorization.SourceLanguage);
+
+        Assert.Throws<ArgumentException>(() => store.Create(
+            Guid.NewGuid(),
+            "user-1",
+            "sv",
+            RealtimeTranslationModes.Scribe,
+            RealtimeSpeechProviders.Azure,
+            "pl",
+            saveTranscript: false,
+            transcriptSourceLanguage: null));
     }
 
     [Fact]
@@ -241,6 +265,7 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "es",
             translationMode: RealtimeTranslationModes.Enhanced,
+            speechProvider: RealtimeSpeechProviders.Foundry,
             sourceLanguage: null,
             saveTranscript: false,
             transcriptSourceLanguage: null);
@@ -253,6 +278,7 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "es",
             translationMode: RealtimeTranslationModes.Enhanced,
+            speechProvider: RealtimeSpeechProviders.Foundry,
             sourceLanguage: null,
             saveTranscript: false,
             transcriptSourceLanguage: null);
@@ -271,6 +297,7 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "es",
             translationMode: RealtimeTranslationModes.Enhanced,
+            speechProvider: RealtimeSpeechProviders.Foundry,
             sourceLanguage: null,
             saveTranscript: true,
             transcriptSourceLanguage: "sv"));
@@ -290,7 +317,7 @@ public sealed class FoundryTranslationRelayTests
 
     [Theory]
     [InlineData(RealtimeTranslationModes.Enhanced, 1, 0)]
-    [InlineData(RealtimeTranslationModes.Economical, 0, 1)]
+    [InlineData(RealtimeTranslationModes.Scribe, 0, 1)]
     public async Task RelayRouter_DelegatesToTheAuthorizedMode(
         string mode,
         int expectedEnhancedCalls,
@@ -305,7 +332,12 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "sv",
             mode,
-            mode == RealtimeTranslationModes.Economical ? "pl" : null,
+            mode switch
+            {
+                RealtimeTranslationModes.Scribe => RealtimeSpeechProviders.ElevenLabs,
+                _ => RealtimeSpeechProviders.Foundry,
+            },
+            mode == RealtimeTranslationModes.Scribe ? "pl" : null,
             SaveTranscript: false,
             TranscriptSourceLanguage: null);
 
@@ -313,6 +345,21 @@ public sealed class FoundryTranslationRelayTests
 
         Assert.Equal(expectedEnhancedCalls, enhanced.Calls);
         Assert.Equal(expectedEconomicalCalls, economical.Calls);
+    }
+
+    [Fact]
+    public async Task RelayRouter_RejectsRemovedEconomicalMode()
+    {
+        var router = new RealtimeTranslationRelayRouter(
+            new RecordingEnhancedRelay(),
+            new RecordingEconomicalRelay());
+        using var socket = new ClientWebSocket();
+        var authorization = new RealtimeTranslationRelayAuthorization(
+            Guid.NewGuid(), "user-1", "sv", RealtimeTranslationModes.Economical,
+            RealtimeSpeechProviders.Azure, "auto", false, null);
+
+        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(
+            () => router.RelayAsync(socket, authorization));
     }
 
     [Fact]
@@ -327,6 +374,7 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "sv",
             "unknown",
+            RealtimeSpeechProviders.Foundry,
             SourceLanguage: null,
             SaveTranscript: false,
             TranscriptSourceLanguage: null);

@@ -5,6 +5,7 @@ import {
   canSaveSourceTranscript,
   clearTranscriptStorageState,
   getEffectiveCreditsPerMinute,
+  selectAvailableTranslationMode,
 } from "../lib/transcript-storage.js";
 
 const STORAGE_KEYS = Object.freeze({
@@ -30,7 +31,7 @@ const state = {
   availableCredits: 0,
   catalog: null,
   targetLanguage: "en",
-  translationMode: "economical",
+  translationMode: "scribe",
   sourceLanguage: "auto",
   saveTranscript: false,
   tabId: null,
@@ -139,7 +140,7 @@ async function handleMessage(message) {
       return null;
     case "media:error":
       if (!stopping) {
-        await stopSession(message.error || "The Microsoft Foundry connection ended.", "error");
+        await stopSession(message.error || "The selected subtitle provider connection ended.", "error");
       }
       return null;
     case "media:ended":
@@ -157,7 +158,7 @@ async function restoreLocalState() {
   const stored = await chrome.storage.local.get(Object.values(STORAGE_KEYS));
   refreshToken = stored[STORAGE_KEYS.refreshToken] ?? null;
   state.targetLanguage = stored[STORAGE_KEYS.targetLanguage] ?? "en";
-  state.translationMode = stored[STORAGE_KEYS.translationMode] ?? "economical";
+  state.translationMode = stored[STORAGE_KEYS.translationMode] ?? "scribe";
   state.sourceLanguage = stored[STORAGE_KEYS.sourceLanguage] ?? "auto";
   state.signedIn = Boolean(refreshToken);
   state.status = refreshToken ? "ready" : "disconnected";
@@ -350,17 +351,14 @@ async function refreshAccountState() {
     }
     const modes = catalog.modes ?? [{ code: "enhanced", creditsPerMinute: catalog.creditsPerMinute ?? 8 }];
     if (!modes.some(mode => mode.code === state.translationMode)) {
-      state.translationMode = "enhanced";
-      state.notice = "Economical subtitles are not available on this Glosify deployment; Enhanced mode is selected.";
+      state.translationMode = selectAvailableTranslationMode(modes, state.translationMode);
+      state.notice = `Your saved subtitle mode is unavailable; ${modes.find(mode => mode.code === state.translationMode)?.name ?? "an available mode"} is selected.`;
       await chrome.storage.local.set({ [STORAGE_KEYS.translationMode]: state.translationMode });
     }
     const sourceLanguages = catalog.sourceLanguages ?? [];
-    if (state.translationMode === "economical"
-        && !sourceLanguages.some(language => language.code === state.sourceLanguage)) {
-      state.sourceLanguage = sourceLanguages.some(language => language.code === "auto")
-        ? "auto"
-        : sourceLanguages[0]?.code ?? "auto";
-      await chrome.storage.local.set({ [STORAGE_KEYS.sourceLanguage]: state.sourceLanguage });
+    if (!sourceLanguages.some(language => language.code === state.sourceLanguage)) {
+      state.sourceLanguage = "auto";
+      await chrome.storage.local.set({ [STORAGE_KEYS.sourceLanguage]: "auto" });
     }
     if (!state.sessionId
         && state.saveTranscript
@@ -404,25 +402,16 @@ async function setTranslationMode(translationMode) {
     throw new Error("Choose an available subtitle mode.");
   }
   state.translationMode = translationMode;
-  if (translationMode === "economical" && state.saveTranscript) {
-    state.sourceLanguage = state.catalog?.selectedQuizLanguage?.code ?? state.sourceLanguage;
-    await chrome.storage.local.set({ [STORAGE_KEYS.sourceLanguage]: state.sourceLanguage });
-  }
   await chrome.storage.local.set({ [STORAGE_KEYS.translationMode]: translationMode });
   broadcastState();
 }
 
 async function setSourceLanguage(sourceLanguage) {
   if (state.sessionId) {
-    throw new Error("Stop the current subtitles before changing source language.");
+    throw new Error("Stop the current subtitles before changing the spoken-language hint.");
   }
   if (!state.catalog?.sourceLanguages?.some(language => language.code === sourceLanguage)) {
-    throw new Error("Choose a supported source language.");
-  }
-  if (state.saveTranscript
-      && state.translationMode === "economical"
-      && sourceLanguage !== state.catalog?.selectedQuizLanguage?.code) {
-    throw new Error("The source language must match your Glosify quiz language while saving a transcript.");
+    throw new Error("Choose a supported spoken-language hint.");
   }
   state.sourceLanguage = sourceLanguage;
   await chrome.storage.local.set({ [STORAGE_KEYS.sourceLanguage]: sourceLanguage });
@@ -441,10 +430,6 @@ async function setQuizLanguage(code) {
     body: JSON.stringify({ code }),
   });
   state.catalog = { ...state.catalog, selectedQuizLanguage: selected };
-  if (state.saveTranscript && state.translationMode === "economical") {
-    state.sourceLanguage = selected.code;
-    await chrome.storage.local.set({ [STORAGE_KEYS.sourceLanguage]: selected.code });
-  }
   if (state.catalog.languages.some(language => language.code === selected.code)) {
     state.targetLanguage = selected.code;
     await chrome.storage.local.set({ [STORAGE_KEYS.targetLanguage]: selected.code });
@@ -463,15 +448,6 @@ async function setSaveTranscript(enabled, requestedQuizLanguageCode) {
   try {
     if (enabled) {
       await ensureTranscriptLearningLanguage(requestedQuizLanguageCode);
-      if (state.translationMode === "economical"
-          && state.sourceLanguage !== state.catalog.selectedQuizLanguage.code) {
-        if (state.sessionId) {
-          throw new Error("Stop subtitles before choosing a source language for a saved transcript.");
-        }
-        state.sourceLanguage = state.catalog.selectedQuizLanguage.code;
-        await chrome.storage.local.set({ [STORAGE_KEYS.sourceLanguage]: state.sourceLanguage });
-        state.notice = `Source language changed to ${state.catalog.selectedQuizLanguage.name} for transcript saving.`;
-      }
     }
 
     const previousValue = state.saveTranscript;
@@ -491,8 +467,8 @@ async function setSaveTranscript(enabled, requestedQuizLanguageCode) {
             ? "Starting saved transcript…"
             : "Stopping transcript saving…",
           completedNotice: enabled
-            ? "Original speech is now being saved. The relay started a new 16-credit minute."
-            : "Transcript saving stopped. The relay started a new 8-credit minute.",
+            ? `Original speech is now being saved. The relay started a new ${requiredCredits}-credit minute.`
+            : `Transcript saving stopped. The relay started a new ${requiredCredits}-credit minute.`,
         });
       } catch (error) {
         state.saveTranscript = previousValue;
@@ -872,7 +848,7 @@ async function ensureOffscreenDocument() {
   await chrome.offscreen.createDocument({
     url: "offscreen/offscreen.html",
     reasons: ["USER_MEDIA", "AUDIO_PLAYBACK"],
-    justification: "Capture tab audio, keep it audible locally, and stream it through Glosify for Foundry subtitles.",
+    justification: "Capture tab audio, keep it audible locally, and stream it through Glosify for live subtitles.",
   });
 }
 
@@ -953,24 +929,24 @@ function effectiveCreditsPerMinute() {
 
 function saveTranscriptUnavailableMessage() {
   const selected = state.catalog?.selectedQuizLanguage;
-  if (state.translationMode === "economical") {
-    if (state.sourceLanguage === "auto") {
-      return "Saving requires an explicit source language. Enabling it will use the quiz language shown above.";
-    }
+  const speechHint = state.sourceLanguage === "auto"
+    ? "automatic spoken-language detection"
+    : `${state.catalog?.sourceLanguages?.find(language => language.code === state.sourceLanguage)?.name ?? state.sourceLanguage} as a spoken-language hint`;
+  if (state.translationMode === "scribe") {
     return state.saveTranscript
-      ? "Finalized original speech is being saved from the economical transcription stream."
-      : "Save finalized original speech from the existing economical transcription stream at no extra credits per minute.";
+      ? `Scribe’s finalized original speech is being saved using ${speechHint}.`
+      : `Save Scribe’s finalized original speech using ${speechHint} at no extra credits per minute.`;
   }
   if (state.sessionId) {
     return state.saveTranscript
-      ? `Finalized original speech is being transcribed as ${selected?.name ?? "your quiz language"} and saved. Uncheck anytime to stop saving.`
-      : `Check anytime to transcribe original speech as ${selected?.name ?? "your quiz language"} and save it without stopping tab audio.`;
+      ? `Scribe is saving finalized original speech using ${speechHint}. Uncheck anytime to stop saving.`
+      : `Check anytime to use Scribe with ${speechHint} and save the original speech without stopping tab audio.`;
   }
   if (state.catalog && !state.catalog.savedSourceTranscriptsEnabled) {
     return "Saved source transcripts are temporarily unavailable.";
   }
   return selected
-    ? `Check anytime to transcribe original speech as ${selected.name} and save it in your private Glosify account.`
+    ? `Check anytime to use Scribe with ${speechHint} and save the original speech for your ${selected.name} learning context.`
     : "Check anytime to save. Glosify will use the quiz language shown above.";
 }
 

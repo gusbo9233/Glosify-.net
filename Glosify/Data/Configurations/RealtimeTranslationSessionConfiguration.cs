@@ -12,6 +12,7 @@ internal sealed class RealtimeTranslationSessionConfiguration : IEntityTypeConfi
         entity.Property(session => session.UserId).HasMaxLength(450).IsRequired();
         entity.Property(session => session.TargetLanguage).HasMaxLength(16).IsRequired();
         entity.Property(session => session.TranslationMode).HasMaxLength(16).IsRequired();
+        entity.Property(session => session.SpeechProvider).HasMaxLength(16).IsRequired();
         entity.Property(session => session.SourceLanguage).HasMaxLength(16);
         entity.Property(session => session.Model).HasMaxLength(128).IsRequired();
         entity.Property(session => session.SourceTranscriptionDeployment).HasMaxLength(128);

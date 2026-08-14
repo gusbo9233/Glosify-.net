@@ -27,7 +27,7 @@ public sealed class RealtimeTranslationOptionsTests
                 MonthlyBudget = new AiMonthlyBudgetOptions
                 {
                     Enabled = true,
-                    Providers = ["foundry"],
+                    Providers = ["foundry", "elevenlabs"],
                     Models =
                     [
                         new AiModelPriceOptions
@@ -53,7 +53,7 @@ public sealed class RealtimeTranslationOptionsTests
                 MonthlyBudget = new AiMonthlyBudgetOptions
                 {
                     Enabled = true,
-                    Providers = ["foundry"],
+                    Providers = ["foundry", "elevenlabs"],
                     Models =
                     [
                         new AiModelPriceOptions
@@ -63,8 +63,13 @@ public sealed class RealtimeTranslationOptionsTests
                         },
                         new AiModelPriceOptions
                         {
-                            Deployment = "gpt-realtime-translate+gpt-realtime-whisper",
+                            Deployment = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime",
                             AudioSekPerMinute = 1m,
+                        },
+                        new AiModelPriceOptions
+                        {
+                            Deployment = "elevenlabs-scribe-v2-realtime+azure-translator-nmt",
+                            AudioSekPerMinute = 0.4m,
                         },
                     ],
                 },
@@ -186,17 +191,110 @@ public sealed class RealtimeTranslationOptionsTests
         Assert.True(validator.Validate(null, options).Succeeded);
     }
 
+    [Fact]
+    public void ElevenLabsFeature_RequiresSecureConfigurationAndBudgetCoverage()
+    {
+        var aiUsage = new AiUsageOptions
+        {
+            MonthlyBudget = new AiMonthlyBudgetOptions
+            {
+                Enabled = true,
+                Providers = ["foundry"],
+                Models =
+                [
+                    new AiModelPriceOptions
+                    {
+                        Deployment = "gpt-realtime-translate",
+                        AudioSekPerMinute = 0.5m,
+                    },
+                    new AiModelPriceOptions
+                    {
+                        Deployment = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime",
+                        AudioSekPerMinute = 1m,
+                    },
+                ],
+            },
+        };
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(aiUsage),
+            ExtensionAuth());
+        var options = ValidOptions();
+        ConfigureScribe(options);
+        options.ElevenLabs.Enabled = true;
+        options.ElevenLabs.ApiKey = string.Empty;
+        options.ElevenLabs.Endpoint = "https://example.test/";
+        options.ElevenLabs.Model = "scribe_v2";
+        options.ElevenLabs.CreditsPerStartedMinute = 0;
+        options.ElevenLabs.VadSilenceThresholdSeconds = 0.1;
+
+        var invalid = validator.Validate(null, options);
+
+        Assert.False(invalid.Succeeded);
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:Endpoint", StringComparison.Ordinal));
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:ApiKey", StringComparison.Ordinal));
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:Model", StringComparison.Ordinal));
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:CreditsPerStartedMinute", StringComparison.Ordinal));
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("VadSilenceThresholdSeconds", StringComparison.Ordinal));
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("every enabled", StringComparison.Ordinal));
+
+        options.ElevenLabs.Endpoint = "wss://api.elevenlabs.io/v1/speech-to-text/realtime";
+        options.ElevenLabs.ApiKey = "test-key";
+        options.ElevenLabs.Model = "scribe_v2_realtime";
+        options.ElevenLabs.CreditsPerStartedMinute = 7;
+        options.ElevenLabs.VadSilenceThresholdSeconds = 1.5;
+        aiUsage.MonthlyBudget.Providers.Add("elevenlabs");
+        aiUsage.MonthlyBudget.Models.Add(new AiModelPriceOptions
+        {
+            Deployment = options.ElevenLabs.BillingModel,
+            AudioSekPerMinute = 0.4m,
+        });
+
+        Assert.True(validator.Validate(null, options).Succeeded);
+    }
+
+    private static void ConfigureScribe(RealtimeTranslationOptions options)
+    {
+        ConfigureSpeechRecognitionTranslation(options);
+    }
+
+    private static void ConfigureSpeechRecognitionTranslation(RealtimeTranslationOptions options)
+    {
+        options.TranslatorResourceId =
+            "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/glosify/providers/Microsoft.CognitiveServices/accounts/glosify-translator";
+        options.TranslatorRegion = "swedencentral";
+        options.Languages[0].TranslatorCode = "es";
+        options.SourceLanguages =
+        [
+            new RealtimeTranslationSourceLanguageOptions
+            {
+                Code = "pl",
+                Name = "Polish",
+                Locale = "pl-PL",
+                TranslatorCode = "pl",
+                ScribeCode = "pl",
+                AutoDetect = true,
+            },
+        ];
+    }
+
     private static RealtimeTranslationOptions ValidOptions() => new()
     {
         Enabled = true,
         FoundryEndpoint = "https://glosify-foundry.openai.azure.com/",
         Deployment = "gpt-realtime-translate",
         SavedSourceTranscriptsEnabled = true,
-        SourceTranscriptionDeployment = "gpt-realtime-whisper",
-        SavedTranscriptBillingModel = "gpt-realtime-translate+gpt-realtime-whisper",
+        SavedTranscriptBillingModel = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime",
+        TranslatorResourceId = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/glosify/providers/Microsoft.CognitiveServices/accounts/glosify-translator",
+        TranslatorRegion = "swedencentral",
+        ElevenLabs = new ElevenLabsRealtimeSpeechOptions
+        {
+            Enabled = true,
+            ApiKey = "test-key",
+            CreditsPerStartedMinute = 6,
+        },
         Languages =
         [
-            new RealtimeTranslationLanguageOptions { Code = "es", Name = "Spanish" },
+            new RealtimeTranslationLanguageOptions { Code = "es", Name = "Spanish", TranslatorCode = "es" },
         ],
     };
 

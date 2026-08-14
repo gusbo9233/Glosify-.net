@@ -12,7 +12,7 @@
     <article class="glass-card legal-document">
         <header class="auth-card-header">
             <h1>Privacy Policy</h1>
-            <p>Last updated 11 August 2026</p>
+            <p>Last updated 14 August 2026</p>
         </header>
 
         <h2>Who controls your data</h2>
@@ -29,9 +29,9 @@
         </ul>
         <p>Assistant operational analytics records model and tool names, token counts, timings, outcomes, and pseudonymous correlation identifiers. It is configured not to duplicate complete prompts, responses, tool arguments, or tool results into analytics storage or telemetry.</p>
 
-        <h2>Live subtitles and Microsoft processing</h2>
-        <p>Chrome captures audio only after you press <strong>Start subtitles</strong> for the active tab. In Enhanced mode, the audio is streamed through Glosify to Microsoft Foundry for real-time speech processing and translation. In Economical mode, the audio is streamed through Glosify to Azure Speech for transcription, and each finalized recognized phrase is sent to Azure Translator for text translation. Tab audio is not written to Glosify storage.</p>
-        <p>Captions and recognized phrases are displayed transiently unless you separately opt in to transcript saving. Microsoft processes the audio, recognized phrases, and related service metadata as Glosify's cloud provider. Google and Microsoft process information under their own policies when you choose their OAuth sign-in services.</p>
+        <h2>Live subtitles and provider processing</h2>
+        <p>Chrome captures audio only after you press <strong>Start subtitles</strong> for the active tab. In Enhanced mode, the audio is streamed through Glosify to Microsoft Foundry for real-time speech processing and translation. If transcript saving is enabled, the same audio is also streamed to ElevenLabs Scribe v2 to produce the finalized source transcript. In ElevenLabs Scribe v2 subtitle mode, audio is streamed through Glosify to ElevenLabs for transcription and each finalized phrase is sent to Azure Translator. Tab audio is not written to Glosify storage.</p>
+        <p>Captions and recognized phrases are displayed transiently unless you separately opt in to transcript saving. Microsoft and, when selected, ElevenLabs process audio, recognized phrases, and related service metadata as Glosify's cloud providers. Standard ElevenLabs API logging is enabled, so ElevenLabs may retain request and service-log data under its applicable service terms and retention policy. Google and Microsoft process information under their own policies when you choose their OAuth sign-in services.</p>
 
         <h2>Purposes and legal basis</h2>
         <p>Glosify uses this data to authenticate you, deliver requested learning and subtitle features, maintain your content, administer credits and the application budget, prevent abuse, troubleshoot failures, and comply with legal obligations. Processing is necessary to provide the service you request and for legitimate security and reliability interests; optional transcript storage is based on your explicit choice.</p>

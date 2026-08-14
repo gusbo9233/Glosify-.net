@@ -13,9 +13,8 @@ namespace Glosify.Services.RealtimeTranslation;
 public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
 {
     private const string FoundryTokenScope = "https://ai.azure.com/.default";
-    private const int PcmBytesPerSecond = 24_000 * sizeof(short);
-
     private readonly TokenCredential _credential;
+    private readonly IRealtimeSpeechTranscriber _speech;
     private readonly RealtimeTranslationRelayAuthorizationMonitor _authorizationMonitor;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly RealtimeTranslationOptions _options;
@@ -24,6 +23,7 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
 
     public FoundryTranslationRelay(
         TokenCredential credential,
+        IRealtimeSpeechTranscriber speech,
         RealtimeTranslationRelayAuthorizationMonitor authorizationMonitor,
         IServiceScopeFactory scopeFactory,
         IOptions<RealtimeTranslationOptions> options,
@@ -31,6 +31,7 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         ILogger<FoundryTranslationRelay> logger)
     {
         _credential = credential;
+        _speech = speech;
         _authorizationMonitor = authorizationMonitor;
         _scopeFactory = scopeFactory;
         _options = options.Value;
@@ -51,12 +52,12 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         }
         var foundryUri = FoundryTranslationProtocol.BuildWebSocketUri(_options);
         using var foundrySocket = new ClientWebSocket();
-        using var sourceSocket = authorization.SaveTranscript ? new ClientWebSocket() : null;
         using var browserSendLock = new SemaphoreSlim(1, 1);
         foundrySocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
-        if (sourceSocket is not null)
+        if (authorization.SaveTranscript && !_options.ElevenLabs.Enabled)
         {
-            sourceSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
+            throw new RealtimeTranslationUnavailableException(
+                "Saved transcripts require ElevenLabs Scribe v2 on this Glosify deployment.");
         }
 
         AccessToken token;
@@ -82,10 +83,6 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         foundrySocket.Options.SetRequestHeader(
             "Authorization",
             new AuthenticationHeaderValue("Bearer", token.Token).ToString());
-        sourceSocket?.Options.SetRequestHeader(
-            "Authorization",
-            new AuthenticationHeaderValue("Bearer", token.Token).ToString());
-
         using var relayCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         relayCancellation.CancelAfter(TimeSpan.FromMinutes(_options.MaxSessionMinutes + 1));
         var relayToken = relayCancellation.Token;
@@ -102,23 +99,6 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                 relayToken);
 
             await WaitForFoundrySessionUpdatedAsync(foundrySocket, relayToken);
-            if (sourceSocket is not null)
-            {
-                var sourceLanguage = authorization.TranscriptSourceLanguage
-                    ?? throw new InvalidOperationException(
-                        "Saved source transcription is missing its quiz language.");
-                await sourceSocket.ConnectAsync(
-                    FoundryTranslationProtocol.BuildSourceTranscriptionWebSocketUri(_options),
-                    relayToken);
-                await sourceSocket.SendAsync(
-                    FoundryTranslationProtocol.CreateSourceTranscriptionSessionUpdate(
-                        _options,
-                        sourceLanguage),
-                    WebSocketMessageType.Text,
-                    endOfMessage: true,
-                    relayToken);
-                await WaitForFoundrySessionUpdatedAsync(sourceSocket, relayToken);
-            }
             await SendBrowserControlAsync(browserSocket, "glosify.relay.ready", null, relayToken);
             var sessionState = await _authorizationMonitor.WaitForSessionStartAsync(
                 authorization,
@@ -127,6 +107,8 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
             var transcriptState = new RelayTranscriptState();
             Channel<CapturedTranslationSegment>? transcriptChannel = null;
             Task? transcriptWriter = null;
+            Channel<byte[]>? sourceAudio = null;
+            Channel<RecognizedSpeechSegment>? sourceSegments = null;
             if (sessionState.TranscriptId.HasValue)
             {
                 transcriptChannel = Channel.CreateBounded<CapturedTranslationSegment>(new BoundedChannelOptions(256)
@@ -141,12 +123,24 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                     transcriptChannel.Reader,
                     transcriptState,
                     CancellationToken.None);
+                sourceAudio = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(32)
+                {
+                    SingleReader = true,
+                    SingleWriter = true,
+                    FullMode = BoundedChannelFullMode.Wait,
+                });
+                sourceSegments = Channel.CreateBounded<RecognizedSpeechSegment>(new BoundedChannelOptions(64)
+                {
+                    SingleReader = true,
+                    SingleWriter = true,
+                    FullMode = BoundedChannelFullMode.Wait,
+                });
             }
 
             var browserToFoundry = PumpBrowserToFoundryAsync(
                 browserSocket,
                 foundrySocket,
-                sourceSocket,
+                sourceAudio?.Writer,
                 sessionState.StartedAt!.Value,
                 billingState,
                 relayToken);
@@ -158,10 +152,18 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                 transcriptChannel?.Writer,
                 transcriptState,
                 relayToken);
-            var sourceToBrowser = sourceSocket is null
+            var sourceTranscription = sourceAudio is null || sourceSegments is null
                 ? Task.Delay(Timeout.InfiniteTimeSpan, relayToken)
-                : PumpSourceTranscriptAsync(
-                    sourceSocket,
+                : _speech.TranscribeAsync(
+                    RealtimeSpeechProviders.ElevenLabs,
+                    authorization.SourceLanguage ?? "auto",
+                    sourceAudio.Reader,
+                    sourceSegments.Writer,
+                    relayToken);
+            var sourceToTranscript = sourceSegments is null
+                ? Task.Delay(Timeout.InfiniteTimeSpan, relayToken)
+                : PumpScribeTranscriptAsync(
+                    sourceSegments.Reader,
                     browserSocket,
                     browserSendLock,
                     authorization.SessionId,
@@ -177,20 +179,34 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
             var completed = await Task.WhenAny(
                 browserToFoundry,
                 foundryToBrowser,
-                sourceToBrowser,
+                sourceTranscription,
                 authorizationMonitor);
-            relayCancellation.Cancel();
-
             try
             {
-                await completed;
+                if (completed == browserToFoundry && sourceAudio is not null)
+                {
+                    await browserToFoundry;
+                    await sourceTranscription;
+                    await sourceToTranscript;
+                }
+                else if (completed == sourceTranscription)
+                {
+                    await sourceTranscription;
+                    await sourceToTranscript;
+                }
+                else
+                {
+                    await completed;
+                }
             }
             finally
             {
+                relayCancellation.Cancel();
                 await IgnoreCancellationAsync(Task.WhenAll(
                     browserToFoundry,
                     foundryToBrowser,
-                    sourceToBrowser,
+                    sourceTranscription,
+                    sourceToTranscript,
                     authorizationMonitor));
                 transcriptChannel?.Writer.TryComplete();
                 if (transcriptWriter is not null)
@@ -231,10 +247,6 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         finally
         {
             await CloseQuietlyAsync(foundrySocket, CancellationToken.None);
-            if (sourceSocket is not null)
-            {
-                await CloseQuietlyAsync(sourceSocket, CancellationToken.None);
-            }
             await CloseQuietlyAsync(browserSocket, CancellationToken.None);
         }
     }
@@ -279,19 +291,17 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
     private async Task PumpBrowserToFoundryAsync(
         WebSocket browserSocket,
         WebSocket foundrySocket,
-        WebSocket? sourceSocket,
+        ChannelWriter<byte[]>? sourceAudio,
         DateTimeOffset startedAt,
         RealtimeTranslationRelayBillingState billingState,
         CancellationToken cancellationToken)
     {
         long forwardedAudioBytes = 0;
-        long sourceUncommittedBytes = 0;
         try
         {
             while (!cancellationToken.IsCancellationRequested
                 && browserSocket.State == WebSocketState.Open
-                && foundrySocket.State == WebSocketState.Open
-                && (sourceSocket is null || sourceSocket.State == WebSocketState.Open))
+                && foundrySocket.State == WebSocketState.Open)
             {
                 var message = await ReceiveTextMessageAsync(
                     browserSocket,
@@ -301,9 +311,7 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                 {
                     return;
                 }
-                if (!FoundryTranslationProtocol.TryGetBrowserAudioByteCount(
-                        message,
-                        out var audioByteCount))
+                if (!FoundryTranslationProtocol.TryDecodeBrowserAudio(message, out var audioBytes))
                 {
                     await browserSocket.CloseOutputAsync(
                         WebSocketCloseStatus.PolicyViolation,
@@ -313,7 +321,7 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                 }
 
                 await _authorizationMonitor.WaitForAudioCapacityAsync(
-                    forwardedAudioBytes + audioByteCount,
+                    forwardedAudioBytes + audioBytes.Length,
                     startedAt,
                     billingState,
                     cancellationToken);
@@ -323,40 +331,16 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                     WebSocketMessageType.Text,
                     endOfMessage: true,
                     cancellationToken);
-                if (sourceSocket is not null)
+                if (sourceAudio is not null)
                 {
-                    await sourceSocket.SendAsync(
-                        FoundryTranslationProtocol.CreateSourceAudioAppend(message),
-                        WebSocketMessageType.Text,
-                        endOfMessage: true,
-                        cancellationToken);
-                    sourceUncommittedBytes += audioByteCount;
-                    if (sourceUncommittedBytes >= 3L * PcmBytesPerSecond)
-                    {
-                        await sourceSocket.SendAsync(
-                            FoundryTranslationProtocol.CreateSourceAudioCommit(),
-                            WebSocketMessageType.Text,
-                            endOfMessage: true,
-                            cancellationToken);
-                        sourceUncommittedBytes = 0;
-                    }
+                    await sourceAudio.WriteAsync(audioBytes, cancellationToken);
                 }
-                forwardedAudioBytes += audioByteCount;
+                forwardedAudioBytes += audioBytes.Length;
             }
         }
         finally
         {
-            if (!cancellationToken.IsCancellationRequested
-                && sourceSocket?.State == WebSocketState.Open
-                && sourceUncommittedBytes >= PcmBytesPerSecond / 10)
-            {
-                await sourceSocket.SendAsync(
-                    FoundryTranslationProtocol.CreateSourceAudioCommit(),
-                    WebSocketMessageType.Text,
-                    endOfMessage: true,
-                    cancellationToken);
-                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
-            }
+            sourceAudio?.TryComplete();
         }
     }
 
@@ -444,8 +428,8 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
             sessionId);
     }
 
-    private async Task PumpSourceTranscriptAsync(
-        WebSocket sourceSocket,
+    private async Task PumpScribeTranscriptAsync(
+        ChannelReader<RecognizedSpeechSegment> sourceSegments,
         WebSocket browserSocket,
         SemaphoreSlim browserSendLock,
         Guid sessionId,
@@ -453,28 +437,15 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         RelayTranscriptState transcriptState,
         CancellationToken cancellationToken)
     {
-        var accumulator = new FoundrySourceTranscriptAccumulator();
-        while (!cancellationToken.IsCancellationRequested
-            && sourceSocket.State == WebSocketState.Open)
+        await foreach (var recognized in sourceSegments.ReadAllAsync(cancellationToken))
         {
-            var message = await ReceiveTextMessageAsync(
-                sourceSocket,
-                FoundryTranslationProtocol.MaximumFoundryMessageBytes,
-                cancellationToken);
-            if (message is null)
+            if (transcriptWriter is not null)
             {
-                return;
-            }
-            if (FoundryTranslationProtocol.HasType(message, "error"))
-            {
-                throw new RealtimeTranslationUpstreamException(
-                    "Microsoft Foundry ended source transcription.");
-            }
-
-            var segment = accumulator.Apply(message, _timeProvider.GetUtcNow());
-            if (segment is not null && transcriptWriter is not null)
-            {
-                WriteCaption(segment, transcriptWriter, transcriptState, sessionId);
+                WriteCaption(new CapturedTranslationSegment(
+                    recognized.Sequence,
+                    $"scribe:source:{recognized.Sequence}",
+                    recognized.Text,
+                    recognized.CapturedAt), transcriptWriter, transcriptState, sessionId);
             }
 
             if (browserSocket.State != WebSocketState.Open)
@@ -632,6 +603,10 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         catch (WebSocketException)
         {
             // Expected when cancellation races a peer closure.
+        }
+        catch (RealtimeTranslationUpstreamException)
+        {
+            // The task selected by WhenAny already propagates the provider failure.
         }
     }
 

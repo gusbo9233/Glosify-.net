@@ -12,6 +12,7 @@ public interface IRealtimeTranslationRelayTokenStore
         string userId,
         string targetLanguage,
         string translationMode,
+        string speechProvider,
         string? sourceLanguage,
         bool saveTranscript,
         string? transcriptSourceLanguage);
@@ -45,6 +46,7 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         string userId,
         string targetLanguage,
         string translationMode,
+        string speechProvider,
         string? sourceLanguage,
         bool saveTranscript,
         string? transcriptSourceLanguage)
@@ -52,9 +54,27 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetLanguage);
 
-        if (translationMode is not (RealtimeTranslationModes.Economical or RealtimeTranslationModes.Enhanced))
+        if (translationMode is not (RealtimeTranslationModes.Scribe or RealtimeTranslationModes.Enhanced))
         {
             throw new ArgumentException("Unsupported subtitle mode.", nameof(translationMode));
+        }
+        if (speechProvider is not (
+                RealtimeSpeechProviders.Azure
+                or RealtimeSpeechProviders.ElevenLabs
+                or RealtimeSpeechProviders.Foundry))
+        {
+            throw new ArgumentException("Unsupported speech provider.", nameof(speechProvider));
+        }
+        var expectedSpeechProvider = translationMode switch
+        {
+            RealtimeTranslationModes.Scribe => RealtimeSpeechProviders.ElevenLabs,
+            _ => RealtimeSpeechProviders.Foundry,
+        };
+        if (!string.Equals(speechProvider, expectedSpeechProvider, StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                "The speech provider does not match the authorized subtitle mode.",
+                nameof(speechProvider));
         }
         var canonicalTranscriptSourceLanguage = saveTranscript
             ? QuizLanguageCatalog.Find(transcriptSourceLanguage)?.Code
@@ -74,6 +94,7 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
             userId,
             targetLanguage,
             translationMode,
+            speechProvider,
             sourceLanguage,
             saveTranscript,
             canonicalTranscriptSourceLanguage,
@@ -112,6 +133,7 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
             entry.UserId,
             entry.TargetLanguage,
             entry.TranslationMode,
+            entry.SpeechProvider,
             entry.SourceLanguage,
             entry.SaveTranscript,
             entry.TranscriptSourceLanguage);
@@ -136,6 +158,7 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         string UserId,
         string TargetLanguage,
         string TranslationMode,
+        string SpeechProvider,
         string? SourceLanguage,
         bool SaveTranscript,
         string? TranscriptSourceLanguage,

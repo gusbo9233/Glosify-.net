@@ -4,11 +4,12 @@ import { readFile } from "node:fs/promises";
 
 const popupPath = new URL("../popup/popup.html", import.meta.url);
 
-test("popup offers mode, source, target, quiz-language, and transcript controls", async () => {
+test("popup offers mode, optional language hint, target, quiz-language, and transcript controls", async () => {
   const markup = await readFile(popupPath, "utf8");
 
   assert.match(markup, /<select id="quiz-language">/);
   assert.match(markup, /<select id="translation-mode">/);
+  assert.doesNotMatch(markup, /<select id="speech-provider">/);
   assert.match(markup, /<select id="source-language">/);
   assert.match(markup, /<input id="save-transcript" type="checkbox">/);
   assert.match(markup, /audio is streamed through Glosify to Microsoft services/);

@@ -6,6 +6,7 @@ import {
   clearTranscriptStorageState,
   getEffectiveCreditsPerMinute,
   isTranscriptToggleDisabled,
+  selectAvailableTranslationMode,
 } from "../lib/transcript-storage.js";
 
 test("transcript storage is opt-in and does not send an id while disabled", () => {
@@ -27,19 +28,20 @@ test("reconnect preserves the opted-in transcript id", () => {
   }), {
     targetLanguage: "sv",
     saveTranscript: true,
+    sourceLanguage: "auto",
     transcriptId: "2145953e-a101-40fb-9859-6bd80225695e",
   });
 });
 
-test("economical sessions include mode and source language", () => {
+test("speech recognition modes include mode and source language", () => {
   assert.deepEqual(buildTranscriptSessionRequest({
     targetLanguage: "sv",
-    translationMode: "economical",
+    translationMode: "scribe",
     sourceLanguage: "pl",
     saveTranscript: false,
   }), {
     targetLanguage: "sv",
-    translationMode: "economical",
+    translationMode: "scribe",
     sourceLanguage: "pl",
     saveTranscript: false,
   });
@@ -67,8 +69,21 @@ test("source saving switches the displayed and preflight rate to sixteen credits
   assert.equal(getEffectiveCreditsPerMinute(catalog, true), 16);
   assert.equal(getEffectiveCreditsPerMinute({
     ...catalog,
-    modes: [{ code: "economical", creditsPerMinute: 4 }],
-  }, true, "economical"), 4);
+    modes: [{ code: "scribe", creditsPerMinute: 6 }],
+  }, true, "scribe"), 6);
+});
+
+test("enhanced sessions omit speech-recognition-only fields", () => {
+  assert.deepEqual(buildTranscriptSessionRequest({
+    targetLanguage: "sv",
+    translationMode: "enhanced",
+    sourceLanguage: "pl",
+    saveTranscript: false,
+  }), {
+    targetLanguage: "sv",
+    translationMode: "enhanced",
+    saveTranscript: false,
+  });
 });
 
 test("the transcript toggle is not gated by active state or language matching", () => {
@@ -81,4 +96,14 @@ test("the transcript toggle is not gated by active state or language matching", 
     active: false,
     catalog: { savedSourceTranscriptsEnabled: false },
   }), true);
+});
+
+test("an unavailable saved mode falls back to Scribe before Enhanced", () => {
+  const modes = [
+    { code: "scribe", name: "ElevenLabs Scribe v2" },
+    { code: "enhanced", name: "Enhanced" },
+  ];
+  assert.equal(selectAvailableTranslationMode(modes, "economical"), "scribe");
+  assert.equal(selectAvailableTranslationMode(modes, "enhanced"), "enhanced");
+  assert.equal(selectAvailableTranslationMode([{ code: "enhanced" }], "scribe"), "enhanced");
 });
