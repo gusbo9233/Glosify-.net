@@ -20,6 +20,47 @@ test("builds one live message from deltas and commits it on done", () => {
   assert.equal(chat.translation, "");
 });
 
+test("Enhanced subtitles commit completed sentences as separate chat bubbles", () => {
+  const chat = new ChatBuffer();
+  const result = chat.apply({
+    stream: "translation",
+    delta: "Good morning. How are",
+    isFinal: false,
+    clientTimestamp: 234,
+  });
+
+  assert.deepEqual(result, { changed: true, committed: true });
+  assert.deepEqual(chat.messages, [{ text: "Good morning.", timestamp: 234 }]);
+  assert.equal(chat.translation, "How are");
+
+  chat.apply({
+    stream: "translation",
+    delta: " you? I am well",
+    isFinal: false,
+    clientTimestamp: 235,
+  });
+  chat.apply({ stream: "translation", isFinal: true, clientTimestamp: 236 });
+
+  assert.deepEqual(chat.messages, [
+    { text: "Good morning.", timestamp: 234 },
+    { text: "How are you?", timestamp: 235 },
+    { text: "I am well", timestamp: 236 },
+  ]);
+});
+
+test("Enhanced subtitles split unusually long speech at a word boundary", () => {
+  const chat = new ChatBuffer({ maximumBubbleCharacters: 12 });
+  chat.apply({
+    stream: "translation",
+    delta: "one two three four",
+    isFinal: false,
+    clientTimestamp: 345,
+  });
+
+  assert.deepEqual(chat.messages, [{ text: "one two", timestamp: 345 }]);
+  assert.equal(chat.translation, "three four");
+});
+
 test("Scribe revisions replace live text before the finalized segment commits", () => {
   const chat = new ChatBuffer();
   chat.apply({ stream: "translation", delta: "Good", replace: true, isFinal: false });
@@ -34,6 +75,22 @@ test("Scribe revisions replace live text before the finalized segment commits", 
 
   assert.equal(chat.translation, "");
   assert.deepEqual(chat.messages, [{ text: "Good morning!", timestamp: 321 }]);
+});
+
+test("Scribe finalized replacements remain one provider-defined bubble", () => {
+  const chat = new ChatBuffer({ maximumBubbleCharacters: 12 });
+  chat.apply({
+    stream: "translation",
+    delta: "First sentence. Second sentence.",
+    replace: true,
+    isFinal: true,
+    clientTimestamp: 322,
+  });
+
+  assert.deepEqual(chat.messages, [{
+    text: "First sentence. Second sentence.",
+    timestamp: 322,
+  }]);
 });
 
 test("ignores source speech so the overlay remains translation-only", () => {
