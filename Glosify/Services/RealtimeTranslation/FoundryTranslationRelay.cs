@@ -191,10 +191,9 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                     await sourceTranscription;
                     await sourceToTranscript;
                 }
-                else if (completed == sourceTranscription)
+                else if (completed == sourceTranscription || completed == sourceToTranscript)
                 {
-                    await sourceTranscription;
-                    await sourceToTranscript;
+                    await AwaitScribePipelineAsync(sourceTranscription, sourceToTranscript);
                 }
                 else
                 {
@@ -614,6 +613,14 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         {
             // The task selected by WhenAny already propagates the provider failure.
         }
+    }
+
+    internal static async Task AwaitScribePipelineAsync(
+        Task sourceTranscription,
+        Task sourceToTranscript)
+    {
+        await sourceToTranscript;
+        await sourceTranscription;
     }
 
     private sealed class RelayTranscriptState

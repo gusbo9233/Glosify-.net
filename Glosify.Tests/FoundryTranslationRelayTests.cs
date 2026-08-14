@@ -340,6 +340,20 @@ public sealed class FoundryTranslationRelayTests
             () => router.RelayAsync(socket, authorization));
     }
 
+    [Fact]
+    public async Task ScribePipeline_PropagatesProducerFailureWhenConsumerCompletesFirst()
+    {
+        var producerFailure = new RealtimeTranslationUpstreamException(
+            "ElevenLabs Scribe v2 ended the transcription stream.");
+
+        var exception = await Assert.ThrowsAsync<RealtimeTranslationUpstreamException>(() =>
+            FoundryTranslationRelay.AwaitScribePipelineAsync(
+                Task.FromException(producerFailure),
+                Task.CompletedTask));
+
+        Assert.Same(producerFailure, exception);
+    }
+
     private static RealtimeTranslationRelayTokenStore CreateTokenStore(
         IMemoryCache cache,
         TimeProvider timeProvider) =>
