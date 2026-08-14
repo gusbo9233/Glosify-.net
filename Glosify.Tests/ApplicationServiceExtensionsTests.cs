@@ -35,6 +35,19 @@ public sealed class ApplicationServiceExtensionsTests
             ApplicationServiceExtensions.ResolveElevenLabsApiKey(configuration));
     }
 
+    [Fact]
+    public void ElevenLabsApiKey_EnvironmentAliasRemainsACompatibilityFallback()
+    {
+        var configuration = Configuration(new Dictionary<string, string?>
+        {
+            ["ELEVENLABS_API_KEY"] = "environment-alias-key",
+        });
+
+        Assert.Equal(
+            "environment-alias-key",
+            ApplicationServiceExtensions.ResolveElevenLabsApiKey(configuration));
+    }
+
     private static IConfiguration Configuration(Dictionary<string, string?> values) =>
         new ConfigurationBuilder()
             .AddInMemoryCollection(values)
