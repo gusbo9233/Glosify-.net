@@ -81,8 +81,7 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IValidateOptions<RealtimeTranslationOptions>, RealtimeTranslationOptionsValidator>();
         services.Configure<RealtimeTranslationOptions>(options =>
         {
-            var elevenLabsApiKey = configuration["Elevenlabs_key"]
-                ?? configuration["ELEVENLABS_API_KEY"];
+            var elevenLabsApiKey = ResolveElevenLabsApiKey(configuration);
             if (!string.IsNullOrWhiteSpace(elevenLabsApiKey))
             {
                 options.ElevenLabs.ApiKey = elevenLabsApiKey;
@@ -267,5 +266,19 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ISpeakingQuizReader, SpeakingQuizReader>();
 
         return services;
+    }
+
+    internal static string? ResolveElevenLabsApiKey(IConfiguration configuration)
+    {
+        var canonical = configuration[$"{RealtimeTranslationOptions.SectionName}:ElevenLabs:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(canonical))
+        {
+            return canonical;
+        }
+
+        var legacy = configuration["Elevenlabs_key"];
+        return !string.IsNullOrWhiteSpace(legacy)
+            ? legacy
+            : configuration["ELEVENLABS_API_KEY"];
     }
 }
