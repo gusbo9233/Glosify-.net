@@ -32,6 +32,7 @@
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
     <PackageReference Include="Mscc.GenerativeAI" />
     <PackageReference Include="PdfPig" />
+    <PackageReference Include="Stripe.net" />
   </ItemGroup>
 
   <ItemGroup>

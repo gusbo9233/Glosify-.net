@@ -1,0 +1,93 @@
+.content-page {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 40px 28px 72px;
+}
+
+.page-heading {
+    max-width: 680px;
+    margin-bottom: 32px;
+}
+
+.page-heading h1,
+.empty-state h1,
+.empty-state h2,
+.surface-card h2 {
+    margin: 0;
+    color: var(--on-surface);
+}
+
+.page-heading p:not(.eyebrow),
+.surface-card p,
+.empty-state p,
+.muted-copy {
+    color: var(--on-surface-var);
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+}
+
+.surface-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 230px;
+    padding: 24px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 20px;
+    background: var(--surface-container-low);
+}
+
+.surface-card form {
+    margin-top: auto;
+}
+
+.surface-card .home-button,
+.empty-state .home-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font: inherit;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.display-number {
+    margin: 4px 0 0;
+    color: var(--primary) !important;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.empty-state {
+    display: grid;
+    justify-items: start;
+    gap: 12px;
+    padding: 32px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 20px;
+    background: var(--surface-container-low);
+}
+
+.empty-state > .material-symbols-outlined {
+    color: var(--primary);
+    font-size: 40px;
+}
+
+.muted-copy {
+    margin-top: 22px;
+    font-size: 13px;
+}
+
+@media (max-width: 640px) {
+    .content-page {
+        padding: 24px 16px 56px;
+    }
+}

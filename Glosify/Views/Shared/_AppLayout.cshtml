@@ -1,5 +1,6 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Html
+@inject IStripePaymentService StripePayments
 @functions {
     const string DefaultMetaDescription =
         "Glosify turns what you read into vocabulary you can use: build word lists from books and "
@@ -220,6 +221,13 @@
                     </button>
                     @if (User.Identity?.IsAuthenticated == true)
                     {
+                        @if (StripePayments.IsEnabled)
+                        {
+                            <a class="credit-pill credit-pill-buy" asp-controller="Payments" asp-action="Index">
+                                <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
+                                Get credits
+                            </a>
+                        }
                         @await Component.InvokeAsync("AiCreditPill")
                         <div class="account-block">
                             <div class="account-meta">

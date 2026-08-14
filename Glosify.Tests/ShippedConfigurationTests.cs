@@ -106,6 +106,7 @@ public sealed class ShippedConfigurationTests
         var options = services.GetRequiredService<IOptions<RealtimeTranslationOptions>>().Value;
         var budget = services.GetRequiredService<IOptions<AiUsageOptions>>().Value.MonthlyBudget;
 
+        Assert.Equal(6, options.EconomicalCreditsPerStartedMinute);
         Assert.Equal(
             ["de", "et", "pl", "uk"],
             options.SourceLanguages

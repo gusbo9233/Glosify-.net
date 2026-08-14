@@ -172,6 +172,10 @@ variables, .NET user secrets, or Azure App Service settings—never in Git.
 Secrets belong in user secrets, which live outside the repository folder:
 `dotnet user-secrets list --project Glosify`.
 
+Stripe credit-pack setup, webhook events, and test-mode configuration are documented
+in [`docs/STRIPE.md`](docs/STRIPE.md). Payments remain disabled until the deployment
+provides Stripe test/live settings outside the repository.
+
 Local Azure access uses `DefaultAzureCredential`; run `az login` before using
 Foundry, Speech, or Blob Storage features. Production uses managed identity and
 does not require Foundry or Speech keys.

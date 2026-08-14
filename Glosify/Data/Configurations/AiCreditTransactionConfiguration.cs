@@ -18,13 +18,28 @@ internal sealed class AiCreditTransactionConfiguration : IEntityTypeConfiguratio
         entity.Property(transaction => transaction.ActorUserId).HasMaxLength(450);
         entity.Property(transaction => transaction.Note).HasMaxLength(512);
         entity.Property(transaction => transaction.RelatedEntityType).HasMaxLength(64);
-        entity.Property(transaction => transaction.RelatedEntityId).HasMaxLength(128);
+        entity.Property(transaction => transaction.RelatedEntityId).HasMaxLength(255);
         entity.Property(transaction => transaction.BudgetPeriodKey).HasMaxLength(7);
         entity.HasIndex(transaction => new { transaction.UserId, transaction.CreatedAt });
         entity.HasIndex(transaction => transaction.ReservationId);
         entity.HasIndex(transaction => transaction.OperationId);
         entity.HasIndex(transaction => transaction.AssistantTurnId);
         entity.HasIndex(transaction => transaction.BudgetPeriodKey);
+        entity.HasIndex(transaction => new
+        {
+            transaction.RelatedEntityType,
+            transaction.RelatedEntityId,
+        })
+            .IsUnique()
+            .HasFilter("[Kind] = 'stripe_purchase' AND [RelatedEntityType] = 'StripeCreditPurchase' AND [RelatedEntityId] IS NOT NULL");
+        entity.HasIndex(transaction => new
+        {
+            transaction.RelatedEntityType,
+            transaction.RelatedEntityId,
+            transaction.Kind,
+        })
+            .IsUnique()
+            .HasFilter("[Kind] = 'stripe_adjustment' AND [RelatedEntityType] = 'StripePaymentEvent' AND [RelatedEntityId] IS NOT NULL");
 
         entity.HasOne<ApplicationUser>()
             .WithMany()

@@ -23,7 +23,7 @@ public sealed class RealtimeTranslationOptions
     public string FoundryEndpoint { get; set; } = string.Empty;
     public string Deployment { get; set; } = "gpt-realtime-translate";
     public bool EconomicalEnabled { get; set; }
-    public int EconomicalCreditsPerStartedMinute { get; set; } = 4;
+    public int EconomicalCreditsPerStartedMinute { get; set; } = 6;
     public string EconomicalBillingModel { get; set; } = "azure-speech-standard+azure-translator-nmt";
     public string SpeechEndpoint { get; set; } = string.Empty;
     public string TranslatorEndpoint { get; set; } = "https://api.cognitive.microsofttranslator.com/";

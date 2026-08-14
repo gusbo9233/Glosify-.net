@@ -449,6 +449,148 @@ public sealed class AiCreditService : IAiCreditService
         return true;
     }
 
+    public Task<bool> GrantStripePurchaseAsync(
+        string targetUserId,
+        string purchaseId,
+        int credits,
+        string note,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(targetUserId))
+        {
+            throw new ArgumentException("A target user is required.", nameof(targetUserId));
+        }
+        if (string.IsNullOrWhiteSpace(purchaseId))
+        {
+            throw new ArgumentException("A purchase id is required.", nameof(purchaseId));
+        }
+        if (credits <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(credits), "Purchased credits must be greater than zero.");
+        }
+        if (string.IsNullOrWhiteSpace(note))
+        {
+            throw new ArgumentException("A purchase note is required.", nameof(note));
+        }
+
+        return WithConcurrencyRetryAsync(() => GrantStripePurchaseCoreAsync(
+            targetUserId,
+            purchaseId,
+            credits,
+            note,
+            cancellationToken));
+    }
+
+    private async Task<bool> GrantStripePurchaseCoreAsync(
+        string targetUserId,
+        string purchaseId,
+        int credits,
+        string note,
+        CancellationToken cancellationToken)
+    {
+        var alreadyGranted = await _context.AiCreditTransactions.AnyAsync(transaction =>
+            transaction.Kind == AiCreditTransactionKinds.StripePurchase
+            && transaction.RelatedEntityType == "StripeCreditPurchase"
+            && transaction.RelatedEntityId == purchaseId,
+            cancellationToken);
+        if (alreadyGranted)
+        {
+            return false;
+        }
+
+        var account = await GetOrCreateAccountEntityAsync(targetUserId, cancellationToken);
+        await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
+        var now = _timeProvider.GetUtcNow();
+        account.BalanceCredits += credits;
+        account.UpdatedAt = now;
+        _context.AiCreditTransactions.Add(new AiCreditTransaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = targetUserId,
+            Kind = AiCreditTransactionKinds.StripePurchase,
+            CreditAmount = credits,
+            BalanceAfterCredits = account.BalanceCredits,
+            ReservedAfterCredits = account.ReservedCredits,
+            Note = note.Trim(),
+            RelatedEntityType = "StripeCreditPurchase",
+            RelatedEntityId = purchaseId,
+            CreatedAt = now,
+        });
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public Task<bool> ApplyStripePaymentAdjustmentAsync(
+        string targetUserId,
+        string adjustmentId,
+        int creditDelta,
+        string note,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(targetUserId))
+        {
+            throw new ArgumentException("A target user is required.", nameof(targetUserId));
+        }
+        if (string.IsNullOrWhiteSpace(adjustmentId))
+        {
+            throw new ArgumentException("An adjustment id is required.", nameof(adjustmentId));
+        }
+        if (creditDelta == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(creditDelta), "A credit adjustment cannot be zero.");
+        }
+        if (string.IsNullOrWhiteSpace(note))
+        {
+            throw new ArgumentException("An adjustment note is required.", nameof(note));
+        }
+
+        return WithConcurrencyRetryAsync(() => ApplyStripePaymentAdjustmentCoreAsync(
+            targetUserId,
+            adjustmentId,
+            creditDelta,
+            note,
+            cancellationToken));
+    }
+
+    private async Task<bool> ApplyStripePaymentAdjustmentCoreAsync(
+        string targetUserId,
+        string adjustmentId,
+        int creditDelta,
+        string note,
+        CancellationToken cancellationToken)
+    {
+        var alreadyApplied = await _context.AiCreditTransactions.AnyAsync(transaction =>
+            transaction.Kind == AiCreditTransactionKinds.StripeAdjustment
+            && transaction.RelatedEntityType == "StripePaymentEvent"
+            && transaction.RelatedEntityId == adjustmentId,
+            cancellationToken);
+        if (alreadyApplied)
+        {
+            return false;
+        }
+
+        var account = await GetOrCreateAccountEntityAsync(targetUserId, cancellationToken);
+        await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
+        var now = _timeProvider.GetUtcNow();
+        account.BalanceCredits += creditDelta;
+        account.UpdatedAt = now;
+        _context.AiCreditTransactions.Add(new AiCreditTransaction
+        {
+            Id = Guid.NewGuid(),
+            UserId = targetUserId,
+            Kind = AiCreditTransactionKinds.StripeAdjustment,
+            CreditAmount = creditDelta,
+            BalanceAfterCredits = account.BalanceCredits,
+            ReservedAfterCredits = account.ReservedCredits,
+            Note = note.Trim(),
+            RelatedEntityType = "StripePaymentEvent",
+            RelatedEntityId = adjustmentId,
+            CreatedAt = now,
+        });
+        await _context.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     // Each mutating flow reads the account, applies a delta, and saves once. A
     // concurrent request can invalidate the read (RowVersion conflict) or win the
     // race to insert the account row (key conflict); both are resolved by dropping

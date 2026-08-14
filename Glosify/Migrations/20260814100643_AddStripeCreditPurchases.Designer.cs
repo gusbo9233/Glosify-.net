@@ -4,6 +4,7 @@ using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Glosify.Migrations
 {
     [DbContext(typeof(GlosifyContext))]
-    partial class GlosifyContextModelSnapshot : ModelSnapshot
+    [Migration("20260814100643_AddStripeCreditPurchases")]
+    partial class AddStripeCreditPurchases
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -140,8 +143,8 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("RelatedEntityId")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("RelatedEntityType")
                         .HasMaxLength(64)
@@ -182,10 +185,6 @@ namespace Glosify.Migrations
                         .HasFilter("[Kind] = 'stripe_purchase' AND [RelatedEntityType] = 'StripeCreditPurchase' AND [RelatedEntityId] IS NOT NULL");
 
                     b.HasIndex("UserId", "CreatedAt");
-
-                    b.HasIndex("RelatedEntityType", "RelatedEntityId", "Kind")
-                        .IsUnique()
-                        .HasFilter("[Kind] = 'stripe_adjustment' AND [RelatedEntityType] = 'StripePaymentEvent' AND [RelatedEntityId] IS NOT NULL");
 
                     b.ToTable("AiCreditTransactions");
                 });
@@ -1841,18 +1840,10 @@ namespace Glosify.Migrations
                     b.Property<int>("Credits")
                         .HasColumnType("int");
 
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
                     b.Property<string>("DisplayName")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
-
-                    b.Property<bool>("HasUnresolvedDispute")
-                        .HasColumnType("bit");
 
                     b.Property<string>("LastWebhookEventId")
                         .HasMaxLength(255)
@@ -1871,18 +1862,6 @@ namespace Glosify.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<long>("RefundedAmountMinor")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("RevokedCredits")
-                        .HasColumnType("int");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -1896,9 +1875,6 @@ namespace Glosify.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
-                    b.Property<long>("UnitAmountMinor")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -1910,50 +1886,9 @@ namespace Glosify.Migrations
                         .IsUnique()
                         .HasFilter("[StripeCheckoutSessionId] IS NOT NULL");
 
-                    b.HasIndex("StripePaymentIntentId")
-                        .IsUnique()
-                        .HasFilter("[StripePaymentIntentId] IS NOT NULL");
-
                     b.HasIndex("UserId", "CreatedAt");
 
                     b.ToTable("StripeCreditPurchases");
-                });
-
-            modelBuilder.Entity("Glosify.Models.Entities.StripePaymentEvent", b =>
-                {
-                    b.Property<string>("IdempotencyKey")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<DateTimeOffset?>("AppliedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<int>("CreditDelta")
-                        .HasColumnType("int");
-
-                    b.Property<DateTimeOffset>("ProcessedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<Guid>("PurchaseId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("StripeEventId")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.HasKey("IdempotencyKey");
-
-                    b.HasIndex("PurchaseId");
-
-                    b.HasIndex("StripeEventId");
-
-                    b.ToTable("StripePaymentEvents");
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.Word", b =>
@@ -2693,16 +2628,6 @@ namespace Glosify.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_StripeCreditPurchases_AspNetUsers_UserId");
-                });
-
-            modelBuilder.Entity("Glosify.Models.Entities.StripePaymentEvent", b =>
-                {
-                    b.HasOne("Glosify.Models.Entities.StripeCreditPurchase", null)
-                        .WithMany()
-                        .HasForeignKey("PurchaseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_StripePaymentEvents_StripeCreditPurchases_PurchaseId");
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.Word", b =>
