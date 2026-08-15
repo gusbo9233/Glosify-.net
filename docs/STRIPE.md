@@ -6,8 +6,10 @@ configuration and fulfills paid sessions into the existing AI credit ledger.
 
 ## Dashboard setup
 
-1. In Stripe test mode, create one Product and one one-time Price for each credit
-   pack. Copy each `price_...` ID.
+1. In Stripe live mode, create one Product and one one-time Price for each credit
+   pack. The checked-in production catalog contains these live `price_...` IDs.
+   Test and staging deployments must create their own test-mode Prices and
+   override every `Stripe__CreditPackages__...__PriceId` setting.
 2. Configure the public Checkout branding in Stripe.
 3. Create a restricted API key with permission to read Prices and PaymentIntents,
    and to create and read Checkout Sessions. PaymentIntent metadata lets Glosify
@@ -15,7 +17,7 @@ configuration and fulfills paid sessions into the existing AI credit ledger.
    Checkout completion event. Keep the key in user secrets or Azure App Service
    settings; never commit it.
 4. Create a webhook endpoint at
-   `https://glosify.se/Payments/Webhook` for:
+   `https://www.glosify.se/Payments/Webhook` for:
    - `checkout.session.completed`
    - `checkout.session.async_payment_succeeded`
    - `refund.created`
@@ -34,21 +36,20 @@ Stripe Tax and registrations accordingly.
 
 ## Configuration
 
-The checked-in defaults keep payments disabled. For a test deployment, configure
-the equivalent of:
+The checked-in defaults keep payments disabled, but ship the nonsecret production
+URL and live package catalog. A deployment only needs to provide the
+environment-specific enable flag and secrets:
 
 ```text
 Stripe__Enabled=true
-Stripe__PublicBaseUrl=https://glosify.se
-Stripe__SecretKey=rk_test_...
+Stripe__SecretKey=rk_live_...
 Stripe__WebhookSecret=whsec_...
-Stripe__CreditPackages__0__Key=starter
-Stripe__CreditPackages__0__DisplayName=Starter
-Stripe__CreditPackages__0__Credits=100
-Stripe__CreditPackages__0__PriceId=price_...
-Stripe__CreditPackages__0__UnitAmountMinor=5900
-Stripe__CreditPackages__0__Currency=sek
 ```
+
+Override `Stripe__PublicBaseUrl` and `Stripe__CreditPackages__...` only for a
+separate test or staging catalog. Keeping the live nonsecret mappings in shipped
+configuration prevents an App Service settings edit from silently removing the
+purchase catalog.
 
 The package key, credit amount, price amount, and currency are controlled by
 Glosify, not by the browser or Stripe metadata. Before creating Checkout, Glosify

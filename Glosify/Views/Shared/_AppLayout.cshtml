@@ -198,6 +198,13 @@
                     @NavIcon("school")
                     @Text["Nav.Classrooms"]
                 </a>
+                @if (User.Identity?.IsAuthenticated == true && StripePayments.IsEnabled)
+                {
+                    <a class="@NavClass("Payments")" asp-controller="Payments" asp-action="Index">
+                        @NavIcon("subscriptions")
+                        @Text["Layout.GetCredits"]
+                    </a>
+                }
             </nav>
 
         </aside>
