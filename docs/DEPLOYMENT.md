@@ -136,9 +136,12 @@ CreditPricing__TokenFeatures__image_extraction=1
 CreditPricing__TokenFeatures__speaking=1
 CreditPricing__TokenFeatures__page_translation=1
 CreditPricing__DefaultModelMultiplier=1
-CreditPricing__ModelMultipliers__gpt-5.6-luna=1
-CreditPricing__ModelMultipliers__grok-4.3=0.6
-CreditPricing__ModelMultipliers__DeepSeek-V4-Flash=0.3
+CreditPricing__Models__0__Deployment=gpt-5.6-luna
+CreditPricing__Models__0__Multiplier=1
+CreditPricing__Models__1__Deployment=grok-4.3
+CreditPricing__Models__1__Multiplier=0.6
+CreditPricing__Models__2__Deployment=DeepSeek-V4-Flash
+CreditPricing__Models__2__Multiplier=0.3
 CreditPricing__Subtitles__EnhancedCreditsPerStartedMinute=8
 CreditPricing__Subtitles__ScribeCreditsPerStartedMinute=4
 CreditPricing__Subtitles__EnhancedWithTranscriptCreditsPerStartedMinute=16
@@ -146,6 +149,8 @@ CreditPricing__Subtitles__EnhancedWithTranscriptCreditsPerStartedMinute=16
 
 Token-feature rates and model multipliers may be positive decimals. The final
 integer debit is `ceil(ceil(tokens / 1000) × feature rate × model multiplier)`.
+Model prices use indexed entries so deployment names containing hyphens remain
+in setting values; Azure App Service does not permit hyphens in setting names.
 All configured customer prices must be greater than zero; invalid values fail
 application startup. Existing `AiUsage:CreditsPerThousandTokens`, assistant
 model multipliers, and realtime subtitle rates remain fallbacks when the
@@ -164,9 +169,12 @@ az webapp config appsettings set \
     CreditPricing__TokenFeatures__speaking=1 \
     CreditPricing__TokenFeatures__page_translation=1 \
     CreditPricing__DefaultModelMultiplier=1 \
-    CreditPricing__ModelMultipliers__gpt-5.6-luna=1 \
-    CreditPricing__ModelMultipliers__grok-4.3=0.6 \
-    CreditPricing__ModelMultipliers__DeepSeek-V4-Flash=0.3 \
+    CreditPricing__Models__0__Deployment=gpt-5.6-luna \
+    CreditPricing__Models__0__Multiplier=1 \
+    CreditPricing__Models__1__Deployment=grok-4.3 \
+    CreditPricing__Models__1__Multiplier=0.6 \
+    CreditPricing__Models__2__Deployment=DeepSeek-V4-Flash \
+    CreditPricing__Models__2__Multiplier=0.3 \
     CreditPricing__Subtitles__EnhancedCreditsPerStartedMinute=8 \
     CreditPricing__Subtitles__ScribeCreditsPerStartedMinute=4 \
     CreditPricing__Subtitles__EnhancedWithTranscriptCreditsPerStartedMinute=16 \

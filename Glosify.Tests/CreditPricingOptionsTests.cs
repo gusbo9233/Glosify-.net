@@ -16,7 +16,8 @@ public sealed class CreditPricingOptionsTests
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["CreditPricing:TokenFeatures:assistant"] = "1.5",
-                ["CreditPricing:ModelMultipliers:gpt-5.6-luna"] = "0.6",
+                ["CreditPricing:Models:0:Deployment"] = "gpt-5.6-luna",
+                ["CreditPricing:Models:0:Multiplier"] = "0.6",
                 ["CreditPricing:DefaultModelMultiplier"] = "1",
                 ["CreditPricing:Subtitles:EnhancedCreditsPerStartedMinute"] = "8",
                 ["CreditPricing:Subtitles:ScribeCreditsPerStartedMinute"] = "4",
@@ -30,7 +31,8 @@ public sealed class CreditPricingOptionsTests
 
         Assert.NotNull(options);
         Assert.Equal(1.5m, options.TokenFeatures["assistant"]);
-        Assert.Equal(0.6m, options.ModelMultipliers["gpt-5.6-luna"]);
+        Assert.Equal("gpt-5.6-luna", options.Models[0].Deployment);
+        Assert.Equal(0.6m, options.Models[0].Multiplier);
         Assert.Equal(4, options.Subtitles.ScribeCreditsPerStartedMinute);
     }
 
@@ -46,6 +48,12 @@ public sealed class CreditPricingOptionsTests
                 [AiUsageFeatures.Assistant] = 0,
             },
             ModelMultipliers = { ["model"] = -1 },
+            Models =
+            [
+                new ModelCreditPricingOptions { Deployment = "duplicate", Multiplier = 1 },
+                new ModelCreditPricingOptions { Deployment = "DUPLICATE", Multiplier = 1 },
+                new ModelCreditPricingOptions { Deployment = "", Multiplier = 0 },
+            ],
             Subtitles = new SubtitleCreditPricingOptions
             {
                 ScribeCreditsPerStartedMinute = 0,
@@ -59,6 +67,7 @@ public sealed class CreditPricingOptionsTests
         Assert.Contains(result.Failures!, failure => failure.Contains("assistant", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("DefaultModelMultiplier", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("ScribeCredits", StringComparison.Ordinal));
+        Assert.Contains(result.Failures!, failure => failure.Contains("duplicate deployment", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -68,7 +77,7 @@ public sealed class CreditPricingOptionsTests
         {
             TokenFeatures = { [AiUsageFeatures.Speaking] = 1.5m },
             DefaultModelMultiplier = 1m,
-            ModelMultipliers = { ["test-model"] = 0.6m },
+            Models = [new ModelCreditPricingOptions { Deployment = "test-model", Multiplier = 0.6m }],
         });
 
         Assert.Equal(5, resolver.CalculateTokenCredits(
