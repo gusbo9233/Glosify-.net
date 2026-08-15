@@ -141,7 +141,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await createForm.GetByRole(AriaRole.Button, new() { Name = "Create and link" }).ClickAsync();
         await Expect(Page).ToHaveURLAsync(new Regex("/Anki/Collection", RegexOptions.IgnoreCase));
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Portfolio Anki", Exact = true }).First).ToBeVisibleAsync();
-        await Expect(Page.GetByText("Portfolio Polish", new() { Exact = true }).First).ToBeVisibleAsync();
+        await Expect(Page.Locator(".anki-list").GetByText("Portfolio Polish", new() { Exact = true })).ToBeVisibleAsync();
 
         // Adding the already-linked word individually is intentionally idempotent and
         // preserves the same durable card while recording both inclusion sources.
