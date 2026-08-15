@@ -45,6 +45,6 @@
     document.addEventListener('keydown', event => {
         if (!ratingForm || event.metaKey || event.ctrlKey || event.altKey) return;
         const button = ratingForm.querySelector(`[data-rating-key="${event.key}"]`);
-        if (button) { event.preventDefault(); button.click(); }
+        if (button) { event.preventDefault(); ratingForm.requestSubmit(button); }
     });
 })();

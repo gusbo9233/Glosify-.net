@@ -17,6 +17,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
     private IPage Page { get; set; } = null!;
     private readonly List<string> _pageErrors = [];
     private readonly List<string> _consoleErrors = [];
+    private readonly List<string> _responseErrors = [];
     private readonly List<string> _scriptResponses = [];
 
     public async Task InitializeAsync()
@@ -39,6 +40,8 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         };
         Page.Response += (_, response) =>
         {
+            if (response.Status >= 400)
+                _responseErrors.Add($"HTTP {response.Status} {response.Url}");
             if (response.Url.Contains(".js", StringComparison.OrdinalIgnoreCase))
                 _scriptResponses.Add($"{response.Status} {response.Url}");
         };
@@ -567,7 +570,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
     {
         await Page.WaitForTimeoutAsync(100);
         Assert.True(
-            _pageErrors.Count == 0 && _consoleErrors.Count == 0,
-            $"Browser errors:{Environment.NewLine}{string.Join(Environment.NewLine, _pageErrors.Concat(_consoleErrors))}");
+            _pageErrors.Count == 0 && _consoleErrors.Count == 0 && _responseErrors.Count == 0,
+            $"Browser errors:{Environment.NewLine}{string.Join(Environment.NewLine, _pageErrors.Concat(_consoleErrors).Concat(_responseErrors))}");
     }
 }
