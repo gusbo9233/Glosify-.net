@@ -12,25 +12,25 @@
         <section class="panel">
             <div class="panel-header">
                 <div class="panel-icon"><span class="material-symbols-outlined">event</span></div>
-                <h2 class="panel-title">Add a lesson</h2>
+                <h2 class="panel-title">@Text["Classroom.AddLesson"]</h2>
             </div>
             <form method="post" asp-controller="ClassroomPlanning" asp-action="CreateLesson">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Classroom.Id" />
                 <div class="form-group">
-                    <label class="form-label" for="lessonTitle">Title</label>
+                    <label class="form-label" for="lessonTitle">@Text["Classroom.TitleLabel"]</label>
                     <input class="form-input" id="lessonTitle" name="title" maxlength="160" required />
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="lessonDescription">Description (optional)</label>
+                    <label class="form-label" for="lessonDescription">@Text["Classroom.DescriptionOptional"]</label>
                     <input class="form-input" id="lessonDescription" name="description" maxlength="2000" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="lessonScheduledAt">Scheduled for (optional)</label>
+                    <label class="form-label" for="lessonScheduledAt">@Text["Classroom.ScheduledOptional"]</label>
                     <input class="form-input" id="lessonScheduledAt" name="scheduledAt" type="datetime-local" />
                 </div>
                 <button class="btn-submit" type="submit">
-                    Add lesson <span class="material-symbols-outlined" aria-hidden="true">event</span>
+                    @Text["Classroom.AddLesson"] <span class="material-symbols-outlined" aria-hidden="true">event</span>
                 </button>
             </form>
         </section>
@@ -38,23 +38,23 @@
         <section class="panel">
             <div class="panel-header">
                 <div class="panel-icon"><span class="material-symbols-outlined">assignment</span></div>
-                <h2 class="panel-title">Add an assignment</h2>
+                <h2 class="panel-title">@Text["Classroom.AddAssignment"]</h2>
             </div>
             <form method="post" asp-controller="ClassroomPlanning" asp-action="CreateAssignment">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Classroom.Id" />
                 <div class="form-group">
-                    <label class="form-label" for="assignmentTitle">Title</label>
+                    <label class="form-label" for="assignmentTitle">@Text["Classroom.TitleLabel"]</label>
                     <input class="form-input" id="assignmentTitle" name="title" maxlength="160" required />
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="assignmentInstructions">Instructions (optional)</label>
+                    <label class="form-label" for="assignmentInstructions">@Text["Classroom.InstructionsOptional"]</label>
                     <input class="form-input" id="assignmentInstructions" name="instructions" maxlength="2000" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="assignmentQuiz">Quiz (optional, from shared content)</label>
+                    <label class="form-label" for="assignmentQuiz">@Text["Classroom.QuizOptional"]</label>
                     <select class="form-input" id="assignmentQuiz" name="quizId">
-                        <option value="">No quiz</option>
+                        <option value="">@Text["Classroom.NoQuiz"]</option>
                         @foreach (var quiz in sharedQuizzes)
                         {
                             <option value="@quiz.Id">@quiz.Name</option>
@@ -62,9 +62,9 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="assignmentLesson">Lesson (optional)</label>
+                    <label class="form-label" for="assignmentLesson">@Text["Classroom.LessonOptional"]</label>
                     <select class="form-input" id="assignmentLesson" name="lessonId">
-                        <option value="">No lesson</option>
+                        <option value="">@Text["Classroom.NoLesson"]</option>
                         @foreach (var lessonInfo in Model.Schedule.Lessons)
                         {
                             <option value="@lessonInfo.Lesson.Id">@lessonInfo.Lesson.Title</option>
@@ -72,11 +72,11 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="assignmentDueAt">Due (optional)</label>
+                    <label class="form-label" for="assignmentDueAt">@Text["Classroom.DueOptional"]</label>
                     <input class="form-input" id="assignmentDueAt" name="dueAt" type="datetime-local" />
                 </div>
                 <button class="btn-submit" type="submit">
-                    Add assignment <span class="material-symbols-outlined" aria-hidden="true">assignment_add</span>
+                    @Text["Classroom.AddAssignment"] <span class="material-symbols-outlined" aria-hidden="true">assignment_add</span>
                 </button>
             </form>
         </section>
@@ -86,10 +86,11 @@
 <section>
     <div class="collection-header">
         <div>
-            <h2 class="collection-title">Course plan</h2>
+            <h2 class="collection-title">@Text["Classroom.CoursePlan"]</h2>
             <p class="collection-subtitle">
-                @Model.Schedule.Lessons.Count @(Model.Schedule.Lessons.Count == 1 ? "lesson" : "lessons"),
-                @(Model.Schedule.Lessons.Sum(l => l.Assignments.Count) + Model.Schedule.UnattachedAssignments.Count) assignments
+                @Model.Schedule.Lessons.Count @(Model.Schedule.Lessons.Count == 1 ? Text["Classroom.LessonOne"] : Text["Classroom.LessonMany"]),
+                @{ var assignmentCount = Model.Schedule.Lessons.Sum(l => l.Assignments.Count) + Model.Schedule.UnattachedAssignments.Count; }
+                @assignmentCount @(assignmentCount == 1 ? Text["Classroom.AssignmentOne"] : Text["Classroom.AssignmentMany"])
             </p>
         </div>
     </div>
@@ -113,11 +114,11 @@
                 </div>
                 @if (Model.IsTeacher)
                 {
-                    <form method="post" asp-controller="ClassroomPlanning" asp-action="DeleteLesson" data-confirm="Delete this lesson? Its assignments stay, unattached.">
+                    <form method="post" asp-controller="ClassroomPlanning" asp-action="DeleteLesson" data-confirm="@Text["Classroom.DeleteLessonConfirm"]">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Classroom.Id" />
                         <input type="hidden" name="lessonId" value="@lessonInfo.Lesson.Id" />
-                        <button class="btn-linkish" type="submit">Delete lesson</button>
+                        <button class="btn-linkish" type="submit">@Text["Classroom.DeleteLesson"]</button>
                     </form>
                 }
             </div>
@@ -128,7 +129,7 @@
                 }
                 @if (!lessonInfo.Assignments.Any())
                 {
-                    <div class="empty-state">No assignments for this lesson.</div>
+                    <div class="empty-state">@Text["Classroom.NoAssignmentsLesson"]</div>
                 }
             </div>
         </section>
@@ -138,7 +139,7 @@
     {
         <section class="classroom-lesson">
             <div class="classroom-lesson-header">
-                <h3 class="collection-title">Other assignments</h3>
+                <h3 class="collection-title">@Text["Classroom.OtherAssignments"]</h3>
             </div>
             <div class="classroom-member-list">
                 @foreach (var info in Model.Schedule.UnattachedAssignments)
@@ -151,6 +152,6 @@
 
     @if (!Model.Schedule.Lessons.Any() && !Model.Schedule.UnattachedAssignments.Any())
     {
-        <div class="empty-state">No lessons or assignments yet. @(Model.IsTeacher ? "Plan the course above." : "Your teacher hasn't planned anything yet.")</div>
+        <div class="empty-state">@Text["Classroom.NoPlanYet"] @(Model.IsTeacher ? Text["Classroom.PlanAbove"] : Text["Classroom.NoTeacherPlan"])</div>
     }
 </section>

@@ -40,14 +40,14 @@ public sealed class ClassroomCallController : ClassroomControllerBase
             {
                 Classroom = entry.Classroom,
                 IsCallingConfigured = _acsTokens.IsConfigured,
-                DisplayName = User.Identity?.Name ?? "Member",
+                DisplayName = User.Identity?.Name ?? Text["Classroom.Member"],
                 IsTeacher = entry.IsTeacher,
                 ActiveCallParticipants = entry.ActiveParticipants
             });
         }
         catch (ClassroomAccessDeniedException)
         {
-            TempData[NotificationKeys.Classroom] = "Classroom not found.";
+            TempData[NotificationKeys.Classroom] = Text["Classroom.NotFound"].Value;
             return BackToClassroomList();
         }
     }

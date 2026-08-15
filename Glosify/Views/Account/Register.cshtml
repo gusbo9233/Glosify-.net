@@ -1,7 +1,7 @@
 @model RegisterViewModel
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
-    ViewData["Title"] = "Create Account";
+    ViewData["Title"] = Text["Auth.CreateAccount"];
     var returnUrl = ViewData["ReturnUrl"] as string ?? "/";
 }
 
@@ -11,14 +11,14 @@
             <span class="material-symbols-outlined">graphic_eq</span>
         </div>
         <h1>Glosify</h1>
-        <p class="brand-tagline">Sonic Language Immersion</p>
+        <p class="brand-tagline">@Text["Auth.BrandTagline"]</p>
     </div>
 
     <section class="glass-card">
         <header class="auth-card-header">
-            <h2>Create Account</h2>
-            <p>Start your language immersion journey today.</p>
-            <p><strong>25-credit trial:</strong> available once after you link and sign in with Google or Microsoft. Creating a password account alone does not add trial credits.</p>
+            <h2>@Text["Auth.CreateAccount"]</h2>
+            <p>@Text["Auth.RegisterIntro"]</p>
+            <p><strong>@Text["Auth.RegisterTrialLabel"]</strong> @Text["Auth.RegisterTrialText"]</p>
         </header>
 
         @if (!ViewData.ModelState.IsValid)
@@ -35,41 +35,41 @@
             @Html.AntiForgeryToken()
 
             <div class="field">
-                <label class="field-label" asp-for="Email">Email Address</label>
+                <label class="field-label" asp-for="Email">@Text["Auth.EmailAddress"]</label>
                 <input asp-for="Email" type="email"
                        class="field-input"
                        placeholder="name@@domain.com" autocomplete="email" />
             </div>
 
             <div class="field">
-                <label class="field-label" asp-for="Password">Password</label>
+                <label class="field-label" asp-for="Password">@Text["Auth.Password"]</label>
                 <input asp-for="Password" type="password"
                        class="field-input"
                        placeholder="••••••••" autocomplete="new-password" />
             </div>
 
             <div class="field">
-                <label class="field-label" asp-for="ConfirmPassword">Confirm Password</label>
+                <label class="field-label" asp-for="ConfirmPassword">@Text["Auth.ConfirmPassword"]</label>
                 <input asp-for="ConfirmPassword" type="password"
                        class="field-input"
                        placeholder="••••••••" autocomplete="new-password" />
             </div>
 
             <button type="submit" class="btn-primary-pill">
-                Create Account
+                @Text["Auth.CreateAccount"]
                 <span class="material-symbols-outlined">arrow_forward</span>
             </button>
         </form>
 
         <footer class="auth-footer">
-            Already have an account?
-            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl">Sign In</a>
+            @Text["Auth.AlreadyAccount"]
+            <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl">@Text["Common.LogIn"]</a>
         </footer>
     </section>
 
-    <nav class="legal-links" aria-label="Legal">
-        <a asp-controller="Home" asp-action="Privacy">Privacy Policy</a>
-        <a asp-controller="Home" asp-action="Terms">Terms of Service</a>
-        <a asp-controller="Home" asp-action="Support">Support</a>
+    <nav class="legal-links" aria-label="@Text["Legal.Label"]">
+        <a asp-controller="Home" asp-action="Privacy">@Text["Legal.PrivacyPolicy"]</a>
+        <a asp-controller="Home" asp-action="Terms">@Text["Legal.TermsOfService"]</a>
+        <a asp-controller="Home" asp-action="Support">@Text["Legal.Support"]</a>
     </nav>
 </main>

@@ -1,7 +1,7 @@
 @model ClassroomCallViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = $"{Model.Classroom.Name} — call";
+    ViewData["Title"] = Text["Classroom.CallTitle", Model.Classroom.Name];
     ViewData["HideAssistantPanel"] = true;
 }
 
@@ -16,18 +16,18 @@
         <section class="books-header">
             <div>
                 <p class="hero-label">@Model.Classroom.Name</p>
-                <h1 class="page-title">Video call</h1>
-                <p class="collection-subtitle" data-call-status>Not connected</p>
+                <h1 class="page-title">@Text["Classroom.VideoCall"]</h1>
+                <p class="collection-subtitle" data-call-status>@Text["Classroom.NotConnected"]</p>
             </div>
             <a class="btn-secondary" asp-controller="Classroom" asp-action="Details" asp-route-id="@Model.Classroom.Id">
-                Back to classroom
+                @Text["Classroom.Back"]
             </a>
         </section>
 
         @if (!Model.IsCallingConfigured)
         {
             <div class="empty-state">
-                Video calling is not configured on this server. An administrator needs to set the
+                @Text["Classroom.CallNotConfigured"]
                 <code>Acs__ConnectionString</code> app setting to an Azure Communication Services resource.
             </div>
         }
@@ -37,11 +37,11 @@
 
             <div class="call-lobby-card">
                 <div class="call-lobby-avatar" data-lobby-avatar aria-hidden="true"></div>
-                <p class="call-lobby-title" data-call-lobby-title>Ready to join?</p>
-                <p class="call-lobby-subtitle">You will join as <strong>@Model.DisplayName</strong></p>
+                <p class="call-lobby-title" data-call-lobby-title>@Text["Classroom.ReadyJoin"]</p>
+                <p class="call-lobby-subtitle">@Text["Classroom.JoinAs"] <strong>@Model.DisplayName</strong></p>
                 <p class="call-lobby-presence" data-call-presence hidden></p>
                 <button class="btn-main" type="button" data-call-join>
-                    <span data-call-join-label>Join call</span> <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
+                    <span data-call-join-label>@Text["Classroom.JoinCall"]</span> <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
                 </button>
             </div>
         }
@@ -55,7 +55,7 @@
                     <span class="call-topbar-name">@Model.Classroom.Name</span>
                     <span class="call-status-pill">
                         <span class="call-status-dot" aria-hidden="true"></span>
-                        <span data-call-status-live>Connecting…</span>
+                        <span data-call-status-live>@Text["Classroom.Connecting"]</span>
                         <span data-call-timer hidden></span>
                     </span>
                 </div>
@@ -72,17 +72,17 @@
             <div class="call-pip" data-local-tile hidden>
                 <div class="classroom-call-video" data-local-video></div>
                 <div class="classroom-call-avatar" data-local-avatar aria-hidden="true"></div>
-                <span class="classroom-call-name">You</span>
+                <span class="classroom-call-name">@Text["Speaking.You"]</span>
             </div>
 
             <div class="call-controls">
-                <button class="call-ctrl" type="button" data-call-mute aria-label="Mute microphone" title="Mute">
+                <button class="call-ctrl" type="button" data-call-mute aria-label="@Text["Classroom.MuteMic"]" title="@Text["Classroom.Mute"]">
                     <span class="material-symbols-outlined" aria-hidden="true">mic</span>
                 </button>
-                <button class="call-ctrl" type="button" data-call-camera aria-label="Turn camera off" title="Camera">
+                <button class="call-ctrl" type="button" data-call-camera aria-label="@Text["Classroom.CameraOff"]" title="@Text["Classroom.Camera"]">
                     <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
                 </button>
-                <button class="call-ctrl call-ctrl-danger" type="button" data-call-leave aria-label="Leave call" title="Leave">
+                <button class="call-ctrl call-ctrl-danger" type="button" data-call-leave aria-label="@Text["Classroom.LeaveCall"]" title="@Text["Classroom.Leave"]">
                     <span class="material-symbols-outlined" aria-hidden="true">call_end</span>
                 </button>
             </div>

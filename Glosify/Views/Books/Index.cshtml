@@ -4,8 +4,9 @@
     Layout = "~/Views/Shared/_AppLayout.cshtml";
 
     var language = LangContext.CurrentLanguage;
-    var shelfTitle = string.IsNullOrEmpty(language) ? "Your books" : $"Your {language} books";
-    ViewData["Title"] = string.IsNullOrEmpty(language) ? "Books" : $"{language} books";
+    var displayLanguage = QuizLanguageDisplay.Name(language);
+    var shelfTitle = string.IsNullOrEmpty(language) ? Text["Books.YourBooks"] : Text["Books.LanguageBooks", displayLanguage];
+    ViewData["Title"] = string.IsNullOrEmpty(language) ? Text["Books.Title"] : Text["Books.LanguageTitle", displayLanguage];
 
     var totalPages = Model.Books.Sum(book => book.PageCount);
 }
@@ -15,22 +16,22 @@
         <div class="books-hero-copy">
             <div class="books-eyebrow">
                 <span class="material-symbols-outlined" aria-hidden="true">auto_stories</span>
-                Your library
+                @Text["Books.YourLibrary"]
             </div>
-            <h1 class="books-hero-title">Turn every page into <span>progress.</span></h1>
+            <h1 class="books-hero-title">@Text["Books.HeroPrefix"] <span>@Text["Books.Progress"]</span></h1>
             <p class="books-hero-description">
-                Bring your own reading material and use Glosify to explore every page, phrase, and new word.
+                @Text["Books.HeroText"]
             </p>
 
-            <div class="books-library-stats" aria-label="Library summary">
+            <div class="books-library-stats" aria-label="@Text["Books.SummaryAria"]">
                 <div class="books-library-stat">
                     <strong>@Model.Books.Count</strong>
-                    <span>@(Model.Books.Count == 1 ? "book" : "books")</span>
+                    <span>@(Model.Books.Count == 1 ? Text["Books.BookOne"] : Text["Books.BookMany"])</span>
                 </div>
                 <span class="books-stat-divider" aria-hidden="true"></span>
                 <div class="books-library-stat">
                     <strong>@totalPages</strong>
-                    <span>@(totalPages == 1 ? "page" : "pages")</span>
+                    <span>@(totalPages == 1 ? Text["Books.PageOne"] : Text["Books.PageMany"])</span>
                 </div>
             </div>
         </div>
@@ -41,8 +42,8 @@
                     <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
                 </span>
                 <div>
-                    <p>Add to your shelf</p>
-                    <h2>Upload a PDF</h2>
+                    <p>@Text["Books.AddShelf"]</p>
+                    <h2>@Text["Books.UploadPdf"]</h2>
                 </div>
             </div>
 
@@ -51,14 +52,14 @@
                 <label class="books-file-picker" for="bookFile">
                     <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
                     <span class="books-file-picker-copy">
-                        <strong data-book-file-label>Choose a PDF</strong>
-                        <small>Text-based PDF · up to 25 MB</small>
+                        <strong data-book-file-label>@Text["Books.ChoosePdf"]</strong>
+                        <small>@Text["Books.PdfLimit"]</small>
                     </span>
-                    <span class="books-file-browse">Browse</span>
+                    <span class="books-file-browse">@Text["Books.Browse"]</span>
                     <input id="bookFile" name="file" type="file" accept="application/pdf,.pdf" required data-book-file-input />
                 </label>
                 <button class="books-upload-button" type="submit">
-                    Add to library
+                    @Text["Books.AddLibrary"]
                     <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                 </button>
             </form>
@@ -78,12 +79,12 @@
     <section class="books-collection">
         <div class="books-collection-header">
             <div>
-                <p class="books-section-label">Keep reading</p>
+                <p class="books-section-label">@Text["Books.KeepReading"]</p>
                 <h2>@shelfTitle</h2>
             </div>
             @if (Model.Books.Any())
             {
-                <span class="books-count-pill">@Model.Books.Count on your shelf</span>
+                <span class="books-count-pill">@Text["Books.OnShelf", Model.Books.Count]</span>
             }
         </div>
 
@@ -94,20 +95,20 @@
                     @* Outside the card link: a button cannot be nested inside an anchor. *@
                     <form class="book-delete-form" method="post" asp-controller="Books" asp-action="Delete"
                           asp-route-id="@book.Book.Id"
-                          data-confirm="Delete &quot;@book.Book.Title&quot; and its pages permanently? Chats that used it are kept.">
+                          data-confirm="@Text["Books.DeleteConfirm", book.Book.Title]">
                         @Html.AntiForgeryToken()
                         <button class="book-delete" type="submit"
-                                aria-label="Delete @book.Book.Title" title="Delete @book.Book.Title">
+                                aria-label="@Text["Books.Delete", book.Book.Title]" title="@Text["Books.Delete", book.Book.Title]">
                             <span class="material-symbols-outlined" aria-hidden="true">delete</span>
                         </button>
                     </form>
                     <a class="book-card-link" asp-controller="Books" asp-action="Read" asp-route-id="@book.Book.Id"
-                       aria-label="Read @book.Book.Title">
+                       aria-label="@Text["Books.Read", book.Book.Title]">
                         <div class="book-cover book-cover-@((book.Index % 4) + 1)" aria-hidden="true">
                             <span class="book-cover-mark">G</span>
                             <span class="book-cover-title">@book.Book.Title</span>
                             <span class="book-cover-rule"></span>
-                            <span class="book-cover-type">Reader edition</span>
+                            <span class="book-cover-type">@Text["Books.ReaderEdition"]</span>
                             <canvas class="book-cover-preview"
                                     data-book-preview
                                     data-pdf-url="@Url.Action("File", "Books", new { id = book.Book.Id })"></canvas>
@@ -119,16 +120,16 @@
                                     <span class="material-symbols-outlined" aria-hidden="true">picture_as_pdf</span>
                                     PDF
                                 </span>
-                                <span class="book-added">Added <time datetime="@book.Book.CreatedAt.ToString("O")" data-local="date">@book.Book.CreatedAt.UtcDateTime.ToString("MMM d, yyyy")</time></span>
+                                <span class="book-added">@Text["Books.Added"] <time datetime="@book.Book.CreatedAt.ToString("O")" data-local="date">@book.Book.CreatedAt.UtcDateTime.ToString("MMM d, yyyy")</time></span>
                             </div>
                             <h3 class="book-title">@book.Book.Title</h3>
                             <div class="book-card-footer">
                                 <span class="book-page-count">
                                     <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
-                                    @book.Book.PageCount @(book.Book.PageCount == 1 ? "page" : "pages")
+                                    @(book.Book.PageCount == 1 ? Text["Books.PageCountOne", book.Book.PageCount] : Text["Books.PageCountMany", book.Book.PageCount])
                                 </span>
                                 <span class="book-read-action">
-                                    Start reading
+                                    @Text["Books.StartReading"]
                                     <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                                 </span>
                             </div>
@@ -142,10 +143,10 @@
                     <span class="books-empty-icon">
                         <span class="material-symbols-outlined" aria-hidden="true">library_books</span>
                     </span>
-                    <h3>@(string.IsNullOrEmpty(language) ? "Your shelf is ready" : $"No {language} books yet")</h3>
-                    <p>Upload your first text-based PDF above and start learning from the things you already love to read.@(string.IsNullOrEmpty(language) ? "" : $" It will be added to your {language} shelf.")</p>
+                    <h3>@(string.IsNullOrEmpty(language) ? Text["Books.ShelfReady"] : Text["Books.NoLanguageBooks", displayLanguage])</h3>
+                    <p>@Text["Books.EmptyText"]@(string.IsNullOrEmpty(language) ? "" : Text["Books.EmptyLanguageText", displayLanguage])</p>
                     <label class="books-empty-action" for="bookFile">
-                        Choose your first book
+                        @Text["Books.ChooseFirst"]
                         <span class="material-symbols-outlined" aria-hidden="true">north_east</span>
                     </label>
                 </div>

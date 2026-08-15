@@ -1,0 +1,2883 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="DisplayLanguage.Label" xml:space="preserve">
+    <value>Мова відображення</value>
+  </data>
+  <data name="DisplayLanguage.Submit" xml:space="preserve">
+    <value>Змінити мову</value>
+  </data>
+  <data name="Common.English" xml:space="preserve">
+    <value>Англійська</value>
+  </data>
+  <data name="Common.Swedish" xml:space="preserve">
+    <value>Шведська</value>
+  </data>
+  <data name="Common.LogIn" xml:space="preserve">
+    <value>Увійти</value>
+  </data>
+  <data name="Common.LogOut" xml:space="preserve">
+    <value>Вийти</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Видалити</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Скасувати</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Зберегти</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Закрити</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>Пошук</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="Common.Next" xml:space="preserve">
+    <value>Далі</value>
+  </data>
+  <data name="Common.Previous" xml:space="preserve">
+    <value>Попередній</value>
+  </data>
+  <data name="Layout.MetaDescription" xml:space="preserve">
+    <value>Glosify перетворює те, що ви читаєте, на лексику, яку можна використовувати: створюйте списки слів із книжок і транскриптів, тренуйте їх у вікторинах і картках, а потім практикуйтеся вголос з партнером для розмови на основі AI.</value>
+  </data>
+  <data name="Layout.AuthMetaDescription" xml:space="preserve">
+    <value>Увійдіть у Glosify, щоб створювати лексику з того, що ви читаєте, тренувати її у вікторинах і говорити нею з партнером для розмови на основі AI.</value>
+  </data>
+  <data name="Layout.PremiumLearner" xml:space="preserve">
+    <value>Преміум-учень</value>
+  </data>
+  <data name="Layout.SearchPlaceholder" xml:space="preserve">
+    <value>Що ви хочете вивчити?</value>
+  </data>
+  <data name="Layout.Notifications" xml:space="preserve">
+    <value>Сповіщення</value>
+  </data>
+  <data name="Layout.GetCredits" xml:space="preserve">
+    <value>Отримати кредити</value>
+  </data>
+  <data name="Layout.SignedInAs" xml:space="preserve">
+    <value>Ви ввійшли як</value>
+  </data>
+  <data name="Layout.SignedIn" xml:space="preserve">
+    <value>Вхід виконано</value>
+  </data>
+  <data name="Layout.PrimaryNavigation" xml:space="preserve">
+    <value>Основна навігація</value>
+  </data>
+  <data name="Nav.LanguageSelector" xml:space="preserve">
+    <value>Вибір мови</value>
+  </data>
+  <data name="Nav.Language" xml:space="preserve">
+    <value>Мова</value>
+  </data>
+  <data name="Nav.Home" xml:space="preserve">
+    <value>Головна</value>
+  </data>
+  <data name="Nav.Explore" xml:space="preserve">
+    <value>Огляд</value>
+  </data>
+  <data name="Nav.Books" xml:space="preserve">
+    <value>Книги</value>
+  </data>
+  <data name="Nav.Transcripts" xml:space="preserve">
+    <value>Транскрипти</value>
+  </data>
+  <data name="Nav.Quizzes" xml:space="preserve">
+    <value>Вікторини</value>
+  </data>
+  <data name="Nav.Speaking" xml:space="preserve">
+    <value>Говоріння</value>
+  </data>
+  <data name="Nav.Speak" xml:space="preserve">
+    <value>Говорити</value>
+  </data>
+  <data name="Nav.Classrooms" xml:space="preserve">
+    <value>Класи</value>
+  </data>
+  <data name="Nav.Class" xml:space="preserve">
+    <value>Клас</value>
+  </data>
+  <data name="Languages.Title" xml:space="preserve">
+    <value>Вибір мови</value>
+  </data>
+  <data name="Languages.Tagline" xml:space="preserve">
+    <value>Якою мовою ви хотіли б звучати сьогодні?</value>
+  </data>
+  <data name="Languages.Current" xml:space="preserve">
+    <value>Наразі вивчаєте {0}</value>
+  </data>
+  <data name="Languages.Find" xml:space="preserve">
+    <value>Знайти мову</value>
+  </data>
+  <data name="Languages.SearchPlaceholder" xml:space="preserve">
+    <value>Шукати англійською, рідною назвою або кодом</value>
+  </data>
+  <data name="Languages.Count" xml:space="preserve">
+    <value>{0} мов</value>
+  </data>
+  <data name="Languages.None" xml:space="preserve">
+    <value>Немає відповідної мови</value>
+  </data>
+  <data name="Languages.NoneHelp" xml:space="preserve">
+    <value>Спробуйте англійську назву, рідну назву або код мови.</value>
+  </data>
+  <data name="Languages.Pick" xml:space="preserve">
+    <value>Виберіть мову</value>
+  </data>
+  <data name="Assistant.Title" xml:space="preserve">
+    <value>Помічник</value>
+  </data>
+  <data name="Assistant.Empty" xml:space="preserve">
+    <value>Просіть про допомогу будь-де в Glosify.</value>
+  </data>
+  <data name="Assistant.Placeholder" xml:space="preserve">
+    <value>Запитайте помічника...</value>
+  </data>
+  <data name="Assistant.Workspace" xml:space="preserve">
+    <value>Робоча область помічника</value>
+  </data>
+  <data name="Assistant.Chat" xml:space="preserve">
+    <value>ЧАТ</value>
+  </data>
+  <data name="Assistant.Chats" xml:space="preserve">
+    <value>ЧАТИ</value>
+  </data>
+  <data name="Assistant.NewChat" xml:space="preserve">
+    <value>Новий чат</value>
+  </data>
+  <data name="Assistant.Close" xml:space="preserve">
+    <value>Закрити помічника</value>
+  </data>
+  <data name="Assistant.QuizContext" xml:space="preserve">
+    <value>Контекст вікторини</value>
+  </data>
+  <data name="Assistant.NoQuiz" xml:space="preserve">
+    <value>Вікторину не вибрано</value>
+  </data>
+  <data name="Assistant.ReadingMaterial" xml:space="preserve">
+    <value>Матеріал для читання</value>
+  </data>
+  <data name="Assistant.NoMaterial" xml:space="preserve">
+    <value>Матеріал не вибрано</value>
+  </data>
+  <data name="Assistant.Picture" xml:space="preserve">
+    <value>Зображення</value>
+  </data>
+  <data name="Assistant.Model" xml:space="preserve">
+    <value>Модель помічника</value>
+  </data>
+  <data name="Assistant.AutoModel" xml:space="preserve">
+    <value>Авто · {0}</value>
+  </data>
+  <data name="Assistant.Send" xml:space="preserve">
+    <value>Надіслати</value>
+  </data>
+  <data name="Assistant.PreviousChats" xml:space="preserve">
+    <value>Попередні чати</value>
+  </data>
+  <data name="Assistant.NoChats" xml:space="preserve">
+    <value>Ще немає збережених чатів.</value>
+  </data>
+  <data name="Quiz.FlashcardsTitle" xml:space="preserve">
+    <value>Вікторина за картками</value>
+  </data>
+  <data name="Quiz.TypingTitle" xml:space="preserve">
+    <value>Вікторина на введення</value>
+  </data>
+  <data name="Quiz.RevealRate" xml:space="preserve">
+    <value>Покажіть відповідь, оцініть запам’ятовування і рухайтеся далі.</value>
+  </data>
+  <data name="Quiz.BackWords" xml:space="preserve">
+    <value>Назад до слів</value>
+  </data>
+  <data name="Quiz.SessionComplete" xml:space="preserve">
+    <value>Сесію завершено</value>
+  </data>
+  <data name="Quiz.Remembered" xml:space="preserve">
+    <value>Запам’ятано</value>
+  </data>
+  <data name="Quiz.ReviewAgain" xml:space="preserve">
+    <value>Повторити ще раз</value>
+  </data>
+  <data name="Quiz.Skipped" xml:space="preserve">
+    <value>Пропущено</value>
+  </data>
+  <data name="Quiz.Restart" xml:space="preserve">
+    <value>Перезапустити сесію</value>
+  </data>
+  <data name="Quiz.PracticeAgain" xml:space="preserve">
+    <value>Потренуватися ще раз</value>
+  </data>
+  <data name="Quiz.PlayPronunciation" xml:space="preserve">
+    <value>Прослухати вимову {0}</value>
+  </data>
+  <data name="Quiz.RevealAnswer" xml:space="preserve">
+    <value>Показати відповідь для {0}</value>
+  </data>
+  <data name="Quiz.Again" xml:space="preserve">
+    <value>Ще раз</value>
+  </data>
+  <data name="Quiz.Good" xml:space="preserve">
+    <value>Добре</value>
+  </data>
+  <data name="Quiz.Easy" xml:space="preserve">
+    <value>Легко</value>
+  </data>
+  <data name="Quiz.SwipeHint" xml:space="preserve">
+    <value>Проведіть праворуч для «Добре», ліворуч для «Ще раз»</value>
+  </data>
+  <data name="Quiz.Skip" xml:space="preserve">
+    <value>Пропустити</value>
+  </data>
+  <data name="Quiz.ShowAnswer" xml:space="preserve">
+    <value>Показати відповідь</value>
+  </data>
+  <data name="Quiz.Reset" xml:space="preserve">
+    <value>Скинути сесію</value>
+  </data>
+  <data name="Quiz.NoneYet" xml:space="preserve">
+    <value>Ще немає {0}</value>
+  </data>
+  <data name="Quiz.AddThenStart" xml:space="preserve">
+    <value>Додайте {0} до вікторини, а потім почніть сеанс {1} з цієї вікторини.</value>
+  </data>
+  <data name="Quiz.TypeInstruction" xml:space="preserve">
+    <value>Введіть повний {0} {1} із підказки {2}.</value>
+  </data>
+  <data name="Quiz.CheckAnswer" xml:space="preserve">
+    <value>Перевірити відповідь</value>
+  </data>
+  <data name="Quiz.PlayPronunciationGeneric" xml:space="preserve">
+    <value>Відтворити вимову</value>
+  </data>
+  <data name="Quiz.Answer" xml:space="preserve">
+    <value>Відповідь</value>
+  </data>
+  <data name="Quiz.TypePlaceholder" xml:space="preserve">
+    <value>Введіть свою відповідь...</value>
+  </data>
+  <data name="Quiz.CorrectAnswer" xml:space="preserve">
+    <value>Правильна відповідь</value>
+  </data>
+  <data name="Quiz.Space" xml:space="preserve">
+    <value>Пробіл</value>
+  </data>
+  <data name="Quiz.TypingComplete" xml:space="preserve">
+    <value>Введення завершено</value>
+  </data>
+  <data name="Quiz.Correct" xml:space="preserve">
+    <value>Правильно</value>
+  </data>
+  <data name="Quiz.Incorrect" xml:space="preserve">
+    <value>Неправильно</value>
+  </data>
+  <data name="Quiz.PracticeIncorrect" xml:space="preserve">
+    <value>Потренувати неправильні слова</value>
+  </data>
+  <data name="Quiz.ChangeSettings" xml:space="preserve">
+    <value>Змінити налаштування</value>
+  </data>
+  <data name="Transcripts.Title" xml:space="preserve">
+    <value>Транскрипти</value>
+  </data>
+  <data name="Transcripts.Eyebrow" xml:space="preserve">
+    <value>Історія live-субтитрів</value>
+  </data>
+  <data name="Transcripts.Saved" xml:space="preserve">
+    <value>Збережені транскрипти</value>
+  </data>
+  <data name="Transcripts.Intro" xml:space="preserve">
+    <value>Збережений текст live-субтитрів для {0}. Нові сеанси містять оригінальне мовлення; старі сеанси й далі позначені як переклади.</value>
+  </data>
+  <data name="Transcripts.SelectedLanguage" xml:space="preserve">
+    <value>обрану вами мову</value>
+  </data>
+  <data name="Transcripts.Updated" xml:space="preserve">
+    <value>Оновлено</value>
+  </data>
+  <data name="Transcripts.None" xml:space="preserve">
+    <value>Ще немає збережених транскриптів</value>
+  </data>
+  <data name="Transcripts.NoneHelp" xml:space="preserve">
+    <value>Увімкніть «Зберігати транскрипт оригінального мовлення» перед запуском live-субтитрів.</value>
+  </data>
+  <data name="Transcripts.PagesAria" xml:space="preserve">
+    <value>Сторінки транскрипту</value>
+  </data>
+  <data name="Common.PageOf" xml:space="preserve">
+    <value>Сторінка {0} з {1}</value>
+  </data>
+  <data name="Home.Title" xml:space="preserve">
+    <value>Головна</value>
+  </data>
+  <data name="Home.Coach" xml:space="preserve">
+    <value>Навчальний помічник</value>
+  </data>
+  <data name="Home.Kicker" xml:space="preserve">
+    <value>Ваш простір для вивчення мов</value>
+  </data>
+  <data name="Home.TitleWithLanguage" xml:space="preserve">
+    <value>Зробіть {0} частиною свого дня.</value>
+  </data>
+  <data name="Home.TitleAnonymous" xml:space="preserve">
+    <value>Перетворюйте нові слова на реальні розмови.</value>
+  </data>
+  <data name="Home.Description" xml:space="preserve">
+    <value>Поповнюйте словниковий запас із того, що читаєте, закріплюйте його цілеспрямованою практикою, а потім використовуйте вголос із партнером для розмов на основі AI.</value>
+  </data>
+  <data name="Home.StartLearning" xml:space="preserve">
+    <value>Почати навчання</value>
+  </data>
+  <data name="Home.ChooseLanguage" xml:space="preserve">
+    <value>Вибрати мову</value>
+  </data>
+  <data name="Home.BrowseShared" xml:space="preserve">
+    <value>Переглянути спільні набори</value>
+  </data>
+  <data name="Home.StartSpeaking" xml:space="preserve">
+    <value>Почати говорити</value>
+  </data>
+  <data name="Home.OpenQuizzes" xml:space="preserve">
+    <value>Відкрити мої вікторини</value>
+  </data>
+  <data name="Home.WaysAria" xml:space="preserve">
+    <value>Способи вивчати з Glosify</value>
+  </data>
+  <data name="Home.ReadContext" xml:space="preserve">
+    <value>Читати в контексті</value>
+  </data>
+  <data name="Home.PracticeRecall" xml:space="preserve">
+    <value>Тренувати запам’ятовування</value>
+  </data>
+  <data name="Home.SpeakConfidence" xml:space="preserve">
+    <value>Говорити впевнено</value>
+  </data>
+  <data name="Home.LoopAria" xml:space="preserve">
+    <value>Пов’язаний цикл навчання від читання до говоріння</value>
+  </data>
+  <data name="Home.Discover" xml:space="preserve">
+    <value>Відкривайте</value>
+  </data>
+  <data name="Home.Remember" xml:space="preserve">
+    <value>Запам’ятовуйте</value>
+  </data>
+  <data name="Home.LearningLoop" xml:space="preserve">
+    <value>Ваш цикл навчання</value>
+  </data>
+  <data name="Home.TodayMindset" xml:space="preserve">
+    <value>Сьогоднішній настрій</value>
+  </data>
+  <data name="Home.SmallSteps" xml:space="preserve">
+    <value>Малі кроки. Реальний прогрес.</value>
+  </data>
+  <data name="Home.QuickStart" xml:space="preserve">
+    <value>Швидкий старт</value>
+  </data>
+  <data name="Home.ChooseNext" xml:space="preserve">
+    <value>Оберіть наступний крок</value>
+  </data>
+  <data name="Home.LearningLanguage" xml:space="preserve">
+    <value>Вивчаю {0}</value>
+  </data>
+  <data name="Home.BuildVocabulary" xml:space="preserve">
+    <value>Поповнювати словниковий запас</value>
+  </data>
+  <data name="Home.BuildVocabularyText" xml:space="preserve">
+    <value>Створюйте сфокусовані набори зі слів, які ви справді хочете використовувати.</value>
+  </data>
+  <data name="Home.PracticeRecallText" xml:space="preserve">
+    <value>Використовуйте картки, введення тексту та власні вікторини, щоб слова запам’ятовувалися.</value>
+  </data>
+  <data name="Home.SpeakNaturally" xml:space="preserve">
+    <value>Говорити природно</value>
+  </data>
+  <data name="Home.SpeakNaturallyText" xml:space="preserve">
+    <value>Увійдіть у сценарій із підказками та отримуйте приватні поради після кожного ходу.</value>
+  </data>
+  <data name="Home.ConnectedKicker" xml:space="preserve">
+    <value>Одне пов’язане робоче середовище</value>
+  </data>
+  <data name="Home.ConnectedTitle" xml:space="preserve">
+    <value>Навчайтеся з усього, що вже привертає вашу увагу.</value>
+  </data>
+  <data name="Home.ConnectedText" xml:space="preserve">
+    <value>Книга, спільний список слів або класне завдання можуть стати початком вашого наступного заняття. Ваш словниковий запас залишається поруч, куди б ви не пішли далі.</value>
+  </data>
+  <data name="Home.ExploreCollections" xml:space="preserve">
+    <value>Переглянути спільноту добірок</value>
+  </data>
+  <data name="Home.ReadCollect" xml:space="preserve">
+    <value>Читати й збирати</value>
+  </data>
+  <data name="Home.ReadCollectText" xml:space="preserve">
+    <value>Перетворюйте PDF на словниковий запас, не виходячи зі сторінки.</value>
+  </data>
+  <data name="Home.ExploreTogether" xml:space="preserve">
+    <value>Досліджувати разом</value>
+  </data>
+  <data name="Home.ExploreTogetherText" xml:space="preserve">
+    <value>Копіюйте публічні вікторини та добірки у свою бібліотеку.</value>
+  </data>
+  <data name="Home.JoinClassroom" xml:space="preserve">
+    <value>Приєднатися до класу</value>
+  </data>
+  <data name="Home.JoinClassroomText" xml:space="preserve">
+    <value>Навчайтеся із завданнями, спільним контентом і живою підтримкою.</value>
+  </data>
+  <data name="Home.YourTurn" xml:space="preserve">
+    <value>Ваш хід</value>
+  </data>
+  <data name="Home.TodayLanguage" xml:space="preserve">
+    <value>Що ви зробите сьогодні з {0}?</value>
+  </data>
+  <data name="Home.PickFirstWord" xml:space="preserve">
+    <value>Оберіть мову та почніть з одного корисного слова.</value>
+  </data>
+  <data name="Home.ContinueLearning" xml:space="preserve">
+    <value>Продовжити навчання</value>
+  </data>
+  <data name="Home.PickLanguage" xml:space="preserve">
+    <value>Оберіть мову</value>
+  </data>
+  <data name="Home.CreateAccount" xml:space="preserve">
+    <value>Створити обліковий запис</value>
+  </data>
+  <data name="Auth.BrandTagline" xml:space="preserve">
+    <value>Sonic Language Immersion</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>Вхід</value>
+  </data>
+  <data name="Auth.WelcomeBack" xml:space="preserve">
+    <value>Ласкаво просимо знову</value>
+  </data>
+  <data name="Auth.LoginIntro" xml:space="preserve">
+    <value>Введіть свої дані, щоб продовжити шлях.</value>
+  </data>
+  <data name="Auth.TrialLabel" xml:space="preserve">
+    <value>Пробна пропозиція:</value>
+  </data>
+  <data name="Auth.TrialText" xml:space="preserve">
+    <value>отримайте 25 кредитів один раз, коли увійдете через Google або Microsoft. Облікові записи з паролем не отримують автоматичні пробні кредити.</value>
+  </data>
+  <data name="Auth.EmailAddress" xml:space="preserve">
+    <value>Адреса електронної пошти</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>Пароль</value>
+  </data>
+  <data name="Auth.Forgot" xml:space="preserve">
+    <value>Забули?</value>
+  </data>
+  <data name="Auth.OrContinue" xml:space="preserve">
+    <value>Або продовжити з</value>
+  </data>
+  <data name="Auth.ContinueProvider" xml:space="preserve">
+    <value>Продовжити з {0}</value>
+  </data>
+  <data name="Auth.NoAccount" xml:space="preserve">
+    <value>Немає облікового запису?</value>
+  </data>
+  <data name="Auth.CreateAccount" xml:space="preserve">
+    <value>Створити обліковий запис</value>
+  </data>
+  <data name="Auth.RegisterTitle" xml:space="preserve">
+    <value>Реєстрація</value>
+  </data>
+  <data name="Auth.CreateYourAccount" xml:space="preserve">
+    <value>Створіть свій обліковий запис</value>
+  </data>
+  <data name="Auth.RegisterIntro" xml:space="preserve">
+    <value>Почніть свою подорож мовного занурення вже сьогодні.</value>
+  </data>
+  <data name="Auth.RegisterTrialLabel" xml:space="preserve">
+    <value>Пробний доступ на 25 кредитів:</value>
+  </data>
+  <data name="Auth.RegisterTrialText" xml:space="preserve">
+    <value>доступний один раз після прив’язування й входу через Google або Microsoft. Створення лише пароля не додає пробних кредитів.</value>
+  </data>
+  <data name="Auth.ConfirmPassword" xml:space="preserve">
+    <value>Підтвердьте пароль</value>
+  </data>
+  <data name="Auth.AlreadyAccount" xml:space="preserve">
+    <value>Вже маєте обліковий запис?</value>
+  </data>
+  <data name="Auth.ForgotTitle" xml:space="preserve">
+    <value>Забули пароль</value>
+  </data>
+  <data name="Auth.ForgotHeading" xml:space="preserve">
+    <value>Скидання пароля</value>
+  </data>
+  <data name="Auth.ForgotUnavailable" xml:space="preserve">
+    <value>Скидання пароля електронною поштою ще недоступне. Зверніться до служби підтримки, якщо вам потрібна допомога з доступом до облікового запису.</value>
+  </data>
+  <data name="Auth.BackToLogin" xml:space="preserve">
+    <value>Повернутися до входу</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>Невірна електронна адреса або пароль.</value>
+  </data>
+  <data name="Auth.AccountLocked" xml:space="preserve">
+    <value>Обліковий запис заблоковано. Спробуйте ще раз пізніше.</value>
+  </data>
+  <data name="Auth.ExternalNotConfigured" xml:space="preserve">
+    <value>Вхід через {0} не налаштовано.</value>
+  </data>
+  <data name="Auth.ExternalFailed" xml:space="preserve">
+    <value>Не вдалося ввійти через зовнішній сервіс.</value>
+  </data>
+  <data name="Auth.ExternalProviderFailed" xml:space="preserve">
+    <value>Не вдалося ввійти через {0}. Перевірте локальний OAuth client ID і client secret для {0}, а потім спробуйте ще раз.</value>
+  </data>
+  <data name="Identity.DuplicateUserName" xml:space="preserve">
+    <value>Обліковий запис із цією електронною адресою вже існує.</value>
+  </data>
+  <data name="Identity.DuplicateEmail" xml:space="preserve">
+    <value>Обліковий запис із цією електронною адресою вже існує.</value>
+  </data>
+  <data name="Identity.PasswordTooShort" xml:space="preserve">
+    <value>Пароль занадто короткий.</value>
+  </data>
+  <data name="Identity.PasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>Пароль має містити символ.</value>
+  </data>
+  <data name="Identity.PasswordRequiresDigit" xml:space="preserve">
+    <value>Пароль має містити цифру.</value>
+  </data>
+  <data name="Identity.PasswordRequiresLower" xml:space="preserve">
+    <value>Пароль має містити малу літеру.</value>
+  </data>
+  <data name="Identity.PasswordRequiresUpper" xml:space="preserve">
+    <value>Пароль має містити велику літеру.</value>
+  </data>
+  <data name="Identity.DefaultError" xml:space="preserve">
+    <value>Не вдалося створити обліковий запис. Перевірте введені дані та спробуйте ще раз.</value>
+  </data>
+  <data name="Validation.PasswordsMismatch" xml:space="preserve">
+    <value>Паролі не збігаються.</value>
+  </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>Поле {0} є обов’язковим.</value>
+  </data>
+  <data name="Validation.Email" xml:space="preserve">
+    <value>Поле {0} не є дійсною електронною адресою.</value>
+  </data>
+  <data name="Validation.MinLength" xml:space="preserve">
+    <value>Поле {0} має бути рядком або масивом із мінімальною довжиною «{1}».</value>
+  </data>
+  <data name="Legal.Label" xml:space="preserve">
+    <value>Правова інформація</value>
+  </data>
+  <data name="Legal.PrivacyPolicy" xml:space="preserve">
+    <value>Політика конфіденційності</value>
+  </data>
+  <data name="Legal.TermsOfService" xml:space="preserve">
+    <value>Умови надання послуг</value>
+  </data>
+  <data name="Legal.Support" xml:space="preserve">
+    <value>Підтримка</value>
+  </data>
+  <data name="Legal.PrivacyTitle" xml:space="preserve">
+    <value>Конфіденційність</value>
+  </data>
+  <data name="Legal.TermsTitle" xml:space="preserve">
+    <value>Умови</value>
+  </data>
+  <data name="Legal.EnglishGoverns" xml:space="preserve">
+    <value>Цей переклад надано для зручності. Якщо він відрізняється від англійської версії, переважну силу має англійська версія.</value>
+  </data>
+  <data name="Transcripts.CountOne" xml:space="preserve">
+    <value>збережено {0}</value>
+  </data>
+  <data name="Transcripts.CountMany" xml:space="preserve">
+    <value>збережено {0}</value>
+  </data>
+  <data name="Transcripts.CaptionOne" xml:space="preserve">
+    <value>{0} підпис</value>
+  </data>
+  <data name="Transcripts.CaptionMany" xml:space="preserve">
+    <value>{0} підписи</value>
+  </data>
+  <data name="Quiz.Progress" xml:space="preserve">
+    <value>{0} із {1} {2}</value>
+  </data>
+  <data name="Quiz.CorrectCount" xml:space="preserve">
+    <value>{0} правильних</value>
+  </data>
+  <data name="Quiz.PromptLabel" xml:space="preserve">
+    <value>Запит {0}</value>
+  </data>
+  <data name="Quiz.UkrainianKeyboard" xml:space="preserve">
+    <value>Віртуальна українська клавіатура</value>
+  </data>
+  <data name="Books.Title" xml:space="preserve">
+    <value>Книги</value>
+  </data>
+  <data name="Books.YourBooks" xml:space="preserve">
+    <value>Ваші книги</value>
+  </data>
+  <data name="Books.LanguageBooks" xml:space="preserve">
+    <value>Ваші книги {0}</value>
+  </data>
+  <data name="Books.LanguageTitle" xml:space="preserve">
+    <value>Книги {0}</value>
+  </data>
+  <data name="Books.YourLibrary" xml:space="preserve">
+    <value>Ваша бібліотека</value>
+  </data>
+  <data name="Books.HeroPrefix" xml:space="preserve">
+    <value>Перетворіть кожну сторінку на</value>
+  </data>
+  <data name="Books.Progress" xml:space="preserve">
+    <value>прогрес.</value>
+  </data>
+  <data name="Books.HeroText" xml:space="preserve">
+    <value>Завантажте власні матеріали для читання й використовуйте Glosify, щоб досліджувати кожну сторінку, фразу та нове слово.</value>
+  </data>
+  <data name="Books.SummaryAria" xml:space="preserve">
+    <value>Зведення бібліотеки</value>
+  </data>
+  <data name="Books.BookOne" xml:space="preserve">
+    <value>книга</value>
+  </data>
+  <data name="Books.BookMany" xml:space="preserve">
+    <value>книги</value>
+  </data>
+  <data name="Books.PageOne" xml:space="preserve">
+    <value>сторінка</value>
+  </data>
+  <data name="Books.PageMany" xml:space="preserve">
+    <value>сторінки</value>
+  </data>
+  <data name="Books.AddShelf" xml:space="preserve">
+    <value>Додати на полицю</value>
+  </data>
+  <data name="Books.UploadPdf" xml:space="preserve">
+    <value>Завантажити PDF</value>
+  </data>
+  <data name="Books.ChoosePdf" xml:space="preserve">
+    <value>Вибрати PDF</value>
+  </data>
+  <data name="Books.PdfLimit" xml:space="preserve">
+    <value>PDF із текстом · до 25 МБ</value>
+  </data>
+  <data name="Books.Browse" xml:space="preserve">
+    <value>Переглянути</value>
+  </data>
+  <data name="Books.AddLibrary" xml:space="preserve">
+    <value>Додати до бібліотеки</value>
+  </data>
+  <data name="Books.KeepReading" xml:space="preserve">
+    <value>Продовжити читання</value>
+  </data>
+  <data name="Books.OnShelf" xml:space="preserve">
+    <value>{0} на вашій полиці</value>
+  </data>
+  <data name="Books.DeleteConfirm" xml:space="preserve">
+    <value>Видалити "{0}" і всі його сторінки назавжди? Чати, у яких його використовували, буде збережено.</value>
+  </data>
+  <data name="Books.Delete" xml:space="preserve">
+    <value>Видалити {0}</value>
+  </data>
+  <data name="Books.Read" xml:space="preserve">
+    <value>Читати {0}</value>
+  </data>
+  <data name="Books.ReaderEdition" xml:space="preserve">
+    <value>Видання для читання</value>
+  </data>
+  <data name="Books.Added" xml:space="preserve">
+    <value>Додано</value>
+  </data>
+  <data name="Books.PageCountOne" xml:space="preserve">
+    <value>{0} сторінка</value>
+  </data>
+  <data name="Books.PageCountMany" xml:space="preserve">
+    <value>{0} сторінок</value>
+  </data>
+  <data name="Books.StartReading" xml:space="preserve">
+    <value>Почати читати</value>
+  </data>
+  <data name="Books.ShelfReady" xml:space="preserve">
+    <value>Ваша полиця готова</value>
+  </data>
+  <data name="Books.NoLanguageBooks" xml:space="preserve">
+    <value>Поки що немає книг {0}</value>
+  </data>
+  <data name="Books.EmptyText" xml:space="preserve">
+    <value>Завантажте свій перший PDF із текстом вище та почніть навчатися з того, що ви вже любите читати.</value>
+  </data>
+  <data name="Books.EmptyLanguageText" xml:space="preserve">
+    <value> Її буде додано на вашу полицю {0}.</value>
+  </data>
+  <data name="Books.ChooseFirst" xml:space="preserve">
+    <value>Виберіть свою першу книгу</value>
+  </data>
+  <data name="Common.First" xml:space="preserve">
+    <value>Перший</value>
+  </data>
+  <data name="Common.Last" xml:space="preserve">
+    <value>Остання</value>
+  </data>
+  <data name="Common.Page" xml:space="preserve">
+    <value>Сторінка {0}</value>
+  </data>
+  <data name="Common.Go" xml:space="preserve">
+    <value>Перейти</value>
+  </data>
+  <data name="Transcripts.AssistantTitle" xml:space="preserve">
+    <value>Помічник транскрипції</value>
+  </data>
+  <data name="Transcripts.AssistantEmpty" xml:space="preserve">
+    <value>Поставте запитання про цю транскрипцію або використайте її у своїх наявних вікторинах.</value>
+  </data>
+  <data name="Transcripts.AssistantPlaceholder" xml:space="preserve">
+    <value>Поставте запитання про цю транскрипцію...</value>
+  </data>
+  <data name="Transcripts.OriginalFor" xml:space="preserve">
+    <value>Оригінальне мовлення збережено для вивчення {0}</value>
+  </data>
+  <data name="Transcripts.LegacyFor" xml:space="preserve">
+    <value>Застарілі перекладені субтитри · вивчення {0}</value>
+  </data>
+  <data name="Transcripts.Started" xml:space="preserve">
+    <value>розпочато</value>
+  </data>
+  <data name="Transcripts.NameLabel" xml:space="preserve">
+    <value>Назва транскрипції</value>
+  </data>
+  <data name="Transcripts.Rename" xml:space="preserve">
+    <value>Перейменувати</value>
+  </data>
+  <data name="Transcripts.DeleteConfirm" xml:space="preserve">
+    <value>Назавжди видалити цю збережену транскрипцію?</value>
+  </data>
+  <data name="Transcripts.StopBeforeDelete" xml:space="preserve">
+    <value>Зупиніть живі субтитри перед видаленням</value>
+  </data>
+  <data name="Transcripts.StreamAria" xml:space="preserve">
+    <value>Потік субтитрів</value>
+  </data>
+  <data name="Transcripts.OriginalSpeech" xml:space="preserve">
+    <value>Оригінальне мовлення</value>
+  </data>
+  <data name="Transcripts.Translation" xml:space="preserve">
+    <value>Переклад</value>
+  </data>
+  <data name="Transcripts.TranslationNote" xml:space="preserve">
+    <value>Переклад у реальному часі з того самого аудіо, виконаний іншою моделлю. Корисно для перевірки значення там, де оригінальне мовлення було розпізнано неправильно.</value>
+  </data>
+  <data name="Transcripts.OriginalNote" xml:space="preserve">
+    <value>Те, що почув розпізнавач мовлення. Перемкніться на переклад, щоб звірити неясні фрагменти.</value>
+  </data>
+  <data name="Transcripts.SavedTranslationAria" xml:space="preserve">
+    <value>Збережені перекладені субтитри</value>
+  </data>
+  <data name="Transcripts.SavedOriginalAria" xml:space="preserve">
+    <value>Збережене оригінальне мовлення</value>
+  </data>
+  <data name="Transcripts.TextPagesAria" xml:space="preserve">
+    <value>Сторінки тексту транскрипції</value>
+  </data>
+  <data name="Transcripts.JumpPage" xml:space="preserve">
+    <value>Перейти до сторінки</value>
+  </data>
+  <data name="Common.Off" xml:space="preserve">
+    <value>Вимкнено</value>
+  </data>
+  <data name="Reader.AssistantTitle" xml:space="preserve">
+    <value>Помічник сторінки</value>
+  </data>
+  <data name="Reader.AssistantEmpty" xml:space="preserve">
+    <value>Попросіть слова або речення з цієї сторінки.</value>
+  </data>
+  <data name="Reader.AssistantPlaceholder" xml:space="preserve">
+    <value>Створіть вікторину за цією сторінкою...</value>
+  </data>
+  <data name="Reader.TranslatedPage" xml:space="preserve">
+    <value>Перекладена сторінка</value>
+  </data>
+  <data name="Reader.BackBooks" xml:space="preserve">
+    <value>Назад до книжок</value>
+  </data>
+  <data name="Reader.PdfControls" xml:space="preserve">
+    <value>Елементи керування переглядом PDF</value>
+  </data>
+  <data name="Reader.ZoomOut" xml:space="preserve">
+    <value>Зменшити масштаб</value>
+  </data>
+  <data name="Reader.ResetZoom100" xml:space="preserve">
+    <value>Скинути масштаб до 100%</value>
+  </data>
+  <data name="Reader.ResetZoom" xml:space="preserve">
+    <value>Скинути масштаб</value>
+  </data>
+  <data name="Reader.ZoomIn" xml:space="preserve">
+    <value>Збільшити масштаб</value>
+  </data>
+  <data name="Reader.FitPage" xml:space="preserve">
+    <value>Вписати в сторінку</value>
+  </data>
+  <data name="Reader.Rotate" xml:space="preserve">
+    <value>Повернути за годинниковою стрілкою</value>
+  </data>
+  <data name="Reader.PolishVoice" xml:space="preserve">
+    <value>Польський голос для читання</value>
+  </data>
+  <data name="Reader.ReadAloud" xml:space="preserve">
+    <value>Читати цю сторінку вголос</value>
+  </data>
+  <data name="Reader.Read" xml:space="preserve">
+    <value>Читати</value>
+  </data>
+  <data name="Reader.TranslationControls" xml:space="preserve">
+    <value>Елементи керування перекладом сторінки</value>
+  </data>
+  <data name="Reader.TranslateOffAria" xml:space="preserve">
+    <value>Переклад вимкнено. Перекласти цю сторінку</value>
+  </data>
+  <data name="Reader.TranslateOffTitle" xml:space="preserve">
+    <value>Переклад вимкнено. Натисніть, щоб перекласти цю сторінку</value>
+  </data>
+  <data name="Reader.Translation" xml:space="preserve">
+    <value>Переклад</value>
+  </data>
+  <data name="Reader.TranslationLanguage" xml:space="preserve">
+    <value>Мова перекладу</value>
+  </data>
+  <data name="Reader.SplitAria" xml:space="preserve">
+    <value>Показати оригінал і переклад поруч</value>
+  </data>
+  <data name="Reader.SplitView" xml:space="preserve">
+    <value>Розділений перегляд</value>
+  </data>
+  <data name="Reader.Original" xml:space="preserve">
+    <value>Оригінал</value>
+  </data>
+  <data name="Reader.PreviousPage" xml:space="preserve">
+    <value>Попередня сторінка</value>
+  </data>
+  <data name="Reader.NextPage" xml:space="preserve">
+    <value>Наступна сторінка</value>
+  </data>
+  <data name="Client.GenericError" xml:space="preserve">
+    <value>Щось пішло не так. Спробуйте ще раз.</value>
+  </data>
+  <data name="Client.NetworkError" xml:space="preserve">
+    <value>Помилка мережі. Спробуйте ще раз.</value>
+  </data>
+  <data name="Client.TryAgain" xml:space="preserve">
+    <value>Спробувати ще раз</value>
+  </data>
+  <data name="Client.Loading" xml:space="preserve">
+    <value>Завантаження…</value>
+  </data>
+  <data name="Client.Correct" xml:space="preserve">
+    <value>Правильно</value>
+  </data>
+  <data name="Client.Incorrect" xml:space="preserve">
+    <value>Неправильно</value>
+  </data>
+  <data name="Client.NextWord" xml:space="preserve">
+    <value>Наступне слово</value>
+  </data>
+  <data name="Client.CheckFailed" xml:space="preserve">
+    <value>Не вдалося перевірити цю відповідь. Спробуйте ще раз.</value>
+  </data>
+  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
+    <value>Видалити цю власну вікторину?</value>
+  </data>
+  <data name="Client.DeleteQuizFailed" xml:space="preserve">
+    <value>Не вдалося видалити власну вікторину. Спробуйте ще раз.</value>
+  </data>
+  <data name="Client.RepairFailed" xml:space="preserve">
+    <value>Не вдалося виправити. Спробуйте ще раз.</value>
+  </data>
+  <data name="Client.RepairStopped" xml:space="preserve">
+    <value>Запит на виправлення несподівано зупинився. Спробуйте ще раз.</value>
+  </data>
+  <data name="Client.DeleteChat" xml:space="preserve">
+    <value>Видалити чат</value>
+  </data>
+  <data name="Client.DeleteChatConfirm" xml:space="preserve">
+    <value>Видалити цей чат?</value>
+  </data>
+  <data name="Client.ApplyFailed" xml:space="preserve">
+    <value>Не вдалося застосувати зміни.</value>
+  </data>
+  <data name="Client.ApplyNetwork" xml:space="preserve">
+    <value>Помилка мережі під час застосування змін.</value>
+  </data>
+  <data name="Client.RejectNetwork" xml:space="preserve">
+    <value>Помилка мережі під час відхилення змін.</value>
+  </data>
+  <data name="Client.AssistantFailed" xml:space="preserve">
+    <value>Помічник не зміг відповісти.</value>
+  </data>
+  <data name="Client.AssistantNetwork" xml:space="preserve">
+    <value>Помилка мережі під час зв’язку з помічником.</value>
+  </data>
+  <data name="Client.PictureFailed" xml:space="preserve">
+    <value>Не вдалося розпізнати текст на цьому зображенні.</value>
+  </data>
+  <data name="Client.PictureNetwork" xml:space="preserve">
+    <value>Помилка мережі під час обробки зображення.</value>
+  </data>
+  <data name="Client.MessageFailed" xml:space="preserve">
+    <value>Не вдалося надіслати повідомлення.</value>
+  </data>
+  <data name="Client.JoinCallFailed" xml:space="preserve">
+    <value>Не вдалося приєднатися до дзвінка.</value>
+  </data>
+  <data name="Client.CallTokenFailed" xml:space="preserve">
+    <value>Не вдалося отримати токен дзвінка.</value>
+  </data>
+  <data name="Client.PageOf" xml:space="preserve">
+    <value>Сторінка {0} з {1}</value>
+  </data>
+  <data name="Client.TtsNoText" xml:space="preserve">
+    <value>Немає доступного для читання тексту.</value>
+  </data>
+  <data name="Client.TtsUnavailable" xml:space="preserve">
+    <value>Синтез мовлення недоступний у цьому браузері.</value>
+  </data>
+  <data name="Client.TtsFailed" xml:space="preserve">
+    <value>Не вдалося відтворити синтез мовлення.</value>
+  </data>
+  <data name="Client.TranslationFailed" xml:space="preserve">
+    <value>Не вдалося перекласти сторінку.</value>
+  </data>
+  <data name="Client.PreferenceFailed" xml:space="preserve">
+    <value>Не вдалося зберегти мовні налаштування.</value>
+  </data>
+  <data name="Client.On" xml:space="preserve">
+    <value>Увімкнено</value>
+  </data>
+  <data name="Client.Off" xml:space="preserve">
+    <value>Вимкнено</value>
+  </data>
+  <data name="Client.Translating" xml:space="preserve">
+    <value>Переклад…</value>
+  </data>
+  <data name="Client.TranslationError" xml:space="preserve">
+    <value>Помилка</value>
+  </data>
+  <data name="Client.Read" xml:space="preserve">
+    <value>Читати</value>
+  </data>
+  <data name="Client.Stop" xml:space="preserve">
+    <value>Зупинити</value>
+  </data>
+  <data name="Client.MessageRateLimited" xml:space="preserve">
+    <value>Ви надсилаєте повідомлення надто швидко. Зачекайте трохи.</value>
+  </data>
+  <data name="Client.SessionExpired" xml:space="preserve">
+    <value>Термін дії сеансу минув. Перезапустіть вікторину, щоб продовжити.</value>
+  </data>
+  <data name="Client.NotQuite" xml:space="preserve">
+    <value>Не зовсім</value>
+  </data>
+  <data name="Client.ShowResults" xml:space="preserve">
+    <value>Показати результати</value>
+  </data>
+  <data name="Quiz.LibraryTitle" xml:space="preserve">
+    <value>Виберіть вікторину</value>
+  </data>
+  <data name="Quiz.SelectQuiz" xml:space="preserve">
+    <value>Виберіть вікторину</value>
+  </data>
+  <data name="Quiz.ShowingLanguage" xml:space="preserve">
+    <value>Показано ваші вікторини мовою {0}.</value>
+  </data>
+  <data name="Quiz.LanguageCollection" xml:space="preserve">
+    <value>Колекція {0}.</value>
+  </data>
+  <data name="Quiz.Library" xml:space="preserve">
+    <value>Бібліотека вікторин</value>
+  </data>
+  <data name="Quiz.ChangeLanguage" xml:space="preserve">
+    <value>Змінити мову</value>
+  </data>
+  <data name="Quiz.MakePrivate" xml:space="preserve">
+    <value>Зробити колекцію приватною</value>
+  </data>
+  <data name="Quiz.MakePublic" xml:space="preserve">
+    <value>Зробити колекцію публічною</value>
+  </data>
+  <data name="Quiz.PublicSubtree" xml:space="preserve">
+    <value>Публічне піддерево</value>
+  </data>
+  <data name="Quiz.Private" xml:space="preserve">
+    <value>Приватне</value>
+  </data>
+  <data name="Quiz.LibrarySummary" xml:space="preserve">
+    <value>Підсумок бібліотеки</value>
+  </data>
+  <data name="Quiz.CollectionOne" xml:space="preserve">
+    <value>колекція</value>
+  </data>
+  <data name="Quiz.CollectionMany" xml:space="preserve">
+    <value>колекції</value>
+  </data>
+  <data name="Quiz.QuizOne" xml:space="preserve">
+    <value>вікторина</value>
+  </data>
+  <data name="Quiz.QuizMany" xml:space="preserve">
+    <value>вікторини</value>
+  </data>
+  <data name="Quiz.NewCollection" xml:space="preserve">
+    <value>Нова колекція</value>
+  </data>
+  <data name="Quiz.NewQuiz" xml:space="preserve">
+    <value>Нова вікторина</value>
+  </data>
+  <data name="Quiz.Collections" xml:space="preserve">
+    <value>Колекції</value>
+  </data>
+  <data name="Quiz.CollectionsHelp" xml:space="preserve">
+    <value>Групуйте пов’язані вікторини та тримайте свій навчальний шлях упорядкованим.</value>
+  </data>
+  <data name="Quiz.DropInto" xml:space="preserve">
+    <value>Перетягніть вікторини в {0}</value>
+  </data>
+  <data name="Quiz.NestedCount" xml:space="preserve">
+    <value>{0} вкладених</value>
+  </data>
+  <data name="Quiz.YourQuizzes" xml:space="preserve">
+    <value>Ваші вікторини</value>
+  </data>
+  <data name="Quiz.DragHelp" xml:space="preserve">
+    <value>Відкрийте вікторину для навчання або перетягніть її на колекцію, щоб упорядкувати.</value>
+  </data>
+  <data name="Quiz.ChooseHelp" xml:space="preserve">
+    <value>Оберіть вікторину й не переривайте свій навчальний ритм.</value>
+  </data>
+  <data name="Quiz.DeleteConfirm" xml:space="preserve">
+    <value>Видалити цю вікторину та всі її слова?</value>
+  </data>
+  <data name="Quiz.DeleteNamed" xml:space="preserve">
+    <value>Видалити {0}</value>
+  </data>
+  <data name="Quiz.Delete" xml:space="preserve">
+    <value>Видалити вікторину</value>
+  </data>
+  <data name="Quiz.EmptyTitle" xml:space="preserve">
+    <value>Ще немає вікторин або колекцій</value>
+  </data>
+  <data name="Quiz.EmptyText" xml:space="preserve">
+    <value>Створіть колекцію, щоб упорядкувати свою лексику, або створіть першу вікторину.</value>
+  </data>
+  <data name="Quiz.CreateCollection" xml:space="preserve">
+    <value>Створити колекцію</value>
+  </data>
+  <data name="Quiz.CreateQuiz" xml:space="preserve">
+    <value>Створити вікторину</value>
+  </data>
+  <data name="Quiz.CreateNewCollection" xml:space="preserve">
+    <value>Створити нову колекцію</value>
+  </data>
+  <data name="Quiz.CollectionName" xml:space="preserve">
+    <value>Назва колекції</value>
+  </data>
+  <data name="Quiz.CollectionExample" xml:space="preserve">
+    <value>напр., Travel phrases</value>
+  </data>
+  <data name="Quiz.CreateNewQuiz" xml:space="preserve">
+    <value>Створити нову вікторину</value>
+  </data>
+  <data name="Quiz.Name" xml:space="preserve">
+    <value>Назва вікторини</value>
+  </data>
+  <data name="Quiz.NameExample" xml:space="preserve">
+    <value>напр., French Basics</value>
+  </data>
+  <data name="Quiz.SourceLanguage" xml:space="preserve">
+    <value>Мова джерела</value>
+  </data>
+  <data name="Quiz.SelectLanguage" xml:space="preserve">
+    <value>Виберіть мову...</value>
+  </data>
+  <data name="Quiz.TargetLanguage" xml:space="preserve">
+    <value>Мова перекладу</value>
+  </data>
+  <data name="Books.UploadRequired" xml:space="preserve">
+    <value>Виберіть PDF-файл для завантаження.</value>
+  </data>
+  <data name="Books.Uploaded" xml:space="preserve">
+    <value>Завантажено {0}.</value>
+  </data>
+  <data name="Books.UploadInvalid" xml:space="preserve">
+    <value>Виберіть дійсний текстовий PDF-файл до 25 МБ.</value>
+  </data>
+  <data name="Books.ProcessFailed" xml:space="preserve">
+    <value>Не вдалося обробити PDF. Спробуйте текстовий PDF-файл.</value>
+  </data>
+  <data name="Books.Deleted" xml:space="preserve">
+    <value>Видалено {0}.</value>
+  </data>
+  <data name="Books.PaidUnavailable" xml:space="preserve">
+    <value>Платні функції {0} знову будуть доступні о {1}.</value>
+  </data>
+  <data name="Books.PaidReason" xml:space="preserve">
+    <value>Досягнуто щомісячного бюджету застосунку.</value>
+  </data>
+  <data name="Transcripts.Renamed" xml:space="preserve">
+    <value>Транскрипт перейменовано.</value>
+  </data>
+  <data name="Transcripts.InvalidTitle" xml:space="preserve">
+    <value>Назви транскриптів мають бути від 1 до 160 символів.</value>
+  </data>
+  <data name="Transcripts.Deleted" xml:space="preserve">
+    <value>Транскрипт видалено.</value>
+  </data>
+  <data name="Common.Accept" xml:space="preserve">
+    <value>Прийняти</value>
+  </data>
+  <data name="Common.Optional" xml:space="preserve">
+    <value>Необов’язково</value>
+  </data>
+  <data name="Common.Open" xml:space="preserve">
+    <value>Відкрити</value>
+  </data>
+  <data name="Common.Copy" xml:space="preserve">
+    <value>Копіювати</value>
+  </data>
+  <data name="Classroom.Title" xml:space="preserve">
+    <value>Класи</value>
+  </data>
+  <data name="Classroom.MyClassrooms" xml:space="preserve">
+    <value>Мої класи</value>
+  </data>
+  <data name="Classroom.LanguageClassrooms" xml:space="preserve">
+    <value>Ваші класи {0}</value>
+  </data>
+  <data name="Classroom.LanguageTitle" xml:space="preserve">
+    <value>Класи {0}</value>
+  </data>
+  <data name="Classroom.SharedSpaces" xml:space="preserve">
+    <value>Спільні простори для навчання</value>
+  </data>
+  <data name="Classroom.LearnBetter" xml:space="preserve">
+    <value>Навчайтеся краще,</value>
+  </data>
+  <data name="Classroom.Together" xml:space="preserve">
+    <value>разом.</value>
+  </data>
+  <data name="Classroom.HeroText" xml:space="preserve">
+    <value>Створіть простір для своїх учнів, діліться навчальними матеріалами та допомагайте всім рухатися в одному напрямку.</value>
+  </data>
+  <data name="Classroom.Summary" xml:space="preserve">
+    <value>Підсумок класу</value>
+  </data>
+  <data name="Classroom.One" xml:space="preserve">
+    <value>клас</value>
+  </data>
+  <data name="Classroom.Many" xml:space="preserve">
+    <value>класи</value>
+  </data>
+  <data name="Classroom.MemberOne" xml:space="preserve">
+    <value>учасник</value>
+  </data>
+  <data name="Classroom.MemberMany" xml:space="preserve">
+    <value>учасники</value>
+  </data>
+  <data name="Classroom.Waiting" xml:space="preserve">
+    <value>очікує</value>
+  </data>
+  <data name="Classroom.LanguageLab" xml:space="preserve">
+    <value>Мовна лабораторія</value>
+  </data>
+  <data name="Classroom.LearnersActive" xml:space="preserve">
+    <value>Активні {0} учнів</value>
+  </data>
+  <data name="Classroom.Live" xml:space="preserve">
+    <value>У прямому ефірі</value>
+  </data>
+  <data name="Classroom.PracticeCompleted" xml:space="preserve">
+    <value>Практику завершено</value>
+  </data>
+  <data name="Classroom.WaitingForYou" xml:space="preserve">
+    <value>Чекає на вас</value>
+  </data>
+  <data name="Classroom.Invitations" xml:space="preserve">
+    <value>Запрошення</value>
+  </data>
+  <data name="Classroom.NewCount" xml:space="preserve">
+    <value>{0} нових</value>
+  </data>
+  <data name="Classroom.Invited" xml:space="preserve">
+    <value>Вас запрошено</value>
+  </data>
+  <data name="Classroom.InvitedBy" xml:space="preserve">
+    <value>{0} запросив(-ла) вас приєднатися як {1}</value>
+  </data>
+  <data name="Classroom.DeclineInvitation" xml:space="preserve">
+    <value>Відхилити запрошення до {0}</value>
+  </data>
+  <data name="Classroom.GetStarted" xml:space="preserve">
+    <value>Почати</value>
+  </data>
+  <data name="Classroom.MakeOrJoin" xml:space="preserve">
+    <value>Створіть простір або приєднайтеся до існуючого</value>
+  </data>
+  <data name="Classroom.ForTeachers" xml:space="preserve">
+    <value>Для викладачів</value>
+  </data>
+  <data name="Classroom.Create" xml:space="preserve">
+    <value>Створити classroom</value>
+  </data>
+  <data name="Classroom.CreateHelp" xml:space="preserve">
+    <value>Створіть простір для уроків, вікторин, книжок і спілкування.</value>
+  </data>
+  <data name="Classroom.LanguageHelp" xml:space="preserve">
+    <value> Це буде classroom для {0}.</value>
+  </data>
+  <data name="Classroom.Name" xml:space="preserve">
+    <value>Назва classroom</value>
+  </data>
+  <data name="Classroom.NameExample" xml:space="preserve">
+    <value>напр. Swedish A2 · Spring</value>
+  </data>
+  <data name="Classroom.ShortDescription" xml:space="preserve">
+    <value>Короткий опис</value>
+  </data>
+  <data name="Classroom.DescriptionPlaceholder" xml:space="preserve">
+    <value>Що вивчатиме ваша група?</value>
+  </data>
+  <data name="Classroom.HaveCode" xml:space="preserve">
+    <value>Є код запрошення?</value>
+  </data>
+  <data name="Classroom.Join" xml:space="preserve">
+    <value>Приєднатися до classroom</value>
+  </data>
+  <data name="Classroom.JoinHelp" xml:space="preserve">
+    <value>Введіть восьмизначний код, який надав ваш викладач.</value>
+  </data>
+  <data name="Classroom.JoinCode" xml:space="preserve">
+    <value>Код для приєднання</value>
+  </data>
+  <data name="Classroom.JoinThis" xml:space="preserve">
+    <value>Приєднатися до цього classroom</value>
+  </data>
+  <data name="Classroom.YourSpaces" xml:space="preserve">
+    <value>Ваші навчальні простори</value>
+  </data>
+  <data name="Classroom.TotalCount" xml:space="preserve">
+    <value>усього {0}</value>
+  </data>
+  <data name="Classroom.OpenNamed" xml:space="preserve">
+    <value>Відкрити {0}</value>
+  </data>
+  <data name="Classroom.CardPlaceholder" xml:space="preserve">
+    <value>Спільний простір для навчання та практики.</value>
+  </data>
+  <data name="Classroom.BetterCompany" xml:space="preserve">
+    <value>Навчатися краще разом</value>
+  </data>
+  <data name="Classroom.NoLanguageYet" xml:space="preserve">
+    <value>Ще немає classroom для {0}</value>
+  </data>
+  <data name="Classroom.EmptyHelp" xml:space="preserve">
+    <value>Створіть свій перший classroom або попросіть у викладача код для приєднання, щоб знайти свою групу.</value>
+  </data>
+  <data name="Classroom.CreateFirst" xml:space="preserve">
+    <value>Створити свій перший простір</value>
+  </data>
+  <data name="Classroom.JoinCall" xml:space="preserve">
+    <value>Приєднатися до дзвінка</value>
+  </data>
+  <data name="Classroom.VideoCall" xml:space="preserve">
+    <value>Відеодзвінок</value>
+  </data>
+  <data name="Classroom.Sections" xml:space="preserve">
+    <value>Розділи classroom</value>
+  </data>
+  <data name="Classroom.Stream" xml:space="preserve">
+    <value>Стрічка</value>
+  </data>
+  <data name="Classroom.Content" xml:space="preserve">
+    <value>Контент</value>
+  </data>
+  <data name="Classroom.Planning" xml:space="preserve">
+    <value>Планування</value>
+  </data>
+  <data name="Classroom.Members" xml:space="preserve">
+    <value>Учасники</value>
+  </data>
+  <data name="Classroom.Results" xml:space="preserve">
+    <value>Результати</value>
+  </data>
+  <data name="Speaking.LanguagePractice" xml:space="preserve">
+    <value>Практика мовлення {0}</value>
+  </data>
+  <data name="Speaking.HeroTitle" xml:space="preserve">
+    <value>Заговоріть мовою.</value>
+  </data>
+  <data name="Speaking.HeroText" xml:space="preserve">
+    <value>Оберіть відкритого тьютора або сцену, говоріть природно й отримуйте приватний зворотний зв’язок після кожної репліки.</value>
+  </data>
+  <data name="Speaking.PracticeQuiz" xml:space="preserve">
+    <value>Вікторина для практики</value>
+  </data>
+  <data name="Speaking.ChooseQuiz" xml:space="preserve">
+    <value>Оберіть вікторину для практики мовлення</value>
+  </data>
+  <data name="Speaking.FreeLesson" xml:space="preserve">
+    <value>Безкоштовний урок</value>
+  </data>
+  <data name="Speaking.PoweredBy" xml:space="preserve">
+    <value>Працює на Microsoft Foundry та Azure AI Speech</value>
+  </data>
+  <data name="Speaking.Settings" xml:space="preserve">
+    <value>Налаштування практики</value>
+  </data>
+  <data name="Speaking.ChooseAvatar" xml:space="preserve">
+    <value>Оберіть аватар</value>
+  </data>
+  <data name="Speaking.Level" xml:space="preserve">
+    <value>Рівень</value>
+  </data>
+  <data name="Speaking.ChooseLevel" xml:space="preserve">
+    <value>Оберіть рівень CEFR</value>
+  </data>
+  <data name="Speaking.Beginner" xml:space="preserve">
+    <value>Початковий</value>
+  </data>
+  <data name="Speaking.Elementary" xml:space="preserve">
+    <value>Елементарний</value>
+  </data>
+  <data name="Speaking.Intermediate" xml:space="preserve">
+    <value>Середній</value>
+  </data>
+  <data name="Speaking.UpperIntermediate" xml:space="preserve">
+    <value>Вище середнього</value>
+  </data>
+  <data name="Speaking.Advanced" xml:space="preserve">
+    <value>Просунутий</value>
+  </data>
+  <data name="Speaking.EnglishTranslation" xml:space="preserve">
+    <value>Переклад англійською</value>
+  </data>
+  <data name="Speaking.MuteAvatar" xml:space="preserve">
+    <value>Вимкнути звук аватара</value>
+  </data>
+  <data name="Speaking.AvatarScene" xml:space="preserve">
+    <value>Сцена аватара</value>
+  </data>
+  <data name="Speaking.HoldSpeak" xml:space="preserve">
+    <value>Утримуйте, щоб говорити й надіслати</value>
+  </data>
+  <data name="Speaking.StartingScene" xml:space="preserve">
+    <value>Запуск сцени…</value>
+  </data>
+  <data name="Speaking.ReplayLatestAria" xml:space="preserve">
+    <value>Повторити останню відповідь аватара</value>
+  </data>
+  <data name="Speaking.ReplayLatest" xml:space="preserve">
+    <value>Повторити останню відповідь</value>
+  </data>
+  <data name="Speaking.Conversation" xml:space="preserve">
+    <value>Розмова</value>
+  </data>
+  <data name="Speaking.CurrentSession" xml:space="preserve">
+    <value>Поточна сесія</value>
+  </data>
+  <data name="Speaking.ScoreHelp" xml:space="preserve">
+    <value>Оцінки вимови стосуються вашого записаного аудіо.</value>
+  </data>
+  <data name="Speaking.SpeakToType" xml:space="preserve">
+    <value>Говоріть, щоб вводити текст</value>
+  </data>
+  <data name="Speaking.You" xml:space="preserve">
+    <value>Ви</value>
+  </data>
+  <data name="Speaking.Accuracy" xml:space="preserve">
+    <value>Точність</value>
+  </data>
+  <data name="Speaking.Fluency" xml:space="preserve">
+    <value>Плавність</value>
+  </data>
+  <data name="Speaking.Completeness" xml:space="preserve">
+    <value>Повнота</value>
+  </data>
+  <data name="Speaking.ReplayReply" xml:space="preserve">
+    <value>Повторити цю відповідь</value>
+  </data>
+  <data name="Speaking.ShowEnglish" xml:space="preserve">
+    <value>Показати переклад англійською</value>
+  </data>
+  <data name="Speaking.Grammar" xml:space="preserve">
+    <value>Граматика</value>
+  </data>
+  <data name="Speaking.Vocabulary" xml:space="preserve">
+    <value>Лексика</value>
+  </data>
+  <data name="Speaking.Naturalness" xml:space="preserve">
+    <value>Природність</value>
+  </data>
+  <data name="Speaking.PracticeThis" xml:space="preserve">
+    <value>Практикуйте це</value>
+  </data>
+  <data name="Speaking.HearPhrase" xml:space="preserve">
+    <value>Прослухати цю фразу для практики</value>
+  </data>
+  <data name="Speaking.HoldRepeatAria" xml:space="preserve">
+    <value>Утримуйте, щоб повторити цю фразу для практики</value>
+  </data>
+  <data name="Speaking.HoldRepeat" xml:space="preserve">
+    <value>Утримуйте, щоб повторити</value>
+  </data>
+  <data name="Quiz.DeletedWord" xml:space="preserve">
+    <value>{0} видалено.</value>
+  </data>
+  <data name="Quiz.DeletedNamed" xml:space="preserve">
+    <value>{0} видалено.</value>
+  </data>
+  <data name="Quiz.NowPublic" xml:space="preserve">
+    <value>Вікторину тепер зроблено публічною.</value>
+  </data>
+  <data name="Quiz.NowPrivate" xml:space="preserve">
+    <value>Квіз тепер приватний.</value>
+  </data>
+  <data name="Quiz.VisibilityFailed" xml:space="preserve">
+    <value>Не вдалося оновити видимість квізу.</value>
+  </data>
+  <data name="Quiz.CollectionNowPublic" xml:space="preserve">
+    <value>Колекція тепер публічна.</value>
+  </data>
+  <data name="Quiz.CollectionNowPrivate" xml:space="preserve">
+    <value>Колекція тепер приватна.</value>
+  </data>
+  <data name="Quiz.CollectionVisibilityFailed" xml:space="preserve">
+    <value>Не вдалося оновити видимість колекції.</value>
+  </data>
+  <data name="Quiz.CollectionCreated" xml:space="preserve">
+    <value>Колекцію {0} створено.</value>
+  </data>
+  <data name="Quiz.CollectionCreateFailed" xml:space="preserve">
+    <value>Не вдалося створити колекцію. Перевірте її назву та батьківську колекцію.</value>
+  </data>
+  <data name="Common.All" xml:space="preserve">
+    <value>Усе</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Налаштування квізу</value>
+  </data>
+  <data name="Settings.FlashcardQuiz" xml:space="preserve">
+    <value>Квіз на картках</value>
+  </data>
+  <data name="Settings.Source" xml:space="preserve">
+    <value>Джерело</value>
+  </data>
+  <data name="Settings.Target" xml:space="preserve">
+    <value>Ціль</value>
+  </data>
+  <data name="Settings.Configuration" xml:space="preserve">
+    <value>Налаштування</value>
+  </data>
+  <data name="Settings.Intro" xml:space="preserve">
+    <value>Оберіть швидке тренування та перегляньте цей квіз.</value>
+  </data>
+  <data name="Settings.SessionLength" xml:space="preserve">
+    <value>Тривалість сесії</value>
+  </data>
+  <data name="Settings.Words" xml:space="preserve">
+    <value>Слова</value>
+  </data>
+  <data name="Settings.AvailableLower" xml:space="preserve">
+    <value>доступно</value>
+  </data>
+  <data name="Settings.Quick" xml:space="preserve">
+    <value>Швидко</value>
+  </data>
+  <data name="Settings.Standard" xml:space="preserve">
+    <value>Стандартно</value>
+  </data>
+  <data name="Settings.WordRange" xml:space="preserve">
+    <value>Діапазон слів</value>
+  </data>
+  <data name="Settings.RangeHelp" xml:space="preserve">
+    <value>Перетягніть будь-який повзунок, щоб зосередитися на частині списку, наприклад лише на найновіших словах.</value>
+  </data>
+  <data name="Settings.Newest20" xml:space="preserve">
+    <value>Найновіші 20%</value>
+  </data>
+  <data name="Settings.Newest50" xml:space="preserve">
+    <value>Найновіші 50%</value>
+  </data>
+  <data name="Settings.Oldest20" xml:space="preserve">
+    <value>Найдавніші 20%</value>
+  </data>
+  <data name="Settings.AllWordsOrder" xml:space="preserve">
+    <value>Практика всіх слів, від найдавніших до найновіших.</value>
+  </data>
+  <data name="Settings.ChooseIndividually" xml:space="preserve">
+    <value>Оберіть слова вручну…</value>
+  </data>
+  <data name="Settings.ClearSelection" xml:space="preserve">
+    <value>Очистити вибір</value>
+  </data>
+  <data name="Settings.ChooseWords" xml:space="preserve">
+    <value>Оберіть слова для тренування</value>
+  </data>
+  <data name="Settings.SelectAll" xml:space="preserve">
+    <value>Вибрати все</value>
+  </data>
+  <data name="Settings.DeselectAll" xml:space="preserve">
+    <value>Зняти вибір</value>
+  </data>
+  <data name="Settings.FilterWords" xml:space="preserve">
+    <value>Фільтрувати слова…</value>
+  </data>
+  <data name="Settings.ApplySelection" xml:space="preserve">
+    <value>Застосувати вибір</value>
+  </data>
+  <data name="Settings.PracticeContent" xml:space="preserve">
+    <value>Вміст для тренування</value>
+  </data>
+  <data name="Settings.ContentHelp" xml:space="preserve">
+    <value>Оберіть слова або повні речення.</value>
+  </data>
+  <data name="Settings.Sentences" xml:space="preserve">
+    <value>Речення</value>
+  </data>
+  <data name="Settings.QuizMode" xml:space="preserve">
+    <value>Режим квізу</value>
+  </data>
+  <data name="Settings.ModeHelp" xml:space="preserve">
+    <value>Оберіть картки для відтворення з пам’яті або введення для активного тренування правопису.</value>
+  </data>
+  <data name="Settings.Flashcards" xml:space="preserve">
+    <value>Картки</value>
+  </data>
+  <data name="Settings.Typing" xml:space="preserve">
+    <value>Введення</value>
+  </data>
+  <data name="Settings.Choices" xml:space="preserve">
+    <value>Варіанти</value>
+  </data>
+  <data name="Settings.PracticeDirection" xml:space="preserve">
+    <value>Напрямок тренування</value>
+  </data>
+  <data name="Settings.DirectionHelp" xml:space="preserve">
+    <value>Оберіть, яка мова відображатиметься першою.</value>
+  </data>
+  <data name="Settings.NeedWord" xml:space="preserve">
+    <value>Додайте принаймні одне слово перед початком сеансу тренування.</value>
+  </data>
+  <data name="Settings.Quiz" xml:space="preserve">
+    <value>Квіз</value>
+  </data>
+  <data name="Settings.Content" xml:space="preserve">
+    <value>Вміст</value>
+  </data>
+  <data name="Settings.Available" xml:space="preserve">
+    <value>Доступно</value>
+  </data>
+  <data name="Settings.Mode" xml:space="preserve">
+    <value>Режим</value>
+  </data>
+  <data name="Settings.Range" xml:space="preserve">
+    <value>Діапазон</value>
+  </data>
+  <data name="Settings.Direction" xml:space="preserve">
+    <value>Напрямок</value>
+  </data>
+  <data name="Settings.StartQuiz" xml:space="preserve">
+    <value>Почати квіз</value>
+  </data>
+  <data name="Settings.WordsLower" xml:space="preserve">
+    <value>слів</value>
+  </data>
+  <data name="Settings.SentencesLower" xml:space="preserve">
+    <value>речень</value>
+  </data>
+  <data name="Settings.WordLower" xml:space="preserve">
+    <value>слово</value>
+  </data>
+  <data name="Settings.SentenceLower" xml:space="preserve">
+    <value>речення</value>
+  </data>
+  <data name="Settings.NeedItem" xml:space="preserve">
+    <value>Додайте принаймні одне {0} перед початком сеансу тренування.</value>
+  </data>
+  <data name="Settings.Newest" xml:space="preserve">
+    <value>Найновіші {0}%</value>
+  </data>
+  <data name="Settings.Oldest" xml:space="preserve">
+    <value>Найдавніші {0}%</value>
+  </data>
+  <data name="Settings.RangeDynamic" xml:space="preserve">
+    <value>Практика {0} зі списку (від найдавніших до найновіших).</value>
+  </data>
+  <data name="Settings.SelectedCount" xml:space="preserve">
+    <value>Обрано {0} із {1}</value>
+  </data>
+  <data name="Settings.PickedWords" xml:space="preserve">
+    <value>Вручну обрано {0} із {1} слів</value>
+  </data>
+  <data name="Settings.PickedCount" xml:space="preserve">
+    <value>Обрано {0}</value>
+  </data>
+  <data name="Explore.Title" xml:space="preserve">
+    <value>Огляд</value>
+  </data>
+  <data name="Explore.Discover" xml:space="preserve">
+    <value>Відкрийте щось нове</value>
+  </data>
+  <data name="Explore.Intro" xml:space="preserve">
+    <value>Переглядайте словник, яким діляться інші учні, а потім додавайте до своєї бібліотеки те, що вас надихає.</value>
+  </data>
+  <data name="Explore.Summary" xml:space="preserve">
+    <value>Зведення публічної бібліотеки</value>
+  </data>
+  <data name="Explore.CommunityLibrary" xml:space="preserve">
+    <value>Бібліотека спільноти</value>
+  </data>
+  <data name="Explore.SharedCollections" xml:space="preserve">
+    <value>Спільні колекції</value>
+  </data>
+  <data name="Explore.CollectionsHelp" xml:space="preserve">
+    <value>Досліджуйте повні навчальні набори, підібрані спільнотою.</value>
+  </data>
+  <data name="Explore.SharedCollection" xml:space="preserve">
+    <value>Спільна колекція</value>
+  </data>
+  <data name="Explore.CopyNamed" xml:space="preserve">
+    <value>Скопіювати {0} до своєї бібліотеки</value>
+  </data>
+  <data name="Explore.CommunityQuizzes" xml:space="preserve">
+    <value>Квізи спільноти</value>
+  </data>
+  <data name="Explore.QuizzesHelp" xml:space="preserve">
+    <value>Перегляньте квіз, а потім додайте особисту копію до своєї бібліотеки.</value>
+  </data>
+  <data name="Explore.CommunityQuiz" xml:space="preserve">
+    <value>Квіз спільноти</value>
+  </data>
+  <data name="Explore.NothingPublic" xml:space="preserve">
+    <value>Поки що немає нічого публічного для {0}</value>
+  </data>
+  <data name="Explore.EmptyHelp" xml:space="preserve">
+    <value>Коли учні поділяться квізами або колекціями цією мовою, вони з’являться тут.</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Редагувати</value>
+  </data>
+  <data name="Common.Play" xml:space="preserve">
+    <value>Грати</value>
+  </data>
+  <data name="Quiz.AssistantEmpty" xml:space="preserve">
+    <value>Почніть розмову про цей квіз.</value>
+  </data>
+  <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
+    <value>Поставте запитання про цей квіз...</value>
+  </data>
+  <data name="Quiz.CustomCount" xml:space="preserve">
+    <value>{0} власних</value>
+  </data>
+  <data name="Quiz.BuildCustom" xml:space="preserve">
+    <value>Створити власний тест</value>
+  </data>
+  <data name="Quiz.Public" xml:space="preserve">
+    <value>Публічна</value>
+  </data>
+  <data name="Quiz.Word" xml:space="preserve">
+    <value>Слово</value>
+  </data>
+  <data name="Quiz.WordExample" xml:space="preserve">
+    <value>напр., Bibliothèque</value>
+  </data>
+  <data name="Quiz.TranslationExample" xml:space="preserve">
+    <value>напр., Library</value>
+  </data>
+  <data name="Quiz.AddWord" xml:space="preserve">
+    <value>Додати слово</value>
+  </data>
+  <data name="Quiz.ItemsIn" xml:space="preserve">
+    <value>{0} {1} у {2}</value>
+  </data>
+  <data name="Quiz.ContentAria" xml:space="preserve">
+    <value>Вміст тесту</value>
+  </data>
+  <data name="Quiz.OpenWiktionary" xml:space="preserve">
+    <value>Відкрити {0} у Wiktionary</value>
+  </data>
+  <data name="Quiz.RepairWord" xml:space="preserve">
+    <value>Виправити слово</value>
+  </data>
+  <data name="Quiz.RepairNamed" xml:space="preserve">
+    <value>Виправити {0}</value>
+  </data>
+  <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
+    <value>Видалити це слово?</value>
+  </data>
+  <data name="Quiz.NoWords" xml:space="preserve">
+    <value>Поки що немає слів. Додайте перше слово за допомогою панелі вище.</value>
+  </data>
+  <data name="Quiz.LinkedWords" xml:space="preserve">
+    <value>{0} пов’язані {1}</value>
+  </data>
+  <data name="Quiz.Repair" xml:space="preserve">
+    <value>Виправити</value>
+  </data>
+  <data name="Quiz.NoSentences" xml:space="preserve">
+    <value>Поки що немає речень. Попросіть помічника додати речення або витягнути їх із тексту.</value>
+  </data>
+  <data name="Quiz.CustomQuizzes" xml:space="preserve">
+    <value>Власні тести</value>
+  </data>
+  <data name="Quiz.CustomHelp" xml:space="preserve">
+    <value>Створіть вправу довільного формату зі слів у цьому тесті.</value>
+  </data>
+  <data name="Quiz.NewCustom" xml:space="preserve">
+    <value>Новий власний тест</value>
+  </data>
+  <data name="Quiz.Playable" xml:space="preserve">
+    <value>Можна пройти</value>
+  </data>
+  <data name="Quiz.Draft" xml:space="preserve">
+    <value>Чернетка</value>
+  </data>
+  <data name="Quiz.NoCustom" xml:space="preserve">
+    <value>Поки що немає власних тестів. Створіть один, перетягнувши блоки на полотно.</value>
+  </data>
+  <data name="Payments.PackageUnavailable" xml:space="preserve">
+    <value>Цей пакет кредитів більше недоступний.</value>
+  </data>
+  <data name="Payments.CreditsReady" xml:space="preserve">
+    <value>Платіж підтверджено. Ваші кредити готові.</value>
+  </data>
+  <data name="Payments.AwaitingOrFailed" xml:space="preserve">
+    <value>Платіж ще очікує підтвердження або його не вдалося перевірити.</value>
+  </data>
+  <data name="Payments.GetCredits" xml:space="preserve">
+    <value>Отримати кредити</value>
+  </data>
+  <data name="Payments.GlosifyCredits" xml:space="preserve">
+    <value>Кредити Glosify</value>
+  </data>
+  <data name="Payments.Hero" xml:space="preserve">
+    <value>Продовжуйте свій цикл навчання.</value>
+  </data>
+  <data name="Payments.Intro" xml:space="preserve">
+    <value>Кредити відкривають AI-функції навчання Glosify та живі субтитри.</value>
+  </data>
+  <data name="Payments.NotAvailable" xml:space="preserve">
+    <value>Платежі ще недоступні</value>
+  </data>
+  <data name="Payments.NotConnected" xml:space="preserve">
+    <value>Цей розгорток Glosify не підключено до Stripe.</value>
+  </data>
+  <data name="Payments.CreditPack" xml:space="preserve">
+    <value>Пакет кредитів</value>
+  </data>
+  <data name="Payments.CreditCount" xml:space="preserve">
+    <value>{0} кредитів</value>
+  </data>
+  <data name="Payments.ContinueCheckout" xml:space="preserve">
+    <value>Продовжити до безпечного оформлення</value>
+  </data>
+  <data name="Payments.StripeNotice" xml:space="preserve">
+    <value>Оформлення замовлення відбувається на Stripe. Glosify ніколи не отримує і не зберігає дані картки.</value>
+  </data>
+  <data name="Payments.Status" xml:space="preserve">
+    <value>Статус платежу</value>
+  </data>
+  <data name="Payments.Confirmed" xml:space="preserve">
+    <value>Платіж підтверджено</value>
+  </data>
+  <data name="Payments.Processing" xml:space="preserve">
+    <value>Обробка платежу</value>
+  </data>
+  <data name="Payments.Back" xml:space="preserve">
+    <value>Назад до Glosify</value>
+  </data>
+  <data name="Payments.AiCredits" xml:space="preserve">
+    <value>AI-кредити</value>
+  </data>
+  <data name="Payments.AiCreditAdmin" xml:space="preserve">
+    <value>Керування AI-кредитами</value>
+  </data>
+  <data name="Error.StartupDelay" xml:space="preserve">
+    <value>Тимчасова затримка запуску</value>
+  </data>
+  <data name="Error.RequestFailed" xml:space="preserve">
+    <value>Не вдалося виконати запит</value>
+  </data>
+  <data name="Error.RequestId" xml:space="preserve">
+    <value>ID запиту:</value>
+  </data>
+  <data name="Error.WarmupTitle" xml:space="preserve">
+    <value>Сервіс запускається</value>
+  </data>
+  <data name="Error.WarmupMessage" xml:space="preserve">
+    <value>Зачекайте мить і спробуйте ще раз.</value>
+  </data>
+  <data name="Error.GenericTitle" xml:space="preserve">
+    <value>Щось пішло не так</value>
+  </data>
+  <data name="Error.GenericMessage" xml:space="preserve">
+    <value>Не вдалося виконати запит. Спробуйте ще раз.</value>
+  </data>
+  <data name="Common.Undo" xml:space="preserve">
+    <value>Скасувати</value>
+  </data>
+  <data name="Common.Preview" xml:space="preserve">
+    <value>Попередній перегляд</value>
+  </data>
+  <data name="Custom.EditNamed" xml:space="preserve">
+    <value>Редагувати {0}</value>
+  </data>
+  <data name="Custom.AssistantTitle" xml:space="preserve">
+    <value>Помічник зі створення тестів</value>
+  </data>
+  <data name="Custom.AssistantEmpty" xml:space="preserve">
+    <value>Попросіть мене додати, налаштувати або впорядкувати елементи тесту.</value>
+  </data>
+  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
+    <value>Додайте запитання до цього власного тесту...</value>
+  </data>
+  <data name="Custom.Name" xml:space="preserve">
+    <value>Назва власного тесту</value>
+  </data>
+  <data name="Custom.LoadingEditor" xml:space="preserve">
+    <value>Завантаження елементів редактора…</value>
+  </data>
+  <data name="Custom.DesignStarters" xml:space="preserve">
+    <value>Початкові варіанти дизайну</value>
+  </data>
+  <data name="Custom.VisualDirection" xml:space="preserve">
+    <value>Оберіть візуальний напрям</value>
+  </data>
+  <data name="Custom.TemplateHelp" xml:space="preserve">
+    <value>Застосуйте лише стиль або замініть полотно повним макетом, зібраним зі слів цього тесту.</value>
+  </data>
+  <data name="Custom.UseStyle" xml:space="preserve">
+    <value>Використати стиль</value>
+  </data>
+  <data name="Custom.UseLayout" xml:space="preserve">
+    <value>Використати макет</value>
+  </data>
+  <data name="Custom.BuildingBlocks" xml:space="preserve">
+    <value>Конструктор тесту</value>
+  </data>
+  <data name="Custom.Blocks" xml:space="preserve">
+    <value>Блоки</value>
+  </data>
+  <data name="Custom.BlocksHelp" xml:space="preserve">
+    <value>Перетягніть у будь-яку вільну область або натисніть, щоб додати автоматично.</value>
+  </data>
+  <data name="Custom.DragAdd" xml:space="preserve">
+    <value>Перетягніть або натисніть, щоб додати {0}</value>
+  </data>
+  <data name="Custom.Add" xml:space="preserve">
+    <value>Додати {0}</value>
+  </data>
+  <data name="Custom.Grid" xml:space="preserve">
+    <value>Розумна сітка на 12 колонок</value>
+  </data>
+  <data name="Custom.GridHelp" xml:space="preserve">
+    <value>Перетягніть, щоб розмістити · краї прилипають · зайняті місця оминаються</value>
+  </data>
+  <data name="Custom.Canvas" xml:space="preserve">
+    <value>Полотно власного тесту</value>
+  </data>
+  <data name="Custom.Properties" xml:space="preserve">
+    <value>Властивості</value>
+  </data>
+  <data name="Custom.PropertiesHelp" xml:space="preserve">
+    <value>Виберіть блок, щоб редагувати його вміст і прив’язки.</value>
+  </data>
+  <data name="Custom.Answer" xml:space="preserve">
+    <value>Відповідь</value>
+  </data>
+  <data name="Custom.Choose" xml:space="preserve">
+    <value>Оберіть...</value>
+  </data>
+  <data name="Custom.CheckAnswers" xml:space="preserve">
+    <value>Перевірити відповіді</value>
+  </data>
+  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
+    <value>Завершіть тест, а потім надішліть відповіді.</value>
+  </data>
+  <data name="Custom.Block.Heading" xml:space="preserve">
+    <value>Заголовок</value>
+  </data>
+  <data name="Custom.Block.Instruction" xml:space="preserve">
+    <value>Інструкція</value>
+  </data>
+  <data name="Custom.Block.WordLabel" xml:space="preserve">
+    <value>Підпис слова</value>
+  </data>
+  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
+    <value>Підпис перекладу</value>
+  </data>
+  <data name="Custom.Block.TextInput" xml:space="preserve">
+    <value>Текстове поле</value>
+  </data>
+  <data name="Custom.Block.LongAnswer" xml:space="preserve">
+    <value>Розгорнута відповідь</value>
+  </data>
+  <data name="Custom.Block.Checkbox" xml:space="preserve">
+    <value>Прапорець</value>
+  </data>
+  <data name="Custom.Block.RadioChoices" xml:space="preserve">
+    <value>Варіанти з перемикачами</value>
+  </data>
+  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
+    <value>Варіанти з прапорцями</value>
+  </data>
+  <data name="Custom.Block.SelectMenu" xml:space="preserve">
+    <value>Випадне меню</value>
+  </data>
+  <data name="Custom.Block.WordBank" xml:space="preserve">
+    <value>Банк слів</value>
+  </data>
+  <data name="Custom.Block.SubmitButton" xml:space="preserve">
+    <value>Кнопка надсилання</value>
+  </data>
+  <data name="Custom.Block.Feedback" xml:space="preserve">
+    <value>Зворотний зв’язок</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
+    <value>Редакційний потік</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
+    <value>Спокійна ієрархія, щедрі відступи та одне чітке завдання в кожному рядку.</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
+    <value>Переклади, граматичні підказки, цільове відтворення</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
+    <value>Картки Aurora</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
+    <value>М’які кольори, парні картки для практики та енергійна атмосфера класу.</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
+    <value>Короткі набори лексики та візуальне сканування</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
+    <value>Вправи за зразком підручника</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
+    <value>Компактні пронумеровані рядки, змодельовані за зразком вправ із сфотографованого зошита.</value>
+  </data>
+  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
+    <value>Відмінювання, перетворення, пропуски та формальні вправи</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
+    <value>Лабораторія банку слів</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
+    <value>Сміливий банк слів веде вправу й робить відтворення грайливим.</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
+    <value>Кероване відтворення та лексика для початківців</value>
+  </data>
+  <data name="Custom.AnswerQuestion" xml:space="preserve">
+    <value>Дайте відповідь на це запитання.</value>
+  </data>
+  <data name="Custom.Correct" xml:space="preserve">
+    <value>Правильно.</value>
+  </data>
+  <data name="Custom.CorrectAnswer" xml:space="preserve">
+    <value>Правильна відповідь: {0}</value>
+  </data>
+  <data name="Custom.CompleteAnswers" xml:space="preserve">
+    <value>Заповніть усі відповіді, перш ніж надсилати.</value>
+  </data>
+  <data name="Custom.Score" xml:space="preserve">
+    <value>Рахунок: {0} із {1} ({2}%).</value>
+  </data>
+  <data name="Custom.GradeFailed" xml:space="preserve">
+    <value>Не вдалося оцінити цю вікторину. Спробуйте ще раз.</value>
+  </data>
+  <data name="Classroom.PostAnnouncement" xml:space="preserve">
+    <value>Опублікувати оголошення</value>
+  </data>
+  <data name="Classroom.ShareClass" xml:space="preserve">
+    <value>Поділіться чимось із класом</value>
+  </data>
+  <data name="Classroom.Post" xml:space="preserve">
+    <value>Опублікувати</value>
+  </data>
+  <data name="Classroom.Announcements" xml:space="preserve">
+    <value>Оголошення</value>
+  </data>
+  <data name="Classroom.PostOne" xml:space="preserve">
+    <value>публікація</value>
+  </data>
+  <data name="Classroom.PostMany" xml:space="preserve">
+    <value>публікацій</value>
+  </data>
+  <data name="Classroom.Pinned" xml:space="preserve">
+    <value>Закріплено</value>
+  </data>
+  <data name="Classroom.Unpin" xml:space="preserve">
+    <value>Відкріпити</value>
+  </data>
+  <data name="Classroom.Pin" xml:space="preserve">
+    <value>Закріпити</value>
+  </data>
+  <data name="Classroom.DeleteAnnouncement" xml:space="preserve">
+    <value>Видалити це оголошення?</value>
+  </data>
+  <data name="Classroom.NothingYet" xml:space="preserve">
+    <value>Тут поки що нічого немає.</value>
+  </data>
+  <data name="Classroom.PostFirst" xml:space="preserve">
+    <value>Спочатку опублікуйте оголошення вище.</value>
+  </data>
+  <data name="Classroom.NoTeacherPosts" xml:space="preserve">
+    <value>Ваш учитель ще нічого не опублікував.</value>
+  </data>
+  <data name="Classroom.OpenChat" xml:space="preserve">
+    <value>Відкрити чат класу</value>
+  </data>
+  <data name="Classroom.ClassChat" xml:space="preserve">
+    <value>Чат класу</value>
+  </data>
+  <data name="Classroom.ClassChatUpper" xml:space="preserve">
+    <value>ЧАТ КЛАСУ</value>
+  </data>
+  <data name="Classroom.Connecting" xml:space="preserve">
+    <value>Підключення…</value>
+  </data>
+  <data name="Classroom.CloseChat" xml:space="preserve">
+    <value>Закрити чат класу</value>
+  </data>
+  <data name="Classroom.LoadingMessages" xml:space="preserve">
+    <value>Завантаження повідомлень…</value>
+  </data>
+  <data name="Classroom.MessageClass" xml:space="preserve">
+    <value>Написати класу</value>
+  </data>
+  <data name="Classroom.ChatMessage" xml:space="preserve">
+    <value>Повідомлення в чаті</value>
+  </data>
+  <data name="Classroom.CallTitle" xml:space="preserve">
+    <value>{0} — дзвінок</value>
+  </data>
+  <data name="Classroom.NotConnected" xml:space="preserve">
+    <value>Немає підключення</value>
+  </data>
+  <data name="Classroom.Back" xml:space="preserve">
+    <value>Повернутися до класу</value>
+  </data>
+  <data name="Classroom.CallNotConfigured" xml:space="preserve">
+    <value>Відеодзвінки не налаштовано на цьому сервері. Адміністратору потрібно встановити</value>
+  </data>
+  <data name="Classroom.ReadyJoin" xml:space="preserve">
+    <value>Готові приєднатися?</value>
+  </data>
+  <data name="Classroom.JoinAs" xml:space="preserve">
+    <value>Ви приєднаєтеся як</value>
+  </data>
+  <data name="Classroom.MuteMic" xml:space="preserve">
+    <value>Вимкнути мікрофон</value>
+  </data>
+  <data name="Classroom.Mute" xml:space="preserve">
+    <value>Вимкнути звук</value>
+  </data>
+  <data name="Classroom.CameraOff" xml:space="preserve">
+    <value>Вимкнути камеру</value>
+  </data>
+  <data name="Classroom.Camera" xml:space="preserve">
+    <value>Камера</value>
+  </data>
+  <data name="Classroom.LeaveCall" xml:space="preserve">
+    <value>Покинути дзвінок</value>
+  </data>
+  <data name="Classroom.Leave" xml:space="preserve">
+    <value>Покинути</value>
+  </data>
+  <data name="Classroom.ReadyStart" xml:space="preserve">
+    <value>Готові почати?</value>
+  </data>
+  <data name="Classroom.NoOneCall" xml:space="preserve">
+    <value>У дзвінку ще нікого немає.</value>
+  </data>
+  <data name="Classroom.WaitingTeacher" xml:space="preserve">
+    <value>Очікування вчителя</value>
+  </data>
+  <data name="Classroom.JoinAfterTeacher" xml:space="preserve">
+    <value>Ви зможете приєднатися, коли вчитель почне дзвінок.</value>
+  </data>
+  <data name="Classroom.UnmuteMic" xml:space="preserve">
+    <value>Увімкнути мікрофон</value>
+  </data>
+  <data name="Classroom.CameraOn" xml:space="preserve">
+    <value>Увімкнути камеру</value>
+  </data>
+  <data name="Classroom.Connected" xml:space="preserve">
+    <value>Підключено</value>
+  </data>
+  <data name="Classroom.NoMessages" xml:space="preserve">
+    <value>Поки що немає повідомлень. Привітайтеся!</value>
+  </data>
+  <data name="Classroom.Reconnecting" xml:space="preserve">
+    <value>Повторне підключення…</value>
+  </data>
+  <data name="Classroom.ActionInvalid" xml:space="preserve">
+    <value>Не вдалося виконати дію в класі. Перевірте введені дані та доступ.</value>
+  </data>
+  <data name="Classroom.Created" xml:space="preserve">
+    <value>Створено {0}.</value>
+  </data>
+  <data name="Classroom.CreateInvalid" xml:space="preserve">
+    <value>Введіть дійсну назву та опис класу.</value>
+  </data>
+  <data name="Classroom.NoCodeMatch" xml:space="preserve">
+    <value>Жоден клас не відповідає цьому коду приєднання.</value>
+  </data>
+  <data name="Classroom.InvitationUnavailable" xml:space="preserve">
+    <value>Це запрошення більше недоступне.</value>
+  </data>
+  <data name="Classroom.Welcome" xml:space="preserve">
+    <value>Ласкаво просимо до {0}.</value>
+  </data>
+  <data name="Classroom.WelcomeSwitched" xml:space="preserve">
+    <value>Ласкаво просимо до {0}. Вас переключено на {1}.</value>
+  </data>
+  <data name="Classroom.InvitationDeclined" xml:space="preserve">
+    <value>Запрошення відхилено.</value>
+  </data>
+  <data name="Classroom.NotFound" xml:space="preserve">
+    <value>Клас не знайдено.</value>
+  </data>
+  <data name="Classroom.Left" xml:space="preserve">
+    <value>Ви покинули клас.</value>
+  </data>
+  <data name="Classroom.ActionDenied" xml:space="preserve">
+    <value>Ви не можете виконати цю дію в цьому класі.</value>
+  </data>
+  <data name="Classroom.Deleted" xml:space="preserve">
+    <value>Клас видалено.</value>
+  </data>
+  <data name="Explore.PublicQuiz" xml:space="preserve">
+    <value>Публічна вікторина</value>
+  </data>
+  <data name="Explore.CustomExercises" xml:space="preserve">
+    <value>Вправи, створені на основі лексики цієї вікторини.</value>
+  </data>
+  <data name="Explore.NoPublicWords" xml:space="preserve">
+    <value>До цієї публічної вікторини ще не додано жодного слова.</value>
+  </data>
+  <data name="Explore.NoPublicSentences" xml:space="preserve">
+    <value>До цієї публічної вікторини ще не додано жодного речення.</value>
+  </data>
+  <data name="Explore.PublicCollection" xml:space="preserve">
+    <value>Публічна добірка</value>
+  </data>
+  <data name="Explore.CollectionIntro" xml:space="preserve">
+    <value>Перегляньте {0} {1} у {2} добірках, а потім скопіюйте весь набір до своєї бібліотеки.</value>
+  </data>
+  <data name="Explore.CollectionSummary" xml:space="preserve">
+    <value>Зведення добірки</value>
+  </data>
+  <data name="Explore.CopyCollection" xml:space="preserve">
+    <value>Копіювати добірку</value>
+  </data>
+  <data name="Explore.InCollection" xml:space="preserve">
+    <value>У цій добірці</value>
+  </data>
+  <data name="Explore.FiledInside" xml:space="preserve">
+    <value>Вікторини, розміщені безпосередньо в {0}.</value>
+  </data>
+  <data name="Explore.NoDirectQuizzes" xml:space="preserve">
+    <value>У цій добірці немає вікторин, розміщених безпосередньо.</value>
+  </data>
+  <data name="Common.Remove" xml:space="preserve">
+    <value>Видалити</value>
+  </data>
+  <data name="Classroom.ShareQuiz" xml:space="preserve">
+    <value>Поділитися вікториною</value>
+  </data>
+  <data name="Classroom.QuizLibrary" xml:space="preserve">
+    <value>Вікторина з вашої бібліотеки</value>
+  </data>
+  <data name="Classroom.Share" xml:space="preserve">
+    <value>Поділитися</value>
+  </data>
+  <data name="Classroom.AllQuizzesShared" xml:space="preserve">
+    <value>Усі ваші вікторини вже поширено тут, або ваша бібліотека порожня.</value>
+  </data>
+  <data name="Classroom.ShareBook" xml:space="preserve">
+    <value>Поділитися книгою</value>
+  </data>
+  <data name="Classroom.BookLibrary" xml:space="preserve">
+    <value>Книга з вашої бібліотеки</value>
+  </data>
+  <data name="Classroom.AllBooksShared" xml:space="preserve">
+    <value>Усі ваші книги вже поширено тут, або у вас немає завантажень.</value>
+  </data>
+  <data name="Classroom.First" xml:space="preserve">
+    <value>спочатку.</value>
+  </data>
+  <data name="Classroom.SharedContent" xml:space="preserve">
+    <value>Спільний вміст</value>
+  </data>
+  <data name="Classroom.ItemOne" xml:space="preserve">
+    <value>елемент</value>
+  </data>
+  <data name="Classroom.ItemMany" xml:space="preserve">
+    <value>елементи</value>
+  </data>
+  <data name="Classroom.Removed" xml:space="preserve">
+    <value>Видалено</value>
+  </data>
+  <data name="Classroom.SharedBy" xml:space="preserve">
+    <value>Надано користувачем {0}</value>
+  </data>
+  <data name="Classroom.CopyLibrary" xml:space="preserve">
+    <value>Скопіювати до моєї бібліотеки</value>
+  </data>
+  <data name="Classroom.OpenPdf" xml:space="preserve">
+    <value>Відкрити PDF</value>
+  </data>
+  <data name="Classroom.RemoveConfirm" xml:space="preserve">
+    <value>Видалити це з класу?</value>
+  </data>
+  <data name="Classroom.NoSharedContent" xml:space="preserve">
+    <value>Ще немає спільного вмісту.</value>
+  </data>
+  <data name="Classroom.QuizResults" xml:space="preserve">
+    <value>Результати вікторини</value>
+  </data>
+  <data name="Classroom.AttemptOne" xml:space="preserve">
+    <value>спроба</value>
+  </data>
+  <data name="Classroom.AttemptMany" xml:space="preserve">
+    <value>спроби</value>
+  </data>
+  <data name="Classroom.FromPractice" xml:space="preserve">
+    <value>із практики в класі</value>
+  </data>
+  <data name="Classroom.Score" xml:space="preserve">
+    <value>Оцінка</value>
+  </data>
+  <data name="Classroom.Completed" xml:space="preserve">
+    <value>Завершено</value>
+  </data>
+  <data name="Classroom.NoAttempts" xml:space="preserve">
+    <value>Спроб ще немає. Результати з’являться, коли учасники потренуються у вікторинах із вкладки Вміст.</value>
+  </data>
+  <data name="Classroom.MemberResultsTitle" xml:space="preserve">
+    <value>{0} — результати</value>
+  </data>
+  <data name="Classroom.Skipped" xml:space="preserve">
+    <value>Пропущено</value>
+  </data>
+  <data name="Classroom.NoMemberAttempts" xml:space="preserve">
+    <value>Для цього учасника ще не зафіксовано жодної спроби.</value>
+  </data>
+  <data name="Classroom.InviteEmail" xml:space="preserve">
+    <value>Запросити електронною поштою</value>
+  </data>
+  <data name="Classroom.Role" xml:space="preserve">
+    <value>Роль</value>
+  </data>
+  <data name="Classroom.Student" xml:space="preserve">
+    <value>Учень</value>
+  </data>
+  <data name="Classroom.Teacher" xml:space="preserve">
+    <value>Викладач</value>
+  </data>
+  <data name="Classroom.Invite" xml:space="preserve">
+    <value>Запросити</value>
+  </data>
+  <data name="Classroom.InviteHelp" xml:space="preserve">
+    <value>Запрошення з’явиться на сторінці Класи цієї людини, коли вона ввійде в систему з цією адресою — листа не надсилається.</value>
+  </data>
+  <data name="Classroom.CodeAnyone" xml:space="preserve">
+    <value>Будь-хто з кодом</value>
+  </data>
+  <data name="Classroom.CodeCanJoin" xml:space="preserve">
+    <value>може приєднатися як учень.</value>
+  </data>
+  <data name="Classroom.JoiningCurrently" xml:space="preserve">
+    <value>Приєднання наразі</value>
+  </data>
+  <data name="Classroom.Enabled" xml:space="preserve">
+    <value>увімкнено</value>
+  </data>
+  <data name="Classroom.Paused" xml:space="preserve">
+    <value>призупинено</value>
+  </data>
+  <data name="Classroom.NewCode" xml:space="preserve">
+    <value>Новий код</value>
+  </data>
+  <data name="Classroom.PauseJoining" xml:space="preserve">
+    <value>Призупинити приєднання</value>
+  </data>
+  <data name="Classroom.ResumeJoining" xml:space="preserve">
+    <value>Відновити приєднання</value>
+  </data>
+  <data name="Classroom.Joined" xml:space="preserve">
+    <value>приєднався</value>
+  </data>
+  <data name="Classroom.MakeRole" xml:space="preserve">
+    <value>Зробити {0}</value>
+  </data>
+  <data name="Classroom.RemoveMemberConfirm" xml:space="preserve">
+    <value>Видалити {0} з класу?</value>
+  </data>
+  <data name="Classroom.DeleteForEveryone" xml:space="preserve">
+    <value>Видалити цей клас для всіх? Спільні вікторини й книги залишаться в бібліотеках своїх власників.</value>
+  </data>
+  <data name="Classroom.DeleteClassroom" xml:space="preserve">
+    <value>Видалити клас</value>
+  </data>
+  <data name="Classroom.LeaveConfirm" xml:space="preserve">
+    <value>Покинути цей клас?</value>
+  </data>
+  <data name="Classroom.LeaveClassroom" xml:space="preserve">
+    <value>Покинути клас</value>
+  </data>
+  <data name="Classroom.AddLesson" xml:space="preserve">
+    <value>Додати урок</value>
+  </data>
+  <data name="Classroom.TitleLabel" xml:space="preserve">
+    <value>Назва</value>
+  </data>
+  <data name="Classroom.DescriptionOptional" xml:space="preserve">
+    <value>Опис (необов’язково)</value>
+  </data>
+  <data name="Classroom.ScheduledOptional" xml:space="preserve">
+    <value>Заплановано на (необов’язково)</value>
+  </data>
+  <data name="Classroom.AddAssignment" xml:space="preserve">
+    <value>Додати завдання</value>
+  </data>
+  <data name="Classroom.InstructionsOptional" xml:space="preserve">
+    <value>Інструкції (необов’язково)</value>
+  </data>
+  <data name="Classroom.QuizOptional" xml:space="preserve">
+    <value>Вікторина (необов’язково, зі спільного вмісту)</value>
+  </data>
+  <data name="Classroom.NoQuiz" xml:space="preserve">
+    <value>Немає вікторини</value>
+  </data>
+  <data name="Classroom.LessonOptional" xml:space="preserve">
+    <value>Урок (необов’язково)</value>
+  </data>
+  <data name="Classroom.NoLesson" xml:space="preserve">
+    <value>Немає уроку</value>
+  </data>
+  <data name="Classroom.DueOptional" xml:space="preserve">
+    <value>Термін виконання (необов’язково)</value>
+  </data>
+  <data name="Classroom.CoursePlan" xml:space="preserve">
+    <value>План курсу</value>
+  </data>
+  <data name="Classroom.LessonOne" xml:space="preserve">
+    <value>урок</value>
+  </data>
+  <data name="Classroom.LessonMany" xml:space="preserve">
+    <value>уроки</value>
+  </data>
+  <data name="Classroom.AssignmentOne" xml:space="preserve">
+    <value>завдання</value>
+  </data>
+  <data name="Classroom.AssignmentMany" xml:space="preserve">
+    <value>завдання</value>
+  </data>
+  <data name="Classroom.DeleteLessonConfirm" xml:space="preserve">
+    <value>Видалити цей урок? Його завдання залишаться, але будуть без прив’язки.</value>
+  </data>
+  <data name="Classroom.DeleteLesson" xml:space="preserve">
+    <value>Видалити урок</value>
+  </data>
+  <data name="Classroom.NoAssignmentsLesson" xml:space="preserve">
+    <value>Для цього уроку немає завдань.</value>
+  </data>
+  <data name="Classroom.OtherAssignments" xml:space="preserve">
+    <value>Інші завдання</value>
+  </data>
+  <data name="Classroom.NoPlanYet" xml:space="preserve">
+    <value>Ще немає уроків або завдань.</value>
+  </data>
+  <data name="Classroom.PlanAbove" xml:space="preserve">
+    <value>Заплануйте курс вище.</value>
+  </data>
+  <data name="Classroom.NoTeacherPlan" xml:space="preserve">
+    <value>Ваш учитель ще нічого не запланував.</value>
+  </data>
+  <data name="Classroom.Due" xml:space="preserve">
+    <value>Термін здачі</value>
+  </data>
+  <data name="Classroom.StudentsCompleted" xml:space="preserve">
+    <value>{0} із {1} студентів завершили</value>
+  </data>
+  <data name="Classroom.DoneBest" xml:space="preserve">
+    <value>Готово — найкращий результат {0}%</value>
+  </data>
+  <data name="Classroom.NotDone" xml:space="preserve">
+    <value>Ще не виконано</value>
+  </data>
+  <data name="Classroom.DeleteAssignmentConfirm" xml:space="preserve">
+    <value>Видалити це завдання?</value>
+  </data>
+  <data name="Speaking.BarMenu" xml:space="preserve">
+    <value>Меню бару</value>
+  </data>
+  <data name="Speaking.YourWallet" xml:space="preserve">
+    <value>Ваш гаманець</value>
+  </data>
+  <data name="Speaking.NoBill" xml:space="preserve">
+    <value>Рахунку ще немає</value>
+  </data>
+  <data name="Speaking.CloseWallet" xml:space="preserve">
+    <value>Закрити гаманець</value>
+  </data>
+  <data name="Speaking.Selected" xml:space="preserve">
+    <value>Вибрано</value>
+  </data>
+  <data name="Speaking.SceneActions" xml:space="preserve">
+    <value>Дії сцени</value>
+  </data>
+  <data name="Speaking.NextMonth" xml:space="preserve">
+    <value>на початку наступного місяця</value>
+  </data>
+  <data name="Speaking.PaidPaused" xml:space="preserve">
+    <value>Платні функції розмови призупинено до {0}.</value>
+  </data>
+  <data name="Speaking.SessionReady" xml:space="preserve">
+    <value>Ваша сесія для практики готова.</value>
+  </data>
+  <data name="Speaking.Unavailable" xml:space="preserve">
+    <value>Практика розмови недоступна</value>
+  </data>
+  <data name="Speaking.NewSessionConfirm" xml:space="preserve">
+    <value>Почати нову сесію? Поточну розмову буде очищено.</value>
+  </data>
+  <data name="Speaking.UpdatingQuiz" xml:space="preserve">
+    <value>Оновлюємо практичну вікторину викладача…</value>
+  </data>
+  <data name="Speaking.PractisingNamed" xml:space="preserve">
+    <value>Практикуємо {0}.</value>
+  </data>
+  <data name="Speaking.FreeModeActive" xml:space="preserve">
+    <value>Активовано режим вільного уроку.</value>
+  </data>
+  <data name="Speaking.Voice" xml:space="preserve">
+    <value>Голос</value>
+  </data>
+  <data name="Speaking.Typed" xml:space="preserve">
+    <value>Введено текстом</value>
+  </data>
+  <data name="Speaking.StartBeforeSend" xml:space="preserve">
+    <value>Почніть розмовну сесію, перш ніж надсилати повідомлення.</value>
+  </data>
+  <data name="Speaking.AvatarThinking" xml:space="preserve">
+    <value>{0} думає…</value>
+  </data>
+  <data name="Speaking.Avatar" xml:space="preserve">
+    <value>Аватар</value>
+  </data>
+  <data name="Speaking.SessionEnded" xml:space="preserve">
+    <value>Сесію завершено · почати нову сесію</value>
+  </data>
+  <data name="Speaking.TakingSip" xml:space="preserve">
+    <value>Роблю ковток…</value>
+  </data>
+  <data name="Speaking.TakingSnack" xml:space="preserve">
+    <value>Підкріплююсь…</value>
+  </data>
+  <data name="Speaking.AvatarReacting" xml:space="preserve">
+    <value>{0} реагує…</value>
+  </data>
+  <data name="Speaking.MomentPassed" xml:space="preserve">
+    <value>Цей момент минув. Продовжуйте спілкування або спробуйте іншу дію.</value>
+  </data>
+  <data name="Speaking.RecordUnavailable" xml:space="preserve">
+    <value>Цей браузер не може записувати мовлення тут. Текстовий чат і далі доступний.</value>
+  </data>
+  <data name="Speaking.Starting" xml:space="preserve">
+    <value>Запускаємо…</value>
+  </data>
+  <data name="Speaking.MicConnectingAuto" xml:space="preserve">
+    <value>Підключаємося до мікрофона. Почніть говорити, коли все буде готово.</value>
+  </data>
+  <data name="Speaking.MicConnectingHold" xml:space="preserve">
+    <value>Підключаємося до мікрофона. Продовжуйте тримати кнопку.</value>
+  </data>
+  <data name="Speaking.Listening" xml:space="preserve">
+    <value>Слухаю…</value>
+  </data>
+  <data name="Speaking.SpeakNaturally" xml:space="preserve">
+    <value>Говоріть природно. Запис зупиниться, коли ви закінчите.</value>
+  </data>
+  <data name="Speaking.ReleaseSend" xml:space="preserve">
+    <value>Відпустіть, щоб надіслати</value>
+  </data>
+  <data name="Speaking.KeepHolding" xml:space="preserve">
+    <value>Продовжуйте тримати, поки говорите. Відпустіть кнопку, щоб надіслати.</value>
+  </data>
+  <data name="Speaking.Transcribing" xml:space="preserve">
+    <value>Розпізнаємо мовлення…</value>
+  </data>
+  <data name="Speaking.FinishingTranscript" xml:space="preserve">
+    <value>Завершуємо розшифрування…</value>
+  </data>
+  <data name="Speaking.NotCaughtComposer" xml:space="preserve">
+    <value>Azure Speech це не розпізнав. Натисніть «Говорити», щоб ввести текст і спробувати ще раз.</value>
+  </data>
+  <data name="Speaking.NotCaughtAvatar" xml:space="preserve">
+    <value>Azure Speech це не розпізнав. Утримуйте червону кнопку й спробуйте ще раз.</value>
+  </data>
+  <data name="Speaking.RecordingTooLong" xml:space="preserve">
+    <value>Запис занадто довгий. Скоротіть розшифровку й натисніть «Надіслати».</value>
+  </data>
+  <data name="Speaking.TranscriptSending" xml:space="preserve">
+    <value>Розшифровка готова. Надсилаємо…</value>
+  </data>
+  <data name="Speaking.TranscriptReady" xml:space="preserve">
+    <value>Розшифровка готова. Перегляньте або відредагуйте її, а потім натисніть «Надіслати».</value>
+  </data>
+  <data name="Speaking.MicFailed" xml:space="preserve">
+    <value>Не вдалося отримати доступ до мікрофона. Текстовий чат і далі доступний.</value>
+  </data>
+  <data name="Speaking.SpeechFinishFailed" xml:space="preserve">
+    <value>Azure Speech не вдалося завершити запис.</value>
+  </data>
+  <data name="Speaking.Scene.PoursDrink" xml:space="preserve">
+    <value>Marek наливає ваш напій і підсуває його вам.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSnack" xml:space="preserve">
+    <value>Ви берете paluszki.</value>
+  </data>
+  <data name="Speaking.Scene.OffersSnack" xml:space="preserve">
+    <value>Marek пропонує вам paluszki.</value>
+  </data>
+  <data name="Speaking.Scene.ClearsGlass" xml:space="preserve">
+    <value>Marek забирає порожній келих.</value>
+  </data>
+  <data name="Speaking.Scene.PolishesGlass" xml:space="preserve">
+    <value>Marek полірує келих.</value>
+  </data>
+  <data name="Speaking.Scene.WipesCounter" xml:space="preserve">
+    <value>Marek витирає стійку.</value>
+  </data>
+  <data name="Speaking.Scene.LastCall" xml:space="preserve">
+    <value>Останнє замовлення.</value>
+  </data>
+  <data name="Speaking.Scene.ItemUnavailable" xml:space="preserve">
+    <value>Цього товару немає в наявності.</value>
+  </data>
+  <data name="Speaking.Scene.FinishDrink" xml:space="preserve">
+    <value>Ви допиваєте напій.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSip" xml:space="preserve">
+    <value>Ви робите ковток.</value>
+  </data>
+  <data name="Speaking.Scene.PresentsBill" xml:space="preserve">
+    <value>Marek подає рахунок на {0} zł.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentRejected" xml:space="preserve">
+    <value>{0} zł недостатньо. Нічого не знято.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentAccepted" xml:space="preserve">
+    <value>Marek приймає {0} zł.</value>
+  </data>
+  <data name="Speaking.Scene.ReturnsChange" xml:space="preserve">
+    <value>Marek повертає решту {0} zł.</value>
+  </data>
+  <data name="Reader.ReadingSentence" xml:space="preserve">
+    <value>Читаємо сторінку {0} · речення {1} з {2}</value>
+  </data>
+  <data name="Reader.ReadingSelectionPart" xml:space="preserve">
+    <value>Читаємо виділений фрагмент · частина {0} з {1}</value>
+  </data>
+  <data name="Reader.ReadingSelection" xml:space="preserve">
+    <value>Читаємо виділений текст…</value>
+  </data>
+  <data name="Reader.ReadingPage" xml:space="preserve">
+    <value>Читаємо сторінку {0}…</value>
+  </data>
+  <data name="Reader.FinishedSelection" xml:space="preserve">
+    <value>Читання виділеного фрагмента завершено.</value>
+  </data>
+  <data name="Reader.FinishedPage" xml:space="preserve">
+    <value>Читання сторінки {0} завершено.</value>
+  </data>
+  <data name="Reader.ReadingStopped" xml:space="preserve">
+    <value>Читання зупинено.</value>
+  </data>
+  <data name="Reader.Detected" xml:space="preserve">
+    <value>Виявлено {0}</value>
+  </data>
+  <data name="Reader.DetectedCached" xml:space="preserve">
+    <value>Виявлено {0} · з кешу</value>
+  </data>
+  <data name="Reader.CachedTranslation" xml:space="preserve">
+    <value>Переклад із кешу</value>
+  </data>
+  <data name="Reader.NoSelectableTextPage" xml:space="preserve">
+    <value>На цій сторінці не знайдено тексту, який можна виділити.</value>
+  </data>
+  <data name="Reader.RenderFailed" xml:space="preserve">
+    <value>Не вдалося відобразити цю сторінку.</value>
+  </data>
+  <data name="Reader.PdfLoadFailed" xml:space="preserve">
+    <value>Не вдалося завантажити PDF.</value>
+  </data>
+  <data name="Editor.Heading" xml:space="preserve">
+    <value>Заголовок</value>
+  </data>
+  <data name="Editor.Instruction" xml:space="preserve">
+    <value>Інструкція</value>
+  </data>
+  <data name="Editor.WordLabel" xml:space="preserve">
+    <value>Мітка слова</value>
+  </data>
+  <data name="Editor.TranslationLabel" xml:space="preserve">
+    <value>Мітка перекладу</value>
+  </data>
+  <data name="Editor.TextInput" xml:space="preserve">
+    <value>Текстове поле</value>
+  </data>
+  <data name="Editor.LongAnswer" xml:space="preserve">
+    <value>Розгорнута відповідь</value>
+  </data>
+  <data name="Editor.Checkbox" xml:space="preserve">
+    <value>Прапорець</value>
+  </data>
+  <data name="Editor.RadioChoices" xml:space="preserve">
+    <value>Варіанти з радіокнопками</value>
+  </data>
+  <data name="Editor.CheckboxChoices" xml:space="preserve">
+    <value>Варіанти з прапорцями</value>
+  </data>
+  <data name="Editor.SelectMenu" xml:space="preserve">
+    <value>Випадне меню</value>
+  </data>
+  <data name="Editor.WordBank" xml:space="preserve">
+    <value>Банк слів</value>
+  </data>
+  <data name="Editor.SubmitButton" xml:space="preserve">
+    <value>Кнопка «Надіслати»</value>
+  </data>
+  <data name="Editor.Feedback" xml:space="preserve">
+    <value>Відгук</value>
+  </data>
+  <data name="Editor.EmptyCanvas" xml:space="preserve">
+    <value>Перетягніть будь-який блок на це полотно, щоб почати.</value>
+  </data>
+  <data name="Editor.MoveLeft" xml:space="preserve">
+    <value>Перемістити вліво</value>
+  </data>
+  <data name="Editor.MoveUp" xml:space="preserve">
+    <value>Перемістити вгору</value>
+  </data>
+  <data name="Editor.MoveDown" xml:space="preserve">
+    <value>Перемістити вниз</value>
+  </data>
+  <data name="Editor.MoveRight" xml:space="preserve">
+    <value>Перемістити вправо</value>
+  </data>
+  <data name="Editor.RemoveBlock" xml:space="preserve">
+    <value>Видалити блок</value>
+  </data>
+  <data name="Editor.Resize" xml:space="preserve">
+    <value>Перетягніть, щоб змінити ширину</value>
+  </data>
+  <data name="Editor.Word" xml:space="preserve">
+    <value>Слово</value>
+  </data>
+  <data name="Editor.DisplayField" xml:space="preserve">
+    <value>Поле відображення</value>
+  </data>
+  <data name="Editor.Words" xml:space="preserve">
+    <value>Слова</value>
+  </data>
+  <data name="Editor.Options" xml:space="preserve">
+    <value>Варіанти</value>
+  </data>
+  <data name="Editor.CorrectOption" xml:space="preserve">
+    <value>Правильний варіант</value>
+  </data>
+  <data name="Editor.RemoveOption" xml:space="preserve">
+    <value>Видалити варіант</value>
+  </data>
+  <data name="Editor.AddOption" xml:space="preserve">
+    <value>Додати варіант</value>
+  </data>
+  <data name="Editor.Properties" xml:space="preserve">
+    <value>Властивості</value>
+  </data>
+  <data name="Editor.SelectBlock" xml:space="preserve">
+    <value>Виберіть блок, щоб редагувати його вміст і прив’язки.</value>
+  </data>
+  <data name="Editor.TargetInputs" xml:space="preserve">
+    <value>Цільові поля введення</value>
+  </data>
+  <data name="Editor.PreviewOnly" xml:space="preserve">
+    <value>Лише попередній перегляд — збережіть і запустіть, щоб записати оцінювану спробу.</value>
+  </data>
+  <data name="Editor.BackToEditor" xml:space="preserve">
+    <value>Назад до редактора</value>
+  </data>
+  <data name="Editor.Preview" xml:space="preserve">
+    <value>Попередній перегляд</value>
+  </data>
+  <data name="Editor.PreviewingOne" xml:space="preserve">
+    <value>Попередній перегляд {0} блоку.</value>
+  </data>
+  <data name="Editor.PreviewingMany" xml:space="preserve">
+    <value>Попередній перегляд {0} блоків.</value>
+  </data>
+  <data name="Editor.ReadyOne" xml:space="preserve">
+    <value>Редактор готовий · на полотні {0} блок. Скористайтеся +, щоб додати блок, або перетягніть його.</value>
+  </data>
+  <data name="Editor.ReadyMany" xml:space="preserve">
+    <value>Редактор готовий · на полотні {0} блоків. Скористайтеся +, щоб додати блок, або перетягніть його.</value>
+  </data>
+  <data name="Editor.ReplaceConfirm" xml:space="preserve">
+    <value>Замінити поточне полотно макетом {0}? Ви можете скасувати цю зміну.</value>
+  </data>
+  <data name="Editor.SaveFailed" xml:space="preserve">
+    <value>Не вдалося зберегти цю власну вікторину.</value>
+  </data>
+  <data name="Editor.SavedPlayable" xml:space="preserve">
+    <value>Збережено. Цю вікторину можна запускати.</value>
+  </data>
+  <data name="Editor.DraftSaved" xml:space="preserve">
+    <value>Чернетку збережено. Завершіть обов’язкові поля вікторини, перш ніж запускати її.</value>
+  </data>
+  <data name="Editor.SaveStopped" xml:space="preserve">
+    <value>Запит на збереження несподівано зупинився. Спробуйте ще раз.</value>
+  </data>
+  <data name="Editor.WordLemma" xml:space="preserve">
+    <value>Слово / лема</value>
+  </data>
+  <data name="Editor.Translation" xml:space="preserve">
+    <value>Переклад</value>
+  </data>
+  <data name="Editor.Width" xml:space="preserve">
+    <value>Ширина</value>
+  </data>
+  <data name="Editor.Column" xml:space="preserve">
+    <value>Стовпець</value>
+  </data>
+  <data name="Editor.ColumnNumber" xml:space="preserve">
+    <value>Стовпець {0}</value>
+  </data>
+  <data name="Editor.Row" xml:space="preserve">
+    <value>Рядок</value>
+  </data>
+  <data name="Editor.Text" xml:space="preserve">
+    <value>Текст</value>
+  </data>
+  <data name="Editor.LiveBinding" xml:space="preserve">
+    <value>Живе прив’язування слова</value>
+  </data>
+  <data name="Editor.ExerciseRow" xml:space="preserve">
+    <value>Рядок вправи (використовуйте {{blank}})</value>
+  </data>
+  <data name="Editor.AccessibleLabel" xml:space="preserve">
+    <value>Мітка доступності</value>
+  </data>
+  <data name="Editor.CustomExpected" xml:space="preserve">
+    <value>Власна очікувана відповідь</value>
+  </data>
+  <data name="Editor.ExpectedBinding" xml:space="preserve">
+    <value>Очікуване прив’язування слова</value>
+  </data>
+  <data name="Editor.DisplayedWord" xml:space="preserve">
+    <value>Відображуване слово</value>
+  </data>
+  <data name="Editor.ExpectedChecked" xml:space="preserve">
+    <value>Має бути позначено</value>
+  </data>
+  <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
+    <value>Ця вікторина більше не є публічною.</value>
+  </data>
+  <data name="Explore.CollectionNoLongerPublic" xml:space="preserve">
+    <value>Ця колекція більше не є публічною.</value>
+  </data>
+  <data name="Explore.CopiedToLibrary" xml:space="preserve">
+    <value>{0} скопійовано до вашої бібліотеки.</value>
+  </data>
+  <data name="Classroom.InvitationCreated" xml:space="preserve">
+    <value>Запрошення створено. Воно з’явиться на їхній сторінці Classroom під час наступного входу.</value>
+  </data>
+  <data name="Classroom.JoinCodeRegenerated" xml:space="preserve">
+    <value>Код приєднання згенеровано повторно.</value>
+  </data>
+  <data name="Classroom.NoAccessResults" xml:space="preserve">
+    <value>У вас немає доступу до цих результатів.</value>
+  </data>
+  <data name="Classroom.QuizShared" xml:space="preserve">
+    <value>Вікторину опубліковано.</value>
+  </data>
+  <data name="Classroom.BookShared" xml:space="preserve">
+    <value>Книгу опубліковано.</value>
+  </data>
+  <data name="Classroom.RemovedFromClassroom" xml:space="preserve">
+    <value>Видалено з Classroom.</value>
+  </data>
+  <data name="Classroom.QuizCopyFailed" xml:space="preserve">
+    <value>Не вдалося скопіювати цю вікторину.</value>
+  </data>
+  <data name="Classroom.Member" xml:space="preserve">
+    <value>Учасник</value>
+  </data>
+  <data name="Common.Unknown" xml:space="preserve">
+    <value>Невідомо</value>
+  </data>
+  <data name="Account.LogOut" xml:space="preserve">
+    <value>Вийти</value>
+  </data>
+  <data name="Account.LogIn" xml:space="preserve">
+    <value>Увійти</value>
+  </data>
+  <data name="Common.Send" xml:space="preserve">
+    <value>Надіслати</value>
+  </data>
+  <data name="Speaking.ConversationLab" xml:space="preserve">
+    <value>Лабораторія розмов {0}</value>
+  </data>
+  <data name="Speaking.MessageLabel" xml:space="preserve">
+    <value>Ваше повідомлення {0}</value>
+  </data>
+  <data name="Speaking.MessagePlaceholder" xml:space="preserve">
+    <value>Пишіть {0} або скористайтеся мікрофоном…</value>
+  </data>
+  <data name="Speaking.MicAria" xml:space="preserve">
+    <value>Почати голосову транскрипцію в {0}; запис зупиниться після того, як ви завершите мовлення</value>
+  </data>
+  <data name="Speaking.PrivacyNote" xml:space="preserve">
+    <value>Аудіо передається безпосередньо до Azure Speech. Ця розмова зберігається лише протягом поточної сесії.</value>
+  </data>
+  <data name="Speaking.ClickTranslate" xml:space="preserve">
+    <value>Натисніть, щоб перекласти</value>
+  </data>
+  <data name="Speaking.ClickShowLanguage" xml:space="preserve">
+    <value>Натисніть, щоб показати {0}</value>
+  </data>
+  <data name="Speaking.CoachFeedback" xml:space="preserve">
+    <value>Відгук коуча</value>
+  </data>
+  <data name="Speaking.MoreNatural" xml:space="preserve">
+    <value>Природніше {0}</value>
+  </data>
+</root>

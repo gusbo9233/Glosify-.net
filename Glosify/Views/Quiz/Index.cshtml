@@ -1,7 +1,7 @@
 @model QuizIndexViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = "Select Quiz";
+    ViewData["Title"] = Text["Quiz.LibraryTitle"];
     ViewData["ActiveNav"] = "quizzes";
 
     var currentLanguage = Model.CurrentLanguage;
@@ -9,10 +9,11 @@
     var currentCollectionId = currentCollection?.Id;
     var childCollections = Model.Collections.Where(collection => collection.ParentCollectionId == currentCollectionId).ToList();
     var visibleQuizzes = Model.Quizzes.Where(quiz => quiz.CollectionId == currentCollectionId).ToList();
-    var pageTitle = currentCollection?.Name ?? "Select a quiz";
+    var displayLanguage = QuizLanguageDisplay.Name(currentLanguage);
+    var pageTitle = currentCollection?.Name ?? Text["Quiz.SelectQuiz"];
     var pageSubtitle = currentCollection == null
-        ? $"Showing your {currentLanguage} quizzes."
-        : $"{currentLanguage} collection.";
+        ? Text["Quiz.ShowingLanguage", displayLanguage]
+        : Text["Quiz.LanguageCollection", displayLanguage];
 }
 
 @section Styles {
@@ -24,14 +25,14 @@
         <div class="select-heading">
             <p class="select-kicker">
                 <span class="material-symbols-outlined" aria-hidden="true">stacks</span>
-                Quiz Library <span class="select-kicker-separator">/</span> @currentLanguage
+                @Text["Quiz.Library"] <span class="select-kicker-separator">/</span> @displayLanguage
             </p>
             <h1 class="select-title">@pageTitle</h1>
             <p class="select-subtitle">
                 @pageSubtitle
                 @if (currentCollection == null)
                 {
-                    <a class="language-change-link" asp-controller="Languages" asp-action="Index">Change language</a>
+                    <a class="language-change-link" asp-controller="Languages" asp-action="Index">@Text["Quiz.ChangeLanguage"]</a>
                 }
             </p>
             @if (currentCollection != null)
@@ -41,19 +42,19 @@
                     <input type="hidden" name="isPublic" value="@(currentCollection.IsPublic ? "false" : "true")" />
                     <button class="btn-inline-share" type="submit">
                         <span class="material-symbols-outlined">@(currentCollection.IsPublic ? "lock" : "public")</span>
-                        @(currentCollection.IsPublic ? "Make collection private" : "Make collection public")
+                        @(currentCollection.IsPublic ? Text["Quiz.MakePrivate"] : Text["Quiz.MakePublic"])
                     </button>
-                    <span class="status-pill">@(currentCollection.IsPublic ? "Public subtree" : "Private")</span>
+                    <span class="status-pill">@(currentCollection.IsPublic ? Text["Quiz.PublicSubtree"] : Text["Quiz.Private"])</span>
                 </form>
             }
-            <div class="library-overview" aria-label="Library summary">
+            <div class="library-overview" aria-label="@Text["Quiz.LibrarySummary"]">
                 <span class="overview-item">
                     <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>
-                    <strong>@childCollections.Count</strong> @(childCollections.Count == 1 ? "collection" : "collections")
+                    <strong>@childCollections.Count</strong> @(childCollections.Count == 1 ? Text["Quiz.CollectionOne"] : Text["Quiz.CollectionMany"])
                 </span>
                 <span class="overview-item">
                     <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
-                    <strong>@visibleQuizzes.Count</strong> @(visibleQuizzes.Count == 1 ? "quiz" : "quizzes")
+                    <strong>@visibleQuizzes.Count</strong> @(visibleQuizzes.Count == 1 ? Text["Quiz.QuizOne"] : Text["Quiz.QuizMany"])
                 </span>
             </div>
         </div>
@@ -64,24 +65,24 @@
                 {
                     <a class="btn-new-quiz btn-back-library" asp-controller="Quiz" asp-action="Collection" asp-route-id="@Model.ParentCollection.Id">
                         <span class="material-symbols-outlined">arrow_back</span>
-                        Back
+                        @Text["Common.Back"]
                     </a>
                 }
                 else
                 {
                     <a class="btn-new-quiz btn-back-library" asp-controller="Quiz" asp-action="Index">
                         <span class="material-symbols-outlined">arrow_back</span>
-                        Back
+                        @Text["Common.Back"]
                     </a>
                 }
             }
             <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="createCollectionModal">
                 <span class="material-symbols-outlined">create_new_folder</span>
-                New Collection
+                @Text["Quiz.NewCollection"]
             </button>
             <button class="btn-new-quiz" type="button" data-modal-open="createModal">
                 <span class="material-symbols-outlined">add</span>
-                New Quiz
+                @Text["Quiz.NewQuiz"]
             </button>
         </div>
     </header>
@@ -96,8 +97,8 @@
         <section class="library-section library-section--collections" aria-labelledby="collectionsHeading">
             <div class="library-section-header">
                 <div class="library-section-copy">
-                    <h2 id="collectionsHeading">Collections <span class="section-count">@childCollections.Count</span></h2>
-                    <p>Group related quizzes and keep your learning path tidy.</p>
+                    <h2 id="collectionsHeading">@Text["Quiz.Collections"] <span class="section-count">@childCollections.Count</span></h2>
+                    <p>@Text["Quiz.CollectionsHelp"]</p>
                 </div>
             </div>
             <div class="quiz-grid">
@@ -109,19 +110,19 @@
                     <article class="quiz-card collection-card"
                              data-collection-drop-target
                              data-collection-id="@collection.Id"
-                             aria-label="Drop quizzes into @collection.Name">
+                             aria-label="@Text["Quiz.DropInto", collection.Name]">
                         <a class="quiz-card-link" asp-controller="Quiz" asp-action="Collection" asp-route-id="@collection.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon collection-icon"><span class="material-symbols-outlined">folder</span></div>
-                                <span class="quiz-card-kind">Collection</span>
+                                <span class="quiz-card-kind">@Text["Quiz.CollectionOne"]</span>
                                 <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@collection.Name</h2>
-                            <p class="quiz-languages">@collection.Language</p>
+                            <p class="quiz-languages">@QuizLanguageDisplay.Name(collection.Language)</p>
                         </a>
                         <div class="quiz-meta">
-                            <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@collection.CreatedAt.ToString("MMM d, yyyy")</span>
-                            <span class="status-pill">@quizCount @(quizCount == 1 ? "quiz" : "quizzes") &middot; @childCollectionCount nested</span>
+                            <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@collection.CreatedAt.ToString("d")</span>
+                            <span class="status-pill">@quizCount @(quizCount == 1 ? Text["Quiz.QuizOne"] : Text["Quiz.QuizMany"]) &middot; @Text["Quiz.NestedCount", childCollectionCount]</span>
                         </div>
                     </article>
                 }
@@ -134,8 +135,8 @@
         <section class="library-section library-section--quizzes" aria-labelledby="quizzesHeading">
             <div class="library-section-header">
                 <div class="library-section-copy">
-                    <h2 id="quizzesHeading">Your quizzes <span class="section-count">@visibleQuizzes.Count</span></h2>
-                    <p>@(childCollections.Any() ? "Open a quiz to study, or drag it onto a collection to organize it." : "Choose a quiz and keep your learning streak moving.")</p>
+                    <h2 id="quizzesHeading">@Text["Quiz.YourQuizzes"] <span class="section-count">@visibleQuizzes.Count</span></h2>
+                    <p>@(childCollections.Any() ? Text["Quiz.DragHelp"] : Text["Quiz.ChooseHelp"])</p>
                 </div>
             </div>
             <div class="quiz-grid">
@@ -148,19 +149,19 @@
                         <a class="quiz-card-link" draggable="false" asp-controller="Quiz" asp-action="Details" asp-route-id="@quiz.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon"><span class="material-symbols-outlined">quiz</span></div>
-                                <span class="quiz-card-kind">Quiz</span>
+                                <span class="quiz-card-kind">@Text["Quiz.QuizOne"]</span>
                                 <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@quiz.Name</h2>
-                            <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
+                            <p class="quiz-languages">@QuizLanguageDisplay.Name(quiz.SourceLanguage) &rarr; @QuizLanguageDisplay.Name(quiz.TargetLanguage)</p>
                         </a>
                         <div class="quiz-meta">
-                            <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
+                            <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@quiz.CreatedAt.ToString("d")</span>
                             <div class="quiz-meta-actions">
                                 <span class="status-pill"><span class="status-dot" aria-hidden="true"></span>@quiz.ProcessingStatus</span>
-                                <form class="delete-form" method="post" asp-controller="Quiz" asp-action="DeleteQuiz" asp-route-id="@quiz.Id" data-confirm="Delete this quiz and all of its words?">
+                                <form class="delete-form" method="post" asp-controller="Quiz" asp-action="DeleteQuiz" asp-route-id="@quiz.Id" data-confirm="@Text["Quiz.DeleteConfirm"]">
                                     @Html.AntiForgeryToken()
-                                    <button class="btn-delete" type="submit" aria-label="Delete @quiz.Name" title="Delete quiz">
+                                    <button class="btn-delete" type="submit" aria-label="@Text["Quiz.DeleteNamed", quiz.Name]" title="@Text["Quiz.Delete"]">
                                         <span class="material-symbols-outlined" aria-hidden="true">delete</span>
                                     </button>
                                 </form>
@@ -175,16 +176,16 @@
     {
         <div class="empty-state">
             <div class="empty-icon"><span class="material-symbols-outlined">library_add</span></div>
-            <h2 class="empty-title">No quizzes or collections yet</h2>
-            <p class="empty-copy">Create a collection to organize your vocabulary, or create your first quiz.</p>
+            <h2 class="empty-title">@Text["Quiz.EmptyTitle"]</h2>
+            <p class="empty-copy">@Text["Quiz.EmptyText"]</p>
             <div class="empty-actions">
                 <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="createCollectionModal">
                     <span class="material-symbols-outlined">create_new_folder</span>
-                    Create Collection
+                    @Text["Quiz.CreateCollection"]
                 </button>
                 <button class="btn-new-quiz" type="button" data-modal-open="createModal">
                     <span class="material-symbols-outlined">add</span>
-                    Create Quiz
+                    @Text["Quiz.CreateQuiz"]
                 </button>
             </div>
         </div>
@@ -193,17 +194,17 @@
 
 <div class="modal-backdrop" id="createCollectionModal">
     <div class="modal">
-        <h2 class="modal-title">Create New Collection</h2>
+        <h2 class="modal-title">@Text["Quiz.CreateNewCollection"]</h2>
         <form method="post" asp-controller="Quiz" asp-action="CreateCollection">
             @Html.AntiForgeryToken()
             <div class="form-group">
-                <label class="form-label" for="collectionName">Collection Name</label>
-                <input class="form-input" id="collectionName" type="text" name="Name" placeholder="e.g. Travel phrases" required />
+                <label class="form-label" for="collectionName">@Text["Quiz.CollectionName"]</label>
+                <input class="form-input" id="collectionName" type="text" name="Name" placeholder="@Text["Quiz.CollectionExample"]" required />
             </div>
             <input type="hidden" name="ParentCollectionId" value="@currentCollectionId" />
             <div class="modal-actions">
-                <button type="button" class="btn-cancel" data-modal-close>Cancel</button>
-                <button type="submit" class="btn-create">Create Collection</button>
+                <button type="button" class="btn-cancel" data-modal-close>@Text["Common.Cancel"]</button>
+                <button type="submit" class="btn-create">@Text["Quiz.CreateCollection"]</button>
             </div>
         </form>
     </div>
@@ -215,34 +216,34 @@
 
 <div class="modal-backdrop" id="createModal">
     <div class="modal">
-        <h2 class="modal-title">Create New Quiz</h2>
+        <h2 class="modal-title">@Text["Quiz.CreateNewQuiz"]</h2>
         <form method="post" asp-controller="Quiz" asp-action="Create">
             @Html.AntiForgeryToken()
             <input type="hidden" name="CollectionId" value="@currentCollectionId" />
             <div class="form-group">
-                <label class="form-label" for="quizName">Quiz Name</label>
-                <input class="form-input" id="quizName" type="text" name="Name" placeholder="e.g. French Basics" required />
+                <label class="form-label" for="quizName">@Text["Quiz.Name"]</label>
+                <input class="form-input" id="quizName" type="text" name="Name" placeholder="@Text["Quiz.NameExample"]" required />
             </div>
             <div class="form-group">
-                <label class="form-label" for="quizSourceLanguage">Source Language</label>
+                <label class="form-label" for="quizSourceLanguage">@Text["Quiz.SourceLanguage"]</label>
                 <select class="select-input" id="quizSourceLanguage" name="SourceLanguage" required>
-                    <option value="">Select language...</option>
+                    <option value="">@Text["Quiz.SelectLanguage"]</option>
                     @foreach (var language in Glosify.Services.Language.QuizLanguageCatalog.All)
                     {
-                        <option value="@language.Name">@language.Name</option>
+                        <option value="@language.Name">@QuizLanguageDisplay.Name(language.Name)</option>
                     }
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Target Language</label>
+                <label class="form-label">@Text["Quiz.TargetLanguage"]</label>
                 <input type="hidden" name="TargetLanguage" value="@currentLanguage" />
                 <div class="form-input target-language-display">
-                    <span>@currentLanguage</span>
+                    <span>@displayLanguage</span>
                 </div>
             </div>
             <div class="modal-actions">
-                <button type="button" class="btn-cancel" data-modal-close>Cancel</button>
-                <button type="submit" class="btn-create">Create Quiz</button>
+                <button type="button" class="btn-cancel" data-modal-close>@Text["Common.Cancel"]</button>
+                <button type="submit" class="btn-create">@Text["Quiz.CreateQuiz"]</button>
             </div>
         </form>
     </div>

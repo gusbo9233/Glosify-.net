@@ -22,7 +22,7 @@
        so it is built from the same title rather than a fixed "Open assistant". *@
     <button class="assistant-fab"
             type="button"
-            aria-label="Open @panel.Title"
+            aria-label="@Text["Assistant.Title"]: @panel.Title"
             aria-controls="@popoverId"
             aria-expanded="false"
             data-assistant-toggle>
@@ -32,15 +32,15 @@
 
     <section class="assistant-popover assistant-panel" id="@popoverId" hidden data-assistant-window>
         <header class="assistant-ide-header">
-            <div class="assistant-tabs" aria-label="Assistant workspace">
-                <button class="assistant-tab is-active" type="button" data-assistant-tab="chat">CHAT</button>
-                <button class="assistant-tab" type="button" data-assistant-tab="chats">CHATS</button>
+            <div class="assistant-tabs" aria-label="@Text["Assistant.Workspace"]">
+                <button class="assistant-tab is-active" type="button" data-assistant-tab="chat">@Text["Assistant.Chat"]</button>
+                <button class="assistant-tab" type="button" data-assistant-tab="chats">@Text["Assistant.Chats"]</button>
             </div>
             <div class="assistant-header-actions">
-                <button class="assistant-reset" type="button" aria-label="New chat" title="New chat" data-assistant-reset>
+                <button class="assistant-reset" type="button" aria-label="@Text["Assistant.NewChat"]" title="@Text["Assistant.NewChat"]" data-assistant-reset>
                     <span class="material-symbols-outlined" aria-hidden="true">add</span>
                 </button>
-                <button class="assistant-close" type="button" aria-label="Close assistant" data-assistant-close>
+                <button class="assistant-close" type="button" aria-label="@Text["Assistant.Close"]" data-assistant-close>
                     <span class="material-symbols-outlined" aria-hidden="true">close</span>
                 </button>
             </div>
@@ -60,9 +60,9 @@
             <form class="assistant-input" data-assistant-form>
                 <div class="assistant-context-bar">
                     <label class="assistant-context-picker">
-                        <span class="visually-hidden">Quiz context</span>
-                        <select aria-label="Quiz context" data-assistant-quiz-selector>
-                            <option value="" data-context-label="Glosify">No quiz selected</option>
+                        <span class="visually-hidden">@Text["Assistant.QuizContext"]</span>
+                        <select aria-label="@Text["Assistant.QuizContext"]" data-assistant-quiz-selector>
+                            <option value="" data-context-label="Glosify">@Text["Assistant.NoQuiz"]</option>
                             @foreach (var quiz in Model.Quizzes)
                             {
                                 <option value="@quiz.Id"
@@ -74,12 +74,12 @@
                         </select>
                     </label>
                     <label class="assistant-context-picker">
-                        <span class="visually-hidden">Reading material</span>
-                        <select aria-label="Reading material" data-assistant-material-selector>
-                            <option value="" data-context-label="">No material selected</option>
+                        <span class="visually-hidden">@Text["Assistant.ReadingMaterial"]</span>
+                        <select aria-label="@Text["Assistant.ReadingMaterial"]" data-assistant-material-selector>
+                            <option value="" data-context-label="">@Text["Assistant.NoMaterial"]</option>
                             @if (Model.Books.Count > 0)
                             {
-                                <optgroup label="Books">
+                                <optgroup label="@Text["Nav.Books"]">
                                     @foreach (var book in Model.Books)
                                     {
                                         <option value="book:@book.Id"
@@ -92,7 +92,7 @@
                             }
                             @if (Model.Transcripts.Count > 0)
                             {
-                                <optgroup label="Transcripts">
+                                <optgroup label="@Text["Nav.Transcripts"]">
                                     @foreach (var savedTranscript in Model.Transcripts)
                                     {
                                         <option value="transcript:@savedTranscript.Id"
@@ -118,7 +118,7 @@
                         <div class="assistant-composer-tools">
                             @if (panel.QuizId.HasValue)
                             {
-                                <label class="assistant-icon-tool" for="@imageInputId" aria-label="Picture" title="Picture">
+                                <label class="assistant-icon-tool" for="@imageInputId" aria-label="@Text["Assistant.Picture"]" title="@Text["Assistant.Picture"]">
                                     <span class="material-symbols-outlined" aria-hidden="true">add</span>
                                 </label>
                                 <input
@@ -132,9 +132,9 @@
                                 <span class="scan-status" data-assistant-scan-status hidden></span>
                             }
                             <label class="assistant-model-picker">
-                                <span class="visually-hidden">Assistant model</span>
-                                <select data-assistant-model-select aria-label="Assistant model">
-                                    <option value="">Auto · @Model.DefaultModelLabel</option>
+                                <span class="visually-hidden">@Text["Assistant.Model"]</span>
+                                <select data-assistant-model-select aria-label="@Text["Assistant.Model"]">
+                                    <option value="">@Text["Assistant.AutoModel", Model.DefaultModelLabel]</option>
                                     @foreach (var assistantModel in Model.Models)
                                     {
                                         <option value="@assistantModel.Deployment">@assistantModel.Label</option>
@@ -142,7 +142,7 @@
                                 </select>
                             </label>
                         </div>
-                        <button class="assistant-send" type="submit" aria-label="Send" data-assistant-submit>
+                        <button class="assistant-send" type="submit" aria-label="@Text["Assistant.Send"]" data-assistant-submit>
                             <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
                         </button>
                     </div>
@@ -152,13 +152,13 @@
 
         <div class="assistant-pane" data-assistant-pane="chats" hidden>
             <div class="assistant-chat-list-toolbar">
-                <span>Previous chats</span>
-                <button class="assistant-list-action" type="button" aria-label="New chat" title="New chat" data-assistant-new-chat>
+                <span>@Text["Assistant.PreviousChats"]</span>
+                <button class="assistant-list-action" type="button" aria-label="@Text["Assistant.NewChat"]" title="@Text["Assistant.NewChat"]" data-assistant-new-chat>
                     <span class="material-symbols-outlined" aria-hidden="true">add</span>
                 </button>
             </div>
             <div class="assistant-chat-list" data-assistant-chat-list>
-                <div class="assistant-chat-list-empty">No saved chats yet.</div>
+                <div class="assistant-chat-list-empty">@Text["Assistant.NoChats"]</div>
             </div>
         </div>
     </section>

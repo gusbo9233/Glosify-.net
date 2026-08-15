@@ -20,11 +20,11 @@
     {
         <section class="results visible" aria-live="polite">
             <div class="result-score">@Model.ScorePercent%</div>
-            <h2 class="flash-title">Session Complete</h2>
+            <h2 class="flash-title">@Text["Quiz.SessionComplete"]</h2>
             <div class="result-grid">
-                <div class="result-stat"><span>Remembered</span><span>@Model.RememberedCount</span></div>
-                <div class="result-stat"><span>Review Again</span><span>@Model.AgainCount</span></div>
-                <div class="result-stat"><span>Skipped</span><span>@Model.SkippedCount</span></div>
+                <div class="result-stat"><span>@Text["Quiz.Remembered"]</span><span>@Model.RememberedCount</span></div>
+                <div class="result-stat"><span>@Text["Quiz.ReviewAgain"]</span><span>@Model.AgainCount</span></div>
+                <div class="result-stat"><span>@Text["Quiz.Skipped"]</span><span>@Model.SkippedCount</span></div>
             </div>
             <form method="post" asp-controller="FlashcardQuiz" asp-action="Restart">
                 @Html.AntiForgeryToken()
@@ -36,14 +36,14 @@
                 <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
                 <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
                 <input type="hidden" name="classroomId" value="@Model.ClassroomId" />
-                <button class="btn-main" type="submit">Restart Session</button>
+                <button class="btn-main" type="submit">@Text["Quiz.Restart"]</button>
             </form>
             @if (Model.AgainCount > 0)
             {
                 <form method="post" asp-controller="FlashcardQuiz" asp-action="RestartAgain">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="sessionId" value="@Model.SessionId" />
-                    <button class="btn-main" type="submit">Practice Again</button>
+                    <button class="btn-main" type="submit">@Text["Quiz.PracticeAgain"]</button>
                 </form>
             }
             
@@ -63,8 +63,8 @@
                                 type="button"
                                 data-tts="@Model.CurrentCard.Prompt"
                                 data-tts-lang="@Model.PromptLanguage"
-                                title="Play pronunciation"
-                                aria-label="Play pronunciation of @Model.CurrentCard.Prompt">
+                                title="@Text["Quiz.PlayPronunciationGeneric"]"
+                                aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Prompt]">
                             <span class="material-symbols-outlined">volume_up</span>
                         </button>
                     }
@@ -78,8 +78,8 @@
                                     type="button"
                                     data-tts="@Model.CurrentCard.Answer"
                                     data-tts-lang="@Model.AnswerLanguage"
-                                    title="Play pronunciation"
-                                    aria-label="Play pronunciation of @Model.CurrentCard.Answer">
+                                    title="@Text["Quiz.PlayPronunciationGeneric"]"
+                                    aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Answer]">
                                 <span class="material-symbols-outlined">volume_up</span>
                             </button>
                         }
@@ -100,7 +100,7 @@
             <form class="card-reveal-form" method="post" asp-controller="FlashcardQuiz" asp-action="Reveal" data-flashcard-form data-card-reveal-form>
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="sessionId" value="@Model.SessionId" />
-                <button class="flashcard flashcard-clickable" type="submit" aria-label="Reveal answer for @Model.CurrentCard.Prompt">
+                <button class="flashcard flashcard-clickable" type="submit" aria-label="@Text["Quiz.RevealAnswer", Model.CurrentCard.Prompt]">
                     <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
                     <span class="card-word" dir="auto">
                         @Model.CurrentCard.Prompt
@@ -111,8 +111,8 @@
                                   tabindex="0"
                                   data-tts="@Model.CurrentCard.Prompt"
                                   data-tts-lang="@Model.PromptLanguage"
-                                  title="Play pronunciation"
-                                  aria-label="Play pronunciation of @Model.CurrentCard.Prompt">
+                                  title="@Text["Quiz.PlayPronunciationGeneric"]"
+                                  aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Prompt]">
                                 <span class="material-symbols-outlined">volume_up</span>
                             </span>
                         }
@@ -127,12 +127,12 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="sessionId" value="@Model.SessionId" />
                 <div class="rating-row revealed">
-                    <button class="btn-rating again" type="submit" name="rating" value="again">Again</button>
-                    <button class="btn-rating" type="submit" name="rating" value="good">Good</button>
-                    <button class="btn-rating easy" type="submit" name="rating" value="easy">Easy</button>
+                    <button class="btn-rating again" type="submit" name="rating" value="again">@Text["Quiz.Again"]</button>
+                    <button class="btn-rating" type="submit" name="rating" value="good">@Text["Quiz.Good"]</button>
+                    <button class="btn-rating easy" type="submit" name="rating" value="easy">@Text["Quiz.Easy"]</button>
                 </div>
-                <p class="swipe-hint" aria-hidden="true">Swipe right for Good, left for Again</p>
-                <button class="btn-linkish" type="submit" name="rating" value="skip">Skip</button>
+                <p class="swipe-hint" aria-hidden="true">@Text["Quiz.SwipeHint"]</p>
+                <button class="btn-linkish" type="submit" name="rating" value="skip">@Text["Quiz.Skip"]</button>
             </form>
         }
         else
@@ -141,12 +141,12 @@
                 <form method="post" asp-controller="FlashcardQuiz" asp-action="Reveal" data-flashcard-form>
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="sessionId" value="@Model.SessionId" />
-                    <button class="btn-main" type="submit">Show Answer</button>
+                    <button class="btn-main" type="submit">@Text["Quiz.ShowAnswer"]</button>
                 </form>
                 <form method="post" asp-controller="FlashcardQuiz" asp-action="Rate" data-flashcard-form>
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="sessionId" value="@Model.SessionId" />
-                    <button class="btn-linkish" type="submit" name="rating" value="skip">Skip</button>
+                    <button class="btn-linkish" type="submit" name="rating" value="skip">@Text["Quiz.Skip"]</button>
                 </form>
             </div>
         }
@@ -158,15 +158,15 @@
             <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
             <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
                 <input type="hidden" name="classroomId" value="@Model.ClassroomId" />
-            <button class="btn-linkish" type="submit">Reset Session</button>
+            <button class="btn-linkish" type="submit">@Text["Quiz.Reset"]</button>
         </form>
     }
     else
     {
         <div class="empty-state">
-            <h2 class="flash-title">No @Model.ItemPluralLabel yet</h2>
-            <p class="flash-subtitle">Add @Model.ItemPluralLabel to a quiz, then start a flashcard session from that quiz.</p>
-            <button class="btn-main" type="button" disabled>Show Answer</button>
+            <h2 class="flash-title">@Text["Quiz.NoneYet", Model.ItemPluralLabel]</h2>
+            <p class="flash-subtitle">@Text["Quiz.AddThenStart", Model.ItemPluralLabel, Text["Settings.Flashcards"]]</p>
+            <button class="btn-main" type="button" disabled>@Text["Quiz.ShowAnswer"]</button>
         </div>
     }
 </div>

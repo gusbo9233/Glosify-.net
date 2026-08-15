@@ -1,26 +1,29 @@
 ﻿@model ErrorViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = Model.Title;
+    var useLocalizedFallback = CultureInfo.CurrentUICulture.Name != DisplayCultureCatalog.DefaultCulture;
+    var displayTitle = useLocalizedFallback ? Text[Model.IsServiceWarmup ? "Error.WarmupTitle" : "Error.GenericTitle"] : Model.Title;
+    var displayMessage = useLocalizedFallback ? Text[Model.IsServiceWarmup ? "Error.WarmupMessage" : "Error.GenericMessage"] : Model.Message;
+    ViewData["Title"] = displayTitle;
 }
 
 <section class="service-warmup">
     <div class="service-warmup-icon">
         <span class="material-symbols-outlined" aria-hidden="true">@(Model.IsServiceWarmup ? "hourglass_top" : "error")</span>
     </div>
-    <p class="hero-label">@(Model.IsServiceWarmup ? "Temporary startup delay" : "Request failed")</p>
-    <h1 class="service-warmup-title">@Model.Title</h1>
-    <p class="service-warmup-message">@Model.Message</p>
+    <p class="hero-label">@(Model.IsServiceWarmup ? Text["Error.StartupDelay"] : Text["Error.RequestFailed"])</p>
+    <h1 class="service-warmup-title">@displayTitle</h1>
+    <p class="service-warmup-message">@displayMessage</p>
 
     @if (Model.IsServiceWarmup)
     {
-        <a class="btn-hero" href="@(Model.ReturnPath ?? Context.Request.Path)">Try again</a>
+        <a class="btn-hero" href="@(Model.ReturnPath ?? Context.Request.Path)">@Text["Client.TryAgain"]</a>
     }
 </section>
 
 @if (Model.ShowRequestId)
 {
     <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
+        <strong>@Text["Error.RequestId"]</strong> <code>@Model.RequestId</code>
     </p>
 }

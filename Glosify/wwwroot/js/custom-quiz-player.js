@@ -1,6 +1,7 @@
 (() => {
     const root = document.querySelector('[data-custom-player]');
     if (!root) return;
+    const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
     const form = root.querySelector('[data-custom-player-form]');
     const token = root.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
     let focusedInput = null;
@@ -44,13 +45,22 @@
             result.blocks.forEach(grade => {
                 const block = root.querySelector(`[data-play-block="${CSS.escape(grade.blockId)}"]`);
                 const host = block?.querySelector('[data-answer-feedback]');
-                if (host) { host.textContent = grade.message; host.classList.add(`is-${grade.state}`); }
+                if (host) {
+                    host.textContent = grade.state === 'correct'
+                        ? t('Custom.Correct', 'Correct.')
+                        : grade.state === 'incomplete'
+                            ? t('Custom.AnswerQuestion', 'Answer this question.')
+                            : t('Custom.CorrectAnswer', 'Correct answer: {0}', (grade.correctValues || []).join(', '));
+                    host.classList.add(`is-${grade.state}`);
+                }
             });
             const overall = root.querySelector('[data-overall-feedback]');
-            if (overall) overall.textContent = result.state === 'incomplete' ? 'Complete every answer before submitting.' : `Score: ${result.correctCount} of ${result.totalCount} (${result.scorePercent}%).`;
+            if (overall) overall.textContent = result.state === 'incomplete'
+                ? t('Custom.CompleteAnswers', 'Complete every answer before submitting.')
+                : t('Custom.Score', 'Score: {0} of {1} ({2}%).', result.correctCount, result.totalCount, result.scorePercent);
             if (result.state !== 'incomplete') root.querySelectorAll('[data-answer-block]').forEach(control => { control.disabled = true; });
         } catch {
-            const overall = root.querySelector('[data-overall-feedback]'); if (overall) overall.textContent = 'Could not grade this quiz. Try again.';
+            const overall = root.querySelector('[data-overall-feedback]'); if (overall) overall.textContent = t('Custom.GradeFailed', 'Could not grade this quiz. Try again.');
         } finally { if (submit) submit.disabled = false; }
     });
 })();

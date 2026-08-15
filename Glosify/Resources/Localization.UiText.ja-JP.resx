@@ -1,0 +1,2883 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="DisplayLanguage.Label" xml:space="preserve">
+    <value>表示言語</value>
+  </data>
+  <data name="DisplayLanguage.Submit" xml:space="preserve">
+    <value>言語を変更</value>
+  </data>
+  <data name="Common.English" xml:space="preserve">
+    <value>英語</value>
+  </data>
+  <data name="Common.Swedish" xml:space="preserve">
+    <value>スウェーデン語</value>
+  </data>
+  <data name="Common.LogIn" xml:space="preserve">
+    <value>ログイン</value>
+  </data>
+  <data name="Common.LogOut" xml:space="preserve">
+    <value>ログアウト</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>検索</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>戻る</value>
+  </data>
+  <data name="Common.Next" xml:space="preserve">
+    <value>次へ</value>
+  </data>
+  <data name="Common.Previous" xml:space="preserve">
+    <value>前へ</value>
+  </data>
+  <data name="Layout.MetaDescription" xml:space="preserve">
+    <value>Glosifyは、読んだ内容を使える語彙に変えます。書籍や書き起こしから単語リストを作成し、クイズやフラッシュカードで練習し、AI会話パートナーと声に出して練習できます。</value>
+  </data>
+  <data name="Layout.AuthMetaDescription" xml:space="preserve">
+    <value>Glosifyにサインインして、読んだ内容から語彙を作り、クイズで練習し、AI会話パートナーと話しましょう。</value>
+  </data>
+  <data name="Layout.PremiumLearner" xml:space="preserve">
+    <value>プレミアム学習者</value>
+  </data>
+  <data name="Layout.SearchPlaceholder" xml:space="preserve">
+    <value>何を学びたいですか？</value>
+  </data>
+  <data name="Layout.Notifications" xml:space="preserve">
+    <value>通知</value>
+  </data>
+  <data name="Layout.GetCredits" xml:space="preserve">
+    <value>クレジットを取得</value>
+  </data>
+  <data name="Layout.SignedInAs" xml:space="preserve">
+    <value>サインイン中のアカウント</value>
+  </data>
+  <data name="Layout.SignedIn" xml:space="preserve">
+    <value>サインイン済み</value>
+  </data>
+  <data name="Layout.PrimaryNavigation" xml:space="preserve">
+    <value>主要ナビゲーション</value>
+  </data>
+  <data name="Nav.LanguageSelector" xml:space="preserve">
+    <value>言語セレクター</value>
+  </data>
+  <data name="Nav.Language" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="Nav.Home" xml:space="preserve">
+    <value>ホーム</value>
+  </data>
+  <data name="Nav.Explore" xml:space="preserve">
+    <value>探す</value>
+  </data>
+  <data name="Nav.Books" xml:space="preserve">
+    <value>書籍</value>
+  </data>
+  <data name="Nav.Transcripts" xml:space="preserve">
+    <value>書き起こし</value>
+  </data>
+  <data name="Nav.Quizzes" xml:space="preserve">
+    <value>クイズ</value>
+  </data>
+  <data name="Nav.Speaking" xml:space="preserve">
+    <value>スピーキング</value>
+  </data>
+  <data name="Nav.Speak" xml:space="preserve">
+    <value>話す</value>
+  </data>
+  <data name="Nav.Classrooms" xml:space="preserve">
+    <value>クラスルーム</value>
+  </data>
+  <data name="Nav.Class" xml:space="preserve">
+    <value>クラス</value>
+  </data>
+  <data name="Languages.Title" xml:space="preserve">
+    <value>言語セレクター</value>
+  </data>
+  <data name="Languages.Tagline" xml:space="preserve">
+    <value>今日はどの言語に触れたいですか？</value>
+  </data>
+  <data name="Languages.Current" xml:space="preserve">
+    <value>現在 {0} を学習中</value>
+  </data>
+  <data name="Languages.Find" xml:space="preserve">
+    <value>言語を探す</value>
+  </data>
+  <data name="Languages.SearchPlaceholder" xml:space="preserve">
+    <value>英語名、母語表記、またはコードで検索</value>
+  </data>
+  <data name="Languages.Count" xml:space="preserve">
+    <value>{0} 言語</value>
+  </data>
+  <data name="Languages.None" xml:space="preserve">
+    <value>一致する言語はありません</value>
+  </data>
+  <data name="Languages.NoneHelp" xml:space="preserve">
+    <value>英語名、母語表記、または言語コードをお試しください。</value>
+  </data>
+  <data name="Languages.Pick" xml:space="preserve">
+    <value>言語を選ぶ</value>
+  </data>
+  <data name="Assistant.Title" xml:space="preserve">
+    <value>アシスタント</value>
+  </data>
+  <data name="Assistant.Empty" xml:space="preserve">
+    <value>Glosifyのどこでもヘルプを依頼できます。</value>
+  </data>
+  <data name="Assistant.Placeholder" xml:space="preserve">
+    <value>アシスタントに質問してください...</value>
+  </data>
+  <data name="Assistant.Workspace" xml:space="preserve">
+    <value>アシスタントワークスペース</value>
+  </data>
+  <data name="Assistant.Chat" xml:space="preserve">
+    <value>チャット</value>
+  </data>
+  <data name="Assistant.Chats" xml:space="preserve">
+    <value>チャット</value>
+  </data>
+  <data name="Assistant.NewChat" xml:space="preserve">
+    <value>新しいチャット</value>
+  </data>
+  <data name="Assistant.Close" xml:space="preserve">
+    <value>アシスタントを閉じる</value>
+  </data>
+  <data name="Assistant.QuizContext" xml:space="preserve">
+    <value>クイズのコンテキスト</value>
+  </data>
+  <data name="Assistant.NoQuiz" xml:space="preserve">
+    <value>クイズが選択されていません</value>
+  </data>
+  <data name="Assistant.ReadingMaterial" xml:space="preserve">
+    <value>学習教材</value>
+  </data>
+  <data name="Assistant.NoMaterial" xml:space="preserve">
+    <value>教材が選択されていません</value>
+  </data>
+  <data name="Assistant.Picture" xml:space="preserve">
+    <value>画像</value>
+  </data>
+  <data name="Assistant.Model" xml:space="preserve">
+    <value>アシスタントモデル</value>
+  </data>
+  <data name="Assistant.AutoModel" xml:space="preserve">
+    <value>自動 · {0}</value>
+  </data>
+  <data name="Assistant.Send" xml:space="preserve">
+    <value>送信</value>
+  </data>
+  <data name="Assistant.PreviousChats" xml:space="preserve">
+    <value>以前のチャット</value>
+  </data>
+  <data name="Assistant.NoChats" xml:space="preserve">
+    <value>保存されたチャットはまだありません。</value>
+  </data>
+  <data name="Quiz.FlashcardsTitle" xml:space="preserve">
+    <value>フラッシュカードクイズ</value>
+  </data>
+  <data name="Quiz.TypingTitle" xml:space="preserve">
+    <value>タイピングクイズ</value>
+  </data>
+  <data name="Quiz.RevealRate" xml:space="preserve">
+    <value>答えを表示し、記憶度を評価して、次へ進みましょう。</value>
+  </data>
+  <data name="Quiz.BackWords" xml:space="preserve">
+    <value>単語に戻る</value>
+  </data>
+  <data name="Quiz.SessionComplete" xml:space="preserve">
+    <value>セッション完了</value>
+  </data>
+  <data name="Quiz.Remembered" xml:space="preserve">
+    <value>覚えた</value>
+  </data>
+  <data name="Quiz.ReviewAgain" xml:space="preserve">
+    <value>もう一度復習</value>
+  </data>
+  <data name="Quiz.Skipped" xml:space="preserve">
+    <value>スキップ済み</value>
+  </data>
+  <data name="Quiz.Restart" xml:space="preserve">
+    <value>セッションを再開</value>
+  </data>
+  <data name="Quiz.PracticeAgain" xml:space="preserve">
+    <value>もう一度練習</value>
+  </data>
+  <data name="Quiz.PlayPronunciation" xml:space="preserve">
+    <value>{0} の発音を再生</value>
+  </data>
+  <data name="Quiz.RevealAnswer" xml:space="preserve">
+    <value>{0} の答えを表示</value>
+  </data>
+  <data name="Quiz.Again" xml:space="preserve">
+    <value>もう一度</value>
+  </data>
+  <data name="Quiz.Good" xml:space="preserve">
+    <value>良い</value>
+  </data>
+  <data name="Quiz.Easy" xml:space="preserve">
+    <value>簡単</value>
+  </data>
+  <data name="Quiz.SwipeHint" xml:space="preserve">
+    <value>右にスワイプで「良い」、左にスワイプで「もう一度」</value>
+  </data>
+  <data name="Quiz.Skip" xml:space="preserve">
+    <value>スキップ</value>
+  </data>
+  <data name="Quiz.ShowAnswer" xml:space="preserve">
+    <value>答えを表示</value>
+  </data>
+  <data name="Quiz.Reset" xml:space="preserve">
+    <value>セッションをリセット</value>
+  </data>
+  <data name="Quiz.NoneYet" xml:space="preserve">
+    <value>まだ{0}はありません</value>
+  </data>
+  <data name="Quiz.AddThenStart" xml:space="preserve">
+    <value>クイズに{0}を追加してから、そのクイズで{1}セッションを開始してください。</value>
+  </data>
+  <data name="Quiz.TypeInstruction" xml:space="preserve">
+    <value>{2}のプロンプトで、{0} {1}を全文入力してください。</value>
+  </data>
+  <data name="Quiz.CheckAnswer" xml:space="preserve">
+    <value>回答を確認</value>
+  </data>
+  <data name="Quiz.PlayPronunciationGeneric" xml:space="preserve">
+    <value>発音を再生</value>
+  </data>
+  <data name="Quiz.Answer" xml:space="preserve">
+    <value>回答</value>
+  </data>
+  <data name="Quiz.TypePlaceholder" xml:space="preserve">
+    <value>回答を入力してください...</value>
+  </data>
+  <data name="Quiz.CorrectAnswer" xml:space="preserve">
+    <value>正解</value>
+  </data>
+  <data name="Quiz.Space" xml:space="preserve">
+    <value>スペース</value>
+  </data>
+  <data name="Quiz.TypingComplete" xml:space="preserve">
+    <value>入力完了</value>
+  </data>
+  <data name="Quiz.Correct" xml:space="preserve">
+    <value>正解</value>
+  </data>
+  <data name="Quiz.Incorrect" xml:space="preserve">
+    <value>不正解</value>
+  </data>
+  <data name="Quiz.PracticeIncorrect" xml:space="preserve">
+    <value>不正解の単語を練習</value>
+  </data>
+  <data name="Quiz.ChangeSettings" xml:space="preserve">
+    <value>設定を変更</value>
+  </data>
+  <data name="Transcripts.Title" xml:space="preserve">
+    <value>トランスクリプト</value>
+  </data>
+  <data name="Transcripts.Eyebrow" xml:space="preserve">
+    <value>ライブ字幕の履歴</value>
+  </data>
+  <data name="Transcripts.Saved" xml:space="preserve">
+    <value>保存済みのトランスクリプト</value>
+  </data>
+  <data name="Transcripts.Intro" xml:space="preserve">
+    <value>{0}の保存済みライブ字幕テキストです。新しいセッションには元の音声が含まれ、旧セッションは翻訳として表示されたままです。</value>
+  </data>
+  <data name="Transcripts.SelectedLanguage" xml:space="preserve">
+    <value>選択した言語</value>
+  </data>
+  <data name="Transcripts.Updated" xml:space="preserve">
+    <value>更新済み</value>
+  </data>
+  <data name="Transcripts.None" xml:space="preserve">
+    <value>まだ保存済みのトランスクリプトはありません</value>
+  </data>
+  <data name="Transcripts.NoneHelp" xml:space="preserve">
+    <value>ライブ字幕を開始する前に「元の音声のトランスクリプトを保存」を有効にしてください。</value>
+  </data>
+  <data name="Transcripts.PagesAria" xml:space="preserve">
+    <value>トランスクリプトのページ</value>
+  </data>
+  <data name="Common.PageOf" xml:space="preserve">
+    <value>{1}件中{0}ページ目</value>
+  </data>
+  <data name="Home.Title" xml:space="preserve">
+    <value>ホーム</value>
+  </data>
+  <data name="Home.Coach" xml:space="preserve">
+    <value>学習コーチ</value>
+  </data>
+  <data name="Home.Kicker" xml:space="preserve">
+    <value>あなたの語学学習スペース</value>
+  </data>
+  <data name="Home.TitleWithLanguage" xml:space="preserve">
+    <value>{0}を日常に取り入れましょう。</value>
+  </data>
+  <data name="Home.TitleAnonymous" xml:space="preserve">
+    <value>新しい単語を実際の会話につなげましょう。</value>
+  </data>
+  <data name="Home.Description" xml:space="preserve">
+    <value>読んだ内容から語彙を増やし、集中練習で定着させ、AI会話パートナーとの音声会話で使えるようにします。</value>
+  </data>
+  <data name="Home.StartLearning" xml:space="preserve">
+    <value>学習を始める</value>
+  </data>
+  <data name="Home.ChooseLanguage" xml:space="preserve">
+    <value>言語を選ぶ</value>
+  </data>
+  <data name="Home.BrowseShared" xml:space="preserve">
+    <value>共有セットを見る</value>
+  </data>
+  <data name="Home.StartSpeaking" xml:space="preserve">
+    <value>話し始める</value>
+  </data>
+  <data name="Home.OpenQuizzes" xml:space="preserve">
+    <value>自分のクイズを開く</value>
+  </data>
+  <data name="Home.WaysAria" xml:space="preserve">
+    <value>Glosifyで学ぶ方法</value>
+  </data>
+  <data name="Home.ReadContext" xml:space="preserve">
+    <value>文脈で読む</value>
+  </data>
+  <data name="Home.PracticeRecall" xml:space="preserve">
+    <value>想起を練習する</value>
+  </data>
+  <data name="Home.SpeakConfidence" xml:space="preserve">
+    <value>自信を持って話す</value>
+  </data>
+  <data name="Home.LoopAria" xml:space="preserve">
+    <value>読むことから話すことへつながる学習ループ</value>
+  </data>
+  <data name="Home.Discover" xml:space="preserve">
+    <value>見つける</value>
+  </data>
+  <data name="Home.Remember" xml:space="preserve">
+    <value>覚える</value>
+  </data>
+  <data name="Home.LearningLoop" xml:space="preserve">
+    <value>学習ループ</value>
+  </data>
+  <data name="Home.TodayMindset" xml:space="preserve">
+    <value>今日の心がまえ</value>
+  </data>
+  <data name="Home.SmallSteps" xml:space="preserve">
+    <value>小さな一歩。着実な進歩。</value>
+  </data>
+  <data name="Home.QuickStart" xml:space="preserve">
+    <value>クイックスタート</value>
+  </data>
+  <data name="Home.ChooseNext" xml:space="preserve">
+    <value>次の行動を選ぶ</value>
+  </data>
+  <data name="Home.LearningLanguage" xml:space="preserve">
+    <value>{0}を学習中</value>
+  </data>
+  <data name="Home.BuildVocabulary" xml:space="preserve">
+    <value>語彙を増やす</value>
+  </data>
+  <data name="Home.BuildVocabularyText" xml:space="preserve">
+    <value>実際に使いたい単語だけを集めて、重点的に学べるセットを作成します。</value>
+  </data>
+  <data name="Home.PracticeRecallText" xml:space="preserve">
+    <value>フラッシュカード、入力、カスタムクイズで単語を定着させます。</value>
+  </data>
+  <data name="Home.SpeakNaturally" xml:space="preserve">
+    <value>自然に話す</value>
+  </data>
+  <data name="Home.SpeakNaturallyText" xml:space="preserve">
+    <value>ガイド付きのシーンに入り、各ターンのあとに個別コーチングを受けられます。</value>
+  </data>
+  <data name="Home.ConnectedKicker" xml:space="preserve">
+    <value>ひとつにつながった作業スペース</value>
+  </data>
+  <data name="Home.ConnectedTitle" xml:space="preserve">
+    <value>すでに興味のあるものから学べます。</value>
+  </data>
+  <data name="Home.ConnectedText" xml:space="preserve">
+    <value>本、共有単語リスト、授業課題など、次の学習セッションのきっかけにできます。次にどこへ行っても、語彙はすぐそばにあります。</value>
+  </data>
+  <data name="Home.ExploreCollections" xml:space="preserve">
+    <value>コミュニティのコレクションを見る</value>
+  </data>
+  <data name="Home.ReadCollect" xml:space="preserve">
+    <value>読む・集める</value>
+  </data>
+  <data name="Home.ReadCollectText" xml:space="preserve">
+    <value>ページを離れずに、PDFを語彙に変えられます。</value>
+  </data>
+  <data name="Home.ExploreTogether" xml:space="preserve">
+    <value>みんなで探す</value>
+  </data>
+  <data name="Home.ExploreTogetherText" xml:space="preserve">
+    <value>公開クイズやコレクションを自分のライブラリにコピーできます。</value>
+  </data>
+  <data name="Home.JoinClassroom" xml:space="preserve">
+    <value>クラスに参加する</value>
+  </data>
+  <data name="Home.JoinClassroomText" xml:space="preserve">
+    <value>課題、共有コンテンツ、ライブサポートで学べます。</value>
+  </data>
+  <data name="Home.YourTurn" xml:space="preserve">
+    <value>あなたの番です</value>
+  </data>
+  <data name="Home.TodayLanguage" xml:space="preserve">
+    <value>今日は{0}で何をしますか？</value>
+  </data>
+  <data name="Home.PickFirstWord" xml:space="preserve">
+    <value>言語を選んで、役立つ単語を1つから始めましょう。</value>
+  </data>
+  <data name="Home.ContinueLearning" xml:space="preserve">
+    <value>学習を続ける</value>
+  </data>
+  <data name="Home.PickLanguage" xml:space="preserve">
+    <value>言語を選ぶ</value>
+  </data>
+  <data name="Home.CreateAccount" xml:space="preserve">
+    <value>アカウントを作成</value>
+  </data>
+  <data name="Auth.BrandTagline" xml:space="preserve">
+    <value>Sonic Language Immersion</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>ログイン</value>
+  </data>
+  <data name="Auth.WelcomeBack" xml:space="preserve">
+    <value>おかえりなさい</value>
+  </data>
+  <data name="Auth.LoginIntro" xml:space="preserve">
+    <value>続けるには、詳細を入力してください。</value>
+  </data>
+  <data name="Auth.TrialLabel" xml:space="preserve">
+    <value>トライアル特典：</value>
+  </data>
+  <data name="Auth.TrialText" xml:space="preserve">
+    <value>GoogleまたはMicrosoftでサインインすると、25クレジットを1回受け取れます。パスワードアカウントには自動トライアルクレジットは付与されません。</value>
+  </data>
+  <data name="Auth.EmailAddress" xml:space="preserve">
+    <value>メールアドレス</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>パスワード</value>
+  </data>
+  <data name="Auth.Forgot" xml:space="preserve">
+    <value>お忘れですか？</value>
+  </data>
+  <data name="Auth.OrContinue" xml:space="preserve">
+    <value>または次で続ける</value>
+  </data>
+  <data name="Auth.ContinueProvider" xml:space="preserve">
+    <value>{0}で続ける</value>
+  </data>
+  <data name="Auth.NoAccount" xml:space="preserve">
+    <value>アカウントをお持ちでないですか？</value>
+  </data>
+  <data name="Auth.CreateAccount" xml:space="preserve">
+    <value>アカウントを作成</value>
+  </data>
+  <data name="Auth.RegisterTitle" xml:space="preserve">
+    <value>登録</value>
+  </data>
+  <data name="Auth.CreateYourAccount" xml:space="preserve">
+    <value>アカウントを作成してください</value>
+  </data>
+  <data name="Auth.RegisterIntro" xml:space="preserve">
+    <value>今日から言語没入の旅を始めましょう。</value>
+  </data>
+  <data name="Auth.RegisterTrialLabel" xml:space="preserve">
+    <value>25クレジットのトライアル：</value>
+  </data>
+  <data name="Auth.RegisterTrialText" xml:space="preserve">
+    <value>Google または Microsoft に連携してサインインすると、1回だけ利用できます。パスワードアカウントを作成するだけではトライアルクレジットは追加されません。</value>
+  </data>
+  <data name="Auth.ConfirmPassword" xml:space="preserve">
+    <value>パスワードを確認</value>
+  </data>
+  <data name="Auth.AlreadyAccount" xml:space="preserve">
+    <value>すでにアカウントをお持ちですか？</value>
+  </data>
+  <data name="Auth.ForgotTitle" xml:space="preserve">
+    <value>パスワードをお忘れですか</value>
+  </data>
+  <data name="Auth.ForgotHeading" xml:space="preserve">
+    <value>パスワードをリセット</value>
+  </data>
+  <data name="Auth.ForgotUnavailable" xml:space="preserve">
+    <value>メールによるパスワードのリセットはまだ利用できません。アカウントへのアクセスに問題がある場合はサポートにお問い合わせください。</value>
+  </data>
+  <data name="Auth.BackToLogin" xml:space="preserve">
+    <value>ログインに戻る</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>メールアドレスまたはパスワードが正しくありません。</value>
+  </data>
+  <data name="Auth.AccountLocked" xml:space="preserve">
+    <value>アカウントがロックされています。しばらくしてからもう一度お試しください。</value>
+  </data>
+  <data name="Auth.ExternalNotConfigured" xml:space="preserve">
+    <value>{0} ログインは設定されていません。</value>
+  </data>
+  <data name="Auth.ExternalFailed" xml:space="preserve">
+    <value>外部ログインに失敗しました。</value>
+  </data>
+  <data name="Auth.ExternalProviderFailed" xml:space="preserve">
+    <value>{0} ログインに失敗しました。ローカルの {0} OAuth クライアント ID とクライアントシークレットを確認して、もう一度お試しください。</value>
+  </data>
+  <data name="Identity.DuplicateUserName" xml:space="preserve">
+    <value>このメールアドレスのアカウントはすでに存在します。</value>
+  </data>
+  <data name="Identity.DuplicateEmail" xml:space="preserve">
+    <value>このメールアドレスのアカウントはすでに存在します。</value>
+  </data>
+  <data name="Identity.PasswordTooShort" xml:space="preserve">
+    <value>パスワードが短すぎます。</value>
+  </data>
+  <data name="Identity.PasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>パスワードには記号を含める必要があります。</value>
+  </data>
+  <data name="Identity.PasswordRequiresDigit" xml:space="preserve">
+    <value>パスワードには数字を含める必要があります。</value>
+  </data>
+  <data name="Identity.PasswordRequiresLower" xml:space="preserve">
+    <value>パスワードには小文字を含める必要があります。</value>
+  </data>
+  <data name="Identity.PasswordRequiresUpper" xml:space="preserve">
+    <value>パスワードには大文字を含める必要があります。</value>
+  </data>
+  <data name="Identity.DefaultError" xml:space="preserve">
+    <value>アカウントを作成できませんでした。入力内容を確認して、もう一度お試しください。</value>
+  </data>
+  <data name="Validation.PasswordsMismatch" xml:space="preserve">
+    <value>パスワードが一致しません。</value>
+  </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>{0} は必須です。</value>
+  </data>
+  <data name="Validation.Email" xml:space="preserve">
+    <value>{0} は有効なメールアドレスではありません。</value>
+  </data>
+  <data name="Validation.MinLength" xml:space="preserve">
+    <value>フィールド {0} は、最小長が '{1}' の文字列または配列型である必要があります。</value>
+  </data>
+  <data name="Legal.Label" xml:space="preserve">
+    <value>法的情報</value>
+  </data>
+  <data name="Legal.PrivacyPolicy" xml:space="preserve">
+    <value>プライバシーポリシー</value>
+  </data>
+  <data name="Legal.TermsOfService" xml:space="preserve">
+    <value>利用規約</value>
+  </data>
+  <data name="Legal.Support" xml:space="preserve">
+    <value>サポート</value>
+  </data>
+  <data name="Legal.PrivacyTitle" xml:space="preserve">
+    <value>プライバシー</value>
+  </data>
+  <data name="Legal.TermsTitle" xml:space="preserve">
+    <value>利用規約</value>
+  </data>
+  <data name="Legal.EnglishGoverns" xml:space="preserve">
+    <value>この翻訳は便宜上提供されています。英語版と異なる場合は、英語版が優先されます。</value>
+  </data>
+  <data name="Transcripts.CountOne" xml:space="preserve">
+    <value>{0}件保存済み</value>
+  </data>
+  <data name="Transcripts.CountMany" xml:space="preserve">
+    <value>{0}件保存済み</value>
+  </data>
+  <data name="Transcripts.CaptionOne" xml:space="preserve">
+    <value>{0}件のキャプション</value>
+  </data>
+  <data name="Transcripts.CaptionMany" xml:space="preserve">
+    <value>{0}件のキャプション</value>
+  </data>
+  <data name="Quiz.Progress" xml:space="preserve">
+    <value>{0}/{1} {2}</value>
+  </data>
+  <data name="Quiz.CorrectCount" xml:space="preserve">
+    <value>{0}件正解</value>
+  </data>
+  <data name="Quiz.PromptLabel" xml:space="preserve">
+    <value>{0} のプロンプト</value>
+  </data>
+  <data name="Quiz.UkrainianKeyboard" xml:space="preserve">
+    <value>Ukrainian 仮想キーボード</value>
+  </data>
+  <data name="Books.Title" xml:space="preserve">
+    <value>書籍</value>
+  </data>
+  <data name="Books.YourBooks" xml:space="preserve">
+    <value>あなたの書籍</value>
+  </data>
+  <data name="Books.LanguageBooks" xml:space="preserve">
+    <value>あなたの {0} 書籍</value>
+  </data>
+  <data name="Books.LanguageTitle" xml:space="preserve">
+    <value>{0} の書籍</value>
+  </data>
+  <data name="Books.YourLibrary" xml:space="preserve">
+    <value>あなたのライブラリ</value>
+  </data>
+  <data name="Books.HeroPrefix" xml:space="preserve">
+    <value>すべてのページを</value>
+  </data>
+  <data name="Books.Progress" xml:space="preserve">
+    <value>進捗に変えましょう。</value>
+  </data>
+  <data name="Books.HeroText" xml:space="preserve">
+    <value>お手持ちの読書素材を取り込み、Glosify でページ、フレーズ、新しい単語のすべてを探求しましょう。</value>
+  </data>
+  <data name="Books.SummaryAria" xml:space="preserve">
+    <value>ライブラリの概要</value>
+  </data>
+  <data name="Books.BookOne" xml:space="preserve">
+    <value>冊</value>
+  </data>
+  <data name="Books.BookMany" xml:space="preserve">
+    <value>冊</value>
+  </data>
+  <data name="Books.PageOne" xml:space="preserve">
+    <value>ページ</value>
+  </data>
+  <data name="Books.PageMany" xml:space="preserve">
+    <value>ページ</value>
+  </data>
+  <data name="Books.AddShelf" xml:space="preserve">
+    <value>本棚に追加</value>
+  </data>
+  <data name="Books.UploadPdf" xml:space="preserve">
+    <value>PDF をアップロード</value>
+  </data>
+  <data name="Books.ChoosePdf" xml:space="preserve">
+    <value>PDF を選択</value>
+  </data>
+  <data name="Books.PdfLimit" xml:space="preserve">
+    <value>テキストベースの PDF · 最大 25 MB</value>
+  </data>
+  <data name="Books.Browse" xml:space="preserve">
+    <value>参照</value>
+  </data>
+  <data name="Books.AddLibrary" xml:space="preserve">
+    <value>ライブラリに追加</value>
+  </data>
+  <data name="Books.KeepReading" xml:space="preserve">
+    <value>読み続ける</value>
+  </data>
+  <data name="Books.OnShelf" xml:space="preserve">
+    <value>本棚の {0}</value>
+  </data>
+  <data name="Books.DeleteConfirm" xml:space="preserve">
+    <value>"{0}" とそのページを完全に削除しますか？それを使ったチャットは保持されます。</value>
+  </data>
+  <data name="Books.Delete" xml:space="preserve">
+    <value>{0} を削除</value>
+  </data>
+  <data name="Books.Read" xml:space="preserve">
+    <value>{0} を読む</value>
+  </data>
+  <data name="Books.ReaderEdition" xml:space="preserve">
+    <value>リーダー版</value>
+  </data>
+  <data name="Books.Added" xml:space="preserve">
+    <value>追加済み</value>
+  </data>
+  <data name="Books.PageCountOne" xml:space="preserve">
+    <value>{0} ページ</value>
+  </data>
+  <data name="Books.PageCountMany" xml:space="preserve">
+    <value>{0} ページ</value>
+  </data>
+  <data name="Books.StartReading" xml:space="preserve">
+    <value>読み始める</value>
+  </data>
+  <data name="Books.ShelfReady" xml:space="preserve">
+    <value>本棚の準備ができました</value>
+  </data>
+  <data name="Books.NoLanguageBooks" xml:space="preserve">
+    <value>まだ {0} の書籍はありません</value>
+  </data>
+  <data name="Books.EmptyText" xml:space="preserve">
+    <value>上のテキストベースの PDF を最初にアップロードして、すでに好きな読書から学び始めましょう。</value>
+  </data>
+  <data name="Books.EmptyLanguageText" xml:space="preserve">
+    <value> これは {0} の本棚に追加されます。</value>
+  </data>
+  <data name="Books.ChooseFirst" xml:space="preserve">
+    <value>最初の書籍を選択</value>
+  </data>
+  <data name="Common.First" xml:space="preserve">
+    <value>最初</value>
+  </data>
+  <data name="Common.Last" xml:space="preserve">
+    <value>最後</value>
+  </data>
+  <data name="Common.Page" xml:space="preserve">
+    <value>ページ {0}</value>
+  </data>
+  <data name="Common.Go" xml:space="preserve">
+    <value>移動</value>
+  </data>
+  <data name="Transcripts.AssistantTitle" xml:space="preserve">
+    <value>文字起こしアシスタント</value>
+  </data>
+  <data name="Transcripts.AssistantEmpty" xml:space="preserve">
+    <value>この文字起こしについて質問するか、既存のクイズで使ってください。</value>
+  </data>
+  <data name="Transcripts.AssistantPlaceholder" xml:space="preserve">
+    <value>この文字起こしについて質問してください...</value>
+  </data>
+  <data name="Transcripts.OriginalFor" xml:space="preserve">
+    <value>{0}学習用に保存された元の発話</value>
+  </data>
+  <data name="Transcripts.LegacyFor" xml:space="preserve">
+    <value>旧翻訳字幕 · {0}学習</value>
+  </data>
+  <data name="Transcripts.Started" xml:space="preserve">
+    <value>開始済み</value>
+  </data>
+  <data name="Transcripts.NameLabel" xml:space="preserve">
+    <value>文字起こしのタイトル</value>
+  </data>
+  <data name="Transcripts.Rename" xml:space="preserve">
+    <value>名前を変更</value>
+  </data>
+  <data name="Transcripts.DeleteConfirm" xml:space="preserve">
+    <value>保存したこの文字起こしを完全に削除しますか？</value>
+  </data>
+  <data name="Transcripts.StopBeforeDelete" xml:space="preserve">
+    <value>削除する前にライブ字幕を停止してください</value>
+  </data>
+  <data name="Transcripts.StreamAria" xml:space="preserve">
+    <value>字幕ストリーム</value>
+  </data>
+  <data name="Transcripts.OriginalSpeech" xml:space="preserve">
+    <value>元の発話</value>
+  </data>
+  <data name="Transcripts.Translation" xml:space="preserve">
+    <value>翻訳</value>
+  </data>
+  <data name="Transcripts.TranslationNote" xml:space="preserve">
+    <value>同じ音声を別のモデルでリアルタイム翻訳したものです。元の発話が聞き取れなかった箇所の意味確認に便利です。</value>
+  </data>
+  <data name="Transcripts.OriginalNote" xml:space="preserve">
+    <value>音声認識が聞き取った内容です。分かりにくい箇所は翻訳に切り替えて照合してください。</value>
+  </data>
+  <data name="Transcripts.SavedTranslationAria" xml:space="preserve">
+    <value>保存された翻訳字幕</value>
+  </data>
+  <data name="Transcripts.SavedOriginalAria" xml:space="preserve">
+    <value>保存された元の発話</value>
+  </data>
+  <data name="Transcripts.TextPagesAria" xml:space="preserve">
+    <value>文字起こしのテキストページ</value>
+  </data>
+  <data name="Transcripts.JumpPage" xml:space="preserve">
+    <value>ページへ移動</value>
+  </data>
+  <data name="Common.Off" xml:space="preserve">
+    <value>オフ</value>
+  </data>
+  <data name="Reader.AssistantTitle" xml:space="preserve">
+    <value>ページアシスタント</value>
+  </data>
+  <data name="Reader.AssistantEmpty" xml:space="preserve">
+    <value>このページの語彙や例文を質問してください。</value>
+  </data>
+  <data name="Reader.AssistantPlaceholder" xml:space="preserve">
+    <value>このページからクイズを作成...</value>
+  </data>
+  <data name="Reader.TranslatedPage" xml:space="preserve">
+    <value>翻訳ページ</value>
+  </data>
+  <data name="Reader.BackBooks" xml:space="preserve">
+    <value>本に戻る</value>
+  </data>
+  <data name="Reader.PdfControls" xml:space="preserve">
+    <value>PDF表示の操作</value>
+  </data>
+  <data name="Reader.ZoomOut" xml:space="preserve">
+    <value>縮小</value>
+  </data>
+  <data name="Reader.ResetZoom100" xml:space="preserve">
+    <value>ズームを100%に戻す</value>
+  </data>
+  <data name="Reader.ResetZoom" xml:space="preserve">
+    <value>ズームをリセット</value>
+  </data>
+  <data name="Reader.ZoomIn" xml:space="preserve">
+    <value>拡大</value>
+  </data>
+  <data name="Reader.FitPage" xml:space="preserve">
+    <value>ページに合わせる</value>
+  </data>
+  <data name="Reader.Rotate" xml:space="preserve">
+    <value>時計回りに回転</value>
+  </data>
+  <data name="Reader.PolishVoice" xml:space="preserve">
+    <value>読み上げ音声を洗練</value>
+  </data>
+  <data name="Reader.ReadAloud" xml:space="preserve">
+    <value>このページを読み上げる</value>
+  </data>
+  <data name="Reader.Read" xml:space="preserve">
+    <value>読む</value>
+  </data>
+  <data name="Reader.TranslationControls" xml:space="preserve">
+    <value>ページ翻訳の操作</value>
+  </data>
+  <data name="Reader.TranslateOffAria" xml:space="preserve">
+    <value>翻訳はオフです。このページを翻訳します</value>
+  </data>
+  <data name="Reader.TranslateOffTitle" xml:space="preserve">
+    <value>翻訳はオフです。クリックしてこのページを翻訳します</value>
+  </data>
+  <data name="Reader.Translation" xml:space="preserve">
+    <value>翻訳</value>
+  </data>
+  <data name="Reader.TranslationLanguage" xml:space="preserve">
+    <value>翻訳言語</value>
+  </data>
+  <data name="Reader.SplitAria" xml:space="preserve">
+    <value>原文と翻訳を左右に表示</value>
+  </data>
+  <data name="Reader.SplitView" xml:space="preserve">
+    <value>分割表示</value>
+  </data>
+  <data name="Reader.Original" xml:space="preserve">
+    <value>原文</value>
+  </data>
+  <data name="Reader.PreviousPage" xml:space="preserve">
+    <value>前のページ</value>
+  </data>
+  <data name="Reader.NextPage" xml:space="preserve">
+    <value>次のページ</value>
+  </data>
+  <data name="Client.GenericError" xml:space="preserve">
+    <value>問題が発生しました。もう一度お試しください。</value>
+  </data>
+  <data name="Client.NetworkError" xml:space="preserve">
+    <value>ネットワークエラーです。もう一度お試しください。</value>
+  </data>
+  <data name="Client.TryAgain" xml:space="preserve">
+    <value>再試行</value>
+  </data>
+  <data name="Client.Loading" xml:space="preserve">
+    <value>読み込み中…</value>
+  </data>
+  <data name="Client.Correct" xml:space="preserve">
+    <value>正解</value>
+  </data>
+  <data name="Client.Incorrect" xml:space="preserve">
+    <value>不正解</value>
+  </data>
+  <data name="Client.NextWord" xml:space="preserve">
+    <value>次の単語</value>
+  </data>
+  <data name="Client.CheckFailed" xml:space="preserve">
+    <value>その回答を確認できませんでした。もう一度お試しください。</value>
+  </data>
+  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
+    <value>このカスタムクイズを削除しますか？</value>
+  </data>
+  <data name="Client.DeleteQuizFailed" xml:space="preserve">
+    <value>カスタムクイズを削除できませんでした。もう一度お試しください。</value>
+  </data>
+  <data name="Client.RepairFailed" xml:space="preserve">
+    <value>修復に失敗しました。もう一度お試しください。</value>
+  </data>
+  <data name="Client.RepairStopped" xml:space="preserve">
+    <value>修復リクエストが予期せず停止しました。もう一度お試しください。</value>
+  </data>
+  <data name="Client.DeleteChat" xml:space="preserve">
+    <value>チャットを削除</value>
+  </data>
+  <data name="Client.DeleteChatConfirm" xml:space="preserve">
+    <value>このチャットを削除しますか？</value>
+  </data>
+  <data name="Client.ApplyFailed" xml:space="preserve">
+    <value>変更を適用できませんでした。</value>
+  </data>
+  <data name="Client.ApplyNetwork" xml:space="preserve">
+    <value>変更の適用中にネットワークエラーが発生しました。</value>
+  </data>
+  <data name="Client.RejectNetwork" xml:space="preserve">
+    <value>変更の却下中にネットワークエラーが発生しました。</value>
+  </data>
+  <data name="Client.AssistantFailed" xml:space="preserve">
+    <value>アシスタントが応答できませんでした。</value>
+  </data>
+  <data name="Client.AssistantNetwork" xml:space="preserve">
+    <value>アシスタントとの通信中にネットワークエラーが発生しました。</value>
+  </data>
+  <data name="Client.PictureFailed" xml:space="preserve">
+    <value>この画像からテキストを読み取れませんでした。</value>
+  </data>
+  <data name="Client.PictureNetwork" xml:space="preserve">
+    <value>画像の読み取り中にネットワークエラーが発生しました。</value>
+  </data>
+  <data name="Client.MessageFailed" xml:space="preserve">
+    <value>メッセージの送信に失敗しました。</value>
+  </data>
+  <data name="Client.JoinCallFailed" xml:space="preserve">
+    <value>通話に参加できませんでした。</value>
+  </data>
+  <data name="Client.CallTokenFailed" xml:space="preserve">
+    <value>通話トークンを取得できませんでした。</value>
+  </data>
+  <data name="Client.PageOf" xml:space="preserve">
+    <value>{0}/{1}ページ</value>
+  </data>
+  <data name="Client.TtsNoText" xml:space="preserve">
+    <value>読み上げ可能なテキストがありません。</value>
+  </data>
+  <data name="Client.TtsUnavailable" xml:space="preserve">
+    <value>このブラウザーでは音声読み上げを利用できません。</value>
+  </data>
+  <data name="Client.TtsFailed" xml:space="preserve">
+    <value>音声読み上げの再生に失敗しました。</value>
+  </data>
+  <data name="Client.TranslationFailed" xml:space="preserve">
+    <value>ページを翻訳できませんでした。</value>
+  </data>
+  <data name="Client.PreferenceFailed" xml:space="preserve">
+    <value>言語の設定を保存できませんでした。</value>
+  </data>
+  <data name="Client.On" xml:space="preserve">
+    <value>オン</value>
+  </data>
+  <data name="Client.Off" xml:space="preserve">
+    <value>オフ</value>
+  </data>
+  <data name="Client.Translating" xml:space="preserve">
+    <value>翻訳しています…</value>
+  </data>
+  <data name="Client.TranslationError" xml:space="preserve">
+    <value>エラー</value>
+  </data>
+  <data name="Client.Read" xml:space="preserve">
+    <value>読む</value>
+  </data>
+  <data name="Client.Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="Client.MessageRateLimited" xml:space="preserve">
+    <value>メッセージの送信が速すぎます。少し待ってからお試しください。</value>
+  </data>
+  <data name="Client.SessionExpired" xml:space="preserve">
+    <value>セッションの有効期限が切れました。続けるにはクイズを再開してください。</value>
+  </data>
+  <data name="Client.NotQuite" xml:space="preserve">
+    <value>惜しいです</value>
+  </data>
+  <data name="Client.ShowResults" xml:space="preserve">
+    <value>結果を表示</value>
+  </data>
+  <data name="Quiz.LibraryTitle" xml:space="preserve">
+    <value>クイズを選択</value>
+  </data>
+  <data name="Quiz.SelectQuiz" xml:space="preserve">
+    <value>クイズを選択してください</value>
+  </data>
+  <data name="Quiz.ShowingLanguage" xml:space="preserve">
+    <value>{0} のクイズを表示しています。</value>
+  </data>
+  <data name="Quiz.LanguageCollection" xml:space="preserve">
+    <value>{0} のコレクションです。</value>
+  </data>
+  <data name="Quiz.Library" xml:space="preserve">
+    <value>クイズライブラリ</value>
+  </data>
+  <data name="Quiz.ChangeLanguage" xml:space="preserve">
+    <value>言語を変更</value>
+  </data>
+  <data name="Quiz.MakePrivate" xml:space="preserve">
+    <value>コレクションを非公開にする</value>
+  </data>
+  <data name="Quiz.MakePublic" xml:space="preserve">
+    <value>コレクションを公開にする</value>
+  </data>
+  <data name="Quiz.PublicSubtree" xml:space="preserve">
+    <value>公開サブツリー</value>
+  </data>
+  <data name="Quiz.Private" xml:space="preserve">
+    <value>非公開</value>
+  </data>
+  <data name="Quiz.LibrarySummary" xml:space="preserve">
+    <value>ライブラリの概要</value>
+  </data>
+  <data name="Quiz.CollectionOne" xml:space="preserve">
+    <value>コレクション</value>
+  </data>
+  <data name="Quiz.CollectionMany" xml:space="preserve">
+    <value>コレクション</value>
+  </data>
+  <data name="Quiz.QuizOne" xml:space="preserve">
+    <value>クイズ</value>
+  </data>
+  <data name="Quiz.QuizMany" xml:space="preserve">
+    <value>クイズ</value>
+  </data>
+  <data name="Quiz.NewCollection" xml:space="preserve">
+    <value>新しいコレクション</value>
+  </data>
+  <data name="Quiz.NewQuiz" xml:space="preserve">
+    <value>新しいクイズ</value>
+  </data>
+  <data name="Quiz.Collections" xml:space="preserve">
+    <value>コレクション</value>
+  </data>
+  <data name="Quiz.CollectionsHelp" xml:space="preserve">
+    <value>関連するクイズをまとめて、学習の流れを整えましょう。</value>
+  </data>
+  <data name="Quiz.DropInto" xml:space="preserve">
+    <value>{0} にクイズをドロップ</value>
+  </data>
+  <data name="Quiz.NestedCount" xml:space="preserve">
+    <value>ネストされた項目 {0} 件</value>
+  </data>
+  <data name="Quiz.YourQuizzes" xml:space="preserve">
+    <value>あなたのクイズ</value>
+  </data>
+  <data name="Quiz.DragHelp" xml:space="preserve">
+    <value>クイズを開いて学習するか、コレクションにドラッグして整理してください。</value>
+  </data>
+  <data name="Quiz.ChooseHelp" xml:space="preserve">
+    <value>クイズを選んで、学習の連続記録を続けましょう。</value>
+  </data>
+  <data name="Quiz.DeleteConfirm" xml:space="preserve">
+    <value>このクイズとその単語をすべて削除しますか？</value>
+  </data>
+  <data name="Quiz.DeleteNamed" xml:space="preserve">
+    <value>{0} を削除</value>
+  </data>
+  <data name="Quiz.Delete" xml:space="preserve">
+    <value>クイズを削除</value>
+  </data>
+  <data name="Quiz.EmptyTitle" xml:space="preserve">
+    <value>まだクイズもコレクションもありません</value>
+  </data>
+  <data name="Quiz.EmptyText" xml:space="preserve">
+    <value>コレクションを作成して語彙を整理するか、最初のクイズを作成してください。</value>
+  </data>
+  <data name="Quiz.CreateCollection" xml:space="preserve">
+    <value>コレクションを作成</value>
+  </data>
+  <data name="Quiz.CreateQuiz" xml:space="preserve">
+    <value>クイズを作成</value>
+  </data>
+  <data name="Quiz.CreateNewCollection" xml:space="preserve">
+    <value>新しいコレクションを作成</value>
+  </data>
+  <data name="Quiz.CollectionName" xml:space="preserve">
+    <value>コレクション名</value>
+  </data>
+  <data name="Quiz.CollectionExample" xml:space="preserve">
+    <value>例: Travel phrases</value>
+  </data>
+  <data name="Quiz.CreateNewQuiz" xml:space="preserve">
+    <value>新しいクイズを作成</value>
+  </data>
+  <data name="Quiz.Name" xml:space="preserve">
+    <value>クイズ名</value>
+  </data>
+  <data name="Quiz.NameExample" xml:space="preserve">
+    <value>例: French Basics</value>
+  </data>
+  <data name="Quiz.SourceLanguage" xml:space="preserve">
+    <value>元の言語</value>
+  </data>
+  <data name="Quiz.SelectLanguage" xml:space="preserve">
+    <value>言語を選択...</value>
+  </data>
+  <data name="Quiz.TargetLanguage" xml:space="preserve">
+    <value>学習言語</value>
+  </data>
+  <data name="Books.UploadRequired" xml:space="preserve">
+    <value>アップロードする PDF ファイルを選択してください。</value>
+  </data>
+  <data name="Books.Uploaded" xml:space="preserve">
+    <value>{0} をアップロードしました。</value>
+  </data>
+  <data name="Books.UploadInvalid" xml:space="preserve">
+    <value>25 MB 未満の、テキストベースの有効な PDF を選択してください。</value>
+  </data>
+  <data name="Books.ProcessFailed" xml:space="preserve">
+    <value>PDF を処理できませんでした。テキストベースの PDF をお試しください。</value>
+  </data>
+  <data name="Books.Deleted" xml:space="preserve">
+    <value>{0} を削除しました。</value>
+  </data>
+  <data name="Books.PaidUnavailable" xml:space="preserve">
+    <value>{0} の有料機能は {1} に再開されます。</value>
+  </data>
+  <data name="Books.PaidReason" xml:space="preserve">
+    <value>月間アプリ予算の上限に達しました。</value>
+  </data>
+  <data name="Transcripts.Renamed" xml:space="preserve">
+    <value>トランスクリプト名を変更しました。</value>
+  </data>
+  <data name="Transcripts.InvalidTitle" xml:space="preserve">
+    <value>トランスクリプトのタイトルは 1〜160 文字である必要があります。</value>
+  </data>
+  <data name="Transcripts.Deleted" xml:space="preserve">
+    <value>トランスクリプトを削除しました。</value>
+  </data>
+  <data name="Common.Accept" xml:space="preserve">
+    <value>承諾</value>
+  </data>
+  <data name="Common.Optional" xml:space="preserve">
+    <value>任意</value>
+  </data>
+  <data name="Common.Open" xml:space="preserve">
+    <value>開く</value>
+  </data>
+  <data name="Common.Copy" xml:space="preserve">
+    <value>コピー</value>
+  </data>
+  <data name="Classroom.Title" xml:space="preserve">
+    <value>教室</value>
+  </data>
+  <data name="Classroom.MyClassrooms" xml:space="preserve">
+    <value>マイ教室</value>
+  </data>
+  <data name="Classroom.LanguageClassrooms" xml:space="preserve">
+    <value>あなたの {0} の教室</value>
+  </data>
+  <data name="Classroom.LanguageTitle" xml:space="preserve">
+    <value>{0} の教室</value>
+  </data>
+  <data name="Classroom.SharedSpaces" xml:space="preserve">
+    <value>共有学習スペース</value>
+  </data>
+  <data name="Classroom.LearnBetter" xml:space="preserve">
+    <value>もっとよく学ぶ、</value>
+  </data>
+  <data name="Classroom.Together" xml:space="preserve">
+    <value>一緒に。</value>
+  </data>
+  <data name="Classroom.HeroText" xml:space="preserve">
+    <value>学習者のためのスペースを作り、練習教材を共有し、全員が同じ方向に進めるようにしましょう。</value>
+  </data>
+  <data name="Classroom.Summary" xml:space="preserve">
+    <value>教室の概要</value>
+  </data>
+  <data name="Classroom.One" xml:space="preserve">
+    <value>教室</value>
+  </data>
+  <data name="Classroom.Many" xml:space="preserve">
+    <value>教室</value>
+  </data>
+  <data name="Classroom.MemberOne" xml:space="preserve">
+    <value>メンバー</value>
+  </data>
+  <data name="Classroom.MemberMany" xml:space="preserve">
+    <value>メンバー</value>
+  </data>
+  <data name="Classroom.Waiting" xml:space="preserve">
+    <value>待機中</value>
+  </data>
+  <data name="Classroom.LanguageLab" xml:space="preserve">
+    <value>語学ラボ</value>
+  </data>
+  <data name="Classroom.LearnersActive" xml:space="preserve">
+    <value>{0} 人の学習者がアクティブです</value>
+  </data>
+  <data name="Classroom.Live" xml:space="preserve">
+    <value>ライブ</value>
+  </data>
+  <data name="Classroom.PracticeCompleted" xml:space="preserve">
+    <value>練習完了</value>
+  </data>
+  <data name="Classroom.WaitingForYou" xml:space="preserve">
+    <value>お待ちしています</value>
+  </data>
+  <data name="Classroom.Invitations" xml:space="preserve">
+    <value>招待</value>
+  </data>
+  <data name="Classroom.NewCount" xml:space="preserve">
+    <value>新着 {0} 件</value>
+  </data>
+  <data name="Classroom.Invited" xml:space="preserve">
+    <value>招待されています</value>
+  </data>
+  <data name="Classroom.InvitedBy" xml:space="preserve">
+    <value>{0} さんが {1} として参加するよう招待しました</value>
+  </data>
+  <data name="Classroom.DeclineInvitation" xml:space="preserve">
+    <value>{0} への招待を辞退</value>
+  </data>
+  <data name="Classroom.GetStarted" xml:space="preserve">
+    <value>始める</value>
+  </data>
+  <data name="Classroom.MakeOrJoin" xml:space="preserve">
+    <value>スペースを作成するか、参加してください</value>
+  </data>
+  <data name="Classroom.ForTeachers" xml:space="preserve">
+    <value>教師向け</value>
+  </data>
+  <data name="Classroom.Create" xml:space="preserve">
+    <value>クラスルームを作成</value>
+  </data>
+  <data name="Classroom.CreateHelp" xml:space="preserve">
+    <value>レッスン、クイズ、書籍、会話のための場を設定します。</value>
+  </data>
+  <data name="Classroom.LanguageHelp" xml:space="preserve">
+    <value> これは {0} のクラスルームになります。</value>
+  </data>
+  <data name="Classroom.Name" xml:space="preserve">
+    <value>クラスルーム名</value>
+  </data>
+  <data name="Classroom.NameExample" xml:space="preserve">
+    <value>例: Swedish A2 · Spring</value>
+  </data>
+  <data name="Classroom.ShortDescription" xml:space="preserve">
+    <value>短い説明</value>
+  </data>
+  <data name="Classroom.DescriptionPlaceholder" xml:space="preserve">
+    <value>このグループでは何を学びますか？</value>
+  </data>
+  <data name="Classroom.HaveCode" xml:space="preserve">
+    <value>招待コードをお持ちですか？</value>
+  </data>
+  <data name="Classroom.Join" xml:space="preserve">
+    <value>クラスルームに参加</value>
+  </data>
+  <data name="Classroom.JoinHelp" xml:space="preserve">
+    <value>先生から共有された8文字のコードを入力してください。</value>
+  </data>
+  <data name="Classroom.JoinCode" xml:space="preserve">
+    <value>参加コード</value>
+  </data>
+  <data name="Classroom.JoinThis" xml:space="preserve">
+    <value>このクラスルームに参加</value>
+  </data>
+  <data name="Classroom.YourSpaces" xml:space="preserve">
+    <value>あなたの学習スペース</value>
+  </data>
+  <data name="Classroom.TotalCount" xml:space="preserve">
+    <value>合計 {0} 件</value>
+  </data>
+  <data name="Classroom.OpenNamed" xml:space="preserve">
+    <value>{0} を開く</value>
+  </data>
+  <data name="Classroom.CardPlaceholder" xml:space="preserve">
+    <value>学習と練習のための共有スペースです。</value>
+  </data>
+  <data name="Classroom.BetterCompany" xml:space="preserve">
+    <value>学習は仲間がいるとより楽しくなります</value>
+  </data>
+  <data name="Classroom.NoLanguageYet" xml:space="preserve">
+    <value>まだ {0} のクラスルームはありません</value>
+  </data>
+  <data name="Classroom.EmptyHelp" xml:space="preserve">
+    <value>最初のクラスルームを作成するか、先生に参加コードを聞いてグループを見つけてください。</value>
+  </data>
+  <data name="Classroom.CreateFirst" xml:space="preserve">
+    <value>最初のスペースを作成</value>
+  </data>
+  <data name="Classroom.JoinCall" xml:space="preserve">
+    <value>通話に参加</value>
+  </data>
+  <data name="Classroom.VideoCall" xml:space="preserve">
+    <value>ビデオ通話</value>
+  </data>
+  <data name="Classroom.Sections" xml:space="preserve">
+    <value>クラスルームのセクション</value>
+  </data>
+  <data name="Classroom.Stream" xml:space="preserve">
+    <value>ストリーム</value>
+  </data>
+  <data name="Classroom.Content" xml:space="preserve">
+    <value>コンテンツ</value>
+  </data>
+  <data name="Classroom.Planning" xml:space="preserve">
+    <value>計画</value>
+  </data>
+  <data name="Classroom.Members" xml:space="preserve">
+    <value>メンバー</value>
+  </data>
+  <data name="Classroom.Results" xml:space="preserve">
+    <value>結果</value>
+  </data>
+  <data name="Speaking.LanguagePractice" xml:space="preserve">
+    <value>{0} のスピーキング練習</value>
+  </data>
+  <data name="Speaking.HeroTitle" xml:space="preserve">
+    <value>話して身につける言語学習。</value>
+  </data>
+  <data name="Speaking.HeroText" xml:space="preserve">
+    <value>公開チューターまたはシーンを選び、自然に話すと、毎回の発話後に個別コーチングを受けられます。</value>
+  </data>
+  <data name="Speaking.PracticeQuiz" xml:space="preserve">
+    <value>練習クイズ</value>
+  </data>
+  <data name="Speaking.ChooseQuiz" xml:space="preserve">
+    <value>スピーキング練習用のクイズを選んでください</value>
+  </data>
+  <data name="Speaking.FreeLesson" xml:space="preserve">
+    <value>無料レッスン</value>
+  </data>
+  <data name="Speaking.PoweredBy" xml:space="preserve">
+    <value>Microsoft Foundry と Azure AI Speech を使用</value>
+  </data>
+  <data name="Speaking.Settings" xml:space="preserve">
+    <value>練習設定</value>
+  </data>
+  <data name="Speaking.ChooseAvatar" xml:space="preserve">
+    <value>アバターを選択</value>
+  </data>
+  <data name="Speaking.Level" xml:space="preserve">
+    <value>レベル</value>
+  </data>
+  <data name="Speaking.ChooseLevel" xml:space="preserve">
+    <value>CEFR レベルを選択</value>
+  </data>
+  <data name="Speaking.Beginner" xml:space="preserve">
+    <value>初級</value>
+  </data>
+  <data name="Speaking.Elementary" xml:space="preserve">
+    <value>基礎</value>
+  </data>
+  <data name="Speaking.Intermediate" xml:space="preserve">
+    <value>中級</value>
+  </data>
+  <data name="Speaking.UpperIntermediate" xml:space="preserve">
+    <value>中上級</value>
+  </data>
+  <data name="Speaking.Advanced" xml:space="preserve">
+    <value>上級</value>
+  </data>
+  <data name="Speaking.EnglishTranslation" xml:space="preserve">
+    <value>英語訳</value>
+  </data>
+  <data name="Speaking.MuteAvatar" xml:space="preserve">
+    <value>アバターをミュート</value>
+  </data>
+  <data name="Speaking.AvatarScene" xml:space="preserve">
+    <value>アバターシーン</value>
+  </data>
+  <data name="Speaking.HoldSpeak" xml:space="preserve">
+    <value>押して話し、送信</value>
+  </data>
+  <data name="Speaking.StartingScene" xml:space="preserve">
+    <value>シーンを開始しています…</value>
+  </data>
+  <data name="Speaking.ReplayLatestAria" xml:space="preserve">
+    <value>最新のアバターの返答を再生</value>
+  </data>
+  <data name="Speaking.ReplayLatest" xml:space="preserve">
+    <value>最新の返答を再生</value>
+  </data>
+  <data name="Speaking.Conversation" xml:space="preserve">
+    <value>会話</value>
+  </data>
+  <data name="Speaking.CurrentSession" xml:space="preserve">
+    <value>現在のセッション</value>
+  </data>
+  <data name="Speaking.ScoreHelp" xml:space="preserve">
+    <value>発音スコアは録音された音声に基づきます。</value>
+  </data>
+  <data name="Speaking.SpeakToType" xml:space="preserve">
+    <value>話して入力</value>
+  </data>
+  <data name="Speaking.You" xml:space="preserve">
+    <value>あなた</value>
+  </data>
+  <data name="Speaking.Accuracy" xml:space="preserve">
+    <value>正確さ</value>
+  </data>
+  <data name="Speaking.Fluency" xml:space="preserve">
+    <value>流暢さ</value>
+  </data>
+  <data name="Speaking.Completeness" xml:space="preserve">
+    <value>完全性</value>
+  </data>
+  <data name="Speaking.ReplayReply" xml:space="preserve">
+    <value>この返答を再生</value>
+  </data>
+  <data name="Speaking.ShowEnglish" xml:space="preserve">
+    <value>英語訳を表示</value>
+  </data>
+  <data name="Speaking.Grammar" xml:space="preserve">
+    <value>文法</value>
+  </data>
+  <data name="Speaking.Vocabulary" xml:space="preserve">
+    <value>語彙</value>
+  </data>
+  <data name="Speaking.Naturalness" xml:space="preserve">
+    <value>自然さ</value>
+  </data>
+  <data name="Speaking.PracticeThis" xml:space="preserve">
+    <value>これを練習</value>
+  </data>
+  <data name="Speaking.HearPhrase" xml:space="preserve">
+    <value>この練習フレーズを聞く</value>
+  </data>
+  <data name="Speaking.HoldRepeatAria" xml:space="preserve">
+    <value>押してこの練習フレーズを繰り返す</value>
+  </data>
+  <data name="Speaking.HoldRepeat" xml:space="preserve">
+    <value>押して繰り返す</value>
+  </data>
+  <data name="Quiz.DeletedWord" xml:space="preserve">
+    <value>{0} を削除しました。</value>
+  </data>
+  <data name="Quiz.DeletedNamed" xml:space="preserve">
+    <value>{0} を削除しました。</value>
+  </data>
+  <data name="Quiz.NowPublic" xml:space="preserve">
+    <value>クイズを公開しました。</value>
+  </data>
+  <data name="Quiz.NowPrivate" xml:space="preserve">
+    <value>クイズを非公開にしました。</value>
+  </data>
+  <data name="Quiz.VisibilityFailed" xml:space="preserve">
+    <value>クイズの公開設定を更新できませんでした。</value>
+  </data>
+  <data name="Quiz.CollectionNowPublic" xml:space="preserve">
+    <value>コレクションを公開しました。</value>
+  </data>
+  <data name="Quiz.CollectionNowPrivate" xml:space="preserve">
+    <value>コレクションを非公開にしました。</value>
+  </data>
+  <data name="Quiz.CollectionVisibilityFailed" xml:space="preserve">
+    <value>コレクションの公開設定を更新できませんでした。</value>
+  </data>
+  <data name="Quiz.CollectionCreated" xml:space="preserve">
+    <value>コレクション {0} を作成しました。</value>
+  </data>
+  <data name="Quiz.CollectionCreateFailed" xml:space="preserve">
+    <value>コレクションを作成できませんでした。名前と親コレクションを確認してください。</value>
+  </data>
+  <data name="Common.All" xml:space="preserve">
+    <value>すべて</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>クイズ設定</value>
+  </data>
+  <data name="Settings.FlashcardQuiz" xml:space="preserve">
+    <value>フラッシュカードクイズ</value>
+  </data>
+  <data name="Settings.Source" xml:space="preserve">
+    <value>元の言語</value>
+  </data>
+  <data name="Settings.Target" xml:space="preserve">
+    <value>学習言語</value>
+  </data>
+  <data name="Settings.Configuration" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="Settings.Intro" xml:space="preserve">
+    <value>手軽に練習して、このクイズを復習しましょう。</value>
+  </data>
+  <data name="Settings.SessionLength" xml:space="preserve">
+    <value>セッションの長さ</value>
+  </data>
+  <data name="Settings.Words" xml:space="preserve">
+    <value>単語</value>
+  </data>
+  <data name="Settings.AvailableLower" xml:space="preserve">
+    <value>利用可能</value>
+  </data>
+  <data name="Settings.Quick" xml:space="preserve">
+    <value>短め</value>
+  </data>
+  <data name="Settings.Standard" xml:space="preserve">
+    <value>標準</value>
+  </data>
+  <data name="Settings.WordRange" xml:space="preserve">
+    <value>単語範囲</value>
+  </data>
+  <data name="Settings.RangeHelp" xml:space="preserve">
+    <value>どちらかのハンドルをドラッグして、リストの一部に絞り込めます。たとえば最新の単語だけにできます。</value>
+  </data>
+  <data name="Settings.Newest20" xml:space="preserve">
+    <value>最新20%</value>
+  </data>
+  <data name="Settings.Newest50" xml:space="preserve">
+    <value>最新50%</value>
+  </data>
+  <data name="Settings.Oldest20" xml:space="preserve">
+    <value>最古20%</value>
+  </data>
+  <data name="Settings.AllWordsOrder" xml:space="preserve">
+    <value>すべての単語を、古いものから新しいものへ練習します。</value>
+  </data>
+  <data name="Settings.ChooseIndividually" xml:space="preserve">
+    <value>単語を個別に選ぶ…</value>
+  </data>
+  <data name="Settings.ClearSelection" xml:space="preserve">
+    <value>選択をクリア</value>
+  </data>
+  <data name="Settings.ChooseWords" xml:space="preserve">
+    <value>練習する単語を選択</value>
+  </data>
+  <data name="Settings.SelectAll" xml:space="preserve">
+    <value>すべて選択</value>
+  </data>
+  <data name="Settings.DeselectAll" xml:space="preserve">
+    <value>すべて選択解除</value>
+  </data>
+  <data name="Settings.FilterWords" xml:space="preserve">
+    <value>単語を絞り込む…</value>
+  </data>
+  <data name="Settings.ApplySelection" xml:space="preserve">
+    <value>選択を適用</value>
+  </data>
+  <data name="Settings.PracticeContent" xml:space="preserve">
+    <value>練習内容</value>
+  </data>
+  <data name="Settings.ContentHelp" xml:space="preserve">
+    <value>単語または全文を選択してください。</value>
+  </data>
+  <data name="Settings.Sentences" xml:space="preserve">
+    <value>例文</value>
+  </data>
+  <data name="Settings.QuizMode" xml:space="preserve">
+    <value>クイズモード</value>
+  </data>
+  <data name="Settings.ModeHelp" xml:space="preserve">
+    <value>記憶用のフラッシュカードか、綴りの練習用のタイピングかを選択してください。</value>
+  </data>
+  <data name="Settings.Flashcards" xml:space="preserve">
+    <value>フラッシュカード</value>
+  </data>
+  <data name="Settings.Typing" xml:space="preserve">
+    <value>タイピング</value>
+  </data>
+  <data name="Settings.Choices" xml:space="preserve">
+    <value>選択肢</value>
+  </data>
+  <data name="Settings.PracticeDirection" xml:space="preserve">
+    <value>練習の順序</value>
+  </data>
+  <data name="Settings.DirectionHelp" xml:space="preserve">
+    <value>どちらの言語を先に表示するかを選択してください。</value>
+  </data>
+  <data name="Settings.NeedWord" xml:space="preserve">
+    <value>練習を開始する前に、少なくとも1語追加してください。</value>
+  </data>
+  <data name="Settings.Quiz" xml:space="preserve">
+    <value>クイズ</value>
+  </data>
+  <data name="Settings.Content" xml:space="preserve">
+    <value>内容</value>
+  </data>
+  <data name="Settings.Available" xml:space="preserve">
+    <value>利用可能</value>
+  </data>
+  <data name="Settings.Mode" xml:space="preserve">
+    <value>モード</value>
+  </data>
+  <data name="Settings.Range" xml:space="preserve">
+    <value>範囲</value>
+  </data>
+  <data name="Settings.Direction" xml:space="preserve">
+    <value>順序</value>
+  </data>
+  <data name="Settings.StartQuiz" xml:space="preserve">
+    <value>クイズを開始</value>
+  </data>
+  <data name="Settings.WordsLower" xml:space="preserve">
+    <value>単語</value>
+  </data>
+  <data name="Settings.SentencesLower" xml:space="preserve">
+    <value>例文</value>
+  </data>
+  <data name="Settings.WordLower" xml:space="preserve">
+    <value>単語</value>
+  </data>
+  <data name="Settings.SentenceLower" xml:space="preserve">
+    <value>例文</value>
+  </data>
+  <data name="Settings.NeedItem" xml:space="preserve">
+    <value>練習を開始する前に、少なくとも1つの{0}を追加してください。</value>
+  </data>
+  <data name="Settings.Newest" xml:space="preserve">
+    <value>最新 {0}%</value>
+  </data>
+  <data name="Settings.Oldest" xml:space="preserve">
+    <value>最古 {0}%</value>
+  </data>
+  <data name="Settings.RangeDynamic" xml:space="preserve">
+    <value>リストの {0} を練習します（古いものから新しいものへ）。</value>
+  </data>
+  <data name="Settings.SelectedCount" xml:space="preserve">
+    <value>{1}件中{0}件選択</value>
+  </data>
+  <data name="Settings.PickedWords" xml:space="preserve">
+    <value>{1}語中{0}語を個別に選択</value>
+  </data>
+  <data name="Settings.PickedCount" xml:space="preserve">
+    <value>{0}件選択済み</value>
+  </data>
+  <data name="Explore.Title" xml:space="preserve">
+    <value>探索</value>
+  </data>
+  <data name="Explore.Discover" xml:space="preserve">
+    <value>新しい発見をしましょう</value>
+  </data>
+  <data name="Explore.Intro" xml:space="preserve">
+    <value>他の学習者が共有した語彙を閲覧して、気に入ったものを自分のライブラリにコピーしましょう。</value>
+  </data>
+  <data name="Explore.Summary" xml:space="preserve">
+    <value>公開ライブラリの概要</value>
+  </data>
+  <data name="Explore.CommunityLibrary" xml:space="preserve">
+    <value>コミュニティライブラリ</value>
+  </data>
+  <data name="Explore.SharedCollections" xml:space="preserve">
+    <value>共有コレクション</value>
+  </data>
+  <data name="Explore.CollectionsHelp" xml:space="preserve">
+    <value>コミュニティが厳選した学習セットを見つけましょう。</value>
+  </data>
+  <data name="Explore.SharedCollection" xml:space="preserve">
+    <value>共有コレクション</value>
+  </data>
+  <data name="Explore.CopyNamed" xml:space="preserve">
+    <value>{0} をライブラリにコピー</value>
+  </data>
+  <data name="Explore.CommunityQuizzes" xml:space="preserve">
+    <value>コミュニティクイズ</value>
+  </data>
+  <data name="Explore.QuizzesHelp" xml:space="preserve">
+    <value>クイズをプレビューしてから、個人用のコピーをライブラリに追加できます。</value>
+  </data>
+  <data name="Explore.CommunityQuiz" xml:space="preserve">
+    <value>コミュニティクイズ</value>
+  </data>
+  <data name="Explore.NothingPublic" xml:space="preserve">
+    <value>{0} の公開コンテンツはまだありません</value>
+  </data>
+  <data name="Explore.EmptyHelp" xml:space="preserve">
+    <value>この言語で学習者がクイズやコレクションを共有すると、ここに表示されます。</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>編集</value>
+  </data>
+  <data name="Common.Play" xml:space="preserve">
+    <value>再生</value>
+  </data>
+  <data name="Quiz.AssistantEmpty" xml:space="preserve">
+    <value>このクイズについて会話を始めましょう。</value>
+  </data>
+  <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
+    <value>このクイズについて質問してください...</value>
+  </data>
+  <data name="Quiz.CustomCount" xml:space="preserve">
+    <value>カスタム {0} 件</value>
+  </data>
+  <data name="Quiz.BuildCustom" xml:space="preserve">
+    <value>カスタムクイズを作成</value>
+  </data>
+  <data name="Quiz.Public" xml:space="preserve">
+    <value>公開</value>
+  </data>
+  <data name="Quiz.Word" xml:space="preserve">
+    <value>単語</value>
+  </data>
+  <data name="Quiz.WordExample" xml:space="preserve">
+    <value>例: Bibliothèque</value>
+  </data>
+  <data name="Quiz.TranslationExample" xml:space="preserve">
+    <value>例: Library</value>
+  </data>
+  <data name="Quiz.AddWord" xml:space="preserve">
+    <value>単語を追加</value>
+  </data>
+  <data name="Quiz.ItemsIn" xml:space="preserve">
+    <value>{0} {1} in {2}</value>
+  </data>
+  <data name="Quiz.ContentAria" xml:space="preserve">
+    <value>クイズ内容</value>
+  </data>
+  <data name="Quiz.OpenWiktionary" xml:space="preserve">
+    <value>Wiktionaryで{0}を開く</value>
+  </data>
+  <data name="Quiz.RepairWord" xml:space="preserve">
+    <value>単語を修正</value>
+  </data>
+  <data name="Quiz.RepairNamed" xml:space="preserve">
+    <value>{0}を修正</value>
+  </data>
+  <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
+    <value>この単語を削除しますか？</value>
+  </data>
+  <data name="Quiz.NoWords" xml:space="preserve">
+    <value>まだ単語がありません。上のバーで最初の単語を追加してください。</value>
+  </data>
+  <data name="Quiz.LinkedWords" xml:space="preserve">
+    <value>リンク済みの{0} {1}</value>
+  </data>
+  <data name="Quiz.Repair" xml:space="preserve">
+    <value>修正</value>
+  </data>
+  <data name="Quiz.NoSentences" xml:space="preserve">
+    <value>まだ文がありません。アシスタントに文の追加を依頼するか、テキストから抽出してください。</value>
+  </data>
+  <data name="Quiz.CustomQuizzes" xml:space="preserve">
+    <value>カスタムクイズ</value>
+  </data>
+  <data name="Quiz.CustomHelp" xml:space="preserve">
+    <value>このクイズの単語から自由形式の演習を作成します。</value>
+  </data>
+  <data name="Quiz.NewCustom" xml:space="preserve">
+    <value>新しいカスタムクイズ</value>
+  </data>
+  <data name="Quiz.Playable" xml:space="preserve">
+    <value>プレイ可能</value>
+  </data>
+  <data name="Quiz.Draft" xml:space="preserve">
+    <value>下書き</value>
+  </data>
+  <data name="Quiz.NoCustom" xml:space="preserve">
+    <value>まだカスタムクイズがありません。ブロックをキャンバスにドラッグして作成してください。</value>
+  </data>
+  <data name="Payments.PackageUnavailable" xml:space="preserve">
+    <value>そのクレジットパッケージは現在ご利用いただけません。</value>
+  </data>
+  <data name="Payments.CreditsReady" xml:space="preserve">
+    <value>支払いが確認されました。クレジットをご利用いただけます。</value>
+  </data>
+  <data name="Payments.AwaitingOrFailed" xml:space="preserve">
+    <value>支払いはまだ確認待ちか、確認できませんでした。</value>
+  </data>
+  <data name="Payments.GetCredits" xml:space="preserve">
+    <value>クレジットを取得</value>
+  </data>
+  <data name="Payments.GlosifyCredits" xml:space="preserve">
+    <value>Glosifyクレジット</value>
+  </data>
+  <data name="Payments.Hero" xml:space="preserve">
+    <value>学習サイクルを継続しましょう。</value>
+  </data>
+  <data name="Payments.Intro" xml:space="preserve">
+    <value>クレジットは、GlosifyのAI支援学習機能とライブ字幕を利用するために使われます。</value>
+  </data>
+  <data name="Payments.NotAvailable" xml:space="preserve">
+    <value>支払いはまだ利用できません</value>
+  </data>
+  <data name="Payments.NotConnected" xml:space="preserve">
+    <value>このGlosifyデプロイはStripeに接続されていません。</value>
+  </data>
+  <data name="Payments.CreditPack" xml:space="preserve">
+    <value>クレジットパック</value>
+  </data>
+  <data name="Payments.CreditCount" xml:space="preserve">
+    <value>{0} クレジット</value>
+  </data>
+  <data name="Payments.ContinueCheckout" xml:space="preserve">
+    <value>安全なチェックアウトに進む</value>
+  </data>
+  <data name="Payments.StripeNotice" xml:space="preserve">
+    <value>チェックアウトはStripeで処理されます。Glosifyがカード情報を受け取ったり保存したりすることはありません。</value>
+  </data>
+  <data name="Payments.Status" xml:space="preserve">
+    <value>支払い状況</value>
+  </data>
+  <data name="Payments.Confirmed" xml:space="preserve">
+    <value>支払いが確認されました</value>
+  </data>
+  <data name="Payments.Processing" xml:space="preserve">
+    <value>支払い処理中</value>
+  </data>
+  <data name="Payments.Back" xml:space="preserve">
+    <value>Glosifyに戻る</value>
+  </data>
+  <data name="Payments.AiCredits" xml:space="preserve">
+    <value>AIクレジット</value>
+  </data>
+  <data name="Payments.AiCreditAdmin" xml:space="preserve">
+    <value>AIクレジット管理</value>
+  </data>
+  <data name="Error.StartupDelay" xml:space="preserve">
+    <value>一時的な起動遅延</value>
+  </data>
+  <data name="Error.RequestFailed" xml:space="preserve">
+    <value>リクエストに失敗しました</value>
+  </data>
+  <data name="Error.RequestId" xml:space="preserve">
+    <value>リクエストID:</value>
+  </data>
+  <data name="Error.WarmupTitle" xml:space="preserve">
+    <value>このサービスを起動しています</value>
+  </data>
+  <data name="Error.WarmupMessage" xml:space="preserve">
+    <value>しばらく待ってからもう一度お試しください。</value>
+  </data>
+  <data name="Error.GenericTitle" xml:space="preserve">
+    <value>問題が発生しました</value>
+  </data>
+  <data name="Error.GenericMessage" xml:space="preserve">
+    <value>リクエストを完了できませんでした。もう一度お試しください。</value>
+  </data>
+  <data name="Common.Undo" xml:space="preserve">
+    <value>元に戻す</value>
+  </data>
+  <data name="Common.Preview" xml:space="preserve">
+    <value>プレビュー</value>
+  </data>
+  <data name="Custom.EditNamed" xml:space="preserve">
+    <value>{0}を編集</value>
+  </data>
+  <data name="Custom.AssistantTitle" xml:space="preserve">
+    <value>クイズ作成アシスタント</value>
+  </data>
+  <data name="Custom.AssistantEmpty" xml:space="preserve">
+    <value>クイズ要素の追加、設定、配置を依頼してください。</value>
+  </data>
+  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
+    <value>このカスタムクイズに問題を追加してください...</value>
+  </data>
+  <data name="Custom.Name" xml:space="preserve">
+    <value>カスタムクイズ名</value>
+  </data>
+  <data name="Custom.LoadingEditor" xml:space="preserve">
+    <value>エディターコントロールを読み込み中…</value>
+  </data>
+  <data name="Custom.DesignStarters" xml:space="preserve">
+    <value>デザインの開始</value>
+  </data>
+  <data name="Custom.VisualDirection" xml:space="preserve">
+    <value>見た目の方向を選択</value>
+  </data>
+  <data name="Custom.TemplateHelp" xml:space="preserve">
+    <value>見た目だけを適用するか、このクイズの単語から作成した完全なレイアウトでキャンバスを置き換えます。</value>
+  </data>
+  <data name="Custom.UseStyle" xml:space="preserve">
+    <value>スタイルを使用</value>
+  </data>
+  <data name="Custom.UseLayout" xml:space="preserve">
+    <value>レイアウトを使用</value>
+  </data>
+  <data name="Custom.BuildingBlocks" xml:space="preserve">
+    <value>クイズ構成ブロック</value>
+  </data>
+  <data name="Custom.Blocks" xml:space="preserve">
+    <value>ブロック</value>
+  </data>
+  <data name="Custom.BlocksHelp" xml:space="preserve">
+    <value>空いている場所にドラッグするか、クリックして自動追加します。</value>
+  </data>
+  <data name="Custom.DragAdd" xml:space="preserve">
+    <value>{0}をドラッグするかクリックして追加</value>
+  </data>
+  <data name="Custom.Add" xml:space="preserve">
+    <value>{0}を追加</value>
+  </data>
+  <data name="Custom.Grid" xml:space="preserve">
+    <value>12列のスマートグリッド</value>
+  </data>
+  <data name="Custom.GridHelp" xml:space="preserve">
+    <value>ドラッグして配置 · 端にスナップ · 既存のスペースは避けます</value>
+  </data>
+  <data name="Custom.Canvas" xml:space="preserve">
+    <value>カスタムクイズキャンバス</value>
+  </data>
+  <data name="Custom.Properties" xml:space="preserve">
+    <value>プロパティ</value>
+  </data>
+  <data name="Custom.PropertiesHelp" xml:space="preserve">
+    <value>ブロックを選択して内容とバインディングを編集します。</value>
+  </data>
+  <data name="Custom.Answer" xml:space="preserve">
+    <value>回答</value>
+  </data>
+  <data name="Custom.Choose" xml:space="preserve">
+    <value>選択してください...</value>
+  </data>
+  <data name="Custom.CheckAnswers" xml:space="preserve">
+    <value>回答を確認</value>
+  </data>
+  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
+    <value>クイズを完了してから、回答を送信してください。</value>
+  </data>
+  <data name="Custom.Block.Heading" xml:space="preserve">
+    <value>見出し</value>
+  </data>
+  <data name="Custom.Block.Instruction" xml:space="preserve">
+    <value>指示</value>
+  </data>
+  <data name="Custom.Block.WordLabel" xml:space="preserve">
+    <value>単語ラベル</value>
+  </data>
+  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
+    <value>訳語ラベル</value>
+  </data>
+  <data name="Custom.Block.TextInput" xml:space="preserve">
+    <value>テキスト入力</value>
+  </data>
+  <data name="Custom.Block.LongAnswer" xml:space="preserve">
+    <value>長文回答</value>
+  </data>
+  <data name="Custom.Block.Checkbox" xml:space="preserve">
+    <value>チェックボックス</value>
+  </data>
+  <data name="Custom.Block.RadioChoices" xml:space="preserve">
+    <value>ラジオボタンの選択肢</value>
+  </data>
+  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
+    <value>チェックボックスの選択肢</value>
+  </data>
+  <data name="Custom.Block.SelectMenu" xml:space="preserve">
+    <value>選択メニュー</value>
+  </data>
+  <data name="Custom.Block.WordBank" xml:space="preserve">
+    <value>単語バンク</value>
+  </data>
+  <data name="Custom.Block.SubmitButton" xml:space="preserve">
+    <value>送信ボタン</value>
+  </data>
+  <data name="Custom.Block.Feedback" xml:space="preserve">
+    <value>フィードバック</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
+    <value>編集フロー</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
+    <value>静かな階層、ゆとりのある余白、1行につき1つの明確な課題です。</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
+    <value>翻訳、文法プロンプト、重点的な復習</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
+    <value>オーロラカード</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
+    <value>やわらかな色合い、ペアで行う練習カード、活気のある教室の雰囲気です。</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
+    <value>短い語彙セットと視覚的な確認</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
+    <value>教科書ドリル</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
+    <value>写真付きワークブックの演習をモデルにした、コンパクトな番号付き行です。</value>
+  </data>
+  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
+    <value>活用、変換、穴埋め、正式な演習</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
+    <value>単語バンクラボ</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
+    <value>目立つ単語バンクが演習を導き、思い出す練習を楽しく保ちます。</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
+    <value>ガイド付きの想起と初級語彙</value>
+  </data>
+  <data name="Custom.AnswerQuestion" xml:space="preserve">
+    <value>この質問に答えてください。</value>
+  </data>
+  <data name="Custom.Correct" xml:space="preserve">
+    <value>正解です。</value>
+  </data>
+  <data name="Custom.CorrectAnswer" xml:space="preserve">
+    <value>正解: {0}</value>
+  </data>
+  <data name="Custom.CompleteAnswers" xml:space="preserve">
+    <value>送信する前にすべての回答を完了してください。</value>
+  </data>
+  <data name="Custom.Score" xml:space="preserve">
+    <value>スコア: {0}/{1} ({2}%)。</value>
+  </data>
+  <data name="Custom.GradeFailed" xml:space="preserve">
+    <value>このクイズを採点できませんでした。もう一度お試しください。</value>
+  </data>
+  <data name="Classroom.PostAnnouncement" xml:space="preserve">
+    <value>お知らせを投稿</value>
+  </data>
+  <data name="Classroom.ShareClass" xml:space="preserve">
+    <value>クラスで共有する</value>
+  </data>
+  <data name="Classroom.Post" xml:space="preserve">
+    <value>投稿</value>
+  </data>
+  <data name="Classroom.Announcements" xml:space="preserve">
+    <value>お知らせ</value>
+  </data>
+  <data name="Classroom.PostOne" xml:space="preserve">
+    <value>件の投稿</value>
+  </data>
+  <data name="Classroom.PostMany" xml:space="preserve">
+    <value>件の投稿</value>
+  </data>
+  <data name="Classroom.Pinned" xml:space="preserve">
+    <value>固定済み</value>
+  </data>
+  <data name="Classroom.Unpin" xml:space="preserve">
+    <value>固定解除</value>
+  </data>
+  <data name="Classroom.Pin" xml:space="preserve">
+    <value>固定</value>
+  </data>
+  <data name="Classroom.DeleteAnnouncement" xml:space="preserve">
+    <value>このお知らせを削除しますか？</value>
+  </data>
+  <data name="Classroom.NothingYet" xml:space="preserve">
+    <value>まだ何もありません。</value>
+  </data>
+  <data name="Classroom.PostFirst" xml:space="preserve">
+    <value>上に最初のお知らせを投稿してください。</value>
+  </data>
+  <data name="Classroom.NoTeacherPosts" xml:space="preserve">
+    <value>先生はまだ何も投稿していません。</value>
+  </data>
+  <data name="Classroom.OpenChat" xml:space="preserve">
+    <value>クラスチャットを開く</value>
+  </data>
+  <data name="Classroom.ClassChat" xml:space="preserve">
+    <value>クラスチャット</value>
+  </data>
+  <data name="Classroom.ClassChatUpper" xml:space="preserve">
+    <value>クラスチャット</value>
+  </data>
+  <data name="Classroom.Connecting" xml:space="preserve">
+    <value>接続中…</value>
+  </data>
+  <data name="Classroom.CloseChat" xml:space="preserve">
+    <value>クラスチャットを閉じる</value>
+  </data>
+  <data name="Classroom.LoadingMessages" xml:space="preserve">
+    <value>メッセージを読み込み中…</value>
+  </data>
+  <data name="Classroom.MessageClass" xml:space="preserve">
+    <value>クラスにメッセージを送る</value>
+  </data>
+  <data name="Classroom.ChatMessage" xml:space="preserve">
+    <value>チャットメッセージ</value>
+  </data>
+  <data name="Classroom.CallTitle" xml:space="preserve">
+    <value>{0} — 通話</value>
+  </data>
+  <data name="Classroom.NotConnected" xml:space="preserve">
+    <value>未接続</value>
+  </data>
+  <data name="Classroom.Back" xml:space="preserve">
+    <value>教室に戻る</value>
+  </data>
+  <data name="Classroom.CallNotConfigured" xml:space="preserve">
+    <value>このサーバーではビデオ通話が設定されていません。管理者が設定する必要があります</value>
+  </data>
+  <data name="Classroom.ReadyJoin" xml:space="preserve">
+    <value>参加する準備はできましたか？</value>
+  </data>
+  <data name="Classroom.JoinAs" xml:space="preserve">
+    <value>次の名前で参加します</value>
+  </data>
+  <data name="Classroom.MuteMic" xml:space="preserve">
+    <value>マイクをミュート</value>
+  </data>
+  <data name="Classroom.Mute" xml:space="preserve">
+    <value>ミュート</value>
+  </data>
+  <data name="Classroom.CameraOff" xml:space="preserve">
+    <value>カメラをオフにする</value>
+  </data>
+  <data name="Classroom.Camera" xml:space="preserve">
+    <value>カメラ</value>
+  </data>
+  <data name="Classroom.LeaveCall" xml:space="preserve">
+    <value>通話を退出</value>
+  </data>
+  <data name="Classroom.Leave" xml:space="preserve">
+    <value>退出</value>
+  </data>
+  <data name="Classroom.ReadyStart" xml:space="preserve">
+    <value>開始する準備はできましたか？</value>
+  </data>
+  <data name="Classroom.NoOneCall" xml:space="preserve">
+    <value>まだ通話には誰もいません。</value>
+  </data>
+  <data name="Classroom.WaitingTeacher" xml:space="preserve">
+    <value>先生を待っています</value>
+  </data>
+  <data name="Classroom.JoinAfterTeacher" xml:space="preserve">
+    <value>先生が通話を開始したら参加できます。</value>
+  </data>
+  <data name="Classroom.UnmuteMic" xml:space="preserve">
+    <value>マイクのミュートを解除</value>
+  </data>
+  <data name="Classroom.CameraOn" xml:space="preserve">
+    <value>カメラをオンにする</value>
+  </data>
+  <data name="Classroom.Connected" xml:space="preserve">
+    <value>接続済み</value>
+  </data>
+  <data name="Classroom.NoMessages" xml:space="preserve">
+    <value>まだメッセージはありません。こんにちはと送ってください！</value>
+  </data>
+  <data name="Classroom.Reconnecting" xml:space="preserve">
+    <value>再接続中…</value>
+  </data>
+  <data name="Classroom.ActionInvalid" xml:space="preserve">
+    <value>教室の操作を完了できませんでした。入力内容とアクセス権を確認してください。</value>
+  </data>
+  <data name="Classroom.Created" xml:space="preserve">
+    <value>{0} を作成しました。</value>
+  </data>
+  <data name="Classroom.CreateInvalid" xml:space="preserve">
+    <value>有効な教室名と説明を入力してください。</value>
+  </data>
+  <data name="Classroom.NoCodeMatch" xml:space="preserve">
+    <value>その参加コードに一致する教室はありません。</value>
+  </data>
+  <data name="Classroom.InvitationUnavailable" xml:space="preserve">
+    <value>その招待はすでに利用できません。</value>
+  </data>
+  <data name="Classroom.Welcome" xml:space="preserve">
+    <value>{0}へようこそ。</value>
+  </data>
+  <data name="Classroom.WelcomeSwitched" xml:space="preserve">
+    <value>{0}へようこそ。{1}に切り替えました。</value>
+  </data>
+  <data name="Classroom.InvitationDeclined" xml:space="preserve">
+    <value>招待は辞退されました。</value>
+  </data>
+  <data name="Classroom.NotFound" xml:space="preserve">
+    <value>教室が見つかりません。</value>
+  </data>
+  <data name="Classroom.Left" xml:space="preserve">
+    <value>教室を退出しました。</value>
+  </data>
+  <data name="Classroom.ActionDenied" xml:space="preserve">
+    <value>この教室ではその操作を実行できません。</value>
+  </data>
+  <data name="Classroom.Deleted" xml:space="preserve">
+    <value>教室を削除しました。</value>
+  </data>
+  <data name="Explore.PublicQuiz" xml:space="preserve">
+    <value>公開クイズ</value>
+  </data>
+  <data name="Explore.CustomExercises" xml:space="preserve">
+    <value>このクイズの語彙から作成された練習問題です。</value>
+  </data>
+  <data name="Explore.NoPublicWords" xml:space="preserve">
+    <value>この公開クイズにはまだ単語が追加されていません。</value>
+  </data>
+  <data name="Explore.NoPublicSentences" xml:space="preserve">
+    <value>この公開クイズにはまだ例文が追加されていません。</value>
+  </data>
+  <data name="Explore.PublicCollection" xml:space="preserve">
+    <value>公開コレクション</value>
+  </data>
+  <data name="Explore.CollectionIntro" xml:space="preserve">
+    <value>{2}のコレクションで{0}件の{1}を探して、完全なセットをライブラリにコピーしてください。</value>
+  </data>
+  <data name="Explore.CollectionSummary" xml:space="preserve">
+    <value>コレクションの概要</value>
+  </data>
+  <data name="Explore.CopyCollection" xml:space="preserve">
+    <value>コレクションをコピー</value>
+  </data>
+  <data name="Explore.InCollection" xml:space="preserve">
+    <value>このコレクション内</value>
+  </data>
+  <data name="Explore.FiledInside" xml:space="preserve">
+    <value>{0}の中に直接保存されたクイズです。</value>
+  </data>
+  <data name="Explore.NoDirectQuizzes" xml:space="preserve">
+    <value>このコレクション内に直接保存されたクイズはありません。</value>
+  </data>
+  <data name="Common.Remove" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Classroom.ShareQuiz" xml:space="preserve">
+    <value>クイズを共有</value>
+  </data>
+  <data name="Classroom.QuizLibrary" xml:space="preserve">
+    <value>ライブラリ内のクイズ</value>
+  </data>
+  <data name="Classroom.Share" xml:space="preserve">
+    <value>共有</value>
+  </data>
+  <data name="Classroom.AllQuizzesShared" xml:space="preserve">
+    <value>クイズはすべてすでにここで共有済みか、ライブラリが空です。</value>
+  </data>
+  <data name="Classroom.ShareBook" xml:space="preserve">
+    <value>本を共有</value>
+  </data>
+  <data name="Classroom.BookLibrary" xml:space="preserve">
+    <value>ライブラリ内の本</value>
+  </data>
+  <data name="Classroom.AllBooksShared" xml:space="preserve">
+    <value>本はすべてすでにここで共有済みか、アップロードがありません。</value>
+  </data>
+  <data name="Classroom.First" xml:space="preserve">
+    <value>最初の</value>
+  </data>
+  <data name="Classroom.SharedContent" xml:space="preserve">
+    <value>共有コンテンツ</value>
+  </data>
+  <data name="Classroom.ItemOne" xml:space="preserve">
+    <value>件</value>
+  </data>
+  <data name="Classroom.ItemMany" xml:space="preserve">
+    <value>件</value>
+  </data>
+  <data name="Classroom.Removed" xml:space="preserve">
+    <value>削除済み</value>
+  </data>
+  <data name="Classroom.SharedBy" xml:space="preserve">
+    <value>{0}が共有</value>
+  </data>
+  <data name="Classroom.CopyLibrary" xml:space="preserve">
+    <value>マイライブラリにコピー</value>
+  </data>
+  <data name="Classroom.OpenPdf" xml:space="preserve">
+    <value>PDFを開く</value>
+  </data>
+  <data name="Classroom.RemoveConfirm" xml:space="preserve">
+    <value>これをクラスルームから削除しますか？</value>
+  </data>
+  <data name="Classroom.NoSharedContent" xml:space="preserve">
+    <value>まだ共有コンテンツはありません。</value>
+  </data>
+  <data name="Classroom.QuizResults" xml:space="preserve">
+    <value>クイズ結果</value>
+  </data>
+  <data name="Classroom.AttemptOne" xml:space="preserve">
+    <value>回</value>
+  </data>
+  <data name="Classroom.AttemptMany" xml:space="preserve">
+    <value>回</value>
+  </data>
+  <data name="Classroom.FromPractice" xml:space="preserve">
+    <value>クラスルームでの練習から</value>
+  </data>
+  <data name="Classroom.Score" xml:space="preserve">
+    <value>スコア</value>
+  </data>
+  <data name="Classroom.Completed" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="Classroom.NoAttempts" xml:space="preserve">
+    <value>まだ試行はありません。メンバーがコンテンツタブからクイズを練習すると、結果が表示されます。</value>
+  </data>
+  <data name="Classroom.MemberResultsTitle" xml:space="preserve">
+    <value>{0} — 結果</value>
+  </data>
+  <data name="Classroom.Skipped" xml:space="preserve">
+    <value>スキップ</value>
+  </data>
+  <data name="Classroom.NoMemberAttempts" xml:space="preserve">
+    <value>このメンバーの記録された試行はまだありません。</value>
+  </data>
+  <data name="Classroom.InviteEmail" xml:space="preserve">
+    <value>メールで招待</value>
+  </data>
+  <data name="Classroom.Role" xml:space="preserve">
+    <value>役割</value>
+  </data>
+  <data name="Classroom.Student" xml:space="preserve">
+    <value>生徒</value>
+  </data>
+  <data name="Classroom.Teacher" xml:space="preserve">
+    <value>教師</value>
+  </data>
+  <data name="Classroom.Invite" xml:space="preserve">
+    <value>招待</value>
+  </data>
+  <data name="Classroom.InviteHelp" xml:space="preserve">
+    <value>招待は、このメールでサインインするとその人のクラスルームページに表示されます — メールは送信されません。</value>
+  </data>
+  <data name="Classroom.CodeAnyone" xml:space="preserve">
+    <value>コードを持っている人なら誰でも</value>
+  </data>
+  <data name="Classroom.CodeCanJoin" xml:space="preserve">
+    <value>生徒として参加できます。</value>
+  </data>
+  <data name="Classroom.JoiningCurrently" xml:space="preserve">
+    <value>参加は現在</value>
+  </data>
+  <data name="Classroom.Enabled" xml:space="preserve">
+    <value>有効です</value>
+  </data>
+  <data name="Classroom.Paused" xml:space="preserve">
+    <value>一時停止中です</value>
+  </data>
+  <data name="Classroom.NewCode" xml:space="preserve">
+    <value>新しいコード</value>
+  </data>
+  <data name="Classroom.PauseJoining" xml:space="preserve">
+    <value>参加を一時停止</value>
+  </data>
+  <data name="Classroom.ResumeJoining" xml:space="preserve">
+    <value>参加を再開</value>
+  </data>
+  <data name="Classroom.Joined" xml:space="preserve">
+    <value>参加済み</value>
+  </data>
+  <data name="Classroom.MakeRole" xml:space="preserve">
+    <value>{0}にする</value>
+  </data>
+  <data name="Classroom.RemoveMemberConfirm" xml:space="preserve">
+    <value>{0}をクラスルームから削除しますか？</value>
+  </data>
+  <data name="Classroom.DeleteForEveryone" xml:space="preserve">
+    <value>このクラスルームを全員から削除しますか？ 共有されたクイズと本は、所有者のライブラリに残ります。</value>
+  </data>
+  <data name="Classroom.DeleteClassroom" xml:space="preserve">
+    <value>クラスルームを削除</value>
+  </data>
+  <data name="Classroom.LeaveConfirm" xml:space="preserve">
+    <value>このクラスルームを退出しますか？</value>
+  </data>
+  <data name="Classroom.LeaveClassroom" xml:space="preserve">
+    <value>クラスルームを退出</value>
+  </data>
+  <data name="Classroom.AddLesson" xml:space="preserve">
+    <value>レッスンを追加</value>
+  </data>
+  <data name="Classroom.TitleLabel" xml:space="preserve">
+    <value>タイトル</value>
+  </data>
+  <data name="Classroom.DescriptionOptional" xml:space="preserve">
+    <value>説明（任意）</value>
+  </data>
+  <data name="Classroom.ScheduledOptional" xml:space="preserve">
+    <value>予定日（任意）</value>
+  </data>
+  <data name="Classroom.AddAssignment" xml:space="preserve">
+    <value>課題を追加</value>
+  </data>
+  <data name="Classroom.InstructionsOptional" xml:space="preserve">
+    <value>指示（任意）</value>
+  </data>
+  <data name="Classroom.QuizOptional" xml:space="preserve">
+    <value>クイズ（任意、共有コンテンツから）</value>
+  </data>
+  <data name="Classroom.NoQuiz" xml:space="preserve">
+    <value>クイズなし</value>
+  </data>
+  <data name="Classroom.LessonOptional" xml:space="preserve">
+    <value>レッスン（任意）</value>
+  </data>
+  <data name="Classroom.NoLesson" xml:space="preserve">
+    <value>レッスンなし</value>
+  </data>
+  <data name="Classroom.DueOptional" xml:space="preserve">
+    <value>期限（任意）</value>
+  </data>
+  <data name="Classroom.CoursePlan" xml:space="preserve">
+    <value>授業計画</value>
+  </data>
+  <data name="Classroom.LessonOne" xml:space="preserve">
+    <value>レッスン</value>
+  </data>
+  <data name="Classroom.LessonMany" xml:space="preserve">
+    <value>レッスン</value>
+  </data>
+  <data name="Classroom.AssignmentOne" xml:space="preserve">
+    <value>課題</value>
+  </data>
+  <data name="Classroom.AssignmentMany" xml:space="preserve">
+    <value>課題</value>
+  </data>
+  <data name="Classroom.DeleteLessonConfirm" xml:space="preserve">
+    <value>このレッスンを削除しますか？ 課題は紐づかないまま残ります。</value>
+  </data>
+  <data name="Classroom.DeleteLesson" xml:space="preserve">
+    <value>レッスンを削除</value>
+  </data>
+  <data name="Classroom.NoAssignmentsLesson" xml:space="preserve">
+    <value>このレッスンの課題はありません。</value>
+  </data>
+  <data name="Classroom.OtherAssignments" xml:space="preserve">
+    <value>その他の課題</value>
+  </data>
+  <data name="Classroom.NoPlanYet" xml:space="preserve">
+    <value>まだレッスンや課題はありません。</value>
+  </data>
+  <data name="Classroom.PlanAbove" xml:space="preserve">
+    <value>上のコースを計画してください。</value>
+  </data>
+  <data name="Classroom.NoTeacherPlan" xml:space="preserve">
+    <value>先生はまだ何も計画していません。</value>
+  </data>
+  <data name="Classroom.Due" xml:space="preserve">
+    <value>期限</value>
+  </data>
+  <data name="Classroom.StudentsCompleted" xml:space="preserve">
+    <value>生徒 {0} 人中 {1} 人が完了しました</value>
+  </data>
+  <data name="Classroom.DoneBest" xml:space="preserve">
+    <value>完了 — 最高スコア {0}%</value>
+  </data>
+  <data name="Classroom.NotDone" xml:space="preserve">
+    <value>まだ完了していません</value>
+  </data>
+  <data name="Classroom.DeleteAssignmentConfirm" xml:space="preserve">
+    <value>この課題を削除しますか？</value>
+  </data>
+  <data name="Speaking.BarMenu" xml:space="preserve">
+    <value>バーメニュー</value>
+  </data>
+  <data name="Speaking.YourWallet" xml:space="preserve">
+    <value>ウォレット</value>
+  </data>
+  <data name="Speaking.NoBill" xml:space="preserve">
+    <value>まだ請求書はありません</value>
+  </data>
+  <data name="Speaking.CloseWallet" xml:space="preserve">
+    <value>ウォレットを閉じる</value>
+  </data>
+  <data name="Speaking.Selected" xml:space="preserve">
+    <value>選択済み</value>
+  </data>
+  <data name="Speaking.SceneActions" xml:space="preserve">
+    <value>シーン操作</value>
+  </data>
+  <data name="Speaking.NextMonth" xml:space="preserve">
+    <value>来月の初め</value>
+  </data>
+  <data name="Speaking.PaidPaused" xml:space="preserve">
+    <value>有料の Speaking 機能は {0} まで一時停止されています。</value>
+  </data>
+  <data name="Speaking.SessionReady" xml:space="preserve">
+    <value>練習セッションの準備ができました。</value>
+  </data>
+  <data name="Speaking.Unavailable" xml:space="preserve">
+    <value>Speaking の練習は利用できません</value>
+  </data>
+  <data name="Speaking.NewSessionConfirm" xml:space="preserve">
+    <value>新しいセッションを開始しますか？現在の会話は消去されます。</value>
+  </data>
+  <data name="Speaking.UpdatingQuiz" xml:space="preserve">
+    <value>先生の練習クイズを更新しています…</value>
+  </data>
+  <data name="Speaking.PractisingNamed" xml:space="preserve">
+    <value>{0} を練習中です。</value>
+  </data>
+  <data name="Speaking.FreeModeActive" xml:space="preserve">
+    <value>自由レッスンモードが有効です。</value>
+  </data>
+  <data name="Speaking.Voice" xml:space="preserve">
+    <value>音声</value>
+  </data>
+  <data name="Speaking.Typed" xml:space="preserve">
+    <value>入力</value>
+  </data>
+  <data name="Speaking.StartBeforeSend" xml:space="preserve">
+    <value>メッセージを送信する前に Speaking セッションを開始してください。</value>
+  </data>
+  <data name="Speaking.AvatarThinking" xml:space="preserve">
+    <value>{0} が考えています…</value>
+  </data>
+  <data name="Speaking.Avatar" xml:space="preserve">
+    <value>アバター</value>
+  </data>
+  <data name="Speaking.SessionEnded" xml:space="preserve">
+    <value>セッションは終了しました · 新しいセッションを開始</value>
+  </data>
+  <data name="Speaking.TakingSip" xml:space="preserve">
+    <value>ひと口飲んでいます…</value>
+  </data>
+  <data name="Speaking.TakingSnack" xml:space="preserve">
+    <value>軽食を取っています…</value>
+  </data>
+  <data name="Speaking.AvatarReacting" xml:space="preserve">
+    <value>{0} が反応しています…</value>
+  </data>
+  <data name="Speaking.MomentPassed" xml:space="preserve">
+    <value>そのタイミングは過ぎました。会話を続けるか、別の操作を試してください。</value>
+  </data>
+  <data name="Speaking.RecordUnavailable" xml:space="preserve">
+    <value>このブラウザではここで音声を録音できません。入力チャットは引き続き利用できます。</value>
+  </data>
+  <data name="Speaking.Starting" xml:space="preserve">
+    <value>開始中…</value>
+  </data>
+  <data name="Speaking.MicConnectingAuto" xml:space="preserve">
+    <value>マイクに接続しています。準備ができたら話し始めてください。</value>
+  </data>
+  <data name="Speaking.MicConnectingHold" xml:space="preserve">
+    <value>マイクに接続しています。ボタンを押し続けてください。</value>
+  </data>
+  <data name="Speaking.Listening" xml:space="preserve">
+    <value>聞き取り中…</value>
+  </data>
+  <data name="Speaking.SpeakNaturally" xml:space="preserve">
+    <value>自然に話してください。終了すると録音が止まります。</value>
+  </data>
+  <data name="Speaking.ReleaseSend" xml:space="preserve">
+    <value>離して送信</value>
+  </data>
+  <data name="Speaking.KeepHolding" xml:space="preserve">
+    <value>話している間は押し続けてください。ボタンを離すと送信されます。</value>
+  </data>
+  <data name="Speaking.Transcribing" xml:space="preserve">
+    <value>文字起こし中…</value>
+  </data>
+  <data name="Speaking.FinishingTranscript" xml:space="preserve">
+    <value>文字起こしを仕上げています…</value>
+  </data>
+  <data name="Speaking.NotCaughtComposer" xml:space="preserve">
+    <value>Azure Speech で認識できませんでした。Speak を押して入力し、もう一度お試しください。</value>
+  </data>
+  <data name="Speaking.NotCaughtAvatar" xml:space="preserve">
+    <value>Azure Speech で認識できませんでした。赤いボタンを長押ししてもう一度お試しください。</value>
+  </data>
+  <data name="Speaking.RecordingTooLong" xml:space="preserve">
+    <value>録音が長すぎます。文字起こしを短くして Send を押してください。</value>
+  </data>
+  <data name="Speaking.TranscriptSending" xml:space="preserve">
+    <value>文字起こしが準備できました。送信中…</value>
+  </data>
+  <data name="Speaking.TranscriptReady" xml:space="preserve">
+    <value>文字起こしが準備できました。確認または編集してから Send を押してください。</value>
+  </data>
+  <data name="Speaking.MicFailed" xml:space="preserve">
+    <value>マイクへのアクセスに失敗しました。入力チャットは引き続き利用できます。</value>
+  </data>
+  <data name="Speaking.SpeechFinishFailed" xml:space="preserve">
+    <value>Azure Speech は録音を完了できませんでした。</value>
+  </data>
+  <data name="Speaking.Scene.PoursDrink" xml:space="preserve">
+    <value>Marek が飲み物を注いで、あなたの前に滑らせます。</value>
+  </data>
+  <data name="Speaking.Scene.TakeSnack" xml:space="preserve">
+    <value>paluszki を少し取ります。</value>
+  </data>
+  <data name="Speaking.Scene.OffersSnack" xml:space="preserve">
+    <value>Marek が paluszki を勧めます。</value>
+  </data>
+  <data name="Speaking.Scene.ClearsGlass" xml:space="preserve">
+    <value>Marek が空のグラスを片付けます。</value>
+  </data>
+  <data name="Speaking.Scene.PolishesGlass" xml:space="preserve">
+    <value>Marek がグラスを磨いています。</value>
+  </data>
+  <data name="Speaking.Scene.WipesCounter" xml:space="preserve">
+    <value>Marek がカウンターを拭いています。</value>
+  </data>
+  <data name="Speaking.Scene.LastCall" xml:space="preserve">
+    <value>ラストオーダーです。</value>
+  </data>
+  <data name="Speaking.Scene.ItemUnavailable" xml:space="preserve">
+    <value>その品は利用できません。</value>
+  </data>
+  <data name="Speaking.Scene.FinishDrink" xml:space="preserve">
+    <value>飲み物を飲み干します。</value>
+  </data>
+  <data name="Speaking.Scene.TakeSip" xml:space="preserve">
+    <value>ひと口飲みます。</value>
+  </data>
+  <data name="Speaking.Scene.PresentsBill" xml:space="preserve">
+    <value>Marek が {0} zł の請求書を差し出します。</value>
+  </data>
+  <data name="Speaking.Scene.PaymentRejected" xml:space="preserve">
+    <value>{0} zł では足りません。何も取り除かれませんでした。</value>
+  </data>
+  <data name="Speaking.Scene.PaymentAccepted" xml:space="preserve">
+    <value>Marek は {0} zł を受け取ります。</value>
+  </data>
+  <data name="Speaking.Scene.ReturnsChange" xml:space="preserve">
+    <value>Marek は {0} zł のおつりを返します。</value>
+  </data>
+  <data name="Reader.ReadingSentence" xml:space="preserve">
+    <value>ページ {0} を読み上げ中 · {2} 文中 {1} 文目</value>
+  </data>
+  <data name="Reader.ReadingSelectionPart" xml:space="preserve">
+    <value>選択範囲を読み上げ中 · {1} 部分中 {0} 部分目</value>
+  </data>
+  <data name="Reader.ReadingSelection" xml:space="preserve">
+    <value>選択したテキストを読み上げ中…</value>
+  </data>
+  <data name="Reader.ReadingPage" xml:space="preserve">
+    <value>ページ {0} を読み上げ中…</value>
+  </data>
+  <data name="Reader.FinishedSelection" xml:space="preserve">
+    <value>選択範囲の読み上げが完了しました。</value>
+  </data>
+  <data name="Reader.FinishedPage" xml:space="preserve">
+    <value>ページ {0} の読み上げが完了しました。</value>
+  </data>
+  <data name="Reader.ReadingStopped" xml:space="preserve">
+    <value>読み上げを停止しました。</value>
+  </data>
+  <data name="Reader.Detected" xml:space="preserve">
+    <value>{0} を検出しました</value>
+  </data>
+  <data name="Reader.DetectedCached" xml:space="preserve">
+    <value>{0} を検出しました · キャッシュ済み</value>
+  </data>
+  <data name="Reader.CachedTranslation" xml:space="preserve">
+    <value>キャッシュ済みの翻訳</value>
+  </data>
+  <data name="Reader.NoSelectableTextPage" xml:space="preserve">
+    <value>このページには選択可能なテキストが見つかりません。</value>
+  </data>
+  <data name="Reader.RenderFailed" xml:space="preserve">
+    <value>このページを表示できませんでした。</value>
+  </data>
+  <data name="Reader.PdfLoadFailed" xml:space="preserve">
+    <value>PDF を読み込めませんでした。</value>
+  </data>
+  <data name="Editor.Heading" xml:space="preserve">
+    <value>見出し</value>
+  </data>
+  <data name="Editor.Instruction" xml:space="preserve">
+    <value>指示</value>
+  </data>
+  <data name="Editor.WordLabel" xml:space="preserve">
+    <value>単語ラベル</value>
+  </data>
+  <data name="Editor.TranslationLabel" xml:space="preserve">
+    <value>翻訳ラベル</value>
+  </data>
+  <data name="Editor.TextInput" xml:space="preserve">
+    <value>テキスト入力</value>
+  </data>
+  <data name="Editor.LongAnswer" xml:space="preserve">
+    <value>長文回答</value>
+  </data>
+  <data name="Editor.Checkbox" xml:space="preserve">
+    <value>チェックボックス</value>
+  </data>
+  <data name="Editor.RadioChoices" xml:space="preserve">
+    <value>ラジオボタンの選択肢</value>
+  </data>
+  <data name="Editor.CheckboxChoices" xml:space="preserve">
+    <value>チェックボックスの選択肢</value>
+  </data>
+  <data name="Editor.SelectMenu" xml:space="preserve">
+    <value>選択メニュー</value>
+  </data>
+  <data name="Editor.WordBank" xml:space="preserve">
+    <value>単語バンク</value>
+  </data>
+  <data name="Editor.SubmitButton" xml:space="preserve">
+    <value>送信ボタン</value>
+  </data>
+  <data name="Editor.Feedback" xml:space="preserve">
+    <value>フィードバック</value>
+  </data>
+  <data name="Editor.EmptyCanvas" xml:space="preserve">
+    <value>開始するには、このキャンバスのどこかにブロックをドラッグしてください。</value>
+  </data>
+  <data name="Editor.MoveLeft" xml:space="preserve">
+    <value>左へ移動</value>
+  </data>
+  <data name="Editor.MoveUp" xml:space="preserve">
+    <value>上へ移動</value>
+  </data>
+  <data name="Editor.MoveDown" xml:space="preserve">
+    <value>下へ移動</value>
+  </data>
+  <data name="Editor.MoveRight" xml:space="preserve">
+    <value>右へ移動</value>
+  </data>
+  <data name="Editor.RemoveBlock" xml:space="preserve">
+    <value>ブロックを削除</value>
+  </data>
+  <data name="Editor.Resize" xml:space="preserve">
+    <value>ドラッグして幅を変更</value>
+  </data>
+  <data name="Editor.Word" xml:space="preserve">
+    <value>単語</value>
+  </data>
+  <data name="Editor.DisplayField" xml:space="preserve">
+    <value>表示欄</value>
+  </data>
+  <data name="Editor.Words" xml:space="preserve">
+    <value>単語</value>
+  </data>
+  <data name="Editor.Options" xml:space="preserve">
+    <value>選択肢</value>
+  </data>
+  <data name="Editor.CorrectOption" xml:space="preserve">
+    <value>正解の選択肢</value>
+  </data>
+  <data name="Editor.RemoveOption" xml:space="preserve">
+    <value>選択肢を削除</value>
+  </data>
+  <data name="Editor.AddOption" xml:space="preserve">
+    <value>選択肢を追加</value>
+  </data>
+  <data name="Editor.Properties" xml:space="preserve">
+    <value>プロパティ</value>
+  </data>
+  <data name="Editor.SelectBlock" xml:space="preserve">
+    <value>編集するには、ブロックを選択して内容とバインディングを設定してください。</value>
+  </data>
+  <data name="Editor.TargetInputs" xml:space="preserve">
+    <value>対象の入力欄</value>
+  </data>
+  <data name="Editor.PreviewOnly" xml:space="preserve">
+    <value>プレビューのみ — 保存してプレイすると、採点対象の試行を記録できます。</value>
+  </data>
+  <data name="Editor.BackToEditor" xml:space="preserve">
+    <value>エディターに戻る</value>
+  </data>
+  <data name="Editor.Preview" xml:space="preserve">
+    <value>プレビュー</value>
+  </data>
+  <data name="Editor.PreviewingOne" xml:space="preserve">
+    <value>{0}個のブロックをプレビューしています。</value>
+  </data>
+  <data name="Editor.PreviewingMany" xml:space="preserve">
+    <value>{0}個のブロックをプレビューしています。</value>
+  </data>
+  <data name="Editor.ReadyOne" xml:space="preserve">
+    <value>エディターの準備ができました · キャンバス上にブロックが{0}個あります。+ で追加するか、ブロックをドラッグしてください。</value>
+  </data>
+  <data name="Editor.ReadyMany" xml:space="preserve">
+    <value>エディターの準備ができました · キャンバス上にブロックが{0}個あります。+ で追加するか、ブロックをドラッグしてください。</value>
+  </data>
+  <data name="Editor.ReplaceConfirm" xml:space="preserve">
+    <value>現在のキャンバスを{0}レイアウトに置き換えますか？この変更は元に戻せます。</value>
+  </data>
+  <data name="Editor.SaveFailed" xml:space="preserve">
+    <value>このカスタムクイズを保存できませんでした。</value>
+  </data>
+  <data name="Editor.SavedPlayable" xml:space="preserve">
+    <value>保存しました。このクイズはプレイできます。</value>
+  </data>
+  <data name="Editor.DraftSaved" xml:space="preserve">
+    <value>下書きを保存しました。プレイする前に、必須のクイズ項目を完了してください。</value>
+  </data>
+  <data name="Editor.SaveStopped" xml:space="preserve">
+    <value>保存リクエストが予期せず停止しました。もう一度お試しください。</value>
+  </data>
+  <data name="Editor.WordLemma" xml:space="preserve">
+    <value>単語 / 語形</value>
+  </data>
+  <data name="Editor.Translation" xml:space="preserve">
+    <value>翻訳</value>
+  </data>
+  <data name="Editor.Width" xml:space="preserve">
+    <value>幅</value>
+  </data>
+  <data name="Editor.Column" xml:space="preserve">
+    <value>列</value>
+  </data>
+  <data name="Editor.ColumnNumber" xml:space="preserve">
+    <value>列 {0}</value>
+  </data>
+  <data name="Editor.Row" xml:space="preserve">
+    <value>行</value>
+  </data>
+  <data name="Editor.Text" xml:space="preserve">
+    <value>テキスト</value>
+  </data>
+  <data name="Editor.LiveBinding" xml:space="preserve">
+    <value>ライブ単語バインディング</value>
+  </data>
+  <data name="Editor.ExerciseRow" xml:space="preserve">
+    <value>練習行（{{blank}}を使用）</value>
+  </data>
+  <data name="Editor.AccessibleLabel" xml:space="preserve">
+    <value>アクセシブルラベル</value>
+  </data>
+  <data name="Editor.CustomExpected" xml:space="preserve">
+    <value>カスタムの期待解答</value>
+  </data>
+  <data name="Editor.ExpectedBinding" xml:space="preserve">
+    <value>期待する単語バインディング</value>
+  </data>
+  <data name="Editor.DisplayedWord" xml:space="preserve">
+    <value>表示する単語</value>
+  </data>
+  <data name="Editor.ExpectedChecked" xml:space="preserve">
+    <value>チェックされている必要があります</value>
+  </data>
+  <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
+    <value>そのクイズは公開されていません。</value>
+  </data>
+  <data name="Explore.CollectionNoLongerPublic" xml:space="preserve">
+    <value>そのコレクションは公開されていません。</value>
+  </data>
+  <data name="Explore.CopiedToLibrary" xml:space="preserve">
+    <value>{0}をライブラリにコピーしました。</value>
+  </data>
+  <data name="Classroom.InvitationCreated" xml:space="preserve">
+    <value>招待を作成しました。次回その方が Classroom ページにアクセスすると表示されます。</value>
+  </data>
+  <data name="Classroom.JoinCodeRegenerated" xml:space="preserve">
+    <value>参加コードを再生成しました。</value>
+  </data>
+  <data name="Classroom.NoAccessResults" xml:space="preserve">
+    <value>それらの結果にアクセスする権限がありません。</value>
+  </data>
+  <data name="Classroom.QuizShared" xml:space="preserve">
+    <value>クイズを共有しました。</value>
+  </data>
+  <data name="Classroom.BookShared" xml:space="preserve">
+    <value>書籍を共有しました。</value>
+  </data>
+  <data name="Classroom.RemovedFromClassroom" xml:space="preserve">
+    <value>クラスルームから削除しました。</value>
+  </data>
+  <data name="Classroom.QuizCopyFailed" xml:space="preserve">
+    <value>そのクイズはコピーできませんでした。</value>
+  </data>
+  <data name="Classroom.Member" xml:space="preserve">
+    <value>メンバー</value>
+  </data>
+  <data name="Common.Unknown" xml:space="preserve">
+    <value>不明</value>
+  </data>
+  <data name="Account.LogOut" xml:space="preserve">
+    <value>ログアウト</value>
+  </data>
+  <data name="Account.LogIn" xml:space="preserve">
+    <value>ログイン</value>
+  </data>
+  <data name="Common.Send" xml:space="preserve">
+    <value>送信</value>
+  </data>
+  <data name="Speaking.ConversationLab" xml:space="preserve">
+    <value>{0}会話ラボ</value>
+  </data>
+  <data name="Speaking.MessageLabel" xml:space="preserve">
+    <value>{0}のメッセージ</value>
+  </data>
+  <data name="Speaking.MessagePlaceholder" xml:space="preserve">
+    <value>{0}で入力するか、マイクを使ってください…</value>
+  </data>
+  <data name="Speaking.MicAria" xml:space="preserve">
+    <value>{0}で音声文字起こしを開始します。録音は話し終えると停止します</value>
+  </data>
+  <data name="Speaking.PrivacyNote" xml:space="preserve">
+    <value>音声は直接 Azure Speech に送信されます。この会話は現在のセッション中のみ保持されます。</value>
+  </data>
+  <data name="Speaking.ClickTranslate" xml:space="preserve">
+    <value>クリックして翻訳</value>
+  </data>
+  <data name="Speaking.ClickShowLanguage" xml:space="preserve">
+    <value>クリックして{0}を表示</value>
+  </data>
+  <data name="Speaking.CoachFeedback" xml:space="preserve">
+    <value>コーチのフィードバック</value>
+  </data>
+  <data name="Speaking.MoreNatural" xml:space="preserve">
+    <value>より自然な{0}</value>
+  </data>
+</root>

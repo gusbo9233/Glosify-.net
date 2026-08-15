@@ -43,4 +43,10 @@
     <Content Update="libman.json" CopyToPublishDirectory="Never" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Update="Resources/Localization.UiText.*.resx"
+                      WithCulture="false"
+                      LogicalName="Glosify.Resources.%(Filename).resources" />
+  </ItemGroup>
+
 </Project>

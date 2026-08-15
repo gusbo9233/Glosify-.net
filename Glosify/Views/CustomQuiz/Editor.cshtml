@@ -2,13 +2,13 @@
 @using System.Text.Json
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = Model.Editor.Id.HasValue ? $"Edit {Model.Editor.Name}" : "New custom quiz";
+    ViewData["Title"] = Model.Editor.Id.HasValue ? Text["Custom.EditNamed", Model.Editor.Name] : Text["Quiz.NewCustom"];
     ViewData["AssistantQuizId"] = Model.Quiz.Id;
     ViewData["AssistantCustomQuizId"] = Model.Editor.Id;
-    ViewData["AssistantTitle"] = "Quiz builder assistant";
+    ViewData["AssistantTitle"] = Text["Custom.AssistantTitle"];
     ViewData["AssistantContextLabel"] = Model.Editor.Name;
-    ViewData["AssistantEmptyText"] = "Ask me to add, configure, or arrange quiz elements.";
-    ViewData["AssistantPlaceholder"] = "Add questions to this custom quiz...";
+    ViewData["AssistantEmptyText"] = Text["Custom.AssistantEmpty"];
+    ViewData["AssistantPlaceholder"] = Text["Custom.AssistantPlaceholder"];
     var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 }
 
@@ -25,28 +25,28 @@
     <header class="custom-builder-header">
         <div>
             <a class="custom-builder-back" asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.Quiz.Id">&larr; @Model.Quiz.Name</a>
-            <input class="custom-builder-name" value="@Model.Editor.Name" maxlength="160" aria-label="Custom quiz name" data-custom-name />
-            <p>@Model.Quiz.SourceLanguage &rarr; @Model.Quiz.TargetLanguage</p>
+            <input class="custom-builder-name" value="@Model.Editor.Name" maxlength="160" aria-label="@Text["Custom.Name"]" data-custom-name />
+            <p>@QuizLanguageDisplay.Name(Model.Quiz.SourceLanguage) &rarr; @QuizLanguageDisplay.Name(Model.Quiz.TargetLanguage)</p>
         </div>
         <div class="custom-builder-actions">
-            <button class="btn-secondary" type="button" data-custom-undo disabled>Undo</button>
-            <button class="btn-secondary" type="button" data-custom-preview>Preview</button>
-            <button class="btn-submit" type="button" data-custom-save>Save</button>
+            <button class="btn-secondary" type="button" data-custom-undo disabled>@Text["Common.Undo"]</button>
+            <button class="btn-secondary" type="button" data-custom-preview>@Text["Common.Preview"]</button>
+            <button class="btn-submit" type="button" data-custom-save>@Text["Common.Save"]</button>
         </div>
     </header>
     <div class="panel-message error" data-custom-errors hidden></div>
     <div class="panel-message success" data-custom-message hidden></div>
     <div class="custom-builder-runtime" data-custom-runtime role="status" aria-live="polite">
-        Loading editor controls&hellip;
+        @Text["Custom.LoadingEditor"]
     </div>
 
     <section class="custom-template-gallery" aria-labelledby="custom-template-title">
         <div class="custom-template-heading">
             <div>
-                <span class="custom-template-eyebrow">Design starters</span>
-                <h2 id="custom-template-title">Choose a visual direction</h2>
+                <span class="custom-template-eyebrow">@Text["Custom.DesignStarters"]</span>
+                <h2 id="custom-template-title">@Text["Custom.VisualDirection"]</h2>
             </div>
-            <p>Apply only the look, or replace the canvas with a complete layout built from this quiz&rsquo;s words.</p>
+            <p>@Text["Custom.TemplateHelp"]</p>
         </div>
         <div class="custom-template-grid">
             @foreach (var template in Model.Templates)
@@ -57,13 +57,13 @@
                         <i></i><i></i><i></i>
                     </div>
                     <div class="custom-template-card-copy">
-                        <h3>@template.Name</h3>
-                        <p>@template.Description</p>
-                        <small>@template.BestFor</small>
+                        <h3>@Text[$"Custom.Template.{template.Id}.Name"]</h3>
+                        <p>@Text[$"Custom.Template.{template.Id}.Description"]</p>
+                        <small>@Text[$"Custom.Template.{template.Id}.BestFor"]</small>
                     </div>
                     <div class="custom-template-card-actions">
-                        <button type="button" class="btn-secondary" data-template-style="@template.Id">Use style</button>
-                        <button type="button" class="btn-linkish" data-template-apply="@template.Id">Use layout</button>
+                        <button type="button" class="btn-secondary" data-template-style="@template.Id">@Text["Custom.UseStyle"]</button>
+                        <button type="button" class="btn-linkish" data-template-apply="@template.Id">@Text["Custom.UseLayout"]</button>
                     </div>
                 </article>
             }
@@ -71,24 +71,24 @@
     </section>
 
     <div class="custom-builder-layout">
-        <aside class="custom-block-palette" aria-label="Quiz building blocks">
-            <h2>Blocks</h2>
-            <p>Drag onto any open area, or click to add automatically.</p>
+        <aside class="custom-block-palette" aria-label="@Text["Custom.BuildingBlocks"]">
+            <h2>@Text["Custom.Blocks"]</h2>
+            <p>@Text["Custom.BlocksHelp"]</p>
             @foreach (var block in new[] {
-                (CustomQuizBlockTypes.Heading, "Heading"), (CustomQuizBlockTypes.InstructionLabel, "Instruction"),
-                (CustomQuizBlockTypes.PromptLabel, "Word label"), (CustomQuizBlockTypes.TranslationLabel, "Translation label"),
-                (CustomQuizBlockTypes.TextInput, "Text input"), (CustomQuizBlockTypes.Textarea, "Long answer"),
-                (CustomQuizBlockTypes.Checkbox, "Checkbox"), (CustomQuizBlockTypes.RadioGroup, "Radio choices"),
-                (CustomQuizBlockTypes.MultiSelectGroup, "Checkbox choices"), (CustomQuizBlockTypes.SelectMenu, "Select menu"),
-                (CustomQuizBlockTypes.WordBank, "Word bank"), (CustomQuizBlockTypes.SubmitButton, "Submit button"),
-                (CustomQuizBlockTypes.FeedbackMessage, "Feedback") })
+                (CustomQuizBlockTypes.Heading, Text["Custom.Block.Heading"].Value), (CustomQuizBlockTypes.InstructionLabel, Text["Custom.Block.Instruction"].Value),
+                (CustomQuizBlockTypes.PromptLabel, Text["Custom.Block.WordLabel"].Value), (CustomQuizBlockTypes.TranslationLabel, Text["Custom.Block.TranslationLabel"].Value),
+                (CustomQuizBlockTypes.TextInput, Text["Custom.Block.TextInput"].Value), (CustomQuizBlockTypes.Textarea, Text["Custom.Block.LongAnswer"].Value),
+                (CustomQuizBlockTypes.Checkbox, Text["Custom.Block.Checkbox"].Value), (CustomQuizBlockTypes.RadioGroup, Text["Custom.Block.RadioChoices"].Value),
+                (CustomQuizBlockTypes.MultiSelectGroup, Text["Custom.Block.CheckboxChoices"].Value), (CustomQuizBlockTypes.SelectMenu, Text["Custom.Block.SelectMenu"].Value),
+                (CustomQuizBlockTypes.WordBank, Text["Custom.Block.WordBank"].Value), (CustomQuizBlockTypes.SubmitButton, Text["Custom.Block.SubmitButton"].Value),
+                (CustomQuizBlockTypes.FeedbackMessage, Text["Custom.Block.Feedback"].Value) })
             {
                 <div class="custom-palette-block">
-                    <button type="button" class="custom-palette-drag" data-palette-drag data-palette-type="@block.Item1" aria-label="Drag or click to add @block.Item2">
+                    <button type="button" class="custom-palette-drag" data-palette-drag data-palette-type="@block.Item1" aria-label="@Text["Custom.DragAdd", block.Item2]">
                         <span class="material-symbols-outlined">drag_indicator</span>
                         <span>@block.Item2</span>
                     </button>
-                    <button type="button" class="custom-palette-add" data-palette-add data-palette-type="@block.Item1" aria-label="Add @block.Item2">
+                    <button type="button" class="custom-palette-add" data-palette-add data-palette-type="@block.Item1" aria-label="@Text["Custom.Add", block.Item2]">
                         <span class="material-symbols-outlined">add</span>
                     </button>
                 </div>
@@ -97,16 +97,16 @@
 
         <main class="custom-canvas-wrap">
             <div class="custom-canvas-toolbar">
-                <span><span class="material-symbols-outlined">grid_4x4</span> 12-column smart grid</span>
-                <small>Drag to place · edges snap · occupied spaces are avoided</small>
+                <span><span class="material-symbols-outlined">grid_4x4</span> @Text["Custom.Grid"]</span>
+                <small>@Text["Custom.GridHelp"]</small>
             </div>
-            <div class="custom-canvas" data-custom-canvas aria-label="Custom quiz canvas"></div>
+            <div class="custom-canvas" data-custom-canvas aria-label="@Text["Custom.Canvas"]"></div>
             <div class="custom-preview" data-custom-preview-host hidden></div>
         </main>
 
         <aside class="custom-inspector" data-custom-inspector>
-            <h2>Properties</h2>
-            <p>Select a block to edit its content and bindings.</p>
+            <h2>@Text["Custom.Properties"]</h2>
+            <p>@Text["Custom.PropertiesHelp"]</p>
         </aside>
     </div>
 </section>

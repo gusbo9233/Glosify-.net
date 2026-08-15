@@ -15,6 +15,22 @@ import {
     if (!panel) {
         return;
     }
+    const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
+
+    const localizedProblem = (data, response, fallbackKey, fallback) => {
+        const code = data?.code;
+        if (code === 'unauthorized' || response?.status === 401) {
+            return t('Client.SessionExpired', 'Your session expired. Sign in and try again.');
+        }
+        if (code === 'rate_limited' || response?.status === 429) {
+            return t('Client.TryAgain', 'Please try again.');
+        }
+        if (code === 'payment_required' || code === 'paid_services_budget_exhausted') {
+            return t('Speaking.PaidPaused', 'Paid features are paused until {0}.',
+                t('Speaking.NextMonth', 'the start of next month'));
+        }
+        return t(fallbackKey, fallback);
+    };
 
     const pageQuizId = panel.dataset.quizId || null;
     const pageContextLabel = panel.dataset.contextLabel || null;
@@ -70,7 +86,7 @@ import {
     const panes = Array.from(panel.querySelectorAll('[data-assistant-pane]'));
     const tokenInput = panel.querySelector('input[name="__RequestVerificationToken"]')
         || document.querySelector('input[name="__RequestVerificationToken"]');
-    const defaultEmptyText = empty?.textContent?.trim() || 'Ask for help anywhere in Glosify.';
+    const defaultEmptyText = empty?.textContent?.trim() || t('Assistant.Empty', 'Ask for help anywhere in Glosify.');
 
     if (modelSelect) {
         const storedModel = localStorage.getItem(modelStorageKey);
@@ -268,7 +284,7 @@ import {
         });
         if (!response.ok) {
             const data = await response.json().catch(() => null);
-            throw new Error(data?.detail || data?.title || data?.error || 'Could not create chat.');
+            throw new Error(localizedProblem(data, response, 'Client.GenericError', 'Could not create chat.'));
         }
 
         const chat = await response.json();
@@ -285,7 +301,7 @@ import {
         });
         if (!response.ok) {
             const data = await response.json().catch(() => null);
-            throw new Error(data?.detail || data?.title || data?.error || 'Could not update chat.');
+            throw new Error(localizedProblem(data, response, 'Client.GenericError', 'Could not update chat.'));
         }
 
         const updated = await response.json();
@@ -301,7 +317,7 @@ import {
         });
         if (!response.ok) {
             const data = await response.json().catch(() => null);
-            throw new Error(data?.detail || data?.title || data?.error || 'Could not delete chat.');
+            throw new Error(localizedProblem(data, response, 'Client.GenericError', 'Could not delete chat.'));
         }
 
         chats = removeChat(chats, threadId);
@@ -434,11 +450,11 @@ import {
             const remove = document.createElement('button');
             remove.type = 'button';
             remove.className = 'assistant-list-action';
-            remove.title = 'Delete chat';
-            remove.setAttribute('aria-label', 'Delete chat');
+            remove.title = t('Client.DeleteChat', 'Delete chat');
+            remove.setAttribute('aria-label', t('Client.DeleteChat', 'Delete chat'));
             remove.innerHTML = '<span class="material-symbols-outlined" aria-hidden="true">delete</span>';
             remove.addEventListener('click', async () => {
-                if (!window.confirm('Delete this chat?')) return;
+                if (!window.confirm(t('Client.DeleteChatConfirm', 'Delete this chat?'))) return;
                 try {
                     await deleteChat(chat.id);
                 } catch (err) {
@@ -789,7 +805,7 @@ import {
     const applyChanges = async (messageId, card, applyBtn, rejectBtn) => {
         applyBtn.disabled = true;
         rejectBtn.disabled = true;
-        setStatus('Applying changes...');
+        setStatus(t('Client.Loading', 'Loading…'));
         try {
             const response = await fetch(applyUrl(messageId), {
                 method: 'POST',
@@ -797,17 +813,17 @@ import {
             });
             if (!response.ok) {
                 const data = await response.json().catch(() => null);
-                setStatus(data?.detail || data?.title || data?.error || 'Could not apply changes.', true);
+                setStatus(localizedProblem(data, response, 'Client.ApplyFailed', 'Could not apply changes.'), true);
                 applyBtn.disabled = false;
                 rejectBtn.disabled = false;
                 return;
             }
             const data = await response.json();
-            replaceActionsWithTag(card, `Applied (${data.applied})`, 'success');
+            replaceActionsWithTag(card, `${t('Client.Correct', 'Done')} (${data.applied})`, 'success');
             if (data.createdQuizId) {
                 const contextSaved = await selectCreatedQuiz(data.createdQuiz || {
                     id: data.createdQuizId,
-                    name: 'Created quiz',
+                    name: t('Settings.Quiz', 'Quiz'),
                     sourceLanguage: '',
                     targetLanguage: '',
                 });
@@ -827,7 +843,7 @@ import {
             }
             await loadChats();
         } catch (err) {
-            setStatus('Network error applying changes.', true);
+            setStatus(t('Client.ApplyNetwork', 'Network error applying changes.'), true);
             applyBtn.disabled = false;
             rejectBtn.disabled = false;
         }
@@ -851,7 +867,7 @@ import {
             setStatus('');
             await loadChats();
         } catch (err) {
-            setStatus('Network error rejecting changes.', true);
+            setStatus(t('Client.RejectNetwork', 'Network error rejecting changes.'), true);
             applyBtn.disabled = false;
             rejectBtn.disabled = false;
         }
@@ -1027,7 +1043,7 @@ import {
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {
-                setStatus(data?.detail || data?.title || data?.error || 'The assistant could not respond.', true);
+                setStatus(localizedProblem(data, response, 'Client.AssistantFailed', 'The assistant could not respond.'), true);
                 submit.disabled = false;
                 return;
             }
@@ -1052,7 +1068,7 @@ import {
             await loadChats();
             setStatus('');
         } catch (err) {
-            setStatus('Network error talking to the assistant.', true);
+            setStatus(t('Client.AssistantNetwork', 'Network error talking to the assistant.'), true);
         } finally {
             submit.disabled = false;
             textarea.focus();
@@ -1072,7 +1088,7 @@ import {
         body.append('image', image);
 
         imageInput.disabled = true;
-        setScanStatus('Reading picture...');
+        setScanStatus(t('Client.Loading', 'Loading…'));
         try {
             const response = await fetch(imageInput.dataset.extractUrl || '/Quiz/ExtractTextFromImage', {
                 method: 'POST',
@@ -1081,7 +1097,7 @@ import {
             });
             const data = await response.json().catch(() => null);
             if (!response.ok || !data?.text) {
-                setScanStatus(data?.detail || data?.title || data?.error || 'Could not read text from that picture.', true);
+                setScanStatus(localizedProblem(data, response, 'Client.PictureFailed', 'Could not read text from that picture.'), true);
                 return;
             }
 
@@ -1090,9 +1106,9 @@ import {
                 ? `${textarea.value.trim()}\n\n${prompt}`
                 : prompt;
             textarea.focus();
-            setScanStatus('Text added.');
+            setScanStatus(t('Client.Correct', 'Done'));
         } catch (err) {
-            setScanStatus('Network error reading picture.', true);
+            setScanStatus(t('Client.PictureNetwork', 'Network error reading picture.'), true);
         } finally {
             imageInput.value = '';
             imageInput.disabled = false;

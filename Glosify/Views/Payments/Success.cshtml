@@ -1,14 +1,14 @@
 @model PaymentSuccessViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = "Payment status";
+    ViewData["Title"] = Text["Payments.Status"];
 }
 
 <div class="content-page">
     <section class="empty-state" aria-live="polite">
         <span class="material-symbols-outlined" aria-hidden="true">@(Model.IsPaid ? "check_circle" : "hourglass_top")</span>
-        <h1>@(Model.IsPaid ? "Payment confirmed" : "Payment processing")</h1>
+        <h1>@(Model.IsPaid ? Text["Payments.Confirmed"] : Text["Payments.Processing"])</h1>
         <p>@Model.Message</p>
-        <a class="home-button home-button-primary" asp-controller="Home" asp-action="Index">Back to Glosify</a>
+        <a class="home-button home-button-primary" asp-controller="Home" asp-action="Index">@Text["Payments.Back"]</a>
     </section>
 </div>

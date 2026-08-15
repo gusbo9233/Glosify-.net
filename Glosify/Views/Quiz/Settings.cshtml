@@ -1,10 +1,10 @@
 @model QuizSettingsViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = "Quiz Configuration";
+    ViewData["Title"] = Text["Settings.Title"];
     ViewData["ActiveNav"] = "quizzes";
 
-    var quizName = Model.SelectedQuiz?.Name ?? "Flashcard Quiz";
+    var quizName = Model.SelectedQuiz?.Name ?? Text["Settings.FlashcardQuiz"];
     var availableWords = Model.AvailableWordCount;
     var availableSentences = Model.AvailableSentenceCount;
     var selectedWordCount = Model.SelectedWordCount;
@@ -14,8 +14,8 @@
     var sentenceTenCount = Math.Min(10, Math.Max(availableSentences, 1));
     var sentenceTwentyCount = Math.Min(20, Math.Max(availableSentences, 1));
     var sentenceAllCount = Math.Max(availableSentences, 1);
-    var sourceLanguage = Model.SelectedQuiz?.SourceLanguage ?? "Source";
-    var targetLanguage = Model.SelectedQuiz?.TargetLanguage ?? "Target";
+    var sourceLanguage = QuizLanguageDisplay.Name(Model.SelectedQuiz?.SourceLanguage) ?? Text["Settings.Source"];
+    var targetLanguage = QuizLanguageDisplay.Name(Model.SelectedQuiz?.TargetLanguage) ?? Text["Settings.Target"];
 }
 
 
@@ -25,9 +25,9 @@
     <input type="hidden" name="QuizId" value="@Model.SelectedQuiz?.Id" />
 
     <header class="settings-header">
-        <span class="config-badge">Configuration</span>
+        <span class="config-badge">@Text["Settings.Configuration"]</span>
         <h1 class="page-title">@quizName</h1>
-        <p class="page-subtitle">Pick a quick practice run and review this quiz.</p>
+        <p class="page-subtitle">@Text["Settings.Intro"]</p>
     </header>
 
     <div class="settings-grid">
@@ -35,23 +35,23 @@
             <div>
                 <div class="section-header">
                     <div>
-                        <h2 class="section-title">Session Length</h2>
-                        <p class="section-note"><span data-available-count>@availableWords</span> <span data-available-label>words</span> available</p>
+                        <h2 class="section-title">@Text["Settings.SessionLength"]</h2>
+                        <p class="section-note"><span data-available-count>@availableWords</span> <span data-available-label>@Text["Settings.Words"]</span> @Text["Settings.AvailableLower"]</p>
                     </div>
                     <span class="material-symbols-outlined">timer</span>
                 </div>
                 <div class="length-grid">
                     <label class="choice">
                         <input type="radio" name="WordCount" value="@tenCount" data-word-value="@tenCount" data-sentence-value="@sentenceTenCount" @(selectedWordCount <= 10 ? "checked" : "") />
-                        <span class="choice-card"><span class="num" data-length-num>@tenCount</span><span class="label">Quick</span></span>
+                        <span class="choice-card"><span class="num" data-length-num>@tenCount</span><span class="label">@Text["Settings.Quick"]</span></span>
                     </label>
                     <label class="choice">
                         <input type="radio" name="WordCount" value="@twentyCount" data-word-value="@twentyCount" data-sentence-value="@sentenceTwentyCount" @(selectedWordCount > 10 && selectedWordCount <= 20 ? "checked" : "") />
-                        <span class="choice-card"><span class="num" data-length-num>@twentyCount</span><span class="label">Standard</span></span>
+                        <span class="choice-card"><span class="num" data-length-num>@twentyCount</span><span class="label">@Text["Settings.Standard"]</span></span>
                     </label>
                     <label class="choice">
                         <input type="radio" name="WordCount" value="@allCount" data-word-value="@allCount" data-sentence-value="@sentenceAllCount" data-word-total="@availableWords" data-sentence-total="@availableSentences" data-length-all @(selectedWordCount > 20 ? "checked" : "") />
-                        <span class="choice-card"><span class="num" data-length-num>@allCount</span><span class="label">All</span></span>
+                        <span class="choice-card"><span class="num" data-length-num>@allCount</span><span class="label">@Text["Common.All"]</span></span>
                     </label>
                 </div>
             </div>
@@ -59,16 +59,16 @@
             <div>
                 <div class="section-header">
                     <div>
-                        <h2 class="section-title">Word Range</h2>
-                        <p class="section-note">Drag either handle to focus on a slice of your list, e.g. just the newest words.</p>
+                        <h2 class="section-title">@Text["Settings.WordRange"]</h2>
+                        <p class="section-note">@Text["Settings.RangeHelp"]</p>
                     </div>
                     <span class="material-symbols-outlined">tune</span>
                 </div>
                 <div class="range-presets">
-                    <button type="button" class="range-preset" data-range-preset="0,100">All</button>
-                    <button type="button" class="range-preset" data-range-preset="80,100">Newest 20%</button>
-                    <button type="button" class="range-preset" data-range-preset="50,100">Newest 50%</button>
-                    <button type="button" class="range-preset" data-range-preset="0,20">Oldest 20%</button>
+                    <button type="button" class="range-preset" data-range-preset="0,100">@Text["Common.All"]</button>
+                    <button type="button" class="range-preset" data-range-preset="80,100">@Text["Settings.Newest20"]</button>
+                    <button type="button" class="range-preset" data-range-preset="50,100">@Text["Settings.Newest50"]</button>
+                    <button type="button" class="range-preset" data-range-preset="0,20">@Text["Settings.Oldest20"]</button>
                 </div>
                 <div class="range-slider" data-range-slider>
                     <div class="range-slider-track">
@@ -77,29 +77,29 @@
                     <input type="range" name="WordRangeStart" min="0" max="100" step="5" value="0" class="range-thumb range-thumb-min" data-range-min />
                     <input type="range" name="WordRangeEnd" min="0" max="100" step="5" value="100" class="range-thumb range-thumb-max" data-range-max />
                 </div>
-                <p class="range-slider-label" data-range-label>Practicing all words, oldest to newest.</p>
+                <p class="range-slider-label" data-range-label>@Text["Settings.AllWordsOrder"]</p>
 
                 <input type="hidden" name="SelectedWordIds" data-selected-word-ids value="" />
                 <div class="word-picker-row" data-word-picker-row>
                     <button type="button" class="range-preset" data-open-word-picker>
                         <span class="material-symbols-outlined" style="font-size:16px;vertical-align:-3px;">checklist</span>
-                        Choose words individually&hellip;
+                        @Text["Settings.ChooseIndividually"]
                     </button>
                     <span class="word-picker-summary" data-word-picker-summary hidden></span>
-                    <button type="button" class="word-picker-clear" data-clear-word-picker hidden>Clear selection</button>
+                    <button type="button" class="word-picker-clear" data-clear-word-picker hidden>@Text["Settings.ClearSelection"]</button>
                 </div>
 
                 <dialog class="word-picker-dialog" data-word-picker-dialog>
                     <div class="word-picker-header">
-                        <h3>Choose words to practice</h3>
-                        <button type="button" class="btn-icon" data-close-word-picker aria-label="Close">
+                        <h3>@Text["Settings.ChooseWords"]</h3>
+                        <button type="button" class="btn-icon" data-close-word-picker aria-label="@Text["Common.Close"]">
                             <span class="material-symbols-outlined">close</span>
                         </button>
                     </div>
                     <div class="word-picker-toolbar">
-                        <button type="button" class="range-preset" data-select-all>Select all</button>
-                        <button type="button" class="range-preset" data-deselect-all>Deselect all</button>
-                        <input type="search" class="word-picker-search" placeholder="Filter words&hellip;" data-word-picker-search />
+                        <button type="button" class="range-preset" data-select-all>@Text["Settings.SelectAll"]</button>
+                        <button type="button" class="range-preset" data-deselect-all>@Text["Settings.DeselectAll"]</button>
+                        <input type="search" class="word-picker-search" placeholder="@Text["Settings.FilterWords"]" data-word-picker-search />
                         <span class="word-picker-count" data-word-picker-count></span>
                     </div>
                     <div class="word-picker-list">
@@ -113,7 +113,7 @@
                         }
                     </div>
                     <div class="word-picker-footer">
-                        <button type="button" class="btn-start" data-apply-word-picker>Apply selection</button>
+                        <button type="button" class="btn-start" data-apply-word-picker>@Text["Settings.ApplySelection"]</button>
                     </div>
                 </dialog>
             </div>
@@ -121,24 +121,24 @@
             <div>
                 <div class="section-header">
                     <div>
-                        <h2 class="section-title">Practice Content</h2>
-                        <p class="section-note">Choose words or full sentences.</p>
+                        <h2 class="section-title">@Text["Settings.PracticeContent"]</h2>
+                        <p class="section-note">@Text["Settings.ContentHelp"]</p>
                     </div>
                     <span class="material-symbols-outlined">subject</span>
                 </div>
                 <div class="mode-grid">
                     <label class="choice">
-                        <input type="radio" name="PracticeItemType" value="words" checked data-item-label="Words" data-count="@availableWords" />
+                        <input type="radio" name="PracticeItemType" value="words" checked data-item-label="@Text["Settings.Words"]" data-count="@availableWords" />
                         <span class="choice-card">
                             <span class="material-symbols-outlined">short_text</span>
-                            <span class="mode-name">Words</span>
+                            <span class="mode-name">@Text["Settings.Words"]</span>
                         </span>
                     </label>
                     <label class="choice">
-                        <input type="radio" name="PracticeItemType" value="sentences" data-item-label="Sentences" data-count="@availableSentences" />
+                        <input type="radio" name="PracticeItemType" value="sentences" data-item-label="@Text["Settings.Sentences"]" data-count="@availableSentences" />
                         <span class="choice-card">
                             <span class="material-symbols-outlined">notes</span>
-                            <span class="mode-name">Sentences</span>
+                            <span class="mode-name">@Text["Settings.Sentences"]</span>
                         </span>
                     </label>
                 </div>
@@ -147,8 +147,8 @@
             <div>
                 <div class="section-header">
                     <div>
-                        <h2 class="section-title">Quiz Mode</h2>
-                        <p class="section-note">Choose flashcards for recall or typing for active spelling practice.</p>
+                        <h2 class="section-title">@Text["Settings.QuizMode"]</h2>
+                        <p class="section-note">@Text["Settings.ModeHelp"]</p>
                     </div>
                     <span class="material-symbols-outlined">psychology</span>
                 </div>
@@ -157,21 +157,21 @@
                         <input type="radio" name="Mode" value="flashcards" checked />
                         <span class="choice-card">
                             <span class="material-symbols-outlined material-symbols-filled">style</span>
-                            <span class="mode-name">Flashcards</span>
+                            <span class="mode-name">@Text["Settings.Flashcards"]</span>
                         </span>
                     </label>
                     <label class="choice">
                         <input type="radio" name="Mode" value="typing" />
                         <span class="choice-card">
                             <span class="material-symbols-outlined">keyboard</span>
-                            <span class="mode-name">Typing</span>
+                            <span class="mode-name">@Text["Settings.Typing"]</span>
                         </span>
                     </label>
                     <label class="choice">
                         <input type="radio" name="Mode" value="multiple-choice" />
                         <span class="choice-card">
                             <span class="material-symbols-outlined">checklist</span>
-                            <span class="mode-name">Choices</span>
+                            <span class="mode-name">@Text["Settings.Choices"]</span>
                         </span>
                     </label>
                 </div>
@@ -180,8 +180,8 @@
             <div>
                 <div class="section-header">
                     <div>
-                        <h2 class="section-title">Practice Direction</h2>
-                        <p class="section-note">Choose which language appears first.</p>
+                        <h2 class="section-title">@Text["Settings.PracticeDirection"]</h2>
+                        <p class="section-note">@Text["Settings.DirectionHelp"]</p>
                     </div>
                     <span class="material-symbols-outlined">swap_horiz</span>
                 </div>
@@ -207,21 +207,21 @@
         <aside class="start-panel">
             @if (availableWords == 0)
             {
-                <div class="empty-callout" data-empty-callout>Add at least one word before starting a practice session.</div>
+                <div class="empty-callout" data-empty-callout>@Text["Settings.NeedWord"]</div>
             }
             else
             {
-                <div class="empty-callout" data-empty-callout hidden>Add at least one word before starting a practice session.</div>
+                <div class="empty-callout" data-empty-callout hidden>@Text["Settings.NeedWord"]</div>
             }
-            <div class="stat-row"><span>Quiz</span><span>@quizName</span></div>
-            <div class="stat-row"><span>Content</span><span data-selected-content>Words</span></div>
-            <div class="stat-row"><span>Available</span><span data-selected-available>@availableWords</span></div>
-            <div class="stat-row"><span>Mode</span><span data-selected-mode>Flashcards</span></div>
-            <div class="stat-row"><span>Range</span><span data-selected-range>All</span></div>
-            <div class="stat-row"><span>Direction</span><span data-selected-direction>@sourceLanguage -> @targetLanguage</span></div>
+            <div class="stat-row"><span>@Text["Settings.Quiz"]</span><span>@quizName</span></div>
+            <div class="stat-row"><span>@Text["Settings.Content"]</span><span data-selected-content>@Text["Settings.Words"]</span></div>
+            <div class="stat-row"><span>@Text["Settings.Available"]</span><span data-selected-available>@availableWords</span></div>
+            <div class="stat-row"><span>@Text["Settings.Mode"]</span><span data-selected-mode>@Text["Settings.Flashcards"]</span></div>
+            <div class="stat-row"><span>@Text["Settings.Range"]</span><span data-selected-range>@Text["Common.All"]</span></div>
+            <div class="stat-row"><span>@Text["Settings.Direction"]</span><span data-selected-direction>@sourceLanguage -> @targetLanguage</span></div>
             <button class="btn-start" type="submit" data-start-button @(availableWords == 0 ? "disabled" : "")>
                 <span class="material-symbols-outlined">play_circle</span>
-                Start Quiz
+                @Text["Settings.StartQuiz"]
             </button>
         </aside>
     </div>

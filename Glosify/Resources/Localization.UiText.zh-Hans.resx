@@ -1,0 +1,2883 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="DisplayLanguage.Label" xml:space="preserve">
+    <value>显示语言</value>
+  </data>
+  <data name="DisplayLanguage.Submit" xml:space="preserve">
+    <value>更改语言</value>
+  </data>
+  <data name="Common.English" xml:space="preserve">
+    <value>英语</value>
+  </data>
+  <data name="Common.Swedish" xml:space="preserve">
+    <value>瑞典语</value>
+  </data>
+  <data name="Common.LogIn" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="Common.LogOut" xml:space="preserve">
+    <value>退出登录</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>搜索</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>返回</value>
+  </data>
+  <data name="Common.Next" xml:space="preserve">
+    <value>下一步</value>
+  </data>
+  <data name="Common.Previous" xml:space="preserve">
+    <value>上一页</value>
+  </data>
+  <data name="Layout.MetaDescription" xml:space="preserve">
+    <value>Glosify 将你读到的内容转化为可用词汇：从书籍和转录稿中创建单词列表，用测验和抽认卡练习，然后与 AI 对话伙伴开口练习。</value>
+  </data>
+  <data name="Layout.AuthMetaDescription" xml:space="preserve">
+    <value>登录 Glosify，从你读到的内容中构建词汇，用测验练习，并与 AI 对话伙伴开口练习。</value>
+  </data>
+  <data name="Layout.PremiumLearner" xml:space="preserve">
+    <value>高级学习者</value>
+  </data>
+  <data name="Layout.SearchPlaceholder" xml:space="preserve">
+    <value>你想学习什么？</value>
+  </data>
+  <data name="Layout.Notifications" xml:space="preserve">
+    <value>通知</value>
+  </data>
+  <data name="Layout.GetCredits" xml:space="preserve">
+    <value>获取积分</value>
+  </data>
+  <data name="Layout.SignedInAs" xml:space="preserve">
+    <value>登录身份</value>
+  </data>
+  <data name="Layout.SignedIn" xml:space="preserve">
+    <value>已登录</value>
+  </data>
+  <data name="Layout.PrimaryNavigation" xml:space="preserve">
+    <value>主导航</value>
+  </data>
+  <data name="Nav.LanguageSelector" xml:space="preserve">
+    <value>语言选择器</value>
+  </data>
+  <data name="Nav.Language" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="Nav.Home" xml:space="preserve">
+    <value>首页</value>
+  </data>
+  <data name="Nav.Explore" xml:space="preserve">
+    <value>探索</value>
+  </data>
+  <data name="Nav.Books" xml:space="preserve">
+    <value>书籍</value>
+  </data>
+  <data name="Nav.Transcripts" xml:space="preserve">
+    <value>转录稿</value>
+  </data>
+  <data name="Nav.Quizzes" xml:space="preserve">
+    <value>测验</value>
+  </data>
+  <data name="Nav.Speaking" xml:space="preserve">
+    <value>口语</value>
+  </data>
+  <data name="Nav.Speak" xml:space="preserve">
+    <value>开口说</value>
+  </data>
+  <data name="Nav.Classrooms" xml:space="preserve">
+    <value>教室</value>
+  </data>
+  <data name="Nav.Class" xml:space="preserve">
+    <value>班级</value>
+  </data>
+  <data name="Languages.Title" xml:space="preserve">
+    <value>语言选择器</value>
+  </data>
+  <data name="Languages.Tagline" xml:space="preserve">
+    <value>今天你想与哪种语言产生共鸣？</value>
+  </data>
+  <data name="Languages.Current" xml:space="preserve">
+    <value>当前学习 {0}</value>
+  </data>
+  <data name="Languages.Find" xml:space="preserve">
+    <value>查找语言</value>
+  </data>
+  <data name="Languages.SearchPlaceholder" xml:space="preserve">
+    <value>按英语名称、母语名称或代码搜索</value>
+  </data>
+  <data name="Languages.Count" xml:space="preserve">
+    <value>{0} 种语言</value>
+  </data>
+  <data name="Languages.None" xml:space="preserve">
+    <value>没有匹配的语言</value>
+  </data>
+  <data name="Languages.NoneHelp" xml:space="preserve">
+    <value>试试英语名称、母语名称或语言代码。</value>
+  </data>
+  <data name="Languages.Pick" xml:space="preserve">
+    <value>选择语言</value>
+  </data>
+  <data name="Assistant.Title" xml:space="preserve">
+    <value>助手</value>
+  </data>
+  <data name="Assistant.Empty" xml:space="preserve">
+    <value>在 Glosify 的任何地方都可以寻求帮助。</value>
+  </data>
+  <data name="Assistant.Placeholder" xml:space="preserve">
+    <value>向助手提问...</value>
+  </data>
+  <data name="Assistant.Workspace" xml:space="preserve">
+    <value>助手工作区</value>
+  </data>
+  <data name="Assistant.Chat" xml:space="preserve">
+    <value>聊天</value>
+  </data>
+  <data name="Assistant.Chats" xml:space="preserve">
+    <value>聊天</value>
+  </data>
+  <data name="Assistant.NewChat" xml:space="preserve">
+    <value>新聊天</value>
+  </data>
+  <data name="Assistant.Close" xml:space="preserve">
+    <value>关闭助手</value>
+  </data>
+  <data name="Assistant.QuizContext" xml:space="preserve">
+    <value>测验上下文</value>
+  </data>
+  <data name="Assistant.NoQuiz" xml:space="preserve">
+    <value>未选择测验</value>
+  </data>
+  <data name="Assistant.ReadingMaterial" xml:space="preserve">
+    <value>阅读材料</value>
+  </data>
+  <data name="Assistant.NoMaterial" xml:space="preserve">
+    <value>未选择材料</value>
+  </data>
+  <data name="Assistant.Picture" xml:space="preserve">
+    <value>图片</value>
+  </data>
+  <data name="Assistant.Model" xml:space="preserve">
+    <value>助手模型</value>
+  </data>
+  <data name="Assistant.AutoModel" xml:space="preserve">
+    <value>自动 · {0}</value>
+  </data>
+  <data name="Assistant.Send" xml:space="preserve">
+    <value>发送</value>
+  </data>
+  <data name="Assistant.PreviousChats" xml:space="preserve">
+    <value>历史聊天</value>
+  </data>
+  <data name="Assistant.NoChats" xml:space="preserve">
+    <value>暂无已保存的聊天。</value>
+  </data>
+  <data name="Quiz.FlashcardsTitle" xml:space="preserve">
+    <value>抽认卡测验</value>
+  </data>
+  <data name="Quiz.TypingTitle" xml:space="preserve">
+    <value>输入测验</value>
+  </data>
+  <data name="Quiz.RevealRate" xml:space="preserve">
+    <value>显示答案，评分记忆情况，然后继续。</value>
+  </data>
+  <data name="Quiz.BackWords" xml:space="preserve">
+    <value>返回单词</value>
+  </data>
+  <data name="Quiz.SessionComplete" xml:space="preserve">
+    <value>本轮完成</value>
+  </data>
+  <data name="Quiz.Remembered" xml:space="preserve">
+    <value>已记住</value>
+  </data>
+  <data name="Quiz.ReviewAgain" xml:space="preserve">
+    <value>再复习一次</value>
+  </data>
+  <data name="Quiz.Skipped" xml:space="preserve">
+    <value>已跳过</value>
+  </data>
+  <data name="Quiz.Restart" xml:space="preserve">
+    <value>重新开始本轮</value>
+  </data>
+  <data name="Quiz.PracticeAgain" xml:space="preserve">
+    <value>再练一次</value>
+  </data>
+  <data name="Quiz.PlayPronunciation" xml:space="preserve">
+    <value>播放 {0} 的发音</value>
+  </data>
+  <data name="Quiz.RevealAnswer" xml:space="preserve">
+    <value>显示 {0} 的答案</value>
+  </data>
+  <data name="Quiz.Again" xml:space="preserve">
+    <value>再来一次</value>
+  </data>
+  <data name="Quiz.Good" xml:space="preserve">
+    <value>不错</value>
+  </data>
+  <data name="Quiz.Easy" xml:space="preserve">
+    <value>简单</value>
+  </data>
+  <data name="Quiz.SwipeHint" xml:space="preserve">
+    <value>向右滑表示不错，向左滑表示再来一次</value>
+  </data>
+  <data name="Quiz.Skip" xml:space="preserve">
+    <value>跳过</value>
+  </data>
+  <data name="Quiz.ShowAnswer" xml:space="preserve">
+    <value>显示答案</value>
+  </data>
+  <data name="Quiz.Reset" xml:space="preserve">
+    <value>重置本轮</value>
+  </data>
+  <data name="Quiz.NoneYet" xml:space="preserve">
+    <value>尚无{0}</value>
+  </data>
+  <data name="Quiz.AddThenStart" xml:space="preserve">
+    <value>先将{0}添加到测验中，然后从该测验开始{1}会话。</value>
+  </data>
+  <data name="Quiz.TypeInstruction" xml:space="preserve">
+    <value>请输入{2}提示中的完整{0}{1}。</value>
+  </data>
+  <data name="Quiz.CheckAnswer" xml:space="preserve">
+    <value>检查答案</value>
+  </data>
+  <data name="Quiz.PlayPronunciationGeneric" xml:space="preserve">
+    <value>播放发音</value>
+  </data>
+  <data name="Quiz.Answer" xml:space="preserve">
+    <value>答案</value>
+  </data>
+  <data name="Quiz.TypePlaceholder" xml:space="preserve">
+    <value>请输入答案...</value>
+  </data>
+  <data name="Quiz.CorrectAnswer" xml:space="preserve">
+    <value>正确答案</value>
+  </data>
+  <data name="Quiz.Space" xml:space="preserve">
+    <value>空格</value>
+  </data>
+  <data name="Quiz.TypingComplete" xml:space="preserve">
+    <value>输入完成</value>
+  </data>
+  <data name="Quiz.Correct" xml:space="preserve">
+    <value>正确</value>
+  </data>
+  <data name="Quiz.Incorrect" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Quiz.PracticeIncorrect" xml:space="preserve">
+    <value>练习错误单词</value>
+  </data>
+  <data name="Quiz.ChangeSettings" xml:space="preserve">
+    <value>更改设置</value>
+  </data>
+  <data name="Transcripts.Title" xml:space="preserve">
+    <value>转录</value>
+  </data>
+  <data name="Transcripts.Eyebrow" xml:space="preserve">
+    <value>实时字幕历史</value>
+  </data>
+  <data name="Transcripts.Saved" xml:space="preserve">
+    <value>已保存的转录</value>
+  </data>
+  <data name="Transcripts.Intro" xml:space="preserve">
+    <value>已保存 {0} 的实时字幕文本。新会话包含原始语音；旧会话仍标记为翻译。</value>
+  </data>
+  <data name="Transcripts.SelectedLanguage" xml:space="preserve">
+    <value>您选择的语言</value>
+  </data>
+  <data name="Transcripts.Updated" xml:space="preserve">
+    <value>已更新</value>
+  </data>
+  <data name="Transcripts.None" xml:space="preserve">
+    <value>暂无已保存的转录</value>
+  </data>
+  <data name="Transcripts.NoneHelp" xml:space="preserve">
+    <value>在开始实时字幕前启用“保存原始语音转录”。</value>
+  </data>
+  <data name="Transcripts.PagesAria" xml:space="preserve">
+    <value>转录页</value>
+  </data>
+  <data name="Common.PageOf" xml:space="preserve">
+    <value>第 {0} 页，共 {1} 页</value>
+  </data>
+  <data name="Home.Title" xml:space="preserve">
+    <value>主页</value>
+  </data>
+  <data name="Home.Coach" xml:space="preserve">
+    <value>学习教练</value>
+  </data>
+  <data name="Home.Kicker" xml:space="preserve">
+    <value>您的语言学习空间</value>
+  </data>
+  <data name="Home.TitleWithLanguage" xml:space="preserve">
+    <value>让 {0} 成为您日常的一部分。</value>
+  </data>
+  <data name="Home.TitleAnonymous" xml:space="preserve">
+    <value>把新单词变成真实对话。</value>
+  </data>
+  <data name="Home.Description" xml:space="preserve">
+    <value>从您阅读的内容中积累词汇，通过针对性练习巩固记忆，再与 AI 对话伙伴开口使用。</value>
+  </data>
+  <data name="Home.StartLearning" xml:space="preserve">
+    <value>开始学习</value>
+  </data>
+  <data name="Home.ChooseLanguage" xml:space="preserve">
+    <value>选择语言</value>
+  </data>
+  <data name="Home.BrowseShared" xml:space="preserve">
+    <value>浏览共享集合</value>
+  </data>
+  <data name="Home.StartSpeaking" xml:space="preserve">
+    <value>开始口语</value>
+  </data>
+  <data name="Home.OpenQuizzes" xml:space="preserve">
+    <value>打开我的测验</value>
+  </data>
+  <data name="Home.WaysAria" xml:space="preserve">
+    <value>使用 Glosify 学习的方式</value>
+  </data>
+  <data name="Home.ReadContext" xml:space="preserve">
+    <value>在语境中阅读</value>
+  </data>
+  <data name="Home.PracticeRecall" xml:space="preserve">
+    <value>练习回忆</value>
+  </data>
+  <data name="Home.SpeakConfidence" xml:space="preserve">
+    <value>自信开口</value>
+  </data>
+  <data name="Home.LoopAria" xml:space="preserve">
+    <value>从阅读到口语的连贯学习闭环</value>
+  </data>
+  <data name="Home.Discover" xml:space="preserve">
+    <value>发现</value>
+  </data>
+  <data name="Home.Remember" xml:space="preserve">
+    <value>记住</value>
+  </data>
+  <data name="Home.LearningLoop" xml:space="preserve">
+    <value>您的学习循环</value>
+  </data>
+  <data name="Home.TodayMindset" xml:space="preserve">
+    <value>今日心态</value>
+  </data>
+  <data name="Home.SmallSteps" xml:space="preserve">
+    <value>小步前进。真正进步。</value>
+  </data>
+  <data name="Home.QuickStart" xml:space="preserve">
+    <value>快速开始</value>
+  </data>
+  <data name="Home.ChooseNext" xml:space="preserve">
+    <value>选择下一步</value>
+  </data>
+  <data name="Home.LearningLanguage" xml:space="preserve">
+    <value>正在学习 {0}</value>
+  </data>
+  <data name="Home.BuildVocabulary" xml:space="preserve">
+    <value>积累词汇</value>
+  </data>
+  <data name="Home.BuildVocabularyText" xml:space="preserve">
+    <value>创建聚焦词集，收录您真正想用的词。</value>
+  </data>
+  <data name="Home.PracticeRecallText" xml:space="preserve">
+    <value>使用闪卡、输入和自定义测验，让单词牢牢记住。</value>
+  </data>
+  <data name="Home.SpeakNaturally" xml:space="preserve">
+    <value>自然开口</value>
+  </data>
+  <data name="Home.SpeakNaturallyText" xml:space="preserve">
+    <value>进入引导场景，每轮后获得私人辅导。</value>
+  </data>
+  <data name="Home.ConnectedKicker" xml:space="preserve">
+    <value>一个连贯的工作区</value>
+  </data>
+  <data name="Home.ConnectedTitle" xml:space="preserve">
+    <value>从您已经关注的任何内容中学习。</value>
+  </data>
+  <data name="Home.ConnectedText" xml:space="preserve">
+    <value>一本书、一个共享词表或一项课堂作业，都可以成为您下一次练习的起点。无论接下来去哪儿，词汇都始终伴您左右。</value>
+  </data>
+  <data name="Home.ExploreCollections" xml:space="preserve">
+    <value>探索社区集合</value>
+  </data>
+  <data name="Home.ReadCollect" xml:space="preserve">
+    <value>阅读并收集</value>
+  </data>
+  <data name="Home.ReadCollectText" xml:space="preserve">
+    <value>无需离开页面，即可将 PDF 变成词汇。</value>
+  </data>
+  <data name="Home.ExploreTogether" xml:space="preserve">
+    <value>一起探索</value>
+  </data>
+  <data name="Home.ExploreTogetherText" xml:space="preserve">
+    <value>将公开测验和集合复制到您的库中。</value>
+  </data>
+  <data name="Home.JoinClassroom" xml:space="preserve">
+    <value>加入课堂</value>
+  </data>
+  <data name="Home.JoinClassroomText" xml:space="preserve">
+    <value>通过作业、共享内容和实时支持来学习。</value>
+  </data>
+  <data name="Home.YourTurn" xml:space="preserve">
+    <value>轮到您了</value>
+  </data>
+  <data name="Home.TodayLanguage" xml:space="preserve">
+    <value>今天您会在 {0} 中做什么？</value>
+  </data>
+  <data name="Home.PickFirstWord" xml:space="preserve">
+    <value>选择一种语言，从一个实用单词开始。</value>
+  </data>
+  <data name="Home.ContinueLearning" xml:space="preserve">
+    <value>继续学习</value>
+  </data>
+  <data name="Home.PickLanguage" xml:space="preserve">
+    <value>选择语言</value>
+  </data>
+  <data name="Home.CreateAccount" xml:space="preserve">
+    <value>创建账户</value>
+  </data>
+  <data name="Auth.BrandTagline" xml:space="preserve">
+    <value>Sonic 语言沉浸</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="Auth.WelcomeBack" xml:space="preserve">
+    <value>欢迎回来</value>
+  </data>
+  <data name="Auth.LoginIntro" xml:space="preserve">
+    <value>请输入您的详细信息以继续学习。</value>
+  </data>
+  <data name="Auth.TrialLabel" xml:space="preserve">
+    <value>试用优惠：</value>
+  </data>
+  <data name="Auth.TrialText" xml:space="preserve">
+    <value>使用 Google 或 Microsoft 登录时可一次性获得 25 点数。密码账户不会自动获得试用点数。</value>
+  </data>
+  <data name="Auth.EmailAddress" xml:space="preserve">
+    <value>电子邮件地址</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>密码</value>
+  </data>
+  <data name="Auth.Forgot" xml:space="preserve">
+    <value>忘记了？</value>
+  </data>
+  <data name="Auth.OrContinue" xml:space="preserve">
+    <value>或使用以下方式继续</value>
+  </data>
+  <data name="Auth.ContinueProvider" xml:space="preserve">
+    <value>使用 {0} 继续</value>
+  </data>
+  <data name="Auth.NoAccount" xml:space="preserve">
+    <value>没有账号？</value>
+  </data>
+  <data name="Auth.CreateAccount" xml:space="preserve">
+    <value>创建账号</value>
+  </data>
+  <data name="Auth.RegisterTitle" xml:space="preserve">
+    <value>注册</value>
+  </data>
+  <data name="Auth.CreateYourAccount" xml:space="preserve">
+    <value>创建您的账号</value>
+  </data>
+  <data name="Auth.RegisterIntro" xml:space="preserve">
+    <value>今天就开始您的语言沉浸之旅。</value>
+  </data>
+  <data name="Auth.RegisterTrialLabel" xml:space="preserve">
+    <value>25 积分试用：</value>
+  </data>
+  <data name="Auth.RegisterTrialText" xml:space="preserve">
+    <value>通过链接并使用 Google 或 Microsoft 登录后可使用一次。仅创建密码账号不会增加试用积分。</value>
+  </data>
+  <data name="Auth.ConfirmPassword" xml:space="preserve">
+    <value>确认密码</value>
+  </data>
+  <data name="Auth.AlreadyAccount" xml:space="preserve">
+    <value>已经有账号？</value>
+  </data>
+  <data name="Auth.ForgotTitle" xml:space="preserve">
+    <value>忘记密码</value>
+  </data>
+  <data name="Auth.ForgotHeading" xml:space="preserve">
+    <value>重置密码</value>
+  </data>
+  <data name="Auth.ForgotUnavailable" xml:space="preserve">
+    <value>暂不支持通过电子邮件重置密码。如需访问账号帮助，请联系支持。</value>
+  </data>
+  <data name="Auth.BackToLogin" xml:space="preserve">
+    <value>返回登录</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>电子邮件或密码无效。</value>
+  </data>
+  <data name="Auth.AccountLocked" xml:space="preserve">
+    <value>账号已锁定。请稍后再试。</value>
+  </data>
+  <data name="Auth.ExternalNotConfigured" xml:space="preserve">
+    <value>未配置 {0} 登录。</value>
+  </data>
+  <data name="Auth.ExternalFailed" xml:space="preserve">
+    <value>外部登录失败。</value>
+  </data>
+  <data name="Auth.ExternalProviderFailed" xml:space="preserve">
+    <value>{0} 登录失败。请检查本地 {0} OAuth 客户端 ID 和客户端密钥，然后重试。</value>
+  </data>
+  <data name="Identity.DuplicateUserName" xml:space="preserve">
+    <value>该电子邮件地址的账号已存在。</value>
+  </data>
+  <data name="Identity.DuplicateEmail" xml:space="preserve">
+    <value>该电子邮件地址的账号已存在。</value>
+  </data>
+  <data name="Identity.PasswordTooShort" xml:space="preserve">
+    <value>密码太短。</value>
+  </data>
+  <data name="Identity.PasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>密码必须包含符号。</value>
+  </data>
+  <data name="Identity.PasswordRequiresDigit" xml:space="preserve">
+    <value>密码必须包含数字。</value>
+  </data>
+  <data name="Identity.PasswordRequiresLower" xml:space="preserve">
+    <value>密码必须包含小写字母。</value>
+  </data>
+  <data name="Identity.PasswordRequiresUpper" xml:space="preserve">
+    <value>密码必须包含大写字母。</value>
+  </data>
+  <data name="Identity.DefaultError" xml:space="preserve">
+    <value>无法创建账号。请检查您的信息后重试。</value>
+  </data>
+  <data name="Validation.PasswordsMismatch" xml:space="preserve">
+    <value>密码不匹配。</value>
+  </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>必须填写 {0} 字段。</value>
+  </data>
+  <data name="Validation.Email" xml:space="preserve">
+    <value>{0} 字段不是有效的电子邮件地址。</value>
+  </data>
+  <data name="Validation.MinLength" xml:space="preserve">
+    <value>字段 {0} 必须是字符串或数组类型，且最小长度为 '{1}'。</value>
+  </data>
+  <data name="Legal.Label" xml:space="preserve">
+    <value>法律</value>
+  </data>
+  <data name="Legal.PrivacyPolicy" xml:space="preserve">
+    <value>隐私政策</value>
+  </data>
+  <data name="Legal.TermsOfService" xml:space="preserve">
+    <value>服务条款</value>
+  </data>
+  <data name="Legal.Support" xml:space="preserve">
+    <value>支持</value>
+  </data>
+  <data name="Legal.PrivacyTitle" xml:space="preserve">
+    <value>隐私</value>
+  </data>
+  <data name="Legal.TermsTitle" xml:space="preserve">
+    <value>条款</value>
+  </data>
+  <data name="Legal.EnglishGoverns" xml:space="preserve">
+    <value>本译文仅供方便使用。如与英文版本有差异，以英文版本为准。</value>
+  </data>
+  <data name="Transcripts.CountOne" xml:space="preserve">
+    <value>已保存 {0}</value>
+  </data>
+  <data name="Transcripts.CountMany" xml:space="preserve">
+    <value>已保存 {0}</value>
+  </data>
+  <data name="Transcripts.CaptionOne" xml:space="preserve">
+    <value>{0} 个字幕</value>
+  </data>
+  <data name="Transcripts.CaptionMany" xml:space="preserve">
+    <value>{0} 个字幕</value>
+  </data>
+  <data name="Quiz.Progress" xml:space="preserve">
+    <value>{0} / {1} {2}</value>
+  </data>
+  <data name="Quiz.CorrectCount" xml:space="preserve">
+    <value>答对 {0}</value>
+  </data>
+  <data name="Quiz.PromptLabel" xml:space="preserve">
+    <value>{0} 提示</value>
+  </data>
+  <data name="Quiz.UkrainianKeyboard" xml:space="preserve">
+    <value>乌克兰语虚拟键盘</value>
+  </data>
+  <data name="Books.Title" xml:space="preserve">
+    <value>书籍</value>
+  </data>
+  <data name="Books.YourBooks" xml:space="preserve">
+    <value>您的书籍</value>
+  </data>
+  <data name="Books.LanguageBooks" xml:space="preserve">
+    <value>您的 {0} 书籍</value>
+  </data>
+  <data name="Books.LanguageTitle" xml:space="preserve">
+    <value>{0} 书籍</value>
+  </data>
+  <data name="Books.YourLibrary" xml:space="preserve">
+    <value>您的书库</value>
+  </data>
+  <data name="Books.HeroPrefix" xml:space="preserve">
+    <value>让每一页都变成</value>
+  </data>
+  <data name="Books.Progress" xml:space="preserve">
+    <value>进步。</value>
+  </data>
+  <data name="Books.HeroText" xml:space="preserve">
+    <value>带上您自己的阅读材料，用 Glosify 探索每一页、每个短语和每个新单词。</value>
+  </data>
+  <data name="Books.SummaryAria" xml:space="preserve">
+    <value>书库摘要</value>
+  </data>
+  <data name="Books.BookOne" xml:space="preserve">
+    <value>本书</value>
+  </data>
+  <data name="Books.BookMany" xml:space="preserve">
+    <value>书</value>
+  </data>
+  <data name="Books.PageOne" xml:space="preserve">
+    <value>页</value>
+  </data>
+  <data name="Books.PageMany" xml:space="preserve">
+    <value>页</value>
+  </data>
+  <data name="Books.AddShelf" xml:space="preserve">
+    <value>添加到您的书架</value>
+  </data>
+  <data name="Books.UploadPdf" xml:space="preserve">
+    <value>上传 PDF</value>
+  </data>
+  <data name="Books.ChoosePdf" xml:space="preserve">
+    <value>选择 PDF</value>
+  </data>
+  <data name="Books.PdfLimit" xml:space="preserve">
+    <value>基于文本的 PDF · 最多 25 MB</value>
+  </data>
+  <data name="Books.Browse" xml:space="preserve">
+    <value>浏览</value>
+  </data>
+  <data name="Books.AddLibrary" xml:space="preserve">
+    <value>添加到书库</value>
+  </data>
+  <data name="Books.KeepReading" xml:space="preserve">
+    <value>继续阅读</value>
+  </data>
+  <data name="Books.OnShelf" xml:space="preserve">
+    <value>您书架上的 {0}</value>
+  </data>
+  <data name="Books.DeleteConfirm" xml:space="preserve">
+    <value>要永久删除“{0}”及其页面吗？使用过它的聊天会保留。</value>
+  </data>
+  <data name="Books.Delete" xml:space="preserve">
+    <value>删除 {0}</value>
+  </data>
+  <data name="Books.Read" xml:space="preserve">
+    <value>阅读 {0}</value>
+  </data>
+  <data name="Books.ReaderEdition" xml:space="preserve">
+    <value>阅读版</value>
+  </data>
+  <data name="Books.Added" xml:space="preserve">
+    <value>已添加</value>
+  </data>
+  <data name="Books.PageCountOne" xml:space="preserve">
+    <value>{0} 页</value>
+  </data>
+  <data name="Books.PageCountMany" xml:space="preserve">
+    <value>{0} 页</value>
+  </data>
+  <data name="Books.StartReading" xml:space="preserve">
+    <value>开始阅读</value>
+  </data>
+  <data name="Books.ShelfReady" xml:space="preserve">
+    <value>您的书架已就绪</value>
+  </data>
+  <data name="Books.NoLanguageBooks" xml:space="preserve">
+    <value>还没有 {0} 书籍</value>
+  </data>
+  <data name="Books.EmptyText" xml:space="preserve">
+    <value>请先上传上面的第一个基于文本的 PDF，从您已经喜爱的阅读内容中开始学习。</value>
+  </data>
+  <data name="Books.EmptyLanguageText" xml:space="preserve">
+    <value>它将添加到您的 {0} 书架。</value>
+  </data>
+  <data name="Books.ChooseFirst" xml:space="preserve">
+    <value>选择您的第一本书</value>
+  </data>
+  <data name="Common.First" xml:space="preserve">
+    <value>第一</value>
+  </data>
+  <data name="Common.Last" xml:space="preserve">
+    <value>最后一个</value>
+  </data>
+  <data name="Common.Page" xml:space="preserve">
+    <value>第 {0} 页</value>
+  </data>
+  <data name="Common.Go" xml:space="preserve">
+    <value>前往</value>
+  </data>
+  <data name="Transcripts.AssistantTitle" xml:space="preserve">
+    <value>转录助手</value>
+  </data>
+  <data name="Transcripts.AssistantEmpty" xml:space="preserve">
+    <value>询问这段转录内容，或将其用于你现有的测验。</value>
+  </data>
+  <data name="Transcripts.AssistantPlaceholder" xml:space="preserve">
+    <value>询问这段转录内容...</value>
+  </data>
+  <data name="Transcripts.OriginalFor" xml:space="preserve">
+    <value>保存的 {0} 学习原始语音</value>
+  </data>
+  <data name="Transcripts.LegacyFor" xml:space="preserve">
+    <value>旧版翻译字幕 · 学习 {0}</value>
+  </data>
+  <data name="Transcripts.Started" xml:space="preserve">
+    <value>已开始</value>
+  </data>
+  <data name="Transcripts.NameLabel" xml:space="preserve">
+    <value>转录标题</value>
+  </data>
+  <data name="Transcripts.Rename" xml:space="preserve">
+    <value>重命名</value>
+  </data>
+  <data name="Transcripts.DeleteConfirm" xml:space="preserve">
+    <value>要永久删除此已保存的转录内容吗？</value>
+  </data>
+  <data name="Transcripts.StopBeforeDelete" xml:space="preserve">
+    <value>删除前先停止实时字幕</value>
+  </data>
+  <data name="Transcripts.StreamAria" xml:space="preserve">
+    <value>字幕流</value>
+  </data>
+  <data name="Transcripts.OriginalSpeech" xml:space="preserve">
+    <value>原始语音</value>
+  </data>
+  <data name="Transcripts.Translation" xml:space="preserve">
+    <value>翻译</value>
+  </data>
+  <data name="Transcripts.TranslationNote" xml:space="preserve">
+    <value>由不同模型根据同一音频实时翻译。原始语音识别有误时，可用于核对含义。</value>
+  </data>
+  <data name="Transcripts.OriginalNote" xml:space="preserve">
+    <value>语音识别器听到的内容。切换到翻译可交叉核对不清楚的段落。</value>
+  </data>
+  <data name="Transcripts.SavedTranslationAria" xml:space="preserve">
+    <value>已保存的翻译字幕</value>
+  </data>
+  <data name="Transcripts.SavedOriginalAria" xml:space="preserve">
+    <value>已保存的原始语音</value>
+  </data>
+  <data name="Transcripts.TextPagesAria" xml:space="preserve">
+    <value>转录文本页</value>
+  </data>
+  <data name="Transcripts.JumpPage" xml:space="preserve">
+    <value>跳转到页面</value>
+  </data>
+  <data name="Common.Off" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Reader.AssistantTitle" xml:space="preserve">
+    <value>页面助手</value>
+  </data>
+  <data name="Reader.AssistantEmpty" xml:space="preserve">
+    <value>询问此页中的词汇或句子。</value>
+  </data>
+  <data name="Reader.AssistantPlaceholder" xml:space="preserve">
+    <value>基于此页生成测验...</value>
+  </data>
+  <data name="Reader.TranslatedPage" xml:space="preserve">
+    <value>译文页</value>
+  </data>
+  <data name="Reader.BackBooks" xml:space="preserve">
+    <value>返回书籍</value>
+  </data>
+  <data name="Reader.PdfControls" xml:space="preserve">
+    <value>PDF 视图控件</value>
+  </data>
+  <data name="Reader.ZoomOut" xml:space="preserve">
+    <value>缩小</value>
+  </data>
+  <data name="Reader.ResetZoom100" xml:space="preserve">
+    <value>重置缩放为 100%</value>
+  </data>
+  <data name="Reader.ResetZoom" xml:space="preserve">
+    <value>重置缩放</value>
+  </data>
+  <data name="Reader.ZoomIn" xml:space="preserve">
+    <value>放大</value>
+  </data>
+  <data name="Reader.FitPage" xml:space="preserve">
+    <value>适合页面</value>
+  </data>
+  <data name="Reader.Rotate" xml:space="preserve">
+    <value>顺时针旋转</value>
+  </data>
+  <data name="Reader.PolishVoice" xml:space="preserve">
+    <value>润色朗读语音</value>
+  </data>
+  <data name="Reader.ReadAloud" xml:space="preserve">
+    <value>朗读此页</value>
+  </data>
+  <data name="Reader.Read" xml:space="preserve">
+    <value>阅读</value>
+  </data>
+  <data name="Reader.TranslationControls" xml:space="preserve">
+    <value>页面翻译控件</value>
+  </data>
+  <data name="Reader.TranslateOffAria" xml:space="preserve">
+    <value>翻译已关闭。翻译此页</value>
+  </data>
+  <data name="Reader.TranslateOffTitle" xml:space="preserve">
+    <value>翻译已关闭。点击翻译此页</value>
+  </data>
+  <data name="Reader.Translation" xml:space="preserve">
+    <value>翻译</value>
+  </data>
+  <data name="Reader.TranslationLanguage" xml:space="preserve">
+    <value>翻译语言</value>
+  </data>
+  <data name="Reader.SplitAria" xml:space="preserve">
+    <value>并排显示原文和译文</value>
+  </data>
+  <data name="Reader.SplitView" xml:space="preserve">
+    <value>分屏视图</value>
+  </data>
+  <data name="Reader.Original" xml:space="preserve">
+    <value>原文</value>
+  </data>
+  <data name="Reader.PreviousPage" xml:space="preserve">
+    <value>上一页</value>
+  </data>
+  <data name="Reader.NextPage" xml:space="preserve">
+    <value>下一页</value>
+  </data>
+  <data name="Client.GenericError" xml:space="preserve">
+    <value>出了点问题。请重试。</value>
+  </data>
+  <data name="Client.NetworkError" xml:space="preserve">
+    <value>网络错误。请重试。</value>
+  </data>
+  <data name="Client.TryAgain" xml:space="preserve">
+    <value>重试</value>
+  </data>
+  <data name="Client.Loading" xml:space="preserve">
+    <value>加载中…</value>
+  </data>
+  <data name="Client.Correct" xml:space="preserve">
+    <value>正确</value>
+  </data>
+  <data name="Client.Incorrect" xml:space="preserve">
+    <value>错误</value>
+  </data>
+  <data name="Client.NextWord" xml:space="preserve">
+    <value>下一个词</value>
+  </data>
+  <data name="Client.CheckFailed" xml:space="preserve">
+    <value>无法检查该答案。请重试。</value>
+  </data>
+  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
+    <value>删除此自定义测验？</value>
+  </data>
+  <data name="Client.DeleteQuizFailed" xml:space="preserve">
+    <value>无法删除自定义测验。请重试。</value>
+  </data>
+  <data name="Client.RepairFailed" xml:space="preserve">
+    <value>修复失败。请重试。</value>
+  </data>
+  <data name="Client.RepairStopped" xml:space="preserve">
+    <value>修复请求意外停止。请重试。</value>
+  </data>
+  <data name="Client.DeleteChat" xml:space="preserve">
+    <value>删除聊天</value>
+  </data>
+  <data name="Client.DeleteChatConfirm" xml:space="preserve">
+    <value>删除此聊天？</value>
+  </data>
+  <data name="Client.ApplyFailed" xml:space="preserve">
+    <value>无法应用更改。</value>
+  </data>
+  <data name="Client.ApplyNetwork" xml:space="preserve">
+    <value>应用更改时网络错误。</value>
+  </data>
+  <data name="Client.RejectNetwork" xml:space="preserve">
+    <value>拒绝更改时网络错误。</value>
+  </data>
+  <data name="Client.AssistantFailed" xml:space="preserve">
+    <value>助手无法响应。</value>
+  </data>
+  <data name="Client.AssistantNetwork" xml:space="preserve">
+    <value>与助手通信时网络错误。</value>
+  </data>
+  <data name="Client.PictureFailed" xml:space="preserve">
+    <value>无法从该图片中读取文本。</value>
+  </data>
+  <data name="Client.PictureNetwork" xml:space="preserve">
+    <value>读取图片时网络错误。</value>
+  </data>
+  <data name="Client.MessageFailed" xml:space="preserve">
+    <value>消息发送失败。</value>
+  </data>
+  <data name="Client.JoinCallFailed" xml:space="preserve">
+    <value>无法加入通话。</value>
+  </data>
+  <data name="Client.CallTokenFailed" xml:space="preserve">
+    <value>无法获取通话令牌。</value>
+  </data>
+  <data name="Client.PageOf" xml:space="preserve">
+    <value>第 {0} 页，共 {1} 页</value>
+  </data>
+  <data name="Client.TtsNoText" xml:space="preserve">
+    <value>没有可供朗读的可选文本。</value>
+  </data>
+  <data name="Client.TtsUnavailable" xml:space="preserve">
+    <value>此浏览器中不可用文本转语音。</value>
+  </data>
+  <data name="Client.TtsFailed" xml:space="preserve">
+    <value>文本转语音播放失败。</value>
+  </data>
+  <data name="Client.TranslationFailed" xml:space="preserve">
+    <value>无法翻译此页。</value>
+  </data>
+  <data name="Client.PreferenceFailed" xml:space="preserve">
+    <value>无法保存语言偏好。</value>
+  </data>
+  <data name="Client.On" xml:space="preserve">
+    <value>开启</value>
+  </data>
+  <data name="Client.Off" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="Client.Translating" xml:space="preserve">
+    <value>正在翻译…</value>
+  </data>
+  <data name="Client.TranslationError" xml:space="preserve">
+    <value>出错</value>
+  </data>
+  <data name="Client.Read" xml:space="preserve">
+    <value>朗读</value>
+  </data>
+  <data name="Client.Stop" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="Client.MessageRateLimited" xml:space="preserve">
+    <value>你发送消息太快了。请稍等片刻。</value>
+  </data>
+  <data name="Client.SessionExpired" xml:space="preserve">
+    <value>会话已过期。请重新开始测验以继续。</value>
+  </data>
+  <data name="Client.NotQuite" xml:space="preserve">
+    <value>还差一点</value>
+  </data>
+  <data name="Client.ShowResults" xml:space="preserve">
+    <value>显示结果</value>
+  </data>
+  <data name="Quiz.LibraryTitle" xml:space="preserve">
+    <value>选择测验</value>
+  </data>
+  <data name="Quiz.SelectQuiz" xml:space="preserve">
+    <value>选择测验</value>
+  </data>
+  <data name="Quiz.ShowingLanguage" xml:space="preserve">
+    <value>显示你的 {0} 个测验。</value>
+  </data>
+  <data name="Quiz.LanguageCollection" xml:space="preserve">
+    <value>{0} 集合。</value>
+  </data>
+  <data name="Quiz.Library" xml:space="preserve">
+    <value>测验库</value>
+  </data>
+  <data name="Quiz.ChangeLanguage" xml:space="preserve">
+    <value>更改语言</value>
+  </data>
+  <data name="Quiz.MakePrivate" xml:space="preserve">
+    <value>将集合设为私密</value>
+  </data>
+  <data name="Quiz.MakePublic" xml:space="preserve">
+    <value>将集合设为公开</value>
+  </data>
+  <data name="Quiz.PublicSubtree" xml:space="preserve">
+    <value>公开子树</value>
+  </data>
+  <data name="Quiz.Private" xml:space="preserve">
+    <value>私密</value>
+  </data>
+  <data name="Quiz.LibrarySummary" xml:space="preserve">
+    <value>库摘要</value>
+  </data>
+  <data name="Quiz.CollectionOne" xml:space="preserve">
+    <value>集合</value>
+  </data>
+  <data name="Quiz.CollectionMany" xml:space="preserve">
+    <value>集合</value>
+  </data>
+  <data name="Quiz.QuizOne" xml:space="preserve">
+    <value>测验</value>
+  </data>
+  <data name="Quiz.QuizMany" xml:space="preserve">
+    <value>测验</value>
+  </data>
+  <data name="Quiz.NewCollection" xml:space="preserve">
+    <value>新建集合</value>
+  </data>
+  <data name="Quiz.NewQuiz" xml:space="preserve">
+    <value>新建测验</value>
+  </data>
+  <data name="Quiz.Collections" xml:space="preserve">
+    <value>集合</value>
+  </data>
+  <data name="Quiz.CollectionsHelp" xml:space="preserve">
+    <value>将相关测验分组，让学习路径更清晰。</value>
+  </data>
+  <data name="Quiz.DropInto" xml:space="preserve">
+    <value>将测验拖到 {0} 中</value>
+  </data>
+  <data name="Quiz.NestedCount" xml:space="preserve">
+    <value>{0} 个嵌套</value>
+  </data>
+  <data name="Quiz.YourQuizzes" xml:space="preserve">
+    <value>你的测验</value>
+  </data>
+  <data name="Quiz.DragHelp" xml:space="preserve">
+    <value>打开测验开始学习，或将其拖到集合中进行整理。</value>
+  </data>
+  <data name="Quiz.ChooseHelp" xml:space="preserve">
+    <value>选择一个测验，让学习节奏持续下去。</value>
+  </data>
+  <data name="Quiz.DeleteConfirm" xml:space="preserve">
+    <value>删除此测验及其所有单词？</value>
+  </data>
+  <data name="Quiz.DeleteNamed" xml:space="preserve">
+    <value>删除 {0}</value>
+  </data>
+  <data name="Quiz.Delete" xml:space="preserve">
+    <value>删除测验</value>
+  </data>
+  <data name="Quiz.EmptyTitle" xml:space="preserve">
+    <value>还没有测验或集合</value>
+  </data>
+  <data name="Quiz.EmptyText" xml:space="preserve">
+    <value>创建一个集合来整理词汇，或创建你的第一个测验。</value>
+  </data>
+  <data name="Quiz.CreateCollection" xml:space="preserve">
+    <value>创建集合</value>
+  </data>
+  <data name="Quiz.CreateQuiz" xml:space="preserve">
+    <value>创建测验</value>
+  </data>
+  <data name="Quiz.CreateNewCollection" xml:space="preserve">
+    <value>创建新集合</value>
+  </data>
+  <data name="Quiz.CollectionName" xml:space="preserve">
+    <value>集合名称</value>
+  </data>
+  <data name="Quiz.CollectionExample" xml:space="preserve">
+    <value>例如：旅行短语</value>
+  </data>
+  <data name="Quiz.CreateNewQuiz" xml:space="preserve">
+    <value>创建新测验</value>
+  </data>
+  <data name="Quiz.Name" xml:space="preserve">
+    <value>测验名称</value>
+  </data>
+  <data name="Quiz.NameExample" xml:space="preserve">
+    <value>例如：法语基础</value>
+  </data>
+  <data name="Quiz.SourceLanguage" xml:space="preserve">
+    <value>源语言</value>
+  </data>
+  <data name="Quiz.SelectLanguage" xml:space="preserve">
+    <value>选择语言...</value>
+  </data>
+  <data name="Quiz.TargetLanguage" xml:space="preserve">
+    <value>目标语言</value>
+  </data>
+  <data name="Books.UploadRequired" xml:space="preserve">
+    <value>请选择要上传的 PDF 文件。</value>
+  </data>
+  <data name="Books.Uploaded" xml:space="preserve">
+    <value>已上传 {0}。</value>
+  </data>
+  <data name="Books.UploadInvalid" xml:space="preserve">
+    <value>请选择有效的文本型 PDF，且小于 25 MB。</value>
+  </data>
+  <data name="Books.ProcessFailed" xml:space="preserve">
+    <value>无法处理该 PDF。请尝试文本型 PDF。</value>
+  </data>
+  <data name="Books.Deleted" xml:space="preserve">
+    <value>已删除 {0}。</value>
+  </data>
+  <data name="Books.PaidUnavailable" xml:space="preserve">
+    <value>{0} 付费功能将于 {1} 重新开放。</value>
+  </data>
+  <data name="Books.PaidReason" xml:space="preserve">
+    <value>每月应用预算已达到上限。</value>
+  </data>
+  <data name="Transcripts.Renamed" xml:space="preserve">
+    <value>转写已重命名。</value>
+  </data>
+  <data name="Transcripts.InvalidTitle" xml:space="preserve">
+    <value>转写标题长度必须在 1 到 160 个字符之间。</value>
+  </data>
+  <data name="Transcripts.Deleted" xml:space="preserve">
+    <value>转写已删除。</value>
+  </data>
+  <data name="Common.Accept" xml:space="preserve">
+    <value>接受</value>
+  </data>
+  <data name="Common.Optional" xml:space="preserve">
+    <value>可选</value>
+  </data>
+  <data name="Common.Open" xml:space="preserve">
+    <value>打开</value>
+  </data>
+  <data name="Common.Copy" xml:space="preserve">
+    <value>复制</value>
+  </data>
+  <data name="Classroom.Title" xml:space="preserve">
+    <value>课堂</value>
+  </data>
+  <data name="Classroom.MyClassrooms" xml:space="preserve">
+    <value>我的课堂</value>
+  </data>
+  <data name="Classroom.LanguageClassrooms" xml:space="preserve">
+    <value>你的 {0} 课堂</value>
+  </data>
+  <data name="Classroom.LanguageTitle" xml:space="preserve">
+    <value>{0} 课堂</value>
+  </data>
+  <data name="Classroom.SharedSpaces" xml:space="preserve">
+    <value>共享学习空间</value>
+  </data>
+  <data name="Classroom.LearnBetter" xml:space="preserve">
+    <value>更好地学习，</value>
+  </data>
+  <data name="Classroom.Together" xml:space="preserve">
+    <value>一起。</value>
+  </data>
+  <data name="Classroom.HeroText" xml:space="preserve">
+    <value>为学习者创建一个空间，分享练习材料，让大家朝同一个方向前进。</value>
+  </data>
+  <data name="Classroom.Summary" xml:space="preserve">
+    <value>课堂摘要</value>
+  </data>
+  <data name="Classroom.One" xml:space="preserve">
+    <value>课堂</value>
+  </data>
+  <data name="Classroom.Many" xml:space="preserve">
+    <value>课堂</value>
+  </data>
+  <data name="Classroom.MemberOne" xml:space="preserve">
+    <value>成员</value>
+  </data>
+  <data name="Classroom.MemberMany" xml:space="preserve">
+    <value>成员</value>
+  </data>
+  <data name="Classroom.Waiting" xml:space="preserve">
+    <value>等待中</value>
+  </data>
+  <data name="Classroom.LanguageLab" xml:space="preserve">
+    <value>语言实验室</value>
+  </data>
+  <data name="Classroom.LearnersActive" xml:space="preserve">
+    <value>{0} 名学习者活跃</value>
+  </data>
+  <data name="Classroom.Live" xml:space="preserve">
+    <value>实时</value>
+  </data>
+  <data name="Classroom.PracticeCompleted" xml:space="preserve">
+    <value>练习已完成</value>
+  </data>
+  <data name="Classroom.WaitingForYou" xml:space="preserve">
+    <value>等你来</value>
+  </data>
+  <data name="Classroom.Invitations" xml:space="preserve">
+    <value>邀请</value>
+  </data>
+  <data name="Classroom.NewCount" xml:space="preserve">
+    <value>{0} 个新内容</value>
+  </data>
+  <data name="Classroom.Invited" xml:space="preserve">
+    <value>你已受邀</value>
+  </data>
+  <data name="Classroom.InvitedBy" xml:space="preserve">
+    <value>{0} 邀请你以 {1} 身份加入</value>
+  </data>
+  <data name="Classroom.DeclineInvitation" xml:space="preserve">
+    <value>拒绝 {0} 的邀请</value>
+  </data>
+  <data name="Classroom.GetStarted" xml:space="preserve">
+    <value>开始使用</value>
+  </data>
+  <data name="Classroom.MakeOrJoin" xml:space="preserve">
+    <value>创建空间或加入一个</value>
+  </data>
+  <data name="Classroom.ForTeachers" xml:space="preserve">
+    <value>面向教师</value>
+  </data>
+  <data name="Classroom.Create" xml:space="preserve">
+    <value>创建课堂</value>
+  </data>
+  <data name="Classroom.CreateHelp" xml:space="preserve">
+    <value>为课程、测验、书籍和对话搭建一个学习空间。</value>
+  </data>
+  <data name="Classroom.LanguageHelp" xml:space="preserve">
+    <value> 这将是一个 {0} 课堂。</value>
+  </data>
+  <data name="Classroom.Name" xml:space="preserve">
+    <value>课堂名称</value>
+  </data>
+  <data name="Classroom.NameExample" xml:space="preserve">
+    <value>例如：Swedish A2 · Spring</value>
+  </data>
+  <data name="Classroom.ShortDescription" xml:space="preserve">
+    <value>简短描述</value>
+  </data>
+  <data name="Classroom.DescriptionPlaceholder" xml:space="preserve">
+    <value>你们小组将学习什么？</value>
+  </data>
+  <data name="Classroom.HaveCode" xml:space="preserve">
+    <value>有邀请码吗？</value>
+  </data>
+  <data name="Classroom.Join" xml:space="preserve">
+    <value>加入课堂</value>
+  </data>
+  <data name="Classroom.JoinHelp" xml:space="preserve">
+    <value>输入老师分享的 8 位代码。</value>
+  </data>
+  <data name="Classroom.JoinCode" xml:space="preserve">
+    <value>加入代码</value>
+  </data>
+  <data name="Classroom.JoinThis" xml:space="preserve">
+    <value>加入此课堂</value>
+  </data>
+  <data name="Classroom.YourSpaces" xml:space="preserve">
+    <value>你的学习空间</value>
+  </data>
+  <data name="Classroom.TotalCount" xml:space="preserve">
+    <value>共 {0} 个</value>
+  </data>
+  <data name="Classroom.OpenNamed" xml:space="preserve">
+    <value>打开 {0}</value>
+  </data>
+  <data name="Classroom.CardPlaceholder" xml:space="preserve">
+    <value>一个用于学习和练习的共享空间。</value>
+  </data>
+  <data name="Classroom.BetterCompany" xml:space="preserve">
+    <value>一起学习更好</value>
+  </data>
+  <data name="Classroom.NoLanguageYet" xml:space="preserve">
+    <value>还没有 {0} 课堂</value>
+  </data>
+  <data name="Classroom.EmptyHelp" xml:space="preserve">
+    <value>创建你的第一个课堂，或向老师索取加入代码来找到你的小组。</value>
+  </data>
+  <data name="Classroom.CreateFirst" xml:space="preserve">
+    <value>创建你的第一个空间</value>
+  </data>
+  <data name="Classroom.JoinCall" xml:space="preserve">
+    <value>加入通话</value>
+  </data>
+  <data name="Classroom.VideoCall" xml:space="preserve">
+    <value>视频通话</value>
+  </data>
+  <data name="Classroom.Sections" xml:space="preserve">
+    <value>课堂分区</value>
+  </data>
+  <data name="Classroom.Stream" xml:space="preserve">
+    <value>动态</value>
+  </data>
+  <data name="Classroom.Content" xml:space="preserve">
+    <value>内容</value>
+  </data>
+  <data name="Classroom.Planning" xml:space="preserve">
+    <value>规划</value>
+  </data>
+  <data name="Classroom.Members" xml:space="preserve">
+    <value>成员</value>
+  </data>
+  <data name="Classroom.Results" xml:space="preserve">
+    <value>结果</value>
+  </data>
+  <data name="Speaking.LanguagePractice" xml:space="preserve">
+    <value>{0} 口语练习</value>
+  </data>
+  <data name="Speaking.HeroTitle" xml:space="preserve">
+    <value>用口语说出你的语言。</value>
+  </data>
+  <data name="Speaking.HeroText" xml:space="preserve">
+    <value>选择一位开放式辅导员或一个场景，自然地对话，并在每一轮后获得私人辅导。</value>
+  </data>
+  <data name="Speaking.PracticeQuiz" xml:space="preserve">
+    <value>练习测验</value>
+  </data>
+  <data name="Speaking.ChooseQuiz" xml:space="preserve">
+    <value>选择一个用于口语练习的测验</value>
+  </data>
+  <data name="Speaking.FreeLesson" xml:space="preserve">
+    <value>免费课程</value>
+  </data>
+  <data name="Speaking.PoweredBy" xml:space="preserve">
+    <value>由 Microsoft Foundry 和 Azure AI Speech 提供支持</value>
+  </data>
+  <data name="Speaking.Settings" xml:space="preserve">
+    <value>练习设置</value>
+  </data>
+  <data name="Speaking.ChooseAvatar" xml:space="preserve">
+    <value>选择头像</value>
+  </data>
+  <data name="Speaking.Level" xml:space="preserve">
+    <value>级别</value>
+  </data>
+  <data name="Speaking.ChooseLevel" xml:space="preserve">
+    <value>选择 CEFR 级别</value>
+  </data>
+  <data name="Speaking.Beginner" xml:space="preserve">
+    <value>初学者</value>
+  </data>
+  <data name="Speaking.Elementary" xml:space="preserve">
+    <value>初级</value>
+  </data>
+  <data name="Speaking.Intermediate" xml:space="preserve">
+    <value>中级</value>
+  </data>
+  <data name="Speaking.UpperIntermediate" xml:space="preserve">
+    <value>中高级</value>
+  </data>
+  <data name="Speaking.Advanced" xml:space="preserve">
+    <value>高级</value>
+  </data>
+  <data name="Speaking.EnglishTranslation" xml:space="preserve">
+    <value>英文翻译</value>
+  </data>
+  <data name="Speaking.MuteAvatar" xml:space="preserve">
+    <value>关闭头像声音</value>
+  </data>
+  <data name="Speaking.AvatarScene" xml:space="preserve">
+    <value>头像场景</value>
+  </data>
+  <data name="Speaking.HoldSpeak" xml:space="preserve">
+    <value>按住说话并发送</value>
+  </data>
+  <data name="Speaking.StartingScene" xml:space="preserve">
+    <value>正在开始场景…</value>
+  </data>
+  <data name="Speaking.ReplayLatestAria" xml:space="preserve">
+    <value>重播头像的最新回复</value>
+  </data>
+  <data name="Speaking.ReplayLatest" xml:space="preserve">
+    <value>重播最新回复</value>
+  </data>
+  <data name="Speaking.Conversation" xml:space="preserve">
+    <value>对话</value>
+  </data>
+  <data name="Speaking.CurrentSession" xml:space="preserve">
+    <value>当前会话</value>
+  </data>
+  <data name="Speaking.ScoreHelp" xml:space="preserve">
+    <value>发音评分基于你录制的音频。</value>
+  </data>
+  <data name="Speaking.SpeakToType" xml:space="preserve">
+    <value>语音输入</value>
+  </data>
+  <data name="Speaking.You" xml:space="preserve">
+    <value>你</value>
+  </data>
+  <data name="Speaking.Accuracy" xml:space="preserve">
+    <value>准确度</value>
+  </data>
+  <data name="Speaking.Fluency" xml:space="preserve">
+    <value>流利度</value>
+  </data>
+  <data name="Speaking.Completeness" xml:space="preserve">
+    <value>完整度</value>
+  </data>
+  <data name="Speaking.ReplayReply" xml:space="preserve">
+    <value>重播此回复</value>
+  </data>
+  <data name="Speaking.ShowEnglish" xml:space="preserve">
+    <value>显示英文翻译</value>
+  </data>
+  <data name="Speaking.Grammar" xml:space="preserve">
+    <value>语法</value>
+  </data>
+  <data name="Speaking.Vocabulary" xml:space="preserve">
+    <value>词汇</value>
+  </data>
+  <data name="Speaking.Naturalness" xml:space="preserve">
+    <value>自然度</value>
+  </data>
+  <data name="Speaking.PracticeThis" xml:space="preserve">
+    <value>练习这个</value>
+  </data>
+  <data name="Speaking.HearPhrase" xml:space="preserve">
+    <value>聆听此练习短语</value>
+  </data>
+  <data name="Speaking.HoldRepeatAria" xml:space="preserve">
+    <value>按住重复此练习短语</value>
+  </data>
+  <data name="Speaking.HoldRepeat" xml:space="preserve">
+    <value>按住重复</value>
+  </data>
+  <data name="Quiz.DeletedWord" xml:space="preserve">
+    <value>已删除 {0}。</value>
+  </data>
+  <data name="Quiz.DeletedNamed" xml:space="preserve">
+    <value>已删除 {0}。</value>
+  </data>
+  <data name="Quiz.NowPublic" xml:space="preserve">
+    <value>测验现已公开。</value>
+  </data>
+  <data name="Quiz.NowPrivate" xml:space="preserve">
+    <value>测验已设为私有。</value>
+  </data>
+  <data name="Quiz.VisibilityFailed" xml:space="preserve">
+    <value>无法更新测验可见性。</value>
+  </data>
+  <data name="Quiz.CollectionNowPublic" xml:space="preserve">
+    <value>集合已设为公开。</value>
+  </data>
+  <data name="Quiz.CollectionNowPrivate" xml:space="preserve">
+    <value>集合已设为私有。</value>
+  </data>
+  <data name="Quiz.CollectionVisibilityFailed" xml:space="preserve">
+    <value>无法更新集合可见性。</value>
+  </data>
+  <data name="Quiz.CollectionCreated" xml:space="preserve">
+    <value>已创建集合 {0}。</value>
+  </data>
+  <data name="Quiz.CollectionCreateFailed" xml:space="preserve">
+    <value>无法创建该集合。请检查其名称和父集合。</value>
+  </data>
+  <data name="Common.All" xml:space="preserve">
+    <value>全部</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>测验设置</value>
+  </data>
+  <data name="Settings.FlashcardQuiz" xml:space="preserve">
+    <value>单词卡测验</value>
+  </data>
+  <data name="Settings.Source" xml:space="preserve">
+    <value>源语言</value>
+  </data>
+  <data name="Settings.Target" xml:space="preserve">
+    <value>目标语言</value>
+  </data>
+  <data name="Settings.Configuration" xml:space="preserve">
+    <value>配置</value>
+  </data>
+  <data name="Settings.Intro" xml:space="preserve">
+    <value>选择一个快速练习并复习此测验。</value>
+  </data>
+  <data name="Settings.SessionLength" xml:space="preserve">
+    <value>练习时长</value>
+  </data>
+  <data name="Settings.Words" xml:space="preserve">
+    <value>单词</value>
+  </data>
+  <data name="Settings.AvailableLower" xml:space="preserve">
+    <value>可用</value>
+  </data>
+  <data name="Settings.Quick" xml:space="preserve">
+    <value>快速</value>
+  </data>
+  <data name="Settings.Standard" xml:space="preserve">
+    <value>标准</value>
+  </data>
+  <data name="Settings.WordRange" xml:space="preserve">
+    <value>单词范围</value>
+  </data>
+  <data name="Settings.RangeHelp" xml:space="preserve">
+    <value>拖动任一滑块手柄可聚焦列表中的一段，例如最新的单词。</value>
+  </data>
+  <data name="Settings.Newest20" xml:space="preserve">
+    <value>最新 20%</value>
+  </data>
+  <data name="Settings.Newest50" xml:space="preserve">
+    <value>最新 50%</value>
+  </data>
+  <data name="Settings.Oldest20" xml:space="preserve">
+    <value>最旧 20%</value>
+  </data>
+  <data name="Settings.AllWordsOrder" xml:space="preserve">
+    <value>按从旧到新的顺序练习所有单词。</value>
+  </data>
+  <data name="Settings.ChooseIndividually" xml:space="preserve">
+    <value>逐个选择单词…</value>
+  </data>
+  <data name="Settings.ClearSelection" xml:space="preserve">
+    <value>清除选择</value>
+  </data>
+  <data name="Settings.ChooseWords" xml:space="preserve">
+    <value>选择要练习的单词</value>
+  </data>
+  <data name="Settings.SelectAll" xml:space="preserve">
+    <value>全选</value>
+  </data>
+  <data name="Settings.DeselectAll" xml:space="preserve">
+    <value>取消全选</value>
+  </data>
+  <data name="Settings.FilterWords" xml:space="preserve">
+    <value>筛选单词…</value>
+  </data>
+  <data name="Settings.ApplySelection" xml:space="preserve">
+    <value>应用选择</value>
+  </data>
+  <data name="Settings.PracticeContent" xml:space="preserve">
+    <value>练习内容</value>
+  </data>
+  <data name="Settings.ContentHelp" xml:space="preserve">
+    <value>选择单词或完整句子。</value>
+  </data>
+  <data name="Settings.Sentences" xml:space="preserve">
+    <value>句子</value>
+  </data>
+  <data name="Settings.QuizMode" xml:space="preserve">
+    <value>测验模式</value>
+  </data>
+  <data name="Settings.ModeHelp" xml:space="preserve">
+    <value>选择用于回忆的单词卡，或用于主动拼写练习的输入。</value>
+  </data>
+  <data name="Settings.Flashcards" xml:space="preserve">
+    <value>单词卡</value>
+  </data>
+  <data name="Settings.Typing" xml:space="preserve">
+    <value>输入</value>
+  </data>
+  <data name="Settings.Choices" xml:space="preserve">
+    <value>选项</value>
+  </data>
+  <data name="Settings.PracticeDirection" xml:space="preserve">
+    <value>练习方向</value>
+  </data>
+  <data name="Settings.DirectionHelp" xml:space="preserve">
+    <value>选择先显示哪种语言。</value>
+  </data>
+  <data name="Settings.NeedWord" xml:space="preserve">
+    <value>开始练习前请至少添加一个单词。</value>
+  </data>
+  <data name="Settings.Quiz" xml:space="preserve">
+    <value>测验</value>
+  </data>
+  <data name="Settings.Content" xml:space="preserve">
+    <value>内容</value>
+  </data>
+  <data name="Settings.Available" xml:space="preserve">
+    <value>可用</value>
+  </data>
+  <data name="Settings.Mode" xml:space="preserve">
+    <value>模式</value>
+  </data>
+  <data name="Settings.Range" xml:space="preserve">
+    <value>范围</value>
+  </data>
+  <data name="Settings.Direction" xml:space="preserve">
+    <value>方向</value>
+  </data>
+  <data name="Settings.StartQuiz" xml:space="preserve">
+    <value>开始测验</value>
+  </data>
+  <data name="Settings.WordsLower" xml:space="preserve">
+    <value>单词</value>
+  </data>
+  <data name="Settings.SentencesLower" xml:space="preserve">
+    <value>句子</value>
+  </data>
+  <data name="Settings.WordLower" xml:space="preserve">
+    <value>单词</value>
+  </data>
+  <data name="Settings.SentenceLower" xml:space="preserve">
+    <value>句子</value>
+  </data>
+  <data name="Settings.NeedItem" xml:space="preserve">
+    <value>开始练习前请至少添加一个{0}。</value>
+  </data>
+  <data name="Settings.Newest" xml:space="preserve">
+    <value>最新 {0}%</value>
+  </data>
+  <data name="Settings.Oldest" xml:space="preserve">
+    <value>最旧 {0}%</value>
+  </data>
+  <data name="Settings.RangeDynamic" xml:space="preserve">
+    <value>练习列表中的 {0}（从旧到新）。</value>
+  </data>
+  <data name="Settings.SelectedCount" xml:space="preserve">
+    <value>已选 {0}/{1}</value>
+  </data>
+  <data name="Settings.PickedWords" xml:space="preserve">
+    <value>已逐个选择 {0}/{1} 个单词</value>
+  </data>
+  <data name="Settings.PickedCount" xml:space="preserve">
+    <value>已选择 {0} 个</value>
+  </data>
+  <data name="Explore.Title" xml:space="preserve">
+    <value>探索</value>
+  </data>
+  <data name="Explore.Discover" xml:space="preserve">
+    <value>发现新内容</value>
+  </data>
+  <data name="Explore.Intro" xml:space="preserve">
+    <value>浏览其他学习者分享的词汇，然后将启发你的内容复制到自己的资料库。</value>
+  </data>
+  <data name="Explore.Summary" xml:space="preserve">
+    <value>公开资料库摘要</value>
+  </data>
+  <data name="Explore.CommunityLibrary" xml:space="preserve">
+    <value>社区资料库</value>
+  </data>
+  <data name="Explore.SharedCollections" xml:space="preserve">
+    <value>共享集合</value>
+  </data>
+  <data name="Explore.CollectionsHelp" xml:space="preserve">
+    <value>探索社区精选的完整学习集。</value>
+  </data>
+  <data name="Explore.SharedCollection" xml:space="preserve">
+    <value>共享集合</value>
+  </data>
+  <data name="Explore.CopyNamed" xml:space="preserve">
+    <value>将 {0} 复制到你的资料库</value>
+  </data>
+  <data name="Explore.CommunityQuizzes" xml:space="preserve">
+    <value>社区测验</value>
+  </data>
+  <data name="Explore.QuizzesHelp" xml:space="preserve">
+    <value>预览测验，然后将个人副本添加到你的资料库。</value>
+  </data>
+  <data name="Explore.CommunityQuiz" xml:space="preserve">
+    <value>社区测验</value>
+  </data>
+  <data name="Explore.NothingPublic" xml:space="preserve">
+    <value>{0} 目前还没有公开内容</value>
+  </data>
+  <data name="Explore.EmptyHelp" xml:space="preserve">
+    <value>当学习者分享此语言的测验或集合时，它们会显示在这里。</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data name="Common.Play" xml:space="preserve">
+    <value>播放</value>
+  </data>
+  <data name="Quiz.AssistantEmpty" xml:space="preserve">
+    <value>开始围绕此测验进行对话。</value>
+  </data>
+  <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
+    <value>询问有关此测验的问题...</value>
+  </data>
+  <data name="Quiz.CustomCount" xml:space="preserve">
+    <value>{0} 个自定义</value>
+  </data>
+  <data name="Quiz.BuildCustom" xml:space="preserve">
+    <value>创建自定义测验</value>
+  </data>
+  <data name="Quiz.Public" xml:space="preserve">
+    <value>公开</value>
+  </data>
+  <data name="Quiz.Word" xml:space="preserve">
+    <value>单词</value>
+  </data>
+  <data name="Quiz.WordExample" xml:space="preserve">
+    <value>例如 Bibliothèque</value>
+  </data>
+  <data name="Quiz.TranslationExample" xml:space="preserve">
+    <value>例如 Library</value>
+  </data>
+  <data name="Quiz.AddWord" xml:space="preserve">
+    <value>添加单词</value>
+  </data>
+  <data name="Quiz.ItemsIn" xml:space="preserve">
+    <value>{0} 个{1}，在 {2} 中</value>
+  </data>
+  <data name="Quiz.ContentAria" xml:space="preserve">
+    <value>测验内容</value>
+  </data>
+  <data name="Quiz.OpenWiktionary" xml:space="preserve">
+    <value>在 Wiktionary 上打开 {0}</value>
+  </data>
+  <data name="Quiz.RepairWord" xml:space="preserve">
+    <value>修正单词</value>
+  </data>
+  <data name="Quiz.RepairNamed" xml:space="preserve">
+    <value>修正 {0}</value>
+  </data>
+  <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
+    <value>删除此单词？</value>
+  </data>
+  <data name="Quiz.NoWords" xml:space="preserve">
+    <value>还没有单词。请先用上方栏添加第一个单词。</value>
+  </data>
+  <data name="Quiz.LinkedWords" xml:space="preserve">
+    <value>{0} 个已关联{1}</value>
+  </data>
+  <data name="Quiz.Repair" xml:space="preserve">
+    <value>修正</value>
+  </data>
+  <data name="Quiz.NoSentences" xml:space="preserve">
+    <value>还没有句子。请让助手添加句子，或从文本中提取。</value>
+  </data>
+  <data name="Quiz.CustomQuizzes" xml:space="preserve">
+    <value>自定义测验</value>
+  </data>
+  <data name="Quiz.CustomHelp" xml:space="preserve">
+    <value>根据此测验中的单词创建自由练习。</value>
+  </data>
+  <data name="Quiz.NewCustom" xml:space="preserve">
+    <value>新建自定义测验</value>
+  </data>
+  <data name="Quiz.Playable" xml:space="preserve">
+    <value>可播放</value>
+  </data>
+  <data name="Quiz.Draft" xml:space="preserve">
+    <value>草稿</value>
+  </data>
+  <data name="Quiz.NoCustom" xml:space="preserve">
+    <value>还没有自定义测验。通过将模块拖到画布上来创建一个。</value>
+  </data>
+  <data name="Payments.PackageUnavailable" xml:space="preserve">
+    <value>该积分包已不再可用。</value>
+  </data>
+  <data name="Payments.CreditsReady" xml:space="preserve">
+    <value>付款已确认。你的积分已准备好。</value>
+  </data>
+  <data name="Payments.AwaitingOrFailed" xml:space="preserve">
+    <value>付款仍在等待确认，或无法验证。</value>
+  </data>
+  <data name="Payments.GetCredits" xml:space="preserve">
+    <value>获取积分</value>
+  </data>
+  <data name="Payments.GlosifyCredits" xml:space="preserve">
+    <value>Glosify 积分</value>
+  </data>
+  <data name="Payments.Hero" xml:space="preserve">
+    <value>让你的学习循环持续进行。</value>
+  </data>
+  <data name="Payments.Intro" xml:space="preserve">
+    <value>积分可支持 Glosify 的 AI 辅助学习功能和实时字幕。</value>
+  </data>
+  <data name="Payments.NotAvailable" xml:space="preserve">
+    <value>付款暂不可用</value>
+  </data>
+  <data name="Payments.NotConnected" xml:space="preserve">
+    <value>此 Glosify 部署尚未连接到 Stripe。</value>
+  </data>
+  <data name="Payments.CreditPack" xml:space="preserve">
+    <value>积分包</value>
+  </data>
+  <data name="Payments.CreditCount" xml:space="preserve">
+    <value>{0} 积分</value>
+  </data>
+  <data name="Payments.ContinueCheckout" xml:space="preserve">
+    <value>继续安全结账</value>
+  </data>
+  <data name="Payments.StripeNotice" xml:space="preserve">
+    <value>结账由 Stripe 托管。Glosify 不会接收或存储卡片详情。</value>
+  </data>
+  <data name="Payments.Status" xml:space="preserve">
+    <value>付款状态</value>
+  </data>
+  <data name="Payments.Confirmed" xml:space="preserve">
+    <value>付款已确认</value>
+  </data>
+  <data name="Payments.Processing" xml:space="preserve">
+    <value>付款处理中</value>
+  </data>
+  <data name="Payments.Back" xml:space="preserve">
+    <value>返回 Glosify</value>
+  </data>
+  <data name="Payments.AiCredits" xml:space="preserve">
+    <value>AI 积分</value>
+  </data>
+  <data name="Payments.AiCreditAdmin" xml:space="preserve">
+    <value>AI 积分管理</value>
+  </data>
+  <data name="Error.StartupDelay" xml:space="preserve">
+    <value>临时启动延迟</value>
+  </data>
+  <data name="Error.RequestFailed" xml:space="preserve">
+    <value>请求失败</value>
+  </data>
+  <data name="Error.RequestId" xml:space="preserve">
+    <value>请求 ID：</value>
+  </data>
+  <data name="Error.WarmupTitle" xml:space="preserve">
+    <value>此服务正在启动</value>
+  </data>
+  <data name="Error.WarmupMessage" xml:space="preserve">
+    <value>请稍等片刻后重试。</value>
+  </data>
+  <data name="Error.GenericTitle" xml:space="preserve">
+    <value>出错了</value>
+  </data>
+  <data name="Error.GenericMessage" xml:space="preserve">
+    <value>无法完成该请求。请重试。</value>
+  </data>
+  <data name="Common.Undo" xml:space="preserve">
+    <value>撤销</value>
+  </data>
+  <data name="Common.Preview" xml:space="preserve">
+    <value>预览</value>
+  </data>
+  <data name="Custom.EditNamed" xml:space="preserve">
+    <value>编辑 {0}</value>
+  </data>
+  <data name="Custom.AssistantTitle" xml:space="preserve">
+    <value>测验构建助手</value>
+  </data>
+  <data name="Custom.AssistantEmpty" xml:space="preserve">
+    <value>请让我添加、配置或排列测验元素。</value>
+  </data>
+  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
+    <value>向此自定义测验添加问题...</value>
+  </data>
+  <data name="Custom.Name" xml:space="preserve">
+    <value>自定义测验名称</value>
+  </data>
+  <data name="Custom.LoadingEditor" xml:space="preserve">
+    <value>正在加载编辑器控件…</value>
+  </data>
+  <data name="Custom.DesignStarters" xml:space="preserve">
+    <value>设计起点</value>
+  </data>
+  <data name="Custom.VisualDirection" xml:space="preserve">
+    <value>选择视觉方向</value>
+  </data>
+  <data name="Custom.TemplateHelp" xml:space="preserve">
+    <value>只应用样式，或用基于此测验单词构建的完整布局替换画布。</value>
+  </data>
+  <data name="Custom.UseStyle" xml:space="preserve">
+    <value>使用样式</value>
+  </data>
+  <data name="Custom.UseLayout" xml:space="preserve">
+    <value>使用布局</value>
+  </data>
+  <data name="Custom.BuildingBlocks" xml:space="preserve">
+    <value>测验构建模块</value>
+  </data>
+  <data name="Custom.Blocks" xml:space="preserve">
+    <value>模块</value>
+  </data>
+  <data name="Custom.BlocksHelp" xml:space="preserve">
+    <value>拖到任意空白区域，或点击自动添加。</value>
+  </data>
+  <data name="Custom.DragAdd" xml:space="preserve">
+    <value>拖动或点击以添加 {0}</value>
+  </data>
+  <data name="Custom.Add" xml:space="preserve">
+    <value>添加 {0}</value>
+  </data>
+  <data name="Custom.Grid" xml:space="preserve">
+    <value>12 列智能网格</value>
+  </data>
+  <data name="Custom.GridHelp" xml:space="preserve">
+    <value>拖动放置 · 边缘吸附 · 避开已占用空间</value>
+  </data>
+  <data name="Custom.Canvas" xml:space="preserve">
+    <value>自定义测验画布</value>
+  </data>
+  <data name="Custom.Properties" xml:space="preserve">
+    <value>属性</value>
+  </data>
+  <data name="Custom.PropertiesHelp" xml:space="preserve">
+    <value>选择一个模块以编辑其内容和绑定。</value>
+  </data>
+  <data name="Custom.Answer" xml:space="preserve">
+    <value>答案</value>
+  </data>
+  <data name="Custom.Choose" xml:space="preserve">
+    <value>选择...</value>
+  </data>
+  <data name="Custom.CheckAnswers" xml:space="preserve">
+    <value>检查答案</value>
+  </data>
+  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
+    <value>完成测验，然后提交答案。</value>
+  </data>
+  <data name="Custom.Block.Heading" xml:space="preserve">
+    <value>标题</value>
+  </data>
+  <data name="Custom.Block.Instruction" xml:space="preserve">
+    <value>说明</value>
+  </data>
+  <data name="Custom.Block.WordLabel" xml:space="preserve">
+    <value>单词标签</value>
+  </data>
+  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
+    <value>译文标签</value>
+  </data>
+  <data name="Custom.Block.TextInput" xml:space="preserve">
+    <value>文本输入</value>
+  </data>
+  <data name="Custom.Block.LongAnswer" xml:space="preserve">
+    <value>长答案</value>
+  </data>
+  <data name="Custom.Block.Checkbox" xml:space="preserve">
+    <value>复选框</value>
+  </data>
+  <data name="Custom.Block.RadioChoices" xml:space="preserve">
+    <value>单选项</value>
+  </data>
+  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
+    <value>多选项</value>
+  </data>
+  <data name="Custom.Block.SelectMenu" xml:space="preserve">
+    <value>下拉菜单</value>
+  </data>
+  <data name="Custom.Block.WordBank" xml:space="preserve">
+    <value>词库</value>
+  </data>
+  <data name="Custom.Block.SubmitButton" xml:space="preserve">
+    <value>提交按钮</value>
+  </data>
+  <data name="Custom.Block.Feedback" xml:space="preserve">
+    <value>反馈</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
+    <value>编辑式流程</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
+    <value>层级清晰、留白充足，每行只做一项任务。</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
+    <value>翻译、语法提示、集中回忆</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
+    <value>极光卡片</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
+    <value>柔和配色、配对练习卡，营造活跃的课堂氛围。</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
+    <value>短词汇集和视觉浏览</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
+    <value>课本练习</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
+    <value>紧凑的编号行，仿照拍摄的练习册习题。</value>
+  </data>
+  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
+    <value>动词变位、句式转换、完形填空和正式练习</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
+    <value>词库实验室</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
+    <value>醒目的词库引导练习，让回忆更有趣。</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
+    <value>引导回忆和初级词汇</value>
+  </data>
+  <data name="Custom.AnswerQuestion" xml:space="preserve">
+    <value>回答这个问题。</value>
+  </data>
+  <data name="Custom.Correct" xml:space="preserve">
+    <value>正确。</value>
+  </data>
+  <data name="Custom.CorrectAnswer" xml:space="preserve">
+    <value>正确答案：{0}</value>
+  </data>
+  <data name="Custom.CompleteAnswers" xml:space="preserve">
+    <value>提交前请完成所有答案。</value>
+  </data>
+  <data name="Custom.Score" xml:space="preserve">
+    <value>得分：{0}/{1}（{2}%）。</value>
+  </data>
+  <data name="Custom.GradeFailed" xml:space="preserve">
+    <value>无法批改此测验。请重试。</value>
+  </data>
+  <data name="Classroom.PostAnnouncement" xml:space="preserve">
+    <value>发布公告</value>
+  </data>
+  <data name="Classroom.ShareClass" xml:space="preserve">
+    <value>和全班分享内容</value>
+  </data>
+  <data name="Classroom.Post" xml:space="preserve">
+    <value>发布</value>
+  </data>
+  <data name="Classroom.Announcements" xml:space="preserve">
+    <value>公告</value>
+  </data>
+  <data name="Classroom.PostOne" xml:space="preserve">
+    <value>条帖子</value>
+  </data>
+  <data name="Classroom.PostMany" xml:space="preserve">
+    <value>条帖子</value>
+  </data>
+  <data name="Classroom.Pinned" xml:space="preserve">
+    <value>已置顶</value>
+  </data>
+  <data name="Classroom.Unpin" xml:space="preserve">
+    <value>取消置顶</value>
+  </data>
+  <data name="Classroom.Pin" xml:space="preserve">
+    <value>置顶</value>
+  </data>
+  <data name="Classroom.DeleteAnnouncement" xml:space="preserve">
+    <value>要删除此公告吗？</value>
+  </data>
+  <data name="Classroom.NothingYet" xml:space="preserve">
+    <value>这里还没有内容。</value>
+  </data>
+  <data name="Classroom.PostFirst" xml:space="preserve">
+    <value>先在上方发布第一条公告。</value>
+  </data>
+  <data name="Classroom.NoTeacherPosts" xml:space="preserve">
+    <value>你的老师还没有发布任何内容。</value>
+  </data>
+  <data name="Classroom.OpenChat" xml:space="preserve">
+    <value>打开班级聊天</value>
+  </data>
+  <data name="Classroom.ClassChat" xml:space="preserve">
+    <value>班级聊天</value>
+  </data>
+  <data name="Classroom.ClassChatUpper" xml:space="preserve">
+    <value>班级聊天</value>
+  </data>
+  <data name="Classroom.Connecting" xml:space="preserve">
+    <value>正在连接…</value>
+  </data>
+  <data name="Classroom.CloseChat" xml:space="preserve">
+    <value>关闭班级聊天</value>
+  </data>
+  <data name="Classroom.LoadingMessages" xml:space="preserve">
+    <value>正在加载消息…</value>
+  </data>
+  <data name="Classroom.MessageClass" xml:space="preserve">
+    <value>给全班发消息</value>
+  </data>
+  <data name="Classroom.ChatMessage" xml:space="preserve">
+    <value>聊天消息</value>
+  </data>
+  <data name="Classroom.CallTitle" xml:space="preserve">
+    <value>{0} — 通话</value>
+  </data>
+  <data name="Classroom.NotConnected" xml:space="preserve">
+    <value>未连接</value>
+  </data>
+  <data name="Classroom.Back" xml:space="preserve">
+    <value>返回教室</value>
+  </data>
+  <data name="Classroom.CallNotConfigured" xml:space="preserve">
+    <value>此服务器未配置视频通话。管理员需要设置</value>
+  </data>
+  <data name="Classroom.ReadyJoin" xml:space="preserve">
+    <value>准备加入了吗？</value>
+  </data>
+  <data name="Classroom.JoinAs" xml:space="preserve">
+    <value>你将以以下身份加入</value>
+  </data>
+  <data name="Classroom.MuteMic" xml:space="preserve">
+    <value>静音麦克风</value>
+  </data>
+  <data name="Classroom.Mute" xml:space="preserve">
+    <value>静音</value>
+  </data>
+  <data name="Classroom.CameraOff" xml:space="preserve">
+    <value>关闭摄像头</value>
+  </data>
+  <data name="Classroom.Camera" xml:space="preserve">
+    <value>摄像头</value>
+  </data>
+  <data name="Classroom.LeaveCall" xml:space="preserve">
+    <value>离开通话</value>
+  </data>
+  <data name="Classroom.Leave" xml:space="preserve">
+    <value>离开</value>
+  </data>
+  <data name="Classroom.ReadyStart" xml:space="preserve">
+    <value>准备开始了吗？</value>
+  </data>
+  <data name="Classroom.NoOneCall" xml:space="preserve">
+    <value>通话中还没有人。</value>
+  </data>
+  <data name="Classroom.WaitingTeacher" xml:space="preserve">
+    <value>等待老师</value>
+  </data>
+  <data name="Classroom.JoinAfterTeacher" xml:space="preserve">
+    <value>老师开始通话后你就可以加入。</value>
+  </data>
+  <data name="Classroom.UnmuteMic" xml:space="preserve">
+    <value>取消麦克风静音</value>
+  </data>
+  <data name="Classroom.CameraOn" xml:space="preserve">
+    <value>打开摄像头</value>
+  </data>
+  <data name="Classroom.Connected" xml:space="preserve">
+    <value>已连接</value>
+  </data>
+  <data name="Classroom.NoMessages" xml:space="preserve">
+    <value>还没有消息。打个招呼吧！</value>
+  </data>
+  <data name="Classroom.Reconnecting" xml:space="preserve">
+    <value>正在重新连接…</value>
+  </data>
+  <data name="Classroom.ActionInvalid" xml:space="preserve">
+    <value>无法完成课堂操作。请检查输入和访问权限。</value>
+  </data>
+  <data name="Classroom.Created" xml:space="preserve">
+    <value>已创建 {0}。</value>
+  </data>
+  <data name="Classroom.CreateInvalid" xml:space="preserve">
+    <value>请输入有效的课堂名称和描述。</value>
+  </data>
+  <data name="Classroom.NoCodeMatch" xml:space="preserve">
+    <value>没有课堂匹配该加入代码。</value>
+  </data>
+  <data name="Classroom.InvitationUnavailable" xml:space="preserve">
+    <value>该邀请已不再可用。</value>
+  </data>
+  <data name="Classroom.Welcome" xml:space="preserve">
+    <value>欢迎来到 {0}。</value>
+  </data>
+  <data name="Classroom.WelcomeSwitched" xml:space="preserve">
+    <value>欢迎来到 {0}。已为你切换到 {1}。</value>
+  </data>
+  <data name="Classroom.InvitationDeclined" xml:space="preserve">
+    <value>已拒绝邀请。</value>
+  </data>
+  <data name="Classroom.NotFound" xml:space="preserve">
+    <value>未找到课堂。</value>
+  </data>
+  <data name="Classroom.Left" xml:space="preserve">
+    <value>你已离开课堂。</value>
+  </data>
+  <data name="Classroom.ActionDenied" xml:space="preserve">
+    <value>你不能在此课堂执行该操作。</value>
+  </data>
+  <data name="Classroom.Deleted" xml:space="preserve">
+    <value>课堂已删除。</value>
+  </data>
+  <data name="Explore.PublicQuiz" xml:space="preserve">
+    <value>公开测验</value>
+  </data>
+  <data name="Explore.CustomExercises" xml:space="preserve">
+    <value>根据此测验的词汇创建的练习。</value>
+  </data>
+  <data name="Explore.NoPublicWords" xml:space="preserve">
+    <value>此公开测验尚未添加任何词汇。</value>
+  </data>
+  <data name="Explore.NoPublicSentences" xml:space="preserve">
+    <value>此公开测验尚未添加任何句子。</value>
+  </data>
+  <data name="Explore.PublicCollection" xml:space="preserve">
+    <value>公开合集</value>
+  </data>
+  <data name="Explore.CollectionIntro" xml:space="preserve">
+    <value>浏览 {0} {1}，覆盖 {2} 个合集，然后将整套复制到你的资料库。</value>
+  </data>
+  <data name="Explore.CollectionSummary" xml:space="preserve">
+    <value>合集摘要</value>
+  </data>
+  <data name="Explore.CopyCollection" xml:space="preserve">
+    <value>复制合集</value>
+  </data>
+  <data name="Explore.InCollection" xml:space="preserve">
+    <value>在此合集内</value>
+  </data>
+  <data name="Explore.FiledInside" xml:space="preserve">
+    <value>直接归入 {0} 的测验。</value>
+  </data>
+  <data name="Explore.NoDirectQuizzes" xml:space="preserve">
+    <value>此合集内没有直接包含的测验。</value>
+  </data>
+  <data name="Common.Remove" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="Classroom.ShareQuiz" xml:space="preserve">
+    <value>分享测验</value>
+  </data>
+  <data name="Classroom.QuizLibrary" xml:space="preserve">
+    <value>来自你的资料库的测验</value>
+  </data>
+  <data name="Classroom.Share" xml:space="preserve">
+    <value>分享</value>
+  </data>
+  <data name="Classroom.AllQuizzesShared" xml:space="preserve">
+    <value>你的所有测验都已在此分享，或者你的资料库为空。</value>
+  </data>
+  <data name="Classroom.ShareBook" xml:space="preserve">
+    <value>分享书籍</value>
+  </data>
+  <data name="Classroom.BookLibrary" xml:space="preserve">
+    <value>来自你的资料库的书籍</value>
+  </data>
+  <data name="Classroom.AllBooksShared" xml:space="preserve">
+    <value>你的所有书籍都已在此分享，或者你没有上传内容。</value>
+  </data>
+  <data name="Classroom.First" xml:space="preserve">
+    <value>首先。</value>
+  </data>
+  <data name="Classroom.SharedContent" xml:space="preserve">
+    <value>共享内容</value>
+  </data>
+  <data name="Classroom.ItemOne" xml:space="preserve">
+    <value>项</value>
+  </data>
+  <data name="Classroom.ItemMany" xml:space="preserve">
+    <value>项</value>
+  </data>
+  <data name="Classroom.Removed" xml:space="preserve">
+    <value>已移除</value>
+  </data>
+  <data name="Classroom.SharedBy" xml:space="preserve">
+    <value>由 {0} 分享</value>
+  </data>
+  <data name="Classroom.CopyLibrary" xml:space="preserve">
+    <value>复制到我的资料库</value>
+  </data>
+  <data name="Classroom.OpenPdf" xml:space="preserve">
+    <value>打开 PDF</value>
+  </data>
+  <data name="Classroom.RemoveConfirm" xml:space="preserve">
+    <value>要将此内容从课堂中移除吗？</value>
+  </data>
+  <data name="Classroom.NoSharedContent" xml:space="preserve">
+    <value>尚无共享内容。</value>
+  </data>
+  <data name="Classroom.QuizResults" xml:space="preserve">
+    <value>测验结果</value>
+  </data>
+  <data name="Classroom.AttemptOne" xml:space="preserve">
+    <value>次尝试</value>
+  </data>
+  <data name="Classroom.AttemptMany" xml:space="preserve">
+    <value>次尝试</value>
+  </data>
+  <data name="Classroom.FromPractice" xml:space="preserve">
+    <value>来自课堂练习</value>
+  </data>
+  <data name="Classroom.Score" xml:space="preserve">
+    <value>得分</value>
+  </data>
+  <data name="Classroom.Completed" xml:space="preserve">
+    <value>已完成</value>
+  </data>
+  <data name="Classroom.NoAttempts" xml:space="preserve">
+    <value>尚无尝试记录。成员在“内容”选项卡中练习测验后，结果会显示在这里。</value>
+  </data>
+  <data name="Classroom.MemberResultsTitle" xml:space="preserve">
+    <value>{0} — 结果</value>
+  </data>
+  <data name="Classroom.Skipped" xml:space="preserve">
+    <value>已跳过</value>
+  </data>
+  <data name="Classroom.NoMemberAttempts" xml:space="preserve">
+    <value>此成员尚无尝试记录。</value>
+  </data>
+  <data name="Classroom.InviteEmail" xml:space="preserve">
+    <value>通过电子邮件邀请</value>
+  </data>
+  <data name="Classroom.Role" xml:space="preserve">
+    <value>角色</value>
+  </data>
+  <data name="Classroom.Student" xml:space="preserve">
+    <value>学生</value>
+  </data>
+  <data name="Classroom.Teacher" xml:space="preserve">
+    <value>教师</value>
+  </data>
+  <data name="Classroom.Invite" xml:space="preserve">
+    <value>邀请</value>
+  </data>
+  <data name="Classroom.InviteHelp" xml:space="preserve">
+    <value>当对方使用此电子邮件地址登录时，邀请会显示在其“课堂”页面上——不会发送电子邮件。</value>
+  </data>
+  <data name="Classroom.CodeAnyone" xml:space="preserve">
+    <value>任何拥有代码的人</value>
+  </data>
+  <data name="Classroom.CodeCanJoin" xml:space="preserve">
+    <value>都可以以学生身份加入。</value>
+  </data>
+  <data name="Classroom.JoiningCurrently" xml:space="preserve">
+    <value>当前加入状态为</value>
+  </data>
+  <data name="Classroom.Enabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="Classroom.Paused" xml:space="preserve">
+    <value>已暂停</value>
+  </data>
+  <data name="Classroom.NewCode" xml:space="preserve">
+    <value>新代码</value>
+  </data>
+  <data name="Classroom.PauseJoining" xml:space="preserve">
+    <value>暂停加入</value>
+  </data>
+  <data name="Classroom.ResumeJoining" xml:space="preserve">
+    <value>恢复加入</value>
+  </data>
+  <data name="Classroom.Joined" xml:space="preserve">
+    <value>已加入</value>
+  </data>
+  <data name="Classroom.MakeRole" xml:space="preserve">
+    <value>设为 {0}</value>
+  </data>
+  <data name="Classroom.RemoveMemberConfirm" xml:space="preserve">
+    <value>要将 {0} 从课堂中移除吗？</value>
+  </data>
+  <data name="Classroom.DeleteForEveryone" xml:space="preserve">
+    <value>要为所有人删除此课堂吗？共享的测验和书籍仍会保留在各自拥有者的资料库中。</value>
+  </data>
+  <data name="Classroom.DeleteClassroom" xml:space="preserve">
+    <value>删除课堂</value>
+  </data>
+  <data name="Classroom.LeaveConfirm" xml:space="preserve">
+    <value>要退出此课堂吗？</value>
+  </data>
+  <data name="Classroom.LeaveClassroom" xml:space="preserve">
+    <value>退出课堂</value>
+  </data>
+  <data name="Classroom.AddLesson" xml:space="preserve">
+    <value>添加课时</value>
+  </data>
+  <data name="Classroom.TitleLabel" xml:space="preserve">
+    <value>标题</value>
+  </data>
+  <data name="Classroom.DescriptionOptional" xml:space="preserve">
+    <value>说明（可选）</value>
+  </data>
+  <data name="Classroom.ScheduledOptional" xml:space="preserve">
+    <value>计划于（可选）</value>
+  </data>
+  <data name="Classroom.AddAssignment" xml:space="preserve">
+    <value>添加作业</value>
+  </data>
+  <data name="Classroom.InstructionsOptional" xml:space="preserve">
+    <value>说明（可选）</value>
+  </data>
+  <data name="Classroom.QuizOptional" xml:space="preserve">
+    <value>测验（可选，来自共享内容）</value>
+  </data>
+  <data name="Classroom.NoQuiz" xml:space="preserve">
+    <value>无测验</value>
+  </data>
+  <data name="Classroom.LessonOptional" xml:space="preserve">
+    <value>课时（可选）</value>
+  </data>
+  <data name="Classroom.NoLesson" xml:space="preserve">
+    <value>无课时</value>
+  </data>
+  <data name="Classroom.DueOptional" xml:space="preserve">
+    <value>截止日期（可选）</value>
+  </data>
+  <data name="Classroom.CoursePlan" xml:space="preserve">
+    <value>课程计划</value>
+  </data>
+  <data name="Classroom.LessonOne" xml:space="preserve">
+    <value>课时</value>
+  </data>
+  <data name="Classroom.LessonMany" xml:space="preserve">
+    <value>课时</value>
+  </data>
+  <data name="Classroom.AssignmentOne" xml:space="preserve">
+    <value>作业</value>
+  </data>
+  <data name="Classroom.AssignmentMany" xml:space="preserve">
+    <value>作业</value>
+  </data>
+  <data name="Classroom.DeleteLessonConfirm" xml:space="preserve">
+    <value>要删除此课时吗？其作业将保留，但不再关联。</value>
+  </data>
+  <data name="Classroom.DeleteLesson" xml:space="preserve">
+    <value>删除课时</value>
+  </data>
+  <data name="Classroom.NoAssignmentsLesson" xml:space="preserve">
+    <value>此课时没有作业。</value>
+  </data>
+  <data name="Classroom.OtherAssignments" xml:space="preserve">
+    <value>其他作业</value>
+  </data>
+  <data name="Classroom.NoPlanYet" xml:space="preserve">
+    <value>尚无课时或作业。</value>
+  </data>
+  <data name="Classroom.PlanAbove" xml:space="preserve">
+    <value>请在上方安排课程。</value>
+  </data>
+  <data name="Classroom.NoTeacherPlan" xml:space="preserve">
+    <value>你的老师还没有安排任何内容。</value>
+  </data>
+  <data name="Classroom.Due" xml:space="preserve">
+    <value>截止</value>
+  </data>
+  <data name="Classroom.StudentsCompleted" xml:space="preserve">
+    <value>{0}/{1} 名学生已完成</value>
+  </data>
+  <data name="Classroom.DoneBest" xml:space="preserve">
+    <value>已完成 — 最佳分数 {0}%</value>
+  </data>
+  <data name="Classroom.NotDone" xml:space="preserve">
+    <value>尚未完成</value>
+  </data>
+  <data name="Classroom.DeleteAssignmentConfirm" xml:space="preserve">
+    <value>删除此作业？</value>
+  </data>
+  <data name="Speaking.BarMenu" xml:space="preserve">
+    <value>栏菜单</value>
+  </data>
+  <data name="Speaking.YourWallet" xml:space="preserve">
+    <value>你的钱包</value>
+  </data>
+  <data name="Speaking.NoBill" xml:space="preserve">
+    <value>暂无账单</value>
+  </data>
+  <data name="Speaking.CloseWallet" xml:space="preserve">
+    <value>关闭钱包</value>
+  </data>
+  <data name="Speaking.Selected" xml:space="preserve">
+    <value>已选中</value>
+  </data>
+  <data name="Speaking.SceneActions" xml:space="preserve">
+    <value>场景操作</value>
+  </data>
+  <data name="Speaking.NextMonth" xml:space="preserve">
+    <value>下个月初</value>
+  </data>
+  <data name="Speaking.PaidPaused" xml:space="preserve">
+    <value>付费口语功能已暂停，直到 {0}。</value>
+  </data>
+  <data name="Speaking.SessionReady" xml:space="preserve">
+    <value>你的练习会话已准备就绪。</value>
+  </data>
+  <data name="Speaking.Unavailable" xml:space="preserve">
+    <value>口语练习不可用</value>
+  </data>
+  <data name="Speaking.NewSessionConfirm" xml:space="preserve">
+    <value>开始新会话？当前对话将被清除。</value>
+  </data>
+  <data name="Speaking.UpdatingQuiz" xml:space="preserve">
+    <value>正在更新导师的练习测验…</value>
+  </data>
+  <data name="Speaking.PractisingNamed" xml:space="preserve">
+    <value>正在练习 {0}。</value>
+  </data>
+  <data name="Speaking.FreeModeActive" xml:space="preserve">
+    <value>自由课程模式已启用。</value>
+  </data>
+  <data name="Speaking.Voice" xml:space="preserve">
+    <value>语音</value>
+  </data>
+  <data name="Speaking.Typed" xml:space="preserve">
+    <value>键入</value>
+  </data>
+  <data name="Speaking.StartBeforeSend" xml:space="preserve">
+    <value>发送消息前请先开始口语会话。</value>
+  </data>
+  <data name="Speaking.AvatarThinking" xml:space="preserve">
+    <value>{0} 正在思考…</value>
+  </data>
+  <data name="Speaking.Avatar" xml:space="preserve">
+    <value>头像</value>
+  </data>
+  <data name="Speaking.SessionEnded" xml:space="preserve">
+    <value>会话已结束 · 开始新会话</value>
+  </data>
+  <data name="Speaking.TakingSip" xml:space="preserve">
+    <value>正在喝一小口…</value>
+  </data>
+  <data name="Speaking.TakingSnack" xml:space="preserve">
+    <value>正在吃点零食…</value>
+  </data>
+  <data name="Speaking.AvatarReacting" xml:space="preserve">
+    <value>{0} 正在反应…</value>
+  </data>
+  <data name="Speaking.MomentPassed" xml:space="preserve">
+    <value>那个时刻已经过去。继续聊天或尝试其他操作。</value>
+  </data>
+  <data name="Speaking.RecordUnavailable" xml:space="preserve">
+    <value>此浏览器无法在这里录音。仍可使用键入聊天。</value>
+  </data>
+  <data name="Speaking.Starting" xml:space="preserve">
+    <value>正在开始…</value>
+  </data>
+  <data name="Speaking.MicConnectingAuto" xml:space="preserve">
+    <value>正在连接麦克风。准备好后就开始说话。</value>
+  </data>
+  <data name="Speaking.MicConnectingHold" xml:space="preserve">
+    <value>正在连接麦克风。请继续按住按钮。</value>
+  </data>
+  <data name="Speaking.Listening" xml:space="preserve">
+    <value>正在聆听…</value>
+  </data>
+  <data name="Speaking.SpeakNaturally" xml:space="preserve">
+    <value>自然地说。你说完后录音会停止。</value>
+  </data>
+  <data name="Speaking.ReleaseSend" xml:space="preserve">
+    <value>松开发送</value>
+  </data>
+  <data name="Speaking.KeepHolding" xml:space="preserve">
+    <value>说话时请继续按住。松开按钮即可发送。</value>
+  </data>
+  <data name="Speaking.Transcribing" xml:space="preserve">
+    <value>正在转写…</value>
+  </data>
+  <data name="Speaking.FinishingTranscript" xml:space="preserve">
+    <value>正在完成转写…</value>
+  </data>
+  <data name="Speaking.NotCaughtComposer" xml:space="preserve">
+    <value>Azure Speech 没有听清。按“说话”改为键入并重试。</value>
+  </data>
+  <data name="Speaking.NotCaughtAvatar" xml:space="preserve">
+    <value>Azure Speech 没有听清。按住红色按钮重试。</value>
+  </data>
+  <data name="Speaking.RecordingTooLong" xml:space="preserve">
+    <value>录音太长了。请缩短文本后按发送。</value>
+  </data>
+  <data name="Speaking.TranscriptSending" xml:space="preserve">
+    <value>转写已准备好。正在发送…</value>
+  </data>
+  <data name="Speaking.TranscriptReady" xml:space="preserve">
+    <value>转写已准备好。请检查或编辑，然后按发送。</value>
+  </data>
+  <data name="Speaking.MicFailed" xml:space="preserve">
+    <value>麦克风访问失败。仍可使用键入聊天。</value>
+  </data>
+  <data name="Speaking.SpeechFinishFailed" xml:space="preserve">
+    <value>Azure Speech 无法完成录音。</value>
+  </data>
+  <data name="Speaking.Scene.PoursDrink" xml:space="preserve">
+    <value>Marek 为你倒上并递过来饮料。</value>
+  </data>
+  <data name="Speaking.Scene.TakeSnack" xml:space="preserve">
+    <value>你拿了一些 paluszki。</value>
+  </data>
+  <data name="Speaking.Scene.OffersSnack" xml:space="preserve">
+    <value>Marek 给你提供 paluszki。</value>
+  </data>
+  <data name="Speaking.Scene.ClearsGlass" xml:space="preserve">
+    <value>Marek 收走了空杯子。</value>
+  </data>
+  <data name="Speaking.Scene.PolishesGlass" xml:space="preserve">
+    <value>Marek 在擦亮一个玻璃杯。</value>
+  </data>
+  <data name="Speaking.Scene.WipesCounter" xml:space="preserve">
+    <value>Marek 在擦拭柜台。</value>
+  </data>
+  <data name="Speaking.Scene.LastCall" xml:space="preserve">
+    <value>最后一轮。</value>
+  </data>
+  <data name="Speaking.Scene.ItemUnavailable" xml:space="preserve">
+    <value>该物品不可用。</value>
+  </data>
+  <data name="Speaking.Scene.FinishDrink" xml:space="preserve">
+    <value>你喝完了饮料。</value>
+  </data>
+  <data name="Speaking.Scene.TakeSip" xml:space="preserve">
+    <value>你喝了一小口。</value>
+  </data>
+  <data name="Speaking.Scene.PresentsBill" xml:space="preserve">
+    <value>Marek 递上 {0} zł 的账单。</value>
+  </data>
+  <data name="Speaking.Scene.PaymentRejected" xml:space="preserve">
+    <value>{0} zł 不够。未移除任何金额。</value>
+  </data>
+  <data name="Speaking.Scene.PaymentAccepted" xml:space="preserve">
+    <value>Marek 接受了 {0} zł。</value>
+  </data>
+  <data name="Speaking.Scene.ReturnsChange" xml:space="preserve">
+    <value>Marek 找回 {0} zł。</value>
+  </data>
+  <data name="Reader.ReadingSentence" xml:space="preserve">
+    <value>正在阅读第 {0} 页 · 第 {1}/{2} 句</value>
+  </data>
+  <data name="Reader.ReadingSelectionPart" xml:space="preserve">
+    <value>正在阅读所选内容 · 第 {0}/{1} 部分</value>
+  </data>
+  <data name="Reader.ReadingSelection" xml:space="preserve">
+    <value>正在阅读所选文本…</value>
+  </data>
+  <data name="Reader.ReadingPage" xml:space="preserve">
+    <value>正在阅读第 {0} 页…</value>
+  </data>
+  <data name="Reader.FinishedSelection" xml:space="preserve">
+    <value>所选内容已读完。</value>
+  </data>
+  <data name="Reader.FinishedPage" xml:space="preserve">
+    <value>第 {0} 页已读完。</value>
+  </data>
+  <data name="Reader.ReadingStopped" xml:space="preserve">
+    <value>阅读已停止。</value>
+  </data>
+  <data name="Reader.Detected" xml:space="preserve">
+    <value>检测到 {0}</value>
+  </data>
+  <data name="Reader.DetectedCached" xml:space="preserve">
+    <value>检测到 {0} · 缓存</value>
+  </data>
+  <data name="Reader.CachedTranslation" xml:space="preserve">
+    <value>缓存的译文</value>
+  </data>
+  <data name="Reader.NoSelectableTextPage" xml:space="preserve">
+    <value>此页未找到可选择文本。</value>
+  </data>
+  <data name="Reader.RenderFailed" xml:space="preserve">
+    <value>此页无法渲染。</value>
+  </data>
+  <data name="Reader.PdfLoadFailed" xml:space="preserve">
+    <value>无法加载 PDF。</value>
+  </data>
+  <data name="Editor.Heading" xml:space="preserve">
+    <value>标题</value>
+  </data>
+  <data name="Editor.Instruction" xml:space="preserve">
+    <value>说明</value>
+  </data>
+  <data name="Editor.WordLabel" xml:space="preserve">
+    <value>单词标签</value>
+  </data>
+  <data name="Editor.TranslationLabel" xml:space="preserve">
+    <value>译文标签</value>
+  </data>
+  <data name="Editor.TextInput" xml:space="preserve">
+    <value>文本输入</value>
+  </data>
+  <data name="Editor.LongAnswer" xml:space="preserve">
+    <value>长答案</value>
+  </data>
+  <data name="Editor.Checkbox" xml:space="preserve">
+    <value>复选框</value>
+  </data>
+  <data name="Editor.RadioChoices" xml:space="preserve">
+    <value>单选项</value>
+  </data>
+  <data name="Editor.CheckboxChoices" xml:space="preserve">
+    <value>多选项</value>
+  </data>
+  <data name="Editor.SelectMenu" xml:space="preserve">
+    <value>下拉菜单</value>
+  </data>
+  <data name="Editor.WordBank" xml:space="preserve">
+    <value>词库</value>
+  </data>
+  <data name="Editor.SubmitButton" xml:space="preserve">
+    <value>提交按钮</value>
+  </data>
+  <data name="Editor.Feedback" xml:space="preserve">
+    <value>反馈</value>
+  </data>
+  <data name="Editor.EmptyCanvas" xml:space="preserve">
+    <value>将一个块拖到此画布上的任意位置以开始。</value>
+  </data>
+  <data name="Editor.MoveLeft" xml:space="preserve">
+    <value>向左移动</value>
+  </data>
+  <data name="Editor.MoveUp" xml:space="preserve">
+    <value>向上移动</value>
+  </data>
+  <data name="Editor.MoveDown" xml:space="preserve">
+    <value>向下移动</value>
+  </data>
+  <data name="Editor.MoveRight" xml:space="preserve">
+    <value>向右移动</value>
+  </data>
+  <data name="Editor.RemoveBlock" xml:space="preserve">
+    <value>移除块</value>
+  </data>
+  <data name="Editor.Resize" xml:space="preserve">
+    <value>拖动以调整宽度</value>
+  </data>
+  <data name="Editor.Word" xml:space="preserve">
+    <value>单词</value>
+  </data>
+  <data name="Editor.DisplayField" xml:space="preserve">
+    <value>显示字段</value>
+  </data>
+  <data name="Editor.Words" xml:space="preserve">
+    <value>单词</value>
+  </data>
+  <data name="Editor.Options" xml:space="preserve">
+    <value>选项</value>
+  </data>
+  <data name="Editor.CorrectOption" xml:space="preserve">
+    <value>正确选项</value>
+  </data>
+  <data name="Editor.RemoveOption" xml:space="preserve">
+    <value>移除选项</value>
+  </data>
+  <data name="Editor.AddOption" xml:space="preserve">
+    <value>添加选项</value>
+  </data>
+  <data name="Editor.Properties" xml:space="preserve">
+    <value>属性</value>
+  </data>
+  <data name="Editor.SelectBlock" xml:space="preserve">
+    <value>选择一个块以编辑其内容和绑定。</value>
+  </data>
+  <data name="Editor.TargetInputs" xml:space="preserve">
+    <value>目标输入框</value>
+  </data>
+  <data name="Editor.PreviewOnly" xml:space="preserve">
+    <value>仅预览 — 保存并播放后才能记录评分尝试。</value>
+  </data>
+  <data name="Editor.BackToEditor" xml:space="preserve">
+    <value>返回编辑器</value>
+  </data>
+  <data name="Editor.Preview" xml:space="preserve">
+    <value>预览</value>
+  </data>
+  <data name="Editor.PreviewingOne" xml:space="preserve">
+    <value>正在预览 {0} 个块。</value>
+  </data>
+  <data name="Editor.PreviewingMany" xml:space="preserve">
+    <value>正在预览 {0} 个块。</value>
+  </data>
+  <data name="Editor.ReadyOne" xml:space="preserve">
+    <value>编辑器已就绪 · 画布上有 {0} 个块。使用 + 添加或拖动块。</value>
+  </data>
+  <data name="Editor.ReadyMany" xml:space="preserve">
+    <value>编辑器已就绪 · 画布上有 {0} 个块。使用 + 添加或拖动块。</value>
+  </data>
+  <data name="Editor.ReplaceConfirm" xml:space="preserve">
+    <value>要用 {0} 布局替换当前画布吗？你可以撤销此更改。</value>
+  </data>
+  <data name="Editor.SaveFailed" xml:space="preserve">
+    <value>无法保存此自定义测验。</value>
+  </data>
+  <data name="Editor.SavedPlayable" xml:space="preserve">
+    <value>已保存。此测验已可开始。</value>
+  </data>
+  <data name="Editor.DraftSaved" xml:space="preserve">
+    <value>草稿已保存。请先完成所需的测验字段再开始。</value>
+  </data>
+  <data name="Editor.SaveStopped" xml:space="preserve">
+    <value>保存请求意外停止。请重试。</value>
+  </data>
+  <data name="Editor.WordLemma" xml:space="preserve">
+    <value>单词 / 词元</value>
+  </data>
+  <data name="Editor.Translation" xml:space="preserve">
+    <value>翻译</value>
+  </data>
+  <data name="Editor.Width" xml:space="preserve">
+    <value>宽度</value>
+  </data>
+  <data name="Editor.Column" xml:space="preserve">
+    <value>列</value>
+  </data>
+  <data name="Editor.ColumnNumber" xml:space="preserve">
+    <value>第 {0} 列</value>
+  </data>
+  <data name="Editor.Row" xml:space="preserve">
+    <value>行</value>
+  </data>
+  <data name="Editor.Text" xml:space="preserve">
+    <value>文本</value>
+  </data>
+  <data name="Editor.LiveBinding" xml:space="preserve">
+    <value>实时词绑定</value>
+  </data>
+  <data name="Editor.ExerciseRow" xml:space="preserve">
+    <value>练习行（使用 {{blank}}）</value>
+  </data>
+  <data name="Editor.AccessibleLabel" xml:space="preserve">
+    <value>无障碍标签</value>
+  </data>
+  <data name="Editor.CustomExpected" xml:space="preserve">
+    <value>自定义期望答案</value>
+  </data>
+  <data name="Editor.ExpectedBinding" xml:space="preserve">
+    <value>期望词绑定</value>
+  </data>
+  <data name="Editor.DisplayedWord" xml:space="preserve">
+    <value>显示的单词</value>
+  </data>
+  <data name="Editor.ExpectedChecked" xml:space="preserve">
+    <value>应勾选</value>
+  </data>
+  <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
+    <value>该测验已不再公开。</value>
+  </data>
+  <data name="Explore.CollectionNoLongerPublic" xml:space="preserve">
+    <value>该合集已不再公开。</value>
+  </data>
+  <data name="Explore.CopiedToLibrary" xml:space="preserve">
+    <value>已将 {0} 复制到你的库。</value>
+  </data>
+  <data name="Classroom.InvitationCreated" xml:space="preserve">
+    <value>邀请已创建。下次他们访问时会显示在其 Classroom 页面上。</value>
+  </data>
+  <data name="Classroom.JoinCodeRegenerated" xml:space="preserve">
+    <value>加入码已重新生成。</value>
+  </data>
+  <data name="Classroom.NoAccessResults" xml:space="preserve">
+    <value>你无权查看这些结果。</value>
+  </data>
+  <data name="Classroom.QuizShared" xml:space="preserve">
+    <value>测验已共享。</value>
+  </data>
+  <data name="Classroom.BookShared" xml:space="preserve">
+    <value>书籍已共享。</value>
+  </data>
+  <data name="Classroom.RemovedFromClassroom" xml:space="preserve">
+    <value>已从课堂移除。</value>
+  </data>
+  <data name="Classroom.QuizCopyFailed" xml:space="preserve">
+    <value>无法复制该测验。</value>
+  </data>
+  <data name="Classroom.Member" xml:space="preserve">
+    <value>成员</value>
+  </data>
+  <data name="Common.Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="Account.LogOut" xml:space="preserve">
+    <value>退出登录</value>
+  </data>
+  <data name="Account.LogIn" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="Common.Send" xml:space="preserve">
+    <value>发送</value>
+  </data>
+  <data name="Speaking.ConversationLab" xml:space="preserve">
+    <value>{0} 对话实验室</value>
+  </data>
+  <data name="Speaking.MessageLabel" xml:space="preserve">
+    <value>你的 {0} 消息</value>
+  </data>
+  <data name="Speaking.MessagePlaceholder" xml:space="preserve">
+    <value>用 {0} 输入，或使用麦克风…</value>
+  </data>
+  <data name="Speaking.MicAria" xml:space="preserve">
+    <value>开始用 {0} 进行语音转写；说完后录音将停止</value>
+  </data>
+  <data name="Speaking.PrivacyNote" xml:space="preserve">
+    <value>音频将直接流式传输到 Azure Speech。此对话仅保留在当前会话中。</value>
+  </data>
+  <data name="Speaking.ClickTranslate" xml:space="preserve">
+    <value>点击翻译</value>
+  </data>
+  <data name="Speaking.ClickShowLanguage" xml:space="preserve">
+    <value>点击显示 {0}</value>
+  </data>
+  <data name="Speaking.CoachFeedback" xml:space="preserve">
+    <value>教练反馈</value>
+  </data>
+  <data name="Speaking.MoreNatural" xml:space="preserve">
+    <value>更自然的 {0}</value>
+  </data>
+</root>

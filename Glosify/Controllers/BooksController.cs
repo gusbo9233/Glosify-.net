@@ -6,6 +6,7 @@ using Glosify.Services;
 using Glosify.Services.Books;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Ai;
+using Glosify.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +19,7 @@ public sealed class BooksController : Controller
     private readonly IQuizService _quizzes;
     private readonly ILogger<BooksController> _logger;
     private readonly IPaidServiceGate _paidServices;
+    private readonly UiTextStringLocalizer _text = new();
 
     public BooksController(
         IBookDocumentService books,
@@ -59,19 +61,20 @@ public sealed class BooksController : Controller
         var userId = User.GetUserId();
         if (file is null)
         {
-            TempData[NotificationKeys.Book] = "Choose a PDF file to upload.";
+            TempData[NotificationKeys.Book] = _text["Books.UploadRequired"].Value;
             return RedirectToAction(nameof(Index));
         }
 
         try
         {
             var document = await _books.UploadAsync(userId, file, cancellationToken);
-            TempData[NotificationKeys.Book] = $"Uploaded {document.Title}.";
+            TempData[NotificationKeys.Book] = _text["Books.Uploaded", document.Title].Value;
             return RedirectToAction(nameof(Read), new { id = document.Id });
         }
         catch (ArgumentException ex)
         {
-            TempData[NotificationKeys.Book] = ex.Message;
+            _logger.LogInformation(ex, "Book upload validation failed for user {UserId}", userId);
+            TempData[NotificationKeys.Book] = _text["Books.UploadInvalid"].Value;
             return RedirectToAction(nameof(Index));
         }
         catch (PaidServicesBudgetExhaustedException ex)
@@ -82,13 +85,21 @@ public sealed class BooksController : Controller
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Book upload failed for user {UserId}", userId);
-            TempData[NotificationKeys.Book] = "The PDF could not be processed. Try a text-based PDF.";
+            TempData[NotificationKeys.Book] = _text["Books.ProcessFailed"].Value;
             return RedirectToAction(nameof(Index));
         }
     }
 
-    private static string PaidServicesUnavailableMessage(string? reason, DateTimeOffset resetsAtUtc) =>
-        $"{reason ?? PaidServiceGate.BudgetExhaustedReason} Paid features reopen at {resetsAtUtc:yyyy-MM-dd HH:mm} UTC.";
+    private string PaidServicesUnavailableMessage(string? reason, DateTimeOffset resetsAtUtc)
+    {
+        var displayReason = System.Globalization.CultureInfo.CurrentUICulture.Name != DisplayCultureCatalog.DefaultCulture
+            ? _text["Books.PaidReason"].Value
+            : reason ?? PaidServiceGate.BudgetExhaustedReason;
+        return _text[
+            "Books.PaidUnavailable",
+            displayReason,
+            resetsAtUtc.ToString("yyyy-MM-dd HH:mm 'UTC'", System.Globalization.CultureInfo.InvariantCulture)];
+    }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -106,7 +117,7 @@ public sealed class BooksController : Controller
             return NotFound();
         }
 
-        TempData[NotificationKeys.Book] = $"Deleted {book.Title}.";
+        TempData[NotificationKeys.Book] = _text["Books.Deleted", book.Title].Value;
         return RedirectToAction(nameof(Index));
     }
 

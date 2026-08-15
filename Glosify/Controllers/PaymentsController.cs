@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Stripe;
 using Stripe.Checkout;
+using Glosify.Localization;
 
 namespace Glosify.Controllers;
 
@@ -15,6 +16,7 @@ public sealed class PaymentsController : Controller
     private readonly IStripePaymentService _payments;
     private readonly StripeOptions _stripeOptions;
     private readonly ILogger<PaymentsController> _logger;
+    private readonly UiTextStringLocalizer _text = new();
 
     public PaymentsController(
         IStripePaymentService payments,
@@ -66,7 +68,7 @@ public sealed class PaymentsController : Controller
         }
         catch (ArgumentException)
         {
-            TempData["PaymentsMessage"] = "That credit package is no longer available.";
+            TempData["PaymentsMessage"] = _text["Payments.PackageUnavailable"].Value;
             return RedirectToAction(nameof(Index));
         }
     }
@@ -89,7 +91,9 @@ public sealed class PaymentsController : Controller
         {
             IsPaid = confirmation.IsPaid,
             WasFulfilled = confirmation.WasFulfilled,
-            Message = confirmation.Message,
+            Message = confirmation.IsPaid
+                ? _text["Payments.CreditsReady"]
+                : _text["Payments.AwaitingOrFailed"],
         });
     }
 

@@ -1,0 +1,63 @@
+@using Microsoft.Extensions.Options
+@using Glosify.Services.Legal
+@inject IOptions<LegalOptions> Legal
+@{
+    Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
+    ViewData["Title"] = "隐私政策";
+    ViewData["Description"] = "Glosify 和 Glosify Live Subtitles Chrome 扩展如何处理个人数据。";
+    var legal = Legal.Value;
+}
+
+<main class="auth-shell legal-shell">
+    <article class="glass-card legal-document">
+        <header class="auth-card-header">
+            <h1>隐私政策</h1>
+            <p>最后更新于 2026 年 8 月 14 日</p>
+        </header>
+        <aside class="legal-language-notice">
+            本译文仅为方便阅读而提供。如与英文版本不一致，以英文版本为准。
+            <a asp-action="PrivacyEnglish">阅读具有约束力的英文版本</a>。
+        </aside>
+
+
+        <h2>谁控制您的数据</h2>
+        <p><strong>@legal.ControllerName</strong> 运营 Glosify，并且是此处所述个人数据的控制方。有关隐私或删除请求，请联系 <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>。</p>
+
+        <h2>Glosify 处理的数据</h2>
+        <ul>
+            <li>账户信息，例如电子邮件地址、内部账户 ID、身份验证方式，以及 Google 或 Microsoft 外部登录标识符。</li>
+            <li>语言偏好、测验、学习内容、积分、预订、使用交易，以及提供和保护服务所需的会话元数据。</li>
+            <li>助手聊天消息、选定的学习上下文、AI 生成的回复、工具操作以及提供已保存聊天所需的拟议更改。助手请求由 Microsoft Foundry 处理。</li>
+            <li>对于实时字幕，包括您明确选择的标签页音频、翻译后的字幕、目标语言、时间信息和连接诊断。</li>
+            <li>如果您另外启用转录保存，则包括最终定稿的原始语言语音、转录标题、时间戳和所选学习语言。</li>
+            <li>安全和运营元数据，例如 IP 地址、请求时间、状态和错误诊断。应用日志的设计不包含标签页音频或字幕文本。</li>
+        </ul>
+        <p>助手运营分析会记录模型和工具名称、令牌数量、耗时、结果以及匿名关联标识符。其配置为不会将完整提示、回复、工具参数或工具结果重复写入分析存储或遥测。</p>
+
+        <h2>实时字幕和提供方处理</h2>
+        <p>Chrome 仅在您为当前活动标签页按下 <strong>开始字幕</strong> 后才会捕获音频。在增强模式下，音频会通过 Glosify 实时流式传输到 Microsoft Foundry，以进行语音处理和翻译。如果启用了转录保存，同一音频还会流式传输到 ElevenLabs Scribe v2，以生成最终的源语言转录。在 ElevenLabs Scribe v2 字幕模式下，音频会通过 Glosify 流式传输到 ElevenLabs 进行转写，并将每个最终短语发送至 Azure Translator。标签页音频不会写入 Glosify 存储。
+        </p>
+        <p>除非您另外选择启用转录保存，否则字幕和识别出的短语仅会短暂显示。Microsoft 会为增强字幕处理音频、识别出的短语以及相关服务元数据。ElevenLabs 在 Scribe 模式处于活动状态或启用增强转录保存时会处理这些数据。标准 ElevenLabs API 日志已启用，因此 ElevenLabs 可能依据其适用的服务条款和保留政策保留请求和服务日志数据。您选择其 OAuth 登录服务时，Google 和 Microsoft 会依据各自政策处理相关信息。</p>
+
+        <h2>用途和法律依据</h2>
+        <p>Glosify 使用这些数据来验证您的身份、提供您请求的学习和字幕功能、维护您的内容、管理积分和应用预算、防止滥用、排查故障并遵守法律义务。处理这些数据是为了提供您请求的服务，以及基于合法的安全和可靠性利益；可选的转录存储则基于您的明确选择。</p>
+
+        <h2>存储、保留和删除</h2>
+        <p>转录保存默认关闭。启用后，最终定稿的原始语音会存储在您的私有 Glosify 账户中，直到您删除该转录或账户。账户内容和积分记录会在账户处于活动状态期间以及为安全、记账、争议处理或法律义务所合理需要的时间内保留。云备份和运营日志副本会根据已配置的 Microsoft Azure 保留计划到期，而不会立即消失。</p>
+        <p>您可以在登录后从 Transcripts 页面删除已保存的转录，并使用账户管理删除工具。您也可以联系上述地址。删除内容不会撤销 OAuth 提供方自身的副本；请同样在 Google 或 Microsoft 侧管理该关系。</p>
+
+        <h2>Chrome 扩展数据</h2>
+        <p>该扩展会存储保持连接所需的最少本地设置和身份验证材料，例如语言选择、会话状态和 Glosify bearer tokens。它仅使用 active-tab、tab-capture、offscreen、scripting、storage、identity 和 glosify.se 访问权限来连接账户，并将翻译字幕叠加到用户启动的标签页上。</p>
+
+        <h2>Chrome Web Store 限制用途</h2>
+        <p>Glosify 对从 Google APIs 收到的信息的使用和传输将遵守 Chrome Web Store 用户数据政策，包括限制用途要求。Glosify 不会出售扩展用户数据，不会将其用于个性化广告，也不会为无关的信贷或放贷目的而传输。</p>
+
+        <h2>变更和问题</h2>
+        <p>重大变更将连同新的生效日期发布在本页。如有问题、访问、更正、可携带性、反对或删除请求，请联系 <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>。</p>
+
+        <nav class="legal-links" aria-label='@Text["Legal.Label"]'>
+            <a asp-action="Terms">@Text["Legal.TermsOfService"]</a>
+            <a asp-action="Support">@Text["Legal.Support"]</a>
+        </nav>
+    </article>
+</main>

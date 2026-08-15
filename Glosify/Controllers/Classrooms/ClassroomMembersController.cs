@@ -44,7 +44,7 @@ public sealed class ClassroomMembersController : ClassroomControllerBase
             : ClassroomRole.Student;
         return RunAndReturnAsync(id, Tab,
             () => _roster.InviteByEmailAsync(id, User.GetUserId(), email ?? string.Empty, invitedRole, cancellationToken),
-            "Invitation created. It appears on their Classroom page next time they visit.");
+            Text["Classroom.InvitationCreated"]);
     }
 
     [HttpPost]
@@ -66,7 +66,7 @@ public sealed class ClassroomMembersController : ClassroomControllerBase
 
     [HttpPost]
     public Task<IActionResult> RegenerateJoinCode(Guid id, CancellationToken cancellationToken)
-        => RunAndReturnAsync(id, Tab, () => _classrooms.RegenerateJoinCodeAsync(id, User.GetUserId(), cancellationToken), "Join code regenerated.");
+        => RunAndReturnAsync(id, Tab, () => _classrooms.RegenerateJoinCodeAsync(id, User.GetUserId(), cancellationToken), Text["Classroom.JoinCodeRegenerated"]);
 
     [HttpPost]
     public Task<IActionResult> ToggleJoinCode(Guid id, bool enabled, CancellationToken cancellationToken)
@@ -86,13 +86,13 @@ public sealed class ClassroomMembersController : ClassroomControllerBase
             {
                 Classroom = classroom,
                 MemberUserId = memberId,
-                MemberName = memberName ?? "Unknown",
+                MemberName = memberName ?? Text["Common.Unknown"],
                 Results = results
             });
         }
         catch (ClassroomAccessDeniedException)
         {
-            TempData[NotificationKeys.Classroom] = "You do not have access to those results.";
+            TempData[NotificationKeys.Classroom] = Text["Classroom.NoAccessResults"].Value;
             return BackToClassroom(id);
         }
     }

@@ -6,23 +6,23 @@
      data-unread-count="@Model.UnreadChatCount">
     <button class="assistant-fab classroom-chat-fab"
             type="button"
-            aria-label="Open class chat"
+            aria-label="@Text["Classroom.OpenChat"]"
             aria-controls="classroomChatPopover"
             aria-expanded="false"
             data-chat-toggle>
         <span class="material-symbols-outlined" aria-hidden="true">forum</span>
-        <span class="assistant-fab-label">Class chat</span>
+        <span class="assistant-fab-label">@Text["Classroom.ClassChat"]</span>
         <span class="classroom-unread-badge" data-chat-unread hidden></span>
     </button>
 
     <section class="assistant-popover assistant-panel classroom-chat-popover" id="classroomChatPopover" hidden data-chat-window>
         <header class="assistant-ide-header">
-            <div class="assistant-tabs" aria-label="Class chat">
-                <span class="assistant-tab is-active classroom-chat-tab-label">CLASS CHAT</span>
+            <div class="assistant-tabs" aria-label="@Text["Classroom.ClassChat"]">
+                <span class="assistant-tab is-active classroom-chat-tab-label">@Text["Classroom.ClassChatUpper"]</span>
             </div>
             <div class="assistant-header-actions">
-                <span class="classroom-chat-status" data-chat-status>Connecting&hellip;</span>
-                <button class="assistant-close" type="button" aria-label="Close class chat" data-chat-close>
+                <span class="classroom-chat-status" data-chat-status>@Text["Classroom.Connecting"]</span>
+                <button class="assistant-close" type="button" aria-label="@Text["Classroom.CloseChat"]" data-chat-close>
                     <span class="material-symbols-outlined" aria-hidden="true">close</span>
                 </button>
             </div>
@@ -32,15 +32,15 @@
             <div class="assistant-transcript classroom-chat-messages" data-chat-messages aria-live="polite">
                 <div class="assistant-empty" data-chat-empty>
                     <span class="material-symbols-outlined" aria-hidden="true">forum</span>
-                    <strong>Class chat</strong>
-                    <span>Loading messages&hellip;</span>
+                    <strong>@Text["Classroom.ClassChat"]</strong>
+                    <span>@Text["Classroom.LoadingMessages"]</span>
                 </div>
             </div>
 
             <form class="classroom-chat-form" data-chat-form>
                 <input class="form-input classroom-chat-input" type="text" name="body" dir="auto" maxlength="2000" autocomplete="off"
-                       placeholder="Message the class" aria-label="Chat message" required data-chat-input />
-                <button class="assistant-send" type="submit" aria-label="Send" data-chat-send disabled>
+                       placeholder="@Text["Classroom.MessageClass"]" aria-label="@Text["Classroom.ChatMessage"]" required data-chat-input />
+                <button class="assistant-send" type="submit" aria-label="@Text["Common.Send"]" data-chat-send disabled>
                     <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
                 </button>
             </form>

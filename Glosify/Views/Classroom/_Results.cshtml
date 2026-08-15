@@ -3,8 +3,8 @@
 <section>
     <div class="collection-header">
         <div>
-            <h2 class="collection-title">Quiz results</h2>
-            <p class="collection-subtitle">@Model.Results.Count @(Model.Results.Count == 1 ? "attempt" : "attempts") from classroom practice</p>
+            <h2 class="collection-title">@Text["Classroom.QuizResults"]</h2>
+            <p class="collection-subtitle">@Model.Results.Count @(Model.Results.Count == 1 ? Text["Classroom.AttemptOne"] : Text["Classroom.AttemptMany"]) @Text["Classroom.FromPractice"]</p>
         </div>
     </div>
 
@@ -14,12 +14,7 @@
             <table class="admin-credit-table">
                 <thead>
                     <tr>
-                        <th>Member</th>
-                        <th>Quiz</th>
-                        <th>Mode</th>
-                        <th>Score</th>
-                        <th>Correct</th>
-                        <th>Completed</th>
+                        <th>@Text["Classroom.MemberOne"]</th><th>@Text["Settings.Quiz"]</th><th>@Text["Settings.Mode"]</th><th>@Text["Classroom.Score"]</th><th>@Text["Quiz.Correct"]</th><th>@Text["Classroom.Completed"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -44,6 +39,6 @@
     }
     else
     {
-        <div class="empty-state">No attempts yet. Results appear when members practice quizzes from the Content tab.</div>
+        <div class="empty-state">@Text["Classroom.NoAttempts"]</div>
     }
 </section>

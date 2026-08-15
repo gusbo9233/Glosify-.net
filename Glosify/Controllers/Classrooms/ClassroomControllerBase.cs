@@ -1,5 +1,6 @@
 using Glosify.Models;
 using Glosify.Services.Classrooms;
+using Glosify.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,7 @@ namespace Glosify.Controllers.Classrooms;
 public abstract class ClassroomControllerBase : Controller
 {
     private readonly ILogger _logger;
+    protected UiTextStringLocalizer Text { get; } = new();
 
     protected ClassroomControllerBase(ILogger logger)
     {
@@ -57,12 +59,12 @@ public abstract class ClassroomControllerBase : Controller
         }
         catch (Exception ex) when (ex is ClassroomAccessDeniedException or ArgumentException)
         {
-            TempData[NotificationKeys.Classroom] = ex.Message;
+            TempData[NotificationKeys.Classroom] = Text["Classroom.ActionInvalid"].Value;
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Classroom action failed for classroom {ClassroomId}", classroomId);
-            TempData[NotificationKeys.Classroom] = "Something went wrong. Try again.";
+            TempData[NotificationKeys.Classroom] = Text["Client.GenericError"].Value;
         }
 
         return BackToClassroom(classroomId, tab);

@@ -14,11 +14,11 @@
             <p class="book-meta">
                 @if (assignment.DueAt.HasValue)
                 {
-                    <span class="classroom-due @(overdue ? "is-overdue" : null)">Due <time datetime="@assignment.DueAt.Value.ToString("O")" data-local="datetime">@assignment.DueAt.Value.UtcDateTime.ToString("MMM d, yyyy HH:mm")</time></span>
+                    <span class="classroom-due @(overdue ? "is-overdue" : null)">@Text["Classroom.Due"] <time datetime="@assignment.DueAt.Value.ToString("O")" data-local="datetime">@assignment.DueAt.Value.UtcDateTime.ToString("MMM d, yyyy HH:mm")</time></span>
                 }
                 @if (info.QuizName != null)
                 {
-                    <span> &middot; Quiz: @info.QuizName</span>
+                    <span> &middot; @Text["Settings.Quiz"]: @info.QuizName</span>
                 }
             </p>
             @if (!string.IsNullOrWhiteSpace(assignment.Instructions))
@@ -28,11 +28,11 @@
             <p class="book-meta">
                 @if (parent.IsTeacher)
                 {
-                    @($"{info.CompletedStudents} of {info.TotalStudents} students completed")
+                    @Text["Classroom.StudentsCompleted", info.CompletedStudents, info.TotalStudents]
                 }
                 else if (assignment.QuizId.HasValue)
                 {
-                    @(info.CompletedByMe ? $"Done — best score {info.MyBestScorePercent}%" : "Not done yet")
+                    @(info.CompletedByMe ? Text["Classroom.DoneBest", info.MyBestScorePercent ?? 0] : Text["Classroom.NotDone"])
                 }
             </p>
         </div>
@@ -41,8 +41,8 @@
         @if (assignment.QuizId.HasValue)
         {
             var customQuizzes = parent.CustomQuizzesByQuizId.GetValueOrDefault(assignment.QuizId.Value, []);
-            <a class="btn-secondary" asp-controller="FlashcardQuiz" asp-action="Index" asp-route-id="@assignment.QuizId" asp-route-classroomId="@parent.Classroom.Id">Flashcards</a>
-            <a class="btn-secondary" asp-controller="TypingQuiz" asp-action="Index" asp-route-id="@assignment.QuizId" asp-route-classroomId="@parent.Classroom.Id">Typing</a>
+            <a class="btn-secondary" asp-controller="FlashcardQuiz" asp-action="Index" asp-route-id="@assignment.QuizId" asp-route-classroomId="@parent.Classroom.Id">@Text["Settings.Flashcards"]</a>
+            <a class="btn-secondary" asp-controller="TypingQuiz" asp-action="Index" asp-route-id="@assignment.QuizId" asp-route-classroomId="@parent.Classroom.Id">@Text["Settings.Typing"]</a>
             @foreach (var customQuiz in customQuizzes)
             {
                 <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id" asp-route-classroomId="@parent.Classroom.Id">@customQuiz.Name</a>
@@ -50,11 +50,11 @@
         }
         @if (parent.IsTeacher)
         {
-            <form method="post" asp-controller="ClassroomPlanning" asp-action="DeleteAssignment" data-confirm="Delete this assignment?">
+            <form method="post" asp-controller="ClassroomPlanning" asp-action="DeleteAssignment" data-confirm="@Text["Classroom.DeleteAssignmentConfirm"]">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@parent.Classroom.Id" />
                 <input type="hidden" name="assignmentId" value="@assignment.Id" />
-                <button class="btn-linkish" type="submit">Delete</button>
+                <button class="btn-linkish" type="submit">@Text["Common.Delete"]</button>
             </form>
         }
     </div>

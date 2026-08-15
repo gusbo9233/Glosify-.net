@@ -9,6 +9,8 @@ namespace Glosify.BrowserTests;
 public sealed class PortfolioJourneys : IAsyncLifetime
 {
     private static string? BaseUrl => Environment.GetEnvironmentVariable("GLOSIFY_BROWSER_BASE_URL");
+    private static int _nextTestClient;
+    private string TestClientIp { get; set; } = null!;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
     private IBrowserContext? _context;
@@ -27,6 +29,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             ExecutablePath = Environment.GetEnvironmentVariable("GLOSIFY_BROWSER_EXECUTABLE_PATH"),
             Headless = true,
         });
+        TestClientIp = $"192.0.2.{Interlocked.Increment(ref _nextTestClient)}";
         _context = await _browser.NewContextAsync(new BrowserNewContextOptions { BaseURL = BaseUrl });
         Page = await _context.NewPageAsync();
         Page.PageError += (_, error) => _pageErrors.Add(error);
@@ -360,7 +363,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         var applyButton = pendingCard.GetByRole(AriaRole.Button, new() { Name = "Apply", Exact = true });
         var rejectButton = pendingCard.GetByRole(AriaRole.Button, new() { Name = "Reject", Exact = true });
         await applyButton.ClickAsync();
-        await Expect(Page.Locator("[data-assistant-status]")).ToContainTextAsync("target collection changed");
+        await Expect(Page.Locator("[data-assistant-status]")).ToContainTextAsync("Could not apply changes.");
         await Expect(applyButton).ToBeEnabledAsync();
         await Expect(rejectButton).ToBeEnabledAsync();
 
@@ -386,10 +389,98 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Travel Polish" })).ToBeVisibleAsync();
     }
 
+    [Fact]
+    [Trait("Category", "Browser")]
+    public async Task SwedishDisplayLanguagePersistsAcrossNavigationReloadMobileAndSignIn()
+    {
+        if (BaseUrl is null) return;
+
+        await Page.GotoAsync("/");
+        await Page.GetByLabel("Display language").SelectOptionAsync("sv-SE");
+        await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Gör nya ord till riktiga samtal." })).ToBeVisibleAsync();
+        await Page.ReloadAsync();
+        await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
+
+        await Page.SetViewportSizeAsync(390, 844);
+        var mobileSelector = Page.GetByLabel("Visningsspråk");
+        await Expect(mobileSelector).ToBeVisibleAsync();
+        Assert.NotNull(await mobileSelector.BoundingBoxAsync());
+
+        var email = $"sv-e2e-{Guid.NewGuid():N}@example.test";
+        const string password = "Portfolio!123";
+        await RouteRegistrationAsTestClientAsync();
+        await Page.GotoAsync("/Account/Register");
+        await Page.GetByLabel("E-postadress").FillAsync(email);
+        await Page.GetByLabel("Lösenord", new() { Exact = true }).FillAsync(password);
+        await Page.GetByLabel("Bekräfta lösenord").FillAsync(password);
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Skapa konto" }).ClickAsync();
+        await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
+
+        await using var otherDevice = await _browser!.NewContextAsync(new BrowserNewContextOptions { BaseURL = BaseUrl });
+        var signedInPage = await otherDevice.NewPageAsync();
+        await signedInPage.GotoAsync("/login");
+        await signedInPage.GetByLabel("Email Address").FillAsync(email);
+        await signedInPage.GetByLabel("Password", new() { Exact = true }).FillAsync(password);
+        await signedInPage.GetByRole(AriaRole.Button, new() { Name = "Log In" }).ClickAsync();
+        await Expect(signedInPage.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
+
+        await signedInPage.GotoAsync("/Languages");
+        await signedInPage.Locator("button[name='language'][value='pl']").ClickAsync();
+        foreach (var route in new[] { "/", "/Quizzes", "/Books", "/Speaking", "/Classroom", "/Transcripts" })
+        {
+            await signedInPage.GotoAsync(route);
+            await Expect(signedInPage.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Browser")]
+    public async Task EveryDisplayLanguageSwitchesPersistsAndKeepsPublicRoutesAccessible()
+    {
+        if (BaseUrl is null) return;
+
+        var cultures = new[]
+        {
+            "en-GB", "sv-SE", "es-419", "pt-BR", "fr-FR", "ja-JP",
+            "zh-Hans", "uk-UA", "tr-TR", "id-ID", "vi-VN", "ar",
+        };
+        await Page.GotoAsync("/");
+        foreach (var culture in cultures)
+        {
+            await Page.Locator("select[name='culture']").SelectOptionAsync(culture);
+            await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", culture);
+            await Expect(Page.Locator("html")).ToHaveAttributeAsync("dir", culture == "ar" ? "rtl" : "ltr");
+            await Page.ReloadAsync();
+            await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", culture);
+            await Expect(Page.Locator("html")).ToHaveAttributeAsync("dir", culture == "ar" ? "rtl" : "ltr");
+        }
+
+        foreach (var culture in new[] { "es-419", "ja-JP", "uk-UA", "ar" })
+        {
+            foreach (var suffix in new[] { "", "/privacy", "/terms", "/support" })
+            {
+                await Page.GotoAsync($"/{culture}{suffix}");
+                await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", culture);
+                await Expect(Page.Locator("link[rel='canonical']")).ToHaveCountAsync(1);
+                await Expect(Page.Locator("link[rel='alternate'][hreflang='x-default']")).ToHaveCountAsync(1);
+            }
+        }
+
+        await Page.SetViewportSizeAsync(390, 844);
+        await Page.GotoAsync("/ar");
+        var selector = Page.Locator("select[name='culture']");
+        await Expect(selector).ToBeVisibleAsync();
+        Assert.NotNull(await selector.BoundingBoxAsync());
+        Assert.NotEmpty(await Page.ScreenshotAsync(new PageScreenshotOptions { FullPage = true }));
+        await AssertNoPageErrorsAsync();
+    }
+
     private async Task<(string Email, string Password)> RegisterAsync()
     {
         var email = $"e2e-{Guid.NewGuid():N}@example.test";
         const string password = "Portfolio!123";
+        await RouteRegistrationAsTestClientAsync();
         await Page.GotoAsync("/Account/Register");
         await Page.GetByLabel("Email Address").FillAsync(email);
         await Page.GetByLabel("Password", new() { Exact = true }).FillAsync(password);
@@ -398,6 +489,16 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page).Not.ToHaveURLAsync(new Regex("/Account/Register", RegexOptions.IgnoreCase));
         return (email, password);
     }
+
+    private Task RouteRegistrationAsTestClientAsync() =>
+        Page.RouteAsync("**/Account/Register*", route =>
+        {
+            var headers = new Dictionary<string, string>(route.Request.Headers, StringComparer.OrdinalIgnoreCase)
+            {
+                ["X-Forwarded-For"] = TestClientIp,
+            };
+            return route.FallbackAsync(new RouteFallbackOptions { Headers = headers });
+        });
 
     private async Task RegisterAndSelectPolishAsync()
     {

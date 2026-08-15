@@ -11,27 +11,27 @@
 <section class="workspace explore-page">
     <section class="workspace-hero">
         <div class="workspace-hero-content">
-            <p class="hero-label">Public Quiz - @Model.SelectedQuiz.SourceLanguage &rarr; @Model.SelectedQuiz.TargetLanguage</p>
+            <p class="hero-label">@Text["Explore.PublicQuiz"] - @QuizLanguageDisplay.Name(Model.SelectedQuiz.SourceLanguage) &rarr; @QuizLanguageDisplay.Name(Model.SelectedQuiz.TargetLanguage)</p>
             <h1 class="hero-title">@Model.SelectedQuiz.Name</h1>
             <div class="hero-actions">
                 @if (backCollectionId.HasValue)
                 {
                     <a class="btn-hero btn-hero-secondary" asp-controller="Explore" asp-action="Collection" asp-route-id="@backCollectionId">
                         <span class="material-symbols-outlined">arrow_back</span>
-                        Back
+                        @Text["Common.Back"]
                     </a>
                 }
                 else
                 {
                     <a class="btn-hero btn-hero-secondary" asp-controller="Explore" asp-action="Index">
                         <span class="material-symbols-outlined">arrow_back</span>
-                        Back
+                        @Text["Common.Back"]
                     </a>
                 }
                 <form class="share-form" method="post" asp-controller="Explore" asp-action="CopyQuiz" asp-route-id="@Model.SelectedQuiz.Id">
                     @Html.AntiForgeryToken()
                     <button class="btn-hero" type="submit">
-                        Copy <span class="material-symbols-outlined">library_add</span>
+                        @Text["Common.Copy"] <span class="material-symbols-outlined">library_add</span>
                     </button>
                 </form>
             </div>
@@ -43,8 +43,8 @@
         <section class="custom-quiz-library">
             <div class="collection-header">
                 <div>
-                    <h2 class="collection-title">Custom quizzes</h2>
-                    <p class="collection-subtitle">Exercises created from this quiz's vocabulary.</p>
+                    <h2 class="collection-title">@Text["Quiz.CustomQuizzes"]</h2>
+                    <p class="collection-subtitle">@Text["Explore.CustomExercises"]</p>
                 </div>
             </div>
             <div class="custom-quiz-card-grid">
@@ -52,7 +52,7 @@
                 {
                     <article class="custom-quiz-card">
                         <h3>@customQuiz.Name</h3>
-                        <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id">Play</a>
+                        <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id">@Text["Common.Play"]</a>
                     </article>
                 }
             </div>
@@ -62,16 +62,16 @@
     <section>
         <div class="collection-header">
             <div>
-                <h2 class="collection-title" id="collectionTitle">Words</h2>
-                <p class="collection-subtitle" id="collectionSubtitle">@Model.Words.Count words in @Model.SelectedQuiz.Name</p>
+                <h2 class="collection-title" id="collectionTitle">@Text["Settings.Words"]</h2>
+                <p class="collection-subtitle" id="collectionSubtitle">@Text["Quiz.ItemsIn", Model.Words.Count, Text["Settings.WordsLower"], Model.SelectedQuiz.Name]</p>
             </div>
-            <div class="tab-group" role="tablist" aria-label="Quiz content">
-                <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="wordsPanel" data-tab="words">Words</button>
-                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="sentencesPanel" data-tab="sentences">Sentences</button>
+            <div class="tab-group" role="tablist" aria-label="@Text["Quiz.ContentAria"]">
+                <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="wordsPanel" data-tab="words">@Text["Settings.Words"]</button>
+                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="sentencesPanel" data-tab="sentences">@Text["Settings.Sentences"]</button>
             </div>
         </div>
 
-        <div class="tab-panel" id="wordsPanel" data-title="Words" data-subtitle="@Model.Words.Count words in @Model.SelectedQuiz.Name">
+        <div class="tab-panel" id="wordsPanel" data-title="@Text["Settings.Words"]" data-subtitle="@Text["Quiz.ItemsIn", Model.Words.Count, Text["Settings.WordsLower"], Model.SelectedQuiz.Name]">
             <div class="word-grid" data-word-grid>
                 @foreach (var word in Model.Words)
                 {
@@ -82,8 +82,8 @@
                             {
                                 <a class="word-icon word-wiktionary-link"
                                    href="@wiktionaryUrl"
-                                   aria-label="Open @word.Lemma on Wiktionary"
-                                   title="Open @word.Lemma on Wiktionary">
+                                   aria-label="@Text["Quiz.OpenWiktionary", word.Lemma]"
+                                   title="@Text["Quiz.OpenWiktionary", word.Lemma]">
                                     <span class="material-symbols-outlined">translate</span>
                                 </a>
                             }
@@ -102,12 +102,12 @@
                 }
                 @if (!Model.Words.Any())
                 {
-                    <div class="empty-state">No words have been added to this public quiz yet.</div>
+                    <div class="empty-state">@Text["Explore.NoPublicWords"]</div>
                 }
             </div>
         </div>
 
-        <div class="tab-panel" id="sentencesPanel" data-title="Sentences" data-subtitle="@Model.Sentences.Count sentences in @Model.SelectedQuiz.Name" hidden>
+        <div class="tab-panel" id="sentencesPanel" data-title="@Text["Settings.Sentences"]" data-subtitle="@Text["Quiz.ItemsIn", Model.Sentences.Count, Text["Settings.SentencesLower"], Model.SelectedQuiz.Name]" hidden>
             <div class="sentence-grid" data-sentence-grid>
                 @foreach (var sentence in Model.Sentences)
                 {
@@ -123,13 +123,13 @@
                             </div>
                         </div>
                         <div class="sentence-meta">
-                            @sentence.WordCount linked @(sentence.WordCount == 1 ? "word" : "words")
+                            @Text["Quiz.LinkedWords", sentence.WordCount, sentence.WordCount == 1 ? Text["Settings.WordLower"] : Text["Settings.WordsLower"]]
                         </div>
                     </article>
                 }
                 @if (!Model.Sentences.Any())
                 {
-                    <div class="empty-state">No sentences have been added to this public quiz yet.</div>
+                    <div class="empty-state">@Text["Explore.NoPublicSentences"]</div>
                 }
             </div>
         </div>

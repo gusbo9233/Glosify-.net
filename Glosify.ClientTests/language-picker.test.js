@@ -20,6 +20,10 @@ test('language search is case- and diacritic-insensitive', () => {
     assert.equal(languageMatches('Māori Maori mri', 'MAORI'), true);
 });
 
+test('language search matches a localized display name included by the server', () => {
+    assert.equal(languageMatches('Polish Polski polaco pol', 'polaco'), true);
+});
+
 test('language search reports an empty result for an unknown language', () => {
     assert.equal(languageMatches('cy cym Welsh Cymraeg', 'Klingon'), false);
 });

@@ -1,9 +1,9 @@
 @inject Glosify.Services.Language.ILanguageContext LangContext
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = "Home";
-    ViewData["AssistantTitle"] = "Learning coach";
-    ViewData["AssistantContextLabel"] = "Home";
+    ViewData["Title"] = Text["Home.Title"];
+    ViewData["AssistantTitle"] = Text["Home.Coach"];
+    ViewData["AssistantContextLabel"] = Text["Home.Title"];
 
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var currentLanguage = LangContext.CurrentLanguage;
@@ -19,89 +19,88 @@
         <div class="home-hero-copy">
             <p class="home-kicker">
                 <span class="home-kicker-dot" aria-hidden="true"></span>
-                Your language learning space
+                @Text["Home.Kicker"]
             </p>
             <h1 id="home-title">
                 @if (hasLanguage)
                 {
-                    <text>Make <span>@currentLanguage</span> part of your day.</text>
+                    @Text["Home.TitleWithLanguage", currentLanguage!]
                 }
                 else
                 {
-                    <text>Turn new words into <span>real conversations.</span></text>
+                    @Text["Home.TitleAnonymous"]
                 }
             </h1>
             <p class="home-hero-lede">
-                Build vocabulary from the things you read, make it stick with focused practice,
-                then use it out loud with an AI conversation partner.
+                @Text["Home.Description"]
             </p>
 
             <div class="home-hero-actions">
                 @if (!isAuthenticated)
                 {
                     <a class="home-button home-button-primary" asp-controller="Account" asp-action="Register">
-                        Start learning
+                        @Text["Home.StartLearning"]
                         <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                     </a>
                     <a class="home-button home-button-secondary" asp-controller="Account" asp-action="Login">
-                        Log in
+                        @Text["Common.LogIn"]
                     </a>
                 }
                 else if (!hasLanguage)
                 {
                     <a class="home-button home-button-primary" asp-controller="Languages" asp-action="Index">
-                        Choose a language
+                        @Text["Home.ChooseLanguage"]
                         <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                     </a>
                     <a class="home-button home-button-secondary" asp-controller="Explore" asp-action="Index">
-                        Browse shared sets
+                        @Text["Home.BrowseShared"]
                     </a>
                 }
                 else
                 {
                     <a class="home-button home-button-primary" asp-controller="Speaking" asp-action="Index">
-                        Start speaking
+                        @Text["Home.StartSpeaking"]
                         <span class="material-symbols-outlined" aria-hidden="true">mic</span>
                     </a>
                     <a class="home-button home-button-secondary" asp-controller="Quiz" asp-action="Index">
-                        Open my quizzes
+                        @Text["Home.OpenQuizzes"]
                     </a>
                 }
             </div>
 
-            <ul class="home-hero-points" aria-label="Ways to learn with Glosify">
-                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> Read in context</li>
-                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> Practice recall</li>
-                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> Speak with confidence</li>
+            <ul class="home-hero-points" aria-label="@Text["Home.WaysAria"]">
+                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> @Text["Home.ReadContext"]</li>
+                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> @Text["Home.PracticeRecall"]</li>
+                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> @Text["Home.SpeakConfidence"]</li>
             </ul>
         </div>
 
-        <div class="home-hero-visual" aria-label="A connected learning loop from reading to speaking">
+        <div class="home-hero-visual" aria-label="@Text["Home.LoopAria"]">
             <div class="home-orbit home-orbit-outer" aria-hidden="true"></div>
             <div class="home-orbit home-orbit-inner" aria-hidden="true"></div>
 
             <div class="home-orbit-node home-orbit-node-book">
                 <span class="material-symbols-outlined" aria-hidden="true">auto_stories</span>
-                <small>Discover</small>
+                <small>@Text["Home.Discover"]</small>
             </div>
             <div class="home-orbit-node home-orbit-node-quiz">
                 <span class="material-symbols-outlined" aria-hidden="true">neurology</span>
-                <small>Remember</small>
+                <small>@Text["Home.Remember"]</small>
             </div>
             <div class="home-orbit-node home-orbit-node-speak">
                 <span class="material-symbols-outlined" aria-hidden="true">graphic_eq</span>
-                <small>Speak</small>
+                <small>@Text["Nav.Speak"]</small>
             </div>
 
             <div class="home-orbit-core">
                 <span class="material-symbols-outlined" aria-hidden="true">translate</span>
                 <strong>@(hasLanguage ? currentLanguage : "Glosify")</strong>
-                <small>Your learning loop</small>
+                <small>@Text["Home.LearningLoop"]</small>
             </div>
 
             <div class="home-phrase-card">
-                <span class="home-phrase-label">Today’s mindset</span>
-                <strong>Small steps. Real progress.</strong>
+                <span class="home-phrase-label">@Text["Home.TodayMindset"]</span>
+                <strong>@Text["Home.SmallSteps"]</strong>
                 <div class="home-phrase-progress" aria-hidden="true"><span></span></div>
             </div>
         </div>
@@ -110,13 +109,13 @@
     <section class="home-section" aria-labelledby="next-move-title">
         <div class="home-section-heading">
             <div>
-                <p class="home-kicker">Quick start</p>
-                <h2 id="next-move-title">Choose your next move</h2>
+                <p class="home-kicker">@Text["Home.QuickStart"]</p>
+                <h2 id="next-move-title">@Text["Home.ChooseNext"]</h2>
             </div>
             @if (hasLanguage)
             {
                 <a class="home-text-link" asp-controller="Languages" asp-action="Index">
-                    Learning @currentLanguage
+                    @Text["Home.LearningLanguage", currentLanguage!]
                     <span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
                 </a>
             }
@@ -129,8 +128,8 @@
                     <span class="material-symbols-outlined" aria-hidden="true">library_add</span>
                 </span>
                 <span class="home-action-content">
-                    <strong>Build vocabulary</strong>
-                    <small>Create focused sets from words you actually want to use.</small>
+                    <strong>@Text["Home.BuildVocabulary"]</strong>
+                    <small>@Text["Home.BuildVocabularyText"]</small>
                 </span>
                 <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
             </a>
@@ -141,8 +140,8 @@
                     <span class="material-symbols-outlined" aria-hidden="true">psychology</span>
                 </span>
                 <span class="home-action-content">
-                    <strong>Practice recall</strong>
-                    <small>Use flashcards, typing, and custom quizzes to make words stick.</small>
+                    <strong>@Text["Home.PracticeRecall"]</strong>
+                    <small>@Text["Home.PracticeRecallText"]</small>
                 </span>
                 <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
             </a>
@@ -153,8 +152,8 @@
                     <span class="material-symbols-outlined" aria-hidden="true">mic</span>
                 </span>
                 <span class="home-action-content">
-                    <strong>Speak naturally</strong>
-                    <small>Enter a guided scene and get private coaching after every turn.</small>
+                    <strong>@Text["Home.SpeakNaturally"]</strong>
+                    <small>@Text["Home.SpeakNaturallyText"]</small>
                 </span>
                 <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
             </a>
@@ -163,14 +162,11 @@
 
     <section class="home-connected" aria-labelledby="connected-title">
         <div class="home-connected-copy">
-            <p class="home-kicker">One connected workspace</p>
-            <h2 id="connected-title">Learn from whatever already has your attention.</h2>
-            <p>
-                A book, a shared word list, or a classroom assignment can become the start of your
-                next practice session. Your vocabulary stays close wherever you go next.
-            </p>
+            <p class="home-kicker">@Text["Home.ConnectedKicker"]</p>
+            <h2 id="connected-title">@Text["Home.ConnectedTitle"]</h2>
+            <p>@Text["Home.ConnectedText"]</p>
             <a class="home-text-link home-text-link-bright" asp-controller="Explore" asp-action="Index">
-                Explore community collections
+                @Text["Home.ExploreCollections"]
                 <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
             </a>
         </div>
@@ -179,8 +175,8 @@
             <a class="home-feature-card home-feature-card-books" asp-controller="Books" asp-action="Index">
                 <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">menu_book</span>
                 <span>
-                    <strong>Read &amp; collect</strong>
-                    <small>Turn a PDF into vocabulary without leaving the page.</small>
+                    <strong>@Text["Home.ReadCollect"]</strong>
+                    <small>@Text["Home.ReadCollectText"]</small>
                 </span>
                 <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
             </a>
@@ -188,8 +184,8 @@
             <a class="home-feature-card home-feature-card-explore" asp-controller="Explore" asp-action="Index">
                 <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">travel_explore</span>
                 <span>
-                    <strong>Explore together</strong>
-                    <small>Copy public quizzes and collections into your library.</small>
+                    <strong>@Text["Home.ExploreTogether"]</strong>
+                    <small>@Text["Home.ExploreTogetherText"]</small>
                 </span>
                 <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
             </a>
@@ -197,8 +193,8 @@
             <a class="home-feature-card home-feature-card-classroom" asp-controller="Classroom" asp-action="Index">
                 <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">school</span>
                 <span>
-                    <strong>Join a classroom</strong>
-                    <small>Learn with assignments, shared content, and live support.</small>
+                    <strong>@Text["Home.JoinClassroom"]</strong>
+                    <small>@Text["Home.JoinClassroomText"]</small>
                 </span>
                 <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
             </a>
@@ -208,36 +204,36 @@
     <section class="home-final-cta" aria-labelledby="home-final-title">
         <span class="home-final-icon material-symbols-outlined" aria-hidden="true">waving_hand</span>
         <div>
-            <p class="home-kicker">Your turn</p>
+            <p class="home-kicker">@Text["Home.YourTurn"]</p>
             <h2 id="home-final-title">
                 @if (hasLanguage)
                 {
-                    <text>What will you do in @currentLanguage today?</text>
+                    @Text["Home.TodayLanguage", currentLanguage!]
                 }
                 else
                 {
-                    <text>Pick a language and begin with one useful word.</text>
+                    @Text["Home.PickFirstWord"]
                 }
             </h2>
         </div>
         @if (hasLanguage && isAuthenticated)
         {
             <a class="home-button home-button-primary" asp-controller="Quiz" asp-action="Index">
-                Continue learning
+                @Text["Home.ContinueLearning"]
                 <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
             </a>
         }
         else if (isAuthenticated)
         {
             <a class="home-button home-button-primary" asp-controller="Languages" asp-action="Index">
-                Pick a language
+                @Text["Home.PickLanguage"]
                 <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
             </a>
         }
         else
         {
             <a class="home-button home-button-primary" asp-controller="Account" asp-action="Register">
-                Create an account
+                @Text["Home.CreateAccount"]
                 <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
             </a>
         }

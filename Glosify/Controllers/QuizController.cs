@@ -10,6 +10,7 @@ using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Words;
+using Glosify.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,6 +26,7 @@ public class QuizController : Controller
     private readonly IImageTextExtractionService _imageTextExtractionService;
     private readonly ILanguageContext _languageContext;
     private readonly ICustomQuizService _customQuizService;
+    private readonly UiTextStringLocalizer _text = new();
 
     public QuizController(
         IQuizService quizService,
@@ -198,7 +200,7 @@ public class QuizController : Controller
         if (deleted == null)
             return RedirectToAction(nameof(Index));
 
-        TempData[NotificationKeys.Quiz] = $"Deleted {deleted.Lemma}.";
+        TempData[NotificationKeys.Quiz] = _text["Quiz.DeletedWord", deleted.Lemma].Value;
         return RedirectToAction(nameof(Details), new { id = deleted.QuizId });
     }
 
@@ -210,7 +212,7 @@ public class QuizController : Controller
         var deleted = await _quizService.DeleteQuizAsync(id, userId, cancellationToken: cancellationToken);
         if (deleted != null)
         {
-            TempData[NotificationKeys.Quiz] = $"Deleted {deleted.Name}.";
+            TempData[NotificationKeys.Quiz] = _text["Quiz.DeletedNamed", deleted.Name].Value;
         }
 
         return RedirectToAction(nameof(Index));
@@ -223,8 +225,8 @@ public class QuizController : Controller
 
         var updated = await _quizService.SetQuizPublicAsync(id, userId, isPublic, cancellationToken: cancellationToken);
         TempData[NotificationKeys.Quiz] = updated
-            ? isPublic ? "Quiz is now public." : "Quiz is now private."
-            : "Could not update quiz visibility.";
+            ? isPublic ? _text["Quiz.NowPublic"].Value : _text["Quiz.NowPrivate"].Value
+            : _text["Quiz.VisibilityFailed"].Value;
 
         return updated
             ? RedirectToAction(nameof(Details), new { id })
@@ -238,8 +240,8 @@ public class QuizController : Controller
 
         var updated = await _collectionService.SetCollectionPublicAsync(id, userId, isPublic, cancellationToken: cancellationToken);
         TempData[NotificationKeys.Quiz] = updated
-            ? isPublic ? "Collection is now public." : "Collection is now private."
-            : "Could not update collection visibility.";
+            ? isPublic ? _text["Quiz.CollectionNowPublic"].Value : _text["Quiz.CollectionNowPrivate"].Value
+            : _text["Quiz.CollectionVisibilityFailed"].Value;
 
         return updated
             ? RedirectToAction(nameof(Collection), new { id })
@@ -283,11 +285,11 @@ public class QuizController : Controller
         try
         {
             var collection = await _collectionService.CreateCollectionAsync(input.Name, language, userId, input.ParentCollectionId, cancellationToken: cancellationToken);
-            TempData[NotificationKeys.Quiz] = $"Created collection {collection.Name}.";
+            TempData[NotificationKeys.Quiz] = _text["Quiz.CollectionCreated", collection.Name].Value;
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
-            TempData[NotificationKeys.Quiz] = ex.Message;
+            TempData[NotificationKeys.Quiz] = _text["Quiz.CollectionCreateFailed"].Value;
         }
 
         return RedirectToLibrary(input.ParentCollectionId);

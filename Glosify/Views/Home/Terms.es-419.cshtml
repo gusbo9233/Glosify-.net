@@ -1,0 +1,40 @@
+@using Microsoft.Extensions.Options
+@using Glosify.Services.Legal
+@inject IOptions<LegalOptions> Legal
+@{
+    Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
+    ViewData["Title"] = "Términos del servicio";
+    var legal = Legal.Value;
+}
+
+<main class="auth-shell legal-shell">
+    <article class="glass-card legal-document">
+        <header class="auth-card-header"><h1>Términos del servicio</h1><p>Vigente a partir del 10 de agosto de 2026</p></header>
+        <aside class="legal-language-notice">
+            Esta traducción se proporciona para tu comodidad. Si difiere de la versión en inglés, la versión en inglés prevalece.
+            <a asp-action="TermsEnglish">Lee la versión en inglés que rige</a>.
+        </aside>
+
+        <p>Glosify es un servicio beta de aprendizaje de idiomas operado por <strong>@legal.ControllerName</strong>. Al usarlo, aceptas usar el servicio de forma legal, mantener tu cuenta segura y subir o transmitir solo material que tengas permitido procesar.</p>
+
+        <h2>Servicio beta y disponibilidad</h2>
+        <p>Las funciones pueden cambiar, fallar o no estar disponibles temporalmente. Las funciones de pago se cierran cuando se agota el presupuesto mensual de la aplicación de Glosify y vuelven a abrirse en el siguiente período mensual de Europe/Stockholm. Los créditos son unidades del servicio, no tienen valor en efectivo y no garantizan una disponibilidad ininterrumpida.</p>
+
+        <h2>Créditos de prueba</h2>
+        <p>Una cuenta elegible vinculada a Google o Microsoft puede recibir una prueba de 25 créditos. Las cuentas registradas solo con contraseña y las registraciones por API no reciben créditos de prueba automáticos. El abuso, la creación de cuentas duplicadas, la automatización o los intentos de eludir los límites pueden dar lugar a la suspensión.</p>
+
+        <h2>Tu contenido</h2>
+        <p>Conservas los derechos sobre el contenido que proporcionas. Le otorgas a Glosify y a sus procesadores el permiso limitado necesario para alojar, transmitir, analizar, traducir y devolver ese contenido para las funciones que solicitas. No confíes en las traducciones generadas ni en el material de aprendizaje para decisiones médicas, legales, críticas para la seguridad u otras de alto impacto.</p>
+
+        <h2>Finalización del uso</h2>
+        <p>Puedes dejar de usar Glosify y eliminar el contenido almacenado a través de los controles disponibles de cuenta y transcripciones. Glosify puede restringir cuentas que amenacen el servicio, a otros usuarios o el cumplimiento legal.</p>
+
+        <h2>Contacto</h2>
+        <p>Las preguntas sobre estos términos pueden enviarse a <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>
+
+        <nav class="legal-links" aria-label='@Text["Legal.Label"]'>
+            <a asp-action="Privacy">@Text["Legal.PrivacyPolicy"]</a>
+            <a asp-action="Support">@Text["Legal.Support"]</a>
+        </nav>
+    </article>
+</main>

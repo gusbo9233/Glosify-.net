@@ -1,6 +1,7 @@
 (() => {
     const root = document.querySelector('[data-custom-builder]');
     if (!root) return;
+    const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
 
     const canvas = root.querySelector('[data-custom-canvas]');
     const inspector = root.querySelector('[data-custom-inspector]');
@@ -25,11 +26,11 @@
     const history = [];
 
     const labels = {
-        quiz_heading: 'Heading', instruction_label: 'Instruction', prompt_label: 'Word label',
-        translation_label: 'Translation label', text_input: 'Text input', textarea: 'Long answer',
-        checkbox: 'Checkbox', radio_group: 'Radio choices', multi_select_group: 'Checkbox choices',
-        select_menu: 'Select menu', word_bank: 'Word bank', submit_button: 'Submit button',
-        feedback_message: 'Feedback'
+        quiz_heading: t('Editor.Heading', 'Heading'), instruction_label: t('Editor.Instruction', 'Instruction'), prompt_label: t('Editor.WordLabel', 'Word label'),
+        translation_label: t('Editor.TranslationLabel', 'Translation label'), text_input: t('Editor.TextInput', 'Text input'), textarea: t('Editor.LongAnswer', 'Long answer'),
+        checkbox: t('Editor.Checkbox', 'Checkbox'), radio_group: t('Editor.RadioChoices', 'Radio choices'), multi_select_group: t('Editor.CheckboxChoices', 'Checkbox choices'),
+        select_menu: t('Editor.SelectMenu', 'Select menu'), word_bank: t('Editor.WordBank', 'Word bank'), submit_button: t('Editor.SubmitButton', 'Submit button'),
+        feedback_message: t('Editor.Feedback', 'Feedback')
     };
     const answerTypes = new Set(['text_input', 'textarea', 'checkbox', 'radio_group', 'multi_select_group', 'select_menu']);
     const choiceTypes = new Set(['radio_group', 'multi_select_group', 'select_menu']);
@@ -346,7 +347,7 @@
 
     const renderCanvas = () => {
         canvas.replaceChildren();
-        if (!documentModel.blocks.length) canvas.append(element('div', 'custom-canvas-empty', 'Drag a block anywhere onto this canvas to begin.'));
+        if (!documentModel.blocks.length) canvas.append(element('div', 'custom-canvas-empty', t('Editor.EmptyCanvas', 'Drag a block anywhere onto this canvas to begin.')));
         documentModel.blocks.forEach(block => {
             const card = element('section', `custom-play-block custom-canvas-block${block.id === selectedId ? ' is-selected' : ''}`);
             card.dataset.blockId = block.id;
@@ -363,11 +364,11 @@
             const typeLabel = element('span', 'custom-canvas-type', labels[block.type] || block.type);
             const controls = element('div', 'custom-canvas-controls');
             controls.append(
-                iconButton('arrow_back', 'Move left', () => moveBlock(block.id, 0, -1)),
-                iconButton('arrow_upward', 'Move up', () => moveBlock(block.id, -1, 0)),
-                iconButton('arrow_downward', 'Move down', () => moveBlock(block.id, 1, 0)),
-                iconButton('arrow_forward', 'Move right', () => moveBlock(block.id, 0, 1)),
-                iconButton('delete', 'Remove block', () => mutate(() => {
+                iconButton('arrow_back', t('Editor.MoveLeft', 'Move left'), () => moveBlock(block.id, 0, -1)),
+                iconButton('arrow_upward', t('Editor.MoveUp', 'Move up'), () => moveBlock(block.id, -1, 0)),
+                iconButton('arrow_downward', t('Editor.MoveDown', 'Move down'), () => moveBlock(block.id, 1, 0)),
+                iconButton('arrow_forward', t('Editor.MoveRight', 'Move right'), () => moveBlock(block.id, 0, 1)),
+                iconButton('delete', t('Editor.RemoveBlock', 'Remove block'), () => mutate(() => {
                     documentModel.blocks = documentModel.blocks.filter(item => item.id !== block.id);
                     selectedId = documentModel.blocks[0]?.id || '';
                 }))
@@ -377,11 +378,12 @@
             renderQuizContent(block, content, false);
             const resize = element('button', 'custom-resize-handle');
             resize.type = 'button';
-            resize.title = 'Drag to resize width';
-            resize.setAttribute('aria-label', `Resize ${labels[block.type]}`);
+            resize.title = t('Editor.Resize', 'Drag to resize width');
+            const resizeLabel = `${t('Editor.Resize', 'Drag to resize width')}: ${labels[block.type]}`;
+            resize.setAttribute('aria-label', resizeLabel);
             resize.addEventListener('pointerdown', event => beginPointerAction(event, {
                 kind: 'resize', source: resize, card, blockId: block.id, span: block.columnSpan, startSpan: block.columnSpan,
-                startRow: block.gridRow, startColumn: block.gridColumn, label: `Resize ${labels[block.type]}`
+                startRow: block.gridRow, startColumn: block.gridColumn, label: resizeLabel
             }));
             card.append(chrome, content, resize);
             card.addEventListener('click', () => { selectedId = block.id; render(); });
@@ -415,42 +417,42 @@
     const bindingEditor = (title, binding, setter) => {
         const group = element('fieldset', 'custom-binding-editor'); group.append(element('legend', '', title));
         inspector.append(group);
-        const wordLabel = element('label', 'custom-inspector-field'); wordLabel.append(element('span', '', 'Word'));
+        const wordLabel = element('label', 'custom-inspector-field'); wordLabel.append(element('span', '', t('Editor.Word', 'Word')));
         const wordSelect = element('select', 'form-input');
         wordOptions().forEach(option => { const node = element('option', '', option.label); node.value = option.value; node.selected = option.value === binding?.wordId; wordSelect.append(node); });
         wordSelect.addEventListener('change', () => mutate(() => setter({ wordId: wordSelect.value, field: binding?.field || 'lemma' })));
         wordLabel.append(wordSelect); group.append(wordLabel);
-        const fieldLabel = element('label', 'custom-inspector-field'); fieldLabel.append(element('span', '', 'Display field'));
+        const fieldLabel = element('label', 'custom-inspector-field'); fieldLabel.append(element('span', '', t('Editor.DisplayField', 'Display field')));
         const fieldSelect = element('select', 'form-input');
-        [{ value: 'lemma', label: 'Word / lemma' }, { value: 'translation', label: 'Translation' }].forEach(option => {
+        [{ value: 'lemma', label: t('Editor.WordLemma', 'Word / lemma') }, { value: 'translation', label: t('Editor.Translation', 'Translation') }].forEach(option => {
             const node = element('option', '', option.label); node.value = option.value; node.selected = option.value === binding?.field; fieldSelect.append(node);
         });
         fieldSelect.addEventListener('change', () => mutate(() => setter({ wordId: binding?.wordId || words[0]?.id || '', field: fieldSelect.value })));
         fieldLabel.append(fieldSelect); group.append(fieldLabel);
     };
     const optionEditor = block => {
-        inspector.append(element('h3', '', block.type === 'word_bank' ? 'Words' : 'Options'));
+        inspector.append(element('h3', '', block.type === 'word_bank' ? t('Editor.Words', 'Words') : t('Editor.Options', 'Options')));
         block.options.forEach((option, index) => {
             const row = element('div', 'custom-option-editor');
             const select = element('select', 'form-input');
             wordOptions().forEach(item => { const node = element('option', '', item.label); node.value = item.value; node.selected = item.value === option.binding.wordId; select.append(node); });
             select.addEventListener('change', () => mutate(() => { option.binding.wordId = select.value; }));
             const field = element('select', 'form-input');
-            [['lemma', 'Word'], ['translation', 'Translation']].forEach(([value, label]) => { const node = element('option', '', label); node.value = value; node.selected = value === option.binding.field; field.append(node); });
+            [['lemma', t('Editor.Word', 'Word')], ['translation', t('Editor.Translation', 'Translation')]].forEach(([value, label]) => { const node = element('option', '', label); node.value = value; node.selected = value === option.binding.field; field.append(node); });
             field.addEventListener('change', () => mutate(() => { option.binding.field = field.value; }));
             row.append(select, field);
             if (choiceTypes.has(block.type)) {
-                const correct = document.createElement('input'); correct.type = block.type === 'multi_select_group' ? 'checkbox' : 'radio'; correct.name = `correct-${block.id}`; correct.checked = option.isCorrect; correct.title = 'Correct option';
+                const correct = document.createElement('input'); correct.type = block.type === 'multi_select_group' ? 'checkbox' : 'radio'; correct.name = `correct-${block.id}`; correct.checked = option.isCorrect; correct.title = t('Editor.CorrectOption', 'Correct option');
                 correct.addEventListener('change', () => mutate(() => {
                     if (block.type !== 'multi_select_group') block.options.forEach(item => { item.isCorrect = false; });
                     option.isCorrect = correct.checked;
                 }));
                 row.append(correct);
             }
-            row.append(iconButton('close', 'Remove option', () => mutate(() => { block.options.splice(index, 1); })));
+            row.append(iconButton('close', t('Editor.RemoveOption', 'Remove option'), () => mutate(() => { block.options.splice(index, 1); })));
             inspector.append(row);
         });
-        const add = element('button', 'btn-secondary', 'Add option'); add.type = 'button'; add.disabled = words.length === 0;
+        const add = element('button', 'btn-secondary', t('Editor.AddOption', 'Add option')); add.type = 'button'; add.disabled = words.length === 0;
         add.addEventListener('click', () => mutate(() => block.options.push({ id: uid(), binding: defaultBinding(), isCorrect: false })));
         inspector.append(add);
     };
@@ -463,31 +465,31 @@
         block.gridRow = placement.row; block.gridColumn = placement.column;
     };
     const renderInspector = () => {
-        inspector.replaceChildren(element('h2', '', 'Properties'));
+        inspector.replaceChildren(element('h2', '', t('Editor.Properties', 'Properties')));
         const block = byId(selectedId);
-        if (!block) { inspector.append(element('p', '', 'Select a block to edit its content and bindings.')); return; }
+        if (!block) { inspector.append(element('p', '', t('Editor.SelectBlock', 'Select a block to edit its content and bindings.'))); return; }
         inspector.append(element('p', 'custom-inspector-type', labels[block.type] || block.type));
-        addSelect('Width', String(block.columnSpan), spans.map(span => ({ value: String(span), label: `${Math.round(span / 12 * 100)}%` })), value => changeBlockWidth(block, value));
-        addSelect('Column', String(block.gridColumn), Array.from({ length: 13 - block.columnSpan }, (_, index) => ({ value: String(index + 1), label: `Column ${index + 1}` })), value => changeBlockPosition(block, block.gridRow, Number(value)));
-        addField('Row', block.gridRow, value => changeBlockPosition(block, Math.max(1, Number(value) || 1), block.gridColumn), 'number');
-        if (['quiz_heading', 'instruction_label', 'submit_button'].includes(block.type)) addField('Text', block.text, value => { block.text = value; });
-        if (['prompt_label', 'translation_label'].includes(block.type)) bindingEditor('Live word binding', block.binding, value => { block.binding = value; });
-        if (answerTypes.has(block.type)) addField(block.type === 'text_input' ? 'Exercise row (use {{blank}})' : 'Accessible label', block.label, value => { block.label = value; });
+        addSelect(t('Editor.Width', 'Width'), String(block.columnSpan), spans.map(span => ({ value: String(span), label: `${Math.round(span / 12 * 100)}%` })), value => changeBlockWidth(block, value));
+        addSelect(t('Editor.Column', 'Column'), String(block.gridColumn), Array.from({ length: 13 - block.columnSpan }, (_, index) => ({ value: String(index + 1), label: t('Editor.ColumnNumber', 'Column {0}', index + 1) })), value => changeBlockPosition(block, block.gridRow, Number(value)));
+        addField(t('Editor.Row', 'Row'), block.gridRow, value => changeBlockPosition(block, Math.max(1, Number(value) || 1), block.gridColumn), 'number');
+        if (['quiz_heading', 'instruction_label', 'submit_button'].includes(block.type)) addField(t('Editor.Text', 'Text'), block.text, value => { block.text = value; });
+        if (['prompt_label', 'translation_label'].includes(block.type)) bindingEditor(t('Editor.LiveBinding', 'Live word binding'), block.binding, value => { block.binding = value; });
+        if (answerTypes.has(block.type)) addField(block.type === 'text_input' ? t('Editor.ExerciseRow', 'Exercise row (use {{blank}})') : t('Editor.AccessibleLabel', 'Accessible label'), block.label, value => { block.label = value; });
         if (['text_input', 'textarea'].includes(block.type)) {
-            addField('Custom expected answer', block.expectedText, value => {
+            addField(t('Editor.CustomExpected', 'Custom expected answer'), block.expectedText, value => {
                 block.expectedText = value;
                 if (value?.trim()) block.expectedBinding = null;
             });
-            if (!block.expectedText?.trim()) bindingEditor('Expected word binding', block.expectedBinding, value => { block.expectedBinding = value; });
+            if (!block.expectedText?.trim()) bindingEditor(t('Editor.ExpectedBinding', 'Expected word binding'), block.expectedBinding, value => { block.expectedBinding = value; });
         }
         if (block.type === 'checkbox') {
-            bindingEditor('Displayed word', block.binding, value => { block.binding = value; });
-            addField('Expected to be checked', block.expectedChecked, value => { block.expectedChecked = value; }, 'checkbox');
+            bindingEditor(t('Editor.DisplayedWord', 'Displayed word'), block.binding, value => { block.binding = value; });
+            addField(t('Editor.ExpectedChecked', 'Expected to be checked'), block.expectedChecked, value => { block.expectedChecked = value; }, 'checkbox');
         }
         if (choiceTypes.has(block.type) || block.type === 'word_bank') optionEditor(block);
         if (block.type === 'word_bank') {
             const inputs = documentModel.blocks.filter(item => ['text_input', 'textarea'].includes(item.type));
-            inspector.append(element('h3', '', 'Target inputs'));
+            inspector.append(element('h3', '', t('Editor.TargetInputs', 'Target inputs')));
             inputs.forEach(inputBlock => {
                 const label = element('label', 'custom-check'); const check = document.createElement('input'); check.type = 'checkbox'; check.checked = block.targetInputIds.includes(inputBlock.id);
                 check.addEventListener('change', () => mutate(() => { if (check.checked) block.targetInputIds.push(inputBlock.id); else block.targetInputIds = block.targetInputIds.filter(id => id !== inputBlock.id); }));
@@ -508,7 +510,7 @@
         form.addEventListener('submit', event => {
             event.preventDefault();
             const feedback = form.querySelector('.custom-overall-feedback');
-            if (feedback) feedback.textContent = 'Preview only — save and play to record a graded attempt.';
+            if (feedback) feedback.textContent = t('Editor.PreviewOnly', 'Preview only — save and play to record a graded attempt.');
         });
         previewHost.append(form);
     };
@@ -516,11 +518,11 @@
         root.dataset.customStyle = documentModel.stylePreset || 'editorial';
         renderCanvas(); renderInspector(); renderPreview();
         canvas.hidden = previewing; inspector.hidden = previewing; previewHost.hidden = !previewing;
-        previewButton.textContent = previewing ? 'Back to editor' : 'Preview';
+        previewButton.textContent = previewing ? t('Editor.BackToEditor', 'Back to editor') : t('Editor.Preview', 'Preview');
         if (runtimeHost) {
             runtimeHost.textContent = previewing
-                ? `Previewing ${documentModel.blocks.length} block${documentModel.blocks.length === 1 ? '' : 's'}.`
-                : `Editor ready · ${documentModel.blocks.length} block${documentModel.blocks.length === 1 ? '' : 's'} on the canvas. Use + to add or drag a block.`;
+                ? t(documentModel.blocks.length === 1 ? 'Editor.PreviewingOne' : 'Editor.PreviewingMany', documentModel.blocks.length === 1 ? 'Previewing {0} block.' : 'Previewing {0} blocks.', documentModel.blocks.length)
+                : t(documentModel.blocks.length === 1 ? 'Editor.ReadyOne' : 'Editor.ReadyMany', documentModel.blocks.length === 1 ? 'Editor ready · {0} block on the canvas. Use + to add or drag a block.' : 'Editor ready · {0} blocks on the canvas. Use + to add or drag a block.', documentModel.blocks.length);
             runtimeHost.classList.add('is-ready');
         }
         root.querySelectorAll('[data-template-card]').forEach(card => {
@@ -541,7 +543,7 @@
         button.addEventListener('click', () => {
             const template = templateById(button.dataset.templateApply);
             if (!template) return;
-            if (documentModel.blocks.length && !window.confirm(`Replace the current canvas with the ${template.name} layout? You can Undo this change.`)) return;
+            if (documentModel.blocks.length && !window.confirm(t('Editor.ReplaceConfirm', 'Replace the current canvas with the {0} layout? You can Undo this change.', template.name))) return;
             mutate(() => {
                 documentModel = JSON.parse(JSON.stringify(template.document));
                 normalizeLayout();
@@ -583,11 +585,11 @@
                 body: JSON.stringify({ quizId: root.dataset.quizId, name: nameInput.value, document: documentModel, rowVersion })
             });
             const result = await response.json().catch(() => null);
-            if (!response.ok) { setStatus(errorHost, result?.error || result?.errors?.join(' ') || 'Could not save this custom quiz.'); return; }
+            if (!response.ok) { setStatus(errorHost, t('Editor.SaveFailed', 'Could not save this custom quiz.')); return; }
             customId = result.id; rowVersion = result.rowVersion || ''; documentModel = result.document; normalizeLayout(); dirty = false; history.length = 0; undoButton.disabled = true;
-            root.dataset.customId = customId; setStatus(messageHost, result.isPlayable ? 'Saved. This quiz is ready to play.' : `Draft saved. ${result.playabilityErrors.join(' ')}`);
+            root.dataset.customId = customId; setStatus(messageHost, result.isPlayable ? t('Editor.SavedPlayable', 'Saved. This quiz is ready to play.') : t('Editor.DraftSaved', 'Draft saved. Finish the required quiz fields before playing.'));
             window.history.replaceState(null, '', `/CustomQuizzes/${customId}/Edit`); render();
-        } catch { setStatus(errorHost, 'The save request stopped unexpectedly. Try again.'); }
+        } catch { setStatus(errorHost, t('Editor.SaveStopped', 'The save request stopped unexpectedly. Try again.')); }
         finally { saveButton.disabled = false; }
     });
     window.addEventListener('beforeunload', event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } });

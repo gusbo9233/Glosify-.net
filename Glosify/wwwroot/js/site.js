@@ -1,6 +1,20 @@
 // Site-wide delegated behaviors, replacing inline on* attributes so the CSP can
 // disallow 'unsafe-inline' scripts.
 (() => {
+    let dictionary = {};
+    try {
+        dictionary = JSON.parse(document.body?.dataset.i18n || '{}');
+    } catch {
+        dictionary = {};
+    }
+
+    window.glosifyText = (key, fallback = '', ...values) => {
+        const template = dictionary[key] || fallback || key;
+        return values.reduce(
+            (result, value, index) => result.replaceAll(`{${index}}`, String(value)),
+            template);
+    };
+
     document.addEventListener('click', event => {
         const opener = event.target.closest('[data-modal-open]');
         if (opener) {

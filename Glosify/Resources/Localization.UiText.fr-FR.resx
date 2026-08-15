@@ -1,0 +1,2883 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="DisplayLanguage.Label" xml:space="preserve">
+    <value>Langue d’affichage</value>
+  </data>
+  <data name="DisplayLanguage.Submit" xml:space="preserve">
+    <value>Changer de langue</value>
+  </data>
+  <data name="Common.English" xml:space="preserve">
+    <value>Anglais</value>
+  </data>
+  <data name="Common.Swedish" xml:space="preserve">
+    <value>Suédois</value>
+  </data>
+  <data name="Common.LogIn" xml:space="preserve">
+    <value>Se connecter</value>
+  </data>
+  <data name="Common.LogOut" xml:space="preserve">
+    <value>Se déconnecter</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Enregistrer</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Fermer</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>Rechercher</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="Common.Next" xml:space="preserve">
+    <value>Suivant</value>
+  </data>
+  <data name="Common.Previous" xml:space="preserve">
+    <value>Précédent</value>
+  </data>
+  <data name="Layout.MetaDescription" xml:space="preserve">
+    <value>Glosify transforme ce que vous lisez en vocabulaire que vous pouvez utiliser : créez des listes de mots à partir de livres et de transcriptions, entraînez-vous avec des quiz et des cartes mémoire, puis pratiquez à voix haute avec un partenaire de conversation IA.</value>
+  </data>
+  <data name="Layout.AuthMetaDescription" xml:space="preserve">
+    <value>Connectez-vous à Glosify pour constituer votre vocabulaire à partir de ce que vous lisez, vous entraîner avec des quiz et le pratiquer avec un partenaire de conversation IA.</value>
+  </data>
+  <data name="Layout.PremiumLearner" xml:space="preserve">
+    <value>Apprenant Premium</value>
+  </data>
+  <data name="Layout.SearchPlaceholder" xml:space="preserve">
+    <value>Que souhaitez-vous apprendre ?</value>
+  </data>
+  <data name="Layout.Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="Layout.GetCredits" xml:space="preserve">
+    <value>Obtenir des crédits</value>
+  </data>
+  <data name="Layout.SignedInAs" xml:space="preserve">
+    <value>Connecté en tant que</value>
+  </data>
+  <data name="Layout.SignedIn" xml:space="preserve">
+    <value>Connecté</value>
+  </data>
+  <data name="Layout.PrimaryNavigation" xml:space="preserve">
+    <value>Navigation principale</value>
+  </data>
+  <data name="Nav.LanguageSelector" xml:space="preserve">
+    <value>Sélecteur de langue</value>
+  </data>
+  <data name="Nav.Language" xml:space="preserve">
+    <value>Langue</value>
+  </data>
+  <data name="Nav.Home" xml:space="preserve">
+    <value>Accueil</value>
+  </data>
+  <data name="Nav.Explore" xml:space="preserve">
+    <value>Explorer</value>
+  </data>
+  <data name="Nav.Books" xml:space="preserve">
+    <value>Livres</value>
+  </data>
+  <data name="Nav.Transcripts" xml:space="preserve">
+    <value>Transcriptions</value>
+  </data>
+  <data name="Nav.Quizzes" xml:space="preserve">
+    <value>Quiz</value>
+  </data>
+  <data name="Nav.Speaking" xml:space="preserve">
+    <value>Expression orale</value>
+  </data>
+  <data name="Nav.Speak" xml:space="preserve">
+    <value>Parler</value>
+  </data>
+  <data name="Nav.Classrooms" xml:space="preserve">
+    <value>Salles de classe</value>
+  </data>
+  <data name="Nav.Class" xml:space="preserve">
+    <value>Classe</value>
+  </data>
+  <data name="Languages.Title" xml:space="preserve">
+    <value>Sélecteur de langue</value>
+  </data>
+  <data name="Languages.Tagline" xml:space="preserve">
+    <value>Quelle langue souhaitez-vous faire résonner aujourd’hui ?</value>
+  </data>
+  <data name="Languages.Current" xml:space="preserve">
+    <value>Apprentissage actuel : {0}</value>
+  </data>
+  <data name="Languages.Find" xml:space="preserve">
+    <value>Trouver une langue</value>
+  </data>
+  <data name="Languages.SearchPlaceholder" xml:space="preserve">
+    <value>Rechercher en anglais, dans le nom natif ou le code</value>
+  </data>
+  <data name="Languages.Count" xml:space="preserve">
+    <value>{0} langues</value>
+  </data>
+  <data name="Languages.None" xml:space="preserve">
+    <value>Aucune langue correspondante</value>
+  </data>
+  <data name="Languages.NoneHelp" xml:space="preserve">
+    <value>Essayez un nom en anglais, le nom natif ou le code de la langue.</value>
+  </data>
+  <data name="Languages.Pick" xml:space="preserve">
+    <value>Choisir une langue</value>
+  </data>
+  <data name="Assistant.Title" xml:space="preserve">
+    <value>Assistant</value>
+  </data>
+  <data name="Assistant.Empty" xml:space="preserve">
+    <value>Demandez de l’aide n’importe où dans Glosify.</value>
+  </data>
+  <data name="Assistant.Placeholder" xml:space="preserve">
+    <value>Demander à l’assistant...</value>
+  </data>
+  <data name="Assistant.Workspace" xml:space="preserve">
+    <value>Espace de travail de l’assistant</value>
+  </data>
+  <data name="Assistant.Chat" xml:space="preserve">
+    <value>DISCUSSION</value>
+  </data>
+  <data name="Assistant.Chats" xml:space="preserve">
+    <value>DISCUSSIONS</value>
+  </data>
+  <data name="Assistant.NewChat" xml:space="preserve">
+    <value>Nouvelle discussion</value>
+  </data>
+  <data name="Assistant.Close" xml:space="preserve">
+    <value>Fermer l’assistant</value>
+  </data>
+  <data name="Assistant.QuizContext" xml:space="preserve">
+    <value>Contexte du quiz</value>
+  </data>
+  <data name="Assistant.NoQuiz" xml:space="preserve">
+    <value>Aucun quiz sélectionné</value>
+  </data>
+  <data name="Assistant.ReadingMaterial" xml:space="preserve">
+    <value>Support de lecture</value>
+  </data>
+  <data name="Assistant.NoMaterial" xml:space="preserve">
+    <value>Aucun support sélectionné</value>
+  </data>
+  <data name="Assistant.Picture" xml:space="preserve">
+    <value>Image</value>
+  </data>
+  <data name="Assistant.Model" xml:space="preserve">
+    <value>Modèle de l’assistant</value>
+  </data>
+  <data name="Assistant.AutoModel" xml:space="preserve">
+    <value>Auto · {0}</value>
+  </data>
+  <data name="Assistant.Send" xml:space="preserve">
+    <value>Envoyer</value>
+  </data>
+  <data name="Assistant.PreviousChats" xml:space="preserve">
+    <value>Discussions précédentes</value>
+  </data>
+  <data name="Assistant.NoChats" xml:space="preserve">
+    <value>Aucune discussion enregistrée pour le moment.</value>
+  </data>
+  <data name="Quiz.FlashcardsTitle" xml:space="preserve">
+    <value>Quiz de cartes mémoire</value>
+  </data>
+  <data name="Quiz.TypingTitle" xml:space="preserve">
+    <value>Quiz de saisie</value>
+  </data>
+  <data name="Quiz.RevealRate" xml:space="preserve">
+    <value>Révélez la réponse, évaluez le rappel, puis continuez.</value>
+  </data>
+  <data name="Quiz.BackWords" xml:space="preserve">
+    <value>Retour aux mots</value>
+  </data>
+  <data name="Quiz.SessionComplete" xml:space="preserve">
+    <value>Session terminée</value>
+  </data>
+  <data name="Quiz.Remembered" xml:space="preserve">
+    <value>Mémorisé</value>
+  </data>
+  <data name="Quiz.ReviewAgain" xml:space="preserve">
+    <value>Réviser à nouveau</value>
+  </data>
+  <data name="Quiz.Skipped" xml:space="preserve">
+    <value>Passé</value>
+  </data>
+  <data name="Quiz.Restart" xml:space="preserve">
+    <value>Redémarrer la session</value>
+  </data>
+  <data name="Quiz.PracticeAgain" xml:space="preserve">
+    <value>S’entraîner à nouveau</value>
+  </data>
+  <data name="Quiz.PlayPronunciation" xml:space="preserve">
+    <value>Écouter la prononciation de {0}</value>
+  </data>
+  <data name="Quiz.RevealAnswer" xml:space="preserve">
+    <value>Révéler la réponse pour {0}</value>
+  </data>
+  <data name="Quiz.Again" xml:space="preserve">
+    <value>À nouveau</value>
+  </data>
+  <data name="Quiz.Good" xml:space="preserve">
+    <value>Bien</value>
+  </data>
+  <data name="Quiz.Easy" xml:space="preserve">
+    <value>Facile</value>
+  </data>
+  <data name="Quiz.SwipeHint" xml:space="preserve">
+    <value>Balayez vers la droite pour Bien, vers la gauche pour À nouveau</value>
+  </data>
+  <data name="Quiz.Skip" xml:space="preserve">
+    <value>Passer</value>
+  </data>
+  <data name="Quiz.ShowAnswer" xml:space="preserve">
+    <value>Afficher la réponse</value>
+  </data>
+  <data name="Quiz.Reset" xml:space="preserve">
+    <value>Réinitialiser la session</value>
+  </data>
+  <data name="Quiz.NoneYet" xml:space="preserve">
+    <value>Aucun {0} pour le moment</value>
+  </data>
+  <data name="Quiz.AddThenStart" xml:space="preserve">
+    <value>Ajoutez {0} à un quiz, puis lancez une session de {1} à partir de ce quiz.</value>
+  </data>
+  <data name="Quiz.TypeInstruction" xml:space="preserve">
+    <value>Saisissez le {0} {1} complet à partir de l’invite {2}.</value>
+  </data>
+  <data name="Quiz.CheckAnswer" xml:space="preserve">
+    <value>Vérifier la réponse</value>
+  </data>
+  <data name="Quiz.PlayPronunciationGeneric" xml:space="preserve">
+    <value>Écouter la prononciation</value>
+  </data>
+  <data name="Quiz.Answer" xml:space="preserve">
+    <value>Réponse</value>
+  </data>
+  <data name="Quiz.TypePlaceholder" xml:space="preserve">
+    <value>Saisissez votre réponse...</value>
+  </data>
+  <data name="Quiz.CorrectAnswer" xml:space="preserve">
+    <value>Réponse correcte</value>
+  </data>
+  <data name="Quiz.Space" xml:space="preserve">
+    <value>Espace</value>
+  </data>
+  <data name="Quiz.TypingComplete" xml:space="preserve">
+    <value>Saisie terminée</value>
+  </data>
+  <data name="Quiz.Correct" xml:space="preserve">
+    <value>Correct</value>
+  </data>
+  <data name="Quiz.Incorrect" xml:space="preserve">
+    <value>Incorrect</value>
+  </data>
+  <data name="Quiz.PracticeIncorrect" xml:space="preserve">
+    <value>S’entraîner sur les mots incorrects</value>
+  </data>
+  <data name="Quiz.ChangeSettings" xml:space="preserve">
+    <value>Modifier les paramètres</value>
+  </data>
+  <data name="Transcripts.Title" xml:space="preserve">
+    <value>Transcriptions</value>
+  </data>
+  <data name="Transcripts.Eyebrow" xml:space="preserve">
+    <value>Historique des sous-titres en direct</value>
+  </data>
+  <data name="Transcripts.Saved" xml:space="preserve">
+    <value>Transcriptions enregistrées</value>
+  </data>
+  <data name="Transcripts.Intro" xml:space="preserve">
+    <value>Texte des sous-titres en direct enregistré pour {0}. Les nouvelles sessions contiennent le discours original ; les anciennes sessions restent étiquetées comme des traductions.</value>
+  </data>
+  <data name="Transcripts.SelectedLanguage" xml:space="preserve">
+    <value>la langue sélectionnée</value>
+  </data>
+  <data name="Transcripts.Updated" xml:space="preserve">
+    <value>Mis à jour</value>
+  </data>
+  <data name="Transcripts.None" xml:space="preserve">
+    <value>Aucune transcription enregistrée pour le moment</value>
+  </data>
+  <data name="Transcripts.NoneHelp" xml:space="preserve">
+    <value>Activez « Enregistrer la transcription du discours original » avant de lancer les sous-titres en direct.</value>
+  </data>
+  <data name="Transcripts.PagesAria" xml:space="preserve">
+    <value>Pages de transcription</value>
+  </data>
+  <data name="Common.PageOf" xml:space="preserve">
+    <value>Page {0} sur {1}</value>
+  </data>
+  <data name="Home.Title" xml:space="preserve">
+    <value>Accueil</value>
+  </data>
+  <data name="Home.Coach" xml:space="preserve">
+    <value>Coach d’apprentissage</value>
+  </data>
+  <data name="Home.Kicker" xml:space="preserve">
+    <value>Votre espace d’apprentissage des langues</value>
+  </data>
+  <data name="Home.TitleWithLanguage" xml:space="preserve">
+    <value>Intégrez {0} à votre quotidien.</value>
+  </data>
+  <data name="Home.TitleAnonymous" xml:space="preserve">
+    <value>Transformez de nouveaux mots en conversations réelles.</value>
+  </data>
+  <data name="Home.Description" xml:space="preserve">
+    <value>Développez votre vocabulaire à partir de ce que vous lisez, fixez-le grâce à une pratique ciblée, puis utilisez-le à l’oral avec un partenaire de conversation IA.</value>
+  </data>
+  <data name="Home.StartLearning" xml:space="preserve">
+    <value>Commencer à apprendre</value>
+  </data>
+  <data name="Home.ChooseLanguage" xml:space="preserve">
+    <value>Choisir une langue</value>
+  </data>
+  <data name="Home.BrowseShared" xml:space="preserve">
+    <value>Parcourir les ensembles partagés</value>
+  </data>
+  <data name="Home.StartSpeaking" xml:space="preserve">
+    <value>Commencer à parler</value>
+  </data>
+  <data name="Home.OpenQuizzes" xml:space="preserve">
+    <value>Ouvrir mes quiz</value>
+  </data>
+  <data name="Home.WaysAria" xml:space="preserve">
+    <value>Différentes façons d’apprendre avec Glosify</value>
+  </data>
+  <data name="Home.ReadContext" xml:space="preserve">
+    <value>Lire en contexte</value>
+  </data>
+  <data name="Home.PracticeRecall" xml:space="preserve">
+    <value>Entraîner la mémorisation</value>
+  </data>
+  <data name="Home.SpeakConfidence" xml:space="preserve">
+    <value>Parler avec assurance</value>
+  </data>
+  <data name="Home.LoopAria" xml:space="preserve">
+    <value>Une boucle d’apprentissage connectée, de la lecture à l’expression orale</value>
+  </data>
+  <data name="Home.Discover" xml:space="preserve">
+    <value>Découvrir</value>
+  </data>
+  <data name="Home.Remember" xml:space="preserve">
+    <value>Mémoriser</value>
+  </data>
+  <data name="Home.LearningLoop" xml:space="preserve">
+    <value>Votre boucle d’apprentissage</value>
+  </data>
+  <data name="Home.TodayMindset" xml:space="preserve">
+    <value>L’état d’esprit du jour</value>
+  </data>
+  <data name="Home.SmallSteps" xml:space="preserve">
+    <value>De petits pas. De vrais progrès.</value>
+  </data>
+  <data name="Home.QuickStart" xml:space="preserve">
+    <value>Démarrage rapide</value>
+  </data>
+  <data name="Home.ChooseNext" xml:space="preserve">
+    <value>Choisissez votre prochaine étape</value>
+  </data>
+  <data name="Home.LearningLanguage" xml:space="preserve">
+    <value>Apprendre le {0}</value>
+  </data>
+  <data name="Home.BuildVocabulary" xml:space="preserve">
+    <value>Développer son vocabulaire</value>
+  </data>
+  <data name="Home.BuildVocabularyText" xml:space="preserve">
+    <value>Créez des ensembles ciblés à partir des mots que vous voulez vraiment utiliser.</value>
+  </data>
+  <data name="Home.PracticeRecallText" xml:space="preserve">
+    <value>Utilisez des cartes mémoire, la saisie et des quiz personnalisés pour bien mémoriser les mots.</value>
+  </data>
+  <data name="Home.SpeakNaturally" xml:space="preserve">
+    <value>Parler naturellement</value>
+  </data>
+  <data name="Home.SpeakNaturallyText" xml:space="preserve">
+    <value>Entrez dans une scène guidée et recevez un accompagnement privé après chaque tour.</value>
+  </data>
+  <data name="Home.ConnectedKicker" xml:space="preserve">
+    <value>Un espace de travail connecté</value>
+  </data>
+  <data name="Home.ConnectedTitle" xml:space="preserve">
+    <value>Apprenez à partir de tout ce qui retient déjà votre attention.</value>
+  </data>
+  <data name="Home.ConnectedText" xml:space="preserve">
+    <value>Un livre, une liste de mots partagée ou un devoir de classe peuvent devenir le point de départ de votre prochaine séance de pratique. Votre vocabulaire reste à portée de main où que vous alliez ensuite.</value>
+  </data>
+  <data name="Home.ExploreCollections" xml:space="preserve">
+    <value>Explorer les collections de la communauté</value>
+  </data>
+  <data name="Home.ReadCollect" xml:space="preserve">
+    <value>Lire et collecter</value>
+  </data>
+  <data name="Home.ReadCollectText" xml:space="preserve">
+    <value>Transformez un PDF en vocabulaire sans quitter la page.</value>
+  </data>
+  <data name="Home.ExploreTogether" xml:space="preserve">
+    <value>Explorer ensemble</value>
+  </data>
+  <data name="Home.ExploreTogetherText" xml:space="preserve">
+    <value>Copiez des quiz et des collections publics dans votre bibliothèque.</value>
+  </data>
+  <data name="Home.JoinClassroom" xml:space="preserve">
+    <value>Rejoindre une classe</value>
+  </data>
+  <data name="Home.JoinClassroomText" xml:space="preserve">
+    <value>Apprenez avec des devoirs, du contenu partagé et une assistance en direct.</value>
+  </data>
+  <data name="Home.YourTurn" xml:space="preserve">
+    <value>À vous de jouer</value>
+  </data>
+  <data name="Home.TodayLanguage" xml:space="preserve">
+    <value>Que ferez-vous aujourd’hui en {0} ?</value>
+  </data>
+  <data name="Home.PickFirstWord" xml:space="preserve">
+    <value>Choisissez une langue et commencez par un mot utile.</value>
+  </data>
+  <data name="Home.ContinueLearning" xml:space="preserve">
+    <value>Continuer à apprendre</value>
+  </data>
+  <data name="Home.PickLanguage" xml:space="preserve">
+    <value>Choisir une langue</value>
+  </data>
+  <data name="Home.CreateAccount" xml:space="preserve">
+    <value>Créer un compte</value>
+  </data>
+  <data name="Auth.BrandTagline" xml:space="preserve">
+    <value>Immersion linguistique sonore</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>Connexion</value>
+  </data>
+  <data name="Auth.WelcomeBack" xml:space="preserve">
+    <value>Bon retour</value>
+  </data>
+  <data name="Auth.LoginIntro" xml:space="preserve">
+    <value>Veuillez saisir vos informations pour reprendre votre parcours.</value>
+  </data>
+  <data name="Auth.TrialLabel" xml:space="preserve">
+    <value>Offre d’essai :</value>
+  </data>
+  <data name="Auth.TrialText" xml:space="preserve">
+    <value>recevez 25 crédits une seule fois lorsque vous vous connectez avec Google ou Microsoft. Les comptes avec mot de passe ne reçoivent pas de crédits d’essai automatiques.</value>
+  </data>
+  <data name="Auth.EmailAddress" xml:space="preserve">
+    <value>Adresse e-mail</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>Mot de passe</value>
+  </data>
+  <data name="Auth.Forgot" xml:space="preserve">
+    <value>Mot de passe oublié ?</value>
+  </data>
+  <data name="Auth.OrContinue" xml:space="preserve">
+    <value>Ou continuer avec</value>
+  </data>
+  <data name="Auth.ContinueProvider" xml:space="preserve">
+    <value>Continuer avec {0}</value>
+  </data>
+  <data name="Auth.NoAccount" xml:space="preserve">
+    <value>Vous n’avez pas de compte ?</value>
+  </data>
+  <data name="Auth.CreateAccount" xml:space="preserve">
+    <value>Créer un compte</value>
+  </data>
+  <data name="Auth.RegisterTitle" xml:space="preserve">
+    <value>S’inscrire</value>
+  </data>
+  <data name="Auth.CreateYourAccount" xml:space="preserve">
+    <value>Créez votre compte</value>
+  </data>
+  <data name="Auth.RegisterIntro" xml:space="preserve">
+    <value>Commencez dès aujourd’hui votre parcours d’immersion linguistique.</value>
+  </data>
+  <data name="Auth.RegisterTrialLabel" xml:space="preserve">
+    <value>Essai de 25 crédits :</value>
+  </data>
+  <data name="Auth.RegisterTrialText" xml:space="preserve">
+    <value>disponible une seule fois après avoir associé votre compte et vous être connecté avec Google ou Microsoft. La création d’un compte avec mot de passe seule n’ajoute pas de crédits d’essai.</value>
+  </data>
+  <data name="Auth.ConfirmPassword" xml:space="preserve">
+    <value>Confirmer le mot de passe</value>
+  </data>
+  <data name="Auth.AlreadyAccount" xml:space="preserve">
+    <value>Vous avez déjà un compte ?</value>
+  </data>
+  <data name="Auth.ForgotTitle" xml:space="preserve">
+    <value>Mot de passe oublié</value>
+  </data>
+  <data name="Auth.ForgotHeading" xml:space="preserve">
+    <value>Réinitialisez votre mot de passe</value>
+  </data>
+  <data name="Auth.ForgotUnavailable" xml:space="preserve">
+    <value>La réinitialisation du mot de passe par e-mail n’est pas encore disponible. Contactez le support si vous avez besoin d’aide pour accéder à votre compte.</value>
+  </data>
+  <data name="Auth.BackToLogin" xml:space="preserve">
+    <value>Retour à la connexion</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>E-mail ou mot de passe incorrect.</value>
+  </data>
+  <data name="Auth.AccountLocked" xml:space="preserve">
+    <value>Compte verrouillé. Veuillez réessayer plus tard.</value>
+  </data>
+  <data name="Auth.ExternalNotConfigured" xml:space="preserve">
+    <value>La connexion {0} n’est pas configurée.</value>
+  </data>
+  <data name="Auth.ExternalFailed" xml:space="preserve">
+    <value>Échec de la connexion externe.</value>
+  </data>
+  <data name="Auth.ExternalProviderFailed" xml:space="preserve">
+    <value>Échec de la connexion {0}. Vérifiez l’ID client OAuth local {0} et le secret client, puis réessayez.</value>
+  </data>
+  <data name="Identity.DuplicateUserName" xml:space="preserve">
+    <value>Un compte avec cette adresse e-mail existe déjà.</value>
+  </data>
+  <data name="Identity.DuplicateEmail" xml:space="preserve">
+    <value>Un compte avec cette adresse e-mail existe déjà.</value>
+  </data>
+  <data name="Identity.PasswordTooShort" xml:space="preserve">
+    <value>Le mot de passe est trop court.</value>
+  </data>
+  <data name="Identity.PasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>Le mot de passe doit contenir un symbole.</value>
+  </data>
+  <data name="Identity.PasswordRequiresDigit" xml:space="preserve">
+    <value>Le mot de passe doit contenir un chiffre.</value>
+  </data>
+  <data name="Identity.PasswordRequiresLower" xml:space="preserve">
+    <value>Le mot de passe doit contenir une lettre minuscule.</value>
+  </data>
+  <data name="Identity.PasswordRequiresUpper" xml:space="preserve">
+    <value>Le mot de passe doit contenir une lettre majuscule.</value>
+  </data>
+  <data name="Identity.DefaultError" xml:space="preserve">
+    <value>Le compte n’a pas pu être créé. Vérifiez vos informations et réessayez.</value>
+  </data>
+  <data name="Validation.PasswordsMismatch" xml:space="preserve">
+    <value>Les mots de passe ne correspondent pas.</value>
+  </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>Le champ {0} est obligatoire.</value>
+  </data>
+  <data name="Validation.Email" xml:space="preserve">
+    <value>Le champ {0} n’est pas une adresse e-mail valide.</value>
+  </data>
+  <data name="Validation.MinLength" xml:space="preserve">
+    <value>Le champ {0} doit être une chaîne ou un tableau d’une longueur minimale de « {1} ».</value>
+  </data>
+  <data name="Legal.Label" xml:space="preserve">
+    <value>Mentions légales</value>
+  </data>
+  <data name="Legal.PrivacyPolicy" xml:space="preserve">
+    <value>Politique de confidentialité</value>
+  </data>
+  <data name="Legal.TermsOfService" xml:space="preserve">
+    <value>Conditions d’utilisation</value>
+  </data>
+  <data name="Legal.Support" xml:space="preserve">
+    <value>Assistance</value>
+  </data>
+  <data name="Legal.PrivacyTitle" xml:space="preserve">
+    <value>Confidentialité</value>
+  </data>
+  <data name="Legal.TermsTitle" xml:space="preserve">
+    <value>Conditions</value>
+  </data>
+  <data name="Legal.EnglishGoverns" xml:space="preserve">
+    <value>Cette traduction est fournie pour plus de commodité. Si elle diffère de la version anglaise, la version anglaise fait foi.</value>
+  </data>
+  <data name="Transcripts.CountOne" xml:space="preserve">
+    <value>{0} enregistré</value>
+  </data>
+  <data name="Transcripts.CountMany" xml:space="preserve">
+    <value>{0} enregistrés</value>
+  </data>
+  <data name="Transcripts.CaptionOne" xml:space="preserve">
+    <value>{0} sous-titre</value>
+  </data>
+  <data name="Transcripts.CaptionMany" xml:space="preserve">
+    <value>{0} sous-titres</value>
+  </data>
+  <data name="Quiz.Progress" xml:space="preserve">
+    <value>{0} sur {1} {2}</value>
+  </data>
+  <data name="Quiz.CorrectCount" xml:space="preserve">
+    <value>{0} correct</value>
+  </data>
+  <data name="Quiz.PromptLabel" xml:space="preserve">
+    <value>invite {0}</value>
+  </data>
+  <data name="Quiz.UkrainianKeyboard" xml:space="preserve">
+    <value>Clavier virtuel ukrainien</value>
+  </data>
+  <data name="Books.Title" xml:space="preserve">
+    <value>Livres</value>
+  </data>
+  <data name="Books.YourBooks" xml:space="preserve">
+    <value>Vos livres</value>
+  </data>
+  <data name="Books.LanguageBooks" xml:space="preserve">
+    <value>Vos livres en {0}</value>
+  </data>
+  <data name="Books.LanguageTitle" xml:space="preserve">
+    <value>Livres en {0}</value>
+  </data>
+  <data name="Books.YourLibrary" xml:space="preserve">
+    <value>Votre bibliothèque</value>
+  </data>
+  <data name="Books.HeroPrefix" xml:space="preserve">
+    <value>Transformez chaque page en</value>
+  </data>
+  <data name="Books.Progress" xml:space="preserve">
+    <value>progression.</value>
+  </data>
+  <data name="Books.HeroText" xml:space="preserve">
+    <value>Apportez votre propre support de lecture et utilisez Glosify pour explorer chaque page, chaque expression et chaque nouveau mot.</value>
+  </data>
+  <data name="Books.SummaryAria" xml:space="preserve">
+    <value>Résumé de la bibliothèque</value>
+  </data>
+  <data name="Books.BookOne" xml:space="preserve">
+    <value>livre</value>
+  </data>
+  <data name="Books.BookMany" xml:space="preserve">
+    <value>livres</value>
+  </data>
+  <data name="Books.PageOne" xml:space="preserve">
+    <value>page</value>
+  </data>
+  <data name="Books.PageMany" xml:space="preserve">
+    <value>pages</value>
+  </data>
+  <data name="Books.AddShelf" xml:space="preserve">
+    <value>Ajouter à votre étagère</value>
+  </data>
+  <data name="Books.UploadPdf" xml:space="preserve">
+    <value>Téléverser un PDF</value>
+  </data>
+  <data name="Books.ChoosePdf" xml:space="preserve">
+    <value>Choisir un PDF</value>
+  </data>
+  <data name="Books.PdfLimit" xml:space="preserve">
+    <value>PDF textuel · jusqu’à 25 Mo</value>
+  </data>
+  <data name="Books.Browse" xml:space="preserve">
+    <value>Parcourir</value>
+  </data>
+  <data name="Books.AddLibrary" xml:space="preserve">
+    <value>Ajouter à la bibliothèque</value>
+  </data>
+  <data name="Books.KeepReading" xml:space="preserve">
+    <value>Continuer la lecture</value>
+  </data>
+  <data name="Books.OnShelf" xml:space="preserve">
+    <value>{0} sur votre étagère</value>
+  </data>
+  <data name="Books.DeleteConfirm" xml:space="preserve">
+    <value>Supprimer définitivement « {0} » et ses pages ? Les chats qui l’ont utilisé sont conservés.</value>
+  </data>
+  <data name="Books.Delete" xml:space="preserve">
+    <value>Supprimer {0}</value>
+  </data>
+  <data name="Books.Read" xml:space="preserve">
+    <value>Lire {0}</value>
+  </data>
+  <data name="Books.ReaderEdition" xml:space="preserve">
+    <value>Édition lecteur</value>
+  </data>
+  <data name="Books.Added" xml:space="preserve">
+    <value>Ajouté</value>
+  </data>
+  <data name="Books.PageCountOne" xml:space="preserve">
+    <value>{0} page</value>
+  </data>
+  <data name="Books.PageCountMany" xml:space="preserve">
+    <value>{0} pages</value>
+  </data>
+  <data name="Books.StartReading" xml:space="preserve">
+    <value>Commencer la lecture</value>
+  </data>
+  <data name="Books.ShelfReady" xml:space="preserve">
+    <value>Votre étagère est prête</value>
+  </data>
+  <data name="Books.NoLanguageBooks" xml:space="preserve">
+    <value>Aucun livre en {0} pour le moment</value>
+  </data>
+  <data name="Books.EmptyText" xml:space="preserve">
+    <value>Téléversez votre premier PDF textuel ci-dessus et commencez à apprendre à partir des choses que vous aimez déjà lire.</value>
+  </data>
+  <data name="Books.EmptyLanguageText" xml:space="preserve">
+    <value> Il sera ajouté à votre étagère en {0}.</value>
+  </data>
+  <data name="Books.ChooseFirst" xml:space="preserve">
+    <value>Choisissez votre premier livre</value>
+  </data>
+  <data name="Common.First" xml:space="preserve">
+    <value>Premier</value>
+  </data>
+  <data name="Common.Last" xml:space="preserve">
+    <value>Dernier</value>
+  </data>
+  <data name="Common.Page" xml:space="preserve">
+    <value>Page {0}</value>
+  </data>
+  <data name="Common.Go" xml:space="preserve">
+    <value>Aller</value>
+  </data>
+  <data name="Transcripts.AssistantTitle" xml:space="preserve">
+    <value>Assistant de transcription</value>
+  </data>
+  <data name="Transcripts.AssistantEmpty" xml:space="preserve">
+    <value>Posez une question sur cette transcription ou utilisez-la avec vos quiz existants.</value>
+  </data>
+  <data name="Transcripts.AssistantPlaceholder" xml:space="preserve">
+    <value>Posez une question sur cette transcription...</value>
+  </data>
+  <data name="Transcripts.OriginalFor" xml:space="preserve">
+    <value>Discours original enregistré pour l’apprentissage du {0}</value>
+  </data>
+  <data name="Transcripts.LegacyFor" xml:space="preserve">
+    <value>Sous-titres traduits hérités · apprentissage du {0}</value>
+  </data>
+  <data name="Transcripts.Started" xml:space="preserve">
+    <value>a commencé</value>
+  </data>
+  <data name="Transcripts.NameLabel" xml:space="preserve">
+    <value>Titre de la transcription</value>
+  </data>
+  <data name="Transcripts.Rename" xml:space="preserve">
+    <value>Renommer</value>
+  </data>
+  <data name="Transcripts.DeleteConfirm" xml:space="preserve">
+    <value>Supprimer définitivement cette transcription enregistrée ?</value>
+  </data>
+  <data name="Transcripts.StopBeforeDelete" xml:space="preserve">
+    <value>Arrêtez les sous-titres en direct avant de supprimer</value>
+  </data>
+  <data name="Transcripts.StreamAria" xml:space="preserve">
+    <value>Flux de sous-titres</value>
+  </data>
+  <data name="Transcripts.OriginalSpeech" xml:space="preserve">
+    <value>Discours original</value>
+  </data>
+  <data name="Transcripts.Translation" xml:space="preserve">
+    <value>Traduction</value>
+  </data>
+  <data name="Transcripts.TranslationNote" xml:space="preserve">
+    <value>Traduit en direct à partir du même audio par un autre modèle. Utile pour vérifier le sens lorsque le discours original a été mal entendu.</value>
+  </data>
+  <data name="Transcripts.OriginalNote" xml:space="preserve">
+    <value>Ce que le moteur de reconnaissance vocale a entendu. Passez à la traduction pour vérifier les passages peu clairs.</value>
+  </data>
+  <data name="Transcripts.SavedTranslationAria" xml:space="preserve">
+    <value>Sous-titres traduits enregistrés</value>
+  </data>
+  <data name="Transcripts.SavedOriginalAria" xml:space="preserve">
+    <value>Discours original enregistré</value>
+  </data>
+  <data name="Transcripts.TextPagesAria" xml:space="preserve">
+    <value>Pages de texte de la transcription</value>
+  </data>
+  <data name="Transcripts.JumpPage" xml:space="preserve">
+    <value>Aller à la page</value>
+  </data>
+  <data name="Common.Off" xml:space="preserve">
+    <value>Désactivé</value>
+  </data>
+  <data name="Reader.AssistantTitle" xml:space="preserve">
+    <value>Assistant de page</value>
+  </data>
+  <data name="Reader.AssistantEmpty" xml:space="preserve">
+    <value>Demandez du vocabulaire ou des phrases à partir de cette page.</value>
+  </data>
+  <data name="Reader.AssistantPlaceholder" xml:space="preserve">
+    <value>Créer un quiz à partir de cette page...</value>
+  </data>
+  <data name="Reader.TranslatedPage" xml:space="preserve">
+    <value>Page traduite</value>
+  </data>
+  <data name="Reader.BackBooks" xml:space="preserve">
+    <value>Retour aux livres</value>
+  </data>
+  <data name="Reader.PdfControls" xml:space="preserve">
+    <value>Commandes d’affichage du PDF</value>
+  </data>
+  <data name="Reader.ZoomOut" xml:space="preserve">
+    <value>Dézoomer</value>
+  </data>
+  <data name="Reader.ResetZoom100" xml:space="preserve">
+    <value>Réinitialiser le zoom à 100 %</value>
+  </data>
+  <data name="Reader.ResetZoom" xml:space="preserve">
+    <value>Réinitialiser le zoom</value>
+  </data>
+  <data name="Reader.ZoomIn" xml:space="preserve">
+    <value>Zoomer</value>
+  </data>
+  <data name="Reader.FitPage" xml:space="preserve">
+    <value>Ajuster à la page</value>
+  </data>
+  <data name="Reader.Rotate" xml:space="preserve">
+    <value>Faire pivoter dans le sens horaire</value>
+  </data>
+  <data name="Reader.PolishVoice" xml:space="preserve">
+    <value>Voix de lecture polie</value>
+  </data>
+  <data name="Reader.ReadAloud" xml:space="preserve">
+    <value>Lire cette page à voix haute</value>
+  </data>
+  <data name="Reader.Read" xml:space="preserve">
+    <value>Lire</value>
+  </data>
+  <data name="Reader.TranslationControls" xml:space="preserve">
+    <value>Commandes de traduction de la page</value>
+  </data>
+  <data name="Reader.TranslateOffAria" xml:space="preserve">
+    <value>La traduction est désactivée. Traduire cette page</value>
+  </data>
+  <data name="Reader.TranslateOffTitle" xml:space="preserve">
+    <value>La traduction est désactivée. Cliquez pour traduire cette page</value>
+  </data>
+  <data name="Reader.Translation" xml:space="preserve">
+    <value>Traduction</value>
+  </data>
+  <data name="Reader.TranslationLanguage" xml:space="preserve">
+    <value>Langue de traduction</value>
+  </data>
+  <data name="Reader.SplitAria" xml:space="preserve">
+    <value>Afficher l’original et la traduction côte à côte</value>
+  </data>
+  <data name="Reader.SplitView" xml:space="preserve">
+    <value>Vue partagée</value>
+  </data>
+  <data name="Reader.Original" xml:space="preserve">
+    <value>Original</value>
+  </data>
+  <data name="Reader.PreviousPage" xml:space="preserve">
+    <value>Page précédente</value>
+  </data>
+  <data name="Reader.NextPage" xml:space="preserve">
+    <value>Page suivante</value>
+  </data>
+  <data name="Client.GenericError" xml:space="preserve">
+    <value>Une erreur s’est produite. Veuillez réessayer.</value>
+  </data>
+  <data name="Client.NetworkError" xml:space="preserve">
+    <value>Erreur réseau. Veuillez réessayer.</value>
+  </data>
+  <data name="Client.TryAgain" xml:space="preserve">
+    <value>Réessayer</value>
+  </data>
+  <data name="Client.Loading" xml:space="preserve">
+    <value>Chargement…</value>
+  </data>
+  <data name="Client.Correct" xml:space="preserve">
+    <value>Correct</value>
+  </data>
+  <data name="Client.Incorrect" xml:space="preserve">
+    <value>Incorrect</value>
+  </data>
+  <data name="Client.NextWord" xml:space="preserve">
+    <value>Mot suivant</value>
+  </data>
+  <data name="Client.CheckFailed" xml:space="preserve">
+    <value>Impossible de vérifier cette réponse. Réessayez.</value>
+  </data>
+  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
+    <value>Supprimer ce quiz personnalisé ?</value>
+  </data>
+  <data name="Client.DeleteQuizFailed" xml:space="preserve">
+    <value>Impossible de supprimer le quiz personnalisé. Réessayez.</value>
+  </data>
+  <data name="Client.RepairFailed" xml:space="preserve">
+    <value>La réparation a échoué. Veuillez réessayer.</value>
+  </data>
+  <data name="Client.RepairStopped" xml:space="preserve">
+    <value>La demande de réparation s’est arrêtée de manière inattendue. Veuillez réessayer.</value>
+  </data>
+  <data name="Client.DeleteChat" xml:space="preserve">
+    <value>Supprimer la conversation</value>
+  </data>
+  <data name="Client.DeleteChatConfirm" xml:space="preserve">
+    <value>Supprimer cette conversation ?</value>
+  </data>
+  <data name="Client.ApplyFailed" xml:space="preserve">
+    <value>Impossible d’appliquer les modifications.</value>
+  </data>
+  <data name="Client.ApplyNetwork" xml:space="preserve">
+    <value>Erreur réseau lors de l’application des modifications.</value>
+  </data>
+  <data name="Client.RejectNetwork" xml:space="preserve">
+    <value>Erreur réseau lors du rejet des modifications.</value>
+  </data>
+  <data name="Client.AssistantFailed" xml:space="preserve">
+    <value>L’assistant n’a pas pu répondre.</value>
+  </data>
+  <data name="Client.AssistantNetwork" xml:space="preserve">
+    <value>Erreur réseau lors de la communication avec l’assistant.</value>
+  </data>
+  <data name="Client.PictureFailed" xml:space="preserve">
+    <value>Impossible de lire le texte de cette image.</value>
+  </data>
+  <data name="Client.PictureNetwork" xml:space="preserve">
+    <value>Erreur réseau lors de la lecture de l’image.</value>
+  </data>
+  <data name="Client.MessageFailed" xml:space="preserve">
+    <value>L’envoi du message a échoué.</value>
+  </data>
+  <data name="Client.JoinCallFailed" xml:space="preserve">
+    <value>Impossible de rejoindre l’appel.</value>
+  </data>
+  <data name="Client.CallTokenFailed" xml:space="preserve">
+    <value>Impossible d’obtenir un jeton d’appel.</value>
+  </data>
+  <data name="Client.PageOf" xml:space="preserve">
+    <value>Page {0} sur {1}</value>
+  </data>
+  <data name="Client.TtsNoText" xml:space="preserve">
+    <value>Aucun texte sélectionnable n’est disponible pour la lecture.</value>
+  </data>
+  <data name="Client.TtsUnavailable" xml:space="preserve">
+    <value>La synthèse vocale n’est pas disponible dans ce navigateur.</value>
+  </data>
+  <data name="Client.TtsFailed" xml:space="preserve">
+    <value>La lecture de la synthèse vocale a échoué.</value>
+  </data>
+  <data name="Client.TranslationFailed" xml:space="preserve">
+    <value>La page n’a pas pu être traduite.</value>
+  </data>
+  <data name="Client.PreferenceFailed" xml:space="preserve">
+    <value>La préférence de langue n’a pas pu être enregistrée.</value>
+  </data>
+  <data name="Client.On" xml:space="preserve">
+    <value>Activé</value>
+  </data>
+  <data name="Client.Off" xml:space="preserve">
+    <value>Désactivé</value>
+  </data>
+  <data name="Client.Translating" xml:space="preserve">
+    <value>Traduction…</value>
+  </data>
+  <data name="Client.TranslationError" xml:space="preserve">
+    <value>Erreur</value>
+  </data>
+  <data name="Client.Read" xml:space="preserve">
+    <value>Lire</value>
+  </data>
+  <data name="Client.Stop" xml:space="preserve">
+    <value>Arrêter</value>
+  </data>
+  <data name="Client.MessageRateLimited" xml:space="preserve">
+    <value>Vous envoyez des messages trop rapidement. Veuillez patienter un instant.</value>
+  </data>
+  <data name="Client.SessionExpired" xml:space="preserve">
+    <value>Session expirée. Redémarrez le quiz pour continuer.</value>
+  </data>
+  <data name="Client.NotQuite" xml:space="preserve">
+    <value>Pas tout à fait</value>
+  </data>
+  <data name="Client.ShowResults" xml:space="preserve">
+    <value>Afficher les résultats</value>
+  </data>
+  <data name="Quiz.LibraryTitle" xml:space="preserve">
+    <value>Sélectionner un quiz</value>
+  </data>
+  <data name="Quiz.SelectQuiz" xml:space="preserve">
+    <value>Sélectionner un quiz</value>
+  </data>
+  <data name="Quiz.ShowingLanguage" xml:space="preserve">
+    <value>Affichage de vos quiz en {0}.</value>
+  </data>
+  <data name="Quiz.LanguageCollection" xml:space="preserve">
+    <value>Collection {0}.</value>
+  </data>
+  <data name="Quiz.Library" xml:space="preserve">
+    <value>Bibliothèque de quiz</value>
+  </data>
+  <data name="Quiz.ChangeLanguage" xml:space="preserve">
+    <value>Changer de langue</value>
+  </data>
+  <data name="Quiz.MakePrivate" xml:space="preserve">
+    <value>Rendre la collection privée</value>
+  </data>
+  <data name="Quiz.MakePublic" xml:space="preserve">
+    <value>Rendre la collection publique</value>
+  </data>
+  <data name="Quiz.PublicSubtree" xml:space="preserve">
+    <value>Sous-arborescence publique</value>
+  </data>
+  <data name="Quiz.Private" xml:space="preserve">
+    <value>Privé</value>
+  </data>
+  <data name="Quiz.LibrarySummary" xml:space="preserve">
+    <value>Résumé de la bibliothèque</value>
+  </data>
+  <data name="Quiz.CollectionOne" xml:space="preserve">
+    <value>collection</value>
+  </data>
+  <data name="Quiz.CollectionMany" xml:space="preserve">
+    <value>collections</value>
+  </data>
+  <data name="Quiz.QuizOne" xml:space="preserve">
+    <value>quiz</value>
+  </data>
+  <data name="Quiz.QuizMany" xml:space="preserve">
+    <value>quiz</value>
+  </data>
+  <data name="Quiz.NewCollection" xml:space="preserve">
+    <value>Nouvelle collection</value>
+  </data>
+  <data name="Quiz.NewQuiz" xml:space="preserve">
+    <value>Nouveau quiz</value>
+  </data>
+  <data name="Quiz.Collections" xml:space="preserve">
+    <value>Collections</value>
+  </data>
+  <data name="Quiz.CollectionsHelp" xml:space="preserve">
+    <value>Regroupez les quiz associés et gardez votre parcours d’apprentissage bien organisé.</value>
+  </data>
+  <data name="Quiz.DropInto" xml:space="preserve">
+    <value>Déposez les quiz dans {0}</value>
+  </data>
+  <data name="Quiz.NestedCount" xml:space="preserve">
+    <value>{0} imbriqués</value>
+  </data>
+  <data name="Quiz.YourQuizzes" xml:space="preserve">
+    <value>Vos quiz</value>
+  </data>
+  <data name="Quiz.DragHelp" xml:space="preserve">
+    <value>Ouvrez un quiz pour étudier, ou faites-le glisser sur une collection pour l’organiser.</value>
+  </data>
+  <data name="Quiz.ChooseHelp" xml:space="preserve">
+    <value>Choisissez un quiz et poursuivez votre progression d’apprentissage.</value>
+  </data>
+  <data name="Quiz.DeleteConfirm" xml:space="preserve">
+    <value>Supprimer ce quiz et tous ses mots ?</value>
+  </data>
+  <data name="Quiz.DeleteNamed" xml:space="preserve">
+    <value>Supprimer {0}</value>
+  </data>
+  <data name="Quiz.Delete" xml:space="preserve">
+    <value>Supprimer le quiz</value>
+  </data>
+  <data name="Quiz.EmptyTitle" xml:space="preserve">
+    <value>Aucun quiz ni collection pour le moment</value>
+  </data>
+  <data name="Quiz.EmptyText" xml:space="preserve">
+    <value>Créez une collection pour organiser votre vocabulaire, ou créez votre premier quiz.</value>
+  </data>
+  <data name="Quiz.CreateCollection" xml:space="preserve">
+    <value>Créer une collection</value>
+  </data>
+  <data name="Quiz.CreateQuiz" xml:space="preserve">
+    <value>Créer un quiz</value>
+  </data>
+  <data name="Quiz.CreateNewCollection" xml:space="preserve">
+    <value>Créer une nouvelle collection</value>
+  </data>
+  <data name="Quiz.CollectionName" xml:space="preserve">
+    <value>Nom de la collection</value>
+  </data>
+  <data name="Quiz.CollectionExample" xml:space="preserve">
+    <value>p. ex. Phrases de voyage</value>
+  </data>
+  <data name="Quiz.CreateNewQuiz" xml:space="preserve">
+    <value>Créer un nouveau quiz</value>
+  </data>
+  <data name="Quiz.Name" xml:space="preserve">
+    <value>Nom du quiz</value>
+  </data>
+  <data name="Quiz.NameExample" xml:space="preserve">
+    <value>p. ex. Bases du français</value>
+  </data>
+  <data name="Quiz.SourceLanguage" xml:space="preserve">
+    <value>Langue source</value>
+  </data>
+  <data name="Quiz.SelectLanguage" xml:space="preserve">
+    <value>Sélectionner une langue...</value>
+  </data>
+  <data name="Quiz.TargetLanguage" xml:space="preserve">
+    <value>Langue cible</value>
+  </data>
+  <data name="Books.UploadRequired" xml:space="preserve">
+    <value>Choisissez un fichier PDF à téléverser.</value>
+  </data>
+  <data name="Books.Uploaded" xml:space="preserve">
+    <value>{0} téléversé.</value>
+  </data>
+  <data name="Books.UploadInvalid" xml:space="preserve">
+    <value>Choisissez un PDF textuel valide de moins de 25 Mo.</value>
+  </data>
+  <data name="Books.ProcessFailed" xml:space="preserve">
+    <value>Le PDF n’a pas pu être traité. Essayez un PDF textuel.</value>
+  </data>
+  <data name="Books.Deleted" xml:space="preserve">
+    <value>{0} supprimé.</value>
+  </data>
+  <data name="Books.PaidUnavailable" xml:space="preserve">
+    <value>Les fonctionnalités payantes de {0} seront de nouveau disponibles à {1}.</value>
+  </data>
+  <data name="Books.PaidReason" xml:space="preserve">
+    <value>Le budget mensuel de l’application a été atteint.</value>
+  </data>
+  <data name="Transcripts.Renamed" xml:space="preserve">
+    <value>Transcription renommée.</value>
+  </data>
+  <data name="Transcripts.InvalidTitle" xml:space="preserve">
+    <value>Les titres des transcriptions doivent comporter entre 1 et 160 caractères.</value>
+  </data>
+  <data name="Transcripts.Deleted" xml:space="preserve">
+    <value>Transcription supprimée.</value>
+  </data>
+  <data name="Common.Accept" xml:space="preserve">
+    <value>Accepter</value>
+  </data>
+  <data name="Common.Optional" xml:space="preserve">
+    <value>Facultatif</value>
+  </data>
+  <data name="Common.Open" xml:space="preserve">
+    <value>Ouvrir</value>
+  </data>
+  <data name="Common.Copy" xml:space="preserve">
+    <value>Copier</value>
+  </data>
+  <data name="Classroom.Title" xml:space="preserve">
+    <value>Salles de classe</value>
+  </data>
+  <data name="Classroom.MyClassrooms" xml:space="preserve">
+    <value>Mes salles de classe</value>
+  </data>
+  <data name="Classroom.LanguageClassrooms" xml:space="preserve">
+    <value>Vos salles de classe en {0}</value>
+  </data>
+  <data name="Classroom.LanguageTitle" xml:space="preserve">
+    <value>Salles de classe en {0}</value>
+  </data>
+  <data name="Classroom.SharedSpaces" xml:space="preserve">
+    <value>Espaces d’apprentissage partagés</value>
+  </data>
+  <data name="Classroom.LearnBetter" xml:space="preserve">
+    <value>Apprenez mieux,</value>
+  </data>
+  <data name="Classroom.Together" xml:space="preserve">
+    <value>ensemble.</value>
+  </data>
+  <data name="Classroom.HeroText" xml:space="preserve">
+    <value>Créez un espace pour vos apprenants, partagez des supports d’entraînement et gardez tout le monde dans la même direction.</value>
+  </data>
+  <data name="Classroom.Summary" xml:space="preserve">
+    <value>Résumé de la salle de classe</value>
+  </data>
+  <data name="Classroom.One" xml:space="preserve">
+    <value>salle de classe</value>
+  </data>
+  <data name="Classroom.Many" xml:space="preserve">
+    <value>salles de classe</value>
+  </data>
+  <data name="Classroom.MemberOne" xml:space="preserve">
+    <value>membre</value>
+  </data>
+  <data name="Classroom.MemberMany" xml:space="preserve">
+    <value>membres</value>
+  </data>
+  <data name="Classroom.Waiting" xml:space="preserve">
+    <value>en attente</value>
+  </data>
+  <data name="Classroom.LanguageLab" xml:space="preserve">
+    <value>Laboratoire de langue</value>
+  </data>
+  <data name="Classroom.LearnersActive" xml:space="preserve">
+    <value>{0} apprenants actifs</value>
+  </data>
+  <data name="Classroom.Live" xml:space="preserve">
+    <value>En direct</value>
+  </data>
+  <data name="Classroom.PracticeCompleted" xml:space="preserve">
+    <value>Entraînement terminé</value>
+  </data>
+  <data name="Classroom.WaitingForYou" xml:space="preserve">
+    <value>En attente de vous</value>
+  </data>
+  <data name="Classroom.Invitations" xml:space="preserve">
+    <value>Invitations</value>
+  </data>
+  <data name="Classroom.NewCount" xml:space="preserve">
+    <value>{0} nouveau</value>
+  </data>
+  <data name="Classroom.Invited" xml:space="preserve">
+    <value>Vous êtes invité</value>
+  </data>
+  <data name="Classroom.InvitedBy" xml:space="preserve">
+    <value>{0} vous a invité à rejoindre en tant que {1}</value>
+  </data>
+  <data name="Classroom.DeclineInvitation" xml:space="preserve">
+    <value>Refuser l’invitation à {0}</value>
+  </data>
+  <data name="Classroom.GetStarted" xml:space="preserve">
+    <value>Commencer</value>
+  </data>
+  <data name="Classroom.MakeOrJoin" xml:space="preserve">
+    <value>Créez un espace ou rejoignez-en un</value>
+  </data>
+  <data name="Classroom.ForTeachers" xml:space="preserve">
+    <value>Pour les enseignants</value>
+  </data>
+  <data name="Classroom.Create" xml:space="preserve">
+    <value>Créer une classe</value>
+  </data>
+  <data name="Classroom.CreateHelp" xml:space="preserve">
+    <value>Créez un espace d’accueil pour les leçons, les quiz, les livres et les échanges.</value>
+  </data>
+  <data name="Classroom.LanguageHelp" xml:space="preserve">
+    <value> Ce sera une classe de {0}.</value>
+  </data>
+  <data name="Classroom.Name" xml:space="preserve">
+    <value>Nom de la classe</value>
+  </data>
+  <data name="Classroom.NameExample" xml:space="preserve">
+    <value>p. ex. Swedish A2 · Spring</value>
+  </data>
+  <data name="Classroom.ShortDescription" xml:space="preserve">
+    <value>Brève description</value>
+  </data>
+  <data name="Classroom.DescriptionPlaceholder" xml:space="preserve">
+    <value>Qu’apprendra votre groupe ?</value>
+  </data>
+  <data name="Classroom.HaveCode" xml:space="preserve">
+    <value>Vous avez un code d’invitation ?</value>
+  </data>
+  <data name="Classroom.Join" xml:space="preserve">
+    <value>Rejoindre une classe</value>
+  </data>
+  <data name="Classroom.JoinHelp" xml:space="preserve">
+    <value>Saisissez le code à huit caractères communiqué par votre enseignant.</value>
+  </data>
+  <data name="Classroom.JoinCode" xml:space="preserve">
+    <value>Code de connexion</value>
+  </data>
+  <data name="Classroom.JoinThis" xml:space="preserve">
+    <value>Rejoindre cette classe</value>
+  </data>
+  <data name="Classroom.YourSpaces" xml:space="preserve">
+    <value>Vos espaces d’apprentissage</value>
+  </data>
+  <data name="Classroom.TotalCount" xml:space="preserve">
+    <value>{0} au total</value>
+  </data>
+  <data name="Classroom.OpenNamed" xml:space="preserve">
+    <value>Ouvrir {0}</value>
+  </data>
+  <data name="Classroom.CardPlaceholder" xml:space="preserve">
+    <value>Un espace partagé pour apprendre et s’exercer.</value>
+  </data>
+  <data name="Classroom.BetterCompany" xml:space="preserve">
+    <value>Apprendre est meilleur à plusieurs</value>
+  </data>
+  <data name="Classroom.NoLanguageYet" xml:space="preserve">
+    <value>Aucune classe de {0} pour le moment</value>
+  </data>
+  <data name="Classroom.EmptyHelp" xml:space="preserve">
+    <value>Créez votre première classe ou demandez à votre enseignant un code de connexion pour retrouver votre groupe.</value>
+  </data>
+  <data name="Classroom.CreateFirst" xml:space="preserve">
+    <value>Créez votre premier espace</value>
+  </data>
+  <data name="Classroom.JoinCall" xml:space="preserve">
+    <value>Rejoindre l’appel</value>
+  </data>
+  <data name="Classroom.VideoCall" xml:space="preserve">
+    <value>Appel vidéo</value>
+  </data>
+  <data name="Classroom.Sections" xml:space="preserve">
+    <value>Sections de la classe</value>
+  </data>
+  <data name="Classroom.Stream" xml:space="preserve">
+    <value>Fil</value>
+  </data>
+  <data name="Classroom.Content" xml:space="preserve">
+    <value>Contenu</value>
+  </data>
+  <data name="Classroom.Planning" xml:space="preserve">
+    <value>Planification</value>
+  </data>
+  <data name="Classroom.Members" xml:space="preserve">
+    <value>Membres</value>
+  </data>
+  <data name="Classroom.Results" xml:space="preserve">
+    <value>Résultats</value>
+  </data>
+  <data name="Speaking.LanguagePractice" xml:space="preserve">
+    <value>Pratique orale de {0}</value>
+  </data>
+  <data name="Speaking.HeroTitle" xml:space="preserve">
+    <value>Parlez pour entrer dans la langue.</value>
+  </data>
+  <data name="Speaking.HeroText" xml:space="preserve">
+    <value>Choisissez un tuteur ouvert ou une scène, parlez naturellement et recevez un accompagnement privé après chaque tour.</value>
+  </data>
+  <data name="Speaking.PracticeQuiz" xml:space="preserve">
+    <value>Quiz d’entraînement</value>
+  </data>
+  <data name="Speaking.ChooseQuiz" xml:space="preserve">
+    <value>Choisissez un quiz pour vous entraîner à l’oral</value>
+  </data>
+  <data name="Speaking.FreeLesson" xml:space="preserve">
+    <value>Leçon gratuite</value>
+  </data>
+  <data name="Speaking.PoweredBy" xml:space="preserve">
+    <value>Propulsé par Microsoft Foundry et Azure AI Speech</value>
+  </data>
+  <data name="Speaking.Settings" xml:space="preserve">
+    <value>Paramètres d’entraînement</value>
+  </data>
+  <data name="Speaking.ChooseAvatar" xml:space="preserve">
+    <value>Choisissez un avatar</value>
+  </data>
+  <data name="Speaking.Level" xml:space="preserve">
+    <value>Niveau</value>
+  </data>
+  <data name="Speaking.ChooseLevel" xml:space="preserve">
+    <value>Choisissez le niveau CECR</value>
+  </data>
+  <data name="Speaking.Beginner" xml:space="preserve">
+    <value>Débutant</value>
+  </data>
+  <data name="Speaking.Elementary" xml:space="preserve">
+    <value>Élémentaire</value>
+  </data>
+  <data name="Speaking.Intermediate" xml:space="preserve">
+    <value>Intermédiaire</value>
+  </data>
+  <data name="Speaking.UpperIntermediate" xml:space="preserve">
+    <value>Intermédiaire supérieur</value>
+  </data>
+  <data name="Speaking.Advanced" xml:space="preserve">
+    <value>Avancé</value>
+  </data>
+  <data name="Speaking.EnglishTranslation" xml:space="preserve">
+    <value>Traduction anglaise</value>
+  </data>
+  <data name="Speaking.MuteAvatar" xml:space="preserve">
+    <value>Couper le son de l’avatar</value>
+  </data>
+  <data name="Speaking.AvatarScene" xml:space="preserve">
+    <value>Scène de l’avatar</value>
+  </data>
+  <data name="Speaking.HoldSpeak" xml:space="preserve">
+    <value>Maintenez pour parler et envoyer</value>
+  </data>
+  <data name="Speaking.StartingScene" xml:space="preserve">
+    <value>Démarrage de la scène…</value>
+  </data>
+  <data name="Speaking.ReplayLatestAria" xml:space="preserve">
+    <value>Rejouer la dernière réponse de l’avatar</value>
+  </data>
+  <data name="Speaking.ReplayLatest" xml:space="preserve">
+    <value>Rejouer la dernière réponse</value>
+  </data>
+  <data name="Speaking.Conversation" xml:space="preserve">
+    <value>Conversation</value>
+  </data>
+  <data name="Speaking.CurrentSession" xml:space="preserve">
+    <value>Session en cours</value>
+  </data>
+  <data name="Speaking.ScoreHelp" xml:space="preserve">
+    <value>Les scores de prononciation se réfèrent à votre enregistrement audio.</value>
+  </data>
+  <data name="Speaking.SpeakToType" xml:space="preserve">
+    <value>Parler pour saisir du texte</value>
+  </data>
+  <data name="Speaking.You" xml:space="preserve">
+    <value>Vous</value>
+  </data>
+  <data name="Speaking.Accuracy" xml:space="preserve">
+    <value>Exactitude</value>
+  </data>
+  <data name="Speaking.Fluency" xml:space="preserve">
+    <value>Aisance</value>
+  </data>
+  <data name="Speaking.Completeness" xml:space="preserve">
+    <value>Exhaustivité</value>
+  </data>
+  <data name="Speaking.ReplayReply" xml:space="preserve">
+    <value>Rejouer cette réponse</value>
+  </data>
+  <data name="Speaking.ShowEnglish" xml:space="preserve">
+    <value>Afficher la traduction anglaise</value>
+  </data>
+  <data name="Speaking.Grammar" xml:space="preserve">
+    <value>Grammaire</value>
+  </data>
+  <data name="Speaking.Vocabulary" xml:space="preserve">
+    <value>Vocabulaire</value>
+  </data>
+  <data name="Speaking.Naturalness" xml:space="preserve">
+    <value>Naturel</value>
+  </data>
+  <data name="Speaking.PracticeThis" xml:space="preserve">
+    <value>Entraînez-vous à cela</value>
+  </data>
+  <data name="Speaking.HearPhrase" xml:space="preserve">
+    <value>Écouter cette phrase d’entraînement</value>
+  </data>
+  <data name="Speaking.HoldRepeatAria" xml:space="preserve">
+    <value>Maintenez pour répéter cette phrase d’entraînement</value>
+  </data>
+  <data name="Speaking.HoldRepeat" xml:space="preserve">
+    <value>Maintenez pour répéter</value>
+  </data>
+  <data name="Quiz.DeletedWord" xml:space="preserve">
+    <value>{0} supprimé.</value>
+  </data>
+  <data name="Quiz.DeletedNamed" xml:space="preserve">
+    <value>{0} supprimé.</value>
+  </data>
+  <data name="Quiz.NowPublic" xml:space="preserve">
+    <value>Le quiz est désormais public.</value>
+  </data>
+  <data name="Quiz.NowPrivate" xml:space="preserve">
+    <value>Le quiz est désormais privé.</value>
+  </data>
+  <data name="Quiz.VisibilityFailed" xml:space="preserve">
+    <value>Impossible de mettre à jour la visibilité du quiz.</value>
+  </data>
+  <data name="Quiz.CollectionNowPublic" xml:space="preserve">
+    <value>La collection est désormais publique.</value>
+  </data>
+  <data name="Quiz.CollectionNowPrivate" xml:space="preserve">
+    <value>La collection est désormais privée.</value>
+  </data>
+  <data name="Quiz.CollectionVisibilityFailed" xml:space="preserve">
+    <value>Impossible de mettre à jour la visibilité de la collection.</value>
+  </data>
+  <data name="Quiz.CollectionCreated" xml:space="preserve">
+    <value>Collection {0} créée.</value>
+  </data>
+  <data name="Quiz.CollectionCreateFailed" xml:space="preserve">
+    <value>La collection n’a pas pu être créée. Vérifiez son nom et sa collection parente.</value>
+  </data>
+  <data name="Common.All" xml:space="preserve">
+    <value>Tout</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Configuration du quiz</value>
+  </data>
+  <data name="Settings.FlashcardQuiz" xml:space="preserve">
+    <value>Quiz de cartes mémoire</value>
+  </data>
+  <data name="Settings.Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="Settings.Target" xml:space="preserve">
+    <value>Cible</value>
+  </data>
+  <data name="Settings.Configuration" xml:space="preserve">
+    <value>Configuration</value>
+  </data>
+  <data name="Settings.Intro" xml:space="preserve">
+    <value>Choisissez une session d’entraînement rapide et révisez ce quiz.</value>
+  </data>
+  <data name="Settings.SessionLength" xml:space="preserve">
+    <value>Durée de la session</value>
+  </data>
+  <data name="Settings.Words" xml:space="preserve">
+    <value>Mots</value>
+  </data>
+  <data name="Settings.AvailableLower" xml:space="preserve">
+    <value>disponibles</value>
+  </data>
+  <data name="Settings.Quick" xml:space="preserve">
+    <value>Rapide</value>
+  </data>
+  <data name="Settings.Standard" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+  <data name="Settings.WordRange" xml:space="preserve">
+    <value>Plage de mots</value>
+  </data>
+  <data name="Settings.RangeHelp" xml:space="preserve">
+    <value>Faites glisser l’une ou l’autre poignée pour vous concentrer sur une partie de votre liste, par exemple uniquement les mots les plus récents.</value>
+  </data>
+  <data name="Settings.Newest20" xml:space="preserve">
+    <value>20 % les plus récents</value>
+  </data>
+  <data name="Settings.Newest50" xml:space="preserve">
+    <value>50 % les plus récents</value>
+  </data>
+  <data name="Settings.Oldest20" xml:space="preserve">
+    <value>20 % les plus anciens</value>
+  </data>
+  <data name="Settings.AllWordsOrder" xml:space="preserve">
+    <value>Entraînement sur tous les mots, du plus ancien au plus récent.</value>
+  </data>
+  <data name="Settings.ChooseIndividually" xml:space="preserve">
+    <value>Choisir les mots individuellement…</value>
+  </data>
+  <data name="Settings.ClearSelection" xml:space="preserve">
+    <value>Effacer la sélection</value>
+  </data>
+  <data name="Settings.ChooseWords" xml:space="preserve">
+    <value>Choisir les mots à pratiquer</value>
+  </data>
+  <data name="Settings.SelectAll" xml:space="preserve">
+    <value>Tout sélectionner</value>
+  </data>
+  <data name="Settings.DeselectAll" xml:space="preserve">
+    <value>Tout désélectionner</value>
+  </data>
+  <data name="Settings.FilterWords" xml:space="preserve">
+    <value>Filtrer les mots…</value>
+  </data>
+  <data name="Settings.ApplySelection" xml:space="preserve">
+    <value>Appliquer la sélection</value>
+  </data>
+  <data name="Settings.PracticeContent" xml:space="preserve">
+    <value>Contenu de l’entraînement</value>
+  </data>
+  <data name="Settings.ContentHelp" xml:space="preserve">
+    <value>Choisissez des mots ou des phrases complètes.</value>
+  </data>
+  <data name="Settings.Sentences" xml:space="preserve">
+    <value>Phrases</value>
+  </data>
+  <data name="Settings.QuizMode" xml:space="preserve">
+    <value>Mode de quiz</value>
+  </data>
+  <data name="Settings.ModeHelp" xml:space="preserve">
+    <value>Choisissez des cartes mémoire pour la mémorisation ou la saisie pour un entraînement actif à l’orthographe.</value>
+  </data>
+  <data name="Settings.Flashcards" xml:space="preserve">
+    <value>Cartes mémoire</value>
+  </data>
+  <data name="Settings.Typing" xml:space="preserve">
+    <value>Saisie</value>
+  </data>
+  <data name="Settings.Choices" xml:space="preserve">
+    <value>Choix</value>
+  </data>
+  <data name="Settings.PracticeDirection" xml:space="preserve">
+    <value>Sens de l’entraînement</value>
+  </data>
+  <data name="Settings.DirectionHelp" xml:space="preserve">
+    <value>Choisissez quelle langue apparaît en premier.</value>
+  </data>
+  <data name="Settings.NeedWord" xml:space="preserve">
+    <value>Ajoutez au moins un mot avant de commencer une session d’entraînement.</value>
+  </data>
+  <data name="Settings.Quiz" xml:space="preserve">
+    <value>Quiz</value>
+  </data>
+  <data name="Settings.Content" xml:space="preserve">
+    <value>Contenu</value>
+  </data>
+  <data name="Settings.Available" xml:space="preserve">
+    <value>Disponible</value>
+  </data>
+  <data name="Settings.Mode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="Settings.Range" xml:space="preserve">
+    <value>Plage</value>
+  </data>
+  <data name="Settings.Direction" xml:space="preserve">
+    <value>Sens</value>
+  </data>
+  <data name="Settings.StartQuiz" xml:space="preserve">
+    <value>Commencer le quiz</value>
+  </data>
+  <data name="Settings.WordsLower" xml:space="preserve">
+    <value>mots</value>
+  </data>
+  <data name="Settings.SentencesLower" xml:space="preserve">
+    <value>phrases</value>
+  </data>
+  <data name="Settings.WordLower" xml:space="preserve">
+    <value>mot</value>
+  </data>
+  <data name="Settings.SentenceLower" xml:space="preserve">
+    <value>phrase</value>
+  </data>
+  <data name="Settings.NeedItem" xml:space="preserve">
+    <value>Ajoutez au moins un(e) {0} avant de commencer une session d’entraînement.</value>
+  </data>
+  <data name="Settings.Newest" xml:space="preserve">
+    <value>Les {0} % les plus récents</value>
+  </data>
+  <data name="Settings.Oldest" xml:space="preserve">
+    <value>Les {0} % les plus anciens</value>
+  </data>
+  <data name="Settings.RangeDynamic" xml:space="preserve">
+    <value>Entraînement sur {0} de la liste (du plus ancien au plus récent).</value>
+  </data>
+  <data name="Settings.SelectedCount" xml:space="preserve">
+    <value>{0} sur {1} sélectionnés</value>
+  </data>
+  <data name="Settings.PickedWords" xml:space="preserve">
+    <value>{0} mots choisis individuellement sur {1}</value>
+  </data>
+  <data name="Settings.PickedCount" xml:space="preserve">
+    <value>{0} choisis</value>
+  </data>
+  <data name="Explore.Title" xml:space="preserve">
+    <value>Explorer</value>
+  </data>
+  <data name="Explore.Discover" xml:space="preserve">
+    <value>Découvrez quelque chose de nouveau</value>
+  </data>
+  <data name="Explore.Intro" xml:space="preserve">
+    <value>Parcourez le vocabulaire partagé par d’autres apprenants, puis ajoutez à votre bibliothèque ce qui vous inspire.</value>
+  </data>
+  <data name="Explore.Summary" xml:space="preserve">
+    <value>Résumé de la bibliothèque publique</value>
+  </data>
+  <data name="Explore.CommunityLibrary" xml:space="preserve">
+    <value>Bibliothèque de la communauté</value>
+  </data>
+  <data name="Explore.SharedCollections" xml:space="preserve">
+    <value>Collections partagées</value>
+  </data>
+  <data name="Explore.CollectionsHelp" xml:space="preserve">
+    <value>Explorez des ensembles d’apprentissage complets élaborés par la communauté.</value>
+  </data>
+  <data name="Explore.SharedCollection" xml:space="preserve">
+    <value>Collection partagée</value>
+  </data>
+  <data name="Explore.CopyNamed" xml:space="preserve">
+    <value>Copier {0} dans votre bibliothèque</value>
+  </data>
+  <data name="Explore.CommunityQuizzes" xml:space="preserve">
+    <value>Quiz de la communauté</value>
+  </data>
+  <data name="Explore.QuizzesHelp" xml:space="preserve">
+    <value>Prévisualisez un quiz, puis ajoutez-en une copie personnelle à votre bibliothèque.</value>
+  </data>
+  <data name="Explore.CommunityQuiz" xml:space="preserve">
+    <value>Quiz de la communauté</value>
+  </data>
+  <data name="Explore.NothingPublic" xml:space="preserve">
+    <value>Rien de public pour {0} pour le moment</value>
+  </data>
+  <data name="Explore.EmptyHelp" xml:space="preserve">
+    <value>Lorsque des apprenants partagent des quiz ou des collections dans cette langue, ils apparaîtront ici.</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Modifier</value>
+  </data>
+  <data name="Common.Play" xml:space="preserve">
+    <value>Jouer</value>
+  </data>
+  <data name="Quiz.AssistantEmpty" xml:space="preserve">
+    <value>Commencez une conversation sur ce quiz.</value>
+  </data>
+  <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
+    <value>Posez une question sur ce quiz...</value>
+  </data>
+  <data name="Quiz.CustomCount" xml:space="preserve">
+    <value>{0} personnalisés</value>
+  </data>
+  <data name="Quiz.BuildCustom" xml:space="preserve">
+    <value>Créer un quiz personnalisé</value>
+  </data>
+  <data name="Quiz.Public" xml:space="preserve">
+    <value>Public</value>
+  </data>
+  <data name="Quiz.Word" xml:space="preserve">
+    <value>Mot</value>
+  </data>
+  <data name="Quiz.WordExample" xml:space="preserve">
+    <value>p. ex. Bibliothèque</value>
+  </data>
+  <data name="Quiz.TranslationExample" xml:space="preserve">
+    <value>p. ex. Library</value>
+  </data>
+  <data name="Quiz.AddWord" xml:space="preserve">
+    <value>Ajouter un mot</value>
+  </data>
+  <data name="Quiz.ItemsIn" xml:space="preserve">
+    <value>{0} {1} dans {2}</value>
+  </data>
+  <data name="Quiz.ContentAria" xml:space="preserve">
+    <value>Contenu du quiz</value>
+  </data>
+  <data name="Quiz.OpenWiktionary" xml:space="preserve">
+    <value>Ouvrir {0} sur Wiktionary</value>
+  </data>
+  <data name="Quiz.RepairWord" xml:space="preserve">
+    <value>Corriger le mot</value>
+  </data>
+  <data name="Quiz.RepairNamed" xml:space="preserve">
+    <value>Corriger {0}</value>
+  </data>
+  <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
+    <value>Supprimer ce mot ?</value>
+  </data>
+  <data name="Quiz.NoWords" xml:space="preserve">
+    <value>Aucun mot pour le moment. Ajoutez le premier mot avec la barre ci-dessus.</value>
+  </data>
+  <data name="Quiz.LinkedWords" xml:space="preserve">
+    <value>{0} mots liés {1}</value>
+  </data>
+  <data name="Quiz.Repair" xml:space="preserve">
+    <value>Corriger</value>
+  </data>
+  <data name="Quiz.NoSentences" xml:space="preserve">
+    <value>Aucune phrase pour le moment. Demandez à l’assistant d’ajouter des phrases ou de les extraire du texte.</value>
+  </data>
+  <data name="Quiz.CustomQuizzes" xml:space="preserve">
+    <value>Quiz personnalisés</value>
+  </data>
+  <data name="Quiz.CustomHelp" xml:space="preserve">
+    <value>Créez un exercice libre à partir des mots de ce quiz.</value>
+  </data>
+  <data name="Quiz.NewCustom" xml:space="preserve">
+    <value>Nouveau quiz personnalisé</value>
+  </data>
+  <data name="Quiz.Playable" xml:space="preserve">
+    <value>Jouable</value>
+  </data>
+  <data name="Quiz.Draft" xml:space="preserve">
+    <value>Brouillon</value>
+  </data>
+  <data name="Quiz.NoCustom" xml:space="preserve">
+    <value>Aucun quiz personnalisé pour le moment. Créez-en un en faisant glisser des blocs sur une zone de travail.</value>
+  </data>
+  <data name="Payments.PackageUnavailable" xml:space="preserve">
+    <value>Ce pack de crédits n’est plus disponible.</value>
+  </data>
+  <data name="Payments.CreditsReady" xml:space="preserve">
+    <value>Paiement confirmé. Vos crédits sont prêts.</value>
+  </data>
+  <data name="Payments.AwaitingOrFailed" xml:space="preserve">
+    <value>Le paiement est toujours en attente de confirmation ou n’a pas pu être vérifié.</value>
+  </data>
+  <data name="Payments.GetCredits" xml:space="preserve">
+    <value>Obtenir des crédits</value>
+  </data>
+  <data name="Payments.GlosifyCredits" xml:space="preserve">
+    <value>Crédits Glosify</value>
+  </data>
+  <data name="Payments.Hero" xml:space="preserve">
+    <value>Poursuivez votre boucle d’apprentissage.</value>
+  </data>
+  <data name="Payments.Intro" xml:space="preserve">
+    <value>Les crédits alimentent les fonctionnalités d’apprentissage assistées par AI de Glosify et les sous-titres en direct.</value>
+  </data>
+  <data name="Payments.NotAvailable" xml:space="preserve">
+    <value>Les paiements ne sont pas encore disponibles</value>
+  </data>
+  <data name="Payments.NotConnected" xml:space="preserve">
+    <value>Ce déploiement de Glosify n’a pas été connecté à Stripe.</value>
+  </data>
+  <data name="Payments.CreditPack" xml:space="preserve">
+    <value>Pack de crédits</value>
+  </data>
+  <data name="Payments.CreditCount" xml:space="preserve">
+    <value>{0} crédits</value>
+  </data>
+  <data name="Payments.ContinueCheckout" xml:space="preserve">
+    <value>Continuer vers le paiement sécurisé</value>
+  </data>
+  <data name="Payments.StripeNotice" xml:space="preserve">
+    <value>Le paiement est hébergé par Stripe. Glosify ne reçoit ni ne stocke jamais les données de carte.</value>
+  </data>
+  <data name="Payments.Status" xml:space="preserve">
+    <value>État du paiement</value>
+  </data>
+  <data name="Payments.Confirmed" xml:space="preserve">
+    <value>Paiement confirmé</value>
+  </data>
+  <data name="Payments.Processing" xml:space="preserve">
+    <value>Paiement en cours de traitement</value>
+  </data>
+  <data name="Payments.Back" xml:space="preserve">
+    <value>Retour à Glosify</value>
+  </data>
+  <data name="Payments.AiCredits" xml:space="preserve">
+    <value>Crédits AI</value>
+  </data>
+  <data name="Payments.AiCreditAdmin" xml:space="preserve">
+    <value>Administration des crédits AI</value>
+  </data>
+  <data name="Error.StartupDelay" xml:space="preserve">
+    <value>Retard de démarrage temporaire</value>
+  </data>
+  <data name="Error.RequestFailed" xml:space="preserve">
+    <value>Échec de la requête</value>
+  </data>
+  <data name="Error.RequestId" xml:space="preserve">
+    <value>ID de requête :</value>
+  </data>
+  <data name="Error.WarmupTitle" xml:space="preserve">
+    <value>Ce service démarre</value>
+  </data>
+  <data name="Error.WarmupMessage" xml:space="preserve">
+    <value>Veuillez patienter un instant, puis réessayez.</value>
+  </data>
+  <data name="Error.GenericTitle" xml:space="preserve">
+    <value>Une erreur s’est produite</value>
+  </data>
+  <data name="Error.GenericMessage" xml:space="preserve">
+    <value>La requête n’a pas pu être traitée. Veuillez réessayer.</value>
+  </data>
+  <data name="Common.Undo" xml:space="preserve">
+    <value>Annuler</value>
+  </data>
+  <data name="Common.Preview" xml:space="preserve">
+    <value>Aperçu</value>
+  </data>
+  <data name="Custom.EditNamed" xml:space="preserve">
+    <value>Modifier {0}</value>
+  </data>
+  <data name="Custom.AssistantTitle" xml:space="preserve">
+    <value>Assistant de création de quiz</value>
+  </data>
+  <data name="Custom.AssistantEmpty" xml:space="preserve">
+    <value>Demandez-moi d’ajouter, de configurer ou d’organiser des éléments de quiz.</value>
+  </data>
+  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
+    <value>Ajoutez des questions à ce quiz personnalisé…</value>
+  </data>
+  <data name="Custom.Name" xml:space="preserve">
+    <value>Nom du quiz personnalisé</value>
+  </data>
+  <data name="Custom.LoadingEditor" xml:space="preserve">
+    <value>Chargement des commandes de l’éditeur…</value>
+  </data>
+  <data name="Custom.DesignStarters" xml:space="preserve">
+    <value>Modèles de départ</value>
+  </data>
+  <data name="Custom.VisualDirection" xml:space="preserve">
+    <value>Choisissez une orientation visuelle</value>
+  </data>
+  <data name="Custom.TemplateHelp" xml:space="preserve">
+    <value>Appliquez uniquement le style, ou remplacez la zone de travail par une mise en page complète créée à partir des mots de ce quiz.</value>
+  </data>
+  <data name="Custom.UseStyle" xml:space="preserve">
+    <value>Utiliser le style</value>
+  </data>
+  <data name="Custom.UseLayout" xml:space="preserve">
+    <value>Utiliser la mise en page</value>
+  </data>
+  <data name="Custom.BuildingBlocks" xml:space="preserve">
+    <value>Éléments de construction du quiz</value>
+  </data>
+  <data name="Custom.Blocks" xml:space="preserve">
+    <value>Blocs</value>
+  </data>
+  <data name="Custom.BlocksHelp" xml:space="preserve">
+    <value>Glissez-déposez sur n’importe quelle zone libre, ou cliquez pour ajouter automatiquement.</value>
+  </data>
+  <data name="Custom.DragAdd" xml:space="preserve">
+    <value>Glisser ou cliquer pour ajouter {0}</value>
+  </data>
+  <data name="Custom.Add" xml:space="preserve">
+    <value>Ajouter {0}</value>
+  </data>
+  <data name="Custom.Grid" xml:space="preserve">
+    <value>Grille intelligente à 12 colonnes</value>
+  </data>
+  <data name="Custom.GridHelp" xml:space="preserve">
+    <value>Glisser pour placer · les bords s’alignent · les espaces occupés sont évités</value>
+  </data>
+  <data name="Custom.Canvas" xml:space="preserve">
+    <value>Zone de travail du quiz personnalisé</value>
+  </data>
+  <data name="Custom.Properties" xml:space="preserve">
+    <value>Propriétés</value>
+  </data>
+  <data name="Custom.PropertiesHelp" xml:space="preserve">
+    <value>Sélectionnez un bloc pour modifier son contenu et ses liaisons.</value>
+  </data>
+  <data name="Custom.Answer" xml:space="preserve">
+    <value>Réponse</value>
+  </data>
+  <data name="Custom.Choose" xml:space="preserve">
+    <value>Choisir...</value>
+  </data>
+  <data name="Custom.CheckAnswers" xml:space="preserve">
+    <value>Vérifier les réponses</value>
+  </data>
+  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
+    <value>Complétez le quiz, puis envoyez vos réponses.</value>
+  </data>
+  <data name="Custom.Block.Heading" xml:space="preserve">
+    <value>Titre</value>
+  </data>
+  <data name="Custom.Block.Instruction" xml:space="preserve">
+    <value>Instruction</value>
+  </data>
+  <data name="Custom.Block.WordLabel" xml:space="preserve">
+    <value>Libellé du mot</value>
+  </data>
+  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
+    <value>Libellé de la traduction</value>
+  </data>
+  <data name="Custom.Block.TextInput" xml:space="preserve">
+    <value>Champ de texte</value>
+  </data>
+  <data name="Custom.Block.LongAnswer" xml:space="preserve">
+    <value>Réponse longue</value>
+  </data>
+  <data name="Custom.Block.Checkbox" xml:space="preserve">
+    <value>Case à cocher</value>
+  </data>
+  <data name="Custom.Block.RadioChoices" xml:space="preserve">
+    <value>Choix à boutons radio</value>
+  </data>
+  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
+    <value>Choix à cases à cocher</value>
+  </data>
+  <data name="Custom.Block.SelectMenu" xml:space="preserve">
+    <value>Menu déroulant</value>
+  </data>
+  <data name="Custom.Block.WordBank" xml:space="preserve">
+    <value>Banque de mots</value>
+  </data>
+  <data name="Custom.Block.SubmitButton" xml:space="preserve">
+    <value>Bouton d’envoi</value>
+  </data>
+  <data name="Custom.Block.Feedback" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
+    <value>Déroulé éditorial</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
+    <value>Hiérarchie discrète, espacement généreux et une tâche claire par ligne.</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
+    <value>Traductions, consignes de grammaire, rappel ciblé</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
+    <value>Cartes aurora</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
+    <value>Couleurs douces, cartes de pratique par paires et ambiance de classe dynamique.</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
+    <value>Séries courtes de vocabulaire et repérage visuel</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
+    <value>Exercice de manuel</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
+    <value>Des lignes numérotées compactes, inspirées des exercices du cahier photographié.</value>
+  </data>
+  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
+    <value>Conjugaison, transformations, textes à trous et exercices formels</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
+    <value>Atelier de banque de mots</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
+    <value>Une banque de mots bien visible guide l’exercice et rend le rappel ludique.</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
+    <value>Rappel guidé et vocabulaire débutant</value>
+  </data>
+  <data name="Custom.AnswerQuestion" xml:space="preserve">
+    <value>Répondez à cette question.</value>
+  </data>
+  <data name="Custom.Correct" xml:space="preserve">
+    <value>Correct.</value>
+  </data>
+  <data name="Custom.CorrectAnswer" xml:space="preserve">
+    <value>Réponse correcte : {0}</value>
+  </data>
+  <data name="Custom.CompleteAnswers" xml:space="preserve">
+    <value>Complétez toutes les réponses avant de soumettre.</value>
+  </data>
+  <data name="Custom.Score" xml:space="preserve">
+    <value>Score : {0} sur {1} ({2} %).</value>
+  </data>
+  <data name="Custom.GradeFailed" xml:space="preserve">
+    <value>Impossible de noter ce quiz. Réessayez.</value>
+  </data>
+  <data name="Classroom.PostAnnouncement" xml:space="preserve">
+    <value>Publier une annonce</value>
+  </data>
+  <data name="Classroom.ShareClass" xml:space="preserve">
+    <value>Partager quelque chose avec la classe</value>
+  </data>
+  <data name="Classroom.Post" xml:space="preserve">
+    <value>Publier</value>
+  </data>
+  <data name="Classroom.Announcements" xml:space="preserve">
+    <value>Annonces</value>
+  </data>
+  <data name="Classroom.PostOne" xml:space="preserve">
+    <value>publication</value>
+  </data>
+  <data name="Classroom.PostMany" xml:space="preserve">
+    <value>publications</value>
+  </data>
+  <data name="Classroom.Pinned" xml:space="preserve">
+    <value>Épinglé</value>
+  </data>
+  <data name="Classroom.Unpin" xml:space="preserve">
+    <value>Désépingler</value>
+  </data>
+  <data name="Classroom.Pin" xml:space="preserve">
+    <value>Épingler</value>
+  </data>
+  <data name="Classroom.DeleteAnnouncement" xml:space="preserve">
+    <value>Supprimer cette annonce ?</value>
+  </data>
+  <data name="Classroom.NothingYet" xml:space="preserve">
+    <value>Rien ici pour le moment.</value>
+  </data>
+  <data name="Classroom.PostFirst" xml:space="preserve">
+    <value>Publiez la première annonce ci-dessus.</value>
+  </data>
+  <data name="Classroom.NoTeacherPosts" xml:space="preserve">
+    <value>Votre enseignant n’a encore rien publié.</value>
+  </data>
+  <data name="Classroom.OpenChat" xml:space="preserve">
+    <value>Ouvrir le chat de la classe</value>
+  </data>
+  <data name="Classroom.ClassChat" xml:space="preserve">
+    <value>Chat de la classe</value>
+  </data>
+  <data name="Classroom.ClassChatUpper" xml:space="preserve">
+    <value>CHAT DE LA CLASSE</value>
+  </data>
+  <data name="Classroom.Connecting" xml:space="preserve">
+    <value>Connexion…</value>
+  </data>
+  <data name="Classroom.CloseChat" xml:space="preserve">
+    <value>Fermer le chat de la classe</value>
+  </data>
+  <data name="Classroom.LoadingMessages" xml:space="preserve">
+    <value>Chargement des messages…</value>
+  </data>
+  <data name="Classroom.MessageClass" xml:space="preserve">
+    <value>Envoyer un message à la classe</value>
+  </data>
+  <data name="Classroom.ChatMessage" xml:space="preserve">
+    <value>Message du chat</value>
+  </data>
+  <data name="Classroom.CallTitle" xml:space="preserve">
+    <value>{0} — appel</value>
+  </data>
+  <data name="Classroom.NotConnected" xml:space="preserve">
+    <value>Non connecté</value>
+  </data>
+  <data name="Classroom.Back" xml:space="preserve">
+    <value>Retour à la classe</value>
+  </data>
+  <data name="Classroom.CallNotConfigured" xml:space="preserve">
+    <value>Les appels vidéo ne sont pas configurés sur ce serveur. Un administrateur doit configurer le</value>
+  </data>
+  <data name="Classroom.ReadyJoin" xml:space="preserve">
+    <value>Prêt à rejoindre ?</value>
+  </data>
+  <data name="Classroom.JoinAs" xml:space="preserve">
+    <value>Vous rejoindrez en tant que</value>
+  </data>
+  <data name="Classroom.MuteMic" xml:space="preserve">
+    <value>Couper le microphone</value>
+  </data>
+  <data name="Classroom.Mute" xml:space="preserve">
+    <value>Couper le son</value>
+  </data>
+  <data name="Classroom.CameraOff" xml:space="preserve">
+    <value>Désactiver la caméra</value>
+  </data>
+  <data name="Classroom.Camera" xml:space="preserve">
+    <value>Caméra</value>
+  </data>
+  <data name="Classroom.LeaveCall" xml:space="preserve">
+    <value>Quitter l’appel</value>
+  </data>
+  <data name="Classroom.Leave" xml:space="preserve">
+    <value>Quitter</value>
+  </data>
+  <data name="Classroom.ReadyStart" xml:space="preserve">
+    <value>Prêt à commencer ?</value>
+  </data>
+  <data name="Classroom.NoOneCall" xml:space="preserve">
+    <value>Personne n’est encore dans l’appel.</value>
+  </data>
+  <data name="Classroom.WaitingTeacher" xml:space="preserve">
+    <value>En attente d’un enseignant</value>
+  </data>
+  <data name="Classroom.JoinAfterTeacher" xml:space="preserve">
+    <value>Vous pourrez rejoindre une fois qu’un enseignant aura démarré l’appel.</value>
+  </data>
+  <data name="Classroom.UnmuteMic" xml:space="preserve">
+    <value>Activer le microphone</value>
+  </data>
+  <data name="Classroom.CameraOn" xml:space="preserve">
+    <value>Activer la caméra</value>
+  </data>
+  <data name="Classroom.Connected" xml:space="preserve">
+    <value>Connecté</value>
+  </data>
+  <data name="Classroom.NoMessages" xml:space="preserve">
+    <value>Aucun message pour le moment. Dites bonjour !</value>
+  </data>
+  <data name="Classroom.Reconnecting" xml:space="preserve">
+    <value>Reconnexion…</value>
+  </data>
+  <data name="Classroom.ActionInvalid" xml:space="preserve">
+    <value>L’action de classe n’a pas pu être effectuée. Vérifiez votre saisie et vos droits d’accès.</value>
+  </data>
+  <data name="Classroom.Created" xml:space="preserve">
+    <value>{0} créé.</value>
+  </data>
+  <data name="Classroom.CreateInvalid" xml:space="preserve">
+    <value>Saisissez un nom et une description de classe valides.</value>
+  </data>
+  <data name="Classroom.NoCodeMatch" xml:space="preserve">
+    <value>Aucune classe ne correspond à ce code de connexion.</value>
+  </data>
+  <data name="Classroom.InvitationUnavailable" xml:space="preserve">
+    <value>Cette invitation n’est plus disponible.</value>
+  </data>
+  <data name="Classroom.Welcome" xml:space="preserve">
+    <value>Bienvenue dans {0}.</value>
+  </data>
+  <data name="Classroom.WelcomeSwitched" xml:space="preserve">
+    <value>Bienvenue dans {0}. Vous avez été basculé vers {1}.</value>
+  </data>
+  <data name="Classroom.InvitationDeclined" xml:space="preserve">
+    <value>Invitation refusée.</value>
+  </data>
+  <data name="Classroom.NotFound" xml:space="preserve">
+    <value>Classe introuvable.</value>
+  </data>
+  <data name="Classroom.Left" xml:space="preserve">
+    <value>Vous avez quitté la classe.</value>
+  </data>
+  <data name="Classroom.ActionDenied" xml:space="preserve">
+    <value>Vous ne pouvez pas effectuer cette action dans cette classe.</value>
+  </data>
+  <data name="Classroom.Deleted" xml:space="preserve">
+    <value>Classe supprimée.</value>
+  </data>
+  <data name="Explore.PublicQuiz" xml:space="preserve">
+    <value>Quiz public</value>
+  </data>
+  <data name="Explore.CustomExercises" xml:space="preserve">
+    <value>Exercices créés à partir du vocabulaire de ce quiz.</value>
+  </data>
+  <data name="Explore.NoPublicWords" xml:space="preserve">
+    <value>Aucun mot n’a encore été ajouté à ce quiz public.</value>
+  </data>
+  <data name="Explore.NoPublicSentences" xml:space="preserve">
+    <value>Aucune phrase n’a encore été ajoutée à ce quiz public.</value>
+  </data>
+  <data name="Explore.PublicCollection" xml:space="preserve">
+    <value>Collection publique</value>
+  </data>
+  <data name="Explore.CollectionIntro" xml:space="preserve">
+    <value>Explorez {0} {1} dans {2} collections, puis copiez l’ensemble complet dans votre bibliothèque.</value>
+  </data>
+  <data name="Explore.CollectionSummary" xml:space="preserve">
+    <value>Résumé de la collection</value>
+  </data>
+  <data name="Explore.CopyCollection" xml:space="preserve">
+    <value>Copier la collection</value>
+  </data>
+  <data name="Explore.InCollection" xml:space="preserve">
+    <value>Dans cette collection</value>
+  </data>
+  <data name="Explore.FiledInside" xml:space="preserve">
+    <value>Quiz classés directement dans {0}.</value>
+  </data>
+  <data name="Explore.NoDirectQuizzes" xml:space="preserve">
+    <value>Aucun quiz directement dans cette collection.</value>
+  </data>
+  <data name="Common.Remove" xml:space="preserve">
+    <value>Supprimer</value>
+  </data>
+  <data name="Classroom.ShareQuiz" xml:space="preserve">
+    <value>Partager un quiz</value>
+  </data>
+  <data name="Classroom.QuizLibrary" xml:space="preserve">
+    <value>Quiz de votre bibliothèque</value>
+  </data>
+  <data name="Classroom.Share" xml:space="preserve">
+    <value>Partager</value>
+  </data>
+  <data name="Classroom.AllQuizzesShared" xml:space="preserve">
+    <value>Tous vos quiz sont déjà partagés ici, ou votre bibliothèque est vide.</value>
+  </data>
+  <data name="Classroom.ShareBook" xml:space="preserve">
+    <value>Partager un livre</value>
+  </data>
+  <data name="Classroom.BookLibrary" xml:space="preserve">
+    <value>Livre de votre bibliothèque</value>
+  </data>
+  <data name="Classroom.AllBooksShared" xml:space="preserve">
+    <value>Tous vos livres sont déjà partagés ici, ou vous n’avez aucun envoi.</value>
+  </data>
+  <data name="Classroom.First" xml:space="preserve">
+    <value>premier.</value>
+  </data>
+  <data name="Classroom.SharedContent" xml:space="preserve">
+    <value>Contenu partagé</value>
+  </data>
+  <data name="Classroom.ItemOne" xml:space="preserve">
+    <value>élément</value>
+  </data>
+  <data name="Classroom.ItemMany" xml:space="preserve">
+    <value>éléments</value>
+  </data>
+  <data name="Classroom.Removed" xml:space="preserve">
+    <value>Supprimé</value>
+  </data>
+  <data name="Classroom.SharedBy" xml:space="preserve">
+    <value>Partagé par {0}</value>
+  </data>
+  <data name="Classroom.CopyLibrary" xml:space="preserve">
+    <value>Copier dans ma bibliothèque</value>
+  </data>
+  <data name="Classroom.OpenPdf" xml:space="preserve">
+    <value>Ouvrir le PDF</value>
+  </data>
+  <data name="Classroom.RemoveConfirm" xml:space="preserve">
+    <value>Retirer ceci de la classe ?</value>
+  </data>
+  <data name="Classroom.NoSharedContent" xml:space="preserve">
+    <value>Aucun contenu partagé pour le moment.</value>
+  </data>
+  <data name="Classroom.QuizResults" xml:space="preserve">
+    <value>Résultats du quiz</value>
+  </data>
+  <data name="Classroom.AttemptOne" xml:space="preserve">
+    <value>tentative</value>
+  </data>
+  <data name="Classroom.AttemptMany" xml:space="preserve">
+    <value>tentatives</value>
+  </data>
+  <data name="Classroom.FromPractice" xml:space="preserve">
+    <value>depuis l’entraînement en classe</value>
+  </data>
+  <data name="Classroom.Score" xml:space="preserve">
+    <value>Score</value>
+  </data>
+  <data name="Classroom.Completed" xml:space="preserve">
+    <value>Terminé</value>
+  </data>
+  <data name="Classroom.NoAttempts" xml:space="preserve">
+    <value>Aucune tentative pour le moment. Les résultats apparaîtront lorsque les membres s’exerceront aux quiz depuis l’onglet Contenu.</value>
+  </data>
+  <data name="Classroom.MemberResultsTitle" xml:space="preserve">
+    <value>{0} — résultats</value>
+  </data>
+  <data name="Classroom.Skipped" xml:space="preserve">
+    <value>Passé</value>
+  </data>
+  <data name="Classroom.NoMemberAttempts" xml:space="preserve">
+    <value>Aucune tentative enregistrée pour ce membre pour le moment.</value>
+  </data>
+  <data name="Classroom.InviteEmail" xml:space="preserve">
+    <value>Inviter par e-mail</value>
+  </data>
+  <data name="Classroom.Role" xml:space="preserve">
+    <value>Rôle</value>
+  </data>
+  <data name="Classroom.Student" xml:space="preserve">
+    <value>Élève</value>
+  </data>
+  <data name="Classroom.Teacher" xml:space="preserve">
+    <value>Enseignant</value>
+  </data>
+  <data name="Classroom.Invite" xml:space="preserve">
+    <value>Inviter</value>
+  </data>
+  <data name="Classroom.InviteHelp" xml:space="preserve">
+    <value>Les invitations apparaissent sur la page Classes de la personne lorsqu’elle se connecte avec cette adresse e-mail — aucun e-mail n’est envoyé.</value>
+  </data>
+  <data name="Classroom.CodeAnyone" xml:space="preserve">
+    <value>Toute personne disposant du code</value>
+  </data>
+  <data name="Classroom.CodeCanJoin" xml:space="preserve">
+    <value>peut rejoindre en tant qu’élève.</value>
+  </data>
+  <data name="Classroom.JoiningCurrently" xml:space="preserve">
+    <value>L’adhésion est actuellement</value>
+  </data>
+  <data name="Classroom.Enabled" xml:space="preserve">
+    <value>activée</value>
+  </data>
+  <data name="Classroom.Paused" xml:space="preserve">
+    <value>en pause</value>
+  </data>
+  <data name="Classroom.NewCode" xml:space="preserve">
+    <value>Nouveau code</value>
+  </data>
+  <data name="Classroom.PauseJoining" xml:space="preserve">
+    <value>Mettre l’adhésion en pause</value>
+  </data>
+  <data name="Classroom.ResumeJoining" xml:space="preserve">
+    <value>Reprendre l’adhésion</value>
+  </data>
+  <data name="Classroom.Joined" xml:space="preserve">
+    <value>a rejoint</value>
+  </data>
+  <data name="Classroom.MakeRole" xml:space="preserve">
+    <value>Attribuer le rôle {0}</value>
+  </data>
+  <data name="Classroom.RemoveMemberConfirm" xml:space="preserve">
+    <value>Retirer {0} de la classe ?</value>
+  </data>
+  <data name="Classroom.DeleteForEveryone" xml:space="preserve">
+    <value>Supprimer cette classe pour tout le monde ? Les quiz et livres partagés restent dans les bibliothèques de leurs propriétaires.</value>
+  </data>
+  <data name="Classroom.DeleteClassroom" xml:space="preserve">
+    <value>Supprimer la classe</value>
+  </data>
+  <data name="Classroom.LeaveConfirm" xml:space="preserve">
+    <value>Quitter cette classe ?</value>
+  </data>
+  <data name="Classroom.LeaveClassroom" xml:space="preserve">
+    <value>Quitter la classe</value>
+  </data>
+  <data name="Classroom.AddLesson" xml:space="preserve">
+    <value>Ajouter une leçon</value>
+  </data>
+  <data name="Classroom.TitleLabel" xml:space="preserve">
+    <value>Titre</value>
+  </data>
+  <data name="Classroom.DescriptionOptional" xml:space="preserve">
+    <value>Description (facultative)</value>
+  </data>
+  <data name="Classroom.ScheduledOptional" xml:space="preserve">
+    <value>Prévu pour (facultatif)</value>
+  </data>
+  <data name="Classroom.AddAssignment" xml:space="preserve">
+    <value>Ajouter un devoir</value>
+  </data>
+  <data name="Classroom.InstructionsOptional" xml:space="preserve">
+    <value>Instructions (facultatives)</value>
+  </data>
+  <data name="Classroom.QuizOptional" xml:space="preserve">
+    <value>Quiz (facultatif, depuis le contenu partagé)</value>
+  </data>
+  <data name="Classroom.NoQuiz" xml:space="preserve">
+    <value>Aucun quiz</value>
+  </data>
+  <data name="Classroom.LessonOptional" xml:space="preserve">
+    <value>Leçon (facultative)</value>
+  </data>
+  <data name="Classroom.NoLesson" xml:space="preserve">
+    <value>Aucune leçon</value>
+  </data>
+  <data name="Classroom.DueOptional" xml:space="preserve">
+    <value>À rendre (facultatif)</value>
+  </data>
+  <data name="Classroom.CoursePlan" xml:space="preserve">
+    <value>Plan de cours</value>
+  </data>
+  <data name="Classroom.LessonOne" xml:space="preserve">
+    <value>leçon</value>
+  </data>
+  <data name="Classroom.LessonMany" xml:space="preserve">
+    <value>leçons</value>
+  </data>
+  <data name="Classroom.AssignmentOne" xml:space="preserve">
+    <value>devoir</value>
+  </data>
+  <data name="Classroom.AssignmentMany" xml:space="preserve">
+    <value>devoirs</value>
+  </data>
+  <data name="Classroom.DeleteLessonConfirm" xml:space="preserve">
+    <value>Supprimer cette leçon ? Ses devoirs seront conservés, sans lien.</value>
+  </data>
+  <data name="Classroom.DeleteLesson" xml:space="preserve">
+    <value>Supprimer la leçon</value>
+  </data>
+  <data name="Classroom.NoAssignmentsLesson" xml:space="preserve">
+    <value>Aucun devoir pour cette leçon.</value>
+  </data>
+  <data name="Classroom.OtherAssignments" xml:space="preserve">
+    <value>Autres devoirs</value>
+  </data>
+  <data name="Classroom.NoPlanYet" xml:space="preserve">
+    <value>Aucune leçon ni aucun devoir pour le moment.</value>
+  </data>
+  <data name="Classroom.PlanAbove" xml:space="preserve">
+    <value>Planifiez le cours ci-dessus.</value>
+  </data>
+  <data name="Classroom.NoTeacherPlan" xml:space="preserve">
+    <value>Votre professeur n’a encore rien planifié.</value>
+  </data>
+  <data name="Classroom.Due" xml:space="preserve">
+    <value>À rendre</value>
+  </data>
+  <data name="Classroom.StudentsCompleted" xml:space="preserve">
+    <value>{0} des {1} élèves ont terminé</value>
+  </data>
+  <data name="Classroom.DoneBest" xml:space="preserve">
+    <value>Terminé — meilleur score {0} %</value>
+  </data>
+  <data name="Classroom.NotDone" xml:space="preserve">
+    <value>Pas encore terminé</value>
+  </data>
+  <data name="Classroom.DeleteAssignmentConfirm" xml:space="preserve">
+    <value>Supprimer ce devoir ?</value>
+  </data>
+  <data name="Speaking.BarMenu" xml:space="preserve">
+    <value>Menu de la barre</value>
+  </data>
+  <data name="Speaking.YourWallet" xml:space="preserve">
+    <value>Votre portefeuille</value>
+  </data>
+  <data name="Speaking.NoBill" xml:space="preserve">
+    <value>Aucune addition pour le moment</value>
+  </data>
+  <data name="Speaking.CloseWallet" xml:space="preserve">
+    <value>Fermer le portefeuille</value>
+  </data>
+  <data name="Speaking.Selected" xml:space="preserve">
+    <value>Sélectionné</value>
+  </data>
+  <data name="Speaking.SceneActions" xml:space="preserve">
+    <value>Actions de la scène</value>
+  </data>
+  <data name="Speaking.NextMonth" xml:space="preserve">
+    <value>le début du mois prochain</value>
+  </data>
+  <data name="Speaking.PaidPaused" xml:space="preserve">
+    <value>Les fonctionnalités d’oral payantes sont suspendues jusqu’au {0}.</value>
+  </data>
+  <data name="Speaking.SessionReady" xml:space="preserve">
+    <value>Votre session d’entraînement est prête.</value>
+  </data>
+  <data name="Speaking.Unavailable" xml:space="preserve">
+    <value>L’entraînement à l’oral n’est pas disponible</value>
+  </data>
+  <data name="Speaking.NewSessionConfirm" xml:space="preserve">
+    <value>Commencer une nouvelle session ? La conversation en cours sera effacée.</value>
+  </data>
+  <data name="Speaking.UpdatingQuiz" xml:space="preserve">
+    <value>Mise à jour du quiz d’entraînement du tuteur…</value>
+  </data>
+  <data name="Speaking.PractisingNamed" xml:space="preserve">
+    <value>Entraînement de {0}.</value>
+  </data>
+  <data name="Speaking.FreeModeActive" xml:space="preserve">
+    <value>Le mode cours libre est actif.</value>
+  </data>
+  <data name="Speaking.Voice" xml:space="preserve">
+    <value>Voix</value>
+  </data>
+  <data name="Speaking.Typed" xml:space="preserve">
+    <value>Saisi au clavier</value>
+  </data>
+  <data name="Speaking.StartBeforeSend" xml:space="preserve">
+    <value>Commencez une session orale avant d’envoyer un message.</value>
+  </data>
+  <data name="Speaking.AvatarThinking" xml:space="preserve">
+    <value>{0} réfléchit…</value>
+  </data>
+  <data name="Speaking.Avatar" xml:space="preserve">
+    <value>L’avatar</value>
+  </data>
+  <data name="Speaking.SessionEnded" xml:space="preserve">
+    <value>Session terminée · commencez une nouvelle session</value>
+  </data>
+  <data name="Speaking.TakingSip" xml:space="preserve">
+    <value>Prend une gorgée…</value>
+  </data>
+  <data name="Speaking.TakingSnack" xml:space="preserve">
+    <value>Prend une collation…</value>
+  </data>
+  <data name="Speaking.AvatarReacting" xml:space="preserve">
+    <value>{0} réagit…</value>
+  </data>
+  <data name="Speaking.MomentPassed" xml:space="preserve">
+    <value>Ce moment est passé. Continuez à discuter ou essayez une autre action.</value>
+  </data>
+  <data name="Speaking.RecordUnavailable" xml:space="preserve">
+    <value>Ce navigateur ne peut pas enregistrer la voix ici. Le chat saisi au clavier reste disponible.</value>
+  </data>
+  <data name="Speaking.Starting" xml:space="preserve">
+    <value>Démarrage…</value>
+  </data>
+  <data name="Speaking.MicConnectingAuto" xml:space="preserve">
+    <value>Connexion au microphone. Commencez à parler lorsqu’il sera prêt.</value>
+  </data>
+  <data name="Speaking.MicConnectingHold" xml:space="preserve">
+    <value>Connexion au microphone. Continuez à maintenir le bouton enfoncé.</value>
+  </data>
+  <data name="Speaking.Listening" xml:space="preserve">
+    <value>Écoute…</value>
+  </data>
+  <data name="Speaking.SpeakNaturally" xml:space="preserve">
+    <value>Parlez naturellement. L’enregistrement s’arrêtera quand vous aurez fini.</value>
+  </data>
+  <data name="Speaking.ReleaseSend" xml:space="preserve">
+    <value>Relâchez pour envoyer</value>
+  </data>
+  <data name="Speaking.KeepHolding" xml:space="preserve">
+    <value>Continuez à maintenir en parlant. Relâchez le bouton pour envoyer.</value>
+  </data>
+  <data name="Speaking.Transcribing" xml:space="preserve">
+    <value>Transcription…</value>
+  </data>
+  <data name="Speaking.FinishingTranscript" xml:space="preserve">
+    <value>Finalisation de votre transcription…</value>
+  </data>
+  <data name="Speaking.NotCaughtComposer" xml:space="preserve">
+    <value>Azure Speech n’a pas compris cela. Appuyez sur Parler pour taper et réessayer.</value>
+  </data>
+  <data name="Speaking.NotCaughtAvatar" xml:space="preserve">
+    <value>Azure Speech n’a pas compris cela. Maintenez le bouton rouge enfoncé et réessayez.</value>
+  </data>
+  <data name="Speaking.RecordingTooLong" xml:space="preserve">
+    <value>Cet enregistrement est trop long. Raccourcissez la transcription puis appuyez sur Envoyer.</value>
+  </data>
+  <data name="Speaking.TranscriptSending" xml:space="preserve">
+    <value>Transcription prête. Envoi…</value>
+  </data>
+  <data name="Speaking.TranscriptReady" xml:space="preserve">
+    <value>Transcription prête. Vérifiez-la ou modifiez-la, puis appuyez sur Envoyer.</value>
+  </data>
+  <data name="Speaking.MicFailed" xml:space="preserve">
+    <value>L’accès au microphone a échoué. Le chat saisi au clavier reste disponible.</value>
+  </data>
+  <data name="Speaking.SpeechFinishFailed" xml:space="preserve">
+    <value>Azure Speech n’a pas pu terminer l’enregistrement.</value>
+  </data>
+  <data name="Speaking.Scene.PoursDrink" xml:space="preserve">
+    <value>Marek verse votre boisson et la fait glisser vers vous.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSnack" xml:space="preserve">
+    <value>Vous prenez quelques paluszki.</value>
+  </data>
+  <data name="Speaking.Scene.OffersSnack" xml:space="preserve">
+    <value>Marek vous propose des paluszki.</value>
+  </data>
+  <data name="Speaking.Scene.ClearsGlass" xml:space="preserve">
+    <value>Marek débarrasse le verre vide.</value>
+  </data>
+  <data name="Speaking.Scene.PolishesGlass" xml:space="preserve">
+    <value>Marek polit un verre.</value>
+  </data>
+  <data name="Speaking.Scene.WipesCounter" xml:space="preserve">
+    <value>Marek essuie le comptoir.</value>
+  </data>
+  <data name="Speaking.Scene.LastCall" xml:space="preserve">
+    <value>Dernière commande.</value>
+  </data>
+  <data name="Speaking.Scene.ItemUnavailable" xml:space="preserve">
+    <value>Cet article n’est pas disponible.</value>
+  </data>
+  <data name="Speaking.Scene.FinishDrink" xml:space="preserve">
+    <value>Vous terminez la boisson.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSip" xml:space="preserve">
+    <value>Vous prenez une gorgée.</value>
+  </data>
+  <data name="Speaking.Scene.PresentsBill" xml:space="preserve">
+    <value>Marek présente l’addition de {0} zł.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentRejected" xml:space="preserve">
+    <value>{0} zł ne suffit pas. Rien n’a été retiré.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentAccepted" xml:space="preserve">
+    <value>Marek accepte {0} zł.</value>
+  </data>
+  <data name="Speaking.Scene.ReturnsChange" xml:space="preserve">
+    <value>Marek rend {0} zł de monnaie.</value>
+  </data>
+  <data name="Reader.ReadingSentence" xml:space="preserve">
+    <value>Lecture de la page {0} · phrase {1} sur {2}</value>
+  </data>
+  <data name="Reader.ReadingSelectionPart" xml:space="preserve">
+    <value>Lecture de la sélection · partie {0} sur {1}</value>
+  </data>
+  <data name="Reader.ReadingSelection" xml:space="preserve">
+    <value>Lecture du texte sélectionné…</value>
+  </data>
+  <data name="Reader.ReadingPage" xml:space="preserve">
+    <value>Lecture de la page {0}…</value>
+  </data>
+  <data name="Reader.FinishedSelection" xml:space="preserve">
+    <value>Lecture de la sélection terminée.</value>
+  </data>
+  <data name="Reader.FinishedPage" xml:space="preserve">
+    <value>Lecture de la page {0} terminée.</value>
+  </data>
+  <data name="Reader.ReadingStopped" xml:space="preserve">
+    <value>Lecture arrêtée.</value>
+  </data>
+  <data name="Reader.Detected" xml:space="preserve">
+    <value>{0} détecté</value>
+  </data>
+  <data name="Reader.DetectedCached" xml:space="preserve">
+    <value>{0} détecté · en cache</value>
+  </data>
+  <data name="Reader.CachedTranslation" xml:space="preserve">
+    <value>Traduction en cache</value>
+  </data>
+  <data name="Reader.NoSelectableTextPage" xml:space="preserve">
+    <value>Aucun texte sélectionnable trouvé sur cette page.</value>
+  </data>
+  <data name="Reader.RenderFailed" xml:space="preserve">
+    <value>Cette page n’a pas pu être rendue.</value>
+  </data>
+  <data name="Reader.PdfLoadFailed" xml:space="preserve">
+    <value>Le PDF n’a pas pu être chargé.</value>
+  </data>
+  <data name="Editor.Heading" xml:space="preserve">
+    <value>Titre</value>
+  </data>
+  <data name="Editor.Instruction" xml:space="preserve">
+    <value>Instruction</value>
+  </data>
+  <data name="Editor.WordLabel" xml:space="preserve">
+    <value>Libellé du mot</value>
+  </data>
+  <data name="Editor.TranslationLabel" xml:space="preserve">
+    <value>Libellé de la traduction</value>
+  </data>
+  <data name="Editor.TextInput" xml:space="preserve">
+    <value>Saisie de texte</value>
+  </data>
+  <data name="Editor.LongAnswer" xml:space="preserve">
+    <value>Réponse longue</value>
+  </data>
+  <data name="Editor.Checkbox" xml:space="preserve">
+    <value>Case à cocher</value>
+  </data>
+  <data name="Editor.RadioChoices" xml:space="preserve">
+    <value>Choix à bouton radio</value>
+  </data>
+  <data name="Editor.CheckboxChoices" xml:space="preserve">
+    <value>Choix à cases à cocher</value>
+  </data>
+  <data name="Editor.SelectMenu" xml:space="preserve">
+    <value>Menu de sélection</value>
+  </data>
+  <data name="Editor.WordBank" xml:space="preserve">
+    <value>Banque de mots</value>
+  </data>
+  <data name="Editor.SubmitButton" xml:space="preserve">
+    <value>Bouton de soumission</value>
+  </data>
+  <data name="Editor.Feedback" xml:space="preserve">
+    <value>Retour</value>
+  </data>
+  <data name="Editor.EmptyCanvas" xml:space="preserve">
+    <value>Faites glisser un bloc n’importe où sur ce canevas pour commencer.</value>
+  </data>
+  <data name="Editor.MoveLeft" xml:space="preserve">
+    <value>Déplacer vers la gauche</value>
+  </data>
+  <data name="Editor.MoveUp" xml:space="preserve">
+    <value>Déplacer vers le haut</value>
+  </data>
+  <data name="Editor.MoveDown" xml:space="preserve">
+    <value>Déplacer vers le bas</value>
+  </data>
+  <data name="Editor.MoveRight" xml:space="preserve">
+    <value>Déplacer vers la droite</value>
+  </data>
+  <data name="Editor.RemoveBlock" xml:space="preserve">
+    <value>Supprimer le bloc</value>
+  </data>
+  <data name="Editor.Resize" xml:space="preserve">
+    <value>Faites glisser pour redimensionner la largeur</value>
+  </data>
+  <data name="Editor.Word" xml:space="preserve">
+    <value>Mot</value>
+  </data>
+  <data name="Editor.DisplayField" xml:space="preserve">
+    <value>Champ d’affichage</value>
+  </data>
+  <data name="Editor.Words" xml:space="preserve">
+    <value>Mots</value>
+  </data>
+  <data name="Editor.Options" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="Editor.CorrectOption" xml:space="preserve">
+    <value>Option correcte</value>
+  </data>
+  <data name="Editor.RemoveOption" xml:space="preserve">
+    <value>Supprimer l’option</value>
+  </data>
+  <data name="Editor.AddOption" xml:space="preserve">
+    <value>Ajouter une option</value>
+  </data>
+  <data name="Editor.Properties" xml:space="preserve">
+    <value>Propriétés</value>
+  </data>
+  <data name="Editor.SelectBlock" xml:space="preserve">
+    <value>Sélectionnez un bloc pour modifier son contenu et ses liaisons.</value>
+  </data>
+  <data name="Editor.TargetInputs" xml:space="preserve">
+    <value>Champs cibles</value>
+  </data>
+  <data name="Editor.PreviewOnly" xml:space="preserve">
+    <value>Aperçu uniquement — enregistrez et lancez pour enregistrer une tentative notée.</value>
+  </data>
+  <data name="Editor.BackToEditor" xml:space="preserve">
+    <value>Retour à l’éditeur</value>
+  </data>
+  <data name="Editor.Preview" xml:space="preserve">
+    <value>Aperçu</value>
+  </data>
+  <data name="Editor.PreviewingOne" xml:space="preserve">
+    <value>Aperçu du bloc {0}.</value>
+  </data>
+  <data name="Editor.PreviewingMany" xml:space="preserve">
+    <value>Aperçu de {0} blocs.</value>
+  </data>
+  <data name="Editor.ReadyOne" xml:space="preserve">
+    <value>Éditeur prêt · {0} bloc sur le canevas. Utilisez + pour ajouter ou faites glisser un bloc.</value>
+  </data>
+  <data name="Editor.ReadyMany" xml:space="preserve">
+    <value>Éditeur prêt · {0} blocs sur le canevas. Utilisez + pour ajouter ou faites glisser un bloc.</value>
+  </data>
+  <data name="Editor.ReplaceConfirm" xml:space="preserve">
+    <value>Remplacer le canevas actuel par la disposition {0} ? Vous pouvez annuler cette modification.</value>
+  </data>
+  <data name="Editor.SaveFailed" xml:space="preserve">
+    <value>Impossible d’enregistrer ce quiz personnalisé.</value>
+  </data>
+  <data name="Editor.SavedPlayable" xml:space="preserve">
+    <value>Enregistré. Ce quiz est prêt à être joué.</value>
+  </data>
+  <data name="Editor.DraftSaved" xml:space="preserve">
+    <value>Brouillon enregistré. Terminez les champs obligatoires du quiz avant de jouer.</value>
+  </data>
+  <data name="Editor.SaveStopped" xml:space="preserve">
+    <value>La demande d’enregistrement s’est arrêtée de manière inattendue. Réessayez.</value>
+  </data>
+  <data name="Editor.WordLemma" xml:space="preserve">
+    <value>Mot / lemme</value>
+  </data>
+  <data name="Editor.Translation" xml:space="preserve">
+    <value>Traduction</value>
+  </data>
+  <data name="Editor.Width" xml:space="preserve">
+    <value>Largeur</value>
+  </data>
+  <data name="Editor.Column" xml:space="preserve">
+    <value>Colonne</value>
+  </data>
+  <data name="Editor.ColumnNumber" xml:space="preserve">
+    <value>Colonne {0}</value>
+  </data>
+  <data name="Editor.Row" xml:space="preserve">
+    <value>Ligne</value>
+  </data>
+  <data name="Editor.Text" xml:space="preserve">
+    <value>Texte</value>
+  </data>
+  <data name="Editor.LiveBinding" xml:space="preserve">
+    <value>Liaison dynamique du mot</value>
+  </data>
+  <data name="Editor.ExerciseRow" xml:space="preserve">
+    <value>Ligne d’exercice (utilisez {{blank}})</value>
+  </data>
+  <data name="Editor.AccessibleLabel" xml:space="preserve">
+    <value>Libellé accessible</value>
+  </data>
+  <data name="Editor.CustomExpected" xml:space="preserve">
+    <value>Réponse attendue personnalisée</value>
+  </data>
+  <data name="Editor.ExpectedBinding" xml:space="preserve">
+    <value>Liaison de mot attendue</value>
+  </data>
+  <data name="Editor.DisplayedWord" xml:space="preserve">
+    <value>Mot affiché</value>
+  </data>
+  <data name="Editor.ExpectedChecked" xml:space="preserve">
+    <value>Doit être cochée</value>
+  </data>
+  <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
+    <value>Ce quiz n’est plus public.</value>
+  </data>
+  <data name="Explore.CollectionNoLongerPublic" xml:space="preserve">
+    <value>Cette collection n’est plus publique.</value>
+  </data>
+  <data name="Explore.CopiedToLibrary" xml:space="preserve">
+    <value>{0} copié dans votre bibliothèque.</value>
+  </data>
+  <data name="Classroom.InvitationCreated" xml:space="preserve">
+    <value>Invitation créée. Elle apparaît sur leur page Classroom lors de leur prochaine visite.</value>
+  </data>
+  <data name="Classroom.JoinCodeRegenerated" xml:space="preserve">
+    <value>Code d’accès régénéré.</value>
+  </data>
+  <data name="Classroom.NoAccessResults" xml:space="preserve">
+    <value>Vous n’avez pas accès à ces résultats.</value>
+  </data>
+  <data name="Classroom.QuizShared" xml:space="preserve">
+    <value>Quiz partagé.</value>
+  </data>
+  <data name="Classroom.BookShared" xml:space="preserve">
+    <value>Livre partagé.</value>
+  </data>
+  <data name="Classroom.RemovedFromClassroom" xml:space="preserve">
+    <value>Retiré de la classe.</value>
+  </data>
+  <data name="Classroom.QuizCopyFailed" xml:space="preserve">
+    <value>Ce quiz n’a pas pu être copié.</value>
+  </data>
+  <data name="Classroom.Member" xml:space="preserve">
+    <value>Membre</value>
+  </data>
+  <data name="Common.Unknown" xml:space="preserve">
+    <value>Inconnu</value>
+  </data>
+  <data name="Account.LogOut" xml:space="preserve">
+    <value>Se déconnecter</value>
+  </data>
+  <data name="Account.LogIn" xml:space="preserve">
+    <value>Se connecter</value>
+  </data>
+  <data name="Common.Send" xml:space="preserve">
+    <value>Envoyer</value>
+  </data>
+  <data name="Speaking.ConversationLab" xml:space="preserve">
+    <value>laboratoire de conversation {0}</value>
+  </data>
+  <data name="Speaking.MessageLabel" xml:space="preserve">
+    <value>Votre message en {0}</value>
+  </data>
+  <data name="Speaking.MessagePlaceholder" xml:space="preserve">
+    <value>Écrivez en {0} ou utilisez le microphone…</value>
+  </data>
+  <data name="Speaking.MicAria" xml:space="preserve">
+    <value>Démarrer la transcription vocale en {0} ; l’enregistrement s’arrête lorsque vous avez fini de parler</value>
+  </data>
+  <data name="Speaking.PrivacyNote" xml:space="preserve">
+    <value>L’audio est envoyé directement à Azure Speech. Cette conversation est conservée uniquement pour la session en cours.</value>
+  </data>
+  <data name="Speaking.ClickTranslate" xml:space="preserve">
+    <value>Cliquez pour traduire</value>
+  </data>
+  <data name="Speaking.ClickShowLanguage" xml:space="preserve">
+    <value>Cliquez pour afficher {0}</value>
+  </data>
+  <data name="Speaking.CoachFeedback" xml:space="preserve">
+    <value>Retour du coach</value>
+  </data>
+  <data name="Speaking.MoreNatural" xml:space="preserve">
+    <value>Plus naturel en {0}</value>
+  </data>
+</root>

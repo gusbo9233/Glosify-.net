@@ -1,0 +1,40 @@
+@using Microsoft.Extensions.Options
+@using Glosify.Services.Legal
+@inject IOptions<LegalOptions> Legal
+@{
+    Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
+    ViewData["Title"] = "利用規約";
+    var legal = Legal.Value;
+}
+
+<main class="auth-shell legal-shell">
+    <article class="glass-card legal-document">
+        <header class="auth-card-header"><h1>利用規約</h1><p>2026年8月10日発効</p></header>
+        <aside class="legal-language-notice">
+            この翻訳は便宜上提供されています。英語版と異なる場合は、英語版が優先されます。
+            <a asp-action="TermsEnglish">準拠する英語版を読む</a>。
+        </aside>
+
+        <p>Glosify は、<strong>@legal.ControllerName</strong> が運営するベータ版の言語学習サービスです。本サービスを利用することで、お客様は、本サービスを合法的に利用し、アカウントを安全に保ち、処理する権限のある素材のみをアップロードまたはストリーミングすることに同意するものとします。</p>
+
+        <h2>ベータ版サービスと提供状況</h2>
+        <p>機能は変更されたり、正常に動作しなかったり、一時的に利用できなくなったりする場合があります。有料機能は、Glosify の月間アプリケーション予算が使い切られると停止し、次の Europe/Stockholm の月次期間に再開します。クレジットはサービス単位であり、現金価値はなく、継続的な利用を保証するものではありません。</p>
+
+        <h2>試用クレジット</h2>
+        <p>Google または Microsoft にリンクされた対象アカウントには、25 クレジットの試用が 1 回付与される場合があります。パスワードのみの登録および API 登録には、自動の試用クレジットは付与されません。乱用、重複アカウントの量産、自動化、または制限を回避しようとする試みは、停止の対象となる場合があります。</p>
+
+        <h2>お客様のコンテンツ</h2>
+        <p>お客様が提供するコンテンツに関する権利は、お客様に留保されます。お客様は、Glosify およびその処理者に対し、お客様が要求した機能のために、そのコンテンツをホスト、送信、分析、翻訳し、返送するために必要な限定的な権限を付与します。生成された翻訳や学習教材は、医療、法律、安全に関わる重要な判断、その他の重大な判断に使用しないでください。</p>
+
+        <h2>利用の終了</h2>
+        <p>お客様は、利用可能なアカウントおよびトランスクリプトの管理機能を通じて、Glosify の利用を停止し、保存されたコンテンツを削除できます。Glosify は、本サービス、他の利用者、または法令遵守に対する脅威となるアカウントを制限する場合があります。</p>
+
+        <h2>お問い合わせ</h2>
+        <p>本規約に関するご質問は <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> までお送りください。</p>
+
+        <nav class="legal-links" aria-label='@Text["Legal.Label"]'>
+            <a asp-action="Privacy">@Text["Legal.PrivacyPolicy"]</a>
+            <a asp-action="Support">@Text["Legal.Support"]</a>
+        </nav>
+    </article>
+</main>

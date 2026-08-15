@@ -1,4 +1,5 @@
 (() => {
+    const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
     const modeLabel = document.querySelector('[data-selected-mode]');
     const modes = document.querySelectorAll('input[name="Mode"]');
     const directionLabel = document.querySelector('[data-selected-direction]');
@@ -14,9 +15,9 @@
     if (!modeLabel || !modes.length) return;
 
     const labels = {
-        flashcards: 'Flashcards',
-        typing: 'Typing',
-        'multiple-choice': 'Choices'
+        flashcards: t('Settings.Flashcards', 'Flashcards'),
+        typing: t('Settings.Typing', 'Typing'),
+        'multiple-choice': t('Settings.Choices', 'Choices')
     };
 
     modes.forEach(mode => {
@@ -69,11 +70,12 @@
 
         const isSentences = selected.value === 'sentences';
         const count = Number(selected.dataset.count || '0');
-        const itemLabel = isSentences ? 'sentences' : 'words';
-        const singularLabel = isSentences ? 'sentence' : 'word';
+        const itemLabel = isSentences ? t('Settings.SentencesLower', 'sentences') : t('Settings.WordsLower', 'words');
+        const singularLabel = isSentences ? t('Settings.SentenceLower', 'sentence') : t('Settings.WordLower', 'word');
+        const countLabel = count === 1 ? singularLabel : itemLabel;
 
         if (contentLabel) contentLabel.textContent = selected.dataset.itemLabel || selected.value;
-        if (availableLabel) availableLabel.textContent = `${count} ${itemLabel}`;
+        if (availableLabel) availableLabel.textContent = `${count} ${countLabel}`;
         if (availableCount) availableCount.textContent = `${count}`;
         if (availableItemLabel) availableItemLabel.textContent = itemLabel;
 
@@ -88,7 +90,7 @@
 
         if (emptyCallout) {
             emptyCallout.hidden = count > 0;
-            emptyCallout.textContent = `Add at least one ${singularLabel} before starting a practice session.`;
+            emptyCallout.textContent = t('Settings.NeedItem', 'Add at least one {0} before starting a practice session.', singularLabel);
         }
 
         if (startButton) {
@@ -113,9 +115,9 @@
 
         const describeRange = (minVal, maxVal) => {
             const width = maxVal - minVal;
-            if (minVal === 0 && maxVal === 100) return 'All';
-            if (maxVal === 100) return `Newest ${width}%`;
-            if (minVal === 0) return `Oldest ${width}%`;
+            if (minVal === 0 && maxVal === 100) return t('Common.All', 'All');
+            if (maxVal === 100) return t('Settings.Newest', 'Newest {0}%', width);
+            if (minVal === 0) return t('Settings.Oldest', 'Oldest {0}%', width);
             return `${minVal}%–${maxVal}%`;
         };
 
@@ -130,8 +132,8 @@
 
             if (rangeLabel) {
                 rangeLabel.textContent = minVal === 0 && maxVal === 100
-                    ? 'Practicing all words, oldest to newest.'
-                    : `Practicing ${describeRange(minVal, maxVal).toLowerCase()} of the list (oldest to newest).`;
+                    ? t('Settings.AllWordsOrder', 'Practicing all words, oldest to newest.')
+                    : t('Settings.RangeDynamic', 'Practicing {0} of the list (oldest to newest).', describeRange(minVal, maxVal));
             }
 
             if (selectedRange) {
@@ -196,7 +198,7 @@
 
         const updateCount = () => {
             const checked = checkboxes.filter(cb => cb.checked).length;
-            if (countLabel) countLabel.textContent = `${checked} of ${total} selected`;
+            if (countLabel) countLabel.textContent = t('Settings.SelectedCount', '{0} of {1} selected', checked, total);
         };
 
         checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
@@ -233,7 +235,7 @@
 
             if (summary) {
                 summary.hidden = !isOverrideActive;
-                summary.textContent = isOverrideActive ? `${checkedIds.length} of ${total} words picked individually` : '';
+                summary.textContent = isOverrideActive ? t('Settings.PickedWords', '{0} of {1} words picked individually', checkedIds.length, total) : '';
             }
             if (clearBtn) clearBtn.hidden = !isOverrideActive;
 
@@ -241,7 +243,7 @@
 
             if (selectedRangeLabel) {
                 if (isOverrideActive) {
-                    selectedRangeLabel.textContent = `${checkedIds.length} picked`;
+                    selectedRangeLabel.textContent = t('Settings.PickedCount', '{0} picked', checkedIds.length);
                 } else {
                     const minInput = document.querySelector('[data-range-min]');
                     const maxInput = document.querySelector('[data-range-max]');

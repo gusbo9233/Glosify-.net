@@ -5,17 +5,17 @@
     <section class="panel classroom-composer">
         <div class="panel-header">
             <div class="panel-icon"><span class="material-symbols-outlined">campaign</span></div>
-            <h2 class="panel-title">Post an announcement</h2>
+            <h2 class="panel-title">@Text["Classroom.PostAnnouncement"]</h2>
         </div>
         <form method="post" asp-controller="ClassroomStream" asp-action="PostAnnouncement">
             @Html.AntiForgeryToken()
             <input type="hidden" name="id" value="@Model.Classroom.Id" />
             <div class="form-group">
-                <textarea class="form-input classroom-announcement-input" name="body" rows="3" maxlength="4000"
-                          placeholder="Share something with the class" required></textarea>
+                <textarea class="form-input classroom-announcement-input" name="body" dir="auto" rows="3" maxlength="4000"
+                          placeholder="@Text["Classroom.ShareClass"]" required></textarea>
             </div>
             <button class="btn-submit" type="submit">
-                Post <span class="material-symbols-outlined" aria-hidden="true">send</span>
+                @Text["Classroom.Post"] <span class="material-symbols-outlined" aria-hidden="true">send</span>
             </button>
         </form>
     </section>
@@ -24,8 +24,8 @@
 <section>
     <div class="collection-header">
         <div>
-            <h2 class="collection-title">Announcements</h2>
-            <p class="collection-subtitle">@Model.Board.Count @(Model.Board.Count == 1 ? "post" : "posts")</p>
+            <h2 class="collection-title">@Text["Classroom.Announcements"]</h2>
+            <p class="collection-subtitle">@Model.Board.Count @(Model.Board.Count == 1 ? Text["Classroom.PostOne"] : Text["Classroom.PostMany"])</p>
         </div>
     </div>
 
@@ -38,7 +38,7 @@
                     <span class="book-meta"><time datetime="@message.CreatedAt.ToString("O")" data-local="datetime">@message.CreatedAt.UtcDateTime.ToString("MMM d, yyyy HH:mm")</time></span>
                     @if (message.IsPinned)
                     {
-                        <span class="material-symbols-outlined classroom-pin-icon" title="Pinned">keep</span>
+                        <span class="material-symbols-outlined classroom-pin-icon" title="@Text["Classroom.Pinned"]">keep</span>
                     }
                 </div>
                 <p class="classroom-board-body">@message.Body</p>
@@ -50,13 +50,13 @@
                             <input type="hidden" name="id" value="@Model.Classroom.Id" />
                             <input type="hidden" name="messageId" value="@message.Id" />
                             <input type="hidden" name="pinned" value="@((!message.IsPinned).ToString().ToLowerInvariant())" />
-                            <button class="btn-linkish" type="submit">@(message.IsPinned ? "Unpin" : "Pin")</button>
+                            <button class="btn-linkish" type="submit">@(message.IsPinned ? Text["Classroom.Unpin"] : Text["Classroom.Pin"])</button>
                         </form>
-                        <form method="post" asp-controller="ClassroomStream" asp-action="DeleteMessage" data-confirm="Delete this announcement?">
+                        <form method="post" asp-controller="ClassroomStream" asp-action="DeleteMessage" data-confirm="@Text["Classroom.DeleteAnnouncement"]">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@Model.Classroom.Id" />
                             <input type="hidden" name="messageId" value="@message.Id" />
-                            <button class="btn-linkish" type="submit">Delete</button>
+                            <button class="btn-linkish" type="submit">@Text["Common.Delete"]</button>
                         </form>
                     </div>
                 }
@@ -64,7 +64,7 @@
         }
         @if (!Model.Board.Any())
         {
-            <div class="empty-state">Nothing here yet. @(Model.IsTeacher ? "Post the first announcement above." : "Your teacher hasn't posted anything yet.")</div>
+            <div class="empty-state">@Text["Classroom.NothingYet"] @(Model.IsTeacher ? Text["Classroom.PostFirst"] : Text["Classroom.NoTeacherPosts"])</div>
         }
     </div>
 </section>

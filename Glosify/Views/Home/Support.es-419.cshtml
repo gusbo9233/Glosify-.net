@@ -1,0 +1,20 @@
+@using Microsoft.Extensions.Options
+@using Glosify.Services.Legal
+@inject IOptions<LegalOptions> Legal
+@{
+    Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
+    ViewData["Title"] = "Soporte";
+    var legal = Legal.Value;
+}
+
+<main class="auth-shell legal-shell">
+    <article class="glass-card legal-document">
+        <header class="auth-card-header"><h1>Soporte de Glosify</h1><p>Ayuda con la app web beta y la extensión de Chrome.</p></header>
+        <p>Escríbenos a <a href="mailto:@legal.ContactEmail?subject=Glosify%20support">@legal.ContactEmail</a>. Incluye la hora aproximada, la versión del navegador y el mensaje de error que te apareció. No envíes contraseñas, tokens de acceso, audio de pestañas ni texto sensible de la transcripción.</p>
+        <p>Para preguntas sobre privacidad, eliminación de transcripciones o eliminación de la cuenta, usa la misma dirección y especifica claramente la solicitud. Si ya iniciaste sesión, primero usa los controles de eliminación integrados cuando estén disponibles.</p>
+        <nav class="legal-links" aria-label='@Text["Legal.Label"]'>
+            <a asp-action="Privacy">@Text["Legal.PrivacyPolicy"]</a>
+            <a asp-action="Terms">@Text["Legal.TermsOfService"]</a>
+        </nav>
+    </article>
+</main>

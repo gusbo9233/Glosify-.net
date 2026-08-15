@@ -7,6 +7,12 @@ public class ApplicationUser : IdentityUser
     public string? SelectedQuizLanguageCode { get; set; }
 
     /// <summary>
+    /// Culture used for Glosify's interface, independently of the language being learned.
+    /// Null means the standard English display default unless a browser culture cookie exists.
+    /// </summary>
+    public string? DisplayCulture { get; set; }
+
+    /// <summary>
     /// The language this user translates into, as a display name such as "English".
     /// </summary>
     /// <remarks>

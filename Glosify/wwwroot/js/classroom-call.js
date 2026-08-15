@@ -5,6 +5,7 @@
     if (!root || typeof acs === "undefined") {
         return;
     }
+    const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
 
     const classroomId = root.getAttribute("data-classroom-id");
     const displayName = root.getAttribute("data-display-name") || "Member";
@@ -67,24 +68,24 @@
         }
         const active = callParticipants > 0;
         if (active) {
-            lobbyTitle.textContent = "A call is in progress";
-            presenceLine.textContent = callParticipants === 1
-                ? "1 person is in the call."
-                : `${callParticipants} people are in the call.`;
+            lobbyTitle.textContent = t('Classroom.VideoCall', "Video call");
+            presenceLine.textContent = `${callParticipants} ${callParticipants === 1
+                ? t('Classroom.MemberOne', 'member')
+                : t('Classroom.MemberMany', 'members')}`;
             presenceLine.hidden = false;
-            joinLabel.textContent = "Join call";
+            joinLabel.textContent = t('Classroom.JoinCall', "Join call");
             joinButton.disabled = Boolean(joinInFlight);
         } else if (isTeacher) {
-            lobbyTitle.textContent = "Ready to start?";
-            presenceLine.textContent = "No one is in the call yet.";
+            lobbyTitle.textContent = t('Classroom.ReadyStart', "Ready to start?");
+            presenceLine.textContent = t('Classroom.NoOneCall', "No one is in the call yet.");
             presenceLine.hidden = false;
-            joinLabel.textContent = "Start call";
+            joinLabel.textContent = t('Classroom.ReadyStart', "Ready to start?");
             joinButton.disabled = Boolean(joinInFlight);
         } else {
-            lobbyTitle.textContent = "Waiting for a teacher";
-            presenceLine.textContent = "You can join once a teacher has started the call.";
+            lobbyTitle.textContent = t('Classroom.WaitingTeacher', "Waiting for a teacher");
+            presenceLine.textContent = t('Classroom.JoinAfterTeacher', "You can join once a teacher has started the call.");
             presenceLine.hidden = false;
-            joinLabel.textContent = "Join call";
+            joinLabel.textContent = t('Classroom.JoinCall', "Join call");
             joinButton.disabled = true;
         }
     }
@@ -131,7 +132,7 @@
 
         if (!response.ok) {
             const problem = await response.json().catch(() => null);
-            throw new Error(problem && problem.message ? problem.message : "Could not get a call token.");
+            throw new Error(t('Client.CallTokenFailed', "Could not get a call token."));
         }
 
         return response.json();
@@ -312,12 +313,12 @@
         }
         const reset = paid.resetsAtUtc ? new Date(paid.resetsAtUtc) : null;
         const resetText = reset && !Number.isNaN(reset.valueOf())
-            ? reset.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
-            : "the start of next month";
+            ? reset.toLocaleString(document.documentElement.lang || "en-GB", { dateStyle: "medium", timeStyle: "short" })
+            : t('Speaking.NextMonth', "the start of next month");
         const active = call;
         call = null;
         cleanUp();
-        setStatus(`The Glosify paid-services budget was reached. Calls reopen ${resetText}.`);
+        setStatus(t('Books.PaidUnavailable', '{0} Paid features reopen at {1}.', '', resetText).trim());
         hangUpCall(active);
     }
 
@@ -420,7 +421,7 @@
         const session = ++joinSession;
         joining = true;
         joinButton.disabled = true;
-        setStatus("Connecting…");
+        setStatus(t('Classroom.Connecting', "Connecting…"));
 
         // Show the stage right away so the call can be hung up while it is
         // still connecting.
@@ -429,9 +430,9 @@
         root.classList.add("is-live");
         document.body.classList.add("call-in-progress");
         localTile.hidden = false;
-        liveStatus.textContent = "Connecting…";
-        setControlState(muteButton, "mic", "mic_off", true, "Mute microphone", "Unmute microphone");
-        setControlState(cameraButton, "videocam", "videocam_off", true, "Turn camera off", "Turn camera on");
+        liveStatus.textContent = t('Classroom.Connecting', "Connecting…");
+        setControlState(muteButton, "mic", "mic_off", true, t('Classroom.MuteMic', "Mute microphone"), t('Classroom.UnmuteMic', "Unmute microphone"));
+        setControlState(cameraButton, "videocam", "videocam_off", true, t('Classroom.CameraOff', "Turn camera off"), t('Classroom.CameraOn', "Turn camera on"));
         layoutGrid();
 
         try {
@@ -460,7 +461,7 @@
                 disposeLocalVideo();
                 return;
             }
-            setControlState(cameraButton, "videocam", "videocam_off", Boolean(videoStream), "Turn camera off", "Turn camera on");
+            setControlState(cameraButton, "videocam", "videocam_off", Boolean(videoStream), t('Classroom.CameraOff', "Turn camera off"), t('Classroom.CameraOn', "Turn camera on"));
 
             const joined = callAgent.join(
                 { groupId: info.groupCallId },
@@ -484,7 +485,7 @@
                     return;
                 }
                 if (joined.state === "Connected") {
-                    liveStatus.textContent = "Connected";
+                    liveStatus.textContent = t('Classroom.Connected', "Connected");
                     root.classList.add("is-connected");
                     joining = false;
                     notifyJoinedCall();
@@ -501,7 +502,7 @@
         } catch (error) {
             if (session === joinSession) {
                 cleanUp();
-                setStatus(error.message || "Could not join the call.");
+                setStatus(t('Client.JoinCallFailed', "Could not join the call."));
             }
         }
     }
@@ -521,7 +522,7 @@
         document.body.classList.remove("call-in-progress");
         joining = false;
         renderLobby(false);
-        setStatus("Not connected");
+        setStatus(t('Classroom.NotConnected', "Not connected"));
     }
 
     muteButton.addEventListener("click", async () => {
@@ -534,7 +535,7 @@
         } else {
             await call.mute();
         }
-        setControlState(muteButton, "mic", "mic_off", !call.isMuted, "Mute microphone", "Unmute microphone");
+        setControlState(muteButton, "mic", "mic_off", !call.isMuted, t('Classroom.MuteMic', "Mute microphone"), t('Classroom.UnmuteMic', "Unmute microphone"));
     });
 
     cameraButton.addEventListener("click", async () => {
@@ -550,12 +551,12 @@
             }
             localVideoHost.replaceChildren();
             localTile.classList.remove("has-video");
-            setControlState(cameraButton, "videocam", "videocam_off", false, "Turn camera off", "Turn camera on");
+            setControlState(cameraButton, "videocam", "videocam_off", false, t('Classroom.CameraOff', "Turn camera off"), t('Classroom.CameraOn', "Turn camera on"));
         } else {
             const videoStream = await startLocalVideo();
             if (videoStream) {
                 await call.startVideo(videoStream);
-                setControlState(cameraButton, "videocam", "videocam_off", true, "Turn camera off", "Turn camera on");
+                setControlState(cameraButton, "videocam", "videocam_off", true, t('Classroom.CameraOff', "Turn camera off"), t('Classroom.CameraOn', "Turn camera on"));
             }
         }
     });

@@ -1,0 +1,2883 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="DisplayLanguage.Label" xml:space="preserve">
+    <value>Görüntüleme dili</value>
+  </data>
+  <data name="DisplayLanguage.Submit" xml:space="preserve">
+    <value>Dili değiştir</value>
+  </data>
+  <data name="Common.English" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="Common.Swedish" xml:space="preserve">
+    <value>Svenska</value>
+  </data>
+  <data name="Common.LogIn" xml:space="preserve">
+    <value>Giriş yap</value>
+  </data>
+  <data name="Common.LogOut" xml:space="preserve">
+    <value>Çıkış yap</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>Ara</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="Common.Next" xml:space="preserve">
+    <value>İleri</value>
+  </data>
+  <data name="Common.Previous" xml:space="preserve">
+    <value>Önceki</value>
+  </data>
+  <data name="Layout.MetaDescription" xml:space="preserve">
+    <value>Glosify, okuduklarınızı kullanabileceğiniz kelimelere dönüştürür: kitaplar ve transkriptlerden kelime listeleri oluşturun, bunları quizler ve bilgi kartlarıyla pekiştirin, ardından bir AI sohbet partneriyle yüksek sesle pratik yapın.</value>
+  </data>
+  <data name="Layout.AuthMetaDescription" xml:space="preserve">
+    <value>Okuduklarınızdan kelime dağarcığı oluşturmak, quizlerle pratik yapmak ve bir AI sohbet partneriyle konuşmak için Glosify'a giriş yapın.</value>
+  </data>
+  <data name="Layout.PremiumLearner" xml:space="preserve">
+    <value>Premium Öğrenci</value>
+  </data>
+  <data name="Layout.SearchPlaceholder" xml:space="preserve">
+    <value>Ne öğrenmek istiyorsunuz?</value>
+  </data>
+  <data name="Layout.Notifications" xml:space="preserve">
+    <value>Bildirimler</value>
+  </data>
+  <data name="Layout.GetCredits" xml:space="preserve">
+    <value>Kredi al</value>
+  </data>
+  <data name="Layout.SignedInAs" xml:space="preserve">
+    <value>Oturum açan kullanıcı</value>
+  </data>
+  <data name="Layout.SignedIn" xml:space="preserve">
+    <value>Oturum açıldı</value>
+  </data>
+  <data name="Layout.PrimaryNavigation" xml:space="preserve">
+    <value>Ana gezinme</value>
+  </data>
+  <data name="Nav.LanguageSelector" xml:space="preserve">
+    <value>Dil seçici</value>
+  </data>
+  <data name="Nav.Language" xml:space="preserve">
+    <value>Dil</value>
+  </data>
+  <data name="Nav.Home" xml:space="preserve">
+    <value>Ana sayfa</value>
+  </data>
+  <data name="Nav.Explore" xml:space="preserve">
+    <value>Keşfet</value>
+  </data>
+  <data name="Nav.Books" xml:space="preserve">
+    <value>Kitaplar</value>
+  </data>
+  <data name="Nav.Transcripts" xml:space="preserve">
+    <value>Transkriptler</value>
+  </data>
+  <data name="Nav.Quizzes" xml:space="preserve">
+    <value>Quizler</value>
+  </data>
+  <data name="Nav.Speaking" xml:space="preserve">
+    <value>Konuşma</value>
+  </data>
+  <data name="Nav.Speak" xml:space="preserve">
+    <value>Konuş</value>
+  </data>
+  <data name="Nav.Classrooms" xml:space="preserve">
+    <value>Sınıflar</value>
+  </data>
+  <data name="Nav.Class" xml:space="preserve">
+    <value>Sınıf</value>
+  </data>
+  <data name="Languages.Title" xml:space="preserve">
+    <value>Dil seçici</value>
+  </data>
+  <data name="Languages.Tagline" xml:space="preserve">
+    <value>Bugün hangi dile dokunmak istersiniz?</value>
+  </data>
+  <data name="Languages.Current" xml:space="preserve">
+    <value>Şu anda {0} öğreniyorsunuz</value>
+  </data>
+  <data name="Languages.Find" xml:space="preserve">
+    <value>Dil bul</value>
+  </data>
+  <data name="Languages.SearchPlaceholder" xml:space="preserve">
+    <value>İngilizce, ana dil adı veya kod ile ara</value>
+  </data>
+  <data name="Languages.Count" xml:space="preserve">
+    <value>{0} dil</value>
+  </data>
+  <data name="Languages.None" xml:space="preserve">
+    <value>Eşleşen dil yok</value>
+  </data>
+  <data name="Languages.NoneHelp" xml:space="preserve">
+    <value>İngilizce ad, ana dil adı veya dil kodu deneyin.</value>
+  </data>
+  <data name="Languages.Pick" xml:space="preserve">
+    <value>Bir dil seçin</value>
+  </data>
+  <data name="Assistant.Title" xml:space="preserve">
+    <value>Asistan</value>
+  </data>
+  <data name="Assistant.Empty" xml:space="preserve">
+    <value>Glosify içinde istediğiniz yerden yardım isteyin.</value>
+  </data>
+  <data name="Assistant.Placeholder" xml:space="preserve">
+    <value>Asistana sorun...</value>
+  </data>
+  <data name="Assistant.Workspace" xml:space="preserve">
+    <value>Asistan çalışma alanı</value>
+  </data>
+  <data name="Assistant.Chat" xml:space="preserve">
+    <value>SOHBET</value>
+  </data>
+  <data name="Assistant.Chats" xml:space="preserve">
+    <value>SOHBETLER</value>
+  </data>
+  <data name="Assistant.NewChat" xml:space="preserve">
+    <value>Yeni sohbet</value>
+  </data>
+  <data name="Assistant.Close" xml:space="preserve">
+    <value>Asistanı kapat</value>
+  </data>
+  <data name="Assistant.QuizContext" xml:space="preserve">
+    <value>Quiz bağlamı</value>
+  </data>
+  <data name="Assistant.NoQuiz" xml:space="preserve">
+    <value>Seçili quiz yok</value>
+  </data>
+  <data name="Assistant.ReadingMaterial" xml:space="preserve">
+    <value>Okuma materyali</value>
+  </data>
+  <data name="Assistant.NoMaterial" xml:space="preserve">
+    <value>Seçili materyal yok</value>
+  </data>
+  <data name="Assistant.Picture" xml:space="preserve">
+    <value>Görsel</value>
+  </data>
+  <data name="Assistant.Model" xml:space="preserve">
+    <value>Asistan modeli</value>
+  </data>
+  <data name="Assistant.AutoModel" xml:space="preserve">
+    <value>Otomatik · {0}</value>
+  </data>
+  <data name="Assistant.Send" xml:space="preserve">
+    <value>Gönder</value>
+  </data>
+  <data name="Assistant.PreviousChats" xml:space="preserve">
+    <value>Önceki sohbetler</value>
+  </data>
+  <data name="Assistant.NoChats" xml:space="preserve">
+    <value>Henüz kayıtlı sohbet yok.</value>
+  </data>
+  <data name="Quiz.FlashcardsTitle" xml:space="preserve">
+    <value>Bilgi Kartı Quiz'i</value>
+  </data>
+  <data name="Quiz.TypingTitle" xml:space="preserve">
+    <value>Yazma Quiz'i</value>
+  </data>
+  <data name="Quiz.RevealRate" xml:space="preserve">
+    <value>Cevabı gösterin, hatırlama düzeyini değerlendirin ve devam edin.</value>
+  </data>
+  <data name="Quiz.BackWords" xml:space="preserve">
+    <value>Kelimelere geri dön</value>
+  </data>
+  <data name="Quiz.SessionComplete" xml:space="preserve">
+    <value>Oturum tamamlandı</value>
+  </data>
+  <data name="Quiz.Remembered" xml:space="preserve">
+    <value>Hatırlandı</value>
+  </data>
+  <data name="Quiz.ReviewAgain" xml:space="preserve">
+    <value>Tekrar gözden geçir</value>
+  </data>
+  <data name="Quiz.Skipped" xml:space="preserve">
+    <value>Atlandı</value>
+  </data>
+  <data name="Quiz.Restart" xml:space="preserve">
+    <value>Oturumu yeniden başlat</value>
+  </data>
+  <data name="Quiz.PracticeAgain" xml:space="preserve">
+    <value>Tekrar pratik yap</value>
+  </data>
+  <data name="Quiz.PlayPronunciation" xml:space="preserve">
+    <value>{0} telaffuzunu oynat</value>
+  </data>
+  <data name="Quiz.RevealAnswer" xml:space="preserve">
+    <value>{0} için cevabı göster</value>
+  </data>
+  <data name="Quiz.Again" xml:space="preserve">
+    <value>Tekrar</value>
+  </data>
+  <data name="Quiz.Good" xml:space="preserve">
+    <value>İyi</value>
+  </data>
+  <data name="Quiz.Easy" xml:space="preserve">
+    <value>Kolay</value>
+  </data>
+  <data name="Quiz.SwipeHint" xml:space="preserve">
+    <value>İyi için sağa, Tekrar için sola kaydırın</value>
+  </data>
+  <data name="Quiz.Skip" xml:space="preserve">
+    <value>Atla</value>
+  </data>
+  <data name="Quiz.ShowAnswer" xml:space="preserve">
+    <value>Cevabı Göster</value>
+  </data>
+  <data name="Quiz.Reset" xml:space="preserve">
+    <value>Oturumu Sıfırla</value>
+  </data>
+  <data name="Quiz.NoneYet" xml:space="preserve">
+    <value>Henüz {0} yok</value>
+  </data>
+  <data name="Quiz.AddThenStart" xml:space="preserve">
+    <value>Bir quize {0} ekleyin, ardından o quizden bir {1} oturumu başlatın.</value>
+  </data>
+  <data name="Quiz.TypeInstruction" xml:space="preserve">
+    <value>{2} isteminden tam {0} {1} ifadesini yazın.</value>
+  </data>
+  <data name="Quiz.CheckAnswer" xml:space="preserve">
+    <value>Cevabı Kontrol Et</value>
+  </data>
+  <data name="Quiz.PlayPronunciationGeneric" xml:space="preserve">
+    <value>Telaffuzu oynat</value>
+  </data>
+  <data name="Quiz.Answer" xml:space="preserve">
+    <value>Cevap</value>
+  </data>
+  <data name="Quiz.TypePlaceholder" xml:space="preserve">
+    <value>Cevabınızı yazın...</value>
+  </data>
+  <data name="Quiz.CorrectAnswer" xml:space="preserve">
+    <value>Doğru cevap</value>
+  </data>
+  <data name="Quiz.Space" xml:space="preserve">
+    <value>Boşluk</value>
+  </data>
+  <data name="Quiz.TypingComplete" xml:space="preserve">
+    <value>Yazma Tamamlandı</value>
+  </data>
+  <data name="Quiz.Correct" xml:space="preserve">
+    <value>Doğru</value>
+  </data>
+  <data name="Quiz.Incorrect" xml:space="preserve">
+    <value>Yanlış</value>
+  </data>
+  <data name="Quiz.PracticeIncorrect" xml:space="preserve">
+    <value>Yanlış Kelimeleri Çalış</value>
+  </data>
+  <data name="Quiz.ChangeSettings" xml:space="preserve">
+    <value>Ayarları değiştir</value>
+  </data>
+  <data name="Transcripts.Title" xml:space="preserve">
+    <value>Transkriptler</value>
+  </data>
+  <data name="Transcripts.Eyebrow" xml:space="preserve">
+    <value>Canlı altyazı geçmişi</value>
+  </data>
+  <data name="Transcripts.Saved" xml:space="preserve">
+    <value>Kaydedilmiş transkriptler</value>
+  </data>
+  <data name="Transcripts.Intro" xml:space="preserve">
+    <value>{0} için kaydedilmiş canlı altyazı metni. Yeni oturumlar orijinal konuşmayı içerir; eski oturumlar çeviri olarak etiketli kalır.</value>
+  </data>
+  <data name="Transcripts.SelectedLanguage" xml:space="preserve">
+    <value>seçtiğiniz dil</value>
+  </data>
+  <data name="Transcripts.Updated" xml:space="preserve">
+    <value>Güncellendi</value>
+  </data>
+  <data name="Transcripts.None" xml:space="preserve">
+    <value>Henüz kaydedilmiş transkript yok</value>
+  </data>
+  <data name="Transcripts.NoneHelp" xml:space="preserve">
+    <value>Canlı altyazıları başlatmadan önce “Orijinal konuşma transkriptini kaydet” seçeneğini etkinleştirin.</value>
+  </data>
+  <data name="Transcripts.PagesAria" xml:space="preserve">
+    <value>Transkript sayfaları</value>
+  </data>
+  <data name="Common.PageOf" xml:space="preserve">
+    <value>Sayfa {0} / {1}</value>
+  </data>
+  <data name="Home.Title" xml:space="preserve">
+    <value>Ana sayfa</value>
+  </data>
+  <data name="Home.Coach" xml:space="preserve">
+    <value>Öğrenme koçu</value>
+  </data>
+  <data name="Home.Kicker" xml:space="preserve">
+    <value>Dil öğrenme alanınız</value>
+  </data>
+  <data name="Home.TitleWithLanguage" xml:space="preserve">
+    <value>{0} öğrenmenizin bir parçası olsun.</value>
+  </data>
+  <data name="Home.TitleAnonymous" xml:space="preserve">
+    <value>Yeni kelimeleri gerçek sohbetlere dönüştürün.</value>
+  </data>
+  <data name="Home.Description" xml:space="preserve">
+    <value>Okuduğunuz şeylerden kelime hazinesi oluşturun, odaklı pratikle kalıcı hale getirin, ardından bir AI sohbet partneriyle sesli olarak kullanın.</value>
+  </data>
+  <data name="Home.StartLearning" xml:space="preserve">
+    <value>Öğrenmeye başla</value>
+  </data>
+  <data name="Home.ChooseLanguage" xml:space="preserve">
+    <value>Bir dil seçin</value>
+  </data>
+  <data name="Home.BrowseShared" xml:space="preserve">
+    <value>Paylaşılan setlere göz atın</value>
+  </data>
+  <data name="Home.StartSpeaking" xml:space="preserve">
+    <value>Konuşmaya başla</value>
+  </data>
+  <data name="Home.OpenQuizzes" xml:space="preserve">
+    <value>Quizlerimi aç</value>
+  </data>
+  <data name="Home.WaysAria" xml:space="preserve">
+    <value>Glosify ile öğrenme yolları</value>
+  </data>
+  <data name="Home.ReadContext" xml:space="preserve">
+    <value>Bağlam içinde okuyun</value>
+  </data>
+  <data name="Home.PracticeRecall" xml:space="preserve">
+    <value>Hatırlamayı çalışın</value>
+  </data>
+  <data name="Home.SpeakConfidence" xml:space="preserve">
+    <value>Özgüvenle konuşun</value>
+  </data>
+  <data name="Home.LoopAria" xml:space="preserve">
+    <value>Okumadan konuşmaya uzanan bağlantılı bir öğrenme döngüsü</value>
+  </data>
+  <data name="Home.Discover" xml:space="preserve">
+    <value>Keşfet</value>
+  </data>
+  <data name="Home.Remember" xml:space="preserve">
+    <value>Hatırla</value>
+  </data>
+  <data name="Home.LearningLoop" xml:space="preserve">
+    <value>Öğrenme döngünüz</value>
+  </data>
+  <data name="Home.TodayMindset" xml:space="preserve">
+    <value>Bugünün yaklaşımı</value>
+  </data>
+  <data name="Home.SmallSteps" xml:space="preserve">
+    <value>Küçük adımlar. Gerçek ilerleme.</value>
+  </data>
+  <data name="Home.QuickStart" xml:space="preserve">
+    <value>Hızlı başlangıç</value>
+  </data>
+  <data name="Home.ChooseNext" xml:space="preserve">
+    <value>Bir sonraki adımınızı seçin</value>
+  </data>
+  <data name="Home.LearningLanguage" xml:space="preserve">
+    <value>Öğrenilen dil: {0}</value>
+  </data>
+  <data name="Home.BuildVocabulary" xml:space="preserve">
+    <value>Kelime hazinesi oluşturun</value>
+  </data>
+  <data name="Home.BuildVocabularyText" xml:space="preserve">
+    <value>Gerçekten kullanmak istediğiniz kelimelerden odaklı setler oluşturun.</value>
+  </data>
+  <data name="Home.PracticeRecallText" xml:space="preserve">
+    <value>Kelimeleri akılda tutmak için kartlar, yazma ve özel quizler kullanın.</value>
+  </data>
+  <data name="Home.SpeakNaturally" xml:space="preserve">
+    <value>Doğal konuşun</value>
+  </data>
+  <data name="Home.SpeakNaturallyText" xml:space="preserve">
+    <value>Yönlendirmeli bir sahneye girin ve her turdan sonra özel koçluk alın.</value>
+  </data>
+  <data name="Home.ConnectedKicker" xml:space="preserve">
+    <value>Tek ve bağlantılı bir çalışma alanı</value>
+  </data>
+  <data name="Home.ConnectedTitle" xml:space="preserve">
+    <value>Zaten ilginizi çeken her şeyden öğrenin.</value>
+  </data>
+  <data name="Home.ConnectedText" xml:space="preserve">
+    <value>Bir kitap, paylaşılan bir kelime listesi ya da sınıf ödevi bir sonraki pratik oturumunuzun başlangıcı olabilir. Kelime hazineniz bir sonraki adımınızda da size yakın kalır.</value>
+  </data>
+  <data name="Home.ExploreCollections" xml:space="preserve">
+    <value>Topluluk koleksiyonlarını keşfet</value>
+  </data>
+  <data name="Home.ReadCollect" xml:space="preserve">
+    <value>Oku ve topla</value>
+  </data>
+  <data name="Home.ReadCollectText" xml:space="preserve">
+    <value>Bir PDF'i sayfadan ayrılmadan kelime hazinesine dönüştürün.</value>
+  </data>
+  <data name="Home.ExploreTogether" xml:space="preserve">
+    <value>Birlikte keşfedin</value>
+  </data>
+  <data name="Home.ExploreTogetherText" xml:space="preserve">
+    <value>Herkese açık quizleri ve koleksiyonları kitaplığınıza kopyalayın.</value>
+  </data>
+  <data name="Home.JoinClassroom" xml:space="preserve">
+    <value>Bir sınıfa katılın</value>
+  </data>
+  <data name="Home.JoinClassroomText" xml:space="preserve">
+    <value>Ödevler, paylaşılan içerik ve canlı destekle öğrenin.</value>
+  </data>
+  <data name="Home.YourTurn" xml:space="preserve">
+    <value>Sıra sizde</value>
+  </data>
+  <data name="Home.TodayLanguage" xml:space="preserve">
+    <value>Bugün {0} ile ne yapacaksınız?</value>
+  </data>
+  <data name="Home.PickFirstWord" xml:space="preserve">
+    <value>Bir dil seçin ve kullanışlı bir kelimeyle başlayın.</value>
+  </data>
+  <data name="Home.ContinueLearning" xml:space="preserve">
+    <value>Öğrenmeye devam et</value>
+  </data>
+  <data name="Home.PickLanguage" xml:space="preserve">
+    <value>Bir dil seçin</value>
+  </data>
+  <data name="Home.CreateAccount" xml:space="preserve">
+    <value>Hesap oluştur</value>
+  </data>
+  <data name="Auth.BrandTagline" xml:space="preserve">
+    <value>Sonic Language Immersion</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>Giriş yap</value>
+  </data>
+  <data name="Auth.WelcomeBack" xml:space="preserve">
+    <value>Tekrar hoş geldiniz</value>
+  </data>
+  <data name="Auth.LoginIntro" xml:space="preserve">
+    <value>Yolculuğunuza devam etmek için lütfen bilgilerinizi girin.</value>
+  </data>
+  <data name="Auth.TrialLabel" xml:space="preserve">
+    <value>Deneme teklifi:</value>
+  </data>
+  <data name="Auth.TrialText" xml:space="preserve">
+    <value>Google veya Microsoft ile giriş yaptığınızda bir kez 25 kredi alın. Şifreli hesaplar otomatik deneme kredisi almaz.</value>
+  </data>
+  <data name="Auth.EmailAddress" xml:space="preserve">
+    <value>E-posta Adresi</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>Şifre</value>
+  </data>
+  <data name="Auth.Forgot" xml:space="preserve">
+    <value>Unuttunuz mu?</value>
+  </data>
+  <data name="Auth.OrContinue" xml:space="preserve">
+    <value>Ya da bununla devam edin</value>
+  </data>
+  <data name="Auth.ContinueProvider" xml:space="preserve">
+    <value>{0} ile devam et</value>
+  </data>
+  <data name="Auth.NoAccount" xml:space="preserve">
+    <value>Hesabınız yok mu?</value>
+  </data>
+  <data name="Auth.CreateAccount" xml:space="preserve">
+    <value>Hesap oluştur</value>
+  </data>
+  <data name="Auth.RegisterTitle" xml:space="preserve">
+    <value>Kayıt ol</value>
+  </data>
+  <data name="Auth.CreateYourAccount" xml:space="preserve">
+    <value>Hesabınızı oluşturun</value>
+  </data>
+  <data name="Auth.RegisterIntro" xml:space="preserve">
+    <value>Dil öğrenme serüveninize bugün başlayın.</value>
+  </data>
+  <data name="Auth.RegisterTrialLabel" xml:space="preserve">
+    <value>25 kredilik deneme:</value>
+  </data>
+  <data name="Auth.RegisterTrialText" xml:space="preserve">
+    <value>Google veya Microsoft ile bağlayıp giriş yaptığınızda bir kez kullanılabilir. Yalnızca parola ile hesap oluşturmak deneme kredisi eklemez.</value>
+  </data>
+  <data name="Auth.ConfirmPassword" xml:space="preserve">
+    <value>Parolayı onayla</value>
+  </data>
+  <data name="Auth.AlreadyAccount" xml:space="preserve">
+    <value>Zaten bir hesabınız var mı?</value>
+  </data>
+  <data name="Auth.ForgotTitle" xml:space="preserve">
+    <value>Parolayı unuttum</value>
+  </data>
+  <data name="Auth.ForgotHeading" xml:space="preserve">
+    <value>Parolanızı sıfırlayın</value>
+  </data>
+  <data name="Auth.ForgotUnavailable" xml:space="preserve">
+    <value>E-posta ile parola sıfırlama henüz kullanılamıyor. Hesabınıza erişimde yardıma ihtiyacınız varsa destek ile iletişime geçin.</value>
+  </data>
+  <data name="Auth.BackToLogin" xml:space="preserve">
+    <value>Girişe dön</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>Geçersiz e-posta veya parola.</value>
+  </data>
+  <data name="Auth.AccountLocked" xml:space="preserve">
+    <value>Hesap kilitlendi. Lütfen daha sonra tekrar deneyin.</value>
+  </data>
+  <data name="Auth.ExternalNotConfigured" xml:space="preserve">
+    <value>{0} ile giriş yapılandırılmamış.</value>
+  </data>
+  <data name="Auth.ExternalFailed" xml:space="preserve">
+    <value>Harici giriş başarısız oldu.</value>
+  </data>
+  <data name="Auth.ExternalProviderFailed" xml:space="preserve">
+    <value>{0} ile giriş başarısız oldu. Yerel {0} OAuth istemci kimliğini ve istemci sırrını kontrol edin, ardından tekrar deneyin.</value>
+  </data>
+  <data name="Identity.DuplicateUserName" xml:space="preserve">
+    <value>Bu e-posta adresiyle bir hesap zaten mevcut.</value>
+  </data>
+  <data name="Identity.DuplicateEmail" xml:space="preserve">
+    <value>Bu e-posta adresiyle bir hesap zaten mevcut.</value>
+  </data>
+  <data name="Identity.PasswordTooShort" xml:space="preserve">
+    <value>Parola çok kısa.</value>
+  </data>
+  <data name="Identity.PasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>Parola bir sembol içermelidir.</value>
+  </data>
+  <data name="Identity.PasswordRequiresDigit" xml:space="preserve">
+    <value>Parola bir sayı içermelidir.</value>
+  </data>
+  <data name="Identity.PasswordRequiresLower" xml:space="preserve">
+    <value>Parola küçük harf içermelidir.</value>
+  </data>
+  <data name="Identity.PasswordRequiresUpper" xml:space="preserve">
+    <value>Parola büyük harf içermelidir.</value>
+  </data>
+  <data name="Identity.DefaultError" xml:space="preserve">
+    <value>Hesap oluşturulamadı. Bilgilerinizi kontrol edin ve tekrar deneyin.</value>
+  </data>
+  <data name="Validation.PasswordsMismatch" xml:space="preserve">
+    <value>Parolalar eşleşmiyor.</value>
+  </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>{0} alanı zorunludur.</value>
+  </data>
+  <data name="Validation.Email" xml:space="preserve">
+    <value>{0} alanı geçerli bir e-posta adresi değil.</value>
+  </data>
+  <data name="Validation.MinLength" xml:space="preserve">
+    <value>{0} alanı, en az '{1}' uzunluğunda bir dize veya dizi türü olmalıdır.</value>
+  </data>
+  <data name="Legal.Label" xml:space="preserve">
+    <value>Yasal</value>
+  </data>
+  <data name="Legal.PrivacyPolicy" xml:space="preserve">
+    <value>Gizlilik Politikası</value>
+  </data>
+  <data name="Legal.TermsOfService" xml:space="preserve">
+    <value>Hizmet Şartları</value>
+  </data>
+  <data name="Legal.Support" xml:space="preserve">
+    <value>Destek</value>
+  </data>
+  <data name="Legal.PrivacyTitle" xml:space="preserve">
+    <value>Gizlilik</value>
+  </data>
+  <data name="Legal.TermsTitle" xml:space="preserve">
+    <value>Şartlar</value>
+  </data>
+  <data name="Legal.EnglishGoverns" xml:space="preserve">
+    <value>Bu çeviri kolaylık sağlamak için sunulmuştur. İngilizce sürümle farklılık varsa, İngilizce sürüm geçerlidir.</value>
+  </data>
+  <data name="Transcripts.CountOne" xml:space="preserve">
+    <value>{0} kaydedildi</value>
+  </data>
+  <data name="Transcripts.CountMany" xml:space="preserve">
+    <value>{0} kaydedildi</value>
+  </data>
+  <data name="Transcripts.CaptionOne" xml:space="preserve">
+    <value>{0} altyazı</value>
+  </data>
+  <data name="Transcripts.CaptionMany" xml:space="preserve">
+    <value>{0} altyazı</value>
+  </data>
+  <data name="Quiz.Progress" xml:space="preserve">
+    <value>{0} / {1} {2}</value>
+  </data>
+  <data name="Quiz.CorrectCount" xml:space="preserve">
+    <value>{0} doğru</value>
+  </data>
+  <data name="Quiz.PromptLabel" xml:space="preserve">
+    <value>{0} ipucu</value>
+  </data>
+  <data name="Quiz.UkrainianKeyboard" xml:space="preserve">
+    <value>Ukraynaca sanal klavye</value>
+  </data>
+  <data name="Books.Title" xml:space="preserve">
+    <value>Kitaplar</value>
+  </data>
+  <data name="Books.YourBooks" xml:space="preserve">
+    <value>Kitaplarınız</value>
+  </data>
+  <data name="Books.LanguageBooks" xml:space="preserve">
+    <value>{0} kitaplarınız</value>
+  </data>
+  <data name="Books.LanguageTitle" xml:space="preserve">
+    <value>{0} kitapları</value>
+  </data>
+  <data name="Books.YourLibrary" xml:space="preserve">
+    <value>Kütüphaneniz</value>
+  </data>
+  <data name="Books.HeroPrefix" xml:space="preserve">
+    <value>Her sayfayı şuna dönüştürün:</value>
+  </data>
+  <data name="Books.Progress" xml:space="preserve">
+    <value>ilerleme.</value>
+  </data>
+  <data name="Books.HeroText" xml:space="preserve">
+    <value>Kendi okuma materyalinizi getirin ve Glosify ile her sayfayı, ifadeyi ve yeni kelimeyi keşfedin.</value>
+  </data>
+  <data name="Books.SummaryAria" xml:space="preserve">
+    <value>Kütüphane özeti</value>
+  </data>
+  <data name="Books.BookOne" xml:space="preserve">
+    <value>kitap</value>
+  </data>
+  <data name="Books.BookMany" xml:space="preserve">
+    <value>kitap</value>
+  </data>
+  <data name="Books.PageOne" xml:space="preserve">
+    <value>sayfa</value>
+  </data>
+  <data name="Books.PageMany" xml:space="preserve">
+    <value>sayfa</value>
+  </data>
+  <data name="Books.AddShelf" xml:space="preserve">
+    <value>Rafınıza ekleyin</value>
+  </data>
+  <data name="Books.UploadPdf" xml:space="preserve">
+    <value>PDF yükle</value>
+  </data>
+  <data name="Books.ChoosePdf" xml:space="preserve">
+    <value>PDF seç</value>
+  </data>
+  <data name="Books.PdfLimit" xml:space="preserve">
+    <value>Metin tabanlı PDF · en fazla 25 MB</value>
+  </data>
+  <data name="Books.Browse" xml:space="preserve">
+    <value>Gözat</value>
+  </data>
+  <data name="Books.AddLibrary" xml:space="preserve">
+    <value>Kütüphaneye ekle</value>
+  </data>
+  <data name="Books.KeepReading" xml:space="preserve">
+    <value>Okumaya devam et</value>
+  </data>
+  <data name="Books.OnShelf" xml:space="preserve">
+    <value>Rafınızda {0}</value>
+  </data>
+  <data name="Books.DeleteConfirm" xml:space="preserve">
+    <value>"{0}" ve sayfaları kalıcı olarak silinsin mi? Onu kullanan sohbetler korunur.</value>
+  </data>
+  <data name="Books.Delete" xml:space="preserve">
+    <value>{0} sil</value>
+  </data>
+  <data name="Books.Read" xml:space="preserve">
+    <value>{0} oku</value>
+  </data>
+  <data name="Books.ReaderEdition" xml:space="preserve">
+    <value>Okuyucu sürümü</value>
+  </data>
+  <data name="Books.Added" xml:space="preserve">
+    <value>Eklendi</value>
+  </data>
+  <data name="Books.PageCountOne" xml:space="preserve">
+    <value>{0} sayfa</value>
+  </data>
+  <data name="Books.PageCountMany" xml:space="preserve">
+    <value>{0} sayfa</value>
+  </data>
+  <data name="Books.StartReading" xml:space="preserve">
+    <value>Okumaya başla</value>
+  </data>
+  <data name="Books.ShelfReady" xml:space="preserve">
+    <value>Rafınız hazır</value>
+  </data>
+  <data name="Books.NoLanguageBooks" xml:space="preserve">
+    <value>Henüz {0} kitap yok</value>
+  </data>
+  <data name="Books.EmptyText" xml:space="preserve">
+    <value>İlk metin tabanlı PDF'nizi yukarıya yükleyin ve zaten okumayı sevdiğiniz şeylerden öğrenmeye başlayın.</value>
+  </data>
+  <data name="Books.EmptyLanguageText" xml:space="preserve">
+    <value>{0} rafınıza eklenecek.</value>
+  </data>
+  <data name="Books.ChooseFirst" xml:space="preserve">
+    <value>İlk kitabınızı seçin</value>
+  </data>
+  <data name="Common.First" xml:space="preserve">
+    <value>İlk</value>
+  </data>
+  <data name="Common.Last" xml:space="preserve">
+    <value>Son</value>
+  </data>
+  <data name="Common.Page" xml:space="preserve">
+    <value>Sayfa {0}</value>
+  </data>
+  <data name="Common.Go" xml:space="preserve">
+    <value>Git</value>
+  </data>
+  <data name="Transcripts.AssistantTitle" xml:space="preserve">
+    <value>Transkript asistanı</value>
+  </data>
+  <data name="Transcripts.AssistantEmpty" xml:space="preserve">
+    <value>Bu transkript hakkında soru sorun veya mevcut quizlerinizle kullanın.</value>
+  </data>
+  <data name="Transcripts.AssistantPlaceholder" xml:space="preserve">
+    <value>Bu transkript hakkında soru sorun...</value>
+  </data>
+  <data name="Transcripts.OriginalFor" xml:space="preserve">
+    <value>{0} öğrenimi için kaydedilmiş orijinal konuşma</value>
+  </data>
+  <data name="Transcripts.LegacyFor" xml:space="preserve">
+    <value>Eski çevrilmiş altyazılar · {0} öğrenimi</value>
+  </data>
+  <data name="Transcripts.Started" xml:space="preserve">
+    <value>başladı</value>
+  </data>
+  <data name="Transcripts.NameLabel" xml:space="preserve">
+    <value>Transkript başlığı</value>
+  </data>
+  <data name="Transcripts.Rename" xml:space="preserve">
+    <value>Yeniden adlandır</value>
+  </data>
+  <data name="Transcripts.DeleteConfirm" xml:space="preserve">
+    <value>Bu kaydedilmiş transkript kalıcı olarak silinsin mi?</value>
+  </data>
+  <data name="Transcripts.StopBeforeDelete" xml:space="preserve">
+    <value>Silmeden önce canlı altyazıları durdurun</value>
+  </data>
+  <data name="Transcripts.StreamAria" xml:space="preserve">
+    <value>Altyazı akışı</value>
+  </data>
+  <data name="Transcripts.OriginalSpeech" xml:space="preserve">
+    <value>Orijinal konuşma</value>
+  </data>
+  <data name="Transcripts.Translation" xml:space="preserve">
+    <value>Çeviri</value>
+  </data>
+  <data name="Transcripts.TranslationNote" xml:space="preserve">
+    <value>Aynı sesten farklı bir model tarafından canlı olarak çevrildi. Orijinal konuşma yanlış algılandığında anlamı kontrol etmek için kullanışlıdır.</value>
+  </data>
+  <data name="Transcripts.OriginalNote" xml:space="preserve">
+    <value>Konuşma tanıyıcının duyduğu şey. Belirsiz bölümleri çapraz kontrol etmek için çeviriye geçin.</value>
+  </data>
+  <data name="Transcripts.SavedTranslationAria" xml:space="preserve">
+    <value>Kaydedilmiş çevrilmiş altyazılar</value>
+  </data>
+  <data name="Transcripts.SavedOriginalAria" xml:space="preserve">
+    <value>Kaydedilmiş orijinal konuşma</value>
+  </data>
+  <data name="Transcripts.TextPagesAria" xml:space="preserve">
+    <value>Transkript metin sayfaları</value>
+  </data>
+  <data name="Transcripts.JumpPage" xml:space="preserve">
+    <value>Sayfaya git</value>
+  </data>
+  <data name="Common.Off" xml:space="preserve">
+    <value>Kapalı</value>
+  </data>
+  <data name="Reader.AssistantTitle" xml:space="preserve">
+    <value>Sayfa asistanı</value>
+  </data>
+  <data name="Reader.AssistantEmpty" xml:space="preserve">
+    <value>Bu sayfadan kelime bilgisi veya cümleler sorun.</value>
+  </data>
+  <data name="Reader.AssistantPlaceholder" xml:space="preserve">
+    <value>Bu sayfadan bir quiz oluşturun...</value>
+  </data>
+  <data name="Reader.TranslatedPage" xml:space="preserve">
+    <value>Çevrilmiş sayfa</value>
+  </data>
+  <data name="Reader.BackBooks" xml:space="preserve">
+    <value>Kitaplara geri dön</value>
+  </data>
+  <data name="Reader.PdfControls" xml:space="preserve">
+    <value>PDF görünüm kontrolleri</value>
+  </data>
+  <data name="Reader.ZoomOut" xml:space="preserve">
+    <value>Uzaklaştır</value>
+  </data>
+  <data name="Reader.ResetZoom100" xml:space="preserve">
+    <value>Yakınlaştırmayı %100'e sıfırla</value>
+  </data>
+  <data name="Reader.ResetZoom" xml:space="preserve">
+    <value>Yakınlaştırmayı sıfırla</value>
+  </data>
+  <data name="Reader.ZoomIn" xml:space="preserve">
+    <value>Yakınlaştır</value>
+  </data>
+  <data name="Reader.FitPage" xml:space="preserve">
+    <value>Sayfaya sığdır</value>
+  </data>
+  <data name="Reader.Rotate" xml:space="preserve">
+    <value>Saat yönünde döndür</value>
+  </data>
+  <data name="Reader.PolishVoice" xml:space="preserve">
+    <value>Okuma sesini iyileştir</value>
+  </data>
+  <data name="Reader.ReadAloud" xml:space="preserve">
+    <value>Bu sayfayı sesli oku</value>
+  </data>
+  <data name="Reader.Read" xml:space="preserve">
+    <value>Oku</value>
+  </data>
+  <data name="Reader.TranslationControls" xml:space="preserve">
+    <value>Sayfa çeviri kontrolleri</value>
+  </data>
+  <data name="Reader.TranslateOffAria" xml:space="preserve">
+    <value>Çeviri kapalı. Bu sayfayı çevir</value>
+  </data>
+  <data name="Reader.TranslateOffTitle" xml:space="preserve">
+    <value>Çeviri kapalı. Bu sayfayı çevirmek için tıklayın</value>
+  </data>
+  <data name="Reader.Translation" xml:space="preserve">
+    <value>Çeviri</value>
+  </data>
+  <data name="Reader.TranslationLanguage" xml:space="preserve">
+    <value>Çeviri dili</value>
+  </data>
+  <data name="Reader.SplitAria" xml:space="preserve">
+    <value>Orijinali ve çeviriyi yan yana göster</value>
+  </data>
+  <data name="Reader.SplitView" xml:space="preserve">
+    <value>Bölünmüş görünüm</value>
+  </data>
+  <data name="Reader.Original" xml:space="preserve">
+    <value>Orijinal</value>
+  </data>
+  <data name="Reader.PreviousPage" xml:space="preserve">
+    <value>Önceki sayfa</value>
+  </data>
+  <data name="Reader.NextPage" xml:space="preserve">
+    <value>Sonraki sayfa</value>
+  </data>
+  <data name="Client.GenericError" xml:space="preserve">
+    <value>Bir şeyler yanlış gitti. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="Client.NetworkError" xml:space="preserve">
+    <value>Ağ hatası. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="Client.TryAgain" xml:space="preserve">
+    <value>Tekrar dene</value>
+  </data>
+  <data name="Client.Loading" xml:space="preserve">
+    <value>Yükleniyor…</value>
+  </data>
+  <data name="Client.Correct" xml:space="preserve">
+    <value>Doğru</value>
+  </data>
+  <data name="Client.Incorrect" xml:space="preserve">
+    <value>Yanlış</value>
+  </data>
+  <data name="Client.NextWord" xml:space="preserve">
+    <value>Sonraki kelime</value>
+  </data>
+  <data name="Client.CheckFailed" xml:space="preserve">
+    <value>Bu cevap doğrulanamadı. Tekrar deneyin.</value>
+  </data>
+  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
+    <value>Bu özel quiz silinsin mi?</value>
+  </data>
+  <data name="Client.DeleteQuizFailed" xml:space="preserve">
+    <value>Özel quiz silinemedi. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="Client.RepairFailed" xml:space="preserve">
+    <value>Onarma başarısız oldu. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="Client.RepairStopped" xml:space="preserve">
+    <value>Onarma isteği beklenmedik şekilde durdu. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="Client.DeleteChat" xml:space="preserve">
+    <value>Sohbeti sil</value>
+  </data>
+  <data name="Client.DeleteChatConfirm" xml:space="preserve">
+    <value>Bu sohbet silinsin mi?</value>
+  </data>
+  <data name="Client.ApplyFailed" xml:space="preserve">
+    <value>Değişiklikler uygulanamadı.</value>
+  </data>
+  <data name="Client.ApplyNetwork" xml:space="preserve">
+    <value>Değişiklikler uygulanırken ağ hatası oluştu.</value>
+  </data>
+  <data name="Client.RejectNetwork" xml:space="preserve">
+    <value>Değişiklikler reddedilirken ağ hatası oluştu.</value>
+  </data>
+  <data name="Client.AssistantFailed" xml:space="preserve">
+    <value>Asistan yanıt veremedi.</value>
+  </data>
+  <data name="Client.AssistantNetwork" xml:space="preserve">
+    <value>Asistanla iletişimde ağ hatası.</value>
+  </data>
+  <data name="Client.PictureFailed" xml:space="preserve">
+    <value>Bu görseldeki metin okunamadı.</value>
+  </data>
+  <data name="Client.PictureNetwork" xml:space="preserve">
+    <value>Görsel okunurken ağ hatası.</value>
+  </data>
+  <data name="Client.MessageFailed" xml:space="preserve">
+    <value>Mesaj gönderilemedi.</value>
+  </data>
+  <data name="Client.JoinCallFailed" xml:space="preserve">
+    <value>Aramaya katılınamadı.</value>
+  </data>
+  <data name="Client.CallTokenFailed" xml:space="preserve">
+    <value>Arama belirteci alınamadı.</value>
+  </data>
+  <data name="Client.PageOf" xml:space="preserve">
+    <value>Sayfa {0} / {1}</value>
+  </data>
+  <data name="Client.TtsNoText" xml:space="preserve">
+    <value>Okunabilecek seçilebilir metin yok.</value>
+  </data>
+  <data name="Client.TtsUnavailable" xml:space="preserve">
+    <value>Bu tarayıcıda metinden sese özelliği kullanılamıyor.</value>
+  </data>
+  <data name="Client.TtsFailed" xml:space="preserve">
+    <value>Metinden sese oynatımı başarısız oldu.</value>
+  </data>
+  <data name="Client.TranslationFailed" xml:space="preserve">
+    <value>Sayfa çevrilemedi.</value>
+  </data>
+  <data name="Client.PreferenceFailed" xml:space="preserve">
+    <value>Dil tercihi kaydedilemedi.</value>
+  </data>
+  <data name="Client.On" xml:space="preserve">
+    <value>Açık</value>
+  </data>
+  <data name="Client.Off" xml:space="preserve">
+    <value>Kapalı</value>
+  </data>
+  <data name="Client.Translating" xml:space="preserve">
+    <value>Çevriliyor…</value>
+  </data>
+  <data name="Client.TranslationError" xml:space="preserve">
+    <value>Hata</value>
+  </data>
+  <data name="Client.Read" xml:space="preserve">
+    <value>Oku</value>
+  </data>
+  <data name="Client.Stop" xml:space="preserve">
+    <value>Durdur</value>
+  </data>
+  <data name="Client.MessageRateLimited" xml:space="preserve">
+    <value>Mesajları çok hızlı gönderiyorsunuz. Biraz bekleyin.</value>
+  </data>
+  <data name="Client.SessionExpired" xml:space="preserve">
+    <value>Oturumun süresi doldu. Devam etmek için sınavı yeniden başlatın.</value>
+  </data>
+  <data name="Client.NotQuite" xml:space="preserve">
+    <value>Tam değil</value>
+  </data>
+  <data name="Client.ShowResults" xml:space="preserve">
+    <value>Sonuçları göster</value>
+  </data>
+  <data name="Quiz.LibraryTitle" xml:space="preserve">
+    <value>Sınav Seç</value>
+  </data>
+  <data name="Quiz.SelectQuiz" xml:space="preserve">
+    <value>Bir sınav seçin</value>
+  </data>
+  <data name="Quiz.ShowingLanguage" xml:space="preserve">
+    <value>{0} sınavlarınız gösteriliyor.</value>
+  </data>
+  <data name="Quiz.LanguageCollection" xml:space="preserve">
+    <value>{0} koleksiyonu.</value>
+  </data>
+  <data name="Quiz.Library" xml:space="preserve">
+    <value>Sınav Kitaplığı</value>
+  </data>
+  <data name="Quiz.ChangeLanguage" xml:space="preserve">
+    <value>Dili değiştir</value>
+  </data>
+  <data name="Quiz.MakePrivate" xml:space="preserve">
+    <value>Koleksiyonu özel yap</value>
+  </data>
+  <data name="Quiz.MakePublic" xml:space="preserve">
+    <value>Koleksiyonu herkese açık yap</value>
+  </data>
+  <data name="Quiz.PublicSubtree" xml:space="preserve">
+    <value>Herkese açık alt ağaç</value>
+  </data>
+  <data name="Quiz.Private" xml:space="preserve">
+    <value>Özel</value>
+  </data>
+  <data name="Quiz.LibrarySummary" xml:space="preserve">
+    <value>Kitaplık özeti</value>
+  </data>
+  <data name="Quiz.CollectionOne" xml:space="preserve">
+    <value>koleksiyon</value>
+  </data>
+  <data name="Quiz.CollectionMany" xml:space="preserve">
+    <value>koleksiyonlar</value>
+  </data>
+  <data name="Quiz.QuizOne" xml:space="preserve">
+    <value>sınav</value>
+  </data>
+  <data name="Quiz.QuizMany" xml:space="preserve">
+    <value>sınavlar</value>
+  </data>
+  <data name="Quiz.NewCollection" xml:space="preserve">
+    <value>Yeni Koleksiyon</value>
+  </data>
+  <data name="Quiz.NewQuiz" xml:space="preserve">
+    <value>Yeni Sınav</value>
+  </data>
+  <data name="Quiz.Collections" xml:space="preserve">
+    <value>Koleksiyonlar</value>
+  </data>
+  <data name="Quiz.CollectionsHelp" xml:space="preserve">
+    <value>İlgili sınavları gruplandırın ve öğrenme yolunuzu düzenli tutun.</value>
+  </data>
+  <data name="Quiz.DropInto" xml:space="preserve">
+    <value>{0} içine bırakın</value>
+  </data>
+  <data name="Quiz.NestedCount" xml:space="preserve">
+    <value>{0} iç içe</value>
+  </data>
+  <data name="Quiz.YourQuizzes" xml:space="preserve">
+    <value>Sınavlarınız</value>
+  </data>
+  <data name="Quiz.DragHelp" xml:space="preserve">
+    <value>Çalışmak için bir sınav açın veya düzenlemek için bir koleksiyonun üzerine sürükleyin.</value>
+  </data>
+  <data name="Quiz.ChooseHelp" xml:space="preserve">
+    <value>Bir sınav seçin ve öğrenme serinizi sürdürün.</value>
+  </data>
+  <data name="Quiz.DeleteConfirm" xml:space="preserve">
+    <value>Bu sınavı ve içindeki tüm kelimeleri silmek istiyor musunuz?</value>
+  </data>
+  <data name="Quiz.DeleteNamed" xml:space="preserve">
+    <value>{0} sil</value>
+  </data>
+  <data name="Quiz.Delete" xml:space="preserve">
+    <value>Sınavı sil</value>
+  </data>
+  <data name="Quiz.EmptyTitle" xml:space="preserve">
+    <value>Henüz sınav veya koleksiyon yok</value>
+  </data>
+  <data name="Quiz.EmptyText" xml:space="preserve">
+    <value>Kelime dağarcığınızı düzenlemek için bir koleksiyon oluşturun veya ilk sınavınızı oluşturun.</value>
+  </data>
+  <data name="Quiz.CreateCollection" xml:space="preserve">
+    <value>Koleksiyon Oluştur</value>
+  </data>
+  <data name="Quiz.CreateQuiz" xml:space="preserve">
+    <value>Sınav Oluştur</value>
+  </data>
+  <data name="Quiz.CreateNewCollection" xml:space="preserve">
+    <value>Yeni Koleksiyon Oluştur</value>
+  </data>
+  <data name="Quiz.CollectionName" xml:space="preserve">
+    <value>Koleksiyon Adı</value>
+  </data>
+  <data name="Quiz.CollectionExample" xml:space="preserve">
+    <value>ör. Seyahat ifadeleri</value>
+  </data>
+  <data name="Quiz.CreateNewQuiz" xml:space="preserve">
+    <value>Yeni Sınav Oluştur</value>
+  </data>
+  <data name="Quiz.Name" xml:space="preserve">
+    <value>Sınav Adı</value>
+  </data>
+  <data name="Quiz.NameExample" xml:space="preserve">
+    <value>ör. Fransızca Temelleri</value>
+  </data>
+  <data name="Quiz.SourceLanguage" xml:space="preserve">
+    <value>Kaynak Dil</value>
+  </data>
+  <data name="Quiz.SelectLanguage" xml:space="preserve">
+    <value>Dil seçin...</value>
+  </data>
+  <data name="Quiz.TargetLanguage" xml:space="preserve">
+    <value>Hedef Dil</value>
+  </data>
+  <data name="Books.UploadRequired" xml:space="preserve">
+    <value>Yüklemek için bir PDF dosyası seçin.</value>
+  </data>
+  <data name="Books.Uploaded" xml:space="preserve">
+    <value>{0} yüklendi.</value>
+  </data>
+  <data name="Books.UploadInvalid" xml:space="preserve">
+    <value>25 MB'den küçük, geçerli ve metin tabanlı bir PDF seçin.</value>
+  </data>
+  <data name="Books.ProcessFailed" xml:space="preserve">
+    <value>PDF işlenemedi. Metin tabanlı bir PDF deneyin.</value>
+  </data>
+  <data name="Books.Deleted" xml:space="preserve">
+    <value>{0} silindi.</value>
+  </data>
+  <data name="Books.PaidUnavailable" xml:space="preserve">
+    <value>{0} ücretli özellikler {1} tarihinde yeniden açılacak.</value>
+  </data>
+  <data name="Books.PaidReason" xml:space="preserve">
+    <value>Aylık uygulama bütçesine ulaşıldı.</value>
+  </data>
+  <data name="Transcripts.Renamed" xml:space="preserve">
+    <value>Transkript yeniden adlandırıldı.</value>
+  </data>
+  <data name="Transcripts.InvalidTitle" xml:space="preserve">
+    <value>Transkript başlıkları 1 ile 160 karakter arasında olmalıdır.</value>
+  </data>
+  <data name="Transcripts.Deleted" xml:space="preserve">
+    <value>Transkript silindi.</value>
+  </data>
+  <data name="Common.Accept" xml:space="preserve">
+    <value>Kabul et</value>
+  </data>
+  <data name="Common.Optional" xml:space="preserve">
+    <value>İsteğe bağlı</value>
+  </data>
+  <data name="Common.Open" xml:space="preserve">
+    <value>Aç</value>
+  </data>
+  <data name="Common.Copy" xml:space="preserve">
+    <value>Kopyala</value>
+  </data>
+  <data name="Classroom.Title" xml:space="preserve">
+    <value>Sınıflar</value>
+  </data>
+  <data name="Classroom.MyClassrooms" xml:space="preserve">
+    <value>Sınıflarım</value>
+  </data>
+  <data name="Classroom.LanguageClassrooms" xml:space="preserve">
+    <value>{0} sınıflarınız</value>
+  </data>
+  <data name="Classroom.LanguageTitle" xml:space="preserve">
+    <value>{0} sınıfları</value>
+  </data>
+  <data name="Classroom.SharedSpaces" xml:space="preserve">
+    <value>Ortak öğrenme alanları</value>
+  </data>
+  <data name="Classroom.LearnBetter" xml:space="preserve">
+    <value>Birlikte</value>
+  </data>
+  <data name="Classroom.Together" xml:space="preserve">
+    <value>daha iyi öğrenin.</value>
+  </data>
+  <data name="Classroom.HeroText" xml:space="preserve">
+    <value>Öğrenenleriniz için bir alan oluşturun, pratik materyalleri paylaşın ve herkesi aynı yönde ilerletin.</value>
+  </data>
+  <data name="Classroom.Summary" xml:space="preserve">
+    <value>Sınıf özeti</value>
+  </data>
+  <data name="Classroom.One" xml:space="preserve">
+    <value>sınıf</value>
+  </data>
+  <data name="Classroom.Many" xml:space="preserve">
+    <value>sınıflar</value>
+  </data>
+  <data name="Classroom.MemberOne" xml:space="preserve">
+    <value>üye</value>
+  </data>
+  <data name="Classroom.MemberMany" xml:space="preserve">
+    <value>üyeler</value>
+  </data>
+  <data name="Classroom.Waiting" xml:space="preserve">
+    <value>bekliyor</value>
+  </data>
+  <data name="Classroom.LanguageLab" xml:space="preserve">
+    <value>Dil laboratuvarı</value>
+  </data>
+  <data name="Classroom.LearnersActive" xml:space="preserve">
+    <value>{0} öğrenen aktif</value>
+  </data>
+  <data name="Classroom.Live" xml:space="preserve">
+    <value>Canlı</value>
+  </data>
+  <data name="Classroom.PracticeCompleted" xml:space="preserve">
+    <value>Alıştırma tamamlandı</value>
+  </data>
+  <data name="Classroom.WaitingForYou" xml:space="preserve">
+    <value>Seni bekliyor</value>
+  </data>
+  <data name="Classroom.Invitations" xml:space="preserve">
+    <value>Davetler</value>
+  </data>
+  <data name="Classroom.NewCount" xml:space="preserve">
+    <value>{0} yeni</value>
+  </data>
+  <data name="Classroom.Invited" xml:space="preserve">
+    <value>Davetlisiniz</value>
+  </data>
+  <data name="Classroom.InvitedBy" xml:space="preserve">
+    <value>{0}, {1} olarak katılmanız için sizi davet etti</value>
+  </data>
+  <data name="Classroom.DeclineInvitation" xml:space="preserve">
+    <value>{0} davetini reddet</value>
+  </data>
+  <data name="Classroom.GetStarted" xml:space="preserve">
+    <value>Başlayın</value>
+  </data>
+  <data name="Classroom.MakeOrJoin" xml:space="preserve">
+    <value>Bir alan oluşturun veya birine katılın</value>
+  </data>
+  <data name="Classroom.ForTeachers" xml:space="preserve">
+    <value>Öğretmenler için</value>
+  </data>
+  <data name="Classroom.Create" xml:space="preserve">
+    <value>Sınıf oluştur</value>
+  </data>
+  <data name="Classroom.CreateHelp" xml:space="preserve">
+    <value>Dersler, quizler, kitaplar ve sohbet için bir merkez kurun.</value>
+  </data>
+  <data name="Classroom.LanguageHelp" xml:space="preserve">
+    <value> Bu bir {0} sınıfı olacak.</value>
+  </data>
+  <data name="Classroom.Name" xml:space="preserve">
+    <value>Sınıf adı</value>
+  </data>
+  <data name="Classroom.NameExample" xml:space="preserve">
+    <value>ör. Swedish A2 · Spring</value>
+  </data>
+  <data name="Classroom.ShortDescription" xml:space="preserve">
+    <value>Kısa açıklama</value>
+  </data>
+  <data name="Classroom.DescriptionPlaceholder" xml:space="preserve">
+    <value>Grubunuz neler öğrenecek?</value>
+  </data>
+  <data name="Classroom.HaveCode" xml:space="preserve">
+    <value>Davet kodunuz var mı?</value>
+  </data>
+  <data name="Classroom.Join" xml:space="preserve">
+    <value>Bir sınıfa katıl</value>
+  </data>
+  <data name="Classroom.JoinHelp" xml:space="preserve">
+    <value>Öğretmeninizin paylaştığı sekiz karakterli kodu girin.</value>
+  </data>
+  <data name="Classroom.JoinCode" xml:space="preserve">
+    <value>Katılma kodu</value>
+  </data>
+  <data name="Classroom.JoinThis" xml:space="preserve">
+    <value>Bu sınıfa katıl</value>
+  </data>
+  <data name="Classroom.YourSpaces" xml:space="preserve">
+    <value>Öğrenme alanlarınız</value>
+  </data>
+  <data name="Classroom.TotalCount" xml:space="preserve">
+    <value>Toplam {0}</value>
+  </data>
+  <data name="Classroom.OpenNamed" xml:space="preserve">
+    <value>{0} aç</value>
+  </data>
+  <data name="Classroom.CardPlaceholder" xml:space="preserve">
+    <value>Öğrenme ve pratik için ortak bir alan.</value>
+  </data>
+  <data name="Classroom.BetterCompany" xml:space="preserve">
+    <value>Öğrenmek, birlikte daha güzel</value>
+  </data>
+  <data name="Classroom.NoLanguageYet" xml:space="preserve">
+    <value>Henüz {0} sınıfı yok</value>
+  </data>
+  <data name="Classroom.EmptyHelp" xml:space="preserve">
+    <value>İlk sınıfınızı oluşturun veya grubunuzu bulmak için öğretmeninizden bir katılma kodu isteyin.</value>
+  </data>
+  <data name="Classroom.CreateFirst" xml:space="preserve">
+    <value>İlk alanınızı oluşturun</value>
+  </data>
+  <data name="Classroom.JoinCall" xml:space="preserve">
+    <value>Görüntülü görüşmeye katıl</value>
+  </data>
+  <data name="Classroom.VideoCall" xml:space="preserve">
+    <value>Görüntülü görüşme</value>
+  </data>
+  <data name="Classroom.Sections" xml:space="preserve">
+    <value>Sınıf bölümleri</value>
+  </data>
+  <data name="Classroom.Stream" xml:space="preserve">
+    <value>Akış</value>
+  </data>
+  <data name="Classroom.Content" xml:space="preserve">
+    <value>İçerik</value>
+  </data>
+  <data name="Classroom.Planning" xml:space="preserve">
+    <value>Planlama</value>
+  </data>
+  <data name="Classroom.Members" xml:space="preserve">
+    <value>Üyeler</value>
+  </data>
+  <data name="Classroom.Results" xml:space="preserve">
+    <value>Sonuçlar</value>
+  </data>
+  <data name="Speaking.LanguagePractice" xml:space="preserve">
+    <value>{0} konuşma pratiği</value>
+  </data>
+  <data name="Speaking.HeroTitle" xml:space="preserve">
+    <value>Konuşarak dile adım atın.</value>
+  </data>
+  <data name="Speaking.HeroText" xml:space="preserve">
+    <value>Açık bir eğitmen veya sahne seçin, doğal konuşun ve her turdan sonra özel geri bildirim alın.</value>
+  </data>
+  <data name="Speaking.PracticeQuiz" xml:space="preserve">
+    <value>Pratik quiz</value>
+  </data>
+  <data name="Speaking.ChooseQuiz" xml:space="preserve">
+    <value>Konuşma pratiği için bir quiz seçin</value>
+  </data>
+  <data name="Speaking.FreeLesson" xml:space="preserve">
+    <value>Ücretsiz ders</value>
+  </data>
+  <data name="Speaking.PoweredBy" xml:space="preserve">
+    <value>Microsoft Foundry ve Azure AI Speech desteklidir</value>
+  </data>
+  <data name="Speaking.Settings" xml:space="preserve">
+    <value>Pratik ayarları</value>
+  </data>
+  <data name="Speaking.ChooseAvatar" xml:space="preserve">
+    <value>Bir avatar seçin</value>
+  </data>
+  <data name="Speaking.Level" xml:space="preserve">
+    <value>Seviye</value>
+  </data>
+  <data name="Speaking.ChooseLevel" xml:space="preserve">
+    <value>CEFR seviyesini seçin</value>
+  </data>
+  <data name="Speaking.Beginner" xml:space="preserve">
+    <value>Başlangıç</value>
+  </data>
+  <data name="Speaking.Elementary" xml:space="preserve">
+    <value>Temel</value>
+  </data>
+  <data name="Speaking.Intermediate" xml:space="preserve">
+    <value>Orta</value>
+  </data>
+  <data name="Speaking.UpperIntermediate" xml:space="preserve">
+    <value>Orta-üstü</value>
+  </data>
+  <data name="Speaking.Advanced" xml:space="preserve">
+    <value>İleri</value>
+  </data>
+  <data name="Speaking.EnglishTranslation" xml:space="preserve">
+    <value>İngilizce çeviri</value>
+  </data>
+  <data name="Speaking.MuteAvatar" xml:space="preserve">
+    <value>Avatarı sessize al</value>
+  </data>
+  <data name="Speaking.AvatarScene" xml:space="preserve">
+    <value>Avatar sahnesi</value>
+  </data>
+  <data name="Speaking.HoldSpeak" xml:space="preserve">
+    <value>Konuşmak ve göndermek için basılı tutun</value>
+  </data>
+  <data name="Speaking.StartingScene" xml:space="preserve">
+    <value>Sahne başlatılıyor…</value>
+  </data>
+  <data name="Speaking.ReplayLatestAria" xml:space="preserve">
+    <value>Son avatar yanıtını yeniden oynat</value>
+  </data>
+  <data name="Speaking.ReplayLatest" xml:space="preserve">
+    <value>Son yanıtı yeniden oynat</value>
+  </data>
+  <data name="Speaking.Conversation" xml:space="preserve">
+    <value>Konuşma</value>
+  </data>
+  <data name="Speaking.CurrentSession" xml:space="preserve">
+    <value>Geçerli oturum</value>
+  </data>
+  <data name="Speaking.ScoreHelp" xml:space="preserve">
+    <value>Telaffuz puanları kaydedilen sesinize göre verilir.</value>
+  </data>
+  <data name="Speaking.SpeakToType" xml:space="preserve">
+    <value>Konuşarak yazın</value>
+  </data>
+  <data name="Speaking.You" xml:space="preserve">
+    <value>Siz</value>
+  </data>
+  <data name="Speaking.Accuracy" xml:space="preserve">
+    <value>Doğruluk</value>
+  </data>
+  <data name="Speaking.Fluency" xml:space="preserve">
+    <value>Akıcılık</value>
+  </data>
+  <data name="Speaking.Completeness" xml:space="preserve">
+    <value>Tamlık</value>
+  </data>
+  <data name="Speaking.ReplayReply" xml:space="preserve">
+    <value>Bu yanıtı yeniden oynat</value>
+  </data>
+  <data name="Speaking.ShowEnglish" xml:space="preserve">
+    <value>İngilizce çeviriyi göster</value>
+  </data>
+  <data name="Speaking.Grammar" xml:space="preserve">
+    <value>Dilbilgisi</value>
+  </data>
+  <data name="Speaking.Vocabulary" xml:space="preserve">
+    <value>Kelime bilgisi</value>
+  </data>
+  <data name="Speaking.Naturalness" xml:space="preserve">
+    <value>Doğallık</value>
+  </data>
+  <data name="Speaking.PracticeThis" xml:space="preserve">
+    <value>Bunu çalışın</value>
+  </data>
+  <data name="Speaking.HearPhrase" xml:space="preserve">
+    <value>Bu pratik cümleyi dinleyin</value>
+  </data>
+  <data name="Speaking.HoldRepeatAria" xml:space="preserve">
+    <value>Bu pratik cümleyi tekrar etmek için basılı tutun</value>
+  </data>
+  <data name="Speaking.HoldRepeat" xml:space="preserve">
+    <value>Tekrar etmek için basılı tutun</value>
+  </data>
+  <data name="Quiz.DeletedWord" xml:space="preserve">
+    <value>{0} silindi.</value>
+  </data>
+  <data name="Quiz.DeletedNamed" xml:space="preserve">
+    <value>{0} silindi.</value>
+  </data>
+  <data name="Quiz.NowPublic" xml:space="preserve">
+    <value>Quiz artık herkese açık.</value>
+  </data>
+  <data name="Quiz.NowPrivate" xml:space="preserve">
+    <value>Quiz artık gizli.</value>
+  </data>
+  <data name="Quiz.VisibilityFailed" xml:space="preserve">
+    <value>Quiz görünürlüğü güncellenemedi.</value>
+  </data>
+  <data name="Quiz.CollectionNowPublic" xml:space="preserve">
+    <value>Koleksiyon artık herkese açık.</value>
+  </data>
+  <data name="Quiz.CollectionNowPrivate" xml:space="preserve">
+    <value>Koleksiyon artık gizli.</value>
+  </data>
+  <data name="Quiz.CollectionVisibilityFailed" xml:space="preserve">
+    <value>Koleksiyon görünürlüğü güncellenemedi.</value>
+  </data>
+  <data name="Quiz.CollectionCreated" xml:space="preserve">
+    <value>{0} koleksiyonu oluşturuldu.</value>
+  </data>
+  <data name="Quiz.CollectionCreateFailed" xml:space="preserve">
+    <value>Koleksiyon oluşturulamadı. Adını ve üst koleksiyonunu kontrol edin.</value>
+  </data>
+  <data name="Common.All" xml:space="preserve">
+    <value>Tümü</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Quiz Yapılandırması</value>
+  </data>
+  <data name="Settings.FlashcardQuiz" xml:space="preserve">
+    <value>Kart Quiz'i</value>
+  </data>
+  <data name="Settings.Source" xml:space="preserve">
+    <value>Kaynak</value>
+  </data>
+  <data name="Settings.Target" xml:space="preserve">
+    <value>Hedef</value>
+  </data>
+  <data name="Settings.Configuration" xml:space="preserve">
+    <value>Yapılandırma</value>
+  </data>
+  <data name="Settings.Intro" xml:space="preserve">
+    <value>Hızlı bir çalışma oturumu seçin ve bu quiz'i gözden geçirin.</value>
+  </data>
+  <data name="Settings.SessionLength" xml:space="preserve">
+    <value>Oturum Süresi</value>
+  </data>
+  <data name="Settings.Words" xml:space="preserve">
+    <value>Kelimeler</value>
+  </data>
+  <data name="Settings.AvailableLower" xml:space="preserve">
+    <value>kullanılabilir</value>
+  </data>
+  <data name="Settings.Quick" xml:space="preserve">
+    <value>Hızlı</value>
+  </data>
+  <data name="Settings.Standard" xml:space="preserve">
+    <value>Standart</value>
+  </data>
+  <data name="Settings.WordRange" xml:space="preserve">
+    <value>Kelime Aralığı</value>
+  </data>
+  <data name="Settings.RangeHelp" xml:space="preserve">
+    <value>Listenizin bir bölümüne odaklanmak için tutamaçlardan birini sürükleyin; örneğin yalnızca en yeni kelimeler.</value>
+  </data>
+  <data name="Settings.Newest20" xml:space="preserve">
+    <value>En yeni %20</value>
+  </data>
+  <data name="Settings.Newest50" xml:space="preserve">
+    <value>En yeni %50</value>
+  </data>
+  <data name="Settings.Oldest20" xml:space="preserve">
+    <value>En eski %20</value>
+  </data>
+  <data name="Settings.AllWordsOrder" xml:space="preserve">
+    <value>Tüm kelimelerle, en eskiden en yeniye doğru çalışılıyor.</value>
+  </data>
+  <data name="Settings.ChooseIndividually" xml:space="preserve">
+    <value>Kelimeleri tek tek seçin…</value>
+  </data>
+  <data name="Settings.ClearSelection" xml:space="preserve">
+    <value>Seçimi temizle</value>
+  </data>
+  <data name="Settings.ChooseWords" xml:space="preserve">
+    <value>Çalışılacak kelimeleri seçin</value>
+  </data>
+  <data name="Settings.SelectAll" xml:space="preserve">
+    <value>Tümünü seç</value>
+  </data>
+  <data name="Settings.DeselectAll" xml:space="preserve">
+    <value>Tüm seçimi kaldır</value>
+  </data>
+  <data name="Settings.FilterWords" xml:space="preserve">
+    <value>Kelimeleri filtrele…</value>
+  </data>
+  <data name="Settings.ApplySelection" xml:space="preserve">
+    <value>Seçimi uygula</value>
+  </data>
+  <data name="Settings.PracticeContent" xml:space="preserve">
+    <value>Çalışma İçeriği</value>
+  </data>
+  <data name="Settings.ContentHelp" xml:space="preserve">
+    <value>Kelimeleri veya tam cümleleri seçin.</value>
+  </data>
+  <data name="Settings.Sentences" xml:space="preserve">
+    <value>Cümleler</value>
+  </data>
+  <data name="Settings.QuizMode" xml:space="preserve">
+    <value>Quiz Modu</value>
+  </data>
+  <data name="Settings.ModeHelp" xml:space="preserve">
+    <value>Hatırlama için kartları veya aktif yazım pratiği için yazmayı seçin.</value>
+  </data>
+  <data name="Settings.Flashcards" xml:space="preserve">
+    <value>Kartlar</value>
+  </data>
+  <data name="Settings.Typing" xml:space="preserve">
+    <value>Yazma</value>
+  </data>
+  <data name="Settings.Choices" xml:space="preserve">
+    <value>Seçenekler</value>
+  </data>
+  <data name="Settings.PracticeDirection" xml:space="preserve">
+    <value>Çalışma Yönü</value>
+  </data>
+  <data name="Settings.DirectionHelp" xml:space="preserve">
+    <value>Hangi dilin önce görüneceğini seçin.</value>
+  </data>
+  <data name="Settings.NeedWord" xml:space="preserve">
+    <value>Bir çalışma oturumu başlatmadan önce en az bir kelime ekleyin.</value>
+  </data>
+  <data name="Settings.Quiz" xml:space="preserve">
+    <value>Quiz</value>
+  </data>
+  <data name="Settings.Content" xml:space="preserve">
+    <value>İçerik</value>
+  </data>
+  <data name="Settings.Available" xml:space="preserve">
+    <value>Kullanılabilir</value>
+  </data>
+  <data name="Settings.Mode" xml:space="preserve">
+    <value>Mod</value>
+  </data>
+  <data name="Settings.Range" xml:space="preserve">
+    <value>Aralık</value>
+  </data>
+  <data name="Settings.Direction" xml:space="preserve">
+    <value>Yön</value>
+  </data>
+  <data name="Settings.StartQuiz" xml:space="preserve">
+    <value>Quiz'i Başlat</value>
+  </data>
+  <data name="Settings.WordsLower" xml:space="preserve">
+    <value>kelimeler</value>
+  </data>
+  <data name="Settings.SentencesLower" xml:space="preserve">
+    <value>cümleler</value>
+  </data>
+  <data name="Settings.WordLower" xml:space="preserve">
+    <value>kelime</value>
+  </data>
+  <data name="Settings.SentenceLower" xml:space="preserve">
+    <value>cümle</value>
+  </data>
+  <data name="Settings.NeedItem" xml:space="preserve">
+    <value>Bir çalışma oturumu başlatmadan önce en az bir {0} ekleyin.</value>
+  </data>
+  <data name="Settings.Newest" xml:space="preserve">
+    <value>En yeni {0}%</value>
+  </data>
+  <data name="Settings.Oldest" xml:space="preserve">
+    <value>En eski {0}%</value>
+  </data>
+  <data name="Settings.RangeDynamic" xml:space="preserve">
+    <value>Listenin {0} kadarı çalışılıyor (en eskiden en yeniye).</value>
+  </data>
+  <data name="Settings.SelectedCount" xml:space="preserve">
+    <value>{1} içinden {0} seçildi</value>
+  </data>
+  <data name="Settings.PickedWords" xml:space="preserve">
+    <value>{1} kelimenin {0} tanesi tek tek seçildi</value>
+  </data>
+  <data name="Settings.PickedCount" xml:space="preserve">
+    <value>{0} seçildi</value>
+  </data>
+  <data name="Explore.Title" xml:space="preserve">
+    <value>Keşfet</value>
+  </data>
+  <data name="Explore.Discover" xml:space="preserve">
+    <value>Yeni bir şey keşfedin</value>
+  </data>
+  <data name="Explore.Intro" xml:space="preserve">
+    <value>Diğer öğrenenlerin paylaştığı kelime dağarcığını inceleyin, sonra sizi etkileyeni kendi kütüphanenize kopyalayın.</value>
+  </data>
+  <data name="Explore.Summary" xml:space="preserve">
+    <value>Herkese açık kütüphane özeti</value>
+  </data>
+  <data name="Explore.CommunityLibrary" xml:space="preserve">
+    <value>Topluluk kütüphanesi</value>
+  </data>
+  <data name="Explore.SharedCollections" xml:space="preserve">
+    <value>Paylaşılan koleksiyonlar</value>
+  </data>
+  <data name="Explore.CollectionsHelp" xml:space="preserve">
+    <value>Topluluk tarafından özenle hazırlanmış eksiksiz öğrenme setlerini keşfedin.</value>
+  </data>
+  <data name="Explore.SharedCollection" xml:space="preserve">
+    <value>Paylaşılan koleksiyon</value>
+  </data>
+  <data name="Explore.CopyNamed" xml:space="preserve">
+    <value>{0} öğesini kütüphanenize kopyalayın</value>
+  </data>
+  <data name="Explore.CommunityQuizzes" xml:space="preserve">
+    <value>Topluluk quiz'leri</value>
+  </data>
+  <data name="Explore.QuizzesHelp" xml:space="preserve">
+    <value>Bir quiz'i önizleyin, ardından kütüphanenize kişisel bir kopya ekleyin.</value>
+  </data>
+  <data name="Explore.CommunityQuiz" xml:space="preserve">
+    <value>Topluluk quiz'i</value>
+  </data>
+  <data name="Explore.NothingPublic" xml:space="preserve">
+    <value>{0} için henüz herkese açık içerik yok</value>
+  </data>
+  <data name="Explore.EmptyHelp" xml:space="preserve">
+    <value>Öğrenenler bu dilde quiz'ler veya koleksiyonlar paylaştığında, burada görünürler.</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Düzenle</value>
+  </data>
+  <data name="Common.Play" xml:space="preserve">
+    <value>Oynat</value>
+  </data>
+  <data name="Quiz.AssistantEmpty" xml:space="preserve">
+    <value>Bu quiz hakkında bir konuşma başlatın.</value>
+  </data>
+  <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
+    <value>Bu quiz hakkında soru sorun...</value>
+  </data>
+  <data name="Quiz.CustomCount" xml:space="preserve">
+    <value>{0} özel</value>
+  </data>
+  <data name="Quiz.BuildCustom" xml:space="preserve">
+    <value>Özel quiz oluştur</value>
+  </data>
+  <data name="Quiz.Public" xml:space="preserve">
+    <value>Genel</value>
+  </data>
+  <data name="Quiz.Word" xml:space="preserve">
+    <value>Kelime</value>
+  </data>
+  <data name="Quiz.WordExample" xml:space="preserve">
+    <value>örn. Bibliothèque</value>
+  </data>
+  <data name="Quiz.TranslationExample" xml:space="preserve">
+    <value>örn. Kütüphane</value>
+  </data>
+  <data name="Quiz.AddWord" xml:space="preserve">
+    <value>Kelime ekle</value>
+  </data>
+  <data name="Quiz.ItemsIn" xml:space="preserve">
+    <value>{0} {1} içinde {2}</value>
+  </data>
+  <data name="Quiz.ContentAria" xml:space="preserve">
+    <value>Quiz içeriği</value>
+  </data>
+  <data name="Quiz.OpenWiktionary" xml:space="preserve">
+    <value>Wiktionary'de {0} sayfasını aç</value>
+  </data>
+  <data name="Quiz.RepairWord" xml:space="preserve">
+    <value>Kelimeyi düzelt</value>
+  </data>
+  <data name="Quiz.RepairNamed" xml:space="preserve">
+    <value>{0} öğesini düzelt</value>
+  </data>
+  <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
+    <value>Bu kelime silinsin mi?</value>
+  </data>
+  <data name="Quiz.NoWords" xml:space="preserve">
+    <value>Henüz kelime yok. Yukarıdaki çubukla ilk kelimeyi ekleyin.</value>
+  </data>
+  <data name="Quiz.LinkedWords" xml:space="preserve">
+    <value>{0} bağlantılı {1}</value>
+  </data>
+  <data name="Quiz.Repair" xml:space="preserve">
+    <value>Düzelt</value>
+  </data>
+  <data name="Quiz.NoSentences" xml:space="preserve">
+    <value>Henüz cümle yok. Asistandan cümle eklemesini isteyin veya metinden cümleleri çıkarmasını isteyin.</value>
+  </data>
+  <data name="Quiz.CustomQuizzes" xml:space="preserve">
+    <value>Özel quizler</value>
+  </data>
+  <data name="Quiz.CustomHelp" xml:space="preserve">
+    <value>Bu quizdeki kelimelerden serbest biçimli bir alıştırma oluşturun.</value>
+  </data>
+  <data name="Quiz.NewCustom" xml:space="preserve">
+    <value>Yeni özel quiz</value>
+  </data>
+  <data name="Quiz.Playable" xml:space="preserve">
+    <value>Oynanabilir</value>
+  </data>
+  <data name="Quiz.Draft" xml:space="preserve">
+    <value>Taslak</value>
+  </data>
+  <data name="Quiz.NoCustom" xml:space="preserve">
+    <value>Henüz özel quiz yok. Blokları bir kanvasa sürükleyerek bir tane oluşturun.</value>
+  </data>
+  <data name="Payments.PackageUnavailable" xml:space="preserve">
+    <value>Bu kredi paketi artık mevcut değil.</value>
+  </data>
+  <data name="Payments.CreditsReady" xml:space="preserve">
+    <value>Ödeme onaylandı. Kredileriniz hazır.</value>
+  </data>
+  <data name="Payments.AwaitingOrFailed" xml:space="preserve">
+    <value>Ödeme hâlâ onay bekliyor ya da doğrulanamadı.</value>
+  </data>
+  <data name="Payments.GetCredits" xml:space="preserve">
+    <value>Kredi al</value>
+  </data>
+  <data name="Payments.GlosifyCredits" xml:space="preserve">
+    <value>Glosify kredileri</value>
+  </data>
+  <data name="Payments.Hero" xml:space="preserve">
+    <value>Öğrenme döngünüzü sürdürün.</value>
+  </data>
+  <data name="Payments.Intro" xml:space="preserve">
+    <value>Krediler, Glosify’nin AI destekli öğrenme özelliklerini ve canlı altyazıları çalıştırır.</value>
+  </data>
+  <data name="Payments.NotAvailable" xml:space="preserve">
+    <value>Ödemeler henüz kullanılamıyor</value>
+  </data>
+  <data name="Payments.NotConnected" xml:space="preserve">
+    <value>Bu Glosify dağıtımı Stripe'a bağlı değil.</value>
+  </data>
+  <data name="Payments.CreditPack" xml:space="preserve">
+    <value>Kredi paketi</value>
+  </data>
+  <data name="Payments.CreditCount" xml:space="preserve">
+    <value>{0} kredi</value>
+  </data>
+  <data name="Payments.ContinueCheckout" xml:space="preserve">
+    <value>Güvenli ödeme adımına devam et</value>
+  </data>
+  <data name="Payments.StripeNotice" xml:space="preserve">
+    <value>Ödeme işlemi Stripe tarafından barındırılır. Glosify kart bilgilerinizi hiçbir zaman almaz veya saklamaz.</value>
+  </data>
+  <data name="Payments.Status" xml:space="preserve">
+    <value>Ödeme durumu</value>
+  </data>
+  <data name="Payments.Confirmed" xml:space="preserve">
+    <value>Ödeme onaylandı</value>
+  </data>
+  <data name="Payments.Processing" xml:space="preserve">
+    <value>Ödeme işleniyor</value>
+  </data>
+  <data name="Payments.Back" xml:space="preserve">
+    <value>Glosify'a dön</value>
+  </data>
+  <data name="Payments.AiCredits" xml:space="preserve">
+    <value>AI kredileri</value>
+  </data>
+  <data name="Payments.AiCreditAdmin" xml:space="preserve">
+    <value>AI kredi yöneticisi</value>
+  </data>
+  <data name="Error.StartupDelay" xml:space="preserve">
+    <value>Geçici başlatma gecikmesi</value>
+  </data>
+  <data name="Error.RequestFailed" xml:space="preserve">
+    <value>İstek başarısız oldu</value>
+  </data>
+  <data name="Error.RequestId" xml:space="preserve">
+    <value>İstek kimliği:</value>
+  </data>
+  <data name="Error.WarmupTitle" xml:space="preserve">
+    <value>Bu hizmet başlatılıyor</value>
+  </data>
+  <data name="Error.WarmupMessage" xml:space="preserve">
+    <value>Biraz bekleyip tekrar deneyin.</value>
+  </data>
+  <data name="Error.GenericTitle" xml:space="preserve">
+    <value>Bir şeyler ters gitti</value>
+  </data>
+  <data name="Error.GenericMessage" xml:space="preserve">
+    <value>İstek tamamlanamadı. Lütfen tekrar deneyin.</value>
+  </data>
+  <data name="Common.Undo" xml:space="preserve">
+    <value>Geri al</value>
+  </data>
+  <data name="Common.Preview" xml:space="preserve">
+    <value>Önizleme</value>
+  </data>
+  <data name="Custom.EditNamed" xml:space="preserve">
+    <value>{0} öğesini düzenle</value>
+  </data>
+  <data name="Custom.AssistantTitle" xml:space="preserve">
+    <value>Quiz oluşturucu asistanı</value>
+  </data>
+  <data name="Custom.AssistantEmpty" xml:space="preserve">
+    <value>Benden quiz öğeleri eklememi, yapılandırmamı veya düzenlememi isteyin.</value>
+  </data>
+  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
+    <value>Bu özel quize sorular ekle...</value>
+  </data>
+  <data name="Custom.Name" xml:space="preserve">
+    <value>Özel quiz adı</value>
+  </data>
+  <data name="Custom.LoadingEditor" xml:space="preserve">
+    <value>Düzenleyici kontrolleri yükleniyor…</value>
+  </data>
+  <data name="Custom.DesignStarters" xml:space="preserve">
+    <value>Tasarım başlangıçları</value>
+  </data>
+  <data name="Custom.VisualDirection" xml:space="preserve">
+    <value>Görsel bir yön seçin</value>
+  </data>
+  <data name="Custom.TemplateHelp" xml:space="preserve">
+    <value>Yalnızca görünümü uygulayın ya da bu quizin kelimelerinden oluşturulmuş eksiksiz bir düzenle kanvası değiştirin.</value>
+  </data>
+  <data name="Custom.UseStyle" xml:space="preserve">
+    <value>Stili kullan</value>
+  </data>
+  <data name="Custom.UseLayout" xml:space="preserve">
+    <value>Düzeni kullan</value>
+  </data>
+  <data name="Custom.BuildingBlocks" xml:space="preserve">
+    <value>Quiz yapı taşları</value>
+  </data>
+  <data name="Custom.Blocks" xml:space="preserve">
+    <value>Bloklar</value>
+  </data>
+  <data name="Custom.BlocksHelp" xml:space="preserve">
+    <value>Boş bir alana sürükleyin veya otomatik eklemek için tıklayın.</value>
+  </data>
+  <data name="Custom.DragAdd" xml:space="preserve">
+    <value>{0} eklemek için sürükleyin veya tıklayın</value>
+  </data>
+  <data name="Custom.Add" xml:space="preserve">
+    <value>{0} ekle</value>
+  </data>
+  <data name="Custom.Grid" xml:space="preserve">
+    <value>12 sütunlu akıllı ızgara</value>
+  </data>
+  <data name="Custom.GridHelp" xml:space="preserve">
+    <value>Yerleştirmek için sürükleyin · kenarlar hizalanır · dolu alanlardan kaçınılır</value>
+  </data>
+  <data name="Custom.Canvas" xml:space="preserve">
+    <value>Özel quiz kanvası</value>
+  </data>
+  <data name="Custom.Properties" xml:space="preserve">
+    <value>Özellikler</value>
+  </data>
+  <data name="Custom.PropertiesHelp" xml:space="preserve">
+    <value>İçeriğini ve bağlamalarını düzenlemek için bir blok seçin.</value>
+  </data>
+  <data name="Custom.Answer" xml:space="preserve">
+    <value>Cevap</value>
+  </data>
+  <data name="Custom.Choose" xml:space="preserve">
+    <value>Seçin...</value>
+  </data>
+  <data name="Custom.CheckAnswers" xml:space="preserve">
+    <value>Cevapları kontrol et</value>
+  </data>
+  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
+    <value>Quizi tamamlayın, ardından cevaplarınızı gönderin.</value>
+  </data>
+  <data name="Custom.Block.Heading" xml:space="preserve">
+    <value>Başlık</value>
+  </data>
+  <data name="Custom.Block.Instruction" xml:space="preserve">
+    <value>Yönerge</value>
+  </data>
+  <data name="Custom.Block.WordLabel" xml:space="preserve">
+    <value>Kelime etiketi</value>
+  </data>
+  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
+    <value>Çeviri etiketi</value>
+  </data>
+  <data name="Custom.Block.TextInput" xml:space="preserve">
+    <value>Metin girişi</value>
+  </data>
+  <data name="Custom.Block.LongAnswer" xml:space="preserve">
+    <value>Uzun cevap</value>
+  </data>
+  <data name="Custom.Block.Checkbox" xml:space="preserve">
+    <value>Onay kutusu</value>
+  </data>
+  <data name="Custom.Block.RadioChoices" xml:space="preserve">
+    <value>Radyo seçenekleri</value>
+  </data>
+  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
+    <value>Onay kutusu seçenekleri</value>
+  </data>
+  <data name="Custom.Block.SelectMenu" xml:space="preserve">
+    <value>Açılır menü</value>
+  </data>
+  <data name="Custom.Block.WordBank" xml:space="preserve">
+    <value>Kelime havuzu</value>
+  </data>
+  <data name="Custom.Block.SubmitButton" xml:space="preserve">
+    <value>Gönder düğmesi</value>
+  </data>
+  <data name="Custom.Block.Feedback" xml:space="preserve">
+    <value>Geri bildirim</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
+    <value>Editoryal akış</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
+    <value>Sakin bir hiyerarşi, cömert boşluklar ve her satırda tek bir net görev.</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
+    <value>Çeviriler, dilbilgisi yönergeleri, odaklanmış hatırlama</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
+    <value>Aurora kartları</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
+    <value>Yumuşak renkler, eşleştirilmiş çalışma kartları ve enerjik bir sınıf hissi.</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
+    <value>Kısa kelime listeleri ve görsel tarama</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
+    <value>Ders kitabı alıştırması</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
+    <value>Fotoğraflanmış çalışma kitabı alıştırmalarından esinlenen, sıkı aralıklı numaralı satırlar.</value>
+  </data>
+  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
+    <value>Çekimler, dönüşümler, boşluk doldurma ve resmî alıştırmalar</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
+    <value>Kelime havuzu laboratuvarı</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
+    <value>Göz alıcı bir kelime havuzu alıştırmaya yön verir ve hatırlamayı eğlenceli kılar.</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
+    <value>Yönlendirilmiş hatırlama ve başlangıç düzeyi kelimeler</value>
+  </data>
+  <data name="Custom.AnswerQuestion" xml:space="preserve">
+    <value>Bu soruyu cevaplayın.</value>
+  </data>
+  <data name="Custom.Correct" xml:space="preserve">
+    <value>Doğru.</value>
+  </data>
+  <data name="Custom.CorrectAnswer" xml:space="preserve">
+    <value>Doğru cevap: {0}</value>
+  </data>
+  <data name="Custom.CompleteAnswers" xml:space="preserve">
+    <value>Göndermeden önce tüm cevapları tamamlayın.</value>
+  </data>
+  <data name="Custom.Score" xml:space="preserve">
+    <value>Puan: {0} / {1} ({2}%).</value>
+  </data>
+  <data name="Custom.GradeFailed" xml:space="preserve">
+    <value>Bu sınav değerlendirilemedi. Tekrar deneyin.</value>
+  </data>
+  <data name="Classroom.PostAnnouncement" xml:space="preserve">
+    <value>Duyuru paylaş</value>
+  </data>
+  <data name="Classroom.ShareClass" xml:space="preserve">
+    <value>Sınıfla bir şey paylaş</value>
+  </data>
+  <data name="Classroom.Post" xml:space="preserve">
+    <value>Gönder</value>
+  </data>
+  <data name="Classroom.Announcements" xml:space="preserve">
+    <value>Duyurular</value>
+  </data>
+  <data name="Classroom.PostOne" xml:space="preserve">
+    <value>gönderi</value>
+  </data>
+  <data name="Classroom.PostMany" xml:space="preserve">
+    <value>gönderi</value>
+  </data>
+  <data name="Classroom.Pinned" xml:space="preserve">
+    <value>Sabitlendi</value>
+  </data>
+  <data name="Classroom.Unpin" xml:space="preserve">
+    <value>Sabitlemeyi kaldır</value>
+  </data>
+  <data name="Classroom.Pin" xml:space="preserve">
+    <value>Sabitle</value>
+  </data>
+  <data name="Classroom.DeleteAnnouncement" xml:space="preserve">
+    <value>Bu duyuru silinsin mi?</value>
+  </data>
+  <data name="Classroom.NothingYet" xml:space="preserve">
+    <value>Henüz burada bir şey yok.</value>
+  </data>
+  <data name="Classroom.PostFirst" xml:space="preserve">
+    <value>İlk duyuruyu yukarıdan paylaşın.</value>
+  </data>
+  <data name="Classroom.NoTeacherPosts" xml:space="preserve">
+    <value>Öğretmeniniz henüz hiçbir şey paylaşmadı.</value>
+  </data>
+  <data name="Classroom.OpenChat" xml:space="preserve">
+    <value>Sınıf sohbetini aç</value>
+  </data>
+  <data name="Classroom.ClassChat" xml:space="preserve">
+    <value>Sınıf sohbeti</value>
+  </data>
+  <data name="Classroom.ClassChatUpper" xml:space="preserve">
+    <value>SINIF SOHBETİ</value>
+  </data>
+  <data name="Classroom.Connecting" xml:space="preserve">
+    <value>Bağlanıyor…</value>
+  </data>
+  <data name="Classroom.CloseChat" xml:space="preserve">
+    <value>Sınıf sohbetini kapat</value>
+  </data>
+  <data name="Classroom.LoadingMessages" xml:space="preserve">
+    <value>Mesajlar yükleniyor…</value>
+  </data>
+  <data name="Classroom.MessageClass" xml:space="preserve">
+    <value>Sınıfa mesaj gönder</value>
+  </data>
+  <data name="Classroom.ChatMessage" xml:space="preserve">
+    <value>Sohbet mesajı</value>
+  </data>
+  <data name="Classroom.CallTitle" xml:space="preserve">
+    <value>{0} — arama</value>
+  </data>
+  <data name="Classroom.NotConnected" xml:space="preserve">
+    <value>Bağlı değil</value>
+  </data>
+  <data name="Classroom.Back" xml:space="preserve">
+    <value>Sınıfa geri dön</value>
+  </data>
+  <data name="Classroom.CallNotConfigured" xml:space="preserve">
+    <value>Bu sunucuda görüntülü arama yapılandırılmamış. Bir yöneticinin bunu ayarlaması gerekiyor</value>
+  </data>
+  <data name="Classroom.ReadyJoin" xml:space="preserve">
+    <value>Katılmaya hazır mısınız?</value>
+  </data>
+  <data name="Classroom.JoinAs" xml:space="preserve">
+    <value>Şu kişi olarak katılacaksınız</value>
+  </data>
+  <data name="Classroom.MuteMic" xml:space="preserve">
+    <value>Mikrofonu sessize al</value>
+  </data>
+  <data name="Classroom.Mute" xml:space="preserve">
+    <value>Sessize al</value>
+  </data>
+  <data name="Classroom.CameraOff" xml:space="preserve">
+    <value>Kamerayı kapat</value>
+  </data>
+  <data name="Classroom.Camera" xml:space="preserve">
+    <value>Kamera</value>
+  </data>
+  <data name="Classroom.LeaveCall" xml:space="preserve">
+    <value>Aramadan ayrıl</value>
+  </data>
+  <data name="Classroom.Leave" xml:space="preserve">
+    <value>Ayrıl</value>
+  </data>
+  <data name="Classroom.ReadyStart" xml:space="preserve">
+    <value>Başlatmaya hazır mısınız?</value>
+  </data>
+  <data name="Classroom.NoOneCall" xml:space="preserve">
+    <value>Henüz aramada kimse yok.</value>
+  </data>
+  <data name="Classroom.WaitingTeacher" xml:space="preserve">
+    <value>Öğretmen bekleniyor</value>
+  </data>
+  <data name="Classroom.JoinAfterTeacher" xml:space="preserve">
+    <value>Öğretmen aramayı başlattıktan sonra katılabilirsiniz.</value>
+  </data>
+  <data name="Classroom.UnmuteMic" xml:space="preserve">
+    <value>Mikrofon sesini aç</value>
+  </data>
+  <data name="Classroom.CameraOn" xml:space="preserve">
+    <value>Kamerayı aç</value>
+  </data>
+  <data name="Classroom.Connected" xml:space="preserve">
+    <value>Bağlandı</value>
+  </data>
+  <data name="Classroom.NoMessages" xml:space="preserve">
+    <value>Henüz mesaj yok. Merhaba deyin!</value>
+  </data>
+  <data name="Classroom.Reconnecting" xml:space="preserve">
+    <value>Yeniden bağlanıyor…</value>
+  </data>
+  <data name="Classroom.ActionInvalid" xml:space="preserve">
+    <value>Sınıf işlemi tamamlanamadı. Girdinizi ve erişiminizi kontrol edin.</value>
+  </data>
+  <data name="Classroom.Created" xml:space="preserve">
+    <value>{0} oluşturuldu.</value>
+  </data>
+  <data name="Classroom.CreateInvalid" xml:space="preserve">
+    <value>Geçerli bir sınıf adı ve açıklaması girin.</value>
+  </data>
+  <data name="Classroom.NoCodeMatch" xml:space="preserve">
+    <value>Bu katılım koduyla eşleşen bir sınıf yok.</value>
+  </data>
+  <data name="Classroom.InvitationUnavailable" xml:space="preserve">
+    <value>Bu davet artık kullanılamıyor.</value>
+  </data>
+  <data name="Classroom.Welcome" xml:space="preserve">
+    <value>{0} sınıfına hoş geldiniz.</value>
+  </data>
+  <data name="Classroom.WelcomeSwitched" xml:space="preserve">
+    <value>{0} sınıfına hoş geldiniz. Sizi {1} sınıfına aldık.</value>
+  </data>
+  <data name="Classroom.InvitationDeclined" xml:space="preserve">
+    <value>Davet reddedildi.</value>
+  </data>
+  <data name="Classroom.NotFound" xml:space="preserve">
+    <value>Sınıf bulunamadı.</value>
+  </data>
+  <data name="Classroom.Left" xml:space="preserve">
+    <value>Sınıftan ayrıldınız.</value>
+  </data>
+  <data name="Classroom.ActionDenied" xml:space="preserve">
+    <value>Bu sınıfta o işlemi yapamazsınız.</value>
+  </data>
+  <data name="Classroom.Deleted" xml:space="preserve">
+    <value>Sınıf silindi.</value>
+  </data>
+  <data name="Explore.PublicQuiz" xml:space="preserve">
+    <value>Genel Test</value>
+  </data>
+  <data name="Explore.CustomExercises" xml:space="preserve">
+    <value>Bu testin kelime hazinesinden oluşturulan alıştırmalar.</value>
+  </data>
+  <data name="Explore.NoPublicWords" xml:space="preserve">
+    <value>Bu herkese açık teste henüz kelime eklenmedi.</value>
+  </data>
+  <data name="Explore.NoPublicSentences" xml:space="preserve">
+    <value>Bu herkese açık teste henüz cümle eklenmedi.</value>
+  </data>
+  <data name="Explore.PublicCollection" xml:space="preserve">
+    <value>Herkese Açık Koleksiyon</value>
+  </data>
+  <data name="Explore.CollectionIntro" xml:space="preserve">
+    <value>{2} koleksiyonda yer alan {0} {1} keşfedin, ardından tam seti kitaplığınıza kopyalayın.</value>
+  </data>
+  <data name="Explore.CollectionSummary" xml:space="preserve">
+    <value>Koleksiyon özeti</value>
+  </data>
+  <data name="Explore.CopyCollection" xml:space="preserve">
+    <value>Koleksiyonu Kopyala</value>
+  </data>
+  <data name="Explore.InCollection" xml:space="preserve">
+    <value>Bu koleksiyonda</value>
+  </data>
+  <data name="Explore.FiledInside" xml:space="preserve">
+    <value>Doğrudan {0} içine eklenmiş testler.</value>
+  </data>
+  <data name="Explore.NoDirectQuizzes" xml:space="preserve">
+    <value>Bu koleksiyonun içinde doğrudan test yok.</value>
+  </data>
+  <data name="Common.Remove" xml:space="preserve">
+    <value>Kaldır</value>
+  </data>
+  <data name="Classroom.ShareQuiz" xml:space="preserve">
+    <value>Test paylaş</value>
+  </data>
+  <data name="Classroom.QuizLibrary" xml:space="preserve">
+    <value>Kitaplığınızdaki test</value>
+  </data>
+  <data name="Classroom.Share" xml:space="preserve">
+    <value>Paylaş</value>
+  </data>
+  <data name="Classroom.AllQuizzesShared" xml:space="preserve">
+    <value>Tüm testleriniz burada zaten paylaşılmış ya da kitaplığınız boş.</value>
+  </data>
+  <data name="Classroom.ShareBook" xml:space="preserve">
+    <value>Kitap paylaş</value>
+  </data>
+  <data name="Classroom.BookLibrary" xml:space="preserve">
+    <value>Kitaplığınızdaki kitap</value>
+  </data>
+  <data name="Classroom.AllBooksShared" xml:space="preserve">
+    <value>Tüm kitaplarınız burada zaten paylaşılmış ya da hiç yüklemeniz yok.</value>
+  </data>
+  <data name="Classroom.First" xml:space="preserve">
+    <value>önce.</value>
+  </data>
+  <data name="Classroom.SharedContent" xml:space="preserve">
+    <value>Paylaşılan içerik</value>
+  </data>
+  <data name="Classroom.ItemOne" xml:space="preserve">
+    <value>öğe</value>
+  </data>
+  <data name="Classroom.ItemMany" xml:space="preserve">
+    <value>öğe</value>
+  </data>
+  <data name="Classroom.Removed" xml:space="preserve">
+    <value>Kaldırıldı</value>
+  </data>
+  <data name="Classroom.SharedBy" xml:space="preserve">
+    <value>{0} tarafından paylaşıldı</value>
+  </data>
+  <data name="Classroom.CopyLibrary" xml:space="preserve">
+    <value>Kitaplığıma kopyala</value>
+  </data>
+  <data name="Classroom.OpenPdf" xml:space="preserve">
+    <value>PDF'yi aç</value>
+  </data>
+  <data name="Classroom.RemoveConfirm" xml:space="preserve">
+    <value>Bunu sınıftan kaldıralım mı?</value>
+  </data>
+  <data name="Classroom.NoSharedContent" xml:space="preserve">
+    <value>Henüz paylaşılan içerik yok.</value>
+  </data>
+  <data name="Classroom.QuizResults" xml:space="preserve">
+    <value>Test sonuçları</value>
+  </data>
+  <data name="Classroom.AttemptOne" xml:space="preserve">
+    <value>deneme</value>
+  </data>
+  <data name="Classroom.AttemptMany" xml:space="preserve">
+    <value>deneme</value>
+  </data>
+  <data name="Classroom.FromPractice" xml:space="preserve">
+    <value>sınıf içi alıştırmadan</value>
+  </data>
+  <data name="Classroom.Score" xml:space="preserve">
+    <value>Puan</value>
+  </data>
+  <data name="Classroom.Completed" xml:space="preserve">
+    <value>Tamamlandı</value>
+  </data>
+  <data name="Classroom.NoAttempts" xml:space="preserve">
+    <value>Henüz deneme yok. Sonuçlar, üyeler İçerik sekmesinden testleri çalıştığında görünür.</value>
+  </data>
+  <data name="Classroom.MemberResultsTitle" xml:space="preserve">
+    <value>{0} — sonuçlar</value>
+  </data>
+  <data name="Classroom.Skipped" xml:space="preserve">
+    <value>Atlandı</value>
+  </data>
+  <data name="Classroom.NoMemberAttempts" xml:space="preserve">
+    <value>Bu üye için henüz kaydedilmiş deneme yok.</value>
+  </data>
+  <data name="Classroom.InviteEmail" xml:space="preserve">
+    <value>E-posta ile davet et</value>
+  </data>
+  <data name="Classroom.Role" xml:space="preserve">
+    <value>Rol</value>
+  </data>
+  <data name="Classroom.Student" xml:space="preserve">
+    <value>Öğrenci</value>
+  </data>
+  <data name="Classroom.Teacher" xml:space="preserve">
+    <value>Öğretmen</value>
+  </data>
+  <data name="Classroom.Invite" xml:space="preserve">
+    <value>Davet et</value>
+  </data>
+  <data name="Classroom.InviteHelp" xml:space="preserve">
+    <value>Davetler, kişi bu e-posta ile oturum açtığında Classrooms sayfasında görünür — e-posta gönderilmez.</value>
+  </data>
+  <data name="Classroom.CodeAnyone" xml:space="preserve">
+    <value>Koda sahip olan herkes</value>
+  </data>
+  <data name="Classroom.CodeCanJoin" xml:space="preserve">
+    <value>öğrenci olarak katılabilir.</value>
+  </data>
+  <data name="Classroom.JoiningCurrently" xml:space="preserve">
+    <value>Katılma durumu şu anda</value>
+  </data>
+  <data name="Classroom.Enabled" xml:space="preserve">
+    <value>etkin</value>
+  </data>
+  <data name="Classroom.Paused" xml:space="preserve">
+    <value>duraklatıldı</value>
+  </data>
+  <data name="Classroom.NewCode" xml:space="preserve">
+    <value>Yeni kod</value>
+  </data>
+  <data name="Classroom.PauseJoining" xml:space="preserve">
+    <value>Katılmayı duraklat</value>
+  </data>
+  <data name="Classroom.ResumeJoining" xml:space="preserve">
+    <value>Katılmayı sürdür</value>
+  </data>
+  <data name="Classroom.Joined" xml:space="preserve">
+    <value>katıldı</value>
+  </data>
+  <data name="Classroom.MakeRole" xml:space="preserve">
+    <value>{0} yap</value>
+  </data>
+  <data name="Classroom.RemoveMemberConfirm" xml:space="preserve">
+    <value>{0} kişisini sınıftan kaldıralım mı?</value>
+  </data>
+  <data name="Classroom.DeleteForEveryone" xml:space="preserve">
+    <value>Bu sınıfı herkes için silmek istediğinize emin misiniz? Paylaşılan testler ve kitaplar sahiplerinin kitaplıklarında kalır.</value>
+  </data>
+  <data name="Classroom.DeleteClassroom" xml:space="preserve">
+    <value>Sınıfı sil</value>
+  </data>
+  <data name="Classroom.LeaveConfirm" xml:space="preserve">
+    <value>Bu sınıftan ayrılmak istediğinize emin misiniz?</value>
+  </data>
+  <data name="Classroom.LeaveClassroom" xml:space="preserve">
+    <value>Sınıftan ayrıl</value>
+  </data>
+  <data name="Classroom.AddLesson" xml:space="preserve">
+    <value>Ders ekle</value>
+  </data>
+  <data name="Classroom.TitleLabel" xml:space="preserve">
+    <value>Başlık</value>
+  </data>
+  <data name="Classroom.DescriptionOptional" xml:space="preserve">
+    <value>Açıklama (isteğe bağlı)</value>
+  </data>
+  <data name="Classroom.ScheduledOptional" xml:space="preserve">
+    <value>Planlanan tarih (isteğe bağlı)</value>
+  </data>
+  <data name="Classroom.AddAssignment" xml:space="preserve">
+    <value>Ödev ekle</value>
+  </data>
+  <data name="Classroom.InstructionsOptional" xml:space="preserve">
+    <value>Yönergeler (isteğe bağlı)</value>
+  </data>
+  <data name="Classroom.QuizOptional" xml:space="preserve">
+    <value>Test (isteğe bağlı, paylaşılan içerikten)</value>
+  </data>
+  <data name="Classroom.NoQuiz" xml:space="preserve">
+    <value>Test yok</value>
+  </data>
+  <data name="Classroom.LessonOptional" xml:space="preserve">
+    <value>Ders (isteğe bağlı)</value>
+  </data>
+  <data name="Classroom.NoLesson" xml:space="preserve">
+    <value>Ders yok</value>
+  </data>
+  <data name="Classroom.DueOptional" xml:space="preserve">
+    <value>Son tarih (isteğe bağlı)</value>
+  </data>
+  <data name="Classroom.CoursePlan" xml:space="preserve">
+    <value>Ders planı</value>
+  </data>
+  <data name="Classroom.LessonOne" xml:space="preserve">
+    <value>ders</value>
+  </data>
+  <data name="Classroom.LessonMany" xml:space="preserve">
+    <value>ders</value>
+  </data>
+  <data name="Classroom.AssignmentOne" xml:space="preserve">
+    <value>ödev</value>
+  </data>
+  <data name="Classroom.AssignmentMany" xml:space="preserve">
+    <value>ödev</value>
+  </data>
+  <data name="Classroom.DeleteLessonConfirm" xml:space="preserve">
+    <value>Bu dersi silmek istediğinize emin misiniz? Ödevler bağlı olmadan kalır.</value>
+  </data>
+  <data name="Classroom.DeleteLesson" xml:space="preserve">
+    <value>Dersi sil</value>
+  </data>
+  <data name="Classroom.NoAssignmentsLesson" xml:space="preserve">
+    <value>Bu ders için ödev yok.</value>
+  </data>
+  <data name="Classroom.OtherAssignments" xml:space="preserve">
+    <value>Diğer ödevler</value>
+  </data>
+  <data name="Classroom.NoPlanYet" xml:space="preserve">
+    <value>Henüz ders veya ödev yok.</value>
+  </data>
+  <data name="Classroom.PlanAbove" xml:space="preserve">
+    <value>Dersi yukarıda planlayın.</value>
+  </data>
+  <data name="Classroom.NoTeacherPlan" xml:space="preserve">
+    <value>Öğretmeniniz henüz bir plan yapmadı.</value>
+  </data>
+  <data name="Classroom.Due" xml:space="preserve">
+    <value>Son tarih</value>
+  </data>
+  <data name="Classroom.StudentsCompleted" xml:space="preserve">
+    <value>{0} öğrenciden {1} tanesi tamamladı</value>
+  </data>
+  <data name="Classroom.DoneBest" xml:space="preserve">
+    <value>Tamamlandı — en iyi puan {0}%</value>
+  </data>
+  <data name="Classroom.NotDone" xml:space="preserve">
+    <value>Henüz tamamlanmadı</value>
+  </data>
+  <data name="Classroom.DeleteAssignmentConfirm" xml:space="preserve">
+    <value>Bu ödevi silmek istiyor musunuz?</value>
+  </data>
+  <data name="Speaking.BarMenu" xml:space="preserve">
+    <value>Çubuk menü</value>
+  </data>
+  <data name="Speaking.YourWallet" xml:space="preserve">
+    <value>Cüzdanınız</value>
+  </data>
+  <data name="Speaking.NoBill" xml:space="preserve">
+    <value>Henüz hesap yok</value>
+  </data>
+  <data name="Speaking.CloseWallet" xml:space="preserve">
+    <value>Cüzdanı kapat</value>
+  </data>
+  <data name="Speaking.Selected" xml:space="preserve">
+    <value>Seçili</value>
+  </data>
+  <data name="Speaking.SceneActions" xml:space="preserve">
+    <value>Sahne işlemleri</value>
+  </data>
+  <data name="Speaking.NextMonth" xml:space="preserve">
+    <value>gelecek ayın başı</value>
+  </data>
+  <data name="Speaking.PaidPaused" xml:space="preserve">
+    <value>Ücretli konuşma özellikleri {0} tarihine kadar duraklatıldı.</value>
+  </data>
+  <data name="Speaking.SessionReady" xml:space="preserve">
+    <value>Pratik oturumunuz hazır.</value>
+  </data>
+  <data name="Speaking.Unavailable" xml:space="preserve">
+    <value>Konuşma pratiği kullanılamıyor</value>
+  </data>
+  <data name="Speaking.NewSessionConfirm" xml:space="preserve">
+    <value>Yeni bir oturum başlatılsın mı? Mevcut konuşma silinecek.</value>
+  </data>
+  <data name="Speaking.UpdatingQuiz" xml:space="preserve">
+    <value>Eğitmenin pratik testi güncelleniyor…</value>
+  </data>
+  <data name="Speaking.PractisingNamed" xml:space="preserve">
+    <value>{0} çalışılıyor.</value>
+  </data>
+  <data name="Speaking.FreeModeActive" xml:space="preserve">
+    <value>Ücretsiz ders modu etkin.</value>
+  </data>
+  <data name="Speaking.Voice" xml:space="preserve">
+    <value>Ses</value>
+  </data>
+  <data name="Speaking.Typed" xml:space="preserve">
+    <value>Yazılı</value>
+  </data>
+  <data name="Speaking.StartBeforeSend" xml:space="preserve">
+    <value>Mesaj göndermeden önce bir konuşma oturumu başlatın.</value>
+  </data>
+  <data name="Speaking.AvatarThinking" xml:space="preserve">
+    <value>{0} düşünüyor…</value>
+  </data>
+  <data name="Speaking.Avatar" xml:space="preserve">
+    <value>Avatar</value>
+  </data>
+  <data name="Speaking.SessionEnded" xml:space="preserve">
+    <value>Oturum sona erdi · yeni bir oturum başlatın</value>
+  </data>
+  <data name="Speaking.TakingSip" xml:space="preserve">
+    <value>Bir yudum alıyor…</value>
+  </data>
+  <data name="Speaking.TakingSnack" xml:space="preserve">
+    <value>Bir atıştırmalık alıyor…</value>
+  </data>
+  <data name="Speaking.AvatarReacting" xml:space="preserve">
+    <value>{0} tepki veriyor…</value>
+  </data>
+  <data name="Speaking.MomentPassed" xml:space="preserve">
+    <value>O an geçti. Sohbete devam edin ya da başka bir işlem deneyin.</value>
+  </data>
+  <data name="Speaking.RecordUnavailable" xml:space="preserve">
+    <value>Bu tarayıcı burada konuşmayı kaydedemiyor. Yazılı sohbet yine kullanılabilir.</value>
+  </data>
+  <data name="Speaking.Starting" xml:space="preserve">
+    <value>Başlatılıyor…</value>
+  </data>
+  <data name="Speaking.MicConnectingAuto" xml:space="preserve">
+    <value>Mikrofona bağlanılıyor. Hazır olduğunda konuşmaya başlayın.</value>
+  </data>
+  <data name="Speaking.MicConnectingHold" xml:space="preserve">
+    <value>Mikrofona bağlanılıyor. Düğmeyi basılı tutmaya devam edin.</value>
+  </data>
+  <data name="Speaking.Listening" xml:space="preserve">
+    <value>Dinleniyor…</value>
+  </data>
+  <data name="Speaking.SpeakNaturally" xml:space="preserve">
+    <value>Doğal konuşun. Konuşmanız bitince kayıt durur.</value>
+  </data>
+  <data name="Speaking.ReleaseSend" xml:space="preserve">
+    <value>Göndermek için bırakın</value>
+  </data>
+  <data name="Speaking.KeepHolding" xml:space="preserve">
+    <value>Konuşurken basılı tutun. Göndermek için düğmeyi bırakın.</value>
+  </data>
+  <data name="Speaking.Transcribing" xml:space="preserve">
+    <value>Metne dönüştürülüyor…</value>
+  </data>
+  <data name="Speaking.FinishingTranscript" xml:space="preserve">
+    <value>Transkriptiniz tamamlanıyor…</value>
+  </data>
+  <data name="Speaking.NotCaughtComposer" xml:space="preserve">
+    <value>Azure Speech bunu algılayamadı. Konuş'a basıp tekrar deneyin.</value>
+  </data>
+  <data name="Speaking.NotCaughtAvatar" xml:space="preserve">
+    <value>Azure Speech bunu algılayamadı. Kırmızı düğmeye basılı tutup tekrar deneyin.</value>
+  </data>
+  <data name="Speaking.RecordingTooLong" xml:space="preserve">
+    <value>Bu kayıt çok uzun. Transkripti kısaltıp Gönder'e basın.</value>
+  </data>
+  <data name="Speaking.TranscriptSending" xml:space="preserve">
+    <value>Transkript hazır. Gönderiliyor…</value>
+  </data>
+  <data name="Speaking.TranscriptReady" xml:space="preserve">
+    <value>Transkript hazır. Gözden geçirin veya düzenleyin, ardından Gönder'e basın.</value>
+  </data>
+  <data name="Speaking.MicFailed" xml:space="preserve">
+    <value>Mikrofon erişimi başarısız oldu. Yazılı sohbet yine kullanılabilir.</value>
+  </data>
+  <data name="Speaking.SpeechFinishFailed" xml:space="preserve">
+    <value>Azure Speech kaydı tamamlayamadı.</value>
+  </data>
+  <data name="Speaking.Scene.PoursDrink" xml:space="preserve">
+    <value>Marek içeceğinizi doldurup önünüze kaydırır.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSnack" xml:space="preserve">
+    <value>Biraz paluszki alıyorsunuz.</value>
+  </data>
+  <data name="Speaking.Scene.OffersSnack" xml:space="preserve">
+    <value>Marek size paluszki ikram eder.</value>
+  </data>
+  <data name="Speaking.Scene.ClearsGlass" xml:space="preserve">
+    <value>Marek boş bardağı kaldırır.</value>
+  </data>
+  <data name="Speaking.Scene.PolishesGlass" xml:space="preserve">
+    <value>Marek bir bardağı parlatır.</value>
+  </data>
+  <data name="Speaking.Scene.WipesCounter" xml:space="preserve">
+    <value>Marek tezgâhı siler.</value>
+  </data>
+  <data name="Speaking.Scene.LastCall" xml:space="preserve">
+    <value>Son çağrı.</value>
+  </data>
+  <data name="Speaking.Scene.ItemUnavailable" xml:space="preserve">
+    <value>Bu ürün mevcut değil.</value>
+  </data>
+  <data name="Speaking.Scene.FinishDrink" xml:space="preserve">
+    <value>İçeceği bitiriyorsunuz.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSip" xml:space="preserve">
+    <value>Bir yudum alıyorsunuz.</value>
+  </data>
+  <data name="Speaking.Scene.PresentsBill" xml:space="preserve">
+    <value>Marek {0} zł hesabı getirir.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentRejected" xml:space="preserve">
+    <value>{0} zł yeterli değil. Hiçbir şey alınmadı.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentAccepted" xml:space="preserve">
+    <value>Marek {0} zł kabul eder.</value>
+  </data>
+  <data name="Speaking.Scene.ReturnsChange" xml:space="preserve">
+    <value>Marek {0} zł para üstü verir.</value>
+  </data>
+  <data name="Reader.ReadingSentence" xml:space="preserve">
+    <value>Sayfa {0} okunuyor · cümle {1} / {2}</value>
+  </data>
+  <data name="Reader.ReadingSelectionPart" xml:space="preserve">
+    <value>Seçim okunuyor · bölüm {0} / {1}</value>
+  </data>
+  <data name="Reader.ReadingSelection" xml:space="preserve">
+    <value>Seçili metin okunuyor…</value>
+  </data>
+  <data name="Reader.ReadingPage" xml:space="preserve">
+    <value>Sayfa {0} okunuyor…</value>
+  </data>
+  <data name="Reader.FinishedSelection" xml:space="preserve">
+    <value>Seçimin okunması tamamlandı.</value>
+  </data>
+  <data name="Reader.FinishedPage" xml:space="preserve">
+    <value>Sayfa {0} okunması tamamlandı.</value>
+  </data>
+  <data name="Reader.ReadingStopped" xml:space="preserve">
+    <value>Okuma durduruldu.</value>
+  </data>
+  <data name="Reader.Detected" xml:space="preserve">
+    <value>{0} algılandı</value>
+  </data>
+  <data name="Reader.DetectedCached" xml:space="preserve">
+    <value>{0} algılandı · önbellekten</value>
+  </data>
+  <data name="Reader.CachedTranslation" xml:space="preserve">
+    <value>Önbelleğe alınmış çeviri</value>
+  </data>
+  <data name="Reader.NoSelectableTextPage" xml:space="preserve">
+    <value>Bu sayfada seçilebilir metin bulunamadı.</value>
+  </data>
+  <data name="Reader.RenderFailed" xml:space="preserve">
+    <value>Bu sayfa oluşturulamadı.</value>
+  </data>
+  <data name="Reader.PdfLoadFailed" xml:space="preserve">
+    <value>PDF yüklenemedi.</value>
+  </data>
+  <data name="Editor.Heading" xml:space="preserve">
+    <value>Başlık</value>
+  </data>
+  <data name="Editor.Instruction" xml:space="preserve">
+    <value>Yönerge</value>
+  </data>
+  <data name="Editor.WordLabel" xml:space="preserve">
+    <value>Kelime etiketi</value>
+  </data>
+  <data name="Editor.TranslationLabel" xml:space="preserve">
+    <value>Çeviri etiketi</value>
+  </data>
+  <data name="Editor.TextInput" xml:space="preserve">
+    <value>Metin girişi</value>
+  </data>
+  <data name="Editor.LongAnswer" xml:space="preserve">
+    <value>Uzun yanıt</value>
+  </data>
+  <data name="Editor.Checkbox" xml:space="preserve">
+    <value>Onay kutusu</value>
+  </data>
+  <data name="Editor.RadioChoices" xml:space="preserve">
+    <value>Radyo seçenekleri</value>
+  </data>
+  <data name="Editor.CheckboxChoices" xml:space="preserve">
+    <value>Onay kutusu seçenekleri</value>
+  </data>
+  <data name="Editor.SelectMenu" xml:space="preserve">
+    <value>Açılır menü</value>
+  </data>
+  <data name="Editor.WordBank" xml:space="preserve">
+    <value>Kelime havuzu</value>
+  </data>
+  <data name="Editor.SubmitButton" xml:space="preserve">
+    <value>Gönder düğmesi</value>
+  </data>
+  <data name="Editor.Feedback" xml:space="preserve">
+    <value>Geri bildirim</value>
+  </data>
+  <data name="Editor.EmptyCanvas" xml:space="preserve">
+    <value>Başlamak için bu tuval üzerine istediğiniz herhangi bir yere bir blok sürükleyin.</value>
+  </data>
+  <data name="Editor.MoveLeft" xml:space="preserve">
+    <value>Sola taşı</value>
+  </data>
+  <data name="Editor.MoveUp" xml:space="preserve">
+    <value>Yukarı taşı</value>
+  </data>
+  <data name="Editor.MoveDown" xml:space="preserve">
+    <value>Aşağı taşı</value>
+  </data>
+  <data name="Editor.MoveRight" xml:space="preserve">
+    <value>Sağa taşı</value>
+  </data>
+  <data name="Editor.RemoveBlock" xml:space="preserve">
+    <value>Bloğu kaldır</value>
+  </data>
+  <data name="Editor.Resize" xml:space="preserve">
+    <value>Genişliği ayarlamak için sürükleyin</value>
+  </data>
+  <data name="Editor.Word" xml:space="preserve">
+    <value>Kelime</value>
+  </data>
+  <data name="Editor.DisplayField" xml:space="preserve">
+    <value>Görüntü alanı</value>
+  </data>
+  <data name="Editor.Words" xml:space="preserve">
+    <value>Kelimeler</value>
+  </data>
+  <data name="Editor.Options" xml:space="preserve">
+    <value>Seçenekler</value>
+  </data>
+  <data name="Editor.CorrectOption" xml:space="preserve">
+    <value>Doğru seçenek</value>
+  </data>
+  <data name="Editor.RemoveOption" xml:space="preserve">
+    <value>Seçeneği kaldır</value>
+  </data>
+  <data name="Editor.AddOption" xml:space="preserve">
+    <value>Seçenek ekle</value>
+  </data>
+  <data name="Editor.Properties" xml:space="preserve">
+    <value>Özellikler</value>
+  </data>
+  <data name="Editor.SelectBlock" xml:space="preserve">
+    <value>İçeriğini ve bağlamalarını düzenlemek için bir blok seçin.</value>
+  </data>
+  <data name="Editor.TargetInputs" xml:space="preserve">
+    <value>Hedef girişler</value>
+  </data>
+  <data name="Editor.PreviewOnly" xml:space="preserve">
+    <value>Yalnızca önizleme — puanlanan bir denemeyi kaydetmek ve oynamak için kaydedin.</value>
+  </data>
+  <data name="Editor.BackToEditor" xml:space="preserve">
+    <value>Düzenleyiciye dön</value>
+  </data>
+  <data name="Editor.Preview" xml:space="preserve">
+    <value>Önizleme</value>
+  </data>
+  <data name="Editor.PreviewingOne" xml:space="preserve">
+    <value>{0} blok önizleniyor.</value>
+  </data>
+  <data name="Editor.PreviewingMany" xml:space="preserve">
+    <value>{0} blok önizleniyor.</value>
+  </data>
+  <data name="Editor.ReadyOne" xml:space="preserve">
+    <value>Düzenleyici hazır · tuvalde {0} blok var. Eklemek için + simgesini kullanın veya bir blok sürükleyin.</value>
+  </data>
+  <data name="Editor.ReadyMany" xml:space="preserve">
+    <value>Düzenleyici hazır · tuvalde {0} blok var. Eklemek için + simgesini kullanın veya bir blok sürükleyin.</value>
+  </data>
+  <data name="Editor.ReplaceConfirm" xml:space="preserve">
+    <value>Geçerli tuvali {0} düzeniyle değiştirmek ister misiniz? Bu değişikliği Geri Alabilirsiniz.</value>
+  </data>
+  <data name="Editor.SaveFailed" xml:space="preserve">
+    <value>Bu özel sınav kaydedilemedi.</value>
+  </data>
+  <data name="Editor.SavedPlayable" xml:space="preserve">
+    <value>Kaydedildi. Bu sınav artık oynatılmaya hazır.</value>
+  </data>
+  <data name="Editor.DraftSaved" xml:space="preserve">
+    <value>Taslak kaydedildi. Oynamadan önce gerekli sınav alanlarını tamamlayın.</value>
+  </data>
+  <data name="Editor.SaveStopped" xml:space="preserve">
+    <value>Kaydetme isteği beklenmedik şekilde durdu. Tekrar deneyin.</value>
+  </data>
+  <data name="Editor.WordLemma" xml:space="preserve">
+    <value>Kelime / kök</value>
+  </data>
+  <data name="Editor.Translation" xml:space="preserve">
+    <value>Çeviri</value>
+  </data>
+  <data name="Editor.Width" xml:space="preserve">
+    <value>Genişlik</value>
+  </data>
+  <data name="Editor.Column" xml:space="preserve">
+    <value>Sütun</value>
+  </data>
+  <data name="Editor.ColumnNumber" xml:space="preserve">
+    <value>Sütun {0}</value>
+  </data>
+  <data name="Editor.Row" xml:space="preserve">
+    <value>Satır</value>
+  </data>
+  <data name="Editor.Text" xml:space="preserve">
+    <value>Metin</value>
+  </data>
+  <data name="Editor.LiveBinding" xml:space="preserve">
+    <value>Canlı kelime bağlama</value>
+  </data>
+  <data name="Editor.ExerciseRow" xml:space="preserve">
+    <value>Alıştırma satırı ({{blank}} kullanın)</value>
+  </data>
+  <data name="Editor.AccessibleLabel" xml:space="preserve">
+    <value>Erişilebilir etiket</value>
+  </data>
+  <data name="Editor.CustomExpected" xml:space="preserve">
+    <value>Özel beklenen yanıt</value>
+  </data>
+  <data name="Editor.ExpectedBinding" xml:space="preserve">
+    <value>Beklenen kelime bağlaması</value>
+  </data>
+  <data name="Editor.DisplayedWord" xml:space="preserve">
+    <value>Gösterilen kelime</value>
+  </data>
+  <data name="Editor.ExpectedChecked" xml:space="preserve">
+    <value>İşaretli olması beklenir</value>
+  </data>
+  <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
+    <value>Bu sınav artık herkese açık değil.</value>
+  </data>
+  <data name="Explore.CollectionNoLongerPublic" xml:space="preserve">
+    <value>Bu koleksiyon artık herkese açık değil.</value>
+  </data>
+  <data name="Explore.CopiedToLibrary" xml:space="preserve">
+    <value>{0} kitaplığınıza kopyalandı.</value>
+  </data>
+  <data name="Classroom.InvitationCreated" xml:space="preserve">
+    <value>Davet oluşturuldu. Bir sonraki ziyaretlerinde Classroom sayfasında görünür.</value>
+  </data>
+  <data name="Classroom.JoinCodeRegenerated" xml:space="preserve">
+    <value>Katılım kodu yeniden oluşturuldu.</value>
+  </data>
+  <data name="Classroom.NoAccessResults" xml:space="preserve">
+    <value>Bu sonuçlara erişiminiz yok.</value>
+  </data>
+  <data name="Classroom.QuizShared" xml:space="preserve">
+    <value>Sınav paylaşıldı.</value>
+  </data>
+  <data name="Classroom.BookShared" xml:space="preserve">
+    <value>Kitap paylaşıldı.</value>
+  </data>
+  <data name="Classroom.RemovedFromClassroom" xml:space="preserve">
+    <value>Sınıftan kaldırıldı.</value>
+  </data>
+  <data name="Classroom.QuizCopyFailed" xml:space="preserve">
+    <value>Bu sınav kopyalanamadı.</value>
+  </data>
+  <data name="Classroom.Member" xml:space="preserve">
+    <value>Üye</value>
+  </data>
+  <data name="Common.Unknown" xml:space="preserve">
+    <value>Bilinmiyor</value>
+  </data>
+  <data name="Account.LogOut" xml:space="preserve">
+    <value>Çıkış yap</value>
+  </data>
+  <data name="Account.LogIn" xml:space="preserve">
+    <value>Giriş yap</value>
+  </data>
+  <data name="Common.Send" xml:space="preserve">
+    <value>Gönder</value>
+  </data>
+  <data name="Speaking.ConversationLab" xml:space="preserve">
+    <value>{0} konuşma laboratuvarı</value>
+  </data>
+  <data name="Speaking.MessageLabel" xml:space="preserve">
+    <value>Sizin {0} mesajınız</value>
+  </data>
+  <data name="Speaking.MessagePlaceholder" xml:space="preserve">
+    <value>{0} dilinde yazın veya mikrofonu kullanın…</value>
+  </data>
+  <data name="Speaking.MicAria" xml:space="preserve">
+    <value>{0} dilinde sesli yazmayı başlatın; kayıt, konuşmayı bitirdiğinizde durur</value>
+  </data>
+  <data name="Speaking.PrivacyNote" xml:space="preserve">
+    <value>Ses doğrudan Azure Speech'e aktarılır. Bu konuşma yalnızca geçerli oturum için saklanır.</value>
+  </data>
+  <data name="Speaking.ClickTranslate" xml:space="preserve">
+    <value>Çevirmek için tıklayın</value>
+  </data>
+  <data name="Speaking.ClickShowLanguage" xml:space="preserve">
+    <value>{0} dilini göstermek için tıklayın</value>
+  </data>
+  <data name="Speaking.CoachFeedback" xml:space="preserve">
+    <value>Koç geri bildirimi</value>
+  </data>
+  <data name="Speaking.MoreNatural" xml:space="preserve">
+    <value>Daha doğal {0}</value>
+  </data>
+</root>

@@ -1,0 +1,2883 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="DisplayLanguage.Label" xml:space="preserve">
+    <value>Bahasa tampilan</value>
+  </data>
+  <data name="DisplayLanguage.Submit" xml:space="preserve">
+    <value>Ubah bahasa</value>
+  </data>
+  <data name="Common.English" xml:space="preserve">
+    <value>Inggris</value>
+  </data>
+  <data name="Common.Swedish" xml:space="preserve">
+    <value>Swensk</value>
+  </data>
+  <data name="Common.LogIn" xml:space="preserve">
+    <value>Masuk</value>
+  </data>
+  <data name="Common.LogOut" xml:space="preserve">
+    <value>Keluar</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Hapus</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Batal</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Simpan</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Tutup</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>Cari</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>Kembali</value>
+  </data>
+  <data name="Common.Next" xml:space="preserve">
+    <value>Berikutnya</value>
+  </data>
+  <data name="Common.Previous" xml:space="preserve">
+    <value>Sebelumnya</value>
+  </data>
+  <data name="Layout.MetaDescription" xml:space="preserve">
+    <value>Glosify mengubah apa yang Anda baca menjadi kosakata yang dapat Anda gunakan: buat daftar kata dari buku dan transkrip, latih dengan kuis dan kartu flash, lalu berlatih berbicara dengan pasangan percakapan AI.</value>
+  </data>
+  <data name="Layout.AuthMetaDescription" xml:space="preserve">
+    <value>Masuk ke Glosify untuk membangun kosakata dari apa yang Anda baca, melatihnya dengan kuis, dan mengucapkannya dengan pasangan percakapan AI.</value>
+  </data>
+  <data name="Layout.PremiumLearner" xml:space="preserve">
+    <value>Pembelajar Premium</value>
+  </data>
+  <data name="Layout.SearchPlaceholder" xml:space="preserve">
+    <value>Apa yang ingin Anda pelajari?</value>
+  </data>
+  <data name="Layout.Notifications" xml:space="preserve">
+    <value>Notifikasi</value>
+  </data>
+  <data name="Layout.GetCredits" xml:space="preserve">
+    <value>Dapatkan kredit</value>
+  </data>
+  <data name="Layout.SignedInAs" xml:space="preserve">
+    <value>Masuk sebagai</value>
+  </data>
+  <data name="Layout.SignedIn" xml:space="preserve">
+    <value>Sudah masuk</value>
+  </data>
+  <data name="Layout.PrimaryNavigation" xml:space="preserve">
+    <value>Navigasi utama</value>
+  </data>
+  <data name="Nav.LanguageSelector" xml:space="preserve">
+    <value>Pemilih bahasa</value>
+  </data>
+  <data name="Nav.Language" xml:space="preserve">
+    <value>Bahasa</value>
+  </data>
+  <data name="Nav.Home" xml:space="preserve">
+    <value>Beranda</value>
+  </data>
+  <data name="Nav.Explore" xml:space="preserve">
+    <value>Jelajahi</value>
+  </data>
+  <data name="Nav.Books" xml:space="preserve">
+    <value>Buku</value>
+  </data>
+  <data name="Nav.Transcripts" xml:space="preserve">
+    <value>Transkrip</value>
+  </data>
+  <data name="Nav.Quizzes" xml:space="preserve">
+    <value>Kuis</value>
+  </data>
+  <data name="Nav.Speaking" xml:space="preserve">
+    <value>Berbicara</value>
+  </data>
+  <data name="Nav.Speak" xml:space="preserve">
+    <value>Berbicara</value>
+  </data>
+  <data name="Nav.Classrooms" xml:space="preserve">
+    <value>Ruang kelas</value>
+  </data>
+  <data name="Nav.Class" xml:space="preserve">
+    <value>Kelas</value>
+  </data>
+  <data name="Languages.Title" xml:space="preserve">
+    <value>Pemilih bahasa</value>
+  </data>
+  <data name="Languages.Tagline" xml:space="preserve">
+    <value>Bahasa apa yang ingin Anda pilih hari ini?</value>
+  </data>
+  <data name="Languages.Current" xml:space="preserve">
+    <value>Sedang mempelajari {0}</value>
+  </data>
+  <data name="Languages.Find" xml:space="preserve">
+    <value>Cari bahasa</value>
+  </data>
+  <data name="Languages.SearchPlaceholder" xml:space="preserve">
+    <value>Cari dalam bahasa Inggris, nama asli, atau kode</value>
+  </data>
+  <data name="Languages.Count" xml:space="preserve">
+    <value>{0} bahasa</value>
+  </data>
+  <data name="Languages.None" xml:space="preserve">
+    <value>Tidak ada bahasa yang cocok</value>
+  </data>
+  <data name="Languages.NoneHelp" xml:space="preserve">
+    <value>Coba nama dalam bahasa Inggris, nama asli, atau kode bahasa.</value>
+  </data>
+  <data name="Languages.Pick" xml:space="preserve">
+    <value>Pilih bahasa</value>
+  </data>
+  <data name="Assistant.Title" xml:space="preserve">
+    <value>Asisten</value>
+  </data>
+  <data name="Assistant.Empty" xml:space="preserve">
+    <value>Minta bantuan di mana saja di Glosify.</value>
+  </data>
+  <data name="Assistant.Placeholder" xml:space="preserve">
+    <value>Tanyakan kepada asisten...</value>
+  </data>
+  <data name="Assistant.Workspace" xml:space="preserve">
+    <value>Ruang kerja asisten</value>
+  </data>
+  <data name="Assistant.Chat" xml:space="preserve">
+    <value>CHAT</value>
+  </data>
+  <data name="Assistant.Chats" xml:space="preserve">
+    <value>CHAT</value>
+  </data>
+  <data name="Assistant.NewChat" xml:space="preserve">
+    <value>Obrolan baru</value>
+  </data>
+  <data name="Assistant.Close" xml:space="preserve">
+    <value>Tutup asisten</value>
+  </data>
+  <data name="Assistant.QuizContext" xml:space="preserve">
+    <value>Konteks kuis</value>
+  </data>
+  <data name="Assistant.NoQuiz" xml:space="preserve">
+    <value>Tidak ada kuis yang dipilih</value>
+  </data>
+  <data name="Assistant.ReadingMaterial" xml:space="preserve">
+    <value>Materi bacaan</value>
+  </data>
+  <data name="Assistant.NoMaterial" xml:space="preserve">
+    <value>Tidak ada materi yang dipilih</value>
+  </data>
+  <data name="Assistant.Picture" xml:space="preserve">
+    <value>Gambar</value>
+  </data>
+  <data name="Assistant.Model" xml:space="preserve">
+    <value>Model asisten</value>
+  </data>
+  <data name="Assistant.AutoModel" xml:space="preserve">
+    <value>Otomatis · {0}</value>
+  </data>
+  <data name="Assistant.Send" xml:space="preserve">
+    <value>Kirim</value>
+  </data>
+  <data name="Assistant.PreviousChats" xml:space="preserve">
+    <value>Obrolan sebelumnya</value>
+  </data>
+  <data name="Assistant.NoChats" xml:space="preserve">
+    <value>Belum ada obrolan tersimpan.</value>
+  </data>
+  <data name="Quiz.FlashcardsTitle" xml:space="preserve">
+    <value>Kuis Kartu Flash</value>
+  </data>
+  <data name="Quiz.TypingTitle" xml:space="preserve">
+    <value>Kuis Mengetik</value>
+  </data>
+  <data name="Quiz.RevealRate" xml:space="preserve">
+    <value>Tampilkan jawabannya, nilai ingatan, dan lanjutkan.</value>
+  </data>
+  <data name="Quiz.BackWords" xml:space="preserve">
+    <value>Kembali ke kata</value>
+  </data>
+  <data name="Quiz.SessionComplete" xml:space="preserve">
+    <value>Sesi Selesai</value>
+  </data>
+  <data name="Quiz.Remembered" xml:space="preserve">
+    <value>Diingat</value>
+  </data>
+  <data name="Quiz.ReviewAgain" xml:space="preserve">
+    <value>Tinjau Lagi</value>
+  </data>
+  <data name="Quiz.Skipped" xml:space="preserve">
+    <value>Dilewati</value>
+  </data>
+  <data name="Quiz.Restart" xml:space="preserve">
+    <value>Mulai Ulang Sesi</value>
+  </data>
+  <data name="Quiz.PracticeAgain" xml:space="preserve">
+    <value>Latihan Lagi</value>
+  </data>
+  <data name="Quiz.PlayPronunciation" xml:space="preserve">
+    <value>Putar pelafalan {0}</value>
+  </data>
+  <data name="Quiz.RevealAnswer" xml:space="preserve">
+    <value>Tampilkan jawaban untuk {0}</value>
+  </data>
+  <data name="Quiz.Again" xml:space="preserve">
+    <value>Lagi</value>
+  </data>
+  <data name="Quiz.Good" xml:space="preserve">
+    <value>Baik</value>
+  </data>
+  <data name="Quiz.Easy" xml:space="preserve">
+    <value>Mudah</value>
+  </data>
+  <data name="Quiz.SwipeHint" xml:space="preserve">
+    <value>Geser ke kanan untuk Baik, ke kiri untuk Lagi</value>
+  </data>
+  <data name="Quiz.Skip" xml:space="preserve">
+    <value>Lewati</value>
+  </data>
+  <data name="Quiz.ShowAnswer" xml:space="preserve">
+    <value>Tampilkan Jawaban</value>
+  </data>
+  <data name="Quiz.Reset" xml:space="preserve">
+    <value>Setel Ulang Sesi</value>
+  </data>
+  <data name="Quiz.NoneYet" xml:space="preserve">
+    <value>Belum ada {0}</value>
+  </data>
+  <data name="Quiz.AddThenStart" xml:space="preserve">
+    <value>Tambahkan {0} ke kuis, lalu mulai sesi {1} dari kuis itu.</value>
+  </data>
+  <data name="Quiz.TypeInstruction" xml:space="preserve">
+    <value>Ketik {0} {1} lengkap dari prompt {2}.</value>
+  </data>
+  <data name="Quiz.CheckAnswer" xml:space="preserve">
+    <value>Periksa Jawaban</value>
+  </data>
+  <data name="Quiz.PlayPronunciationGeneric" xml:space="preserve">
+    <value>Putar pengucapan</value>
+  </data>
+  <data name="Quiz.Answer" xml:space="preserve">
+    <value>Jawaban</value>
+  </data>
+  <data name="Quiz.TypePlaceholder" xml:space="preserve">
+    <value>Ketik jawaban Anda...</value>
+  </data>
+  <data name="Quiz.CorrectAnswer" xml:space="preserve">
+    <value>Jawaban yang benar</value>
+  </data>
+  <data name="Quiz.Space" xml:space="preserve">
+    <value>Spasi</value>
+  </data>
+  <data name="Quiz.TypingComplete" xml:space="preserve">
+    <value>Pengetikan Selesai</value>
+  </data>
+  <data name="Quiz.Correct" xml:space="preserve">
+    <value>Benar</value>
+  </data>
+  <data name="Quiz.Incorrect" xml:space="preserve">
+    <value>Salah</value>
+  </data>
+  <data name="Quiz.PracticeIncorrect" xml:space="preserve">
+    <value>Latih Kata yang Salah</value>
+  </data>
+  <data name="Quiz.ChangeSettings" xml:space="preserve">
+    <value>Ubah pengaturan</value>
+  </data>
+  <data name="Transcripts.Title" xml:space="preserve">
+    <value>Transkrip</value>
+  </data>
+  <data name="Transcripts.Eyebrow" xml:space="preserve">
+    <value>Riwayat subtitle langsung</value>
+  </data>
+  <data name="Transcripts.Saved" xml:space="preserve">
+    <value>Transkrip tersimpan</value>
+  </data>
+  <data name="Transcripts.Intro" xml:space="preserve">
+    <value>Teks subtitle langsung yang disimpan untuk {0}. Sesi baru memuat ucapan asli; sesi lama tetap diberi label sebagai terjemahan.</value>
+  </data>
+  <data name="Transcripts.SelectedLanguage" xml:space="preserve">
+    <value>bahasa yang Anda pilih</value>
+  </data>
+  <data name="Transcripts.Updated" xml:space="preserve">
+    <value>Diperbarui</value>
+  </data>
+  <data name="Transcripts.None" xml:space="preserve">
+    <value>Belum ada transkrip tersimpan</value>
+  </data>
+  <data name="Transcripts.NoneHelp" xml:space="preserve">
+    <value>Aktifkan “Simpan transkrip ucapan asli” sebelum memulai subtitle langsung.</value>
+  </data>
+  <data name="Transcripts.PagesAria" xml:space="preserve">
+    <value>Halaman transkrip</value>
+  </data>
+  <data name="Common.PageOf" xml:space="preserve">
+    <value>Halaman {0} dari {1}</value>
+  </data>
+  <data name="Home.Title" xml:space="preserve">
+    <value>Beranda</value>
+  </data>
+  <data name="Home.Coach" xml:space="preserve">
+    <value>Pelatih belajar</value>
+  </data>
+  <data name="Home.Kicker" xml:space="preserve">
+    <value>Ruang belajar bahasa Anda</value>
+  </data>
+  <data name="Home.TitleWithLanguage" xml:space="preserve">
+    <value>Jadikan {0} bagian dari hari Anda.</value>
+  </data>
+  <data name="Home.TitleAnonymous" xml:space="preserve">
+    <value>Ubah kata-kata baru menjadi percakapan nyata.</value>
+  </data>
+  <data name="Home.Description" xml:space="preserve">
+    <value>Bangun kosakata dari hal-hal yang Anda baca, kuasai dengan latihan terarah, lalu gunakan secara lisan dengan mitra percakapan AI.</value>
+  </data>
+  <data name="Home.StartLearning" xml:space="preserve">
+    <value>Mulai belajar</value>
+  </data>
+  <data name="Home.ChooseLanguage" xml:space="preserve">
+    <value>Pilih bahasa</value>
+  </data>
+  <data name="Home.BrowseShared" xml:space="preserve">
+    <value>Telusuri set bersama</value>
+  </data>
+  <data name="Home.StartSpeaking" xml:space="preserve">
+    <value>Mulai berbicara</value>
+  </data>
+  <data name="Home.OpenQuizzes" xml:space="preserve">
+    <value>Buka kuis saya</value>
+  </data>
+  <data name="Home.WaysAria" xml:space="preserve">
+    <value>Cara belajar dengan Glosify</value>
+  </data>
+  <data name="Home.ReadContext" xml:space="preserve">
+    <value>Membaca dalam konteks</value>
+  </data>
+  <data name="Home.PracticeRecall" xml:space="preserve">
+    <value>Latih daya ingat</value>
+  </data>
+  <data name="Home.SpeakConfidence" xml:space="preserve">
+    <value>Berbicara dengan percaya diri</value>
+  </data>
+  <data name="Home.LoopAria" xml:space="preserve">
+    <value>Siklus belajar yang terhubung dari membaca ke berbicara</value>
+  </data>
+  <data name="Home.Discover" xml:space="preserve">
+    <value>Temukan</value>
+  </data>
+  <data name="Home.Remember" xml:space="preserve">
+    <value>Ingat</value>
+  </data>
+  <data name="Home.LearningLoop" xml:space="preserve">
+    <value>Siklus belajar Anda</value>
+  </data>
+  <data name="Home.TodayMindset" xml:space="preserve">
+    <value>Pola pikir hari ini</value>
+  </data>
+  <data name="Home.SmallSteps" xml:space="preserve">
+    <value>Langkah kecil. Kemajuan nyata.</value>
+  </data>
+  <data name="Home.QuickStart" xml:space="preserve">
+    <value>Mulai cepat</value>
+  </data>
+  <data name="Home.ChooseNext" xml:space="preserve">
+    <value>Pilih langkah Anda berikutnya</value>
+  </data>
+  <data name="Home.LearningLanguage" xml:space="preserve">
+    <value>Sedang belajar {0}</value>
+  </data>
+  <data name="Home.BuildVocabulary" xml:space="preserve">
+    <value>Bangun kosakata</value>
+  </data>
+  <data name="Home.BuildVocabularyText" xml:space="preserve">
+    <value>Buat set terfokus dari kata-kata yang benar-benar ingin Anda gunakan.</value>
+  </data>
+  <data name="Home.PracticeRecallText" xml:space="preserve">
+    <value>Gunakan kartu flash, pengetikan, dan kuis kustom agar kata-kata mudah diingat.</value>
+  </data>
+  <data name="Home.SpeakNaturally" xml:space="preserve">
+    <value>Berbicara secara alami</value>
+  </data>
+  <data name="Home.SpeakNaturallyText" xml:space="preserve">
+    <value>Masuk ke skenario terpandu dan dapatkan bimbingan pribadi setelah setiap giliran.</value>
+  </data>
+  <data name="Home.ConnectedKicker" xml:space="preserve">
+    <value>Satu ruang kerja terhubung</value>
+  </data>
+  <data name="Home.ConnectedTitle" xml:space="preserve">
+    <value>Belajar dari apa pun yang sudah menarik perhatian Anda.</value>
+  </data>
+  <data name="Home.ConnectedText" xml:space="preserve">
+    <value>Buku, daftar kata bersama, atau tugas kelas dapat menjadi awal sesi latihan berikutnya. Kosakata Anda tetap dekat ke mana pun Anda pergi berikutnya.</value>
+  </data>
+  <data name="Home.ExploreCollections" xml:space="preserve">
+    <value>Jelajahi koleksi komunitas</value>
+  </data>
+  <data name="Home.ReadCollect" xml:space="preserve">
+    <value>Baca &amp; kumpulkan</value>
+  </data>
+  <data name="Home.ReadCollectText" xml:space="preserve">
+    <value>Ubah PDF menjadi kosakata tanpa meninggalkan halaman.</value>
+  </data>
+  <data name="Home.ExploreTogether" xml:space="preserve">
+    <value>Jelajahi bersama</value>
+  </data>
+  <data name="Home.ExploreTogetherText" xml:space="preserve">
+    <value>Salin kuis dan koleksi publik ke pustaka Anda.</value>
+  </data>
+  <data name="Home.JoinClassroom" xml:space="preserve">
+    <value>Bergabung ke kelas</value>
+  </data>
+  <data name="Home.JoinClassroomText" xml:space="preserve">
+    <value>Belajar dengan tugas, konten bersama, dan dukungan langsung.</value>
+  </data>
+  <data name="Home.YourTurn" xml:space="preserve">
+    <value>Giliran Anda</value>
+  </data>
+  <data name="Home.TodayLanguage" xml:space="preserve">
+    <value>Apa yang akan Anda lakukan dalam {0} hari ini?</value>
+  </data>
+  <data name="Home.PickFirstWord" xml:space="preserve">
+    <value>Pilih bahasa dan mulai dengan satu kata yang berguna.</value>
+  </data>
+  <data name="Home.ContinueLearning" xml:space="preserve">
+    <value>Lanjutkan belajar</value>
+  </data>
+  <data name="Home.PickLanguage" xml:space="preserve">
+    <value>Pilih bahasa</value>
+  </data>
+  <data name="Home.CreateAccount" xml:space="preserve">
+    <value>Buat akun</value>
+  </data>
+  <data name="Auth.BrandTagline" xml:space="preserve">
+    <value>Sonic Language Immersion</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>Masuk</value>
+  </data>
+  <data name="Auth.WelcomeBack" xml:space="preserve">
+    <value>Selamat Datang Kembali</value>
+  </data>
+  <data name="Auth.LoginIntro" xml:space="preserve">
+    <value>Silakan masukkan detail Anda untuk melanjutkan perjalanan Anda.</value>
+  </data>
+  <data name="Auth.TrialLabel" xml:space="preserve">
+    <value>Penawaran percobaan:</value>
+  </data>
+  <data name="Auth.TrialText" xml:space="preserve">
+    <value>dapatkan 25 kredit sekali saat Anda masuk dengan Google atau Microsoft. Akun sandi tidak menerima kredit percobaan otomatis.</value>
+  </data>
+  <data name="Auth.EmailAddress" xml:space="preserve">
+    <value>Alamat Email</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>Kata Sandi</value>
+  </data>
+  <data name="Auth.Forgot" xml:space="preserve">
+    <value>Lupa?</value>
+  </data>
+  <data name="Auth.OrContinue" xml:space="preserve">
+    <value>Atau lanjutkan dengan</value>
+  </data>
+  <data name="Auth.ContinueProvider" xml:space="preserve">
+    <value>Lanjutkan dengan {0}</value>
+  </data>
+  <data name="Auth.NoAccount" xml:space="preserve">
+    <value>Belum punya akun?</value>
+  </data>
+  <data name="Auth.CreateAccount" xml:space="preserve">
+    <value>Buat akun</value>
+  </data>
+  <data name="Auth.RegisterTitle" xml:space="preserve">
+    <value>Daftar</value>
+  </data>
+  <data name="Auth.CreateYourAccount" xml:space="preserve">
+    <value>Buat akun Anda</value>
+  </data>
+  <data name="Auth.RegisterIntro" xml:space="preserve">
+    <value>Mulailah perjalanan imersi bahasa Anda hari ini.</value>
+  </data>
+  <data name="Auth.RegisterTrialLabel" xml:space="preserve">
+    <value>Uji coba 25 kredit:</value>
+  </data>
+  <data name="Auth.RegisterTrialText" xml:space="preserve">
+    <value>tersedia satu kali setelah Anda menautkan dan masuk dengan Google atau Microsoft. Membuat akun sandi saja tidak menambahkan kredit uji coba.</value>
+  </data>
+  <data name="Auth.ConfirmPassword" xml:space="preserve">
+    <value>Konfirmasi sandi</value>
+  </data>
+  <data name="Auth.AlreadyAccount" xml:space="preserve">
+    <value>Sudah punya akun?</value>
+  </data>
+  <data name="Auth.ForgotTitle" xml:space="preserve">
+    <value>Lupa sandi</value>
+  </data>
+  <data name="Auth.ForgotHeading" xml:space="preserve">
+    <value>Atur ulang sandi Anda</value>
+  </data>
+  <data name="Auth.ForgotUnavailable" xml:space="preserve">
+    <value>Pengaturan ulang sandi melalui email belum tersedia. Hubungi dukungan jika Anda memerlukan bantuan untuk mengakses akun Anda.</value>
+  </data>
+  <data name="Auth.BackToLogin" xml:space="preserve">
+    <value>Kembali ke masuk</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>Email atau sandi tidak valid.</value>
+  </data>
+  <data name="Auth.AccountLocked" xml:space="preserve">
+    <value>Akun terkunci. Silakan coba lagi nanti.</value>
+  </data>
+  <data name="Auth.ExternalNotConfigured" xml:space="preserve">
+    <value>Login {0} belum dikonfigurasi.</value>
+  </data>
+  <data name="Auth.ExternalFailed" xml:space="preserve">
+    <value>Login eksternal gagal.</value>
+  </data>
+  <data name="Auth.ExternalProviderFailed" xml:space="preserve">
+    <value>Login {0} gagal. Periksa client ID OAuth {0} lokal dan client secret, lalu coba lagi.</value>
+  </data>
+  <data name="Identity.DuplicateUserName" xml:space="preserve">
+    <value>Akun dengan alamat email ini sudah ada.</value>
+  </data>
+  <data name="Identity.DuplicateEmail" xml:space="preserve">
+    <value>Akun dengan alamat email ini sudah ada.</value>
+  </data>
+  <data name="Identity.PasswordTooShort" xml:space="preserve">
+    <value>Sandi terlalu singkat.</value>
+  </data>
+  <data name="Identity.PasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>Sandi harus berisi simbol.</value>
+  </data>
+  <data name="Identity.PasswordRequiresDigit" xml:space="preserve">
+    <value>Sandi harus berisi angka.</value>
+  </data>
+  <data name="Identity.PasswordRequiresLower" xml:space="preserve">
+    <value>Sandi harus berisi huruf kecil.</value>
+  </data>
+  <data name="Identity.PasswordRequiresUpper" xml:space="preserve">
+    <value>Sandi harus berisi huruf besar.</value>
+  </data>
+  <data name="Identity.DefaultError" xml:space="preserve">
+    <value>Akun tidak dapat dibuat. Periksa detail Anda dan coba lagi.</value>
+  </data>
+  <data name="Validation.PasswordsMismatch" xml:space="preserve">
+    <value>Sandi tidak cocok.</value>
+  </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>Kolom {0} wajib diisi.</value>
+  </data>
+  <data name="Validation.Email" xml:space="preserve">
+    <value>Kolom {0} bukan alamat email yang valid.</value>
+  </data>
+  <data name="Validation.MinLength" xml:space="preserve">
+    <value>Kolom {0} harus berupa string atau array dengan panjang minimum '{1}'.</value>
+  </data>
+  <data name="Legal.Label" xml:space="preserve">
+    <value>Legal</value>
+  </data>
+  <data name="Legal.PrivacyPolicy" xml:space="preserve">
+    <value>Kebijakan Privasi</value>
+  </data>
+  <data name="Legal.TermsOfService" xml:space="preserve">
+    <value>Ketentuan Layanan</value>
+  </data>
+  <data name="Legal.Support" xml:space="preserve">
+    <value>Dukungan</value>
+  </data>
+  <data name="Legal.PrivacyTitle" xml:space="preserve">
+    <value>Privasi</value>
+  </data>
+  <data name="Legal.TermsTitle" xml:space="preserve">
+    <value>Ketentuan</value>
+  </data>
+  <data name="Legal.EnglishGoverns" xml:space="preserve">
+    <value>Terjemahan ini disediakan untuk kemudahan. Jika berbeda dengan versi bahasa Inggris, versi bahasa Inggris yang berlaku.</value>
+  </data>
+  <data name="Transcripts.CountOne" xml:space="preserve">
+    <value>{0} disimpan</value>
+  </data>
+  <data name="Transcripts.CountMany" xml:space="preserve">
+    <value>{0} disimpan</value>
+  </data>
+  <data name="Transcripts.CaptionOne" xml:space="preserve">
+    <value>{0} keterangan</value>
+  </data>
+  <data name="Transcripts.CaptionMany" xml:space="preserve">
+    <value>{0} keterangan</value>
+  </data>
+  <data name="Quiz.Progress" xml:space="preserve">
+    <value>{0} dari {1} {2}</value>
+  </data>
+  <data name="Quiz.CorrectCount" xml:space="preserve">
+    <value>{0} benar</value>
+  </data>
+  <data name="Quiz.PromptLabel" xml:space="preserve">
+    <value>{0} pertanyaan</value>
+  </data>
+  <data name="Quiz.UkrainianKeyboard" xml:space="preserve">
+    <value>Papan ketik virtual Ukrainian</value>
+  </data>
+  <data name="Books.Title" xml:space="preserve">
+    <value>Buku</value>
+  </data>
+  <data name="Books.YourBooks" xml:space="preserve">
+    <value>Buku Anda</value>
+  </data>
+  <data name="Books.LanguageBooks" xml:space="preserve">
+    <value>Buku {0} Anda</value>
+  </data>
+  <data name="Books.LanguageTitle" xml:space="preserve">
+    <value>Buku {0}</value>
+  </data>
+  <data name="Books.YourLibrary" xml:space="preserve">
+    <value>Perpustakaan Anda</value>
+  </data>
+  <data name="Books.HeroPrefix" xml:space="preserve">
+    <value>Jadikan setiap halaman sebagai</value>
+  </data>
+  <data name="Books.Progress" xml:space="preserve">
+    <value>progres.</value>
+  </data>
+  <data name="Books.HeroText" xml:space="preserve">
+    <value>Bawa bahan bacaan Anda sendiri dan gunakan Glosify untuk menjelajahi setiap halaman, frasa, dan kata baru.</value>
+  </data>
+  <data name="Books.SummaryAria" xml:space="preserve">
+    <value>Ringkasan perpustakaan</value>
+  </data>
+  <data name="Books.BookOne" xml:space="preserve">
+    <value>buku</value>
+  </data>
+  <data name="Books.BookMany" xml:space="preserve">
+    <value>buku</value>
+  </data>
+  <data name="Books.PageOne" xml:space="preserve">
+    <value>halaman</value>
+  </data>
+  <data name="Books.PageMany" xml:space="preserve">
+    <value>halaman</value>
+  </data>
+  <data name="Books.AddShelf" xml:space="preserve">
+    <value>Tambahkan ke rak Anda</value>
+  </data>
+  <data name="Books.UploadPdf" xml:space="preserve">
+    <value>Unggah PDF</value>
+  </data>
+  <data name="Books.ChoosePdf" xml:space="preserve">
+    <value>Pilih PDF</value>
+  </data>
+  <data name="Books.PdfLimit" xml:space="preserve">
+    <value>PDF berbasis teks · hingga 25 MB</value>
+  </data>
+  <data name="Books.Browse" xml:space="preserve">
+    <value>Jelajahi</value>
+  </data>
+  <data name="Books.AddLibrary" xml:space="preserve">
+    <value>Tambahkan ke perpustakaan</value>
+  </data>
+  <data name="Books.KeepReading" xml:space="preserve">
+    <value>Lanjutkan membaca</value>
+  </data>
+  <data name="Books.OnShelf" xml:space="preserve">
+    <value>{0} di rak Anda</value>
+  </data>
+  <data name="Books.DeleteConfirm" xml:space="preserve">
+    <value>Hapus "{0}" beserta halamannya secara permanen? Obrolan yang menggunakannya tetap disimpan.</value>
+  </data>
+  <data name="Books.Delete" xml:space="preserve">
+    <value>Hapus {0}</value>
+  </data>
+  <data name="Books.Read" xml:space="preserve">
+    <value>Baca {0}</value>
+  </data>
+  <data name="Books.ReaderEdition" xml:space="preserve">
+    <value>Edisi pembaca</value>
+  </data>
+  <data name="Books.Added" xml:space="preserve">
+    <value>Ditambahkan</value>
+  </data>
+  <data name="Books.PageCountOne" xml:space="preserve">
+    <value>{0} halaman</value>
+  </data>
+  <data name="Books.PageCountMany" xml:space="preserve">
+    <value>{0} halaman</value>
+  </data>
+  <data name="Books.StartReading" xml:space="preserve">
+    <value>Mulai membaca</value>
+  </data>
+  <data name="Books.ShelfReady" xml:space="preserve">
+    <value>Rak Anda sudah siap</value>
+  </data>
+  <data name="Books.NoLanguageBooks" xml:space="preserve">
+    <value>Belum ada buku {0}</value>
+  </data>
+  <data name="Books.EmptyText" xml:space="preserve">
+    <value>Unggah PDF berbasis teks pertama Anda di atas dan mulai belajar dari hal-hal yang sudah Anda sukai untuk dibaca.</value>
+  </data>
+  <data name="Books.EmptyLanguageText" xml:space="preserve">
+    <value> Ini akan ditambahkan ke rak {0} Anda.</value>
+  </data>
+  <data name="Books.ChooseFirst" xml:space="preserve">
+    <value>Pilih buku pertama Anda</value>
+  </data>
+  <data name="Common.First" xml:space="preserve">
+    <value>Pertama</value>
+  </data>
+  <data name="Common.Last" xml:space="preserve">
+    <value>Terakhir</value>
+  </data>
+  <data name="Common.Page" xml:space="preserve">
+    <value>Halaman {0}</value>
+  </data>
+  <data name="Common.Go" xml:space="preserve">
+    <value>Buka</value>
+  </data>
+  <data name="Transcripts.AssistantTitle" xml:space="preserve">
+    <value>Asisten transkrip</value>
+  </data>
+  <data name="Transcripts.AssistantEmpty" xml:space="preserve">
+    <value>Tanyakan tentang transkrip ini atau gunakan dengan kuis yang sudah Anda miliki.</value>
+  </data>
+  <data name="Transcripts.AssistantPlaceholder" xml:space="preserve">
+    <value>Tanyakan tentang transkrip ini...</value>
+  </data>
+  <data name="Transcripts.OriginalFor" xml:space="preserve">
+    <value>Ucapan asli tersimpan untuk pembelajaran {0}</value>
+  </data>
+  <data name="Transcripts.LegacyFor" xml:space="preserve">
+    <value>Teks terjemahan lama · pembelajaran {0}</value>
+  </data>
+  <data name="Transcripts.Started" xml:space="preserve">
+    <value>dimulai</value>
+  </data>
+  <data name="Transcripts.NameLabel" xml:space="preserve">
+    <value>Judul transkrip</value>
+  </data>
+  <data name="Transcripts.Rename" xml:space="preserve">
+    <value>Ubah nama</value>
+  </data>
+  <data name="Transcripts.DeleteConfirm" xml:space="preserve">
+    <value>Hapus transkrip tersimpan ini secara permanen?</value>
+  </data>
+  <data name="Transcripts.StopBeforeDelete" xml:space="preserve">
+    <value>Hentikan subtitle langsung sebelum menghapus</value>
+  </data>
+  <data name="Transcripts.StreamAria" xml:space="preserve">
+    <value>Aliran teks</value>
+  </data>
+  <data name="Transcripts.OriginalSpeech" xml:space="preserve">
+    <value>Ucapan asli</value>
+  </data>
+  <data name="Transcripts.Translation" xml:space="preserve">
+    <value>Terjemahan</value>
+  </data>
+  <data name="Transcripts.TranslationNote" xml:space="preserve">
+    <value>Diterjemahkan langsung dari audio yang sama oleh model berbeda. Berguna untuk memeriksa makna saat ucapan asli salah dikenali.</value>
+  </data>
+  <data name="Transcripts.OriginalNote" xml:space="preserve">
+    <value>Apa yang didengar oleh pengenal ucapan. Beralih ke terjemahan untuk membandingkan bagian yang tidak jelas.</value>
+  </data>
+  <data name="Transcripts.SavedTranslationAria" xml:space="preserve">
+    <value>Teks terjemahan tersimpan</value>
+  </data>
+  <data name="Transcripts.SavedOriginalAria" xml:space="preserve">
+    <value>Ucapan asli tersimpan</value>
+  </data>
+  <data name="Transcripts.TextPagesAria" xml:space="preserve">
+    <value>Halaman teks transkrip</value>
+  </data>
+  <data name="Transcripts.JumpPage" xml:space="preserve">
+    <value>Lompat ke halaman</value>
+  </data>
+  <data name="Common.Off" xml:space="preserve">
+    <value>Nonaktif</value>
+  </data>
+  <data name="Reader.AssistantTitle" xml:space="preserve">
+    <value>Asisten halaman</value>
+  </data>
+  <data name="Reader.AssistantEmpty" xml:space="preserve">
+    <value>Tanyakan kosakata atau kalimat dari halaman ini.</value>
+  </data>
+  <data name="Reader.AssistantPlaceholder" xml:space="preserve">
+    <value>Buat kuis dari halaman ini...</value>
+  </data>
+  <data name="Reader.TranslatedPage" xml:space="preserve">
+    <value>Halaman terjemahan</value>
+  </data>
+  <data name="Reader.BackBooks" xml:space="preserve">
+    <value>Kembali ke buku</value>
+  </data>
+  <data name="Reader.PdfControls" xml:space="preserve">
+    <value>Kontrol tampilan PDF</value>
+  </data>
+  <data name="Reader.ZoomOut" xml:space="preserve">
+    <value>Perkecil</value>
+  </data>
+  <data name="Reader.ResetZoom100" xml:space="preserve">
+    <value>Atur ulang zoom ke 100%</value>
+  </data>
+  <data name="Reader.ResetZoom" xml:space="preserve">
+    <value>Atur ulang zoom</value>
+  </data>
+  <data name="Reader.ZoomIn" xml:space="preserve">
+    <value>Perbesar</value>
+  </data>
+  <data name="Reader.FitPage" xml:space="preserve">
+    <value>Sesuaikan ke halaman</value>
+  </data>
+  <data name="Reader.Rotate" xml:space="preserve">
+    <value>Putar searah jarum jam</value>
+  </data>
+  <data name="Reader.PolishVoice" xml:space="preserve">
+    <value>Suara bacaan yang dipoles</value>
+  </data>
+  <data name="Reader.ReadAloud" xml:space="preserve">
+    <value>Bacakan halaman ini</value>
+  </data>
+  <data name="Reader.Read" xml:space="preserve">
+    <value>Baca</value>
+  </data>
+  <data name="Reader.TranslationControls" xml:space="preserve">
+    <value>Kontrol terjemahan halaman</value>
+  </data>
+  <data name="Reader.TranslateOffAria" xml:space="preserve">
+    <value>Terjemahan nonaktif. Terjemahkan halaman ini</value>
+  </data>
+  <data name="Reader.TranslateOffTitle" xml:space="preserve">
+    <value>Terjemahan nonaktif. Klik untuk menerjemahkan halaman ini</value>
+  </data>
+  <data name="Reader.Translation" xml:space="preserve">
+    <value>Terjemahan</value>
+  </data>
+  <data name="Reader.TranslationLanguage" xml:space="preserve">
+    <value>Bahasa terjemahan</value>
+  </data>
+  <data name="Reader.SplitAria" xml:space="preserve">
+    <value>Tampilkan asli dan terjemahan berdampingan</value>
+  </data>
+  <data name="Reader.SplitView" xml:space="preserve">
+    <value>Tampilan terbagi</value>
+  </data>
+  <data name="Reader.Original" xml:space="preserve">
+    <value>Asli</value>
+  </data>
+  <data name="Reader.PreviousPage" xml:space="preserve">
+    <value>Halaman sebelumnya</value>
+  </data>
+  <data name="Reader.NextPage" xml:space="preserve">
+    <value>Halaman berikutnya</value>
+  </data>
+  <data name="Client.GenericError" xml:space="preserve">
+    <value>Terjadi kesalahan. Silakan coba lagi.</value>
+  </data>
+  <data name="Client.NetworkError" xml:space="preserve">
+    <value>Kesalahan jaringan. Silakan coba lagi.</value>
+  </data>
+  <data name="Client.TryAgain" xml:space="preserve">
+    <value>Coba lagi</value>
+  </data>
+  <data name="Client.Loading" xml:space="preserve">
+    <value>Memuat…</value>
+  </data>
+  <data name="Client.Correct" xml:space="preserve">
+    <value>Benar</value>
+  </data>
+  <data name="Client.Incorrect" xml:space="preserve">
+    <value>Salah</value>
+  </data>
+  <data name="Client.NextWord" xml:space="preserve">
+    <value>Kata berikutnya</value>
+  </data>
+  <data name="Client.CheckFailed" xml:space="preserve">
+    <value>Tidak dapat memeriksa jawaban itu. Coba lagi.</value>
+  </data>
+  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
+    <value>Hapus kuis khusus ini?</value>
+  </data>
+  <data name="Client.DeleteQuizFailed" xml:space="preserve">
+    <value>Tidak dapat menghapus kuis khusus. Coba lagi.</value>
+  </data>
+  <data name="Client.RepairFailed" xml:space="preserve">
+    <value>Perbaikan gagal. Silakan coba lagi.</value>
+  </data>
+  <data name="Client.RepairStopped" xml:space="preserve">
+    <value>Permintaan perbaikan berhenti secara tidak terduga. Silakan coba lagi.</value>
+  </data>
+  <data name="Client.DeleteChat" xml:space="preserve">
+    <value>Hapus chat</value>
+  </data>
+  <data name="Client.DeleteChatConfirm" xml:space="preserve">
+    <value>Hapus chat ini?</value>
+  </data>
+  <data name="Client.ApplyFailed" xml:space="preserve">
+    <value>Tidak dapat menerapkan perubahan.</value>
+  </data>
+  <data name="Client.ApplyNetwork" xml:space="preserve">
+    <value>Kesalahan jaringan saat menerapkan perubahan.</value>
+  </data>
+  <data name="Client.RejectNetwork" xml:space="preserve">
+    <value>Kesalahan jaringan saat menolak perubahan.</value>
+  </data>
+  <data name="Client.AssistantFailed" xml:space="preserve">
+    <value>Asisten tidak dapat membalas.</value>
+  </data>
+  <data name="Client.AssistantNetwork" xml:space="preserve">
+    <value>Kesalahan jaringan saat berkomunikasi dengan asisten.</value>
+  </data>
+  <data name="Client.PictureFailed" xml:space="preserve">
+    <value>Tidak dapat membaca teks dari gambar itu.</value>
+  </data>
+  <data name="Client.PictureNetwork" xml:space="preserve">
+    <value>Kesalahan jaringan saat membaca gambar.</value>
+  </data>
+  <data name="Client.MessageFailed" xml:space="preserve">
+    <value>Pesan gagal dikirim.</value>
+  </data>
+  <data name="Client.JoinCallFailed" xml:space="preserve">
+    <value>Tidak dapat bergabung ke panggilan.</value>
+  </data>
+  <data name="Client.CallTokenFailed" xml:space="preserve">
+    <value>Tidak dapat mendapatkan token panggilan.</value>
+  </data>
+  <data name="Client.PageOf" xml:space="preserve">
+    <value>Halaman {0} dari {1}</value>
+  </data>
+  <data name="Client.TtsNoText" xml:space="preserve">
+    <value>Tidak ada teks yang dapat dipilih untuk dibaca.</value>
+  </data>
+  <data name="Client.TtsUnavailable" xml:space="preserve">
+    <value>Text-to-speech tidak tersedia di peramban ini.</value>
+  </data>
+  <data name="Client.TtsFailed" xml:space="preserve">
+    <value>Pemutaran text-to-speech gagal.</value>
+  </data>
+  <data name="Client.TranslationFailed" xml:space="preserve">
+    <value>Halaman tidak dapat diterjemahkan.</value>
+  </data>
+  <data name="Client.PreferenceFailed" xml:space="preserve">
+    <value>Preferensi bahasa tidak dapat disimpan.</value>
+  </data>
+  <data name="Client.On" xml:space="preserve">
+    <value>Aktif</value>
+  </data>
+  <data name="Client.Off" xml:space="preserve">
+    <value>Nonaktif</value>
+  </data>
+  <data name="Client.Translating" xml:space="preserve">
+    <value>Menerjemahkan…</value>
+  </data>
+  <data name="Client.TranslationError" xml:space="preserve">
+    <value>Kesalahan</value>
+  </data>
+  <data name="Client.Read" xml:space="preserve">
+    <value>Baca</value>
+  </data>
+  <data name="Client.Stop" xml:space="preserve">
+    <value>Berhenti</value>
+  </data>
+  <data name="Client.MessageRateLimited" xml:space="preserve">
+    <value>Anda mengirim pesan terlalu cepat. Tunggu sebentar.</value>
+  </data>
+  <data name="Client.SessionExpired" xml:space="preserve">
+    <value>Sesi berakhir. Mulai ulang kuis untuk melanjutkan.</value>
+  </data>
+  <data name="Client.NotQuite" xml:space="preserve">
+    <value>Belum tepat</value>
+  </data>
+  <data name="Client.ShowResults" xml:space="preserve">
+    <value>Tampilkan hasil</value>
+  </data>
+  <data name="Quiz.LibraryTitle" xml:space="preserve">
+    <value>Pilih Kuis</value>
+  </data>
+  <data name="Quiz.SelectQuiz" xml:space="preserve">
+    <value>Pilih kuis</value>
+  </data>
+  <data name="Quiz.ShowingLanguage" xml:space="preserve">
+    <value>Menampilkan {0} kuis Anda.</value>
+  </data>
+  <data name="Quiz.LanguageCollection" xml:space="preserve">
+    <value>Koleksi {0}.</value>
+  </data>
+  <data name="Quiz.Library" xml:space="preserve">
+    <value>Pustaka Kuis</value>
+  </data>
+  <data name="Quiz.ChangeLanguage" xml:space="preserve">
+    <value>Ubah bahasa</value>
+  </data>
+  <data name="Quiz.MakePrivate" xml:space="preserve">
+    <value>Jadikan koleksi privat</value>
+  </data>
+  <data name="Quiz.MakePublic" xml:space="preserve">
+    <value>Jadikan koleksi publik</value>
+  </data>
+  <data name="Quiz.PublicSubtree" xml:space="preserve">
+    <value>Subpohon publik</value>
+  </data>
+  <data name="Quiz.Private" xml:space="preserve">
+    <value>Privat</value>
+  </data>
+  <data name="Quiz.LibrarySummary" xml:space="preserve">
+    <value>Ringkasan pustaka</value>
+  </data>
+  <data name="Quiz.CollectionOne" xml:space="preserve">
+    <value>koleksi</value>
+  </data>
+  <data name="Quiz.CollectionMany" xml:space="preserve">
+    <value>koleksi</value>
+  </data>
+  <data name="Quiz.QuizOne" xml:space="preserve">
+    <value>kuis</value>
+  </data>
+  <data name="Quiz.QuizMany" xml:space="preserve">
+    <value>kuis</value>
+  </data>
+  <data name="Quiz.NewCollection" xml:space="preserve">
+    <value>Koleksi Baru</value>
+  </data>
+  <data name="Quiz.NewQuiz" xml:space="preserve">
+    <value>Kuis Baru</value>
+  </data>
+  <data name="Quiz.Collections" xml:space="preserve">
+    <value>Koleksi</value>
+  </data>
+  <data name="Quiz.CollectionsHelp" xml:space="preserve">
+    <value>Kelompokkan kuis yang terkait dan jaga alur belajar Anda tetap rapi.</value>
+  </data>
+  <data name="Quiz.DropInto" xml:space="preserve">
+    <value>Letakkan kuis ke {0}</value>
+  </data>
+  <data name="Quiz.NestedCount" xml:space="preserve">
+    <value>{0} bersarang</value>
+  </data>
+  <data name="Quiz.YourQuizzes" xml:space="preserve">
+    <value>Kuis Anda</value>
+  </data>
+  <data name="Quiz.DragHelp" xml:space="preserve">
+    <value>Buka kuis untuk belajar, atau seret ke koleksi untuk mengaturnya.</value>
+  </data>
+  <data name="Quiz.ChooseHelp" xml:space="preserve">
+    <value>Pilih kuis dan terus jaga momentum belajar Anda.</value>
+  </data>
+  <data name="Quiz.DeleteConfirm" xml:space="preserve">
+    <value>Hapus kuis ini dan semua katanya?</value>
+  </data>
+  <data name="Quiz.DeleteNamed" xml:space="preserve">
+    <value>Hapus {0}</value>
+  </data>
+  <data name="Quiz.Delete" xml:space="preserve">
+    <value>Hapus kuis</value>
+  </data>
+  <data name="Quiz.EmptyTitle" xml:space="preserve">
+    <value>Belum ada kuis atau koleksi</value>
+  </data>
+  <data name="Quiz.EmptyText" xml:space="preserve">
+    <value>Buat koleksi untuk mengatur kosakata Anda, atau buat kuis pertama Anda.</value>
+  </data>
+  <data name="Quiz.CreateCollection" xml:space="preserve">
+    <value>Buat Koleksi</value>
+  </data>
+  <data name="Quiz.CreateQuiz" xml:space="preserve">
+    <value>Buat Kuis</value>
+  </data>
+  <data name="Quiz.CreateNewCollection" xml:space="preserve">
+    <value>Buat Koleksi Baru</value>
+  </data>
+  <data name="Quiz.CollectionName" xml:space="preserve">
+    <value>Nama Koleksi</value>
+  </data>
+  <data name="Quiz.CollectionExample" xml:space="preserve">
+    <value>mis. Frasa perjalanan</value>
+  </data>
+  <data name="Quiz.CreateNewQuiz" xml:space="preserve">
+    <value>Buat Kuis Baru</value>
+  </data>
+  <data name="Quiz.Name" xml:space="preserve">
+    <value>Nama Kuis</value>
+  </data>
+  <data name="Quiz.NameExample" xml:space="preserve">
+    <value>mis. Dasar-dasar Prancis</value>
+  </data>
+  <data name="Quiz.SourceLanguage" xml:space="preserve">
+    <value>Bahasa Sumber</value>
+  </data>
+  <data name="Quiz.SelectLanguage" xml:space="preserve">
+    <value>Pilih bahasa...</value>
+  </data>
+  <data name="Quiz.TargetLanguage" xml:space="preserve">
+    <value>Bahasa Target</value>
+  </data>
+  <data name="Books.UploadRequired" xml:space="preserve">
+    <value>Pilih file PDF untuk diunggah.</value>
+  </data>
+  <data name="Books.Uploaded" xml:space="preserve">
+    <value>{0} diunggah.</value>
+  </data>
+  <data name="Books.UploadInvalid" xml:space="preserve">
+    <value>Pilih PDF berbasis teks yang valid di bawah 25 MB.</value>
+  </data>
+  <data name="Books.ProcessFailed" xml:space="preserve">
+    <value>PDF tidak dapat diproses. Coba PDF berbasis teks.</value>
+  </data>
+  <data name="Books.Deleted" xml:space="preserve">
+    <value>{0} dihapus.</value>
+  </data>
+  <data name="Books.PaidUnavailable" xml:space="preserve">
+    <value>Fitur berbayar {0} dibuka kembali pada {1}.</value>
+  </data>
+  <data name="Books.PaidReason" xml:space="preserve">
+    <value>Anggaran aplikasi bulanan telah tercapai.</value>
+  </data>
+  <data name="Transcripts.Renamed" xml:space="preserve">
+    <value>Transkrip diganti nama.</value>
+  </data>
+  <data name="Transcripts.InvalidTitle" xml:space="preserve">
+    <value>Judul transkrip harus antara 1 dan 160 karakter.</value>
+  </data>
+  <data name="Transcripts.Deleted" xml:space="preserve">
+    <value>Transkrip dihapus.</value>
+  </data>
+  <data name="Common.Accept" xml:space="preserve">
+    <value>Terima</value>
+  </data>
+  <data name="Common.Optional" xml:space="preserve">
+    <value>Opsional</value>
+  </data>
+  <data name="Common.Open" xml:space="preserve">
+    <value>Buka</value>
+  </data>
+  <data name="Common.Copy" xml:space="preserve">
+    <value>Salin</value>
+  </data>
+  <data name="Classroom.Title" xml:space="preserve">
+    <value>Ruang Kelas</value>
+  </data>
+  <data name="Classroom.MyClassrooms" xml:space="preserve">
+    <value>Ruang kelas saya</value>
+  </data>
+  <data name="Classroom.LanguageClassrooms" xml:space="preserve">
+    <value>Ruang kelas {0} Anda</value>
+  </data>
+  <data name="Classroom.LanguageTitle" xml:space="preserve">
+    <value>Ruang kelas {0}</value>
+  </data>
+  <data name="Classroom.SharedSpaces" xml:space="preserve">
+    <value>Ruang belajar bersama</value>
+  </data>
+  <data name="Classroom.LearnBetter" xml:space="preserve">
+    <value>Belajar lebih baik,</value>
+  </data>
+  <data name="Classroom.Together" xml:space="preserve">
+    <value>bersama-sama.</value>
+  </data>
+  <data name="Classroom.HeroText" xml:space="preserve">
+    <value>Buat ruang untuk para pelajar Anda, bagikan materi latihan, dan pastikan semua orang bergerak ke arah yang sama.</value>
+  </data>
+  <data name="Classroom.Summary" xml:space="preserve">
+    <value>Ringkasan ruang kelas</value>
+  </data>
+  <data name="Classroom.One" xml:space="preserve">
+    <value>ruang kelas</value>
+  </data>
+  <data name="Classroom.Many" xml:space="preserve">
+    <value>ruang kelas</value>
+  </data>
+  <data name="Classroom.MemberOne" xml:space="preserve">
+    <value>anggota</value>
+  </data>
+  <data name="Classroom.MemberMany" xml:space="preserve">
+    <value>anggota</value>
+  </data>
+  <data name="Classroom.Waiting" xml:space="preserve">
+    <value>menunggu</value>
+  </data>
+  <data name="Classroom.LanguageLab" xml:space="preserve">
+    <value>Laboratorium bahasa</value>
+  </data>
+  <data name="Classroom.LearnersActive" xml:space="preserve">
+    <value>{0} pelajar aktif</value>
+  </data>
+  <data name="Classroom.Live" xml:space="preserve">
+    <value>Langsung</value>
+  </data>
+  <data name="Classroom.PracticeCompleted" xml:space="preserve">
+    <value>Latihan selesai</value>
+  </data>
+  <data name="Classroom.WaitingForYou" xml:space="preserve">
+    <value>Menunggu Anda</value>
+  </data>
+  <data name="Classroom.Invitations" xml:space="preserve">
+    <value>Undangan</value>
+  </data>
+  <data name="Classroom.NewCount" xml:space="preserve">
+    <value>{0} baru</value>
+  </data>
+  <data name="Classroom.Invited" xml:space="preserve">
+    <value>Anda diundang</value>
+  </data>
+  <data name="Classroom.InvitedBy" xml:space="preserve">
+    <value>{0} mengundang Anda untuk bergabung sebagai {1}</value>
+  </data>
+  <data name="Classroom.DeclineInvitation" xml:space="preserve">
+    <value>Tolak undangan ke {0}</value>
+  </data>
+  <data name="Classroom.GetStarted" xml:space="preserve">
+    <value>Mulai</value>
+  </data>
+  <data name="Classroom.MakeOrJoin" xml:space="preserve">
+    <value>Buat ruang atau bergabung ke salah satu</value>
+  </data>
+  <data name="Classroom.ForTeachers" xml:space="preserve">
+    <value>Untuk guru</value>
+  </data>
+  <data name="Classroom.Create" xml:space="preserve">
+    <value>Buat kelas</value>
+  </data>
+  <data name="Classroom.CreateHelp" xml:space="preserve">
+    <value>Siapkan tempat untuk pelajaran, kuis, buku, dan percakapan.</value>
+  </data>
+  <data name="Classroom.LanguageHelp" xml:space="preserve">
+    <value> Ini akan menjadi kelas {0}.</value>
+  </data>
+  <data name="Classroom.Name" xml:space="preserve">
+    <value>Nama kelas</value>
+  </data>
+  <data name="Classroom.NameExample" xml:space="preserve">
+    <value>mis. Swedish A2 · Spring</value>
+  </data>
+  <data name="Classroom.ShortDescription" xml:space="preserve">
+    <value>Deskripsi singkat</value>
+  </data>
+  <data name="Classroom.DescriptionPlaceholder" xml:space="preserve">
+    <value>Apa yang akan dipelajari kelompok Anda?</value>
+  </data>
+  <data name="Classroom.HaveCode" xml:space="preserve">
+    <value>Punya kode undangan?</value>
+  </data>
+  <data name="Classroom.Join" xml:space="preserve">
+    <value>Bergabung dengan kelas</value>
+  </data>
+  <data name="Classroom.JoinHelp" xml:space="preserve">
+    <value>Masukkan kode delapan karakter yang dibagikan oleh guru Anda.</value>
+  </data>
+  <data name="Classroom.JoinCode" xml:space="preserve">
+    <value>Kode bergabung</value>
+  </data>
+  <data name="Classroom.JoinThis" xml:space="preserve">
+    <value>Bergabung dengan kelas ini</value>
+  </data>
+  <data name="Classroom.YourSpaces" xml:space="preserve">
+    <value>Ruang belajar Anda</value>
+  </data>
+  <data name="Classroom.TotalCount" xml:space="preserve">
+    <value>Total {0}</value>
+  </data>
+  <data name="Classroom.OpenNamed" xml:space="preserve">
+    <value>Buka {0}</value>
+  </data>
+  <data name="Classroom.CardPlaceholder" xml:space="preserve">
+    <value>Ruang bersama untuk belajar dan berlatih.</value>
+  </data>
+  <data name="Classroom.BetterCompany" xml:space="preserve">
+    <value>Belajar lebih baik bersama</value>
+  </data>
+  <data name="Classroom.NoLanguageYet" xml:space="preserve">
+    <value>Belum ada kelas {0}</value>
+  </data>
+  <data name="Classroom.EmptyHelp" xml:space="preserve">
+    <value>Buat kelas pertama Anda, atau minta kode bergabung dari guru Anda untuk menemukan kelompok Anda.</value>
+  </data>
+  <data name="Classroom.CreateFirst" xml:space="preserve">
+    <value>Buat ruang pertama Anda</value>
+  </data>
+  <data name="Classroom.JoinCall" xml:space="preserve">
+    <value>Gabung panggilan</value>
+  </data>
+  <data name="Classroom.VideoCall" xml:space="preserve">
+    <value>Panggilan video</value>
+  </data>
+  <data name="Classroom.Sections" xml:space="preserve">
+    <value>Bagian kelas</value>
+  </data>
+  <data name="Classroom.Stream" xml:space="preserve">
+    <value>Aliran</value>
+  </data>
+  <data name="Classroom.Content" xml:space="preserve">
+    <value>Konten</value>
+  </data>
+  <data name="Classroom.Planning" xml:space="preserve">
+    <value>Perencanaan</value>
+  </data>
+  <data name="Classroom.Members" xml:space="preserve">
+    <value>Anggota</value>
+  </data>
+  <data name="Classroom.Results" xml:space="preserve">
+    <value>Hasil</value>
+  </data>
+  <data name="Speaking.LanguagePractice" xml:space="preserve">
+    <value>Latihan berbicara {0}</value>
+  </data>
+  <data name="Speaking.HeroTitle" xml:space="preserve">
+    <value>Berbicara untuk menguasai bahasa.</value>
+  </data>
+  <data name="Speaking.HeroText" xml:space="preserve">
+    <value>Pilih tutor terbuka atau sebuah adegan, berbicaralah secara alami, dan dapatkan bimbingan pribadi setelah setiap giliran.</value>
+  </data>
+  <data name="Speaking.PracticeQuiz" xml:space="preserve">
+    <value>Kuis latihan</value>
+  </data>
+  <data name="Speaking.ChooseQuiz" xml:space="preserve">
+    <value>Pilih kuis untuk latihan berbicara</value>
+  </data>
+  <data name="Speaking.FreeLesson" xml:space="preserve">
+    <value>Pelajaran gratis</value>
+  </data>
+  <data name="Speaking.PoweredBy" xml:space="preserve">
+    <value>Didukung oleh Microsoft Foundry dan Azure AI Speech</value>
+  </data>
+  <data name="Speaking.Settings" xml:space="preserve">
+    <value>Pengaturan latihan</value>
+  </data>
+  <data name="Speaking.ChooseAvatar" xml:space="preserve">
+    <value>Pilih avatar</value>
+  </data>
+  <data name="Speaking.Level" xml:space="preserve">
+    <value>Tingkat</value>
+  </data>
+  <data name="Speaking.ChooseLevel" xml:space="preserve">
+    <value>Pilih tingkat CEFR</value>
+  </data>
+  <data name="Speaking.Beginner" xml:space="preserve">
+    <value>Pemula</value>
+  </data>
+  <data name="Speaking.Elementary" xml:space="preserve">
+    <value>Dasar</value>
+  </data>
+  <data name="Speaking.Intermediate" xml:space="preserve">
+    <value>Menengah</value>
+  </data>
+  <data name="Speaking.UpperIntermediate" xml:space="preserve">
+    <value>Menengah atas</value>
+  </data>
+  <data name="Speaking.Advanced" xml:space="preserve">
+    <value>Mahir</value>
+  </data>
+  <data name="Speaking.EnglishTranslation" xml:space="preserve">
+    <value>Terjemahan bahasa Inggris</value>
+  </data>
+  <data name="Speaking.MuteAvatar" xml:space="preserve">
+    <value>Senyapkan avatar</value>
+  </data>
+  <data name="Speaking.AvatarScene" xml:space="preserve">
+    <value>Adegan avatar</value>
+  </data>
+  <data name="Speaking.HoldSpeak" xml:space="preserve">
+    <value>Tahan untuk berbicara &amp; mengirim</value>
+  </data>
+  <data name="Speaking.StartingScene" xml:space="preserve">
+    <value>Memulai adegan…</value>
+  </data>
+  <data name="Speaking.ReplayLatestAria" xml:space="preserve">
+    <value>Putar ulang balasan avatar terakhir</value>
+  </data>
+  <data name="Speaking.ReplayLatest" xml:space="preserve">
+    <value>Putar ulang balasan terbaru</value>
+  </data>
+  <data name="Speaking.Conversation" xml:space="preserve">
+    <value>Percakapan</value>
+  </data>
+  <data name="Speaking.CurrentSession" xml:space="preserve">
+    <value>Sesi saat ini</value>
+  </data>
+  <data name="Speaking.ScoreHelp" xml:space="preserve">
+    <value>Skor pelafalan mengacu pada audio yang Anda rekam.</value>
+  </data>
+  <data name="Speaking.SpeakToType" xml:space="preserve">
+    <value>Bicara untuk mengetik</value>
+  </data>
+  <data name="Speaking.You" xml:space="preserve">
+    <value>Anda</value>
+  </data>
+  <data name="Speaking.Accuracy" xml:space="preserve">
+    <value>Akurasi</value>
+  </data>
+  <data name="Speaking.Fluency" xml:space="preserve">
+    <value>Kelancaran</value>
+  </data>
+  <data name="Speaking.Completeness" xml:space="preserve">
+    <value>Kelengkapan</value>
+  </data>
+  <data name="Speaking.ReplayReply" xml:space="preserve">
+    <value>Putar ulang balasan ini</value>
+  </data>
+  <data name="Speaking.ShowEnglish" xml:space="preserve">
+    <value>Tampilkan terjemahan bahasa Inggris</value>
+  </data>
+  <data name="Speaking.Grammar" xml:space="preserve">
+    <value>Tata bahasa</value>
+  </data>
+  <data name="Speaking.Vocabulary" xml:space="preserve">
+    <value>Kosakata</value>
+  </data>
+  <data name="Speaking.Naturalness" xml:space="preserve">
+    <value>Kewajaran</value>
+  </data>
+  <data name="Speaking.PracticeThis" xml:space="preserve">
+    <value>Latih ini</value>
+  </data>
+  <data name="Speaking.HearPhrase" xml:space="preserve">
+    <value>Dengarkan frasa latihan ini</value>
+  </data>
+  <data name="Speaking.HoldRepeatAria" xml:space="preserve">
+    <value>Tahan untuk mengulang frasa latihan ini</value>
+  </data>
+  <data name="Speaking.HoldRepeat" xml:space="preserve">
+    <value>Tahan untuk mengulang</value>
+  </data>
+  <data name="Quiz.DeletedWord" xml:space="preserve">
+    <value>{0} dihapus.</value>
+  </data>
+  <data name="Quiz.DeletedNamed" xml:space="preserve">
+    <value>{0} dihapus.</value>
+  </data>
+  <data name="Quiz.NowPublic" xml:space="preserve">
+    <value>Kuis kini publik.</value>
+  </data>
+  <data name="Quiz.NowPrivate" xml:space="preserve">
+    <value>Quiz sekarang bersifat pribadi.</value>
+  </data>
+  <data name="Quiz.VisibilityFailed" xml:space="preserve">
+    <value>Tidak dapat memperbarui visibilitas quiz.</value>
+  </data>
+  <data name="Quiz.CollectionNowPublic" xml:space="preserve">
+    <value>Koleksi sekarang bersifat publik.</value>
+  </data>
+  <data name="Quiz.CollectionNowPrivate" xml:space="preserve">
+    <value>Koleksi sekarang bersifat pribadi.</value>
+  </data>
+  <data name="Quiz.CollectionVisibilityFailed" xml:space="preserve">
+    <value>Tidak dapat memperbarui visibilitas koleksi.</value>
+  </data>
+  <data name="Quiz.CollectionCreated" xml:space="preserve">
+    <value>Koleksi {0} dibuat.</value>
+  </data>
+  <data name="Quiz.CollectionCreateFailed" xml:space="preserve">
+    <value>Koleksi tidak dapat dibuat. Periksa nama dan koleksi induknya.</value>
+  </data>
+  <data name="Common.All" xml:space="preserve">
+    <value>Semua</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Konfigurasi Quiz</value>
+  </data>
+  <data name="Settings.FlashcardQuiz" xml:space="preserve">
+    <value>Quiz Kartu Kilat</value>
+  </data>
+  <data name="Settings.Source" xml:space="preserve">
+    <value>Sumber</value>
+  </data>
+  <data name="Settings.Target" xml:space="preserve">
+    <value>Target</value>
+  </data>
+  <data name="Settings.Configuration" xml:space="preserve">
+    <value>Konfigurasi</value>
+  </data>
+  <data name="Settings.Intro" xml:space="preserve">
+    <value>Pilih sesi latihan cepat dan tinjau quiz ini.</value>
+  </data>
+  <data name="Settings.SessionLength" xml:space="preserve">
+    <value>Durasi Sesi</value>
+  </data>
+  <data name="Settings.Words" xml:space="preserve">
+    <value>Kata</value>
+  </data>
+  <data name="Settings.AvailableLower" xml:space="preserve">
+    <value>tersedia</value>
+  </data>
+  <data name="Settings.Quick" xml:space="preserve">
+    <value>Cepat</value>
+  </data>
+  <data name="Settings.Standard" xml:space="preserve">
+    <value>Standar</value>
+  </data>
+  <data name="Settings.WordRange" xml:space="preserve">
+    <value>Rentang Kata</value>
+  </data>
+  <data name="Settings.RangeHelp" xml:space="preserve">
+    <value>Seret salah satu pegangan untuk memfokuskan pada sebagian daftar Anda, misalnya hanya kata-kata terbaru.</value>
+  </data>
+  <data name="Settings.Newest20" xml:space="preserve">
+    <value>20% Terbaru</value>
+  </data>
+  <data name="Settings.Newest50" xml:space="preserve">
+    <value>50% Terbaru</value>
+  </data>
+  <data name="Settings.Oldest20" xml:space="preserve">
+    <value>20% Tertua</value>
+  </data>
+  <data name="Settings.AllWordsOrder" xml:space="preserve">
+    <value>Berlatih semua kata, dari yang tertua ke yang terbaru.</value>
+  </data>
+  <data name="Settings.ChooseIndividually" xml:space="preserve">
+    <value>Pilih kata satu per satu…</value>
+  </data>
+  <data name="Settings.ClearSelection" xml:space="preserve">
+    <value>Hapus pilihan</value>
+  </data>
+  <data name="Settings.ChooseWords" xml:space="preserve">
+    <value>Pilih kata untuk dilatih</value>
+  </data>
+  <data name="Settings.SelectAll" xml:space="preserve">
+    <value>Pilih semua</value>
+  </data>
+  <data name="Settings.DeselectAll" xml:space="preserve">
+    <value>Batal pilih semua</value>
+  </data>
+  <data name="Settings.FilterWords" xml:space="preserve">
+    <value>Filter kata…</value>
+  </data>
+  <data name="Settings.ApplySelection" xml:space="preserve">
+    <value>Terapkan pilihan</value>
+  </data>
+  <data name="Settings.PracticeContent" xml:space="preserve">
+    <value>Konten Latihan</value>
+  </data>
+  <data name="Settings.ContentHelp" xml:space="preserve">
+    <value>Pilih kata atau kalimat lengkap.</value>
+  </data>
+  <data name="Settings.Sentences" xml:space="preserve">
+    <value>Kalimat</value>
+  </data>
+  <data name="Settings.QuizMode" xml:space="preserve">
+    <value>Mode Quiz</value>
+  </data>
+  <data name="Settings.ModeHelp" xml:space="preserve">
+    <value>Pilih kartu kilat untuk mengingat atau mengetik untuk latihan ejaan aktif.</value>
+  </data>
+  <data name="Settings.Flashcards" xml:space="preserve">
+    <value>Kartu Kilat</value>
+  </data>
+  <data name="Settings.Typing" xml:space="preserve">
+    <value>Mengetik</value>
+  </data>
+  <data name="Settings.Choices" xml:space="preserve">
+    <value>Pilihan</value>
+  </data>
+  <data name="Settings.PracticeDirection" xml:space="preserve">
+    <value>Arah Latihan</value>
+  </data>
+  <data name="Settings.DirectionHelp" xml:space="preserve">
+    <value>Pilih bahasa yang tampil lebih dulu.</value>
+  </data>
+  <data name="Settings.NeedWord" xml:space="preserve">
+    <value>Tambahkan setidaknya satu kata sebelum memulai sesi latihan.</value>
+  </data>
+  <data name="Settings.Quiz" xml:space="preserve">
+    <value>Quiz</value>
+  </data>
+  <data name="Settings.Content" xml:space="preserve">
+    <value>Konten</value>
+  </data>
+  <data name="Settings.Available" xml:space="preserve">
+    <value>Tersedia</value>
+  </data>
+  <data name="Settings.Mode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="Settings.Range" xml:space="preserve">
+    <value>Rentang</value>
+  </data>
+  <data name="Settings.Direction" xml:space="preserve">
+    <value>Arah</value>
+  </data>
+  <data name="Settings.StartQuiz" xml:space="preserve">
+    <value>Mulai Quiz</value>
+  </data>
+  <data name="Settings.WordsLower" xml:space="preserve">
+    <value>kata</value>
+  </data>
+  <data name="Settings.SentencesLower" xml:space="preserve">
+    <value>kalimat</value>
+  </data>
+  <data name="Settings.WordLower" xml:space="preserve">
+    <value>kata</value>
+  </data>
+  <data name="Settings.SentenceLower" xml:space="preserve">
+    <value>kalimat</value>
+  </data>
+  <data name="Settings.NeedItem" xml:space="preserve">
+    <value>Tambahkan setidaknya satu {0} sebelum memulai sesi latihan.</value>
+  </data>
+  <data name="Settings.Newest" xml:space="preserve">
+    <value>{0}% Terbaru</value>
+  </data>
+  <data name="Settings.Oldest" xml:space="preserve">
+    <value>{0}% Tertua</value>
+  </data>
+  <data name="Settings.RangeDynamic" xml:space="preserve">
+    <value>Berlatih {0} dari daftar (dari yang tertua ke yang terbaru).</value>
+  </data>
+  <data name="Settings.SelectedCount" xml:space="preserve">
+    <value>{0} dari {1} dipilih</value>
+  </data>
+  <data name="Settings.PickedWords" xml:space="preserve">
+    <value>{0} dari {1} kata dipilih satu per satu</value>
+  </data>
+  <data name="Settings.PickedCount" xml:space="preserve">
+    <value>{0} dipilih</value>
+  </data>
+  <data name="Explore.Title" xml:space="preserve">
+    <value>Jelajahi</value>
+  </data>
+  <data name="Explore.Discover" xml:space="preserve">
+    <value>Temukan sesuatu yang baru</value>
+  </data>
+  <data name="Explore.Intro" xml:space="preserve">
+    <value>Jelajahi kosakata yang dibagikan oleh pelajar lain, lalu salin yang menginspirasi Anda ke pustaka Anda sendiri.</value>
+  </data>
+  <data name="Explore.Summary" xml:space="preserve">
+    <value>Ringkasan pustaka publik</value>
+  </data>
+  <data name="Explore.CommunityLibrary" xml:space="preserve">
+    <value>Pustaka komunitas</value>
+  </data>
+  <data name="Explore.SharedCollections" xml:space="preserve">
+    <value>Koleksi bersama</value>
+  </data>
+  <data name="Explore.CollectionsHelp" xml:space="preserve">
+    <value>Jelajahi set pembelajaran lengkap yang dikurasi oleh komunitas.</value>
+  </data>
+  <data name="Explore.SharedCollection" xml:space="preserve">
+    <value>Koleksi bersama</value>
+  </data>
+  <data name="Explore.CopyNamed" xml:space="preserve">
+    <value>Salin {0} ke pustaka Anda</value>
+  </data>
+  <data name="Explore.CommunityQuizzes" xml:space="preserve">
+    <value>Quiz komunitas</value>
+  </data>
+  <data name="Explore.QuizzesHelp" xml:space="preserve">
+    <value>Pratinjau quiz, lalu tambahkan salinan pribadi ke pustaka Anda.</value>
+  </data>
+  <data name="Explore.CommunityQuiz" xml:space="preserve">
+    <value>Quiz komunitas</value>
+  </data>
+  <data name="Explore.NothingPublic" xml:space="preserve">
+    <value>Belum ada yang publik untuk {0}</value>
+  </data>
+  <data name="Explore.EmptyHelp" xml:space="preserve">
+    <value>Saat pelajar membagikan quiz atau koleksi dalam bahasa ini, semuanya akan muncul di sini.</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Common.Play" xml:space="preserve">
+    <value>Mainkan</value>
+  </data>
+  <data name="Quiz.AssistantEmpty" xml:space="preserve">
+    <value>Mulai percakapan tentang quiz ini.</value>
+  </data>
+  <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
+    <value>Tanyakan tentang quiz ini...</value>
+  </data>
+  <data name="Quiz.CustomCount" xml:space="preserve">
+    <value>{0} kustom</value>
+  </data>
+  <data name="Quiz.BuildCustom" xml:space="preserve">
+    <value>Buat kuis kustom</value>
+  </data>
+  <data name="Quiz.Public" xml:space="preserve">
+    <value>Publik</value>
+  </data>
+  <data name="Quiz.Word" xml:space="preserve">
+    <value>Kata</value>
+  </data>
+  <data name="Quiz.WordExample" xml:space="preserve">
+    <value>mis. Bibliothèque</value>
+  </data>
+  <data name="Quiz.TranslationExample" xml:space="preserve">
+    <value>mis. Library</value>
+  </data>
+  <data name="Quiz.AddWord" xml:space="preserve">
+    <value>Tambahkan kata</value>
+  </data>
+  <data name="Quiz.ItemsIn" xml:space="preserve">
+    <value>{0} {1} dalam {2}</value>
+  </data>
+  <data name="Quiz.ContentAria" xml:space="preserve">
+    <value>Konten kuis</value>
+  </data>
+  <data name="Quiz.OpenWiktionary" xml:space="preserve">
+    <value>Buka {0} di Wiktionary</value>
+  </data>
+  <data name="Quiz.RepairWord" xml:space="preserve">
+    <value>Perbaiki kata</value>
+  </data>
+  <data name="Quiz.RepairNamed" xml:space="preserve">
+    <value>Perbaiki {0}</value>
+  </data>
+  <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
+    <value>Hapus kata ini?</value>
+  </data>
+  <data name="Quiz.NoWords" xml:space="preserve">
+    <value>Belum ada kata. Tambahkan kata pertama dengan bilah di atas.</value>
+  </data>
+  <data name="Quiz.LinkedWords" xml:space="preserve">
+    <value>{0} kata tertaut {1}</value>
+  </data>
+  <data name="Quiz.Repair" xml:space="preserve">
+    <value>Perbaiki</value>
+  </data>
+  <data name="Quiz.NoSentences" xml:space="preserve">
+    <value>Belum ada kalimat. Minta asisten untuk menambahkan kalimat atau mengekstraknya dari teks.</value>
+  </data>
+  <data name="Quiz.CustomQuizzes" xml:space="preserve">
+    <value>Kuis kustom</value>
+  </data>
+  <data name="Quiz.CustomHelp" xml:space="preserve">
+    <value>Buat latihan bebas dari kata-kata dalam kuis ini.</value>
+  </data>
+  <data name="Quiz.NewCustom" xml:space="preserve">
+    <value>Kuis kustom baru</value>
+  </data>
+  <data name="Quiz.Playable" xml:space="preserve">
+    <value>Dapat dimainkan</value>
+  </data>
+  <data name="Quiz.Draft" xml:space="preserve">
+    <value>Draf</value>
+  </data>
+  <data name="Quiz.NoCustom" xml:space="preserve">
+    <value>Belum ada kuis kustom. Buat satu dengan menyeret blok ke kanvas.</value>
+  </data>
+  <data name="Payments.PackageUnavailable" xml:space="preserve">
+    <value>Paket kredit ini sudah tidak tersedia.</value>
+  </data>
+  <data name="Payments.CreditsReady" xml:space="preserve">
+    <value>Pembayaran terkonfirmasi. Kredit Anda siap digunakan.</value>
+  </data>
+  <data name="Payments.AwaitingOrFailed" xml:space="preserve">
+    <value>Pembayaran masih menunggu konfirmasi atau tidak dapat diverifikasi.</value>
+  </data>
+  <data name="Payments.GetCredits" xml:space="preserve">
+    <value>Dapatkan kredit</value>
+  </data>
+  <data name="Payments.GlosifyCredits" xml:space="preserve">
+    <value>Kredit Glosify</value>
+  </data>
+  <data name="Payments.Hero" xml:space="preserve">
+    <value>Terus lanjutkan siklus belajar Anda.</value>
+  </data>
+  <data name="Payments.Intro" xml:space="preserve">
+    <value>Kredit mendukung fitur pembelajaran berbantuan AI dan subtitle langsung Glosify.</value>
+  </data>
+  <data name="Payments.NotAvailable" xml:space="preserve">
+    <value>Pembayaran belum tersedia</value>
+  </data>
+  <data name="Payments.NotConnected" xml:space="preserve">
+    <value>Penerapan Glosify ini belum terhubung ke Stripe.</value>
+  </data>
+  <data name="Payments.CreditPack" xml:space="preserve">
+    <value>Paket kredit</value>
+  </data>
+  <data name="Payments.CreditCount" xml:space="preserve">
+    <value>{0} kredit</value>
+  </data>
+  <data name="Payments.ContinueCheckout" xml:space="preserve">
+    <value>Lanjutkan ke pembayaran aman</value>
+  </data>
+  <data name="Payments.StripeNotice" xml:space="preserve">
+    <value>Pembayaran diproses oleh Stripe. Glosify tidak pernah menerima atau menyimpan detail kartu.</value>
+  </data>
+  <data name="Payments.Status" xml:space="preserve">
+    <value>Status pembayaran</value>
+  </data>
+  <data name="Payments.Confirmed" xml:space="preserve">
+    <value>Pembayaran terkonfirmasi</value>
+  </data>
+  <data name="Payments.Processing" xml:space="preserve">
+    <value>Pembayaran diproses</value>
+  </data>
+  <data name="Payments.Back" xml:space="preserve">
+    <value>Kembali ke Glosify</value>
+  </data>
+  <data name="Payments.AiCredits" xml:space="preserve">
+    <value>Kredit AI</value>
+  </data>
+  <data name="Payments.AiCreditAdmin" xml:space="preserve">
+    <value>Admin kredit AI</value>
+  </data>
+  <data name="Error.StartupDelay" xml:space="preserve">
+    <value>Penundaan startup sementara</value>
+  </data>
+  <data name="Error.RequestFailed" xml:space="preserve">
+    <value>Permintaan gagal</value>
+  </data>
+  <data name="Error.RequestId" xml:space="preserve">
+    <value>ID permintaan:</value>
+  </data>
+  <data name="Error.WarmupTitle" xml:space="preserve">
+    <value>Layanan ini sedang dimulai</value>
+  </data>
+  <data name="Error.WarmupMessage" xml:space="preserve">
+    <value>Tunggu sebentar lalu coba lagi.</value>
+  </data>
+  <data name="Error.GenericTitle" xml:space="preserve">
+    <value>Terjadi kesalahan</value>
+  </data>
+  <data name="Error.GenericMessage" xml:space="preserve">
+    <value>Permintaan tidak dapat diselesaikan. Silakan coba lagi.</value>
+  </data>
+  <data name="Common.Undo" xml:space="preserve">
+    <value>Urungkan</value>
+  </data>
+  <data name="Common.Preview" xml:space="preserve">
+    <value>Pratinjau</value>
+  </data>
+  <data name="Custom.EditNamed" xml:space="preserve">
+    <value>Edit {0}</value>
+  </data>
+  <data name="Custom.AssistantTitle" xml:space="preserve">
+    <value>Asisten pembuat kuis</value>
+  </data>
+  <data name="Custom.AssistantEmpty" xml:space="preserve">
+    <value>Minta saya untuk menambahkan, mengonfigurasi, atau menyusun elemen kuis.</value>
+  </data>
+  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
+    <value>Tambahkan pertanyaan ke kuis kustom ini...</value>
+  </data>
+  <data name="Custom.Name" xml:space="preserve">
+    <value>Nama kuis kustom</value>
+  </data>
+  <data name="Custom.LoadingEditor" xml:space="preserve">
+    <value>Memuat kontrol editor…</value>
+  </data>
+  <data name="Custom.DesignStarters" xml:space="preserve">
+    <value>Starter desain</value>
+  </data>
+  <data name="Custom.VisualDirection" xml:space="preserve">
+    <value>Pilih arah visual</value>
+  </data>
+  <data name="Custom.TemplateHelp" xml:space="preserve">
+    <value>Terapkan hanya gayanya, atau ganti kanvas dengan tata letak lengkap yang dibuat dari kata-kata kuis ini.</value>
+  </data>
+  <data name="Custom.UseStyle" xml:space="preserve">
+    <value>Gunakan gaya</value>
+  </data>
+  <data name="Custom.UseLayout" xml:space="preserve">
+    <value>Gunakan tata letak</value>
+  </data>
+  <data name="Custom.BuildingBlocks" xml:space="preserve">
+    <value>Blok penyusun kuis</value>
+  </data>
+  <data name="Custom.Blocks" xml:space="preserve">
+    <value>Blok</value>
+  </data>
+  <data name="Custom.BlocksHelp" xml:space="preserve">
+    <value>Seret ke area kosong mana pun, atau klik untuk menambahkan secara otomatis.</value>
+  </data>
+  <data name="Custom.DragAdd" xml:space="preserve">
+    <value>Seret atau klik untuk menambahkan {0}</value>
+  </data>
+  <data name="Custom.Add" xml:space="preserve">
+    <value>Tambahkan {0}</value>
+  </data>
+  <data name="Custom.Grid" xml:space="preserve">
+    <value>Grid pintar 12 kolom</value>
+  </data>
+  <data name="Custom.GridHelp" xml:space="preserve">
+    <value>Seret untuk menempatkan · tepi menempel · ruang yang sudah terisi dihindari</value>
+  </data>
+  <data name="Custom.Canvas" xml:space="preserve">
+    <value>Kanvas kuis kustom</value>
+  </data>
+  <data name="Custom.Properties" xml:space="preserve">
+    <value>Properti</value>
+  </data>
+  <data name="Custom.PropertiesHelp" xml:space="preserve">
+    <value>Pilih blok untuk mengedit konten dan pengikatannya.</value>
+  </data>
+  <data name="Custom.Answer" xml:space="preserve">
+    <value>Jawaban</value>
+  </data>
+  <data name="Custom.Choose" xml:space="preserve">
+    <value>Pilih...</value>
+  </data>
+  <data name="Custom.CheckAnswers" xml:space="preserve">
+    <value>Periksa jawaban</value>
+  </data>
+  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
+    <value>Selesaikan kuis, lalu kirim jawaban Anda.</value>
+  </data>
+  <data name="Custom.Block.Heading" xml:space="preserve">
+    <value>Judul</value>
+  </data>
+  <data name="Custom.Block.Instruction" xml:space="preserve">
+    <value>Instruksi</value>
+  </data>
+  <data name="Custom.Block.WordLabel" xml:space="preserve">
+    <value>Label kata</value>
+  </data>
+  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
+    <value>Label terjemahan</value>
+  </data>
+  <data name="Custom.Block.TextInput" xml:space="preserve">
+    <value>Input teks</value>
+  </data>
+  <data name="Custom.Block.LongAnswer" xml:space="preserve">
+    <value>Jawaban panjang</value>
+  </data>
+  <data name="Custom.Block.Checkbox" xml:space="preserve">
+    <value>Kotak centang</value>
+  </data>
+  <data name="Custom.Block.RadioChoices" xml:space="preserve">
+    <value>Pilihan radio</value>
+  </data>
+  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
+    <value>Pilihan kotak centang</value>
+  </data>
+  <data name="Custom.Block.SelectMenu" xml:space="preserve">
+    <value>Menu pilihan</value>
+  </data>
+  <data name="Custom.Block.WordBank" xml:space="preserve">
+    <value>Bank kata</value>
+  </data>
+  <data name="Custom.Block.SubmitButton" xml:space="preserve">
+    <value>Tombol kirim</value>
+  </data>
+  <data name="Custom.Block.Feedback" xml:space="preserve">
+    <value>Umpan balik</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
+    <value>Alur editorial</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
+    <value>Hierarki yang tenang, spasi yang lapang, dan satu tugas yang jelas per baris.</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
+    <value>Terjemahan, petunjuk tata bahasa, fokus mengingat</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
+    <value>Kartu aurora</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
+    <value>Warna lembut, kartu latihan berpasangan, dan suasana kelas yang energik.</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
+    <value>Set kosakata singkat dan pemindaian visual</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
+    <value>Latihan buku teks</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
+    <value>Baris bernomor yang ringkas meniru latihan buku kerja yang difoto.</value>
+  </data>
+  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
+    <value>Konjugasi, transformasi, cloze, dan latihan formal</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
+    <value>Lab bank kata</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
+    <value>Bank kata yang menonjol memandu latihan dan membuat ingatan terasa menyenangkan.</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
+    <value>Ingatan terpandu dan kosakata pemula</value>
+  </data>
+  <data name="Custom.AnswerQuestion" xml:space="preserve">
+    <value>Jawab pertanyaan ini.</value>
+  </data>
+  <data name="Custom.Correct" xml:space="preserve">
+    <value>Benar.</value>
+  </data>
+  <data name="Custom.CorrectAnswer" xml:space="preserve">
+    <value>Jawaban benar: {0}</value>
+  </data>
+  <data name="Custom.CompleteAnswers" xml:space="preserve">
+    <value>Lengkapi semua jawaban sebelum mengirim.</value>
+  </data>
+  <data name="Custom.Score" xml:space="preserve">
+    <value>Skor: {0} dari {1} ({2}%).</value>
+  </data>
+  <data name="Custom.GradeFailed" xml:space="preserve">
+    <value>Tidak dapat menilai kuis ini. Coba lagi.</value>
+  </data>
+  <data name="Classroom.PostAnnouncement" xml:space="preserve">
+    <value>Posting pengumuman</value>
+  </data>
+  <data name="Classroom.ShareClass" xml:space="preserve">
+    <value>Bagikan sesuatu dengan kelas</value>
+  </data>
+  <data name="Classroom.Post" xml:space="preserve">
+    <value>Posting</value>
+  </data>
+  <data name="Classroom.Announcements" xml:space="preserve">
+    <value>Pengumuman</value>
+  </data>
+  <data name="Classroom.PostOne" xml:space="preserve">
+    <value>posting</value>
+  </data>
+  <data name="Classroom.PostMany" xml:space="preserve">
+    <value>posting</value>
+  </data>
+  <data name="Classroom.Pinned" xml:space="preserve">
+    <value>Disematkan</value>
+  </data>
+  <data name="Classroom.Unpin" xml:space="preserve">
+    <value>Lepas sematan</value>
+  </data>
+  <data name="Classroom.Pin" xml:space="preserve">
+    <value>Sematkan</value>
+  </data>
+  <data name="Classroom.DeleteAnnouncement" xml:space="preserve">
+    <value>Hapus pengumuman ini?</value>
+  </data>
+  <data name="Classroom.NothingYet" xml:space="preserve">
+    <value>Belum ada apa pun di sini.</value>
+  </data>
+  <data name="Classroom.PostFirst" xml:space="preserve">
+    <value>Posting pengumuman pertama di atas.</value>
+  </data>
+  <data name="Classroom.NoTeacherPosts" xml:space="preserve">
+    <value>Guru Anda belum memposting apa pun.</value>
+  </data>
+  <data name="Classroom.OpenChat" xml:space="preserve">
+    <value>Buka obrolan kelas</value>
+  </data>
+  <data name="Classroom.ClassChat" xml:space="preserve">
+    <value>Obrolan kelas</value>
+  </data>
+  <data name="Classroom.ClassChatUpper" xml:space="preserve">
+    <value>OBROLAN KELAS</value>
+  </data>
+  <data name="Classroom.Connecting" xml:space="preserve">
+    <value>Menghubungkan…</value>
+  </data>
+  <data name="Classroom.CloseChat" xml:space="preserve">
+    <value>Tutup obrolan kelas</value>
+  </data>
+  <data name="Classroom.LoadingMessages" xml:space="preserve">
+    <value>Memuat pesan…</value>
+  </data>
+  <data name="Classroom.MessageClass" xml:space="preserve">
+    <value>Kirim pesan ke kelas</value>
+  </data>
+  <data name="Classroom.ChatMessage" xml:space="preserve">
+    <value>Pesan obrolan</value>
+  </data>
+  <data name="Classroom.CallTitle" xml:space="preserve">
+    <value>{0} — panggilan</value>
+  </data>
+  <data name="Classroom.NotConnected" xml:space="preserve">
+    <value>Tidak terhubung</value>
+  </data>
+  <data name="Classroom.Back" xml:space="preserve">
+    <value>Kembali ke kelas</value>
+  </data>
+  <data name="Classroom.CallNotConfigured" xml:space="preserve">
+    <value>Panggilan video belum dikonfigurasi di server ini. Seorang administrator perlu mengatur</value>
+  </data>
+  <data name="Classroom.ReadyJoin" xml:space="preserve">
+    <value>Siap bergabung?</value>
+  </data>
+  <data name="Classroom.JoinAs" xml:space="preserve">
+    <value>Anda akan bergabung sebagai</value>
+  </data>
+  <data name="Classroom.MuteMic" xml:space="preserve">
+    <value>Bisukan mikrofon</value>
+  </data>
+  <data name="Classroom.Mute" xml:space="preserve">
+    <value>Bisukan</value>
+  </data>
+  <data name="Classroom.CameraOff" xml:space="preserve">
+    <value>Matikan kamera</value>
+  </data>
+  <data name="Classroom.Camera" xml:space="preserve">
+    <value>Kamera</value>
+  </data>
+  <data name="Classroom.LeaveCall" xml:space="preserve">
+    <value>Keluar dari panggilan</value>
+  </data>
+  <data name="Classroom.Leave" xml:space="preserve">
+    <value>Keluar</value>
+  </data>
+  <data name="Classroom.ReadyStart" xml:space="preserve">
+    <value>Siap memulai?</value>
+  </data>
+  <data name="Classroom.NoOneCall" xml:space="preserve">
+    <value>Belum ada siapa pun di panggilan.</value>
+  </data>
+  <data name="Classroom.WaitingTeacher" xml:space="preserve">
+    <value>Menunggu guru</value>
+  </data>
+  <data name="Classroom.JoinAfterTeacher" xml:space="preserve">
+    <value>Anda dapat bergabung setelah guru memulai panggilan.</value>
+  </data>
+  <data name="Classroom.UnmuteMic" xml:space="preserve">
+    <value>Aktifkan mikrofon</value>
+  </data>
+  <data name="Classroom.CameraOn" xml:space="preserve">
+    <value>Nyalakan kamera</value>
+  </data>
+  <data name="Classroom.Connected" xml:space="preserve">
+    <value>Terhubung</value>
+  </data>
+  <data name="Classroom.NoMessages" xml:space="preserve">
+    <value>Belum ada pesan. Sapa kami!</value>
+  </data>
+  <data name="Classroom.Reconnecting" xml:space="preserve">
+    <value>Menyambungkan ulang…</value>
+  </data>
+  <data name="Classroom.ActionInvalid" xml:space="preserve">
+    <value>Tindakan di kelas tidak dapat diselesaikan. Periksa input dan akses Anda.</value>
+  </data>
+  <data name="Classroom.Created" xml:space="preserve">
+    <value>{0} dibuat.</value>
+  </data>
+  <data name="Classroom.CreateInvalid" xml:space="preserve">
+    <value>Masukkan nama dan deskripsi kelas yang valid.</value>
+  </data>
+  <data name="Classroom.NoCodeMatch" xml:space="preserve">
+    <value>Tidak ada kelas yang cocok dengan kode bergabung tersebut.</value>
+  </data>
+  <data name="Classroom.InvitationUnavailable" xml:space="preserve">
+    <value>Undangan itu sudah tidak tersedia lagi.</value>
+  </data>
+  <data name="Classroom.Welcome" xml:space="preserve">
+    <value>Selamat datang di {0}.</value>
+  </data>
+  <data name="Classroom.WelcomeSwitched" xml:space="preserve">
+    <value>Selamat datang di {0}. Anda dialihkan ke {1}.</value>
+  </data>
+  <data name="Classroom.InvitationDeclined" xml:space="preserve">
+    <value>Undangan ditolak.</value>
+  </data>
+  <data name="Classroom.NotFound" xml:space="preserve">
+    <value>Kelas tidak ditemukan.</value>
+  </data>
+  <data name="Classroom.Left" xml:space="preserve">
+    <value>Anda telah keluar dari kelas.</value>
+  </data>
+  <data name="Classroom.ActionDenied" xml:space="preserve">
+    <value>Anda tidak dapat melakukan tindakan itu di kelas ini.</value>
+  </data>
+  <data name="Classroom.Deleted" xml:space="preserve">
+    <value>Kelas dihapus.</value>
+  </data>
+  <data name="Explore.PublicQuiz" xml:space="preserve">
+    <value>Kuis Publik</value>
+  </data>
+  <data name="Explore.CustomExercises" xml:space="preserve">
+    <value>Latihan yang dibuat dari kosakata kuis ini.</value>
+  </data>
+  <data name="Explore.NoPublicWords" xml:space="preserve">
+    <value>Belum ada kata yang ditambahkan ke kuis publik ini.</value>
+  </data>
+  <data name="Explore.NoPublicSentences" xml:space="preserve">
+    <value>Belum ada kalimat yang ditambahkan ke kuis publik ini.</value>
+  </data>
+  <data name="Explore.PublicCollection" xml:space="preserve">
+    <value>Koleksi Publik</value>
+  </data>
+  <data name="Explore.CollectionIntro" xml:space="preserve">
+    <value>Jelajahi {0} {1} di {2} koleksi, lalu salin seluruh set ke perpustakaan Anda.</value>
+  </data>
+  <data name="Explore.CollectionSummary" xml:space="preserve">
+    <value>Ringkasan koleksi</value>
+  </data>
+  <data name="Explore.CopyCollection" xml:space="preserve">
+    <value>Salin Koleksi</value>
+  </data>
+  <data name="Explore.InCollection" xml:space="preserve">
+    <value>Di koleksi ini</value>
+  </data>
+  <data name="Explore.FiledInside" xml:space="preserve">
+    <value>Kuis yang ditempatkan langsung di dalam {0}.</value>
+  </data>
+  <data name="Explore.NoDirectQuizzes" xml:space="preserve">
+    <value>Tidak ada kuis yang langsung berada di dalam koleksi ini.</value>
+  </data>
+  <data name="Common.Remove" xml:space="preserve">
+    <value>Hapus</value>
+  </data>
+  <data name="Classroom.ShareQuiz" xml:space="preserve">
+    <value>Bagikan kuis</value>
+  </data>
+  <data name="Classroom.QuizLibrary" xml:space="preserve">
+    <value>Kuis dari perpustakaan Anda</value>
+  </data>
+  <data name="Classroom.Share" xml:space="preserve">
+    <value>Bagikan</value>
+  </data>
+  <data name="Classroom.AllQuizzesShared" xml:space="preserve">
+    <value>Semua kuis Anda sudah dibagikan di sini, atau perpustakaan Anda kosong.</value>
+  </data>
+  <data name="Classroom.ShareBook" xml:space="preserve">
+    <value>Bagikan buku</value>
+  </data>
+  <data name="Classroom.BookLibrary" xml:space="preserve">
+    <value>Buku dari perpustakaan Anda</value>
+  </data>
+  <data name="Classroom.AllBooksShared" xml:space="preserve">
+    <value>Semua buku Anda sudah dibagikan di sini, atau Anda belum memiliki unggahan.</value>
+  </data>
+  <data name="Classroom.First" xml:space="preserve">
+    <value>pertama.</value>
+  </data>
+  <data name="Classroom.SharedContent" xml:space="preserve">
+    <value>Konten yang dibagikan</value>
+  </data>
+  <data name="Classroom.ItemOne" xml:space="preserve">
+    <value>item</value>
+  </data>
+  <data name="Classroom.ItemMany" xml:space="preserve">
+    <value>item</value>
+  </data>
+  <data name="Classroom.Removed" xml:space="preserve">
+    <value>Dihapus</value>
+  </data>
+  <data name="Classroom.SharedBy" xml:space="preserve">
+    <value>Dibagikan oleh {0}</value>
+  </data>
+  <data name="Classroom.CopyLibrary" xml:space="preserve">
+    <value>Salin ke perpustakaan saya</value>
+  </data>
+  <data name="Classroom.OpenPdf" xml:space="preserve">
+    <value>Buka PDF</value>
+  </data>
+  <data name="Classroom.RemoveConfirm" xml:space="preserve">
+    <value>Hapus ini dari kelas?</value>
+  </data>
+  <data name="Classroom.NoSharedContent" xml:space="preserve">
+    <value>Belum ada konten yang dibagikan.</value>
+  </data>
+  <data name="Classroom.QuizResults" xml:space="preserve">
+    <value>Hasil kuis</value>
+  </data>
+  <data name="Classroom.AttemptOne" xml:space="preserve">
+    <value>percobaan</value>
+  </data>
+  <data name="Classroom.AttemptMany" xml:space="preserve">
+    <value>percobaan</value>
+  </data>
+  <data name="Classroom.FromPractice" xml:space="preserve">
+    <value>dari latihan kelas</value>
+  </data>
+  <data name="Classroom.Score" xml:space="preserve">
+    <value>Skor</value>
+  </data>
+  <data name="Classroom.Completed" xml:space="preserve">
+    <value>Selesai</value>
+  </data>
+  <data name="Classroom.NoAttempts" xml:space="preserve">
+    <value>Belum ada percobaan. Hasil akan muncul saat anggota berlatih kuis dari tab Konten.</value>
+  </data>
+  <data name="Classroom.MemberResultsTitle" xml:space="preserve">
+    <value>{0} — hasil</value>
+  </data>
+  <data name="Classroom.Skipped" xml:space="preserve">
+    <value>Dilewati</value>
+  </data>
+  <data name="Classroom.NoMemberAttempts" xml:space="preserve">
+    <value>Belum ada percobaan yang tercatat untuk anggota ini.</value>
+  </data>
+  <data name="Classroom.InviteEmail" xml:space="preserve">
+    <value>Undang lewat email</value>
+  </data>
+  <data name="Classroom.Role" xml:space="preserve">
+    <value>Peran</value>
+  </data>
+  <data name="Classroom.Student" xml:space="preserve">
+    <value>Siswa</value>
+  </data>
+  <data name="Classroom.Teacher" xml:space="preserve">
+    <value>Guru</value>
+  </data>
+  <data name="Classroom.Invite" xml:space="preserve">
+    <value>Undang</value>
+  </data>
+  <data name="Classroom.InviteHelp" xml:space="preserve">
+    <value>Undangan muncul di halaman Kelas orang tersebut saat mereka masuk dengan email ini — tidak ada email yang dikirim.</value>
+  </data>
+  <data name="Classroom.CodeAnyone" xml:space="preserve">
+    <value>Siapa saja dengan kode</value>
+  </data>
+  <data name="Classroom.CodeCanJoin" xml:space="preserve">
+    <value>dapat bergabung sebagai siswa.</value>
+  </data>
+  <data name="Classroom.JoiningCurrently" xml:space="preserve">
+    <value>Bergabung saat ini</value>
+  </data>
+  <data name="Classroom.Enabled" xml:space="preserve">
+    <value>diaktifkan</value>
+  </data>
+  <data name="Classroom.Paused" xml:space="preserve">
+    <value>dijeda</value>
+  </data>
+  <data name="Classroom.NewCode" xml:space="preserve">
+    <value>Kode baru</value>
+  </data>
+  <data name="Classroom.PauseJoining" xml:space="preserve">
+    <value>Jeda bergabung</value>
+  </data>
+  <data name="Classroom.ResumeJoining" xml:space="preserve">
+    <value>Lanjutkan bergabung</value>
+  </data>
+  <data name="Classroom.Joined" xml:space="preserve">
+    <value>bergabung</value>
+  </data>
+  <data name="Classroom.MakeRole" xml:space="preserve">
+    <value>Jadikan {0}</value>
+  </data>
+  <data name="Classroom.RemoveMemberConfirm" xml:space="preserve">
+    <value>Hapus {0} dari kelas?</value>
+  </data>
+  <data name="Classroom.DeleteForEveryone" xml:space="preserve">
+    <value>Hapus kelas ini untuk semua orang? Kuis dan buku yang dibagikan tetap berada di perpustakaan pemiliknya.</value>
+  </data>
+  <data name="Classroom.DeleteClassroom" xml:space="preserve">
+    <value>Hapus kelas</value>
+  </data>
+  <data name="Classroom.LeaveConfirm" xml:space="preserve">
+    <value>Keluar dari kelas ini?</value>
+  </data>
+  <data name="Classroom.LeaveClassroom" xml:space="preserve">
+    <value>Keluar dari kelas</value>
+  </data>
+  <data name="Classroom.AddLesson" xml:space="preserve">
+    <value>Tambahkan pelajaran</value>
+  </data>
+  <data name="Classroom.TitleLabel" xml:space="preserve">
+    <value>Judul</value>
+  </data>
+  <data name="Classroom.DescriptionOptional" xml:space="preserve">
+    <value>Deskripsi (opsional)</value>
+  </data>
+  <data name="Classroom.ScheduledOptional" xml:space="preserve">
+    <value>Dijadwalkan untuk (opsional)</value>
+  </data>
+  <data name="Classroom.AddAssignment" xml:space="preserve">
+    <value>Tambahkan tugas</value>
+  </data>
+  <data name="Classroom.InstructionsOptional" xml:space="preserve">
+    <value>Instruksi (opsional)</value>
+  </data>
+  <data name="Classroom.QuizOptional" xml:space="preserve">
+    <value>Kuis (opsional, dari konten yang dibagikan)</value>
+  </data>
+  <data name="Classroom.NoQuiz" xml:space="preserve">
+    <value>Tidak ada kuis</value>
+  </data>
+  <data name="Classroom.LessonOptional" xml:space="preserve">
+    <value>Pelajaran (opsional)</value>
+  </data>
+  <data name="Classroom.NoLesson" xml:space="preserve">
+    <value>Tidak ada pelajaran</value>
+  </data>
+  <data name="Classroom.DueOptional" xml:space="preserve">
+    <value>Jatuh tempo (opsional)</value>
+  </data>
+  <data name="Classroom.CoursePlan" xml:space="preserve">
+    <value>Rencana kursus</value>
+  </data>
+  <data name="Classroom.LessonOne" xml:space="preserve">
+    <value>pelajaran</value>
+  </data>
+  <data name="Classroom.LessonMany" xml:space="preserve">
+    <value>pelajaran</value>
+  </data>
+  <data name="Classroom.AssignmentOne" xml:space="preserve">
+    <value>tugas</value>
+  </data>
+  <data name="Classroom.AssignmentMany" xml:space="preserve">
+    <value>tugas</value>
+  </data>
+  <data name="Classroom.DeleteLessonConfirm" xml:space="preserve">
+    <value>Hapus pelajaran ini? Tugas-tugasnya tetap ada, tanpa keterkaitan.</value>
+  </data>
+  <data name="Classroom.DeleteLesson" xml:space="preserve">
+    <value>Hapus pelajaran</value>
+  </data>
+  <data name="Classroom.NoAssignmentsLesson" xml:space="preserve">
+    <value>Tidak ada tugas untuk pelajaran ini.</value>
+  </data>
+  <data name="Classroom.OtherAssignments" xml:space="preserve">
+    <value>Tugas lainnya</value>
+  </data>
+  <data name="Classroom.NoPlanYet" xml:space="preserve">
+    <value>Belum ada pelajaran atau tugas.</value>
+  </data>
+  <data name="Classroom.PlanAbove" xml:space="preserve">
+    <value>Rencanakan kursus di atas.</value>
+  </data>
+  <data name="Classroom.NoTeacherPlan" xml:space="preserve">
+    <value>Guru Anda belum merencanakan apa pun.</value>
+  </data>
+  <data name="Classroom.Due" xml:space="preserve">
+    <value>Jatuh tempo</value>
+  </data>
+  <data name="Classroom.StudentsCompleted" xml:space="preserve">
+    <value>{0} dari {1} siswa telah menyelesaikan</value>
+  </data>
+  <data name="Classroom.DoneBest" xml:space="preserve">
+    <value>Selesai — skor terbaik {0}%</value>
+  </data>
+  <data name="Classroom.NotDone" xml:space="preserve">
+    <value>Belum selesai</value>
+  </data>
+  <data name="Classroom.DeleteAssignmentConfirm" xml:space="preserve">
+    <value>Hapus tugas ini?</value>
+  </data>
+  <data name="Speaking.BarMenu" xml:space="preserve">
+    <value>Menu bilah</value>
+  </data>
+  <data name="Speaking.YourWallet" xml:space="preserve">
+    <value>Dompet Anda</value>
+  </data>
+  <data name="Speaking.NoBill" xml:space="preserve">
+    <value>Belum ada tagihan</value>
+  </data>
+  <data name="Speaking.CloseWallet" xml:space="preserve">
+    <value>Tutup dompet</value>
+  </data>
+  <data name="Speaking.Selected" xml:space="preserve">
+    <value>Dipilih</value>
+  </data>
+  <data name="Speaking.SceneActions" xml:space="preserve">
+    <value>Tindakan adegan</value>
+  </data>
+  <data name="Speaking.NextMonth" xml:space="preserve">
+    <value>awal bulan depan</value>
+  </data>
+  <data name="Speaking.PaidPaused" xml:space="preserve">
+    <value>Fitur berbicara berbayar dijeda sampai {0}.</value>
+  </data>
+  <data name="Speaking.SessionReady" xml:space="preserve">
+    <value>Sesi latihan Anda siap.</value>
+  </data>
+  <data name="Speaking.Unavailable" xml:space="preserve">
+    <value>Latihan berbicara tidak tersedia</value>
+  </data>
+  <data name="Speaking.NewSessionConfirm" xml:space="preserve">
+    <value>Mulai sesi baru? Percakapan saat ini akan dihapus.</value>
+  </data>
+  <data name="Speaking.UpdatingQuiz" xml:space="preserve">
+    <value>Memperbarui kuis latihan tutor…</value>
+  </data>
+  <data name="Speaking.PractisingNamed" xml:space="preserve">
+    <value>Berlatih {0}.</value>
+  </data>
+  <data name="Speaking.FreeModeActive" xml:space="preserve">
+    <value>Mode pelajaran gratis aktif.</value>
+  </data>
+  <data name="Speaking.Voice" xml:space="preserve">
+    <value>Suara</value>
+  </data>
+  <data name="Speaking.Typed" xml:space="preserve">
+    <value>Diketik</value>
+  </data>
+  <data name="Speaking.StartBeforeSend" xml:space="preserve">
+    <value>Mulai sesi berbicara sebelum mengirim pesan.</value>
+  </data>
+  <data name="Speaking.AvatarThinking" xml:space="preserve">
+    <value>{0} sedang berpikir…</value>
+  </data>
+  <data name="Speaking.Avatar" xml:space="preserve">
+    <value>Avatar</value>
+  </data>
+  <data name="Speaking.SessionEnded" xml:space="preserve">
+    <value>Sesi berakhir · mulai sesi baru</value>
+  </data>
+  <data name="Speaking.TakingSip" xml:space="preserve">
+    <value>Menyeruput…</value>
+  </data>
+  <data name="Speaking.TakingSnack" xml:space="preserve">
+    <value>Menyantap camilan…</value>
+  </data>
+  <data name="Speaking.AvatarReacting" xml:space="preserve">
+    <value>{0} sedang bereaksi…</value>
+  </data>
+  <data name="Speaking.MomentPassed" xml:space="preserve">
+    <value>Momen itu sudah lewat. Lanjutkan mengobrol atau coba tindakan lain.</value>
+  </data>
+  <data name="Speaking.RecordUnavailable" xml:space="preserve">
+    <value>Browser ini tidak dapat merekam suara di sini. Obrolan teks masih tersedia.</value>
+  </data>
+  <data name="Speaking.Starting" xml:space="preserve">
+    <value>Memulai…</value>
+  </data>
+  <data name="Speaking.MicConnectingAuto" xml:space="preserve">
+    <value>Menghubungkan ke mikrofon. Mulai berbicara saat sudah siap.</value>
+  </data>
+  <data name="Speaking.MicConnectingHold" xml:space="preserve">
+    <value>Menghubungkan ke mikrofon. Tetap tahan tombol.</value>
+  </data>
+  <data name="Speaking.Listening" xml:space="preserve">
+    <value>Mendengarkan…</value>
+  </data>
+  <data name="Speaking.SpeakNaturally" xml:space="preserve">
+    <value>Berbicaralah secara alami. Perekaman akan berhenti saat Anda selesai.</value>
+  </data>
+  <data name="Speaking.ReleaseSend" xml:space="preserve">
+    <value>Lepas untuk mengirim</value>
+  </data>
+  <data name="Speaking.KeepHolding" xml:space="preserve">
+    <value>Tetap tahan saat Anda berbicara. Lepas tombol untuk mengirim.</value>
+  </data>
+  <data name="Speaking.Transcribing" xml:space="preserve">
+    <value>Mentranskripsikan…</value>
+  </data>
+  <data name="Speaking.FinishingTranscript" xml:space="preserve">
+    <value>Menyelesaikan transkripsi Anda…</value>
+  </data>
+  <data name="Speaking.NotCaughtComposer" xml:space="preserve">
+    <value>Azure Speech tidak menangkap itu. Tekan Bicara untuk mengetik dan coba lagi.</value>
+  </data>
+  <data name="Speaking.NotCaughtAvatar" xml:space="preserve">
+    <value>Azure Speech tidak menangkap itu. Tahan tombol merah dan coba lagi.</value>
+  </data>
+  <data name="Speaking.RecordingTooLong" xml:space="preserve">
+    <value>Rekaman itu terlalu panjang. Pendekkan transkrip dan tekan Kirim.</value>
+  </data>
+  <data name="Speaking.TranscriptSending" xml:space="preserve">
+    <value>Transkrip siap. Mengirim…</value>
+  </data>
+  <data name="Speaking.TranscriptReady" xml:space="preserve">
+    <value>Transkrip siap. Tinjau atau edit, lalu tekan Kirim.</value>
+  </data>
+  <data name="Speaking.MicFailed" xml:space="preserve">
+    <value>Akses mikrofon gagal. Obrolan teks masih tersedia.</value>
+  </data>
+  <data name="Speaking.SpeechFinishFailed" xml:space="preserve">
+    <value>Azure Speech tidak dapat menyelesaikan perekaman.</value>
+  </data>
+  <data name="Speaking.Scene.PoursDrink" xml:space="preserve">
+    <value>Marek menuangkan dan menggeser minuman Anda.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSnack" xml:space="preserve">
+    <value>Anda mengambil beberapa paluszki.</value>
+  </data>
+  <data name="Speaking.Scene.OffersSnack" xml:space="preserve">
+    <value>Marek menawarkan paluszki kepada Anda.</value>
+  </data>
+  <data name="Speaking.Scene.ClearsGlass" xml:space="preserve">
+    <value>Marek membereskan gelas kosong.</value>
+  </data>
+  <data name="Speaking.Scene.PolishesGlass" xml:space="preserve">
+    <value>Marek memoles gelas.</value>
+  </data>
+  <data name="Speaking.Scene.WipesCounter" xml:space="preserve">
+    <value>Marek mengelap meja.</value>
+  </data>
+  <data name="Speaking.Scene.LastCall" xml:space="preserve">
+    <value>Panggilan terakhir.</value>
+  </data>
+  <data name="Speaking.Scene.ItemUnavailable" xml:space="preserve">
+    <value>Item itu tidak tersedia.</value>
+  </data>
+  <data name="Speaking.Scene.FinishDrink" xml:space="preserve">
+    <value>Anda menghabiskan minuman.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSip" xml:space="preserve">
+    <value>Anda menyeruput.</value>
+  </data>
+  <data name="Speaking.Scene.PresentsBill" xml:space="preserve">
+    <value>Marek menyerahkan tagihan {0} zł.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentRejected" xml:space="preserve">
+    <value>{0} zł tidak cukup. Tidak ada yang diambil.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentAccepted" xml:space="preserve">
+    <value>Marek menerima {0} zł.</value>
+  </data>
+  <data name="Speaking.Scene.ReturnsChange" xml:space="preserve">
+    <value>Marek mengembalikan kembalian {0} zł.</value>
+  </data>
+  <data name="Reader.ReadingSentence" xml:space="preserve">
+    <value>Membaca halaman {0} · kalimat {1} dari {2}</value>
+  </data>
+  <data name="Reader.ReadingSelectionPart" xml:space="preserve">
+    <value>Membaca pilihan · bagian {0} dari {1}</value>
+  </data>
+  <data name="Reader.ReadingSelection" xml:space="preserve">
+    <value>Membaca teks yang dipilih…</value>
+  </data>
+  <data name="Reader.ReadingPage" xml:space="preserve">
+    <value>Membaca halaman {0}…</value>
+  </data>
+  <data name="Reader.FinishedSelection" xml:space="preserve">
+    <value>Selesai membaca pilihan.</value>
+  </data>
+  <data name="Reader.FinishedPage" xml:space="preserve">
+    <value>Selesai membaca halaman {0}.</value>
+  </data>
+  <data name="Reader.ReadingStopped" xml:space="preserve">
+    <value>Pembacaan dihentikan.</value>
+  </data>
+  <data name="Reader.Detected" xml:space="preserve">
+    <value>Terdeteksi {0}</value>
+  </data>
+  <data name="Reader.DetectedCached" xml:space="preserve">
+    <value>Terdeteksi {0} · cache</value>
+  </data>
+  <data name="Reader.CachedTranslation" xml:space="preserve">
+    <value>Terjemahan cache</value>
+  </data>
+  <data name="Reader.NoSelectableTextPage" xml:space="preserve">
+    <value>Tidak ada teks yang dapat dipilih di halaman ini.</value>
+  </data>
+  <data name="Reader.RenderFailed" xml:space="preserve">
+    <value>Halaman ini tidak dapat dirender.</value>
+  </data>
+  <data name="Reader.PdfLoadFailed" xml:space="preserve">
+    <value>PDF tidak dapat dimuat.</value>
+  </data>
+  <data name="Editor.Heading" xml:space="preserve">
+    <value>Judul</value>
+  </data>
+  <data name="Editor.Instruction" xml:space="preserve">
+    <value>Instruksi</value>
+  </data>
+  <data name="Editor.WordLabel" xml:space="preserve">
+    <value>Label kata</value>
+  </data>
+  <data name="Editor.TranslationLabel" xml:space="preserve">
+    <value>Label terjemahan</value>
+  </data>
+  <data name="Editor.TextInput" xml:space="preserve">
+    <value>Input teks</value>
+  </data>
+  <data name="Editor.LongAnswer" xml:space="preserve">
+    <value>Jawaban panjang</value>
+  </data>
+  <data name="Editor.Checkbox" xml:space="preserve">
+    <value>Kotak centang</value>
+  </data>
+  <data name="Editor.RadioChoices" xml:space="preserve">
+    <value>Pilihan radio</value>
+  </data>
+  <data name="Editor.CheckboxChoices" xml:space="preserve">
+    <value>Pilihan kotak centang</value>
+  </data>
+  <data name="Editor.SelectMenu" xml:space="preserve">
+    <value>Menu pilihan</value>
+  </data>
+  <data name="Editor.WordBank" xml:space="preserve">
+    <value>Bank kata</value>
+  </data>
+  <data name="Editor.SubmitButton" xml:space="preserve">
+    <value>Tombol kirim</value>
+  </data>
+  <data name="Editor.Feedback" xml:space="preserve">
+    <value>Umpan balik</value>
+  </data>
+  <data name="Editor.EmptyCanvas" xml:space="preserve">
+    <value>Seret blok ke mana saja ke kanvas ini untuk memulai.</value>
+  </data>
+  <data name="Editor.MoveLeft" xml:space="preserve">
+    <value>Pindahkan ke kiri</value>
+  </data>
+  <data name="Editor.MoveUp" xml:space="preserve">
+    <value>Pindahkan ke atas</value>
+  </data>
+  <data name="Editor.MoveDown" xml:space="preserve">
+    <value>Pindahkan ke bawah</value>
+  </data>
+  <data name="Editor.MoveRight" xml:space="preserve">
+    <value>Pindahkan ke kanan</value>
+  </data>
+  <data name="Editor.RemoveBlock" xml:space="preserve">
+    <value>Hapus blok</value>
+  </data>
+  <data name="Editor.Resize" xml:space="preserve">
+    <value>Seret untuk mengubah lebar</value>
+  </data>
+  <data name="Editor.Word" xml:space="preserve">
+    <value>Kata</value>
+  </data>
+  <data name="Editor.DisplayField" xml:space="preserve">
+    <value>Bidang tampilan</value>
+  </data>
+  <data name="Editor.Words" xml:space="preserve">
+    <value>Kata</value>
+  </data>
+  <data name="Editor.Options" xml:space="preserve">
+    <value>Opsi</value>
+  </data>
+  <data name="Editor.CorrectOption" xml:space="preserve">
+    <value>Opsi yang benar</value>
+  </data>
+  <data name="Editor.RemoveOption" xml:space="preserve">
+    <value>Hapus opsi</value>
+  </data>
+  <data name="Editor.AddOption" xml:space="preserve">
+    <value>Tambahkan opsi</value>
+  </data>
+  <data name="Editor.Properties" xml:space="preserve">
+    <value>Properti</value>
+  </data>
+  <data name="Editor.SelectBlock" xml:space="preserve">
+    <value>Pilih sebuah blok untuk mengedit konten dan pengikatannya.</value>
+  </data>
+  <data name="Editor.TargetInputs" xml:space="preserve">
+    <value>Input target</value>
+  </data>
+  <data name="Editor.PreviewOnly" xml:space="preserve">
+    <value>Hanya pratinjau — simpan dan mainkan untuk merekam percobaan yang dinilai.</value>
+  </data>
+  <data name="Editor.BackToEditor" xml:space="preserve">
+    <value>Kembali ke editor</value>
+  </data>
+  <data name="Editor.Preview" xml:space="preserve">
+    <value>Pratinjau</value>
+  </data>
+  <data name="Editor.PreviewingOne" xml:space="preserve">
+    <value>Mempratinjau {0} blok.</value>
+  </data>
+  <data name="Editor.PreviewingMany" xml:space="preserve">
+    <value>Mempratinjau {0} blok.</value>
+  </data>
+  <data name="Editor.ReadyOne" xml:space="preserve">
+    <value>Editor siap · {0} blok di kanvas. Gunakan + untuk menambahkan atau seret blok.</value>
+  </data>
+  <data name="Editor.ReadyMany" xml:space="preserve">
+    <value>Editor siap · {0} blok di kanvas. Gunakan + untuk menambahkan atau seret blok.</value>
+  </data>
+  <data name="Editor.ReplaceConfirm" xml:space="preserve">
+    <value>Ganti kanvas saat ini dengan tata letak {0}? Anda dapat membatalkan perubahan ini.</value>
+  </data>
+  <data name="Editor.SaveFailed" xml:space="preserve">
+    <value>Tidak dapat menyimpan kuis kustom ini.</value>
+  </data>
+  <data name="Editor.SavedPlayable" xml:space="preserve">
+    <value>Tersimpan. Kuis ini siap dimainkan.</value>
+  </data>
+  <data name="Editor.DraftSaved" xml:space="preserve">
+    <value>Draf tersimpan. Selesaikan bidang kuis yang diperlukan sebelum bermain.</value>
+  </data>
+  <data name="Editor.SaveStopped" xml:space="preserve">
+    <value>Permintaan penyimpanan berhenti secara tidak terduga. Coba lagi.</value>
+  </data>
+  <data name="Editor.WordLemma" xml:space="preserve">
+    <value>Kata / lema</value>
+  </data>
+  <data name="Editor.Translation" xml:space="preserve">
+    <value>Terjemahan</value>
+  </data>
+  <data name="Editor.Width" xml:space="preserve">
+    <value>Lebar</value>
+  </data>
+  <data name="Editor.Column" xml:space="preserve">
+    <value>Kolom</value>
+  </data>
+  <data name="Editor.ColumnNumber" xml:space="preserve">
+    <value>Kolom {0}</value>
+  </data>
+  <data name="Editor.Row" xml:space="preserve">
+    <value>Baris</value>
+  </data>
+  <data name="Editor.Text" xml:space="preserve">
+    <value>Teks</value>
+  </data>
+  <data name="Editor.LiveBinding" xml:space="preserve">
+    <value>Pengikatan kata langsung</value>
+  </data>
+  <data name="Editor.ExerciseRow" xml:space="preserve">
+    <value>Baris latihan (gunakan {{blank}})</value>
+  </data>
+  <data name="Editor.AccessibleLabel" xml:space="preserve">
+    <value>Label aksesibel</value>
+  </data>
+  <data name="Editor.CustomExpected" xml:space="preserve">
+    <value>Jawaban yang diharapkan kustom</value>
+  </data>
+  <data name="Editor.ExpectedBinding" xml:space="preserve">
+    <value>Pengikatan kata yang diharapkan</value>
+  </data>
+  <data name="Editor.DisplayedWord" xml:space="preserve">
+    <value>Kata yang ditampilkan</value>
+  </data>
+  <data name="Editor.ExpectedChecked" xml:space="preserve">
+    <value>Diharapkan dicentang</value>
+  </data>
+  <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
+    <value>Kuis itu tidak lagi publik.</value>
+  </data>
+  <data name="Explore.CollectionNoLongerPublic" xml:space="preserve">
+    <value>Koleksi itu tidak lagi publik.</value>
+  </data>
+  <data name="Explore.CopiedToLibrary" xml:space="preserve">
+    <value>{0} disalin ke pustaka Anda.</value>
+  </data>
+  <data name="Classroom.InvitationCreated" xml:space="preserve">
+    <value>Undangan dibuat. Undangan tersebut akan muncul di halaman Classroom mereka saat berikutnya mereka berkunjung.</value>
+  </data>
+  <data name="Classroom.JoinCodeRegenerated" xml:space="preserve">
+    <value>Kode gabung dibuat ulang.</value>
+  </data>
+  <data name="Classroom.NoAccessResults" xml:space="preserve">
+    <value>Anda tidak memiliki akses ke hasil tersebut.</value>
+  </data>
+  <data name="Classroom.QuizShared" xml:space="preserve">
+    <value>Kuis dibagikan.</value>
+  </data>
+  <data name="Classroom.BookShared" xml:space="preserve">
+    <value>Buku dibagikan.</value>
+  </data>
+  <data name="Classroom.RemovedFromClassroom" xml:space="preserve">
+    <value>Dihapus dari classroom.</value>
+  </data>
+  <data name="Classroom.QuizCopyFailed" xml:space="preserve">
+    <value>Kuis tersebut tidak dapat disalin.</value>
+  </data>
+  <data name="Classroom.Member" xml:space="preserve">
+    <value>Anggota</value>
+  </data>
+  <data name="Common.Unknown" xml:space="preserve">
+    <value>Tidak diketahui</value>
+  </data>
+  <data name="Account.LogOut" xml:space="preserve">
+    <value>Keluar</value>
+  </data>
+  <data name="Account.LogIn" xml:space="preserve">
+    <value>Masuk</value>
+  </data>
+  <data name="Common.Send" xml:space="preserve">
+    <value>Kirim</value>
+  </data>
+  <data name="Speaking.ConversationLab" xml:space="preserve">
+    <value>{0} conversation lab</value>
+  </data>
+  <data name="Speaking.MessageLabel" xml:space="preserve">
+    <value>Pesan {0} Anda</value>
+  </data>
+  <data name="Speaking.MessagePlaceholder" xml:space="preserve">
+    <value>Tulis dalam {0} atau gunakan mikrofon…</value>
+  </data>
+  <data name="Speaking.MicAria" xml:space="preserve">
+    <value>Mulai transkripsi suara dalam {0}; perekaman berhenti setelah Anda selesai berbicara</value>
+  </data>
+  <data name="Speaking.PrivacyNote" xml:space="preserve">
+    <value>Audio mengalir langsung ke Azure Speech. Percakapan ini hanya disimpan untuk sesi saat ini.</value>
+  </data>
+  <data name="Speaking.ClickTranslate" xml:space="preserve">
+    <value>Klik untuk menerjemahkan</value>
+  </data>
+  <data name="Speaking.ClickShowLanguage" xml:space="preserve">
+    <value>Klik untuk menampilkan {0}</value>
+  </data>
+  <data name="Speaking.CoachFeedback" xml:space="preserve">
+    <value>Umpan balik pelatih</value>
+  </data>
+  <data name="Speaking.MoreNatural" xml:space="preserve">
+    <value>{0} yang lebih alami</value>
+  </data>
+</root>

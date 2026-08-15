@@ -1,6 +1,7 @@
 using Glosify.Data;
 using Glosify.Models;
 using Glosify.Models.Entities;
+using Glosify.Localization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
@@ -31,6 +32,8 @@ public static class AuthenticationExtensions
             // Enables MapIdentityApi (token-based register/login/refresh) for the mobile app,
             // backed by the same user store as the cookie-based web sign-in.
             .AddApiEndpoints();
+
+        services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, DisplayCultureClaimsPrincipalFactory>();
 
         services.ConfigureApplicationCookie(options =>
         {

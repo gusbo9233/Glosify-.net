@@ -1,0 +1,20 @@
+@{
+    var currentCulture = CultureInfo.CurrentUICulture.Name;
+    var returnUrl = $"{Context.Request.PathBase}{Context.Request.Path}{Context.Request.QueryString}";
+}
+<form class="display-language-selector" method="post" asp-controller="DisplayLanguage" asp-action="Set">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="returnUrl" value="@returnUrl" />
+    <label class="visually-hidden" for="display-language-@ViewContext.View.Path.GetHashCode()">@Text["DisplayLanguage.Label"]</label>
+    <span class="material-symbols-outlined" aria-hidden="true">translate</span>
+    <select id="display-language-@ViewContext.View.Path.GetHashCode()" name="culture" data-submit-on-change aria-label="@Text["DisplayLanguage.Label"]">
+        @foreach (var culture in DisplayCultureCatalog.All)
+        {
+            <option value="@culture.Name"
+                    lang="@culture.Name"
+                    dir="@(culture.IsRightToLeft ? "rtl" : "ltr")"
+                    selected="@(currentCulture == culture.Name)">@culture.NativeName</option>
+        }
+    </select>
+    <noscript><button type="submit">@Text["DisplayLanguage.Submit"]</button></noscript>
+</form>

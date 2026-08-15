@@ -1,4 +1,5 @@
 using Glosify.Models.Entities;
+using Glosify.Localization;
 using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -11,6 +12,8 @@ internal sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Ap
     {
         entity.Property(user => user.SelectedQuizLanguageCode)
             .HasMaxLength(QuizLanguageCatalog.StorageCodeMaximumLength);
+        entity.Property(user => user.DisplayCulture)
+            .HasMaxLength(DisplayCultureCatalog.StorageMaximumLength);
         // Names rather than codes, matching Quiz.SourceLanguage/TargetLanguage, and with no
         // check constraint: the selected-language restriction below is about what Glosify
         // teaches, not what a learner already speaks or wants to be answered in.
@@ -22,6 +25,9 @@ internal sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Ap
         entity.ToTable(table => table.HasCheckConstraint(
             "CK_AspNetUsers_SelectedQuizLanguageCode",
             QuizLanguageCatalog.SelectedLanguageCheckConstraintSql));
+        entity.ToTable(table => table.HasCheckConstraint(
+            "CK_AspNetUsers_DisplayCulture",
+            DisplayCultureCatalog.CheckConstraintSql));
 
     }
 }

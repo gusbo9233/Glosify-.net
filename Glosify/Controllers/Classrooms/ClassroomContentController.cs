@@ -33,15 +33,15 @@ public sealed class ClassroomContentController : ClassroomControllerBase
 
     [HttpPost]
     public Task<IActionResult> ShareQuiz(Guid id, Guid quizId, CancellationToken cancellationToken)
-        => RunAndReturnAsync(id, Tab, () => _library.ShareQuizAsync(id, User.GetUserId(), quizId, cancellationToken), "Quiz shared.");
+        => RunAndReturnAsync(id, Tab, () => _library.ShareQuizAsync(id, User.GetUserId(), quizId, cancellationToken), Text["Classroom.QuizShared"]);
 
     [HttpPost]
     public Task<IActionResult> ShareBook(Guid id, Guid bookId, CancellationToken cancellationToken)
-        => RunAndReturnAsync(id, Tab, () => _library.ShareBookAsync(id, User.GetUserId(), bookId, cancellationToken), "Book shared.");
+        => RunAndReturnAsync(id, Tab, () => _library.ShareBookAsync(id, User.GetUserId(), bookId, cancellationToken), Text["Classroom.BookShared"]);
 
     [HttpPost]
     public Task<IActionResult> Unshare(Guid id, Guid contentId, CancellationToken cancellationToken)
-        => RunAndReturnAsync(id, Tab, () => _library.UnshareContentAsync(id, User.GetUserId(), contentId, cancellationToken), "Removed from classroom.");
+        => RunAndReturnAsync(id, Tab, () => _library.UnshareContentAsync(id, User.GetUserId(), contentId, cancellationToken), Text["Classroom.RemovedFromClassroom"]);
 
     [HttpPost]
     public async Task<IActionResult> CopyQuiz(Guid id, Guid quizId, CancellationToken cancellationToken)
@@ -49,11 +49,11 @@ public sealed class ClassroomContentController : ClassroomControllerBase
         var copy = await _quizzes.CopyClassroomQuizAsync(quizId, id, User.GetUserId(), cancellationToken);
         if (copy == null)
         {
-            TempData[NotificationKeys.Classroom] = "That quiz could not be copied.";
+            TempData[NotificationKeys.Classroom] = Text["Classroom.QuizCopyFailed"].Value;
             return BackToClassroom(id, Tab);
         }
 
-        TempData[NotificationKeys.Quiz] = $"Copied {copy.Name} to your library.";
+        TempData[NotificationKeys.Quiz] = Text["Explore.CopiedToLibrary", copy.Name].Value;
         return RedirectToAction("Details", "Quiz", new { id = copy.Id });
     }
 

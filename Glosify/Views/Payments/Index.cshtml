@@ -1,7 +1,7 @@
 @model PaymentIndexViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = "Get credits";
+    ViewData["Title"] = Text["Payments.GetCredits"];
 }
 
 @section Styles {
@@ -10,9 +10,9 @@
 
 <div class="content-page">
     <div class="page-heading">
-        <p class="eyebrow">Glosify credits</p>
-        <h1>Keep your learning loop going.</h1>
-        <p>Credits power Glosify’s AI-assisted learning features and live subtitles.</p>
+        <p class="eyebrow">@Text["Payments.GlosifyCredits"]</p>
+        <h1>@Text["Payments.Hero"]</h1>
+        <p>@Text["Payments.Intro"]</p>
     </div>
 
     @if (TempData["PaymentsMessage"] is string message)
@@ -23,8 +23,8 @@
     @if (!Model.IsEnabled || Model.Packages.Count == 0)
     {
         <section class="empty-state" aria-live="polite">
-            <h2>Payments are not available yet</h2>
-            <p>This Glosify deployment has not been connected to Stripe.</p>
+            <h2>@Text["Payments.NotAvailable"]</h2>
+            <p>@Text["Payments.NotConnected"]</p>
         </section>
     }
     else
@@ -33,21 +33,21 @@
             @foreach (var package in Model.Packages)
             {
                 <article class="surface-card">
-                    <p class="eyebrow">Credit pack</p>
+                    <p class="eyebrow">@Text["Payments.CreditPack"]</p>
                     <h2>@package.DisplayName</h2>
-                    <p class="display-number">@package.Credits credits</p>
+                    <p class="display-number">@Text["Payments.CreditCount", package.Credits]</p>
                     <p>@package.DisplayPrice</p>
                     <form asp-action="CreateCheckoutSession" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="packageKey" value="@package.Key" />
                         <button class="home-button home-button-primary" type="submit">
-                            Continue to secure checkout
+                            @Text["Payments.ContinueCheckout"]
                             <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                         </button>
                     </form>
                 </article>
             }
         </div>
-        <p class="muted-copy">Checkout is hosted by Stripe. Glosify never receives or stores card details.</p>
+        <p class="muted-copy">@Text["Payments.StripeNotice"]</p>
     }
 </div>
