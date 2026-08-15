@@ -18,3 +18,9 @@ test("popup offers mode, optional language hint, target, quiz-language, and tran
   assert.match(markup, /until you delete the transcript or account/);
   assert.doesNotMatch(markup, /id="bilingual"/);
 });
+
+test("quiz language is hidden until transcript saving is enabled", async () => {
+  const markup = await readFile(popupPath, "utf8");
+
+  assert.match(markup, /<div id="quiz-language-group" class="control-group hidden">/);
+});

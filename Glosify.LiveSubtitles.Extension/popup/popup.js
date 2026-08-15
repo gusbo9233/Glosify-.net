@@ -1,4 +1,5 @@
 import { isTranscriptToggleDisabled } from "../lib/transcript-storage.js";
+import { setQuizLanguageVisibility } from "../lib/popup-visibility.js";
 
 const elements = {
   loading: document.querySelector("#loading"),
@@ -9,6 +10,7 @@ const elements = {
   email: document.querySelector("#email"),
   credits: document.querySelector("#credits"),
   quizLanguage: document.querySelector("#quiz-language"),
+  quizLanguageGroup: document.querySelector("#quiz-language-group"),
   language: document.querySelector("#language"),
   translationMode: document.querySelector("#translation-mode"),
   sourceLanguage: document.querySelector("#source-language"),
@@ -166,6 +168,7 @@ function render() {
     ?? quizLanguages[0]?.code
     ?? "";
   elements.quizLanguage.disabled = busy || currentState.active || quizLanguages.length === 0;
+  setQuizLanguageVisibility(elements.quizLanguageGroup, currentState.saveTranscript);
 
   const languages = currentState.catalog?.languages ?? [];
   const signature = languages.map(language => language.code).join(",");
