@@ -163,12 +163,20 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await RegisterAndSelectPolishAsync();
         await Page.GotoAsync("/Quizzes");
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
+        var chatsPane = Page.Locator("[data-assistant-pane='chats']");
+
+        async Task OpenChatsAsync()
+        {
+            await Page.Locator("[data-assistant-tab='chats']").ClickAsync();
+            await Expect(chatsPane).ToBeVisibleAsync();
+        }
+
         // Opening initializes/selects the first chat and finishes by activating the
         // chat pane. Wait for that state before choosing Chats, otherwise a slow SQL
         // test host can switch the pane back while this click is in flight.
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
         await AssertNoPageErrorsAsync();
-        await Page.Locator("[data-assistant-tab='chats']").ClickAsync();
+        await OpenChatsAsync();
         await Expect(Page.Locator("[data-assistant-new-chat]")).ToBeVisibleAsync();
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
 
@@ -178,7 +186,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         // the Chats click below cannot race that second render and replace the row while
         // Playwright is hovering it.
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
-        await Page.Locator("[data-assistant-tab='chats']").ClickAsync();
+        await OpenChatsAsync();
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(2);
 
         async void RenameDialog(object? _, IDialog dialog) => await dialog.AcceptAsync("Employer demo chat");
@@ -190,6 +198,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         Page.Dialog -= RenameDialog;
         await Expect(Page.Locator("[data-assistant-chat-item]").First).ToContainTextAsync("Employer demo chat");
 
+        // Renaming replaces the list rows asynchronously. Reassert the pane before
+        // interacting with the replacement row so a delayed selection transition
+        // cannot leave Playwright targeting a row inside the hidden Chats pane.
+        await OpenChatsAsync();
         async void DeleteDialog(object? _, IDialog dialog) => await dialog.AcceptAsync();
         Page.Dialog += DeleteDialog;
         await Page.Locator("[data-assistant-chat-item]").First.HoverAsync();
@@ -198,7 +210,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             .ClickAsync();
         Page.Dialog -= DeleteDialog;
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
-        await Page.Locator("[data-assistant-tab='chats']").ClickAsync();
+        await OpenChatsAsync();
         await Page.Locator(".assistant-chat-main").ClickAsync();
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
     }
