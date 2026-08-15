@@ -16,6 +16,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
     private readonly IQuizLanguagePreferenceService _languagePreferences;
     private readonly IRealtimeTranslationLanguageCatalog _languageCatalog;
     private readonly RealtimeTranslationOptions _options;
+    private readonly ICreditPricingResolver _pricing;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<RealtimeTranslationService> _logger;
     private readonly IKeyedAsyncLock _keyedLock;
@@ -27,6 +28,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         IQuizLanguagePreferenceService languagePreferences,
         IRealtimeTranslationLanguageCatalog languageCatalog,
         IOptions<RealtimeTranslationOptions> options,
+        ICreditPricingResolver pricing,
         TimeProvider timeProvider,
         ILogger<RealtimeTranslationService> logger,
         IKeyedAsyncLock keyedLock)
@@ -37,6 +39,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         _languagePreferences = languagePreferences;
         _languageCatalog = languageCatalog;
         _options = options.Value;
+        _pricing = pricing;
         _timeProvider = timeProvider;
         _logger = logger;
         _keyedLock = keyedLock;
@@ -60,13 +63,13 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 RealtimeTranslationModes.Scribe,
                 "ElevenLabs Scribe v2",
                 "Scribe v2 speech recognition with Azure translation",
-                _options.ElevenLabs.CreditsPerStartedMinute));
+                _pricing.ScribeSubtitleCreditsPerStartedMinute));
         }
         modes.Add(new RealtimeTranslationMode(
             RealtimeTranslationModes.Enhanced,
             "Enhanced",
             "Best translation quality",
-            _options.CreditsPerStartedMinute));
+            _pricing.EnhancedSubtitleCreditsPerStartedMinute));
         var sourceLanguages = languages
             .Select(language => new RealtimeTranslationSourceLanguage(
                 NormalizeScribeHint(language.Code),
@@ -81,8 +84,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         return new RealtimeTranslationCatalog(
             languages,
             quizLanguages,
-            _options.CreditsPerStartedMinute,
-            _options.SavedTranscriptCreditsPerStartedMinute,
+            _pricing.EnhancedSubtitleCreditsPerStartedMinute,
+            _pricing.EnhancedWithTranscriptCreditsPerStartedMinute,
             _options.SavedSourceTranscriptsEnabled,
             selectedQuizLanguage is null
                 ? null
@@ -240,10 +243,10 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                         ? _options.Deployment
                         : _options.SavedTranscriptBillingModel,
                 CreditsPerStartedMinute = mode == RealtimeTranslationModes.Scribe
-                    ? _options.ElevenLabs.CreditsPerStartedMinute
+                    ? _pricing.ScribeSubtitleCreditsPerStartedMinute
                     : transcript is null
-                        ? _options.CreditsPerStartedMinute
-                        : _options.SavedTranscriptCreditsPerStartedMinute,
+                        ? _pricing.EnhancedSubtitleCreditsPerStartedMinute
+                        : _pricing.EnhancedWithTranscriptCreditsPerStartedMinute,
                 TranscriptId = transcript?.Id,
                 TranscriptConsentAt = transcript is null ? null : now,
                 Status = RealtimeTranslationSessionStatuses.Pending,

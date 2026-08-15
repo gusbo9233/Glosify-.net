@@ -141,6 +141,18 @@ public sealed class ShippedConfigurationTests
     }
 
     [Fact]
+    public void CustomerCreditPricingResolvesEveryActiveService()
+    {
+        using var factory = new WebApplicationFactory<Program>();
+        using var scope = factory.Services.CreateScope();
+        var pricing = scope.ServiceProvider.GetRequiredService<ICreditPricingResolver>();
+
+        Assert.All(pricing.GetCatalog().TokenFeatures, price => Assert.True(price.Value > 0));
+        Assert.All(pricing.GetCatalog().ModelMultipliers, price => Assert.True(price.Value > 0));
+        Assert.All(pricing.GetCatalog().Subtitles, price => Assert.True(price.Value > 0));
+    }
+
+    [Fact]
     public void AssistantModelMetadataCoversTheAllowlist()
     {
         using var factory = new WebApplicationFactory<Program>();

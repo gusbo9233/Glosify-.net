@@ -1,6 +1,7 @@
 using System.Globalization;
 using Glosify.Extensions;
 using Glosify.Models.ViewModels;
+using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Books;
 using Glosify.Services.Language;
@@ -25,6 +26,7 @@ public sealed class AssistantPanelViewComponent : ViewComponent
     private const int TranscriptPageSize = 50;
 
     private readonly IGenerativeAiModelResolver _models;
+    private readonly ICreditPricingResolver _pricing;
     private readonly IQuizService _quizzes;
     private readonly IBookDocumentService _books;
     private readonly IRealtimeTranslationTranscriptService _transcripts;
@@ -33,6 +35,7 @@ public sealed class AssistantPanelViewComponent : ViewComponent
 
     public AssistantPanelViewComponent(
         IGenerativeAiModelResolver models,
+        ICreditPricingResolver pricing,
         IQuizService quizzes,
         IBookDocumentService books,
         IRealtimeTranslationTranscriptService transcripts,
@@ -40,6 +43,7 @@ public sealed class AssistantPanelViewComponent : ViewComponent
         ILogger<AssistantPanelViewComponent> logger)
     {
         _models = models;
+        _pricing = pricing;
         _quizzes = quizzes;
         _books = books;
         _transcripts = transcripts;
@@ -154,6 +158,6 @@ public sealed class AssistantPanelViewComponent : ViewComponent
                 model.Deployment,
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"{model.DisplayName} · {model.Provider} · {model.SpeedTier} · {model.CostTier} · {model.CreditMultiplier:0.##}× credits")))
+                    $"{model.DisplayName} · {model.Provider} · {model.SpeedTier} · {_pricing.GetModelMultiplier(model.Deployment):0.##}× credits")))
             .ToArray();
 }

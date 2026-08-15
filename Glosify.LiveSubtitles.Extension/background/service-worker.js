@@ -349,7 +349,7 @@ async function refreshAccountState() {
       state.targetLanguage = catalog.languages[0]?.code ?? "en";
       await chrome.storage.local.set({ [STORAGE_KEYS.targetLanguage]: state.targetLanguage });
     }
-    const modes = catalog.modes ?? [{ code: "enhanced", creditsPerMinute: catalog.creditsPerMinute ?? 8 }];
+    const modes = catalog.modes ?? [];
     if (!modes.some(mode => mode.code === state.translationMode)) {
       state.translationMode = selectAvailableTranslationMode(modes, state.translationMode);
       state.notice = `Your saved subtitle mode is unavailable; ${modes.find(mode => mode.code === state.translationMode)?.name ?? "an available mode"} is selected.`;
@@ -455,6 +455,10 @@ async function setSaveTranscript(enabled, requestedQuizLanguageCode) {
     state.error = null;
     if (state.sessionId) {
       const requiredCredits = effectiveCreditsPerMinute();
+      if (!Number.isFinite(requiredCredits) || requiredCredits <= 0) {
+        state.saveTranscript = previousValue;
+        throw new Error("Glosify did not return a valid subtitle price.");
+      }
       if (state.availableCredits < requiredCredits) {
         state.saveTranscript = previousValue;
         throw new ApiRequestError(
@@ -524,6 +528,9 @@ async function startSession() {
     throw new Error(saveTranscriptUnavailableMessage());
   }
   const requiredCredits = effectiveCreditsPerMinute();
+  if (!Number.isFinite(requiredCredits) || requiredCredits <= 0) {
+    throw new Error("Glosify did not return a valid subtitle price.");
+  }
   if (state.availableCredits < requiredCredits) {
     throw new ApiRequestError(402, "You do not have enough Glosify credits to start subtitles.");
   }

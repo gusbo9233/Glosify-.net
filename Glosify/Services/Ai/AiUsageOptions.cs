@@ -95,6 +95,11 @@ public sealed class AiUsageOptionsValidator : IValidateOptions<AiUsageOptions>
         var failures = new List<string>();
         var budget = options.MonthlyBudget;
 
+        if (options.CreditsPerThousandTokens <= 0)
+        {
+            failures.Add("AiUsage:CreditsPerThousandTokens must be greater than zero.");
+        }
+
         if (options.PageTranslationOutputTokenReserve <= 0)
         {
             failures.Add("AiUsage:PageTranslationOutputTokenReserve must be greater than zero.");

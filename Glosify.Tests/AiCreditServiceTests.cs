@@ -5,6 +5,7 @@ using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Ai.Llm;
 using Glosify.Services.Auth;
+using Glosify.Services.RealtimeTranslation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -669,18 +670,21 @@ public sealed class AiCreditServiceTests
                 ],
             },
         };
-        var resolver = new GenerativeAiModelResolver(
+        var effectiveUsageOptions = usageOptions ?? CreateUsageOptions(
+            monthlyLimitSek,
+            inputSekPerMillionTokens,
+            outputSekPerMillionTokens,
+            audioSekPerMinute);
+        var pricing = new CreditPricingResolver(
+            Options.Create(new CreditPricingOptions()),
+            Options.Create(effectiveUsageOptions),
             Options.Create(generativeAiOptions),
-            Options.Create(new GeminiOptions()));
+            Options.Create(new RealtimeTranslationOptions()));
         return new AiCreditService(
             context,
             new TestDbContextFactory(context),
-            Options.Create(usageOptions ?? CreateUsageOptions(
-                monthlyLimitSek,
-                inputSekPerMillionTokens,
-                outputSekPerMillionTokens,
-                audioSekPerMinute)),
-            resolver,
+            Options.Create(effectiveUsageOptions),
+            pricing,
             trialEligibility ?? new MutableTrialEligibilityService { IsEligible = true },
             timeProvider ?? new ManualTimeProvider(
                 new DateTimeOffset(2026, 7, 19, 12, 0, 0, TimeSpan.Zero)));

@@ -36,13 +36,20 @@ export function getEffectiveCreditsPerMinute(
   catalog,
   saveTranscript,
   translationMode = "enhanced") {
+  if (!catalog) {
+    return null;
+  }
   if (translationMode === "scribe") {
-    return catalog?.modes?.find(mode => mode.code === translationMode)?.creditsPerMinute
-      ?? (translationMode === "scribe" ? 6 : 4);
+    return positivePrice(catalog.modes?.find(mode => mode.code === translationMode)?.creditsPerMinute);
   }
   return saveTranscript
-    ? catalog?.savedTranscriptCreditsPerMinute ?? 16
-    : catalog?.creditsPerMinute ?? 8;
+    ? positivePrice(catalog.savedTranscriptCreditsPerMinute)
+    : positivePrice(catalog.modes?.find(mode => mode.code === "enhanced")?.creditsPerMinute
+      ?? catalog.creditsPerMinute);
+}
+
+function positivePrice(value) {
+  return Number.isFinite(value) && value > 0 ? value : null;
 }
 
 export function isTranscriptToggleDisabled({ busy, catalog }) {
