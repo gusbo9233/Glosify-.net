@@ -182,6 +182,7 @@ public class QuizController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteSentence(Guid id, CancellationToken cancellationToken = default)
     {
         var deleted = await _wordService.DeleteSentenceAsync(id, User.GetUserId(), cancellationToken);

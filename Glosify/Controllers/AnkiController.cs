@@ -42,6 +42,7 @@ public sealed class AnkiController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateAnkiCollectionForm form, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
@@ -72,6 +73,7 @@ public sealed class AnkiController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Rename(Guid id, string name, CancellationToken cancellationToken)
     {
         try
@@ -87,6 +89,7 @@ public sealed class AnkiController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Settings(Guid id, double desiredRetention, int newCardsPerDay,
         int maximumReviewsPerDay, string timeZoneId, CancellationToken cancellationToken)
     {
@@ -97,6 +100,7 @@ public sealed class AnkiController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         if (!await _collections.DeleteAsync(id, User.GetUserId(), cancellationToken))
@@ -105,6 +109,7 @@ public sealed class AnkiController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddQuiz(AddAnkiQuizForm form, CancellationToken cancellationToken)
     {
         try
@@ -123,6 +128,7 @@ public sealed class AnkiController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateFromQuiz(CreateAnkiFromQuizForm form, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
@@ -145,6 +151,7 @@ public sealed class AnkiController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveQuiz(Guid collectionId, Guid quizId, CancellationToken cancellationToken)
     {
         if (!await _collections.RemoveQuizAsync(collectionId, quizId, User.GetUserId(), cancellationToken))
@@ -153,6 +160,7 @@ public sealed class AnkiController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddItem(AddAnkiItemForm form, string? returnUrl, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return BadRequest();
@@ -172,6 +180,7 @@ public sealed class AnkiController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveCard(Guid id, Guid collectionId, CancellationToken cancellationToken)
     {
         if (!await _collections.RemoveCardAsync(id, User.GetUserId(), cancellationToken))
@@ -193,9 +202,11 @@ public sealed class AnkiController : Controller
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public IActionResult Reveal(Guid id) => RedirectToAction(nameof(Study), new { id, reveal = true });
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Rate(RateAnkiCardForm form, CancellationToken cancellationToken)
     {
         try
