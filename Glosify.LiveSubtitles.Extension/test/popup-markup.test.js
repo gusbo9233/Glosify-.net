@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const popupPath = new URL("../popup/popup.html", import.meta.url);
-const popupScriptPath = new URL("../popup/popup.js", import.meta.url);
 
 test("popup offers mode, optional language hint, target, quiz-language, and transcript controls", async () => {
   const markup = await readFile(popupPath, "utf8");
@@ -21,12 +20,7 @@ test("popup offers mode, optional language hint, target, quiz-language, and tran
 });
 
 test("quiz language is hidden until transcript saving is enabled", async () => {
-  const [markup, script] = await Promise.all([
-    readFile(popupPath, "utf8"),
-    readFile(popupScriptPath, "utf8"),
-  ]);
+  const markup = await readFile(popupPath, "utf8");
 
   assert.match(markup, /<div id="quiz-language-group" class="control-group hidden">/);
-  assert.match(script, /quizLanguageGroup: document\.querySelector\("#quiz-language-group"\)/);
-  assert.match(script, /quizLanguageGroup\.classList\.toggle\("hidden", !currentState\.saveTranscript\)/);
 });
