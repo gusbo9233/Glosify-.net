@@ -2,6 +2,7 @@ using Glosify.Data;
 using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Services.Anki;
+using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
@@ -90,6 +91,79 @@ public sealed class AnkiCollectionServiceTests
         Assert.NotNull(after);
         Assert.Null(after!.Card);
         Assert.Equal(2, await fixture.Context.AnkiCards.CountAsync(card => card.Note.WordId == fixture.Word.Id));
+    }
+
+    [Fact]
+    public async Task SqlServer_rating_persists_review_with_generated_rowversion()
+    {
+        var configuredConnection = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+        if (string.IsNullOrWhiteSpace(configuredConnection))
+            return;
+
+        var connection = new SqlConnectionStringBuilder(configuredConnection)
+        {
+            InitialCatalog = $"glosify-anki-rating-{Guid.NewGuid():N}",
+        };
+        var options = new DbContextOptionsBuilder<GlosifyContext>()
+            .UseSqlServer(connection.ConnectionString)
+            .Options;
+        await using var context = new GlosifyContext(options);
+        try
+        {
+            await context.Database.EnsureCreatedAsync();
+            context.Users.Add(new ApplicationUser
+            {
+                Id = UserId,
+                UserName = "anki@example.test",
+                NormalizedUserName = "ANKI@EXAMPLE.TEST",
+            });
+            var quiz = new Quiz
+            {
+                Id = Guid.NewGuid(),
+                UserId = UserId,
+                Name = "SQL rating",
+                SourceLanguage = "English",
+                TargetLanguage = "Polish",
+                Language = "Polish",
+                ProcessingStatus = "Ready",
+                CreatedAt = Now,
+            };
+            var word = new Word
+            {
+                Id = $"word-{Guid.NewGuid():N}",
+                QuizId = quiz.Id,
+                Lemma = "dom",
+                Translation = "house",
+                CreatedAt = Now,
+            };
+            context.AddRange(quiz, word);
+            await context.SaveChangesAsync();
+
+            var clock = new FakeTimeProvider(Now);
+            var collections = new AnkiCollectionService(context, clock);
+            var study = new AnkiStudyService(context, collections, new Fsrs6AnkiScheduler(), clock);
+            var collection = await collections.CreateAsync(new("SQL", "English", "Polish", "UTC"), UserId);
+            Assert.True(await collections.AddItemAsync(
+                new(collection.Id, quiz.Id, "word", word.Id, true, false), UserId));
+
+            var card = (await study.GetNextAsync(collection.Id, UserId))!.Card!;
+            Assert.NotEmpty(card.RowVersion);
+            // MVC resolves each request with a fresh scoped DbContext. Clear the setup/read
+            // graph so the rating path exercises SQL Server exactly as the POST request does.
+            context.ChangeTracker.Clear();
+            Assert.True(await study.RateAsync(new(
+                collection.Id,
+                card.CardId,
+                AnkiRatings.Good,
+                Guid.NewGuid(),
+                card.RowVersion,
+                250), UserId));
+            Assert.Single(await context.AnkiReviews.ToListAsync());
+        }
+        finally
+        {
+            await context.Database.EnsureDeletedAsync();
+        }
     }
 
     [Fact]

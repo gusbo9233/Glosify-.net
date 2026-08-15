@@ -27,9 +27,19 @@
 
     const startedAt = performance.now();
     const ratingForm = document.querySelector('[data-anki-rating-form]');
-    ratingForm?.addEventListener('submit', () => {
+    ratingForm?.addEventListener('submit', event => {
         const duration = ratingForm.querySelector('[data-study-duration]');
         if (duration) duration.value = Math.round(performance.now() - startedAt);
+        // Disabled submit buttons are not successful form controls. Preserve the chosen
+        // grade before locking the buttons so MVC always receives Rating.
+        const submittedRating = event.submitter?.value;
+        if (submittedRating) {
+            const rating = document.createElement('input');
+            rating.type = 'hidden';
+            rating.name = 'Rating';
+            rating.value = submittedRating;
+            ratingForm.appendChild(rating);
+        }
         ratingForm.querySelectorAll('button').forEach(button => button.disabled = true);
     });
     document.addEventListener('keydown', event => {

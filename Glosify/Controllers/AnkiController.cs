@@ -209,6 +209,11 @@ public sealed class AnkiController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Rate(RateAnkiCardForm form, CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid)
+        {
+            TempData["AnkiMessage"] = "Choose Again, Hard, Good, or Easy to rate the card.";
+            return RedirectToAction(nameof(Study), new { id = form.CollectionId });
+        }
         try
         {
             await _study.RateAsync(new(form.CollectionId, form.CardId, form.Rating,
