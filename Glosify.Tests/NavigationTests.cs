@@ -135,6 +135,7 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
             csp);
         Assert.Contains("https://accounts.google.com", csp);
         Assert.Contains("https://login.microsoftonline.com", csp);
+        Assert.Contains("https://checkout.stripe.com", csp);
     }
 
     [Fact]
