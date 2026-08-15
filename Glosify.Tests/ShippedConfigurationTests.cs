@@ -28,9 +28,12 @@ public sealed class ShippedConfigurationTests
         Assert.Equal("https://www.glosify.se", stripe.PublicBaseUrl);
         Assert.Collection(
             stripe.CreditPackages,
-            package => AssertPackage(package, "starter", 500, "price_1U4J8dISaVlY8AHns1cfq0mI", 5900),
-            package => AssertPackage(package, "standard", 1000, "price_1U4J8rISaVlY8AHnIK7euJCd", 10900),
-            package => AssertPackage(package, "value", 5000, "price_1U4J8uISaVlY8AHnN0SZZauF", 52900));
+            package => AssertPackage(
+                package, "starter", "500 credits", 500, "price_1U4J8dISaVlY8AHns1cfq0mI", 5900),
+            package => AssertPackage(
+                package, "standard", "1,000 credits", 1000, "price_1U4J8rISaVlY8AHnIK7euJCd", 10900),
+            package => AssertPackage(
+                package, "value", "5,000 credits", 5000, "price_1U4J8uISaVlY8AHnN0SZZauF", 52900));
     }
 
     [Fact]
@@ -159,11 +162,13 @@ public sealed class ShippedConfigurationTests
     private static void AssertPackage(
         StripeCreditPackageOptions package,
         string key,
+        string displayName,
         int credits,
         string priceId,
         long unitAmountMinor)
     {
         Assert.Equal(key, package.Key);
+        Assert.Equal(displayName, package.DisplayName);
         Assert.Equal(credits, package.Credits);
         Assert.Equal(priceId, package.PriceId);
         Assert.Equal(unitAmountMinor, package.UnitAmountMinor);
