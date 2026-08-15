@@ -131,7 +131,6 @@ through stable, named App Service settings:
 
 ```text
 CreditPricing__TokenFeatures__assistant=1
-CreditPricing__TokenFeatures__repair=1
 CreditPricing__TokenFeatures__image_extraction=1
 CreditPricing__TokenFeatures__speaking=1
 CreditPricing__TokenFeatures__page_translation=1
@@ -164,7 +163,6 @@ az webapp config appsettings set \
   --name glosify-app \
   --settings \
     CreditPricing__TokenFeatures__assistant=1 \
-    CreditPricing__TokenFeatures__repair=1 \
     CreditPricing__TokenFeatures__image_extraction=1 \
     CreditPricing__TokenFeatures__speaking=1 \
     CreditPricing__TokenFeatures__page_translation=1 \
