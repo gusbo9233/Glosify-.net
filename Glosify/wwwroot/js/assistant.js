@@ -737,11 +737,8 @@ import {
         card.className = 'assistant-pending-card';
         card.dataset.assistantPendingCard = '';
         card.dataset.messageId = message.id;
-        const isSentenceFix = message.pendingChanges.every(change => change.kind === 'repair_sentence');
         const isLibraryChange = message.pendingChanges.every(change => change.kind === 'create_quiz' || change.kind === 'create_collection');
-        const headingText = isSentenceFix
-            ? 'Review sentence fixes'
-            : isLibraryChange
+        const headingText = isLibraryChange
                 ? 'Review library changes'
                 : 'Review proposed changes';
 

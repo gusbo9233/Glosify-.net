@@ -4,6 +4,7 @@ using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Services;
 using Glosify.Services.CustomQuizzes;
+using Glosify.Services.Anki;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Words;
@@ -11,10 +12,12 @@ namespace Glosify.Services.Words;
 public class WordService : IWordService
 {
     private readonly GlosifyContext _context;
+    private readonly IAnkiCollectionService? _ankiCollections;
 
-    public WordService(GlosifyContext context)
+    public WordService(GlosifyContext context, IAnkiCollectionService? ankiCollections = null)
     {
         _context = context;
+        _ankiCollections = ankiCollections;
     }
 
     public async Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId, CancellationToken cancellationToken = default)
@@ -181,6 +184,7 @@ public class WordService : IWordService
         });
 
         await _context.SaveChangesAsync(cancellationToken);
+        if (_ankiCollections is not null) await _ankiCollections.SyncQuizAsync(quizId, cancellationToken);
         return true;
     }
 
@@ -202,8 +206,21 @@ public class WordService : IWordService
         await new CustomQuizService(_context).PruneWordBindingsAsync(word.QuizId, [word.Id], cancellationToken);
         _context.Words.Remove(word);
         await _context.SaveChangesAsync(cancellationToken);
+        if (_ankiCollections is not null) await _ankiCollections.SyncQuizAsync(word.QuizId, cancellationToken);
 
         return word;
+    }
+
+    public async Task<QuizSentence?> DeleteSentenceAsync(Guid sentenceId, string userId, CancellationToken cancellationToken = default)
+    {
+        var sentence = await _context.QuizSentences.SingleOrDefaultAsync(item => item.Id == sentenceId, cancellationToken);
+        if (sentence is null || !await _context.Quizzes.AnyAsync(
+                quiz => quiz.Id == sentence.QuizId && quiz.UserId == userId, cancellationToken))
+            return null;
+        _context.QuizSentences.Remove(sentence);
+        await _context.SaveChangesAsync(cancellationToken);
+        if (_ankiCollections is not null) await _ankiCollections.SyncQuizAsync(sentence.QuizId, cancellationToken);
+        return sentence;
     }
 
     public async Task<bool> WordExistsAsync(Guid quizId, string word, CancellationToken cancellationToken = default)

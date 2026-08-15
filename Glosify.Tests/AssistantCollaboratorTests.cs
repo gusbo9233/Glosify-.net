@@ -165,7 +165,7 @@ public sealed class AssistantCollaboratorTests
             new[]
             {
                 "325A0F9D8F33F0D86B1F17914A1A2A029F089D2FB13FE6D9C648EBED8D9178BD",
-                "DE6B95D7285605BD058CD67BC473A3BBDF2FF219E14548BCCAAFD110BC3615C9",
+                "A67677730145A6FC34EE0AF4D19BEEA3096D93C883D6C300B02780C80E56EB77",
                 // Every instruction that carries a selected book changed with
                 // search_book_pages and the search strategy that followed it: the book
                 // block now tells the model to search in the book's own language, to read

@@ -48,7 +48,6 @@ public sealed class FoundryLiveSmokeTests
             Options.Create(options),
             Options.Create(new AiUsageOptions
             {
-                RepairOutputTokenReserve = 512,
                 ImageExtractionOutputTokenReserve = 512,
                 AssistantOutputTokenReserve = 512,
             }),
@@ -69,15 +68,6 @@ public sealed class FoundryLiveSmokeTests
         meterListener.SetMeasurementEventCallback<long>((_, measurement, _, _) =>
             telemetryRequests += measurement);
         meterListener.Start();
-
-        var repaired = await client.GenerateStructuredAsync<RepairWordResult>(
-            """
-            Repair this vocabulary record and return the same id and quiz_id:
-            {"word":{"id":"w1","word":"dmo","translation":"house","quiz_id":"q1"}}
-            """,
-            Usage(AiUsageFeatures.Repair, "live_repair"));
-        Assert.Equal("w1", repaired.Word.Id);
-        Assert.False(string.IsNullOrWhiteSpace(repaired.Word.Word));
 
         var extracted = await client.ExtractTextFromImageAsync(
             Convert.FromBase64String(OcrFixtureBase64),

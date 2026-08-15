@@ -50,7 +50,6 @@ internal static class AssistantToolSurfaces
         typeof(EditSentenceTool),
         typeof(EditSentencesTool),
         typeof(DeleteWordTool),
-        typeof(RepairSentenceTool),
         typeof(DeleteSentenceTool),
     ];
 
@@ -108,7 +107,6 @@ internal static class AssistantToolSurfaces
         typeof(EditSentenceTool),
         typeof(EditSentencesTool),
         typeof(DeleteWordTool),
-        typeof(RepairSentenceTool),
         typeof(DeleteSentenceTool),
         // Creating another standard quiz from inside a selected one used to be impossible:
         // only the custom builder was reachable here, so "make me another quiz" had nowhere

@@ -17,6 +17,20 @@ namespace Glosify.Tests;
 public sealed class AssistantToolSurfaceRegressionTests
 {
     [Fact]
+    public void Published_quiz_assistant_v5_has_no_repair_tool_or_instruction()
+    {
+        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+            "../../../../.foundry/agents/glosify-quiz-assistant-v5.json"));
+        var json = File.ReadAllText(path);
+        Assert.DoesNotContain("repair_sentence", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("repair", json, StringComparison.OrdinalIgnoreCase);
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        Assert.Equal("5", document.RootElement.GetProperty("version").GetString());
+        Assert.Equal("active", document.RootElement.GetProperty("status").GetString());
+        Assert.False(document.RootElement.GetProperty("draft").GetBoolean());
+    }
+
+    [Fact]
     public void Quiz_page_surface_is_unchanged() =>
         AssertSurface(
         [
@@ -34,7 +48,6 @@ public sealed class AssistantToolSurfaceRegressionTests
             "edit_sentence",
             "edit_sentences",
             "delete_word",
-            "repair_sentence",
             "delete_sentence",
             // Standard creation is reachable from a selected quiz as of the intent-routing
             // change: "create another normal quiz" had no path but create_custom_quiz before.
@@ -170,7 +183,6 @@ public sealed class AssistantToolSurfaceRegressionTests
             "edit_sentence",
             "edit_sentences",
             "delete_word",
-            "repair_sentence",
             "delete_sentence",
         ],
             tools => tools.Declarations);

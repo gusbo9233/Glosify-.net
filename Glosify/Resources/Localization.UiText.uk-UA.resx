@@ -906,12 +906,6 @@
   <data name="Client.DeleteQuizFailed" xml:space="preserve">
     <value>Не вдалося видалити власну вікторину. Спробуйте ще раз.</value>
   </data>
-  <data name="Client.RepairFailed" xml:space="preserve">
-    <value>Не вдалося виправити. Спробуйте ще раз.</value>
-  </data>
-  <data name="Client.RepairStopped" xml:space="preserve">
-    <value>Запит на виправлення несподівано зупинився. Спробуйте ще раз.</value>
-  </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>Видалити чат</value>
   </data>
@@ -1719,12 +1713,6 @@
   <data name="Quiz.OpenWiktionary" xml:space="preserve">
     <value>Відкрити {0} у Wiktionary</value>
   </data>
-  <data name="Quiz.RepairWord" xml:space="preserve">
-    <value>Виправити слово</value>
-  </data>
-  <data name="Quiz.RepairNamed" xml:space="preserve">
-    <value>Виправити {0}</value>
-  </data>
   <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
     <value>Видалити це слово?</value>
   </data>
@@ -1733,9 +1721,6 @@
   </data>
   <data name="Quiz.LinkedWords" xml:space="preserve">
     <value>{0} пов’язані {1}</value>
-  </data>
-  <data name="Quiz.Repair" xml:space="preserve">
-    <value>Виправити</value>
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>Поки що немає речень. Попросіть помічника додати речення або витягнути їх із тексту.</value>

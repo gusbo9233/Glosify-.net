@@ -11,7 +11,7 @@ internal sealed class ListSentencesTool : IAssistantTool
 {
     private static readonly AgentToolDeclaration DeclarationValue = new(
         "list_sentences",
-        "List the standalone quiz sentences in the current quiz with text, translation, and id. Use this before repairing or deleting sentences; repair_sentence must match the existing sentence text exactly. Returns up to 200 sentences per call; when has_more is true, call again with the next offset.",
+        "List the standalone quiz sentences in the current quiz with text, translation, and id. Use this before editing or deleting sentences. Returns up to 200 sentences per call; when has_more is true, call again with the next offset.",
         BuildSchema(new Dictionary<string, object>
         {
             ["offset"] = new Dictionary<string, object>

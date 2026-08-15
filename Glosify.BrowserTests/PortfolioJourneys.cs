@@ -127,6 +127,39 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
     [Fact]
     [Trait("Category", "Browser")]
+    public async Task CreateLinkStudyAndInspectAnkiCollection()
+    {
+        if (BaseUrl is null) return;
+
+        await RegisterAndSelectPolishAsync();
+        await CreateQuizWithWordAsync();
+        await Page.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("Start Quiz", RegexOptions.IgnoreCase) }).ClickAsync();
+
+        var createForm = Page.Locator("form[action*='CreateFromQuiz']");
+        await createForm.Locator("input[name='Name']").FillAsync("Portfolio Anki");
+        await createForm.GetByRole(AriaRole.Button, new() { Name = "Create and link" }).ClickAsync();
+        await Expect(Page).ToHaveURLAsync(new Regex("/Anki/Collection", RegexOptions.IgnoreCase));
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Portfolio Anki", Exact = true }).First).ToBeVisibleAsync();
+        await Expect(Page.GetByText("Portfolio Polish", new() { Exact = true }).First).ToBeVisibleAsync();
+
+        // Adding the already-linked word individually is intentionally idempotent and
+        // preserves the same durable card while recording both inclusion sources.
+        await Page.Locator(".anki-item-picker form").First.GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true }).ClickAsync();
+        await Page.GetByRole(AriaRole.Link, new() { Name = "Start session" }).ClickAsync();
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Show answer" }).ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "dom", Exact = true })).ToBeVisibleAsync();
+        await Page.Keyboard.PressAsync("3");
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You’re done for now" })).ToBeVisibleAsync();
+
+        await Page.GetByRole(AriaRole.Link, new() { Name = "Back to collections" }).ClickAsync();
+        await Page.GetByRole(AriaRole.Link, new() { Name = "Portfolio Anki" }).ClickAsync();
+        await Expect(Page.GetByText("Studied today").Locator("..")).ToContainTextAsync("1");
+        await Expect(Page.GetByText("30-day retention").Locator("..")).ToContainTextAsync("100%");
+        await AssertNoPageErrorsAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Browser")]
     public async Task CreateSaveAndPlayCustomQuiz()
     {
         if (BaseUrl is null) return;

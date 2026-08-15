@@ -18,7 +18,32 @@
     var targetLanguage = QuizLanguageDisplay.Name(Model.SelectedQuiz?.TargetLanguage) ?? Text["Settings.Target"];
 }
 
-
+@if (Model.SelectedQuiz is not null)
+{
+    <section class="settings-shell anki-settings-panel">
+        <header class="settings-header"><span class="config-badge">Tracked flashcards</span><h2 class="section-title">Add this quiz to Anki</h2><p class="page-subtitle">Link the whole quiz to a compatible collection. New quiz content will stay synchronized.</p></header>
+        @if (Model.AnkiCollections.Count > 0)
+        {
+            <form method="post" asp-controller="Anki" asp-action="AddQuiz" class="anki-settings-form">
+                @Html.AntiForgeryToken()<input type="hidden" name="QuizId" value="@Model.SelectedQuiz.Id"/>
+                <label>Collection<select class="form-input" name="CollectionId">@foreach (var collection in Model.AnkiCollections) { <option value="@collection.Id">@collection.Name</option> }</select></label>
+                <fieldset><legend>Words</legend><label><input type="checkbox" name="WordsSourceToTarget" value="true" checked/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="WordsTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset>
+                <fieldset><legend>Sentences</legend><label><input type="checkbox" name="SentencesSourceToTarget" value="true"/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="SentencesTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset>
+                <button class="btn-secondary" type="submit">Link quiz</button>
+            </form>
+        }
+        <details class="anki-create-inline">
+            <summary>Create a new compatible collection</summary>
+            <form method="post" asp-controller="Anki" asp-action="CreateFromQuiz" class="anki-settings-form">
+                @Html.AntiForgeryToken()<input type="hidden" name="QuizId" value="@Model.SelectedQuiz.Id"/><input type="hidden" name="TimeZoneId" value="UTC" data-browser-timezone/>
+                <label>Name<input class="form-input" name="Name" required maxlength="160"/></label>
+                <fieldset><legend>Words</legend><label><input type="checkbox" name="WordsSourceToTarget" value="true" checked/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="WordsTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset>
+                <fieldset><legend>Sentences</legend><label><input type="checkbox" name="SentencesSourceToTarget" value="true"/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="SentencesTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset>
+                <button class="btn-secondary" type="submit">Create and link</button>
+            </form>
+        </details>
+    </section>
+}
 
 <form class="settings-shell" method="post" asp-controller="Quiz" asp-action="Start">
     @Html.AntiForgeryToken()
@@ -227,6 +252,11 @@
     </div>
 </form>
 
+<style>
+    .anki-settings-panel{margin-bottom:1.25rem}.anki-settings-form{display:grid;grid-template-columns:minmax(180px,1fr) 1fr 1fr auto;gap:1rem;align-items:end}.anki-settings-form fieldset{display:grid;gap:.35rem;border:1px solid var(--border-color,#ddd);border-radius:10px}.anki-create-inline{margin-top:1rem}.anki-create-inline summary{cursor:pointer;font-weight:600}.anki-create-inline form{margin-top:1rem}@@media(max-width:900px){.anki-settings-form{grid-template-columns:1fr}}
+</style>
+
 @section Scripts {
 <script src="~/js/quiz-settings.js" asp-append-version="true"></script>
+<script>document.querySelectorAll('[data-browser-timezone]').forEach(input => input.value = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');</script>
 }

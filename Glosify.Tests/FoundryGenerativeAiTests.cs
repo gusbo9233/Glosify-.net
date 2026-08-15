@@ -243,7 +243,7 @@ public sealed class FoundryGenerativeAiTests
     {
         var invoker = new FakeInvoker
         {
-            StructuredJson = """{"value":"repaired"}""",
+            StructuredJson = """{"value":"generated"}""",
             StructuredUsage = new UsageDetails
             {
                 InputTokenCount = 20,
@@ -255,10 +255,10 @@ public sealed class FoundryGenerativeAiTests
         var client = CreateClient(invoker, credits);
 
         var result = await client.GenerateStructuredAsync<StructuredFixture>(
-            "Repair this.",
-            Usage(AiUsageFeatures.Repair));
+            "Generate this.",
+            Usage(AiUsageFeatures.Assistant));
 
-        Assert.Equal("repaired", result.Value);
+        Assert.Equal("generated", result.Value);
         Assert.Equal(
             new AiTokenUsage(20, 5, 0, 0, 25),
             Assert.Single(credits.Commits).Usage);
@@ -351,8 +351,8 @@ public sealed class FoundryGenerativeAiTests
 
         await Assert.ThrowsAsync<GenerativeAiStructuredOutputException>(() =>
             client.GenerateStructuredAsync<StructuredFixture>(
-                "Repair this.",
-                Usage(AiUsageFeatures.Repair)));
+                "Generate this.",
+                Usage(AiUsageFeatures.Assistant)));
 
         Assert.Empty(credits.Commits);
         Assert.Equal(13, Assert.Single(credits.IndependentCommits).Usage.TotalTokens);
@@ -368,8 +368,8 @@ public sealed class FoundryGenerativeAiTests
 
         var exception = await Assert.ThrowsAsync<GenerativeAiStructuredOutputException>(() =>
             client.GenerateStructuredAsync<StructuredFixture>(
-                "Repair this.",
-                Usage(AiUsageFeatures.Repair)));
+                "Generate this.",
+                Usage(AiUsageFeatures.Assistant)));
 
         Assert.Equal("The AI service could not produce a valid structured response.", exception.Message);
         Assert.Single(credits.IndependentCommits);
@@ -390,8 +390,8 @@ public sealed class FoundryGenerativeAiTests
 
         await Assert.ThrowsAsync<GenerativeAiStructuredOutputException>(() =>
             client.GenerateStructuredAsync<StructuredFixture>(
-                "Repair this.",
-                Usage(AiUsageFeatures.Repair)));
+                "Generate this.",
+                Usage(AiUsageFeatures.Assistant)));
 
         Assert.Empty(credits.Commits);
         Assert.Equal(7, Assert.Single(credits.IndependentCommits).Usage.TotalTokens);
@@ -1089,7 +1089,6 @@ public sealed class FoundryGenerativeAiTests
             Options.Create(new AiUsageOptions
             {
                 AssistantOutputTokenReserve = 50,
-                RepairOutputTokenReserve = 40,
                 ImageExtractionOutputTokenReserve = 30,
                 PageTranslationOutputTokenReserve = 40,
             }),

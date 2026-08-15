@@ -906,12 +906,6 @@
   <data name="Client.DeleteQuizFailed" xml:space="preserve">
     <value>Không thể xóa câu đố tùy chỉnh. Hãy thử lại.</value>
   </data>
-  <data name="Client.RepairFailed" xml:space="preserve">
-    <value>Sửa chữa không thành công. Vui lòng thử lại.</value>
-  </data>
-  <data name="Client.RepairStopped" xml:space="preserve">
-    <value>Yêu cầu sửa chữa đã dừng đột ngột. Vui lòng thử lại.</value>
-  </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>Xóa cuộc trò chuyện</value>
   </data>
@@ -1719,12 +1713,6 @@
   <data name="Quiz.OpenWiktionary" xml:space="preserve">
     <value>Mở {0} trên Wiktionary</value>
   </data>
-  <data name="Quiz.RepairWord" xml:space="preserve">
-    <value>Sửa từ</value>
-  </data>
-  <data name="Quiz.RepairNamed" xml:space="preserve">
-    <value>Sửa {0}</value>
-  </data>
   <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
     <value>Xoá từ này?</value>
   </data>
@@ -1733,9 +1721,6 @@
   </data>
   <data name="Quiz.LinkedWords" xml:space="preserve">
     <value>{0} từ được liên kết {1}</value>
-  </data>
-  <data name="Quiz.Repair" xml:space="preserve">
-    <value>Sửa</value>
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>Chưa có câu nào. Hãy yêu cầu trợ lý thêm câu hoặc trích xuất chúng từ văn bản.</value>

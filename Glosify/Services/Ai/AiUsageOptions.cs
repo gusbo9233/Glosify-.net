@@ -7,7 +7,6 @@ public sealed class AiUsageOptions
     public int TrialGrantCredits { get; set; } = 25;
     public int CreditsPerThousandTokens { get; set; } = 1;
     public int AssistantOutputTokenReserve { get; set; } = 16384;
-    public int RepairOutputTokenReserve { get; set; } = 1024;
     public int ImageExtractionOutputTokenReserve { get; set; } = 1024;
     public int SpeakingOutputTokenReserve { get; set; } = 768;
     public int PageTranslationOutputTokenReserve { get; set; } = 4096;
@@ -18,7 +17,6 @@ public sealed class AiUsageOptions
         return feature switch
         {
             AiUsageFeatures.Assistant => AssistantOutputTokenReserve,
-            AiUsageFeatures.Repair => RepairOutputTokenReserve,
             AiUsageFeatures.ImageExtraction => ImageExtractionOutputTokenReserve,
             AiUsageFeatures.Speaking => SpeakingOutputTokenReserve,
             AiUsageFeatures.PageTranslation => PageTranslationOutputTokenReserve,
@@ -70,7 +68,7 @@ public sealed class AiMonthlyBudgetOptions
 /// </summary>
 public static class AiUsageProviders
 {
-    /// <summary>Generative AI through Microsoft Foundry (assistant, repair, vision, translation).</summary>
+    /// <summary>Generative AI through Microsoft Foundry (assistant, vision, translation).</summary>
     public const string Foundry = "foundry";
 
     /// <summary>Speaking practice through Microsoft Foundry.</summary>
@@ -187,7 +185,6 @@ public sealed class AiUsageOptionsValidator : IValidateOptions<AiUsageOptions>
 public static class AiUsageFeatures
 {
     public const string Assistant = "assistant";
-    public const string Repair = "repair";
     public const string ImageExtraction = "image_extraction";
     public const string Speaking = "speaking";
     public const string PageTranslation = "page_translation";

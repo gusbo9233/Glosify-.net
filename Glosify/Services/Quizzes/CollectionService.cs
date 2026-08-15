@@ -2,6 +2,7 @@ using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.CustomQuizzes;
 using Microsoft.EntityFrameworkCore;
+using Glosify.Services.Anki;
 
 namespace Glosify.Services.Quizzes;
 
@@ -9,11 +10,13 @@ public class CollectionService : ICollectionService
 {
     private readonly GlosifyContext _context;
     private readonly CollectionVisibility _collectionVisibility;
+    private readonly IAnkiCollectionService? _ankiCollections;
 
-    public CollectionService(GlosifyContext context)
+    public CollectionService(GlosifyContext context, IAnkiCollectionService? ankiCollections = null)
     {
         _context = context;
         _collectionVisibility = new CollectionVisibility(context);
+        _ankiCollections = ankiCollections;
     }
 
     public async Task<IReadOnlyList<Collection>> GetCollectionsAsync(string userId, string language, CancellationToken cancellationToken = default)
@@ -220,6 +223,8 @@ public class CollectionService : ICollectionService
         if (quizzes.Count > 0)
         {
             var quizIds = quizzes.Select(q => q.Id).ToList();
+            if (_ankiCollections is not null)
+                foreach (var quizId in quizIds) await _ankiCollections.RetireQuizAsync(quizId, cancellationToken);
 
             var words = await _context.Words
                 .Where(word => quizIds.Contains(word.QuizId))
@@ -464,11 +469,6 @@ public class CollectionService : ICollectionService
                 SourceLanguage = source.SourceLanguage,
                 TargetLanguage = source.TargetLanguage,
                 Language = source.Language,
-                AnkiTrackingEnabled = source.AnkiTrackingEnabled,
-                AnkiTrackWordsForward = source.AnkiTrackWordsForward,
-                AnkiTrackWordsReverse = source.AnkiTrackWordsReverse,
-                AnkiTrackSentencesForward = source.AnkiTrackSentencesForward,
-                AnkiTrackSentencesReverse = source.AnkiTrackSentencesReverse,
                 IsPublic = false,
                 OriginalQuizId = source.Id
             });

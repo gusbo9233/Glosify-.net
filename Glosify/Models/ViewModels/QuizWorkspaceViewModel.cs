@@ -1,4 +1,5 @@
 using Glosify.Models.CustomQuizzes;
+using Glosify.Services.Anki;
 namespace Glosify.Models.ViewModels;
 
 public class QuizIndexViewModel
@@ -16,10 +17,12 @@ public class QuizWorkspaceViewModel
     public IReadOnlyList<WordRow> Words { get; set; } = [];
     public IReadOnlyList<QuizSentenceViewModel> Sentences { get; set; } = [];
     public IReadOnlyList<CustomQuizSummaryDto> CustomQuizzes { get; set; } = [];
+    public IReadOnlyList<AnkiCollectionSummary> AnkiCollections { get; set; } = [];
 }
 
 public class QuizSentenceViewModel
 {
+    public Guid Id { get; set; }
     public string Text { get; set; } = string.Empty;
     public string Translation { get; set; } = string.Empty;
     public int WordCount { get; set; }
@@ -59,6 +62,7 @@ public class QuizSettingsViewModel
     public int AvailableSentenceCount { get; set; }
     public int SelectedWordCount { get; set; }
     public IReadOnlyList<WordRow> Words { get; set; } = [];
+    public IReadOnlyList<AnkiCollectionSummary> AnkiCollections { get; set; } = [];
 }
 
 public class FlashcardQuizViewModel

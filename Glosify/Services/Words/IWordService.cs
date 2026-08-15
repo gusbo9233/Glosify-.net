@@ -12,6 +12,7 @@ public interface IWordService
     Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId, CancellationToken cancellationToken = default);
     Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage, CancellationToken cancellationToken = default);
     Task<Word?> DeleteWordAsync(string wordId, string userId, CancellationToken cancellationToken = default);
+    Task<QuizSentence?> DeleteSentenceAsync(Guid sentenceId, string userId, CancellationToken cancellationToken = default);
     Task<bool> WordExistsAsync(Guid quizId, string word, CancellationToken cancellationToken = default);
 }
 

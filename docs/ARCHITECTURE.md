@@ -239,7 +239,7 @@ and, where relevant, its own background service:
 
 | Slice | Contents of note |
 |---|---|
-| `Quizzes/` | `QuizService`, `CollectionService`, `QuizAttemptService`, `QuizRepairService`, `QuizSessionRegistry` (in-memory) |
+| `Quizzes/` | `QuizService`, `CollectionService`, `QuizAttemptService`, `QuizSessionRegistry` (in-memory) |
 | `Words/`, `Flashcards/`, `Typing/` | The practice modes over the same word/sentence data |
 | `CustomQuizzes/` | Element-based custom quiz model + template catalog |
 | `Ai/` | Credit ledger, provider abstraction (`Generation/`, `Llm/`), `Assistant/` (tools, MCP, orchestration) |
@@ -708,7 +708,7 @@ identity — changing direction genuinely starts a different session.
 
 ```mermaid
 flowchart LR
-    Callers["Vocabulary generation<br/>Image text extraction<br/>Quiz repair<br/>Assistant<br/>Page translation"] --> I["IGenerativeAiClient"]
+    Callers["Vocabulary generation<br/>Image text extraction<br/>Assistant<br/>Page translation"] --> I["IGenerativeAiClient"]
     I --> F["FoundryGenerativeAiClient"]
     I -. "rollback switch" .-> G["GeminiGenerativeAiClient"]
     F --> Inv["IFoundryAgentInvoker (singleton, caches agents)"]

@@ -52,6 +52,11 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<ClassroomMessage> ClassroomMessages { get; set; }
     public DbSet<QuizAttempt> QuizAttempts { get; set; }
     public DbSet<QuizAttemptItem> QuizAttemptItems { get; set; }
+    public DbSet<AnkiCollection> AnkiCollections { get; set; }
+    public DbSet<AnkiQuizLink> AnkiQuizLinks { get; set; }
+    public DbSet<AnkiNote> AnkiNotes { get; set; }
+    public DbSet<AnkiCard> AnkiCards { get; set; }
+    public DbSet<AnkiReview> AnkiReviews { get; set; }
     public DbSet<CustomQuiz> CustomQuizzes { get; set; }
     public DbSet<AcsUserIdentity> AcsUserIdentities { get; set; }
     public DbSet<ClassroomLesson> ClassroomLessons { get; set; }
@@ -66,5 +71,11 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
         // existing schema — newer Identity package defaults would otherwise scaffold
         // unrelated widening changes.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(GlosifyContext).Assembly);
+        // SQLite has no generated rowversion type. Keep its relational test model
+        // insertable; SQL Server retains the required, database-generated token.
+        if (Database.ProviderName?.Contains("Sqlite", StringComparison.Ordinal) == true)
+        {
+            modelBuilder.Entity<AnkiCard>().Property(card => card.RowVersion).IsRequired(false);
+        }
     }
 }

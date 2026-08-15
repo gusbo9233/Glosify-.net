@@ -39,11 +39,6 @@ public sealed record SentenceDto(Guid Id, string Text, string Translation, int W
 
 public sealed record SetVisibilityRequest(bool IsPublic);
 
-public sealed record RepairSentenceRequest(
-    [param: Required, StringLength(4000)] string Text);
-
-public sealed record RepairResultDto(string Message);
-
 public sealed record ExtractedTextDto(string Text);
 
 public sealed record CreateQuizRequest(

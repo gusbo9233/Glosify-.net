@@ -232,6 +232,331 @@ namespace Glosify.Migrations
                     b.ToTable("AiMonthlyBudgets");
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiCard", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AnkiNoteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("BuriedUntil")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<double>("Difficulty")
+                        .HasColumnType("float");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<bool>("DirectlyIncluded")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("DueAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("ExcludedFromQuizLink")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LapseCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("LastReviewedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("LearningStep")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("QuizLinkIncluded")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ReviewCount")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("ScheduledDays")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Stability")
+                        .HasColumnType("float");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnkiNoteId", "Direction")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive", "State", "DueAt");
+
+                    b.ToTable("AnkiCards");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiCollection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DefaultDirection")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<double>("DesiredRetention")
+                        .HasColumnType("float");
+
+                    b.Property<int>("MaximumReviewsPerDay")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<int>("NewCardsPerDay")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceLanguage")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("TargetLanguage")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Name");
+
+                    b.HasIndex("UserId", "SourceLanguage", "TargetLanguage");
+
+                    b.ToTable("AnkiCollections");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AnkiCollectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ItemType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<Guid>("QuizId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SentenceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SourceText")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("TargetText")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("WordId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuizId");
+
+                    b.HasIndex("AnkiCollectionId", "SentenceId")
+                        .IsUnique()
+                        .HasFilter("[SentenceId] IS NOT NULL");
+
+                    b.HasIndex("AnkiCollectionId", "WordId")
+                        .IsUnique()
+                        .HasFilter("[WordId] IS NOT NULL");
+
+                    b.ToTable("AnkiNotes", t =>
+                        {
+                            t.HasCheckConstraint("CK_AnkiNotes_OneSource", "([WordId] IS NOT NULL AND [SentenceId] IS NULL) OR ([WordId] IS NULL AND [SentenceId] IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiQuizLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AnkiCollectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("QuizId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("SentencesSourceToTarget")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SentencesTargetToSource")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("WordsSourceToTarget")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("WordsTargetToSource")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuizId");
+
+                    b.HasIndex("AnkiCollectionId", "QuizId")
+                        .IsUnique();
+
+                    b.ToTable("AnkiQuizLinks");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AnkiCardId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AnkiCollectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<Guid>("ClientToken")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("DurationMilliseconds")
+                        .HasColumnType("int");
+
+                    b.Property<double>("ElapsedDays")
+                        .HasColumnType("float");
+
+                    b.Property<double>("NewDifficulty")
+                        .HasColumnType("float");
+
+                    b.Property<DateTimeOffset>("NewDueAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<double>("NewStability")
+                        .HasColumnType("float");
+
+                    b.Property<string>("NewState")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<double>("PreviousDifficulty")
+                        .HasColumnType("float");
+
+                    b.Property<DateTimeOffset?>("PreviousDueAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<double>("PreviousStability")
+                        .HasColumnType("float");
+
+                    b.Property<string>("PreviousState")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<string>("Prompt")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Rating")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<double>("Retrievability")
+                        .HasColumnType("float");
+
+                    b.Property<DateTimeOffset>("ReviewedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("ScheduledDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SchedulerVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AnkiCardId");
+
+                    b.HasIndex("ClientToken")
+                        .IsUnique();
+
+                    b.HasIndex("AnkiCollectionId", "ReviewedAt");
+
+                    b.ToTable("AnkiReviews");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -1401,21 +1726,6 @@ namespace Glosify.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("AnkiTrackSentencesForward")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AnkiTrackSentencesReverse")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AnkiTrackWordsForward")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AnkiTrackWordsReverse")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AnkiTrackingEnabled")
-                        .HasColumnType("bit");
-
                     b.Property<Guid?>("CollectionId")
                         .HasColumnType("uniqueidentifier");
 
@@ -2302,6 +2612,75 @@ namespace Glosify.Migrations
                         .HasConstraintName("FK_AiCreditTransactions_AspNetUsers_UserId");
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiCard", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.AnkiNote", "Note")
+                        .WithMany("Cards")
+                        .HasForeignKey("AnkiNoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Note");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiCollection", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiNote", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.AnkiCollection", "Collection")
+                        .WithMany("Notes")
+                        .HasForeignKey("AnkiCollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiQuizLink", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.AnkiCollection", "Collection")
+                        .WithMany("QuizLinks")
+                        .HasForeignKey("AnkiCollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Glosify.Models.Entities.Quiz", "Quiz")
+                        .WithMany()
+                        .HasForeignKey("QuizId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("Quiz");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiReview", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.AnkiCard", "Card")
+                        .WithMany("Reviews")
+                        .HasForeignKey("AnkiCardId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Glosify.Models.Entities.AnkiCollection", "Collection")
+                        .WithMany("Reviews")
+                        .HasForeignKey("AnkiCollectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Card");
+
+                    b.Navigation("Collection");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.AssistantFeedback", b =>
                 {
                     b.HasOne("Glosify.Models.Entities.AssistantTurn", null)
@@ -2809,6 +3188,25 @@ namespace Glosify.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiCard", b =>
+                {
+                    b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiCollection", b =>
+                {
+                    b.Navigation("Notes");
+
+                    b.Navigation("QuizLinks");
+
+                    b.Navigation("Reviews");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AnkiNote", b =>
+                {
+                    b.Navigation("Cards");
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.AssistantFeedback", b =>
