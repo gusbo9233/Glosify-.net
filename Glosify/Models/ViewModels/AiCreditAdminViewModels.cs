@@ -1,3 +1,5 @@
+using Glosify.Services.Ai;
+
 namespace Glosify.Models.ViewModels;
 
 public sealed class AiCreditAdminViewModel
@@ -6,6 +8,8 @@ public sealed class AiCreditAdminViewModel
     public IReadOnlyList<AiCreditUserRow> Users { get; set; } = [];
     public AiCreditUserRow? SelectedUser { get; set; }
     public IReadOnlyList<AiCreditTransactionRow> RecentTransactions { get; set; } = [];
+    public EffectiveCreditPricingCatalog Pricing { get; set; } =
+        new([], [], []);
     public AiCreditGrantInput Grant { get; set; } = new();
 }
 

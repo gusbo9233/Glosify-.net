@@ -123,6 +123,63 @@ must also be `300` unless a separately reviewed change intentionally alters the
 ceiling. The application fails startup when an enabled provider cannot be
 priced by the budget configuration.
 
+### Customer credit pricing
+
+Customer charges are independent from the provider-cost estimates in
+`AiUsage:MonthlyBudget`. Production should define the effective customer prices
+through stable, named App Service settings:
+
+```text
+CreditPricing__TokenFeatures__assistant=1
+CreditPricing__TokenFeatures__repair=1
+CreditPricing__TokenFeatures__image_extraction=1
+CreditPricing__TokenFeatures__speaking=1
+CreditPricing__TokenFeatures__page_translation=1
+CreditPricing__DefaultModelMultiplier=1
+CreditPricing__ModelMultipliers__gpt-5.6-luna=1
+CreditPricing__ModelMultipliers__grok-4.3=0.6
+CreditPricing__ModelMultipliers__DeepSeek-V4-Flash=0.3
+CreditPricing__Subtitles__EnhancedCreditsPerStartedMinute=8
+CreditPricing__Subtitles__ScribeCreditsPerStartedMinute=4
+CreditPricing__Subtitles__EnhancedWithTranscriptCreditsPerStartedMinute=16
+```
+
+Token-feature rates and model multipliers may be positive decimals. The final
+integer debit is `ceil(ceil(tokens / 1000) × feature rate × model multiplier)`.
+All configured customer prices must be greater than zero; invalid values fail
+application startup. Existing `AiUsage:CreditsPerThousandTokens`, assistant
+model multipliers, and realtime subtitle rates remain fallbacks when the
+corresponding `CreditPricing` value is absent.
+
+Apply the reviewed production catalog with one idempotent App Service update:
+
+```bash
+az webapp config appsettings set \
+  --resource-group glosify \
+  --name glosify-app \
+  --settings \
+    CreditPricing__TokenFeatures__assistant=1 \
+    CreditPricing__TokenFeatures__repair=1 \
+    CreditPricing__TokenFeatures__image_extraction=1 \
+    CreditPricing__TokenFeatures__speaking=1 \
+    CreditPricing__TokenFeatures__page_translation=1 \
+    CreditPricing__DefaultModelMultiplier=1 \
+    CreditPricing__ModelMultipliers__gpt-5.6-luna=1 \
+    CreditPricing__ModelMultipliers__grok-4.3=0.6 \
+    CreditPricing__ModelMultipliers__DeepSeek-V4-Flash=0.3 \
+    CreditPricing__Subtitles__EnhancedCreditsPerStartedMinute=8 \
+    CreditPricing__Subtitles__ScribeCreditsPerStartedMinute=4 \
+    CreditPricing__Subtitles__EnhancedWithTranscriptCreditsPerStartedMinute=16 \
+  --output none
+```
+
+App Service restarts the application after a settings update. New token
+reservations and new subtitle sessions use the new prices. Existing token
+reservations and active subtitle sessions retain the amounts reserved or
+persisted when they started. An administrator can verify the effective values
+and whether each came from `CreditPricing` or a legacy fallback on the AI
+credits admin page.
+
 The Gemini provider is only a rollback seam. Do not set
 `GenerativeAi__Provider=Gemini` unless all Gemini models have configured budget
 prices, `gemini` is included in the budgeted providers, and the Gemini

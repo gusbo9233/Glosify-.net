@@ -1,6 +1,5 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
-using Glosify.Services.Ai.Generation;
 using Glosify.Services.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
@@ -15,7 +14,7 @@ public sealed class AiCreditService : IAiCreditService
     private readonly GlosifyContext _context;
     private readonly IDbContextFactory<GlosifyContext> _contextFactory;
     private readonly AiUsageOptions _options;
-    private readonly IGenerativeAiModelResolver _modelResolver;
+    private readonly ICreditPricingResolver _pricing;
     private readonly ITrialEligibilityService _trialEligibility;
     private readonly TimeProvider _timeProvider;
     private readonly TimeZoneInfo _budgetTimeZone;
@@ -24,14 +23,14 @@ public sealed class AiCreditService : IAiCreditService
         GlosifyContext context,
         IDbContextFactory<GlosifyContext> contextFactory,
         IOptions<AiUsageOptions> options,
-        IGenerativeAiModelResolver modelResolver,
+        ICreditPricingResolver pricing,
         ITrialEligibilityService trialEligibility,
         TimeProvider? timeProvider = null)
     {
         _context = context;
         _contextFactory = contextFactory;
         _options = options.Value;
-        _modelResolver = modelResolver;
+        _pricing = pricing;
         _trialEligibility = trialEligibility;
         _timeProvider = timeProvider ?? TimeProvider.System;
         _budgetTimeZone = _options.MonthlyBudget.Enabled
@@ -82,7 +81,10 @@ public sealed class AiCreditService : IAiCreditService
         var account = await GetOrCreateAccountEntityAsync(usageContext.UserId, cancellationToken);
         await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
 
-        var requiredCredits = CalculateCredits(estimatedTokens, model);
+        var requiredCredits = _pricing.CalculateTokenCredits(
+            estimatedTokens,
+            usageContext.Feature,
+            model);
         if (account.AvailableCredits < requiredCredits)
         {
             throw new InsufficientAiCreditsException(account.AvailableCredits, requiredCredits);
@@ -142,7 +144,10 @@ public sealed class AiCreditService : IAiCreditService
         }
 
         var account = await GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
-        var debitCredits = CalculateCredits(usage.TotalTokens, reservation.Model ?? string.Empty);
+        var debitCredits = _pricing.CalculateTokenCredits(
+            usage.TotalTokens,
+            reservation.Feature ?? string.Empty,
+            reservation.Model ?? string.Empty);
         var releaseCredits = Math.Max(0, reservation.CreditAmount - debitCredits);
         var budgetCharge = await CommitMonthlyBudgetAsync(
             reservation,
@@ -212,7 +217,7 @@ public sealed class AiCreditService : IAiCreditService
             isolatedContext,
             _contextFactory,
             Options.Create(_options),
-            _modelResolver,
+            _pricing,
             _trialEligibility,
             _timeProvider);
         await isolatedService.CommitUsageAsync(reservationId, usage, cancellationToken);
@@ -1106,21 +1111,6 @@ public sealed class AiCreditService : IAiCreditService
 
     private static long ToMicros(decimal micros) =>
         checked((long)decimal.Ceiling(micros));
-
-    private int CalculateCredits(int totalTokens, string model)
-    {
-        if (totalTokens <= 0)
-        {
-            return 0;
-        }
-
-        var baseCredits =
-            (decimal)Math.Ceiling(totalTokens / 1000.0)
-            * Math.Max(1, _options.CreditsPerThousandTokens);
-        var configuredMultiplier = _modelResolver.GetCreditMultiplier(model);
-        var multiplier = configuredMultiplier > 0 ? configuredMultiplier : 1m;
-        return Math.Max(1, (int)Math.Ceiling(baseCredits * multiplier));
-    }
 
     private static AiCreditAccountView Map(AiCreditAccount account)
     {

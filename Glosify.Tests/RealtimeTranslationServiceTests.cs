@@ -108,6 +108,38 @@ public sealed class RealtimeTranslationServiceTests
     }
 
     [Fact]
+    public async Task UnifiedPricing_OverridesCatalogSessionAndPersistedMinuteRate()
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var service = CreateService(
+            context,
+            new ManualTimeProvider(TestNow),
+            new FakeRelayTokenStore(),
+            pricingOptions: new CreditPricingOptions
+            {
+                Subtitles = new SubtitleCreditPricingOptions
+                {
+                    EnhancedCreditsPerStartedMinute = 7,
+                    ScribeCreditsPerStartedMinute = 4,
+                    EnhancedWithTranscriptCreditsPerStartedMinute = 12,
+                },
+            });
+
+        var catalog = await service.GetCatalogAsync("user-1");
+        Assert.Equal(4, catalog.Modes.Single(mode => mode.Code == RealtimeTranslationModes.Scribe).CreditsPerMinute);
+        Assert.Equal(7, catalog.Modes.Single(mode => mode.Code == RealtimeTranslationModes.Enhanced).CreditsPerMinute);
+        Assert.Equal(12, catalog.SavedTranscriptCreditsPerMinute);
+
+        var created = await service.CreateSessionAsync(
+            "user-1",
+            "es",
+            translationMode: RealtimeTranslationModes.Scribe);
+        Assert.Equal(4, created.CreditsPerMinute);
+        Assert.Equal(4, (await context.RealtimeTranslationSessions.SingleAsync()).CreditsPerStartedMinute);
+    }
+
+    [Fact]
     public async Task EnhancedSavedTranscript_UsesScribeWithOptionalLanguageHint()
     {
         await using var context = CreateContext();
@@ -458,7 +490,8 @@ public sealed class RealtimeTranslationServiceTests
         GlosifyContext context,
         TimeProvider timeProvider,
         IRealtimeTranslationRelayTokenStore relayTokens,
-        Action<RealtimeTranslationOptions>? configure = null)
+        Action<RealtimeTranslationOptions>? configure = null,
+        CreditPricingOptions? pricingOptions = null)
     {
         var generativeOptions = new GenerativeAiOptions
         {
@@ -480,18 +513,21 @@ public sealed class RealtimeTranslationServiceTests
                 ],
             },
         };
-        var resolver = new GenerativeAiModelResolver(
+        var usageOptions = new AiUsageOptions
+        {
+            TrialGrantCredits = 25,
+            MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
+        };
+        var creditPricing = new CreditPricingResolver(
+            Options.Create(new CreditPricingOptions()),
+            Options.Create(usageOptions),
             Options.Create(generativeOptions),
-            Options.Create(new GeminiOptions()));
+            Options.Create(new RealtimeTranslationOptions()));
         var credits = new AiCreditService(
             context,
             new TestDbContextFactory(context),
-            Options.Create(new AiUsageOptions
-            {
-                TrialGrantCredits = 25,
-                MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
-            }),
-            resolver,
+            Options.Create(usageOptions),
+            creditPricing,
             new AlwaysEligibleTrialService(),
             timeProvider);
         var realtimeOptions = new RealtimeTranslationOptions
@@ -520,6 +556,11 @@ public sealed class RealtimeTranslationServiceTests
             ],
         };
         configure?.Invoke(realtimeOptions);
+        var realtimePricing = new CreditPricingResolver(
+            Options.Create(pricingOptions ?? new CreditPricingOptions()),
+            Options.Create(usageOptions),
+            Options.Create(generativeOptions),
+            Options.Create(realtimeOptions));
         return new RealtimeTranslationService(
             context,
             credits,
@@ -527,6 +568,7 @@ public sealed class RealtimeTranslationServiceTests
             new QuizLanguagePreferenceService(context),
             new StaticRealtimeTranslationLanguageCatalog(realtimeOptions),
             Options.Create(realtimeOptions),
+            realtimePricing,
             timeProvider,
             NullLogger<RealtimeTranslationService>.Instance,
             new ReferenceCountedKeyedAsyncLock());

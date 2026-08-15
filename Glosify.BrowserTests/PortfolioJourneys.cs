@@ -344,13 +344,13 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         var modelSelector = Page.Locator("[data-assistant-model-select]");
         await Expect(modelSelector.Locator("option")).ToHaveCountAsync(4);
         await Expect(modelSelector.Locator("option[value='']"))
-            .ToContainTextAsync("Auto · GPT-5.6 Luna · OpenAI · Balanced · Cost ≈1× · 1× credits");
+            .ToContainTextAsync("Auto · GPT-5.6 Luna · OpenAI · Balanced · 1× credits");
         await Expect(modelSelector.Locator("option[value='gpt-5.6-luna']"))
-            .ToContainTextAsync("Cost ≈1× · 1× credits");
+            .ToContainTextAsync("Balanced · 1× credits");
         await Expect(modelSelector.Locator("option[value='grok-4.3']"))
-            .ToContainTextAsync("Cost ≈0.6× · 0.6× credits");
+            .ToContainTextAsync("Thoughtful · 0.6× credits");
         await Expect(modelSelector.Locator("option[value='DeepSeek-V4-Flash']"))
-            .ToContainTextAsync("Economy · Cost ≈0.3× · 0.3× credits");
+            .ToContainTextAsync("Economy · 0.3× credits");
         await Page.Locator("[data-assistant-textarea]").FillAsync("Create a travel quiz");
         await Page.Locator("[data-assistant-submit]").ClickAsync();
         await Expect(Page.Locator("[data-assistant-pending-card]")).ToBeVisibleAsync();

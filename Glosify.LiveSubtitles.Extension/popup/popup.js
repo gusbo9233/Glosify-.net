@@ -1,4 +1,4 @@
-import { isTranscriptToggleDisabled } from "../lib/transcript-storage.js";
+import { getEffectiveCreditsPerMinute, isTranscriptToggleDisabled } from "../lib/transcript-storage.js";
 import { setQuizLanguageVisibility } from "../lib/popup-visibility.js";
 
 const elements = {
@@ -54,12 +54,10 @@ elements.saveTranscript.addEventListener("change", () => {
     quizLanguageCode: elements.quizLanguage.value,
   }, true, {
     saveTranscript: enabled,
-    effectiveCreditsPerMinute: currentState?.translationMode === "scribe"
-      ? catalog?.modes?.find(mode => mode.code === currentState?.translationMode)?.creditsPerMinute
-        ?? (currentState?.translationMode === "scribe" ? 6 : 4)
-      : enabled
-        ? catalog?.savedTranscriptCreditsPerMinute ?? 16
-        : catalog?.creditsPerMinute ?? 8,
+    effectiveCreditsPerMinute: getEffectiveCreditsPerMinute(
+      catalog,
+      enabled,
+      currentState?.translationMode),
   });
 });
 elements.viewTranscripts.addEventListener("click", () => run("popup:open-transcripts", {}, false));
@@ -114,11 +112,12 @@ function render() {
 
   elements.email.textContent = currentState.email ?? "Glosify account";
   elements.credits.textContent = String(currentState.availableCredits ?? 0);
-  const price = currentState.effectiveCreditsPerMinute ?? currentState.catalog?.creditsPerMinute ?? 8;
-  elements.price.textContent = `${price} credits/min`;
+  const price = currentState.effectiveCreditsPerMinute;
+  elements.price.textContent = Number.isFinite(price)
+    ? `${price} credits/min`
+    : "Price unavailable";
 
-  const modes = currentState.catalog?.modes
-    ?? [{ code: "enhanced", name: "Enhanced", description: "Best translation quality", creditsPerMinute: 8 }];
+  const modes = currentState.catalog?.modes ?? [];
   const modeSignature = modes.map(mode => `${mode.code}:${mode.creditsPerMinute}`).join(",");
   if (elements.translationMode.dataset.signature !== modeSignature) {
     elements.translationMode.replaceChildren(...modes.map(mode => {
@@ -200,6 +199,8 @@ function render() {
   const canStart = !busy
     && !currentState.active
     && currentState.catalog
+    && Number.isFinite(price)
+    && price > 0
     && currentState.paidServicesAvailable !== false
     && languages.length > 0
     && (!usesScribe || sourceLanguages.some(language => language.code === currentState.sourceLanguage))

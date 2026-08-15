@@ -19,6 +19,53 @@
         <div class="page-message">@adminMessage</div>
     }
 
+    <section class="admin-credit-panel admin-pricing-panel" aria-labelledby="creditPricingHeading">
+        <div class="library-section-header">
+            <div>
+                <h2 id="creditPricingHeading">Effective customer pricing</h2>
+                <p class="select-subtitle">Read-only values resolved from App Service configuration and legacy fallbacks.</p>
+            </div>
+        </div>
+        <div class="admin-pricing-grid">
+            <div>
+                <h3>Token features</h3>
+                <table class="admin-credit-table">
+                    <thead><tr><th>Service</th><th>Rate</th><th>Source</th></tr></thead>
+                    <tbody>
+                    @foreach (var price in Model.Pricing.TokenFeatures)
+                    {
+                        <tr><td>@price.Name</td><td>@price.Value.ToString("0.##") @price.Unit</td><td>@price.Source</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h3>Model multipliers</h3>
+                <table class="admin-credit-table">
+                    <thead><tr><th>Model</th><th>Rate</th><th>Source</th></tr></thead>
+                    <tbody>
+                    @foreach (var price in Model.Pricing.ModelMultipliers)
+                    {
+                        <tr><td>@price.Name</td><td>@price.Value.ToString("0.##")×</td><td>@price.Source</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h3>Live subtitles</h3>
+                <table class="admin-credit-table">
+                    <thead><tr><th>Service</th><th>Rate</th><th>Source</th></tr></thead>
+                    <tbody>
+                    @foreach (var price in Model.Pricing.Subtitles)
+                    {
+                        <tr><td>@price.Name</td><td>@price.Value.ToString("0.##") @price.Unit</td><td>@price.Source</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
     <form class="admin-credit-search" method="get" asp-controller="Admin" asp-action="AiCredits">
         <input class="form-input" type="search" name="search" value="@Model.Search" placeholder="Search users by email" />
         <button class="btn-new-quiz" type="submit">

@@ -66,6 +66,11 @@ public static class ApplicationServiceExtensions
             .Bind(configuration.GetSection("AiUsage"))
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<AiUsageOptions>, AiUsageOptionsValidator>();
+        services.AddOptions<CreditPricingOptions>()
+            .Bind(configuration.GetSection(CreditPricingOptions.SectionName))
+            .ValidateOnStart();
+        services.AddSingleton<IValidateOptions<CreditPricingOptions>, CreditPricingOptionsValidator>();
+        services.AddSingleton<ICreditPricingResolver, CreditPricingResolver>();
         services.AddOptions<StripeOptions>()
             .Bind(configuration.GetSection(StripeOptions.SectionName))
             .ValidateOnStart();

@@ -16,13 +16,16 @@ public sealed class AdminController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAiCreditService _credits;
+    private readonly ICreditPricingResolver _pricing;
 
     public AdminController(
         UserManager<ApplicationUser> userManager,
-        IAiCreditService credits)
+        IAiCreditService credits,
+        ICreditPricingResolver pricing)
     {
         _userManager = userManager;
         _credits = credits;
+        _pricing = pricing;
     }
 
     [HttpGet]
@@ -57,6 +60,7 @@ public sealed class AdminController : Controller
             Users = rows,
             SelectedUser = selected,
             RecentTransactions = transactions.Select(AiCreditTransactionRow.From).ToList(),
+            Pricing = _pricing.GetCatalog(),
             Grant = new AiCreditGrantInput
             {
                 UserId = selected?.UserId ?? string.Empty,

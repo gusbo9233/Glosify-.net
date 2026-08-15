@@ -239,6 +239,21 @@ body {
     min-width: 0;
 }
 
+.admin-pricing-panel {
+    margin-bottom: 22px;
+}
+
+.admin-pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.admin-pricing-grid h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+}
+
 .admin-credit-user-list {
     display: grid;
     gap: 8px;
@@ -333,6 +348,7 @@ body {
 
 @media (max-width: 900px) {
     .admin-credit-grid,
+    .admin-pricing-grid,
     .admin-credit-summary {
         grid-template-columns: 1fr;
     }

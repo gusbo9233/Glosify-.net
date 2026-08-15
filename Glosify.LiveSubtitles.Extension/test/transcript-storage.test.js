@@ -73,6 +73,15 @@ test("source saving switches the displayed and preflight rate to sixteen credits
   }, true, "scribe"), 6);
 });
 
+test("missing or invalid catalog prices never fall back to hardcoded charges", () => {
+  assert.equal(getEffectiveCreditsPerMinute(null, false), null);
+  assert.equal(getEffectiveCreditsPerMinute({}, false), null);
+  assert.equal(getEffectiveCreditsPerMinute({ creditsPerMinute: 0 }, false), null);
+  assert.equal(getEffectiveCreditsPerMinute({
+    modes: [{ code: "scribe", creditsPerMinute: -1 }],
+  }, false, "scribe"), null);
+});
+
 test("enhanced sessions omit speech-recognition-only fields", () => {
   assert.deepEqual(buildTranscriptSessionRequest({
     targetLanguage: "sv",
