@@ -1,5 +1,6 @@
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Payments;
 using Glosify.Services.RealtimeTranslation;
 using Glosify.Services.Speaking;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -17,6 +18,21 @@ namespace Glosify.Tests;
 /// </summary>
 public sealed class ShippedConfigurationTests
 {
+    [Fact]
+    public void StripeCatalogShipsWithTheLivePackageMappings()
+    {
+        using var factory = new WebApplicationFactory<Program>();
+        var stripe = factory.Services.GetRequiredService<IOptions<StripeOptions>>().Value;
+
+        Assert.False(stripe.Enabled);
+        Assert.Equal("https://www.glosify.se", stripe.PublicBaseUrl);
+        Assert.Collection(
+            stripe.CreditPackages,
+            package => AssertPackage(package, "starter", 500, "price_1U4J8dISaVlY8AHns1cfq0mI", 5900),
+            package => AssertPackage(package, "standard", 1000, "price_1U4J8rISaVlY8AHnIK7euJCd", 10900),
+            package => AssertPackage(package, "value", 5000, "price_1U4J8uISaVlY8AHnN0SZZauF", 52900));
+    }
+
     [Fact]
     public void EveryMeteredDeploymentIsPriced()
     {
@@ -138,5 +154,19 @@ public sealed class ShippedConfigurationTests
                 model.Deployment,
                 resolver.DefaultAssistantModel,
                 StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void AssertPackage(
+        StripeCreditPackageOptions package,
+        string key,
+        int credits,
+        string priceId,
+        long unitAmountMinor)
+    {
+        Assert.Equal(key, package.Key);
+        Assert.Equal(credits, package.Credits);
+        Assert.Equal(priceId, package.PriceId);
+        Assert.Equal(unitAmountMinor, package.UnitAmountMinor);
+        Assert.Equal("sek", package.Currency);
     }
 }

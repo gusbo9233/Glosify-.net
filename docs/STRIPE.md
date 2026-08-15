@@ -34,21 +34,20 @@ Stripe Tax and registrations accordingly.
 
 ## Configuration
 
-The checked-in defaults keep payments disabled. For a test deployment, configure
-the equivalent of:
+The checked-in defaults keep payments disabled, but ship the nonsecret production
+URL and live package catalog. A deployment only needs to provide the
+environment-specific enable flag and secrets:
 
 ```text
 Stripe__Enabled=true
-Stripe__PublicBaseUrl=https://glosify.se
 Stripe__SecretKey=rk_test_...
 Stripe__WebhookSecret=whsec_...
-Stripe__CreditPackages__0__Key=starter
-Stripe__CreditPackages__0__DisplayName=Starter
-Stripe__CreditPackages__0__Credits=100
-Stripe__CreditPackages__0__PriceId=price_...
-Stripe__CreditPackages__0__UnitAmountMinor=5900
-Stripe__CreditPackages__0__Currency=sek
 ```
+
+Override `Stripe__PublicBaseUrl` and `Stripe__CreditPackages__...` only for a
+separate test or staging catalog. Keeping the live nonsecret mappings in shipped
+configuration prevents an App Service settings edit from silently removing the
+purchase catalog.
 
 The package key, credit amount, price amount, and currency are controlled by
 Glosify, not by the browser or Stripe metadata. Before creating Checkout, Glosify
