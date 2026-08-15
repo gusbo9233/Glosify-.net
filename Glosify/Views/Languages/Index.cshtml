@@ -1,40 +1,41 @@
 @inject Glosify.Services.Language.ILanguageContext LangContext
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = "Language selector";
+    ViewData["Title"] = Text["Languages.Title"];
     ViewData["ActiveNav"] = "languages";
 
     var languages = Glosify.Services.Language.QuizLanguageCatalog.All;
     var current = LangContext.CurrentLanguage;
+    var currentDisplay = QuizLanguageDisplay.Name(current);
 }
 
 <section class="language-page" data-language-picker>
     <header class="language-hero">
         <h1 class="language-brand">Sonic Polyglot</h1>
         <h2 class="language-tagline">
-            Where would you like to <span class="accent">resonate</span> today?
+            @Text["Languages.Tagline"]
         </h2>
         @if (!string.IsNullOrEmpty(current))
         {
             <span class="language-current">
                 <span class="material-symbols-outlined icon-sm">check_circle</span>
-                Currently learning @current
+                @Text["Languages.Current", currentDisplay]
             </span>
         }
     </header>
 
     <div class="language-search-panel">
-        <label for="languageSearch">Find a language</label>
+        <label for="languageSearch">@Text["Languages.Find"]</label>
         <div class="language-search-control">
             <span class="material-symbols-outlined" aria-hidden="true">search</span>
             <input id="languageSearch"
                    type="search"
                    autocomplete="off"
-                   placeholder="Search in English, native name, or code"
+                   placeholder="@Text["Languages.SearchPlaceholder"]"
                    data-language-search />
         </div>
         <p class="language-result-count" aria-live="polite" data-language-result-count>
-            @languages.Count languages
+            @Text["Languages.Count", languages.Count]
         </p>
     </div>
 
@@ -47,6 +48,7 @@
         @foreach (var language in languages)
         {
             var isCurrent = string.Equals(current, language.Name, StringComparison.OrdinalIgnoreCase);
+            var displayName = QuizLanguageDisplay.Name(language);
             var searchTerms = string.Join(" ", new[]
             {
                 language.Code,
@@ -54,18 +56,19 @@
                 language.ScribeCode,
                 language.Name,
                 language.NativeName,
+                displayName,
             }.Concat(language.Aliases));
             <button class="language-card @(isCurrent ? "is-current" : "")"
                     type="submit"
                     name="language"
                     value="@language.Code"
-                    aria-label="@language.Name"
+                    aria-label="@displayName"
                     aria-pressed="@(isCurrent ? "true" : "false")"
                     data-language-card
                     data-language-search-terms="@searchTerms">
                 <span class="flag-frame" aria-hidden="true">@language.Flag</span>
                 <span class="language-labels">
-                    <span class="language-name">@language.Name</span>
+                    <span class="language-name">@displayName</span>
                     <span class="language-native-name" dir="auto" lang="@language.Locale">@language.NativeName</span>
                 </span>
                 <span class="language-code">@language.Code</span>
@@ -75,8 +78,8 @@
 
     <div class="language-empty-state" data-language-empty hidden>
         <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
-        <strong>No matching language</strong>
-        <span>Try an English name, native name, or language code.</span>
+        <strong>@Text["Languages.None"]</strong>
+        <span>@Text["Languages.NoneHelp"]</span>
     </div>
 </section>
 

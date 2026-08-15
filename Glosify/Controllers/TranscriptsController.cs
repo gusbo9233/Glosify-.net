@@ -3,6 +3,7 @@ using Glosify.Models.ViewModels;
 using Glosify.Services;
 using Glosify.Services.Language;
 using Glosify.Services.RealtimeTranslation;
+using Glosify.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,6 +22,7 @@ public sealed class TranscriptsController : Controller
     private const int DetailPageSize = RealtimeTranslationTranscriptService.DetailPageSize;
     private readonly IRealtimeTranslationTranscriptService _transcripts;
     private readonly IQuizLanguagePreferenceService _preferences;
+    private readonly UiTextStringLocalizer _text = new();
 
     public TranscriptsController(
         IRealtimeTranslationTranscriptService transcripts,
@@ -89,11 +91,11 @@ public sealed class TranscriptsController : Controller
         try
         {
             await _transcripts.RenameAsync(id, User.GetUserId(), language.Code, title, cancellationToken);
-            TempData["TranscriptMessage"] = "Transcript renamed.";
+            TempData["TranscriptMessage"] = _text["Transcripts.Renamed"].Value;
         }
-        catch (RealtimeTranslationValidationException exception)
+        catch (RealtimeTranslationValidationException)
         {
-            TempData["TranscriptError"] = exception.Message;
+            TempData["TranscriptError"] = _text["Transcripts.InvalidTitle"].Value;
         }
         catch (RealtimeTranslationNotFoundException)
         {
@@ -114,12 +116,12 @@ public sealed class TranscriptsController : Controller
         try
         {
             await _transcripts.DeleteAsync(id, User.GetUserId(), language.Code, cancellationToken);
-            TempData["TranscriptMessage"] = "Transcript deleted.";
+            TempData["TranscriptMessage"] = _text["Transcripts.Deleted"].Value;
             return RedirectToAction(nameof(Index));
         }
-        catch (RealtimeTranslationConflictException exception)
+        catch (RealtimeTranslationConflictException)
         {
-            TempData["TranscriptError"] = exception.Message;
+            TempData["TranscriptError"] = _text["Transcripts.StopBeforeDelete"].Value;
             return RedirectToAction(nameof(Details), new { id });
         }
         catch (RealtimeTranslationNotFoundException)

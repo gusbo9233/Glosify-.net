@@ -1,4 +1,5 @@
 const shell = document.querySelector('[data-document-id]');
+const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
 let canvas = document.querySelector('[data-pdf-canvas]');
 const pageSurface = document.querySelector('[data-pdf-page-surface]');
 const highlightLayer = document.querySelector('[data-reader-highlight-layer]');
@@ -260,29 +261,29 @@ const updateTranslationControl = (state) => {
     const language = translationLanguage?.value || 'English';
     const states = {
         off: {
-            status: 'Off',
+            status: t('Client.Off', 'Off'),
             icon: 'translate',
-            title: 'Translation is off. Click to translate this page',
+            title: t('Reader.TranslateOffTitle', 'Translation is off. Click to translate this page'),
         },
         translating: {
-            status: 'Translating…',
+            status: t('Client.Translating', 'Translating…'),
             icon: 'progress_activity',
-            title: `Translating this page to ${language}…`,
+            title: t('Client.Translating', 'Translating…'),
         },
         ready: {
-            status: 'On',
+            status: t('Client.On', 'On'),
             icon: 'check_circle',
-            title: `Translation is on in ${language}. Hover over a sentence to see its translation`,
+            title: `${t('Client.On', 'On')} · ${language}`,
         },
         unavailable: {
-            status: 'No text',
+            status: t('Client.TtsNoText', 'No text'),
             icon: 'block',
-            title: 'Translation is unavailable because this page has no selectable text',
+            title: t('Client.TtsNoText', 'This page has no readable text.'),
         },
         error: {
-            status: 'Error',
+            status: t('Client.TranslationError', 'Error'),
             icon: 'error',
-            title: 'Translation failed. Turn translation off and on to retry',
+            title: t('Client.TranslationFailed', 'Translation failed. Please try again.'),
         },
     };
     const next = states[state] || states.off;
@@ -619,10 +620,12 @@ const updateReaderTtsButton = (playing) => {
     readerTtsToggle?.classList.toggle('is-reading', playing);
     readerTtsToggle?.setAttribute('aria-pressed', String(playing));
     if (readerTtsIcon) readerTtsIcon.textContent = playing ? 'stop_circle' : 'volume_up';
-    if (readerTtsLabel) readerTtsLabel.textContent = playing ? 'Stop' : 'Read';
+    if (readerTtsLabel) readerTtsLabel.textContent = playing
+        ? t('Client.Stop', 'Stop')
+        : t('Client.Read', 'Read');
     if (playing) {
-        readerTtsToggle?.setAttribute('aria-label', 'Stop reading aloud');
-        if (readerTtsToggle) readerTtsToggle.title = 'Stop reading aloud';
+        readerTtsToggle?.setAttribute('aria-label', t('Client.Stop', 'Stop'));
+        if (readerTtsToggle) readerTtsToggle.title = t('Client.Stop', 'Stop');
     } else {
         updateReaderTtsPrompt();
     }
@@ -841,11 +844,11 @@ const startReaderTts = () => {
         return;
     }
     if (!currentSegments.length) {
-        showReaderTtsStatus('No selectable text is available to read.', { error: true });
+        showReaderTtsStatus(t('Client.TtsNoText', 'No selectable text is available to read.'), { error: true });
         return;
     }
     if (!window.GlosifyTts?.playQueue) {
-        showReaderTtsStatus('Text-to-speech is unavailable in this browser.', { error: true });
+        showReaderTtsStatus(t('Client.TtsUnavailable', 'Text-to-speech is unavailable in this browser.'), { error: true });
         return;
     }
 
@@ -856,7 +859,7 @@ const startReaderTts = () => {
         : null;
     const items = buildReaderSpeechQueue(selection);
     if (!items.length) {
-        showReaderTtsStatus('No selectable text is available to read.', { error: true });
+        showReaderTtsStatus(t('Client.TtsNoText', 'No selectable text is available to read.'), { error: true });
         return;
     }
 
@@ -866,8 +869,7 @@ const startReaderTts = () => {
         onItemStart: (item, index, total) => {
             if (item.meta?.mode === 'page') {
                 paintSpeechSegment(item.meta.segmentIndex);
-                showReaderTtsStatus(
-                    `Reading page ${currentPage} · sentence ${item.meta.segmentIndex + 1} of ${currentSegments.length}`);
+                showReaderTtsStatus(t('Reader.ReadingSentence', 'Reading page {0} · sentence {1} of {2}', currentPage, item.meta.segmentIndex + 1, currentSegments.length));
                 return;
             }
             removeHighlightFragments('speech');
@@ -885,12 +887,14 @@ const startReaderTts = () => {
                         indices.includes(Number(element.dataset.translationSegment)));
                 });
             }
-            showReaderTtsStatus(`Reading selection · part ${index + 1} of ${total}`);
+            showReaderTtsStatus(t('Reader.ReadingSelectionPart', 'Reading selection · part {0} of {1}', index + 1, total));
         },
         onStateChange: (state, error) => {
             if (state === 'playing') {
                 updateReaderTtsButton(true);
-                showReaderTtsStatus(selection ? 'Reading selected text…' : `Reading page ${currentPage}…`);
+                showReaderTtsStatus(selection
+                    ? t('Reader.ReadingSelection', 'Reading selected text…')
+                    : t('Reader.ReadingPage', 'Reading page {0}…', currentPage));
                 return;
             }
 
@@ -899,12 +903,14 @@ const startReaderTts = () => {
             updateReaderTtsButton(false);
             if (state === 'completed') {
                 showReaderTtsStatus(
-                    selection ? 'Finished reading the selection.' : `Finished reading page ${currentPage}.`,
+                    selection
+                        ? t('Reader.FinishedSelection', 'Finished reading the selection.')
+                        : t('Reader.FinishedPage', 'Finished reading page {0}.', currentPage),
                     { transient: true });
             } else if (state === 'stopped') {
-                showReaderTtsStatus('Reading stopped.', { transient: true });
+                showReaderTtsStatus(t('Reader.ReadingStopped', 'Reading stopped.'), { transient: true });
             } else if (state === 'error') {
-                const message = error?.message || 'Text-to-speech playback failed.';
+                const message = t('Client.TtsFailed', 'Text-to-speech playback failed.');
                 showReaderTtsStatus(message, { error: true });
                 setStatus(message);
             }
@@ -920,8 +926,8 @@ const renderTranslation = (result) => {
     if (translationHeadingLanguage) translationHeadingLanguage.textContent = result.targetLanguage;
     if (detectedLanguage) {
         detectedLanguage.textContent = result.detectedSourceLanguage
-            ? `Detected ${result.detectedSourceLanguage}${result.cached ? ' · cached' : ''}`
-            : result.cached ? 'Cached translation' : '';
+            ? t(result.cached ? 'Reader.DetectedCached' : 'Reader.Detected', result.cached ? 'Detected {0} · cached' : 'Detected {0}', result.detectedSourceLanguage)
+            : result.cached ? t('Reader.CachedTranslation', 'Cached translation') : '';
     }
     updateReaderVoiceControl();
 
@@ -963,7 +969,7 @@ const requestJson = async (url, options) => {
     if (antiforgeryToken) headers.set('RequestVerificationToken', antiforgeryToken);
     const response = await fetch(url, { ...options, headers });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(payload.error || 'The page could not be translated.');
+    if (!response.ok) throw new Error(t('Client.TranslationFailed', 'The page could not be translated.'));
     return payload;
 };
 
@@ -1000,7 +1006,7 @@ const runTranslationQueue = async () => {
     } catch (error) {
         if (translationEnabled && currentPage === job.pageNumber) {
             updateTranslationControl('error');
-            setTranslationState(error?.message || 'The page could not be translated.', true);
+            setTranslationState(t('Client.TranslationFailed', 'The page could not be translated.'), true);
         }
     } finally {
         translationInFlight = false;
@@ -1101,7 +1107,7 @@ const renderPage = async (pageNumber) => {
             .filter(item => typeof item?.str === 'string');
         currentSegments = buildPageSegments(textContent);
         decorateTextLayer(currentTextLayer, currentSegments);
-        indicator.textContent = `Page ${currentPage} of ${pdf.numPages}`;
+        indicator.textContent = t('Client.PageOf', 'Page {0} of {1}', currentPage, pdf.numPages);
         prev.disabled = currentPage <= 1;
         next.disabled = currentPage >= pdf.numPages;
         splitViewToggle.disabled = !translationEnabled || currentSegments.length === 0;
@@ -1110,13 +1116,13 @@ const renderPage = async (pageNumber) => {
         updateReaderTtsPrompt();
         syncAssistantPage();
         if (currentSegments.length === 0) {
-            setStatus('No selectable text found on this page.');
+            setStatus(t('Reader.NoSelectableTextPage', 'No selectable text found on this page.'));
         }
         if (translationEnabled) queueCurrentPageTranslation();
     } catch (error) {
         if (generation !== renderGeneration || error?.name === 'RenderingCancelledException') return;
         if (readerTtsToggle) readerTtsToggle.disabled = true;
-        setStatus('This page could not be rendered.');
+        setStatus(t('Reader.RenderFailed', 'This page could not be rendered.'));
     }
 };
 
@@ -1178,7 +1184,7 @@ const persistTranslationLanguage = async () => {
         });
         shell.dataset.preferredTranslationLanguage = result.targetLanguage;
     } catch (error) {
-        setTranslationState(error?.message || 'The language preference could not be saved.', true);
+        setTranslationState(t('Client.PreferenceFailed', 'The language preference could not be saved.'), true);
     }
 };
 
@@ -1473,5 +1479,5 @@ try {
     pdf = await pdfjs.getDocument(`/Books/File/${documentId}`).promise;
     await renderPage(1);
 } catch {
-    setStatus('The PDF could not be loaded.');
+    setStatus(t('Reader.PdfLoadFailed', 'The PDF could not be loaded.'));
 }

@@ -1,0 +1,40 @@
+@using Microsoft.Extensions.Options
+@using Glosify.Services.Legal
+@inject IOptions<LegalOptions> Legal
+@{
+    Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
+    ViewData["Title"] = "Ketentuan Layanan";
+    var legal = Legal.Value;
+}
+
+<main class="auth-shell legal-shell">
+    <article class="glass-card legal-document">
+        <header class="auth-card-header"><h1>Ketentuan Layanan</h1><p>Berlaku efektif 10 Agustus 2026</p></header>
+        <aside class="legal-language-notice">
+            Terjemahan ini disediakan untuk kemudahan. Jika berbeda dari versi bahasa Inggris, versi bahasa Inggris yang berlaku.
+            <a asp-action="TermsEnglish">Baca versi bahasa Inggris yang berlaku</a>.
+        </aside>
+
+        <p>Glosify adalah layanan pembelajaran bahasa beta yang dioperasikan oleh <strong>@legal.ControllerName</strong>. Dengan menggunakan layanan ini, Anda setuju untuk menggunakan layanan secara sah, menjaga keamanan akun Anda, dan mengunggah atau men-stream hanya materi yang Anda berwenang untuk memprosesnya.</p>
+
+        <h2>Layanan beta dan ketersediaan</h2>
+        <p>Fitur dapat berubah, gagal, atau sementara tidak tersedia. Fitur berbayar ditutup ketika anggaran aplikasi bulanan Glosify habis dan dibuka kembali pada periode bulanan Europe/Stockholm berikutnya. Kredit adalah unit layanan, tidak memiliki nilai tunai, dan tidak menjamin ketersediaan tanpa gangguan.</p>
+
+        <h2>Kredit percobaan</h2>
+        <p>Akun yang memenuhi syarat yang ditautkan ke Google atau Microsoft dapat menerima satu kredit percobaan sebesar 25 kredit. Pendaftaran hanya dengan kata sandi dan pendaftaran API tidak menerima kredit percobaan otomatis. Penyalahgunaan, pembuatan banyak akun duplikat, otomatisasi, atau upaya untuk menghindari batasan dapat mengakibatkan penangguhan.</p>
+
+        <h2>Konten Anda</h2>
+        <p>Anda tetap memegang hak atas konten yang Anda berikan. Anda memberikan kepada Glosify dan pemrosesnya izin terbatas yang diperlukan untuk menampung, mengirim, menganalisis, menerjemahkan, dan mengembalikan konten tersebut untuk fitur yang Anda minta. Jangan mengandalkan terjemahan atau materi pembelajaran yang dihasilkan untuk keputusan medis, hukum, keselamatan kritis, atau keputusan penting lainnya yang berisiko tinggi.</p>
+
+        <h2>Penghentian penggunaan</h2>
+        <p>Anda dapat berhenti menggunakan Glosify dan menghapus konten yang disimpan melalui kontrol akun dan transkrip yang tersedia. Glosify dapat membatasi akun yang mengancam layanan, pengguna lain, atau kepatuhan hukum.</p>
+
+        <h2>Kontak</h2>
+        <p>Pertanyaan tentang ketentuan ini dapat dikirim ke <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>
+
+        <nav class="legal-links" aria-label='@Text["Legal.Label"]'>
+            <a asp-action="Privacy">@Text["Legal.PrivacyPolicy"]</a>
+            <a asp-action="Support">@Text["Legal.Support"]</a>
+        </nav>
+    </article>
+</main>

@@ -1,7 +1,7 @@
 @model ClassroomMemberResultsViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = $"{Model.MemberName} — results";
+    ViewData["Title"] = Text["Classroom.MemberResultsTitle", Model.MemberName];
 }
 
 <section class="classroom-page">
@@ -9,10 +9,10 @@
         <div>
             <p class="hero-label">@Model.Classroom.Name</p>
             <h1 class="page-title">@Model.MemberName</h1>
-            <p class="collection-subtitle">@Model.Results.Count @(Model.Results.Count == 1 ? "attempt" : "attempts")</p>
+            <p class="collection-subtitle">@Model.Results.Count @(Model.Results.Count == 1 ? Text["Classroom.AttemptOne"] : Text["Classroom.AttemptMany"])</p>
         </div>
         <a class="btn-secondary" asp-controller="Classroom" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="results">
-            Back to classroom
+            @Text["Classroom.Back"]
         </a>
     </section>
 
@@ -22,13 +22,7 @@
             <table class="admin-credit-table">
                 <thead>
                     <tr>
-                        <th>Quiz</th>
-                        <th>Mode</th>
-                        <th>Score</th>
-                        <th>Correct</th>
-                        <th>Incorrect</th>
-                        <th>Skipped</th>
-                        <th>Completed</th>
+                        <th>@Text["Settings.Quiz"]</th><th>@Text["Settings.Mode"]</th><th>@Text["Classroom.Score"]</th><th>@Text["Quiz.Correct"]</th><th>@Text["Quiz.Incorrect"]</th><th>@Text["Classroom.Skipped"]</th><th>@Text["Classroom.Completed"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -52,6 +46,6 @@
     }
     else
     {
-        <div class="empty-state">No attempts recorded for this member yet.</div>
+        <div class="empty-state">@Text["Classroom.NoMemberAttempts"]</div>
     }
 </section>

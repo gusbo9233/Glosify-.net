@@ -1,11 +1,16 @@
 @model TranscriptLibraryViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = "Transcripts";
+    ViewData["Title"] = Text["Transcripts.Title"];
     var totalPages = Math.Max(1, (int)Math.Ceiling(Model.Library.TotalCount / (double)Model.Library.PageSize));
     var learningLanguage = Model.Library.Items.Count == 0
         ? null
         : Glosify.Services.Language.QuizLanguageCatalog.Find(Model.Library.Items[0].TargetLanguage)?.Name;
+    var displayLanguage = QuizLanguageDisplay.Name(learningLanguage);
+    if (string.IsNullOrWhiteSpace(displayLanguage))
+    {
+        displayLanguage = Text["Transcripts.SelectedLanguage"];
+    }
 }
 
 @section Styles {
@@ -15,11 +20,11 @@
 <section class="transcripts-page">
     <header class="transcripts-hero">
         <div>
-            <p class="transcripts-eyebrow">Live subtitle history</p>
-            <h1>Saved transcripts</h1>
-            <p>Saved live-subtitle text for @(learningLanguage ?? "your selected language"). New sessions contain original speech; legacy sessions remain labeled as translations.</p>
+            <p class="transcripts-eyebrow">@Text["Transcripts.Eyebrow"]</p>
+            <h1>@Text["Transcripts.Saved"]</h1>
+            <p>@Text["Transcripts.Intro", displayLanguage]</p>
         </div>
-        <span class="transcripts-count">@Model.Library.TotalCount saved</span>
+        <span class="transcripts-count">@(Model.Library.TotalCount == 1 ? Text["Transcripts.CountOne", Model.Library.TotalCount] : Text["Transcripts.CountMany", Model.Library.TotalCount])</span>
     </header>
 
     @if (TempData["TranscriptMessage"] is string message)
@@ -34,8 +39,8 @@
                 <span class="material-symbols-outlined" aria-hidden="true">subtitles</span>
                 <div>
                     <h2>@transcript.Title</h2>
-                    <p>@(Glosify.Services.Language.QuizLanguageCatalog.Find(transcript.TargetLanguage)?.Name ?? transcript.TargetLanguage.ToUpperInvariant()) · @transcript.Stream · @transcript.SegmentCount captions</p>
-                    <small>Updated <time datetime="@transcript.UpdatedAt.ToString("O")" data-local="datetime">@transcript.UpdatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></small>
+                    <p>@QuizLanguageDisplay.Name(Glosify.Services.Language.QuizLanguageCatalog.Find(transcript.TargetLanguage)?.Name ?? transcript.TargetLanguage.ToUpperInvariant()) · @transcript.Stream · @(transcript.SegmentCount == 1 ? Text["Transcripts.CaptionOne", transcript.SegmentCount] : Text["Transcripts.CaptionMany", transcript.SegmentCount])</p>
+                    <small>@Text["Transcripts.Updated"] <time datetime="@transcript.UpdatedAt.ToString("O")" data-local="datetime">@transcript.UpdatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></small>
                 </div>
                 <span class="material-symbols-outlined transcript-card-arrow" aria-hidden="true">arrow_forward</span>
             </a>
@@ -44,18 +49,18 @@
         {
             <div class="transcripts-empty">
                 <span class="material-symbols-outlined" aria-hidden="true">subtitles_off</span>
-                <h2>No saved transcripts yet</h2>
-                <p>Enable “Save original speech transcript” before starting live subtitles.</p>
+                <h2>@Text["Transcripts.None"]</h2>
+                <p>@Text["Transcripts.NoneHelp"]</p>
             </div>
         }
     </div>
 
     @if (totalPages > 1)
     {
-        <nav class="transcript-pagination" aria-label="Transcript pages">
-            <a class="@(Model.Library.Page <= 1 ? "is-disabled" : "")" asp-route-page="@(Model.Library.Page - 1)">Previous</a>
-            <span>Page @Model.Library.Page of @totalPages</span>
-            <a class="@(Model.Library.Page >= totalPages ? "is-disabled" : "")" asp-route-page="@(Model.Library.Page + 1)">Next</a>
+        <nav class="transcript-pagination" aria-label="@Text["Transcripts.PagesAria"]">
+            <a class="@(Model.Library.Page <= 1 ? "is-disabled" : "")" asp-route-page="@(Model.Library.Page - 1)">@Text["Common.Previous"]</a>
+            <span>@Text["Common.PageOf", Model.Library.Page, totalPages]</span>
+            <a class="@(Model.Library.Page >= totalPages ? "is-disabled" : "")" asp-route-page="@(Model.Library.Page + 1)">@Text["Common.Next"]</a>
         </nav>
     }
 </section>

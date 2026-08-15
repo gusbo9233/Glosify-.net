@@ -6,10 +6,10 @@
     ViewData["Title"] = Model.Book.Title;
     ViewData["AssistantDocumentId"] = Model.Book.Id;
     ViewData["AssistantCurrentPage"] = 1;
-    ViewData["AssistantTitle"] = "Page assistant";
+    ViewData["AssistantTitle"] = Text["Reader.AssistantTitle"];
     ViewData["AssistantContextLabel"] = Model.Book.Title;
-    ViewData["AssistantEmptyText"] = "Ask for vocabulary or sentences from this page.";
-    ViewData["AssistantPlaceholder"] = "Make a quiz from this page...";
+    ViewData["AssistantEmptyText"] = Text["Reader.AssistantEmpty"];
+    ViewData["AssistantPlaceholder"] = Text["Reader.AssistantPlaceholder"];
 
     var selectedQuiz = Model.Quizzes.FirstOrDefault(quiz => quiz.Id == Model.SelectedQuizId);
     if (selectedQuiz != null)
@@ -42,7 +42,7 @@
             <aside class="reader-translation-pane" data-reader-translation-pane hidden>
                 <header class="reader-translation-heading">
                     <div>
-                        <span>Translated page</span>
+                        <span>@Text["Reader.TranslatedPage"]</span>
                         <strong data-translation-heading-language>@preferredTranslationLanguage</strong>
                     </div>
                     <small data-detected-language></small>
@@ -52,30 +52,30 @@
             </aside>
         </div>
 
-        <a class="reader-back" asp-controller="Books" asp-action="Index" title="Back to books">
+        <a class="reader-back" asp-controller="Books" asp-action="Index" title="@Text["Reader.BackBooks"]">
             <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-            <span class="reader-back-label">Books</span>
+            <span class="reader-back-label">@Text["Books.Title"]</span>
         </a>
 
-        <div class="reader-tools" role="toolbar" aria-label="PDF view controls">
-            <button class="reader-tool" type="button" data-zoom-out aria-label="Zoom out" title="Zoom out">
+        <div class="reader-tools" role="toolbar" aria-label="@Text["Reader.PdfControls"]">
+            <button class="reader-tool" type="button" data-zoom-out aria-label="@Text["Reader.ZoomOut"]" title="@Text["Reader.ZoomOut"]">
                 <span class="material-symbols-outlined" aria-hidden="true">remove</span>
             </button>
-            <button class="reader-tool reader-zoom-value" type="button" data-zoom-reset aria-label="Reset zoom to 100%" title="Reset zoom" data-zoom-value>100%</button>
-            <button class="reader-tool" type="button" data-zoom-in aria-label="Zoom in" title="Zoom in">
+            <button class="reader-tool reader-zoom-value" type="button" data-zoom-reset aria-label="@Text["Reader.ResetZoom100"]" title="@Text["Reader.ResetZoom"]" data-zoom-value>100%</button>
+            <button class="reader-tool" type="button" data-zoom-in aria-label="@Text["Reader.ZoomIn"]" title="@Text["Reader.ZoomIn"]">
                 <span class="material-symbols-outlined" aria-hidden="true">add</span>
             </button>
             <span class="reader-tool-divider" aria-hidden="true"></span>
-            <button class="reader-tool" type="button" data-fit-toggle aria-label="Fit to page" title="Fit to page" aria-pressed="false">
+            <button class="reader-tool" type="button" data-fit-toggle aria-label="@Text["Reader.FitPage"]" title="@Text["Reader.FitPage"]" aria-pressed="false">
                 <span class="material-symbols-outlined" aria-hidden="true">fit_screen</span>
             </button>
-            <button class="reader-tool" type="button" data-rotate aria-label="Rotate clockwise" title="Rotate clockwise">
+            <button class="reader-tool" type="button" data-rotate aria-label="@Text["Reader.Rotate"]" title="@Text["Reader.Rotate"]">
                 <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>
             </button>
             <span class="reader-tool-divider" aria-hidden="true"></span>
             <label class="reader-voice-picker" data-reader-voice-control hidden>
-                <span class="visually-hidden">Polish reading voice</span>
-                <select data-reader-voice aria-label="Polish reading voice" title="Polish reading voice">
+                <span class="visually-hidden">@Text["Reader.PolishVoice"]</span>
+                <select data-reader-voice data-default-aria-label="Polish reading voice" aria-label="@Text["Reader.PolishVoice"]" title="@Text["Reader.PolishVoice"]">
                     <option value="zofia" selected>Zofia</option>
                     <option value="agnieszka">Agnieszka</option>
                     <option value="marek">Marek</option>
@@ -84,39 +84,40 @@
             <button class="reader-tool reader-tts-toggle"
                     type="button"
                     data-reader-tts
+                    data-default-aria-label="Read this page aloud"
                     aria-pressed="false"
-                    aria-label="Read this page aloud"
-                    title="Read this page aloud"
+                    aria-label="@Text["Reader.ReadAloud"]"
+                    title="@Text["Reader.ReadAloud"]"
                     disabled>
                 <span class="material-symbols-outlined" data-reader-tts-icon aria-hidden="true">volume_up</span>
-                <span class="reader-tts-label" data-reader-tts-label>Read</span>
+                <span class="reader-tts-label" data-reader-tts-label>@Text["Reader.Read"]</span>
             </button>
         </div>
 
-        <div class="reader-translation-tools" role="toolbar" aria-label="Page translation controls">
+        <div class="reader-translation-tools" role="toolbar" aria-label="@Text["Reader.TranslationControls"]">
             <button class="reader-tool reader-translation-toggle"
                     type="button"
                     data-translation-toggle
                     data-translation-state="off"
                     aria-pressed="false"
-                    aria-label="Translation is off. Translate this page"
-                    title="Translation is off. Click to translate this page">
+                    aria-label="@Text["Reader.TranslateOffAria"]"
+                    title="@Text["Reader.TranslateOffTitle"]">
                 <span class="material-symbols-outlined" data-translation-toggle-icon aria-hidden="true">translate</span>
-                <span class="reader-translation-label">Translation</span>
-                <span class="reader-translation-status" data-translation-toggle-status aria-live="polite">Off</span>
+                <span class="reader-translation-label">@Text["Reader.Translation"]</span>
+                <span class="reader-translation-status" data-translation-toggle-status aria-live="polite">@Text["Common.Off"]</span>
             </button>
             <label class="reader-language-picker">
-                <span class="visually-hidden">Translation language</span>
-                <select data-translation-language aria-label="Translation language">
+                <span class="visually-hidden">@Text["Reader.TranslationLanguage"]</span>
+                <select data-translation-language aria-label="@Text["Reader.TranslationLanguage"]">
                     @foreach (var language in BookTranslationLanguages.All)
                     {
                         if (string.Equals(language, preferredTranslationLanguage, StringComparison.OrdinalIgnoreCase))
                         {
-                            <option value="@language" selected>@language</option>
+                            <option value="@language" selected>@QuizLanguageDisplay.Name(language)</option>
                         }
                         else
                         {
-                            <option value="@language">@language</option>
+                            <option value="@language">@QuizLanguageDisplay.Name(language)</option>
                         }
                     }
                 </select>
@@ -125,27 +126,27 @@
                     type="button"
                     data-split-view-toggle
                     aria-pressed="false"
-                    aria-label="Show original and translation side by side"
-                    title="Show original and translation side by side"
+                    aria-label="@Text["Reader.SplitAria"]"
+                    title="@Text["Reader.SplitAria"]"
                     disabled>
                 <span class="material-symbols-outlined" aria-hidden="true">view_column_2</span>
-                <span class="reader-split-label">Split view</span>
+                <span class="reader-split-label">@Text["Reader.SplitView"]</span>
             </button>
         </div>
 
         <div class="reader-mobile-tabs" data-reader-mobile-tabs hidden>
-            <button type="button" class="is-active" data-reader-mobile-view="original">Original</button>
-            <button type="button" data-reader-mobile-view="translation">Translation</button>
+            <button type="button" class="is-active" data-reader-mobile-view="original">@Text["Reader.Original"]</button>
+            <button type="button" data-reader-mobile-view="translation">@Text["Reader.Translation"]</button>
         </div>
 
-        <button class="reader-nav-arrow reader-nav-prev" type="button" data-prev-page aria-label="Previous page" aria-keyshortcuts="ArrowLeft" title="Previous page">
+        <button class="reader-nav-arrow reader-nav-prev" type="button" data-prev-page aria-label="@Text["Reader.PreviousPage"]" aria-keyshortcuts="ArrowLeft" title="@Text["Reader.PreviousPage"]">
             <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
         </button>
-        <button class="reader-nav-arrow reader-nav-next" type="button" data-next-page aria-label="Next page" aria-keyshortcuts="ArrowRight" title="Next page">
+        <button class="reader-nav-arrow reader-nav-next" type="button" data-next-page aria-label="@Text["Reader.NextPage"]" aria-keyshortcuts="ArrowRight" title="@Text["Reader.NextPage"]">
             <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
         </button>
 
-        <div class="reader-page-pill" data-page-indicator>Page 1 of @Model.Book.PageCount</div>
+        <div class="reader-page-pill" data-page-indicator>@Text["Common.PageOf", 1, Model.Book.PageCount]</div>
 
         <div class="reader-tts-live" data-reader-tts-status aria-live="polite" hidden></div>
 

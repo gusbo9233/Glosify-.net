@@ -1,0 +1,2883 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="DisplayLanguage.Label" xml:space="preserve">
+    <value>لغة العرض</value>
+  </data>
+  <data name="DisplayLanguage.Submit" xml:space="preserve">
+    <value>تغيير اللغة</value>
+  </data>
+  <data name="Common.English" xml:space="preserve">
+    <value>الإنجليزية</value>
+  </data>
+  <data name="Common.Swedish" xml:space="preserve">
+    <value>السويدية</value>
+  </data>
+  <data name="Common.LogIn" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+  <data name="Common.LogOut" xml:space="preserve">
+    <value>تسجيل الخروج</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>حذف</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>حفظ</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>بحث</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>رجوع</value>
+  </data>
+  <data name="Common.Next" xml:space="preserve">
+    <value>التالي</value>
+  </data>
+  <data name="Common.Previous" xml:space="preserve">
+    <value>السابق</value>
+  </data>
+  <data name="Layout.MetaDescription" xml:space="preserve">
+    <value>يحوّل Glosify ما تقرؤه إلى مفردات يمكنك استخدامها: أنشئ قوائم كلمات من الكتب والنصوص، ودرّب نفسك عليها بالاختبارات وبطاقات المراجعة، ثم تدرّب على التحدث بصوت عالٍ مع شريك محادثة بالذكاء الاصطناعي.</value>
+  </data>
+  <data name="Layout.AuthMetaDescription" xml:space="preserve">
+    <value>سجّل الدخول إلى Glosify لبناء مفردات من ما تقرؤه، وممارستها بالاختبارات، والتحدث بها مع شريك محادثة بالذكاء الاصطناعي.</value>
+  </data>
+  <data name="Layout.PremiumLearner" xml:space="preserve">
+    <value>متعلّم مميز</value>
+  </data>
+  <data name="Layout.SearchPlaceholder" xml:space="preserve">
+    <value>ماذا تريد أن تتعلم؟</value>
+  </data>
+  <data name="Layout.Notifications" xml:space="preserve">
+    <value>الإشعارات</value>
+  </data>
+  <data name="Layout.GetCredits" xml:space="preserve">
+    <value>الحصول على رصيد</value>
+  </data>
+  <data name="Layout.SignedInAs" xml:space="preserve">
+    <value>مسجّل الدخول باسم</value>
+  </data>
+  <data name="Layout.SignedIn" xml:space="preserve">
+    <value>تم تسجيل الدخول</value>
+  </data>
+  <data name="Layout.PrimaryNavigation" xml:space="preserve">
+    <value>التنقل الرئيسي</value>
+  </data>
+  <data name="Nav.LanguageSelector" xml:space="preserve">
+    <value>محدد اللغة</value>
+  </data>
+  <data name="Nav.Language" xml:space="preserve">
+    <value>اللغة</value>
+  </data>
+  <data name="Nav.Home" xml:space="preserve">
+    <value>الرئيسية</value>
+  </data>
+  <data name="Nav.Explore" xml:space="preserve">
+    <value>استكشاف</value>
+  </data>
+  <data name="Nav.Books" xml:space="preserve">
+    <value>الكتب</value>
+  </data>
+  <data name="Nav.Transcripts" xml:space="preserve">
+    <value>النصوص</value>
+  </data>
+  <data name="Nav.Quizzes" xml:space="preserve">
+    <value>الاختبارات</value>
+  </data>
+  <data name="Nav.Speaking" xml:space="preserve">
+    <value>التحدث</value>
+  </data>
+  <data name="Nav.Speak" xml:space="preserve">
+    <value>تحدث</value>
+  </data>
+  <data name="Nav.Classrooms" xml:space="preserve">
+    <value>الفصول الدراسية</value>
+  </data>
+  <data name="Nav.Class" xml:space="preserve">
+    <value>صف</value>
+  </data>
+  <data name="Languages.Title" xml:space="preserve">
+    <value>محدد اللغة</value>
+  </data>
+  <data name="Languages.Tagline" xml:space="preserve">
+    <value>إلى أي لغة تريد أن تتفاعل اليوم؟</value>
+  </data>
+  <data name="Languages.Current" xml:space="preserve">
+    <value>أنت تتعلم حاليًا {0}</value>
+  </data>
+  <data name="Languages.Find" xml:space="preserve">
+    <value>ابحث عن لغة</value>
+  </data>
+  <data name="Languages.SearchPlaceholder" xml:space="preserve">
+    <value>ابحث بالإنجليزية أو بالاسم الأصلي أو بالرمز</value>
+  </data>
+  <data name="Languages.Count" xml:space="preserve">
+    <value>{0} لغة</value>
+  </data>
+  <data name="Languages.None" xml:space="preserve">
+    <value>لا توجد لغة مطابقة</value>
+  </data>
+  <data name="Languages.NoneHelp" xml:space="preserve">
+    <value>جرّب اسمًا بالإنجليزية أو الاسم الأصلي أو رمز اللغة.</value>
+  </data>
+  <data name="Languages.Pick" xml:space="preserve">
+    <value>اختر لغة</value>
+  </data>
+  <data name="Assistant.Title" xml:space="preserve">
+    <value>المساعد</value>
+  </data>
+  <data name="Assistant.Empty" xml:space="preserve">
+    <value>اطلب المساعدة من أي مكان في Glosify.</value>
+  </data>
+  <data name="Assistant.Placeholder" xml:space="preserve">
+    <value>اسأل المساعد...</value>
+  </data>
+  <data name="Assistant.Workspace" xml:space="preserve">
+    <value>مساحة عمل المساعد</value>
+  </data>
+  <data name="Assistant.Chat" xml:space="preserve">
+    <value>محادثة</value>
+  </data>
+  <data name="Assistant.Chats" xml:space="preserve">
+    <value>المحادثات</value>
+  </data>
+  <data name="Assistant.NewChat" xml:space="preserve">
+    <value>محادثة جديدة</value>
+  </data>
+  <data name="Assistant.Close" xml:space="preserve">
+    <value>إغلاق المساعد</value>
+  </data>
+  <data name="Assistant.QuizContext" xml:space="preserve">
+    <value>سياق الاختبار</value>
+  </data>
+  <data name="Assistant.NoQuiz" xml:space="preserve">
+    <value>لم يتم اختيار اختبار</value>
+  </data>
+  <data name="Assistant.ReadingMaterial" xml:space="preserve">
+    <value>مادة القراءة</value>
+  </data>
+  <data name="Assistant.NoMaterial" xml:space="preserve">
+    <value>لم يتم اختيار مادة</value>
+  </data>
+  <data name="Assistant.Picture" xml:space="preserve">
+    <value>صورة</value>
+  </data>
+  <data name="Assistant.Model" xml:space="preserve">
+    <value>نموذج المساعد</value>
+  </data>
+  <data name="Assistant.AutoModel" xml:space="preserve">
+    <value>تلقائي · {0}</value>
+  </data>
+  <data name="Assistant.Send" xml:space="preserve">
+    <value>إرسال</value>
+  </data>
+  <data name="Assistant.PreviousChats" xml:space="preserve">
+    <value>المحادثات السابقة</value>
+  </data>
+  <data name="Assistant.NoChats" xml:space="preserve">
+    <value>لا توجد محادثات محفوظة بعد.</value>
+  </data>
+  <data name="Quiz.FlashcardsTitle" xml:space="preserve">
+    <value>اختبار بطاقات المراجعة</value>
+  </data>
+  <data name="Quiz.TypingTitle" xml:space="preserve">
+    <value>اختبار الكتابة</value>
+  </data>
+  <data name="Quiz.RevealRate" xml:space="preserve">
+    <value>أظهر الإجابة، وقيّم التذكر، ثم تابع.</value>
+  </data>
+  <data name="Quiz.BackWords" xml:space="preserve">
+    <value>العودة إلى الكلمات</value>
+  </data>
+  <data name="Quiz.SessionComplete" xml:space="preserve">
+    <value>اكتملت الجلسة</value>
+  </data>
+  <data name="Quiz.Remembered" xml:space="preserve">
+    <value>تم التذكر</value>
+  </data>
+  <data name="Quiz.ReviewAgain" xml:space="preserve">
+    <value>المراجعة مرة أخرى</value>
+  </data>
+  <data name="Quiz.Skipped" xml:space="preserve">
+    <value>تم التخطي</value>
+  </data>
+  <data name="Quiz.Restart" xml:space="preserve">
+    <value>إعادة تشغيل الجلسة</value>
+  </data>
+  <data name="Quiz.PracticeAgain" xml:space="preserve">
+    <value>الممارسة مرة أخرى</value>
+  </data>
+  <data name="Quiz.PlayPronunciation" xml:space="preserve">
+    <value>تشغيل نطق {0}</value>
+  </data>
+  <data name="Quiz.RevealAnswer" xml:space="preserve">
+    <value>إظهار إجابة {0}</value>
+  </data>
+  <data name="Quiz.Again" xml:space="preserve">
+    <value>مرة أخرى</value>
+  </data>
+  <data name="Quiz.Good" xml:space="preserve">
+    <value>جيد</value>
+  </data>
+  <data name="Quiz.Easy" xml:space="preserve">
+    <value>سهل</value>
+  </data>
+  <data name="Quiz.SwipeHint" xml:space="preserve">
+    <value>اسحب إلى اليمين لـ«جيد»، وإلى اليسار لـ«مرة أخرى»</value>
+  </data>
+  <data name="Quiz.Skip" xml:space="preserve">
+    <value>تخطي</value>
+  </data>
+  <data name="Quiz.ShowAnswer" xml:space="preserve">
+    <value>إظهار الإجابة</value>
+  </data>
+  <data name="Quiz.Reset" xml:space="preserve">
+    <value>إعادة ضبط الجلسة</value>
+  </data>
+  <data name="Quiz.NoneYet" xml:space="preserve">
+    <value>لا يوجد {0} بعد</value>
+  </data>
+  <data name="Quiz.AddThenStart" xml:space="preserve">
+    <value>أضف {0} إلى اختبار قصير، ثم ابدأ جلسة {1} من ذلك الاختبار.</value>
+  </data>
+  <data name="Quiz.TypeInstruction" xml:space="preserve">
+    <value>اكتب {0} {1} كاملًا من مُطالبة {2}.</value>
+  </data>
+  <data name="Quiz.CheckAnswer" xml:space="preserve">
+    <value>تحقق من الإجابة</value>
+  </data>
+  <data name="Quiz.PlayPronunciationGeneric" xml:space="preserve">
+    <value>تشغيل النطق</value>
+  </data>
+  <data name="Quiz.Answer" xml:space="preserve">
+    <value>الإجابة</value>
+  </data>
+  <data name="Quiz.TypePlaceholder" xml:space="preserve">
+    <value>اكتب إجابتك...</value>
+  </data>
+  <data name="Quiz.CorrectAnswer" xml:space="preserve">
+    <value>الإجابة الصحيحة</value>
+  </data>
+  <data name="Quiz.Space" xml:space="preserve">
+    <value>مسافة</value>
+  </data>
+  <data name="Quiz.TypingComplete" xml:space="preserve">
+    <value>اكتمل الإدخال</value>
+  </data>
+  <data name="Quiz.Correct" xml:space="preserve">
+    <value>صحيح</value>
+  </data>
+  <data name="Quiz.Incorrect" xml:space="preserve">
+    <value>غير صحيح</value>
+  </data>
+  <data name="Quiz.PracticeIncorrect" xml:space="preserve">
+    <value>الكلمات غير الصحيحة للتدريب</value>
+  </data>
+  <data name="Quiz.ChangeSettings" xml:space="preserve">
+    <value>تغيير الإعدادات</value>
+  </data>
+  <data name="Transcripts.Title" xml:space="preserve">
+    <value>النصوص المنسوخة</value>
+  </data>
+  <data name="Transcripts.Eyebrow" xml:space="preserve">
+    <value>سجل الترجمات الفرعية المباشرة</value>
+  </data>
+  <data name="Transcripts.Saved" xml:space="preserve">
+    <value>النصوص المنسوخة المحفوظة</value>
+  </data>
+  <data name="Transcripts.Intro" xml:space="preserve">
+    <value>نص الترجمة الفرعية المباشرة المحفوظ لـ {0}. تحتوي الجلسات الجديدة على الكلام الأصلي؛ وتظل الجلسات القديمة موسومة على أنها ترجمات.</value>
+  </data>
+  <data name="Transcripts.SelectedLanguage" xml:space="preserve">
+    <value>اللغة التي اخترتها</value>
+  </data>
+  <data name="Transcripts.Updated" xml:space="preserve">
+    <value>تم التحديث</value>
+  </data>
+  <data name="Transcripts.None" xml:space="preserve">
+    <value>لا توجد نصوص منسوخة محفوظة بعد</value>
+  </data>
+  <data name="Transcripts.NoneHelp" xml:space="preserve">
+    <value>فعّل «حفظ نص الكلام الأصلي» قبل بدء الترجمة الفرعية المباشرة.</value>
+  </data>
+  <data name="Transcripts.PagesAria" xml:space="preserve">
+    <value>صفحات النص المنسوخ</value>
+  </data>
+  <data name="Common.PageOf" xml:space="preserve">
+    <value>الصفحة {0} من {1}</value>
+  </data>
+  <data name="Home.Title" xml:space="preserve">
+    <value>الصفحة الرئيسية</value>
+  </data>
+  <data name="Home.Coach" xml:space="preserve">
+    <value>مدرب التعلم</value>
+  </data>
+  <data name="Home.Kicker" xml:space="preserve">
+    <value>مساحة تعلم اللغة الخاصة بك</value>
+  </data>
+  <data name="Home.TitleWithLanguage" xml:space="preserve">
+    <value>اجعل {0} جزءًا من يومك.</value>
+  </data>
+  <data name="Home.TitleAnonymous" xml:space="preserve">
+    <value>حوّل الكلمات الجديدة إلى محادثات حقيقية.</value>
+  </data>
+  <data name="Home.Description" xml:space="preserve">
+    <value>ابنِ مفرداتك من الأشياء التي تقرؤها، ووطّدها بممارسة مركزة، ثم استخدمها شفهيًا مع شريك محادثة مدعوم بالذكاء الاصطناعي.</value>
+  </data>
+  <data name="Home.StartLearning" xml:space="preserve">
+    <value>ابدأ التعلم</value>
+  </data>
+  <data name="Home.ChooseLanguage" xml:space="preserve">
+    <value>اختر لغة</value>
+  </data>
+  <data name="Home.BrowseShared" xml:space="preserve">
+    <value>تصفّح المجموعات المشتركة</value>
+  </data>
+  <data name="Home.StartSpeaking" xml:space="preserve">
+    <value>ابدأ التحدث</value>
+  </data>
+  <data name="Home.OpenQuizzes" xml:space="preserve">
+    <value>افتح اختباراتي القصيرة</value>
+  </data>
+  <data name="Home.WaysAria" xml:space="preserve">
+    <value>طرق التعلم باستخدام Glosify</value>
+  </data>
+  <data name="Home.ReadContext" xml:space="preserve">
+    <value>القراءة في السياق</value>
+  </data>
+  <data name="Home.PracticeRecall" xml:space="preserve">
+    <value>تدريب الاسترجاع</value>
+  </data>
+  <data name="Home.SpeakConfidence" xml:space="preserve">
+    <value>تحدث بثقة</value>
+  </data>
+  <data name="Home.LoopAria" xml:space="preserve">
+    <value>حلقة تعلم مترابطة من القراءة إلى التحدث</value>
+  </data>
+  <data name="Home.Discover" xml:space="preserve">
+    <value>اكتشف</value>
+  </data>
+  <data name="Home.Remember" xml:space="preserve">
+    <value>تذكّر</value>
+  </data>
+  <data name="Home.LearningLoop" xml:space="preserve">
+    <value>حلقة التعلم الخاصة بك</value>
+  </data>
+  <data name="Home.TodayMindset" xml:space="preserve">
+    <value>عقلية اليوم</value>
+  </data>
+  <data name="Home.SmallSteps" xml:space="preserve">
+    <value>خطوات صغيرة. تقدم حقيقي.</value>
+  </data>
+  <data name="Home.QuickStart" xml:space="preserve">
+    <value>بدء سريع</value>
+  </data>
+  <data name="Home.ChooseNext" xml:space="preserve">
+    <value>اختر خطوتك التالية</value>
+  </data>
+  <data name="Home.LearningLanguage" xml:space="preserve">
+    <value>تعلّم {0}</value>
+  </data>
+  <data name="Home.BuildVocabulary" xml:space="preserve">
+    <value>ابنِ المفردات</value>
+  </data>
+  <data name="Home.BuildVocabularyText" xml:space="preserve">
+    <value>أنشئ مجموعات مركزة من الكلمات التي تريد استخدامها فعلًا.</value>
+  </data>
+  <data name="Home.PracticeRecallText" xml:space="preserve">
+    <value>استخدم البطاقات التعليمية والكتابة والتدريبات المخصصة لترسيخ الكلمات.</value>
+  </data>
+  <data name="Home.SpeakNaturally" xml:space="preserve">
+    <value>تحدث بطلاقة</value>
+  </data>
+  <data name="Home.SpeakNaturallyText" xml:space="preserve">
+    <value>ادخل مشهدًا موجّهًا واحصل على توجيه خاص بعد كل دور.</value>
+  </data>
+  <data name="Home.ConnectedKicker" xml:space="preserve">
+    <value>مساحة عمل مترابطة واحدة</value>
+  </data>
+  <data name="Home.ConnectedTitle" xml:space="preserve">
+    <value>تعلّم من أي شيء يستحوذ على انتباهك أصلًا.</value>
+  </data>
+  <data name="Home.ConnectedText" xml:space="preserve">
+    <value>يمكن أن يصبح كتاب أو قائمة كلمات مشتركة أو مهمة صفية بداية جلسة التدريب التالية. ستبقى مفرداتك قريبة منك أينما ذهبت بعد ذلك.</value>
+  </data>
+  <data name="Home.ExploreCollections" xml:space="preserve">
+    <value>استكشف المجموعات المجتمعية</value>
+  </data>
+  <data name="Home.ReadCollect" xml:space="preserve">
+    <value>اقرأ واجمع</value>
+  </data>
+  <data name="Home.ReadCollectText" xml:space="preserve">
+    <value>حوّل ملف PDF إلى مفردات دون مغادرة الصفحة.</value>
+  </data>
+  <data name="Home.ExploreTogether" xml:space="preserve">
+    <value>استكشفوا معًا</value>
+  </data>
+  <data name="Home.ExploreTogetherText" xml:space="preserve">
+    <value>انسخ الاختبارات القصيرة والمجموعات العامة إلى مكتبتك.</value>
+  </data>
+  <data name="Home.JoinClassroom" xml:space="preserve">
+    <value>انضم إلى فصل دراسي</value>
+  </data>
+  <data name="Home.JoinClassroomText" xml:space="preserve">
+    <value>تعلّم مع الواجبات والمحتوى المشترك والدعم المباشر.</value>
+  </data>
+  <data name="Home.YourTurn" xml:space="preserve">
+    <value>دورك الآن</value>
+  </data>
+  <data name="Home.TodayLanguage" xml:space="preserve">
+    <value>ماذا ستفعل في {0} اليوم؟</value>
+  </data>
+  <data name="Home.PickFirstWord" xml:space="preserve">
+    <value>اختر لغة وابدأ بكلمة واحدة مفيدة.</value>
+  </data>
+  <data name="Home.ContinueLearning" xml:space="preserve">
+    <value>تابع التعلم</value>
+  </data>
+  <data name="Home.PickLanguage" xml:space="preserve">
+    <value>اختر لغة</value>
+  </data>
+  <data name="Home.CreateAccount" xml:space="preserve">
+    <value>إنشاء حساب</value>
+  </data>
+  <data name="Auth.BrandTagline" xml:space="preserve">
+    <value>الانغماس اللغوي الصوتي</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+  <data name="Auth.WelcomeBack" xml:space="preserve">
+    <value>مرحبًا بعودتك</value>
+  </data>
+  <data name="Auth.LoginIntro" xml:space="preserve">
+    <value>يرجى إدخال بياناتك لمتابعة رحلتك.</value>
+  </data>
+  <data name="Auth.TrialLabel" xml:space="preserve">
+    <value>عرض تجريبي:</value>
+  </data>
+  <data name="Auth.TrialText" xml:space="preserve">
+    <value>احصل على 25 رصيدًا مرة واحدة عند تسجيل الدخول باستخدام Google أو Microsoft. لا تحصل الحسابات التي تستخدم كلمة مرور على أرصدة تجريبية تلقائية.</value>
+  </data>
+  <data name="Auth.EmailAddress" xml:space="preserve">
+    <value>عنوان البريد الإلكتروني</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>كلمة المرور</value>
+  </data>
+  <data name="Auth.Forgot" xml:space="preserve">
+    <value>هل نسيت؟</value>
+  </data>
+  <data name="Auth.OrContinue" xml:space="preserve">
+    <value>أو تابع باستخدام</value>
+  </data>
+  <data name="Auth.ContinueProvider" xml:space="preserve">
+    <value>تابع باستخدام {0}</value>
+  </data>
+  <data name="Auth.NoAccount" xml:space="preserve">
+    <value>ليس لديك حساب؟</value>
+  </data>
+  <data name="Auth.CreateAccount" xml:space="preserve">
+    <value>إنشاء حساب</value>
+  </data>
+  <data name="Auth.RegisterTitle" xml:space="preserve">
+    <value>التسجيل</value>
+  </data>
+  <data name="Auth.CreateYourAccount" xml:space="preserve">
+    <value>أنشئ حسابك</value>
+  </data>
+  <data name="Auth.RegisterIntro" xml:space="preserve">
+    <value>ابدأ رحلتك في الانغماس اللغوي اليوم.</value>
+  </data>
+  <data name="Auth.RegisterTrialLabel" xml:space="preserve">
+    <value>تجربة بـ 25 رصيدًا:</value>
+  </data>
+  <data name="Auth.RegisterTrialText" xml:space="preserve">
+    <value>متاحة مرة واحدة بعد ربط حسابك وتسجيل الدخول باستخدام Google أو Microsoft. إنشاء حساب بكلمة مرور فقط لا يضيف أرصدة تجريبية.</value>
+  </data>
+  <data name="Auth.ConfirmPassword" xml:space="preserve">
+    <value>تأكيد كلمة المرور</value>
+  </data>
+  <data name="Auth.AlreadyAccount" xml:space="preserve">
+    <value>هل لديك حساب بالفعل؟</value>
+  </data>
+  <data name="Auth.ForgotTitle" xml:space="preserve">
+    <value>نسيت كلمة المرور</value>
+  </data>
+  <data name="Auth.ForgotHeading" xml:space="preserve">
+    <value>إعادة تعيين كلمة المرور</value>
+  </data>
+  <data name="Auth.ForgotUnavailable" xml:space="preserve">
+    <value>إعادة تعيين كلمة المرور عبر البريد الإلكتروني غير متاحة بعد. تواصل مع الدعم إذا كنت بحاجة إلى مساعدة في الوصول إلى حسابك.</value>
+  </data>
+  <data name="Auth.BackToLogin" xml:space="preserve">
+    <value>العودة إلى تسجيل الدخول</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>البريد الإلكتروني أو كلمة المرور غير صحيحة.</value>
+  </data>
+  <data name="Auth.AccountLocked" xml:space="preserve">
+    <value>الحساب مقفل. يُرجى المحاولة مرة أخرى لاحقًا.</value>
+  </data>
+  <data name="Auth.ExternalNotConfigured" xml:space="preserve">
+    <value>تسجيل الدخول باستخدام {0} غير مُعدّ.</value>
+  </data>
+  <data name="Auth.ExternalFailed" xml:space="preserve">
+    <value>فشل تسجيل الدخول الخارجي.</value>
+  </data>
+  <data name="Auth.ExternalProviderFailed" xml:space="preserve">
+    <value>فشل تسجيل الدخول باستخدام {0}. تحقّق من معرّف عميل OAuth المحلي الخاص بـ {0} والسرّ الخاص بالعميل، ثم حاول مرة أخرى.</value>
+  </data>
+  <data name="Identity.DuplicateUserName" xml:space="preserve">
+    <value>يوجد حساب بهذا البريد الإلكتروني بالفعل.</value>
+  </data>
+  <data name="Identity.DuplicateEmail" xml:space="preserve">
+    <value>يوجد حساب بهذا البريد الإلكتروني بالفعل.</value>
+  </data>
+  <data name="Identity.PasswordTooShort" xml:space="preserve">
+    <value>كلمة المرور قصيرة جدًا.</value>
+  </data>
+  <data name="Identity.PasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>يجب أن تحتوي كلمة المرور على رمز.</value>
+  </data>
+  <data name="Identity.PasswordRequiresDigit" xml:space="preserve">
+    <value>يجب أن تحتوي كلمة المرور على رقم.</value>
+  </data>
+  <data name="Identity.PasswordRequiresLower" xml:space="preserve">
+    <value>يجب أن تحتوي كلمة المرور على حرف صغير.</value>
+  </data>
+  <data name="Identity.PasswordRequiresUpper" xml:space="preserve">
+    <value>يجب أن تحتوي كلمة المرور على حرف كبير.</value>
+  </data>
+  <data name="Identity.DefaultError" xml:space="preserve">
+    <value>تعذر إنشاء الحساب. تحقّق من التفاصيل وحاول مرة أخرى.</value>
+  </data>
+  <data name="Validation.PasswordsMismatch" xml:space="preserve">
+    <value>كلمتا المرور غير متطابقتين.</value>
+  </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>الحقل {0} مطلوب.</value>
+  </data>
+  <data name="Validation.Email" xml:space="preserve">
+    <value>الحقل {0} ليس عنوان بريد إلكتروني صالحًا.</value>
+  </data>
+  <data name="Validation.MinLength" xml:space="preserve">
+    <value>يجب أن يكون الحقل {0} من نوع سلسلة أو مصفوفة بطول أدنى قدره '{1}'.</value>
+  </data>
+  <data name="Legal.Label" xml:space="preserve">
+    <value>قانوني</value>
+  </data>
+  <data name="Legal.PrivacyPolicy" xml:space="preserve">
+    <value>سياسة الخصوصية</value>
+  </data>
+  <data name="Legal.TermsOfService" xml:space="preserve">
+    <value>شروط الخدمة</value>
+  </data>
+  <data name="Legal.Support" xml:space="preserve">
+    <value>الدعم</value>
+  </data>
+  <data name="Legal.PrivacyTitle" xml:space="preserve">
+    <value>الخصوصية</value>
+  </data>
+  <data name="Legal.TermsTitle" xml:space="preserve">
+    <value>الشروط</value>
+  </data>
+  <data name="Legal.EnglishGoverns" xml:space="preserve">
+    <value>تُوفَّر هذه الترجمة للتسهيل. إذا اختلفت عن النسخة الإنجليزية، فإن النسخة الإنجليزية هي المعتمدة.</value>
+  </data>
+  <data name="Transcripts.CountOne" xml:space="preserve">
+    <value>تم حفظ {0}</value>
+  </data>
+  <data name="Transcripts.CountMany" xml:space="preserve">
+    <value>تم حفظ {0}</value>
+  </data>
+  <data name="Transcripts.CaptionOne" xml:space="preserve">
+    <value>[{0}] تسمية توضيحية</value>
+  </data>
+  <data name="Transcripts.CaptionMany" xml:space="preserve">
+    <value>{0} تسميات توضيحية</value>
+  </data>
+  <data name="Quiz.Progress" xml:space="preserve">
+    <value>{0} من {1} {2}</value>
+  </data>
+  <data name="Quiz.CorrectCount" xml:space="preserve">
+    <value>{0} صحيحة</value>
+  </data>
+  <data name="Quiz.PromptLabel" xml:space="preserve">
+    <value>مُطالبة {0}</value>
+  </data>
+  <data name="Quiz.UkrainianKeyboard" xml:space="preserve">
+    <value>لوحة مفاتيح افتراضية للأوكرانية</value>
+  </data>
+  <data name="Books.Title" xml:space="preserve">
+    <value>الكتب</value>
+  </data>
+  <data name="Books.YourBooks" xml:space="preserve">
+    <value>كتبك</value>
+  </data>
+  <data name="Books.LanguageBooks" xml:space="preserve">
+    <value>كتبك باللغة {0}</value>
+  </data>
+  <data name="Books.LanguageTitle" xml:space="preserve">
+    <value>كتب {0}</value>
+  </data>
+  <data name="Books.YourLibrary" xml:space="preserve">
+    <value>مكتبتك</value>
+  </data>
+  <data name="Books.HeroPrefix" xml:space="preserve">
+    <value>حوّل كل صفحة إلى</value>
+  </data>
+  <data name="Books.Progress" xml:space="preserve">
+    <value>تقدّم.</value>
+  </data>
+  <data name="Books.HeroText" xml:space="preserve">
+    <value>أحضر مواد القراءة الخاصة بك واستخدم Glosify لاستكشاف كل صفحة وعبارة وكلمة جديدة.</value>
+  </data>
+  <data name="Books.SummaryAria" xml:space="preserve">
+    <value>ملخص المكتبة</value>
+  </data>
+  <data name="Books.BookOne" xml:space="preserve">
+    <value>كتاب</value>
+  </data>
+  <data name="Books.BookMany" xml:space="preserve">
+    <value>كتب</value>
+  </data>
+  <data name="Books.PageOne" xml:space="preserve">
+    <value>صفحة</value>
+  </data>
+  <data name="Books.PageMany" xml:space="preserve">
+    <value>صفحات</value>
+  </data>
+  <data name="Books.AddShelf" xml:space="preserve">
+    <value>أضف إلى رفّك</value>
+  </data>
+  <data name="Books.UploadPdf" xml:space="preserve">
+    <value>تحميل PDF</value>
+  </data>
+  <data name="Books.ChoosePdf" xml:space="preserve">
+    <value>اختر ملف PDF</value>
+  </data>
+  <data name="Books.PdfLimit" xml:space="preserve">
+    <value>PDF نصّي · حتى 25 MB</value>
+  </data>
+  <data name="Books.Browse" xml:space="preserve">
+    <value>تصفّح</value>
+  </data>
+  <data name="Books.AddLibrary" xml:space="preserve">
+    <value>أضف إلى المكتبة</value>
+  </data>
+  <data name="Books.KeepReading" xml:space="preserve">
+    <value>واصل القراءة</value>
+  </data>
+  <data name="Books.OnShelf" xml:space="preserve">
+    <value>{0} على رفّك</value>
+  </data>
+  <data name="Books.DeleteConfirm" xml:space="preserve">
+    <value>هل تريد حذف "{0}" وصفحاته نهائيًا؟ ستبقى المحادثات التي استخدمته.</value>
+  </data>
+  <data name="Books.Delete" xml:space="preserve">
+    <value>حذف {0}</value>
+  </data>
+  <data name="Books.Read" xml:space="preserve">
+    <value>اقرأ {0}</value>
+  </data>
+  <data name="Books.ReaderEdition" xml:space="preserve">
+    <value>نسخة القارئ</value>
+  </data>
+  <data name="Books.Added" xml:space="preserve">
+    <value>تمت الإضافة</value>
+  </data>
+  <data name="Books.PageCountOne" xml:space="preserve">
+    <value>{0} صفحة</value>
+  </data>
+  <data name="Books.PageCountMany" xml:space="preserve">
+    <value>{0} صفحات</value>
+  </data>
+  <data name="Books.StartReading" xml:space="preserve">
+    <value>ابدأ القراءة</value>
+  </data>
+  <data name="Books.ShelfReady" xml:space="preserve">
+    <value>رفّك جاهز</value>
+  </data>
+  <data name="Books.NoLanguageBooks" xml:space="preserve">
+    <value>لا توجد كتب باللغة {0} بعد</value>
+  </data>
+  <data name="Books.EmptyText" xml:space="preserve">
+    <value>حمّل أول ملف PDF نصّي لك أعلاه وابدأ التعلّم من الأشياء التي تحب قراءتها بالفعل.</value>
+  </data>
+  <data name="Books.EmptyLanguageText" xml:space="preserve">
+    <value> سيتم إضافته إلى رفّك باللغة {0}.</value>
+  </data>
+  <data name="Books.ChooseFirst" xml:space="preserve">
+    <value>اختر كتابك الأول</value>
+  </data>
+  <data name="Common.First" xml:space="preserve">
+    <value>الأول</value>
+  </data>
+  <data name="Common.Last" xml:space="preserve">
+    <value>الأخير</value>
+  </data>
+  <data name="Common.Page" xml:space="preserve">
+    <value>الصفحة {0}</value>
+  </data>
+  <data name="Common.Go" xml:space="preserve">
+    <value>انتقال</value>
+  </data>
+  <data name="Transcripts.AssistantTitle" xml:space="preserve">
+    <value>مساعد النص التفريغي</value>
+  </data>
+  <data name="Transcripts.AssistantEmpty" xml:space="preserve">
+    <value>اسأل عن هذا النص التفريغي أو استخدمه مع اختباراتك الحالية.</value>
+  </data>
+  <data name="Transcripts.AssistantPlaceholder" xml:space="preserve">
+    <value>اسأل عن هذا النص التفريغي...</value>
+  </data>
+  <data name="Transcripts.OriginalFor" xml:space="preserve">
+    <value>تم حفظ الكلام الأصلي لتعلّم {0}</value>
+  </data>
+  <data name="Transcripts.LegacyFor" xml:space="preserve">
+    <value>تعليقات مترجمة قديمة · التعلّم {0}</value>
+  </data>
+  <data name="Transcripts.Started" xml:space="preserve">
+    <value>بدأ</value>
+  </data>
+  <data name="Transcripts.NameLabel" xml:space="preserve">
+    <value>عنوان النص التفريغي</value>
+  </data>
+  <data name="Transcripts.Rename" xml:space="preserve">
+    <value>إعادة التسمية</value>
+  </data>
+  <data name="Transcripts.DeleteConfirm" xml:space="preserve">
+    <value>هل تريد حذف هذا النص التفريغي المحفوظ نهائيًا؟</value>
+  </data>
+  <data name="Transcripts.StopBeforeDelete" xml:space="preserve">
+    <value>أوقف التسميات التوضيحية المباشرة قبل الحذف</value>
+  </data>
+  <data name="Transcripts.StreamAria" xml:space="preserve">
+    <value>تدفق التسميات التوضيحية</value>
+  </data>
+  <data name="Transcripts.OriginalSpeech" xml:space="preserve">
+    <value>الكلام الأصلي</value>
+  </data>
+  <data name="Transcripts.Translation" xml:space="preserve">
+    <value>الترجمة</value>
+  </data>
+  <data name="Transcripts.TranslationNote" xml:space="preserve">
+    <value>مترجَم مباشرةً من الصوت نفسه بواسطة نموذج مختلف. مفيد للتحقق من المعنى عندما لا يُسمع الكلام الأصلي بوضوح.</value>
+  </data>
+  <data name="Transcripts.OriginalNote" xml:space="preserve">
+    <value>ما التقطه متعرّف الكلام. انتقل إلى الترجمة للتحقق من المقاطع غير الواضحة.</value>
+  </data>
+  <data name="Transcripts.SavedTranslationAria" xml:space="preserve">
+    <value>التسميات التوضيحية المترجمة المحفوظة</value>
+  </data>
+  <data name="Transcripts.SavedOriginalAria" xml:space="preserve">
+    <value>الكلام الأصلي المحفوظ</value>
+  </data>
+  <data name="Transcripts.TextPagesAria" xml:space="preserve">
+    <value>صفحات نص التفريغ</value>
+  </data>
+  <data name="Transcripts.JumpPage" xml:space="preserve">
+    <value>الانتقال إلى الصفحة</value>
+  </data>
+  <data name="Common.Off" xml:space="preserve">
+    <value>إيقاف</value>
+  </data>
+  <data name="Reader.AssistantTitle" xml:space="preserve">
+    <value>مساعد الصفحة</value>
+  </data>
+  <data name="Reader.AssistantEmpty" xml:space="preserve">
+    <value>اطلب مفردات أو جملًا من هذه الصفحة.</value>
+  </data>
+  <data name="Reader.AssistantPlaceholder" xml:space="preserve">
+    <value>أنشئ اختبارًا من هذه الصفحة...</value>
+  </data>
+  <data name="Reader.TranslatedPage" xml:space="preserve">
+    <value>الصفحة المترجمة</value>
+  </data>
+  <data name="Reader.BackBooks" xml:space="preserve">
+    <value>العودة إلى الكتب</value>
+  </data>
+  <data name="Reader.PdfControls" xml:space="preserve">
+    <value>عناصر التحكم في عرض PDF</value>
+  </data>
+  <data name="Reader.ZoomOut" xml:space="preserve">
+    <value>تصغير</value>
+  </data>
+  <data name="Reader.ResetZoom100" xml:space="preserve">
+    <value>إعادة التكبير إلى 100%</value>
+  </data>
+  <data name="Reader.ResetZoom" xml:space="preserve">
+    <value>إعادة التكبير</value>
+  </data>
+  <data name="Reader.ZoomIn" xml:space="preserve">
+    <value>تكبير</value>
+  </data>
+  <data name="Reader.FitPage" xml:space="preserve">
+    <value>ملاءمة للصفحة</value>
+  </data>
+  <data name="Reader.Rotate" xml:space="preserve">
+    <value>تدوير مع عقارب الساعة</value>
+  </data>
+  <data name="Reader.PolishVoice" xml:space="preserve">
+    <value>صوت القراءة المحسّن</value>
+  </data>
+  <data name="Reader.ReadAloud" xml:space="preserve">
+    <value>اقرأ هذه الصفحة بصوت عالٍ</value>
+  </data>
+  <data name="Reader.Read" xml:space="preserve">
+    <value>القراءة</value>
+  </data>
+  <data name="Reader.TranslationControls" xml:space="preserve">
+    <value>عناصر التحكم في ترجمة الصفحة</value>
+  </data>
+  <data name="Reader.TranslateOffAria" xml:space="preserve">
+    <value>الترجمة متوقفة. ترجم هذه الصفحة</value>
+  </data>
+  <data name="Reader.TranslateOffTitle" xml:space="preserve">
+    <value>الترجمة متوقفة. انقر لترجمة هذه الصفحة</value>
+  </data>
+  <data name="Reader.Translation" xml:space="preserve">
+    <value>الترجمة</value>
+  </data>
+  <data name="Reader.TranslationLanguage" xml:space="preserve">
+    <value>لغة الترجمة</value>
+  </data>
+  <data name="Reader.SplitAria" xml:space="preserve">
+    <value>إظهار الأصل والترجمة جنبًا إلى جنب</value>
+  </data>
+  <data name="Reader.SplitView" xml:space="preserve">
+    <value>عرض مقسّم</value>
+  </data>
+  <data name="Reader.Original" xml:space="preserve">
+    <value>الأصل</value>
+  </data>
+  <data name="Reader.PreviousPage" xml:space="preserve">
+    <value>الصفحة السابقة</value>
+  </data>
+  <data name="Reader.NextPage" xml:space="preserve">
+    <value>الصفحة التالية</value>
+  </data>
+  <data name="Client.GenericError" xml:space="preserve">
+    <value>حدث خطأ ما. يُرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="Client.NetworkError" xml:space="preserve">
+    <value>خطأ في الشبكة. يُرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="Client.TryAgain" xml:space="preserve">
+    <value>حاول مرة أخرى</value>
+  </data>
+  <data name="Client.Loading" xml:space="preserve">
+    <value>جارٍ التحميل…</value>
+  </data>
+  <data name="Client.Correct" xml:space="preserve">
+    <value>صحيح</value>
+  </data>
+  <data name="Client.Incorrect" xml:space="preserve">
+    <value>غير صحيح</value>
+  </data>
+  <data name="Client.NextWord" xml:space="preserve">
+    <value>الكلمة التالية</value>
+  </data>
+  <data name="Client.CheckFailed" xml:space="preserve">
+    <value>تعذّر التحقق من تلك الإجابة. حاول مرة أخرى.</value>
+  </data>
+  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
+    <value>هل تريد حذف هذا الاختبار المخصص؟</value>
+  </data>
+  <data name="Client.DeleteQuizFailed" xml:space="preserve">
+    <value>تعذّر حذف الاختبار المخصص. حاول مرة أخرى.</value>
+  </data>
+  <data name="Client.RepairFailed" xml:space="preserve">
+    <value>فشلت عملية الإصلاح. يُرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="Client.RepairStopped" xml:space="preserve">
+    <value>توقفت طلب الإصلاح بشكل غير متوقع. يُرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="Client.DeleteChat" xml:space="preserve">
+    <value>حذف المحادثة</value>
+  </data>
+  <data name="Client.DeleteChatConfirm" xml:space="preserve">
+    <value>هل تريد حذف هذه المحادثة؟</value>
+  </data>
+  <data name="Client.ApplyFailed" xml:space="preserve">
+    <value>تعذّر تطبيق التغييرات.</value>
+  </data>
+  <data name="Client.ApplyNetwork" xml:space="preserve">
+    <value>خطأ في الشبكة أثناء تطبيق التغييرات.</value>
+  </data>
+  <data name="Client.RejectNetwork" xml:space="preserve">
+    <value>خطأ في الشبكة أثناء رفض التغييرات.</value>
+  </data>
+  <data name="Client.AssistantFailed" xml:space="preserve">
+    <value>تعذّر على المساعد الرد.</value>
+  </data>
+  <data name="Client.AssistantNetwork" xml:space="preserve">
+    <value>خطأ في الشبكة أثناء الاتصال بالمساعد.</value>
+  </data>
+  <data name="Client.PictureFailed" xml:space="preserve">
+    <value>تعذّر قراءة النص من تلك الصورة.</value>
+  </data>
+  <data name="Client.PictureNetwork" xml:space="preserve">
+    <value>خطأ في الشبكة أثناء قراءة الصورة.</value>
+  </data>
+  <data name="Client.MessageFailed" xml:space="preserve">
+    <value>فشلت عملية إرسال الرسالة.</value>
+  </data>
+  <data name="Client.JoinCallFailed" xml:space="preserve">
+    <value>تعذّر الانضمام إلى المكالمة.</value>
+  </data>
+  <data name="Client.CallTokenFailed" xml:space="preserve">
+    <value>تعذّر الحصول على رمز المكالمة.</value>
+  </data>
+  <data name="Client.PageOf" xml:space="preserve">
+    <value>الصفحة {0} من {1}</value>
+  </data>
+  <data name="Client.TtsNoText" xml:space="preserve">
+    <value>لا يوجد نص قابل للتحديد لقراءته.</value>
+  </data>
+  <data name="Client.TtsUnavailable" xml:space="preserve">
+    <value>التحويل من النص إلى كلام غير متوفر في هذا المتصفح.</value>
+  </data>
+  <data name="Client.TtsFailed" xml:space="preserve">
+    <value>فشل تشغيل التحويل من النص إلى كلام.</value>
+  </data>
+  <data name="Client.TranslationFailed" xml:space="preserve">
+    <value>تعذّر ترجمة الصفحة.</value>
+  </data>
+  <data name="Client.PreferenceFailed" xml:space="preserve">
+    <value>تعذّر حفظ تفضيل اللغة.</value>
+  </data>
+  <data name="Client.On" xml:space="preserve">
+    <value>تشغيل</value>
+  </data>
+  <data name="Client.Off" xml:space="preserve">
+    <value>إيقاف</value>
+  </data>
+  <data name="Client.Translating" xml:space="preserve">
+    <value>جارٍ الترجمة…</value>
+  </data>
+  <data name="Client.TranslationError" xml:space="preserve">
+    <value>خطأ</value>
+  </data>
+  <data name="Client.Read" xml:space="preserve">
+    <value>قراءة</value>
+  </data>
+  <data name="Client.Stop" xml:space="preserve">
+    <value>إيقاف</value>
+  </data>
+  <data name="Client.MessageRateLimited" xml:space="preserve">
+    <value>أنت ترسل الرسائل بسرعة كبيرة جدًا. انتظر لحظة.</value>
+  </data>
+  <data name="Client.SessionExpired" xml:space="preserve">
+    <value>انتهت الجلسة. أعد بدء الاختبار للمتابعة.</value>
+  </data>
+  <data name="Client.NotQuite" xml:space="preserve">
+    <value>ليس تمامًا</value>
+  </data>
+  <data name="Client.ShowResults" xml:space="preserve">
+    <value>عرض النتائج</value>
+  </data>
+  <data name="Quiz.LibraryTitle" xml:space="preserve">
+    <value>اختيار الاختبار</value>
+  </data>
+  <data name="Quiz.SelectQuiz" xml:space="preserve">
+    <value>اختر اختبارًا</value>
+  </data>
+  <data name="Quiz.ShowingLanguage" xml:space="preserve">
+    <value>يتم عرض اختباراتك بـ{0}.</value>
+  </data>
+  <data name="Quiz.LanguageCollection" xml:space="preserve">
+    <value>مجموعة {0}.</value>
+  </data>
+  <data name="Quiz.Library" xml:space="preserve">
+    <value>مكتبة الاختبارات</value>
+  </data>
+  <data name="Quiz.ChangeLanguage" xml:space="preserve">
+    <value>تغيير اللغة</value>
+  </data>
+  <data name="Quiz.MakePrivate" xml:space="preserve">
+    <value>جعل المجموعة خاصة</value>
+  </data>
+  <data name="Quiz.MakePublic" xml:space="preserve">
+    <value>جعل المجموعة عامة</value>
+  </data>
+  <data name="Quiz.PublicSubtree" xml:space="preserve">
+    <value>الفرع الفرعي العام</value>
+  </data>
+  <data name="Quiz.Private" xml:space="preserve">
+    <value>خاص</value>
+  </data>
+  <data name="Quiz.LibrarySummary" xml:space="preserve">
+    <value>ملخص المكتبة</value>
+  </data>
+  <data name="Quiz.CollectionOne" xml:space="preserve">
+    <value>مجموعة</value>
+  </data>
+  <data name="Quiz.CollectionMany" xml:space="preserve">
+    <value>مجموعات</value>
+  </data>
+  <data name="Quiz.QuizOne" xml:space="preserve">
+    <value>اختبار</value>
+  </data>
+  <data name="Quiz.QuizMany" xml:space="preserve">
+    <value>اختبارات</value>
+  </data>
+  <data name="Quiz.NewCollection" xml:space="preserve">
+    <value>مجموعة جديدة</value>
+  </data>
+  <data name="Quiz.NewQuiz" xml:space="preserve">
+    <value>اختبار جديد</value>
+  </data>
+  <data name="Quiz.Collections" xml:space="preserve">
+    <value>المجموعات</value>
+  </data>
+  <data name="Quiz.CollectionsHelp" xml:space="preserve">
+    <value>اجمع الاختبارات ذات الصلة وحافظ على تنظيم مسار تعلّمك.</value>
+  </data>
+  <data name="Quiz.DropInto" xml:space="preserve">
+    <value>أفلت الاختبارات في {0}</value>
+  </data>
+  <data name="Quiz.NestedCount" xml:space="preserve">
+    <value>{0} متداخلة</value>
+  </data>
+  <data name="Quiz.YourQuizzes" xml:space="preserve">
+    <value>اختباراتك</value>
+  </data>
+  <data name="Quiz.DragHelp" xml:space="preserve">
+    <value>افتح اختبارًا للدراسة، أو اسحبه إلى مجموعة لتنظيمه.</value>
+  </data>
+  <data name="Quiz.ChooseHelp" xml:space="preserve">
+    <value>اختر اختبارًا وواصل تقدّمك في التعلّم.</value>
+  </data>
+  <data name="Quiz.DeleteConfirm" xml:space="preserve">
+    <value>هل تريد حذف هذا الاختبار وجميع كلماته؟</value>
+  </data>
+  <data name="Quiz.DeleteNamed" xml:space="preserve">
+    <value>حذف {0}</value>
+  </data>
+  <data name="Quiz.Delete" xml:space="preserve">
+    <value>حذف الاختبار</value>
+  </data>
+  <data name="Quiz.EmptyTitle" xml:space="preserve">
+    <value>لا توجد اختبارات أو مجموعات بعد</value>
+  </data>
+  <data name="Quiz.EmptyText" xml:space="preserve">
+    <value>أنشئ مجموعة لتنظيم مفرداتك، أو أنشئ اختبارك الأول.</value>
+  </data>
+  <data name="Quiz.CreateCollection" xml:space="preserve">
+    <value>إنشاء مجموعة</value>
+  </data>
+  <data name="Quiz.CreateQuiz" xml:space="preserve">
+    <value>إنشاء اختبار</value>
+  </data>
+  <data name="Quiz.CreateNewCollection" xml:space="preserve">
+    <value>إنشاء مجموعة جديدة</value>
+  </data>
+  <data name="Quiz.CollectionName" xml:space="preserve">
+    <value>اسم المجموعة</value>
+  </data>
+  <data name="Quiz.CollectionExample" xml:space="preserve">
+    <value>مثال: عبارات السفر</value>
+  </data>
+  <data name="Quiz.CreateNewQuiz" xml:space="preserve">
+    <value>إنشاء اختبار جديد</value>
+  </data>
+  <data name="Quiz.Name" xml:space="preserve">
+    <value>اسم الاختبار</value>
+  </data>
+  <data name="Quiz.NameExample" xml:space="preserve">
+    <value>مثال: أساسيات الفرنسية</value>
+  </data>
+  <data name="Quiz.SourceLanguage" xml:space="preserve">
+    <value>لغة المصدر</value>
+  </data>
+  <data name="Quiz.SelectLanguage" xml:space="preserve">
+    <value>اختر لغة...</value>
+  </data>
+  <data name="Quiz.TargetLanguage" xml:space="preserve">
+    <value>لغة الهدف</value>
+  </data>
+  <data name="Books.UploadRequired" xml:space="preserve">
+    <value>اختر ملف PDF لرفعه.</value>
+  </data>
+  <data name="Books.Uploaded" xml:space="preserve">
+    <value>تم رفع {0}.</value>
+  </data>
+  <data name="Books.UploadInvalid" xml:space="preserve">
+    <value>اختر ملف PDF نصيًا صالحًا بحجم أقل من 25 ميغابايت.</value>
+  </data>
+  <data name="Books.ProcessFailed" xml:space="preserve">
+    <value>تعذر معالجة ملف PDF. جرّب ملف PDF نصيًا.</value>
+  </data>
+  <data name="Books.Deleted" xml:space="preserve">
+    <value>تم حذف {0}.</value>
+  </data>
+  <data name="Books.PaidUnavailable" xml:space="preserve">
+    <value>تُعاد الميزات المدفوعة الخاصة بـ{0} عند {1}.</value>
+  </data>
+  <data name="Books.PaidReason" xml:space="preserve">
+    <value>تم الوصول إلى الميزانية الشهرية للتطبيق.</value>
+  </data>
+  <data name="Transcripts.Renamed" xml:space="preserve">
+    <value>تمت إعادة تسمية النص.</value>
+  </data>
+  <data name="Transcripts.InvalidTitle" xml:space="preserve">
+    <value>يجب أن يتراوح عنوان النص بين 1 و160 حرفًا.</value>
+  </data>
+  <data name="Transcripts.Deleted" xml:space="preserve">
+    <value>تم حذف النص.</value>
+  </data>
+  <data name="Common.Accept" xml:space="preserve">
+    <value>موافق</value>
+  </data>
+  <data name="Common.Optional" xml:space="preserve">
+    <value>اختياري</value>
+  </data>
+  <data name="Common.Open" xml:space="preserve">
+    <value>فتح</value>
+  </data>
+  <data name="Common.Copy" xml:space="preserve">
+    <value>نسخ</value>
+  </data>
+  <data name="Classroom.Title" xml:space="preserve">
+    <value>الفصول الدراسية</value>
+  </data>
+  <data name="Classroom.MyClassrooms" xml:space="preserve">
+    <value>فصولي الدراسية</value>
+  </data>
+  <data name="Classroom.LanguageClassrooms" xml:space="preserve">
+    <value>فصولك الدراسية لـ{0}</value>
+  </data>
+  <data name="Classroom.LanguageTitle" xml:space="preserve">
+    <value>فصول دراسية لـ{0}</value>
+  </data>
+  <data name="Classroom.SharedSpaces" xml:space="preserve">
+    <value>مساحات تعلّم مشتركة</value>
+  </data>
+  <data name="Classroom.LearnBetter" xml:space="preserve">
+    <value>تعلّم بشكل أفضل،</value>
+  </data>
+  <data name="Classroom.Together" xml:space="preserve">
+    <value>معًا.</value>
+  </data>
+  <data name="Classroom.HeroText" xml:space="preserve">
+    <value>أنشئ مساحة للمتعلمين، وشارك مواد التدريب، وحافظ على تحرّك الجميع في الاتجاه نفسه.</value>
+  </data>
+  <data name="Classroom.Summary" xml:space="preserve">
+    <value>ملخص الفصل الدراسي</value>
+  </data>
+  <data name="Classroom.One" xml:space="preserve">
+    <value>فصل دراسي</value>
+  </data>
+  <data name="Classroom.Many" xml:space="preserve">
+    <value>فصول دراسية</value>
+  </data>
+  <data name="Classroom.MemberOne" xml:space="preserve">
+    <value>عضو</value>
+  </data>
+  <data name="Classroom.MemberMany" xml:space="preserve">
+    <value>أعضاء</value>
+  </data>
+  <data name="Classroom.Waiting" xml:space="preserve">
+    <value>في انتظار</value>
+  </data>
+  <data name="Classroom.LanguageLab" xml:space="preserve">
+    <value>مختبر اللغات</value>
+  </data>
+  <data name="Classroom.LearnersActive" xml:space="preserve">
+    <value>{0} من المتعلمين نشطون</value>
+  </data>
+  <data name="Classroom.Live" xml:space="preserve">
+    <value>مباشر</value>
+  </data>
+  <data name="Classroom.PracticeCompleted" xml:space="preserve">
+    <value>اكتمل التدريب</value>
+  </data>
+  <data name="Classroom.WaitingForYou" xml:space="preserve">
+    <value>بانتظارك</value>
+  </data>
+  <data name="Classroom.Invitations" xml:space="preserve">
+    <value>الدعوات</value>
+  </data>
+  <data name="Classroom.NewCount" xml:space="preserve">
+    <value>{0} جديد</value>
+  </data>
+  <data name="Classroom.Invited" xml:space="preserve">
+    <value>تمت دعوتك</value>
+  </data>
+  <data name="Classroom.InvitedBy" xml:space="preserve">
+    <value>دعاك {0} للانضمام بصفتك {1}</value>
+  </data>
+  <data name="Classroom.DeclineInvitation" xml:space="preserve">
+    <value>رفض الدعوة إلى {0}</value>
+  </data>
+  <data name="Classroom.GetStarted" xml:space="preserve">
+    <value>ابدأ الآن</value>
+  </data>
+  <data name="Classroom.MakeOrJoin" xml:space="preserve">
+    <value>أنشئ مساحة أو انضم إلى واحدة</value>
+  </data>
+  <data name="Classroom.ForTeachers" xml:space="preserve">
+    <value>للمعلمين</value>
+  </data>
+  <data name="Classroom.Create" xml:space="preserve">
+    <value>إنشاء فصل دراسي</value>
+  </data>
+  <data name="Classroom.CreateHelp" xml:space="preserve">
+    <value>أنشئ مكانًا للدروس والاختبارات والكتب والمحادثة.</value>
+  </data>
+  <data name="Classroom.LanguageHelp" xml:space="preserve">
+    <value> سيكون هذا فصلًا دراسيًا لـ {0}.</value>
+  </data>
+  <data name="Classroom.Name" xml:space="preserve">
+    <value>اسم الفصل الدراسي</value>
+  </data>
+  <data name="Classroom.NameExample" xml:space="preserve">
+    <value>مثال: Swedish A2 · Spring</value>
+  </data>
+  <data name="Classroom.ShortDescription" xml:space="preserve">
+    <value>وصف قصير</value>
+  </data>
+  <data name="Classroom.DescriptionPlaceholder" xml:space="preserve">
+    <value>ماذا ستتعلم مجموعتك؟</value>
+  </data>
+  <data name="Classroom.HaveCode" xml:space="preserve">
+    <value>هل لديك رمز دعوة؟</value>
+  </data>
+  <data name="Classroom.Join" xml:space="preserve">
+    <value>الانضمام إلى فصل دراسي</value>
+  </data>
+  <data name="Classroom.JoinHelp" xml:space="preserve">
+    <value>أدخل الرمز المكوّن من ثمانية أحرف الذي شاركك به معلمك.</value>
+  </data>
+  <data name="Classroom.JoinCode" xml:space="preserve">
+    <value>رمز الانضمام</value>
+  </data>
+  <data name="Classroom.JoinThis" xml:space="preserve">
+    <value>انضم إلى هذا الفصل الدراسي</value>
+  </data>
+  <data name="Classroom.YourSpaces" xml:space="preserve">
+    <value>مساحات التعلم الخاصة بك</value>
+  </data>
+  <data name="Classroom.TotalCount" xml:space="preserve">
+    <value>{0} إجمالي</value>
+  </data>
+  <data name="Classroom.OpenNamed" xml:space="preserve">
+    <value>فتح {0}</value>
+  </data>
+  <data name="Classroom.CardPlaceholder" xml:space="preserve">
+    <value>مساحة مشتركة للتعلم والممارسة.</value>
+  </data>
+  <data name="Classroom.BetterCompany" xml:space="preserve">
+    <value>التعلم أفضل مع الآخرين</value>
+  </data>
+  <data name="Classroom.NoLanguageYet" xml:space="preserve">
+    <value>لا توجد فصول دراسية لـ {0} بعد</value>
+  </data>
+  <data name="Classroom.EmptyHelp" xml:space="preserve">
+    <value>أنشئ أول فصل دراسي لك، أو اطلب من معلمك رمز انضمام للعثور على مجموعتك.</value>
+  </data>
+  <data name="Classroom.CreateFirst" xml:space="preserve">
+    <value>أنشئ مساحتك الأولى</value>
+  </data>
+  <data name="Classroom.JoinCall" xml:space="preserve">
+    <value>الانضمام إلى المكالمة</value>
+  </data>
+  <data name="Classroom.VideoCall" xml:space="preserve">
+    <value>مكالمة فيديو</value>
+  </data>
+  <data name="Classroom.Sections" xml:space="preserve">
+    <value>أقسام الفصل الدراسي</value>
+  </data>
+  <data name="Classroom.Stream" xml:space="preserve">
+    <value>الموجز</value>
+  </data>
+  <data name="Classroom.Content" xml:space="preserve">
+    <value>المحتوى</value>
+  </data>
+  <data name="Classroom.Planning" xml:space="preserve">
+    <value>التخطيط</value>
+  </data>
+  <data name="Classroom.Members" xml:space="preserve">
+    <value>الأعضاء</value>
+  </data>
+  <data name="Classroom.Results" xml:space="preserve">
+    <value>النتائج</value>
+  </data>
+  <data name="Speaking.LanguagePractice" xml:space="preserve">
+    <value>تدريب {0} على التحدث</value>
+  </data>
+  <data name="Speaking.HeroTitle" xml:space="preserve">
+    <value>تحدث بطريقتك إلى اللغة.</value>
+  </data>
+  <data name="Speaking.HeroText" xml:space="preserve">
+    <value>اختر معلمًا مفتوحًا أو مشهدًا، وتحدث بشكل طبيعي، واحصل على إرشاد خاص بعد كل دور.</value>
+  </data>
+  <data name="Speaking.PracticeQuiz" xml:space="preserve">
+    <value>اختبار تدريبي</value>
+  </data>
+  <data name="Speaking.ChooseQuiz" xml:space="preserve">
+    <value>اختر اختبارًا للتدريب على التحدث</value>
+  </data>
+  <data name="Speaking.FreeLesson" xml:space="preserve">
+    <value>درس مجاني</value>
+  </data>
+  <data name="Speaking.PoweredBy" xml:space="preserve">
+    <value>بدعم من Microsoft Foundry و Azure AI Speech</value>
+  </data>
+  <data name="Speaking.Settings" xml:space="preserve">
+    <value>إعدادات التدريب</value>
+  </data>
+  <data name="Speaking.ChooseAvatar" xml:space="preserve">
+    <value>اختر صورة رمزية</value>
+  </data>
+  <data name="Speaking.Level" xml:space="preserve">
+    <value>المستوى</value>
+  </data>
+  <data name="Speaking.ChooseLevel" xml:space="preserve">
+    <value>اختر مستوى CEFR</value>
+  </data>
+  <data name="Speaking.Beginner" xml:space="preserve">
+    <value>مبتدئ</value>
+  </data>
+  <data name="Speaking.Elementary" xml:space="preserve">
+    <value>أساسي</value>
+  </data>
+  <data name="Speaking.Intermediate" xml:space="preserve">
+    <value>متوسط</value>
+  </data>
+  <data name="Speaking.UpperIntermediate" xml:space="preserve">
+    <value>متوسط أعلى</value>
+  </data>
+  <data name="Speaking.Advanced" xml:space="preserve">
+    <value>متقدم</value>
+  </data>
+  <data name="Speaking.EnglishTranslation" xml:space="preserve">
+    <value>الترجمة الإنجليزية</value>
+  </data>
+  <data name="Speaking.MuteAvatar" xml:space="preserve">
+    <value>كتم الصوت للصورة الرمزية</value>
+  </data>
+  <data name="Speaking.AvatarScene" xml:space="preserve">
+    <value>مشهد الصورة الرمزية</value>
+  </data>
+  <data name="Speaking.HoldSpeak" xml:space="preserve">
+    <value>اضغط مع الاستمرار للتحدث والإرسال</value>
+  </data>
+  <data name="Speaking.StartingScene" xml:space="preserve">
+    <value>بدء المشهد…</value>
+  </data>
+  <data name="Speaking.ReplayLatestAria" xml:space="preserve">
+    <value>إعادة تشغيل أحدث رد للصورة الرمزية</value>
+  </data>
+  <data name="Speaking.ReplayLatest" xml:space="preserve">
+    <value>إعادة تشغيل أحدث رد</value>
+  </data>
+  <data name="Speaking.Conversation" xml:space="preserve">
+    <value>المحادثة</value>
+  </data>
+  <data name="Speaking.CurrentSession" xml:space="preserve">
+    <value>الجلسة الحالية</value>
+  </data>
+  <data name="Speaking.ScoreHelp" xml:space="preserve">
+    <value>تشير درجات النطق إلى الصوت المسجّل الخاص بك.</value>
+  </data>
+  <data name="Speaking.SpeakToType" xml:space="preserve">
+    <value>تحدث للكتابة</value>
+  </data>
+  <data name="Speaking.You" xml:space="preserve">
+    <value>أنت</value>
+  </data>
+  <data name="Speaking.Accuracy" xml:space="preserve">
+    <value>الدقة</value>
+  </data>
+  <data name="Speaking.Fluency" xml:space="preserve">
+    <value>الطلاقة</value>
+  </data>
+  <data name="Speaking.Completeness" xml:space="preserve">
+    <value>الاكتمال</value>
+  </data>
+  <data name="Speaking.ReplayReply" xml:space="preserve">
+    <value>إعادة تشغيل هذا الرد</value>
+  </data>
+  <data name="Speaking.ShowEnglish" xml:space="preserve">
+    <value>عرض الترجمة الإنجليزية</value>
+  </data>
+  <data name="Speaking.Grammar" xml:space="preserve">
+    <value>القواعد</value>
+  </data>
+  <data name="Speaking.Vocabulary" xml:space="preserve">
+    <value>المفردات</value>
+  </data>
+  <data name="Speaking.Naturalness" xml:space="preserve">
+    <value>الطبيعية</value>
+  </data>
+  <data name="Speaking.PracticeThis" xml:space="preserve">
+    <value>تدرّب على هذا</value>
+  </data>
+  <data name="Speaking.HearPhrase" xml:space="preserve">
+    <value>استمع إلى عبارة التدريب هذه</value>
+  </data>
+  <data name="Speaking.HoldRepeatAria" xml:space="preserve">
+    <value>اضغط مع الاستمرار لتكرار عبارة التدريب هذه</value>
+  </data>
+  <data name="Speaking.HoldRepeat" xml:space="preserve">
+    <value>اضغط مع الاستمرار للتكرار</value>
+  </data>
+  <data name="Quiz.DeletedWord" xml:space="preserve">
+    <value>تم حذف {0}.</value>
+  </data>
+  <data name="Quiz.DeletedNamed" xml:space="preserve">
+    <value>تم حذف {0}.</value>
+  </data>
+  <data name="Quiz.NowPublic" xml:space="preserve">
+    <value>أصبح الاختبار عامًا الآن.</value>
+  </data>
+  <data name="Quiz.NowPrivate" xml:space="preserve">
+    <value>أصبح الاختبار خاصًا الآن.</value>
+  </data>
+  <data name="Quiz.VisibilityFailed" xml:space="preserve">
+    <value>تعذّر تحديث حالة ظهور الاختبار.</value>
+  </data>
+  <data name="Quiz.CollectionNowPublic" xml:space="preserve">
+    <value>أصبحت المجموعة عامة الآن.</value>
+  </data>
+  <data name="Quiz.CollectionNowPrivate" xml:space="preserve">
+    <value>أصبحت المجموعة خاصة الآن.</value>
+  </data>
+  <data name="Quiz.CollectionVisibilityFailed" xml:space="preserve">
+    <value>تعذّر تحديث حالة ظهور المجموعة.</value>
+  </data>
+  <data name="Quiz.CollectionCreated" xml:space="preserve">
+    <value>تم إنشاء المجموعة {0}.</value>
+  </data>
+  <data name="Quiz.CollectionCreateFailed" xml:space="preserve">
+    <value>تعذّر إنشاء المجموعة. تحقّق من اسمها ومجموعتها الأصلية.</value>
+  </data>
+  <data name="Common.All" xml:space="preserve">
+    <value>الكل</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>إعدادات الاختبار</value>
+  </data>
+  <data name="Settings.FlashcardQuiz" xml:space="preserve">
+    <value>اختبار البطاقات التعليمية</value>
+  </data>
+  <data name="Settings.Source" xml:space="preserve">
+    <value>المصدر</value>
+  </data>
+  <data name="Settings.Target" xml:space="preserve">
+    <value>الهدف</value>
+  </data>
+  <data name="Settings.Configuration" xml:space="preserve">
+    <value>الإعدادات</value>
+  </data>
+  <data name="Settings.Intro" xml:space="preserve">
+    <value>اختر جلسة تدريب سريعة وراجع هذا الاختبار.</value>
+  </data>
+  <data name="Settings.SessionLength" xml:space="preserve">
+    <value>مدة الجلسة</value>
+  </data>
+  <data name="Settings.Words" xml:space="preserve">
+    <value>الكلمات</value>
+  </data>
+  <data name="Settings.AvailableLower" xml:space="preserve">
+    <value>متاح</value>
+  </data>
+  <data name="Settings.Quick" xml:space="preserve">
+    <value>سريع</value>
+  </data>
+  <data name="Settings.Standard" xml:space="preserve">
+    <value>قياسي</value>
+  </data>
+  <data name="Settings.WordRange" xml:space="preserve">
+    <value>نطاق الكلمات</value>
+  </data>
+  <data name="Settings.RangeHelp" xml:space="preserve">
+    <value>اسحب أيًا من المقبضين للتركيز على جزء من قائمتك، مثل أحدث الكلمات فقط.</value>
+  </data>
+  <data name="Settings.Newest20" xml:space="preserve">
+    <value>أحدث 20%</value>
+  </data>
+  <data name="Settings.Newest50" xml:space="preserve">
+    <value>أحدث 50%</value>
+  </data>
+  <data name="Settings.Oldest20" xml:space="preserve">
+    <value>أقدم 20%</value>
+  </data>
+  <data name="Settings.AllWordsOrder" xml:space="preserve">
+    <value>تدريب جميع الكلمات، من الأقدم إلى الأحدث.</value>
+  </data>
+  <data name="Settings.ChooseIndividually" xml:space="preserve">
+    <value>اختر الكلمات بشكل فردي…</value>
+  </data>
+  <data name="Settings.ClearSelection" xml:space="preserve">
+    <value>مسح التحديد</value>
+  </data>
+  <data name="Settings.ChooseWords" xml:space="preserve">
+    <value>اختر الكلمات للتدريب</value>
+  </data>
+  <data name="Settings.SelectAll" xml:space="preserve">
+    <value>تحديد الكل</value>
+  </data>
+  <data name="Settings.DeselectAll" xml:space="preserve">
+    <value>إلغاء تحديد الكل</value>
+  </data>
+  <data name="Settings.FilterWords" xml:space="preserve">
+    <value>تصفية الكلمات…</value>
+  </data>
+  <data name="Settings.ApplySelection" xml:space="preserve">
+    <value>تطبيق التحديد</value>
+  </data>
+  <data name="Settings.PracticeContent" xml:space="preserve">
+    <value>محتوى التدريب</value>
+  </data>
+  <data name="Settings.ContentHelp" xml:space="preserve">
+    <value>اختر كلمات أو جملًا كاملة.</value>
+  </data>
+  <data name="Settings.Sentences" xml:space="preserve">
+    <value>الجمل</value>
+  </data>
+  <data name="Settings.QuizMode" xml:space="preserve">
+    <value>وضع الاختبار</value>
+  </data>
+  <data name="Settings.ModeHelp" xml:space="preserve">
+    <value>اختر البطاقات التعليمية للاسترجاع أو الكتابة للتدريب النشط على التهجئة.</value>
+  </data>
+  <data name="Settings.Flashcards" xml:space="preserve">
+    <value>البطاقات التعليمية</value>
+  </data>
+  <data name="Settings.Typing" xml:space="preserve">
+    <value>الكتابة</value>
+  </data>
+  <data name="Settings.Choices" xml:space="preserve">
+    <value>الخيارات</value>
+  </data>
+  <data name="Settings.PracticeDirection" xml:space="preserve">
+    <value>اتجاه التدريب</value>
+  </data>
+  <data name="Settings.DirectionHelp" xml:space="preserve">
+    <value>اختر أي لغة تظهر أولًا.</value>
+  </data>
+  <data name="Settings.NeedWord" xml:space="preserve">
+    <value>أضف كلمة واحدة على الأقل قبل بدء جلسة تدريب.</value>
+  </data>
+  <data name="Settings.Quiz" xml:space="preserve">
+    <value>الاختبار</value>
+  </data>
+  <data name="Settings.Content" xml:space="preserve">
+    <value>المحتوى</value>
+  </data>
+  <data name="Settings.Available" xml:space="preserve">
+    <value>المتاح</value>
+  </data>
+  <data name="Settings.Mode" xml:space="preserve">
+    <value>الوضع</value>
+  </data>
+  <data name="Settings.Range" xml:space="preserve">
+    <value>النطاق</value>
+  </data>
+  <data name="Settings.Direction" xml:space="preserve">
+    <value>الاتجاه</value>
+  </data>
+  <data name="Settings.StartQuiz" xml:space="preserve">
+    <value>بدء الاختبار</value>
+  </data>
+  <data name="Settings.WordsLower" xml:space="preserve">
+    <value>كلمات</value>
+  </data>
+  <data name="Settings.SentencesLower" xml:space="preserve">
+    <value>جمل</value>
+  </data>
+  <data name="Settings.WordLower" xml:space="preserve">
+    <value>كلمة</value>
+  </data>
+  <data name="Settings.SentenceLower" xml:space="preserve">
+    <value>جملة</value>
+  </data>
+  <data name="Settings.NeedItem" xml:space="preserve">
+    <value>أضف {0} واحدًا على الأقل قبل بدء جلسة تدريب.</value>
+  </data>
+  <data name="Settings.Newest" xml:space="preserve">
+    <value>أحدث {0}%</value>
+  </data>
+  <data name="Settings.Oldest" xml:space="preserve">
+    <value>أقدم {0}%</value>
+  </data>
+  <data name="Settings.RangeDynamic" xml:space="preserve">
+    <value>تدريب {0} من القائمة (من الأقدم إلى الأحدث).</value>
+  </data>
+  <data name="Settings.SelectedCount" xml:space="preserve">
+    <value>تم تحديد {0} من {1}</value>
+  </data>
+  <data name="Settings.PickedWords" xml:space="preserve">
+    <value>تم اختيار {0} من {1} كلمة بشكل فردي</value>
+  </data>
+  <data name="Settings.PickedCount" xml:space="preserve">
+    <value>تم اختيار {0}</value>
+  </data>
+  <data name="Explore.Title" xml:space="preserve">
+    <value>استكشاف</value>
+  </data>
+  <data name="Explore.Discover" xml:space="preserve">
+    <value>اكتشف شيئًا جديدًا</value>
+  </data>
+  <data name="Explore.Intro" xml:space="preserve">
+    <value>تصفّح المفردات التي شاركها متعلمون آخرون، ثم انسخ ما يلهمك إلى مكتبتك الخاصة.</value>
+  </data>
+  <data name="Explore.Summary" xml:space="preserve">
+    <value>ملخص المكتبة العامة</value>
+  </data>
+  <data name="Explore.CommunityLibrary" xml:space="preserve">
+    <value>مكتبة المجتمع</value>
+  </data>
+  <data name="Explore.SharedCollections" xml:space="preserve">
+    <value>المجموعات المشتركة</value>
+  </data>
+  <data name="Explore.CollectionsHelp" xml:space="preserve">
+    <value>استكشف مجموعات تعلم كاملة منسقة من المجتمع.</value>
+  </data>
+  <data name="Explore.SharedCollection" xml:space="preserve">
+    <value>مجموعة مشتركة</value>
+  </data>
+  <data name="Explore.CopyNamed" xml:space="preserve">
+    <value>نسخ {0} إلى مكتبتك</value>
+  </data>
+  <data name="Explore.CommunityQuizzes" xml:space="preserve">
+    <value>اختبارات المجتمع</value>
+  </data>
+  <data name="Explore.QuizzesHelp" xml:space="preserve">
+    <value>اعرض معاينة لاختبار، ثم أضف نسخة شخصية إلى مكتبتك.</value>
+  </data>
+  <data name="Explore.CommunityQuiz" xml:space="preserve">
+    <value>اختبار المجتمع</value>
+  </data>
+  <data name="Explore.NothingPublic" xml:space="preserve">
+    <value>لا يوجد شيء عام بعد لـ {0}</value>
+  </data>
+  <data name="Explore.EmptyHelp" xml:space="preserve">
+    <value>عندما يشارك المتعلمون اختبارات أو مجموعات بهذه اللغة، ستظهر هنا.</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>تعديل</value>
+  </data>
+  <data name="Common.Play" xml:space="preserve">
+    <value>تشغيل</value>
+  </data>
+  <data name="Quiz.AssistantEmpty" xml:space="preserve">
+    <value>ابدأ محادثة حول هذا الاختبار.</value>
+  </data>
+  <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
+    <value>اسأل عن هذا الاختبار...</value>
+  </data>
+  <data name="Quiz.CustomCount" xml:space="preserve">
+    <value>{0} مخصص</value>
+  </data>
+  <data name="Quiz.BuildCustom" xml:space="preserve">
+    <value>إنشاء اختبار مخصص</value>
+  </data>
+  <data name="Quiz.Public" xml:space="preserve">
+    <value>عام</value>
+  </data>
+  <data name="Quiz.Word" xml:space="preserve">
+    <value>كلمة</value>
+  </data>
+  <data name="Quiz.WordExample" xml:space="preserve">
+    <value>مثال: Bibliothèque</value>
+  </data>
+  <data name="Quiz.TranslationExample" xml:space="preserve">
+    <value>مثال: Library</value>
+  </data>
+  <data name="Quiz.AddWord" xml:space="preserve">
+    <value>إضافة كلمة</value>
+  </data>
+  <data name="Quiz.ItemsIn" xml:space="preserve">
+    <value>{0} {1} في {2}</value>
+  </data>
+  <data name="Quiz.ContentAria" xml:space="preserve">
+    <value>محتوى الاختبار</value>
+  </data>
+  <data name="Quiz.OpenWiktionary" xml:space="preserve">
+    <value>فتح {0} في Wiktionary</value>
+  </data>
+  <data name="Quiz.RepairWord" xml:space="preserve">
+    <value>إصلاح الكلمة</value>
+  </data>
+  <data name="Quiz.RepairNamed" xml:space="preserve">
+    <value>إصلاح {0}</value>
+  </data>
+  <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
+    <value>هل تريد حذف هذه الكلمة؟</value>
+  </data>
+  <data name="Quiz.NoWords" xml:space="preserve">
+    <value>لا توجد كلمات بعد. أضف أول كلمة من الشريط أعلاه.</value>
+  </data>
+  <data name="Quiz.LinkedWords" xml:space="preserve">
+    <value>{0} كلمة مرتبطة {1}</value>
+  </data>
+  <data name="Quiz.Repair" xml:space="preserve">
+    <value>إصلاح</value>
+  </data>
+  <data name="Quiz.NoSentences" xml:space="preserve">
+    <value>لا توجد جمل بعد. اطلب من المساعد إضافة جمل أو استخراجها من النص.</value>
+  </data>
+  <data name="Quiz.CustomQuizzes" xml:space="preserve">
+    <value>اختبارات مخصصة</value>
+  </data>
+  <data name="Quiz.CustomHelp" xml:space="preserve">
+    <value>أنشئ تمرينًا حرًا من الكلمات في هذا الاختبار.</value>
+  </data>
+  <data name="Quiz.NewCustom" xml:space="preserve">
+    <value>اختبار مخصص جديد</value>
+  </data>
+  <data name="Quiz.Playable" xml:space="preserve">
+    <value>قابل للتشغيل</value>
+  </data>
+  <data name="Quiz.Draft" xml:space="preserve">
+    <value>مسودة</value>
+  </data>
+  <data name="Quiz.NoCustom" xml:space="preserve">
+    <value>لا توجد اختبارات مخصصة بعد. أنشئ واحدًا بسحب الكتل إلى اللوحة.</value>
+  </data>
+  <data name="Payments.PackageUnavailable" xml:space="preserve">
+    <value>هذه الحزمة الائتمانية لم تعد متاحة.</value>
+  </data>
+  <data name="Payments.CreditsReady" xml:space="preserve">
+    <value>تم تأكيد الدفع. أصبحت أرصدتك جاهزة.</value>
+  </data>
+  <data name="Payments.AwaitingOrFailed" xml:space="preserve">
+    <value>لا يزال الدفع بانتظار التأكيد أو تعذّر التحقق منه.</value>
+  </data>
+  <data name="Payments.GetCredits" xml:space="preserve">
+    <value>الحصول على أرصدة</value>
+  </data>
+  <data name="Payments.GlosifyCredits" xml:space="preserve">
+    <value>أرصدة Glosify</value>
+  </data>
+  <data name="Payments.Hero" xml:space="preserve">
+    <value>أبقِ حلقة التعلم لديك مستمرة.</value>
+  </data>
+  <data name="Payments.Intro" xml:space="preserve">
+    <value>تدعم الأرصدة ميزات Glosify التعليمية المدعومة بالذكاء الاصطناعي والترجمات الفرعية المباشرة.</value>
+  </data>
+  <data name="Payments.NotAvailable" xml:space="preserve">
+    <value>المدفوعات غير متاحة بعد</value>
+  </data>
+  <data name="Payments.NotConnected" xml:space="preserve">
+    <value>لم يتم ربط هذا النشر من Glosify بـ Stripe.</value>
+  </data>
+  <data name="Payments.CreditPack" xml:space="preserve">
+    <value>حزمة أرصدة</value>
+  </data>
+  <data name="Payments.CreditCount" xml:space="preserve">
+    <value>{0} أرصدة</value>
+  </data>
+  <data name="Payments.ContinueCheckout" xml:space="preserve">
+    <value>المتابعة إلى الدفع الآمن</value>
+  </data>
+  <data name="Payments.StripeNotice" xml:space="preserve">
+    <value>تتم عملية الدفع عبر Stripe. لا يتلقى Glosify تفاصيل البطاقة أو يخزنها أبدًا.</value>
+  </data>
+  <data name="Payments.Status" xml:space="preserve">
+    <value>حالة الدفع</value>
+  </data>
+  <data name="Payments.Confirmed" xml:space="preserve">
+    <value>تم تأكيد الدفع</value>
+  </data>
+  <data name="Payments.Processing" xml:space="preserve">
+    <value>جارٍ معالجة الدفع</value>
+  </data>
+  <data name="Payments.Back" xml:space="preserve">
+    <value>العودة إلى Glosify</value>
+  </data>
+  <data name="Payments.AiCredits" xml:space="preserve">
+    <value>أرصدة الذكاء الاصطناعي</value>
+  </data>
+  <data name="Payments.AiCreditAdmin" xml:space="preserve">
+    <value>إدارة أرصدة الذكاء الاصطناعي</value>
+  </data>
+  <data name="Error.StartupDelay" xml:space="preserve">
+    <value>تأخير مؤقت في بدء التشغيل</value>
+  </data>
+  <data name="Error.RequestFailed" xml:space="preserve">
+    <value>فشل الطلب</value>
+  </data>
+  <data name="Error.RequestId" xml:space="preserve">
+    <value>معرّف الطلب:</value>
+  </data>
+  <data name="Error.WarmupTitle" xml:space="preserve">
+    <value>هذه الخدمة قيد التشغيل</value>
+  </data>
+  <data name="Error.WarmupMessage" xml:space="preserve">
+    <value>انتظر لحظة ثم حاول مرة أخرى.</value>
+  </data>
+  <data name="Error.GenericTitle" xml:space="preserve">
+    <value>حدث خطأ ما</value>
+  </data>
+  <data name="Error.GenericMessage" xml:space="preserve">
+    <value>تعذّر إكمال الطلب. يُرجى المحاولة مرة أخرى.</value>
+  </data>
+  <data name="Common.Undo" xml:space="preserve">
+    <value>تراجع</value>
+  </data>
+  <data name="Common.Preview" xml:space="preserve">
+    <value>معاينة</value>
+  </data>
+  <data name="Custom.EditNamed" xml:space="preserve">
+    <value>تحرير {0}</value>
+  </data>
+  <data name="Custom.AssistantTitle" xml:space="preserve">
+    <value>مساعد إنشاء الاختبار</value>
+  </data>
+  <data name="Custom.AssistantEmpty" xml:space="preserve">
+    <value>اطلب مني إضافة عناصر الاختبار أو ضبطها أو ترتيبها.</value>
+  </data>
+  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
+    <value>أضف أسئلة إلى هذا الاختبار المخصص...</value>
+  </data>
+  <data name="Custom.Name" xml:space="preserve">
+    <value>اسم الاختبار المخصص</value>
+  </data>
+  <data name="Custom.LoadingEditor" xml:space="preserve">
+    <value>جارٍ تحميل عناصر المحرر…</value>
+  </data>
+  <data name="Custom.DesignStarters" xml:space="preserve">
+    <value>بدايات التصميم</value>
+  </data>
+  <data name="Custom.VisualDirection" xml:space="preserve">
+    <value>اختر اتجاهًا بصريًا</value>
+  </data>
+  <data name="Custom.TemplateHelp" xml:space="preserve">
+    <value>طبّق المظهر فقط، أو استبدل اللوحة بتخطيط كامل مبني من كلمات هذا الاختبار.</value>
+  </data>
+  <data name="Custom.UseStyle" xml:space="preserve">
+    <value>استخدام النمط</value>
+  </data>
+  <data name="Custom.UseLayout" xml:space="preserve">
+    <value>استخدام التخطيط</value>
+  </data>
+  <data name="Custom.BuildingBlocks" xml:space="preserve">
+    <value>كتل بناء الاختبار</value>
+  </data>
+  <data name="Custom.Blocks" xml:space="preserve">
+    <value>الكتل</value>
+  </data>
+  <data name="Custom.BlocksHelp" xml:space="preserve">
+    <value>اسحب إلى أي مساحة مفتوحة، أو انقر للإضافة تلقائيًا.</value>
+  </data>
+  <data name="Custom.DragAdd" xml:space="preserve">
+    <value>اسحب أو انقر لإضافة {0}</value>
+  </data>
+  <data name="Custom.Add" xml:space="preserve">
+    <value>إضافة {0}</value>
+  </data>
+  <data name="Custom.Grid" xml:space="preserve">
+    <value>شبكة ذكية من 12 عمودًا</value>
+  </data>
+  <data name="Custom.GridHelp" xml:space="preserve">
+    <value>اسحب لوضع العنصر · تلتقط الحواف المواضع · تُتجنب المساحات المشغولة</value>
+  </data>
+  <data name="Custom.Canvas" xml:space="preserve">
+    <value>لوحة الاختبار المخصص</value>
+  </data>
+  <data name="Custom.Properties" xml:space="preserve">
+    <value>الخصائص</value>
+  </data>
+  <data name="Custom.PropertiesHelp" xml:space="preserve">
+    <value>حدد كتلة لتعديل محتواها وارتباطاتها.</value>
+  </data>
+  <data name="Custom.Answer" xml:space="preserve">
+    <value>الإجابة</value>
+  </data>
+  <data name="Custom.Choose" xml:space="preserve">
+    <value>اختر...</value>
+  </data>
+  <data name="Custom.CheckAnswers" xml:space="preserve">
+    <value>التحقق من الإجابات</value>
+  </data>
+  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
+    <value>أكمل الاختبار، ثم أرسل إجاباتك.</value>
+  </data>
+  <data name="Custom.Block.Heading" xml:space="preserve">
+    <value>عنوان</value>
+  </data>
+  <data name="Custom.Block.Instruction" xml:space="preserve">
+    <value>تعليمات</value>
+  </data>
+  <data name="Custom.Block.WordLabel" xml:space="preserve">
+    <value>تسمية الكلمة</value>
+  </data>
+  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
+    <value>تسمية الترجمة</value>
+  </data>
+  <data name="Custom.Block.TextInput" xml:space="preserve">
+    <value>حقل إدخال نص</value>
+  </data>
+  <data name="Custom.Block.LongAnswer" xml:space="preserve">
+    <value>إجابة مطولة</value>
+  </data>
+  <data name="Custom.Block.Checkbox" xml:space="preserve">
+    <value>مربع اختيار</value>
+  </data>
+  <data name="Custom.Block.RadioChoices" xml:space="preserve">
+    <value>خيارات أزرار الاختيار</value>
+  </data>
+  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
+    <value>خيارات مربعات الاختيار</value>
+  </data>
+  <data name="Custom.Block.SelectMenu" xml:space="preserve">
+    <value>قائمة اختيار</value>
+  </data>
+  <data name="Custom.Block.WordBank" xml:space="preserve">
+    <value>بنك الكلمات</value>
+  </data>
+  <data name="Custom.Block.SubmitButton" xml:space="preserve">
+    <value>زر الإرسال</value>
+  </data>
+  <data name="Custom.Block.Feedback" xml:space="preserve">
+    <value>ملاحظات</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
+    <value>تسلسل تحريري</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
+    <value>تدرّج هادئ، ومسافات رحبة، ومهمة واحدة واضحة في كل صف.</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
+    <value>الترجمات، ومحفزات القواعد، والاسترجاع المركّز</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
+    <value>بطاقات الشفق القطبي</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
+    <value>ألوان هادئة، وبطاقات ممارسة متقابلة، وأجواء صفية نشطة.</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
+    <value>مجموعات مفردات قصيرة والتصفح البصري</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
+    <value>تمرين كتاب مدرسي</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
+    <value>صفوف مرقمة مضغوطة على غرار تمارين الدفتر المصوَّر.</value>
+  </data>
+  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
+    <value>التصريف، والتحويلات، وتمارين الفراغات، والتمارين الرسمية</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
+    <value>مختبر بنك الكلمات</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
+    <value>يتصدر التمرين بنكُ كلماتٍ بارز ويجعل الاسترجاع ممتعًا.</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
+    <value>الاسترجاع الموجّه ومفردات المبتدئين</value>
+  </data>
+  <data name="Custom.AnswerQuestion" xml:space="preserve">
+    <value>أجب عن هذا السؤال.</value>
+  </data>
+  <data name="Custom.Correct" xml:space="preserve">
+    <value>صحيح.</value>
+  </data>
+  <data name="Custom.CorrectAnswer" xml:space="preserve">
+    <value>الإجابة الصحيحة: {0}</value>
+  </data>
+  <data name="Custom.CompleteAnswers" xml:space="preserve">
+    <value>أكمل كل الإجابات قبل الإرسال.</value>
+  </data>
+  <data name="Custom.Score" xml:space="preserve">
+    <value>النتيجة: {0} من {1} ({2}%).</value>
+  </data>
+  <data name="Custom.GradeFailed" xml:space="preserve">
+    <value>تعذّر تقييم هذا الاختبار. حاول مرة أخرى.</value>
+  </data>
+  <data name="Classroom.PostAnnouncement" xml:space="preserve">
+    <value>نشر إعلان</value>
+  </data>
+  <data name="Classroom.ShareClass" xml:space="preserve">
+    <value>شارك شيئًا مع الصف</value>
+  </data>
+  <data name="Classroom.Post" xml:space="preserve">
+    <value>نشر</value>
+  </data>
+  <data name="Classroom.Announcements" xml:space="preserve">
+    <value>الإعلانات</value>
+  </data>
+  <data name="Classroom.PostOne" xml:space="preserve">
+    <value>منشور</value>
+  </data>
+  <data name="Classroom.PostMany" xml:space="preserve">
+    <value>منشورات</value>
+  </data>
+  <data name="Classroom.Pinned" xml:space="preserve">
+    <value>مثبّت</value>
+  </data>
+  <data name="Classroom.Unpin" xml:space="preserve">
+    <value>إلغاء التثبيت</value>
+  </data>
+  <data name="Classroom.Pin" xml:space="preserve">
+    <value>تثبيت</value>
+  </data>
+  <data name="Classroom.DeleteAnnouncement" xml:space="preserve">
+    <value>هل تريد حذف هذا الإعلان؟</value>
+  </data>
+  <data name="Classroom.NothingYet" xml:space="preserve">
+    <value>لا يوجد شيء هنا بعد.</value>
+  </data>
+  <data name="Classroom.PostFirst" xml:space="preserve">
+    <value>انشر أول إعلان أعلاه.</value>
+  </data>
+  <data name="Classroom.NoTeacherPosts" xml:space="preserve">
+    <value>لم ينشر معلمك أي شيء بعد.</value>
+  </data>
+  <data name="Classroom.OpenChat" xml:space="preserve">
+    <value>فتح دردشة الصف</value>
+  </data>
+  <data name="Classroom.ClassChat" xml:space="preserve">
+    <value>دردشة الصف</value>
+  </data>
+  <data name="Classroom.ClassChatUpper" xml:space="preserve">
+    <value>دردشة الصف</value>
+  </data>
+  <data name="Classroom.Connecting" xml:space="preserve">
+    <value>جارٍ الاتصال…</value>
+  </data>
+  <data name="Classroom.CloseChat" xml:space="preserve">
+    <value>إغلاق دردشة الصف</value>
+  </data>
+  <data name="Classroom.LoadingMessages" xml:space="preserve">
+    <value>جارٍ تحميل الرسائل…</value>
+  </data>
+  <data name="Classroom.MessageClass" xml:space="preserve">
+    <value>إرسال رسالة إلى الصف</value>
+  </data>
+  <data name="Classroom.ChatMessage" xml:space="preserve">
+    <value>رسالة دردشة</value>
+  </data>
+  <data name="Classroom.CallTitle" xml:space="preserve">
+    <value>{0} — مكالمة</value>
+  </data>
+  <data name="Classroom.NotConnected" xml:space="preserve">
+    <value>غير متصل</value>
+  </data>
+  <data name="Classroom.Back" xml:space="preserve">
+    <value>العودة إلى الصف</value>
+  </data>
+  <data name="Classroom.CallNotConfigured" xml:space="preserve">
+    <value>لم يتم إعداد مكالمات الفيديو على هذا الخادم. يحتاج أحد المسؤولين إلى ضبط</value>
+  </data>
+  <data name="Classroom.ReadyJoin" xml:space="preserve">
+    <value>هل أنت مستعد للانضمام؟</value>
+  </data>
+  <data name="Classroom.JoinAs" xml:space="preserve">
+    <value>ستنضم بصفتك</value>
+  </data>
+  <data name="Classroom.MuteMic" xml:space="preserve">
+    <value>كتم الميكروفون</value>
+  </data>
+  <data name="Classroom.Mute" xml:space="preserve">
+    <value>كتم</value>
+  </data>
+  <data name="Classroom.CameraOff" xml:space="preserve">
+    <value>إيقاف الكاميرا</value>
+  </data>
+  <data name="Classroom.Camera" xml:space="preserve">
+    <value>الكاميرا</value>
+  </data>
+  <data name="Classroom.LeaveCall" xml:space="preserve">
+    <value>مغادرة المكالمة</value>
+  </data>
+  <data name="Classroom.Leave" xml:space="preserve">
+    <value>مغادرة</value>
+  </data>
+  <data name="Classroom.ReadyStart" xml:space="preserve">
+    <value>هل أنت مستعد للبدء؟</value>
+  </data>
+  <data name="Classroom.NoOneCall" xml:space="preserve">
+    <value>لا أحد في المكالمة بعد.</value>
+  </data>
+  <data name="Classroom.WaitingTeacher" xml:space="preserve">
+    <value>بانتظار المعلم</value>
+  </data>
+  <data name="Classroom.JoinAfterTeacher" xml:space="preserve">
+    <value>يمكنك الانضمام بعد أن يبدأ المعلم المكالمة.</value>
+  </data>
+  <data name="Classroom.UnmuteMic" xml:space="preserve">
+    <value>إلغاء كتم الميكروفون</value>
+  </data>
+  <data name="Classroom.CameraOn" xml:space="preserve">
+    <value>تشغيل الكاميرا</value>
+  </data>
+  <data name="Classroom.Connected" xml:space="preserve">
+    <value>متصل</value>
+  </data>
+  <data name="Classroom.NoMessages" xml:space="preserve">
+    <value>لا توجد رسائل بعد. قل مرحبًا!</value>
+  </data>
+  <data name="Classroom.Reconnecting" xml:space="preserve">
+    <value>جارٍ إعادة الاتصال…</value>
+  </data>
+  <data name="Classroom.ActionInvalid" xml:space="preserve">
+    <value>تعذّر إكمال إجراء الصف. تحقّق من إدخالك ومن صلاحية الوصول.</value>
+  </data>
+  <data name="Classroom.Created" xml:space="preserve">
+    <value>تم إنشاء {0}.</value>
+  </data>
+  <data name="Classroom.CreateInvalid" xml:space="preserve">
+    <value>أدخل اسم صف ووصفًا صالحين.</value>
+  </data>
+  <data name="Classroom.NoCodeMatch" xml:space="preserve">
+    <value>لا يوجد صف يطابق رمز الانضمام هذا.</value>
+  </data>
+  <data name="Classroom.InvitationUnavailable" xml:space="preserve">
+    <value>لم تعد هذه الدعوة متاحة.</value>
+  </data>
+  <data name="Classroom.Welcome" xml:space="preserve">
+    <value>مرحبًا بك في {0}.</value>
+  </data>
+  <data name="Classroom.WelcomeSwitched" xml:space="preserve">
+    <value>مرحبًا بك في {0}. تم التبديل إلى {1}.</value>
+  </data>
+  <data name="Classroom.InvitationDeclined" xml:space="preserve">
+    <value>تم رفض الدعوة.</value>
+  </data>
+  <data name="Classroom.NotFound" xml:space="preserve">
+    <value>لم يتم العثور على الصف.</value>
+  </data>
+  <data name="Classroom.Left" xml:space="preserve">
+    <value>لقد غادرت الصف.</value>
+  </data>
+  <data name="Classroom.ActionDenied" xml:space="preserve">
+    <value>لا يمكنك تنفيذ هذا الإجراء في هذا الصف.</value>
+  </data>
+  <data name="Classroom.Deleted" xml:space="preserve">
+    <value>تم حذف الصف.</value>
+  </data>
+  <data name="Explore.PublicQuiz" xml:space="preserve">
+    <value>اختبار عام</value>
+  </data>
+  <data name="Explore.CustomExercises" xml:space="preserve">
+    <value>تمارين أُنشئت من مفردات هذا الاختبار.</value>
+  </data>
+  <data name="Explore.NoPublicWords" xml:space="preserve">
+    <value>لم تُضَف أي كلمات إلى هذا الاختبار العام بعد.</value>
+  </data>
+  <data name="Explore.NoPublicSentences" xml:space="preserve">
+    <value>لم تُضَف أي جمل إلى هذا الاختبار العام بعد.</value>
+  </data>
+  <data name="Explore.PublicCollection" xml:space="preserve">
+    <value>مجموعة عامة</value>
+  </data>
+  <data name="Explore.CollectionIntro" xml:space="preserve">
+    <value>استكشف {0} {1} عبر {2} من المجموعات، ثم انسخ المجموعة الكاملة إلى مكتبتك.</value>
+  </data>
+  <data name="Explore.CollectionSummary" xml:space="preserve">
+    <value>ملخص المجموعة</value>
+  </data>
+  <data name="Explore.CopyCollection" xml:space="preserve">
+    <value>نسخ المجموعة</value>
+  </data>
+  <data name="Explore.InCollection" xml:space="preserve">
+    <value>في هذه المجموعة</value>
+  </data>
+  <data name="Explore.FiledInside" xml:space="preserve">
+    <value>اختبارات محفوظة مباشرة داخل {0}.</value>
+  </data>
+  <data name="Explore.NoDirectQuizzes" xml:space="preserve">
+    <value>لا توجد اختبارات داخل هذه المجموعة مباشرةً.</value>
+  </data>
+  <data name="Common.Remove" xml:space="preserve">
+    <value>إزالة</value>
+  </data>
+  <data name="Classroom.ShareQuiz" xml:space="preserve">
+    <value>مشاركة اختبار</value>
+  </data>
+  <data name="Classroom.QuizLibrary" xml:space="preserve">
+    <value>اختبار من مكتبتك</value>
+  </data>
+  <data name="Classroom.Share" xml:space="preserve">
+    <value>مشاركة</value>
+  </data>
+  <data name="Classroom.AllQuizzesShared" xml:space="preserve">
+    <value>جميع اختباراتك مشتركة هنا بالفعل، أو أن مكتبتك فارغة.</value>
+  </data>
+  <data name="Classroom.ShareBook" xml:space="preserve">
+    <value>مشاركة كتاب</value>
+  </data>
+  <data name="Classroom.BookLibrary" xml:space="preserve">
+    <value>كتاب من مكتبتك</value>
+  </data>
+  <data name="Classroom.AllBooksShared" xml:space="preserve">
+    <value>جميع كتبك مشتركة هنا بالفعل، أو ليس لديك أي عمليات رفع.</value>
+  </data>
+  <data name="Classroom.First" xml:space="preserve">
+    <value>أولًا.</value>
+  </data>
+  <data name="Classroom.SharedContent" xml:space="preserve">
+    <value>المحتوى المشترك</value>
+  </data>
+  <data name="Classroom.ItemOne" xml:space="preserve">
+    <value>عنصر</value>
+  </data>
+  <data name="Classroom.ItemMany" xml:space="preserve">
+    <value>عناصر</value>
+  </data>
+  <data name="Classroom.Removed" xml:space="preserve">
+    <value>تمت الإزالة</value>
+  </data>
+  <data name="Classroom.SharedBy" xml:space="preserve">
+    <value>مشترك بواسطة {0}</value>
+  </data>
+  <data name="Classroom.CopyLibrary" xml:space="preserve">
+    <value>نسخ إلى مكتبتي</value>
+  </data>
+  <data name="Classroom.OpenPdf" xml:space="preserve">
+    <value>فتح PDF</value>
+  </data>
+  <data name="Classroom.RemoveConfirm" xml:space="preserve">
+    <value>إزالة هذا من الفصل الدراسي؟</value>
+  </data>
+  <data name="Classroom.NoSharedContent" xml:space="preserve">
+    <value>لا يوجد محتوى مشترك بعد.</value>
+  </data>
+  <data name="Classroom.QuizResults" xml:space="preserve">
+    <value>نتائج الاختبار</value>
+  </data>
+  <data name="Classroom.AttemptOne" xml:space="preserve">
+    <value>محاولة</value>
+  </data>
+  <data name="Classroom.AttemptMany" xml:space="preserve">
+    <value>محاولات</value>
+  </data>
+  <data name="Classroom.FromPractice" xml:space="preserve">
+    <value>من الممارسة الصفية</value>
+  </data>
+  <data name="Classroom.Score" xml:space="preserve">
+    <value>النتيجة</value>
+  </data>
+  <data name="Classroom.Completed" xml:space="preserve">
+    <value>مكتمل</value>
+  </data>
+  <data name="Classroom.NoAttempts" xml:space="preserve">
+    <value>لا توجد محاولات بعد. تظهر النتائج عندما يَتدرّب الأعضاء على الاختبارات من علامة التبويب المحتوى.</value>
+  </data>
+  <data name="Classroom.MemberResultsTitle" xml:space="preserve">
+    <value>{0} — النتائج</value>
+  </data>
+  <data name="Classroom.Skipped" xml:space="preserve">
+    <value>متخطّى</value>
+  </data>
+  <data name="Classroom.NoMemberAttempts" xml:space="preserve">
+    <value>لم تُسجَّل أي محاولات لهذا العضو بعد.</value>
+  </data>
+  <data name="Classroom.InviteEmail" xml:space="preserve">
+    <value>دعوة بالبريد الإلكتروني</value>
+  </data>
+  <data name="Classroom.Role" xml:space="preserve">
+    <value>الدور</value>
+  </data>
+  <data name="Classroom.Student" xml:space="preserve">
+    <value>طالب</value>
+  </data>
+  <data name="Classroom.Teacher" xml:space="preserve">
+    <value>معلم</value>
+  </data>
+  <data name="Classroom.Invite" xml:space="preserve">
+    <value>دعوة</value>
+  </data>
+  <data name="Classroom.InviteHelp" xml:space="preserve">
+    <value>تظهر الدعوات في صفحة الفصول الدراسية الخاصة بالشخص عند تسجيل الدخول بهذا البريد الإلكتروني — لا يتم إرسال أي بريد إلكتروني.</value>
+  </data>
+  <data name="Classroom.CodeAnyone" xml:space="preserve">
+    <value>يمكن لأي شخص لديه الرمز</value>
+  </data>
+  <data name="Classroom.CodeCanJoin" xml:space="preserve">
+    <value>الانضمام كطالب.</value>
+  </data>
+  <data name="Classroom.JoiningCurrently" xml:space="preserve">
+    <value>الانضمام حاليًا</value>
+  </data>
+  <data name="Classroom.Enabled" xml:space="preserve">
+    <value>مفعّل</value>
+  </data>
+  <data name="Classroom.Paused" xml:space="preserve">
+    <value>موقوف</value>
+  </data>
+  <data name="Classroom.NewCode" xml:space="preserve">
+    <value>رمز جديد</value>
+  </data>
+  <data name="Classroom.PauseJoining" xml:space="preserve">
+    <value>إيقاف الانضمام مؤقتًا</value>
+  </data>
+  <data name="Classroom.ResumeJoining" xml:space="preserve">
+    <value>استئناف الانضمام</value>
+  </data>
+  <data name="Classroom.Joined" xml:space="preserve">
+    <value>انضم</value>
+  </data>
+  <data name="Classroom.MakeRole" xml:space="preserve">
+    <value>جعل {0}</value>
+  </data>
+  <data name="Classroom.RemoveMemberConfirm" xml:space="preserve">
+    <value>إزالة {0} من الفصل الدراسي؟</value>
+  </data>
+  <data name="Classroom.DeleteForEveryone" xml:space="preserve">
+    <value>حذف هذا الفصل الدراسي للجميع؟ ستبقى الاختبارات والكتب المشتركة في مكتبات مالكيها.</value>
+  </data>
+  <data name="Classroom.DeleteClassroom" xml:space="preserve">
+    <value>حذف الفصل الدراسي</value>
+  </data>
+  <data name="Classroom.LeaveConfirm" xml:space="preserve">
+    <value>مغادرة هذا الفصل الدراسي؟</value>
+  </data>
+  <data name="Classroom.LeaveClassroom" xml:space="preserve">
+    <value>مغادرة الفصل الدراسي</value>
+  </data>
+  <data name="Classroom.AddLesson" xml:space="preserve">
+    <value>إضافة درس</value>
+  </data>
+  <data name="Classroom.TitleLabel" xml:space="preserve">
+    <value>العنوان</value>
+  </data>
+  <data name="Classroom.DescriptionOptional" xml:space="preserve">
+    <value>الوصف (اختياري)</value>
+  </data>
+  <data name="Classroom.ScheduledOptional" xml:space="preserve">
+    <value>مجدول لـ (اختياري)</value>
+  </data>
+  <data name="Classroom.AddAssignment" xml:space="preserve">
+    <value>إضافة واجب</value>
+  </data>
+  <data name="Classroom.InstructionsOptional" xml:space="preserve">
+    <value>التعليمات (اختياري)</value>
+  </data>
+  <data name="Classroom.QuizOptional" xml:space="preserve">
+    <value>اختبار (اختياري، من المحتوى المشترك)</value>
+  </data>
+  <data name="Classroom.NoQuiz" xml:space="preserve">
+    <value>لا يوجد اختبار</value>
+  </data>
+  <data name="Classroom.LessonOptional" xml:space="preserve">
+    <value>الدرس (اختياري)</value>
+  </data>
+  <data name="Classroom.NoLesson" xml:space="preserve">
+    <value>لا يوجد درس</value>
+  </data>
+  <data name="Classroom.DueOptional" xml:space="preserve">
+    <value>موعد الاستحقاق (اختياري)</value>
+  </data>
+  <data name="Classroom.CoursePlan" xml:space="preserve">
+    <value>خطة المقرر</value>
+  </data>
+  <data name="Classroom.LessonOne" xml:space="preserve">
+    <value>درس</value>
+  </data>
+  <data name="Classroom.LessonMany" xml:space="preserve">
+    <value>دروس</value>
+  </data>
+  <data name="Classroom.AssignmentOne" xml:space="preserve">
+    <value>واجب</value>
+  </data>
+  <data name="Classroom.AssignmentMany" xml:space="preserve">
+    <value>واجبات</value>
+  </data>
+  <data name="Classroom.DeleteLessonConfirm" xml:space="preserve">
+    <value>حذف هذا الدرس؟ ستبقى واجباته دون ارتباط.</value>
+  </data>
+  <data name="Classroom.DeleteLesson" xml:space="preserve">
+    <value>حذف الدرس</value>
+  </data>
+  <data name="Classroom.NoAssignmentsLesson" xml:space="preserve">
+    <value>لا توجد واجبات لهذا الدرس.</value>
+  </data>
+  <data name="Classroom.OtherAssignments" xml:space="preserve">
+    <value>واجبات أخرى</value>
+  </data>
+  <data name="Classroom.NoPlanYet" xml:space="preserve">
+    <value>لا توجد دروس أو واجبات بعد.</value>
+  </data>
+  <data name="Classroom.PlanAbove" xml:space="preserve">
+    <value>خطط للدورة أعلاه.</value>
+  </data>
+  <data name="Classroom.NoTeacherPlan" xml:space="preserve">
+    <value>لم يُخطط معلمك لأي شيء بعد.</value>
+  </data>
+  <data name="Classroom.Due" xml:space="preserve">
+    <value>الموعد النهائي</value>
+  </data>
+  <data name="Classroom.StudentsCompleted" xml:space="preserve">
+    <value>أكمل {0} من {1} طالبًا</value>
+  </data>
+  <data name="Classroom.DoneBest" xml:space="preserve">
+    <value>تم — أفضل درجة {0}%</value>
+  </data>
+  <data name="Classroom.NotDone" xml:space="preserve">
+    <value>لم يكتمل بعد</value>
+  </data>
+  <data name="Classroom.DeleteAssignmentConfirm" xml:space="preserve">
+    <value>هل تريد حذف هذا الواجب؟</value>
+  </data>
+  <data name="Speaking.BarMenu" xml:space="preserve">
+    <value>قائمة الشريط</value>
+  </data>
+  <data name="Speaking.YourWallet" xml:space="preserve">
+    <value>محفظتك</value>
+  </data>
+  <data name="Speaking.NoBill" xml:space="preserve">
+    <value>لا توجد فاتورة بعد</value>
+  </data>
+  <data name="Speaking.CloseWallet" xml:space="preserve">
+    <value>إغلاق المحفظة</value>
+  </data>
+  <data name="Speaking.Selected" xml:space="preserve">
+    <value>محدَّد</value>
+  </data>
+  <data name="Speaking.SceneActions" xml:space="preserve">
+    <value>إجراءات المشهد</value>
+  </data>
+  <data name="Speaking.NextMonth" xml:space="preserve">
+    <value>بداية الشهر المقبل</value>
+  </data>
+  <data name="Speaking.PaidPaused" xml:space="preserve">
+    <value>تم إيقاف ميزات التحدث المدفوعة مؤقتًا حتى {0}.</value>
+  </data>
+  <data name="Speaking.SessionReady" xml:space="preserve">
+    <value>جلسة التدريب الخاصة بك جاهزة.</value>
+  </data>
+  <data name="Speaking.Unavailable" xml:space="preserve">
+    <value>تدريب التحدث غير متاح</value>
+  </data>
+  <data name="Speaking.NewSessionConfirm" xml:space="preserve">
+    <value>هل تريد بدء جلسة جديدة؟ سيتم مسح المحادثة الحالية.</value>
+  </data>
+  <data name="Speaking.UpdatingQuiz" xml:space="preserve">
+    <value>جارٍ تحديث اختبار تدريب المعلم…</value>
+  </data>
+  <data name="Speaking.PractisingNamed" xml:space="preserve">
+    <value>التدرب على {0}.</value>
+  </data>
+  <data name="Speaking.FreeModeActive" xml:space="preserve">
+    <value>وضع الدرس المجاني نشط.</value>
+  </data>
+  <data name="Speaking.Voice" xml:space="preserve">
+    <value>الصوت</value>
+  </data>
+  <data name="Speaking.Typed" xml:space="preserve">
+    <value>مكتوب</value>
+  </data>
+  <data name="Speaking.StartBeforeSend" xml:space="preserve">
+    <value>ابدأ جلسة تحدث قبل إرسال رسالة.</value>
+  </data>
+  <data name="Speaking.AvatarThinking" xml:space="preserve">
+    <value>يفكر {0}…</value>
+  </data>
+  <data name="Speaking.Avatar" xml:space="preserve">
+    <value>الصورة الرمزية</value>
+  </data>
+  <data name="Speaking.SessionEnded" xml:space="preserve">
+    <value>انتهت الجلسة · ابدأ جلسة جديدة</value>
+  </data>
+  <data name="Speaking.TakingSip" xml:space="preserve">
+    <value>يرتشف…</value>
+  </data>
+  <data name="Speaking.TakingSnack" xml:space="preserve">
+    <value>يتناول وجبة خفيفة…</value>
+  </data>
+  <data name="Speaking.AvatarReacting" xml:space="preserve">
+    <value>يتفاعل {0}…</value>
+  </data>
+  <data name="Speaking.MomentPassed" xml:space="preserve">
+    <value>لقد فاتت تلك اللحظة. واصل الدردشة أو جرّب إجراءً آخر.</value>
+  </data>
+  <data name="Speaking.RecordUnavailable" xml:space="preserve">
+    <value>لا يستطيع هذا المتصفح تسجيل الصوت هنا. لا يزال بإمكانك استخدام الدردشة المكتوبة.</value>
+  </data>
+  <data name="Speaking.Starting" xml:space="preserve">
+    <value>جارٍ البدء…</value>
+  </data>
+  <data name="Speaking.MicConnectingAuto" xml:space="preserve">
+    <value>جارٍ الاتصال بالميكروفون. ابدأ التحدث عندما يصبح جاهزًا.</value>
+  </data>
+  <data name="Speaking.MicConnectingHold" xml:space="preserve">
+    <value>جارٍ الاتصال بالميكروفون. استمر في الضغط على الزر.</value>
+  </data>
+  <data name="Speaking.Listening" xml:space="preserve">
+    <value>يستمع…</value>
+  </data>
+  <data name="Speaking.SpeakNaturally" xml:space="preserve">
+    <value>تحدث بشكل طبيعي. سيتوقف التسجيل عندما تنتهي.</value>
+  </data>
+  <data name="Speaking.ReleaseSend" xml:space="preserve">
+    <value>أفلِت للإرسال</value>
+  </data>
+  <data name="Speaking.KeepHolding" xml:space="preserve">
+    <value>استمر في الضغط أثناء التحدث. أفلِت الزر للإرسال.</value>
+  </data>
+  <data name="Speaking.Transcribing" xml:space="preserve">
+    <value>جارٍ تحويل الكلام إلى نص…</value>
+  </data>
+  <data name="Speaking.FinishingTranscript" xml:space="preserve">
+    <value>جارٍ إنهاء تحويل النص إلى نص…</value>
+  </data>
+  <data name="Speaking.NotCaughtComposer" xml:space="preserve">
+    <value>لم يلتقط Azure Speech ذلك. اضغط على Speak للكتابة وحاول مرة أخرى.</value>
+  </data>
+  <data name="Speaking.NotCaughtAvatar" xml:space="preserve">
+    <value>لم يلتقط Azure Speech ذلك. اضغط مع الاستمرار على الزر الأحمر وحاول مرة أخرى.</value>
+  </data>
+  <data name="Speaking.RecordingTooLong" xml:space="preserve">
+    <value>هذا التسجيل طويل جدًا. اختصر النص ثم اضغط Send.</value>
+  </data>
+  <data name="Speaking.TranscriptSending" xml:space="preserve">
+    <value>النص جاهز. جارٍ الإرسال…</value>
+  </data>
+  <data name="Speaking.TranscriptReady" xml:space="preserve">
+    <value>النص جاهز. راجعه أو عدّله، ثم اضغط Send.</value>
+  </data>
+  <data name="Speaking.MicFailed" xml:space="preserve">
+    <value>فشل الوصول إلى الميكروفون. لا تزال الدردشة المكتوبة متاحة.</value>
+  </data>
+  <data name="Speaking.SpeechFinishFailed" xml:space="preserve">
+    <value>تعذر على Azure Speech إنهاء التسجيل.</value>
+  </data>
+  <data name="Speaking.Scene.PoursDrink" xml:space="preserve">
+    <value>يسكب Marek مشروبك ويدفعه إليك.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSnack" xml:space="preserve">
+    <value>تأخذ بعض paluszki.</value>
+  </data>
+  <data name="Speaking.Scene.OffersSnack" xml:space="preserve">
+    <value>يعرض Marek عليك بعض paluszki.</value>
+  </data>
+  <data name="Speaking.Scene.ClearsGlass" xml:space="preserve">
+    <value>يُزيل Marek الكأس الفارغة.</value>
+  </data>
+  <data name="Speaking.Scene.PolishesGlass" xml:space="preserve">
+    <value>يُلمّع Marek كأسًا.</value>
+  </data>
+  <data name="Speaking.Scene.WipesCounter" xml:space="preserve">
+    <value>يمسح Marek المنضدة.</value>
+  </data>
+  <data name="Speaking.Scene.LastCall" xml:space="preserve">
+    <value>النداء الأخير.</value>
+  </data>
+  <data name="Speaking.Scene.ItemUnavailable" xml:space="preserve">
+    <value>هذا العنصر غير متاح.</value>
+  </data>
+  <data name="Speaking.Scene.FinishDrink" xml:space="preserve">
+    <value>تنهي المشروب.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSip" xml:space="preserve">
+    <value>ترتشف رشفة.</value>
+  </data>
+  <data name="Speaking.Scene.PresentsBill" xml:space="preserve">
+    <value>يقدّم Marek فاتورة بقيمة {0} zł.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentRejected" xml:space="preserve">
+    <value>{0} zł لا تكفي. لم يُخصم شيء.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentAccepted" xml:space="preserve">
+    <value>يقبل Marek {0} zł.</value>
+  </data>
+  <data name="Speaking.Scene.ReturnsChange" xml:space="preserve">
+    <value>يعيد Marek {0} zł من الباقي.</value>
+  </data>
+  <data name="Reader.ReadingSentence" xml:space="preserve">
+    <value>جارٍ قراءة الصفحة {0} · الجملة {1} من {2}</value>
+  </data>
+  <data name="Reader.ReadingSelectionPart" xml:space="preserve">
+    <value>جارٍ قراءة التحديد · الجزء {0} من {1}</value>
+  </data>
+  <data name="Reader.ReadingSelection" xml:space="preserve">
+    <value>جارٍ قراءة النص المحدد…</value>
+  </data>
+  <data name="Reader.ReadingPage" xml:space="preserve">
+    <value>جارٍ قراءة الصفحة {0}…</value>
+  </data>
+  <data name="Reader.FinishedSelection" xml:space="preserve">
+    <value>انتهت قراءة التحديد.</value>
+  </data>
+  <data name="Reader.FinishedPage" xml:space="preserve">
+    <value>انتهت قراءة الصفحة {0}.</value>
+  </data>
+  <data name="Reader.ReadingStopped" xml:space="preserve">
+    <value>توقفت القراءة.</value>
+  </data>
+  <data name="Reader.Detected" xml:space="preserve">
+    <value>تم اكتشاف {0}</value>
+  </data>
+  <data name="Reader.DetectedCached" xml:space="preserve">
+    <value>تم اكتشاف {0} · محفوظ مؤقتًا</value>
+  </data>
+  <data name="Reader.CachedTranslation" xml:space="preserve">
+    <value>ترجمة محفوظة مؤقتًا</value>
+  </data>
+  <data name="Reader.NoSelectableTextPage" xml:space="preserve">
+    <value>لم يتم العثور على نص قابل للتحديد في هذه الصفحة.</value>
+  </data>
+  <data name="Reader.RenderFailed" xml:space="preserve">
+    <value>تعذر عرض هذه الصفحة.</value>
+  </data>
+  <data name="Reader.PdfLoadFailed" xml:space="preserve">
+    <value>تعذر تحميل ملف PDF.</value>
+  </data>
+  <data name="Editor.Heading" xml:space="preserve">
+    <value>العنوان</value>
+  </data>
+  <data name="Editor.Instruction" xml:space="preserve">
+    <value>التعليمات</value>
+  </data>
+  <data name="Editor.WordLabel" xml:space="preserve">
+    <value>تسمية الكلمة</value>
+  </data>
+  <data name="Editor.TranslationLabel" xml:space="preserve">
+    <value>تسمية الترجمة</value>
+  </data>
+  <data name="Editor.TextInput" xml:space="preserve">
+    <value>إدخال نص</value>
+  </data>
+  <data name="Editor.LongAnswer" xml:space="preserve">
+    <value>إجابة طويلة</value>
+  </data>
+  <data name="Editor.Checkbox" xml:space="preserve">
+    <value>مربع اختيار</value>
+  </data>
+  <data name="Editor.RadioChoices" xml:space="preserve">
+    <value>خيارات أزرار الاختيار</value>
+  </data>
+  <data name="Editor.CheckboxChoices" xml:space="preserve">
+    <value>خيارات مربعات الاختيار</value>
+  </data>
+  <data name="Editor.SelectMenu" xml:space="preserve">
+    <value>قائمة اختيار</value>
+  </data>
+  <data name="Editor.WordBank" xml:space="preserve">
+    <value>بنك الكلمات</value>
+  </data>
+  <data name="Editor.SubmitButton" xml:space="preserve">
+    <value>زر الإرسال</value>
+  </data>
+  <data name="Editor.Feedback" xml:space="preserve">
+    <value>ملاحظات</value>
+  </data>
+  <data name="Editor.EmptyCanvas" xml:space="preserve">
+    <value>اسحب كتلة إلى أي مكان على هذه اللوحة للبدء.</value>
+  </data>
+  <data name="Editor.MoveLeft" xml:space="preserve">
+    <value>تحريك لليسار</value>
+  </data>
+  <data name="Editor.MoveUp" xml:space="preserve">
+    <value>تحريك للأعلى</value>
+  </data>
+  <data name="Editor.MoveDown" xml:space="preserve">
+    <value>تحريك للأسفل</value>
+  </data>
+  <data name="Editor.MoveRight" xml:space="preserve">
+    <value>تحريك لليمين</value>
+  </data>
+  <data name="Editor.RemoveBlock" xml:space="preserve">
+    <value>إزالة الكتلة</value>
+  </data>
+  <data name="Editor.Resize" xml:space="preserve">
+    <value>اسحب لتغيير العرض</value>
+  </data>
+  <data name="Editor.Word" xml:space="preserve">
+    <value>كلمة</value>
+  </data>
+  <data name="Editor.DisplayField" xml:space="preserve">
+    <value>حقل العرض</value>
+  </data>
+  <data name="Editor.Words" xml:space="preserve">
+    <value>كلمات</value>
+  </data>
+  <data name="Editor.Options" xml:space="preserve">
+    <value>الخيارات</value>
+  </data>
+  <data name="Editor.CorrectOption" xml:space="preserve">
+    <value>الخيار الصحيح</value>
+  </data>
+  <data name="Editor.RemoveOption" xml:space="preserve">
+    <value>إزالة الخيار</value>
+  </data>
+  <data name="Editor.AddOption" xml:space="preserve">
+    <value>إضافة خيار</value>
+  </data>
+  <data name="Editor.Properties" xml:space="preserve">
+    <value>الخصائص</value>
+  </data>
+  <data name="Editor.SelectBlock" xml:space="preserve">
+    <value>حدد كتلة لتعديل محتواها وارتباطاتها.</value>
+  </data>
+  <data name="Editor.TargetInputs" xml:space="preserve">
+    <value>المدخلات المستهدفة</value>
+  </data>
+  <data name="Editor.PreviewOnly" xml:space="preserve">
+    <value>معاينة فقط — احفظ ثم شغّل لتسجيل محاولة مُقيّمة.</value>
+  </data>
+  <data name="Editor.BackToEditor" xml:space="preserve">
+    <value>العودة إلى المحرر</value>
+  </data>
+  <data name="Editor.Preview" xml:space="preserve">
+    <value>معاينة</value>
+  </data>
+  <data name="Editor.PreviewingOne" xml:space="preserve">
+    <value>تجري معاينة {0} من الكتل.</value>
+  </data>
+  <data name="Editor.PreviewingMany" xml:space="preserve">
+    <value>تجري معاينة {0} من الكتل.</value>
+  </data>
+  <data name="Editor.ReadyOne" xml:space="preserve">
+    <value>المحرر جاهز · {0} كتلة على اللوحة. استخدم + لإضافة كتلة أو اسحب كتلة.</value>
+  </data>
+  <data name="Editor.ReadyMany" xml:space="preserve">
+    <value>المحرر جاهز · توجد {0} كتل على اللوحة. استخدم + للإضافة أو اسحب كتلة.</value>
+  </data>
+  <data name="Editor.ReplaceConfirm" xml:space="preserve">
+    <value>هل تريد استبدال اللوحة الحالية بتخطيط {0}؟ يمكنك التراجع عن هذا التغيير.</value>
+  </data>
+  <data name="Editor.SaveFailed" xml:space="preserve">
+    <value>تعذّر حفظ هذا الاختبار المخصص.</value>
+  </data>
+  <data name="Editor.SavedPlayable" xml:space="preserve">
+    <value>تم الحفظ. هذا الاختبار جاهز للتشغيل.</value>
+  </data>
+  <data name="Editor.DraftSaved" xml:space="preserve">
+    <value>تم حفظ المسودة. أكمل حقول الاختبار المطلوبة قبل التشغيل.</value>
+  </data>
+  <data name="Editor.SaveStopped" xml:space="preserve">
+    <value>توقفت طلب الحفظ بشكل غير متوقع. حاول مرة أخرى.</value>
+  </data>
+  <data name="Editor.WordLemma" xml:space="preserve">
+    <value>الكلمة / الأصل المعجمي</value>
+  </data>
+  <data name="Editor.Translation" xml:space="preserve">
+    <value>الترجمة</value>
+  </data>
+  <data name="Editor.Width" xml:space="preserve">
+    <value>العرض</value>
+  </data>
+  <data name="Editor.Column" xml:space="preserve">
+    <value>عمود</value>
+  </data>
+  <data name="Editor.ColumnNumber" xml:space="preserve">
+    <value>العمود {0}</value>
+  </data>
+  <data name="Editor.Row" xml:space="preserve">
+    <value>صف</value>
+  </data>
+  <data name="Editor.Text" xml:space="preserve">
+    <value>النص</value>
+  </data>
+  <data name="Editor.LiveBinding" xml:space="preserve">
+    <value>ربط مباشر للكلمة</value>
+  </data>
+  <data name="Editor.ExerciseRow" xml:space="preserve">
+    <value>صف التمرين (استخدم {{blank}})</value>
+  </data>
+  <data name="Editor.AccessibleLabel" xml:space="preserve">
+    <value>تسمية وصولية</value>
+  </data>
+  <data name="Editor.CustomExpected" xml:space="preserve">
+    <value>الإجابة المتوقعة المخصصة</value>
+  </data>
+  <data name="Editor.ExpectedBinding" xml:space="preserve">
+    <value>ربط الكلمة المتوقع</value>
+  </data>
+  <data name="Editor.DisplayedWord" xml:space="preserve">
+    <value>الكلمة المعروضة</value>
+  </data>
+  <data name="Editor.ExpectedChecked" xml:space="preserve">
+    <value>متوقع تحديده</value>
+  </data>
+  <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
+    <value>هذا الاختبار لم يعد عامًا.</value>
+  </data>
+  <data name="Explore.CollectionNoLongerPublic" xml:space="preserve">
+    <value>هذه المجموعة لم تعد عامة.</value>
+  </data>
+  <data name="Explore.CopiedToLibrary" xml:space="preserve">
+    <value>تم نسخ {0} إلى مكتبتك.</value>
+  </data>
+  <data name="Classroom.InvitationCreated" xml:space="preserve">
+    <value>تم إنشاء الدعوة. ستظهر على صفحة Classroom الخاصة بهم في الزيارة التالية.</value>
+  </data>
+  <data name="Classroom.JoinCodeRegenerated" xml:space="preserve">
+    <value>تمت إعادة إنشاء رمز الانضمام.</value>
+  </data>
+  <data name="Classroom.NoAccessResults" xml:space="preserve">
+    <value>ليس لديك إذن بالوصول إلى تلك النتائج.</value>
+  </data>
+  <data name="Classroom.QuizShared" xml:space="preserve">
+    <value>تمت مشاركة الاختبار.</value>
+  </data>
+  <data name="Classroom.BookShared" xml:space="preserve">
+    <value>تمت مشاركة الكتاب.</value>
+  </data>
+  <data name="Classroom.RemovedFromClassroom" xml:space="preserve">
+    <value>تمت الإزالة من Classroom.</value>
+  </data>
+  <data name="Classroom.QuizCopyFailed" xml:space="preserve">
+    <value>تعذّر نسخ هذا الاختبار.</value>
+  </data>
+  <data name="Classroom.Member" xml:space="preserve">
+    <value>عضو</value>
+  </data>
+  <data name="Common.Unknown" xml:space="preserve">
+    <value>غير معروف</value>
+  </data>
+  <data name="Account.LogOut" xml:space="preserve">
+    <value>تسجيل الخروج</value>
+  </data>
+  <data name="Account.LogIn" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+  <data name="Common.Send" xml:space="preserve">
+    <value>إرسال</value>
+  </data>
+  <data name="Speaking.ConversationLab" xml:space="preserve">
+    <value>مختبر محادثة {0}</value>
+  </data>
+  <data name="Speaking.MessageLabel" xml:space="preserve">
+    <value>رسالتك في {0}</value>
+  </data>
+  <data name="Speaking.MessagePlaceholder" xml:space="preserve">
+    <value>اكتب في {0} أو استخدم الميكروفون…</value>
+  </data>
+  <data name="Speaking.MicAria" xml:space="preserve">
+    <value>ابدأ تحويل الصوت إلى نص في {0}؛ سيتوقف التسجيل بعد أن تنتهي من التحدث</value>
+  </data>
+  <data name="Speaking.PrivacyNote" xml:space="preserve">
+    <value>يُبث الصوت مباشرة إلى Azure Speech. تُحفظ هذه المحادثة للجلسة الحالية فقط.</value>
+  </data>
+  <data name="Speaking.ClickTranslate" xml:space="preserve">
+    <value>انقر للترجمة</value>
+  </data>
+  <data name="Speaking.ClickShowLanguage" xml:space="preserve">
+    <value>انقر لإظهار {0}</value>
+  </data>
+  <data name="Speaking.CoachFeedback" xml:space="preserve">
+    <value>ملاحظات المدرب</value>
+  </data>
+  <data name="Speaking.MoreNatural" xml:space="preserve">
+    <value>أكثر طبيعية {0}</value>
+  </data>
+</root>

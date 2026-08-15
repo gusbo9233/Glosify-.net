@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@CultureInfo.CurrentUICulture.Name" dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")" data-display-culture="@CultureInfo.CurrentUICulture.Name">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>@ViewData["Title"] - Glosify</title>
-    <meta name="description" content="@(ViewData["Description"] as string ?? "Sign in to Glosify to build vocabulary from what you read, practice it with quizzes, and speak it with an AI conversation partner.")" />
+    <meta name="description" content="@(ViewData["Description"] as string ?? Text["Layout.AuthMetaDescription"])" />
+    @await Html.PartialAsync("_LocalizedPublicSeo")
     @* The font files come from a second origin, so both are preconnected before
        the stylesheets are even parsed. Text and icons are separate requests
        because they need different font-display behavior — see WebFonts. *@
@@ -15,7 +16,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body class="auth-body">
+<body class="auth-body" data-i18n="@System.Text.Json.JsonSerializer.Serialize(UiClientText.Create(Text))">
     <div class="auth-halos" aria-hidden="true">
         <div class="auth-halo auth-halo-tl"></div>
         <div class="auth-halo auth-halo-br"></div>
@@ -23,6 +24,11 @@
 
     @RenderBody()
 
+    <div class="auth-display-language">
+        @await Html.PartialAsync("_DisplayLanguageSelector")
+    </div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

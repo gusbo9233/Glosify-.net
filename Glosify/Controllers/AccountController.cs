@@ -2,10 +2,13 @@ using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Models.ViewModels;
 using Glosify.Services.Auth;
+using Glosify.Localization;
+using System.Globalization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 
 namespace Glosify.Controllers;
 
@@ -16,17 +19,35 @@ public class AccountController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAuthenticationSchemeProvider _schemeProvider;
     private readonly IExternalAccountService _externalAccounts;
+    private readonly IStringLocalizer<UiText> _text;
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         IAuthenticationSchemeProvider schemeProvider,
         IExternalAccountService externalAccounts)
+        : this(
+            signInManager,
+            userManager,
+            schemeProvider,
+            externalAccounts,
+            PassthroughStringLocalizer<UiText>.Instance)
+    {
+    }
+
+    [ActivatorUtilitiesConstructor]
+    public AccountController(
+        SignInManager<ApplicationUser> signInManager,
+        UserManager<ApplicationUser> userManager,
+        IAuthenticationSchemeProvider schemeProvider,
+        IExternalAccountService externalAccounts,
+        IStringLocalizer<UiText> text)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _schemeProvider = schemeProvider;
         _externalAccounts = externalAccounts;
+        _text = text;
     }
 
     [HttpGet]
@@ -39,9 +60,7 @@ public class AccountController : Controller
 
         if (!string.IsNullOrWhiteSpace(externalLoginError))
         {
-            var externalLoginMessage = string.Equals(externalLoginError, "Google", StringComparison.OrdinalIgnoreCase)
-                ? "Google login failed. Check the local Google OAuth client ID and client secret, then try again."
-                : $"{externalLoginError} login failed. Check the local OAuth client ID and client secret, then try again.";
+            var externalLoginMessage = _text["Auth.ExternalProviderFailed", externalLoginError];
 
             ModelState.AddModelError(
                 string.Empty,
@@ -66,11 +85,11 @@ public class AccountController : Controller
 
         if (result.IsLockedOut)
         {
-            ModelState.AddModelError(string.Empty, "Account locked. Please try again later.");
+            ModelState.AddModelError(string.Empty, _text["Auth.AccountLocked"]);
             return View(model);
         }
 
-        ModelState.AddModelError(string.Empty, "Invalid email or password.");
+        ModelState.AddModelError(string.Empty, _text["Auth.InvalidCredentials"]);
         return View(model);
     }
 
@@ -89,7 +108,12 @@ public class AccountController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+        var user = new ApplicationUser
+        {
+            UserName = model.Email,
+            Email = model.Email,
+            DisplayCulture = CultureInfo.CurrentUICulture.Name,
+        };
         var result = await _userManager.CreateAsync(user, model.Password);
 
         if (result.Succeeded)
@@ -99,7 +123,7 @@ public class AccountController : Controller
         }
 
         foreach (var error in result.Errors)
-            ModelState.AddModelError(string.Empty, error.Description);
+            ModelState.AddModelError(string.Empty, IdentityErrorMessage(error));
 
         return View(model);
     }
@@ -116,7 +140,7 @@ public class AccountController : Controller
     {
         if (!await IsExternalLoginProviderConfigured(provider))
         {
-            ModelState.AddModelError(string.Empty, $"{provider} login is not configured.");
+            ModelState.AddModelError(string.Empty, _text["Auth.ExternalNotConfigured", provider]);
             await SetLoginViewDataAsync(returnUrl);
             return View("Login", new LoginViewModel());
         }
@@ -140,12 +164,17 @@ public class AccountController : Controller
         var resolution = await _externalAccounts.ResolveOrCreateAsync(info);
         if (!resolution.Succeeded)
         {
-            ModelState.AddModelError(string.Empty, resolution.ErrorMessage ?? "External login failed.");
+            ModelState.AddModelError(string.Empty, _text["Auth.ExternalFailed"]);
             await SetLoginViewDataAsync(returnUrl);
             return View("Login", new LoginViewModel());
         }
 
-        await _signInManager.SignInAsync(resolution.User!, isPersistent: false);
+        if (string.IsNullOrWhiteSpace(resolution.User!.DisplayCulture))
+        {
+            resolution.User.DisplayCulture = CultureInfo.CurrentUICulture.Name;
+            await _userManager.UpdateAsync(resolution.User);
+        }
+        await _signInManager.SignInAsync(resolution.User, isPersistent: false);
         return LocalRedirect(SafeLocalReturnUrl(returnUrl));
     }
 
@@ -173,4 +202,11 @@ public class AccountController : Controller
 
     private string SafeLocalReturnUrl(string? returnUrl) =>
         Url.IsLocalUrl(returnUrl) ? returnUrl! : "/";
+
+    private string IdentityErrorMessage(IdentityError error)
+    {
+        var key = $"Identity.{error.Code}";
+        var localized = _text[key];
+        return localized.ResourceNotFound ? _text["Identity.DefaultError"] : localized;
+    }
 }

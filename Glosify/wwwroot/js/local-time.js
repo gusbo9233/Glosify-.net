@@ -4,6 +4,8 @@
 (function () {
   "use strict";
 
+  const displayCulture = document.documentElement.lang || "en-GB";
+
   const FORMATS = {
     datetime: { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },
     date: { year: "numeric", month: "short", day: "numeric" },
@@ -30,9 +32,9 @@
     }
     const options = FORMATS[element.dataset.local] || FORMATS.datetime;
     try {
-      element.textContent = new Intl.DateTimeFormat(undefined, options).format(instant);
+      element.textContent = new Intl.DateTimeFormat(displayCulture, options).format(instant);
     } catch {
-      element.textContent = instant.toLocaleString();
+      element.textContent = instant.toLocaleString(displayCulture);
     }
   }
 
@@ -46,7 +48,7 @@
     }
     const options = FORMATS[element.dataset.localRange] || FORMATS.time;
     try {
-      const formatter = new Intl.DateTimeFormat(undefined, options);
+      const formatter = new Intl.DateTimeFormat(displayCulture, options);
       const label = element.dataset.rangeLabel;
       const range = `${formatter.format(from)}–${formatter.format(to)}`;
       element.textContent = label ? `${label} · ${range}` : range;

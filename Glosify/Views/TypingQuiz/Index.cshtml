@@ -1,10 +1,10 @@
 @model TypingQuizViewModel
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = "Typing Quiz";
+    ViewData["Title"] = Text["Quiz.TypingTitle"];
     ViewData["ActiveNav"] = "quizzes";
 
-    var quizName = Model.SelectedQuiz?.Name ?? "Typing Quiz";
+    var quizName = Model.SelectedQuiz?.Name ?? Text["Quiz.TypingTitle"];
 }
 
 <section class="typing-shell"
@@ -23,28 +23,28 @@
         <div>
             <p class="flash-kicker">@Model.DirectionLabel</p>
             <h1 class="flash-title">@quizName</h1>
-            <p class="flash-subtitle">Type the full @Model.AnswerLanguage @Model.ItemSingularLabel from the @Model.PromptLanguage prompt.</p>
+            <p class="flash-subtitle">@Text["Quiz.TypeInstruction", QuizLanguageDisplay.Name(Model.AnswerLanguage), Model.ItemSingularLabel, QuizLanguageDisplay.Name(Model.PromptLanguage)]</p>
         </div>
         @if (Model.SelectedQuiz != null)
         {
-            <a asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">Back to words</a>
+            <a asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">@Text["Quiz.BackWords"]</a>
         }
     </header>
 
     @if (Model.TotalWords == 0)
     {
         <div class="empty-state">
-            <h2 class="flash-title">No @Model.ItemPluralLabel yet</h2>
-            <p class="flash-subtitle">Add @Model.ItemPluralLabel to a quiz, then start a typing session from that quiz.</p>
-            <button class="btn-main" type="button" disabled>Check Answer</button>
+            <h2 class="flash-title">@Text["Quiz.NoneYet", Model.ItemPluralLabel]</h2>
+            <p class="flash-subtitle">@Text["Quiz.AddThenStart", Model.ItemPluralLabel, Text["Settings.Typing"]]</p>
+            <button class="btn-main" type="button" disabled>@Text["Quiz.CheckAnswer"]</button>
         </div>
     }
     else
     {
         <div class="progress-wrap">
             <div class="progress-meta">
-                <span class="progress-count" data-progress-count>@Model.CurrentWordNumber of @Model.TotalWords @Model.ItemPluralLabel</span>
-                <span class="progress-count" data-accuracy>@Model.CorrectCount correct</span>
+                <span class="progress-count" data-progress-count>@Text["Quiz.Progress", Model.CurrentWordNumber, Model.TotalWords, Model.ItemPluralLabel]</span>
+                <span class="progress-count" data-accuracy>@Text["Quiz.CorrectCount", Model.CorrectCount]</span>
             </div>
             <div class="progress-track" aria-hidden="true">
                 <div class="progress-fill" data-progress-fill style="width:@Model.ProgressPercent%"></div>
@@ -54,7 +54,7 @@
         <div class="typing-stage">
             <article class="typing-card" data-card>
                 <span class="card-label" data-card-label>@Model.CardLabel @Model.CurrentWordNumber</span>
-                <p class="typing-prompt-label">@Model.PromptLanguage prompt</p>
+                <p class="typing-prompt-label">@Text["Quiz.PromptLabel", QuizLanguageDisplay.Name(Model.PromptLanguage)]</p>
                 @{
                     var typingPromptIsTarget = Glosify.Models.PracticeDirection.IsTargetToSource(Model.PracticeDirection);
                 }
@@ -66,8 +66,8 @@
                                 type="button"
                                 data-tts="@Model.CurrentWord.Prompt"
                                 data-tts-lang="@Model.PromptLanguage"
-                                title="Play pronunciation"
-                                aria-label="Play pronunciation">
+                                title="@Text["Quiz.PlayPronunciationGeneric"]"
+                                aria-label="@Text["Quiz.PlayPronunciationGeneric"]">
                             <span class="material-symbols-outlined">volume_up</span>
                         </button>
                     }
@@ -76,15 +76,15 @@
 
                 <form class="typing-form" data-typing-form autocomplete="off">
                     @Html.AntiForgeryToken()
-                    <label class="visually-hidden" for="typingAnswer">Answer</label>
-                    <input class="answer-input" id="typingAnswer" data-answer-input type="text" dir="auto" placeholder="Type your answer..." autocomplete="off" />
+                    <label class="visually-hidden" for="typingAnswer">@Text["Quiz.Answer"]</label>
+                    <input class="answer-input" id="typingAnswer" data-answer-input type="text" dir="auto" placeholder="@Text["Quiz.TypePlaceholder"]" autocomplete="off" />
                     <button class="btn-check" type="submit" data-check-button>
-                        Check Answer <span class="material-symbols-outlined">arrow_forward</span>
+                        @Text["Quiz.CheckAnswer"] <span class="material-symbols-outlined">arrow_forward</span>
                     </button>
                 </form>
 
                 <div class="typing-reveal" data-reveal hidden>
-                    <span>Correct answer</span>
+                    <span>@Text["Quiz.CorrectAnswer"]</span>
                     <strong data-correct-answer dir="auto"></strong>
                     <p data-example dir="auto"></p>
                 </div>
@@ -99,13 +99,13 @@
                     <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
                     <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
                     <input type="hidden" name="classroomId" value="@Model.ClassroomId" />
-                    <button class="btn-linkish" type="submit">Reset Session</button>
+                    <button class="btn-linkish" type="submit">@Text["Quiz.Reset"]</button>
                 </form>
             </article>
 
             @if (Model.ShowsUkrainianKeyboard)
             {
-                <section class="ukrainian-keyboard" aria-label="Ukrainian virtual keyboard" data-ukrainian-keyboard>
+                <section class="ukrainian-keyboard" aria-label="@Text["Quiz.UkrainianKeyboard"]" data-ukrainian-keyboard>
                     <div class="keyboard-row">
                         @foreach (var key in new[] { "й", "ц", "у", "к", "е", "н", "г", "ш", "щ", "з", "х", "ї" })
                         {
@@ -125,7 +125,7 @@
                         }
                     </div>
                     <div class="keyboard-row keyboard-row-actions">
-                        <button type="button" class="keyboard-key keyboard-key-wide" data-key-value=" ">Space</button>
+                        <button type="button" class="keyboard-key keyboard-key-wide" data-key-value=" ">@Text["Quiz.Space"]</button>
                         <button type="button" class="keyboard-key keyboard-key-wide" data-key-action="backspace">
                             <span class="material-symbols-outlined">backspace</span>
                         </button>
@@ -136,10 +136,10 @@
 
         <section class="results" data-results hidden aria-live="polite">
             <div class="result-score" data-result-score>@Model.ScorePercent%</div>
-            <h2 class="flash-title">Typing Complete</h2>
+            <h2 class="flash-title">@Text["Quiz.TypingComplete"]</h2>
             <div class="result-grid">
-                <div class="result-stat"><span>Correct</span><span data-result-correct>@Model.CorrectCount</span></div>
-                <div class="result-stat"><span>Incorrect</span><span data-result-incorrect>@Model.IncorrectCount</span></div>
+                <div class="result-stat"><span>@Text["Quiz.Correct"]</span><span data-result-correct>@Model.CorrectCount</span></div>
+                <div class="result-stat"><span>@Text["Quiz.Incorrect"]</span><span data-result-incorrect>@Model.IncorrectCount</span></div>
                 <div class="result-stat"><span>@Model.ItemPluralLabel</span><span>@Model.TotalWords</span></div>
             </div>
             <div class="typing-result-actions">
@@ -153,16 +153,16 @@
                     <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
                     <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
                     <input type="hidden" name="classroomId" value="@Model.ClassroomId" />
-                    <button class="btn-main" type="submit">Restart Session</button>
+                    <button class="btn-main" type="submit">@Text["Quiz.Restart"]</button>
                 </form>
                 <form method="post" asp-controller="TypingQuiz" asp-action="RestartIncorrect" data-practice-incorrect hidden>
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="sessionId" value="@Model.SessionId" />
-                    <button class="btn-main" type="submit">Practice Incorrect Words</button>
+                    <button class="btn-main" type="submit">@Text["Quiz.PracticeIncorrect"]</button>
                 </form>
                 @if (Model.SelectedQuiz != null)
                 {
-                    <a asp-controller="Quiz" asp-action="Settings" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">Change settings</a>
+                    <a asp-controller="Quiz" asp-action="Settings" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">@Text["Quiz.ChangeSettings"]</a>
                 }
             </div>
         </section>

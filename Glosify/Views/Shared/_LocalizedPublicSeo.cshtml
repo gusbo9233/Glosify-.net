@@ -1,0 +1,36 @@
+@inject IWebHostEnvironment HostEnvironment
+@{
+    var page = ViewData["LocalizedPublicPage"] as string;
+    var description = ViewData["Description"] as string ?? Text["Layout.MetaDescription"].Value;
+    var title = $"{ViewData["Title"]} - Glosify";
+    var origin = HostEnvironment.IsProduction()
+        ? "https://glosify.se"
+        : $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}";
+    var (englishPath, localizedSuffix) = page switch
+    {
+        "home" => ("/", ""),
+        "privacy" => ("/privacy/english", "/privacy"),
+        "terms" => ("/terms/english", "/terms"),
+        "support" => ("/support/english", "/support"),
+        _ => ("", ""),
+    };
+    var routeCulture = Convert.ToString(ViewContext.RouteData.Values["culture"], CultureInfo.InvariantCulture);
+    var canonicalPath = DisplayCultureCatalog.TryCanonicalize(routeCulture, out var canonicalCulture)
+        && canonicalCulture != DisplayCultureCatalog.DefaultCulture
+            ? $"/{canonicalCulture}{localizedSuffix}"
+            : englishPath;
+}
+@if (!string.IsNullOrEmpty(page))
+{
+    <link rel="canonical" href="@(origin + canonicalPath)" />
+    <link rel="alternate" hreflang="en-GB" href="@(origin + englishPath)" />
+    @foreach (var culture in DisplayCultureCatalog.LocalizedPublicCultures)
+    {
+        <link rel="alternate" hreflang="@culture.Name" href="@(origin + "/" + culture.Name + localizedSuffix)" />
+    }
+    <link rel="alternate" hreflang="x-default" href="@(origin + englishPath)" />
+    <meta property="og:title" content="@title" />
+    <meta property="og:description" content="@description" />
+    <meta property="og:url" content="@(origin + canonicalPath)" />
+    <meta property="og:locale" content="@CultureInfo.CurrentUICulture.Name.Replace('-', '_')" />
+}

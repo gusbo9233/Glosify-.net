@@ -5,10 +5,10 @@
     ViewData["AssistantTranscriptId"] = Model.Transcript.Id;
     ViewData["AssistantTranscriptPage"] = Model.Transcript.Page;
     ViewData["AssistantTranscriptStream"] = Model.Transcript.SelectedStream;
-    ViewData["AssistantTitle"] = "Transcript assistant";
+    ViewData["AssistantTitle"] = Text["Transcripts.AssistantTitle"];
     ViewData["AssistantContextLabel"] = Model.Transcript.Title;
-    ViewData["AssistantEmptyText"] = "Ask about this transcript or use it with your existing quizzes.";
-    ViewData["AssistantPlaceholder"] = "Ask about this transcript...";
+    ViewData["AssistantEmptyText"] = Text["Transcripts.AssistantEmpty"];
+    ViewData["AssistantPlaceholder"] = Text["Transcripts.AssistantPlaceholder"];
     var totalPages = Math.Max(1, (int)Math.Ceiling(Model.Transcript.TotalSegments / (double)Model.Transcript.PageSize));
     var learningLanguage = Glosify.Services.Language.QuizLanguageCatalog.Find(Model.Transcript.TargetLanguage)?.Name
         ?? Model.Transcript.TargetLanguage.ToUpperInvariant();
@@ -25,7 +25,7 @@
 <section class="transcripts-page transcript-detail-page">
     <a class="transcript-back" asp-action="Index">
         <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-        Saved transcripts
+        @Text["Transcripts.Saved"]
     </a>
 
     @if (TempData["TranscriptMessage"] is string message)
@@ -39,27 +39,27 @@
 
     <header class="transcript-detail-header">
         <div>
-            <p class="transcripts-eyebrow">@(isSource ? $"Original speech saved for {learningLanguage} learning" : $"Legacy translated captions · learning {learningLanguage}")</p>
+            <p class="transcripts-eyebrow">@(isSource ? Text["Transcripts.OriginalFor", QuizLanguageDisplay.Name(learningLanguage)] : Text["Transcripts.LegacyFor", QuizLanguageDisplay.Name(learningLanguage)])</p>
             <h1>@Model.Transcript.Title</h1>
-            <p>@Model.Transcript.TotalSegments captions · started <time datetime="@Model.Transcript.CreatedAt.ToString("O")" data-local="datetime">@Model.Transcript.CreatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></p>
+            <p>@(Model.Transcript.TotalSegments == 1 ? Text["Transcripts.CaptionOne", Model.Transcript.TotalSegments] : Text["Transcripts.CaptionMany", Model.Transcript.TotalSegments]) · @Text["Transcripts.Started"] <time datetime="@Model.Transcript.CreatedAt.ToString("O")" data-local="datetime">@Model.Transcript.CreatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></p>
         </div>
         <div class="transcript-actions">
             <form method="post" asp-action="Rename" asp-route-id="@Model.Transcript.Id" class="transcript-rename">
                 @Html.AntiForgeryToken()
-                <label class="visually-hidden" for="transcript-title">Transcript title</label>
+                <label class="visually-hidden" for="transcript-title">@Text["Transcripts.NameLabel"]</label>
                 <input id="transcript-title" name="title" value="@Model.Transcript.Title" maxlength="160" required />
-                <button type="submit">Rename</button>
+                <button type="submit">@Text["Transcripts.Rename"]</button>
             </form>
             <form method="post" asp-action="Delete" asp-route-id="@Model.Transcript.Id"
-                  data-confirm="Delete this saved transcript permanently?">
+                  data-confirm="@Text["Transcripts.DeleteConfirm"]">
                 @Html.AntiForgeryToken()
                 @if (Model.Transcript.HasActiveSession)
                 {
-                    <button type="submit" class="transcript-delete" disabled title="Stop live subtitles before deleting">Delete</button>
+                    <button type="submit" class="transcript-delete" disabled title="@Text["Transcripts.StopBeforeDelete"]">@Text["Common.Delete"]</button>
                 }
                 else
                 {
-                    <button type="submit" class="transcript-delete">Delete</button>
+                    <button type="submit" class="transcript-delete">@Text["Common.Delete"]</button>
                 }
             </form>
         </div>
@@ -67,26 +67,26 @@
 
     @if (hasBothStreams)
     {
-        <nav class="transcript-streams" aria-label="Caption stream">
+        <nav class="transcript-streams" aria-label="@Text["Transcripts.StreamAria"]">
             <a class="@(showingTranslation ? "" : "is-active")"
                asp-route-id="@Model.Transcript.Id" asp-route-stream="source"
                aria-current="@(showingTranslation ? null : "page")">
-                Original speech (@Model.Transcript.SourceSegmentCount)
+                @Text["Transcripts.OriginalSpeech"] (@Model.Transcript.SourceSegmentCount)
             </a>
             <a class="@(showingTranslation ? "is-active" : "")"
                asp-route-id="@Model.Transcript.Id" asp-route-stream="translation"
                aria-current="@(showingTranslation ? "page" : null)">
-                Translation (@Model.Transcript.TranslationSegmentCount)
+                @Text["Transcripts.Translation"] (@Model.Transcript.TranslationSegmentCount)
             </a>
         </nav>
         <p class="transcript-stream-note">
             @(showingTranslation
-                ? "Translated live from the same audio by a different model. Useful for checking meaning where the original speech was misheard."
-                : "What the speech recogniser heard. Switch to the translation to cross-check unclear passages.")
+                ? Text["Transcripts.TranslationNote"]
+                : Text["Transcripts.OriginalNote"])
         </p>
     }
 
-    <article class="transcript-reader" aria-label="@(showingTranslation ? "Saved translated captions" : "Saved original speech")">
+    <article class="transcript-reader" aria-label="@(showingTranslation ? Text["Transcripts.SavedTranslationAria"] : Text["Transcripts.SavedOriginalAria"])">
         @foreach (var segment in Model.Transcript.Segments)
         {
             <section class="transcript-segment">
@@ -98,27 +98,27 @@
 
     @if (totalPages > 1)
     {
-        <nav class="transcript-pagination" aria-label="Transcript text pages">
+        <nav class="transcript-pagination" aria-label="@Text["Transcripts.TextPagesAria"]">
             <a class="@(Model.Transcript.Page <= 1 ? "is-disabled" : "")"
                asp-route-id="@Model.Transcript.Id" asp-route-page="1"
-               asp-route-stream="@Model.Transcript.SelectedStream">First</a>
+               asp-route-stream="@Model.Transcript.SelectedStream">@Text["Common.First"]</a>
             <a class="@(Model.Transcript.Page <= 1 ? "is-disabled" : "")"
                asp-route-id="@Model.Transcript.Id" asp-route-page="@(Model.Transcript.Page - 1)"
-               asp-route-stream="@Model.Transcript.SelectedStream">Previous</a>
-            <span>Page @Model.Transcript.Page of @totalPages</span>
+               asp-route-stream="@Model.Transcript.SelectedStream">@Text["Common.Previous"]</a>
+            <span>@Text["Common.PageOf", Model.Transcript.Page, totalPages]</span>
             <a class="@(Model.Transcript.Page >= totalPages ? "is-disabled" : "")"
                asp-route-id="@Model.Transcript.Id" asp-route-page="@(Model.Transcript.Page + 1)"
-               asp-route-stream="@Model.Transcript.SelectedStream">Next</a>
+               asp-route-stream="@Model.Transcript.SelectedStream">@Text["Common.Next"]</a>
             <a class="@(Model.Transcript.Page >= totalPages ? "is-disabled" : "")"
                asp-route-id="@Model.Transcript.Id" asp-route-page="@totalPages"
-               asp-route-stream="@Model.Transcript.SelectedStream">Last</a>
+               asp-route-stream="@Model.Transcript.SelectedStream">@Text["Common.Last"]</a>
         </nav>
 
         @* A long session is dozens of pages, so Next-by-Next is not a way to get around.
            A plain GET form keeps the jump working without script. *@
         <form class="transcript-jump" method="get" asp-action="Details" asp-route-id="@Model.Transcript.Id">
             <input type="hidden" name="stream" value="@Model.Transcript.SelectedStream" />
-            <label for="transcript-jump-page">Jump to page</label>
+            <label for="transcript-jump-page">@Text["Transcripts.JumpPage"]</label>
             @if (Model.PageSpans.Count > 0)
             {
                 <select id="transcript-jump-page" name="page">
@@ -126,9 +126,9 @@
                     {
                         <option value="@span.Page" selected="@(span.Page == Model.Transcript.Page)"
                                 data-local-range="time"
-                                data-range-label="Page @span.Page"
+                                data-range-label="@Text["Common.Page", span.Page]"
                                 data-range-start="@span.StartsAt.ToString("O")"
-                                data-range-end="@span.EndsAt.ToString("O")">Page @span.Page · @span.StartsAt.UtcDateTime.ToString("HH:mm:ss")–@span.EndsAt.UtcDateTime.ToString("HH:mm:ss")</option>
+                                data-range-end="@span.EndsAt.ToString("O")">@Text["Common.Page", span.Page] · @span.StartsAt.UtcDateTime.ToString("HH:mm:ss")–@span.EndsAt.UtcDateTime.ToString("HH:mm:ss")</option>
                     }
                 </select>
             }
@@ -137,7 +137,7 @@
                 <input id="transcript-jump-page" name="page" type="number" inputmode="numeric"
                        min="1" max="@totalPages" value="@Model.Transcript.Page" />
             }
-            <button type="submit">Go</button>
+            <button type="submit">@Text["Common.Go"]</button>
         </form>
     }
 </section>

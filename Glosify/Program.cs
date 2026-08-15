@@ -3,6 +3,7 @@ using Glosify.Data;
 using Glosify.Extensions;
 using Glosify.Infrastructure.Api;
 using Glosify.Infrastructure.Health;
+using Glosify.Localization;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Assistant.Mcp;
 using Glosify.Services.Ai.Generation;
@@ -11,8 +12,10 @@ using Glosify.Services.RealtimeTranslation;
 using Glosify.Services.Speaking;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
@@ -29,11 +32,37 @@ if (builder.Environment.IsEnvironment("Testing"))
 }
 
 // Add services to the container.
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.AddSingleton<Microsoft.Extensions.Localization.IStringLocalizerFactory, UiTextStringLocalizerFactory>();
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
     options.Filters.Add<ApiProblemDetailsResultFilter>();
     options.Filters.AddService<ApiExceptionFilter>();
+})
+    .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
+    .AddDataAnnotationsLocalization(options =>
+    {
+        options.DataAnnotationLocalizerProvider = (_, factory) =>
+            factory.Create(typeof(UiText));
+    });
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new RequestCulture(DisplayCultureCatalog.DefaultCulture);
+    options.SupportedCultures = DisplayCultureCatalog.CultureInfos;
+    options.SupportedUICultures = DisplayCultureCatalog.CultureInfos;
+    options.ApplyCurrentCultureToResponseHeaders = true;
+    options.RequestCultureProviders =
+    [
+        new LocalizedPublicRequestCultureProvider(),
+        new DisplayCultureClaimRequestCultureProvider(),
+        new CookieRequestCultureProvider(),
+    ];
+});
+builder.Services.Configure<RouteOptions>(options =>
+{
+    options.ConstraintMap["displayCulture"] = typeof(DisplayCultureRouteConstraint);
+    options.ConstraintMap["unsupportedDisplayCulture"] = typeof(UnsupportedDisplayCultureRouteConstraint);
 });
 builder.Services.AddScoped<ApiExceptionFilter>();
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -92,7 +121,13 @@ builder.Services.AddGlosifyRateLimiting();
 builder.Services.AddGlosifyAuthentication(builder.Configuration, builder.Environment);
 
 
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages()
+    .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
+    .AddDataAnnotationsLocalization(options =>
+    {
+        options.DataAnnotationLocalizerProvider = (_, factory) =>
+            factory.Create(typeof(UiText));
+    });
 
 builder.Services.AddGlosifyServices(builder.Configuration, builder.Environment);
 
@@ -107,7 +142,8 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNEC
         .WithMetrics(metrics => metrics
             .AddMeter(SpeakingTelemetry.MeterName)
             .AddMeter(GenerativeAiTelemetry.MeterName)
-            .AddMeter(RealtimeTranslationTelemetry.MeterName))
+            .AddMeter(RealtimeTranslationTelemetry.MeterName)
+            .AddMeter(DisplayLanguageTelemetry.MeterName))
         .UseAzureMonitor(options =>
         {
             options.SamplingRatio = 1.0F;
@@ -256,6 +292,10 @@ app.UseRouting();
 // partitioned per user rather than per IP.
 app.UseAuthentication();
 
+// Account culture is stored in the authenticated principal. Keep localization after
+// authentication, but before every component that can produce a routed response.
+app.UseRequestLocalization();
+
 app.UseRateLimiter();
 
 app.UseAuthorization();
@@ -275,6 +315,32 @@ app.MapHealthChecks("/readyz", new HealthCheckOptions
 }).AllowAnonymous();
 
 app.MapStaticAssets().AllowAnonymous();
+
+app.MapControllerRoute(
+    name: "localized-privacy",
+    pattern: "{culture:displayCulture}/privacy",
+    defaults: new { controller = "Home", action = "LocalizedPrivacy" });
+
+app.MapControllerRoute(
+    name: "localized-terms",
+    pattern: "{culture:displayCulture}/terms",
+    defaults: new { controller = "Home", action = "LocalizedTerms" });
+
+app.MapControllerRoute(
+    name: "localized-support",
+    pattern: "{culture:displayCulture}/support",
+    defaults: new { controller = "Home", action = "LocalizedSupport" });
+
+app.MapControllerRoute(
+    name: "localized-landing",
+    pattern: "{culture:displayCulture}",
+    defaults: new { controller = "Home", action = "LocalizedIndex" })
+    .WithStaticAssets();
+
+app.MapGet("/{culture:unsupportedDisplayCulture}/{page:regex(privacy|terms|support)}", () => Results.NotFound())
+    .AllowAnonymous();
+app.MapGet("/{culture:unsupportedDisplayCulture}", () => Results.NotFound())
+    .AllowAnonymous();
 
 app.MapControllerRoute(
     name: "landing",

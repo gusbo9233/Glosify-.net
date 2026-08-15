@@ -1,6 +1,7 @@
 (() => {
     const shell = document.querySelector('[data-typing-quiz]');
     if (!shell) return;
+    const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
 
     const state = {
         index: Number(shell.dataset.initialIndex) || 0,
@@ -36,8 +37,8 @@
         if (!state.total) return;
 
         const completed = state.correct + state.incorrect;
-        progressCount.textContent = `${Math.min(state.index + 1, state.total)} of ${state.total} ${state.itemPluralLabel}`;
-        accuracy.textContent = `${state.correct} correct`;
+        progressCount.textContent = t('Quiz.Progress', '{0} of {1} {2}', Math.min(state.index + 1, state.total), state.total, state.itemPluralLabel);
+        accuracy.textContent = t('Quiz.CorrectCount', '{0} correct', state.correct);
         progressFill.style.width = `${Math.round(completed * 100 / state.total)}%`;
     };
 
@@ -54,7 +55,7 @@
         feedback.textContent = '';
         feedback.className = 'typing-feedback';
         cardLabel.textContent = `${state.cardLabel} ${state.index + 1}`;
-        checkButton.innerHTML = 'Check Answer <span class="material-symbols-outlined">arrow_forward</span>';
+        checkButton.innerHTML = `${t('Quiz.CheckAnswer', 'Check Answer')} <span class="material-symbols-outlined">arrow_forward</span>`;
         reveal.hidden = true;
         card.classList.remove('is-correct', 'is-incorrect');
         updateProgress();
@@ -88,9 +89,16 @@
         });
 
         if (!response.ok) {
-            feedback.textContent = 'Session expired. Restart the quiz to continue.';
+            const problem = await response.json().catch(() => null);
+            const expired = problem?.code === 'unauthorized'
+                || problem?.code === 'gone'
+                || response.status === 401
+                || response.status === 410;
+            feedback.textContent = expired
+                ? t('Client.SessionExpired', 'Session expired. Restart the quiz to continue.')
+                : t('Client.CheckFailed', 'Could not check your answer. Please try again.');
             feedback.className = 'typing-feedback is-incorrect';
-            input.disabled = true;
+            input.disabled = expired;
             return;
         }
 
@@ -105,11 +113,11 @@
         input.disabled = true;
 
         if (result.isCorrect) {
-            feedback.textContent = 'Correct';
+            feedback.textContent = t('Client.Correct', 'Correct');
             feedback.classList.add('is-correct');
             card.classList.add('is-correct');
         } else {
-            feedback.textContent = 'Not quite';
+            feedback.textContent = t('Client.NotQuite', 'Not quite');
             feedback.classList.add('is-incorrect');
             card.classList.add('is-incorrect');
         }
@@ -120,8 +128,8 @@
         example.hidden = !exampleText;
         reveal.hidden = false;
         checkButton.innerHTML = state.isComplete
-            ? 'Show Results <span class="material-symbols-outlined">flag</span>'
-            : 'Next Word <span class="material-symbols-outlined">arrow_forward</span>';
+            ? `${t('Client.ShowResults', 'Show Results')} <span class="material-symbols-outlined">flag</span>`
+            : `${t('Client.NextWord', 'Next Word')} <span class="material-symbols-outlined">arrow_forward</span>`;
         updateProgress();
     };
 
@@ -165,7 +173,7 @@
             nextWord();
         } else {
             checkAnswer().catch(() => {
-                feedback.textContent = 'Could not check that answer. Try again.';
+                feedback.textContent = t('Client.CheckFailed', 'Could not check that answer. Try again.');
                 feedback.className = 'typing-feedback is-incorrect';
             });
         }

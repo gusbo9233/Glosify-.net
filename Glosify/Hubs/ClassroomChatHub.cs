@@ -9,6 +9,8 @@ namespace Glosify.Hubs;
 [Authorize]
 public class ClassroomChatHub : Hub
 {
+    public const string RateLimitedErrorCode = "CHAT_RATE_LIMITED";
+    public const string SendFailedErrorCode = "CHAT_SEND_FAILED";
     private const int MaxMessagesPerWindow = 10;
     private static readonly TimeSpan ThrottleWindow = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan SweepInterval = TimeSpan.FromMinutes(5);
@@ -144,7 +146,7 @@ public class ClassroomChatHub : Hub
 
         if (!TryRecordSend(userId))
         {
-            throw new HubException("You're sending messages too quickly. Wait a moment.");
+            throw new HubException(RateLimitedErrorCode);
         }
 
         ClassroomChatMessage message;
@@ -154,7 +156,7 @@ public class ClassroomChatHub : Hub
         }
         catch (Exception ex) when (ex is ClassroomAccessDeniedException or ArgumentException)
         {
-            throw new HubException(ex.Message);
+            throw new HubException(SendFailedErrorCode);
         }
 
         // The message is persisted at this point, so deliver it to the group

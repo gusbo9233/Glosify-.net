@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Glosify.Models.ViewModels;
 using Glosify.Services;
+using Glosify.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -19,16 +20,85 @@ public class HomeController : Controller
     }
 
     [AllowAnonymous]
-    public IActionResult Index() => View();
+    public IActionResult Index()
+    {
+        ViewData["LocalizedPublicPage"] = "home";
+        return View();
+    }
 
     [AllowAnonymous]
-    public IActionResult Privacy() => View();
+    public IActionResult LocalizedIndex(string culture) => LocalizedPublicView(culture, "Index", "home");
 
     [AllowAnonymous]
-    public IActionResult Terms() => View();
+    public IActionResult Privacy()
+    {
+        ViewData["LocalizedPublicPage"] = "privacy";
+        return View();
+    }
 
     [AllowAnonymous]
-    public IActionResult Support() => View();
+    public IActionResult LocalizedPrivacy(string culture) => LocalizedPublicView(culture, "Privacy", "privacy");
+
+    [AllowAnonymous]
+    [HttpGet("/privacy/english")]
+    public IActionResult PrivacyEnglish()
+    {
+        ViewData["LocalizedPublicPage"] = "privacy";
+        return View("~/Views/Home/Privacy.cshtml");
+    }
+
+    [AllowAnonymous]
+    public IActionResult Terms()
+    {
+        ViewData["LocalizedPublicPage"] = "terms";
+        return View();
+    }
+
+    [AllowAnonymous]
+    public IActionResult LocalizedTerms(string culture) => LocalizedPublicView(culture, "Terms", "terms");
+
+    [AllowAnonymous]
+    [HttpGet("/terms/english")]
+    public IActionResult TermsEnglish()
+    {
+        ViewData["LocalizedPublicPage"] = "terms";
+        return View("~/Views/Home/Terms.cshtml");
+    }
+
+    [AllowAnonymous]
+    public IActionResult Support()
+    {
+        ViewData["LocalizedPublicPage"] = "support";
+        return View();
+    }
+
+    [AllowAnonymous]
+    public IActionResult LocalizedSupport(string culture) => LocalizedPublicView(culture, "Support", "support");
+
+    [AllowAnonymous]
+    [HttpGet("/support/english")]
+    public IActionResult SupportEnglish()
+    {
+        ViewData["LocalizedPublicPage"] = "support";
+        return View("~/Views/Home/Support.cshtml");
+    }
+
+    private IActionResult LocalizedPublicView(string culture, string viewName, string page)
+    {
+        if (!DisplayCultureCatalog.IsLocalizedPublicCulture(culture)
+            || !DisplayCultureCatalog.TryCanonicalize(culture, out var canonicalCulture))
+        {
+            return NotFound();
+        }
+
+        ViewData["LocalizedPublicPage"] = page;
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            DisplayCultureCookie.Append(Response, Request, canonicalCulture);
+        }
+        DisplayLanguageTelemetry.Record(canonicalCulture, "localized-public-url");
+        return View(viewName);
+    }
 
     [AllowAnonymous]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

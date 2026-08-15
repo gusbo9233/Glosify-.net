@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="DisplayLanguage.Label" xml:space="preserve"><value>Visningsspråk</value></data>
+  <data name="DisplayLanguage.Submit" xml:space="preserve"><value>Byt språk</value></data>
+  <data name="Common.English" xml:space="preserve"><value>English</value></data>
+  <data name="Common.Swedish" xml:space="preserve"><value>Svenska</value></data>
+  <data name="Common.LogIn" xml:space="preserve"><value>Logga in</value></data>
+  <data name="Common.LogOut" xml:space="preserve"><value>Logga ut</value></data>
+  <data name="Common.Delete" xml:space="preserve"><value>Ta bort</value></data>
+  <data name="Common.Cancel" xml:space="preserve"><value>Avbryt</value></data>
+  <data name="Common.Save" xml:space="preserve"><value>Spara</value></data>
+  <data name="Common.Close" xml:space="preserve"><value>Stäng</value></data>
+  <data name="Common.Search" xml:space="preserve"><value>Sök</value></data>
+  <data name="Common.Back" xml:space="preserve"><value>Tillbaka</value></data>
+  <data name="Common.Next" xml:space="preserve"><value>Nästa</value></data>
+  <data name="Common.Previous" xml:space="preserve"><value>Föregående</value></data>
+  <data name="Layout.MetaDescription" xml:space="preserve"><value>Glosify gör det du läser till ord du kan använda: bygg ordlistor från böcker och transkriptioner, träna med quiz och minneskort och öva sedan högt med en AI-samtalspartner.</value></data>
+  <data name="Layout.AuthMetaDescription" xml:space="preserve"><value>Logga in på Glosify för att bygga ordförråd från det du läser, träna med quiz och prata med en AI-samtalspartner.</value></data>
+  <data name="Layout.PremiumLearner" xml:space="preserve"><value>Premiumelev</value></data>
+  <data name="Layout.SearchPlaceholder" xml:space="preserve"><value>Vad vill du lära dig?</value></data>
+  <data name="Layout.Notifications" xml:space="preserve"><value>Aviseringar</value></data>
+  <data name="Layout.GetCredits" xml:space="preserve"><value>Köp krediter</value></data>
+  <data name="Layout.SignedInAs" xml:space="preserve"><value>Inloggad som</value></data>
+  <data name="Layout.SignedIn" xml:space="preserve"><value>Inloggad</value></data>
+  <data name="Layout.PrimaryNavigation" xml:space="preserve"><value>Huvudnavigering</value></data>
+  <data name="Nav.LanguageSelector" xml:space="preserve"><value>Välj studiespråk</value></data>
+  <data name="Nav.Language" xml:space="preserve"><value>Språk</value></data>
+  <data name="Nav.Home" xml:space="preserve"><value>Hem</value></data>
+  <data name="Nav.Explore" xml:space="preserve"><value>Utforska</value></data>
+  <data name="Nav.Books" xml:space="preserve"><value>Böcker</value></data>
+  <data name="Nav.Transcripts" xml:space="preserve"><value>Transkriptioner</value></data>
+  <data name="Nav.Quizzes" xml:space="preserve"><value>Quiz</value></data>
+  <data name="Nav.Speaking" xml:space="preserve"><value>Samtalsträning</value></data>
+  <data name="Nav.Speak" xml:space="preserve"><value>Prata</value></data>
+  <data name="Nav.Classrooms" xml:space="preserve"><value>Klassrum</value></data>
+  <data name="Nav.Class" xml:space="preserve"><value>Klass</value></data>
+  <data name="Languages.Title" xml:space="preserve"><value>Välj studiespråk</value></data>
+  <data name="Languages.Tagline" xml:space="preserve"><value>Vilket språk vill du låta ta plats i dag?</value></data>
+  <data name="Languages.Current" xml:space="preserve"><value>Du lär dig {0}</value></data>
+  <data name="Languages.Find" xml:space="preserve"><value>Hitta ett språk</value></data>
+  <data name="Languages.SearchPlaceholder" xml:space="preserve"><value>Sök på engelskt namn, eget namn eller språkkod</value></data>
+  <data name="Languages.Count" xml:space="preserve"><value>{0} språk</value></data>
+  <data name="Languages.None" xml:space="preserve"><value>Inget språk matchar</value></data>
+  <data name="Languages.NoneHelp" xml:space="preserve"><value>Prova ett engelskt namn, språkets eget namn eller en språkkod.</value></data>
+  <data name="Languages.Pick" xml:space="preserve"><value>Välj ett språk</value></data>
+  <data name="Assistant.Title" xml:space="preserve"><value>Assistent</value></data>
+  <data name="Assistant.Empty" xml:space="preserve"><value>Be om hjälp var du än är i Glosify.</value></data>
+  <data name="Assistant.Placeholder" xml:space="preserve"><value>Fråga assistenten...</value></data>
+  <data name="Assistant.Workspace" xml:space="preserve"><value>Assistentens arbetsyta</value></data>
+  <data name="Assistant.Chat" xml:space="preserve"><value>CHATT</value></data>
+  <data name="Assistant.Chats" xml:space="preserve"><value>CHATTAR</value></data>
+  <data name="Assistant.NewChat" xml:space="preserve"><value>Ny chatt</value></data>
+  <data name="Assistant.Close" xml:space="preserve"><value>Stäng assistenten</value></data>
+  <data name="Assistant.QuizContext" xml:space="preserve"><value>Quizkontext</value></data>
+  <data name="Assistant.NoQuiz" xml:space="preserve"><value>Inget quiz valt</value></data>
+  <data name="Assistant.ReadingMaterial" xml:space="preserve"><value>Läsmaterial</value></data>
+  <data name="Assistant.NoMaterial" xml:space="preserve"><value>Inget material valt</value></data>
+  <data name="Assistant.Picture" xml:space="preserve"><value>Bild</value></data>
+  <data name="Assistant.Model" xml:space="preserve"><value>Assistentmodell</value></data>
+  <data name="Assistant.AutoModel" xml:space="preserve"><value>Auto · {0}</value></data>
+  <data name="Assistant.Send" xml:space="preserve"><value>Skicka</value></data>
+  <data name="Assistant.PreviousChats" xml:space="preserve"><value>Tidigare chattar</value></data>
+  <data name="Assistant.NoChats" xml:space="preserve"><value>Du har inga sparade chattar ännu.</value></data>
+  <data name="Quiz.FlashcardsTitle" xml:space="preserve"><value>Quiz med minneskort</value></data>
+  <data name="Quiz.TypingTitle" xml:space="preserve"><value>Skrivquiz</value></data>
+  <data name="Quiz.RevealRate" xml:space="preserve"><value>Visa svaret, bedöm hur väl du mindes och fortsätt framåt.</value></data>
+  <data name="Quiz.BackWords" xml:space="preserve"><value>Tillbaka till orden</value></data>
+  <data name="Quiz.SessionComplete" xml:space="preserve"><value>Passet är klart</value></data>
+  <data name="Quiz.Remembered" xml:space="preserve"><value>Kom ihåg</value></data>
+  <data name="Quiz.ReviewAgain" xml:space="preserve"><value>Träna igen</value></data>
+  <data name="Quiz.Skipped" xml:space="preserve"><value>Hoppades över</value></data>
+  <data name="Quiz.Restart" xml:space="preserve"><value>Starta om passet</value></data>
+  <data name="Quiz.PracticeAgain" xml:space="preserve"><value>Träna igen</value></data>
+  <data name="Quiz.PlayPronunciation" xml:space="preserve"><value>Spela uttalet av {0}</value></data>
+  <data name="Quiz.RevealAnswer" xml:space="preserve"><value>Visa svaret för {0}</value></data>
+  <data name="Quiz.Again" xml:space="preserve"><value>Igen</value></data>
+  <data name="Quiz.Good" xml:space="preserve"><value>Bra</value></data>
+  <data name="Quiz.Easy" xml:space="preserve"><value>Lätt</value></data>
+  <data name="Quiz.SwipeHint" xml:space="preserve"><value>Svep åt höger för Bra och åt vänster för Igen</value></data>
+  <data name="Quiz.Skip" xml:space="preserve"><value>Hoppa över</value></data>
+  <data name="Quiz.ShowAnswer" xml:space="preserve"><value>Visa svaret</value></data>
+  <data name="Quiz.Reset" xml:space="preserve"><value>Återställ passet</value></data>
+  <data name="Quiz.NoneYet" xml:space="preserve"><value>Inga {0} ännu</value></data>
+  <data name="Quiz.AddThenStart" xml:space="preserve"><value>Lägg till {0} i ett quiz och starta sedan ett {1}-pass från quizet.</value></data>
+  <data name="Quiz.TypeInstruction" xml:space="preserve"><value>Skriv hela {1} på {0} utifrån ledtråden på {2}.</value></data>
+  <data name="Quiz.CheckAnswer" xml:space="preserve"><value>Kontrollera svaret</value></data>
+  <data name="Quiz.PlayPronunciationGeneric" xml:space="preserve"><value>Spela uttal</value></data>
+  <data name="Quiz.Answer" xml:space="preserve"><value>Svar</value></data>
+  <data name="Quiz.TypePlaceholder" xml:space="preserve"><value>Skriv ditt svar...</value></data>
+  <data name="Quiz.CorrectAnswer" xml:space="preserve"><value>Rätt svar</value></data>
+  <data name="Quiz.Space" xml:space="preserve"><value>Mellanslag</value></data>
+  <data name="Quiz.TypingComplete" xml:space="preserve"><value>Skrivpasset är klart</value></data>
+  <data name="Quiz.Correct" xml:space="preserve"><value>Rätt</value></data>
+  <data name="Quiz.Incorrect" xml:space="preserve"><value>Fel</value></data>
+  <data name="Quiz.PracticeIncorrect" xml:space="preserve"><value>Träna på felaktiga ord</value></data>
+  <data name="Quiz.ChangeSettings" xml:space="preserve"><value>Ändra inställningar</value></data>
+  <data name="Transcripts.Title" xml:space="preserve"><value>Transkriptioner</value></data>
+  <data name="Transcripts.Eyebrow" xml:space="preserve"><value>Historik för livetextning</value></data>
+  <data name="Transcripts.Saved" xml:space="preserve"><value>Sparade transkriptioner</value></data>
+  <data name="Transcripts.Intro" xml:space="preserve"><value>Sparad livetext för {0}. Nya sessioner innehåller originaltal; äldre sessioner är fortfarande märkta som översättningar.</value></data>
+  <data name="Transcripts.SelectedLanguage" xml:space="preserve"><value>ditt valda språk</value></data>
+  <data name="Transcripts.Updated" xml:space="preserve"><value>Uppdaterad</value></data>
+  <data name="Transcripts.None" xml:space="preserve"><value>Inga sparade transkriptioner ännu</value></data>
+  <data name="Transcripts.NoneHelp" xml:space="preserve"><value>Aktivera ”Spara transkription av originaltal” innan du startar livetextning.</value></data>
+  <data name="Transcripts.PagesAria" xml:space="preserve"><value>Transkriptionssidor</value></data>
+  <data name="Common.PageOf" xml:space="preserve"><value>Sida {0} av {1}</value></data>
+  <data name="Home.Title" xml:space="preserve"><value>Hem</value></data>
+  <data name="Home.Coach" xml:space="preserve"><value>Din språkcoach</value></data>
+  <data name="Home.Kicker" xml:space="preserve"><value>Din plats för språkinlärning</value></data>
+  <data name="Home.TitleWithLanguage" xml:space="preserve"><value>Gör {0} till en del av din vardag.</value></data>
+  <data name="Home.TitleAnonymous" xml:space="preserve"><value>Gör nya ord till riktiga samtal.</value></data>
+  <data name="Home.Description" xml:space="preserve"><value>Bygg ordförråd från det du läser, befäst det med fokuserad träning och använd det sedan högt med en AI-samtalspartner.</value></data>
+  <data name="Home.StartLearning" xml:space="preserve"><value>Börja lära dig</value></data>
+  <data name="Home.ChooseLanguage" xml:space="preserve"><value>Välj ett språk</value></data>
+  <data name="Home.BrowseShared" xml:space="preserve"><value>Bläddra bland delade set</value></data>
+  <data name="Home.StartSpeaking" xml:space="preserve"><value>Börja prata</value></data>
+  <data name="Home.OpenQuizzes" xml:space="preserve"><value>Öppna mina quiz</value></data>
+  <data name="Home.WaysAria" xml:space="preserve"><value>Sätt att lära sig med Glosify</value></data>
+  <data name="Home.ReadContext" xml:space="preserve"><value>Läs i sitt sammanhang</value></data>
+  <data name="Home.PracticeRecall" xml:space="preserve"><value>Träna aktiv återkallning</value></data>
+  <data name="Home.SpeakConfidence" xml:space="preserve"><value>Prata med självförtroende</value></data>
+  <data name="Home.LoopAria" xml:space="preserve"><value>En sammanhängande läranderesa från läsning till samtal</value></data>
+  <data name="Home.Discover" xml:space="preserve"><value>Upptäck</value></data>
+  <data name="Home.Remember" xml:space="preserve"><value>Minns</value></data>
+  <data name="Home.LearningLoop" xml:space="preserve"><value>Din läranderesa</value></data>
+  <data name="Home.TodayMindset" xml:space="preserve"><value>Dagens inställning</value></data>
+  <data name="Home.SmallSteps" xml:space="preserve"><value>Små steg. Verkliga framsteg.</value></data>
+  <data name="Home.QuickStart" xml:space="preserve"><value>Snabbstart</value></data>
+  <data name="Home.ChooseNext" xml:space="preserve"><value>Välj ditt nästa steg</value></data>
+  <data name="Home.LearningLanguage" xml:space="preserve"><value>Du lär dig {0}</value></data>
+  <data name="Home.BuildVocabulary" xml:space="preserve"><value>Bygg ordförråd</value></data>
+  <data name="Home.BuildVocabularyText" xml:space="preserve"><value>Skapa fokuserade set med ord som du faktiskt vill använda.</value></data>
+  <data name="Home.PracticeRecallText" xml:space="preserve"><value>Använd minneskort, skrivövningar och egna quiz för att befästa orden.</value></data>
+  <data name="Home.SpeakNaturally" xml:space="preserve"><value>Prata naturligt</value></data>
+  <data name="Home.SpeakNaturallyText" xml:space="preserve"><value>Gå in i en guidad scen och få privat coachning efter varje tur.</value></data>
+  <data name="Home.ConnectedKicker" xml:space="preserve"><value>En sammanhängande arbetsyta</value></data>
+  <data name="Home.ConnectedTitle" xml:space="preserve"><value>Lär dig från det som redan fångar din uppmärksamhet.</value></data>
+  <data name="Home.ConnectedText" xml:space="preserve"><value>En bok, en delad ordlista eller en klassrumsuppgift kan bli starten på nästa träningspass. Ditt ordförråd följer med vart du än går vidare.</value></data>
+  <data name="Home.ExploreCollections" xml:space="preserve"><value>Utforska communityns samlingar</value></data>
+  <data name="Home.ReadCollect" xml:space="preserve"><value>Läs och samla</value></data>
+  <data name="Home.ReadCollectText" xml:space="preserve"><value>Gör en PDF till ordförråd utan att lämna sidan.</value></data>
+  <data name="Home.ExploreTogether" xml:space="preserve"><value>Utforska tillsammans</value></data>
+  <data name="Home.ExploreTogetherText" xml:space="preserve"><value>Kopiera offentliga quiz och samlingar till ditt bibliotek.</value></data>
+  <data name="Home.JoinClassroom" xml:space="preserve"><value>Gå med i ett klassrum</value></data>
+  <data name="Home.JoinClassroomText" xml:space="preserve"><value>Lär dig med uppgifter, delat innehåll och stöd i realtid.</value></data>
+  <data name="Home.YourTurn" xml:space="preserve"><value>Din tur</value></data>
+  <data name="Home.TodayLanguage" xml:space="preserve"><value>Vad vill du göra på {0} i dag?</value></data>
+  <data name="Home.PickFirstWord" xml:space="preserve"><value>Välj ett språk och börja med ett användbart ord.</value></data>
+  <data name="Home.ContinueLearning" xml:space="preserve"><value>Fortsätt lära dig</value></data>
+  <data name="Home.PickLanguage" xml:space="preserve"><value>Välj ett språk</value></data>
+  <data name="Home.CreateAccount" xml:space="preserve"><value>Skapa ett konto</value></data>
+  <data name="Auth.BrandTagline" xml:space="preserve"><value>Språk genom ljud och fördjupning</value></data>
+  <data name="Auth.LoginTitle" xml:space="preserve"><value>Logga in</value></data>
+  <data name="Auth.WelcomeBack" xml:space="preserve"><value>Välkommen tillbaka</value></data>
+  <data name="Auth.LoginIntro" xml:space="preserve"><value>Fyll i dina uppgifter för att fortsätta där du slutade.</value></data>
+  <data name="Auth.TrialLabel" xml:space="preserve"><value>Prova-på-erbjudande:</value></data>
+  <data name="Auth.TrialText" xml:space="preserve"><value>få 25 krediter en gång när du loggar in med Google eller Microsoft. Lösenordskonton får inte automatiska provkrediter.</value></data>
+  <data name="Auth.EmailAddress" xml:space="preserve"><value>E-postadress</value></data>
+  <data name="Auth.Password" xml:space="preserve"><value>Lösenord</value></data>
+  <data name="Auth.Forgot" xml:space="preserve"><value>Glömt?</value></data>
+  <data name="Auth.OrContinue" xml:space="preserve"><value>Eller fortsätt med</value></data>
+  <data name="Auth.ContinueProvider" xml:space="preserve"><value>Fortsätt med {0}</value></data>
+  <data name="Auth.NoAccount" xml:space="preserve"><value>Har du inget konto?</value></data>
+  <data name="Auth.CreateAccount" xml:space="preserve"><value>Skapa konto</value></data>
+  <data name="Auth.RegisterTitle" xml:space="preserve"><value>Registrera dig</value></data>
+  <data name="Auth.CreateYourAccount" xml:space="preserve"><value>Skapa ditt konto</value></data>
+  <data name="Auth.RegisterIntro" xml:space="preserve"><value>Börja din språkresa i dag.</value></data>
+  <data name="Auth.RegisterTrialLabel" xml:space="preserve"><value>25 provkrediter:</value></data>
+  <data name="Auth.RegisterTrialText" xml:space="preserve"><value>fås en gång efter att du kopplat och loggat in med Google eller Microsoft. Ett lösenordskonto i sig ger inga provkrediter.</value></data>
+  <data name="Auth.ConfirmPassword" xml:space="preserve"><value>Bekräfta lösenord</value></data>
+  <data name="Auth.AlreadyAccount" xml:space="preserve"><value>Har du redan ett konto?</value></data>
+  <data name="Auth.ForgotTitle" xml:space="preserve"><value>Glömt lösenord</value></data>
+  <data name="Auth.ForgotHeading" xml:space="preserve"><value>Återställ ditt lösenord</value></data>
+  <data name="Auth.ForgotUnavailable" xml:space="preserve"><value>Det går ännu inte att återställa lösenord via e-post. Kontakta supporten om du behöver hjälp att komma åt ditt konto.</value></data>
+  <data name="Auth.BackToLogin" xml:space="preserve"><value>Tillbaka till inloggningen</value></data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve"><value>Felaktig e-postadress eller felaktigt lösenord.</value></data>
+  <data name="Auth.AccountLocked" xml:space="preserve"><value>Kontot är låst. Försök igen senare.</value></data>
+  <data name="Auth.ExternalNotConfigured" xml:space="preserve"><value>Inloggning med {0} är inte konfigurerad.</value></data>
+  <data name="Auth.ExternalFailed" xml:space="preserve"><value>Den externa inloggningen misslyckades.</value></data>
+  <data name="Auth.ExternalProviderFailed" xml:space="preserve"><value>Inloggningen med {0} misslyckades. Kontrollera OAuth-klient-id och klienthemlighet för {0} och försök igen.</value></data>
+  <data name="Identity.DuplicateUserName" xml:space="preserve"><value>Det finns redan ett konto med den här e-postadressen.</value></data>
+  <data name="Identity.DuplicateEmail" xml:space="preserve"><value>Det finns redan ett konto med den här e-postadressen.</value></data>
+  <data name="Identity.PasswordTooShort" xml:space="preserve"><value>Lösenordet är för kort.</value></data>
+  <data name="Identity.PasswordRequiresNonAlphanumeric" xml:space="preserve"><value>Lösenordet måste innehålla ett specialtecken.</value></data>
+  <data name="Identity.PasswordRequiresDigit" xml:space="preserve"><value>Lösenordet måste innehålla en siffra.</value></data>
+  <data name="Identity.PasswordRequiresLower" xml:space="preserve"><value>Lösenordet måste innehålla en liten bokstav.</value></data>
+  <data name="Identity.PasswordRequiresUpper" xml:space="preserve"><value>Lösenordet måste innehålla en stor bokstav.</value></data>
+  <data name="Identity.DefaultError" xml:space="preserve"><value>Det gick inte att skapa kontot. Kontrollera uppgifterna och försök igen.</value></data>
+  <data name="Validation.PasswordsMismatch" xml:space="preserve"><value>Lösenorden stämmer inte överens.</value></data>
+  <data name="Validation.Required" xml:space="preserve"><value>Fältet {0} är obligatoriskt.</value></data>
+  <data name="Validation.Email" xml:space="preserve"><value>Fältet {0} innehåller inte en giltig e-postadress.</value></data>
+  <data name="Validation.MinLength" xml:space="preserve"><value>Fältet {0} måste innehålla minst {1} tecken.</value></data>
+  <data name="Legal.Label" xml:space="preserve"><value>Juridisk information</value></data>
+  <data name="Legal.PrivacyPolicy" xml:space="preserve"><value>Integritetspolicy</value></data>
+  <data name="Legal.TermsOfService" xml:space="preserve"><value>Användarvillkor</value></data>
+  <data name="Legal.Support" xml:space="preserve"><value>Support</value></data>
+  <data name="Legal.PrivacyTitle" xml:space="preserve"><value>Integritet</value></data>
+  <data name="Legal.TermsTitle" xml:space="preserve"><value>Villkor</value></data>
+  <data name="Legal.EnglishGoverns" xml:space="preserve"><value>Den här översättningen är endast till för att underlätta läsningen. Om den skiljer sig från den engelska versionen gäller den engelska versionen.</value></data>
+  <data name="Transcripts.CountOne" xml:space="preserve"><value>{0} sparat</value></data>
+  <data name="Transcripts.CountMany" xml:space="preserve"><value>{0} sparade</value></data>
+  <data name="Transcripts.CaptionOne" xml:space="preserve"><value>{0} undertext</value></data>
+  <data name="Transcripts.CaptionMany" xml:space="preserve"><value>{0} undertexter</value></data>
+  <data name="Quiz.Progress" xml:space="preserve"><value>{0} av {1} {2}</value></data>
+  <data name="Quiz.CorrectCount" xml:space="preserve"><value>{0} rätt</value></data>
+  <data name="Quiz.PromptLabel" xml:space="preserve"><value>Fråga på {0}</value></data>
+  <data name="Quiz.UkrainianKeyboard" xml:space="preserve"><value>Ukrainskt virtuellt tangentbord</value></data>
+  <data name="Books.Title" xml:space="preserve"><value>Böcker</value></data>
+  <data name="Books.YourBooks" xml:space="preserve"><value>Dina böcker</value></data>
+  <data name="Books.LanguageBooks" xml:space="preserve"><value>Dina böcker på {0}</value></data>
+  <data name="Books.LanguageTitle" xml:space="preserve"><value>Böcker på {0}</value></data>
+  <data name="Books.YourLibrary" xml:space="preserve"><value>Ditt bibliotek</value></data>
+  <data name="Books.HeroPrefix" xml:space="preserve"><value>Gör varje sida till</value></data>
+  <data name="Books.Progress" xml:space="preserve"><value>framsteg.</value></data>
+  <data name="Books.HeroText" xml:space="preserve"><value>Ta med eget läsmaterial och använd Glosify för att utforska varje sida, fras och nytt ord.</value></data>
+  <data name="Books.SummaryAria" xml:space="preserve"><value>Sammanfattning av biblioteket</value></data>
+  <data name="Books.BookOne" xml:space="preserve"><value>bok</value></data>
+  <data name="Books.BookMany" xml:space="preserve"><value>böcker</value></data>
+  <data name="Books.PageOne" xml:space="preserve"><value>sida</value></data>
+  <data name="Books.PageMany" xml:space="preserve"><value>sidor</value></data>
+  <data name="Books.AddShelf" xml:space="preserve"><value>Lägg till i bokhyllan</value></data>
+  <data name="Books.UploadPdf" xml:space="preserve"><value>Ladda upp en PDF</value></data>
+  <data name="Books.ChoosePdf" xml:space="preserve"><value>Välj en PDF</value></data>
+  <data name="Books.PdfLimit" xml:space="preserve"><value>Textbaserad PDF · högst 25 MB</value></data>
+  <data name="Books.Browse" xml:space="preserve"><value>Bläddra</value></data>
+  <data name="Books.AddLibrary" xml:space="preserve"><value>Lägg till i biblioteket</value></data>
+  <data name="Books.KeepReading" xml:space="preserve"><value>Fortsätt läsa</value></data>
+  <data name="Books.OnShelf" xml:space="preserve"><value>{0} i din bokhylla</value></data>
+  <data name="Books.DeleteConfirm" xml:space="preserve"><value>Vill du ta bort ”{0}” och alla sidor permanent? Chattar som använde boken behålls.</value></data>
+  <data name="Books.Delete" xml:space="preserve"><value>Ta bort {0}</value></data>
+  <data name="Books.Read" xml:space="preserve"><value>Läs {0}</value></data>
+  <data name="Books.ReaderEdition" xml:space="preserve"><value>Läsutgåva</value></data>
+  <data name="Books.Added" xml:space="preserve"><value>Tillagd</value></data>
+  <data name="Books.PageCountOne" xml:space="preserve"><value>{0} sida</value></data>
+  <data name="Books.PageCountMany" xml:space="preserve"><value>{0} sidor</value></data>
+  <data name="Books.StartReading" xml:space="preserve"><value>Börja läsa</value></data>
+  <data name="Books.ShelfReady" xml:space="preserve"><value>Din bokhylla är redo</value></data>
+  <data name="Books.NoLanguageBooks" xml:space="preserve"><value>Inga böcker på {0} än</value></data>
+  <data name="Books.EmptyText" xml:space="preserve"><value>Ladda upp din första textbaserade PDF ovan och börja lära dig från sådant du redan tycker om att läsa.</value></data>
+  <data name="Books.EmptyLanguageText" xml:space="preserve"><value> Den läggs till i din bokhylla för {0}.</value></data>
+  <data name="Books.ChooseFirst" xml:space="preserve"><value>Välj din första bok</value></data>
+  <data name="Common.First" xml:space="preserve"><value>Första</value></data>
+  <data name="Common.Last" xml:space="preserve"><value>Sista</value></data>
+  <data name="Common.Page" xml:space="preserve"><value>Sida {0}</value></data>
+  <data name="Common.Go" xml:space="preserve"><value>Gå</value></data>
+  <data name="Transcripts.AssistantTitle" xml:space="preserve"><value>Undertextassistent</value></data>
+  <data name="Transcripts.AssistantEmpty" xml:space="preserve"><value>Fråga om den här utskriften eller använd den med dina befintliga quiz.</value></data>
+  <data name="Transcripts.AssistantPlaceholder" xml:space="preserve"><value>Fråga om den här utskriften...</value></data>
+  <data name="Transcripts.OriginalFor" xml:space="preserve"><value>Originaltal sparat för inlärning av {0}</value></data>
+  <data name="Transcripts.LegacyFor" xml:space="preserve"><value>Äldre översatta undertexter · du lär dig {0}</value></data>
+  <data name="Transcripts.Started" xml:space="preserve"><value>startade</value></data>
+  <data name="Transcripts.NameLabel" xml:space="preserve"><value>Utskriftens titel</value></data>
+  <data name="Transcripts.Rename" xml:space="preserve"><value>Byt namn</value></data>
+  <data name="Transcripts.DeleteConfirm" xml:space="preserve"><value>Vill du ta bort den sparade utskriften permanent?</value></data>
+  <data name="Transcripts.StopBeforeDelete" xml:space="preserve"><value>Stoppa livetextningen innan du tar bort</value></data>
+  <data name="Transcripts.StreamAria" xml:space="preserve"><value>Undertextflöde</value></data>
+  <data name="Transcripts.OriginalSpeech" xml:space="preserve"><value>Originaltal</value></data>
+  <data name="Transcripts.Translation" xml:space="preserve"><value>Översättning</value></data>
+  <data name="Transcripts.TranslationNote" xml:space="preserve"><value>Direktöversatt från samma ljud av en annan modell. Användbart för att kontrollera betydelsen där originaltalet uppfattades fel.</value></data>
+  <data name="Transcripts.OriginalNote" xml:space="preserve"><value>Det som taligenkänningen hörde. Växla till översättningen för att kontrollera otydliga avsnitt.</value></data>
+  <data name="Transcripts.SavedTranslationAria" xml:space="preserve"><value>Sparade översatta undertexter</value></data>
+  <data name="Transcripts.SavedOriginalAria" xml:space="preserve"><value>Sparat originaltal</value></data>
+  <data name="Transcripts.TextPagesAria" xml:space="preserve"><value>Sidor med utskriftstext</value></data>
+  <data name="Transcripts.JumpPage" xml:space="preserve"><value>Hoppa till sida</value></data>
+  <data name="Common.Off" xml:space="preserve"><value>Av</value></data>
+  <data name="Reader.AssistantTitle" xml:space="preserve"><value>Sidassistent</value></data>
+  <data name="Reader.AssistantEmpty" xml:space="preserve"><value>Fråga efter ord eller meningar från den här sidan.</value></data>
+  <data name="Reader.AssistantPlaceholder" xml:space="preserve"><value>Skapa ett quiz från den här sidan...</value></data>
+  <data name="Reader.TranslatedPage" xml:space="preserve"><value>Översatt sida</value></data>
+  <data name="Reader.BackBooks" xml:space="preserve"><value>Tillbaka till böcker</value></data>
+  <data name="Reader.PdfControls" xml:space="preserve"><value>Kontroller för PDF-visning</value></data>
+  <data name="Reader.ZoomOut" xml:space="preserve"><value>Zooma ut</value></data>
+  <data name="Reader.ResetZoom100" xml:space="preserve"><value>Återställ zoom till 100 %</value></data>
+  <data name="Reader.ResetZoom" xml:space="preserve"><value>Återställ zoom</value></data>
+  <data name="Reader.ZoomIn" xml:space="preserve"><value>Zooma in</value></data>
+  <data name="Reader.FitPage" xml:space="preserve"><value>Anpassa till sidan</value></data>
+  <data name="Reader.Rotate" xml:space="preserve"><value>Rotera medurs</value></data>
+  <data name="Reader.PolishVoice" xml:space="preserve"><value>Polsk uppläsningsröst</value></data>
+  <data name="Reader.ReadAloud" xml:space="preserve"><value>Läs upp den här sidan</value></data>
+  <data name="Reader.Read" xml:space="preserve"><value>Läs</value></data>
+  <data name="Reader.TranslationControls" xml:space="preserve"><value>Kontroller för sidöversättning</value></data>
+  <data name="Reader.TranslateOffAria" xml:space="preserve"><value>Översättning är av. Översätt sidan</value></data>
+  <data name="Reader.TranslateOffTitle" xml:space="preserve"><value>Översättning är av. Klicka för att översätta sidan</value></data>
+  <data name="Reader.Translation" xml:space="preserve"><value>Översättning</value></data>
+  <data name="Reader.TranslationLanguage" xml:space="preserve"><value>Översättningsspråk</value></data>
+  <data name="Reader.SplitAria" xml:space="preserve"><value>Visa original och översättning sida vid sida</value></data>
+  <data name="Reader.SplitView" xml:space="preserve"><value>Delad vy</value></data>
+  <data name="Reader.Original" xml:space="preserve"><value>Original</value></data>
+  <data name="Reader.PreviousPage" xml:space="preserve"><value>Föregående sida</value></data>
+  <data name="Reader.NextPage" xml:space="preserve"><value>Nästa sida</value></data>
+  <data name="Client.GenericError" xml:space="preserve"><value>Något gick fel. Försök igen.</value></data>
+  <data name="Client.NetworkError" xml:space="preserve"><value>Nätverksfel. Försök igen.</value></data>
+  <data name="Client.TryAgain" xml:space="preserve"><value>Försök igen</value></data>
+  <data name="Client.Loading" xml:space="preserve"><value>Laddar…</value></data>
+  <data name="Client.Correct" xml:space="preserve"><value>Rätt</value></data>
+  <data name="Client.Incorrect" xml:space="preserve"><value>Fel</value></data>
+  <data name="Client.NextWord" xml:space="preserve"><value>Nästa ord</value></data>
+  <data name="Client.CheckFailed" xml:space="preserve"><value>Svaret kunde inte kontrolleras. Försök igen.</value></data>
+  <data name="Client.DeleteQuizConfirm" xml:space="preserve"><value>Vill du ta bort det här anpassade quizet?</value></data>
+  <data name="Client.DeleteQuizFailed" xml:space="preserve"><value>Det anpassade quizet kunde inte tas bort. Försök igen.</value></data>
+  <data name="Client.RepairFailed" xml:space="preserve"><value>Reparationen misslyckades. Försök igen.</value></data>
+  <data name="Client.RepairStopped" xml:space="preserve"><value>Reparationsbegäran avbröts oväntat. Försök igen.</value></data>
+  <data name="Client.DeleteChat" xml:space="preserve"><value>Ta bort chatt</value></data>
+  <data name="Client.DeleteChatConfirm" xml:space="preserve"><value>Vill du ta bort den här chatten?</value></data>
+  <data name="Client.ApplyFailed" xml:space="preserve"><value>Ändringarna kunde inte tillämpas.</value></data>
+  <data name="Client.ApplyNetwork" xml:space="preserve"><value>Nätverksfel när ändringarna skulle tillämpas.</value></data>
+  <data name="Client.RejectNetwork" xml:space="preserve"><value>Nätverksfel när ändringarna skulle avvisas.</value></data>
+  <data name="Client.AssistantFailed" xml:space="preserve"><value>Assistenten kunde inte svara.</value></data>
+  <data name="Client.AssistantNetwork" xml:space="preserve"><value>Nätverksfel vid kontakt med assistenten.</value></data>
+  <data name="Client.PictureFailed" xml:space="preserve"><value>Texten i bilden kunde inte läsas.</value></data>
+  <data name="Client.PictureNetwork" xml:space="preserve"><value>Nätverksfel när bilden skulle läsas.</value></data>
+  <data name="Client.MessageFailed" xml:space="preserve"><value>Meddelandet kunde inte skickas.</value></data>
+  <data name="Client.JoinCallFailed" xml:space="preserve"><value>Det gick inte att ansluta till samtalet.</value></data>
+  <data name="Client.CallTokenFailed" xml:space="preserve"><value>Det gick inte att hämta en samtalstoken.</value></data>
+  <data name="Client.PageOf" xml:space="preserve"><value>Sida {0} av {1}</value></data>
+  <data name="Client.TtsNoText" xml:space="preserve"><value>Det finns ingen markerbar text att läsa upp.</value></data>
+  <data name="Client.TtsUnavailable" xml:space="preserve"><value>Textuppläsning är inte tillgänglig i den här webbläsaren.</value></data>
+  <data name="Client.TtsFailed" xml:space="preserve"><value>Textuppläsningen misslyckades.</value></data>
+  <data name="Client.TranslationFailed" xml:space="preserve"><value>Sidan kunde inte översättas.</value></data>
+  <data name="Client.PreferenceFailed" xml:space="preserve"><value>Språkinställningen kunde inte sparas.</value></data>
+  <data name="Client.On" xml:space="preserve"><value>På</value></data>
+  <data name="Client.Off" xml:space="preserve"><value>Av</value></data>
+  <data name="Client.Translating" xml:space="preserve"><value>Översätter…</value></data>
+  <data name="Client.TranslationError" xml:space="preserve"><value>Fel</value></data>
+  <data name="Client.Read" xml:space="preserve"><value>Läs</value></data>
+  <data name="Client.Stop" xml:space="preserve"><value>Stoppa</value></data>
+  <data name="Client.MessageRateLimited" xml:space="preserve"><value>Du skickar meddelanden för snabbt. Vänta en stund.</value></data>
+  <data name="Client.SessionExpired" xml:space="preserve"><value>Sessionen har gått ut. Starta om quizet för att fortsätta.</value></data>
+  <data name="Client.NotQuite" xml:space="preserve"><value>Inte riktigt</value></data>
+  <data name="Client.ShowResults" xml:space="preserve"><value>Visa resultat</value></data>
+  <data name="Quiz.LibraryTitle" xml:space="preserve"><value>Välj quiz</value></data>
+  <data name="Quiz.SelectQuiz" xml:space="preserve"><value>Välj ett quiz</value></data>
+  <data name="Quiz.ShowingLanguage" xml:space="preserve"><value>Visar dina quiz på {0}.</value></data>
+  <data name="Quiz.LanguageCollection" xml:space="preserve"><value>Samling för {0}.</value></data>
+  <data name="Quiz.Library" xml:space="preserve"><value>Quizbibliotek</value></data>
+  <data name="Quiz.ChangeLanguage" xml:space="preserve"><value>Byt språk</value></data>
+  <data name="Quiz.MakePrivate" xml:space="preserve"><value>Gör samlingen privat</value></data>
+  <data name="Quiz.MakePublic" xml:space="preserve"><value>Gör samlingen offentlig</value></data>
+  <data name="Quiz.PublicSubtree" xml:space="preserve"><value>Offentligt underträd</value></data>
+  <data name="Quiz.Private" xml:space="preserve"><value>Privat</value></data>
+  <data name="Quiz.LibrarySummary" xml:space="preserve"><value>Sammanfattning av biblioteket</value></data>
+  <data name="Quiz.CollectionOne" xml:space="preserve"><value>samling</value></data>
+  <data name="Quiz.CollectionMany" xml:space="preserve"><value>samlingar</value></data>
+  <data name="Quiz.QuizOne" xml:space="preserve"><value>quiz</value></data>
+  <data name="Quiz.QuizMany" xml:space="preserve"><value>quiz</value></data>
+  <data name="Quiz.NewCollection" xml:space="preserve"><value>Ny samling</value></data>
+  <data name="Quiz.NewQuiz" xml:space="preserve"><value>Nytt quiz</value></data>
+  <data name="Quiz.Collections" xml:space="preserve"><value>Samlingar</value></data>
+  <data name="Quiz.CollectionsHelp" xml:space="preserve"><value>Samla relaterade quiz och håll ordning på din inlärning.</value></data>
+  <data name="Quiz.DropInto" xml:space="preserve"><value>Släpp quiz i {0}</value></data>
+  <data name="Quiz.NestedCount" xml:space="preserve"><value>{0} underordnade</value></data>
+  <data name="Quiz.YourQuizzes" xml:space="preserve"><value>Dina quiz</value></data>
+  <data name="Quiz.DragHelp" xml:space="preserve"><value>Öppna ett quiz för att öva eller dra det till en samling för att organisera det.</value></data>
+  <data name="Quiz.ChooseHelp" xml:space="preserve"><value>Välj ett quiz och håll din inlärning igång.</value></data>
+  <data name="Quiz.DeleteConfirm" xml:space="preserve"><value>Vill du ta bort quizet och alla dess ord?</value></data>
+  <data name="Quiz.DeleteNamed" xml:space="preserve"><value>Ta bort {0}</value></data>
+  <data name="Quiz.Delete" xml:space="preserve"><value>Ta bort quiz</value></data>
+  <data name="Quiz.EmptyTitle" xml:space="preserve"><value>Inga quiz eller samlingar än</value></data>
+  <data name="Quiz.EmptyText" xml:space="preserve"><value>Skapa en samling för att organisera dina ord eller skapa ditt första quiz.</value></data>
+  <data name="Quiz.CreateCollection" xml:space="preserve"><value>Skapa samling</value></data>
+  <data name="Quiz.CreateQuiz" xml:space="preserve"><value>Skapa quiz</value></data>
+  <data name="Quiz.CreateNewCollection" xml:space="preserve"><value>Skapa ny samling</value></data>
+  <data name="Quiz.CollectionName" xml:space="preserve"><value>Samlingens namn</value></data>
+  <data name="Quiz.CollectionExample" xml:space="preserve"><value>t.ex. Resefraser</value></data>
+  <data name="Quiz.CreateNewQuiz" xml:space="preserve"><value>Skapa nytt quiz</value></data>
+  <data name="Quiz.Name" xml:space="preserve"><value>Quiznamn</value></data>
+  <data name="Quiz.NameExample" xml:space="preserve"><value>t.ex. Franska grunder</value></data>
+  <data name="Quiz.SourceLanguage" xml:space="preserve"><value>Källspråk</value></data>
+  <data name="Quiz.SelectLanguage" xml:space="preserve"><value>Välj språk...</value></data>
+  <data name="Quiz.TargetLanguage" xml:space="preserve"><value>Målspråk</value></data>
+  <data name="Books.UploadRequired" xml:space="preserve"><value>Välj en PDF-fil att ladda upp.</value></data>
+  <data name="Books.Uploaded" xml:space="preserve"><value>{0} har laddats upp.</value></data>
+  <data name="Books.UploadInvalid" xml:space="preserve"><value>Välj en giltig textbaserad PDF under 25 MB.</value></data>
+  <data name="Books.ProcessFailed" xml:space="preserve"><value>PDF-filen kunde inte bearbetas. Prova en textbaserad PDF.</value></data>
+  <data name="Books.Deleted" xml:space="preserve"><value>{0} har tagits bort.</value></data>
+  <data name="Books.PaidUnavailable" xml:space="preserve"><value>{0} Betalfunktionerna öppnar igen {1}.</value></data>
+  <data name="Books.PaidReason" xml:space="preserve"><value>Appens månadsbudget har nåtts.</value></data>
+  <data name="Transcripts.Renamed" xml:space="preserve"><value>Utskriften har bytt namn.</value></data>
+  <data name="Transcripts.InvalidTitle" xml:space="preserve"><value>Utskriftens titel måste vara mellan 1 och 160 tecken.</value></data>
+  <data name="Transcripts.Deleted" xml:space="preserve"><value>Utskriften har tagits bort.</value></data>
+  <data name="Common.Accept" xml:space="preserve"><value>Acceptera</value></data><data name="Common.Optional" xml:space="preserve"><value>Valfritt</value></data><data name="Common.Open" xml:space="preserve"><value>Öppna</value></data><data name="Common.Copy" xml:space="preserve"><value>Kopiera</value></data>
+  <data name="Classroom.Title" xml:space="preserve"><value>Klassrum</value></data><data name="Classroom.MyClassrooms" xml:space="preserve"><value>Mina klassrum</value></data><data name="Classroom.LanguageClassrooms" xml:space="preserve"><value>Dina klassrum för {0}</value></data><data name="Classroom.LanguageTitle" xml:space="preserve"><value>Klassrum för {0}</value></data>
+  <data name="Classroom.SharedSpaces" xml:space="preserve"><value>Gemensamma lärmiljöer</value></data><data name="Classroom.LearnBetter" xml:space="preserve"><value>Lär dig bättre,</value></data><data name="Classroom.Together" xml:space="preserve"><value>tillsammans.</value></data><data name="Classroom.HeroText" xml:space="preserve"><value>Skapa en plats för dina elever, dela övningsmaterial och hjälp alla framåt i samma riktning.</value></data><data name="Classroom.Summary" xml:space="preserve"><value>Sammanfattning av klassrum</value></data>
+  <data name="Classroom.One" xml:space="preserve"><value>klassrum</value></data><data name="Classroom.Many" xml:space="preserve"><value>klassrum</value></data><data name="Classroom.MemberOne" xml:space="preserve"><value>medlem</value></data><data name="Classroom.MemberMany" xml:space="preserve"><value>medlemmar</value></data><data name="Classroom.Waiting" xml:space="preserve"><value>väntar</value></data>
+  <data name="Classroom.LanguageLab" xml:space="preserve"><value>Språklabb</value></data><data name="Classroom.LearnersActive" xml:space="preserve"><value>{0} aktiva elever</value></data><data name="Classroom.Live" xml:space="preserve"><value>Live</value></data><data name="Classroom.PracticeCompleted" xml:space="preserve"><value>Övning slutförd</value></data>
+  <data name="Classroom.WaitingForYou" xml:space="preserve"><value>Väntar på dig</value></data><data name="Classroom.Invitations" xml:space="preserve"><value>Inbjudningar</value></data><data name="Classroom.NewCount" xml:space="preserve"><value>{0} nya</value></data><data name="Classroom.Invited" xml:space="preserve"><value>Du är inbjuden</value></data><data name="Classroom.InvitedBy" xml:space="preserve"><value>{0} bjöd in dig som {1}</value></data><data name="Classroom.DeclineInvitation" xml:space="preserve"><value>Avböj inbjudan till {0}</value></data>
+  <data name="Classroom.GetStarted" xml:space="preserve"><value>Kom igång</value></data><data name="Classroom.MakeOrJoin" xml:space="preserve"><value>Skapa en plats eller gå med i en</value></data><data name="Classroom.ForTeachers" xml:space="preserve"><value>För lärare</value></data><data name="Classroom.Create" xml:space="preserve"><value>Skapa ett klassrum</value></data><data name="Classroom.CreateHelp" xml:space="preserve"><value>Skapa en plats för lektioner, quiz, böcker och samtal.</value></data><data name="Classroom.LanguageHelp" xml:space="preserve"><value> Det blir ett klassrum för {0}.</value></data>
+  <data name="Classroom.Name" xml:space="preserve"><value>Klassrummets namn</value></data><data name="Classroom.NameExample" xml:space="preserve"><value>t.ex. Svenska A2 · vår</value></data><data name="Classroom.ShortDescription" xml:space="preserve"><value>Kort beskrivning</value></data><data name="Classroom.DescriptionPlaceholder" xml:space="preserve"><value>Vad ska gruppen lära sig?</value></data>
+  <data name="Classroom.HaveCode" xml:space="preserve"><value>Har du en inbjudningskod?</value></data><data name="Classroom.Join" xml:space="preserve"><value>Gå med i ett klassrum</value></data><data name="Classroom.JoinHelp" xml:space="preserve"><value>Ange den åtta tecken långa koden som din lärare delade.</value></data><data name="Classroom.JoinCode" xml:space="preserve"><value>Anslutningskod</value></data><data name="Classroom.JoinThis" xml:space="preserve"><value>Gå med i klassrummet</value></data>
+  <data name="Classroom.YourSpaces" xml:space="preserve"><value>Dina lärmiljöer</value></data><data name="Classroom.TotalCount" xml:space="preserve"><value>{0} totalt</value></data><data name="Classroom.OpenNamed" xml:space="preserve"><value>Öppna {0}</value></data><data name="Classroom.CardPlaceholder" xml:space="preserve"><value>En gemensam plats för lärande och övning.</value></data><data name="Classroom.BetterCompany" xml:space="preserve"><value>Det är bättre att lära sig tillsammans</value></data><data name="Classroom.NoLanguageYet" xml:space="preserve"><value>Inga klassrum för {0} än</value></data><data name="Classroom.EmptyHelp" xml:space="preserve"><value>Skapa ditt första klassrum eller be din lärare om en anslutningskod.</value></data><data name="Classroom.CreateFirst" xml:space="preserve"><value>Skapa din första plats</value></data>
+  <data name="Classroom.JoinCall" xml:space="preserve"><value>Gå med i samtalet</value></data><data name="Classroom.VideoCall" xml:space="preserve"><value>Videosamtal</value></data><data name="Classroom.Sections" xml:space="preserve"><value>Klassrummets avsnitt</value></data><data name="Classroom.Stream" xml:space="preserve"><value>Flöde</value></data><data name="Classroom.Content" xml:space="preserve"><value>Innehåll</value></data><data name="Classroom.Planning" xml:space="preserve"><value>Planering</value></data><data name="Classroom.Members" xml:space="preserve"><value>Medlemmar</value></data><data name="Classroom.Results" xml:space="preserve"><value>Resultat</value></data>
+  <data name="Speaking.LanguagePractice" xml:space="preserve"><value>Talövning på {0}</value></data><data name="Speaking.HeroTitle" xml:space="preserve"><value>Prata dig in i språket.</value></data><data name="Speaking.HeroText" xml:space="preserve"><value>Välj en öppen handledare eller en scen, prata naturligt och få privat coachning efter varje tur.</value></data>
+  <data name="Speaking.PracticeQuiz" xml:space="preserve"><value>Övningsquiz</value></data><data name="Speaking.ChooseQuiz" xml:space="preserve"><value>Välj ett quiz för talövning</value></data><data name="Speaking.FreeLesson" xml:space="preserve"><value>Fri lektion</value></data><data name="Speaking.PoweredBy" xml:space="preserve"><value>Drivs av Microsoft Foundry och Azure AI Speech</value></data><data name="Speaking.Settings" xml:space="preserve"><value>Övningsinställningar</value></data><data name="Speaking.ChooseAvatar" xml:space="preserve"><value>Välj en avatar</value></data>
+  <data name="Speaking.Level" xml:space="preserve"><value>Nivå</value></data><data name="Speaking.ChooseLevel" xml:space="preserve"><value>Välj CEFR-nivå</value></data><data name="Speaking.Beginner" xml:space="preserve"><value>Nybörjare</value></data><data name="Speaking.Elementary" xml:space="preserve"><value>Grundnivå</value></data><data name="Speaking.Intermediate" xml:space="preserve"><value>Mellannivå</value></data><data name="Speaking.UpperIntermediate" xml:space="preserve"><value>Övre mellannivå</value></data><data name="Speaking.Advanced" xml:space="preserve"><value>Avancerad</value></data>
+  <data name="Speaking.EnglishTranslation" xml:space="preserve"><value>Engelsk översättning</value></data><data name="Speaking.MuteAvatar" xml:space="preserve"><value>Stäng av avatarljud</value></data><data name="Speaking.AvatarScene" xml:space="preserve"><value>Avatarscen</value></data><data name="Speaking.HoldSpeak" xml:space="preserve"><value>Håll in för att prata och skicka</value></data><data name="Speaking.StartingScene" xml:space="preserve"><value>Startar scenen…</value></data><data name="Speaking.ReplayLatestAria" xml:space="preserve"><value>Spela upp avatarens senaste svar igen</value></data><data name="Speaking.ReplayLatest" xml:space="preserve"><value>Spela upp senaste svaret</value></data>
+  <data name="Speaking.Conversation" xml:space="preserve"><value>Konversation</value></data><data name="Speaking.CurrentSession" xml:space="preserve"><value>Aktuell session</value></data><data name="Speaking.ScoreHelp" xml:space="preserve"><value>Uttalspoängen gäller ditt inspelade ljud.</value></data><data name="Speaking.SpeakToType" xml:space="preserve"><value>Prata för att skriva</value></data><data name="Speaking.You" xml:space="preserve"><value>Du</value></data><data name="Speaking.Accuracy" xml:space="preserve"><value>Precision</value></data><data name="Speaking.Fluency" xml:space="preserve"><value>Flyt</value></data><data name="Speaking.Completeness" xml:space="preserve"><value>Fullständighet</value></data>
+  <data name="Speaking.ReplayReply" xml:space="preserve"><value>Spela upp svaret igen</value></data><data name="Speaking.ShowEnglish" xml:space="preserve"><value>Visa engelsk översättning</value></data><data name="Speaking.Grammar" xml:space="preserve"><value>Grammatik</value></data><data name="Speaking.Vocabulary" xml:space="preserve"><value>Ordförråd</value></data><data name="Speaking.Naturalness" xml:space="preserve"><value>Naturlighet</value></data><data name="Speaking.PracticeThis" xml:space="preserve"><value>Öva på det här</value></data><data name="Speaking.HearPhrase" xml:space="preserve"><value>Lyssna på övningsfrasen</value></data><data name="Speaking.HoldRepeatAria" xml:space="preserve"><value>Håll in för att upprepa övningsfrasen</value></data><data name="Speaking.HoldRepeat" xml:space="preserve"><value>Håll in för att upprepa</value></data>
+  <data name="Quiz.DeletedWord" xml:space="preserve"><value>{0} har tagits bort.</value></data><data name="Quiz.DeletedNamed" xml:space="preserve"><value>{0} har tagits bort.</value></data><data name="Quiz.NowPublic" xml:space="preserve"><value>Quizet är nu offentligt.</value></data><data name="Quiz.NowPrivate" xml:space="preserve"><value>Quizet är nu privat.</value></data><data name="Quiz.VisibilityFailed" xml:space="preserve"><value>Quizets synlighet kunde inte uppdateras.</value></data><data name="Quiz.CollectionNowPublic" xml:space="preserve"><value>Samlingen är nu offentlig.</value></data><data name="Quiz.CollectionNowPrivate" xml:space="preserve"><value>Samlingen är nu privat.</value></data><data name="Quiz.CollectionVisibilityFailed" xml:space="preserve"><value>Samlingens synlighet kunde inte uppdateras.</value></data><data name="Quiz.CollectionCreated" xml:space="preserve"><value>Samlingen {0} har skapats.</value></data><data name="Quiz.CollectionCreateFailed" xml:space="preserve"><value>Samlingen kunde inte skapas. Kontrollera namnet och den överordnade samlingen.</value></data>
+  <data name="Common.All" xml:space="preserve"><value>Alla</value></data>
+  <data name="Settings.Title" xml:space="preserve"><value>Quizinställningar</value></data><data name="Settings.FlashcardQuiz" xml:space="preserve"><value>Quiz med frågekort</value></data><data name="Settings.Source" xml:space="preserve"><value>Källa</value></data><data name="Settings.Target" xml:space="preserve"><value>Mål</value></data><data name="Settings.Configuration" xml:space="preserve"><value>Inställningar</value></data><data name="Settings.Intro" xml:space="preserve"><value>Välj en snabb övning och repetera quizet.</value></data>
+  <data name="Settings.SessionLength" xml:space="preserve"><value>Sessionens längd</value></data><data name="Settings.Words" xml:space="preserve"><value>Ord</value></data><data name="Settings.AvailableLower" xml:space="preserve"><value>tillgängliga</value></data><data name="Settings.Quick" xml:space="preserve"><value>Snabb</value></data><data name="Settings.Standard" xml:space="preserve"><value>Standard</value></data>
+  <data name="Settings.WordRange" xml:space="preserve"><value>Ordintervall</value></data><data name="Settings.RangeHelp" xml:space="preserve"><value>Dra i handtagen för att fokusera på en del av listan, till exempel de nyaste orden.</value></data><data name="Settings.Newest20" xml:space="preserve"><value>Nyaste 20 %</value></data><data name="Settings.Newest50" xml:space="preserve"><value>Nyaste 50 %</value></data><data name="Settings.Oldest20" xml:space="preserve"><value>Äldsta 20 %</value></data><data name="Settings.AllWordsOrder" xml:space="preserve"><value>Övar på alla ord, från äldst till nyast.</value></data>
+  <data name="Settings.ChooseIndividually" xml:space="preserve"><value>Välj ord individuellt…</value></data><data name="Settings.ClearSelection" xml:space="preserve"><value>Rensa val</value></data><data name="Settings.ChooseWords" xml:space="preserve"><value>Välj ord att öva på</value></data><data name="Settings.SelectAll" xml:space="preserve"><value>Välj alla</value></data><data name="Settings.DeselectAll" xml:space="preserve"><value>Avmarkera alla</value></data><data name="Settings.FilterWords" xml:space="preserve"><value>Filtrera ord…</value></data><data name="Settings.ApplySelection" xml:space="preserve"><value>Använd val</value></data>
+  <data name="Settings.PracticeContent" xml:space="preserve"><value>Övningsinnehåll</value></data><data name="Settings.ContentHelp" xml:space="preserve"><value>Välj ord eller hela meningar.</value></data><data name="Settings.Sentences" xml:space="preserve"><value>Meningar</value></data><data name="Settings.QuizMode" xml:space="preserve"><value>Quizläge</value></data><data name="Settings.ModeHelp" xml:space="preserve"><value>Välj frågekort för minnesövning eller skrivning för aktiv stavningsövning.</value></data><data name="Settings.Flashcards" xml:space="preserve"><value>Frågekort</value></data><data name="Settings.Typing" xml:space="preserve"><value>Skrivning</value></data><data name="Settings.Choices" xml:space="preserve"><value>Alternativ</value></data>
+  <data name="Settings.PracticeDirection" xml:space="preserve"><value>Övningsriktning</value></data><data name="Settings.DirectionHelp" xml:space="preserve"><value>Välj vilket språk som visas först.</value></data><data name="Settings.NeedWord" xml:space="preserve"><value>Lägg till minst ett ord innan du startar en övning.</value></data><data name="Settings.Quiz" xml:space="preserve"><value>Quiz</value></data><data name="Settings.Content" xml:space="preserve"><value>Innehåll</value></data><data name="Settings.Available" xml:space="preserve"><value>Tillgängligt</value></data><data name="Settings.Mode" xml:space="preserve"><value>Läge</value></data><data name="Settings.Range" xml:space="preserve"><value>Intervall</value></data><data name="Settings.Direction" xml:space="preserve"><value>Riktning</value></data><data name="Settings.StartQuiz" xml:space="preserve"><value>Starta quiz</value></data>
+  <data name="Settings.WordsLower" xml:space="preserve"><value>ord</value></data><data name="Settings.SentencesLower" xml:space="preserve"><value>meningar</value></data><data name="Settings.WordLower" xml:space="preserve"><value>ord</value></data><data name="Settings.SentenceLower" xml:space="preserve"><value>mening</value></data><data name="Settings.NeedItem" xml:space="preserve"><value>Lägg till minst en/ett {0} innan du startar en övning.</value></data><data name="Settings.Newest" xml:space="preserve"><value>Nyaste {0}%</value></data><data name="Settings.Oldest" xml:space="preserve"><value>Äldsta {0}%</value></data><data name="Settings.RangeDynamic" xml:space="preserve"><value>Övar på {0} av listan (från äldst till nyast).</value></data><data name="Settings.SelectedCount" xml:space="preserve"><value>{0} av {1} valda</value></data><data name="Settings.PickedWords" xml:space="preserve"><value>{0} av {1} ord valda individuellt</value></data><data name="Settings.PickedCount" xml:space="preserve"><value>{0} valda</value></data>
+  <data name="Explore.Title" xml:space="preserve"><value>Utforska</value></data><data name="Explore.Discover" xml:space="preserve"><value>Upptäck något nytt</value></data><data name="Explore.Intro" xml:space="preserve"><value>Utforska ord som andra elever har delat och kopiera det som inspirerar dig till ditt eget bibliotek.</value></data><data name="Explore.Summary" xml:space="preserve"><value>Sammanfattning av det offentliga biblioteket</value></data><data name="Explore.CommunityLibrary" xml:space="preserve"><value>Gemensamt bibliotek</value></data><data name="Explore.SharedCollections" xml:space="preserve"><value>Delade samlingar</value></data><data name="Explore.CollectionsHelp" xml:space="preserve"><value>Utforska kompletta övningspaket som communityn har sammanställt.</value></data><data name="Explore.SharedCollection" xml:space="preserve"><value>Delad samling</value></data><data name="Explore.CopyNamed" xml:space="preserve"><value>Kopiera {0} till ditt bibliotek</value></data><data name="Explore.CommunityQuizzes" xml:space="preserve"><value>Communityquiz</value></data><data name="Explore.QuizzesHelp" xml:space="preserve"><value>Förhandsgranska ett quiz och lägg sedan till en egen kopia i biblioteket.</value></data><data name="Explore.CommunityQuiz" xml:space="preserve"><value>Communityquiz</value></data><data name="Explore.NothingPublic" xml:space="preserve"><value>Inget offentligt för {0} än</value></data><data name="Explore.EmptyHelp" xml:space="preserve"><value>När elever delar quiz eller samlingar på det här språket visas de här.</value></data>
+  <data name="Common.Edit" xml:space="preserve"><value>Redigera</value></data><data name="Common.Play" xml:space="preserve"><value>Spela</value></data>
+  <data name="Quiz.AssistantEmpty" xml:space="preserve"><value>Starta en konversation om det här quizet.</value></data><data name="Quiz.AssistantPlaceholder" xml:space="preserve"><value>Fråga om det här quizet...</value></data><data name="Quiz.CustomCount" xml:space="preserve"><value>{0} anpassade</value></data><data name="Quiz.BuildCustom" xml:space="preserve"><value>Bygg anpassat quiz</value></data><data name="Quiz.Public" xml:space="preserve"><value>Offentligt</value></data><data name="Quiz.Word" xml:space="preserve"><value>Ord</value></data><data name="Quiz.WordExample" xml:space="preserve"><value>t.ex. Bibliothèque</value></data><data name="Quiz.TranslationExample" xml:space="preserve"><value>t.ex. Bibliotek</value></data><data name="Quiz.AddWord" xml:space="preserve"><value>Lägg till ord</value></data><data name="Quiz.ItemsIn" xml:space="preserve"><value>{0} {1} i {2}</value></data><data name="Quiz.ContentAria" xml:space="preserve"><value>Quizets innehåll</value></data>
+  <data name="Quiz.OpenWiktionary" xml:space="preserve"><value>Öppna {0} på Wiktionary</value></data><data name="Quiz.RepairWord" xml:space="preserve"><value>Reparera ord</value></data><data name="Quiz.RepairNamed" xml:space="preserve"><value>Reparera {0}</value></data><data name="Quiz.DeleteWordConfirm" xml:space="preserve"><value>Vill du ta bort ordet?</value></data><data name="Quiz.NoWords" xml:space="preserve"><value>Inga ord än. Lägg till det första ordet i fältet ovan.</value></data><data name="Quiz.LinkedWords" xml:space="preserve"><value>{0} länkade {1}</value></data><data name="Quiz.Repair" xml:space="preserve"><value>Reparera</value></data><data name="Quiz.NoSentences" xml:space="preserve"><value>Inga meningar än. Be assistenten att lägga till meningar eller hämta dem från text.</value></data>
+  <data name="Quiz.CustomQuizzes" xml:space="preserve"><value>Anpassade quiz</value></data><data name="Quiz.CustomHelp" xml:space="preserve"><value>Bygg en fri övning av orden i quizet.</value></data><data name="Quiz.NewCustom" xml:space="preserve"><value>Nytt anpassat quiz</value></data><data name="Quiz.Playable" xml:space="preserve"><value>Spelbart</value></data><data name="Quiz.Draft" xml:space="preserve"><value>Utkast</value></data><data name="Quiz.NoCustom" xml:space="preserve"><value>Inga anpassade quiz än. Skapa ett genom att dra block till arbetsytan.</value></data>
+  <data name="Payments.PackageUnavailable" xml:space="preserve"><value>Det kreditpaketet är inte längre tillgängligt.</value></data><data name="Payments.CreditsReady" xml:space="preserve"><value>Betalningen är bekräftad. Dina krediter är redo.</value></data><data name="Payments.AwaitingOrFailed" xml:space="preserve"><value>Betalningen väntar fortfarande på bekräftelse eller kunde inte verifieras.</value></data><data name="Payments.GetCredits" xml:space="preserve"><value>Skaffa krediter</value></data><data name="Payments.GlosifyCredits" xml:space="preserve"><value>Glosify-krediter</value></data><data name="Payments.Hero" xml:space="preserve"><value>Håll din inlärning igång.</value></data><data name="Payments.Intro" xml:space="preserve"><value>Krediter driver Glosifys AI-assisterade lärfunktioner och livetextning.</value></data><data name="Payments.NotAvailable" xml:space="preserve"><value>Betalningar är inte tillgängliga än</value></data><data name="Payments.NotConnected" xml:space="preserve"><value>Den här Glosify-installationen har inte anslutits till Stripe.</value></data><data name="Payments.CreditPack" xml:space="preserve"><value>Kreditpaket</value></data><data name="Payments.CreditCount" xml:space="preserve"><value>{0} krediter</value></data><data name="Payments.ContinueCheckout" xml:space="preserve"><value>Fortsätt till säker betalning</value></data><data name="Payments.StripeNotice" xml:space="preserve"><value>Betalningen hanteras av Stripe. Glosify tar aldrig emot eller lagrar kortuppgifter.</value></data><data name="Payments.Status" xml:space="preserve"><value>Betalningsstatus</value></data><data name="Payments.Confirmed" xml:space="preserve"><value>Betalningen är bekräftad</value></data><data name="Payments.Processing" xml:space="preserve"><value>Betalningen behandlas</value></data><data name="Payments.Back" xml:space="preserve"><value>Tillbaka till Glosify</value></data><data name="Payments.AiCredits" xml:space="preserve"><value>AI-krediter</value></data><data name="Payments.AiCreditAdmin" xml:space="preserve"><value>Administration av AI-krediter</value></data>
+  <data name="Error.StartupDelay" xml:space="preserve"><value>Tillfällig startfördröjning</value></data><data name="Error.RequestFailed" xml:space="preserve"><value>Begäran misslyckades</value></data><data name="Error.RequestId" xml:space="preserve"><value>Begärande-ID:</value></data><data name="Error.WarmupTitle" xml:space="preserve"><value>Tjänsten startar</value></data><data name="Error.WarmupMessage" xml:space="preserve"><value>Vänta en stund och försök igen.</value></data><data name="Error.GenericTitle" xml:space="preserve"><value>Något gick fel</value></data><data name="Error.GenericMessage" xml:space="preserve"><value>Begäran kunde inte slutföras. Försök igen.</value></data>
+  <data name="Common.Undo" xml:space="preserve"><value>Ångra</value></data><data name="Common.Preview" xml:space="preserve"><value>Förhandsgranska</value></data>
+  <data name="Custom.EditNamed" xml:space="preserve"><value>Redigera {0}</value></data><data name="Custom.AssistantTitle" xml:space="preserve"><value>Quizbyggarassistent</value></data><data name="Custom.AssistantEmpty" xml:space="preserve"><value>Be mig lägga till, konfigurera eller ordna quizelement.</value></data><data name="Custom.AssistantPlaceholder" xml:space="preserve"><value>Lägg till frågor i det här anpassade quizet...</value></data><data name="Custom.Name" xml:space="preserve"><value>Namn på anpassat quiz</value></data><data name="Custom.LoadingEditor" xml:space="preserve"><value>Laddar redigeringskontroller…</value></data><data name="Custom.DesignStarters" xml:space="preserve"><value>Designförslag</value></data><data name="Custom.VisualDirection" xml:space="preserve"><value>Välj ett visuellt uttryck</value></data><data name="Custom.TemplateHelp" xml:space="preserve"><value>Använd bara utseendet eller ersätt arbetsytan med en komplett layout byggd av quizets ord.</value></data><data name="Custom.UseStyle" xml:space="preserve"><value>Använd stil</value></data><data name="Custom.UseLayout" xml:space="preserve"><value>Använd layout</value></data>
+  <data name="Custom.BuildingBlocks" xml:space="preserve"><value>Byggblock för quiz</value></data><data name="Custom.Blocks" xml:space="preserve"><value>Block</value></data><data name="Custom.BlocksHelp" xml:space="preserve"><value>Dra till en ledig yta eller klicka för att lägga till automatiskt.</value></data><data name="Custom.DragAdd" xml:space="preserve"><value>Dra eller klicka för att lägga till {0}</value></data><data name="Custom.Add" xml:space="preserve"><value>Lägg till {0}</value></data><data name="Custom.Grid" xml:space="preserve"><value>Smart rutnät med 12 kolumner</value></data><data name="Custom.GridHelp" xml:space="preserve"><value>Dra för att placera · kanter fäster · upptagna ytor undviks</value></data><data name="Custom.Canvas" xml:space="preserve"><value>Arbetsyta för anpassat quiz</value></data><data name="Custom.Properties" xml:space="preserve"><value>Egenskaper</value></data><data name="Custom.PropertiesHelp" xml:space="preserve"><value>Välj ett block för att redigera dess innehåll och kopplingar.</value></data>
+  <data name="Custom.Answer" xml:space="preserve"><value>Svar</value></data><data name="Custom.Choose" xml:space="preserve"><value>Välj...</value></data><data name="Custom.CheckAnswers" xml:space="preserve"><value>Kontrollera svar</value></data><data name="Custom.CompleteThenSubmit" xml:space="preserve"><value>Gör klart quizet och skicka sedan in dina svar.</value></data>
+  <data name="Custom.Block.Heading" xml:space="preserve"><value>Rubrik</value></data><data name="Custom.Block.Instruction" xml:space="preserve"><value>Instruktion</value></data><data name="Custom.Block.WordLabel" xml:space="preserve"><value>Ordetikett</value></data><data name="Custom.Block.TranslationLabel" xml:space="preserve"><value>Översättningsetikett</value></data><data name="Custom.Block.TextInput" xml:space="preserve"><value>Textfält</value></data><data name="Custom.Block.LongAnswer" xml:space="preserve"><value>Långt svar</value></data><data name="Custom.Block.Checkbox" xml:space="preserve"><value>Kryssruta</value></data><data name="Custom.Block.RadioChoices" xml:space="preserve"><value>Alternativknappar</value></data><data name="Custom.Block.CheckboxChoices" xml:space="preserve"><value>Flervalsrutor</value></data><data name="Custom.Block.SelectMenu" xml:space="preserve"><value>Rullgardinsmeny</value></data><data name="Custom.Block.WordBank" xml:space="preserve"><value>Ordbank</value></data><data name="Custom.Block.SubmitButton" xml:space="preserve"><value>Skicka-knapp</value></data><data name="Custom.Block.Feedback" xml:space="preserve"><value>Återkoppling</value></data>
+  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve"><value>Redaktionellt flöde</value></data><data name="Custom.Template.editorial_flow.Description" xml:space="preserve"><value>Lugn hierarki, generöst mellanrum och en tydlig uppgift per rad.</value></data><data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve"><value>Översättningar, grammatikfrågor och fokuserad repetition</value></data><data name="Custom.Template.aurora_cards.Name" xml:space="preserve"><value>Norrskenskort</value></data><data name="Custom.Template.aurora_cards.Description" xml:space="preserve"><value>Mjuka färger, parade övningskort och en energisk klassrumskänsla.</value></data><data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve"><value>Korta ordlistor och visuell överblick</value></data><data name="Custom.Template.paper_choices.Name" xml:space="preserve"><value>Läroboksövning</value></data><data name="Custom.Template.paper_choices.Description" xml:space="preserve"><value>Kompakta numrerade rader inspirerade av fotograferade arbetsboksövningar.</value></data><data name="Custom.Template.paper_choices.BestFor" xml:space="preserve"><value>Böjning, omformulering, lucktext och formella övningar</value></data><data name="Custom.Template.word_bank_lab.Name" xml:space="preserve"><value>Ordbankslabb</value></data><data name="Custom.Template.word_bank_lab.Description" xml:space="preserve"><value>En tydlig ordbank leder övningen och gör repetitionen lekfull.</value></data><data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve"><value>Guidad repetition och nybörjarordförråd</value></data>
+  <data name="Custom.AnswerQuestion" xml:space="preserve"><value>Svara på frågan.</value></data><data name="Custom.Correct" xml:space="preserve"><value>Rätt.</value></data><data name="Custom.CorrectAnswer" xml:space="preserve"><value>Rätt svar: {0}</value></data><data name="Custom.CompleteAnswers" xml:space="preserve"><value>Fyll i alla svar innan du skickar in.</value></data><data name="Custom.Score" xml:space="preserve"><value>Poäng: {0} av {1} ({2} %).</value></data><data name="Custom.GradeFailed" xml:space="preserve"><value>Quizet kunde inte rättas. Försök igen.</value></data>
+  <data name="Classroom.PostAnnouncement" xml:space="preserve"><value>Publicera ett meddelande</value></data><data name="Classroom.ShareClass" xml:space="preserve"><value>Dela något med klassen</value></data><data name="Classroom.Post" xml:space="preserve"><value>Publicera</value></data><data name="Classroom.Announcements" xml:space="preserve"><value>Meddelanden</value></data><data name="Classroom.PostOne" xml:space="preserve"><value>inlägg</value></data><data name="Classroom.PostMany" xml:space="preserve"><value>inlägg</value></data><data name="Classroom.Pinned" xml:space="preserve"><value>Fäst</value></data><data name="Classroom.Unpin" xml:space="preserve"><value>Lossa</value></data><data name="Classroom.Pin" xml:space="preserve"><value>Fäst</value></data><data name="Classroom.DeleteAnnouncement" xml:space="preserve"><value>Vill du ta bort meddelandet?</value></data><data name="Classroom.NothingYet" xml:space="preserve"><value>Inget här än.</value></data><data name="Classroom.PostFirst" xml:space="preserve"><value>Publicera det första meddelandet ovan.</value></data><data name="Classroom.NoTeacherPosts" xml:space="preserve"><value>Din lärare har inte publicerat något än.</value></data>
+  <data name="Classroom.OpenChat" xml:space="preserve"><value>Öppna klasschatten</value></data><data name="Classroom.ClassChat" xml:space="preserve"><value>Klasschatt</value></data><data name="Classroom.ClassChatUpper" xml:space="preserve"><value>KLASSCHATT</value></data><data name="Classroom.Connecting" xml:space="preserve"><value>Ansluter…</value></data><data name="Classroom.CloseChat" xml:space="preserve"><value>Stäng klasschatten</value></data><data name="Classroom.LoadingMessages" xml:space="preserve"><value>Laddar meddelanden…</value></data><data name="Classroom.MessageClass" xml:space="preserve"><value>Skriv till klassen</value></data><data name="Classroom.ChatMessage" xml:space="preserve"><value>Chattmeddelande</value></data>
+  <data name="Classroom.CallTitle" xml:space="preserve"><value>{0} — samtal</value></data><data name="Classroom.NotConnected" xml:space="preserve"><value>Inte ansluten</value></data><data name="Classroom.Back" xml:space="preserve"><value>Tillbaka till klassrummet</value></data><data name="Classroom.CallNotConfigured" xml:space="preserve"><value>Videosamtal är inte konfigurerat på servern. En administratör måste ange</value></data><data name="Classroom.ReadyJoin" xml:space="preserve"><value>Redo att gå med?</value></data><data name="Classroom.JoinAs" xml:space="preserve"><value>Du ansluter som</value></data><data name="Classroom.MuteMic" xml:space="preserve"><value>Stäng av mikrofonen</value></data><data name="Classroom.Mute" xml:space="preserve"><value>Ljud av</value></data><data name="Classroom.CameraOff" xml:space="preserve"><value>Stäng av kameran</value></data><data name="Classroom.Camera" xml:space="preserve"><value>Kamera</value></data><data name="Classroom.LeaveCall" xml:space="preserve"><value>Lämna samtalet</value></data><data name="Classroom.Leave" xml:space="preserve"><value>Lämna</value></data>
+  <data name="Classroom.ReadyStart" xml:space="preserve"><value>Redo att starta?</value></data><data name="Classroom.NoOneCall" xml:space="preserve"><value>Ingen är med i samtalet än.</value></data><data name="Classroom.WaitingTeacher" xml:space="preserve"><value>Väntar på en lärare</value></data><data name="Classroom.JoinAfterTeacher" xml:space="preserve"><value>Du kan ansluta när en lärare har startat samtalet.</value></data><data name="Classroom.UnmuteMic" xml:space="preserve"><value>Slå på mikrofonen</value></data><data name="Classroom.CameraOn" xml:space="preserve"><value>Slå på kameran</value></data><data name="Classroom.Connected" xml:space="preserve"><value>Ansluten</value></data>
+  <data name="Classroom.NoMessages" xml:space="preserve"><value>Inga meddelanden än. Säg hej!</value></data><data name="Classroom.Reconnecting" xml:space="preserve"><value>Ansluter igen…</value></data>
+  <data name="Classroom.ActionInvalid" xml:space="preserve"><value>Klassrumsåtgärden kunde inte slutföras. Kontrollera dina uppgifter och din behörighet.</value></data><data name="Classroom.Created" xml:space="preserve"><value>{0} har skapats.</value></data><data name="Classroom.CreateInvalid" xml:space="preserve"><value>Ange ett giltigt klassrumsnamn och en giltig beskrivning.</value></data><data name="Classroom.NoCodeMatch" xml:space="preserve"><value>Inget klassrum matchar anslutningskoden.</value></data><data name="Classroom.InvitationUnavailable" xml:space="preserve"><value>Inbjudan är inte längre tillgänglig.</value></data><data name="Classroom.Welcome" xml:space="preserve"><value>Välkommen till {0}.</value></data><data name="Classroom.WelcomeSwitched" xml:space="preserve"><value>Välkommen till {0}. Ditt språk har bytts till {1}.</value></data><data name="Classroom.InvitationDeclined" xml:space="preserve"><value>Inbjudan har avböjts.</value></data><data name="Classroom.NotFound" xml:space="preserve"><value>Klassrummet hittades inte.</value></data><data name="Classroom.Left" xml:space="preserve"><value>Du har lämnat klassrummet.</value></data><data name="Classroom.ActionDenied" xml:space="preserve"><value>Du kan inte utföra den åtgärden i klassrummet.</value></data><data name="Classroom.Deleted" xml:space="preserve"><value>Klassrummet har tagits bort.</value></data>
+  <data name="Explore.PublicQuiz" xml:space="preserve"><value>Offentligt quiz</value></data><data name="Explore.CustomExercises" xml:space="preserve"><value>Övningar skapade av quizets ord.</value></data><data name="Explore.NoPublicWords" xml:space="preserve"><value>Inga ord har lagts till i det offentliga quizet än.</value></data><data name="Explore.NoPublicSentences" xml:space="preserve"><value>Inga meningar har lagts till i det offentliga quizet än.</value></data><data name="Explore.PublicCollection" xml:space="preserve"><value>Offentlig samling</value></data><data name="Explore.CollectionIntro" xml:space="preserve"><value>Utforska {0} {1} i {2} samlingar och kopiera sedan hela paketet till ditt bibliotek.</value></data><data name="Explore.CollectionSummary" xml:space="preserve"><value>Sammanfattning av samlingen</value></data><data name="Explore.CopyCollection" xml:space="preserve"><value>Kopiera samling</value></data><data name="Explore.InCollection" xml:space="preserve"><value>I den här samlingen</value></data><data name="Explore.FiledInside" xml:space="preserve"><value>Quiz direkt i {0}.</value></data><data name="Explore.NoDirectQuizzes" xml:space="preserve"><value>Inga quiz direkt i den här samlingen.</value></data>
+  <data name="Common.Remove" xml:space="preserve"><value>Ta bort</value></data>
+  <data name="Classroom.ShareQuiz" xml:space="preserve"><value>Dela ett quiz</value></data><data name="Classroom.QuizLibrary" xml:space="preserve"><value>Quiz från ditt bibliotek</value></data><data name="Classroom.Share" xml:space="preserve"><value>Dela</value></data><data name="Classroom.AllQuizzesShared" xml:space="preserve"><value>Alla dina quiz är redan delade här eller så är biblioteket tomt.</value></data><data name="Classroom.ShareBook" xml:space="preserve"><value>Dela en bok</value></data><data name="Classroom.BookLibrary" xml:space="preserve"><value>Bok från ditt bibliotek</value></data><data name="Classroom.AllBooksShared" xml:space="preserve"><value>Alla dina böcker är redan delade här eller så har du inga uppladdningar.</value></data><data name="Classroom.First" xml:space="preserve"><value>först.</value></data><data name="Classroom.SharedContent" xml:space="preserve"><value>Delat innehåll</value></data><data name="Classroom.ItemOne" xml:space="preserve"><value>objekt</value></data><data name="Classroom.ItemMany" xml:space="preserve"><value>objekt</value></data><data name="Classroom.Removed" xml:space="preserve"><value>Borttaget</value></data><data name="Classroom.SharedBy" xml:space="preserve"><value>Delat av {0}</value></data><data name="Classroom.CopyLibrary" xml:space="preserve"><value>Kopiera till mitt bibliotek</value></data><data name="Classroom.OpenPdf" xml:space="preserve"><value>Öppna PDF</value></data><data name="Classroom.RemoveConfirm" xml:space="preserve"><value>Vill du ta bort det här från klassrummet?</value></data><data name="Classroom.NoSharedContent" xml:space="preserve"><value>Inget delat innehåll än.</value></data>
+  <data name="Classroom.QuizResults" xml:space="preserve"><value>Quizresultat</value></data><data name="Classroom.AttemptOne" xml:space="preserve"><value>försök</value></data><data name="Classroom.AttemptMany" xml:space="preserve"><value>försök</value></data><data name="Classroom.FromPractice" xml:space="preserve"><value>från klassrumsövningar</value></data><data name="Classroom.Score" xml:space="preserve"><value>Poäng</value></data><data name="Classroom.Completed" xml:space="preserve"><value>Slutförd</value></data><data name="Classroom.NoAttempts" xml:space="preserve"><value>Inga försök än. Resultat visas när medlemmar övar på quiz från fliken Innehåll.</value></data><data name="Classroom.MemberResultsTitle" xml:space="preserve"><value>{0} — resultat</value></data><data name="Classroom.Skipped" xml:space="preserve"><value>Överhoppade</value></data><data name="Classroom.NoMemberAttempts" xml:space="preserve"><value>Inga försök registrerade för medlemmen än.</value></data>
+  <data name="Classroom.InviteEmail" xml:space="preserve"><value>Bjud in via e-post</value></data><data name="Classroom.Role" xml:space="preserve"><value>Roll</value></data><data name="Classroom.Student" xml:space="preserve"><value>Elev</value></data><data name="Classroom.Teacher" xml:space="preserve"><value>Lärare</value></data><data name="Classroom.Invite" xml:space="preserve"><value>Bjud in</value></data><data name="Classroom.InviteHelp" xml:space="preserve"><value>Inbjudan visas på personens klassrumssida när hen loggar in med adressen — inget e-postmeddelande skickas.</value></data><data name="Classroom.CodeAnyone" xml:space="preserve"><value>Alla med koden</value></data><data name="Classroom.CodeCanJoin" xml:space="preserve"><value>kan gå med som elev.</value></data><data name="Classroom.JoiningCurrently" xml:space="preserve"><value>Anslutning är just nu</value></data><data name="Classroom.Enabled" xml:space="preserve"><value>aktiverad</value></data><data name="Classroom.Paused" xml:space="preserve"><value>pausad</value></data><data name="Classroom.NewCode" xml:space="preserve"><value>Ny kod</value></data><data name="Classroom.PauseJoining" xml:space="preserve"><value>Pausa anslutning</value></data><data name="Classroom.ResumeJoining" xml:space="preserve"><value>Återuppta anslutning</value></data>
+  <data name="Classroom.Joined" xml:space="preserve"><value>gick med</value></data><data name="Classroom.MakeRole" xml:space="preserve"><value>Gör till {0}</value></data><data name="Classroom.RemoveMemberConfirm" xml:space="preserve"><value>Vill du ta bort {0} från klassrummet?</value></data><data name="Classroom.DeleteForEveryone" xml:space="preserve"><value>Vill du ta bort klassrummet för alla? Delade quiz och böcker finns kvar i ägarnas bibliotek.</value></data><data name="Classroom.DeleteClassroom" xml:space="preserve"><value>Ta bort klassrum</value></data><data name="Classroom.LeaveConfirm" xml:space="preserve"><value>Vill du lämna klassrummet?</value></data><data name="Classroom.LeaveClassroom" xml:space="preserve"><value>Lämna klassrum</value></data>
+  <data name="Classroom.AddLesson" xml:space="preserve"><value>Lägg till en lektion</value></data><data name="Classroom.TitleLabel" xml:space="preserve"><value>Titel</value></data><data name="Classroom.DescriptionOptional" xml:space="preserve"><value>Beskrivning (valfritt)</value></data><data name="Classroom.ScheduledOptional" xml:space="preserve"><value>Schemalagd till (valfritt)</value></data><data name="Classroom.AddAssignment" xml:space="preserve"><value>Lägg till en uppgift</value></data><data name="Classroom.InstructionsOptional" xml:space="preserve"><value>Instruktioner (valfritt)</value></data><data name="Classroom.QuizOptional" xml:space="preserve"><value>Quiz (valfritt, från delat innehåll)</value></data><data name="Classroom.NoQuiz" xml:space="preserve"><value>Inget quiz</value></data><data name="Classroom.LessonOptional" xml:space="preserve"><value>Lektion (valfritt)</value></data><data name="Classroom.NoLesson" xml:space="preserve"><value>Ingen lektion</value></data><data name="Classroom.DueOptional" xml:space="preserve"><value>Förfallodatum (valfritt)</value></data>
+  <data name="Classroom.CoursePlan" xml:space="preserve"><value>Kursplan</value></data><data name="Classroom.LessonOne" xml:space="preserve"><value>lektion</value></data><data name="Classroom.LessonMany" xml:space="preserve"><value>lektioner</value></data><data name="Classroom.AssignmentOne" xml:space="preserve"><value>uppgift</value></data><data name="Classroom.AssignmentMany" xml:space="preserve"><value>uppgifter</value></data><data name="Classroom.DeleteLessonConfirm" xml:space="preserve"><value>Vill du ta bort lektionen? Uppgifterna finns kvar utan lektion.</value></data><data name="Classroom.DeleteLesson" xml:space="preserve"><value>Ta bort lektion</value></data><data name="Classroom.NoAssignmentsLesson" xml:space="preserve"><value>Inga uppgifter för lektionen.</value></data><data name="Classroom.OtherAssignments" xml:space="preserve"><value>Övriga uppgifter</value></data><data name="Classroom.NoPlanYet" xml:space="preserve"><value>Inga lektioner eller uppgifter än.</value></data><data name="Classroom.PlanAbove" xml:space="preserve"><value>Planera kursen ovan.</value></data><data name="Classroom.NoTeacherPlan" xml:space="preserve"><value>Din lärare har inte planerat något än.</value></data>
+  <data name="Classroom.Due" xml:space="preserve"><value>Förfaller</value></data><data name="Classroom.StudentsCompleted" xml:space="preserve"><value>{0} av {1} elever har slutfört</value></data><data name="Classroom.DoneBest" xml:space="preserve"><value>Klar — bästa poäng {0} %</value></data><data name="Classroom.NotDone" xml:space="preserve"><value>Inte klar än</value></data><data name="Classroom.DeleteAssignmentConfirm" xml:space="preserve"><value>Vill du ta bort uppgiften?</value></data>
+  <data name="Speaking.BarMenu" xml:space="preserve"><value>Barmeny</value></data><data name="Speaking.YourWallet" xml:space="preserve"><value>Din plånbok</value></data><data name="Speaking.NoBill" xml:space="preserve"><value>Ingen nota än</value></data><data name="Speaking.CloseWallet" xml:space="preserve"><value>Stäng plånboken</value></data><data name="Speaking.Selected" xml:space="preserve"><value>Valt</value></data><data name="Speaking.SceneActions" xml:space="preserve"><value>Scenåtgärder</value></data>
+  <data name="Speaking.NextMonth" xml:space="preserve"><value>början av nästa månad</value></data><data name="Speaking.PaidPaused" xml:space="preserve"><value>Betalfunktionerna för talövning är pausade till {0}.</value></data><data name="Speaking.SessionReady" xml:space="preserve"><value>Din övningssession är redo.</value></data><data name="Speaking.Unavailable" xml:space="preserve"><value>Talövning är inte tillgänglig</value></data><data name="Speaking.NewSessionConfirm" xml:space="preserve"><value>Vill du starta en ny session? Den aktuella konversationen rensas.</value></data><data name="Speaking.UpdatingQuiz" xml:space="preserve"><value>Uppdaterar handledarens övningsquiz…</value></data><data name="Speaking.PractisingNamed" xml:space="preserve"><value>Övar med {0}.</value></data><data name="Speaking.FreeModeActive" xml:space="preserve"><value>Läget fri lektion är aktivt.</value></data><data name="Speaking.Voice" xml:space="preserve"><value>Röst</value></data><data name="Speaking.Typed" xml:space="preserve"><value>Skrivet</value></data><data name="Speaking.StartBeforeSend" xml:space="preserve"><value>Starta en talövning innan du skickar ett meddelande.</value></data><data name="Speaking.AvatarThinking" xml:space="preserve"><value>{0} tänker…</value></data><data name="Speaking.Avatar" xml:space="preserve"><value>Avataren</value></data><data name="Speaking.SessionEnded" xml:space="preserve"><value>Sessionen är slut · starta en ny session</value></data><data name="Speaking.TakingSip" xml:space="preserve"><value>Tar en klunk…</value></data><data name="Speaking.TakingSnack" xml:space="preserve"><value>Tar ett snacks…</value></data><data name="Speaking.AvatarReacting" xml:space="preserve"><value>{0} reagerar…</value></data><data name="Speaking.MomentPassed" xml:space="preserve"><value>Det ögonblicket är förbi. Fortsätt chatta eller prova en annan åtgärd.</value></data>
+  <data name="Speaking.RecordUnavailable" xml:space="preserve"><value>Webbläsaren kan inte spela in tal här. Du kan fortfarande skriva i chatten.</value></data><data name="Speaking.Starting" xml:space="preserve"><value>Startar…</value></data><data name="Speaking.MicConnectingAuto" xml:space="preserve"><value>Ansluter till mikrofonen. Börja prata när den är redo.</value></data><data name="Speaking.MicConnectingHold" xml:space="preserve"><value>Ansluter till mikrofonen. Fortsätt hålla knappen intryckt.</value></data><data name="Speaking.Listening" xml:space="preserve"><value>Lyssnar…</value></data><data name="Speaking.SpeakNaturally" xml:space="preserve"><value>Prata naturligt. Inspelningen stoppas när du är klar.</value></data><data name="Speaking.ReleaseSend" xml:space="preserve"><value>Släpp för att skicka</value></data><data name="Speaking.KeepHolding" xml:space="preserve"><value>Fortsätt hålla medan du pratar. Släpp knappen för att skicka.</value></data><data name="Speaking.Transcribing" xml:space="preserve"><value>Transkriberar…</value></data><data name="Speaking.FinishingTranscript" xml:space="preserve"><value>Slutför transkriberingen…</value></data><data name="Speaking.NotCaughtComposer" xml:space="preserve"><value>Azure Speech uppfattade inte det. Tryck på Prata för att skriva och försök igen.</value></data><data name="Speaking.NotCaughtAvatar" xml:space="preserve"><value>Azure Speech uppfattade inte det. Håll den röda knappen intryckt och försök igen.</value></data><data name="Speaking.RecordingTooLong" xml:space="preserve"><value>Inspelningen är för lång. Korta texten och tryck på Skicka.</value></data><data name="Speaking.TranscriptSending" xml:space="preserve"><value>Transkriberingen är redo. Skickar…</value></data><data name="Speaking.TranscriptReady" xml:space="preserve"><value>Transkriberingen är redo. Granska eller redigera den och tryck sedan på Skicka.</value></data><data name="Speaking.MicFailed" xml:space="preserve"><value>Åtkomst till mikrofonen misslyckades. Du kan fortfarande skriva i chatten.</value></data><data name="Speaking.SpeechFinishFailed" xml:space="preserve"><value>Azure Speech kunde inte slutföra inspelningen.</value></data>
+  <data name="Speaking.Scene.PoursDrink" xml:space="preserve"><value>Marek häller upp och skjuter över din dryck.</value></data><data name="Speaking.Scene.TakeSnack" xml:space="preserve"><value>Du tar några paluszki.</value></data><data name="Speaking.Scene.OffersSnack" xml:space="preserve"><value>Marek erbjuder dig paluszki.</value></data><data name="Speaking.Scene.ClearsGlass" xml:space="preserve"><value>Marek tar undan det tomma glaset.</value></data><data name="Speaking.Scene.PolishesGlass" xml:space="preserve"><value>Marek polerar ett glas.</value></data><data name="Speaking.Scene.WipesCounter" xml:space="preserve"><value>Marek torkar av bardisken.</value></data><data name="Speaking.Scene.LastCall" xml:space="preserve"><value>Sista beställningen.</value></data><data name="Speaking.Scene.ItemUnavailable" xml:space="preserve"><value>Varan är inte tillgänglig.</value></data>
+  <data name="Speaking.Scene.FinishDrink" xml:space="preserve"><value>Du dricker upp.</value></data>
+  <data name="Speaking.Scene.TakeSip" xml:space="preserve"><value>Du tar en klunk.</value></data>
+  <data name="Speaking.Scene.PresentsBill" xml:space="preserve"><value>Marek visar notan på {0} zł.</value></data>
+  <data name="Speaking.Scene.PaymentRejected" xml:space="preserve"><value>{0} zł räcker inte. Inget togs bort.</value></data>
+  <data name="Speaking.Scene.PaymentAccepted" xml:space="preserve"><value>Marek tar emot {0} zł.</value></data>
+  <data name="Speaking.Scene.ReturnsChange" xml:space="preserve"><value>Marek ger tillbaka {0} zł i växel.</value></data>
+  <data name="Reader.ReadingSentence" xml:space="preserve"><value>Läser sida {0} · mening {1} av {2}</value></data>
+  <data name="Reader.ReadingSelectionPart" xml:space="preserve"><value>Läser markeringen · del {0} av {1}</value></data>
+  <data name="Reader.ReadingSelection" xml:space="preserve"><value>Läser markerad text…</value></data>
+  <data name="Reader.ReadingPage" xml:space="preserve"><value>Läser sida {0}…</value></data>
+  <data name="Reader.FinishedSelection" xml:space="preserve"><value>Klart med markeringen.</value></data>
+  <data name="Reader.FinishedPage" xml:space="preserve"><value>Klart med sida {0}.</value></data>
+  <data name="Reader.ReadingStopped" xml:space="preserve"><value>Uppläsningen stoppades.</value></data>
+  <data name="Reader.Detected" xml:space="preserve"><value>Identifierat språk: {0}</value></data>
+  <data name="Reader.DetectedCached" xml:space="preserve"><value>Identifierat språk: {0} · cachad</value></data>
+  <data name="Reader.CachedTranslation" xml:space="preserve"><value>Cachad översättning</value></data>
+  <data name="Reader.NoSelectableTextPage" xml:space="preserve"><value>Det finns ingen markerbar text på sidan.</value></data>
+  <data name="Reader.RenderFailed" xml:space="preserve"><value>Sidan kunde inte visas.</value></data>
+  <data name="Reader.PdfLoadFailed" xml:space="preserve"><value>PDF-filen kunde inte läsas in.</value></data>
+  <data name="Editor.Heading" xml:space="preserve"><value>Rubrik</value></data>
+  <data name="Editor.Instruction" xml:space="preserve"><value>Instruktion</value></data>
+  <data name="Editor.WordLabel" xml:space="preserve"><value>Ordetikett</value></data>
+  <data name="Editor.TranslationLabel" xml:space="preserve"><value>Översättningsetikett</value></data>
+  <data name="Editor.TextInput" xml:space="preserve"><value>Textfält</value></data>
+  <data name="Editor.LongAnswer" xml:space="preserve"><value>Långt svar</value></data>
+  <data name="Editor.Checkbox" xml:space="preserve"><value>Kryssruta</value></data>
+  <data name="Editor.RadioChoices" xml:space="preserve"><value>Radioknappar</value></data>
+  <data name="Editor.CheckboxChoices" xml:space="preserve"><value>Flervalsrutor</value></data>
+  <data name="Editor.SelectMenu" xml:space="preserve"><value>Rullgardinsmeny</value></data>
+  <data name="Editor.WordBank" xml:space="preserve"><value>Ordbank</value></data>
+  <data name="Editor.SubmitButton" xml:space="preserve"><value>Skicka-knapp</value></data>
+  <data name="Editor.Feedback" xml:space="preserve"><value>Återkoppling</value></data>
+  <data name="Editor.EmptyCanvas" xml:space="preserve"><value>Dra ett block till arbetsytan för att börja.</value></data>
+  <data name="Editor.MoveLeft" xml:space="preserve"><value>Flytta åt vänster</value></data>
+  <data name="Editor.MoveUp" xml:space="preserve"><value>Flytta uppåt</value></data>
+  <data name="Editor.MoveDown" xml:space="preserve"><value>Flytta nedåt</value></data>
+  <data name="Editor.MoveRight" xml:space="preserve"><value>Flytta åt höger</value></data>
+  <data name="Editor.RemoveBlock" xml:space="preserve"><value>Ta bort block</value></data>
+  <data name="Editor.Resize" xml:space="preserve"><value>Dra för att ändra bredden</value></data>
+  <data name="Editor.Word" xml:space="preserve"><value>Ord</value></data>
+  <data name="Editor.DisplayField" xml:space="preserve"><value>Visningsfält</value></data>
+  <data name="Editor.Words" xml:space="preserve"><value>Ord</value></data>
+  <data name="Editor.Options" xml:space="preserve"><value>Alternativ</value></data>
+  <data name="Editor.CorrectOption" xml:space="preserve"><value>Rätt alternativ</value></data>
+  <data name="Editor.RemoveOption" xml:space="preserve"><value>Ta bort alternativ</value></data>
+  <data name="Editor.AddOption" xml:space="preserve"><value>Lägg till alternativ</value></data>
+  <data name="Editor.Properties" xml:space="preserve"><value>Egenskaper</value></data>
+  <data name="Editor.SelectBlock" xml:space="preserve"><value>Välj ett block för att redigera innehåll och kopplingar.</value></data>
+  <data name="Editor.TargetInputs" xml:space="preserve"><value>Målfält</value></data>
+  <data name="Editor.PreviewOnly" xml:space="preserve"><value>Endast förhandsvisning — spara och spela för att registrera ett bedömt försök.</value></data>
+  <data name="Editor.BackToEditor" xml:space="preserve"><value>Tillbaka till redigeraren</value></data>
+  <data name="Editor.Preview" xml:space="preserve"><value>Förhandsvisa</value></data>
+  <data name="Editor.PreviewingOne" xml:space="preserve"><value>Förhandsvisar {0} block.</value></data>
+  <data name="Editor.PreviewingMany" xml:space="preserve"><value>Förhandsvisar {0} block.</value></data>
+  <data name="Editor.ReadyOne" xml:space="preserve"><value>Redigeraren är redo · {0} block på arbetsytan. Använd + för att lägga till eller dra ett block.</value></data>
+  <data name="Editor.ReadyMany" xml:space="preserve"><value>Redigeraren är redo · {0} block på arbetsytan. Använd + för att lägga till eller dra ett block.</value></data>
+  <data name="Editor.ReplaceConfirm" xml:space="preserve"><value>Vill du ersätta arbetsytan med layouten {0}? Du kan ångra ändringen.</value></data>
+  <data name="Editor.SaveFailed" xml:space="preserve"><value>Det anpassade quizet kunde inte sparas.</value></data>
+  <data name="Editor.SavedPlayable" xml:space="preserve"><value>Sparat. Quizet är redo att spelas.</value></data>
+  <data name="Editor.DraftSaved" xml:space="preserve"><value>Utkastet sparades. Fyll i de obligatoriska quizfälten innan du spelar.</value></data>
+  <data name="Editor.SaveStopped" xml:space="preserve"><value>Sparningen avbröts oväntat. Försök igen.</value></data>
+  <data name="Editor.WordLemma" xml:space="preserve"><value>Ord / uppslagsform</value></data>
+  <data name="Editor.Translation" xml:space="preserve"><value>Översättning</value></data>
+  <data name="Editor.Width" xml:space="preserve"><value>Bredd</value></data>
+  <data name="Editor.Column" xml:space="preserve"><value>Kolumn</value></data>
+  <data name="Editor.ColumnNumber" xml:space="preserve"><value>Kolumn {0}</value></data>
+  <data name="Editor.Row" xml:space="preserve"><value>Rad</value></data>
+  <data name="Editor.Text" xml:space="preserve"><value>Text</value></data>
+  <data name="Editor.LiveBinding" xml:space="preserve"><value>Dynamisk ordkoppling</value></data>
+  <data name="Editor.ExerciseRow" xml:space="preserve"><value>Övningsrad (använd {{blank}})</value></data>
+  <data name="Editor.AccessibleLabel" xml:space="preserve"><value>Tillgänglig etikett</value></data>
+  <data name="Editor.CustomExpected" xml:space="preserve"><value>Eget förväntat svar</value></data>
+  <data name="Editor.ExpectedBinding" xml:space="preserve"><value>Ordkoppling för förväntat svar</value></data>
+  <data name="Editor.DisplayedWord" xml:space="preserve"><value>Visat ord</value></data>
+  <data name="Editor.ExpectedChecked" xml:space="preserve"><value>Ska vara markerad</value></data>
+  <data name="Explore.QuizNoLongerPublic" xml:space="preserve"><value>Quizet är inte längre offentligt.</value></data>
+  <data name="Explore.CollectionNoLongerPublic" xml:space="preserve"><value>Samlingen är inte längre offentlig.</value></data>
+  <data name="Explore.CopiedToLibrary" xml:space="preserve"><value>{0} har kopierats till ditt bibliotek.</value></data>
+  <data name="Classroom.InvitationCreated" xml:space="preserve"><value>Inbjudan har skapats. Den visas på personens klassrumssida nästa gång hen besöker den.</value></data>
+  <data name="Classroom.JoinCodeRegenerated" xml:space="preserve"><value>En ny anslutningskod har skapats.</value></data>
+  <data name="Classroom.NoAccessResults" xml:space="preserve"><value>Du har inte åtkomst till de resultaten.</value></data>
+  <data name="Classroom.QuizShared" xml:space="preserve"><value>Quizet har delats.</value></data>
+  <data name="Classroom.BookShared" xml:space="preserve"><value>Boken har delats.</value></data>
+  <data name="Classroom.RemovedFromClassroom" xml:space="preserve"><value>Innehållet har tagits bort från klassrummet.</value></data>
+  <data name="Classroom.QuizCopyFailed" xml:space="preserve"><value>Quizet kunde inte kopieras.</value></data>
+  <data name="Classroom.Member" xml:space="preserve"><value>Medlem</value></data>
+  <data name="Common.Unknown" xml:space="preserve"><value>Okänd</value></data>
+  <data name="Account.LogOut" xml:space="preserve"><value>Logga ut</value></data>
+  <data name="Account.LogIn" xml:space="preserve"><value>Logga in</value></data>
+  <data name="Common.Send" xml:space="preserve"><value>Skicka</value></data>
+  <data name="Speaking.ConversationLab" xml:space="preserve"><value>Konversationslabb i {0}</value></data>
+  <data name="Speaking.MessageLabel" xml:space="preserve"><value>Ditt meddelande på {0}</value></data>
+  <data name="Speaking.MessagePlaceholder" xml:space="preserve"><value>Skriv på {0} eller använd mikrofonen…</value></data>
+  <data name="Speaking.MicAria" xml:space="preserve"><value>Starta rösttranskribering på {0}; inspelningen stoppas när du har talat klart</value></data>
+  <data name="Speaking.PrivacyNote" xml:space="preserve"><value>Ljudet strömmas direkt till Azure Speech. Konversationen sparas bara under den aktuella sessionen.</value></data>
+  <data name="Speaking.ClickTranslate" xml:space="preserve"><value>Klicka för att översätta</value></data>
+  <data name="Speaking.ClickShowLanguage" xml:space="preserve"><value>Klicka för att visa {0}</value></data>
+  <data name="Speaking.CoachFeedback" xml:space="preserve"><value>Handledarens återkoppling</value></data>
+  <data name="Speaking.MoreNatural" xml:space="preserve"><value>Mer naturlig {0}</value></data>
+</root>

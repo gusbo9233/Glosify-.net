@@ -1,0 +1,2883 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="DisplayLanguage.Label" xml:space="preserve">
+    <value>Ngôn ngữ hiển thị</value>
+  </data>
+  <data name="DisplayLanguage.Submit" xml:space="preserve">
+    <value>Đổi ngôn ngữ</value>
+  </data>
+  <data name="Common.English" xml:space="preserve">
+    <value>Tiếng Anh</value>
+  </data>
+  <data name="Common.Swedish" xml:space="preserve">
+    <value>Tiếng Thụy Điển</value>
+  </data>
+  <data name="Common.LogIn" xml:space="preserve">
+    <value>Đăng nhập</value>
+  </data>
+  <data name="Common.LogOut" xml:space="preserve">
+    <value>Đăng xuất</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Xóa</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Hủy</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Lưu</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Đóng</value>
+  </data>
+  <data name="Common.Search" xml:space="preserve">
+    <value>Tìm kiếm</value>
+  </data>
+  <data name="Common.Back" xml:space="preserve">
+    <value>Quay lại</value>
+  </data>
+  <data name="Common.Next" xml:space="preserve">
+    <value>Tiếp theo</value>
+  </data>
+  <data name="Common.Previous" xml:space="preserve">
+    <value>Trước đó</value>
+  </data>
+  <data name="Layout.MetaDescription" xml:space="preserve">
+    <value>Glosify biến những gì bạn đọc thành từ vựng có thể dùng: tạo danh sách từ từ sách và bản chép lời, luyện chúng bằng câu đố và thẻ ghi nhớ, rồi thực hành nói thành tiếng với một đối tác trò chuyện AI.</value>
+  </data>
+  <data name="Layout.AuthMetaDescription" xml:space="preserve">
+    <value>Đăng nhập vào Glosify để xây dựng từ vựng từ những gì bạn đọc, luyện tập bằng câu đố và nói nó với một đối tác trò chuyện AI.</value>
+  </data>
+  <data name="Layout.PremiumLearner" xml:space="preserve">
+    <value>Người học cao cấp</value>
+  </data>
+  <data name="Layout.SearchPlaceholder" xml:space="preserve">
+    <value>Bạn muốn học gì?</value>
+  </data>
+  <data name="Layout.Notifications" xml:space="preserve">
+    <value>Thông báo</value>
+  </data>
+  <data name="Layout.GetCredits" xml:space="preserve">
+    <value>Nhận tín dụng</value>
+  </data>
+  <data name="Layout.SignedInAs" xml:space="preserve">
+    <value>Đã đăng nhập với tư cách</value>
+  </data>
+  <data name="Layout.SignedIn" xml:space="preserve">
+    <value>Đã đăng nhập</value>
+  </data>
+  <data name="Layout.PrimaryNavigation" xml:space="preserve">
+    <value>Điều hướng chính</value>
+  </data>
+  <data name="Nav.LanguageSelector" xml:space="preserve">
+    <value>Bộ chọn ngôn ngữ</value>
+  </data>
+  <data name="Nav.Language" xml:space="preserve">
+    <value>Ngôn ngữ</value>
+  </data>
+  <data name="Nav.Home" xml:space="preserve">
+    <value>Trang chủ</value>
+  </data>
+  <data name="Nav.Explore" xml:space="preserve">
+    <value>Khám phá</value>
+  </data>
+  <data name="Nav.Books" xml:space="preserve">
+    <value>Sách</value>
+  </data>
+  <data name="Nav.Transcripts" xml:space="preserve">
+    <value>Bản chép lời</value>
+  </data>
+  <data name="Nav.Quizzes" xml:space="preserve">
+    <value>Câu đố</value>
+  </data>
+  <data name="Nav.Speaking" xml:space="preserve">
+    <value>Luyện nói</value>
+  </data>
+  <data name="Nav.Speak" xml:space="preserve">
+    <value>Nói</value>
+  </data>
+  <data name="Nav.Classrooms" xml:space="preserve">
+    <value>Lớp học</value>
+  </data>
+  <data name="Nav.Class" xml:space="preserve">
+    <value>Lớp</value>
+  </data>
+  <data name="Languages.Title" xml:space="preserve">
+    <value>Bộ chọn ngôn ngữ</value>
+  </data>
+  <data name="Languages.Tagline" xml:space="preserve">
+    <value>Hôm nay bạn muốn kết nối với ngôn ngữ nào?</value>
+  </data>
+  <data name="Languages.Current" xml:space="preserve">
+    <value>Hiện đang học {0}</value>
+  </data>
+  <data name="Languages.Find" xml:space="preserve">
+    <value>Tìm một ngôn ngữ</value>
+  </data>
+  <data name="Languages.SearchPlaceholder" xml:space="preserve">
+    <value>Tìm bằng tiếng Anh, tên bản ngữ hoặc mã</value>
+  </data>
+  <data name="Languages.Count" xml:space="preserve">
+    <value>{0} ngôn ngữ</value>
+  </data>
+  <data name="Languages.None" xml:space="preserve">
+    <value>Không có ngôn ngữ nào khớp</value>
+  </data>
+  <data name="Languages.NoneHelp" xml:space="preserve">
+    <value>Hãy thử tên tiếng Anh, tên bản ngữ hoặc mã ngôn ngữ.</value>
+  </data>
+  <data name="Languages.Pick" xml:space="preserve">
+    <value>Chọn một ngôn ngữ</value>
+  </data>
+  <data name="Assistant.Title" xml:space="preserve">
+    <value>Trợ lý</value>
+  </data>
+  <data name="Assistant.Empty" xml:space="preserve">
+    <value>Hãy yêu cầu trợ giúp ở bất kỳ đâu trong Glosify.</value>
+  </data>
+  <data name="Assistant.Placeholder" xml:space="preserve">
+    <value>Hỏi trợ lý...</value>
+  </data>
+  <data name="Assistant.Workspace" xml:space="preserve">
+    <value>Không gian làm việc của trợ lý</value>
+  </data>
+  <data name="Assistant.Chat" xml:space="preserve">
+    <value>TRÒ CHUYỆN</value>
+  </data>
+  <data name="Assistant.Chats" xml:space="preserve">
+    <value>CÁC CUỘC TRÒ CHUYỆN</value>
+  </data>
+  <data name="Assistant.NewChat" xml:space="preserve">
+    <value>Cuộc trò chuyện mới</value>
+  </data>
+  <data name="Assistant.Close" xml:space="preserve">
+    <value>Đóng trợ lý</value>
+  </data>
+  <data name="Assistant.QuizContext" xml:space="preserve">
+    <value>Ngữ cảnh câu đố</value>
+  </data>
+  <data name="Assistant.NoQuiz" xml:space="preserve">
+    <value>Chưa chọn câu đố</value>
+  </data>
+  <data name="Assistant.ReadingMaterial" xml:space="preserve">
+    <value>Tài liệu đọc</value>
+  </data>
+  <data name="Assistant.NoMaterial" xml:space="preserve">
+    <value>Chưa chọn tài liệu</value>
+  </data>
+  <data name="Assistant.Picture" xml:space="preserve">
+    <value>Hình ảnh</value>
+  </data>
+  <data name="Assistant.Model" xml:space="preserve">
+    <value>Mô hình trợ lý</value>
+  </data>
+  <data name="Assistant.AutoModel" xml:space="preserve">
+    <value>Tự động · {0}</value>
+  </data>
+  <data name="Assistant.Send" xml:space="preserve">
+    <value>Gửi</value>
+  </data>
+  <data name="Assistant.PreviousChats" xml:space="preserve">
+    <value>Các cuộc trò chuyện trước</value>
+  </data>
+  <data name="Assistant.NoChats" xml:space="preserve">
+    <value>Chưa có cuộc trò chuyện nào được lưu.</value>
+  </data>
+  <data name="Quiz.FlashcardsTitle" xml:space="preserve">
+    <value>Câu đố thẻ ghi nhớ</value>
+  </data>
+  <data name="Quiz.TypingTitle" xml:space="preserve">
+    <value>Câu đố gõ</value>
+  </data>
+  <data name="Quiz.RevealRate" xml:space="preserve">
+    <value>Hiện đáp án, đánh giá mức độ nhớ và tiếp tục.</value>
+  </data>
+  <data name="Quiz.BackWords" xml:space="preserve">
+    <value>Quay lại danh sách từ</value>
+  </data>
+  <data name="Quiz.SessionComplete" xml:space="preserve">
+    <value>Phiên hoàn tất</value>
+  </data>
+  <data name="Quiz.Remembered" xml:space="preserve">
+    <value>Đã nhớ</value>
+  </data>
+  <data name="Quiz.ReviewAgain" xml:space="preserve">
+    <value>Ôn lại</value>
+  </data>
+  <data name="Quiz.Skipped" xml:space="preserve">
+    <value>Đã bỏ qua</value>
+  </data>
+  <data name="Quiz.Restart" xml:space="preserve">
+    <value>Bắt đầu lại phiên</value>
+  </data>
+  <data name="Quiz.PracticeAgain" xml:space="preserve">
+    <value>Luyện tập lại</value>
+  </data>
+  <data name="Quiz.PlayPronunciation" xml:space="preserve">
+    <value>Phát âm của {0}</value>
+  </data>
+  <data name="Quiz.RevealAnswer" xml:space="preserve">
+    <value>Hiện đáp án cho {0}</value>
+  </data>
+  <data name="Quiz.Again" xml:space="preserve">
+    <value>Lại</value>
+  </data>
+  <data name="Quiz.Good" xml:space="preserve">
+    <value>Tốt</value>
+  </data>
+  <data name="Quiz.Easy" xml:space="preserve">
+    <value>Dễ</value>
+  </data>
+  <data name="Quiz.SwipeHint" xml:space="preserve">
+    <value>Vuốt sang phải để chọn Tốt, sang trái để chọn Lại</value>
+  </data>
+  <data name="Quiz.Skip" xml:space="preserve">
+    <value>Bỏ qua</value>
+  </data>
+  <data name="Quiz.ShowAnswer" xml:space="preserve">
+    <value>Hiện đáp án</value>
+  </data>
+  <data name="Quiz.Reset" xml:space="preserve">
+    <value>Đặt lại phiên</value>
+  </data>
+  <data name="Quiz.NoneYet" xml:space="preserve">
+    <value>Chưa có {0} nào</value>
+  </data>
+  <data name="Quiz.AddThenStart" xml:space="preserve">
+    <value>Thêm {0} vào một bài quiz, rồi bắt đầu một phiên {1} từ bài quiz đó.</value>
+  </data>
+  <data name="Quiz.TypeInstruction" xml:space="preserve">
+    <value>Nhập đầy đủ {0} {1} từ lời nhắc {2}.</value>
+  </data>
+  <data name="Quiz.CheckAnswer" xml:space="preserve">
+    <value>Kiểm tra đáp án</value>
+  </data>
+  <data name="Quiz.PlayPronunciationGeneric" xml:space="preserve">
+    <value>Phát âm</value>
+  </data>
+  <data name="Quiz.Answer" xml:space="preserve">
+    <value>Đáp án</value>
+  </data>
+  <data name="Quiz.TypePlaceholder" xml:space="preserve">
+    <value>Nhập câu trả lời của bạn...</value>
+  </data>
+  <data name="Quiz.CorrectAnswer" xml:space="preserve">
+    <value>Đáp án đúng</value>
+  </data>
+  <data name="Quiz.Space" xml:space="preserve">
+    <value>Phím cách</value>
+  </data>
+  <data name="Quiz.TypingComplete" xml:space="preserve">
+    <value>Hoàn tất nhập</value>
+  </data>
+  <data name="Quiz.Correct" xml:space="preserve">
+    <value>Đúng</value>
+  </data>
+  <data name="Quiz.Incorrect" xml:space="preserve">
+    <value>Sai</value>
+  </data>
+  <data name="Quiz.PracticeIncorrect" xml:space="preserve">
+    <value>Luyện các từ làm sai</value>
+  </data>
+  <data name="Quiz.ChangeSettings" xml:space="preserve">
+    <value>Đổi cài đặt</value>
+  </data>
+  <data name="Transcripts.Title" xml:space="preserve">
+    <value>Bản ghi</value>
+  </data>
+  <data name="Transcripts.Eyebrow" xml:space="preserve">
+    <value>Lịch sử phụ đề trực tiếp</value>
+  </data>
+  <data name="Transcripts.Saved" xml:space="preserve">
+    <value>Các bản ghi đã lưu</value>
+  </data>
+  <data name="Transcripts.Intro" xml:space="preserve">
+    <value>Văn bản phụ đề trực tiếp đã lưu cho {0}. Các phiên mới chứa lời nói gốc; các phiên cũ vẫn được gắn nhãn là bản dịch.</value>
+  </data>
+  <data name="Transcripts.SelectedLanguage" xml:space="preserve">
+    <value>ngôn ngữ bạn đã chọn</value>
+  </data>
+  <data name="Transcripts.Updated" xml:space="preserve">
+    <value>Đã cập nhật</value>
+  </data>
+  <data name="Transcripts.None" xml:space="preserve">
+    <value>Chưa có bản ghi nào được lưu</value>
+  </data>
+  <data name="Transcripts.NoneHelp" xml:space="preserve">
+    <value>Bật “Lưu bản ghi lời nói gốc” trước khi bắt đầu phụ đề trực tiếp.</value>
+  </data>
+  <data name="Transcripts.PagesAria" xml:space="preserve">
+    <value>Các trang bản ghi</value>
+  </data>
+  <data name="Common.PageOf" xml:space="preserve">
+    <value>Trang {0} trên {1}</value>
+  </data>
+  <data name="Home.Title" xml:space="preserve">
+    <value>Trang chủ</value>
+  </data>
+  <data name="Home.Coach" xml:space="preserve">
+    <value>Trợ lý học tập</value>
+  </data>
+  <data name="Home.Kicker" xml:space="preserve">
+    <value>Không gian học ngôn ngữ của bạn</value>
+  </data>
+  <data name="Home.TitleWithLanguage" xml:space="preserve">
+    <value>Biến {0} thành một phần trong ngày của bạn.</value>
+  </data>
+  <data name="Home.TitleAnonymous" xml:space="preserve">
+    <value>Biến từ mới thành những cuộc trò chuyện thực sự.</value>
+  </data>
+  <data name="Home.Description" xml:space="preserve">
+    <value>Xây dựng vốn từ từ những điều bạn đọc, ghi nhớ với việc luyện tập tập trung, rồi dùng chúng thành lời cùng một người bạn trò chuyện AI.</value>
+  </data>
+  <data name="Home.StartLearning" xml:space="preserve">
+    <value>Bắt đầu học</value>
+  </data>
+  <data name="Home.ChooseLanguage" xml:space="preserve">
+    <value>Chọn một ngôn ngữ</value>
+  </data>
+  <data name="Home.BrowseShared" xml:space="preserve">
+    <value>Duyệt các bộ chia sẻ</value>
+  </data>
+  <data name="Home.StartSpeaking" xml:space="preserve">
+    <value>Bắt đầu nói</value>
+  </data>
+  <data name="Home.OpenQuizzes" xml:space="preserve">
+    <value>Mở các bài quiz của tôi</value>
+  </data>
+  <data name="Home.WaysAria" xml:space="preserve">
+    <value>Các cách học với Glosify</value>
+  </data>
+  <data name="Home.ReadContext" xml:space="preserve">
+    <value>Đọc trong ngữ cảnh</value>
+  </data>
+  <data name="Home.PracticeRecall" xml:space="preserve">
+    <value>Luyện ghi nhớ</value>
+  </data>
+  <data name="Home.SpeakConfidence" xml:space="preserve">
+    <value>Nói tự tin</value>
+  </data>
+  <data name="Home.LoopAria" xml:space="preserve">
+    <value>Một vòng học liên kết từ đọc đến nói</value>
+  </data>
+  <data name="Home.Discover" xml:space="preserve">
+    <value>Khám phá</value>
+  </data>
+  <data name="Home.Remember" xml:space="preserve">
+    <value>Ghi nhớ</value>
+  </data>
+  <data name="Home.LearningLoop" xml:space="preserve">
+    <value>Vòng học của bạn</value>
+  </data>
+  <data name="Home.TodayMindset" xml:space="preserve">
+    <value>Tư duy hôm nay</value>
+  </data>
+  <data name="Home.SmallSteps" xml:space="preserve">
+    <value>Những bước nhỏ. Tiến bộ thật sự.</value>
+  </data>
+  <data name="Home.QuickStart" xml:space="preserve">
+    <value>Bắt đầu nhanh</value>
+  </data>
+  <data name="Home.ChooseNext" xml:space="preserve">
+    <value>Chọn bước tiếp theo của bạn</value>
+  </data>
+  <data name="Home.LearningLanguage" xml:space="preserve">
+    <value>Đang học {0}</value>
+  </data>
+  <data name="Home.BuildVocabulary" xml:space="preserve">
+    <value>Xây dựng vốn từ</value>
+  </data>
+  <data name="Home.BuildVocabularyText" xml:space="preserve">
+    <value>Tạo các bộ tập trung từ những từ bạn thực sự muốn dùng.</value>
+  </data>
+  <data name="Home.PracticeRecallText" xml:space="preserve">
+    <value>Dùng thẻ ghi nhớ, gõ từ và các bài quiz tuỳ chỉnh để ghi nhớ từ lâu hơn.</value>
+  </data>
+  <data name="Home.SpeakNaturally" xml:space="preserve">
+    <value>Nói tự nhiên</value>
+  </data>
+  <data name="Home.SpeakNaturallyText" xml:space="preserve">
+    <value>Bước vào một tình huống được hướng dẫn và nhận huấn luyện riêng sau mỗi lượt.</value>
+  </data>
+  <data name="Home.ConnectedKicker" xml:space="preserve">
+    <value>Một không gian làm việc kết nối</value>
+  </data>
+  <data name="Home.ConnectedTitle" xml:space="preserve">
+    <value>Học từ bất cứ thứ gì đã thu hút sự chú ý của bạn.</value>
+  </data>
+  <data name="Home.ConnectedText" xml:space="preserve">
+    <value>Một cuốn sách, một danh sách từ được chia sẻ, hay một bài tập trên lớp đều có thể trở thành điểm bắt đầu cho buổi luyện tập tiếp theo của bạn. Vốn từ của bạn luôn ở gần, dù bạn đi đến đâu.</value>
+  </data>
+  <data name="Home.ExploreCollections" xml:space="preserve">
+    <value>Khám phá các bộ sưu tập cộng đồng</value>
+  </data>
+  <data name="Home.ReadCollect" xml:space="preserve">
+    <value>Đọc &amp; thu thập</value>
+  </data>
+  <data name="Home.ReadCollectText" xml:space="preserve">
+    <value>Biến một PDF thành vốn từ mà không cần rời khỏi trang.</value>
+  </data>
+  <data name="Home.ExploreTogether" xml:space="preserve">
+    <value>Khám phá cùng nhau</value>
+  </data>
+  <data name="Home.ExploreTogetherText" xml:space="preserve">
+    <value>Sao chép các bài quiz và bộ sưu tập công khai vào thư viện của bạn.</value>
+  </data>
+  <data name="Home.JoinClassroom" xml:space="preserve">
+    <value>Tham gia lớp học</value>
+  </data>
+  <data name="Home.JoinClassroomText" xml:space="preserve">
+    <value>Học với bài tập, nội dung được chia sẻ và hỗ trợ trực tiếp.</value>
+  </data>
+  <data name="Home.YourTurn" xml:space="preserve">
+    <value>Đến lượt bạn</value>
+  </data>
+  <data name="Home.TodayLanguage" xml:space="preserve">
+    <value>Hôm nay bạn sẽ làm gì với {0}?</value>
+  </data>
+  <data name="Home.PickFirstWord" xml:space="preserve">
+    <value>Chọn một ngôn ngữ và bắt đầu với một từ hữu ích.</value>
+  </data>
+  <data name="Home.ContinueLearning" xml:space="preserve">
+    <value>Tiếp tục học</value>
+  </data>
+  <data name="Home.PickLanguage" xml:space="preserve">
+    <value>Chọn một ngôn ngữ</value>
+  </data>
+  <data name="Home.CreateAccount" xml:space="preserve">
+    <value>Tạo tài khoản</value>
+  </data>
+  <data name="Auth.BrandTagline" xml:space="preserve">
+    <value>Hòa nhập ngôn ngữ với âm thanh</value>
+  </data>
+  <data name="Auth.LoginTitle" xml:space="preserve">
+    <value>Đăng nhập</value>
+  </data>
+  <data name="Auth.WelcomeBack" xml:space="preserve">
+    <value>Chào mừng bạn quay lại</value>
+  </data>
+  <data name="Auth.LoginIntro" xml:space="preserve">
+    <value>Vui lòng nhập thông tin của bạn để tiếp tục hành trình.</value>
+  </data>
+  <data name="Auth.TrialLabel" xml:space="preserve">
+    <value>Ưu đãi dùng thử:</value>
+  </data>
+  <data name="Auth.TrialText" xml:space="preserve">
+    <value>nhận 25 credit một lần khi bạn đăng nhập bằng Google hoặc Microsoft. Tài khoản mật khẩu không nhận credit dùng thử tự động.</value>
+  </data>
+  <data name="Auth.EmailAddress" xml:space="preserve">
+    <value>Địa chỉ email</value>
+  </data>
+  <data name="Auth.Password" xml:space="preserve">
+    <value>Mật khẩu</value>
+  </data>
+  <data name="Auth.Forgot" xml:space="preserve">
+    <value>Quên mật khẩu?</value>
+  </data>
+  <data name="Auth.OrContinue" xml:space="preserve">
+    <value>Hoặc tiếp tục với</value>
+  </data>
+  <data name="Auth.ContinueProvider" xml:space="preserve">
+    <value>Tiếp tục với {0}</value>
+  </data>
+  <data name="Auth.NoAccount" xml:space="preserve">
+    <value>Chưa có tài khoản?</value>
+  </data>
+  <data name="Auth.CreateAccount" xml:space="preserve">
+    <value>Tạo tài khoản</value>
+  </data>
+  <data name="Auth.RegisterTitle" xml:space="preserve">
+    <value>Đăng ký</value>
+  </data>
+  <data name="Auth.CreateYourAccount" xml:space="preserve">
+    <value>Tạo tài khoản của bạn</value>
+  </data>
+  <data name="Auth.RegisterIntro" xml:space="preserve">
+    <value>Bắt đầu hành trình đắm mình trong ngôn ngữ của bạn ngay hôm nay.</value>
+  </data>
+  <data name="Auth.RegisterTrialLabel" xml:space="preserve">
+    <value>Dùng thử 25 tín dụng:</value>
+  </data>
+  <data name="Auth.RegisterTrialText" xml:space="preserve">
+    <value>chỉ dùng được một lần sau khi bạn liên kết và đăng nhập bằng Google hoặc Microsoft. Chỉ tạo tài khoản mật khẩu sẽ không được cộng tín dụng dùng thử.</value>
+  </data>
+  <data name="Auth.ConfirmPassword" xml:space="preserve">
+    <value>Xác nhận mật khẩu</value>
+  </data>
+  <data name="Auth.AlreadyAccount" xml:space="preserve">
+    <value>Đã có tài khoản?</value>
+  </data>
+  <data name="Auth.ForgotTitle" xml:space="preserve">
+    <value>Quên mật khẩu</value>
+  </data>
+  <data name="Auth.ForgotHeading" xml:space="preserve">
+    <value>Đặt lại mật khẩu của bạn</value>
+  </data>
+  <data name="Auth.ForgotUnavailable" xml:space="preserve">
+    <value>Chưa hỗ trợ đặt lại mật khẩu qua email. Nếu bạn cần trợ giúp để truy cập tài khoản, hãy liên hệ bộ phận hỗ trợ.</value>
+  </data>
+  <data name="Auth.BackToLogin" xml:space="preserve">
+    <value>Quay lại đăng nhập</value>
+  </data>
+  <data name="Auth.InvalidCredentials" xml:space="preserve">
+    <value>Email hoặc mật khẩu không hợp lệ.</value>
+  </data>
+  <data name="Auth.AccountLocked" xml:space="preserve">
+    <value>Tài khoản đã bị khóa. Vui lòng thử lại sau.</value>
+  </data>
+  <data name="Auth.ExternalNotConfigured" xml:space="preserve">
+    <value>Chưa cấu hình đăng nhập {0}.</value>
+  </data>
+  <data name="Auth.ExternalFailed" xml:space="preserve">
+    <value>Đăng nhập bên ngoài không thành công.</value>
+  </data>
+  <data name="Auth.ExternalProviderFailed" xml:space="preserve">
+    <value>Đăng nhập {0} không thành công. Kiểm tra local {0} OAuth client ID và client secret, rồi thử lại.</value>
+  </data>
+  <data name="Identity.DuplicateUserName" xml:space="preserve">
+    <value>Đã tồn tại một tài khoản với địa chỉ email này.</value>
+  </data>
+  <data name="Identity.DuplicateEmail" xml:space="preserve">
+    <value>Đã tồn tại một tài khoản với địa chỉ email này.</value>
+  </data>
+  <data name="Identity.PasswordTooShort" xml:space="preserve">
+    <value>Mật khẩu quá ngắn.</value>
+  </data>
+  <data name="Identity.PasswordRequiresNonAlphanumeric" xml:space="preserve">
+    <value>Mật khẩu phải chứa ký tự đặc biệt.</value>
+  </data>
+  <data name="Identity.PasswordRequiresDigit" xml:space="preserve">
+    <value>Mật khẩu phải chứa số.</value>
+  </data>
+  <data name="Identity.PasswordRequiresLower" xml:space="preserve">
+    <value>Mật khẩu phải chứa chữ cái thường.</value>
+  </data>
+  <data name="Identity.PasswordRequiresUpper" xml:space="preserve">
+    <value>Mật khẩu phải chứa chữ cái in hoa.</value>
+  </data>
+  <data name="Identity.DefaultError" xml:space="preserve">
+    <value>Không thể tạo tài khoản. Kiểm tra thông tin của bạn rồi thử lại.</value>
+  </data>
+  <data name="Validation.PasswordsMismatch" xml:space="preserve">
+    <value>Mật khẩu không khớp.</value>
+  </data>
+  <data name="Validation.Required" xml:space="preserve">
+    <value>Trường {0} là bắt buộc.</value>
+  </data>
+  <data name="Validation.Email" xml:space="preserve">
+    <value>Trường {0} không phải là địa chỉ email hợp lệ.</value>
+  </data>
+  <data name="Validation.MinLength" xml:space="preserve">
+    <value>Trường {0} phải là kiểu chuỗi hoặc mảng có độ dài tối thiểu là '{1}'.</value>
+  </data>
+  <data name="Legal.Label" xml:space="preserve">
+    <value>Pháp lý</value>
+  </data>
+  <data name="Legal.PrivacyPolicy" xml:space="preserve">
+    <value>Chính sách quyền riêng tư</value>
+  </data>
+  <data name="Legal.TermsOfService" xml:space="preserve">
+    <value>Điều khoản dịch vụ</value>
+  </data>
+  <data name="Legal.Support" xml:space="preserve">
+    <value>Hỗ trợ</value>
+  </data>
+  <data name="Legal.PrivacyTitle" xml:space="preserve">
+    <value>Quyền riêng tư</value>
+  </data>
+  <data name="Legal.TermsTitle" xml:space="preserve">
+    <value>Điều khoản</value>
+  </data>
+  <data name="Legal.EnglishGoverns" xml:space="preserve">
+    <value>Bản dịch này chỉ được cung cấp để thuận tiện. Nếu có khác biệt với bản tiếng Anh, bản tiếng Anh sẽ được áp dụng.</value>
+  </data>
+  <data name="Transcripts.CountOne" xml:space="preserve">
+    <value>Đã lưu {0}</value>
+  </data>
+  <data name="Transcripts.CountMany" xml:space="preserve">
+    <value>Đã lưu {0}</value>
+  </data>
+  <data name="Transcripts.CaptionOne" xml:space="preserve">
+    <value>{0} phụ đề</value>
+  </data>
+  <data name="Transcripts.CaptionMany" xml:space="preserve">
+    <value>{0} phụ đề</value>
+  </data>
+  <data name="Quiz.Progress" xml:space="preserve">
+    <value>{0} trong {1} {2}</value>
+  </data>
+  <data name="Quiz.CorrectCount" xml:space="preserve">
+    <value>{0} đúng</value>
+  </data>
+  <data name="Quiz.PromptLabel" xml:space="preserve">
+    <value>Lời nhắc {0}</value>
+  </data>
+  <data name="Quiz.UkrainianKeyboard" xml:space="preserve">
+    <value>Bàn phím ảo tiếng Ukraina</value>
+  </data>
+  <data name="Books.Title" xml:space="preserve">
+    <value>Sách</value>
+  </data>
+  <data name="Books.YourBooks" xml:space="preserve">
+    <value>Sách của bạn</value>
+  </data>
+  <data name="Books.LanguageBooks" xml:space="preserve">
+    <value>Sách {0} của bạn</value>
+  </data>
+  <data name="Books.LanguageTitle" xml:space="preserve">
+    <value>Sách {0}</value>
+  </data>
+  <data name="Books.YourLibrary" xml:space="preserve">
+    <value>Thư viện của bạn</value>
+  </data>
+  <data name="Books.HeroPrefix" xml:space="preserve">
+    <value>Biến mỗi trang thành</value>
+  </data>
+  <data name="Books.Progress" xml:space="preserve">
+    <value>sự tiến bộ.</value>
+  </data>
+  <data name="Books.HeroText" xml:space="preserve">
+    <value>Mang tài liệu đọc của riêng bạn và dùng Glosify để khám phá từng trang, cụm từ và từ mới.</value>
+  </data>
+  <data name="Books.SummaryAria" xml:space="preserve">
+    <value>Tóm tắt thư viện</value>
+  </data>
+  <data name="Books.BookOne" xml:space="preserve">
+    <value>cuốn sách</value>
+  </data>
+  <data name="Books.BookMany" xml:space="preserve">
+    <value>cuốn sách</value>
+  </data>
+  <data name="Books.PageOne" xml:space="preserve">
+    <value>trang</value>
+  </data>
+  <data name="Books.PageMany" xml:space="preserve">
+    <value>trang</value>
+  </data>
+  <data name="Books.AddShelf" xml:space="preserve">
+    <value>Thêm vào kệ sách của bạn</value>
+  </data>
+  <data name="Books.UploadPdf" xml:space="preserve">
+    <value>Tải lên PDF</value>
+  </data>
+  <data name="Books.ChoosePdf" xml:space="preserve">
+    <value>Chọn PDF</value>
+  </data>
+  <data name="Books.PdfLimit" xml:space="preserve">
+    <value>PDF chỉ chứa văn bản · tối đa 25 MB</value>
+  </data>
+  <data name="Books.Browse" xml:space="preserve">
+    <value>Duyệt</value>
+  </data>
+  <data name="Books.AddLibrary" xml:space="preserve">
+    <value>Thêm vào thư viện</value>
+  </data>
+  <data name="Books.KeepReading" xml:space="preserve">
+    <value>Tiếp tục đọc</value>
+  </data>
+  <data name="Books.OnShelf" xml:space="preserve">
+    <value>{0} trên kệ sách của bạn</value>
+  </data>
+  <data name="Books.DeleteConfirm" xml:space="preserve">
+    <value>Xóa vĩnh viễn "{0}" và các trang của nó? Các cuộc trò chuyện đã dùng nó sẽ được giữ lại.</value>
+  </data>
+  <data name="Books.Delete" xml:space="preserve">
+    <value>Xóa {0}</value>
+  </data>
+  <data name="Books.Read" xml:space="preserve">
+    <value>Đọc {0}</value>
+  </data>
+  <data name="Books.ReaderEdition" xml:space="preserve">
+    <value>Phiên bản cho người đọc</value>
+  </data>
+  <data name="Books.Added" xml:space="preserve">
+    <value>Đã thêm</value>
+  </data>
+  <data name="Books.PageCountOne" xml:space="preserve">
+    <value>{0} trang</value>
+  </data>
+  <data name="Books.PageCountMany" xml:space="preserve">
+    <value>{0} trang</value>
+  </data>
+  <data name="Books.StartReading" xml:space="preserve">
+    <value>Bắt đầu đọc</value>
+  </data>
+  <data name="Books.ShelfReady" xml:space="preserve">
+    <value>Kệ sách của bạn đã sẵn sàng</value>
+  </data>
+  <data name="Books.NoLanguageBooks" xml:space="preserve">
+    <value>Chưa có sách {0} nào</value>
+  </data>
+  <data name="Books.EmptyText" xml:space="preserve">
+    <value>Tải lên PDF chỉ chứa văn bản đầu tiên của bạn ở trên và bắt đầu học từ những nội dung bạn đã yêu thích để đọc.</value>
+  </data>
+  <data name="Books.EmptyLanguageText" xml:space="preserve">
+    <value>Nó sẽ được thêm vào kệ sách {0} của bạn.</value>
+  </data>
+  <data name="Books.ChooseFirst" xml:space="preserve">
+    <value>Chọn cuốn sách đầu tiên của bạn</value>
+  </data>
+  <data name="Common.First" xml:space="preserve">
+    <value>Đầu tiên</value>
+  </data>
+  <data name="Common.Last" xml:space="preserve">
+    <value>Cuối</value>
+  </data>
+  <data name="Common.Page" xml:space="preserve">
+    <value>Trang {0}</value>
+  </data>
+  <data name="Common.Go" xml:space="preserve">
+    <value>Đi</value>
+  </data>
+  <data name="Transcripts.AssistantTitle" xml:space="preserve">
+    <value>Trợ lý bản chép lời</value>
+  </data>
+  <data name="Transcripts.AssistantEmpty" xml:space="preserve">
+    <value>Hỏi về bản chép lời này hoặc dùng nó với các bài kiểm tra hiện có của bạn.</value>
+  </data>
+  <data name="Transcripts.AssistantPlaceholder" xml:space="preserve">
+    <value>Hỏi về bản chép lời này...</value>
+  </data>
+  <data name="Transcripts.OriginalFor" xml:space="preserve">
+    <value>Giọng nói gốc đã được lưu cho việc học {0}</value>
+  </data>
+  <data name="Transcripts.LegacyFor" xml:space="preserve">
+    <value>Phụ đề đã dịch cũ · học {0}</value>
+  </data>
+  <data name="Transcripts.Started" xml:space="preserve">
+    <value>đã bắt đầu</value>
+  </data>
+  <data name="Transcripts.NameLabel" xml:space="preserve">
+    <value>Tiêu đề bản chép lời</value>
+  </data>
+  <data name="Transcripts.Rename" xml:space="preserve">
+    <value>Đổi tên</value>
+  </data>
+  <data name="Transcripts.DeleteConfirm" xml:space="preserve">
+    <value>Xóa vĩnh viễn bản chép lời đã lưu này?</value>
+  </data>
+  <data name="Transcripts.StopBeforeDelete" xml:space="preserve">
+    <value>Dừng phụ đề trực tiếp trước khi xóa</value>
+  </data>
+  <data name="Transcripts.StreamAria" xml:space="preserve">
+    <value>Luồng phụ đề</value>
+  </data>
+  <data name="Transcripts.OriginalSpeech" xml:space="preserve">
+    <value>Giọng nói gốc</value>
+  </data>
+  <data name="Transcripts.Translation" xml:space="preserve">
+    <value>Bản dịch</value>
+  </data>
+  <data name="Transcripts.TranslationNote" xml:space="preserve">
+    <value>Được dịch trực tiếp từ cùng một âm thanh bằng một mô hình khác. Hữu ích để kiểm tra ý nghĩa khi giọng nói gốc bị nghe nhầm.</value>
+  </data>
+  <data name="Transcripts.OriginalNote" xml:space="preserve">
+    <value>Những gì bộ nhận dạng giọng nói đã nghe được. Chuyển sang bản dịch để đối chiếu những đoạn chưa rõ.</value>
+  </data>
+  <data name="Transcripts.SavedTranslationAria" xml:space="preserve">
+    <value>Phụ đề đã dịch đã lưu</value>
+  </data>
+  <data name="Transcripts.SavedOriginalAria" xml:space="preserve">
+    <value>Giọng nói gốc đã lưu</value>
+  </data>
+  <data name="Transcripts.TextPagesAria" xml:space="preserve">
+    <value>Các trang văn bản của bản chép lời</value>
+  </data>
+  <data name="Transcripts.JumpPage" xml:space="preserve">
+    <value>Chuyển đến trang</value>
+  </data>
+  <data name="Common.Off" xml:space="preserve">
+    <value>Tắt</value>
+  </data>
+  <data name="Reader.AssistantTitle" xml:space="preserve">
+    <value>Trợ lý trang</value>
+  </data>
+  <data name="Reader.AssistantEmpty" xml:space="preserve">
+    <value>Hỏi về từ vựng hoặc câu từ trang này.</value>
+  </data>
+  <data name="Reader.AssistantPlaceholder" xml:space="preserve">
+    <value>Tạo câu đố từ trang này...</value>
+  </data>
+  <data name="Reader.TranslatedPage" xml:space="preserve">
+    <value>Trang đã dịch</value>
+  </data>
+  <data name="Reader.BackBooks" xml:space="preserve">
+    <value>Quay lại sách</value>
+  </data>
+  <data name="Reader.PdfControls" xml:space="preserve">
+    <value>Điều khiển chế độ xem PDF</value>
+  </data>
+  <data name="Reader.ZoomOut" xml:space="preserve">
+    <value>Thu nhỏ</value>
+  </data>
+  <data name="Reader.ResetZoom100" xml:space="preserve">
+    <value>Đặt lại thu phóng về 100%</value>
+  </data>
+  <data name="Reader.ResetZoom" xml:space="preserve">
+    <value>Đặt lại thu phóng</value>
+  </data>
+  <data name="Reader.ZoomIn" xml:space="preserve">
+    <value>Phóng to</value>
+  </data>
+  <data name="Reader.FitPage" xml:space="preserve">
+    <value>Vừa trang</value>
+  </data>
+  <data name="Reader.Rotate" xml:space="preserve">
+    <value>Xoay theo chiều kim đồng hồ</value>
+  </data>
+  <data name="Reader.PolishVoice" xml:space="preserve">
+    <value>Giọng đọc trau chuốt</value>
+  </data>
+  <data name="Reader.ReadAloud" xml:space="preserve">
+    <value>Đọc to trang này</value>
+  </data>
+  <data name="Reader.Read" xml:space="preserve">
+    <value>Đọc</value>
+  </data>
+  <data name="Reader.TranslationControls" xml:space="preserve">
+    <value>Điều khiển dịch trang</value>
+  </data>
+  <data name="Reader.TranslateOffAria" xml:space="preserve">
+    <value>Dịch đang tắt. Dịch trang này</value>
+  </data>
+  <data name="Reader.TranslateOffTitle" xml:space="preserve">
+    <value>Dịch đang tắt. Nhấp để dịch trang này</value>
+  </data>
+  <data name="Reader.Translation" xml:space="preserve">
+    <value>Bản dịch</value>
+  </data>
+  <data name="Reader.TranslationLanguage" xml:space="preserve">
+    <value>Ngôn ngữ dịch</value>
+  </data>
+  <data name="Reader.SplitAria" xml:space="preserve">
+    <value>Hiển thị nguyên bản và bản dịch cạnh nhau</value>
+  </data>
+  <data name="Reader.SplitView" xml:space="preserve">
+    <value>Chế độ chia đôi</value>
+  </data>
+  <data name="Reader.Original" xml:space="preserve">
+    <value>Nguyên bản</value>
+  </data>
+  <data name="Reader.PreviousPage" xml:space="preserve">
+    <value>Trang trước</value>
+  </data>
+  <data name="Reader.NextPage" xml:space="preserve">
+    <value>Trang sau</value>
+  </data>
+  <data name="Client.GenericError" xml:space="preserve">
+    <value>Đã xảy ra lỗi. Vui lòng thử lại.</value>
+  </data>
+  <data name="Client.NetworkError" xml:space="preserve">
+    <value>Lỗi mạng. Vui lòng thử lại.</value>
+  </data>
+  <data name="Client.TryAgain" xml:space="preserve">
+    <value>Thử lại</value>
+  </data>
+  <data name="Client.Loading" xml:space="preserve">
+    <value>Đang tải…</value>
+  </data>
+  <data name="Client.Correct" xml:space="preserve">
+    <value>Đúng</value>
+  </data>
+  <data name="Client.Incorrect" xml:space="preserve">
+    <value>Sai</value>
+  </data>
+  <data name="Client.NextWord" xml:space="preserve">
+    <value>Từ tiếp theo</value>
+  </data>
+  <data name="Client.CheckFailed" xml:space="preserve">
+    <value>Không thể kiểm tra câu trả lời đó. Hãy thử lại.</value>
+  </data>
+  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
+    <value>Xóa câu đố tùy chỉnh này?</value>
+  </data>
+  <data name="Client.DeleteQuizFailed" xml:space="preserve">
+    <value>Không thể xóa câu đố tùy chỉnh. Hãy thử lại.</value>
+  </data>
+  <data name="Client.RepairFailed" xml:space="preserve">
+    <value>Sửa chữa không thành công. Vui lòng thử lại.</value>
+  </data>
+  <data name="Client.RepairStopped" xml:space="preserve">
+    <value>Yêu cầu sửa chữa đã dừng đột ngột. Vui lòng thử lại.</value>
+  </data>
+  <data name="Client.DeleteChat" xml:space="preserve">
+    <value>Xóa cuộc trò chuyện</value>
+  </data>
+  <data name="Client.DeleteChatConfirm" xml:space="preserve">
+    <value>Xóa cuộc trò chuyện này?</value>
+  </data>
+  <data name="Client.ApplyFailed" xml:space="preserve">
+    <value>Không thể áp dụng thay đổi.</value>
+  </data>
+  <data name="Client.ApplyNetwork" xml:space="preserve">
+    <value>Lỗi mạng khi áp dụng thay đổi.</value>
+  </data>
+  <data name="Client.RejectNetwork" xml:space="preserve">
+    <value>Lỗi mạng khi từ chối thay đổi.</value>
+  </data>
+  <data name="Client.AssistantFailed" xml:space="preserve">
+    <value>Trợ lý không thể phản hồi.</value>
+  </data>
+  <data name="Client.AssistantNetwork" xml:space="preserve">
+    <value>Lỗi mạng khi trò chuyện với trợ lý.</value>
+  </data>
+  <data name="Client.PictureFailed" xml:space="preserve">
+    <value>Không thể đọc văn bản từ hình ảnh đó.</value>
+  </data>
+  <data name="Client.PictureNetwork" xml:space="preserve">
+    <value>Lỗi mạng khi đọc hình ảnh.</value>
+  </data>
+  <data name="Client.MessageFailed" xml:space="preserve">
+    <value>Không thể gửi tin nhắn.</value>
+  </data>
+  <data name="Client.JoinCallFailed" xml:space="preserve">
+    <value>Không thể tham gia cuộc gọi.</value>
+  </data>
+  <data name="Client.CallTokenFailed" xml:space="preserve">
+    <value>Không thể lấy mã cuộc gọi.</value>
+  </data>
+  <data name="Client.PageOf" xml:space="preserve">
+    <value>Trang {0} trên {1}</value>
+  </data>
+  <data name="Client.TtsNoText" xml:space="preserve">
+    <value>Không có văn bản nào có thể chọn để đọc.</value>
+  </data>
+  <data name="Client.TtsUnavailable" xml:space="preserve">
+    <value>Tính năng chuyển văn bản thành giọng nói không khả dụng trong trình duyệt này.</value>
+  </data>
+  <data name="Client.TtsFailed" xml:space="preserve">
+    <value>Phát lại chuyển văn bản thành giọng nói không thành công.</value>
+  </data>
+  <data name="Client.TranslationFailed" xml:space="preserve">
+    <value>Không thể dịch trang.</value>
+  </data>
+  <data name="Client.PreferenceFailed" xml:space="preserve">
+    <value>Không thể lưu tùy chọn ngôn ngữ.</value>
+  </data>
+  <data name="Client.On" xml:space="preserve">
+    <value>Bật</value>
+  </data>
+  <data name="Client.Off" xml:space="preserve">
+    <value>Tắt</value>
+  </data>
+  <data name="Client.Translating" xml:space="preserve">
+    <value>Đang dịch…</value>
+  </data>
+  <data name="Client.TranslationError" xml:space="preserve">
+    <value>Lỗi</value>
+  </data>
+  <data name="Client.Read" xml:space="preserve">
+    <value>Đọc</value>
+  </data>
+  <data name="Client.Stop" xml:space="preserve">
+    <value>Dừng</value>
+  </data>
+  <data name="Client.MessageRateLimited" xml:space="preserve">
+    <value>Bạn đang gửi tin nhắn quá nhanh. Hãy đợi một lát.</value>
+  </data>
+  <data name="Client.SessionExpired" xml:space="preserve">
+    <value>Phiên đã hết hạn. Hãy khởi động lại bài kiểm tra để tiếp tục.</value>
+  </data>
+  <data name="Client.NotQuite" xml:space="preserve">
+    <value>Chưa đúng lắm</value>
+  </data>
+  <data name="Client.ShowResults" xml:space="preserve">
+    <value>Hiển thị kết quả</value>
+  </data>
+  <data name="Quiz.LibraryTitle" xml:space="preserve">
+    <value>Chọn bài kiểm tra</value>
+  </data>
+  <data name="Quiz.SelectQuiz" xml:space="preserve">
+    <value>Chọn một bài kiểm tra</value>
+  </data>
+  <data name="Quiz.ShowingLanguage" xml:space="preserve">
+    <value>Đang hiển thị các bài kiểm tra {0} của bạn.</value>
+  </data>
+  <data name="Quiz.LanguageCollection" xml:space="preserve">
+    <value>Bộ sưu tập {0}.</value>
+  </data>
+  <data name="Quiz.Library" xml:space="preserve">
+    <value>Thư viện bài kiểm tra</value>
+  </data>
+  <data name="Quiz.ChangeLanguage" xml:space="preserve">
+    <value>Đổi ngôn ngữ</value>
+  </data>
+  <data name="Quiz.MakePrivate" xml:space="preserve">
+    <value>Đặt bộ sưu tập ở chế độ riêng tư</value>
+  </data>
+  <data name="Quiz.MakePublic" xml:space="preserve">
+    <value>Đặt bộ sưu tập ở chế độ công khai</value>
+  </data>
+  <data name="Quiz.PublicSubtree" xml:space="preserve">
+    <value>Cây con công khai</value>
+  </data>
+  <data name="Quiz.Private" xml:space="preserve">
+    <value>Riêng tư</value>
+  </data>
+  <data name="Quiz.LibrarySummary" xml:space="preserve">
+    <value>Tóm tắt thư viện</value>
+  </data>
+  <data name="Quiz.CollectionOne" xml:space="preserve">
+    <value>bộ sưu tập</value>
+  </data>
+  <data name="Quiz.CollectionMany" xml:space="preserve">
+    <value>bộ sưu tập</value>
+  </data>
+  <data name="Quiz.QuizOne" xml:space="preserve">
+    <value>bài kiểm tra</value>
+  </data>
+  <data name="Quiz.QuizMany" xml:space="preserve">
+    <value>bài kiểm tra</value>
+  </data>
+  <data name="Quiz.NewCollection" xml:space="preserve">
+    <value>Bộ sưu tập mới</value>
+  </data>
+  <data name="Quiz.NewQuiz" xml:space="preserve">
+    <value>Bài kiểm tra mới</value>
+  </data>
+  <data name="Quiz.Collections" xml:space="preserve">
+    <value>Bộ sưu tập</value>
+  </data>
+  <data name="Quiz.CollectionsHelp" xml:space="preserve">
+    <value>Nhóm các bài kiểm tra liên quan và giữ lộ trình học của bạn gọn gàng.</value>
+  </data>
+  <data name="Quiz.DropInto" xml:space="preserve">
+    <value>Thả bài kiểm tra vào {0}</value>
+  </data>
+  <data name="Quiz.NestedCount" xml:space="preserve">
+    <value>{0} lồng nhau</value>
+  </data>
+  <data name="Quiz.YourQuizzes" xml:space="preserve">
+    <value>Các bài kiểm tra của bạn</value>
+  </data>
+  <data name="Quiz.DragHelp" xml:space="preserve">
+    <value>Mở một bài kiểm tra để học, hoặc kéo nó vào một bộ sưu tập để sắp xếp.</value>
+  </data>
+  <data name="Quiz.ChooseHelp" xml:space="preserve">
+    <value>Chọn một bài kiểm tra và giữ đà học của bạn.</value>
+  </data>
+  <data name="Quiz.DeleteConfirm" xml:space="preserve">
+    <value>Xóa bài kiểm tra này và tất cả các từ của nó?</value>
+  </data>
+  <data name="Quiz.DeleteNamed" xml:space="preserve">
+    <value>Xóa {0}</value>
+  </data>
+  <data name="Quiz.Delete" xml:space="preserve">
+    <value>Xóa bài kiểm tra</value>
+  </data>
+  <data name="Quiz.EmptyTitle" xml:space="preserve">
+    <value>Chưa có bài kiểm tra hoặc bộ sưu tập nào</value>
+  </data>
+  <data name="Quiz.EmptyText" xml:space="preserve">
+    <value>Tạo một bộ sưu tập để sắp xếp vốn từ của bạn, hoặc tạo bài kiểm tra đầu tiên của bạn.</value>
+  </data>
+  <data name="Quiz.CreateCollection" xml:space="preserve">
+    <value>Tạo bộ sưu tập</value>
+  </data>
+  <data name="Quiz.CreateQuiz" xml:space="preserve">
+    <value>Tạo bài kiểm tra</value>
+  </data>
+  <data name="Quiz.CreateNewCollection" xml:space="preserve">
+    <value>Tạo bộ sưu tập mới</value>
+  </data>
+  <data name="Quiz.CollectionName" xml:space="preserve">
+    <value>Tên bộ sưu tập</value>
+  </data>
+  <data name="Quiz.CollectionExample" xml:space="preserve">
+    <value>vd. Cụm từ du lịch</value>
+  </data>
+  <data name="Quiz.CreateNewQuiz" xml:space="preserve">
+    <value>Tạo bài kiểm tra mới</value>
+  </data>
+  <data name="Quiz.Name" xml:space="preserve">
+    <value>Tên bài kiểm tra</value>
+  </data>
+  <data name="Quiz.NameExample" xml:space="preserve">
+    <value>vd. Tiếng Pháp cơ bản</value>
+  </data>
+  <data name="Quiz.SourceLanguage" xml:space="preserve">
+    <value>Ngôn ngữ nguồn</value>
+  </data>
+  <data name="Quiz.SelectLanguage" xml:space="preserve">
+    <value>Chọn ngôn ngữ...</value>
+  </data>
+  <data name="Quiz.TargetLanguage" xml:space="preserve">
+    <value>Ngôn ngữ đích</value>
+  </data>
+  <data name="Books.UploadRequired" xml:space="preserve">
+    <value>Hãy chọn một tệp PDF để tải lên.</value>
+  </data>
+  <data name="Books.Uploaded" xml:space="preserve">
+    <value>Đã tải lên {0}.</value>
+  </data>
+  <data name="Books.UploadInvalid" xml:space="preserve">
+    <value>Hãy chọn một tệp PDF hợp lệ, có thể trích xuất văn bản, dưới 25 MB.</value>
+  </data>
+  <data name="Books.ProcessFailed" xml:space="preserve">
+    <value>Không thể xử lý PDF. Hãy thử một tệp PDF có thể trích xuất văn bản.</value>
+  </data>
+  <data name="Books.Deleted" xml:space="preserve">
+    <value>Đã xóa {0}.</value>
+  </data>
+  <data name="Books.PaidUnavailable" xml:space="preserve">
+    <value>Tính năng trả phí của {0} sẽ mở lại lúc {1}.</value>
+  </data>
+  <data name="Books.PaidReason" xml:space="preserve">
+    <value>Ngân sách ứng dụng hàng tháng đã đạt giới hạn.</value>
+  </data>
+  <data name="Transcripts.Renamed" xml:space="preserve">
+    <value>Đã đổi tên bản chép lời.</value>
+  </data>
+  <data name="Transcripts.InvalidTitle" xml:space="preserve">
+    <value>Tiêu đề bản chép lời phải có từ 1 đến 160 ký tự.</value>
+  </data>
+  <data name="Transcripts.Deleted" xml:space="preserve">
+    <value>Đã xóa bản chép lời.</value>
+  </data>
+  <data name="Common.Accept" xml:space="preserve">
+    <value>Chấp nhận</value>
+  </data>
+  <data name="Common.Optional" xml:space="preserve">
+    <value>Không bắt buộc</value>
+  </data>
+  <data name="Common.Open" xml:space="preserve">
+    <value>Mở</value>
+  </data>
+  <data name="Common.Copy" xml:space="preserve">
+    <value>Sao chép</value>
+  </data>
+  <data name="Classroom.Title" xml:space="preserve">
+    <value>Lớp học</value>
+  </data>
+  <data name="Classroom.MyClassrooms" xml:space="preserve">
+    <value>Lớp học của tôi</value>
+  </data>
+  <data name="Classroom.LanguageClassrooms" xml:space="preserve">
+    <value>Các lớp học {0} của bạn</value>
+  </data>
+  <data name="Classroom.LanguageTitle" xml:space="preserve">
+    <value>Lớp học {0}</value>
+  </data>
+  <data name="Classroom.SharedSpaces" xml:space="preserve">
+    <value>Không gian học tập chung</value>
+  </data>
+  <data name="Classroom.LearnBetter" xml:space="preserve">
+    <value>Học tốt hơn,</value>
+  </data>
+  <data name="Classroom.Together" xml:space="preserve">
+    <value>cùng nhau.</value>
+  </data>
+  <data name="Classroom.HeroText" xml:space="preserve">
+    <value>Tạo một không gian cho học viên của bạn, chia sẻ tài liệu luyện tập và giữ mọi người đi cùng một hướng.</value>
+  </data>
+  <data name="Classroom.Summary" xml:space="preserve">
+    <value>Tóm tắt lớp học</value>
+  </data>
+  <data name="Classroom.One" xml:space="preserve">
+    <value>lớp học</value>
+  </data>
+  <data name="Classroom.Many" xml:space="preserve">
+    <value>lớp học</value>
+  </data>
+  <data name="Classroom.MemberOne" xml:space="preserve">
+    <value>thành viên</value>
+  </data>
+  <data name="Classroom.MemberMany" xml:space="preserve">
+    <value>thành viên</value>
+  </data>
+  <data name="Classroom.Waiting" xml:space="preserve">
+    <value>đang chờ</value>
+  </data>
+  <data name="Classroom.LanguageLab" xml:space="preserve">
+    <value>Phòng ngôn ngữ</value>
+  </data>
+  <data name="Classroom.LearnersActive" xml:space="preserve">
+    <value>{0} học viên đang hoạt động</value>
+  </data>
+  <data name="Classroom.Live" xml:space="preserve">
+    <value>Trực tiếp</value>
+  </data>
+  <data name="Classroom.PracticeCompleted" xml:space="preserve">
+    <value>Đã hoàn thành luyện tập</value>
+  </data>
+  <data name="Classroom.WaitingForYou" xml:space="preserve">
+    <value>Đang chờ bạn</value>
+  </data>
+  <data name="Classroom.Invitations" xml:space="preserve">
+    <value>Lời mời</value>
+  </data>
+  <data name="Classroom.NewCount" xml:space="preserve">
+    <value>{0} mới</value>
+  </data>
+  <data name="Classroom.Invited" xml:space="preserve">
+    <value>Bạn được mời</value>
+  </data>
+  <data name="Classroom.InvitedBy" xml:space="preserve">
+    <value>{0} đã mời bạn tham gia với vai trò {1}</value>
+  </data>
+  <data name="Classroom.DeclineInvitation" xml:space="preserve">
+    <value>Từ chối lời mời đến {0}</value>
+  </data>
+  <data name="Classroom.GetStarted" xml:space="preserve">
+    <value>Bắt đầu</value>
+  </data>
+  <data name="Classroom.MakeOrJoin" xml:space="preserve">
+    <value>Tạo một không gian hoặc tham gia một không gian</value>
+  </data>
+  <data name="Classroom.ForTeachers" xml:space="preserve">
+    <value>Dành cho giáo viên</value>
+  </data>
+  <data name="Classroom.Create" xml:space="preserve">
+    <value>Tạo lớp học</value>
+  </data>
+  <data name="Classroom.CreateHelp" xml:space="preserve">
+    <value>Thiết lập một nơi cho bài học, bài kiểm tra, sách và trao đổi.</value>
+  </data>
+  <data name="Classroom.LanguageHelp" xml:space="preserve">
+    <value> Đây sẽ là lớp học {0}.</value>
+  </data>
+  <data name="Classroom.Name" xml:space="preserve">
+    <value>Tên lớp học</value>
+  </data>
+  <data name="Classroom.NameExample" xml:space="preserve">
+    <value>ví dụ: Swedish A2 · Spring</value>
+  </data>
+  <data name="Classroom.ShortDescription" xml:space="preserve">
+    <value>Mô tả ngắn</value>
+  </data>
+  <data name="Classroom.DescriptionPlaceholder" xml:space="preserve">
+    <value>Nhóm của bạn sẽ học gì?</value>
+  </data>
+  <data name="Classroom.HaveCode" xml:space="preserve">
+    <value>Có mã mời không?</value>
+  </data>
+  <data name="Classroom.Join" xml:space="preserve">
+    <value>Tham gia lớp học</value>
+  </data>
+  <data name="Classroom.JoinHelp" xml:space="preserve">
+    <value>Nhập mã gồm tám ký tự do giáo viên của bạn chia sẻ.</value>
+  </data>
+  <data name="Classroom.JoinCode" xml:space="preserve">
+    <value>Mã tham gia</value>
+  </data>
+  <data name="Classroom.JoinThis" xml:space="preserve">
+    <value>Tham gia lớp học này</value>
+  </data>
+  <data name="Classroom.YourSpaces" xml:space="preserve">
+    <value>Các không gian học tập của bạn</value>
+  </data>
+  <data name="Classroom.TotalCount" xml:space="preserve">
+    <value>Tổng cộng {0}</value>
+  </data>
+  <data name="Classroom.OpenNamed" xml:space="preserve">
+    <value>Mở {0}</value>
+  </data>
+  <data name="Classroom.CardPlaceholder" xml:space="preserve">
+    <value>Một không gian chung để học tập và luyện tập.</value>
+  </data>
+  <data name="Classroom.BetterCompany" xml:space="preserve">
+    <value>Học tập sẽ tốt hơn khi có bạn đồng hành</value>
+  </data>
+  <data name="Classroom.NoLanguageYet" xml:space="preserve">
+    <value>Chưa có lớp học {0} nào</value>
+  </data>
+  <data name="Classroom.EmptyHelp" xml:space="preserve">
+    <value>Tạo lớp học đầu tiên của bạn, hoặc hỏi giáo viên để lấy mã tham gia và tìm nhóm của bạn.</value>
+  </data>
+  <data name="Classroom.CreateFirst" xml:space="preserve">
+    <value>Tạo không gian đầu tiên của bạn</value>
+  </data>
+  <data name="Classroom.JoinCall" xml:space="preserve">
+    <value>Tham gia cuộc gọi</value>
+  </data>
+  <data name="Classroom.VideoCall" xml:space="preserve">
+    <value>Cuộc gọi video</value>
+  </data>
+  <data name="Classroom.Sections" xml:space="preserve">
+    <value>Các mục của lớp học</value>
+  </data>
+  <data name="Classroom.Stream" xml:space="preserve">
+    <value>Bảng tin</value>
+  </data>
+  <data name="Classroom.Content" xml:space="preserve">
+    <value>Nội dung</value>
+  </data>
+  <data name="Classroom.Planning" xml:space="preserve">
+    <value>Kế hoạch</value>
+  </data>
+  <data name="Classroom.Members" xml:space="preserve">
+    <value>Thành viên</value>
+  </data>
+  <data name="Classroom.Results" xml:space="preserve">
+    <value>Kết quả</value>
+  </data>
+  <data name="Speaking.LanguagePractice" xml:space="preserve">
+    <value>Luyện nói {0}</value>
+  </data>
+  <data name="Speaking.HeroTitle" xml:space="preserve">
+    <value>Nói để nhập ngôn ngữ theo cách của bạn.</value>
+  </data>
+  <data name="Speaking.HeroText" xml:space="preserve">
+    <value>Chọn một gia sư mở hoặc một bối cảnh, nói chuyện tự nhiên và nhận hướng dẫn riêng sau mỗi lượt.</value>
+  </data>
+  <data name="Speaking.PracticeQuiz" xml:space="preserve">
+    <value>Bài kiểm tra luyện tập</value>
+  </data>
+  <data name="Speaking.ChooseQuiz" xml:space="preserve">
+    <value>Chọn một bài kiểm tra để luyện nói</value>
+  </data>
+  <data name="Speaking.FreeLesson" xml:space="preserve">
+    <value>Bài học miễn phí</value>
+  </data>
+  <data name="Speaking.PoweredBy" xml:space="preserve">
+    <value>Được hỗ trợ bởi Microsoft Foundry và Azure AI Speech</value>
+  </data>
+  <data name="Speaking.Settings" xml:space="preserve">
+    <value>Cài đặt luyện tập</value>
+  </data>
+  <data name="Speaking.ChooseAvatar" xml:space="preserve">
+    <value>Chọn một avatar</value>
+  </data>
+  <data name="Speaking.Level" xml:space="preserve">
+    <value>Trình độ</value>
+  </data>
+  <data name="Speaking.ChooseLevel" xml:space="preserve">
+    <value>Chọn trình độ CEFR</value>
+  </data>
+  <data name="Speaking.Beginner" xml:space="preserve">
+    <value>Mới bắt đầu</value>
+  </data>
+  <data name="Speaking.Elementary" xml:space="preserve">
+    <value>Cơ bản</value>
+  </data>
+  <data name="Speaking.Intermediate" xml:space="preserve">
+    <value>Trung cấp</value>
+  </data>
+  <data name="Speaking.UpperIntermediate" xml:space="preserve">
+    <value>Trung cao cấp</value>
+  </data>
+  <data name="Speaking.Advanced" xml:space="preserve">
+    <value>Nâng cao</value>
+  </data>
+  <data name="Speaking.EnglishTranslation" xml:space="preserve">
+    <value>Bản dịch tiếng Anh</value>
+  </data>
+  <data name="Speaking.MuteAvatar" xml:space="preserve">
+    <value>Tắt tiếng avatar</value>
+  </data>
+  <data name="Speaking.AvatarScene" xml:space="preserve">
+    <value>Cảnh avatar</value>
+  </data>
+  <data name="Speaking.HoldSpeak" xml:space="preserve">
+    <value>Giữ để nói và gửi</value>
+  </data>
+  <data name="Speaking.StartingScene" xml:space="preserve">
+    <value>Đang bắt đầu cảnh…</value>
+  </data>
+  <data name="Speaking.ReplayLatestAria" xml:space="preserve">
+    <value>Phát lại câu trả lời mới nhất của avatar</value>
+  </data>
+  <data name="Speaking.ReplayLatest" xml:space="preserve">
+    <value>Phát lại câu trả lời mới nhất</value>
+  </data>
+  <data name="Speaking.Conversation" xml:space="preserve">
+    <value>Hội thoại</value>
+  </data>
+  <data name="Speaking.CurrentSession" xml:space="preserve">
+    <value>Phiên hiện tại</value>
+  </data>
+  <data name="Speaking.ScoreHelp" xml:space="preserve">
+    <value>Điểm phát âm dựa trên âm thanh bạn đã ghi âm.</value>
+  </data>
+  <data name="Speaking.SpeakToType" xml:space="preserve">
+    <value>Nói để nhập</value>
+  </data>
+  <data name="Speaking.You" xml:space="preserve">
+    <value>Bạn</value>
+  </data>
+  <data name="Speaking.Accuracy" xml:space="preserve">
+    <value>Độ chính xác</value>
+  </data>
+  <data name="Speaking.Fluency" xml:space="preserve">
+    <value>Độ trôi chảy</value>
+  </data>
+  <data name="Speaking.Completeness" xml:space="preserve">
+    <value>Độ đầy đủ</value>
+  </data>
+  <data name="Speaking.ReplayReply" xml:space="preserve">
+    <value>Phát lại câu trả lời này</value>
+  </data>
+  <data name="Speaking.ShowEnglish" xml:space="preserve">
+    <value>Hiển thị bản dịch tiếng Anh</value>
+  </data>
+  <data name="Speaking.Grammar" xml:space="preserve">
+    <value>Ngữ pháp</value>
+  </data>
+  <data name="Speaking.Vocabulary" xml:space="preserve">
+    <value>Từ vựng</value>
+  </data>
+  <data name="Speaking.Naturalness" xml:space="preserve">
+    <value>Tự nhiên</value>
+  </data>
+  <data name="Speaking.PracticeThis" xml:space="preserve">
+    <value>Luyện tập câu này</value>
+  </data>
+  <data name="Speaking.HearPhrase" xml:space="preserve">
+    <value>Nghe cụm từ luyện tập này</value>
+  </data>
+  <data name="Speaking.HoldRepeatAria" xml:space="preserve">
+    <value>Giữ để lặp lại cụm từ luyện tập này</value>
+  </data>
+  <data name="Speaking.HoldRepeat" xml:space="preserve">
+    <value>Giữ để lặp lại</value>
+  </data>
+  <data name="Quiz.DeletedWord" xml:space="preserve">
+    <value>Đã xóa {0}.</value>
+  </data>
+  <data name="Quiz.DeletedNamed" xml:space="preserve">
+    <value>Đã xóa {0}.</value>
+  </data>
+  <data name="Quiz.NowPublic" xml:space="preserve">
+    <value>Bài kiểm tra hiện đã công khai.</value>
+  </data>
+  <data name="Quiz.NowPrivate" xml:space="preserve">
+    <value>Quiz hiện đã ở chế độ riêng tư.</value>
+  </data>
+  <data name="Quiz.VisibilityFailed" xml:space="preserve">
+    <value>Không thể cập nhật chế độ hiển thị của quiz.</value>
+  </data>
+  <data name="Quiz.CollectionNowPublic" xml:space="preserve">
+    <value>Bộ sưu tập hiện đã ở chế độ công khai.</value>
+  </data>
+  <data name="Quiz.CollectionNowPrivate" xml:space="preserve">
+    <value>Bộ sưu tập hiện đã ở chế độ riêng tư.</value>
+  </data>
+  <data name="Quiz.CollectionVisibilityFailed" xml:space="preserve">
+    <value>Không thể cập nhật chế độ hiển thị của bộ sưu tập.</value>
+  </data>
+  <data name="Quiz.CollectionCreated" xml:space="preserve">
+    <value>Đã tạo bộ sưu tập {0}.</value>
+  </data>
+  <data name="Quiz.CollectionCreateFailed" xml:space="preserve">
+    <value>Không thể tạo bộ sưu tập. Hãy kiểm tra tên và bộ sưu tập cha.</value>
+  </data>
+  <data name="Common.All" xml:space="preserve">
+    <value>Tất cả</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Cấu hình Quiz</value>
+  </data>
+  <data name="Settings.FlashcardQuiz" xml:space="preserve">
+    <value>Quiz thẻ ghi nhớ</value>
+  </data>
+  <data name="Settings.Source" xml:space="preserve">
+    <value>Nguồn</value>
+  </data>
+  <data name="Settings.Target" xml:space="preserve">
+    <value>Đích</value>
+  </data>
+  <data name="Settings.Configuration" xml:space="preserve">
+    <value>Cấu hình</value>
+  </data>
+  <data name="Settings.Intro" xml:space="preserve">
+    <value>Chọn một lượt luyện tập nhanh và ôn lại quiz này.</value>
+  </data>
+  <data name="Settings.SessionLength" xml:space="preserve">
+    <value>Độ dài buổi</value>
+  </data>
+  <data name="Settings.Words" xml:space="preserve">
+    <value>Từ</value>
+  </data>
+  <data name="Settings.AvailableLower" xml:space="preserve">
+    <value>có sẵn</value>
+  </data>
+  <data name="Settings.Quick" xml:space="preserve">
+    <value>Nhanh</value>
+  </data>
+  <data name="Settings.Standard" xml:space="preserve">
+    <value>Tiêu chuẩn</value>
+  </data>
+  <data name="Settings.WordRange" xml:space="preserve">
+    <value>Phạm vi từ</value>
+  </data>
+  <data name="Settings.RangeHelp" xml:space="preserve">
+    <value>Kéo một trong hai tay nắm để tập trung vào một phần danh sách của bạn, ví dụ chỉ những từ mới nhất.</value>
+  </data>
+  <data name="Settings.Newest20" xml:space="preserve">
+    <value>20% mới nhất</value>
+  </data>
+  <data name="Settings.Newest50" xml:space="preserve">
+    <value>50% mới nhất</value>
+  </data>
+  <data name="Settings.Oldest20" xml:space="preserve">
+    <value>20% cũ nhất</value>
+  </data>
+  <data name="Settings.AllWordsOrder" xml:space="preserve">
+    <value>Đang luyện tất cả các từ, từ cũ nhất đến mới nhất.</value>
+  </data>
+  <data name="Settings.ChooseIndividually" xml:space="preserve">
+    <value>Chọn từ riêng lẻ…</value>
+  </data>
+  <data name="Settings.ClearSelection" xml:space="preserve">
+    <value>Xóa lựa chọn</value>
+  </data>
+  <data name="Settings.ChooseWords" xml:space="preserve">
+    <value>Chọn từ để luyện</value>
+  </data>
+  <data name="Settings.SelectAll" xml:space="preserve">
+    <value>Chọn tất cả</value>
+  </data>
+  <data name="Settings.DeselectAll" xml:space="preserve">
+    <value>Bỏ chọn tất cả</value>
+  </data>
+  <data name="Settings.FilterWords" xml:space="preserve">
+    <value>Lọc từ…</value>
+  </data>
+  <data name="Settings.ApplySelection" xml:space="preserve">
+    <value>Áp dụng lựa chọn</value>
+  </data>
+  <data name="Settings.PracticeContent" xml:space="preserve">
+    <value>Nội dung luyện tập</value>
+  </data>
+  <data name="Settings.ContentHelp" xml:space="preserve">
+    <value>Chọn từ hoặc câu đầy đủ.</value>
+  </data>
+  <data name="Settings.Sentences" xml:space="preserve">
+    <value>Câu</value>
+  </data>
+  <data name="Settings.QuizMode" xml:space="preserve">
+    <value>Chế độ Quiz</value>
+  </data>
+  <data name="Settings.ModeHelp" xml:space="preserve">
+    <value>Chọn thẻ ghi nhớ để ôn lại hoặc gõ để luyện chính tả chủ động.</value>
+  </data>
+  <data name="Settings.Flashcards" xml:space="preserve">
+    <value>Thẻ ghi nhớ</value>
+  </data>
+  <data name="Settings.Typing" xml:space="preserve">
+    <value>Gõ</value>
+  </data>
+  <data name="Settings.Choices" xml:space="preserve">
+    <value>Lựa chọn</value>
+  </data>
+  <data name="Settings.PracticeDirection" xml:space="preserve">
+    <value>Chiều luyện</value>
+  </data>
+  <data name="Settings.DirectionHelp" xml:space="preserve">
+    <value>Chọn ngôn ngữ nào xuất hiện trước.</value>
+  </data>
+  <data name="Settings.NeedWord" xml:space="preserve">
+    <value>Hãy thêm ít nhất một từ trước khi bắt đầu phiên luyện tập.</value>
+  </data>
+  <data name="Settings.Quiz" xml:space="preserve">
+    <value>Quiz</value>
+  </data>
+  <data name="Settings.Content" xml:space="preserve">
+    <value>Nội dung</value>
+  </data>
+  <data name="Settings.Available" xml:space="preserve">
+    <value>Có sẵn</value>
+  </data>
+  <data name="Settings.Mode" xml:space="preserve">
+    <value>Chế độ</value>
+  </data>
+  <data name="Settings.Range" xml:space="preserve">
+    <value>Phạm vi</value>
+  </data>
+  <data name="Settings.Direction" xml:space="preserve">
+    <value>Chiều</value>
+  </data>
+  <data name="Settings.StartQuiz" xml:space="preserve">
+    <value>Bắt đầu Quiz</value>
+  </data>
+  <data name="Settings.WordsLower" xml:space="preserve">
+    <value>từ</value>
+  </data>
+  <data name="Settings.SentencesLower" xml:space="preserve">
+    <value>câu</value>
+  </data>
+  <data name="Settings.WordLower" xml:space="preserve">
+    <value>từ</value>
+  </data>
+  <data name="Settings.SentenceLower" xml:space="preserve">
+    <value>câu</value>
+  </data>
+  <data name="Settings.NeedItem" xml:space="preserve">
+    <value>Hãy thêm ít nhất một {0} trước khi bắt đầu phiên luyện tập.</value>
+  </data>
+  <data name="Settings.Newest" xml:space="preserve">
+    <value>{0}% mới nhất</value>
+  </data>
+  <data name="Settings.Oldest" xml:space="preserve">
+    <value>{0}% cũ nhất</value>
+  </data>
+  <data name="Settings.RangeDynamic" xml:space="preserve">
+    <value>Đang luyện {0} của danh sách (từ cũ nhất đến mới nhất).</value>
+  </data>
+  <data name="Settings.SelectedCount" xml:space="preserve">
+    <value>Đã chọn {0} trong {1}</value>
+  </data>
+  <data name="Settings.PickedWords" xml:space="preserve">
+    <value>Đã chọn riêng lẻ {0} trong {1} từ</value>
+  </data>
+  <data name="Settings.PickedCount" xml:space="preserve">
+    <value>Đã chọn {0}</value>
+  </data>
+  <data name="Explore.Title" xml:space="preserve">
+    <value>Khám phá</value>
+  </data>
+  <data name="Explore.Discover" xml:space="preserve">
+    <value>Khám phá điều mới</value>
+  </data>
+  <data name="Explore.Intro" xml:space="preserve">
+    <value>Duyệt qua vốn từ vựng được chia sẻ bởi những người học khác, rồi sao chép những gì truyền cảm hứng cho bạn vào thư viện của riêng mình.</value>
+  </data>
+  <data name="Explore.Summary" xml:space="preserve">
+    <value>Tóm tắt thư viện công khai</value>
+  </data>
+  <data name="Explore.CommunityLibrary" xml:space="preserve">
+    <value>Thư viện cộng đồng</value>
+  </data>
+  <data name="Explore.SharedCollections" xml:space="preserve">
+    <value>Bộ sưu tập được chia sẻ</value>
+  </data>
+  <data name="Explore.CollectionsHelp" xml:space="preserve">
+    <value>Khám phá các bộ học tập hoàn chỉnh do cộng đồng tuyển chọn.</value>
+  </data>
+  <data name="Explore.SharedCollection" xml:space="preserve">
+    <value>Bộ sưu tập được chia sẻ</value>
+  </data>
+  <data name="Explore.CopyNamed" xml:space="preserve">
+    <value>Sao chép {0} vào thư viện của bạn</value>
+  </data>
+  <data name="Explore.CommunityQuizzes" xml:space="preserve">
+    <value>Quiz cộng đồng</value>
+  </data>
+  <data name="Explore.QuizzesHelp" xml:space="preserve">
+    <value>Xem trước một quiz, rồi thêm bản sao cá nhân vào thư viện của bạn.</value>
+  </data>
+  <data name="Explore.CommunityQuiz" xml:space="preserve">
+    <value>Quiz cộng đồng</value>
+  </data>
+  <data name="Explore.NothingPublic" xml:space="preserve">
+    <value>Chưa có nội dung công khai cho {0}</value>
+  </data>
+  <data name="Explore.EmptyHelp" xml:space="preserve">
+    <value>Khi người học chia sẻ quiz hoặc bộ sưu tập bằng ngôn ngữ này, chúng sẽ xuất hiện ở đây.</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Chỉnh sửa</value>
+  </data>
+  <data name="Common.Play" xml:space="preserve">
+    <value>Phát</value>
+  </data>
+  <data name="Quiz.AssistantEmpty" xml:space="preserve">
+    <value>Bắt đầu cuộc trò chuyện về quiz này.</value>
+  </data>
+  <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
+    <value>Hỏi về quiz này...</value>
+  </data>
+  <data name="Quiz.CustomCount" xml:space="preserve">
+    <value>{0} tùy chỉnh</value>
+  </data>
+  <data name="Quiz.BuildCustom" xml:space="preserve">
+    <value>Tạo câu đố tuỳ chỉnh</value>
+  </data>
+  <data name="Quiz.Public" xml:space="preserve">
+    <value>Công khai</value>
+  </data>
+  <data name="Quiz.Word" xml:space="preserve">
+    <value>Từ</value>
+  </data>
+  <data name="Quiz.WordExample" xml:space="preserve">
+    <value>vd. Bibliothèque</value>
+  </data>
+  <data name="Quiz.TranslationExample" xml:space="preserve">
+    <value>vd. Library</value>
+  </data>
+  <data name="Quiz.AddWord" xml:space="preserve">
+    <value>Thêm từ</value>
+  </data>
+  <data name="Quiz.ItemsIn" xml:space="preserve">
+    <value>{0} {1} trong {2}</value>
+  </data>
+  <data name="Quiz.ContentAria" xml:space="preserve">
+    <value>Nội dung câu đố</value>
+  </data>
+  <data name="Quiz.OpenWiktionary" xml:space="preserve">
+    <value>Mở {0} trên Wiktionary</value>
+  </data>
+  <data name="Quiz.RepairWord" xml:space="preserve">
+    <value>Sửa từ</value>
+  </data>
+  <data name="Quiz.RepairNamed" xml:space="preserve">
+    <value>Sửa {0}</value>
+  </data>
+  <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
+    <value>Xoá từ này?</value>
+  </data>
+  <data name="Quiz.NoWords" xml:space="preserve">
+    <value>Chưa có từ nào. Hãy thêm từ đầu tiên bằng thanh ở trên.</value>
+  </data>
+  <data name="Quiz.LinkedWords" xml:space="preserve">
+    <value>{0} từ được liên kết {1}</value>
+  </data>
+  <data name="Quiz.Repair" xml:space="preserve">
+    <value>Sửa</value>
+  </data>
+  <data name="Quiz.NoSentences" xml:space="preserve">
+    <value>Chưa có câu nào. Hãy yêu cầu trợ lý thêm câu hoặc trích xuất chúng từ văn bản.</value>
+  </data>
+  <data name="Quiz.CustomQuizzes" xml:space="preserve">
+    <value>Câu đố tuỳ chỉnh</value>
+  </data>
+  <data name="Quiz.CustomHelp" xml:space="preserve">
+    <value>Tạo bài tập tự do từ các từ trong câu đố này.</value>
+  </data>
+  <data name="Quiz.NewCustom" xml:space="preserve">
+    <value>Câu đố tuỳ chỉnh mới</value>
+  </data>
+  <data name="Quiz.Playable" xml:space="preserve">
+    <value>Có thể chơi</value>
+  </data>
+  <data name="Quiz.Draft" xml:space="preserve">
+    <value>Bản nháp</value>
+  </data>
+  <data name="Quiz.NoCustom" xml:space="preserve">
+    <value>Chưa có câu đố tuỳ chỉnh nào. Hãy tạo một câu đố bằng cách kéo các khối lên canvas.</value>
+  </data>
+  <data name="Payments.PackageUnavailable" xml:space="preserve">
+    <value>Gói tín dụng đó hiện không còn khả dụng.</value>
+  </data>
+  <data name="Payments.CreditsReady" xml:space="preserve">
+    <value>Đã xác nhận thanh toán. Tín dụng của bạn đã sẵn sàng.</value>
+  </data>
+  <data name="Payments.AwaitingOrFailed" xml:space="preserve">
+    <value>Thanh toán vẫn đang chờ xác nhận hoặc không thể được xác minh.</value>
+  </data>
+  <data name="Payments.GetCredits" xml:space="preserve">
+    <value>Nhận tín dụng</value>
+  </data>
+  <data name="Payments.GlosifyCredits" xml:space="preserve">
+    <value>Tín dụng Glosify</value>
+  </data>
+  <data name="Payments.Hero" xml:space="preserve">
+    <value>Hãy tiếp tục vòng lặp học tập của bạn.</value>
+  </data>
+  <data name="Payments.Intro" xml:space="preserve">
+    <value>Tín dụng cung cấp năng lượng cho các tính năng học tập hỗ trợ AI và phụ đề trực tiếp của Glosify.</value>
+  </data>
+  <data name="Payments.NotAvailable" xml:space="preserve">
+    <value>Thanh toán hiện chưa khả dụng</value>
+  </data>
+  <data name="Payments.NotConnected" xml:space="preserve">
+    <value>Triển khai Glosify này chưa được kết nối với Stripe.</value>
+  </data>
+  <data name="Payments.CreditPack" xml:space="preserve">
+    <value>Gói tín dụng</value>
+  </data>
+  <data name="Payments.CreditCount" xml:space="preserve">
+    <value>{0} tín dụng</value>
+  </data>
+  <data name="Payments.ContinueCheckout" xml:space="preserve">
+    <value>Tiếp tục đến thanh toán an toàn</value>
+  </data>
+  <data name="Payments.StripeNotice" xml:space="preserve">
+    <value>Thanh toán được lưu trữ bởi Stripe. Glosify không bao giờ nhận hoặc lưu thông tin thẻ.</value>
+  </data>
+  <data name="Payments.Status" xml:space="preserve">
+    <value>Trạng thái thanh toán</value>
+  </data>
+  <data name="Payments.Confirmed" xml:space="preserve">
+    <value>Đã xác nhận thanh toán</value>
+  </data>
+  <data name="Payments.Processing" xml:space="preserve">
+    <value>Đang xử lý thanh toán</value>
+  </data>
+  <data name="Payments.Back" xml:space="preserve">
+    <value>Quay lại Glosify</value>
+  </data>
+  <data name="Payments.AiCredits" xml:space="preserve">
+    <value>Tín dụng AI</value>
+  </data>
+  <data name="Payments.AiCreditAdmin" xml:space="preserve">
+    <value>Quản trị tín dụng AI</value>
+  </data>
+  <data name="Error.StartupDelay" xml:space="preserve">
+    <value>Khởi động tạm thời bị chậm</value>
+  </data>
+  <data name="Error.RequestFailed" xml:space="preserve">
+    <value>Yêu cầu thất bại</value>
+  </data>
+  <data name="Error.RequestId" xml:space="preserve">
+    <value>ID yêu cầu:</value>
+  </data>
+  <data name="Error.WarmupTitle" xml:space="preserve">
+    <value>Dịch vụ này đang khởi động</value>
+  </data>
+  <data name="Error.WarmupMessage" xml:space="preserve">
+    <value>Hãy đợi một chút rồi thử lại.</value>
+  </data>
+  <data name="Error.GenericTitle" xml:space="preserve">
+    <value>Đã xảy ra lỗi</value>
+  </data>
+  <data name="Error.GenericMessage" xml:space="preserve">
+    <value>Không thể hoàn tất yêu cầu. Vui lòng thử lại.</value>
+  </data>
+  <data name="Common.Undo" xml:space="preserve">
+    <value>Hoàn tác</value>
+  </data>
+  <data name="Common.Preview" xml:space="preserve">
+    <value>Xem trước</value>
+  </data>
+  <data name="Custom.EditNamed" xml:space="preserve">
+    <value>Chỉnh sửa {0}</value>
+  </data>
+  <data name="Custom.AssistantTitle" xml:space="preserve">
+    <value>Trợ lý tạo câu đố</value>
+  </data>
+  <data name="Custom.AssistantEmpty" xml:space="preserve">
+    <value>Hãy yêu cầu tôi thêm, cấu hình hoặc sắp xếp các thành phần của câu đố.</value>
+  </data>
+  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
+    <value>Thêm câu hỏi vào câu đố tuỳ chỉnh này...</value>
+  </data>
+  <data name="Custom.Name" xml:space="preserve">
+    <value>Tên câu đố tuỳ chỉnh</value>
+  </data>
+  <data name="Custom.LoadingEditor" xml:space="preserve">
+    <value>Đang tải các điều khiển trình chỉnh sửa…</value>
+  </data>
+  <data name="Custom.DesignStarters" xml:space="preserve">
+    <value>Bắt đầu thiết kế</value>
+  </data>
+  <data name="Custom.VisualDirection" xml:space="preserve">
+    <value>Chọn hướng hiển thị</value>
+  </data>
+  <data name="Custom.TemplateHelp" xml:space="preserve">
+    <value>Chỉ áp dụng giao diện, hoặc thay canvas bằng một bố cục hoàn chỉnh được xây dựng từ các từ trong câu đố này.</value>
+  </data>
+  <data name="Custom.UseStyle" xml:space="preserve">
+    <value>Dùng kiểu</value>
+  </data>
+  <data name="Custom.UseLayout" xml:space="preserve">
+    <value>Dùng bố cục</value>
+  </data>
+  <data name="Custom.BuildingBlocks" xml:space="preserve">
+    <value>Các khối xây dựng câu đố</value>
+  </data>
+  <data name="Custom.Blocks" xml:space="preserve">
+    <value>Các khối</value>
+  </data>
+  <data name="Custom.BlocksHelp" xml:space="preserve">
+    <value>Kéo vào bất kỳ vùng trống nào, hoặc nhấp để thêm tự động.</value>
+  </data>
+  <data name="Custom.DragAdd" xml:space="preserve">
+    <value>Kéo hoặc nhấp để thêm {0}</value>
+  </data>
+  <data name="Custom.Add" xml:space="preserve">
+    <value>Thêm {0}</value>
+  </data>
+  <data name="Custom.Grid" xml:space="preserve">
+    <value>Lưới thông minh 12 cột</value>
+  </data>
+  <data name="Custom.GridHelp" xml:space="preserve">
+    <value>Kéo để đặt · cạnh sẽ tự căn · các ô đã chiếm sẽ được tránh</value>
+  </data>
+  <data name="Custom.Canvas" xml:space="preserve">
+    <value>Canvas câu đố tuỳ chỉnh</value>
+  </data>
+  <data name="Custom.Properties" xml:space="preserve">
+    <value>Thuộc tính</value>
+  </data>
+  <data name="Custom.PropertiesHelp" xml:space="preserve">
+    <value>Chọn một khối để chỉnh sửa nội dung và liên kết của nó.</value>
+  </data>
+  <data name="Custom.Answer" xml:space="preserve">
+    <value>Đáp án</value>
+  </data>
+  <data name="Custom.Choose" xml:space="preserve">
+    <value>Chọn...</value>
+  </data>
+  <data name="Custom.CheckAnswers" xml:space="preserve">
+    <value>Kiểm tra đáp án</value>
+  </data>
+  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
+    <value>Hoàn thành câu đố, rồi gửi đáp án của bạn.</value>
+  </data>
+  <data name="Custom.Block.Heading" xml:space="preserve">
+    <value>Tiêu đề</value>
+  </data>
+  <data name="Custom.Block.Instruction" xml:space="preserve">
+    <value>Hướng dẫn</value>
+  </data>
+  <data name="Custom.Block.WordLabel" xml:space="preserve">
+    <value>Nhãn từ</value>
+  </data>
+  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
+    <value>Nhãn bản dịch</value>
+  </data>
+  <data name="Custom.Block.TextInput" xml:space="preserve">
+    <value>Ô nhập văn bản</value>
+  </data>
+  <data name="Custom.Block.LongAnswer" xml:space="preserve">
+    <value>Câu trả lời dài</value>
+  </data>
+  <data name="Custom.Block.Checkbox" xml:space="preserve">
+    <value>Ô chọn</value>
+  </data>
+  <data name="Custom.Block.RadioChoices" xml:space="preserve">
+    <value>Các lựa chọn nút chọn</value>
+  </data>
+  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
+    <value>Các lựa chọn ô chọn</value>
+  </data>
+  <data name="Custom.Block.SelectMenu" xml:space="preserve">
+    <value>Menu chọn</value>
+  </data>
+  <data name="Custom.Block.WordBank" xml:space="preserve">
+    <value>Ngân hàng từ</value>
+  </data>
+  <data name="Custom.Block.SubmitButton" xml:space="preserve">
+    <value>Nút gửi</value>
+  </data>
+  <data name="Custom.Block.Feedback" xml:space="preserve">
+    <value>Phản hồi</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
+    <value>Luồng biên tập</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
+    <value>Thứ bậc gọn gàng, khoảng cách thoáng, và mỗi hàng chỉ có một nhiệm vụ rõ ràng.</value>
+  </data>
+  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
+    <value>Bản dịch, gợi ý ngữ pháp, ôn tập ghi nhớ có trọng tâm</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
+    <value>Thẻ Aurora</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
+    <value>Màu sắc nhẹ nhàng, thẻ luyện tập theo cặp, và không khí lớp học đầy năng lượng.</value>
+  </data>
+  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
+    <value>Bộ từ vựng ngắn và quét nhìn trực quan</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
+    <value>Bài tập sách giáo khoa</value>
+  </data>
+  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
+    <value>Các hàng đánh số gọn, mô phỏng bài tập trong vở bài tập được chụp lại.</value>
+  </data>
+  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
+    <value>Chia động từ, biến đổi, điền khuyết và bài tập trang trọng</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
+    <value>Phòng thí nghiệm ngân hàng từ</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
+    <value>Một ngân hàng từ nổi bật dẫn dắt bài tập và khiến việc nhớ lại trở nên thú vị.</value>
+  </data>
+  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
+    <value>Ôn tập có hướng dẫn và từ vựng cho người mới bắt đầu</value>
+  </data>
+  <data name="Custom.AnswerQuestion" xml:space="preserve">
+    <value>Trả lời câu hỏi này.</value>
+  </data>
+  <data name="Custom.Correct" xml:space="preserve">
+    <value>Đúng.</value>
+  </data>
+  <data name="Custom.CorrectAnswer" xml:space="preserve">
+    <value>Đáp án đúng: {0}</value>
+  </data>
+  <data name="Custom.CompleteAnswers" xml:space="preserve">
+    <value>Hãy hoàn thành tất cả câu trả lời trước khi gửi.</value>
+  </data>
+  <data name="Custom.Score" xml:space="preserve">
+    <value>Điểm: {0}/{1} ({2}%).</value>
+  </data>
+  <data name="Custom.GradeFailed" xml:space="preserve">
+    <value>Không thể chấm bài kiểm tra này. Hãy thử lại.</value>
+  </data>
+  <data name="Classroom.PostAnnouncement" xml:space="preserve">
+    <value>Đăng thông báo</value>
+  </data>
+  <data name="Classroom.ShareClass" xml:space="preserve">
+    <value>Chia sẻ điều gì đó với cả lớp</value>
+  </data>
+  <data name="Classroom.Post" xml:space="preserve">
+    <value>Đăng</value>
+  </data>
+  <data name="Classroom.Announcements" xml:space="preserve">
+    <value>Thông báo</value>
+  </data>
+  <data name="Classroom.PostOne" xml:space="preserve">
+    <value>bài đăng</value>
+  </data>
+  <data name="Classroom.PostMany" xml:space="preserve">
+    <value>bài đăng</value>
+  </data>
+  <data name="Classroom.Pinned" xml:space="preserve">
+    <value>Đã ghim</value>
+  </data>
+  <data name="Classroom.Unpin" xml:space="preserve">
+    <value>Bỏ ghim</value>
+  </data>
+  <data name="Classroom.Pin" xml:space="preserve">
+    <value>Ghim</value>
+  </data>
+  <data name="Classroom.DeleteAnnouncement" xml:space="preserve">
+    <value>Xóa thông báo này?</value>
+  </data>
+  <data name="Classroom.NothingYet" xml:space="preserve">
+    <value>Chưa có gì ở đây.</value>
+  </data>
+  <data name="Classroom.PostFirst" xml:space="preserve">
+    <value>Hãy đăng thông báo đầu tiên ở trên.</value>
+  </data>
+  <data name="Classroom.NoTeacherPosts" xml:space="preserve">
+    <value>Giáo viên của bạn chưa đăng gì cả.</value>
+  </data>
+  <data name="Classroom.OpenChat" xml:space="preserve">
+    <value>Mở chat lớp</value>
+  </data>
+  <data name="Classroom.ClassChat" xml:space="preserve">
+    <value>Chat lớp</value>
+  </data>
+  <data name="Classroom.ClassChatUpper" xml:space="preserve">
+    <value>CHAT LỚP</value>
+  </data>
+  <data name="Classroom.Connecting" xml:space="preserve">
+    <value>Đang kết nối…</value>
+  </data>
+  <data name="Classroom.CloseChat" xml:space="preserve">
+    <value>Đóng chat lớp</value>
+  </data>
+  <data name="Classroom.LoadingMessages" xml:space="preserve">
+    <value>Đang tải tin nhắn…</value>
+  </data>
+  <data name="Classroom.MessageClass" xml:space="preserve">
+    <value>Nhắn tin cho cả lớp</value>
+  </data>
+  <data name="Classroom.ChatMessage" xml:space="preserve">
+    <value>Tin nhắn chat</value>
+  </data>
+  <data name="Classroom.CallTitle" xml:space="preserve">
+    <value>{0} — cuộc gọi</value>
+  </data>
+  <data name="Classroom.NotConnected" xml:space="preserve">
+    <value>Chưa kết nối</value>
+  </data>
+  <data name="Classroom.Back" xml:space="preserve">
+    <value>Quay lại lớp học</value>
+  </data>
+  <data name="Classroom.CallNotConfigured" xml:space="preserve">
+    <value>Tính năng gọi video chưa được cấu hình trên máy chủ này. Cần có quản trị viên thiết lập</value>
+  </data>
+  <data name="Classroom.ReadyJoin" xml:space="preserve">
+    <value>Sẵn sàng tham gia chưa?</value>
+  </data>
+  <data name="Classroom.JoinAs" xml:space="preserve">
+    <value>Bạn sẽ tham gia với tư cách</value>
+  </data>
+  <data name="Classroom.MuteMic" xml:space="preserve">
+    <value>Tắt micrô</value>
+  </data>
+  <data name="Classroom.Mute" xml:space="preserve">
+    <value>Tắt tiếng</value>
+  </data>
+  <data name="Classroom.CameraOff" xml:space="preserve">
+    <value>Tắt camera</value>
+  </data>
+  <data name="Classroom.Camera" xml:space="preserve">
+    <value>Camera</value>
+  </data>
+  <data name="Classroom.LeaveCall" xml:space="preserve">
+    <value>Rời cuộc gọi</value>
+  </data>
+  <data name="Classroom.Leave" xml:space="preserve">
+    <value>Rời</value>
+  </data>
+  <data name="Classroom.ReadyStart" xml:space="preserve">
+    <value>Sẵn sàng bắt đầu chưa?</value>
+  </data>
+  <data name="Classroom.NoOneCall" xml:space="preserve">
+    <value>Chưa có ai trong cuộc gọi.</value>
+  </data>
+  <data name="Classroom.WaitingTeacher" xml:space="preserve">
+    <value>Đang chờ giáo viên</value>
+  </data>
+  <data name="Classroom.JoinAfterTeacher" xml:space="preserve">
+    <value>Bạn có thể tham gia sau khi giáo viên bắt đầu cuộc gọi.</value>
+  </data>
+  <data name="Classroom.UnmuteMic" xml:space="preserve">
+    <value>Bật micrô</value>
+  </data>
+  <data name="Classroom.CameraOn" xml:space="preserve">
+    <value>Bật camera</value>
+  </data>
+  <data name="Classroom.Connected" xml:space="preserve">
+    <value>Đã kết nối</value>
+  </data>
+  <data name="Classroom.NoMessages" xml:space="preserve">
+    <value>Chưa có tin nhắn nào. Chào mọi người đi!</value>
+  </data>
+  <data name="Classroom.Reconnecting" xml:space="preserve">
+    <value>Đang kết nối lại…</value>
+  </data>
+  <data name="Classroom.ActionInvalid" xml:space="preserve">
+    <value>Không thể hoàn thành thao tác trong lớp học. Hãy kiểm tra thông tin bạn nhập và quyền truy cập.</value>
+  </data>
+  <data name="Classroom.Created" xml:space="preserve">
+    <value>Đã tạo {0}.</value>
+  </data>
+  <data name="Classroom.CreateInvalid" xml:space="preserve">
+    <value>Nhập tên và mô tả lớp học hợp lệ.</value>
+  </data>
+  <data name="Classroom.NoCodeMatch" xml:space="preserve">
+    <value>Không có lớp học nào khớp với mã tham gia đó.</value>
+  </data>
+  <data name="Classroom.InvitationUnavailable" xml:space="preserve">
+    <value>Lời mời đó không còn khả dụng nữa.</value>
+  </data>
+  <data name="Classroom.Welcome" xml:space="preserve">
+    <value>Chào mừng bạn đến với {0}.</value>
+  </data>
+  <data name="Classroom.WelcomeSwitched" xml:space="preserve">
+    <value>Chào mừng bạn đến với {0}. Đã chuyển bạn sang {1}.</value>
+  </data>
+  <data name="Classroom.InvitationDeclined" xml:space="preserve">
+    <value>Đã từ chối lời mời.</value>
+  </data>
+  <data name="Classroom.NotFound" xml:space="preserve">
+    <value>Không tìm thấy lớp học.</value>
+  </data>
+  <data name="Classroom.Left" xml:space="preserve">
+    <value>Bạn đã rời khỏi lớp học.</value>
+  </data>
+  <data name="Classroom.ActionDenied" xml:space="preserve">
+    <value>Bạn không thể thực hiện thao tác đó trong lớp học này.</value>
+  </data>
+  <data name="Classroom.Deleted" xml:space="preserve">
+    <value>Đã xóa lớp học.</value>
+  </data>
+  <data name="Explore.PublicQuiz" xml:space="preserve">
+    <value>Bài kiểm tra công khai</value>
+  </data>
+  <data name="Explore.CustomExercises" xml:space="preserve">
+    <value>Các bài tập được tạo từ từ vựng của bài kiểm tra này.</value>
+  </data>
+  <data name="Explore.NoPublicWords" xml:space="preserve">
+    <value>Chưa có từ nào được thêm vào bài kiểm tra công khai này.</value>
+  </data>
+  <data name="Explore.NoPublicSentences" xml:space="preserve">
+    <value>Chưa có câu nào được thêm vào bài kiểm tra công khai này.</value>
+  </data>
+  <data name="Explore.PublicCollection" xml:space="preserve">
+    <value>Bộ sưu tập công khai</value>
+  </data>
+  <data name="Explore.CollectionIntro" xml:space="preserve">
+    <value>Khám phá {0} {1} trong {2} bộ sưu tập, rồi sao chép toàn bộ bộ vào thư viện của bạn.</value>
+  </data>
+  <data name="Explore.CollectionSummary" xml:space="preserve">
+    <value>Tóm tắt bộ sưu tập</value>
+  </data>
+  <data name="Explore.CopyCollection" xml:space="preserve">
+    <value>Sao chép bộ sưu tập</value>
+  </data>
+  <data name="Explore.InCollection" xml:space="preserve">
+    <value>Trong bộ sưu tập này</value>
+  </data>
+  <data name="Explore.FiledInside" xml:space="preserve">
+    <value>Các bài kiểm tra được xếp trực tiếp trong {0}.</value>
+  </data>
+  <data name="Explore.NoDirectQuizzes" xml:space="preserve">
+    <value>Không có bài kiểm tra nào nằm trực tiếp trong bộ sưu tập này.</value>
+  </data>
+  <data name="Common.Remove" xml:space="preserve">
+    <value>Xóa</value>
+  </data>
+  <data name="Classroom.ShareQuiz" xml:space="preserve">
+    <value>Chia sẻ một bài kiểm tra</value>
+  </data>
+  <data name="Classroom.QuizLibrary" xml:space="preserve">
+    <value>Bài kiểm tra từ thư viện của bạn</value>
+  </data>
+  <data name="Classroom.Share" xml:space="preserve">
+    <value>Chia sẻ</value>
+  </data>
+  <data name="Classroom.AllQuizzesShared" xml:space="preserve">
+    <value>Tất cả bài kiểm tra của bạn đã được chia sẻ ở đây, hoặc thư viện của bạn đang trống.</value>
+  </data>
+  <data name="Classroom.ShareBook" xml:space="preserve">
+    <value>Chia sẻ một cuốn sách</value>
+  </data>
+  <data name="Classroom.BookLibrary" xml:space="preserve">
+    <value>Sách từ thư viện của bạn</value>
+  </data>
+  <data name="Classroom.AllBooksShared" xml:space="preserve">
+    <value>Tất cả sách của bạn đã được chia sẻ ở đây, hoặc bạn chưa có nội dung tải lên nào.</value>
+  </data>
+  <data name="Classroom.First" xml:space="preserve">
+    <value>đầu tiên.</value>
+  </data>
+  <data name="Classroom.SharedContent" xml:space="preserve">
+    <value>Nội dung đã chia sẻ</value>
+  </data>
+  <data name="Classroom.ItemOne" xml:space="preserve">
+    <value>mục</value>
+  </data>
+  <data name="Classroom.ItemMany" xml:space="preserve">
+    <value>mục</value>
+  </data>
+  <data name="Classroom.Removed" xml:space="preserve">
+    <value>Đã xóa</value>
+  </data>
+  <data name="Classroom.SharedBy" xml:space="preserve">
+    <value>Được chia sẻ bởi {0}</value>
+  </data>
+  <data name="Classroom.CopyLibrary" xml:space="preserve">
+    <value>Sao chép vào thư viện của tôi</value>
+  </data>
+  <data name="Classroom.OpenPdf" xml:space="preserve">
+    <value>Mở PDF</value>
+  </data>
+  <data name="Classroom.RemoveConfirm" xml:space="preserve">
+    <value>Xóa mục này khỏi lớp học?</value>
+  </data>
+  <data name="Classroom.NoSharedContent" xml:space="preserve">
+    <value>Chưa có nội dung được chia sẻ.</value>
+  </data>
+  <data name="Classroom.QuizResults" xml:space="preserve">
+    <value>Kết quả bài kiểm tra</value>
+  </data>
+  <data name="Classroom.AttemptOne" xml:space="preserve">
+    <value>lần thử</value>
+  </data>
+  <data name="Classroom.AttemptMany" xml:space="preserve">
+    <value>lần thử</value>
+  </data>
+  <data name="Classroom.FromPractice" xml:space="preserve">
+    <value>từ luyện tập trong lớp học</value>
+  </data>
+  <data name="Classroom.Score" xml:space="preserve">
+    <value>Điểm</value>
+  </data>
+  <data name="Classroom.Completed" xml:space="preserve">
+    <value>Đã hoàn thành</value>
+  </data>
+  <data name="Classroom.NoAttempts" xml:space="preserve">
+    <value>Chưa có lần thử nào. Kết quả sẽ xuất hiện khi thành viên luyện tập bài kiểm tra từ thẻ Nội dung.</value>
+  </data>
+  <data name="Classroom.MemberResultsTitle" xml:space="preserve">
+    <value>{0} — kết quả</value>
+  </data>
+  <data name="Classroom.Skipped" xml:space="preserve">
+    <value>Đã bỏ qua</value>
+  </data>
+  <data name="Classroom.NoMemberAttempts" xml:space="preserve">
+    <value>Chưa ghi nhận lần thử nào cho thành viên này.</value>
+  </data>
+  <data name="Classroom.InviteEmail" xml:space="preserve">
+    <value>Mời bằng email</value>
+  </data>
+  <data name="Classroom.Role" xml:space="preserve">
+    <value>Vai trò</value>
+  </data>
+  <data name="Classroom.Student" xml:space="preserve">
+    <value>Học viên</value>
+  </data>
+  <data name="Classroom.Teacher" xml:space="preserve">
+    <value>Giáo viên</value>
+  </data>
+  <data name="Classroom.Invite" xml:space="preserve">
+    <value>Mời</value>
+  </data>
+  <data name="Classroom.InviteHelp" xml:space="preserve">
+    <value>Lời mời sẽ xuất hiện trên trang Lớp học của người đó khi họ đăng nhập bằng email này — không có email nào được gửi đi.</value>
+  </data>
+  <data name="Classroom.CodeAnyone" xml:space="preserve">
+    <value>Bất kỳ ai có mã</value>
+  </data>
+  <data name="Classroom.CodeCanJoin" xml:space="preserve">
+    <value>đều có thể tham gia với vai trò học viên.</value>
+  </data>
+  <data name="Classroom.JoiningCurrently" xml:space="preserve">
+    <value>Hiện tại việc tham gia đang</value>
+  </data>
+  <data name="Classroom.Enabled" xml:space="preserve">
+    <value>được bật</value>
+  </data>
+  <data name="Classroom.Paused" xml:space="preserve">
+    <value>tạm dừng</value>
+  </data>
+  <data name="Classroom.NewCode" xml:space="preserve">
+    <value>Mã mới</value>
+  </data>
+  <data name="Classroom.PauseJoining" xml:space="preserve">
+    <value>Tạm dừng tham gia</value>
+  </data>
+  <data name="Classroom.ResumeJoining" xml:space="preserve">
+    <value>Tiếp tục tham gia</value>
+  </data>
+  <data name="Classroom.Joined" xml:space="preserve">
+    <value>đã tham gia</value>
+  </data>
+  <data name="Classroom.MakeRole" xml:space="preserve">
+    <value>Đặt làm {0}</value>
+  </data>
+  <data name="Classroom.RemoveMemberConfirm" xml:space="preserve">
+    <value>Xóa {0} khỏi lớp học?</value>
+  </data>
+  <data name="Classroom.DeleteForEveryone" xml:space="preserve">
+    <value>Xóa lớp học này cho tất cả mọi người? Các bài kiểm tra và sách được chia sẻ sẽ vẫn ở trong thư viện của chủ sở hữu.</value>
+  </data>
+  <data name="Classroom.DeleteClassroom" xml:space="preserve">
+    <value>Xóa lớp học</value>
+  </data>
+  <data name="Classroom.LeaveConfirm" xml:space="preserve">
+    <value>Rời khỏi lớp học này?</value>
+  </data>
+  <data name="Classroom.LeaveClassroom" xml:space="preserve">
+    <value>Rời khỏi lớp học</value>
+  </data>
+  <data name="Classroom.AddLesson" xml:space="preserve">
+    <value>Thêm bài học</value>
+  </data>
+  <data name="Classroom.TitleLabel" xml:space="preserve">
+    <value>Tiêu đề</value>
+  </data>
+  <data name="Classroom.DescriptionOptional" xml:space="preserve">
+    <value>Mô tả (không bắt buộc)</value>
+  </data>
+  <data name="Classroom.ScheduledOptional" xml:space="preserve">
+    <value>Lên lịch vào (không bắt buộc)</value>
+  </data>
+  <data name="Classroom.AddAssignment" xml:space="preserve">
+    <value>Thêm bài tập</value>
+  </data>
+  <data name="Classroom.InstructionsOptional" xml:space="preserve">
+    <value>Hướng dẫn (không bắt buộc)</value>
+  </data>
+  <data name="Classroom.QuizOptional" xml:space="preserve">
+    <value>Bài kiểm tra (không bắt buộc, từ nội dung đã chia sẻ)</value>
+  </data>
+  <data name="Classroom.NoQuiz" xml:space="preserve">
+    <value>Không có bài kiểm tra</value>
+  </data>
+  <data name="Classroom.LessonOptional" xml:space="preserve">
+    <value>Bài học (không bắt buộc)</value>
+  </data>
+  <data name="Classroom.NoLesson" xml:space="preserve">
+    <value>Không có bài học</value>
+  </data>
+  <data name="Classroom.DueOptional" xml:space="preserve">
+    <value>Hạn nộp (không bắt buộc)</value>
+  </data>
+  <data name="Classroom.CoursePlan" xml:space="preserve">
+    <value>Kế hoạch khóa học</value>
+  </data>
+  <data name="Classroom.LessonOne" xml:space="preserve">
+    <value>bài học</value>
+  </data>
+  <data name="Classroom.LessonMany" xml:space="preserve">
+    <value>bài học</value>
+  </data>
+  <data name="Classroom.AssignmentOne" xml:space="preserve">
+    <value>bài tập</value>
+  </data>
+  <data name="Classroom.AssignmentMany" xml:space="preserve">
+    <value>bài tập</value>
+  </data>
+  <data name="Classroom.DeleteLessonConfirm" xml:space="preserve">
+    <value>Xóa bài học này? Các bài tập của nó sẽ vẫn còn, không được gắn vào đâu.</value>
+  </data>
+  <data name="Classroom.DeleteLesson" xml:space="preserve">
+    <value>Xóa bài học</value>
+  </data>
+  <data name="Classroom.NoAssignmentsLesson" xml:space="preserve">
+    <value>Không có bài tập nào cho bài học này.</value>
+  </data>
+  <data name="Classroom.OtherAssignments" xml:space="preserve">
+    <value>Các bài tập khác</value>
+  </data>
+  <data name="Classroom.NoPlanYet" xml:space="preserve">
+    <value>Chưa có bài học hoặc bài tập nào.</value>
+  </data>
+  <data name="Classroom.PlanAbove" xml:space="preserve">
+    <value>Lên kế hoạch cho khóa học ở trên.</value>
+  </data>
+  <data name="Classroom.NoTeacherPlan" xml:space="preserve">
+    <value>Giáo viên của bạn chưa lập kế hoạch nào cả.</value>
+  </data>
+  <data name="Classroom.Due" xml:space="preserve">
+    <value>Hạn nộp</value>
+  </data>
+  <data name="Classroom.StudentsCompleted" xml:space="preserve">
+    <value>{0} trong số {1} học sinh đã hoàn thành</value>
+  </data>
+  <data name="Classroom.DoneBest" xml:space="preserve">
+    <value>Đã xong — điểm cao nhất {0}%</value>
+  </data>
+  <data name="Classroom.NotDone" xml:space="preserve">
+    <value>Chưa làm</value>
+  </data>
+  <data name="Classroom.DeleteAssignmentConfirm" xml:space="preserve">
+    <value>Xóa bài tập này?</value>
+  </data>
+  <data name="Speaking.BarMenu" xml:space="preserve">
+    <value>Menu thanh</value>
+  </data>
+  <data name="Speaking.YourWallet" xml:space="preserve">
+    <value>Ví của bạn</value>
+  </data>
+  <data name="Speaking.NoBill" xml:space="preserve">
+    <value>Chưa có hóa đơn</value>
+  </data>
+  <data name="Speaking.CloseWallet" xml:space="preserve">
+    <value>Đóng ví</value>
+  </data>
+  <data name="Speaking.Selected" xml:space="preserve">
+    <value>Đã chọn</value>
+  </data>
+  <data name="Speaking.SceneActions" xml:space="preserve">
+    <value>Hành động trong cảnh</value>
+  </data>
+  <data name="Speaking.NextMonth" xml:space="preserve">
+    <value>đầu tháng sau</value>
+  </data>
+  <data name="Speaking.PaidPaused" xml:space="preserve">
+    <value>Các tính năng nói có trả phí đang tạm dừng đến {0}.</value>
+  </data>
+  <data name="Speaking.SessionReady" xml:space="preserve">
+    <value>Phiên luyện tập của bạn đã sẵn sàng.</value>
+  </data>
+  <data name="Speaking.Unavailable" xml:space="preserve">
+    <value>Luyện nói hiện không khả dụng</value>
+  </data>
+  <data name="Speaking.NewSessionConfirm" xml:space="preserve">
+    <value>Bắt đầu phiên mới? Cuộc trò chuyện hiện tại sẽ bị xóa.</value>
+  </data>
+  <data name="Speaking.UpdatingQuiz" xml:space="preserve">
+    <value>Đang cập nhật bài kiểm tra luyện tập của gia sư…</value>
+  </data>
+  <data name="Speaking.PractisingNamed" xml:space="preserve">
+    <value>Đang luyện {0}.</value>
+  </data>
+  <data name="Speaking.FreeModeActive" xml:space="preserve">
+    <value>Chế độ bài học miễn phí đang bật.</value>
+  </data>
+  <data name="Speaking.Voice" xml:space="preserve">
+    <value>Giọng nói</value>
+  </data>
+  <data name="Speaking.Typed" xml:space="preserve">
+    <value>Đã nhập</value>
+  </data>
+  <data name="Speaking.StartBeforeSend" xml:space="preserve">
+    <value>Hãy bắt đầu phiên luyện nói trước khi gửi tin nhắn.</value>
+  </data>
+  <data name="Speaking.AvatarThinking" xml:space="preserve">
+    <value>{0} đang suy nghĩ…</value>
+  </data>
+  <data name="Speaking.Avatar" xml:space="preserve">
+    <value>Hình đại diện</value>
+  </data>
+  <data name="Speaking.SessionEnded" xml:space="preserve">
+    <value>Phiên đã kết thúc · bắt đầu phiên mới</value>
+  </data>
+  <data name="Speaking.TakingSip" xml:space="preserve">
+    <value>Đang nhấp một ngụm…</value>
+  </data>
+  <data name="Speaking.TakingSnack" xml:space="preserve">
+    <value>Đang ăn nhẹ…</value>
+  </data>
+  <data name="Speaking.AvatarReacting" xml:space="preserve">
+    <value>{0} đang phản ứng…</value>
+  </data>
+  <data name="Speaking.MomentPassed" xml:space="preserve">
+    <value>Khoảnh khắc đó đã qua. Hãy tiếp tục trò chuyện hoặc thử hành động khác.</value>
+  </data>
+  <data name="Speaking.RecordUnavailable" xml:space="preserve">
+    <value>Trình duyệt này không thể ghi âm ở đây. Vẫn có thể chat bằng văn bản.</value>
+  </data>
+  <data name="Speaking.Starting" xml:space="preserve">
+    <value>Đang bắt đầu…</value>
+  </data>
+  <data name="Speaking.MicConnectingAuto" xml:space="preserve">
+    <value>Đang kết nối với mic. Hãy bắt đầu nói khi sẵn sàng.</value>
+  </data>
+  <data name="Speaking.MicConnectingHold" xml:space="preserve">
+    <value>Đang kết nối với mic. Hãy tiếp tục giữ nút.</value>
+  </data>
+  <data name="Speaking.Listening" xml:space="preserve">
+    <value>Đang nghe…</value>
+  </data>
+  <data name="Speaking.SpeakNaturally" xml:space="preserve">
+    <value>Hãy nói tự nhiên. Bản ghi sẽ dừng khi bạn kết thúc.</value>
+  </data>
+  <data name="Speaking.ReleaseSend" xml:space="preserve">
+    <value>Thả để gửi</value>
+  </data>
+  <data name="Speaking.KeepHolding" xml:space="preserve">
+    <value>Tiếp tục giữ khi bạn nói. Thả nút để gửi.</value>
+  </data>
+  <data name="Speaking.Transcribing" xml:space="preserve">
+    <value>Đang chuyển lời nói thành văn bản…</value>
+  </data>
+  <data name="Speaking.FinishingTranscript" xml:space="preserve">
+    <value>Đang hoàn tất bản chép lời của bạn…</value>
+  </data>
+  <data name="Speaking.NotCaughtComposer" xml:space="preserve">
+    <value>Azure Speech chưa nhận được nội dung đó. Nhấn Nói để nhập văn bản và thử lại.</value>
+  </data>
+  <data name="Speaking.NotCaughtAvatar" xml:space="preserve">
+    <value>Azure Speech chưa nhận được nội dung đó. Giữ nút đỏ và thử lại.</value>
+  </data>
+  <data name="Speaking.RecordingTooLong" xml:space="preserve">
+    <value>Bản ghi đó quá dài. Hãy rút ngắn bản chép lời và nhấn Gửi.</value>
+  </data>
+  <data name="Speaking.TranscriptSending" xml:space="preserve">
+    <value>Bản chép lời đã sẵn sàng. Đang gửi…</value>
+  </data>
+  <data name="Speaking.TranscriptReady" xml:space="preserve">
+    <value>Bản chép lời đã sẵn sàng. Hãy xem lại hoặc chỉnh sửa rồi nhấn Gửi.</value>
+  </data>
+  <data name="Speaking.MicFailed" xml:space="preserve">
+    <value>Không thể truy cập mic. Vẫn có thể chat bằng văn bản.</value>
+  </data>
+  <data name="Speaking.SpeechFinishFailed" xml:space="preserve">
+    <value>Azure Speech không thể hoàn tất bản ghi.</value>
+  </data>
+  <data name="Speaking.Scene.PoursDrink" xml:space="preserve">
+    <value>Marek rót và đẩy đồ uống của bạn sang.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSnack" xml:space="preserve">
+    <value>Bạn lấy một ít paluszki.</value>
+  </data>
+  <data name="Speaking.Scene.OffersSnack" xml:space="preserve">
+    <value>Marek mời bạn paluszki.</value>
+  </data>
+  <data name="Speaking.Scene.ClearsGlass" xml:space="preserve">
+    <value>Marek dọn chiếc ly rỗng đi.</value>
+  </data>
+  <data name="Speaking.Scene.PolishesGlass" xml:space="preserve">
+    <value>Marek lau bóng một chiếc ly.</value>
+  </data>
+  <data name="Speaking.Scene.WipesCounter" xml:space="preserve">
+    <value>Marek lau quầy.</value>
+  </data>
+  <data name="Speaking.Scene.LastCall" xml:space="preserve">
+    <value>Phục vụ lần cuối.</value>
+  </data>
+  <data name="Speaking.Scene.ItemUnavailable" xml:space="preserve">
+    <value>Mặt hàng đó hiện không có.</value>
+  </data>
+  <data name="Speaking.Scene.FinishDrink" xml:space="preserve">
+    <value>Bạn uống hết ly.</value>
+  </data>
+  <data name="Speaking.Scene.TakeSip" xml:space="preserve">
+    <value>Bạn nhấp một ngụm.</value>
+  </data>
+  <data name="Speaking.Scene.PresentsBill" xml:space="preserve">
+    <value>Marek đưa hóa đơn {0} zł.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentRejected" xml:space="preserve">
+    <value>{0} zł là không đủ. Không có gì bị trừ.</value>
+  </data>
+  <data name="Speaking.Scene.PaymentAccepted" xml:space="preserve">
+    <value>Marek nhận {0} zł.</value>
+  </data>
+  <data name="Speaking.Scene.ReturnsChange" xml:space="preserve">
+    <value>Marek trả lại {0} zł tiền thừa.</value>
+  </data>
+  <data name="Reader.ReadingSentence" xml:space="preserve">
+    <value>Đang đọc trang {0} · câu {1} trong {2}</value>
+  </data>
+  <data name="Reader.ReadingSelectionPart" xml:space="preserve">
+    <value>Đang đọc phần được chọn · phần {0} trong {1}</value>
+  </data>
+  <data name="Reader.ReadingSelection" xml:space="preserve">
+    <value>Đang đọc đoạn văn bản đã chọn…</value>
+  </data>
+  <data name="Reader.ReadingPage" xml:space="preserve">
+    <value>Đang đọc trang {0}…</value>
+  </data>
+  <data name="Reader.FinishedSelection" xml:space="preserve">
+    <value>Đã đọc xong phần được chọn.</value>
+  </data>
+  <data name="Reader.FinishedPage" xml:space="preserve">
+    <value>Đã đọc xong trang {0}.</value>
+  </data>
+  <data name="Reader.ReadingStopped" xml:space="preserve">
+    <value>Đã dừng đọc.</value>
+  </data>
+  <data name="Reader.Detected" xml:space="preserve">
+    <value>Đã phát hiện {0}</value>
+  </data>
+  <data name="Reader.DetectedCached" xml:space="preserve">
+    <value>Đã phát hiện {0} · đã lưu trong bộ nhớ đệm</value>
+  </data>
+  <data name="Reader.CachedTranslation" xml:space="preserve">
+    <value>Bản dịch trong bộ nhớ đệm</value>
+  </data>
+  <data name="Reader.NoSelectableTextPage" xml:space="preserve">
+    <value>Không tìm thấy văn bản có thể chọn trên trang này.</value>
+  </data>
+  <data name="Reader.RenderFailed" xml:space="preserve">
+    <value>Không thể hiển thị trang này.</value>
+  </data>
+  <data name="Reader.PdfLoadFailed" xml:space="preserve">
+    <value>Không thể tải PDF.</value>
+  </data>
+  <data name="Editor.Heading" xml:space="preserve">
+    <value>Tiêu đề</value>
+  </data>
+  <data name="Editor.Instruction" xml:space="preserve">
+    <value>Hướng dẫn</value>
+  </data>
+  <data name="Editor.WordLabel" xml:space="preserve">
+    <value>Nhãn từ</value>
+  </data>
+  <data name="Editor.TranslationLabel" xml:space="preserve">
+    <value>Nhãn bản dịch</value>
+  </data>
+  <data name="Editor.TextInput" xml:space="preserve">
+    <value>Ô nhập văn bản</value>
+  </data>
+  <data name="Editor.LongAnswer" xml:space="preserve">
+    <value>Câu trả lời dài</value>
+  </data>
+  <data name="Editor.Checkbox" xml:space="preserve">
+    <value>Ô chọn</value>
+  </data>
+  <data name="Editor.RadioChoices" xml:space="preserve">
+    <value>Các lựa chọn nút chọn</value>
+  </data>
+  <data name="Editor.CheckboxChoices" xml:space="preserve">
+    <value>Các lựa chọn ô chọn</value>
+  </data>
+  <data name="Editor.SelectMenu" xml:space="preserve">
+    <value>Menu chọn</value>
+  </data>
+  <data name="Editor.WordBank" xml:space="preserve">
+    <value>Ngân hàng từ</value>
+  </data>
+  <data name="Editor.SubmitButton" xml:space="preserve">
+    <value>Nút gửi</value>
+  </data>
+  <data name="Editor.Feedback" xml:space="preserve">
+    <value>Phản hồi</value>
+  </data>
+  <data name="Editor.EmptyCanvas" xml:space="preserve">
+    <value>Kéo một khối bất kỳ vào vùng này để bắt đầu.</value>
+  </data>
+  <data name="Editor.MoveLeft" xml:space="preserve">
+    <value>Di chuyển sang trái</value>
+  </data>
+  <data name="Editor.MoveUp" xml:space="preserve">
+    <value>Di chuyển lên</value>
+  </data>
+  <data name="Editor.MoveDown" xml:space="preserve">
+    <value>Di chuyển xuống</value>
+  </data>
+  <data name="Editor.MoveRight" xml:space="preserve">
+    <value>Di chuyển sang phải</value>
+  </data>
+  <data name="Editor.RemoveBlock" xml:space="preserve">
+    <value>Xóa khối</value>
+  </data>
+  <data name="Editor.Resize" xml:space="preserve">
+    <value>Kéo để thay đổi chiều rộng</value>
+  </data>
+  <data name="Editor.Word" xml:space="preserve">
+    <value>Từ</value>
+  </data>
+  <data name="Editor.DisplayField" xml:space="preserve">
+    <value>Trường hiển thị</value>
+  </data>
+  <data name="Editor.Words" xml:space="preserve">
+    <value>Các từ</value>
+  </data>
+  <data name="Editor.Options" xml:space="preserve">
+    <value>Tùy chọn</value>
+  </data>
+  <data name="Editor.CorrectOption" xml:space="preserve">
+    <value>Tùy chọn đúng</value>
+  </data>
+  <data name="Editor.RemoveOption" xml:space="preserve">
+    <value>Xóa tùy chọn</value>
+  </data>
+  <data name="Editor.AddOption" xml:space="preserve">
+    <value>Thêm tùy chọn</value>
+  </data>
+  <data name="Editor.Properties" xml:space="preserve">
+    <value>Thuộc tính</value>
+  </data>
+  <data name="Editor.SelectBlock" xml:space="preserve">
+    <value>Chọn một khối để chỉnh sửa nội dung và ràng buộc của nó.</value>
+  </data>
+  <data name="Editor.TargetInputs" xml:space="preserve">
+    <value>Các ô nhập mục tiêu</value>
+  </data>
+  <data name="Editor.PreviewOnly" xml:space="preserve">
+    <value>Chỉ xem trước — hãy lưu và phát để ghi lại một lần làm có chấm điểm.</value>
+  </data>
+  <data name="Editor.BackToEditor" xml:space="preserve">
+    <value>Quay lại trình chỉnh sửa</value>
+  </data>
+  <data name="Editor.Preview" xml:space="preserve">
+    <value>Xem trước</value>
+  </data>
+  <data name="Editor.PreviewingOne" xml:space="preserve">
+    <value>Đang xem trước khối {0}.</value>
+  </data>
+  <data name="Editor.PreviewingMany" xml:space="preserve">
+    <value>Đang xem trước {0} khối.</value>
+  </data>
+  <data name="Editor.ReadyOne" xml:space="preserve">
+    <value>Trình chỉnh sửa sẵn sàng · có {0} khối trên vùng làm việc. Dùng + để thêm hoặc kéo một khối vào.</value>
+  </data>
+  <data name="Editor.ReadyMany" xml:space="preserve">
+    <value>Trình chỉnh sửa sẵn sàng · có {0} khối trên vùng làm việc. Dùng + để thêm hoặc kéo một khối vào.</value>
+  </data>
+  <data name="Editor.ReplaceConfirm" xml:space="preserve">
+    <value>Thay thế toàn bộ vùng làm việc hiện tại bằng bố cục {0} này? Bạn có thể Hoàn tác thay đổi này.</value>
+  </data>
+  <data name="Editor.SaveFailed" xml:space="preserve">
+    <value>Không thể lưu bài kiểm tra tùy chỉnh này.</value>
+  </data>
+  <data name="Editor.SavedPlayable" xml:space="preserve">
+    <value>Đã lưu. Bài kiểm tra này sẵn sàng để làm.</value>
+  </data>
+  <data name="Editor.DraftSaved" xml:space="preserve">
+    <value>Đã lưu bản nháp. Hãy hoàn thành các trường bắt buộc của bài kiểm tra trước khi làm.</value>
+  </data>
+  <data name="Editor.SaveStopped" xml:space="preserve">
+    <value>Yêu cầu lưu đã dừng đột ngột. Hãy thử lại.</value>
+  </data>
+  <data name="Editor.WordLemma" xml:space="preserve">
+    <value>Từ / dạng gốc</value>
+  </data>
+  <data name="Editor.Translation" xml:space="preserve">
+    <value>Bản dịch</value>
+  </data>
+  <data name="Editor.Width" xml:space="preserve">
+    <value>Chiều rộng</value>
+  </data>
+  <data name="Editor.Column" xml:space="preserve">
+    <value>Cột</value>
+  </data>
+  <data name="Editor.ColumnNumber" xml:space="preserve">
+    <value>Cột {0}</value>
+  </data>
+  <data name="Editor.Row" xml:space="preserve">
+    <value>Hàng</value>
+  </data>
+  <data name="Editor.Text" xml:space="preserve">
+    <value>Văn bản</value>
+  </data>
+  <data name="Editor.LiveBinding" xml:space="preserve">
+    <value>Ràng buộc từ trực tiếp</value>
+  </data>
+  <data name="Editor.ExerciseRow" xml:space="preserve">
+    <value>Hàng bài tập (dùng {{blank}})</value>
+  </data>
+  <data name="Editor.AccessibleLabel" xml:space="preserve">
+    <value>Nhãn hỗ trợ truy cập</value>
+  </data>
+  <data name="Editor.CustomExpected" xml:space="preserve">
+    <value>Đáp án mong đợi tùy chỉnh</value>
+  </data>
+  <data name="Editor.ExpectedBinding" xml:space="preserve">
+    <value>Ràng buộc từ mong đợi</value>
+  </data>
+  <data name="Editor.DisplayedWord" xml:space="preserve">
+    <value>Từ hiển thị</value>
+  </data>
+  <data name="Editor.ExpectedChecked" xml:space="preserve">
+    <value>Dự kiến được chọn</value>
+  </data>
+  <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
+    <value>Bài kiểm tra đó không còn công khai nữa.</value>
+  </data>
+  <data name="Explore.CollectionNoLongerPublic" xml:space="preserve">
+    <value>Bộ sưu tập đó không còn công khai nữa.</value>
+  </data>
+  <data name="Explore.CopiedToLibrary" xml:space="preserve">
+    <value>Đã sao chép {0} vào thư viện của bạn.</value>
+  </data>
+  <data name="Classroom.InvitationCreated" xml:space="preserve">
+    <value>Đã tạo lời mời. Lời mời sẽ xuất hiện trên trang Classroom của họ vào lần tới khi họ truy cập.</value>
+  </data>
+  <data name="Classroom.JoinCodeRegenerated" xml:space="preserve">
+    <value>Đã tạo lại mã tham gia.</value>
+  </data>
+  <data name="Classroom.NoAccessResults" xml:space="preserve">
+    <value>Bạn không có quyền truy cập các kết quả đó.</value>
+  </data>
+  <data name="Classroom.QuizShared" xml:space="preserve">
+    <value>Đã chia sẻ bài kiểm tra.</value>
+  </data>
+  <data name="Classroom.BookShared" xml:space="preserve">
+    <value>Đã chia sẻ sách.</value>
+  </data>
+  <data name="Classroom.RemovedFromClassroom" xml:space="preserve">
+    <value>Đã bị xoá khỏi Classroom.</value>
+  </data>
+  <data name="Classroom.QuizCopyFailed" xml:space="preserve">
+    <value>Không thể sao chép bài kiểm tra đó.</value>
+  </data>
+  <data name="Classroom.Member" xml:space="preserve">
+    <value>Thành viên</value>
+  </data>
+  <data name="Common.Unknown" xml:space="preserve">
+    <value>Không rõ</value>
+  </data>
+  <data name="Account.LogOut" xml:space="preserve">
+    <value>Đăng xuất</value>
+  </data>
+  <data name="Account.LogIn" xml:space="preserve">
+    <value>Đăng nhập</value>
+  </data>
+  <data name="Common.Send" xml:space="preserve">
+    <value>Gửi</value>
+  </data>
+  <data name="Speaking.ConversationLab" xml:space="preserve">
+    <value>Phòng hội thoại {0}</value>
+  </data>
+  <data name="Speaking.MessageLabel" xml:space="preserve">
+    <value>Tin nhắn {0} của bạn</value>
+  </data>
+  <data name="Speaking.MessagePlaceholder" xml:space="preserve">
+    <value>Viết bằng {0} hoặc dùng mic…</value>
+  </data>
+  <data name="Speaking.MicAria" xml:space="preserve">
+    <value>Bắt đầu chuyển giọng nói thành văn bản bằng {0}; quá trình ghi âm sẽ dừng sau khi bạn nói xong</value>
+  </data>
+  <data name="Speaking.PrivacyNote" xml:space="preserve">
+    <value>Âm thanh được truyền trực tiếp đến Azure Speech. Cuộc hội thoại này chỉ được giữ cho phiên hiện tại.</value>
+  </data>
+  <data name="Speaking.ClickTranslate" xml:space="preserve">
+    <value>Nhấp để dịch</value>
+  </data>
+  <data name="Speaking.ClickShowLanguage" xml:space="preserve">
+    <value>Nhấp để hiển thị {0}</value>
+  </data>
+  <data name="Speaking.CoachFeedback" xml:space="preserve">
+    <value>Phản hồi của huấn luyện viên</value>
+  </data>
+  <data name="Speaking.MoreNatural" xml:space="preserve">
+    <value>{0} tự nhiên hơn</value>
+  </data>
+</root>

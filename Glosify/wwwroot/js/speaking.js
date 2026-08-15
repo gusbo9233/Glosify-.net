@@ -18,6 +18,7 @@ import {
     if (!root) {
         return;
     }
+    const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
 
     initializeBartenderThreeScenes(root);
     initializeKasiaThreeScenes(root);
@@ -595,7 +596,7 @@ import {
                     glass.dataset.drinkId = command.drinkId || "";
                     glass.dataset.fillLevel = String(command.fillLevel ?? 3);
                 }
-                showSceneEvent("Marek pours and slides over your drink.");
+                showSceneEvent(t('Speaking.Scene.PoursDrink', "Marek pours and slides over your drink."));
                 if (threeController) {
                     if (!await threeController.playCommand(command)
                         || generation !== state.sceneGeneration) {
@@ -643,8 +644,9 @@ import {
                 if (glass) {
                     glass.dataset.fillLevel = String(command.fillLevel ?? 0);
                 }
-                showSceneEvent(
-                    command.fillLevel === 0 ? "You finish the drink." : "You take a sip.");
+                showSceneEvent(command.fillLevel === 0
+                    ? t('Speaking.Scene.FinishDrink', "You finish the drink.")
+                    : t('Speaking.Scene.TakeSip', "You take a sip."));
                 if (threeController) {
                     await threeController.playCommand(command);
                     break;
@@ -653,7 +655,7 @@ import {
                 break;
             case "takeSnack":
                 scene?.classList.add("is-snacking");
-                showSceneEvent("You take some paluszki.");
+                showSceneEvent(t('Speaking.Scene.TakeSnack', "You take some paluszki."));
                 if (threeController) {
                     await threeController.playCommand(command);
                     scene?.classList.remove("is-snacking");
@@ -671,7 +673,7 @@ import {
                 break;
             case "showBill":
                 openWallet();
-                showSceneEvent(`Marek presents the ${command.amount} zł bill.`);
+                showSceneEvent(t('Speaking.Scene.PresentsBill', 'Marek presents the {0} zł bill.', command.amount));
                 if (threeController) {
                     await threeController.playCommand(command);
                     break;
@@ -679,7 +681,7 @@ import {
                 await waitForScene(350, generation);
                 break;
             case "offerSnack":
-                showSceneEvent("Marek offers you paluszki.");
+                showSceneEvent(t('Speaking.Scene.OffersSnack', "Marek offers you paluszki."));
                 if (threeController) {
                     await threeController.playCommand(command);
                     break;
@@ -688,7 +690,7 @@ import {
                 break;
             case "clearGlass":
                 scene?.classList.add("is-clearing");
-                showSceneEvent("Marek clears the empty glass.");
+                showSceneEvent(t('Speaking.Scene.ClearsGlass', "Marek clears the empty glass."));
                 if (threeController) {
                     await threeController.playCommand(command);
                     scene?.classList.remove("is-clearing", "has-active-drink");
@@ -705,7 +707,7 @@ import {
                 break;
             case "polishGlass":
                 scene?.classList.add("is-polishing");
-                showSceneEvent("Marek polishes a glass.");
+                showSceneEvent(t('Speaking.Scene.PolishesGlass', "Marek polishes a glass."));
                 if (threeController) {
                     await threeController.playCommand(command);
                     scene?.classList.remove("is-polishing");
@@ -722,7 +724,7 @@ import {
                 break;
             case "wipeCounter":
                 scene?.classList.add("is-wiping");
-                showSceneEvent("Marek wipes the counter.");
+                showSceneEvent(t('Speaking.Scene.WipesCounter', "Marek wipes the counter."));
                 if (threeController) {
                     await threeController.playCommand(command);
                     scene?.classList.remove("is-wiping");
@@ -739,7 +741,7 @@ import {
                 break;
             case "lastCall":
                 scene?.classList.add("is-last-call");
-                showSceneEvent("Last call.");
+                showSceneEvent(t('Speaking.Scene.LastCall', "Last call."));
                 if (threeController) {
                     await threeController.playCommand(command);
                     scene?.classList.remove("is-last-call");
@@ -751,7 +753,7 @@ import {
                 scene?.classList.remove("is-last-call");
                 break;
             case "markUnavailable":
-                showSceneEvent("That item is unavailable.");
+                showSceneEvent(t('Speaking.Scene.ItemUnavailable', "That item is unavailable."));
                 if (threeController) {
                     await threeController.playCommand(command);
                     break;
@@ -760,7 +762,7 @@ import {
                 break;
             case "paymentRejected":
                 openWallet();
-                showSceneEvent(`${command.amount} zł is not enough. Nothing was removed.`);
+                showSceneEvent(t('Speaking.Scene.PaymentRejected', '{0} zł is not enough. Nothing was removed.', command.amount));
                 if (threeController) {
                     await threeController.playCommand(command);
                     break;
@@ -768,7 +770,7 @@ import {
                 await waitForScene(450, generation);
                 break;
             case "paymentAccepted":
-                showSceneEvent(`Marek accepts ${command.amount} zł.`);
+                showSceneEvent(t('Speaking.Scene.PaymentAccepted', 'Marek accepts {0} zł.', command.amount));
                 if (threeController) {
                     await threeController.playCommand(command);
                     break;
@@ -776,7 +778,7 @@ import {
                 await waitForScene(450, generation);
                 break;
             case "returnChange":
-                showSceneEvent(`Marek returns ${command.amount} zł change.`);
+                showSceneEvent(t('Speaking.Scene.ReturnsChange', 'Marek returns {0} zł change.', command.amount));
                 if (threeController) {
                     await threeController.playCommand(command);
                     break;
@@ -879,19 +881,15 @@ import {
             return response;
         }
 
-        let message = `Request failed (${response.status}).`;
+        let code = null;
         try {
             const body = await response.json();
-            message = body.detail || body.title || body.error || message;
-        } catch {
-            const text = await response.text();
-            if (text) {
-                message = text;
-            }
-        }
+            code = body.code || null;
+        } catch { }
 
-        const error = new Error(message);
+        const error = new Error(t('Client.GenericError', 'Something went wrong. Please try again.'));
         error.status = response.status;
+        error.code = code;
         throw error;
     }
 
@@ -907,9 +905,9 @@ import {
             stopSpeaking();
             const reset = paid.resetsAtUtc ? new Date(paid.resetsAtUtc) : null;
             const resetText = reset && !Number.isNaN(reset.valueOf())
-                ? reset.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
-                : "the start of next month";
-            setStatus(`Paid speaking features are paused until ${resetText}.`, true);
+                ? reset.toLocaleString(document.documentElement.lang || "en-GB", { dateStyle: "medium", timeStyle: "short" })
+                : t('Speaking.NextMonth', "the start of next month");
+            setStatus(t('Speaking.PaidPaused', 'Paid speaking features are paused until {0}.', resetText), true);
         } catch {
             // Individual paid requests still fail closed at the controller and provider.
         }
@@ -920,7 +918,7 @@ import {
         state.sessionId = null;
         setBusy(true);
         setStatus("");
-        setConnection("Starting the scene…", false);
+        setConnection(t('Speaking.StartingScene', "Starting the scene…"), false);
         elements.messages.replaceChildren();
         elements.liveBubble.hidden = true;
         elements.replayLatest.disabled = true;
@@ -958,14 +956,14 @@ import {
             setActivePracticePrompt(null);
             setConnection(`${created.avatarName} is ready · ${state.cefrLevel}`, true);
             if (announce) {
-                setStatus("Your practice session is ready.");
+                setStatus(t('Speaking.SessionReady', "Your practice session is ready."));
             }
             if (speakOpening && !elements.muteToggle.checked) {
                 void speakReply(opening.replyPolish);
             }
         } catch (error) {
             state.ready = false;
-            setConnection("Speaking practice is unavailable", false);
+            setConnection(t('Speaking.Unavailable', "Speaking practice is unavailable"), false);
             setStatus(error.message, true);
         } finally {
             setBusy(false);
@@ -997,7 +995,7 @@ import {
         }
 
         if (state.userTurns > 0
-            && !window.confirm("Start a new session? The current conversation will be cleared.")) {
+            && !window.confirm(t('Speaking.NewSessionConfirm', "Start a new session? The current conversation will be cleared."))) {
             updateSelectionUi();
             return;
         }
@@ -1018,7 +1016,7 @@ import {
 
         const previousQuizId = state.quizId;
         setBusy(true);
-        setStatus("Updating the tutor's practice quiz…");
+        setStatus(t('Speaking.UpdatingQuiz', "Updating the tutor's practice quiz…"));
         try {
             const response = await apiFetch(
                 `${root.dataset.createUrl}/${state.sessionId}/quiz`,
@@ -1030,8 +1028,8 @@ import {
             applyActiveQuiz(result.activeQuiz);
             setActivePracticePrompt(null);
             setStatus(result.activeQuiz
-                ? `Practising ${result.activeQuiz.name}.`
-                : "Free lesson mode is active.");
+                ? t('Speaking.PractisingNamed', 'Practising {0}.', result.activeQuiz.name)
+                : t('Speaking.FreeModeActive', "Free lesson mode is active."));
         } catch (error) {
             state.quizId = previousQuizId;
             updateSelectionUi();
@@ -1046,7 +1044,7 @@ import {
         const article = fragment.querySelector(".speaking-message");
         fragment.querySelector(".speaking-message-polish").textContent = text;
         fragment.querySelector(".speaking-input-badge").textContent =
-            mode === "voice" ? "Voice" : "Typed";
+            mode === "voice" ? t('Speaking.Voice', "Voice") : t('Speaking.Typed', "Typed");
 
         const scores = fragment.querySelector(".speaking-pronunciation");
         if (mode === "voice" && pronunciation) {
@@ -1152,7 +1150,7 @@ import {
         const text = elements.textarea.value.trim();
         if (!text || state.busy || !state.ready || !state.sessionId) {
             if (!state.ready) {
-                setStatus("Start a speaking session before sending a message.", true);
+                setStatus(t('Speaking.StartBeforeSend', "Start a speaking session before sending a message."), true);
             }
             return;
         }
@@ -1168,7 +1166,7 @@ import {
         updateCharacterCount();
         clearRecordedSpeech();
         setBusy(true);
-        setStatus(`${currentAvatar()?.name || "The avatar"} is thinking…`);
+        setStatus(t('Speaking.AvatarThinking', '{0} is thinking…', currentAvatar()?.name || t('Speaking.Avatar', "The avatar")));
 
         try {
             const response = await apiFetch(
@@ -1192,7 +1190,7 @@ import {
             setStatus(error.message, true);
             if (error.status === 404 || error.status === 410) {
                 state.ready = false;
-                setConnection("Session ended · start a new session", false);
+                setConnection(t('Speaking.SessionEnded', "Session ended · start a new session"), false);
             }
         } finally {
             setBusy(false);
@@ -1215,9 +1213,9 @@ import {
         setStatus(
             userOnlyAction
                 ? action === "drink"
-                    ? "Taking a sip…"
-                    : "Taking a snack…"
-                : `${currentAvatar()?.name || "The avatar"} is reacting…`);
+                    ? t('Speaking.TakingSip', "Taking a sip…")
+                    : t('Speaking.TakingSnack', "Taking a snack…")
+                : t('Speaking.AvatarReacting', '{0} is reacting…', currentAvatar()?.name || t('Speaking.Avatar', "The avatar")));
         try {
             const response = await apiFetch(
                 `${root.dataset.createUrl}/${state.sessionId}/actions`,
@@ -1244,10 +1242,10 @@ import {
             if (error.status === 404 || error.status === 410) {
                 setStatus(error.message, true);
                 state.ready = false;
-                setConnection("Session ended · start a new session", false);
+                setConnection(t('Speaking.SessionEnded', "Session ended · start a new session"), false);
             } else if (error.status === 400 || error.status === 409) {
                 setStatus("");
-                showSceneEvent("That moment passed. Keep chatting or try another action.");
+                showSceneEvent(t('Speaking.MomentPassed', "That moment passed. Keep chatting or try another action."));
             } else {
                 setStatus(error.message, true);
             }
@@ -1295,7 +1293,7 @@ import {
 
         const sdk = window.SpeechSDK;
         if (!sdk || !navigator.mediaDevices?.getUserMedia) {
-            setStatus("This browser cannot record speech here. Typed chat is still available.", true);
+            setStatus(t('Speaking.RecordUnavailable', "This browser cannot record speech here. Typed chat is still available."), true);
             return;
         }
 
@@ -1324,19 +1322,19 @@ import {
         state.activeRecognition = recognition;
         control.classList.add("is-listening");
         control.setAttribute("aria-pressed", "true");
-        label.textContent = "Starting…";
+        label.textContent = t('Speaking.Starting', "Starting…");
         setBusy(state.busy);
         setStatus(
             autoStop
-                ? "Connecting to the microphone. Start speaking when it is ready."
-                : "Connecting to the microphone. Keep holding the button.");
+                ? t('Speaking.MicConnectingAuto', "Connecting to the microphone. Start speaking when it is ready.")
+                : t('Speaking.MicConnectingHold', "Connecting to the microphone. Keep holding the button."));
 
         recognition.startPromise = initializeRecognition(recognition, sdk)
             .catch(error => {
                 recognition.error =
                     error instanceof Error
                         ? error
-                        : new Error("Microphone access failed. Typed chat is still available.");
+                        : new Error(t('Speaking.MicFailed', "Microphone access failed. Typed chat is still available."));
                 return finishRecognition(recognition, false);
             });
     }
@@ -1497,7 +1495,7 @@ import {
         recognizer.canceled = (_sender, event) => {
             if (event.reason === sdk.CancellationReason.Error) {
                 recognition.error = new Error(
-                    "Azure Speech could not finish the recording. Try again or type your message.");
+                    t('Speaking.SpeechFinishFailed', "Azure Speech could not finish the recording."));
                 void finishRecognition(recognition, false);
             }
         };
@@ -1508,12 +1506,12 @@ import {
         recognition.started = true;
         if (!recognition.stopRequested && state.activeRecognition === recognition) {
             if (recognition.autoStop) {
-                recognition.label.textContent = "Listening…";
-                setStatus("Speak naturally. The recording will stop when you finish.");
+                recognition.label.textContent = t('Speaking.Listening', "Listening…");
+                setStatus(t('Speaking.SpeakNaturally', "Speak naturally. The recording will stop when you finish."));
                 scheduleSilenceStop(recognition, 10_000);
             } else {
-                recognition.label.textContent = "Release to send";
-                setStatus("Keep holding while you speak. Release the button to send.");
+                recognition.label.textContent = t('Speaking.ReleaseSend', "Release to send");
+                setStatus(t('Speaking.KeepHolding', "Keep holding while you speak. Release the button to send."));
             }
         }
     }
@@ -1525,9 +1523,9 @@ import {
 
         clearSilenceTimer(recognition);
         recognition.stopRequested = true;
-        recognition.label.textContent = "Transcribing…";
+        recognition.label.textContent = t('Speaking.Transcribing', "Transcribing…");
         recognition.control.disabled = true;
-        setStatus("Finishing your transcription…");
+        setStatus(t('Speaking.FinishingTranscript', "Finishing your transcription…"));
         await recognition.startPromise;
         if (state.activeRecognition !== recognition) {
             return;
@@ -1542,7 +1540,7 @@ import {
                 recognition.error =
                     error instanceof Error
                         ? error
-                        : new Error("Azure Speech could not finish the recording.");
+                        : new Error(t('Speaking.SpeechFinishFailed', "Azure Speech could not finish the recording."));
             }
         }
 
@@ -1589,8 +1587,8 @@ import {
         if (!transcript) {
             setStatus(
                 recognition.source === "composer"
-                    ? "Azure Speech did not catch that. Press Speak to type and try again."
-                    : "Azure Speech did not catch that. Hold the red button and try again.",
+                    ? t('Speaking.NotCaughtComposer', "Azure Speech did not catch that. Press Speak to type and try again.")
+                    : t('Speaking.NotCaughtAvatar', "Azure Speech did not catch that. Hold the red button and try again."),
                 true);
             return;
         }
@@ -1602,7 +1600,7 @@ import {
             state.recordedPracticePromptId = recognition.practicePrompt?.id || null;
             elements.recordingNote.hidden = false;
             updateCharacterCount();
-            setStatus("That recording is too long. Shorten the transcript and press Send.", true);
+            setStatus(t('Speaking.RecordingTooLong', "That recording is too long. Shorten the transcript and press Send."), true);
             elements.textarea.focus();
             return;
         }
@@ -1614,12 +1612,12 @@ import {
         elements.recordingNote.hidden = false;
         updateCharacterCount();
         if (recognition.autoSend) {
-            setStatus("Transcript ready. Sending…");
+            setStatus(t('Speaking.TranscriptSending', "Transcript ready. Sending…"));
             await sendCurrentMessage();
             return;
         }
 
-        setStatus("Transcript ready. Review or edit it, then press Send.");
+        setStatus(t('Speaking.TranscriptReady', "Transcript ready. Review or edit it, then press Send."));
         elements.textarea.focus();
     }
 
@@ -1769,7 +1767,7 @@ import {
                         if (result.reason === sdk.ResultReason.SynthesizingAudioCompleted) {
                             resolve(result);
                         } else {
-                            reject(new Error(result.errorDetails || "Speech synthesis was canceled."));
+                            reject(new Error(t('Client.TtsFailed', "Text-to-speech playback failed.")));
                         }
                     },
                     reject);
@@ -1923,7 +1921,7 @@ import {
 
     elements.newSession.addEventListener("click", async () => {
         if (state.userTurns > 0
-            && !window.confirm("Clear this conversation and start a new session?")) {
+            && !window.confirm(t('Speaking.NewSessionConfirm', "Start a new session? The current conversation will be cleared."))) {
             return;
         }
         stopSpeaking();

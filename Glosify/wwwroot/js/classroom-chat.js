@@ -5,6 +5,7 @@
     if (!root || typeof signalR === "undefined") {
         return;
     }
+    const t = (key, fallback) => window.glosifyText?.(key, fallback) ?? fallback;
 
     const classroomId = root.getAttribute("data-classroom-id");
     const toggleButton = root.querySelector("[data-chat-toggle]");
@@ -67,7 +68,7 @@
 
     function formatTime(value) {
         const date = new Date(value);
-        return date.toLocaleString(undefined, {
+        return date.toLocaleString(document.documentElement.lang || "en-GB", {
             month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
         });
     }
@@ -82,7 +83,7 @@
         icon.setAttribute("aria-hidden", "true");
         icon.textContent = "forum";
         const title = document.createElement("strong");
-        title.textContent = "Class chat";
+        title.textContent = t('Classroom.ClassChat', "Class chat");
         const detail = document.createElement("span");
         detail.textContent = text;
         empty.append(icon, title, detail);
@@ -118,7 +119,7 @@
     }
 
     async function loadHistory() {
-        showEmpty("Loading messages…");
+        showEmpty(t('Client.Loading', "Loading messages…"));
         const response = await fetch(`/Classroom/ChatHistory?id=${encodeURIComponent(classroomId)}`, {
             headers: { "X-Requested-With": "XMLHttpRequest" }
         });
@@ -130,7 +131,7 @@
         const data = await response.json();
         currentUserId = data.currentUserId;
         if (data.messages.length === 0) {
-            showEmpty("No messages yet. Say hi!");
+            showEmpty(t('Classroom.NoMessages', "No messages yet. Say hi!"));
             return;
         }
 
@@ -203,13 +204,13 @@
             : 0);
     });
 
-    connection.onreconnecting(() => setStatus("Reconnecting…"));
+    connection.onreconnecting(() => setStatus(t('Classroom.Reconnecting', "Reconnecting…")));
     connection.onreconnected(async () => {
-        setStatus("Connected");
+        setStatus(t('Classroom.Connected', "Connected"));
         await connection.invoke("JoinClassroom", classroomId);
     });
     connection.onclose(() => {
-        setStatus("Disconnected");
+        setStatus(t('Classroom.NotConnected', "Not connected"));
         connected = false;
         sendButton.disabled = true;
     });
@@ -226,7 +227,14 @@
             await connection.invoke("SendMessage", classroomId, body);
             input.value = "";
         } catch (error) {
-            setStatus(error.message ? error.message.replace(/^.*HubException: /, "") : "Message failed to send.");
+            const code = error?.message || '';
+            if (code.includes('CHAT_RATE_LIMITED')) {
+                setStatus(t('Client.MessageRateLimited', "You're sending messages too quickly. Wait a moment."));
+            } else if (code.includes('CHAT_SEND_FAILED')) {
+                setStatus(t('Client.MessageFailed', "Message failed to send."));
+            } else {
+                setStatus(t('Client.MessageFailed', "Message failed to send."));
+            }
         } finally {
             sendButton.disabled = false;
             input.focus();
@@ -237,7 +245,7 @@
         try {
             await connection.start();
             await connection.invoke("JoinClassroom", classroomId);
-            setStatus("Connected");
+            setStatus(t('Classroom.Connected', "Connected"));
             connected = true;
             sendButton.disabled = false;
             renderCallState(await connection.invoke("GetCallParticipants", classroomId));

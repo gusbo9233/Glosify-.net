@@ -19,14 +19,14 @@
         </li>
         <li class="nav-item">
             <form asp-controller="Account" asp-action="Logout" method="post">
-                <button type="submit" class="nav-link btn btn-link">Log out</button>
+                <button type="submit" class="nav-link btn btn-link">@Text["Account.LogOut"]</button>
             </form>
         </li>
     }
     else
     {
         <li class="nav-item">
-            <a class="nav-link" href="/login">Log in</a>
+            <a class="nav-link" href="/login">@Text["Account.LogIn"]</a>
         </li>
     }
 </ul>

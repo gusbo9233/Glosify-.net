@@ -4,7 +4,7 @@
     <a asp-controller="Languages" asp-action="Index"
        class="language-context-pill language-context-pill-active">
         <span class="material-symbols-outlined language-context-icon">translate</span>
-        @Model
+        @QuizLanguageDisplay.Name(Model)
     </a>
 }
 else
@@ -12,6 +12,6 @@ else
     <a asp-controller="Languages" asp-action="Index"
        class="language-context-pill language-context-pill-empty">
         <span class="material-symbols-outlined language-context-icon">translate</span>
-        Pick a language
+        @Text["Languages.Pick"]
     </a>
 }

@@ -1,7 +1,7 @@
 @model Glosify.Services.Speaking.SpeakingPageViewModel
 @using System.Text.Json
 @{
-    ViewData["Title"] = $"{Model.Language} speaking practice";
+    ViewData["Title"] = Text["Speaking.LanguagePractice", QuizLanguageDisplay.Name(Model.Language)];
     ViewData["HideAssistantPanel"] = true;
     var pageData = JsonSerializer.Serialize(Model, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 }
@@ -22,17 +22,17 @@
 
     <header class="speaking-hero">
         <div>
-            <span class="speaking-kicker">@Model.Language conversation lab</span>
-            <h2>Speak your way into the language.</h2>
-            <p>Choose an open tutor or a scene, talk naturally, and get private coaching after every turn.</p>
+            <span class="speaking-kicker">@Text["Speaking.ConversationLab", QuizLanguageDisplay.Name(Model.Language)]</span>
+            <h2>@Text["Speaking.HeroTitle"]</h2>
+            <p>@Text["Speaking.HeroText"]</p>
         </div>
 
         @if (Model.GenericTutorEnabled)
         {
             <label class="speaking-quiz-control" id="speaking-quiz-control">
-                <span>Practice quiz</span>
-                <select id="speaking-quiz" aria-label="Choose a quiz for speaking practice">
-                    <option value="">Free lesson</option>
+                <span>@Text["Speaking.PracticeQuiz"]</span>
+                <select id="speaking-quiz" aria-label="@Text["Speaking.ChooseQuiz"]">
+                    <option value="">@Text["Speaking.FreeLesson"]</option>
                     @foreach (var quiz in Model.Quizzes)
                     {
                         <option value="@quiz.Id">@quiz.Name</option>
@@ -40,14 +40,14 @@
                 </select>
             </label>
         }
-        <div class="speaking-azure-badge" title="Powered by Microsoft Foundry and Azure AI Speech">
+        <div class="speaking-azure-badge" title="@Text["Speaking.PoweredBy"]">
             <span class="material-symbols-outlined" aria-hidden="true">cloud</span>
             Azure-powered
         </div>
     </header>
 
-    <section class="speaking-controls" aria-label="Practice settings">
-        <div class="speaking-avatar-picker" role="radiogroup" aria-label="Choose an avatar">
+    <section class="speaking-controls" aria-label="@Text["Speaking.Settings"]">
+        <div class="speaking-avatar-picker" role="radiogroup" aria-label="@Text["Speaking.ChooseAvatar"]">
             @foreach (var avatar in Model.Avatars)
             {
                 <button type="button"
@@ -67,32 +67,32 @@
         </div>
 
         <label class="speaking-level-control">
-            <span>Level</span>
-            <select id="speaking-level" aria-label="Choose CEFR level">
-                <option value="A1">A1 · Beginner</option>
-                <option value="A2" selected>A2 · Elementary</option>
-                <option value="B1">B1 · Intermediate</option>
-                <option value="B2">B2 · Upper intermediate</option>
-                <option value="C1">C1 · Advanced</option>
+            <span>@Text["Speaking.Level"]</span>
+            <select id="speaking-level" aria-label="@Text["Speaking.ChooseLevel"]">
+                <option value="A1">A1 · @Text["Speaking.Beginner"]</option>
+                <option value="A2" selected>A2 · @Text["Speaking.Elementary"]</option>
+                <option value="B1">B1 · @Text["Speaking.Intermediate"]</option>
+                <option value="B2">B2 · @Text["Speaking.UpperIntermediate"]</option>
+                <option value="C1">C1 · @Text["Speaking.Advanced"]</option>
             </select>
         </label>
 
         <label class="speaking-switch">
             <input type="checkbox" id="speaking-translation-toggle" />
             <span class="speaking-switch-track" aria-hidden="true"></span>
-            <span>English translation</span>
+            <span>@Text["Speaking.EnglishTranslation"]</span>
         </label>
 
         <label class="speaking-switch">
             <input type="checkbox" id="speaking-mute-toggle" />
             <span class="speaking-switch-track" aria-hidden="true"></span>
-            <span>Mute avatar</span>
+            <span>@Text["Speaking.MuteAvatar"]</span>
         </label>
 
     </section>
 
     <div class="speaking-workspace">
-        <section class="speaking-stage-card" aria-label="Avatar scene">
+        <section class="speaking-stage-card" aria-label="@Text["Speaking.AvatarScene"]">
             <div class="speaking-stage" id="speaking-stage">
                 @await Html.PartialAsync("_AvatarScenes", Model.Avatars)
                 <div class="speaking-scene-caption">
@@ -129,7 +129,7 @@
 
                         <section class="speaking-bar-menu"
                                  id="speaking-bar-menu"
-                                 aria-label="Bar menu"
+                                 aria-label="@Text["Speaking.BarMenu"]"
                                  hidden>
                             <div class="speaking-panel-heading">
                                 <strong>MENU</strong>
@@ -148,17 +148,17 @@
 
                         <section class="speaking-wallet"
                                  id="speaking-wallet"
-                                 aria-label="Your wallet"
+                                 aria-label="@Text["Speaking.YourWallet"]"
                                  hidden>
                             <div class="speaking-panel-heading">
                                 <div>
                                     <strong>Portfel</strong>
-                                    <small id="speaking-payment-due">No bill yet</small>
+                                    <small id="speaking-payment-due">@Text["Speaking.NoBill"]</small>
                                 </div>
                                 <button type="button"
                                         class="speaking-panel-close"
                                         id="speaking-wallet-close"
-                                        aria-label="Close wallet">
+                                        aria-label="@Text["Speaking.CloseWallet"]">
                                     <span class="material-symbols-outlined" aria-hidden="true">close</span>
                                 </button>
                             </div>
@@ -166,7 +166,7 @@
                                  id="speaking-wallet-money"
                                  aria-label="Choose Polish złoty notes and coins"></div>
                             <div class="speaking-wallet-footer">
-                                <span>Selected <strong id="speaking-payment-selected">0 zł</strong></span>
+                                <span>@Text["Speaking.Selected"] <strong id="speaking-payment-selected">0 zł</strong></span>
                                 <button type="button"
                                         class="speaking-wallet-pay"
                                         id="speaking-payment-submit"
@@ -187,7 +187,7 @@
 
                         <div class="speaking-context-actions"
                              id="speaking-context-actions"
-                             aria-label="Scene actions">
+                             aria-label="@Text["Speaking.SceneActions"]">
                             <div class="speaking-drink-actions"
                                  id="speaking-drink-actions"
                                  hidden></div>
@@ -216,31 +216,31 @@
                         aria-pressed="false">
                     <span class="speaking-record-dot" aria-hidden="true"></span>
                     <span class="material-symbols-outlined" aria-hidden="true">mic</span>
-                    <span class="speaking-avatar-record-label">Hold to speak &amp; send</span>
+                    <span class="speaking-avatar-record-label">@Text["Speaking.HoldSpeak"]</span>
                 </button>
             </div>
             <div class="speaking-stage-status">
                 <span class="speaking-presence-dot" aria-hidden="true"></span>
-                <span id="speaking-connection-label">Starting the scene…</span>
+                <span id="speaking-connection-label">@Text["Speaking.StartingScene"]</span>
                 <button type="button"
                         class="speaking-icon-action"
                         id="speaking-replay-latest"
-                        aria-label="Replay the latest avatar reply"
-                        title="Replay latest reply"
+                        aria-label="@Text["Speaking.ReplayLatestAria"]"
+                        title="@Text["Speaking.ReplayLatest"]"
                         disabled>
                     <span class="material-symbols-outlined" aria-hidden="true">replay</span>
                 </button>
             </div>
         </section>
 
-        <section class="speaking-chat-card" aria-label="Conversation">
+        <section class="speaking-chat-card" aria-label="@Text["Speaking.Conversation"]">
             <div class="speaking-chat-heading">
                 <div>
-                    <span class="speaking-kicker">Current session</span>
-                    <h3>Conversation</h3>
+                    <span class="speaking-kicker">@Text["Speaking.CurrentSession"]</span>
+                    <h3>@Text["Speaking.Conversation"]</h3>
                 </div>
                 <button type="button" class="speaking-text-action" id="speaking-new-session">
-                    New session
+                    @Text["Assistant.NewChat"]
                 </button>
             </div>
 
@@ -253,27 +253,28 @@
 
             <div class="speaking-recording-note" id="speaking-recording-note" hidden>
                 <span class="material-symbols-outlined" aria-hidden="true">graphic_eq</span>
-                <span>Pronunciation scores refer to your recorded audio.</span>
+                <span>@Text["Speaking.ScoreHelp"]</span>
             </div>
 
             <div class="speaking-composer">
-                <label for="speaking-message" class="visually-hidden">Your @Model.Language message</label>
+                <label for="speaking-message" class="visually-hidden">@Text["Speaking.MessageLabel", QuizLanguageDisplay.Name(Model.Language)]</label>
                 <textarea id="speaking-message"
+                          dir="auto"
                           maxlength="800"
                           rows="3"
-                          placeholder="Write in @Model.Language or use the microphone…"></textarea>
+                          placeholder="@Text["Speaking.MessagePlaceholder", QuizLanguageDisplay.Name(Model.Language)]"></textarea>
                 <div class="speaking-composer-actions">
                     <button type="button"
                             class="speaking-mic-button"
                             id="speaking-mic"
-                            aria-label="Start voice transcription in @Model.Language; recording stops after you finish speaking"
+                            aria-label="@Text["Speaking.MicAria", QuizLanguageDisplay.Name(Model.Language)]"
                             aria-pressed="false">
                         <span class="material-symbols-outlined" aria-hidden="true">mic</span>
-                        <span class="speaking-mic-label">Speak to type</span>
+                        <span class="speaking-mic-label">@Text["Speaking.SpeakToType"]</span>
                     </button>
                     <span class="speaking-character-count" id="speaking-character-count">0 / 800</span>
                     <button type="button" class="speaking-send-button" id="speaking-send">
-                        Send
+                        @Text["Common.Send"]
                         <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
                     </button>
                 </div>
@@ -288,28 +289,28 @@
 
     <p class="speaking-privacy-note">
         <span class="material-symbols-outlined" aria-hidden="true">lock</span>
-        Audio streams directly to Azure Speech. This conversation is kept only for the current session.
+        @Text["Speaking.PrivacyNote"]
     </p>
 </div>
 
 <template id="speaking-user-message-template">
     <article class="speaking-message speaking-message-user">
         <div class="speaking-message-meta">
-            <span>You</span>
+            <span>@Text["Speaking.You"]</span>
             <span class="speaking-input-badge"></span>
         </div>
         <p class="speaking-message-polish" lang="@Model.LanguageCode"></p>
         <div class="speaking-pronunciation" hidden>
             <div>
-                <span>Accuracy</span>
+                <span>@Text["Speaking.Accuracy"]</span>
                 <strong data-score="accuracy"></strong>
             </div>
             <div>
-                <span>Fluency</span>
+                <span>@Text["Speaking.Fluency"]</span>
                 <strong data-score="fluency"></strong>
             </div>
             <div data-score-row="completeness" hidden>
-                <span>Completeness</span>
+                <span>@Text["Speaking.Completeness"]</span>
                 <strong data-score="completeness"></strong>
             </div>
         </div>
@@ -320,28 +321,28 @@
     <article class="speaking-message speaking-message-avatar">
         <div class="speaking-message-meta">
             <span class="speaking-message-speaker"></span>
-            <button type="button" class="speaking-message-replay" aria-label="Replay this reply">
+            <button type="button" class="speaking-message-replay" aria-label="@Text["Speaking.ReplayReply"]">
                 <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
             </button>
         </div>
         <button type="button"
                 class="speaking-message-flip"
                 data-message-flip
-                aria-label="Show English translation"
+                aria-label="@Text["Speaking.ShowEnglish"]"
                 aria-pressed="false">
             <span class="speaking-message-flip-inner">
                 <span class="speaking-message-face speaking-message-front" aria-hidden="false">
                     <span class="speaking-message-polish" lang="@Model.LanguageCode"></span>
                     <span class="speaking-message-flip-hint" aria-hidden="true">
                         <span class="material-symbols-outlined">translate</span>
-                        Click to translate
+                        @Text["Speaking.ClickTranslate"]
                     </span>
                 </span>
                 <span class="speaking-message-face speaking-message-back" aria-hidden="true">
                     <span class="speaking-message-english" lang="en"></span>
                     <span class="speaking-message-flip-hint" aria-hidden="true">
                         <span class="material-symbols-outlined">undo</span>
-                        Click to show @Model.Language
+                        @Text["Speaking.ClickShowLanguage", QuizLanguageDisplay.Name(Model.Language)]
                     </span>
                 </span>
             </span>
@@ -349,41 +350,41 @@
         <details class="speaking-coach">
             <summary>
                 <span class="material-symbols-outlined" aria-hidden="true">school</span>
-                Coach feedback
+                @Text["Speaking.CoachFeedback"]
             </summary>
             <dl>
                 <div data-coach-row="correctedPolish">
-                    <dt>More natural @Model.Language</dt>
+                    <dt>@Text["Speaking.MoreNatural", QuizLanguageDisplay.Name(Model.Language)]</dt>
                     <dd lang="@Model.LanguageCode"></dd>
                 </div>
                 <div data-coach-row="grammarTipEnglish">
-                    <dt>Grammar</dt>
+                    <dt>@Text["Speaking.Grammar"]</dt>
                     <dd></dd>
                 </div>
                 <div data-coach-row="vocabularyTipEnglish">
-                    <dt>Vocabulary</dt>
+                    <dt>@Text["Speaking.Vocabulary"]</dt>
                     <dd></dd>
                 </div>
                 <div data-coach-row="naturalnessTipEnglish">
-                    <dt>Naturalness</dt>
+                    <dt>@Text["Speaking.Naturalness"]</dt>
                     <dd></dd>
                 </div>
             </dl>
         </details>
         <section class="speaking-practice-prompt" hidden>
             <div class="speaking-practice-copy">
-                <span class="speaking-kicker">Practice this</span>
+                <span class="speaking-kicker">@Text["Speaking.PracticeThis"]</span>
                 <strong class="speaking-practice-text" lang="@Model.LanguageCode"></strong>
                 <span class="speaking-practice-translation" lang="en"></span>
             </div>
             <div class="speaking-practice-actions">
-                <button type="button" class="speaking-practice-replay" aria-label="Hear this practice phrase">
+                <button type="button" class="speaking-practice-replay" aria-label="@Text["Speaking.HearPhrase"]">
                     <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
                     Hear it
                 </button>
-                <button type="button" class="speaking-practice-record" aria-label="Hold to repeat this practice phrase" aria-pressed="false">
+                <button type="button" class="speaking-practice-record" aria-label="@Text["Speaking.HoldRepeatAria"]" aria-pressed="false">
                     <span class="material-symbols-outlined" aria-hidden="true">mic</span>
-                    <span>Hold to repeat</span>
+                    <span>@Text["Speaking.HoldRepeat"]</span>
                 </button>
             </div>
         </section>

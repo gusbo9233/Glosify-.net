@@ -7,7 +7,7 @@
     string ResolveOption(string blockId, string optionId) => Model.Play.ResolvedValues.GetValueOrDefault($"option:{blockId}:{optionId}", string.Empty);
     (string Before, string After) SplitInlineBlank(string? value)
     {
-        var label = string.IsNullOrWhiteSpace(value) ? "Answer" : value.Trim();
+        var label = string.IsNullOrWhiteSpace(value) ? Text["Custom.Answer"].Value : value.Trim();
         var match = System.Text.RegularExpressions.Regex.Match(label, @"\{\{blank\}\}|\{blank\}|_{2,}|\.{3,}", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         return match.Success
             ? (label[..match.Index].TrimEnd(), label[(match.Index + match.Length)..].TrimStart())
@@ -23,7 +23,7 @@
          data-grade-url="@Url.Action("Grade", "CustomQuiz", new { id = Model.Play.Id })">
     @Html.AntiForgeryToken()
     <header class="custom-player-header">
-        <p>@Model.Play.SourceQuizName &middot; @Model.Play.SourceLanguage &rarr; @Model.Play.TargetLanguage</p>
+        <p>@Model.Play.SourceQuizName &middot; @QuizLanguageDisplay.Name(Model.Play.SourceLanguage) &rarr; @QuizLanguageDisplay.Name(Model.Play.TargetLanguage)</p>
         <h1>@Model.Play.Name</h1>
     </header>
     <form class="custom-player-grid" data-custom-player-form>
@@ -74,7 +74,7 @@
                         <div class="custom-answer-feedback" data-answer-feedback></div>
                         break;
                     case CustomQuizBlockTypes.SelectMenu:
-                        <label>@block.Label<select class="form-input" data-answer-block="@block.Id"><option value="">Choose...</option>
+                        <label>@block.Label<select class="form-input" data-answer-block="@block.Id"><option value="">@Text["Custom.Choose"]</option>
                             @foreach (var option in block.Options) { <option value="@option.Id" dir="auto">@ResolveOption(block.Id, option.Id)</option> }
                         </select></label>
                         <div class="custom-answer-feedback" data-answer-feedback></div>
@@ -86,10 +86,10 @@
                         </div>
                         break;
                     case CustomQuizBlockTypes.SubmitButton:
-                        <button class="btn-submit" type="submit">@(string.IsNullOrWhiteSpace(block.Text) ? "Check answers" : block.Text)</button>
+                        <button class="btn-submit" type="submit">@(string.IsNullOrWhiteSpace(block.Text) ? Text["Custom.CheckAnswers"] : block.Text)</button>
                         break;
                     case CustomQuizBlockTypes.FeedbackMessage:
-                        <div class="custom-overall-feedback" role="status" data-overall-feedback>Complete the quiz, then submit your answers.</div>
+                        <div class="custom-overall-feedback" role="status" data-overall-feedback>@Text["Custom.CompleteThenSubmit"]</div>
                         break;
                 }
             </section>

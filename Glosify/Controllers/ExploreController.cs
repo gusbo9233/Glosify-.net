@@ -7,6 +7,7 @@ using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Words;
+using Glosify.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,6 +21,7 @@ public class ExploreController : Controller
     private readonly IWordService _wordService;
     private readonly ILanguageContext _languageContext;
     private readonly ICustomQuizService _customQuizService;
+    private readonly UiTextStringLocalizer _text = new();
 
     public ExploreController(
         ICollectionService collectionService,
@@ -97,7 +99,7 @@ public class ExploreController : Controller
         var selectedQuiz = await _quizService.GetPublicQuizAsync(id, cancellationToken: cancellationToken);
         if (selectedQuiz == null)
         {
-            TempData[NotificationKeys.Explore] = "That quiz is no longer public.";
+            TempData[NotificationKeys.Explore] = _text["Explore.QuizNoLongerPublic"].Value;
             return RedirectToAction(nameof(Index));
         }
 
@@ -141,11 +143,11 @@ public class ExploreController : Controller
         var copied = await _quizService.CopyPublicQuizAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         if (copied == null)
         {
-            TempData[NotificationKeys.Explore] = "That quiz is no longer public.";
+            TempData[NotificationKeys.Explore] = _text["Explore.QuizNoLongerPublic"].Value;
             return RedirectToAction(nameof(Index));
         }
 
-        TempData[NotificationKeys.Quiz] = $"Copied {copied.Name} to your library.";
+        TempData[NotificationKeys.Quiz] = _text["Explore.CopiedToLibrary", copied.Name].Value;
         return RedirectToAction("Details", "Quiz", new { id = copied.Id });
     }
 
@@ -155,11 +157,11 @@ public class ExploreController : Controller
         var copied = await _collectionService.CopyPublicCollectionAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
         if (copied == null)
         {
-            TempData[NotificationKeys.Explore] = "That collection is no longer public.";
+            TempData[NotificationKeys.Explore] = _text["Explore.CollectionNoLongerPublic"].Value;
             return RedirectToAction(nameof(Index));
         }
 
-        TempData[NotificationKeys.Quiz] = $"Copied {copied.Name} to your library.";
+        TempData[NotificationKeys.Quiz] = _text["Explore.CopiedToLibrary", copied.Name].Value;
         return RedirectToAction("Collection", "Quiz", new { id = copied.Id });
     }
 }

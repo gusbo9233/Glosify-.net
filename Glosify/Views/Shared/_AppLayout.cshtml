@@ -2,18 +2,13 @@
 @using Microsoft.AspNetCore.Html
 @inject IStripePaymentService StripePayments
 @functions {
-    const string DefaultMetaDescription =
-        "Glosify turns what you read into vocabulary you can use: build word lists from books and "
-        + "transcripts, drill them with quizzes and flashcards, then practice out loud with an AI "
-        + "conversation partner.";
-
-    string MetaDescription => ViewData["Description"] as string ?? DefaultMetaDescription;
+    string MetaDescription => ViewData["Description"] as string ?? Text["Layout.MetaDescription"];
 
     string CurrentController => (ViewContext.RouteData.Values["controller"] as string ?? "").ToLowerInvariant();
     string CurrentAction => (ViewContext.RouteData.Values["action"] as string ?? "").ToLowerInvariant();
     string DisplayAccount => User.FindFirstValue(ClaimTypes.Email)
         ?? User.Identity?.Name
-        ?? "Signed in";
+        ?? Text["Layout.SignedIn"];
 
     bool IsActive(string controller, string action) =>
         CurrentController == controller.ToLowerInvariant() && CurrentAction == action.ToLowerInvariant();
@@ -141,12 +136,13 @@
     }
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@CultureInfo.CurrentUICulture.Name" dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")" data-display-culture="@CultureInfo.CurrentUICulture.Name">
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
     <title>@ViewData["Title"] - Glosify</title>
     <meta name="description" content="@MetaDescription" />
+    @await Html.PartialAsync("_LocalizedPublicSeo")
     @* The font files come from a second origin, so both are preconnected before
        the stylesheets are even parsed. Text and icons are separate requests
        because they need different font-display behavior — see WebFonts. *@
@@ -158,49 +154,49 @@
     @await RenderSectionAsync("Styles", required: false)
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body class="app-body">
+<body class="app-body" data-i18n="@System.Text.Json.JsonSerializer.Serialize(UiClientText.Create(Text))">
     <div class="app-shell">
         <aside class="app-sidebar">
             <div class="app-sidebar-brand">
                 <h1 class="wordmark">
                     <a asp-controller="Home" asp-action="Index">Glosify</a>
                 </h1>
-                <p class="brand-tier">Premium Learner</p>
+                <p class="brand-tier">@Text["Layout.PremiumLearner"]</p>
                 @await Component.InvokeAsync("LanguagePill")
             </div>
 
             <nav class="app-nav">
                 <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
                     @NavIcon("language")
-                    Language selector
+                    @Text["Nav.LanguageSelector"]
                 </a>
                 <a class="@NavClass("Home")" asp-controller="Home" asp-action="Index">
                     @NavIcon("home")
-                    Home
+                    @Text["Nav.Home"]
                 </a>
                 <a class="@NavClass("Explore")" asp-controller="Explore" asp-action="Index">
                     @NavIcon("explore")
-                    Explore
+                    @Text["Nav.Explore"]
                 </a>
                 <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
                     @NavIcon("auto_stories")
-                    Books
+                    @Text["Nav.Books"]
                 </a>
                 <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
                     @NavIcon("subtitles")
-                    Transcripts
+                    @Text["Nav.Transcripts"]
                 </a>
                 <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
                     @NavIcon("quiz")
-                    Quizzes
+                    @Text["Nav.Quizzes"]
                 </a>
                 <a class="@NavClass("Speaking")" asp-controller="Speaking" asp-action="Index">
                     @NavIcon("mic")
-                    Speaking
+                    @Text["Nav.Speaking"]
                 </a>
                 <a class="@NavClass("Classroom")" asp-controller="Classroom" asp-action="Index">
                     @NavIcon("school")
-                    Classrooms
+                    @Text["Nav.Classrooms"]
                 </a>
             </nav>
 
@@ -208,15 +204,16 @@
 
         <main class="app-main">
             <header class="app-topbar">
-                <a class="app-mobile-brand" asp-controller="Home" asp-action="Index" aria-label="Glosify home">
+                <a class="app-mobile-brand" asp-controller="Home" asp-action="Index" aria-label="Glosify @Text["Nav.Home"]">
                     Glosify
                 </a>
                 <div class="app-search">
                     <span class="material-symbols-outlined">search</span>
-                    <input placeholder="What do you want to learn?" type="text" />
+                    <input placeholder="@Text["Layout.SearchPlaceholder"]" type="text" />
                 </div>
                 <div class="app-topbar-right">
-                    <button type="button" class="icon-button" aria-label="Notifications">
+                    @await Html.PartialAsync("_DisplayLanguageSelector")
+                    <button type="button" class="icon-button" aria-label="@Text["Layout.Notifications"]">
                         <span class="material-symbols-outlined">notifications</span>
                     </button>
                     @if (User.Identity?.IsAuthenticated == true)
@@ -225,13 +222,13 @@
                         {
                             <a class="credit-pill credit-pill-buy" asp-controller="Payments" asp-action="Index">
                                 <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
-                                Get credits
+                                @Text["Layout.GetCredits"]
                             </a>
                         }
                         @await Component.InvokeAsync("AiCreditPill")
                         <div class="account-block">
                             <div class="account-meta">
-                                <span class="account-meta-eyebrow">Signed in as</span>
+                                <span class="account-meta-eyebrow">@Text["Layout.SignedInAs"]</span>
                                 <span class="account-meta-email">@DisplayAccount</span>
                             </div>
                             <div class="account-avatar" title="@DisplayAccount">
@@ -239,7 +236,7 @@
                             </div>
                             <form asp-controller="Account" asp-action="Logout" method="post" class="btn-social-form">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="icon-button" title="Log out" aria-label="Log out">
+                                <button type="submit" class="icon-button" title="@Text["Common.LogOut"]" aria-label="@Text["Common.LogOut"]">
                                     <span class="material-symbols-outlined">logout</span>
                                 </button>
                             </form>
@@ -249,7 +246,7 @@
                     {
                         <a asp-controller="Account" asp-action="Login" class="btn-login">
                             <span class="material-symbols-outlined">login</span>
-                            Log in
+                            @Text["Common.LogIn"]
                         </a>
                     }
                 </div>
@@ -260,47 +257,47 @@
             </div>
         </main>
     </div>
-    <nav class="app-mobile-nav" aria-label="Primary navigation">
+    <nav class="app-mobile-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
         <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
             @NavIcon("language")
-            <span>Language</span>
+            <span>@Text["Nav.Language"]</span>
         </a>
         <a class="@NavClass("Home")" asp-controller="Home" asp-action="Index">
             @NavIcon("home")
-            <span>Home</span>
+            <span>@Text["Nav.Home"]</span>
         </a>
         <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
             @NavIcon("quiz")
-            <span>Quizzes</span>
+            <span>@Text["Nav.Quizzes"]</span>
         </a>
         <a class="@NavClass("Speaking")" asp-controller="Speaking" asp-action="Index">
             @NavIcon("mic")
-            <span>Speak</span>
+            <span>@Text["Nav.Speak"]</span>
         </a>
         <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
             @NavIcon("auto_stories")
-            <span>Books</span>
+            <span>@Text["Nav.Books"]</span>
         </a>
         <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
             @NavIcon("subtitles")
-            <span>Transcripts</span>
+            <span>@Text["Nav.Transcripts"]</span>
         </a>
         @if (User.Identity?.IsAuthenticated == true)
         {
             <a class="@NavClass("Explore")" asp-controller="Explore" asp-action="Index">
                 @NavIcon("explore")
-                <span>Explore</span>
+                <span>@Text["Nav.Explore"]</span>
             </a>
             <a class="@NavClass("Classroom")" asp-controller="Classroom" asp-action="Index">
                 @NavIcon("school")
-                <span>Class</span>
+                <span>@Text["Nav.Class"]</span>
             </a>
         }
         else
         {
             <a class="@NavClass("Account", "Login")" asp-controller="Account" asp-action="Login">
                 <span class="material-symbols-outlined">login</span>
-                <span>Log in</span>
+                <span>@Text["Common.LogIn"]</span>
             </a>
         }
     </nav>
@@ -318,10 +315,10 @@
                 TranscriptId = AssistantGuid("AssistantTranscriptId"),
                 TranscriptPage = AssistantInt("AssistantTranscriptPage"),
                 TranscriptStream = ViewData["AssistantTranscriptStream"] as string,
-                Title = AssistantText("AssistantTitle", "Assistant"),
+                Title = AssistantText("AssistantTitle", Text["Assistant.Title"]),
                 ContextLabel = AssistantText("AssistantContextLabel", "Glosify"),
-                EmptyText = AssistantText("AssistantEmptyText", "Ask for help anywhere in Glosify."),
-                Placeholder = AssistantText("AssistantPlaceholder", "Ask the assistant...")
+                EmptyText = AssistantText("AssistantEmptyText", Text["Assistant.Empty"]),
+                Placeholder = AssistantText("AssistantPlaceholder", Text["Assistant.Placeholder"])
             }
         })
         <script type="module" src="~/js/assistant.js" asp-append-version="true"></script>

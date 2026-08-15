@@ -1,0 +1,36 @@
+@using Microsoft.Extensions.Options
+@using Glosify.Services.Legal
+@inject IOptions<LegalOptions> Legal
+@{
+    Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
+    ViewData["Title"] = "Användarvillkor";
+    var legal = Legal.Value;
+}
+
+<main class="auth-shell legal-shell">
+    <article class="glass-card legal-document">
+        <header class="auth-card-header"><h1>Användarvillkor</h1><p>Gäller från 10 augusti 2026</p></header>
+        <aside class="legal-language-notice">
+            @Text["Legal.EnglishGoverns"]
+            <a asp-action="TermsEnglish">Läs den engelska versionen</a>.
+        </aside>
+        <p>Glosify är en språkinlärningstjänst i betaversion som drivs av <strong>@legal.ControllerName</strong>. Genom att använda tjänsten samtycker du till att använda den lagligt, skydda ditt konto och endast ladda upp eller strömma material som du har rätt att behandla.</p>
+
+        <h2>Betatjänst och tillgänglighet</h2>
+        <p>Funktioner kan ändras, sluta fungera eller tillfälligt vara otillgängliga. Betalfunktioner stängs när Glosifys månatliga programbudget är förbrukad och öppnas igen vid nästa månadsperiod enligt tidszonen Europe/Stockholm. Krediter är tjänsteenheter, saknar kontantvärde och garanterar inte oavbruten tillgänglighet.</p>
+
+        <h2>Provkrediter</h2>
+        <p>Ett berättigat konto som kopplats till Google eller Microsoft kan få 25 provkrediter en gång. Konton med enbart lösenord och API-registreringar får inga automatiska provkrediter. Missbruk, skapande av dubblettkonton, automatisering eller försök att kringgå begränsningar kan leda till avstängning.</p>
+
+        <h2>Ditt innehåll</h2>
+        <p>Du behåller rättigheterna till innehåll som du tillhandahåller. Du ger Glosify och dess personuppgiftsbiträden den begränsade rätt som krävs för att lagra, överföra, analysera, översätta och lämna tillbaka innehållet för de funktioner du begär. Förlita dig inte på genererade översättningar eller utbildningsmaterial för medicinska, juridiska, säkerhetskritiska eller andra beslut med stora konsekvenser.</p>
+
+        <h2>Att sluta använda tjänsten</h2>
+        <p>Du kan sluta använda Glosify och radera lagrat innehåll med de konto- och transkriptionskontroller som finns. Glosify kan begränsa konton som hotar tjänsten, andra användare eller efterlevnaden av lagar.</p>
+
+        <h2>Kontakt</h2>
+        <p>Frågor om villkoren kan skickas till <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>
+
+        <nav class="legal-links" aria-label="Juridiska sidor"><a asp-action="Privacy">Integritetspolicy</a><a asp-action="Support">Support</a></nav>
+    </article>
+</main>

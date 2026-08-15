@@ -7,6 +7,7 @@ using Glosify.Services.Classrooms;
 using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
+using Glosify.Localization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.Controllers.Classrooms;
@@ -74,12 +75,12 @@ public sealed class ClassroomController : ClassroomControllerBase
                 description,
                 _languageContext.CurrentLanguage,
                 cancellationToken);
-            TempData[NotificationKeys.Classroom] = $"Created {classroom.Name}.";
+            TempData[NotificationKeys.Classroom] = Text["Classroom.Created", classroom.Name].Value;
             return BackToClassroom(classroom.Id);
         }
-        catch (ArgumentException ex)
+        catch (ArgumentException)
         {
-            TempData[NotificationKeys.Classroom] = ex.Message;
+            TempData[NotificationKeys.Classroom] = Text["Classroom.CreateInvalid"].Value;
             return BackToClassroomList();
         }
     }
@@ -90,7 +91,7 @@ public sealed class ClassroomController : ClassroomControllerBase
         var classroom = await _classrooms.JoinByCodeAsync(User.GetUserId(), code ?? string.Empty, cancellationToken);
         if (classroom == null)
         {
-            TempData[NotificationKeys.Classroom] = "No classroom matches that join code.";
+            TempData[NotificationKeys.Classroom] = Text["Classroom.NoCodeMatch"].Value;
             return BackToClassroomList();
         }
 
@@ -104,7 +105,7 @@ public sealed class ClassroomController : ClassroomControllerBase
         var classroom = await _roster.AcceptInvitationAsync(id, User.GetUserId(), cancellationToken);
         if (classroom == null)
         {
-            TempData[NotificationKeys.Classroom] = "That invitation is no longer available.";
+            TempData[NotificationKeys.Classroom] = Text["Classroom.InvitationUnavailable"].Value;
             return BackToClassroomList();
         }
 
@@ -122,17 +123,17 @@ public sealed class ClassroomController : ClassroomControllerBase
             || string.Equals(classroom.Language, _languageContext.CurrentLanguage, StringComparison.Ordinal)
             || !_languageContext.TrySetLanguage(classroom.Language))
         {
-            return $"Welcome to {classroom.Name}.";
+            return Text["Classroom.Welcome", classroom.Name];
         }
 
-        return $"Welcome to {classroom.Name}. Switched you to {classroom.Language}.";
+        return Text["Classroom.WelcomeSwitched", classroom.Name, QuizLanguageDisplay.Name(classroom.Language)];
     }
 
     [HttpPost]
     public async Task<IActionResult> DeclineInvitation(Guid id, CancellationToken cancellationToken)
     {
         await _roster.DeclineInvitationAsync(id, User.GetUserId(), cancellationToken);
-        TempData[NotificationKeys.Classroom] = "Invitation declined.";
+        TempData[NotificationKeys.Classroom] = Text["Classroom.InvitationDeclined"].Value;
         return BackToClassroomList();
     }
 
@@ -202,7 +203,7 @@ public sealed class ClassroomController : ClassroomControllerBase
         }
         catch (ClassroomAccessDeniedException)
         {
-            TempData[NotificationKeys.Classroom] = "Classroom not found.";
+            TempData[NotificationKeys.Classroom] = Text["Classroom.NotFound"].Value;
             return BackToClassroomList();
         }
     }
@@ -213,11 +214,11 @@ public sealed class ClassroomController : ClassroomControllerBase
         try
         {
             await _roster.LeaveAsync(id, User.GetUserId(), cancellationToken);
-            TempData[NotificationKeys.Classroom] = "You left the classroom.";
+            TempData[NotificationKeys.Classroom] = Text["Classroom.Left"].Value;
         }
-        catch (ClassroomAccessDeniedException ex)
+        catch (ClassroomAccessDeniedException)
         {
-            TempData[NotificationKeys.Classroom] = ex.Message;
+            TempData[NotificationKeys.Classroom] = Text["Classroom.ActionDenied"].Value;
             return BackToClassroom(id);
         }
 
@@ -230,11 +231,11 @@ public sealed class ClassroomController : ClassroomControllerBase
         try
         {
             await _classrooms.DeleteClassroomAsync(id, User.GetUserId(), cancellationToken);
-            TempData[NotificationKeys.Classroom] = "Classroom deleted.";
+            TempData[NotificationKeys.Classroom] = Text["Classroom.Deleted"].Value;
         }
-        catch (ClassroomAccessDeniedException ex)
+        catch (ClassroomAccessDeniedException)
         {
-            TempData[NotificationKeys.Classroom] = ex.Message;
+            TempData[NotificationKeys.Classroom] = Text["Classroom.ActionDenied"].Value;
             return BackToClassroom(id);
         }
 

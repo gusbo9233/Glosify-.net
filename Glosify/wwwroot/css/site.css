@@ -8294,3 +8294,18 @@ button.btn-hero, button.btn-new-quiz { font: inherit; }
     .custom-canvas-block.is-selected .custom-canvas-chrome { opacity: 1; pointer-events: auto; }
     .custom-canvas-block.is-selected .custom-resize-handle { opacity: 1; }
 }
+
+/* Display culture is separate from the learner's selected quiz language. */
+.display-language-selector { display: inline-flex; align-items: center; gap: .3rem; margin: 0; }
+.display-language-selector .material-symbols-outlined { color: var(--text-muted); font-size: 1.1rem; }
+.display-language-selector select { max-width: 7.5rem; padding-block: .38rem; padding-inline: .5rem 1.55rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface, rgba(255,255,255,.06)); color: inherit; font: inherit; font-size: .78rem; }
+.display-language-selector noscript button { padding: .35rem .55rem; border: 1px solid var(--border); border-radius: 999px; background: transparent; color: inherit; }
+.auth-display-language { position: fixed; z-index: 10; inset-block-start: max(1rem, env(safe-area-inset-top)); inset-inline-end: max(1rem, env(safe-area-inset-right)); }
+.legal-language-notice { margin: 1rem 0 1.5rem; padding: .85rem 1rem; border: 1px solid rgba(255,255,255,.14); border-radius: 12px; background: rgba(255,255,255,.05); color: var(--text-muted); }
+.legal-language-notice a { color: inherit; font-weight: 750; }
+html[dir="rtl"] :is(input, textarea, select) { text-align: start; }
+html[dir="rtl"] :is(.legal-page, .auth-shell, .app-main, .app-topbar) { direction: rtl; }
+@media (max-width: 720px) {
+    .app-topbar-right .display-language-selector .material-symbols-outlined { display: none; }
+    .app-topbar-right .display-language-selector select { max-width: 6.2rem; }
+}

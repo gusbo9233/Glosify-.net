@@ -1,0 +1,62 @@
+@using Microsoft.Extensions.Options
+@using Glosify.Services.Legal
+@inject IOptions<LegalOptions> Legal
+@{
+    Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
+    ViewData["Title"] = "Integritetspolicy";
+    ViewData["Description"] = "Så hanterar Glosify och Chrome-tillägget Glosify Live Subtitles personuppgifter.";
+    var legal = Legal.Value;
+}
+
+<main class="auth-shell legal-shell">
+    <article class="glass-card legal-document">
+        <header class="auth-card-header">
+            <h1>Integritetspolicy</h1>
+            <p>Senast uppdaterad 14 augusti 2026</p>
+        </header>
+
+        <aside class="legal-language-notice">
+            @Text["Legal.EnglishGoverns"]
+            <a asp-action="PrivacyEnglish">Läs den engelska versionen</a>.
+        </aside>
+
+        <h2>Vem ansvarar för dina uppgifter?</h2>
+        <p><strong>@legal.ControllerName</strong> driver Glosify och är personuppgiftsansvarig för de personuppgifter som beskrivs här. Kontakta <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> om du har frågor om integritet eller vill begära radering.</p>
+
+        <h2>Uppgifter som Glosify hanterar</h2>
+        <ul>
+            <li>Kontouppgifter som e-postadress, internt konto-id, autentiseringsmetod och identifierare för extern inloggning med Google eller Microsoft.</li>
+            <li>Språkinställningar, quiz, utbildningsinnehåll, krediter, reservationer, användningstransaktioner och sessionsmetadata som behövs för att leverera och skydda tjänsten.</li>
+            <li>Meddelanden till assistenten, vald inlärningskontext, AI-genererade svar, verktygsåtgärder och föreslagna ändringar som behövs för sparade chattar. Assistentförfrågningar behandlas av Microsoft Foundry.</li>
+            <li>För livetextning: ljud från den flik du uttryckligen väljer, översatta undertexter, målspråk, tidsinformation och anslutningsdiagnostik.</li>
+            <li>Om du separat aktiverar sparning av transkriptioner: färdigställd taltext på originalspråket, transkriptionstitlar, tidsstämplar och valt studiespråk.</li>
+            <li>Säkerhets- och driftmetadata som IP-adress, tidpunkt för förfrågan, status och feldiagnostik. Programloggar är utformade för att inte innehålla flikljud eller undertext.</li>
+        </ul>
+        <p>Assistentens driftanalys registrerar modell- och verktygsnamn, antal token, tider, resultat och pseudonyma korrelationsidentifierare. Den är konfigurerad för att inte kopiera fullständiga promptar, svar, verktygsargument eller verktygsresultat till analyslagring eller telemetri.</p>
+
+        <h2>Livetextning och behandling hos leverantörer</h2>
+        <p>Chrome spelar bara in ljud efter att du tryckt på <strong>Starta undertexter</strong> för den aktiva fliken. I förbättrat läge strömmas ljudet via Glosify till Microsoft Foundry för talbehandling och översättning i realtid. Om sparning av transkriptioner är aktiverad strömmas samma ljud också till ElevenLabs Scribe v2 för att skapa den färdiga källtranskriptionen. I undertextläget ElevenLabs Scribe v2 strömmas ljudet via Glosify till ElevenLabs för transkribering och varje färdig fras skickas till Azure Translator. Flikljud skrivs inte till Glosifys lagring.</p>
+        <p>Undertexter och identifierade fraser visas tillfälligt om du inte separat väljer att spara transkriptionen. Microsoft behandlar ljud, identifierade fraser och relaterad tjänstemetadata för förbättrade undertexter. ElevenLabs behandlar uppgifterna när Scribe-läget är aktivt eller när förbättrad transkriptionssparning är aktiverad. Standardloggning för ElevenLabs API är aktiverad, vilket innebär att ElevenLabs kan behålla förfrågnings- och tjänsteloggar enligt sina tjänstevillkor och sin lagringspolicy. Google och Microsoft behandlar uppgifter enligt sina egna policyer när du väljer deras OAuth-inloggning.</p>
+
+        <h2>Ändamål och rättslig grund</h2>
+        <p>Glosify använder uppgifterna för att autentisera dig, leverera de utbildnings- och undertextfunktioner du begär, hantera ditt innehåll, administrera krediter och programmets budget, förebygga missbruk, felsöka och uppfylla rättsliga skyldigheter. Behandlingen är nödvändig för att leverera tjänsten du begär och för berättigade säkerhets- och tillförlitlighetsintressen. Valfri lagring av transkriptioner bygger på ditt uttryckliga val.</p>
+
+        <h2>Lagring, bevarande och radering</h2>
+        <p>Sparning av transkriptioner är avstängd som standard. När funktionen är aktiverad lagras färdigställd taltext på originalspråket i ditt privata Glosify-konto tills du raderar transkriptionen eller kontot. Kontoinnehåll och kreditposter sparas medan kontot är aktivt och så länge det rimligen behövs för säkerhet, bokföring, tvister eller rättsliga skyldigheter. Kopior i molnsäkerhetskopior och driftloggar upphör enligt konfigurerade lagringstider i Microsoft Azure och försvinner därför inte omedelbart.</p>
+        <p>Du kan radera sparade transkriptioner från sidan Transkriptioner och använda kontots raderingsverktyg efter inloggning. Du kan också kontakta adressen ovan. Att radera innehåll tar inte bort en OAuth-leverantörs egen kopia; hantera även den relationen hos Google eller Microsoft.</p>
+
+        <h2>Data i Chrome-tillägget</h2>
+        <p>Tillägget lagrar minsta möjliga lokala inställningar och autentiseringsmaterial som behövs för anslutningen, exempelvis språkval, sessionsstatus och Glosify-bearer-token. Behörigheter för aktiv flik, flikinspelning, offscreen, skript, lagring, identitet och åtkomst till glosify.se används bara för att ansluta kontot och visa översatta undertexter ovanpå den flik som användaren startar.</p>
+
+        <h2>Chrome Web Store Limited Use</h2>
+        <p>Glosifys användning och överföring av information från Google API:er följer Chrome Web Store User Data Policy, inklusive kraven för Limited Use. Glosify säljer inte användardata från tillägget, använder den inte för personanpassad reklam och överför den inte för orelaterade kredit- eller låneändamål.</p>
+
+        <h2>Ändringar och frågor</h2>
+        <p>Väsentliga ändringar publiceras på den här sidan med ett nytt ikraftträdandedatum. Kontakta <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> om du har frågor eller vill begära tillgång, rättelse, dataportabilitet, invända mot behandling eller få uppgifter raderade.</p>
+
+        <nav class="legal-links" aria-label="Juridiska sidor">
+            <a asp-action="Terms">Användarvillkor</a>
+            <a asp-action="Support">Support</a>
+        </nav>
+    </article>
+</main>

@@ -7,7 +7,7 @@
 <section class="classroom-page">
     <section class="books-header">
         <div>
-            <p class="hero-label">Classroom</p>
+            <p class="hero-label">@Text["Classroom.One"]</p>
             <h1 class="page-title">@Model.Classroom.Name</h1>
             @if (!string.IsNullOrWhiteSpace(Model.Classroom.Description))
             {
@@ -15,7 +15,7 @@
             }
         </div>
         <a class="btn-main classroom-call-link" asp-controller="ClassroomCall" asp-action="Call" asp-route-id="@Model.Classroom.Id">
-            <span data-call-link-label>@(Model.ActiveCallParticipants > 0 ? "Join call" : "Video call")</span>
+            <span data-call-link-label>@(Model.ActiveCallParticipants > 0 ? Text["Classroom.JoinCall"] : Text["Classroom.VideoCall"])</span>
             <span class="material-symbols-outlined" aria-hidden="true">videocam</span>
             <span class="classroom-call-live" data-call-live hidden="@(Model.ActiveCallParticipants > 0 ? null : "hidden")">
                 <span class="call-status-dot" aria-hidden="true"></span>
@@ -25,10 +25,10 @@
         @if (Model.IsTeacher)
         {
             <div class="classroom-join-code" data-join-code="@Model.Classroom.JoinCode">
-                <span class="book-meta">Join code</span>
+                <span class="book-meta">@Text["Classroom.JoinCode"]</span>
                 <strong class="classroom-code-value">@Model.Classroom.JoinCode</strong>
                 <button class="btn-secondary" type="button" data-copy-join-code>
-                    Copy <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+                    @Text["Common.Copy"] <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
                 </button>
             </div>
         }
@@ -39,14 +39,14 @@
         <div class="panel-message">@classroomMessage</div>
     }
 
-    <div class="tab-group classroom-tabs" role="tablist" aria-label="Classroom sections">
-        <a class="tab @(Model.ActiveTab == "stream" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="stream">Stream</a>
-        <a class="tab @(Model.ActiveTab == "content" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="content">Content</a>
-        <a class="tab @(Model.ActiveTab == "planning" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="planning">Planning</a>
-        <a class="tab @(Model.ActiveTab == "members" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="members">Members</a>
+    <div class="tab-group classroom-tabs" role="tablist" aria-label="@Text["Classroom.Sections"]">
+        <a class="tab @(Model.ActiveTab == "stream" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="stream">@Text["Classroom.Stream"]</a>
+        <a class="tab @(Model.ActiveTab == "content" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="content">@Text["Classroom.Content"]</a>
+        <a class="tab @(Model.ActiveTab == "planning" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="planning">@Text["Classroom.Planning"]</a>
+        <a class="tab @(Model.ActiveTab == "members" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="members">@Text["Classroom.Members"]</a>
         @if (Model.IsTeacher)
         {
-            <a class="tab @(Model.ActiveTab == "results" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="results">Results</a>
+            <a class="tab @(Model.ActiveTab == "results" ? "active" : null)" asp-action="Details" asp-route-id="@Model.Classroom.Id" asp-route-tab="results">@Text["Classroom.Results"]</a>
         }
     </div>
 

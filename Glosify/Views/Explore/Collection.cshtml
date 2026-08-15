@@ -14,31 +14,31 @@
         <div class="select-heading">
             <p class="select-kicker">
                 <span class="material-symbols-outlined" aria-hidden="true">folder_shared</span>
-                Public collection <span class="select-kicker-separator">/</span> @Model.Collection.Language
+                @Text["Explore.PublicCollection"] <span class="select-kicker-separator">/</span> @QuizLanguageDisplay.Name(Model.Collection.Language)
             </p>
             <h1 class="select-title">@Model.Collection.Name</h1>
-            <p class="select-subtitle">Explore @Model.QuizCount @(Model.QuizCount == 1 ? "quiz" : "quizzes") across @(Model.CollectionCount + 1) collections, then copy the complete set to your library.</p>
-            <div class="library-overview" aria-label="Collection summary">
+            <p class="select-subtitle">@Text["Explore.CollectionIntro", Model.QuizCount, Model.QuizCount == 1 ? Text["Quiz.QuizOne"] : Text["Quiz.QuizMany"], Model.CollectionCount + 1]</p>
+            <div class="library-overview" aria-label="@Text["Explore.CollectionSummary"]">
                 <span class="overview-item">
                     <span class="material-symbols-outlined" aria-hidden="true">public</span>
-                    <strong>@Model.QuizCount</strong> @(Model.QuizCount == 1 ? "quiz" : "quizzes")
+                    <strong>@Model.QuizCount</strong> @(Model.QuizCount == 1 ? Text["Quiz.QuizOne"] : Text["Quiz.QuizMany"])
                 </span>
                 <span class="overview-item">
                     <span class="material-symbols-outlined" aria-hidden="true">account_tree</span>
-                    <strong>@(Model.CollectionCount + 1)</strong> @(Model.CollectionCount == 0 ? "collection" : "collections")
+                    <strong>@(Model.CollectionCount + 1)</strong> @(Model.CollectionCount == 0 ? Text["Quiz.CollectionOne"] : Text["Quiz.CollectionMany"])
                 </span>
             </div>
         </div>
         <div class="select-actions">
             <a class="btn-new-quiz btn-back-library" asp-controller="Explore" asp-action="Index">
                 <span class="material-symbols-outlined">arrow_back</span>
-                Back
+                @Text["Common.Back"]
             </a>
             <form method="post" asp-controller="Explore" asp-action="CopyCollection" asp-route-id="@Model.Collection.Id">
                 @Html.AntiForgeryToken()
                 <button class="btn-new-quiz" type="submit">
                     <span class="material-symbols-outlined">library_add</span>
-                    Copy Collection
+                    @Text["Explore.CopyCollection"]
                 </button>
             </form>
         </div>
@@ -49,8 +49,8 @@
         <section class="library-section library-section--quizzes" aria-labelledby="rootQuizzesHeading">
             <div class="library-section-header">
                 <div class="library-section-copy">
-                    <h2 id="rootQuizzesHeading">In this collection <span class="section-count">@Model.Collection.Quizzes.Count</span></h2>
-                    <p>Quizzes filed directly inside @Model.Collection.Name.</p>
+                    <h2 id="rootQuizzesHeading">@Text["Explore.InCollection"] <span class="section-count">@Model.Collection.Quizzes.Count</span></h2>
+                    <p>@Text["Explore.FiledInside", Model.Collection.Name]</p>
                 </div>
             </div>
             <div class="quiz-grid">
@@ -60,11 +60,11 @@
                         <a class="quiz-card-link" asp-controller="Explore" asp-action="Details" asp-route-id="@quiz.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon"><span class="material-symbols-outlined">public</span></div>
-                                <span class="quiz-card-kind">Community quiz</span>
+                                <span class="quiz-card-kind">@Text["Explore.CommunityQuiz"]</span>
                                 <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@quiz.Name</h2>
-                            <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
+                            <p class="quiz-languages">@QuizLanguageDisplay.Name(quiz.SourceLanguage) &rarr; @QuizLanguageDisplay.Name(quiz.TargetLanguage)</p>
                         </a>
                         <div class="quiz-meta">
                             <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
@@ -92,11 +92,11 @@
                         <a class="quiz-card-link" asp-controller="Explore" asp-action="Details" asp-route-id="@quiz.Id">
                             <div class="quiz-card-top">
                                 <div class="quiz-icon"><span class="material-symbols-outlined">public</span></div>
-                                <span class="quiz-card-kind">Community quiz</span>
+                                <span class="quiz-card-kind">@Text["Explore.CommunityQuiz"]</span>
                                 <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@quiz.Name</h2>
-                            <p class="quiz-languages">@quiz.SourceLanguage &rarr; @quiz.TargetLanguage</p>
+                            <p class="quiz-languages">@QuizLanguageDisplay.Name(quiz.SourceLanguage) &rarr; @QuizLanguageDisplay.Name(quiz.TargetLanguage)</p>
                         </a>
                         <div class="quiz-meta">
                             <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@quiz.CreatedAt.ToString("MMM d, yyyy")</span>
@@ -108,7 +108,7 @@
                 {
                     <div class="library-inline-empty">
                         <span class="material-symbols-outlined" aria-hidden="true">inventory_2</span>
-                        No quizzes directly inside this collection.
+                        @Text["Explore.NoDirectQuizzes"]
                     </div>
                 }
             </div>

@@ -1,4 +1,5 @@
 (() => {
+    const t = (key, fallback) => window.glosifyText?.(key, fallback) ?? fallback;
     const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
     const messageHost = document.querySelector('[data-ai-message-host]');
 
@@ -28,14 +29,14 @@
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {
-                setMessage(data?.detail || data?.title || data?.error || 'Repair failed. Please try again.', 'error');
+                setMessage(t('Client.RepairFailed', 'Repair failed. Please try again.'), 'error');
                 return;
             }
 
-            setMessage(data?.message || 'Repair finished.');
+            setMessage(data?.message || `${t('Quiz.Repair', 'Repair')} ✓`);
             window.setTimeout(() => window.location.reload(), 450);
         } catch {
-            setMessage('The repair request stopped unexpectedly. Please try again.', 'error');
+            setMessage(t('Client.RepairStopped', 'The repair request stopped unexpectedly. Please try again.'), 'error');
         } finally {
             button.disabled = false;
             button.innerHTML = originalHtml;
@@ -59,7 +60,7 @@
 
     document.querySelectorAll('[data-delete-custom-quiz]').forEach(button => {
         button.addEventListener('click', async () => {
-            if (!window.confirm('Delete this custom quiz?')) return;
+            if (!window.confirm(t('Client.DeleteQuizConfirm', 'Delete this custom quiz?'))) return;
             button.disabled = true;
             try {
                 const response = await fetch(button.dataset.deleteUrl, {
@@ -69,7 +70,7 @@
                 if (!response.ok) throw new Error();
                 button.closest('[data-custom-quiz-card]')?.remove();
             } catch {
-                setMessage('Could not delete the custom quiz. Try again.', 'error');
+                setMessage(t('Client.DeleteQuizFailed', 'Could not delete the custom quiz. Try again.'), 'error');
                 button.disabled = false;
             }
         });
