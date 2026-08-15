@@ -10,8 +10,15 @@ public sealed class CreditPricingOptions
 
     public Dictionary<string, decimal> TokenFeatures { get; set; } = [];
     public decimal? DefaultModelMultiplier { get; set; }
+    public List<ModelCreditPricingOptions> Models { get; set; } = [];
     public Dictionary<string, decimal> ModelMultipliers { get; set; } = [];
     public SubtitleCreditPricingOptions Subtitles { get; set; } = new();
+}
+
+public sealed class ModelCreditPricingOptions
+{
+    public string Deployment { get; set; } = string.Empty;
+    public decimal Multiplier { get; set; }
 }
 
 public sealed class SubtitleCreditPricingOptions
@@ -50,6 +57,28 @@ public sealed class CreditPricingOptionsValidator : IValidateOptions<CreditPrici
         if (options.DefaultModelMultiplier is <= 0)
         {
             failures.Add("CreditPricing:DefaultModelMultiplier must be greater than zero when specified.");
+        }
+
+        foreach (var (model, index) in options.Models.Select((model, index) => (model, index)))
+        {
+            if (string.IsNullOrWhiteSpace(model.Deployment))
+            {
+                failures.Add($"CreditPricing:Models:{index}:Deployment is required.");
+            }
+            if (model.Multiplier <= 0)
+            {
+                failures.Add($"CreditPricing:Models:{index}:Multiplier must be greater than zero.");
+            }
+        }
+
+        var duplicateDeployments = options.Models
+            .Where(model => !string.IsNullOrWhiteSpace(model.Deployment))
+            .GroupBy(model => model.Deployment.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key);
+        foreach (var deployment in duplicateDeployments)
+        {
+            failures.Add($"CreditPricing:Models contains duplicate deployment '{deployment}'.");
         }
 
         foreach (var (deployment, multiplier) in options.ModelMultipliers)
@@ -174,6 +203,14 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
 
     public decimal GetModelMultiplier(string model)
     {
+        var indexedModel = _pricing.Models.FirstOrDefault(candidate => string.Equals(
+            candidate.Deployment?.Trim(),
+            model?.Trim(),
+            StringComparison.OrdinalIgnoreCase));
+        if (indexedModel is not null)
+        {
+            return indexedModel.Multiplier;
+        }
         if (TryGetValue(_pricing.ModelMultipliers, model, out var configured))
         {
             return configured;
@@ -207,13 +244,14 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
 
         var deployments = _generativeAi.Foundry.AssistantModels
             .Select(model => model.Deployment)
+            .Concat(_pricing.Models.Select(model => model.Deployment))
             .Concat(_pricing.ModelMultipliers.Keys)
             .Where(deployment => !string.IsNullOrWhiteSpace(deployment))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(deployment => deployment, StringComparer.OrdinalIgnoreCase)
             .Select(deployment =>
             {
-                var configured = TryGetValue(_pricing.ModelMultipliers, deployment, out var value);
+                var configured = TryGetConfiguredModelMultiplier(deployment, out var value);
                 var source = configured
                     ? CreditPriceSources.CreditPricing
                     : _pricing.DefaultModelMultiplier.HasValue
@@ -274,6 +312,21 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
             configured ?? fallback,
             "credits / started minute",
             configured.HasValue ? CreditPriceSources.CreditPricing : CreditPriceSources.LegacyFallback);
+
+    private bool TryGetConfiguredModelMultiplier(string? deployment, out decimal value)
+    {
+        var indexedModel = _pricing.Models.FirstOrDefault(candidate => string.Equals(
+            candidate.Deployment?.Trim(),
+            deployment?.Trim(),
+            StringComparison.OrdinalIgnoreCase));
+        if (indexedModel is not null)
+        {
+            value = indexedModel.Multiplier;
+            return true;
+        }
+
+        return TryGetValue(_pricing.ModelMultipliers, deployment, out value);
+    }
 
     private static bool TryGetValue(
         IReadOnlyDictionary<string, decimal> values,
