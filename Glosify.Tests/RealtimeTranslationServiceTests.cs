@@ -183,9 +183,10 @@ public sealed class RealtimeTranslationServiceTests
 
         var catalog = await service.GetCatalogAsync("user-1");
 
+        Assert.Equal(69, catalog.QuizLanguages.Count);
         Assert.Equal(
-            [("et", "Estonian"), ("de", "German"), ("pl", "Polish"), ("uk", "Ukrainian")],
-            catalog.QuizLanguages.Select(language => (language.Code, language.Name)).ToArray());
+            QuizLanguageCatalog.All.Select(language => (language.Code, language.Name)),
+            catalog.QuizLanguages.Select(language => (language.Code, language.Name)));
         Assert.Equal("pl", catalog.SelectedQuizLanguage?.Code);
         Assert.Equal("Polish", catalog.SelectedQuizLanguage?.Name);
         Assert.Equal("auto", catalog.SourceLanguages[0].Code);

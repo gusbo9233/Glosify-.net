@@ -59,11 +59,11 @@
         <div class="quick-add-fields">
             <label class="quick-add-field">
                 <span class="quick-add-label">Word</span>
-                <input class="form-input" type="text" name="word" placeholder="e.g. Bibliotheque" required />
+                <input class="form-input" type="text" name="word" dir="auto" placeholder="e.g. Bibliotheque" required />
             </label>
             <label class="quick-add-field">
                 <span class="quick-add-label">Translation</span>
-                <input class="form-input" type="text" name="translation" placeholder="e.g. Library" required />
+                <input class="form-input" type="text" name="translation" dir="auto" placeholder="e.g. Library" required />
             </label>
         </div>
         <button class="btn-submit quick-add-submit" type="submit">Add word</button>
@@ -104,8 +104,8 @@
 
                             <div class="word-card-link">
                                 <div>
-                                    <div class="word">@word.Lemma</div>
-                                    <div class="translation">@word.Translation</div>
+                                    <div class="word" dir="auto">@word.Lemma</div>
+                                    <div class="translation" dir="auto">@word.Translation</div>
                                 </div>
                             </div>
                         </div>
@@ -150,10 +150,10 @@
                         <div class="sentence-card-top">
                             <div class="word-icon"><span class="material-symbols-outlined">format_quote</span></div>
                             <div>
-                                <div class="sentence-text">@sentence.Text</div>
+                                <div class="sentence-text" dir="auto">@sentence.Text</div>
                                 @if (!string.IsNullOrWhiteSpace(sentence.Translation))
                                 {
-                                    <div class="sentence-translation">@sentence.Translation</div>
+                                    <div class="sentence-translation" dir="auto">@sentence.Translation</div>
                                 }
                             </div>
                         </div>

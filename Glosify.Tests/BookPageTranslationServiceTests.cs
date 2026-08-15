@@ -160,7 +160,7 @@ public sealed class BookPageTranslationServiceTests
         await Assert.ThrowsAsync<BookPageTranslationUnavailableException>(() =>
             service.TranslatePageAsync(document.Id, 1, "owner", "Swedish", []));
         await Assert.ThrowsAsync<BookPageTranslationValidationException>(() =>
-            service.TranslatePageAsync(document.Id, 1, "owner", "French", SourceSegments));
+            service.TranslatePageAsync(document.Id, 1, "owner", "Klingon", SourceSegments));
         await Assert.ThrowsAsync<BookPageTranslationValidationException>(() =>
             service.TranslatePageAsync(
                 document.Id,

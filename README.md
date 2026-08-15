@@ -52,6 +52,12 @@ Translator's language catalog. Spoken-language detection defaults to automatic;
 Scribe also accepts an optional language hint. When an Enhanced session saves a
 source transcript, the same audio is transcribed by Scribe.
 
+Learning and saved-transcript language choices use a reviewed, versioned set of
+69 languages shared by Azure Translator text translation and Scribe's published
+≤20% WER tiers. The metadata and provider capability snapshot live under
+`Glosify/Services/Language/`. Foundry assistant and translation deployments are
+shared across this catalog; no model or authored agent is created per language.
+
 The [portfolio case study](docs/portfolio-case-study.md) gives a more complete product
 tour and explains the main technical decisions in simple terms.
 
@@ -132,6 +138,8 @@ the code and its behavior, not just generate more code.
 - Target, source/translation, and reply languages are separate durable
   preferences, so the assistant does not re-ask about a language the conversation
   already established.
+- A searchable English/native-name picker exposes the 69-language shared
+  non-speaking catalog across quizzes, books, classrooms, transcripts, and tools.
 - Live translated subtitles for Chrome tab audio, integrated with Glosify
   authentication, AI credits, saved transcripts, and assistant context.
 - Azure-powered speaking practice with animated language-specific avatars,

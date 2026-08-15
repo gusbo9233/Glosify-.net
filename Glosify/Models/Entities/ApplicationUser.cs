@@ -11,9 +11,9 @@ public class ApplicationUser : IdentityUser
     /// </summary>
     /// <remarks>
     /// Separate from <see cref="SelectedQuizLanguageCode"/>, which is the language being
-    /// learned and is restricted to the four supported ones. What a learner already knows is
-    /// a much wider set and is stored the way quizzes store it, as a name, so the value can
-    /// be used as a quiz source language without translation.
+    /// learned and is restricted to the versioned supported catalog. What a learner already
+    /// knows is stored the way quizzes store it, as a name, so the value can be used as a quiz
+    /// source language without translation.
     /// </remarks>
     public string? PreferredSourceLanguage { get; set; }
 

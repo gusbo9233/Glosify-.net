@@ -4,25 +4,11 @@
     ViewData["Title"] = "Language selector";
     ViewData["ActiveNav"] = "languages";
 
-    var languages = Glosify.Services.Language.QuizLanguageCatalog.All.Select(language => new
-    {
-        language.Name,
-        Flag = language.Code switch
-        {
-            "et" => "estonia",
-            "de" => "germany",
-            "pl" => "poland",
-            "uk" => "ukraine",
-            _ => string.Empty,
-        },
-    });
-
+    var languages = Glosify.Services.Language.QuizLanguageCatalog.All;
     var current = LangContext.CurrentLanguage;
 }
 
-
-
-<section class="language-page">
+<section class="language-page" data-language-picker>
     <header class="language-hero">
         <h1 class="language-brand">Sonic Polyglot</h1>
         <h2 class="language-tagline">
@@ -31,13 +17,28 @@
         @if (!string.IsNullOrEmpty(current))
         {
             <span class="language-current">
-                    <span class="material-symbols-outlined icon-sm">check_circle</span>
+                <span class="material-symbols-outlined icon-sm">check_circle</span>
                 Currently learning @current
             </span>
         }
     </header>
 
-    <form class="language-form" method="post" asp-controller="Languages" asp-action="Select">
+    <div class="language-search-panel">
+        <label for="languageSearch">Find a language</label>
+        <div class="language-search-control">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input id="languageSearch"
+                   type="search"
+                   autocomplete="off"
+                   placeholder="Search in English, native name, or code"
+                   data-language-search />
+        </div>
+        <p class="language-result-count" aria-live="polite" data-language-result-count>
+            @languages.Count languages
+        </p>
+    </div>
+
+    <form class="language-form" method="post" asp-controller="Languages" asp-action="Select" data-language-list>
         @Html.AntiForgeryToken()
         @if (ViewData["ReturnUrl"] is string returnUrl)
         {
@@ -46,40 +47,39 @@
         @foreach (var language in languages)
         {
             var isCurrent = string.Equals(current, language.Name, StringComparison.OrdinalIgnoreCase);
-            <button class="language-card @(isCurrent ? "is-current" : "")" type="submit" name="language" value="@language.Name" aria-label="@language.Name" aria-pressed="@(isCurrent ? "true" : "false")">
-                <span class="flag-frame">
-                    @switch (language.Flag)
-                    {
-                        case "estonia":
-                            <svg viewBox="0 0 3 2" preserveAspectRatio="none" role="img" aria-hidden="true">
-                                <rect width="3" height="2" fill="#0072CE" />
-                                <rect y="0.6667" width="3" height="0.6667" fill="#000000" />
-                                <rect y="1.3333" width="3" height="0.6667" fill="#FFFFFF" />
-                            </svg>
-                            break;
-                        case "germany":
-                            <svg viewBox="0 0 5 3" preserveAspectRatio="none" role="img" aria-hidden="true">
-                                <rect width="5" height="3" fill="#000000" />
-                                <rect y="1" width="5" height="1" fill="#DD0000" />
-                                <rect y="2" width="5" height="1" fill="#FFCE00" />
-                            </svg>
-                            break;
-                        case "poland":
-                            <svg viewBox="0 0 8 5" preserveAspectRatio="none" role="img" aria-hidden="true">
-                                <rect width="8" height="5" fill="#FFFFFF" />
-                                <rect y="2.5" width="8" height="2.5" fill="#DC143C" />
-                            </svg>
-                            break;
-                        case "ukraine":
-                            <svg viewBox="0 0 3 2" preserveAspectRatio="none" role="img" aria-hidden="true">
-                                <rect width="3" height="2" fill="#0057B7" />
-                                <rect y="1" width="3" height="1" fill="#FFD700" />
-                            </svg>
-                            break;
-                    }
+            var searchTerms = string.Join(" ", new[]
+            {
+                language.Code,
+                language.TranslatorCode,
+                language.ScribeCode,
+                language.Name,
+                language.NativeName,
+            }.Concat(language.Aliases));
+            <button class="language-card @(isCurrent ? "is-current" : "")"
+                    type="submit"
+                    name="language"
+                    value="@language.Code"
+                    aria-label="@language.Name"
+                    aria-pressed="@(isCurrent ? "true" : "false")"
+                    data-language-card
+                    data-language-search-terms="@searchTerms">
+                <span class="flag-frame" aria-hidden="true">@language.Flag</span>
+                <span class="language-labels">
+                    <span class="language-name">@language.Name</span>
+                    <span class="language-native-name" dir="auto" lang="@language.Locale">@language.NativeName</span>
                 </span>
-                <span class="language-name">@language.Name</span>
+                <span class="language-code">@language.Code</span>
             </button>
         }
     </form>
+
+    <div class="language-empty-state" data-language-empty hidden>
+        <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
+        <strong>No matching language</strong>
+        <span>Try an English name, native name, or language code.</span>
+    </div>
 </section>
+
+@section Scripts {
+    <script type="module" src="~/js/language-picker.js" asp-append-version="true"></script>
+}

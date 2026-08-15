@@ -33,56 +33,56 @@
                 @switch (block.Type)
                 {
                     case CustomQuizBlockTypes.Heading:
-                        <h2>@block.Text</h2>
+                        <h2 dir="auto">@block.Text</h2>
                         break;
                     case CustomQuizBlockTypes.InstructionLabel:
-                        <p class="custom-instruction">@block.Text</p>
+                        <p class="custom-instruction" dir="auto">@block.Text</p>
                         break;
                     case CustomQuizBlockTypes.PromptLabel:
                     case CustomQuizBlockTypes.TranslationLabel:
-                        <p class="custom-bound-label">@ResolveBlock(block.Id)</p>
+                        <p class="custom-bound-label" dir="auto">@ResolveBlock(block.Id)</p>
                         break;
                     case CustomQuizBlockTypes.TextInput:
                         {
                             var blank = SplitInlineBlank(block.Label);
                             <label class="custom-inline-answer">
-                                @if (!string.IsNullOrEmpty(blank.Before)) { <span class="custom-inline-answer-before">@blank.Before</span> }
-                                <input class="form-input" type="text" data-answer-block="@block.Id" />
-                                @if (!string.IsNullOrEmpty(blank.After)) { <span class="custom-inline-answer-after">@blank.After</span> }
+                                @if (!string.IsNullOrEmpty(blank.Before)) { <span class="custom-inline-answer-before" dir="auto">@blank.Before</span> }
+                                <input class="form-input" type="text" dir="auto" data-answer-block="@block.Id" />
+                                @if (!string.IsNullOrEmpty(blank.After)) { <span class="custom-inline-answer-after" dir="auto">@blank.After</span> }
                             </label>
                             <div class="custom-answer-feedback" data-answer-feedback></div>
                         }
                         break;
                     case CustomQuizBlockTypes.Textarea:
-                        <label>@block.Label<textarea class="form-input" rows="4" data-answer-block="@block.Id"></textarea></label>
+                        <label>@block.Label<textarea class="form-input" rows="4" dir="auto" data-answer-block="@block.Id"></textarea></label>
                         <div class="custom-answer-feedback" data-answer-feedback></div>
                         break;
                     case CustomQuizBlockTypes.Checkbox:
-                        <label class="custom-check"><input type="checkbox" data-answer-block="@block.Id" /><span>@block.Label @ResolveBlock(block.Id)</span></label>
+                        <label class="custom-check"><input type="checkbox" data-answer-block="@block.Id" /><span dir="auto">@block.Label @ResolveBlock(block.Id)</span></label>
                         <div class="custom-answer-feedback" data-answer-feedback></div>
                         break;
                     case CustomQuizBlockTypes.RadioGroup:
                         <fieldset><legend>@block.Label</legend>
-                            @foreach (var option in block.Options) { <label class="custom-choice"><input type="radio" name="@block.Id" value="@option.Id" data-answer-block="@block.Id" />@ResolveOption(block.Id, option.Id)</label> }
+                            @foreach (var option in block.Options) { <label class="custom-choice" dir="auto"><input type="radio" name="@block.Id" value="@option.Id" data-answer-block="@block.Id" />@ResolveOption(block.Id, option.Id)</label> }
                         </fieldset>
                         <div class="custom-answer-feedback" data-answer-feedback></div>
                         break;
                     case CustomQuizBlockTypes.MultiSelectGroup:
                         <fieldset><legend>@block.Label</legend>
-                            @foreach (var option in block.Options) { <label class="custom-choice"><input type="checkbox" value="@option.Id" data-answer-block="@block.Id" />@ResolveOption(block.Id, option.Id)</label> }
+                            @foreach (var option in block.Options) { <label class="custom-choice" dir="auto"><input type="checkbox" value="@option.Id" data-answer-block="@block.Id" />@ResolveOption(block.Id, option.Id)</label> }
                         </fieldset>
                         <div class="custom-answer-feedback" data-answer-feedback></div>
                         break;
                     case CustomQuizBlockTypes.SelectMenu:
                         <label>@block.Label<select class="form-input" data-answer-block="@block.Id"><option value="">Choose...</option>
-                            @foreach (var option in block.Options) { <option value="@option.Id">@ResolveOption(block.Id, option.Id)</option> }
+                            @foreach (var option in block.Options) { <option value="@option.Id" dir="auto">@ResolveOption(block.Id, option.Id)</option> }
                         </select></label>
                         <div class="custom-answer-feedback" data-answer-feedback></div>
                         break;
                     case CustomQuizBlockTypes.WordBank:
                         <div class="custom-word-bank" data-word-bank data-target-inputs="@string.Join(",", block.TargetInputIds)">
                             <span>@block.Label</span>
-                            @foreach (var option in block.Options) { <button type="button" data-bank-value="@ResolveOption(block.Id, option.Id)">@ResolveOption(block.Id, option.Id)</button> }
+                            @foreach (var option in block.Options) { <button type="button" dir="auto" data-bank-value="@ResolveOption(block.Id, option.Id)">@ResolveOption(block.Id, option.Id)</button> }
                         </div>
                         break;
                     case CustomQuizBlockTypes.SubmitButton:

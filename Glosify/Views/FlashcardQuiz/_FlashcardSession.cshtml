@@ -55,7 +55,7 @@
         {
             <article class="flashcard is-revealed" aria-live="polite">
                 <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
-                <h2 class="card-word">
+                <h2 class="card-word" dir="auto">
                     @Model.CurrentCard.Prompt
                     @if (promptIsTarget)
                     {
@@ -70,7 +70,7 @@
                     }
                 </h2>
                 <div class="card-answer revealed">
-                    <div class="translation">
+                    <div class="translation" dir="auto">
                         @Model.CurrentCard.Answer
                         @if (answerIsTarget)
                         {
@@ -86,11 +86,11 @@
                     </div>
                     @if (!string.IsNullOrWhiteSpace(Model.CurrentCard.ExampleSentence))
                     {
-                        <div class="example">@Model.CurrentCard.ExampleSentence</div>
+                        <div class="example" dir="auto">@Model.CurrentCard.ExampleSentence</div>
                     }
                     @if (!string.IsNullOrWhiteSpace(Model.CurrentCard.ExampleTranslation))
                     {
-                        <div class="example">@Model.CurrentCard.ExampleTranslation</div>
+                        <div class="example" dir="auto">@Model.CurrentCard.ExampleTranslation</div>
                     }
                 </div>
             </article>
@@ -102,7 +102,7 @@
                 <input type="hidden" name="sessionId" value="@Model.SessionId" />
                 <button class="flashcard flashcard-clickable" type="submit" aria-label="Reveal answer for @Model.CurrentCard.Prompt">
                     <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
-                    <span class="card-word">
+                    <span class="card-word" dir="auto">
                         @Model.CurrentCard.Prompt
                         @if (promptIsTarget)
                         {

@@ -31,7 +31,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
         if (QuizLanguageCatalog.Find(request.Code) is null)
         {
             throw new RealtimeTranslationValidationException(
-                "Choose Estonian, German, Polish, or Ukrainian.");
+                "Choose a supported learning language.");
         }
         var selected = await _languagePreferences.SetSelectedAsync(
             User.GetUserId(),

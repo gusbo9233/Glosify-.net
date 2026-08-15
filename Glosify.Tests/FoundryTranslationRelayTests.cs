@@ -257,7 +257,7 @@ public sealed class FoundryTranslationRelayTests
             speechProvider: RealtimeSpeechProviders.Foundry,
             sourceLanguage: null,
             saveTranscript: true,
-            transcriptSourceLanguage: "sv"));
+            transcriptSourceLanguage: "tlh"));
     }
 
     [Fact]

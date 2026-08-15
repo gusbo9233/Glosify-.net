@@ -468,6 +468,7 @@ import {
         if (message.text) {
             const body = document.createElement('div');
             body.className = 'assistant-bubble';
+            body.dir = 'auto';
             body.innerHTML = escapeHtml(message.text).replace(/\n/g, '<br />');
             row.appendChild(body);
         }
@@ -737,6 +738,7 @@ import {
         list.className = 'assistant-pending-list';
         for (const change of message.pendingChanges) {
             const li = document.createElement('li');
+            li.dir = 'auto';
             li.textContent = change.summary;
             list.appendChild(li);
         }
