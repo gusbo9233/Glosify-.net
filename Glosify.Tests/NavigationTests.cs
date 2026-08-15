@@ -135,6 +135,12 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
             csp);
         Assert.Contains("https://accounts.google.com", csp);
         Assert.Contains("https://login.microsoftonline.com", csp);
+        var formAction = csp
+            .Split(';')
+            .Select(directive => directive.Trim())
+            .Single(directive => directive.StartsWith("form-action ", StringComparison.Ordinal));
+        var formActionSources = formAction.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Contains("https://checkout.stripe.com", formActionSources);
     }
 
     [Fact]
