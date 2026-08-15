@@ -2,6 +2,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
+using Glosify.Services.Language;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.RealtimeTranslation;
@@ -253,11 +254,12 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
         if (sourceLanguage != "auto")
         {
             var language = _options.FindSourceLanguage(sourceLanguage);
+            var catalogLanguage = QuizLanguageCatalog.Find(sourceLanguage);
             query.Add(Pair(
                 "language_code",
-                language is null || string.IsNullOrWhiteSpace(language.ScribeCode)
-                    ? sourceLanguage.Trim().ToLowerInvariant()
-                    : language.ScribeCode));
+                !string.IsNullOrWhiteSpace(language?.ScribeCode)
+                    ? language.ScribeCode
+                    : catalogLanguage?.ScribeCode ?? sourceLanguage.Trim().ToLowerInvariant()));
         }
 
         var builder = new UriBuilder(settings.Endpoint.Trim())
@@ -378,6 +380,7 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
         if (requestedSourceLanguage != "auto")
         {
             return _options.FindSourceLanguage(requestedSourceLanguage)
+                ?? FromCatalog(QuizLanguageCatalog.Find(requestedSourceLanguage))
                 ?? new RealtimeTranslationSourceLanguageOptions
                 {
                     Code = requestedSourceLanguage,
@@ -398,7 +401,9 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
                     language.Locale.Split('-', 2)[0],
                     normalized,
                     StringComparison.OrdinalIgnoreCase)));
-        return source ?? new RealtimeTranslationSourceLanguageOptions
+        return source
+            ?? FromCatalog(QuizLanguageCatalog.Find(normalized))
+            ?? new RealtimeTranslationSourceLanguageOptions
         {
             Code = normalized ?? "auto",
             Name = normalized ?? "Auto detected",
@@ -407,6 +412,18 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
             ScribeCode = normalized ?? string.Empty,
         };
     }
+
+    private static RealtimeTranslationSourceLanguageOptions? FromCatalog(QuizLanguage? language) =>
+        language is null
+            ? null
+            : new RealtimeTranslationSourceLanguageOptions
+            {
+                Code = language.Code,
+                Name = language.Name,
+                Locale = language.Locale,
+                TranslatorCode = language.TranslatorCode,
+                ScribeCode = language.ScribeCode,
+            };
 
     private static async Task SendJsonAsync(
         WebSocket socket,

@@ -38,6 +38,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Glosify.Tests" />
     <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+    <Content Update="Services/Language/language-capabilities.json" CopyToPublishDirectory="Never" />
     <!-- Build-time tooling config; no reason to ship it. -->
     <Content Update="libman.json" CopyToPublishDirectory="Never" />
   </ItemGroup>

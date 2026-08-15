@@ -589,6 +589,12 @@ Notable modelling choices:
 - **`Quiz` carries three language fields** (`SourceLanguage`, `TargetLanguage`,
   `Language`) plus per-direction Anki tracking flags, because practice direction
   and item type are user-selectable dimensions rather than fixed per quiz.
+- **Learning languages are a versioned static contract.**
+  `QuizLanguageCatalog` holds the 69 canonical app, Azure Translator, and Scribe
+  mappings plus names, locales, aliases, and representative flags. A checked-in
+  provider snapshot records the reviewed intersection. Shared Foundry deployments
+  receive the language dynamically; the catalog never provisions per-language
+  models, agents, prompts, or evaluations.
 - **Sharing is a copy, not a reference.** `Quiz.OriginalQuizId` and
   `Collection.OriginalCollectionId` record provenance of a copied public item, so
   the copy is independently editable and the original is not mutated.
@@ -957,10 +963,11 @@ sequenceDiagram
   (`SavedTranscriptCreditsPerStartedMinute: 16` vs `CreditsPerStartedMinute: 8`)
   because Enhanced tees the same PCM audio to Scribe for finalized source
   transcription. Scribe subtitle sessions reuse their existing finalized text.
-- **Languages are catalog-driven.** The server caches Azure Translator's current
+- **Subtitle targets remain dynamic.** The server caches Azure Translator's current
   target-language catalog for 24 hours and supplies it to the extension, with a
-  configured fallback. Scribe receives no language hint by default; users may
-  optionally select a compatible ISO hint when Scribe is active.
+  configured fallback. The extension's quiz-language list instead uses the static
+  69-language learning catalog. Scribe receives no language hint by default; users
+  may optionally select a compatible ISO hint when Scribe is active.
 - **Billing is per started minute**, written as `RealtimeTranslationMinute` rows
   as the session runs, with a `RelayBillingGraceSeconds` allowance — so a
   disconnect mid-session has already been paid for what it used.

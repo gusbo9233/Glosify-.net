@@ -124,7 +124,7 @@ internal sealed class StubChromeServices : ChromeServicesBase
     public override Task<QuizLanguage?> GetSelectedAsync(
         string userId,
         CancellationToken cancellationToken = default) =>
-        Task.FromResult<QuizLanguage?>(new QuizLanguage("pl", "Polish"));
+        Task.FromResult(QuizLanguageCatalog.Find("pl"));
 
     public override Task<TranscriptLibraryPage> GetLibraryAsync(
         string userId,

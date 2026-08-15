@@ -59,7 +59,7 @@
                     var typingPromptIsTarget = Glosify.Models.PracticeDirection.IsTargetToSource(Model.PracticeDirection);
                 }
                 <h2 class="typing-prompt">
-                    <span data-prompt>@Model.CurrentWord?.Prompt</span>
+                    <span data-prompt dir="auto">@Model.CurrentWord?.Prompt</span>
                     @if (typingPromptIsTarget && Model.CurrentWord != null && !string.IsNullOrWhiteSpace(Model.CurrentWord.Prompt))
                     {
                         <button class="btn-icon-tts"
@@ -77,7 +77,7 @@
                 <form class="typing-form" data-typing-form autocomplete="off">
                     @Html.AntiForgeryToken()
                     <label class="visually-hidden" for="typingAnswer">Answer</label>
-                    <input class="answer-input" id="typingAnswer" data-answer-input type="text" placeholder="Type your answer..." autocomplete="off" />
+                    <input class="answer-input" id="typingAnswer" data-answer-input type="text" dir="auto" placeholder="Type your answer..." autocomplete="off" />
                     <button class="btn-check" type="submit" data-check-button>
                         Check Answer <span class="material-symbols-outlined">arrow_forward</span>
                     </button>
@@ -85,8 +85,8 @@
 
                 <div class="typing-reveal" data-reveal hidden>
                     <span>Correct answer</span>
-                    <strong data-correct-answer></strong>
-                    <p data-example></p>
+                    <strong data-correct-answer dir="auto"></strong>
+                    <p data-example dir="auto"></p>
                 </div>
 
                 <form class="session-reset" method="post" asp-controller="TypingQuiz" asp-action="Restart">

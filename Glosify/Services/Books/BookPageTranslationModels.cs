@@ -1,3 +1,5 @@
+using Glosify.Services.Language;
+
 namespace Glosify.Services.Books;
 
 public sealed record BookPageSourceSegment(int Index, int ParagraphIndex, string SourceText);
@@ -42,22 +44,12 @@ public sealed class BookPageTranslationUnavailableException(string message) : In
 
 public static class BookTranslationLanguages
 {
-    private static readonly string[] Languages =
-    [
-        "English",
-        "Swedish",
-        "Estonian",
-        "German",
-        "Polish",
-        "Ukrainian",
-    ];
-
-    public static IReadOnlyList<string> All { get; } = Languages;
+    public static IReadOnlyList<string> All { get; } =
+        QuizLanguageCatalog.All.Select(language => language.Name).ToArray();
 
     public static bool TryCanonicalize(string? language, out string canonical)
     {
-        canonical = Languages.FirstOrDefault(candidate =>
-            string.Equals(candidate, language?.Trim(), StringComparison.OrdinalIgnoreCase)) ?? string.Empty;
+        canonical = QuizLanguageCatalog.Find(language)?.Name ?? string.Empty;
         return canonical.Length > 0;
     }
 }

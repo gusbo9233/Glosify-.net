@@ -107,6 +107,20 @@ public sealed class ElevenLabsRealtimeSpeechTranscriberTests
     }
 
     [Fact]
+    public void CatalogLanguageHint_UsesScribeIsoCodeAndCanonicalLocale()
+    {
+        var transcriber = CreateTranscriber(new RecordingFactory(new ScriptedWebSocket("srp")));
+
+        var endpoint = transcriber.BuildEndpoint("sr");
+        var resolved = transcriber.ResolveSourceLanguage("sr", null);
+
+        Assert.Contains("language_code=srp", endpoint.Query);
+        Assert.Equal("sr-Latn", resolved.Code);
+        Assert.Equal("sr-Latn-RS", resolved.Locale);
+        Assert.Equal("srp", resolved.ScribeCode);
+    }
+
+    [Fact]
     public async Task AutoDetection_MarksDetectedLanguageForTranslatorAutoDetection()
     {
         var socket = new ScriptedWebSocket("fr");

@@ -306,7 +306,7 @@ public sealed class AssistantCollaboratorTests
     private sealed class FixedLanguagePreference : IQuizLanguagePreferenceService
     {
         public Task<QuizLanguage?> GetSelectedAsync(string userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult<QuizLanguage?>(new QuizLanguage("pl", "Polish"));
+            Task.FromResult(QuizLanguageCatalog.Find("pl"));
 
         public Task<QuizLanguage> SetSelectedAsync(string userId, string language, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();

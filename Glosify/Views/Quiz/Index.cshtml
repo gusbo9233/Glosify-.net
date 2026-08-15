@@ -227,8 +227,10 @@
                 <label class="form-label" for="quizSourceLanguage">Source Language</label>
                 <select class="select-input" id="quizSourceLanguage" name="SourceLanguage" required>
                     <option value="">Select language...</option>
-                    <option>English</option>
-                    <option>Swedish</option>
+                    @foreach (var language in Glosify.Services.Language.QuizLanguageCatalog.All)
+                    {
+                        <option value="@language.Name">@language.Name</option>
+                    }
                 </select>
             </div>
             <div class="form-group">

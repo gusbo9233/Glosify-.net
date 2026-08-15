@@ -109,6 +109,7 @@
 
         const bubble = document.createElement("div");
         bubble.className = "assistant-bubble classroom-chat-bubble";
+        bubble.dir = "auto";
         bubble.textContent = message.body;
 
         item.append(meta, bubble);

@@ -93,8 +93,8 @@
                             }
                             <div class="word-card-link">
                                 <div>
-                                    <div class="word">@word.Lemma</div>
-                                    <div class="translation">@word.Translation</div>
+                                    <div class="word" dir="auto">@word.Lemma</div>
+                                    <div class="translation" dir="auto">@word.Translation</div>
                                 </div>
                             </div>
                         </div>
@@ -115,10 +115,10 @@
                         <div class="sentence-card-top">
                             <div class="word-icon"><span class="material-symbols-outlined">format_quote</span></div>
                             <div>
-                                <div class="sentence-text">@sentence.Text</div>
+                                <div class="sentence-text" dir="auto">@sentence.Text</div>
                                 @if (!string.IsNullOrWhiteSpace(sentence.Translation))
                                 {
-                                    <div class="sentence-translation">@sentence.Translation</div>
+                                    <div class="sentence-translation" dir="auto">@sentence.Translation</div>
                                 }
                             </div>
                         </div>

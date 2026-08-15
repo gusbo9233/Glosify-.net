@@ -49,6 +49,42 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         _playwright?.Dispose();
     }
 
+    private async Task AssertLanguageCatalogSupportsSearchKeyboardMobileAndNoJavaScriptSelectionAsync()
+    {
+        await Page.GotoAsync("/Languages?returnUrl=%2FQuizzes");
+        var cards = Page.Locator("[data-language-card]");
+        await Expect(cards).ToHaveCountAsync(69);
+
+        var search = Page.GetByLabel("Find a language");
+        await search.FillAsync("not-a-language");
+        await Expect(Page.Locator("[data-language-empty]")).ToBeVisibleAsync();
+        await search.FillAsync("Portuguese");
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Portuguese (Brazil)", Exact = true })).ToBeVisibleAsync();
+        await search.FillAsync("العربية");
+        await search.PressAsync("ArrowDown");
+        var arabic = Page.GetByRole(AriaRole.Button, new() { Name = "Arabic", Exact = true });
+        await Expect(arabic).ToBeFocusedAsync();
+
+        await Page.SetViewportSizeAsync(390, 844);
+        var box = await arabic.BoundingBoxAsync();
+        Assert.NotNull(box);
+        Assert.True(box.Width <= 390);
+        await arabic.PressAsync("Enter");
+        await Expect(Page).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
+
+        var state = await _context!.StorageStateAsync();
+        await using var noJavaScriptContext = await _browser!.NewContextAsync(new BrowserNewContextOptions
+        {
+            BaseURL = BaseUrl,
+            JavaScriptEnabled = false,
+            StorageState = state,
+        });
+        var noJavaScriptPage = await noJavaScriptContext.NewPageAsync();
+        await noJavaScriptPage.GotoAsync("/Languages?returnUrl=%2FQuizzes");
+        await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Serbian (Latin)", Exact = true }).ClickAsync();
+        await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
+    }
+
     [Fact]
     [Trait("Category", "Browser")]
     public async Task RegisterLoginLogoutAndProtectedRedirect()
@@ -59,6 +95,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page).ToHaveURLAsync(new Regex("/login", RegexOptions.IgnoreCase));
 
         var credentials = await RegisterAsync();
+        await AssertLanguageCatalogSupportsSearchKeyboardMobileAndNoJavaScriptSelectionAsync();
         await Page.GetByRole(AriaRole.Button, new() { Name = "Log out" }).ClickAsync();
         await Expect(Page).ToHaveURLAsync(new Regex("/$"));
 

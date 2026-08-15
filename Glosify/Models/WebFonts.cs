@@ -32,7 +32,7 @@ public static class WebFonts
         "mark_email_unread", "menu_book", "mic", "mic_off", "neurology", "north_east", "notes",
         "notifications", "outgoing_mail", "person", "person_add", "person_search", "picture_as_pdf",
         "play_circle", "progress_activity", "psychology", "public", "quiz", "remove", "replay",
-        "rotate_right", "school", "science", "search", "send", "settings", "share", "short_text",
+        "rotate_right", "school", "science", "search", "search_off", "send", "settings", "share", "short_text",
         "shot_bar", "stacks", "style", "subject", "subtitles", "subtitles_off", "swap_horiz",
         "task_alt", "thumb_down", "thumb_up", "timer", "translate", "travel_explore", "tune", "undo", "upload_file", "videocam",
         "videocam_off", "view_column_2", "volume_up", "waving_hand", "west",
