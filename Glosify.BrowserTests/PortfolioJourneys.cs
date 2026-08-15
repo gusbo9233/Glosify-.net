@@ -210,6 +210,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             .ClickAsync();
         Page.Dialog -= DeleteDialog;
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
+        await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
         await OpenChatsAsync();
         await Page.Locator(".assistant-chat-main").ClickAsync();
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
