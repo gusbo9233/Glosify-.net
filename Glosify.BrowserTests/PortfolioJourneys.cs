@@ -49,13 +49,8 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         _playwright?.Dispose();
     }
 
-    [Fact]
-    [Trait("Category", "Browser")]
-    public async Task LanguageCatalogSupportsSearchKeyboardMobileAndNoJavaScriptSelection()
+    private async Task AssertLanguageCatalogSupportsSearchKeyboardMobileAndNoJavaScriptSelectionAsync()
     {
-        if (BaseUrl is null) return;
-
-        await RegisterAsync();
         await Page.GotoAsync("/Languages?returnUrl=%2FQuizzes");
         var cards = Page.Locator("[data-language-card]");
         await Expect(cards).ToHaveCountAsync(69);
@@ -100,6 +95,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page).ToHaveURLAsync(new Regex("/login", RegexOptions.IgnoreCase));
 
         var credentials = await RegisterAsync();
+        await AssertLanguageCatalogSupportsSearchKeyboardMobileAndNoJavaScriptSelectionAsync();
         await Page.GetByRole(AriaRole.Button, new() { Name = "Log out" }).ClickAsync();
         await Expect(Page).ToHaveURLAsync(new Regex("/$"));
 
