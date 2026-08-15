@@ -135,6 +135,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await CreateQuizWithWordAsync();
         await Page.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("Start Quiz", RegexOptions.IgnoreCase) }).ClickAsync();
 
+        await Page.Locator("details.anki-create-inline > summary").ClickAsync();
         var createForm = Page.Locator("form[action*='CreateFromQuiz']");
         await createForm.Locator("input[name='Name']").FillAsync("Portfolio Anki");
         await createForm.GetByRole(AriaRole.Button, new() { Name = "Create and link" }).ClickAsync();

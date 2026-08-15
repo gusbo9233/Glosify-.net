@@ -774,7 +774,7 @@ import {
             const apply = document.createElement('button');
             apply.type = 'button';
             apply.className = 'btn-submit';
-            apply.textContent = isSentenceFix ? 'Apply fixes' : 'Apply';
+            apply.textContent = 'Apply';
             apply.addEventListener('click', () => applyChanges(message.id, card, apply, reject));
 
             const reject = document.createElement('button');
