@@ -77,8 +77,15 @@ cost controls, verify the following Azure App Service settings:
   callback: `https://akepdpjieiokffdapibipomhbplikock.chromiumapp.org/glosify`.
 - `OPENAI_API_KEY` is absent.
 - `AZURE_CLIENT_ID` is absent when the system-assigned managed identity is
-  intended. Production code then uses `ManagedIdentityCredential` for Foundry.
+  intended. Production code then uses `ManagedIdentityCredential` for direct
+  Foundry, Speech, and Storage access.
 - The `glosify-app` system-assigned identity is enabled.
+- When the assistant uses an API Management AI Gateway,
+  `GenerativeAi__Foundry__ProjectEndpoint` is the gateway project URL and
+  `GenerativeAi__Foundry__GatewayApiKey` is its subscription key. Set both App
+  Service settings together, never commit the key, and confirm an assistant call
+  increments the gateway `Requests` metric. Speaking has a separate endpoint and
+  remains outside this assistant gateway.
 
 Scribe subtitles and Enhanced transcript saving remain disabled until all of
 these are configured together:

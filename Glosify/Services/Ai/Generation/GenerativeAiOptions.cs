@@ -16,6 +16,7 @@ public sealed class GenerativeAiOptions
 public sealed class FoundryGenerativeAiOptions
 {
     public string ProjectEndpoint { get; set; } = string.Empty;
+    public string GatewayApiKey { get; set; } = string.Empty;
     public string AssistantDeployment { get; set; } = "gpt-5.4-mini";
     public string StructuredDeployment { get; set; } = "gpt-5.4-mini";
     public string VisionDeployment { get; set; } = "gpt-5.4-mini";
@@ -131,6 +132,12 @@ public sealed class GenerativeAiOptionsValidator(
             || endpoint.Scheme != Uri.UriSchemeHttps)
         {
             failures.Add("GenerativeAi:Foundry:ProjectEndpoint must be an absolute HTTPS URI.");
+        }
+        else if (endpoint.Host.EndsWith(".azure-api.net", StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(foundry.GatewayApiKey))
+        {
+            failures.Add(
+                "GenerativeAi:Foundry:GatewayApiKey is required for an Azure API Management gateway endpoint.");
         }
 
         RequireValue(foundry.AssistantDeployment, "AssistantDeployment", failures);

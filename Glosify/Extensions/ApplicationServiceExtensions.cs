@@ -1,5 +1,7 @@
 using Azure.AI.Projects;
 using Azure.Core;
+using System.ClientModel;
+using System.ClientModel.Primitives;
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Anki;
@@ -255,10 +257,10 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<GlosifyBlobServiceClient>();
         services.AddSingleton(services =>
         {
-            var endpoint = services.GetRequiredService<IOptions<GenerativeAiOptions>>()
-                .Value.Foundry.ProjectEndpoint;
-            return new AIProjectClient(
-                new Uri(endpoint, UriKind.Absolute),
+            var foundry = services.GetRequiredService<IOptions<GenerativeAiOptions>>()
+                .Value.Foundry;
+            return CreateFoundryProjectClient(
+                foundry,
                 services.GetRequiredService<TokenCredential>());
         });
         // Without a resilience handler this client falls back to HttpClient's 100-second
@@ -276,6 +278,26 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ISpeakingQuizReader, SpeakingQuizReader>();
 
         return services;
+    }
+
+    internal static AIProjectClient CreateFoundryProjectClient(
+        FoundryGenerativeAiOptions options,
+        TokenCredential credential)
+    {
+        var endpoint = new Uri(options.ProjectEndpoint, UriKind.Absolute);
+        if (string.IsNullOrWhiteSpace(options.GatewayApiKey))
+        {
+            return new AIProjectClient(endpoint, credential);
+        }
+
+        var clientOptions = new AIProjectClientOptions();
+        clientOptions.AddPolicy(
+            ApiKeyAuthenticationPolicy.CreateHeaderApiKeyPolicy(
+                new ApiKeyCredential(options.GatewayApiKey.Trim()),
+                "api-key",
+                keyPrefix: null),
+            PipelinePosition.PerCall);
+        return new AIProjectClient(endpoint, credential, clientOptions);
     }
 
     internal static string? ResolveElevenLabsApiKey(IConfiguration configuration)
