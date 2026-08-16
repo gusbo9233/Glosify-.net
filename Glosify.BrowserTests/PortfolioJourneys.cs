@@ -111,6 +111,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             BaseURL = BaseUrl,
             JavaScriptEnabled = false,
             StorageState = state,
+            ViewportSize = new ViewportSize { Width = 390, Height = 844 },
         });
         var noJavaScriptPage = await noJavaScriptContext.NewPageAsync();
         await noJavaScriptPage.GotoAsync("/Languages?returnUrl=%2FQuizzes");

@@ -798,6 +798,13 @@ public sealed class SpeakingIntegrationTests
             "/api/speaking/sessions/11111111-1111-1111-1111-111111111111");
         var missingTokenResponse = await client.SendAsync(missingTokenRequest);
         Assert.Equal(HttpStatusCode.BadRequest, missingTokenResponse.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            missingTokenResponse.Content.Headers.ContentType?.MediaType);
+        using var missingTokenProblem = JsonDocument.Parse(
+            await missingTokenResponse.Content.ReadAsStringAsync());
+        Assert.Equal("bad_request", missingTokenProblem.RootElement.GetProperty("code").GetString());
+        Assert.Equal("Bad Request", missingTokenProblem.RootElement.GetProperty("error").GetString());
 
         var languagePage = await client.GetStringAsync("/Languages");
         var document = await new HtmlParser().ParseDocumentAsync(languagePage);
