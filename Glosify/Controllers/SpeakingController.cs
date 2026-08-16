@@ -1,4 +1,5 @@
 using Glosify.Extensions;
+using Glosify.Services.Auth;
 using Glosify.Services.Language;
 using Glosify.Services.Speaking;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Options;
 namespace Glosify.Controllers;
 
 [Authorize]
+[Authorize(Policy = AuthorizationPolicyNames.SpeakingAvailability)]
 public sealed class SpeakingController : Controller
 {
     private readonly ILanguageContext _languageContext;

@@ -116,7 +116,7 @@ public static class GlosifyProblemDetails
         return result;
     }
 
-    private static void AddCommonExtensions(HttpContext httpContext, ProblemDetails problem, string code)
+    public static void AddCommonExtensions(HttpContext httpContext, ProblemDetails problem, string code)
     {
         problem.Extensions["code"] = code;
         problem.Extensions["error"] = problem.Detail ?? problem.Title ?? "Request failed.";

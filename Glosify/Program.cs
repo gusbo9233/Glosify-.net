@@ -72,7 +72,17 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
 // Gives the bearer-token API surface a consistent RFC 7807 error body instead of an
 // empty response, and backs UseStatusCodePages below.
-builder.Services.AddProblemDetails();
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        var statusCode = context.ProblemDetails.Status ?? context.HttpContext.Response.StatusCode;
+        GlosifyProblemDetails.AddCommonExtensions(
+            context.HttpContext,
+            context.ProblemDetails,
+            GlosifyProblemDetails.CodeForStatus(statusCode));
+    };
+});
 builder.Services.AddOpenApi();
 
 // Kestrel serves the rendered views uncompressed and nothing in front of it
@@ -94,19 +104,26 @@ builder.Services.AddAuthorization(options =>
         .RequireAuthenticatedUser()
         .Build();
     var adminEmails = builder.Configuration.GetSection("Admin:Emails").Get<string[]>() ?? [];
-    options.AddPolicy("AiCreditAdmin", policy =>
+    bool IsAdmin(AuthorizationHandlerContext context)
+    {
+        var email = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+            ?? context.User.Identity?.Name
+            ?? string.Empty;
+        return adminEmails.Any(adminEmail => string.Equals(
+            adminEmail,
+            email,
+            StringComparison.OrdinalIgnoreCase));
+    }
+
+    options.AddPolicy(AuthorizationPolicyNames.AiCreditAdmin, policy =>
     {
         policy.RequireAuthenticatedUser();
-        policy.RequireAssertion(context =>
-        {
-            var email = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-                ?? context.User.Identity?.Name
-                ?? string.Empty;
-            return adminEmails.Any(adminEmail => string.Equals(
-                adminEmail,
-                email,
-                StringComparison.OrdinalIgnoreCase));
-        });
+        policy.RequireAssertion(IsAdmin);
+    });
+    options.AddPolicy(AuthorizationPolicyNames.SpeakingAvailability, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context => !builder.Environment.IsProduction() || IsAdmin(context));
     });
 });
 builder.Services.AddMemoryCache();

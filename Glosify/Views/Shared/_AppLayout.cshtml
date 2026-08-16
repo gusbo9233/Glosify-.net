@@ -1,6 +1,16 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Html
+@using Microsoft.AspNetCore.Authorization
+@using Glosify.Services.Auth
+@inject IAuthorizationService AuthorizationService
+@inject IWebHostEnvironment HostEnvironment
 @inject IStripePaymentService StripePayments
+@{
+    var speakingIsAvailable = !HostEnvironment.IsProduction()
+        || (await AuthorizationService.AuthorizeAsync(
+            User,
+            AuthorizationPolicyNames.SpeakingAvailability)).Succeeded;
+}
 @functions {
     string MetaDescription => ViewData["Description"] as string ?? Text["Layout.MetaDescription"];
 
@@ -200,10 +210,21 @@
                     @NavIcon("anki")
                     Anki
                 </a>
-                <a class="@NavClass("Speaking")" asp-controller="Speaking" asp-action="Index">
-                    @NavIcon("mic")
-                    @Text["Nav.Speaking"]
-                </a>
+                @if (speakingIsAvailable)
+                {
+                    <a class="@NavClass("Speaking")" asp-controller="Speaking" asp-action="Index">
+                        @NavIcon("mic")
+                        @Text["Nav.Speaking"]
+                    </a>
+                }
+                else
+                {
+                    <span class="app-nav-item is-disabled" aria-disabled="true" data-speaking-unavailable
+                          title="@Text["Speaking.Unavailable"]">
+                        @NavIcon("mic")
+                        @Text["Nav.Speaking"]
+                    </span>
+                }
                 <a class="@NavClass("Classroom")" asp-controller="Classroom" asp-action="Index">
                     @NavIcon("school")
                     @Text["Nav.Classrooms"]
@@ -291,10 +312,21 @@
             @NavIcon("anki")
             <span>Anki</span>
         </a>
-        <a class="@NavClass("Speaking")" asp-controller="Speaking" asp-action="Index">
-            @NavIcon("mic")
-            <span>@Text["Nav.Speak"]</span>
-        </a>
+        @if (speakingIsAvailable)
+        {
+            <a class="@NavClass("Speaking")" asp-controller="Speaking" asp-action="Index">
+                @NavIcon("mic")
+                <span>@Text["Nav.Speak"]</span>
+            </a>
+        }
+        else
+        {
+            <span class="app-nav-item is-disabled" aria-disabled="true" data-speaking-unavailable
+                  title="@Text["Speaking.Unavailable"]">
+                @NavIcon("mic")
+                <span>@Text["Nav.Speak"]</span>
+            </span>
+        }
         <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
             @NavIcon("auto_stories")
             <span>@Text["Nav.Books"]</span>
