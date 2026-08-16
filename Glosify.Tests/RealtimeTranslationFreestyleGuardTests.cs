@@ -9,15 +9,16 @@ using Xunit;
 
 namespace Glosify.Tests;
 
-public sealed class RealtimeTranslationFreestyleGuardTests
+public sealed class RealtimeTranslationFreestyleTests
 {
     [Fact]
-    public async Task Freestyle_rejects_every_session_boundary_before_calling_the_service()
+    public async Task Freestyle_allows_live_subtitle_boundaries_without_changing_selected_mode()
     {
         var service = new RecordingRealtimeTranslationService();
+        var preferences = new FreestyleLanguagePreferenceService();
         var controller = new RealtimeTranslationApiController(
             service,
-            new FreestyleLanguagePreferenceService())
+            preferences)
         {
             ControllerContext = new ControllerContext
             {
@@ -30,47 +31,48 @@ public sealed class RealtimeTranslationFreestyleGuardTests
             },
         };
         var sessionId = Guid.NewGuid();
-        Func<Task>[] calls =
-        [
-            async () => await controller.Catalog(CancellationToken.None),
-            async () => await controller.CreateSession(
-                new CreateRealtimeTranslationSessionRequest("pl"),
-                CancellationToken.None),
-            async () => await controller.ReserveMinute(sessionId, 0, CancellationToken.None),
-            async () => await controller.BeginMinute(sessionId, 0, CancellationToken.None),
-            async () => await controller.Heartbeat(
-                sessionId,
-                new RealtimeTranslationHeartbeatRequest(),
-                CancellationToken.None),
-        ];
-
-        foreach (var call in calls)
-        {
-            var exception = await Assert.ThrowsAsync<RealtimeTranslationValidationException>(call);
-            Assert.Equal("Realtime translation is not available in Freestyle mode.", exception.Message);
-        }
-
-        Assert.Equal(0, service.Calls);
-
+        await controller.Catalog(CancellationToken.None);
+        await controller.CreateSession(
+            new CreateRealtimeTranslationSessionRequest("pl"),
+            CancellationToken.None);
+        await controller.ReserveMinute(sessionId, 2, CancellationToken.None);
+        await controller.BeginMinute(sessionId, 1, CancellationToken.None);
+        await controller.Heartbeat(
+            sessionId,
+            new RealtimeTranslationHeartbeatRequest(),
+            CancellationToken.None);
         var ended = await controller.EndSession(sessionId, CancellationToken.None);
 
         Assert.IsType<NoContentResult>(ended);
-        Assert.Equal(1, service.Calls);
+        Assert.Equal(
+            ["catalog", "create", "reserve", "begin", "heartbeat", "end"],
+            service.Calls);
         Assert.Equal(sessionId, service.EndedSessionId);
+        Assert.Equal(0, preferences.GetCalls);
+        Assert.Equal(0, preferences.SetCalls);
     }
 
     private sealed class FreestyleLanguagePreferenceService : IQuizLanguagePreferenceService
     {
+        public int GetCalls { get; private set; }
+        public int SetCalls { get; private set; }
+
         public Task<QuizLanguage?> GetSelectedAsync(
             string userId,
-            CancellationToken cancellationToken = default) =>
-            Task.FromResult(QuizLanguageCatalog.Find(QuizLanguageCatalog.FreestyleCode));
+            CancellationToken cancellationToken = default)
+        {
+            GetCalls++;
+            return Task.FromResult(QuizLanguageCatalog.Find(QuizLanguageCatalog.FreestyleCode));
+        }
 
         public Task<QuizLanguage> SetSelectedAsync(
             string userId,
             string language,
-            CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+            CancellationToken cancellationToken = default)
+        {
+            SetCalls++;
+            return Task.FromResult(QuizLanguageCatalog.Find(language)!);
+        }
 
         public Task ClearAsync(string userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
@@ -78,11 +80,29 @@ public sealed class RealtimeTranslationFreestyleGuardTests
 
     private sealed class RecordingRealtimeTranslationService : IRealtimeTranslationService
     {
-        public int Calls { get; private set; }
+        public List<string> Calls { get; } = [];
         public Guid? EndedSessionId { get; private set; }
 
-        public Task<RealtimeTranslationCatalog> GetCatalogAsync(string userId, CancellationToken cancellationToken = default) =>
-            Unexpected<RealtimeTranslationCatalog>();
+        public Task<RealtimeTranslationCatalog> GetCatalogAsync(
+            string userId,
+            CancellationToken cancellationToken = default)
+        {
+            Calls.Add("catalog");
+            return Task.FromResult(new RealtimeTranslationCatalog(
+                [new RealtimeTranslationLanguage("pl", "Polish")],
+                [new RealtimeTranslationLanguage("pl", "Polish")],
+                8,
+                16,
+                true,
+                null,
+                30,
+                5,
+                15,
+                "model",
+                25,
+                [new RealtimeTranslationMode("enhanced", "Enhanced", "Best quality", 8)],
+                [new RealtimeTranslationSourceLanguage("auto", "Auto detect", null)]));
+        }
 
         public Task<RealtimeTranslationSessionCreated> CreateSessionAsync(
             string userId,
@@ -91,32 +111,69 @@ public sealed class RealtimeTranslationFreestyleGuardTests
             Guid? transcriptId = null,
             string? translationMode = null,
             string? sourceLanguage = null,
-            CancellationToken cancellationToken = default) =>
-            Unexpected<RealtimeTranslationSessionCreated>();
+            CancellationToken cancellationToken = default)
+        {
+            Calls.Add("create");
+            return Task.FromResult(new RealtimeTranslationSessionCreated(
+                Guid.NewGuid(),
+                "relay-token",
+                DateTimeOffset.UtcNow.AddMinutes(1),
+                "/relay",
+                1,
+                25,
+                8,
+                null));
+        }
 
         public Task<RealtimeTranslationMinuteResult> ReserveMinuteAsync(
             string userId,
             Guid sessionId,
             int minuteIndex,
-            CancellationToken cancellationToken = default) =>
-            Unexpected<RealtimeTranslationMinuteResult>();
+            CancellationToken cancellationToken = default)
+        {
+            Calls.Add("reserve");
+            return Task.FromResult(new RealtimeTranslationMinuteResult(
+                sessionId,
+                minuteIndex,
+                "reserved",
+                25,
+                0,
+                0));
+        }
 
         public Task<RealtimeTranslationMinuteResult> BeginMinuteAsync(
             string userId,
             Guid sessionId,
             int minuteIndex,
-            CancellationToken cancellationToken = default) =>
-            Unexpected<RealtimeTranslationMinuteResult>();
+            CancellationToken cancellationToken = default)
+        {
+            Calls.Add("begin");
+            return Task.FromResult(new RealtimeTranslationMinuteResult(
+                sessionId,
+                minuteIndex,
+                "started",
+                17,
+                1,
+                8));
+        }
 
         public Task<RealtimeTranslationSessionStatus> HeartbeatAsync(
             string userId,
             Guid sessionId,
-            CancellationToken cancellationToken = default) =>
-            Unexpected<RealtimeTranslationSessionStatus>();
+            CancellationToken cancellationToken = default)
+        {
+            Calls.Add("heartbeat");
+            return Task.FromResult(new RealtimeTranslationSessionStatus(
+                sessionId,
+                "active",
+                DateTimeOffset.UtcNow.AddMinutes(30),
+                1,
+                8));
+        }
 
         public Task EndSessionAsync(string userId, Guid sessionId, CancellationToken cancellationToken = default)
         {
-            Calls++;
+            Calls.Add("end");
             EndedSessionId = sessionId;
             return Task.CompletedTask;
         }
@@ -127,15 +184,8 @@ public sealed class RealtimeTranslationFreestyleGuardTests
         public Task CleanupStaleSessionsAsync(CancellationToken cancellationToken = default) =>
             Unexpected();
 
-        private Task<T> Unexpected<T>()
-        {
-            Calls++;
-            throw new InvalidOperationException("The realtime translation service must not be called.");
-        }
-
         private Task Unexpected()
         {
-            Calls++;
             throw new InvalidOperationException("The realtime translation service must not be called.");
         }
     }
