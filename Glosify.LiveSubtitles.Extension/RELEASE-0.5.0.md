@@ -4,7 +4,7 @@
 
 - [ ] Deploy the additive web/backend build before uploading the extension.
 - [ ] Verify `/healthz`, realtime session creation, reserve, begin, heartbeat, and deletion in production.
-- [ ] Confirm heartbeat responses include `sessionStartedAtUtc` and `audioSendAuthorizedUntilUtc` while 0.4.0 sessions still start and stop normally.
+- [ ] Confirm minute and heartbeat responses include `sessionStartedAtUtc`, `audioSendAuthorizedUntilUtc`, and `serverNowUtc` while 0.4.0 sessions still start and stop normally.
 - [ ] Confirm telemetry receives session starts, terminal statuses, worker recoveries, dropped-audio milliseconds, and backpressure events without user, session, URL, caption, or audio data.
 
 ## Headed production Chrome

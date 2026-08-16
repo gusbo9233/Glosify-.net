@@ -650,10 +650,11 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             session.ChargedMinutes,
             session.CreditsCharged,
             session.StartedAt,
-            GetAudioSendAuthorizedUntil(session));
+            GetAudioSendAuthorizedUntil(session),
+            _timeProvider.GetUtcNow());
     }
 
-    private static RealtimeTranslationSessionStatus MapStatus(RealtimeTranslationSession session) =>
+    private RealtimeTranslationSessionStatus MapStatus(RealtimeTranslationSession session) =>
         new(
             session.Id,
             session.Status,
@@ -661,7 +662,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             session.ChargedMinutes,
             session.CreditsCharged,
             session.StartedAt,
-            GetAudioSendAuthorizedUntil(session));
+            GetAudioSendAuthorizedUntil(session),
+            _timeProvider.GetUtcNow());
 
     private static DateTimeOffset? GetAudioSendAuthorizedUntil(RealtimeTranslationSession session)
     {

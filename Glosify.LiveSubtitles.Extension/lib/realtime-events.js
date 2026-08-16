@@ -22,9 +22,17 @@ const TRANSLATION_FINAL_TYPES = new Set([
 export function createRealtimeEventAccumulator(context, {
   idleFlushMs = 4_000,
   maximumLength = 32_000,
+  maximumCompletedKeys = 512,
 } = {}) {
   const buffers = new Map();
   const completed = new Set();
+
+  function markCompleted(key) {
+    completed.add(key);
+    while (completed.size > maximumCompletedKeys) {
+      completed.delete(completed.values().next().value);
+    }
+  }
 
   function apply(event, now = Date.now()) {
     if (!event || typeof event.type !== "string") {
@@ -68,7 +76,7 @@ export function createRealtimeEventAccumulator(context, {
     if (completed.has(key)) {
       return null;
     }
-    completed.add(key);
+    markCompleted(key);
     const buffer = buffers.get(key);
     buffers.delete(key);
     const finalText = [event.text, event.transcript]
@@ -93,7 +101,7 @@ export function createRealtimeEventAccumulator(context, {
         continue;
       }
       buffers.delete(key);
-      completed.add(key);
+      markCompleted(key);
       if (buffer.text.trim()) {
         result.push(normalizedReplacement(
           context,
@@ -165,9 +173,7 @@ export function normalizeRealtimeEvent(event, context) {
   const isFinal = TRANSLATION_FINAL_TYPES.has(event.type);
   const delta = typeof event.delta === "string"
     ? event.delta
-    : !isFinal && typeof event.text === "string"
-      ? event.text
-    : isFinal && typeof event.text === "string"
+    : typeof event.text === "string"
       ? event.text
     : isFinal && typeof event.transcript === "string"
       ? event.transcript

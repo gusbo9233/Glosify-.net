@@ -102,6 +102,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         NoStore();
+        var status = await _translation.HeartbeatAsync(User.GetUserId(), sessionId, cancellationToken);
         if (request.FirstCaptionLatencyMs is >= 0 and <= 300_000)
         {
             RealtimeTranslationTelemetry.FirstCaptionLatency.Record(request.FirstCaptionLatencyMs.Value);
@@ -123,7 +124,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
         {
             RealtimeTranslationTelemetry.BackpressureEvents.Add(request.BackpressureEvents.Value);
         }
-        return Ok(await _translation.HeartbeatAsync(User.GetUserId(), sessionId, cancellationToken));
+        return Ok(status);
     }
 
     [HttpDelete("sessions/{sessionId:guid}")]

@@ -270,8 +270,10 @@ public sealed class RealtimeTranslationServiceTests
         Assert.Equal(17, duplicate.AvailableCredits);
         Assert.Equal(clock.GetUtcNow(), first.SessionStartedAtUtc);
         Assert.Equal(clock.GetUtcNow().AddMinutes(1), first.AudioSendAuthorizedUntilUtc);
+        Assert.Equal(clock.GetUtcNow(), first.ServerNowUtc);
         Assert.Equal(first.SessionStartedAtUtc, duplicate.SessionStartedAtUtc);
         Assert.Equal(first.AudioSendAuthorizedUntilUtc, duplicate.AudioSendAuthorizedUntilUtc);
+        Assert.Equal(clock.GetUtcNow(), duplicate.ServerNowUtc);
         var transaction = Assert.Single(await context.AiCreditTransactions.Where(transaction =>
             transaction.Kind == AiCreditTransactionKinds.UsageDebit
             && transaction.AudioDurationSeconds == 60).ToListAsync());
@@ -436,6 +438,9 @@ public sealed class RealtimeTranslationServiceTests
         Assert.Equal(first.AudioSendAuthorizedUntilUtc, duplicate.AudioSendAuthorizedUntilUtc);
         Assert.Equal(first.SessionStartedAtUtc, heartbeat.SessionStartedAtUtc);
         Assert.Equal(first.AudioSendAuthorizedUntilUtc, heartbeat.AudioSendAuthorizedUntilUtc);
+        Assert.Equal(clock.GetUtcNow(), first.ServerNowUtc);
+        Assert.Equal(clock.GetUtcNow(), duplicate.ServerNowUtc);
+        Assert.Equal(clock.GetUtcNow(), heartbeat.ServerNowUtc);
         var account = await context.AiCreditAccounts.SingleAsync();
         Assert.Equal(17, account.AvailableCredits);
         Assert.Equal(RealtimeTranslationMinuteStatuses.Released,

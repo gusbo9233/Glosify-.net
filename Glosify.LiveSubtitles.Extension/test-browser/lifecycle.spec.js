@@ -231,6 +231,7 @@ async function startMockGlosify({ createDelayMs = 0 } = {}) {
         audioSendAuthorizedUntilUtc: startedAtUtc
           ? new Date(startedAtUtc.getTime() + 60_000).toISOString()
           : null,
+        serverNowUtc: new Date().toISOString(),
       });
     }
     if (url.pathname === `/api/realtime-translation/sessions/${sessionId}`
@@ -280,6 +281,7 @@ function minuteResult(startedAt, minuteIndex) {
     sessionStartedAtUtc: startedAt.toISOString(),
     audioSendAuthorizedUntilUtc: new Date(
       startedAt.getTime() + minuteIndex * 60_000).toISOString(),
+    serverNowUtc: new Date().toISOString(),
   };
 }
 

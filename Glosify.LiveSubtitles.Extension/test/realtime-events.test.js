@@ -161,3 +161,22 @@ test("delta-only captions finalize after four idle seconds", () => {
   assert.equal(final.sequence, 4);
   assert.equal(final.isFinal, true);
 });
+
+test("completed provider IDs retain only a bounded deduplication window", () => {
+  const accumulator = createRealtimeEventAccumulator({
+    sessionId: "s1",
+    targetLanguage: "en",
+    nextSequence: () => 1,
+  }, { maximumCompletedKeys: 2 });
+  const final = responseId => ({
+    type: "response.text.done",
+    response_id: responseId,
+    text: responseId,
+  });
+
+  assert.equal(accumulator.apply(final("one"), 1).delta, "one");
+  assert.equal(accumulator.apply(final("two"), 2).delta, "two");
+  assert.equal(accumulator.apply(final("three"), 3).delta, "three");
+  assert.equal(accumulator.apply(final("one"), 4).delta, "one");
+  assert.equal(accumulator.apply(final("three"), 5), null);
+});

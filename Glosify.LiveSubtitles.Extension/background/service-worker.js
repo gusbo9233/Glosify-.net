@@ -31,6 +31,8 @@ let stopPromise = null;
 let lifecycleGeneration = 0;
 let billingBusy = false;
 let heartbeatBusy = false;
+let heartbeatFailures = 0;
+let nextHeartbeatAttemptAt = 0;
 let relaySwitchBusy = false;
 let paidStatusBusy = false;
 let stopping = false;
@@ -58,9 +60,11 @@ const state = {
   nextMinuteReserved: false,
   stopAtBoundary: false,
   stopAtBoundaryReason: null,
-  sessionStartedAt: 0,
+  sessionStartedAtServerMs: 0,
   sessionStartedAtUtc: null,
   audioSendAuthorizedUntilUtc: null,
+  serverNowAtSync: 0,
+  serverClockMonotonicAtSync: 0,
   connectionStartedAt: 0,
   lastHeartbeatAt: 0,
   firstCaptionLatencyMs: null,
@@ -100,23 +104,8 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (tabId !== state.tabId || changeInfo.status !== "loading") {
     return;
   }
-  void stopIfDocumentChanged(tabId);
+  void stopSession("Subtitles stopped because the captured tab navigated.", "ready");
 });
-
-async function stopIfDocumentChanged(tabId) {
-  await new Promise(resolve => setTimeout(resolve, 50));
-  try {
-    const overlay = await chrome.tabs.sendMessage(tabId, { type: "overlay:get-state" });
-    if (overlay?.installed && overlay.overlayInstanceId === state.overlayInstanceId) {
-      return;
-    }
-  } catch {
-    // The original isolated world was destroyed by a full navigation.
-  }
-  if (tabId === state.tabId) {
-    await stopSession("Subtitles stopped because the captured tab navigated.", "ready");
-  }
-}
 
 async function handleMessage(message) {
   await initialization;
@@ -714,6 +703,8 @@ async function startSessionCore(generation, signal) {
     state.stopAtBoundary = false;
     state.stopAtBoundaryReason = null;
     state.lastHeartbeatAt = Date.now();
+    heartbeatFailures = 0;
+    nextHeartbeatAttemptAt = 0;
     state.status = "subtitling";
     state.notice = null;
     await applyServerAuthorization(begun);
@@ -748,7 +739,8 @@ async function handleSubtitleEvent(event) {
 
 async function processTick() {
   if (!state.sessionId
-      || !state.sessionStartedAt
+      || !state.sessionStartedAtServerMs
+      || !state.serverNowAtSync
       || stopping
       || relaySwitchBusy
       || state.status === "reconnecting") {
@@ -756,9 +748,10 @@ async function processTick() {
   }
 
   const now = Date.now();
+  const serverNow = currentServerTimeMs();
   if (!billingBusy) {
     const action = getBillingAction({
-      elapsedMs: now - state.sessionStartedAt,
+      elapsedMs: serverNow - state.sessionStartedAtServerMs,
       currentMinute: state.currentMinute,
       nextMinuteReserved: state.nextMinuteReserved,
       stopAtBoundary: state.stopAtBoundary,
@@ -869,10 +862,12 @@ async function refreshBackgroundStatus(now) {
     }
   }
   if (heartbeatBusy
+      || now < nextHeartbeatAttemptAt
       || now - state.lastHeartbeatAt < (state.catalog?.heartbeatSeconds ?? 15) * 1000) {
     return;
   }
   heartbeatBusy = true;
+  state.lastHeartbeatAt = now;
   const heartbeatSessionId = state.sessionId;
   const diagnostics = heartbeatDiagnostics();
   try {
@@ -886,12 +881,20 @@ async function refreshBackgroundStatus(now) {
     }
     await applyServerAuthorization(status);
     state.lastHeartbeatAt = Date.now();
+    heartbeatFailures = 0;
+    nextHeartbeatAttemptAt = 0;
     state.firstCaptionReported ||= state.firstCaptionLatencyMs !== null;
     state.reconnectReported = true;
     clearSentDiagnostics(diagnostics);
     await persistActiveSession();
   } catch (error) {
     if (state.sessionId === heartbeatSessionId) {
+      heartbeatFailures += 1;
+      const heartbeatIntervalMs = (state.catalog?.heartbeatSeconds ?? 15) * 1000;
+      const retryDelayMs = Math.min(
+        60_000,
+        heartbeatIntervalMs * (2 ** Math.min(heartbeatFailures - 1, 2)));
+      nextHeartbeatAttemptAt = Date.now() + retryDelayMs;
       state.notice = normalizeError(error).message;
       broadcastState();
     }
@@ -923,9 +926,11 @@ async function reconnectRelaySession({
     });
     throwIfLifecycleCancelled(generation, controller.signal);
     state.sessionId = null;
-    state.sessionStartedAt = 0;
+    state.sessionStartedAtServerMs = 0;
     state.sessionStartedAtUtc = null;
     state.audioSendAuthorizedUntilUtc = null;
+    state.serverNowAtSync = 0;
+    state.serverClockMonotonicAtSync = 0;
     await persistActiveSession();
 
     const created = await apiFetch("/api/realtime-translation/sessions", {
@@ -965,6 +970,8 @@ async function reconnectRelaySession({
       lastHeartbeatAt: Date.now(),
       notice: completedNotice,
     });
+    heartbeatFailures = 0;
+    nextHeartbeatAttemptAt = 0;
     await applyServerAuthorization(begun);
     await persistActiveSession();
     await sendToTab({ type: "overlay:status", text: "Listening…" });
@@ -1018,9 +1025,11 @@ async function stopSessionCore(message, finalStatus) {
       nextMinuteReserved: false,
       stopAtBoundary: false,
       stopAtBoundaryReason: null,
-      sessionStartedAt: 0,
+      sessionStartedAtServerMs: 0,
       sessionStartedAtUtc: null,
       audioSendAuthorizedUntilUtc: null,
+      serverNowAtSync: 0,
+      serverClockMonotonicAtSync: 0,
       connectionStartedAt: 0,
       lastHeartbeatAt: 0,
       firstCaptionLatencyMs: null,
@@ -1035,6 +1044,8 @@ async function stopSessionCore(message, finalStatus) {
       droppedAudioMilliseconds: 0,
       backpressureEvents: 0,
     });
+    heartbeatFailures = 0;
+    nextHeartbeatAttemptAt = 0;
     clearTranscriptStorageState(state);
     if (refreshToken && finalStatus === "ready") {
       await refreshAccountState();
@@ -1114,6 +1125,7 @@ async function applyServerAuthorization(result) {
     result?.sessionStartedAtUtc, "session start");
   const authorizedUntilUtc = parseServerTimestamp(
     result?.audioSendAuthorizedUntilUtc, "audio authorization deadline");
+  const serverNowUtc = parseServerTimestamp(result?.serverNowUtc, "server clock");
   const currentStartedAt = state.sessionStartedAtUtc
     ? Date.parse(state.sessionStartedAtUtc)
     : null;
@@ -1126,19 +1138,23 @@ async function applyServerAuthorization(result) {
   const maximumDeadline = sessionStartedAtUtc
     + (state.catalog?.maxSessionMinutes ?? 30) * 60_000
     + AUTHORIZATION_CLOCK_SKEW_MS;
-  if (authorizedUntilUtc <= Date.now()
+  if (serverNowUtc + AUTHORIZATION_CLOCK_SKEW_MS < sessionStartedAtUtc
+      || authorizedUntilUtc <= serverNowUtc
       || authorizedUntilUtc < previousDeadline
       || authorizedUntilUtc > maximumDeadline) {
     throw new Error("Glosify returned an invalid audio authorization deadline.");
   }
-  state.sessionStartedAt = sessionStartedAtUtc;
+  state.sessionStartedAtServerMs = sessionStartedAtUtc;
   state.sessionStartedAtUtc = new Date(sessionStartedAtUtc).toISOString();
   state.audioSendAuthorizedUntilUtc = new Date(authorizedUntilUtc).toISOString();
+  state.serverNowAtSync = serverNowUtc;
+  state.serverClockMonotonicAtSync = performance.now();
   await sendToOffscreen({
     type: "media:authorize-until",
     sessionId: state.sessionId,
     sessionStartedAtUtc: state.sessionStartedAtUtc,
     audioSendAuthorizedUntilUtc: state.audioSendAuthorizedUntilUtc,
+    serverNowUtc: new Date(serverNowUtc).toISOString(),
     maxSessionMinutes: state.catalog?.maxSessionMinutes ?? 30,
   });
 }
@@ -1205,10 +1221,6 @@ async function reconcileActiveSession() {
     const startedAt = parseServerTimestamp(stored.sessionStartedAtUtc, "saved session start");
     const authorizedUntil = parseServerTimestamp(
       stored.audioSendAuthorizedUntilUtc, "saved authorization deadline");
-    if (authorizedUntil <= Date.now()) {
-      throw new Error("The saved audio authorization expired.");
-    }
-
     const documentUrl = chrome.runtime.getURL("offscreen/offscreen.html");
     const contexts = await chrome.runtime.getContexts({
       contextTypes: ["OFFSCREEN_DOCUMENT"],
@@ -1272,14 +1284,17 @@ async function reconcileActiveSession() {
       nextMinuteReserved: Boolean(stored.nextMinuteReserved),
       stopAtBoundary: Boolean(stored.stopAtBoundary),
       stopAtBoundaryReason: stored.stopAtBoundaryReason ?? null,
-      sessionStartedAt: startedAt,
+      sessionStartedAtServerMs: startedAt,
       sessionStartedAtUtc: new Date(startedAt).toISOString(),
       audioSendAuthorizedUntilUtc: new Date(authorizedUntil).toISOString(),
+      serverNowAtSync: 0,
+      serverClockMonotonicAtSync: 0,
       connectionStartedAt: stored.connectionStartedAt ?? Date.now(),
       lastHeartbeatAt: Date.now(),
       error: null,
       notice: "Live subtitles recovered after Chrome restarted the extension.",
     });
+    await applyServerAuthorization(server);
     pendingDiagnostics.workerRecovered = true;
     await persistActiveSession();
     await sendToTab({ type: "overlay:status", text: "Listening…" });
@@ -1321,9 +1336,11 @@ async function failClosedReconciliation(stored) {
     nextMinuteReserved: false,
     stopAtBoundary: false,
     stopAtBoundaryReason: null,
-    sessionStartedAt: 0,
+    sessionStartedAtServerMs: 0,
     sessionStartedAtUtc: null,
     audioSendAuthorizedUntilUtc: null,
+    serverNowAtSync: 0,
+    serverClockMonotonicAtSync: 0,
     error: null,
     notice: "A previous subtitle session could not be verified and was stopped safely.",
   });
@@ -1375,6 +1392,14 @@ function parseServerTimestamp(value, label) {
     throw new Error(`Glosify returned an invalid ${label}.`);
   }
   return parsed;
+}
+
+function currentServerTimeMs() {
+  const elapsed = performance.now() - state.serverClockMonotonicAtSync;
+  if (!Number.isFinite(elapsed) || elapsed < 0 || !state.serverNowAtSync) {
+    throw new Error("The Glosify server clock is not synchronized.");
+  }
+  return state.serverNowAtSync + elapsed;
 }
 
 function throwIfLifecycleCancelled(generation, signal) {

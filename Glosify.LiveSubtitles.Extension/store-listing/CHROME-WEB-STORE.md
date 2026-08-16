@@ -26,7 +26,7 @@ In Enhanced mode, tab audio is streamed through Glosify to Microsoft Foundry. In
 
 Provider-reported audio usage consumes the displayed credits even if captions are interrupted, inaccurate, or unusable; mandatory consumer rights still apply. AI-generated captions and translations may be incorrect and must not be relied on for safety-critical or other high-stakes decisions. Privacy, Terms, and Support links are available directly in the extension popup.
 
-This is a public BETA. A full page navigation stops capture immediately; same-document app navigation continues. If the connection cannot keep up, the overlay reports degraded service and stops safely after two continuous seconds rather than silently dropping or rebilling audio. Paid features may close for the rest of the Europe/Stockholm month when Glosify's application budget is reached. The extension displays the reset time and stops at a paid-minute boundary.
+This is a public BETA. A full-page navigation stops capture immediately; same-document app navigation continues. If the connection cannot keep up, the overlay reports degraded service and stops safely after two continuous seconds rather than silently dropping or rebilling audio. Paid features may close for the rest of the Europe/Stockholm month when Glosify's application budget is reached. The extension displays the reset time and stops at a paid-minute boundary.
 
 Eligible Google- or Microsoft-linked accounts receive one 25-credit trial. Password-only registrations do not receive automatic trial credits.
 

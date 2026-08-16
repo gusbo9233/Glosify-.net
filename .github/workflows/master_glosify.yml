@@ -68,6 +68,9 @@ jobs:
       - name: Install extension browser-test dependencies
         run: npm ci --prefix Glosify.LiveSubtitles.Extension
 
+      - name: Audit extension dependencies
+        run: npm audit --prefix Glosify.LiveSubtitles.Extension
+
       - name: Install extension Playwright Chromium
         working-directory: Glosify.LiveSubtitles.Extension
         run: npx playwright install --with-deps chromium
@@ -124,19 +127,19 @@ jobs:
           --output "${{ runner.temp }}/migration/efbundle"
 
       - name: Upload web artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: glosify-web
           path: ${{ runner.temp }}/myapp
 
       - name: Upload migration artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: glosify-migration
           path: ${{ runner.temp }}/migration/efbundle
 
       - name: Upload Chrome Web Store artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: glosify-live-subtitles-0.5.0-beta
           path: Glosify.LiveSubtitles.Extension/artifacts/package/glosify-live-subtitles-0.5.0-beta.zip

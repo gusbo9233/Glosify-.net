@@ -142,7 +142,7 @@ function processAudio(event) {
   if (!isCurrentConnection(connection)
       || !connection.ready
       || connection.errorReported
-      || Date.now() >= connection.authorizedUntil
+      || performance.now() >= connection.authorizedUntilMonotonic
       || connection.socket.readyState !== WebSocket.OPEN) {
     return;
   }
@@ -200,6 +200,7 @@ async function connectRelay({ sessionId, targetLanguage, relayToken, relayPath, 
     ready: false,
     sessionStartedAt: 0,
     authorizedUntil: 0,
+    authorizedUntilMonotonic: 0,
     expectedClose: false,
     errorReported: false,
     error: null,
@@ -232,6 +233,7 @@ async function connectRelay({ sessionId, targetLanguage, relayToken, relayPath, 
       }
       connection.ready = false;
       connection.authorizedUntil = 0;
+      connection.authorizedUntilMonotonic = 0;
       if (!connection.expectedClose) {
         reportRelayFailure(connection, "The Glosify subtitle relay ended.");
       }
@@ -338,22 +340,25 @@ function authorizeUntil({
   sessionId,
   sessionStartedAtUtc,
   audioSendAuthorizedUntilUtc,
+  serverNowUtc,
   maxSessionMinutes,
 }) {
   const connection = relayConnection;
   const sessionStartedAt = Date.parse(sessionStartedAtUtc);
   const deadline = Date.parse(audioSendAuthorizedUntilUtc);
-  const now = Date.now();
+  const serverNow = Date.parse(serverNowUtc);
   const maximumMinutes = Number(maxSessionMinutes);
   if (!isCurrentConnection(connection)
       || sessionId !== connection.sessionId
       || !Number.isFinite(sessionStartedAt)
       || !Number.isFinite(deadline)
+      || !Number.isFinite(serverNow)
       || !Number.isInteger(maximumMinutes)
       || maximumMinutes < 1
       || maximumMinutes > 60
-      || deadline <= now
-      || deadline > now + MAX_AUTHORIZATION_AHEAD_MS
+      || serverNow + 2_000 < sessionStartedAt
+      || deadline <= serverNow
+      || deadline > serverNow + MAX_AUTHORIZATION_AHEAD_MS
       || deadline > sessionStartedAt + maximumMinutes * 60_000 + 2_000
       || (connection.sessionStartedAt && connection.sessionStartedAt !== sessionStartedAt)
       || deadline < connection.authorizedUntil) {
@@ -361,6 +366,7 @@ function authorizeUntil({
   }
   connection.sessionStartedAt = sessionStartedAt;
   connection.authorizedUntil = deadline;
+  connection.authorizedUntilMonotonic = performance.now() + (deadline - serverNow);
 }
 
 function reportRelayFailure(connection, error) {
@@ -398,6 +404,7 @@ async function disconnectRelay() {
   connection.expectedClose = true;
   connection.ready = false;
   connection.authorizedUntil = 0;
+  connection.authorizedUntilMonotonic = 0;
   const { socket } = connection;
   socket.onmessage = null;
   socket.onerror = null;
