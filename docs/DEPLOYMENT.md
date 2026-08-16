@@ -430,8 +430,9 @@ npm run package:store --prefix Glosify.LiveSubtitles.Extension
 Upload only the generated ZIP under
 `Glosify.LiveSubtitles.Extension/artifacts/package/`. The packager rebuilds and
 validates the Store profile, requires `manifest.json` at the ZIP root, rejects
-localhost and unexpected files, and checks the pinned extension identity and
-assets.
+localhost and unexpected files, and checks the assets. It also asserts the
+manifest carries no `key`: the Chrome Web Store rejects an upload containing
+one and assigns the extension ID itself.
 
 Follow the complete
 [Chrome Web Store submission guide](../Glosify.LiveSubtitles.Extension/store-listing/CHROME-WEB-STORE.md).
