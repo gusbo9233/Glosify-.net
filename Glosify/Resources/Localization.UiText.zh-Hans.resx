@@ -114,6 +114,14 @@
   <data name="Nav.Class" xml:space="preserve">
     <value>班级</value>
   </data>
+  <data name="Languages.ModeTitle" xml:space="preserve"><value>选择学习模式</value></data>
+  <data name="Languages.ModeTagline" xml:space="preserve"><value>学习一门语言，或为任意主题创建测验。</value></data>
+  <data name="Languages.CurrentMode" xml:space="preserve"><value>当前使用 {0}</value></data>
+  <data name="Languages.ModeFind" xml:space="preserve"><value>查找模式或语言</value></data>
+  <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>搜索模式和语言</value></data>
+  <data name="Languages.ModeCount" xml:space="preserve"><value>{0} 个模式和语言</value></data>
+  <data name="Languages.ModeNone" xml:space="preserve"><value>没有匹配的模式或语言</value></data>
+  <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>试试主题、语言名称或代码。</value></data>
   <data name="Languages.Title" xml:space="preserve">
     <value>语言选择器</value>
   </data>

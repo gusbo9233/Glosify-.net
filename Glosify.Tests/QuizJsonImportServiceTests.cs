@@ -34,8 +34,8 @@ public sealed class QuizJsonImportServiceTests
             }
             """;
 
-        var preview = await service.PreviewAsync(json, "Freestyle", null, "user-1");
-        await service.ApplyAsync(preview.CanonicalJson, "Freestyle", null, "user-1");
+        var preview = await service.PreviewAsync(json, "free", null, "user-1");
+        await service.ApplyAsync(preview.CanonicalJson, "free", null, "user-1");
 
         var quiz = await db.Quizzes.SingleAsync();
         Assert.Equal("Freestyle", quiz.SourceLanguage);

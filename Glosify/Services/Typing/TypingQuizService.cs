@@ -36,7 +36,13 @@ public class TypingQuizService : ITypingQuizService
             };
         }
 
-        var contentDirection = QuizLanguageCatalog.IsFreestyle(quiz.TargetLanguage)
+        var isFreestyle = QuizLanguageCatalog.IsFreestyle(quiz.TargetLanguage);
+        if (isFreestyle)
+        {
+            normalizedItemType = PracticeItemType.Words;
+        }
+
+        var contentDirection = isFreestyle
             ? PracticeDirection.IsSourceToTarget(normalizedDirection)
                 ? PracticeDirection.TargetToSource
                 : PracticeDirection.SourceToTarget

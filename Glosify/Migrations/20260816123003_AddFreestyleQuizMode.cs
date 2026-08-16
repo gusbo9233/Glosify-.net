@@ -27,6 +27,10 @@ namespace Glosify.Migrations
                 name: "CK_AspNetUsers_SelectedQuizLanguageCode",
                 table: "AspNetUsers");
 
+            migrationBuilder.Sql(
+                "UPDATE [AspNetUsers] SET [SelectedQuizLanguageCode] = NULL " +
+                "WHERE [SelectedQuizLanguageCode] = 'free';");
+
             migrationBuilder.AddCheckConstraint(
                 name: "CK_AspNetUsers_SelectedQuizLanguageCode",
                 table: "AspNetUsers",

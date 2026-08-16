@@ -33,6 +33,30 @@ public class TypingQuizServiceTests
     }
 
     [Fact]
+    public async Task Freestyle_forces_word_items_when_sentences_are_requested()
+    {
+        await using var context = CreateContext();
+        var quizId = await SeedQuizAsync(
+            context,
+            "Freestyle",
+            "Freestyle",
+            "Largest human organ",
+            "Skin");
+        var service = new TypingQuizService(context);
+
+        var data = await service.GetQuizDataAsync(
+            quizId,
+            1,
+            PracticeDirection.SourceToTarget,
+            PracticeItemType.Sentences);
+
+        var item = Assert.Single(data.Words);
+        Assert.Equal("Largest human organ", item.Prompt);
+        Assert.Equal("Skin", item.Answer);
+        Assert.Equal(PracticeItemType.Words, data.PracticeItemType);
+    }
+
+    [Fact]
     public async Task GetQuizDataAsync_SourceToTarget_UsesTranslationPromptAndLemmaAnswer()
     {
         await using var context = CreateContext();

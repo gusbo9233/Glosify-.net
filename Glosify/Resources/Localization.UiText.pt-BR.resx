@@ -114,6 +114,14 @@
   <data name="Nav.Class" xml:space="preserve">
     <value>Turma</value>
   </data>
+  <data name="Languages.ModeTitle" xml:space="preserve"><value>Escolha um modo de aprendizagem</value></data>
+  <data name="Languages.ModeTagline" xml:space="preserve"><value>Aprenda um idioma ou crie quizzes sobre qualquer assunto.</value></data>
+  <data name="Languages.CurrentMode" xml:space="preserve"><value>Modo atual: {0}</value></data>
+  <data name="Languages.ModeFind" xml:space="preserve"><value>Encontre um modo ou idioma</value></data>
+  <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Pesquisar modos e idiomas</value></data>
+  <data name="Languages.ModeCount" xml:space="preserve"><value>{0} modos e idiomas</value></data>
+  <data name="Languages.ModeNone" xml:space="preserve"><value>Nenhum modo ou idioma encontrado</value></data>
+  <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Tente um assunto, nome de idioma ou código.</value></data>
   <data name="Languages.Title" xml:space="preserve">
     <value>Seletor de idioma</value>
   </data>

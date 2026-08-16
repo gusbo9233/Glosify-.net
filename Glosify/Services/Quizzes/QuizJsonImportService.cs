@@ -152,7 +152,13 @@ public sealed class QuizJsonImportService : IQuizJsonImportService
 
         var warnings = new List<string>();
         var counters = new ImportCounters();
-        var normalized = NormalizeDocument(parsed, targetLanguage, errors, warnings, counters);
+        var canonicalTarget = targetLanguage?.Trim() ?? string.Empty;
+        if (QuizLanguageCatalog.IsFreestyle(canonicalTarget))
+        {
+            canonicalTarget = QuizLanguageCatalog.FreestyleName;
+        }
+
+        var normalized = NormalizeDocument(parsed, canonicalTarget, errors, warnings, counters);
         var provisionalJson = JsonSerializer.Serialize(normalized, WriteOptions);
 
         if (counters.CollectionCount > MaxCollections)
@@ -168,7 +174,6 @@ public sealed class QuizJsonImportService : IQuizJsonImportService
             errors.Add("$", $"An import may contain at most {MaxTotalItems} word and sentence items.");
         }
 
-        var canonicalTarget = targetLanguage?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(canonicalTarget) || canonicalTarget.Length > 64)
         {
             errors.Add("$.target_language", "The selected quiz language is invalid.");

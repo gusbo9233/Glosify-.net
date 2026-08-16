@@ -270,6 +270,7 @@ internal sealed class AssistantTurnRunner
         try
         {
             var contextQuiz = await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
+            var contextQuizIsFreestyle = QuizLanguageCatalog.IsFreestyle(contextQuiz?.TargetLanguage);
             var contextCustomQuiz = await ValidateCustomQuizAsync(customQuizId, contextQuiz, userId, cancellationToken);
             var focusedWord = contextQuiz is null
                 ? null
@@ -277,11 +278,13 @@ internal sealed class AssistantTurnRunner
             var documentPage = documentContext is null
                 ? null
                 : await _contextResolver.ResolveDocumentPageAsync(documentContext, userId, cancellationToken);
-            var transcriptContext = await _contextResolver.ResolveTranscriptAsync(
-                transcriptId,
-                transcriptPageContext,
-                userId,
-                cancellationToken);
+            var transcriptContext = contextQuizIsFreestyle
+                ? null
+                : await _contextResolver.ResolveTranscriptAsync(
+                    transcriptId,
+                    transcriptPageContext,
+                    userId,
+                    cancellationToken);
             var bookContext = await _contextResolver.ResolveBookAsync(bookDocumentId, userId, cancellationToken);
             var selectedLanguageCode = await _contextResolver.ResolveLanguageCodeAsync(userId, cancellationToken);
             var currentLanguage = contextQuiz?.TargetLanguage
@@ -295,8 +298,8 @@ internal sealed class AssistantTurnRunner
                 userId,
                 thread,
                 cancellationToken);
-            var isFreestyle = QuizLanguageCatalog.IsFreestyle(
-                contextQuiz?.TargetLanguage ?? currentLanguage);
+            var isFreestyle = contextQuizIsFreestyle
+                || QuizLanguageCatalog.IsFreestyle(currentLanguage);
             if (isFreestyle)
             {
                 sourceLanguage = QuizLanguageCatalog.FreestyleName;

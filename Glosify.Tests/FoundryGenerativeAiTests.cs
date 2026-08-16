@@ -629,8 +629,13 @@ public sealed class FoundryGenerativeAiTests
         Assert.Equal("3", result.Metadata.AgentVersion);
     }
 
-    [Fact]
-    public async Task Freestyle_profiles_use_their_dedicated_authored_agents()
+    [Theory]
+    [InlineData(AssistantAgentProfile.FreestyleQuizAssistant, "glosify-freestyle-quiz-assistant")]
+    [InlineData(AssistantAgentProfile.FreestyleLibrarian, "glosify-freestyle-librarian")]
+    [InlineData(AssistantAgentProfile.FreestyleCustomQuizBuilder, "glosify-freestyle-quiz-builder")]
+    public async Task Freestyle_profiles_use_their_dedicated_authored_agents(
+        AssistantAgentProfile profile,
+        string expectedAgentName)
     {
         var invoker = new FakeInvoker
         {
@@ -639,11 +644,23 @@ public sealed class FoundryGenerativeAiTests
         var client = CreateClient(invoker, new FakeCredits(), foundry =>
         {
             foundry.AllowedAssistantDeployments = ["gpt-5.4-mini", "gpt-5.6-luna"];
-            foundry.Agents.FreestyleQuizAssistant = new FoundryAgentVersionOptions
+            var configured = new FoundryAgentVersionOptions
             {
-                Name = "glosify-freestyle-quiz-assistant",
+                Name = expectedAgentName,
                 Version = "1",
             };
+            switch (profile)
+            {
+                case AssistantAgentProfile.FreestyleQuizAssistant:
+                    foundry.Agents.FreestyleQuizAssistant = configured;
+                    break;
+                case AssistantAgentProfile.FreestyleLibrarian:
+                    foundry.Agents.FreestyleLibrarian = configured;
+                    break;
+                default:
+                    foundry.Agents.FreestyleCustomQuizBuilder = configured;
+                    break;
+            }
         });
 
         var result = await client.RunAgentTurnAsync(
@@ -652,14 +669,15 @@ public sealed class FoundryGenerativeAiTests
                 [],
                 [],
                 Model: null,
-                Profile: AssistantAgentProfile.FreestyleQuizAssistant,
+                Profile: profile,
                 ContextInstruction: "The Cardiology quiz is open."),
             Usage(AiUsageFeatures.Assistant));
 
-        Assert.Equal("glosify-freestyle-quiz-assistant@1", Assert.Single(invoker.AuthoredLookups));
+        Assert.Equal($"{expectedAgentName}@1", Assert.Single(invoker.AuthoredLookups));
         Assert.Contains("general study assistant", invoker.Instructions);
+        Assert.Contains("The Cardiology quiz is open.", invoker.Instructions);
         Assert.Equal("gpt-5.6-luna", invoker.Deployment);
-        Assert.Equal("glosify-freestyle-quiz-assistant", result.Metadata!.AgentName);
+        Assert.Equal(expectedAgentName, result.Metadata!.AgentName);
     }
 
     // Tools are defined in Foundry, but which of them a given turn may use is the

@@ -1028,6 +1028,50 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
+    public async Task FreestyleQuizPage_DropsTranscriptContextEvenWhenALanguageIsSelected()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        var transcriptId = Guid.NewGuid();
+        var quiz = CreateQuiz(quizId, "user-1");
+        quiz.SourceLanguage = quiz.TargetLanguage = quiz.Language = "Freestyle";
+        context.Users.Add(new ApplicationUser { Id = "user-1", SelectedQuizLanguageCode = "pl" });
+        context.Quizzes.Add(quiz);
+        context.RealtimeTranslationTranscripts.Add(new RealtimeTranslationTranscript
+        {
+            Id = transcriptId,
+            UserId = "user-1",
+            Title = "Language transcript that must not leak",
+            TargetLanguage = "pl",
+            Stream = RealtimeTranslationTranscriptStreams.Source,
+        });
+        await context.SaveChangesAsync();
+        var generativeAi = new CapturingGenerativeAiClient("Done.");
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: generativeAi,
+            tools: AssistantToolFactory.Create(context),
+            languageContext: new StaticLanguageContext("Polish"));
+        var chat = await orchestrator.CreateChatAsync(
+            "user-1",
+            contextQuizId: quizId,
+            contextTranscriptId: transcriptId);
+
+        await orchestrator.SendChatMessageAsync(
+            chat.Id,
+            "user-1",
+            "Create another item.",
+            contextQuizId: quizId,
+            transcriptId: transcriptId);
+
+        var request = Assert.IsType<AgentRequest>(generativeAi.LastAgentRequest);
+        Assert.Equal(AssistantAgentProfile.FreestyleQuizAssistant, request.Profile);
+        Assert.DoesNotContain("Language transcript that must not leak", request.ContextInstruction);
+        context.ChangeTracker.Clear();
+        Assert.Null((await context.AssistantThreads.SingleAsync(thread => thread.Id == chat.Id)).ContextTranscriptId);
+    }
+
+    [Fact]
     public async Task FreestyleGlobalMessage_RoutesToGenericLibrarian()
     {
         await using var context = CreateContext();

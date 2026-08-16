@@ -44,6 +44,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
     public async Task<ActionResult<RealtimeTranslationCatalog>> Catalog(CancellationToken cancellationToken)
     {
         NoStore();
+        await EnsureLanguageLearningModeAsync(cancellationToken);
         return Ok(await _translation.GetCatalogAsync(User.GetUserId(), cancellationToken));
     }
 
@@ -54,6 +55,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         NoStore();
+        await EnsureLanguageLearningModeAsync(cancellationToken);
         var created = await _translation.CreateSessionAsync(
             User.GetUserId(),
             request.TargetLanguage,
@@ -73,6 +75,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         NoStore();
+        await EnsureLanguageLearningModeAsync(cancellationToken);
         return Ok(await _translation.ReserveMinuteAsync(
             User.GetUserId(),
             sessionId,
@@ -88,6 +91,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         NoStore();
+        await EnsureLanguageLearningModeAsync(cancellationToken);
         return Ok(await _translation.BeginMinuteAsync(
             User.GetUserId(),
             sessionId,
@@ -102,6 +106,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         NoStore();
+        await EnsureLanguageLearningModeAsync(cancellationToken);
         if (request.FirstCaptionLatencyMs is >= 0 and <= 300_000)
         {
             RealtimeTranslationTelemetry.FirstCaptionLatency.Record(request.FirstCaptionLatencyMs.Value);
@@ -117,9 +122,20 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
     public async Task<IActionResult> EndSession(Guid sessionId, CancellationToken cancellationToken)
     {
         NoStore();
+        await EnsureLanguageLearningModeAsync(cancellationToken);
         await _translation.EndSessionAsync(User.GetUserId(), sessionId, cancellationToken);
         return NoContent();
     }
 
     private void NoStore() => Response.Headers.CacheControl = "no-store";
+
+    private async Task EnsureLanguageLearningModeAsync(CancellationToken cancellationToken)
+    {
+        var selected = await _languagePreferences.GetSelectedAsync(User.GetUserId(), cancellationToken);
+        if (selected is { IsLanguageLearning: false })
+        {
+            throw new RealtimeTranslationValidationException(
+                "Realtime translation is not available in Freestyle mode.");
+        }
+    }
 }

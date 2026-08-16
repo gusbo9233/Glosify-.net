@@ -38,6 +38,14 @@
   <data name="Nav.Speak" xml:space="preserve"><value>Speak</value></data>
   <data name="Nav.Classrooms" xml:space="preserve"><value>Classrooms</value></data>
   <data name="Nav.Class" xml:space="preserve"><value>Class</value></data>
+  <data name="Languages.ModeTitle" xml:space="preserve"><value>Choose a learning mode</value></data>
+  <data name="Languages.ModeTagline" xml:space="preserve"><value>Learn a language, or build quizzes for any subject.</value></data>
+  <data name="Languages.CurrentMode" xml:space="preserve"><value>Currently using {0}</value></data>
+  <data name="Languages.ModeFind" xml:space="preserve"><value>Find a mode or language</value></data>
+  <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Search modes and languages</value></data>
+  <data name="Languages.ModeCount" xml:space="preserve"><value>{0} modes and languages</value></data>
+  <data name="Languages.ModeNone" xml:space="preserve"><value>No matching mode or language</value></data>
+  <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Try a subject, language name, or code.</value></data>
   <data name="Languages.Title" xml:space="preserve"><value>Language selector</value></data>
   <data name="Languages.Tagline" xml:space="preserve"><value>Where would you like to resonate today?</value></data>
   <data name="Languages.Current" xml:space="preserve"><value>Currently learning {0}</value></data>
