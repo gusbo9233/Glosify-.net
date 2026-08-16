@@ -607,13 +607,13 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
             return await operation();
 
         var strategy = _context.Database.CreateExecutionStrategy();
-        return await strategy.ExecuteAsync(async () =>
+        return await strategy.ExecuteAsync(async token =>
         {
-            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = await _context.Database.BeginTransactionAsync(token);
             try
             {
                 var result = await operation();
-                await transaction.CommitAsync(cancellationToken);
+                await transaction.CommitAsync(token);
                 return result;
             }
             catch
@@ -621,7 +621,7 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
                 _context.ChangeTracker.Clear();
                 throw;
             }
-        });
+        }, cancellationToken);
     }
 
     internal static DateTimeOffset StartOfNextCollectionDay(string timeZoneId, DateTimeOffset now)

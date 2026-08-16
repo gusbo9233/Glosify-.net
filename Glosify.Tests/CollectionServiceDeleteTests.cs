@@ -1,12 +1,16 @@
 using Glosify.Data;
+using Glosify.Services.Anki;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace Glosify.Tests;
 
 public class CollectionServiceDeleteTests
 {
+    private static readonly DateTimeOffset Now = new(2026, 8, 15, 12, 0, 0, TimeSpan.Zero);
+
     [Fact]
     public async Task DeleteCollectionTreeAsync_KeepsAssistantHistoryAndClearsItsQuizContext()
     {
@@ -61,7 +65,11 @@ public class CollectionServiceDeleteTests
             message);
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-        var service = new CollectionService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
+        var anki = new AnkiCollectionService(context, new FakeTimeProvider(Now));
+        var deck = await anki.CreateAsync(new("Chapter deck", "English", "Polish", "UTC"), UserId);
+        Assert.True(await anki.AddQuizAsync(new(deck.Id, quiz.Id, true, false, false, false), UserId));
+        Assert.Single(await context.AnkiCards.Where(card => card.IsActive).ToListAsync());
+        var service = new CollectionService(context, anki);
 
         var deleted = await service.DeleteCollectionTreeAsync(root.Id, UserId);
 
@@ -71,6 +79,9 @@ public class CollectionServiceDeleteTests
         Assert.Empty(context.Words);
         Assert.Null(Assert.Single(context.AssistantThreads).ContextQuizId);
         Assert.Null(Assert.Single(context.AssistantMessages).ContextQuizId);
+        Assert.Empty(await context.AnkiQuizLinks.ToListAsync());
+        Assert.False(Assert.Single(await context.AnkiNotes.ToListAsync()).IsActive);
+        Assert.All(await context.AnkiCards.ToListAsync(), card => Assert.False(card.IsActive));
     }
 
     [Fact]
@@ -81,7 +92,7 @@ public class CollectionServiceDeleteTests
         context.Add(collection);
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-        var service = new CollectionService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
+        var service = new CollectionService(context, new AnkiCollectionService(context, new FakeTimeProvider(Now)));
 
         var deleted = await service.DeleteCollectionTreeAsync(collection.Id, "someone-else");
 

@@ -109,6 +109,9 @@ public sealed class BookUploadRateLimitTests
 
         using var rejected = await limiter.AcquireAsync(context, 1);
         Assert.False(rejected.IsAcquired);
+
+        using var anotherUser = await limiter.AcquireAsync(CreateContext(path, "user-2"), 1);
+        Assert.True(anotherUser.IsAcquired);
     }
 
     [Fact]

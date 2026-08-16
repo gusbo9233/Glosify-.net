@@ -1016,7 +1016,7 @@ public class ChangeApplierTests
 
     private static ChangeApplier CreateApplier(GlosifyContext db)
     {
-        var anki = new Glosify.Services.Anki.AnkiCollectionService(db, TimeProvider.System);
+        var anki = new Glosify.Services.Anki.AnkiCollectionService(db, new FakeTimeProvider(SeededAt));
         return new ChangeApplier(
             db,
             new QuizService(db, null!, anki),

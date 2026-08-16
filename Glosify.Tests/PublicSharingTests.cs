@@ -4,6 +4,7 @@ using Glosify.Services;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -211,7 +212,9 @@ public class PublicSharingTests
     }
 
     private static Glosify.Services.Anki.IAnkiCollectionService Anki(GlosifyContext context) =>
-        new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System);
+        new Glosify.Services.Anki.AnkiCollectionService(
+            context,
+            new FakeTimeProvider(new DateTimeOffset(2026, 8, 15, 12, 0, 0, TimeSpan.Zero)));
 
     private static Quiz CreateQuiz(
         string userId,

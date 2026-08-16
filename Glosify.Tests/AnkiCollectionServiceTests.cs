@@ -98,6 +98,7 @@ public sealed class AnkiCollectionServiceTests
         var siblings = await fixture.Context.AnkiCards
             .Where(card => card.AnkiNoteId == ratedNoteId && card.Id != first.CardId)
             .ToListAsync();
+        Assert.NotEmpty(siblings);
         Assert.All(siblings, card => Assert.True(card.BuriedUntil.HasValue));
 
         await fixture.Collections.AddItemAsync(new(collection.Id, fixture.Quiz.Id, "word", fixture.SecondWord.Id, true, false), UserId);

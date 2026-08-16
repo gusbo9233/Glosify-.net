@@ -40,12 +40,20 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         };
         Page.Response += (_, response) =>
         {
-            if (response.Status >= 400)
+            if (response.Status >= 400 && !IsIgnorableResponse(response.Url))
                 _responseErrors.Add($"HTTP {response.Status} {response.Url}");
             if (response.Url.Contains(".js", StringComparison.OrdinalIgnoreCase))
                 _scriptResponses.Add($"{response.Status} {response.Url}");
         };
         Page.RequestFailed += (_, request) => _scriptResponses.Add($"FAILED {request.Url}: {request.Failure}");
+    }
+
+    private static bool IsIgnorableResponse(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return false;
+        return uri.AbsolutePath.Contains("favicon", StringComparison.OrdinalIgnoreCase)
+            || uri.AbsolutePath.EndsWith(".map", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task DisposeAsync()
