@@ -3,10 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
+    "test:browser": "node scripts/build.mjs test && playwright test",
     "build:dev": "node scripts/build.mjs development",
+    "build:test": "node scripts/build.mjs test",
     "build:store": "node scripts/build.mjs store",
     "validate:store": "node scripts/validate-store.mjs artifacts/store",
     "package:store": "node scripts/package-store.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "ws": "8.21.3"
   }
 }

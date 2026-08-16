@@ -424,6 +424,7 @@ After the compatible backend is deployed and verified:
 
 ```bash
 npm test --prefix Glosify.LiveSubtitles.Extension
+npm run test:browser --prefix Glosify.LiveSubtitles.Extension
 npm run package:store --prefix Glosify.LiveSubtitles.Extension
 ```
 
@@ -435,7 +436,7 @@ assets.
 
 Follow the complete
 [Chrome Web Store submission guide](../Glosify.LiveSubtitles.Extension/store-listing/CHROME-WEB-STORE.md).
-Use unlisted visibility and deferred publishing for the beta pilot. Put the
+Use Public visibility with BETA branding and deferred publishing for 0.5.0. Put the
 temporary reviewer account credentials only in the Store dashboard, never in
 the repository or listing copy.
 

@@ -13,16 +13,34 @@ const STORAGE_KEYS = Object.freeze({
   targetLanguage: "glosifyTargetLanguage",
   translationMode: "glosifyTranslationMode",
   sourceLanguage: "glosifySourceLanguage",
+  activeSession: "glosifyActiveSession",
 });
+
+const ACTIVE_SESSION_VERSION = 1;
+const AUTHORIZATION_CLOCK_SKEW_MS = 2_000;
 
 let accessToken = null;
 let accessExpiresAt = 0;
 let refreshToken = null;
+let refreshTokenGeneration = 0;
+let refreshPromise = null;
+let offscreenCreationPromise = null;
+let startPromise = null;
+let startAbortController = null;
+let stopPromise = null;
+let lifecycleGeneration = 0;
 let billingBusy = false;
 let heartbeatBusy = false;
+let heartbeatFailures = 0;
+let nextHeartbeatAttemptAt = 0;
 let relaySwitchBusy = false;
 let paidStatusBusy = false;
 let stopping = false;
+const pendingDiagnostics = {
+  workerRecovered: false,
+  droppedAudioMilliseconds: 0,
+  backpressureEvents: 0,
+};
 
 const state = {
   status: "disconnected",
@@ -35,13 +53,18 @@ const state = {
   sourceLanguage: "auto",
   saveTranscript: false,
   tabId: null,
+  overlayInstanceId: null,
   sessionId: null,
   transcriptId: null,
   currentMinute: 0,
   nextMinuteReserved: false,
   stopAtBoundary: false,
   stopAtBoundaryReason: null,
-  sessionStartedAt: 0,
+  sessionStartedAtServerMs: 0,
+  sessionStartedAtUtc: null,
+  audioSendAuthorizedUntilUtc: null,
+  serverNowAtSync: 0,
+  serverClockMonotonicAtSync: 0,
   connectionStartedAt: 0,
   lastHeartbeatAt: 0,
   firstCaptionLatencyMs: null,
@@ -55,7 +78,7 @@ const state = {
   lastPaidStatusAt: 0,
 };
 
-const initialization = restoreLocalState();
+const initialization = initializeWorker();
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || message.target === "offscreen" || message.target === "popup") {
@@ -78,12 +101,10 @@ chrome.tabs.onRemoved.addListener(tabId => {
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (tabId !== state.tabId || changeInfo.status !== "complete" || !state.sessionId) {
+  if (tabId !== state.tabId || changeInfo.status !== "loading") {
     return;
   }
-  void ensureContentOverlay(tabId).then(async () => {
-    await sendToTab({ type: "overlay:status", text: statusText() });
-  });
+  void stopSession("Subtitles stopped because the captured tab navigated.", "ready");
 });
 
 async function handleMessage(message) {
@@ -124,6 +145,19 @@ async function handleMessage(message) {
     case "popup:start":
       await startSession();
       return publicState();
+    case "test:start":
+      if (!isLocalTestProfile()) {
+        throw new Error("The browser-test start hook is unavailable in this build.");
+      }
+      await restoreLocalState();
+      await startSession();
+      return publicState();
+    case "test:restore-local-state":
+      if (!isLocalTestProfile()) {
+        throw new Error("The browser-test state hook is unavailable in this build.");
+      }
+      await restoreLocalState();
+      return publicState();
     case "popup:stop":
       await stopSession(null, "ready");
       return publicState();
@@ -138,8 +172,24 @@ async function handleMessage(message) {
       await sendToTab({ type: "overlay:status", text: state.notice });
       broadcastState();
       return null;
+    case "media:degraded":
+      pendingDiagnostics.droppedAudioMilliseconds += boundedNumber(
+        message.droppedAudioMilliseconds, 0, 60_000);
+      pendingDiagnostics.backpressureEvents += boundedNumber(
+        message.backpressureEvents, 0, 100);
+      state.notice = message.active
+        ? "The subtitle connection is degraded; Glosify is protecting billing while audio is delayed."
+        : "The subtitle connection recovered.";
+      await sendToTab({ type: "overlay:status", text: state.notice });
+      broadcastState();
+      return null;
     case "media:error":
       if (!stopping) {
+        pendingDiagnostics.droppedAudioMilliseconds += boundedNumber(
+          message.droppedAudioMilliseconds, 0, 60_000);
+        pendingDiagnostics.backpressureEvents += boundedNumber(
+          message.backpressureEvents, 0, 100);
+        await flushClientDiagnostics();
         await stopSession(message.error || "The selected subtitle provider connection ended.", "error");
       }
       return null;
@@ -153,10 +203,22 @@ async function handleMessage(message) {
   }
 }
 
+async function initializeWorker() {
+  await restoreLocalState();
+  await reconcileActiveSession();
+}
+
 async function restoreLocalState() {
   await chrome.storage.local.setAccessLevel({ accessLevel: "TRUSTED_CONTEXTS" });
-  const stored = await chrome.storage.local.get(Object.values(STORAGE_KEYS));
+  await chrome.storage.session.setAccessLevel({ accessLevel: "TRUSTED_CONTEXTS" });
+  const stored = await chrome.storage.local.get([
+    STORAGE_KEYS.refreshToken,
+    STORAGE_KEYS.targetLanguage,
+    STORAGE_KEYS.translationMode,
+    STORAGE_KEYS.sourceLanguage,
+  ]);
   refreshToken = stored[STORAGE_KEYS.refreshToken] ?? null;
+  refreshTokenGeneration += 1;
   state.targetLanguage = stored[STORAGE_KEYS.targetLanguage] ?? "en";
   state.translationMode = stored[STORAGE_KEYS.translationMode] ?? "scribe";
   state.sourceLanguage = stored[STORAGE_KEYS.sourceLanguage] ?? "auto";
@@ -217,12 +279,13 @@ async function signIn() {
 }
 
 async function signOut() {
-  if (state.sessionId) {
+  if (state.sessionId || startPromise) {
     await stopSession(null, "ready");
   }
   accessToken = null;
   accessExpiresAt = 0;
   refreshToken = null;
+  refreshTokenGeneration += 1;
   await chrome.storage.local.remove(STORAGE_KEYS.refreshToken);
   Object.assign(state, {
     status: "disconnected",
@@ -249,6 +312,7 @@ async function acceptTokenResponse(tokens) {
   accessToken = tokens.accessToken;
   accessExpiresAt = Date.now() + Math.max(30, Number(tokens.expiresIn ?? 3600) - 30) * 1000;
   refreshToken = tokens.refreshToken;
+  refreshTokenGeneration += 1;
   await chrome.storage.local.set({ [STORAGE_KEYS.refreshToken]: refreshToken });
   state.signedIn = true;
 }
@@ -260,25 +324,39 @@ async function ensureAccessToken() {
   if (!refreshToken) {
     throw new ApiRequestError(401, "Connect your Glosify account first.");
   }
-
-  const response = await fetch(new URL("/api/auth/refresh", CONFIG.glosifyBaseUrl), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-    body: JSON.stringify({ refreshToken }),
-  });
-  if (!response.ok) {
-    await clearExpiredAuthentication();
-    throw new ApiRequestError(401, "Your Glosify session expired. Connect again.");
+  if (!refreshPromise) {
+    const tokenUsed = refreshToken;
+    const generationUsed = refreshTokenGeneration;
+    refreshPromise = (async () => {
+      const response = await fetch(new URL("/api/auth/refresh", CONFIG.glosifyBaseUrl), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ refreshToken: tokenUsed }),
+      });
+      if (!response.ok) {
+        if (refreshTokenGeneration === generationUsed && refreshToken === tokenUsed) {
+          await clearExpiredAuthentication();
+        }
+        throw new ApiRequestError(401, "Your Glosify session expired. Connect again.");
+      }
+      if (refreshTokenGeneration !== generationUsed || refreshToken !== tokenUsed) {
+        return accessToken;
+      }
+      await acceptTokenResponse(await response.json());
+      return accessToken;
+    })().finally(() => {
+      refreshPromise = null;
+    });
   }
-  await acceptTokenResponse(await response.json());
-  return accessToken;
+  return refreshPromise;
 }
 
 async function clearExpiredAuthentication() {
   accessToken = null;
   accessExpiresAt = 0;
   refreshToken = null;
+  refreshTokenGeneration += 1;
   await chrome.storage.local.remove(STORAGE_KEYS.refreshToken);
   state.signedIn = false;
   state.status = "disconnected";
@@ -298,8 +376,10 @@ async function apiFetch(path, options = {}, retry = true) {
     cache: "no-store",
   });
   if (response.status === 401 && retry) {
-    accessToken = null;
-    accessExpiresAt = 0;
+    if (accessToken === token) {
+      accessToken = null;
+      accessExpiresAt = 0;
+    }
     await ensureAccessToken();
     return apiFetch(path, options, false);
   }
@@ -509,53 +589,91 @@ async function ensureTranscriptLearningLanguage(requestedCode) {
   state.catalog = { ...state.catalog, selectedQuizLanguage: persisted };
 }
 
-async function startSession() {
-  if (state.sessionId || state.status === "connecting") {
-    return;
+function startSession() {
+  if (startPromise) {
+    return startPromise;
   }
-  await refreshAccountState();
-  if (!state.signedIn || !state.catalog) {
-    throw new Error(state.error || "Connect your Glosify account first.");
-  }
-  if (!state.paidServicesAvailable) {
-    throw new ApiRequestError(
-      503,
-      budgetUnavailableMessage(),
-      "paid_services_budget_exhausted",
-      state.paidServicesResetAtUtc);
-  }
-  if (state.saveTranscript && !canSaveTranscript()) {
-    throw new Error(saveTranscriptUnavailableMessage());
-  }
-  const requiredCredits = effectiveCreditsPerMinute();
-  if (!Number.isFinite(requiredCredits) || requiredCredits <= 0) {
-    throw new Error("Glosify did not return a valid subtitle price.");
-  }
-  if (state.availableCredits < requiredCredits) {
-    throw new ApiRequestError(402, "You do not have enough Glosify credits to start subtitles.");
+  if (state.sessionId) {
+    return Promise.resolve();
   }
 
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id || !isCapturableUrl(tab.url)) {
-    throw new Error("Open a regular web page such as Twitch or YouTube, then try again.");
-  }
-
+  const generation = ++lifecycleGeneration;
+  const controller = new AbortController();
+  startAbortController = controller;
   state.status = "connecting";
   state.error = null;
   state.notice = null;
-  state.tabId = tab.id;
   broadcastState();
+  startPromise = startSessionCore(generation, controller.signal).finally(() => {
+    if (startAbortController === controller) {
+      startAbortController = null;
+    }
+    startPromise = null;
+  });
+  return startPromise;
+}
 
+async function startSessionCore(generation, signal) {
   try {
+    await refreshAccountState();
+    throwIfLifecycleCancelled(generation, signal);
+    if (!state.signedIn || !state.catalog) {
+      throw new Error(state.error || "Connect your Glosify account first.");
+    }
+    if (!state.paidServicesAvailable) {
+      throw new ApiRequestError(
+        503,
+        budgetUnavailableMessage(),
+        "paid_services_budget_exhausted",
+        state.paidServicesResetAtUtc);
+    }
+    if (state.saveTranscript && !canSaveTranscript()) {
+      throw new Error(saveTranscriptUnavailableMessage());
+    }
+    const requiredCredits = effectiveCreditsPerMinute();
+    if (!Number.isFinite(requiredCredits) || requiredCredits <= 0) {
+      throw new Error("Glosify did not return a valid subtitle price.");
+    }
+    if (state.availableCredits < requiredCredits) {
+      throw new ApiRequestError(402, "You do not have enough Glosify credits to start subtitles.");
+    }
+
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    throwIfLifecycleCancelled(generation, signal);
+    if (!tab?.id || !isCapturableUrl(tab.url)) {
+      throw new Error("Open a regular web page such as Twitch or YouTube, then try again.");
+    }
+
+    state.tabId = tab.id;
+    await persistActiveSession();
+    broadcastState();
+
     await ensureContentOverlay(tab.id);
+    throwIfLifecycleCancelled(generation, signal);
+    const overlay = await chrome.tabs.sendMessage(tab.id, { type: "overlay:get-state" });
+    if (!overlay?.installed || !overlay.overlayInstanceId) {
+      throw new Error("The subtitle overlay did not initialize.");
+    }
+    state.overlayInstanceId = overlay.overlayInstanceId;
     await sendToTab({ type: "overlay:status", text: "Connecting to Glosify…" });
     await ensureOffscreenDocument();
-    const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id });
+    throwIfLifecycleCancelled(generation, signal);
+
+    if (isLocalTestProfile()) {
+      await sendToOffscreen({ type: "media:start-test-capture" });
+    } else {
+      // Chrome stream IDs are short-lived. Claim it only after preparation,
+      // then consume it before making the server request.
+      const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id });
+      throwIfLifecycleCancelled(generation, signal);
+      await sendToOffscreen({ type: "media:start-capture", streamId });
+    }
+    throwIfLifecycleCancelled(generation, signal);
     const created = await apiFetch("/api/realtime-translation/sessions", {
       method: "POST",
       body: JSON.stringify(buildTranscriptSessionRequest(state)),
+      signal,
     });
-
     state.sessionId = created.sessionId;
     state.transcriptId = created.transcriptId ?? null;
     state.availableCredits = created.availableCredits;
@@ -563,31 +681,40 @@ async function startSession() {
     state.firstCaptionLatencyMs = null;
     state.firstCaptionReported = false;
     state.reconnectReported = true;
+    throwIfLifecycleCancelled(generation, signal);
+    await sendToTab({ type: "overlay:bind-session", sessionId: created.sessionId });
+    await persistActiveSession();
     await sendToOffscreen({
-      type: "media:start",
-      streamId,
+      type: "media:connect-relay",
       sessionId: created.sessionId,
       targetLanguage: state.targetLanguage,
       relayToken: created.relayToken,
       relayPath: created.relayPath,
       glosifyBaseUrl: CONFIG.glosifyBaseUrl,
     });
+    throwIfLifecycleCancelled(generation, signal);
     const begun = await apiFetch(
       `/api/realtime-translation/sessions/${created.sessionId}/minutes/1/begin`,
-      { method: "POST" });
+      { method: "POST", signal });
+    throwIfLifecycleCancelled(generation, signal);
     state.availableCredits = begun.availableCredits;
     state.currentMinute = 1;
     state.nextMinuteReserved = false;
     state.stopAtBoundary = false;
     state.stopAtBoundaryReason = null;
-    state.sessionStartedAt = Date.now();
     state.lastHeartbeatAt = Date.now();
+    heartbeatFailures = 0;
+    nextHeartbeatAttemptAt = 0;
     state.status = "subtitling";
     state.notice = null;
-    await authorizeOffscreenMinute(1);
+    await applyServerAuthorization(begun);
+    await persistActiveSession();
     await sendToTab({ type: "overlay:status", text: "Listening…" });
     broadcastState();
   } catch (error) {
+    if (signal.aborted || generation !== lifecycleGeneration) {
+      return;
+    }
     const normalized = normalizeError(error);
     const budgetClosed = rememberBudgetClosure(normalized);
     await stopSession(
@@ -612,7 +739,8 @@ async function handleSubtitleEvent(event) {
 
 async function processTick() {
   if (!state.sessionId
-      || !state.sessionStartedAt
+      || !state.sessionStartedAtServerMs
+      || !state.serverNowAtSync
       || stopping
       || relaySwitchBusy
       || state.status === "reconnecting") {
@@ -620,6 +748,101 @@ async function processTick() {
   }
 
   const now = Date.now();
+  const serverNow = currentServerTimeMs();
+  if (!billingBusy) {
+    const action = getBillingAction({
+      elapsedMs: serverNow - state.sessionStartedAtServerMs,
+      currentMinute: state.currentMinute,
+      nextMinuteReserved: state.nextMinuteReserved,
+      stopAtBoundary: state.stopAtBoundary,
+      maxSessionMinutes: state.catalog?.maxSessionMinutes ?? 30,
+      renewalLeadSeconds: state.catalog?.renewalLeadSeconds ?? 5,
+    });
+    if (action.type !== "none") {
+      billingBusy = true;
+      try {
+        await processBillingAction(action);
+      } catch (error) {
+        const normalized = normalizeError(error);
+        const budgetClosed = rememberBudgetClosure(normalized);
+        await stopSession(
+          budgetClosed
+            ? budgetUnavailableMessage(normalized.resetsAtUtc)
+            : normalized.status === 402
+              ? "Subtitles stopped because your Glosify credits ran out."
+              : normalized.message,
+          budgetClosed ? "budget_exhausted" : normalized.status === 402 ? "insufficient_credits" : "error");
+      } finally {
+        billingBusy = false;
+      }
+    }
+  }
+
+  if (!state.sessionId || stopping) {
+    return;
+  }
+  await refreshBackgroundStatus(now);
+}
+
+async function processBillingAction(action) {
+  if (action.type === "reserve") {
+    try {
+      const result = await apiFetch(
+        `/api/realtime-translation/sessions/${state.sessionId}/minutes/${action.minuteIndex}/reserve`,
+        { method: "POST" });
+      await applyServerAuthorization(result);
+      state.nextMinuteReserved = true;
+      state.availableCredits = result.availableCredits;
+      await persistActiveSession();
+    } catch (error) {
+      const normalized = normalizeError(error);
+      if (normalized.status !== 402 && normalized.code !== "paid_services_budget_exhausted") {
+        throw error;
+      }
+      rememberBudgetClosure(normalized);
+      state.stopAtBoundary = true;
+      state.stopAtBoundaryReason = normalized.status === 402 ? "credits" : "budget";
+      state.notice = normalized.status === 402
+        ? "Subtitles will stop at the end of this paid minute: not enough credits."
+        : `${budgetUnavailableMessage(normalized.resetsAtUtc)} Subtitles will stop at the end of this paid minute.`;
+      await sendToTab({ type: "overlay:status", text: state.notice });
+      await persistActiveSession();
+    }
+    broadcastState();
+    return;
+  }
+  if (action.type === "begin") {
+    const result = await apiFetch(
+      `/api/realtime-translation/sessions/${state.sessionId}/minutes/${action.minuteIndex}/begin`,
+      { method: "POST" });
+    await applyServerAuthorization(result);
+    state.currentMinute = action.minuteIndex;
+    state.nextMinuteReserved = false;
+    state.availableCredits = result.availableCredits;
+    state.notice = null;
+    await persistActiveSession();
+    broadcastState();
+    return;
+  }
+  if (action.type === "stop") {
+    const budgetStopped = state.stopAtBoundaryReason === "budget";
+    await stopSession(
+      budgetStopped
+        ? budgetUnavailableMessage()
+        : state.stopAtBoundary
+          ? "Subtitles stopped because your Glosify credits ran out."
+          : "The next minute was not authorized.",
+      budgetStopped ? "budget_exhausted" : state.stopAtBoundary ? "insufficient_credits" : "error");
+    return;
+  }
+  if (action.type === "reconnect") {
+    await reconnectRelaySession();
+  }
+}
+
+async function refreshBackgroundStatus(now) {
+  // These checks intentionally run after reserve/begin/stop/reconnect. Billing
+  // transitions are time-critical; catalog health and heartbeat are not.
   if (!paidStatusBusy && now - state.lastPaidStatusAt >= 15_000) {
     paidStatusBusy = true;
     try {
@@ -629,6 +852,7 @@ async function processTick() {
         state.stopAtBoundaryReason = "budget";
         state.notice = `${budgetUnavailableMessage()} Subtitles will stop at the end of this paid minute.`;
         await sendToTab({ type: "overlay:status", text: state.notice });
+        await persistActiveSession();
         broadcastState();
       }
     } catch {
@@ -637,107 +861,45 @@ async function processTick() {
       paidStatusBusy = false;
     }
   }
-  if (!heartbeatBusy
-      && now - state.lastHeartbeatAt >= (state.catalog?.heartbeatSeconds ?? 15) * 1000) {
-    heartbeatBusy = true;
-    const heartbeatSessionId = state.sessionId;
-    apiFetch(`/api/realtime-translation/sessions/${heartbeatSessionId}/heartbeat`, {
-      method: "POST",
-      body: JSON.stringify({
-        firstCaptionLatencyMs: state.firstCaptionReported ? null : state.firstCaptionLatencyMs,
-        reconnected: !state.reconnectReported,
-      }),
-    })
-      .then(() => {
-        if (state.sessionId !== heartbeatSessionId) {
-          return;
-        }
-        state.lastHeartbeatAt = Date.now();
-        state.firstCaptionReported ||= state.firstCaptionLatencyMs !== null;
-        state.reconnectReported = true;
-      })
-      .catch(error => {
-        if (state.sessionId === heartbeatSessionId) {
-          state.notice = normalizeError(error).message;
-          broadcastState();
-        }
-      })
-      .finally(() => { heartbeatBusy = false; });
-  }
-
-  if (billingBusy) {
+  if (heartbeatBusy
+      || now < nextHeartbeatAttemptAt
+      || now - state.lastHeartbeatAt < (state.catalog?.heartbeatSeconds ?? 15) * 1000) {
     return;
   }
-  const action = getBillingAction({
-    elapsedMs: now - state.sessionStartedAt,
-    currentMinute: state.currentMinute,
-    nextMinuteReserved: state.nextMinuteReserved,
-    stopAtBoundary: state.stopAtBoundary,
-    maxSessionMinutes: state.catalog?.maxSessionMinutes ?? 30,
-    renewalLeadSeconds: state.catalog?.renewalLeadSeconds ?? 5,
-  });
-  if (action.type === "none") {
-    return;
-  }
-
-  billingBusy = true;
+  heartbeatBusy = true;
+  state.lastHeartbeatAt = now;
+  const heartbeatSessionId = state.sessionId;
+  const diagnostics = heartbeatDiagnostics();
   try {
-    if (action.type === "reserve") {
-      try {
-        const result = await apiFetch(
-          `/api/realtime-translation/sessions/${state.sessionId}/minutes/${action.minuteIndex}/reserve`,
-          { method: "POST" });
-        state.nextMinuteReserved = true;
-        state.availableCredits = result.availableCredits;
-      } catch (error) {
-        const normalized = normalizeError(error);
-        if (normalized.status === 402 || normalized.code === "paid_services_budget_exhausted") {
-          rememberBudgetClosure(normalized);
-          state.stopAtBoundary = true;
-          state.stopAtBoundaryReason = normalized.status === 402 ? "credits" : "budget";
-          state.notice = normalized.status === 402
-            ? "Subtitles will stop at the end of this paid minute: not enough credits."
-            : `${budgetUnavailableMessage(normalized.resetsAtUtc)} Subtitles will stop at the end of this paid minute.`;
-          await sendToTab({ type: "overlay:status", text: state.notice });
-        } else {
-          throw error;
-        }
-      }
-      broadcastState();
-    } else if (action.type === "begin") {
-      const result = await apiFetch(
-        `/api/realtime-translation/sessions/${state.sessionId}/minutes/${action.minuteIndex}/begin`,
-        { method: "POST" });
-      state.currentMinute = action.minuteIndex;
-      state.nextMinuteReserved = false;
-      state.availableCredits = result.availableCredits;
-      state.notice = null;
-      await authorizeOffscreenMinute(action.minuteIndex);
-      broadcastState();
-    } else if (action.type === "stop") {
-      const budgetStopped = state.stopAtBoundaryReason === "budget";
-      await stopSession(
-        budgetStopped
-          ? budgetUnavailableMessage()
-          : state.stopAtBoundary
-            ? "Subtitles stopped because your Glosify credits ran out."
-            : "The next minute was not authorized.",
-        budgetStopped ? "budget_exhausted" : state.stopAtBoundary ? "insufficient_credits" : "error");
-    } else if (action.type === "reconnect") {
-      await reconnectRelaySession();
+    const status = await apiFetch(
+      `/api/realtime-translation/sessions/${heartbeatSessionId}/heartbeat`, {
+        method: "POST",
+        body: JSON.stringify(diagnostics),
+      });
+    if (state.sessionId !== heartbeatSessionId) {
+      return;
     }
+    await applyServerAuthorization(status);
+    state.lastHeartbeatAt = Date.now();
+    heartbeatFailures = 0;
+    nextHeartbeatAttemptAt = 0;
+    state.firstCaptionReported ||= state.firstCaptionLatencyMs !== null;
+    state.reconnectReported = true;
+    clearSentDiagnostics(diagnostics);
+    await persistActiveSession();
   } catch (error) {
-    const normalized = normalizeError(error);
-    const budgetClosed = rememberBudgetClosure(normalized);
-    await stopSession(
-      budgetClosed
-        ? budgetUnavailableMessage(normalized.resetsAtUtc)
-        : normalized.status === 402
-        ? "Subtitles stopped because your Glosify credits ran out."
-        : normalized.message,
-      budgetClosed ? "budget_exhausted" : normalized.status === 402 ? "insufficient_credits" : "error");
+    if (state.sessionId === heartbeatSessionId) {
+      heartbeatFailures += 1;
+      const heartbeatIntervalMs = (state.catalog?.heartbeatSeconds ?? 15) * 1000;
+      const retryDelayMs = Math.min(
+        60_000,
+        heartbeatIntervalMs * (2 ** Math.min(heartbeatFailures - 1, 2)));
+      nextHeartbeatAttemptAt = Date.now() + retryDelayMs;
+      state.notice = normalizeError(error).message;
+      broadcastState();
+    }
   } finally {
-    billingBusy = false;
+    heartbeatBusy = false;
   }
 }
 
@@ -749,54 +911,92 @@ async function reconnectRelaySession({
   if (!oldSessionId) {
     return;
   }
-  state.status = "reconnecting";
-  state.notice = connectingMessage;
-  broadcastState();
-  await sendToTab({ type: "overlay:status", text: connectingMessage });
-  await sendToOffscreen({ type: "media:disconnect-relay" });
-  await apiFetch(`/api/realtime-translation/sessions/${oldSessionId}`, { method: "DELETE" });
-  state.sessionId = null;
+  const generation = lifecycleGeneration;
+  const controller = new AbortController();
+  startAbortController = controller;
+  try {
+    state.status = "reconnecting";
+    state.notice = connectingMessage;
+    broadcastState();
+    await sendToTab({ type: "overlay:status", text: connectingMessage });
+    await sendToOffscreen({ type: "media:disconnect-relay" });
+    await apiFetch(`/api/realtime-translation/sessions/${oldSessionId}`, {
+      method: "DELETE",
+      signal: controller.signal,
+    });
+    throwIfLifecycleCancelled(generation, controller.signal);
+    state.sessionId = null;
+    state.sessionStartedAtServerMs = 0;
+    state.sessionStartedAtUtc = null;
+    state.audioSendAuthorizedUntilUtc = null;
+    state.serverNowAtSync = 0;
+    state.serverClockMonotonicAtSync = 0;
+    await persistActiveSession();
 
-  const created = await apiFetch("/api/realtime-translation/sessions", {
-    method: "POST",
-    body: JSON.stringify(buildTranscriptSessionRequest(state)),
-  });
-  state.sessionId = created.sessionId;
-  state.transcriptId = created.transcriptId ?? state.transcriptId;
-  state.connectionStartedAt = Date.now();
-  state.firstCaptionLatencyMs = null;
-  state.firstCaptionReported = false;
-  state.reconnectReported = false;
-  await sendToOffscreen({
-    type: "media:reconnect",
-    sessionId: created.sessionId,
-    targetLanguage: state.targetLanguage,
-    relayToken: created.relayToken,
-    relayPath: created.relayPath,
-    glosifyBaseUrl: CONFIG.glosifyBaseUrl,
-  });
-  const begun = await apiFetch(
-    `/api/realtime-translation/sessions/${created.sessionId}/minutes/1/begin`,
-    { method: "POST" });
-  Object.assign(state, {
-    status: "subtitling",
-    availableCredits: begun.availableCredits,
-    currentMinute: 1,
-    nextMinuteReserved: false,
-    stopAtBoundary: false,
-    sessionStartedAt: Date.now(),
-    lastHeartbeatAt: Date.now(),
-    notice: completedNotice,
-  });
-  await authorizeOffscreenMinute(1);
-  await sendToTab({ type: "overlay:status", text: "Listening…" });
-  broadcastState();
+    const created = await apiFetch("/api/realtime-translation/sessions", {
+      method: "POST",
+      body: JSON.stringify(buildTranscriptSessionRequest(state)),
+      signal: controller.signal,
+    });
+    state.sessionId = created.sessionId;
+    state.transcriptId = created.transcriptId ?? state.transcriptId;
+    state.connectionStartedAt = Date.now();
+    state.firstCaptionLatencyMs = null;
+    state.firstCaptionReported = false;
+    state.reconnectReported = false;
+    throwIfLifecycleCancelled(generation, controller.signal);
+    await sendToTab({ type: "overlay:bind-session", sessionId: created.sessionId });
+    await persistActiveSession();
+    await sendToOffscreen({
+      type: "media:reconnect",
+      sessionId: created.sessionId,
+      targetLanguage: state.targetLanguage,
+      relayToken: created.relayToken,
+      relayPath: created.relayPath,
+      glosifyBaseUrl: CONFIG.glosifyBaseUrl,
+    });
+    throwIfLifecycleCancelled(generation, controller.signal);
+    const begun = await apiFetch(
+      `/api/realtime-translation/sessions/${created.sessionId}/minutes/1/begin`,
+      { method: "POST", signal: controller.signal });
+    throwIfLifecycleCancelled(generation, controller.signal);
+    Object.assign(state, {
+      status: "subtitling",
+      availableCredits: begun.availableCredits,
+      currentMinute: 1,
+      nextMinuteReserved: false,
+      stopAtBoundary: false,
+      stopAtBoundaryReason: null,
+      lastHeartbeatAt: Date.now(),
+      notice: completedNotice,
+    });
+    heartbeatFailures = 0;
+    nextHeartbeatAttemptAt = 0;
+    await applyServerAuthorization(begun);
+    await persistActiveSession();
+    await sendToTab({ type: "overlay:status", text: "Listening…" });
+    broadcastState();
+  } finally {
+    if (startAbortController === controller) {
+      startAbortController = null;
+    }
+  }
 }
 
-async function stopSession(message, finalStatus) {
-  if (stopping) {
-    return;
+function stopSession(message, finalStatus) {
+  lifecycleGeneration += 1;
+  startAbortController?.abort();
+  if (stopPromise) {
+    return stopPromise;
   }
+  stopPromise = stopSessionCore(message, finalStatus).finally(() => {
+    stopping = false;
+    stopPromise = null;
+  });
+  return stopPromise;
+}
+
+async function stopSessionCore(message, finalStatus) {
   stopping = true;
   const sessionId = state.sessionId;
   try {
@@ -813,16 +1013,23 @@ async function stopSession(message, finalStatus) {
       }
     }
     await sendToTab({ type: "overlay:clear" });
+    await closeOffscreenDocument();
+    await chrome.storage.session.remove(STORAGE_KEYS.activeSession);
     Object.assign(state, {
       status: finalStatus === "ready" ? "ready" : finalStatus,
       tabId: null,
+      overlayInstanceId: null,
       sessionId: null,
       transcriptId: null,
       currentMinute: 0,
       nextMinuteReserved: false,
       stopAtBoundary: false,
       stopAtBoundaryReason: null,
-      sessionStartedAt: 0,
+      sessionStartedAtServerMs: 0,
+      sessionStartedAtUtc: null,
+      audioSendAuthorizedUntilUtc: null,
+      serverNowAtSync: 0,
+      serverClockMonotonicAtSync: 0,
       connectionStartedAt: 0,
       lastHeartbeatAt: 0,
       firstCaptionLatencyMs: null,
@@ -832,6 +1039,13 @@ async function stopSession(message, finalStatus) {
       error: finalStatus === "error" || finalStatus === "insufficient_credits" ? message : null,
       notice: null,
     });
+    Object.assign(pendingDiagnostics, {
+      workerRecovered: false,
+      droppedAudioMilliseconds: 0,
+      backpressureEvents: 0,
+    });
+    heartbeatFailures = 0;
+    nextHeartbeatAttemptAt = 0;
     clearTranscriptStorageState(state);
     if (refreshToken && finalStatus === "ready") {
       await refreshAccountState();
@@ -839,11 +1053,21 @@ async function stopSession(message, finalStatus) {
       broadcastState();
     }
   } finally {
-    stopping = false;
+    await closeOffscreenDocument();
   }
 }
 
 async function ensureOffscreenDocument() {
+  if (offscreenCreationPromise) {
+    return offscreenCreationPromise;
+  }
+  offscreenCreationPromise = ensureOffscreenDocumentCore().finally(() => {
+    offscreenCreationPromise = null;
+  });
+  return offscreenCreationPromise;
+}
+
+async function ensureOffscreenDocumentCore() {
   const documentUrl = chrome.runtime.getURL("offscreen/offscreen.html");
   const contexts = await chrome.runtime.getContexts({
     contextTypes: ["OFFSCREEN_DOCUMENT"],
@@ -857,6 +1081,24 @@ async function ensureOffscreenDocument() {
     reasons: ["USER_MEDIA", "AUDIO_PLAYBACK"],
     justification: "Capture tab audio, keep it audible locally, and stream it through Glosify for live subtitles.",
   });
+}
+
+async function closeOffscreenDocument() {
+  try {
+    if (offscreenCreationPromise) {
+      await offscreenCreationPromise;
+    }
+    const documentUrl = chrome.runtime.getURL("offscreen/offscreen.html");
+    const contexts = await chrome.runtime.getContexts({
+      contextTypes: ["OFFSCREEN_DOCUMENT"],
+      documentUrls: [documentUrl],
+    });
+    if (contexts.length > 0) {
+      await chrome.offscreen.closeDocument();
+    }
+  } catch {
+    // Cleanup is best effort and will be retried by reconciliation on startup.
+  }
 }
 
 async function ensureContentOverlay(tabId) {
@@ -878,12 +1120,42 @@ async function sendToOffscreen(message) {
   return response.result;
 }
 
-async function authorizeOffscreenMinute(minuteIndex) {
+async function applyServerAuthorization(result) {
+  const sessionStartedAtUtc = parseServerTimestamp(
+    result?.sessionStartedAtUtc, "session start");
+  const authorizedUntilUtc = parseServerTimestamp(
+    result?.audioSendAuthorizedUntilUtc, "audio authorization deadline");
+  const serverNowUtc = parseServerTimestamp(result?.serverNowUtc, "server clock");
+  const currentStartedAt = state.sessionStartedAtUtc
+    ? Date.parse(state.sessionStartedAtUtc)
+    : null;
+  if (currentStartedAt !== null && currentStartedAt !== sessionStartedAtUtc) {
+    throw new Error("Glosify returned a different server session start time.");
+  }
+  const previousDeadline = state.audioSendAuthorizedUntilUtc
+    ? Date.parse(state.audioSendAuthorizedUntilUtc)
+    : 0;
+  const maximumDeadline = sessionStartedAtUtc
+    + (state.catalog?.maxSessionMinutes ?? 30) * 60_000
+    + AUTHORIZATION_CLOCK_SKEW_MS;
+  if (serverNowUtc + AUTHORIZATION_CLOCK_SKEW_MS < sessionStartedAtUtc
+      || authorizedUntilUtc <= serverNowUtc
+      || authorizedUntilUtc < previousDeadline
+      || authorizedUntilUtc > maximumDeadline) {
+    throw new Error("Glosify returned an invalid audio authorization deadline.");
+  }
+  state.sessionStartedAtServerMs = sessionStartedAtUtc;
+  state.sessionStartedAtUtc = new Date(sessionStartedAtUtc).toISOString();
+  state.audioSendAuthorizedUntilUtc = new Date(authorizedUntilUtc).toISOString();
+  state.serverNowAtSync = serverNowUtc;
+  state.serverClockMonotonicAtSync = performance.now();
   await sendToOffscreen({
-    type: "media:authorize-minute",
+    type: "media:authorize-until",
     sessionId: state.sessionId,
-    minuteIndex,
-    sessionStartedAt: state.sessionStartedAt,
+    sessionStartedAtUtc: state.sessionStartedAtUtc,
+    audioSendAuthorizedUntilUtc: state.audioSendAuthorizedUntilUtc,
+    serverNowUtc: new Date(serverNowUtc).toISOString(),
+    maxSessionMinutes: state.catalog?.maxSessionMinutes ?? 30,
   });
 }
 
@@ -892,10 +1164,255 @@ async function sendToTab(message) {
     return;
   }
   try {
-    await chrome.tabs.sendMessage(state.tabId, message);
+    return await chrome.tabs.sendMessage(state.tabId, message);
   } catch {
-    // A full navigation destroys the old isolated world; onUpdated reinjects it.
+    // A full navigation destroys the old isolated world and independently
+    // triggers fail-closed shutdown through tabs.onUpdated.
+    return undefined;
   }
+}
+
+async function persistActiveSession() {
+  if (!state.tabId) {
+    await chrome.storage.session.remove(STORAGE_KEYS.activeSession);
+    return;
+  }
+  await chrome.storage.session.set({
+    [STORAGE_KEYS.activeSession]: {
+      version: ACTIVE_SESSION_VERSION,
+      status: state.status,
+      tabId: state.tabId,
+      overlayInstanceId: state.overlayInstanceId,
+      sessionId: state.sessionId,
+      transcriptId: state.transcriptId,
+      targetLanguage: state.targetLanguage,
+      translationMode: state.translationMode,
+      sourceLanguage: state.sourceLanguage,
+      saveTranscript: state.saveTranscript,
+      currentMinute: state.currentMinute,
+      nextMinuteReserved: state.nextMinuteReserved,
+      stopAtBoundary: state.stopAtBoundary,
+      stopAtBoundaryReason: state.stopAtBoundaryReason,
+      sessionStartedAtUtc: state.sessionStartedAtUtc,
+      audioSendAuthorizedUntilUtc: state.audioSendAuthorizedUntilUtc,
+      connectionStartedAt: state.connectionStartedAt,
+      lastHeartbeatAt: state.lastHeartbeatAt,
+    },
+  });
+}
+
+async function reconcileActiveSession() {
+  const stored = (await chrome.storage.session.get(STORAGE_KEYS.activeSession))[
+    STORAGE_KEYS.activeSession];
+  if (!stored) {
+    await closeOffscreenDocument();
+    return;
+  }
+
+  try {
+    if (stored.version !== ACTIVE_SESSION_VERSION
+        || !Number.isInteger(stored.tabId)
+        || typeof stored.overlayInstanceId !== "string"
+        || typeof stored.sessionId !== "string"
+        || !stored.sessionId
+        || typeof stored.targetLanguage !== "string") {
+      throw new Error("The saved subtitle session is incomplete.");
+    }
+    const startedAt = parseServerTimestamp(stored.sessionStartedAtUtc, "saved session start");
+    const authorizedUntil = parseServerTimestamp(
+      stored.audioSendAuthorizedUntilUtc, "saved authorization deadline");
+    const documentUrl = chrome.runtime.getURL("offscreen/offscreen.html");
+    const contexts = await chrome.runtime.getContexts({
+      contextTypes: ["OFFSCREEN_DOCUMENT"],
+      documentUrls: [documentUrl],
+    });
+    if (contexts.length !== 1) {
+      throw new Error("The audio capture process is missing.");
+    }
+    const media = await sendToOffscreen({ type: "media:get-state" });
+    if (!media?.captureActive
+        || !media.relayReady
+        || media.sessionId !== stored.sessionId
+        || media.targetLanguage !== stored.targetLanguage
+        || Date.parse(media.sessionStartedAtUtc) !== startedAt
+        || Date.parse(media.audioSendAuthorizedUntilUtc) !== authorizedUntil) {
+      throw new Error("The audio capture process does not match saved state.");
+    }
+
+    await chrome.tabs.get(stored.tabId);
+    if (!isLocalTestProfile()) {
+      const capturedTabs = await chrome.tabCapture.getCapturedTabs();
+      if (!capturedTabs.some(tab => tab.tabId === stored.tabId && tab.status === "active")) {
+        throw new Error("Chrome no longer identifies the tab as captured.");
+      }
+    }
+    const overlay = await chrome.tabs.sendMessage(stored.tabId, { type: "overlay:get-state" });
+    if (!overlay?.installed
+        || overlay.activeSessionId !== stored.sessionId
+        || overlay.overlayInstanceId !== stored.overlayInstanceId) {
+      throw new Error("The subtitle overlay does not match saved state.");
+    }
+
+    await refreshAccountState();
+    if (!state.signedIn || !state.catalog) {
+      throw new Error("The Glosify account could not be restored.");
+    }
+    const server = await apiFetch(
+      `/api/realtime-translation/sessions/${stored.sessionId}/heartbeat`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+    if (server?.sessionId !== stored.sessionId
+        || server.status !== "active"
+        || server.chargedMinutes !== stored.currentMinute
+        || Date.parse(server.sessionStartedAtUtc) !== startedAt
+        || Date.parse(server.audioSendAuthorizedUntilUtc) !== authorizedUntil) {
+      throw new Error("The server session does not match saved state.");
+    }
+
+    Object.assign(state, {
+      status: "subtitling",
+      tabId: stored.tabId,
+      overlayInstanceId: stored.overlayInstanceId,
+      sessionId: stored.sessionId,
+      transcriptId: stored.transcriptId ?? null,
+      targetLanguage: stored.targetLanguage,
+      translationMode: stored.translationMode,
+      sourceLanguage: stored.sourceLanguage,
+      saveTranscript: Boolean(stored.saveTranscript),
+      currentMinute: stored.currentMinute,
+      nextMinuteReserved: Boolean(stored.nextMinuteReserved),
+      stopAtBoundary: Boolean(stored.stopAtBoundary),
+      stopAtBoundaryReason: stored.stopAtBoundaryReason ?? null,
+      sessionStartedAtServerMs: startedAt,
+      sessionStartedAtUtc: new Date(startedAt).toISOString(),
+      audioSendAuthorizedUntilUtc: new Date(authorizedUntil).toISOString(),
+      serverNowAtSync: 0,
+      serverClockMonotonicAtSync: 0,
+      connectionStartedAt: stored.connectionStartedAt ?? Date.now(),
+      lastHeartbeatAt: Date.now(),
+      error: null,
+      notice: "Live subtitles recovered after Chrome restarted the extension.",
+    });
+    await applyServerAuthorization(server);
+    pendingDiagnostics.workerRecovered = true;
+    await persistActiveSession();
+    await sendToTab({ type: "overlay:status", text: "Listening…" });
+    broadcastState();
+  } catch {
+    await failClosedReconciliation(stored);
+  }
+}
+
+async function failClosedReconciliation(stored) {
+  try {
+    await sendToOffscreen({ type: "media:stop" });
+  } catch {
+    // No usable offscreen document remains.
+  }
+  if (stored?.sessionId && refreshToken) {
+    try {
+      await apiFetch(`/api/realtime-translation/sessions/${stored.sessionId}`, { method: "DELETE" });
+    } catch {
+      // Server cleanup remains fail-safe if the browser is offline.
+    }
+  }
+  if (Number.isInteger(stored?.tabId)) {
+    try {
+      await chrome.tabs.sendMessage(stored.tabId, { type: "overlay:clear" });
+    } catch {
+      // The tab may have navigated or closed while the worker was stopped.
+    }
+  }
+  await closeOffscreenDocument();
+  await chrome.storage.session.remove(STORAGE_KEYS.activeSession);
+  Object.assign(state, {
+    status: refreshToken ? "ready" : "disconnected",
+    tabId: null,
+    overlayInstanceId: null,
+    sessionId: null,
+    transcriptId: null,
+    currentMinute: 0,
+    nextMinuteReserved: false,
+    stopAtBoundary: false,
+    stopAtBoundaryReason: null,
+    sessionStartedAtServerMs: 0,
+    sessionStartedAtUtc: null,
+    audioSendAuthorizedUntilUtc: null,
+    serverNowAtSync: 0,
+    serverClockMonotonicAtSync: 0,
+    error: null,
+    notice: "A previous subtitle session could not be verified and was stopped safely.",
+  });
+  broadcastState();
+}
+
+function heartbeatDiagnostics() {
+  return {
+    firstCaptionLatencyMs: state.firstCaptionReported ? null : state.firstCaptionLatencyMs,
+    reconnected: !state.reconnectReported,
+    workerRecovered: pendingDiagnostics.workerRecovered,
+    droppedAudioMilliseconds: Math.min(60_000, pendingDiagnostics.droppedAudioMilliseconds),
+    backpressureEvents: Math.min(100, Math.trunc(pendingDiagnostics.backpressureEvents)),
+  };
+}
+
+function clearSentDiagnostics(sent) {
+  if (sent.workerRecovered) {
+    pendingDiagnostics.workerRecovered = false;
+  }
+  pendingDiagnostics.droppedAudioMilliseconds = Math.max(
+    0, pendingDiagnostics.droppedAudioMilliseconds - sent.droppedAudioMilliseconds);
+  pendingDiagnostics.backpressureEvents = Math.max(
+    0, pendingDiagnostics.backpressureEvents - sent.backpressureEvents);
+}
+
+async function flushClientDiagnostics() {
+  if (!state.sessionId || heartbeatBusy) {
+    return;
+  }
+  const sessionId = state.sessionId;
+  const diagnostics = heartbeatDiagnostics();
+  try {
+    await apiFetch(`/api/realtime-translation/sessions/${sessionId}/heartbeat`, {
+      method: "POST",
+      body: JSON.stringify(diagnostics),
+    });
+    if (state.sessionId === sessionId) {
+      clearSentDiagnostics(diagnostics);
+    }
+  } catch {
+    // Shutdown must continue even if the last privacy-safe metrics cannot arrive.
+  }
+}
+
+function parseServerTimestamp(value, label) {
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`Glosify returned an invalid ${label}.`);
+  }
+  return parsed;
+}
+
+function currentServerTimeMs() {
+  const elapsed = performance.now() - state.serverClockMonotonicAtSync;
+  if (!Number.isFinite(elapsed) || elapsed < 0 || !state.serverNowAtSync) {
+    throw new Error("The Glosify server clock is not synchronized.");
+  }
+  return state.serverNowAtSync + elapsed;
+}
+
+function throwIfLifecycleCancelled(generation, signal) {
+  if (signal.aborted || generation !== lifecycleGeneration) {
+    throw new Error("Subtitle startup was cancelled.");
+  }
+}
+
+function boundedNumber(value, minimum, maximum) {
+  const number = Number(value);
+  return Number.isFinite(number)
+    ? Math.min(maximum, Math.max(minimum, number))
+    : minimum;
 }
 
 function publicState() {
@@ -1001,6 +1518,16 @@ function isCapturableUrl(url) {
   try {
     const parsed = new URL(url);
     return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function isLocalTestProfile() {
+  try {
+    const base = new URL(CONFIG.glosifyBaseUrl);
+    return base.protocol === "http:"
+      && (base.hostname === "127.0.0.1" || base.hostname === "localhost");
   } catch {
     return false;
   }

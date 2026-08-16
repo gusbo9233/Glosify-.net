@@ -56,14 +56,20 @@ public sealed record RealtimeTranslationMinuteResult(
     string Status,
     int AvailableCredits,
     int ChargedMinutes,
-    int CreditsCharged);
+    int CreditsCharged,
+    DateTimeOffset? SessionStartedAtUtc = null,
+    DateTimeOffset? AudioSendAuthorizedUntilUtc = null,
+    DateTimeOffset? ServerNowUtc = null);
 
 public sealed record RealtimeTranslationSessionStatus(
     Guid SessionId,
     string Status,
     DateTimeOffset ExpiresAt,
     int ChargedMinutes,
-    int CreditsCharged);
+    int CreditsCharged,
+    DateTimeOffset? SessionStartedAtUtc = null,
+    DateTimeOffset? AudioSendAuthorizedUntilUtc = null,
+    DateTimeOffset? ServerNowUtc = null);
 
 public sealed record RealtimeTranslationRelayGrant(
     string Token,

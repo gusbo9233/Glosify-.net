@@ -25,6 +25,14 @@ test("begins a reserved minute at the boundary", () => {
   }), { type: "begin", minuteIndex: 2 });
 });
 
+test("keeps beginning the reserved minute during two seconds of server grace", () => {
+  assert.deepEqual(getBillingAction({
+    ...defaults,
+    elapsedMs: 62_000,
+    nextMinuteReserved: true,
+  }), { type: "begin", minuteIndex: 2 });
+});
+
 test("stops before entering an unreserved minute", () => {
   assert.deepEqual(getBillingAction({ ...defaults, elapsedMs: 60_000 }), { type: "stop" });
 });
@@ -40,4 +48,13 @@ test("reconnects instead of attempting minute 31", () => {
     elapsedMs: 30 * 60_000,
     currentMinute: 30,
   }), { type: "reconnect" });
+});
+
+test("a requested boundary stop wins over reconnecting at the session maximum", () => {
+  assert.deepEqual(getBillingAction({
+    ...defaults,
+    elapsedMs: 30 * 60_000,
+    currentMinute: 30,
+    stopAtBoundary: true,
+  }), { type: "stop" });
 });

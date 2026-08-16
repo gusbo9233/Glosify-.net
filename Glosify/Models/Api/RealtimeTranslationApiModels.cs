@@ -14,4 +14,7 @@ public sealed record SetRealtimeTranslationQuizLanguageRequest(
 
 public sealed record RealtimeTranslationHeartbeatRequest(
     [param: Range(0, 300_000)] double? FirstCaptionLatencyMs = null,
-    bool Reconnected = false);
+    bool Reconnected = false,
+    bool WorkerRecovered = false,
+    [param: Range(0, 60_000)] double? DroppedAudioMilliseconds = null,
+    [param: Range(0, 100)] int? BackpressureEvents = null);

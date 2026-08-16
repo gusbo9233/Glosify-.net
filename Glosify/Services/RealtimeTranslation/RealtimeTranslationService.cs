@@ -421,6 +421,10 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             session.CreditsCharged += minute.Credits;
             await _context.SaveChangesAsync(cancellationToken);
             RealtimeTranslationTelemetry.MinutesCharged.Add(1);
+            if (minuteIndex == 1)
+            {
+                RealtimeTranslationTelemetry.SessionsStarted.Add(1);
+            }
             return await BuildMinuteResultAsync(session, minute, cancellationToken);
         }, cancellationToken);
     }
@@ -555,7 +559,9 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         session.EndedAt = now;
         session.LastHeartbeatAt = now;
         await _context.SaveChangesAsync(cancellationToken);
-        RealtimeTranslationTelemetry.SessionsEnded.Add(1);
+        RealtimeTranslationTelemetry.SessionsEnded.Add(
+            1,
+            new KeyValuePair<string, object?>("status", terminalStatus));
     }
 
     private Task<AiDurationCreditReservation> ReserveCreditsAsync(
@@ -642,16 +648,38 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             minute.Status,
             account.AvailableCredits,
             session.ChargedMinutes,
-            session.CreditsCharged);
+            session.CreditsCharged,
+            session.StartedAt,
+            GetAudioSendAuthorizedUntil(session),
+            _timeProvider.GetUtcNow());
     }
 
-    private static RealtimeTranslationSessionStatus MapStatus(RealtimeTranslationSession session) =>
+    private RealtimeTranslationSessionStatus MapStatus(RealtimeTranslationSession session) =>
         new(
             session.Id,
             session.Status,
             session.ExpiresAt,
             session.ChargedMinutes,
-            session.CreditsCharged);
+            session.CreditsCharged,
+            session.StartedAt,
+            GetAudioSendAuthorizedUntil(session),
+            _timeProvider.GetUtcNow());
+
+    private static DateTimeOffset? GetAudioSendAuthorizedUntil(RealtimeTranslationSession session)
+    {
+        if (session.StartedAt is not { } startedAt)
+        {
+            return null;
+        }
+
+        var authorizedMinute = session.Minutes
+            .Where(minute => minute.Status is RealtimeTranslationMinuteStatuses.Reserved
+                or RealtimeTranslationMinuteStatuses.Begun)
+            .Select(minute => minute.MinuteIndex)
+            .DefaultIfEmpty(session.ChargedMinutes)
+            .Max();
+        return authorizedMinute > 0 ? startedAt.AddMinutes(authorizedMinute) : null;
+    }
 
     private async Task<T> WithSessionLockAsync<T>(
         Guid sessionId,
