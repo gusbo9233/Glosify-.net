@@ -309,13 +309,17 @@ function handleRelayMessage({ data }, connection) {
     return;
   }
   if (providerEvent?.type === "glosify.relay.error") {
-    reportRelayFailure(connection, providerEvent.message || "Glosify ended the subtitle relay.");
+    reportRelayFailure(connection, boundedRelayMessage(
+      providerEvent.message,
+      "Glosify ended the subtitle relay."));
     return;
   }
   if (providerEvent?.type === "glosify.transcript.warning") {
     chrome.runtime.sendMessage({
       type: "media:storage-warning",
-      message: providerEvent.message,
+      message: boundedRelayMessage(
+        providerEvent.message,
+        "Transcript storage is temporarily unavailable."),
     }).catch(() => {});
     return;
   }
@@ -324,6 +328,12 @@ function handleRelayMessage({ data }, connection) {
   } catch {
     reportRelayFailure(connection, "The subtitle relay returned an unsupported event sequence.");
   }
+}
+
+function boundedRelayMessage(value, fallback) {
+  return typeof value === "string" && value.trim()
+    ? value.trim().slice(0, 500)
+    : fallback;
 }
 
 function flushIdleEvents() {
