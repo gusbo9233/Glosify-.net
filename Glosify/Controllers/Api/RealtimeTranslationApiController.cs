@@ -122,7 +122,6 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
     public async Task<IActionResult> EndSession(Guid sessionId, CancellationToken cancellationToken)
     {
         NoStore();
-        await EnsureLanguageLearningModeAsync(cancellationToken);
         await _translation.EndSessionAsync(User.GetUserId(), sessionId, cancellationToken);
         return NoContent();
     }

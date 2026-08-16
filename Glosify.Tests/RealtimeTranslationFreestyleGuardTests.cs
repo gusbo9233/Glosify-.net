@@ -42,7 +42,6 @@ public sealed class RealtimeTranslationFreestyleGuardTests
                 sessionId,
                 new RealtimeTranslationHeartbeatRequest(),
                 CancellationToken.None),
-            async () => await controller.EndSession(sessionId, CancellationToken.None),
         ];
 
         foreach (var call in calls)
@@ -52,6 +51,12 @@ public sealed class RealtimeTranslationFreestyleGuardTests
         }
 
         Assert.Equal(0, service.Calls);
+
+        var ended = await controller.EndSession(sessionId, CancellationToken.None);
+
+        Assert.IsType<NoContentResult>(ended);
+        Assert.Equal(1, service.Calls);
+        Assert.Equal(sessionId, service.EndedSessionId);
     }
 
     private sealed class FreestyleLanguagePreferenceService : IQuizLanguagePreferenceService
@@ -74,6 +79,7 @@ public sealed class RealtimeTranslationFreestyleGuardTests
     private sealed class RecordingRealtimeTranslationService : IRealtimeTranslationService
     {
         public int Calls { get; private set; }
+        public Guid? EndedSessionId { get; private set; }
 
         public Task<RealtimeTranslationCatalog> GetCatalogAsync(string userId, CancellationToken cancellationToken = default) =>
             Unexpected<RealtimeTranslationCatalog>();
@@ -108,8 +114,12 @@ public sealed class RealtimeTranslationFreestyleGuardTests
             CancellationToken cancellationToken = default) =>
             Unexpected<RealtimeTranslationSessionStatus>();
 
-        public Task EndSessionAsync(string userId, Guid sessionId, CancellationToken cancellationToken = default) =>
-            Unexpected();
+        public Task EndSessionAsync(string userId, Guid sessionId, CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            EndedSessionId = sessionId;
+            return Task.CompletedTask;
+        }
 
         public Task FailSessionAsync(string userId, Guid sessionId, CancellationToken cancellationToken = default) =>
             Unexpected();

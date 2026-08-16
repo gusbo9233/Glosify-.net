@@ -177,11 +177,6 @@ public sealed class SpeakingApiController : ControllerBase
         Guid sessionId,
         CancellationToken cancellationToken)
     {
-        if (FreestyleUnavailable() is { } unavailable)
-        {
-            return unavailable;
-        }
-
         await _speaking.DeleteSessionAsync(
             sessionId,
             User.GetUserId(),

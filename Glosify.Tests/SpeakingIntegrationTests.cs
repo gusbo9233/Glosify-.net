@@ -811,6 +811,26 @@ public sealed class SpeakingIntegrationTests
             problem.RootElement.GetProperty("error").GetString());
     }
 
+    [Fact]
+    public async Task Freestyle_still_allows_an_existing_speaking_session_to_be_deleted()
+    {
+        using var factory = CreateFactory(language: "Freestyle");
+        var client = factory.CreateClient();
+        var languagePage = await client.GetStringAsync("/Languages");
+        var document = await new HtmlParser().ParseDocumentAsync(languagePage);
+        var token = document.QuerySelector("input[name='__RequestVerificationToken']")
+            ?.GetAttribute("value")
+            ?? throw new InvalidOperationException("The language page did not render an antiforgery token.");
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            "/api/speaking/sessions/11111111-1111-1111-1111-111111111111");
+        request.Headers.Add("RequestVerificationToken", token);
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
     private static WebApplicationFactory<Program> CreateFactory(
         string? language = "Polish",
         bool interactiveEnabled = true,
