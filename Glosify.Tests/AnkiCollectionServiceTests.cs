@@ -69,6 +69,18 @@ public sealed class AnkiCollectionServiceTests
     }
 
     [Fact]
+    public async Task Collection_names_over_the_database_limit_are_rejected_without_truncation()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+
+        var exception = await Assert.ThrowsAsync<AnkiValidationException>(() =>
+            fixture.Collections.CreateAsync(new(new string('a', 161), "English", "Polish", "UTC"), UserId));
+
+        Assert.Contains("160", exception.Message, StringComparison.Ordinal);
+        Assert.Empty(await fixture.Context.AnkiCollections.ToListAsync());
+    }
+
+    [Fact]
     public async Task Rating_is_idempotent_buries_sibling_and_daily_new_limit_is_durable()
     {
         await using var fixture = await Fixture.CreateAsync();

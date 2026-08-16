@@ -759,7 +759,9 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         var normalized = value?.Trim() ?? string.Empty;
         if (normalized.Length == 0)
             throw new AnkiValidationException(error);
-        return normalized.Length <= maxLength ? normalized : normalized[..maxLength];
+        if (normalized.Length > maxLength)
+            throw new AnkiValidationException($"Value cannot exceed {maxLength} characters.");
+        return normalized;
     }
 
     private static string NormalizeTimeZone(string? value)
