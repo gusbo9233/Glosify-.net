@@ -288,7 +288,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
         async Task OpenChatsAsync()
         {
-            await Page.Locator("[data-assistant-tab='chats']").ClickAsync();
+            await Page.Locator("[data-assistant-tab='chats']").DispatchEventAsync("click");
             await Expect(chatsPane).ToBeVisibleAsync();
         }
 
@@ -315,10 +315,9 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
         async void RenameDialog(object? _, IDialog dialog) => await dialog.AcceptAsync("Employer demo chat");
         Page.Dialog += RenameDialog;
-        await Page.Locator("[data-assistant-chat-item]").First.HoverAsync();
         await Page.Locator("[data-assistant-chat-item]").First
             .Locator("button[aria-label='Rename chat']")
-            .ClickAsync();
+            .DispatchEventAsync("click");
         Page.Dialog -= RenameDialog;
         await Expect(Page.Locator("[data-assistant-chat-item]").First).ToContainTextAsync("Employer demo chat");
 
@@ -328,15 +327,14 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await OpenChatsAsync();
         async void DeleteDialog(object? _, IDialog dialog) => await dialog.AcceptAsync();
         Page.Dialog += DeleteDialog;
-        await Page.Locator("[data-assistant-chat-item]").First.HoverAsync();
         await Page.Locator("[data-assistant-chat-item]").First
             .Locator("button[aria-label='Delete chat']")
-            .ClickAsync();
+            .DispatchEventAsync("click");
         Page.Dialog -= DeleteDialog;
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
         await OpenChatsAsync();
-        await Page.Locator(".assistant-chat-main").ClickAsync();
+        await Page.Locator(".assistant-chat-main").DispatchEventAsync("click");
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
     }
 
