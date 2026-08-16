@@ -50,6 +50,29 @@ public static class GlosifyProblemDetails
         return ToResult(problem, StatusCodes.Status400BadRequest);
     }
 
+    public static ObjectResult ValidationResult(
+        HttpContext httpContext,
+        IReadOnlyDictionary<string, string[]> errors,
+        string? canonicalJson = null,
+        int statusCode = StatusCodes.Status400BadRequest,
+        string code = ApiErrorCodes.ValidationFailed)
+    {
+        var problem = new HttpValidationProblemDetails(errors)
+        {
+            Type = $"urn:glosify:error:{code}",
+            Title = TitleFor(statusCode),
+            Status = statusCode,
+            Detail = "One or more validation errors occurred.",
+            Instance = httpContext.Request.Path,
+        };
+        if (!string.IsNullOrWhiteSpace(canonicalJson))
+        {
+            problem.Extensions["canonicalJson"] = canonicalJson;
+        }
+        AddCommonExtensions(httpContext, problem, code);
+        return ToResult(problem, statusCode);
+    }
+
     public static ProblemDetails Create(
         HttpContext httpContext,
         int statusCode,

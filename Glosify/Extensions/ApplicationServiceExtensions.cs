@@ -113,6 +113,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IAnkiCollectionService, AnkiCollectionService>();
         services.AddScoped<IAnkiStudyService, AnkiStudyService>();
         services.AddScoped<IAnkiStatisticsService, AnkiStatisticsService>();
+        services.AddScoped<IQuizJsonImportService, QuizJsonImportService>();
         services.AddScoped<IWordService, WordService>();
         services.AddSingleton<IQuizSessionRegistry, QuizSessionRegistry>();
         services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
@@ -206,6 +207,7 @@ public static class ApplicationServiceExtensions
                 ? services.GetRequiredService<GeminiGenerativeAiClient>()
                 : services.GetRequiredService<FoundryGenerativeAiClient>();
         });
+        services.AddScoped<IQuizJsonImportRepairService, QuizJsonImportRepairService>();
         services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();
         services.AddAssistantTools();
         services.AddScoped<IChangeApplier, ChangeApplier>();

@@ -152,6 +152,52 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
     [Fact]
     [Trait("Category", "Browser")]
+    public async Task PreviewAndImportExternalAiJsonHierarchy()
+    {
+        if (BaseUrl is null) return;
+
+        await RegisterAndSelectPolishAsync();
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Import JSON", Exact = true }).First.ClickAsync();
+        const string json = """
+            {
+              "version": 1,
+              "source_language": "English",
+              "quizzes": [{
+                "name": "Imported root quiz",
+                "words": [{ "word": "dom", "translation": "house" }],
+                "sentences": []
+              }],
+              "collections": [{
+                "name": "Imported travel",
+                "quizzes": [{
+                  "name": "Imported station",
+                  "words": [],
+                  "sentences": [{ "text": "Gdzie jest pociąg?", "translation": "Where is the train?" }]
+                }],
+                "collections": [{ "name": "Imported empty child", "quizzes": [], "collections": [] }]
+              }]
+            }
+            """;
+        await Page.GetByLabel("2. Paste generated JSON").FillAsync(json);
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Preview JSON" }).ClickAsync();
+
+        var preview = Page.Locator("[data-json-import-preview]");
+        await Expect(preview).ToBeVisibleAsync();
+        await Expect(preview).ToContainTextAsync("Imported root quiz");
+        await Expect(preview).ToContainTextAsync("Imported travel");
+        await Expect(preview).ToContainTextAsync("2 quizzes");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Import everything" }).ClickAsync();
+
+        await Expect(Page).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Imported root quiz" })).ToBeVisibleAsync();
+        await Page.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("Imported travel") }).ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Imported station" })).ToBeVisibleAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Imported empty child" })).ToBeVisibleAsync();
+        await AssertNoPageErrorsAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Browser")]
     public async Task CreateLinkStudyAndInspectAnkiCollection()
     {
         if (BaseUrl is null) return;

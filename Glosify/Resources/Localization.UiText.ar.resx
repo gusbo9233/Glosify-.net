@@ -2869,4 +2869,23 @@
   <data name="Quiz.ItemActions" xml:space="preserve"><value>إجراءات {0}</value></data>
   <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>هل تريد إزالة هذه الجملة؟</value></data>
   <data name="Quiz.DeletedSentence" xml:space="preserve"><value>تم حذف الجملة.</value></data>
+  <data name="Quiz.JsonImportTopLevel" xml:space="preserve"><value>المستوى الأعلى من مكتبة الاختبارات</value></data>
+  <data name="Quiz.JsonImport" xml:space="preserve"><value>استيراد JSON</value></data>
+  <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>استيراد من ذكاء اصطناعي خارجي</value></data>
+  <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>أنشئ اختبارات دون استخدام الأرصدة</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>اطلب من أي ذكاء اصطناعي إنشاء JSON لـ Glosify، والصقه هنا، وراجع النتيجة الدقيقة، ثم استورده إلى {0}.</value></data>
+  <data name="Quiz.JsonImportClose" xml:space="preserve"><value>إغلاق مربع حوار الاستيراد</value></data>
+  <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. انسخ التعليمات للذكاء الاصطناعي</value></data>
+  <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>أضف ما تريد تعلمه، ثم أرسل هذا الطلب إلى ChatGPT أو Claude أو Gemini أو أي ذكاء اصطناعي آخر.</value></data>
+  <data name="Quiz.JsonImportCopyInstructions" xml:space="preserve"><value>نسخ تعليمات الذكاء الاصطناعي</value></data>
+  <data name="Quiz.JsonImportPasteLabel" xml:space="preserve"><value>2. الصق JSON الذي تم إنشاؤه</value></data>
+  <data name="Quiz.JsonImportPastePlaceholder" xml:space="preserve"><value>الصق كائن JSON هنا...</value></data>
+  <data name="Quiz.JsonImportFreeMeta" xml:space="preserve"><value>معاينة واستيراد مجانًا · دون استدعاء الذكاء الاصطناعي</value></data>
+  <data name="Quiz.JsonImportReviewKicker" xml:space="preserve"><value>3. راجع قبل الإنشاء</value></data>
+  <data name="Quiz.JsonImportPreviewTitle" xml:space="preserve"><value>معاينة الاستيراد</value></data>
+  <data name="Quiz.JsonImportCopyRepair" xml:space="preserve"><value>نسخ طلب الإصلاح</value></data>
+  <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>الإصلاح بالذكاء الاصطناعي · يستخدم الأرصدة</value></data>
+  <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>معاينة JSON</value></data>
+  <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>استيراد الكل</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>المعاينة والاستيراد حتميان ولا يتصلان بمزوّد ذكاء اصطناعي. يرسل «الإصلاح بالذكاء الاصطناعي» النص الملصق إلى الذكاء الاصطناعي المُعدّ في Glosify ويخصم الأرصدة.</value></data>
 </root>

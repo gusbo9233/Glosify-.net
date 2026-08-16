@@ -102,6 +102,22 @@ public static class RateLimitingExtensions
                     });
                 }
 
+                if (string.Equals(
+                    path.Value?.TrimEnd('/'),
+                    "/Quiz/RepairJsonImportWithAi",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                        ?? context.Connection.RemoteIpAddress?.ToString()
+                        ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter($"json-import-repair:{caller}", _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 12,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                    });
+                }
+
                 if (path.StartsWithSegments("/api/tts"))
                 {
                     var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value

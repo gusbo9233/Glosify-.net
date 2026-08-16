@@ -552,6 +552,297 @@
     box-shadow: 0 0 0 4px rgba(120, 183, 255, 0.1), 0 24px 52px rgba(1, 10, 28, 0.3);
 }
 
+/* External-AI JSON import ----------------------------------------------- */
+.json-import-modal {
+    width: min(920px, 100%);
+    max-width: 920px;
+    max-height: min(900px, calc(100vh - 32px));
+    overflow-y: auto;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at 100% 0, rgba(120, 183, 255, 0.1), transparent 30%),
+        var(--surface);
+}
+
+.json-import-header,
+.json-import-preview-header,
+.json-import-input-meta,
+.json-import-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.json-import-header {
+    align-items: flex-start;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(214, 227, 255, 0.08);
+}
+
+.json-import-header .modal-title {
+    margin: 4px 0 8px;
+}
+
+.json-import-header p:not(.json-import-kicker),
+.json-import-instructions p,
+.json-import-privacy {
+    margin: 0;
+    color: rgba(214, 227, 255, 0.66);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.json-import-kicker {
+    margin: 0;
+    color: var(--library-blue);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.json-import-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid rgba(214, 227, 255, 0.1);
+    border-radius: 50%;
+    background: rgba(214, 227, 255, 0.05);
+    color: rgba(214, 227, 255, 0.7);
+    cursor: pointer;
+}
+
+.json-import-close:focus-visible,
+.json-import-copy:focus-visible,
+.json-import-ai-repair:focus-visible {
+    outline: 3px solid rgba(120, 183, 255, 0.9);
+    outline-offset: 3px;
+}
+
+.json-import-instructions {
+    margin: 20px 0;
+    padding: 16px 18px;
+    border: 1px solid rgba(120, 183, 255, 0.14);
+    border-radius: 16px;
+    background: rgba(120, 183, 255, 0.055);
+}
+
+.json-import-instructions summary {
+    color: var(--on-surface);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.json-import-instructions[open] summary {
+    margin-bottom: 12px;
+}
+
+.json-import-prompt,
+.json-import-textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid rgba(214, 227, 255, 0.12);
+    border-radius: 14px;
+    background: rgba(1, 14, 36, 0.72);
+    color: var(--on-surface);
+    font: 500 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    outline: none;
+}
+
+.json-import-prompt {
+    min-height: 220px;
+    margin: 12px 0;
+    padding: 14px;
+}
+
+.json-import-textarea {
+    min-height: 230px;
+    padding: 16px;
+}
+
+.json-import-textarea:focus,
+.json-import-prompt:focus {
+    border-color: rgba(120, 183, 255, 0.65);
+    box-shadow: 0 0 0 3px rgba(120, 183, 255, 0.1);
+}
+
+.json-import-input-meta {
+    margin-top: 8px;
+    color: rgba(214, 227, 255, 0.5);
+    font-size: 11px;
+}
+
+.json-import-copy,
+.json-import-ai-repair {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid rgba(120, 183, 255, 0.22);
+    border-radius: 12px;
+    background: rgba(120, 183, 255, 0.1);
+    color: #b9dcff;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.json-import-copy .material-symbols-outlined,
+.json-import-ai-repair .material-symbols-outlined {
+    font-size: 17px;
+}
+
+.json-import-ai-repair {
+    border-color: rgba(255, 202, 111, 0.24);
+    background: rgba(255, 202, 111, 0.1);
+    color: #ffd89a;
+}
+
+.json-import-status,
+.json-import-errors,
+.json-import-success,
+.json-import-warnings {
+    margin: 16px 0;
+    padding: 13px 15px;
+    border-radius: 13px;
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.json-import-status {
+    border: 1px solid rgba(120, 183, 255, 0.18);
+    background: rgba(120, 183, 255, 0.08);
+    color: #b9dcff;
+}
+
+.json-import-errors {
+    border: 1px solid rgba(255, 180, 171, 0.2);
+    background: rgba(255, 96, 96, 0.08);
+    color: #ffcac4;
+}
+
+.json-import-errors ul,
+.json-import-warnings ul {
+    margin: 7px 0 0;
+    padding-left: 20px;
+}
+
+.json-import-success {
+    border: 1px solid rgba(83, 224, 118, 0.24);
+    background: rgba(83, 224, 118, 0.1);
+    color: #a5f4b7;
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.json-import-preview {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid rgba(83, 224, 118, 0.16);
+    border-radius: 18px;
+    background: rgba(83, 224, 118, 0.04);
+}
+
+.json-import-preview h3 {
+    margin: 4px 0 0;
+    font-size: 19px;
+}
+
+.json-import-totals {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 7px;
+}
+
+.json-import-total {
+    padding: 5px 9px;
+    border: 1px solid rgba(83, 224, 118, 0.15);
+    border-radius: 999px;
+    background: rgba(83, 224, 118, 0.08);
+    color: #a5f4b7;
+    font-size: 10px;
+    font-weight: 750;
+}
+
+.json-import-tree ul {
+    margin: 12px 0 0;
+    padding-left: 22px;
+    list-style: none;
+}
+
+.json-import-tree > ul {
+    padding-left: 0;
+}
+
+.json-import-tree li {
+    position: relative;
+    margin: 8px 0;
+    color: rgba(214, 227, 255, 0.72);
+    font-size: 12px;
+}
+
+.json-import-tree li::before {
+    position: absolute;
+    top: 0.55em;
+    left: -15px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--library-blue);
+    content: "";
+}
+
+.json-import-tree > ul > li::before {
+    left: 0;
+}
+
+.json-import-tree > ul > li {
+    padding-left: 20px;
+}
+
+.json-import-tree strong {
+    color: var(--on-surface);
+}
+
+.json-import-tree small {
+    display: block;
+    margin-top: 2px;
+    color: rgba(214, 227, 255, 0.5);
+}
+
+.json-import-warnings {
+    border: 1px solid rgba(255, 202, 111, 0.18);
+    background: rgba(255, 202, 111, 0.075);
+    color: #ffd89a;
+}
+
+.json-import-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.json-import-actions button[disabled] {
+    cursor: wait;
+    opacity: 0.55;
+}
+
+.json-import-privacy {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(214, 227, 255, 0.07);
+}
+
 @media (max-width: 1320px) {
     .library-page .library-section--quizzes .quiz-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -612,6 +903,27 @@
 
     .library-page .quiz-card {
         min-height: 226px;
+    }
+
+    .json-import-modal {
+        max-height: calc(100vh - 16px);
+        border-radius: 20px 20px 0 0;
+    }
+
+    .json-import-header,
+    .json-import-preview-header,
+    .json-import-input-meta {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .json-import-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .json-import-actions button {
+        width: 100%;
     }
 
     .library-page.explore-page .quiz-meta,

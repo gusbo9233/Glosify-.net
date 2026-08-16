@@ -1,5 +1,7 @@
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Classrooms;
+using Glosify.Services.Ai;
+using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -36,6 +38,8 @@ public sealed class ServiceGraphTests : IClassFixture<WebApplicationFactory<Prog
     [InlineData(typeof(IClassroomCall))]
     [InlineData(typeof(IClassroomCallPresence))]
     [InlineData(typeof(IAssistantTools))]
+    [InlineData(typeof(IQuizJsonImportService))]
+    [InlineData(typeof(IQuizJsonImportRepairService))]
     public void Split_services_resolve_from_a_request_scope(Type serviceType)
     {
         using var scope = _factory.Services.CreateScope();

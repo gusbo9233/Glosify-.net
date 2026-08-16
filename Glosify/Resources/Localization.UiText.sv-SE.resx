@@ -542,4 +542,23 @@
   <data name="Quiz.ItemActions" xml:space="preserve"><value>Åtgärder för {0}</value></data>
   <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Ta bort den här meningen?</value></data>
   <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Meningen har tagits bort.</value></data>
+  <data name="Quiz.JsonImportTopLevel" xml:space="preserve"><value>quizbibliotekets översta nivå</value></data>
+  <data name="Quiz.JsonImport" xml:space="preserve"><value>Importera JSON</value></data>
+  <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Import från extern AI</value></data>
+  <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Skapa quiz utan att använda krediter</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Be valfri AI om Glosify-JSON, klistra in den här, granska det exakta resultatet och importera det till {0}.</value></data>
+  <data name="Quiz.JsonImportClose" xml:space="preserve"><value>Stäng importdialogen</value></data>
+  <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Kopiera instruktioner till din AI</value></data>
+  <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Lägg till vad du vill lära dig och skicka sedan prompten till ChatGPT, Claude, Gemini eller en annan AI.</value></data>
+  <data name="Quiz.JsonImportCopyInstructions" xml:space="preserve"><value>Kopiera AI-instruktioner</value></data>
+  <data name="Quiz.JsonImportPasteLabel" xml:space="preserve"><value>2. Klistra in genererad JSON</value></data>
+  <data name="Quiz.JsonImportPastePlaceholder" xml:space="preserve"><value>Klistra in JSON-objektet här...</value></data>
+  <data name="Quiz.JsonImportFreeMeta" xml:space="preserve"><value>Gratis förhandsgranskning och import · inget AI-anrop</value></data>
+  <data name="Quiz.JsonImportReviewKicker" xml:space="preserve"><value>3. Granska innan du skapar</value></data>
+  <data name="Quiz.JsonImportPreviewTitle" xml:space="preserve"><value>Förhandsgranska import</value></data>
+  <data name="Quiz.JsonImportCopyRepair" xml:space="preserve"><value>Kopiera reparationsprompt</value></data>
+  <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Reparera med AI · använder krediter</value></data>
+  <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Förhandsgranska JSON</value></data>
+  <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Importera allt</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Förhandsgranskning och import är deterministiska och kontaktar ingen AI-leverantör. ”Reparera med AI” skickar den inklistrade texten till Glosifys konfigurerade AI och debiterar krediter.</value></data>
 </root>
