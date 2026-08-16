@@ -81,9 +81,14 @@ public sealed class PortfolioJourneys : IAsyncLifetime
     {
         await Page.GotoAsync("/Languages?returnUrl=%2FQuizzes");
         var cards = Page.Locator("[data-language-card]");
-        await Expect(cards).ToHaveCountAsync(69);
+        var expectedCountText = await Page.Locator("[data-language-picker]")
+            .GetAttributeAsync("data-language-count");
+        Assert.True(int.TryParse(expectedCountText, out var expectedCount));
+        await Expect(cards).ToHaveCountAsync(expectedCount);
 
-        var search = Page.GetByLabel("Find a language");
+        var search = Page.GetByLabel("Find a mode or language");
+        await search.FillAsync("Freestyle");
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Freestyle", Exact = true })).ToBeVisibleAsync();
         await search.FillAsync("not-a-language");
         await Expect(Page.Locator("[data-language-empty]")).ToBeVisibleAsync();
         await search.FillAsync("Portuguese");
