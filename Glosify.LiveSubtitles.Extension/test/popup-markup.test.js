@@ -15,7 +15,15 @@ test("popup offers mode, optional language hint, target, quiz-language, and tran
   assert.match(markup, /audio is streamed through Glosify to Microsoft services/);
   assert.match(markup, /Audio is not stored/);
   assert.match(markup, /Each started minute consumes credits/);
+  assert.match(markup, /Provider-reported audio usage consumes credits/);
+  assert.match(markup, /Mandatory consumer rights still apply/);
+  assert.match(markup, /AI-generated captions and translations may be incorrect/);
+  assert.match(markup, /Do not rely on them for safety-critical or high-stakes decisions/);
   assert.match(markup, /until you delete the transcript or account/);
+  assert.match(markup, /href="https:\/\/glosify\.se\/Home\/Privacy"/);
+  assert.match(markup, /href="https:\/\/glosify\.se\/Home\/Terms"/);
+  assert.match(markup, /href="https:\/\/glosify\.se\/Home\/Support"/);
+  assert.equal((markup.match(/target="_blank"/g) ?? []).length, 3);
   assert.doesNotMatch(markup, /id="bilingual"/);
 });
 

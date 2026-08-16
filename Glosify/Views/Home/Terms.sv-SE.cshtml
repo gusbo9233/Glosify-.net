@@ -4,33 +4,70 @@
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = "Användarvillkor";
+    ViewData["Description"] = "Villkoren för Glosify-konton, AI-funktioner, krediter, betalningar och användarinnehåll.";
     var legal = Legal.Value;
 }
 
 <main class="auth-shell legal-shell">
     <article class="glass-card legal-document">
-        <header class="auth-card-header"><h1>Användarvillkor</h1><p>Gäller från 10 augusti 2026</p></header>
+        <header class="auth-card-header">
+            <h1>Användarvillkor</h1>
+            <p>Gäller från 16 augusti 2026</p>
+        </header>
+
         <aside class="legal-language-notice">
             @Text["Legal.EnglishGoverns"]
             <a asp-action="TermsEnglish">Läs den engelska versionen</a>.
         </aside>
-        <p>Glosify är en språkinlärningstjänst i betaversion som drivs av <strong>@legal.ControllerName</strong>. Genom att använda tjänsten samtycker du till att använda den lagligt, skydda ditt konto och endast ladda upp eller strömma material som du har rätt att behandla.</p>
 
-        <h2>Betatjänst och tillgänglighet</h2>
-        <p>Funktioner kan ändras, sluta fungera eller tillfälligt vara otillgängliga. Betalfunktioner stängs när Glosifys månatliga programbudget är förbrukad och öppnas igen vid nästa månadsperiod enligt tidszonen Europe/Stockholm. Krediter är tjänsteenheter, saknar kontantvärde och garanterar inte oavbruten tillgänglighet.</p>
+        <p>Villkoren gäller Glosifys webbapplikation, API:er och Chrome-tillägget Glosify Live Subtitles. Glosify drivs av <strong>@legal.ControllerName</strong>. Genom att skapa ett konto eller använda tjänsten godkänner du villkoren. Tvingande konsumenträtt enligt den lag som gäller för dig påverkas inte.</p>
 
-        <h2>Provkrediter</h2>
-        <p>Ett berättigat konto som kopplats till Google eller Microsoft kan få 25 provkrediter en gång. Konton med enbart lösenord och API-registreringar får inga automatiska provkrediter. Missbruk, skapande av dubblettkonton, automatisering eller försök att kringgå begränsningar kan leda till avstängning.</p>
+        <h2>Konton och behörighet</h2>
+        <p>Du ska lämna korrekta kontouppgifter, skydda dina inloggningsuppgifter och omgående rapportera misstänkt obehörig åtkomst. Om du inte själv har rätt att ingå avtalet måste en förälder eller vårdnadshavare godkänna din användning. Du ansvarar för aktivitet genom ditt konto om inte tillämplig lag anger annat.</p>
+
+        <h2>Betatjänsten</h2>
+        <p>Glosify är en språkinlärningstjänst under utveckling. Funktioner, leverantörer, modeller, priser och kreditnivåer kan ändras, och en funktion kan avbrytas eller tillfälligt vara otillgänglig. Betalda AI-funktioner kan stängas när Glosifys konfigurerade månadsbudget är förbrukad och öppnas igen under nästa månadsperiod enligt Europe/Stockholm. Glosify ändrar inte retroaktivt antalet krediter som redan har köpts.</p>
+
+        <h2>Krediter, provkrediter och betalningar</h2>
+        <p>Krediter är förbetalda tjänsteenheter som används för berättigade AI-, tal-, översättnings- och undertextningsåtgärder. De är inte pengar, kan inte överföras mellan konton och saknar kontantvärde utom när återbetalning eller annan rättelse krävs enligt lag. Pris, valuta, antal krediter och tillämpliga skatter visas före betalningen hos Stripe. Stripe behandlar betalningen; Glosify tar inte emot kortuppgifter.</p>
+        <p>Ett berättigat konto som kopplats till Google eller Microsoft kan få 25 provkrediter en gång. Konton med enbart lösenord och API-registreringar får inga automatiska provkrediter. Provkrediter är en kampanjförmån, kan inte överföras och återbetalas inte. Missbruk, skapande av dubblettkonton, automatisering eller försök att kringgå begränsningar kan leda till att provkrediter tas bort eller kontot begränsas.</p>
+
+        <h2>När krediter förbrukas</h2>
+        <p>Glosify reserverar tillräckligt många krediter innan en mättjänst startas och stämmer av reservationen mot leverantörens rapporterade användning av token, ljud eller tid. Om leverantören inte rapporterar någon debiterbar användning frigör Glosify normalt reservationen. När leverantören har rapporterat token- eller ljudanvändning förbrukas motsvarande krediter och återställs normalt inte enbart för att ett AI-svar är felaktigt, ofullständigt, blockerat, avbrutet, underkänns vid validering eller på annat sätt inte är användbart för dig. Den bakomliggande datortjänsten har ändå levererats och debiterats.</p>
+        <p>Denna kreditregel begränsar inte tvingande konsumenträtt eller rättelse vid en felaktig digital tjänst, en felaktig debitering eller ett fel som Glosify har orsakat. Om du tror att krediter har dragits felaktigt kontaktar du <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> och anger ungefärlig tid och vilken funktion som användes, så kan transaktionen granskas.</p>
+
+        <h2>Ångerrätt och återbetalning av köpta krediter</h2>
+        <p>Om du är konsument inom EU/EES har du i regel 14 dagars lagstadgad ångerrätt vid distansköp, med de regler och undantag som gäller för digitala tjänster. Genom att välja att använda köpta krediter under perioden begär du att tjänsten ska börja utföras omedelbart. I den utsträckning lagen tillåter kan en återbetalning undanta den andel som redan har levererats, inklusive krediter som förbrukats för leverantörsrapporterad användning. Oanvända köpta krediter återbetalas när tillämplig lag kräver det.</p>
+        <p>Återbetalningar, kortreklamationer och betalningstvister kan återkalla motsvarande köpta krediter. Om krediterna redan har använts kan Glosify dra justeringen från kontots saldo och begränsa ytterligare betald användning tills saldot har reglerats. Inget i villkoren utesluter återbetalning, avhjälpande, omleverans, prisavdrag eller annan rättelse som inte lagligen kan uteslutas.</p>
+
+        <h2>AI-genererat innehåll</h2>
+        <p>AI-genererade svar, översättningar, transkriptioner, uttal, quizmaterial, bilder och verktygsförslag är sannolikhetsbaserade och kan vara felaktiga, ofullständiga, partiska, stötande eller olämpliga. Du måste granska resultatet innan du förlitar dig på det eller tillämpar en föreslagen ändring. Glosify ger inte medicinsk, juridisk, ekonomisk, professionell eller säkerhetsrelaterad rådgivning och resultatet får inte användas som underlag för beslut med stora konsekvenser.</p>
+        <p>I den utsträckning lagen tillåter garanterar Glosify inte att AI-resultat är korrekta, unika, tillgängliga eller lämpliga för ett visst ändamål. Detta begränsar inte ansvar eller rättelse som inte kan uteslutas enligt tillämplig lag.</p>
 
         <h2>Ditt innehåll</h2>
-        <p>Du behåller rättigheterna till innehåll som du tillhandahåller. Du ger Glosify och dess personuppgiftsbiträden den begränsade rätt som krävs för att lagra, överföra, analysera, översätta och lämna tillbaka innehållet för de funktioner du begär. Förlita dig inte på genererade översättningar eller utbildningsmaterial för medicinska, juridiska, säkerhetskritiska eller andra beslut med stora konsekvenser.</p>
+        <p>Du behåller de rättigheter du har till innehåll som du tillhandahåller. Du ger Glosify och dess tjänsteleverantörer en begränsad, icke-exklusiv rätt att lagra, kopiera, överföra, analysera, översätta, omvandla och visa innehållet endast i den utsträckning som behövs för att driva, skydda, stödja och förbättra funktionerna du begär. Du ansvarar för att ha de rättigheter och tillstånd som krävs för att ladda upp, strömma, behandla eller dela innehållet, inklusive flikljud och klassrumsmaterial.</p>
+        <p>Innehåll som du avsiktligt publicerar eller delar med ett klassrum kan ses av den målgrupp som funktionen anger. Skicka inte mycket känsliga uppgifter om de inte verkligen behövs för funktionen och du accepterar behandlingen som beskrivs i integritetspolicyn.</p>
+
+        <h2>Tillåten användning</h2>
+        <p>Använd inte Glosify för att bryta mot lag, göra intrång i immateriella rättigheter eller integritet, behandla ljud utan nödvändigt tillstånd, skada, trakassera, utnyttja eller utge dig för att vara andra, sprida skadlig kod, kringgå säkerhets-, kredit-, budget- eller hastighetsgränser, skrapa eller överbelasta tjänsten eller använda genererat innehåll vilseledande. Glosify kan ta bort innehåll eller stänga av åtkomst när det rimligen behövs för att skydda användare, leverantörer, tjänsten eller lagefterlevnad.</p>
+
+        <h2>Tillgänglighet och ansvar</h2>
+        <p>Glosify använder rimlig omsorg vid tillhandahållandet men lovar inte oavbruten tillgänglighet. Du bör behålla egna kopior av viktigt inlärningsinnehåll. I den utsträckning lagen tillåter ansvarar Glosify inte för indirekt eller oförutsebar skada, förlust som orsakas av din felaktiga användning eller obehörigt innehåll eller beslut som fattas med stöd av AI-resultat.</p>
+        <p>Inget i villkoren utesluter eller begränsar ansvar för uppsåt eller grov vårdslöshet, dödsfall eller personskada som orsakas av vårdslöshet, bedrägeri, tvingande dataskyddsskyldigheter eller annat ansvar eller konsumenträttsligt anspråk som inte lagligen kan uteslutas.</p>
 
         <h2>Att sluta använda tjänsten</h2>
-        <p>Du kan sluta använda Glosify och radera lagrat innehåll med de konto- och transkriptionskontroller som finns. Glosify kan begränsa konton som hotar tjänsten, andra användare eller efterlevnaden av lagar.</p>
+        <p>Du kan sluta använda Glosify när som helst, radera innehåll som stöds med kontrollerna i tjänsten och begära kontoradering via <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>. Glosify kan stänga av eller avsluta ett konto vid ett väsentligt eller upprepat avtalsbrott, en säkerhetsrisk, utebliven betalning eller ett rättsligt krav. När det är rimligt får du information och möjlighet att rätta problemet.</p>
 
-        <h2>Kontakt</h2>
-        <p>Frågor om villkoren kan skickas till <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>
+        <h2>Ändringar av villkoren</h2>
+        <p>Glosify kan uppdatera villkoren på grund av rättsliga ändringar, säkerhet, leverantörer eller förändringar i tjänsten. Väsentliga ändringar publiceras med ett nytt ikraftträdandedatum och meddelas, när det är lämpligt, innan de träder i kraft. Ändringar tar inte bort redan intjänade rättigheter och ändrar inte ett slutfört köp retroaktivt.</p>
 
-        <nav class="legal-links" aria-label="Juridiska sidor"><a asp-action="Privacy">Integritetspolicy</a><a asp-action="Support">Support</a></nav>
+        <h2>Lag, tvister och kontakt</h2>
+        <p>Villkoren regleras av svensk lag utan att en konsument fråntas tvingande skydd i sitt bosättningsland. Tvister kan tas upp av en domstol som är behörig enligt tillämplig lag. Svenska konsumenter kan också vända sig till <a href="https://www.arn.se/">Allmänna reklamationsnämnden (ARN)</a>.</p>
+        <p>Frågor, betalningsärenden, meddelanden om ångerrätt och klagomål kan skickas till <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>
+
+        <nav class="legal-links" aria-label="Juridiska sidor">
+            <a asp-action="Privacy">Integritetspolicy</a>
+            <a asp-action="Support">Support</a>
+        </nav>
     </article>
 </main>

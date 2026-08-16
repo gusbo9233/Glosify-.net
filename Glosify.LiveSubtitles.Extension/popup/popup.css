@@ -121,6 +121,13 @@ select:focus { border-color: #8872ff; }
   font-size: 11px;
 }
 
+.usage-warning {
+  color: #aeb7ca;
+  font-size: 11px;
+}
+
+.usage-warning strong { color: #d9deea; }
+
 button {
   border: 0;
   border-radius: 10px;
@@ -148,3 +155,22 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .status { color: #bfe8d5; background: rgba(39, 139, 98, .17); }
 .notice { color: #ffe1a6; background: rgba(182, 117, 30, .18); }
 .error { color: #ffc4cd; background: rgba(181, 52, 72, .19); }
+
+.legal-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 11px;
+}
+
+.legal-footer a {
+  color: #9e91f8;
+  text-decoration: none;
+}
+
+.legal-footer a:hover,
+.legal-footer a:focus-visible {
+  color: #cfc7ff;
+  text-decoration: underline;
+}

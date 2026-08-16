@@ -4,7 +4,7 @@
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = "Privacy Policy";
-    ViewData["Description"] = "How Glosify and the Glosify Live Subtitles Chrome extension handle personal data.";
+    ViewData["Description"] = "How Glosify and the Glosify Live Subtitles Chrome extension collect, use, share, and retain personal data.";
     var legal = Legal.Value;
 }
 
@@ -12,42 +12,67 @@
     <article class="glass-card legal-document">
         <header class="auth-card-header">
             <h1>Privacy Policy</h1>
-            <p>Last updated 14 August 2026</p>
+            <p>Last updated 16 August 2026</p>
         </header>
 
-        <h2>Who controls your data</h2>
-        <p><strong>@legal.ControllerName</strong> operates Glosify and is the controller for personal data described here. Contact <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> for privacy or deletion requests.</p>
+        <p>This policy applies to the Glosify web application, its APIs, and the Glosify Live Subtitles Chrome extension.</p>
 
-        <h2>Data Glosify handles</h2>
+        <h2>Controller and contact</h2>
+        <p><strong>@legal.ControllerName</strong> operates Glosify and is the controller for the personal data described here. Contact <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> for privacy questions or to exercise your rights.</p>
+
+        <h2>Personal data Glosify handles</h2>
         <ul>
-            <li>Account information such as email address, internal account ID, authentication method, and Google or Microsoft external-login identifiers.</li>
-            <li>Language preferences, quizzes, learning content, credits, reservations, usage transactions, and session metadata needed to provide and protect the service.</li>
-            <li>Assistant chat messages, selected learning context, AI-generated replies, tool actions, and proposed changes needed to provide saved chats. Assistant requests are processed by Microsoft Foundry.</li>
-            <li>For live subtitles, audio from the tab you explicitly choose, translated captions, target language, timing, and connection diagnostics.</li>
-            <li>If you separately enable transcript saving, finalized original-language speech, transcript titles, timestamps, and the selected learning language.</li>
-            <li>Security and operational metadata such as IP address, request time, status, and error diagnostics. Application logs are designed not to contain tab audio or caption text.</li>
+            <li><strong>Account and authentication data:</strong> email address, internal account ID, password hash, authentication method, security data, and identifiers received when you choose Google or Microsoft sign-in.</li>
+            <li><strong>Learning data:</strong> language and display preferences, quizzes, words, sentences, attempts, Anki-style study records, uploaded books and extracted page text, saved translations, and other content you create.</li>
+            <li><strong>Classroom and sharing data:</strong> memberships, invitations, messages, assignments, results, and content you choose to share with a classroom or publish through a sharing feature.</li>
+            <li><strong>Assistant data:</strong> chat messages, selected quiz, book, page, or transcript context, AI-generated replies, feedback, tool actions, and proposed or applied changes.</li>
+            <li><strong>Live subtitle and speaking data:</strong> audio you explicitly submit, recognized or translated text, language choices, timestamps, session state, pronunciation results, and connection diagnostics. Glosify does not write live tab audio to its own persistent storage.</li>
+            <li><strong>Saved transcripts:</strong> when you separately enable transcript saving, finalized original-language speech, titles, timestamps, and the selected learning language. Transcript saving is off by default.</li>
+            <li><strong>Credits and payments:</strong> credit balance, reservations and usage transactions. If payments are enabled, Glosify stores the selected package, amount, currency, purchase status, and Stripe checkout, payment, refund, or dispute identifiers. Stripe, not Glosify, receives your card details.</li>
+            <li><strong>Technical and security data:</strong> IP address, request time and route, response status, device or browser information made available by the request, rate-limit events, traces, and error diagnostics.</li>
         </ul>
-        <p>Assistant operational analytics records model and tool names, token counts, timings, outcomes, and pseudonymous correlation identifiers. It is configured not to duplicate complete prompts, responses, tool arguments, or tool results into analytics storage or telemetry.</p>
 
-        <h2>Live subtitles and provider processing</h2>
-        <p>Chrome captures audio only after you press <strong>Start subtitles</strong> for the active tab. In Enhanced mode, the audio is streamed through Glosify to Microsoft Foundry for real-time speech processing and translation. If transcript saving is enabled, the same audio is also streamed to ElevenLabs Scribe v2 to produce the finalized source transcript. In ElevenLabs Scribe v2 subtitle mode, audio is streamed through Glosify to ElevenLabs for transcription and each finalized phrase is sent to Azure Translator. Tab audio is not written to Glosify storage.</p>
-        <p>Captions and recognized phrases are displayed transiently unless you separately opt in to transcript saving. Microsoft processes audio, recognized phrases, and related service metadata for Enhanced subtitles. ElevenLabs processes that data when Scribe mode is active or when Enhanced transcript saving is enabled. Standard ElevenLabs API logging is enabled, so ElevenLabs may retain request and service-log data under its applicable service terms and retention policy. Google and Microsoft process information under their own policies when you choose their OAuth sign-in services.</p>
+        <h2>Assistant content and operational analytics</h2>
+        <p>Glosify stores saved assistant chats so you can return to them. Content capture is also currently enabled for assistant operations. This means an analytics record may contain the complete effective model request—including system instructions, replayed chat history, selected learning context, and tool schemas—as well as the model response, tool arguments, and tool results. Known secrets are redacted before storage, but these records can still contain your prompts and learning content.</p>
+        <p>Separate Azure Monitor telemetry records operational information such as model and tool names, token counts, timings, outcomes, and pseudonymous correlation identifiers. It is designed not to copy complete prompts, responses, tool arguments, tool results, tab audio, or caption text into that telemetry.</p>
 
-        <h2>Purposes and legal basis</h2>
-        <p>Glosify uses this data to authenticate you, deliver requested learning and subtitle features, maintain your content, administer credits and the application budget, prevent abuse, troubleshoot failures, and comply with legal obligations. Processing is necessary to provide the service you request and for legitimate security and reliability interests; optional transcript storage is based on your explicit choice.</p>
+        <h2>How and why the data is used</h2>
+        <ul>
+            <li><strong>To provide the service and perform the agreement:</strong> create and secure your account; save and synchronize your learning content; run quizzes, classrooms, speaking, assistant, translation, subtitle, credit, and payment features; and respond to support requests.</li>
+            <li><strong>For legitimate interests:</strong> prevent fraud and abuse, enforce limits, protect users and infrastructure, diagnose failures, measure reliability and costs, and improve the service. Glosify balances these interests against your rights and limits content access to what is reasonably needed.</li>
+            <li><strong>To comply with law:</strong> keep payment, accounting, security, dispute, and compliance records where legally required.</li>
+            <li><strong>Based on your choice:</strong> use an external sign-in provider, capture a chosen tab for live subtitles, save a transcript, upload content, or share content with others.</li>
+        </ul>
 
-        <h2>Storage, retention, and deletion</h2>
-        <p>Transcript saving is off by default. When enabled, the finalized original speech is stored in your private Glosify account until you delete the transcript or account. Account content and credit records are retained while the account is active and as long as reasonably required for security, accounting, dispute handling, or legal obligations. Cloud backup and operational-log copies expire under the configured Microsoft Azure retention schedules rather than disappearing immediately.</p>
-        <p>You can delete saved transcripts from the Transcripts page and use the account-management deletion tools after signing in. You may also contact the address above. Deleting content does not revoke an OAuth provider's own copy; manage that relationship with Google or Microsoft as well.</p>
+        <h2>AI, speech, and translation providers</h2>
+        <p>Assistant requests and AI-assisted learning content are processed by the configured Microsoft Foundry service. Speaking and enhanced subtitle features use Microsoft Azure AI services. ElevenLabs processes tab audio when Scribe mode is selected and when a source transcript is requested in Enhanced mode; standard ElevenLabs API logging is enabled, so ElevenLabs may retain service-log data under its own applicable terms and retention policy. Finalized Scribe phrases may be sent to Azure Translator. A deployment may use the documented Gemini fallback for supported AI operations.</p>
+        <p>Chrome captures audio only after you start subtitles for the active tab. Captions are transient unless you opt in to saving the source transcript. Google or Microsoft processes authentication data under its own policy when you choose that provider.</p>
 
-        <h2>Chrome extension data</h2>
-        <p>The extension stores the minimum local settings and authentication material needed to stay connected, such as language choices, session state, and Glosify bearer tokens. It uses active-tab, tab-capture, offscreen, scripting, storage, identity, and glosify.se access only to connect the account and place translated subtitles over the tab the user starts.</p>
+        <h2>Service providers, disclosures, and transfers</h2>
+        <p>Glosify uses Microsoft Azure for application hosting, databases, blob storage, monitoring, identity infrastructure, AI, speech, and translation; ElevenLabs for the Scribe speech features described above; Stripe for checkout and payment processing when enabled; and Google or Microsoft for optional sign-in. These providers process data on Glosify's behalf or as independent controllers for their own parts of the service.</p>
+        <p>Some providers may process data outside Sweden or the EU/EEA. Where Glosify is responsible for such a transfer, it relies on an applicable lawful transfer mechanism and contractual safeguards. Contact Glosify for more information. Data may also be disclosed where required by law, to protect legal rights or service security, or as part of a lawful reorganization. Glosify does not sell personal data or use it for personalized advertising.</p>
+
+        <h2>Cookies, local storage, and external resources</h2>
+        <p>The web application uses essential authentication, security, antiforgery, and language-preference cookies. The extension stores settings, short-lived session state, and Glosify authentication material locally so it can connect your account and provide subtitles. Glosify does not use advertising cookies. The pages currently load font resources from Google, which causes the browser to connect to Google and disclose ordinary connection information such as the IP address.</p>
+
+        <h2>Retention and deletion</h2>
+        <ul>
+            <li>Account and learning content is generally kept while the account is active or until you delete the relevant item. You can delete supported items such as books, chats, and saved transcripts through their in-app controls.</li>
+            <li>To request deletion of the account and remaining account content, contact <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>. Glosify may keep limited records when required for accounting, fraud prevention, dispute handling, or another legal obligation.</li>
+            <li>Assistant content-capture records follow the associated assistant chat and account deletion lifecycle. Deleting a chat also queues deletion of its pseudonymous Azure Monitor correlation records where configured.</li>
+            <li>Azure Monitor's operational workspace retention target is 30 days. Database backups, provider logs, and deletion queues expire under their configured schedules and may not disappear immediately from recovery copies.</li>
+            <li>Stripe and external sign-in providers keep their own records under their policies. Deleting Glosify data does not delete an independent copy held by those providers.</li>
+        </ul>
+
+        <h2>Your rights</h2>
+        <p>Subject to applicable law, you may request access, correction, deletion, restriction, or portability of your personal data, and you may object to processing based on legitimate interests. Where processing relies on consent, you may withdraw it without affecting earlier processing. Glosify may need to verify your identity before completing a request.</p>
+        <p>You may complain to the <a href="https://www.imy.se/en/individuals/forms-and-e-services/file-a-gdpr-complaint/">Swedish Authority for Privacy Protection (IMY)</a> or another competent supervisory authority.</p>
 
         <h2>Chrome Web Store Limited Use</h2>
-        <p>Glosify's use and transfer of information received from Google APIs will adhere to the Chrome Web Store User Data Policy, including the Limited Use requirements. Glosify does not sell extension user data, use it for personalised advertising, or transfer it for unrelated credit or lending purposes.</p>
+        <p>Glosify's use and transfer of information received from Google APIs adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements. Extension data is used only to provide and protect the disclosed subtitle and account-connection features.</p>
 
-        <h2>Changes and questions</h2>
-        <p>Material changes will be published on this page with a new effective date. For questions, access, correction, portability, objection, or deletion requests, contact <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>
+        <h2>Changes</h2>
+        <p>Material changes will be published here with a new effective date and, when appropriate, communicated in the service. Questions can be sent to <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>
 
         <nav class="legal-links" aria-label="Legal pages">
             <a asp-action="Terms">Terms of Service</a>

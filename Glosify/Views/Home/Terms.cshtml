@@ -4,29 +4,65 @@
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = "Terms of Service";
+    ViewData["Description"] = "The terms for Glosify accounts, AI features, credits, payments, and user content.";
     var legal = Legal.Value;
 }
 
 <main class="auth-shell legal-shell">
     <article class="glass-card legal-document">
-        <header class="auth-card-header"><h1>Terms of Service</h1><p>Effective 10 August 2026</p></header>
-        <p>Glosify is a beta language-learning service operated by <strong>@legal.ControllerName</strong>. By using it, you agree to use the service lawfully, keep your account secure, and upload or stream only material you are permitted to process.</p>
+        <header class="auth-card-header">
+            <h1>Terms of Service</h1>
+            <p>Effective 16 August 2026</p>
+        </header>
 
-        <h2>Beta service and availability</h2>
-        <p>Features may change, fail, or be temporarily unavailable. Paid features close when Glosify's monthly application budget is exhausted and reopen at the next Europe/Stockholm monthly period. Credits are service units, have no cash value, and do not guarantee uninterrupted availability.</p>
+        <p>These terms apply to the Glosify web application, APIs, and Glosify Live Subtitles Chrome extension. Glosify is operated by <strong>@legal.ControllerName</strong>. By creating an account or using the service, you agree to these terms. Mandatory consumer rights under the law that applies to you remain unaffected.</p>
 
-        <h2>Trial credits</h2>
-        <p>An eligible account linked to Google or Microsoft may receive one 25-credit trial. Password-only and API registrations do not receive automatic trial credits. Abuse, duplicate-account farming, automation, or attempts to evade limits may result in suspension.</p>
+        <h2>Accounts and eligibility</h2>
+        <p>You must provide accurate account information, keep your credentials secure, and promptly report suspected unauthorized access. If you are not legally able to enter this agreement yourself, a parent or guardian must approve your use. You are responsible for activity performed through your account unless applicable law provides otherwise.</p>
+
+        <h2>The beta service</h2>
+        <p>Glosify is a developing language-learning service. Features, providers, models, prices, and credit rates may change, and a feature may be interrupted or temporarily unavailable. Paid AI features may close when Glosify's configured monthly application budget is exhausted and reopen in the next Europe/Stockholm monthly period. Glosify will not retroactively change the number of credits already purchased.</p>
+
+        <h2>Credits, trials, and payments</h2>
+        <p>Credits are prepaid service units used for eligible AI, speech, translation, and subtitle operations. They are not money, cannot be transferred between accounts, and have no cash value except where a refund or other remedy is required by law. The price, currency, credit quantity, and any applicable taxes are shown before Stripe checkout. Stripe processes the payment; Glosify does not receive card details.</p>
+        <p>An eligible account linked to Google or Microsoft may receive one 25-credit trial. Password-only and API registrations do not receive automatic trial credits. Trial credits are promotional, non-transferable, and not refundable. Abuse, duplicate-account farming, automation, or attempts to evade limits may result in removal of trial credits or account restriction.</p>
+
+        <h2>When credits are consumed</h2>
+        <p>Glosify reserves enough credits before starting a metered operation and reconciles that reservation against the provider's reported token, audio, or duration usage. If the provider reports no billable usage, Glosify normally releases the reservation. Once the provider reports token or audio usage, the corresponding credits are consumed and are not ordinarily restored merely because an AI response is inaccurate, incomplete, blocked, interrupted, fails validation, or is otherwise not useful to you. The upstream computing service has still been supplied and charged.</p>
+        <p>This credit rule does not limit mandatory consumer rights or remedies for a defective digital service, an incorrect charge, or a failure caused by Glosify. If you believe credits were deducted incorrectly, contact <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> with the approximate time and feature used so the transaction can be reviewed.</p>
+
+        <h2>Withdrawal and refunds for purchased credits</h2>
+        <p>If you are an EU/EEA consumer, you will generally have a 14-day statutory right of withdrawal for a distance purchase, subject to the rules and exceptions for digital services. By choosing to spend purchased credits during that period, you request that performance begin immediately. To the extent permitted by law, any refund may exclude the proportion already supplied, including credits consumed for provider-reported usage. Unused purchased credits will be refunded where required by applicable law.</p>
+        <p>Refunds, chargebacks, or payment disputes may revoke the corresponding purchased credits. If those credits have already been spent, Glosify may deduct the adjustment from the account balance and restrict further paid usage until the balance is resolved. Nothing in these terms excludes a refund, repair, repeat performance, price reduction, or other remedy that cannot lawfully be excluded.</p>
+
+        <h2>AI-generated output</h2>
+        <p>AI-generated replies, translations, transcripts, pronunciations, quiz material, images, and tool proposals are probabilistic and may be wrong, incomplete, biased, offensive, or unsuitable. You must review output before relying on it or applying a proposed change. Glosify does not provide medical, legal, financial, professional, or safety advice, and you must not rely on its output for high-stakes decisions.</p>
+        <p>To the extent permitted by law, Glosify does not guarantee that AI output will be accurate, unique, available, or fit for a particular purpose. This does not limit liability or remedies that cannot be excluded under applicable law.</p>
 
         <h2>Your content</h2>
-        <p>You retain rights in content you provide. You grant Glosify and its processors the limited permission required to host, transmit, analyse, translate, and return that content for the features you request. Do not rely on generated translations or learning material for medical, legal, safety-critical, or other high-stakes decisions.</p>
+        <p>You retain any rights you hold in content you provide. You grant Glosify and its service providers a limited, non-exclusive permission to host, copy, transmit, analyze, translate, transform, and display that content only as needed to operate, secure, support, and improve the features you request. You are responsible for having the rights and permissions needed to upload, stream, process, or share the content, including tab audio and classroom material.</p>
+        <p>Content you deliberately publish or share with a classroom can be seen by the audience indicated by the feature. Do not submit highly sensitive information unless it is genuinely necessary for the feature and you accept the processing described in the Privacy Policy.</p>
+
+        <h2>Acceptable use</h2>
+        <p>Do not use Glosify to break the law; infringe intellectual-property or privacy rights; process audio without required permission; harm, harass, exploit, or impersonate others; distribute malware; bypass security, credit, budget, or rate limits; scrape or overload the service; or use generated content deceptively. Glosify may remove content or suspend access where reasonably necessary to protect users, providers, the service, or legal compliance.</p>
+
+        <h2>Availability and liability</h2>
+        <p>Glosify will use reasonable care in providing the service but does not promise uninterrupted availability. You should keep independent copies of important learning content. To the extent permitted by law, Glosify is not responsible for indirect or unforeseeable loss, loss caused by your misuse or unauthorized content, or decisions made in reliance on AI output.</p>
+        <p>Nothing in these terms excludes or limits liability for intent or gross negligence, death or personal injury caused by negligence, fraud, mandatory data-protection obligations, or any other liability or consumer remedy that cannot legally be excluded.</p>
 
         <h2>Ending use</h2>
-        <p>You may stop using Glosify and delete stored content through the available account and transcript controls. Glosify may restrict accounts that threaten the service, other users, or legal compliance.</p>
+        <p>You may stop using Glosify at any time, delete supported content through its in-app controls, and request account deletion through <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>. Glosify may suspend or close an account for a material or repeated breach, a security risk, non-payment, or a legal requirement. Where reasonable, Glosify will give notice and an opportunity to correct the issue.</p>
 
-        <h2>Contact</h2>
-        <p>Questions about these terms can be sent to <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>
+        <h2>Changes to these terms</h2>
+        <p>Glosify may update these terms for legal, security, provider, or service changes. Material changes will be posted with a new effective date and, where appropriate, communicated before they take effect. Changes do not remove rights already accrued or retroactively alter a completed purchase.</p>
 
-        <nav class="legal-links" aria-label="Legal pages"><a asp-action="Privacy">Privacy Policy</a><a asp-action="Support">Support</a></nav>
+        <h2>Law, disputes, and contact</h2>
+        <p>These terms are governed by Swedish law, without depriving a consumer of mandatory protection in the country where they live. Disputes may be brought before a court that has jurisdiction under applicable law. Swedish consumers may also contact the <a href="https://www.arn.se/om-arn/Languages/english-what-is-arn/">National Board for Consumer Disputes (ARN)</a>.</p>
+        <p>Questions, billing concerns, withdrawal notices, and complaints can be sent to <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>
+
+        <nav class="legal-links" aria-label="Legal pages">
+            <a asp-action="Privacy">Privacy Policy</a>
+            <a asp-action="Support">Support</a>
+        </nav>
     </article>
 </main>

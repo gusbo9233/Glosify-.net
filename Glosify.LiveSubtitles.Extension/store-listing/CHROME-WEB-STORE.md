@@ -25,6 +25,8 @@ Glosify Live Subtitles adds real-time translated captions to the Chrome tab you 
 
 In Enhanced mode, tab audio is streamed through Glosify to Microsoft Foundry. In ElevenLabs Scribe v2 mode, it is streamed through Glosify to ElevenLabs and finalized phrases are sent to Azure Translator. If transcript saving is enabled in Enhanced mode, the same audio is also sent to Scribe for the finalized source transcript. Standard ElevenLabs API logging is enabled and ElevenLabs may retain service-log data under its policy. Tab audio is not stored by Glosify. Transcript saving is separate, off by default, and stores only finalized original-language speech in the user's private Glosify account until the user deletes the transcript or account.
 
+Provider-reported audio usage consumes the displayed credits even if captions are interrupted, inaccurate, or unusable; mandatory consumer rights still apply. AI-generated captions and translations may be incorrect and must not be relied on for safety-critical or other high-stakes decisions. Privacy, Terms, and Support links are available directly in the extension popup.
+
 This is an unlisted BETA pilot. Paid features may close for the rest of the Europe/Stockholm month when Glosify's application budget is reached. The extension displays the reset time and stops at a paid-minute boundary.
 
 Eligible Google- or Microsoft-linked accounts receive one 25-credit trial. Password-only registrations do not receive automatic trial credits.

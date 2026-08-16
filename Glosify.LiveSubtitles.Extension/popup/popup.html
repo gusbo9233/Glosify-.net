@@ -66,6 +66,7 @@
         </div>
 
         <p id="service-disclosure" class="service-disclosure">When you start, this tab’s audio is streamed through Glosify to Microsoft services for live subtitles. Audio is not stored. Each started minute consumes credits.</p>
+        <p class="usage-warning"><strong>Credits and AI output:</strong> Provider-reported audio usage consumes credits even if captions are interrupted, inaccurate, or unusable. Mandatory consumer rights still apply. AI-generated captions and translations may be incorrect. Do not rely on them for safety-critical or high-stakes decisions.</p>
         <button id="start" class="primary">Start subtitles</button>
         <button id="stop" class="danger hidden">Stop subtitles</button>
         <button id="view-transcripts" class="secondary" type="button">View saved transcripts</button>
@@ -75,6 +76,12 @@
       <div id="notice" class="notice hidden"></div>
       <div id="error" class="error hidden"></div>
     </section>
+
+    <footer class="legal-footer">
+      <a href="https://glosify.se/Home/Privacy" target="_blank" rel="noreferrer">Privacy</a>
+      <a href="https://glosify.se/Home/Terms" target="_blank" rel="noreferrer">Terms</a>
+      <a href="https://glosify.se/Home/Support" target="_blank" rel="noreferrer">Support</a>
+    </footer>
   </main>
   <script type="module" src="popup.js"></script>
 </body>

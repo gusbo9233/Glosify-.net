@@ -298,6 +298,13 @@
             <div class="app-canvas">
                 @RenderBody()
             </div>
+            <footer class="app-legal-footer">
+                <nav aria-label="@Text["Legal.Label"]">
+                    <a asp-controller="Home" asp-action="Privacy">@Text["Legal.PrivacyPolicy"]</a>
+                    <a asp-controller="Home" asp-action="Terms">@Text["Legal.TermsOfService"]</a>
+                    <a asp-controller="Home" asp-action="Support">@Text["Legal.Support"]</a>
+                </nav>
+            </footer>
         </main>
     </div>
     <nav class="app-mobile-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
