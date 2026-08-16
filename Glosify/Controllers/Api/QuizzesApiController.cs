@@ -4,6 +4,7 @@ using Glosify.Models;
 using Glosify.Models.Api;
 using Glosify.Services;
 using Glosify.Services.Ai;
+using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Typing;
 using Glosify.Services.Words;
@@ -127,13 +128,22 @@ public class QuizzesApiController : ApiControllerBase
     [HttpGet("{id:guid}/cards")]
     public async Task<ActionResult<IReadOnlyList<QuizCardData>>> Cards(Guid id, [FromQuery] int count = 20, [FromQuery] string? practiceDirection = null, [FromQuery] string? practiceItemType = null, CancellationToken cancellationToken = default)
     {
-        if (!await _quizService.UserOwnsQuizAsync(id, User.GetUserId(), cancellationToken: cancellationToken))
+        var quiz = await _quizService.GetQuizByIdAsync(id, User.GetUserId(), cancellationToken: cancellationToken);
+        if (quiz is null)
         {
             return NotFound();
         }
 
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
+        var isFreestyle = QuizLanguageCatalog.IsFreestyle(quiz.TargetLanguage);
+        if (isFreestyle)
+        {
+            normalizedItemType = PracticeItemType.Words;
+        }
+        var promptIsLemma = isFreestyle
+            ? PracticeDirection.IsSourceToTarget(normalizedDirection)
+            : PracticeDirection.IsTargetToSource(normalizedDirection);
         var cards = PracticeItemType.IsSentences(normalizedItemType)
             ? await _wordService.LoadSentenceCardsAsync(id, Math.Clamp(count, 1, 1000), cancellationToken: cancellationToken)
             : await _wordService.LoadCardsAsync(id, Math.Clamp(count, 1, 1000), cancellationToken: cancellationToken);
@@ -142,8 +152,8 @@ public class QuizzesApiController : ApiControllerBase
             Id = card.Id,
             Lemma = card.Lemma,
             Translation = card.Translation,
-            Prompt = PracticeDirection.IsSourceToTarget(normalizedDirection) ? card.Translation : card.Lemma,
-            Answer = PracticeDirection.IsSourceToTarget(normalizedDirection) ? card.Lemma : card.Translation,
+            Prompt = promptIsLemma ? card.Lemma : card.Translation,
+            Answer = promptIsLemma ? card.Translation : card.Lemma,
             ExampleSentence = card.ExampleSentence,
             ExampleTranslation = card.ExampleTranslation
         }).ToList());

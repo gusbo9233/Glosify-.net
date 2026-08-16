@@ -324,8 +324,8 @@ internal static class ToolArguments
                 continue;
             }
 
-            var word = GetString(item, "word");
-            var translation = GetString(item, "translation");
+            var word = FirstNonBlank(GetString(item, "word"), GetString(item, "prompt"));
+            var translation = FirstNonBlank(GetString(item, "translation"), GetString(item, "answer"));
             if (string.IsNullOrWhiteSpace(word) || string.IsNullOrWhiteSpace(translation))
             {
                 skipped.Add(new SkippedItem(index, "word and translation are both required."));
@@ -362,9 +362,9 @@ internal static class ToolArguments
                 continue;
             }
 
-            var wordId = GetString(item, "word_id");
-            var word = GetString(item, "word")?.Trim();
-            var translation = GetString(item, "translation")?.Trim();
+            var wordId = FirstNonBlank(GetString(item, "word_id"), GetString(item, "item_id"));
+            var word = FirstNonBlank(GetString(item, "word"), GetString(item, "prompt"))?.Trim();
+            var translation = FirstNonBlank(GetString(item, "translation"), GetString(item, "answer"))?.Trim();
             if (string.IsNullOrWhiteSpace(wordId))
             {
                 skipped.Add(new SkippedItem(index, "word_id is required."));

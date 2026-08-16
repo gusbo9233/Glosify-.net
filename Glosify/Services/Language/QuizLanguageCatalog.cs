@@ -25,6 +25,22 @@ public sealed record QuizLanguage
         Locale = locale;
         FlagRegion = flagRegion;
         Aliases = aliases;
+        IsLanguageLearning = true;
+    }
+
+    public QuizLanguage(
+        string code,
+        string translatorCode,
+        string scribeCode,
+        string name,
+        string nativeName,
+        string locale,
+        string flagRegion,
+        bool isLanguageLearning,
+        params string[] aliases)
+        : this(code, translatorCode, scribeCode, name, nativeName, locale, flagRegion, aliases)
+    {
+        IsLanguageLearning = isLanguageLearning;
     }
 
     public string Code { get; }
@@ -35,6 +51,7 @@ public sealed record QuizLanguage
     public string Locale { get; }
     public string FlagRegion { get; }
     public IReadOnlyList<string> Aliases { get; }
+    public bool IsLanguageLearning { get; }
 
     public string Flag => string.Concat(FlagRegion.ToUpperInvariant().Select(character =>
         char.ConvertFromUtf32(0x1F1E6 + character - 'A')));
@@ -42,7 +59,9 @@ public sealed record QuizLanguage
 
 public static class QuizLanguageCatalog
 {
-    public const string Version = "2026-08-15";
+    public const string Version = "2026-08-16";
+    public const string FreestyleCode = "free";
+    public const string FreestyleName = "Freestyle";
 
     private static readonly QuizLanguage[] Languages =
     [
@@ -115,9 +134,22 @@ public static class QuizLanguageCatalog
         new("uz", "uz", "uzb", "Uzbek", "Oʻzbekcha", "uz-UZ", "UZ"),
         new("vi", "vi", "vie", "Vietnamese", "Tiếng Việt", "vi-VN", "VN"),
         new("cy", "cy", "cym", "Welsh", "Cymraeg", "cy-GB", "GB"),
+        new(
+            FreestyleCode,
+            string.Empty,
+            string.Empty,
+            FreestyleName,
+            "General subjects",
+            "en-GB",
+            string.Empty,
+            isLanguageLearning: false,
+            "General", "General study", "Any subject"),
     ];
 
     public static IReadOnlyList<QuizLanguage> All { get; } = Array.AsReadOnly(Languages);
+
+    public static IReadOnlyList<QuizLanguage> LanguageLearning { get; } =
+        Array.AsReadOnly(Languages.Where(language => language.IsLanguageLearning).ToArray());
 
     public static int MaximumCodeLength { get; } = Languages.Max(language => language.Code.Length);
 
@@ -142,6 +174,9 @@ public static class QuizLanguageCatalog
             || string.Equals(language.NativeName, candidate, StringComparison.OrdinalIgnoreCase)
             || language.Aliases.Contains(candidate, StringComparer.OrdinalIgnoreCase));
     }
+
+    public static bool IsFreestyle(string? value) =>
+        Find(value) is { IsLanguageLearning: false };
 
     public static string NormalizeForSearch(string value) => string.Concat(
         value.Normalize(NormalizationForm.FormD)

@@ -36,6 +36,9 @@ public sealed class FoundryAssistantAgentOptions
     public FoundryAgentVersionOptions CustomQuizBuilder { get; set; } = new();
     public FoundryAgentVersionOptions QuizAssistant { get; set; } = new();
     public FoundryAgentVersionOptions Librarian { get; set; } = new();
+    public FoundryAgentVersionOptions FreestyleCustomQuizBuilder { get; set; } = new();
+    public FoundryAgentVersionOptions FreestyleQuizAssistant { get; set; } = new();
+    public FoundryAgentVersionOptions FreestyleLibrarian { get; set; } = new();
 }
 
 public sealed class FoundryAgentVersionOptions

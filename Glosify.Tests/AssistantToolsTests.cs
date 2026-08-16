@@ -1137,6 +1137,33 @@ public class AssistantToolsTests
     }
 
     [Fact]
+    public async Task FreestyleItemAliases_MapPromptAndAnswerToExistingStorageContracts()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Words.Add(new Word { Id = "item-1", QuizId = quizId, Lemma = "What is preload?", Translation = "Ventricular stretch before contraction." });
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { QuizId = quizId, UserId = "user-1", IsFreestyle = true };
+
+        var listed = await tools.ExecuteAsync("list_items", "{}", context, CancellationToken.None);
+        var added = await tools.ExecuteAsync(
+            "add_items",
+            """{"items":[{"prompt":"What is afterload?","answer":"The resistance the ventricle must overcome."}]}""",
+            context,
+            CancellationToken.None);
+
+        var listedJson = JsonSerializer.Serialize(listed);
+        Assert.Contains("\"prompt\":\"What is preload?\"", listedJson);
+        Assert.Contains("\"answer\":\"Ventricular stretch before contraction.\"", listedJson);
+        Assert.DoesNotContain("\"word\"", listedJson);
+        Assert.Contains("queued", JsonSerializer.Serialize(added));
+        var payload = Assert.Single(context.PendingChanges).Payload;
+        Assert.Contains("What is afterload?", payload.GetRawText());
+        Assert.Contains("The resistance the ventricle must overcome.", payload.GetRawText());
+    }
+
+    [Fact]
     public async Task ListSentences_ReturnsQuizSentences()
     {
         await using var db = CreateContext();

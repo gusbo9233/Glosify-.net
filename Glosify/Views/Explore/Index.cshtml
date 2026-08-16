@@ -107,12 +107,12 @@
                                 <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@item.Quiz.Name</h2>
-                            <p class="quiz-languages">@QuizLanguageDisplay.Name(item.Quiz.SourceLanguage) &rarr; @QuizLanguageDisplay.Name(item.Quiz.TargetLanguage)</p>
+                            <p class="quiz-languages">@(item.Quiz.IsFreestyle ? "Freestyle · prompts and answers" : $"{QuizLanguageDisplay.Name(item.Quiz.SourceLanguage)} → {QuizLanguageDisplay.Name(item.Quiz.TargetLanguage)}")</p>
                         </a>
                         <div class="quiz-meta">
                             <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@item.Quiz.CreatedAt.ToString("MMM d, yyyy")</span>
                             <div class="quiz-meta-actions">
-                                <span class="status-pill"><span class="status-dot" aria-hidden="true"></span>@item.WordCount @(item.WordCount == 1 ? Text["Settings.WordLower"] : Text["Settings.WordsLower"])</span>
+                                <span class="status-pill"><span class="status-dot" aria-hidden="true"></span>@item.WordCount @(item.Quiz.IsFreestyle ? (item.WordCount == 1 ? "item" : "items") : item.WordCount == 1 ? Text["Settings.WordLower"] : Text["Settings.WordsLower"])</span>
                                 <form class="share-form" method="post" asp-controller="Explore" asp-action="CopyQuiz" asp-route-id="@item.Quiz.Id">
                                     @Html.AntiForgeryToken()
                                     <button class="btn-copy-public" type="submit" aria-label="@Text["Explore.CopyNamed", item.Quiz.Name]">

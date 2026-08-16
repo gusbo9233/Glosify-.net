@@ -17,6 +17,7 @@ internal sealed class AddWordsTool : IAssistantTool
         }, required: ["words"]));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
+    public IReadOnlyList<string> Aliases => ["add_items"];
 
     public Task<object> ExecuteAsync(
         JsonElement args,
@@ -36,7 +37,8 @@ internal sealed class AddWordsTool : IAssistantTool
             return mismatch;
         }
 
-        var (words, skipped) = GetWordDrafts(args, "words");
+        var property = args.TryGetProperty("items", out _) ? "items" : "words";
+        var (words, skipped) = GetWordDrafts(args, property);
         if (words.Count == 0)
         {
             return new { error = "At least one valid word and translation is required.", skipped };

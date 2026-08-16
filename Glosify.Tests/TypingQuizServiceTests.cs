@@ -8,6 +8,30 @@ namespace Glosify.Tests;
 
 public class TypingQuizServiceTests
 {
+    [Theory]
+    [InlineData(PracticeDirection.SourceToTarget, "Largest human organ", "Skin")]
+    [InlineData(PracticeDirection.TargetToSource, "Skin", "Largest human organ")]
+    public async Task Freestyle_uses_prompt_to_answer_by_default_and_reverses_it(
+        string direction,
+        string expectedPrompt,
+        string expectedAnswer)
+    {
+        await using var context = CreateContext();
+        var quizId = await SeedQuizAsync(
+            context,
+            "Freestyle",
+            "Freestyle",
+            "Largest human organ",
+            "Skin");
+        var service = new TypingQuizService(context);
+
+        var data = await service.GetQuizDataAsync(quizId, 1, direction, PracticeItemType.Words);
+
+        var item = Assert.Single(data.Words);
+        Assert.Equal(expectedPrompt, item.Prompt);
+        Assert.Equal(expectedAnswer, item.Answer);
+    }
+
     [Fact]
     public async Task GetQuizDataAsync_SourceToTarget_UsesTranslationPromptAndLemmaAnswer()
     {
@@ -70,7 +94,12 @@ public class TypingQuizServiceTests
         Assert.Equal(PracticeItemType.Sentences, data.PracticeItemType);
     }
 
-    private static async Task<Guid> SeedQuizAsync(GlosifyContext context)
+    private static async Task<Guid> SeedQuizAsync(
+        GlosifyContext context,
+        string sourceLanguage = "English",
+        string targetLanguage = "Spanish",
+        string prompt = "casa",
+        string answer = "house")
     {
         var quizId = Guid.NewGuid();
         context.Quizzes.Add(new Quiz
@@ -78,17 +107,17 @@ public class TypingQuizServiceTests
             Id = quizId,
             Name = "Spanish basics",
             UserId = "user-1",
-            SourceLanguage = "English",
-            TargetLanguage = "Spanish",
-            Language = "Spanish",
+            SourceLanguage = sourceLanguage,
+            TargetLanguage = targetLanguage,
+            Language = targetLanguage,
             ProcessingStatus = "Ready"
         });
         context.Words.Add(new Word
         {
             Id = "word-1",
             QuizId = quizId,
-            Lemma = "casa",
-            Translation = "house"
+            Lemma = prompt,
+            Translation = answer
         });
         context.QuizSentences.Add(new QuizSentence
         {

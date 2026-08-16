@@ -13,7 +13,7 @@ namespace Glosify.Services.Ai.Assistant;
 /// </remarks>
 internal static class AssistantToolNarrowing
 {
-    private static readonly string[] WordAdditionTools = ["add_word", "add_words"];
+    private static readonly string[] WordAdditionTools = ["add_word", "add_words", "add_item", "add_items"];
     private static readonly string[] SentenceAdditionTools = ["add_sentence", "add_sentences"];
 
     private static readonly string[] CustomQuizTools =
@@ -55,7 +55,8 @@ internal static class AssistantToolNarrowing
         // With a custom quiz open on screen the element tools are the whole point of the
         // session, so wording like "add ten words to this quiz" must not strip the editor.
         if (intent.ArtifactKind == AssistantArtifactKind.StandardQuiz
-            && profile != AssistantAgentProfile.CustomQuizBuilder)
+            && profile is not (AssistantAgentProfile.CustomQuizBuilder
+                or AssistantAgentProfile.FreestyleCustomQuizBuilder))
         {
             allowed.ExceptWith(CustomQuizTools);
         }

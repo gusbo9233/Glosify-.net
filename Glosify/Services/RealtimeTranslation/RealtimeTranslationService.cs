@@ -52,8 +52,12 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         EnsureEnabled();
         var account = await _credits.GetOrCreateAccountAsync(userId, cancellationToken);
         var selectedQuizLanguage = await _languagePreferences.GetSelectedAsync(userId, cancellationToken);
+        if (selectedQuizLanguage is { IsLanguageLearning: false })
+        {
+            selectedQuizLanguage = null;
+        }
         var languages = await _languageCatalog.GetLanguagesAsync(cancellationToken);
-        var quizLanguages = QuizLanguageCatalog.All
+        var quizLanguages = QuizLanguageCatalog.LanguageLearning
             .Select(language => new RealtimeTranslationLanguage(language.Code, language.Name))
             .ToArray();
         var modes = new List<RealtimeTranslationMode>();
@@ -155,7 +159,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                     "Saved source transcripts are not enabled on this Glosify deployment.");
             }
             selectedQuizLanguage = await _languagePreferences.GetSelectedAsync(userId, cancellationToken);
-            if (selectedQuizLanguage is null)
+            if (selectedQuizLanguage is null || !selectedQuizLanguage.IsLanguageLearning)
             {
                 throw new RealtimeTranslationValidationException(
                     "Choose a quiz language in Glosify before saving an original speech transcript.");

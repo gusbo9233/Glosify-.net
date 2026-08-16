@@ -68,7 +68,7 @@
                                 <option value="@quiz.Id"
                                         data-context-label="@quiz.Name"
                                         selected="@(panel.QuizId == quiz.Id)">
-                                    @quiz.Name (@quiz.SourceLanguage &rarr; @quiz.TargetLanguage)
+                                    @quiz.Name @(Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(quiz.TargetLanguage) ? "(Freestyle)" : $"({quiz.SourceLanguage} → {quiz.TargetLanguage})")
                                 </option>
                             }
                         </select>

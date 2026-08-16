@@ -28,7 +28,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
         CancellationToken cancellationToken)
     {
         NoStore();
-        if (QuizLanguageCatalog.Find(request.Code) is null)
+        if (QuizLanguageCatalog.Find(request.Code) is not { IsLanguageLearning: true })
         {
             throw new RealtimeTranslationValidationException(
                 "Choose a supported learning language.");

@@ -5,8 +5,11 @@
     ViewData["ActiveNav"] = "quizzes";
     ViewData["AssistantQuizId"] = Model.SelectedQuiz.Id;
     ViewData["AssistantContextLabel"] = Model.SelectedQuiz.Name;
-    ViewData["AssistantEmptyText"] = Text["Quiz.AssistantEmpty"];
-    ViewData["AssistantPlaceholder"] = Text["Quiz.AssistantPlaceholder"];
+    var isFreestyle = Model.SelectedQuiz.IsFreestyle;
+    ViewData["AssistantEmptyText"] = isFreestyle ? "Ask for study items, explanations, or quiz ideas." : Text["Quiz.AssistantEmpty"];
+    ViewData["AssistantPlaceholder"] = isFreestyle ? "Ask about this subject or request quiz changes…" : Text["Quiz.AssistantPlaceholder"];
+    var itemLabel = isFreestyle ? "Items" : Text["Settings.Words"].Value;
+    var itemLabelLower = isFreestyle ? "items" : Text["Settings.WordsLower"].Value;
 }
 
 @section Styles {
@@ -16,11 +19,14 @@
 <section class="workspace quiz-workspace">
     <section class="workspace-hero quiz-hero">
         <div class="workspace-hero-content">
-            <p class="hero-label">@QuizLanguageDisplay.Name(Model.SelectedQuiz.SourceLanguage) &rarr; @QuizLanguageDisplay.Name(Model.SelectedQuiz.TargetLanguage)</p>
+            <p class="hero-label">@(isFreestyle ? "Freestyle quiz" : $"{QuizLanguageDisplay.Name(Model.SelectedQuiz.SourceLanguage)} → {QuizLanguageDisplay.Name(Model.SelectedQuiz.TargetLanguage)}")</p>
             <h1 class="hero-title">@Model.SelectedQuiz.Name</h1>
             <p class="hero-meta">
-                <span>@Model.Words.Count @(Model.Words.Count == 1 ? Text["Settings.WordLower"] : Text["Settings.WordsLower"])</span>
-                <span>@Model.Sentences.Count @(Model.Sentences.Count == 1 ? Text["Settings.SentenceLower"] : Text["Settings.SentencesLower"])</span>
+                <span>@Model.Words.Count @(isFreestyle ? (Model.Words.Count == 1 ? "item" : "items") : Model.Words.Count == 1 ? Text["Settings.WordLower"] : Text["Settings.WordsLower"])</span>
+                @if (!isFreestyle)
+                {
+                    <span>@Model.Sentences.Count @(Model.Sentences.Count == 1 ? Text["Settings.SentenceLower"] : Text["Settings.SentencesLower"])</span>
+                }
                 <span>@Text["Quiz.CustomCount", Model.CustomQuizzes.Count()]</span>
             </p>
             <div class="hero-actions">
@@ -58,34 +64,37 @@
         <span class="quick-add-icon" aria-hidden="true"><span class="material-symbols-outlined">add_circle</span></span>
         <div class="quick-add-fields">
             <label class="quick-add-field">
-                <span class="quick-add-label">@Text["Quiz.Word"]</span>
-                <input class="form-input" type="text" name="word" dir="auto" placeholder="@Text["Quiz.WordExample"]" required />
+                <span class="quick-add-label">@(isFreestyle ? "Prompt" : Text["Quiz.Word"])</span>
+                <input class="form-input" type="text" name="word" dir="auto" placeholder="@(isFreestyle ? "e.g. What does the sinoatrial node do?" : Text["Quiz.WordExample"] )" required />
             </label>
             <label class="quick-add-field">
-                <span class="quick-add-label">@Text["Reader.Translation"]</span>
-                <input class="form-input" type="text" name="translation" dir="auto" placeholder="@Text["Quiz.TranslationExample"]" required />
+                <span class="quick-add-label">@(isFreestyle ? "Answer" : Text["Reader.Translation"])</span>
+                <input class="form-input" type="text" name="translation" dir="auto" placeholder="@(isFreestyle ? "e.g. It initiates the heartbeat." : Text["Quiz.TranslationExample"] )" required />
             </label>
         </div>
-        <button class="btn-submit quick-add-submit" type="submit">@Text["Quiz.AddWord"]</button>
+        <button class="btn-submit quick-add-submit" type="submit">@(isFreestyle ? "Add item" : Text["Quiz.AddWord"])</button>
     </form>
 
     <section>
         <div class="collection-header">
             <div>
-                <h2 class="collection-title" id="collectionTitle">@Text["Settings.Words"]</h2>
-                <p class="collection-subtitle" id="collectionSubtitle">@Text["Quiz.ItemsIn", Model.Words.Count, Text["Settings.WordsLower"], Model.SelectedQuiz.Name]</p>
+                <h2 class="collection-title" id="collectionTitle">@itemLabel</h2>
+                <p class="collection-subtitle" id="collectionSubtitle">@Text["Quiz.ItemsIn", Model.Words.Count, itemLabelLower, Model.SelectedQuiz.Name]</p>
             </div>
             <div class="tab-group" role="tablist" aria-label="@Text["Quiz.ContentAria"]">
-                <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="wordsPanel" data-tab="words">@Text["Settings.Words"]</button>
-                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="sentencesPanel" data-tab="sentences">@Text["Settings.Sentences"]</button>
+                <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="wordsPanel" data-tab="words">@itemLabel</button>
+                @if (!isFreestyle)
+                {
+                    <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="sentencesPanel" data-tab="sentences">@Text["Settings.Sentences"]</button>
+                }
             </div>
         </div>
 
-        <div class="tab-panel" id="wordsPanel" data-title="@Text["Settings.Words"]" data-subtitle="@Text["Quiz.ItemsIn", Model.Words.Count, Text["Settings.WordsLower"], Model.SelectedQuiz.Name]">
+        <div class="tab-panel" id="wordsPanel" data-title="@itemLabel" data-subtitle="@Text["Quiz.ItemsIn", Model.Words.Count, itemLabelLower, Model.SelectedQuiz.Name]">
             <div class="word-grid" data-word-grid>
                 @foreach (var word in Model.Words)
                 {
-                    var wiktionaryUrl = WiktionaryLink.ForWord(Model.SelectedQuiz.TargetLanguage, word.Lemma);
+                    var wiktionaryUrl = isFreestyle ? null : WiktionaryLink.ForWord(Model.SelectedQuiz.TargetLanguage, word.Lemma);
                     <article class="word-card">
                         <div class="word-card-main">
                             @if (wiktionaryUrl != null)
@@ -99,7 +108,7 @@
                             }
                             else
                             {
-                                <div class="word-icon"><span class="material-symbols-outlined">translate</span></div>
+                                <div class="word-icon"><span class="material-symbols-outlined">@(isFreestyle ? "help" : "translate")</span></div>
                             }
 
                             <div class="word-card-link">
@@ -110,6 +119,8 @@
                             </div>
                         </div>
                         <div class="word-actions">
+                            @if (!isFreestyle)
+                            {
                             <button class="btn-icon-tts"
                                     type="button"
                                     data-tts="@word.Lemma"
@@ -118,6 +129,7 @@
                                     aria-label="@Text["Quiz.PlayPronunciation", word.Lemma]">
                                 <span class="material-symbols-outlined">volume_up</span>
                             </button>
+                            }
                             <details class="item-action-menu" data-item-menu>
                                 <summary aria-label="@Text["Quiz.ItemActions", word.Lemma]"><span class="material-symbols-outlined">more_vert</span></summary>
                                 <div class="item-action-popover">
@@ -132,11 +144,13 @@
                 }
                 @if (!Model.Words.Any())
                 {
-                    <div class="empty-state">@Text["Quiz.NoWords"]</div>
+                    <div class="empty-state">@(isFreestyle ? "No items yet. Add a prompt and answer above." : Text["Quiz.NoWords"])</div>
                 }
             </div>
         </div>
 
+        @if (!isFreestyle)
+        {
         <div class="tab-panel" id="sentencesPanel" data-title="@Text["Settings.Sentences"]" data-subtitle="@Text["Quiz.ItemsIn", Model.Sentences.Count, Text["Settings.SentencesLower"], Model.SelectedQuiz.Name]" hidden>
             <div class="sentence-grid" data-sentence-grid>
                 @foreach (var sentence in Model.Sentences)
@@ -171,6 +185,7 @@
                 }
             </div>
         </div>
+        }
     </section>
 
     <section class="custom-quiz-library">

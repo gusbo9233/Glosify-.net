@@ -16,6 +16,10 @@
     var sentenceAllCount = Math.Max(availableSentences, 1);
     var sourceLanguage = QuizLanguageDisplay.Name(Model.SelectedQuiz?.SourceLanguage) ?? Text["Settings.Source"];
     var targetLanguage = QuizLanguageDisplay.Name(Model.SelectedQuiz?.TargetLanguage) ?? Text["Settings.Target"];
+    var isFreestyle = Model.SelectedQuiz?.IsFreestyle == true;
+    var itemLabel = isFreestyle ? "Items" : Text["Settings.Words"].Value;
+    var promptLabel = isFreestyle ? "Prompt" : sourceLanguage;
+    var answerLabel = isFreestyle ? "Answer" : targetLanguage;
 }
 
 @if (Model.SelectedQuiz is not null)
@@ -27,8 +31,8 @@
             <form method="post" asp-controller="Anki" asp-action="AddQuiz" class="anki-settings-form">
                 @Html.AntiForgeryToken()<input type="hidden" name="QuizId" value="@Model.SelectedQuiz.Id"/>
                 <label>Collection<select class="form-input" name="CollectionId">@foreach (var collection in Model.AnkiCollections) { <option value="@collection.Id">@collection.Name</option> }</select></label>
-                <fieldset><legend>Words</legend><label><input type="checkbox" name="WordsSourceToTarget" value="true" checked/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="WordsTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset>
-                <fieldset><legend>Sentences</legend><label><input type="checkbox" name="SentencesSourceToTarget" value="true"/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="SentencesTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset>
+                <fieldset><legend>@itemLabel</legend><label><input type="checkbox" name="@(isFreestyle ? "WordsTargetToSource" : "WordsSourceToTarget")" value="true" checked/> @promptLabel &rarr; @answerLabel</label><label><input type="checkbox" name="@(isFreestyle ? "WordsSourceToTarget" : "WordsTargetToSource")" value="true"/> @answerLabel &rarr; @promptLabel</label></fieldset>
+                @if (!isFreestyle) { <fieldset><legend>Sentences</legend><label><input type="checkbox" name="SentencesSourceToTarget" value="true"/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="SentencesTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset> }
                 <button class="btn-secondary" type="submit">Link quiz</button>
             </form>
         }
@@ -37,8 +41,8 @@
             <form method="post" asp-controller="Anki" asp-action="CreateFromQuiz" class="anki-settings-form" aria-label="Create Anki collection from quiz">
                 @Html.AntiForgeryToken()<input type="hidden" name="QuizId" value="@Model.SelectedQuiz.Id"/><input type="hidden" name="TimeZoneId" value="UTC" data-browser-timezone/>
                 <label>Name<input class="form-input" name="Name" required maxlength="160"/></label>
-                <fieldset><legend>Words</legend><label><input type="checkbox" name="WordsSourceToTarget" value="true" checked/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="WordsTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset>
-                <fieldset><legend>Sentences</legend><label><input type="checkbox" name="SentencesSourceToTarget" value="true"/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="SentencesTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset>
+                <fieldset><legend>@itemLabel</legend><label><input type="checkbox" name="@(isFreestyle ? "WordsTargetToSource" : "WordsSourceToTarget")" value="true" checked/> @promptLabel &rarr; @answerLabel</label><label><input type="checkbox" name="@(isFreestyle ? "WordsSourceToTarget" : "WordsTargetToSource")" value="true"/> @answerLabel &rarr; @promptLabel</label></fieldset>
+                @if (!isFreestyle) { <fieldset><legend>Sentences</legend><label><input type="checkbox" name="SentencesSourceToTarget" value="true"/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="SentencesTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset> }
                 <button class="btn-secondary" type="submit">Create and link</button>
             </form>
         </details>
@@ -61,7 +65,7 @@
                 <div class="section-header">
                     <div>
                         <h2 class="section-title">@Text["Settings.SessionLength"]</h2>
-                        <p class="section-note"><span data-available-count>@availableWords</span> <span data-available-label>@Text["Settings.Words"]</span> @Text["Settings.AvailableLower"]</p>
+                        <p class="section-note"><span data-available-count>@availableWords</span> <span data-available-label>@itemLabel</span> @Text["Settings.AvailableLower"]</p>
                     </div>
                     <span class="material-symbols-outlined">timer</span>
                 </div>
@@ -84,7 +88,7 @@
             <div>
                 <div class="section-header">
                     <div>
-                        <h2 class="section-title">@Text["Settings.WordRange"]</h2>
+                        <h2 class="section-title">@(isFreestyle ? "Item range" : Text["Settings.WordRange"])</h2>
                         <p class="section-note">@Text["Settings.RangeHelp"]</p>
                     </div>
                     <span class="material-symbols-outlined">tune</span>
@@ -102,7 +106,7 @@
                     <input type="range" name="WordRangeStart" min="0" max="100" step="5" value="0" class="range-thumb range-thumb-min" data-range-min />
                     <input type="range" name="WordRangeEnd" min="0" max="100" step="5" value="100" class="range-thumb range-thumb-max" data-range-max />
                 </div>
-                <p class="range-slider-label" data-range-label>@Text["Settings.AllWordsOrder"]</p>
+                <p class="range-slider-label" data-range-label>@(isFreestyle ? "All items in creation order" : Text["Settings.AllWordsOrder"])</p>
 
                 <input type="hidden" name="SelectedWordIds" data-selected-word-ids value="" />
                 <div class="word-picker-row" data-word-picker-row>
@@ -116,7 +120,7 @@
 
                 <dialog class="word-picker-dialog" data-word-picker-dialog>
                     <div class="word-picker-header">
-                        <h3>@Text["Settings.ChooseWords"]</h3>
+                        <h3>@(isFreestyle ? "Choose items" : Text["Settings.ChooseWords"])</h3>
                         <button type="button" class="btn-icon" data-close-word-picker aria-label="@Text["Common.Close"]">
                             <span class="material-symbols-outlined">close</span>
                         </button>
@@ -124,7 +128,7 @@
                     <div class="word-picker-toolbar">
                         <button type="button" class="range-preset" data-select-all>@Text["Settings.SelectAll"]</button>
                         <button type="button" class="range-preset" data-deselect-all>@Text["Settings.DeselectAll"]</button>
-                        <input type="search" class="word-picker-search" placeholder="@Text["Settings.FilterWords"]" data-word-picker-search />
+                        <input type="search" class="word-picker-search" placeholder="@(isFreestyle ? "Filter items" : Text["Settings.FilterWords"] )" data-word-picker-search />
                         <span class="word-picker-count" data-word-picker-count></span>
                     </div>
                     <div class="word-picker-list">
@@ -153,12 +157,14 @@
                 </div>
                 <div class="mode-grid">
                     <label class="choice">
-                        <input type="radio" name="PracticeItemType" value="words" checked data-item-label="@Text["Settings.Words"]" data-count="@availableWords" />
+                        <input type="radio" name="PracticeItemType" value="words" checked data-item-label="@itemLabel" data-count="@availableWords" />
                         <span class="choice-card">
                             <span class="material-symbols-outlined">short_text</span>
-                            <span class="mode-name">@Text["Settings.Words"]</span>
+                            <span class="mode-name">@itemLabel</span>
                         </span>
                     </label>
+                    @if (!isFreestyle)
+                    {
                     <label class="choice">
                         <input type="radio" name="PracticeItemType" value="sentences" data-item-label="@Text["Settings.Sentences"]" data-count="@availableSentences" />
                         <span class="choice-card">
@@ -166,6 +172,7 @@
                             <span class="mode-name">@Text["Settings.Sentences"]</span>
                         </span>
                     </label>
+                    }
                 </div>
             </div>
 
@@ -212,17 +219,17 @@
                 </div>
                 <div class="mode-grid">
                     <label class="choice">
-                        <input type="radio" name="PracticeDirection" value="source-to-target" checked data-direction-label="@sourceLanguage -> @targetLanguage" />
+                        <input type="radio" name="PracticeDirection" value="source-to-target" checked data-direction-label="@promptLabel -> @answerLabel" />
                         <span class="choice-card">
                             <span class="material-symbols-outlined">east</span>
-                            <span class="mode-name">@sourceLanguage &rarr; @targetLanguage</span>
+                            <span class="mode-name">@promptLabel &rarr; @answerLabel</span>
                         </span>
                     </label>
                     <label class="choice">
-                        <input type="radio" name="PracticeDirection" value="target-to-source" data-direction-label="@targetLanguage -> @sourceLanguage" />
+                        <input type="radio" name="PracticeDirection" value="target-to-source" data-direction-label="@answerLabel -> @promptLabel" />
                         <span class="choice-card">
                             <span class="material-symbols-outlined">west</span>
-                            <span class="mode-name">@targetLanguage &rarr; @sourceLanguage</span>
+                            <span class="mode-name">@answerLabel &rarr; @promptLabel</span>
                         </span>
                     </label>
                 </div>
@@ -232,18 +239,18 @@
         <aside class="start-panel">
             @if (availableWords == 0)
             {
-                <div class="empty-callout" data-empty-callout>@Text["Settings.NeedWord"]</div>
+                <div class="empty-callout" data-empty-callout>@(isFreestyle ? "Add at least one item before starting." : Text["Settings.NeedWord"])</div>
             }
             else
             {
-                <div class="empty-callout" data-empty-callout hidden>@Text["Settings.NeedWord"]</div>
+                <div class="empty-callout" data-empty-callout hidden>@(isFreestyle ? "Add at least one item before starting." : Text["Settings.NeedWord"])</div>
             }
             <div class="stat-row"><span>@Text["Settings.Quiz"]</span><span>@quizName</span></div>
-            <div class="stat-row"><span>@Text["Settings.Content"]</span><span data-selected-content>@Text["Settings.Words"]</span></div>
+            <div class="stat-row"><span>@Text["Settings.Content"]</span><span data-selected-content>@itemLabel</span></div>
             <div class="stat-row"><span>@Text["Settings.Available"]</span><span data-selected-available>@availableWords</span></div>
             <div class="stat-row"><span>@Text["Settings.Mode"]</span><span data-selected-mode>@Text["Settings.Flashcards"]</span></div>
             <div class="stat-row"><span>@Text["Settings.Range"]</span><span data-selected-range>@Text["Common.All"]</span></div>
-            <div class="stat-row"><span>@Text["Settings.Direction"]</span><span data-selected-direction>@sourceLanguage -> @targetLanguage</span></div>
+            <div class="stat-row"><span>@Text["Settings.Direction"]</span><span data-selected-direction>@promptLabel -> @answerLabel</span></div>
             <button class="btn-start" type="submit" data-start-button @(availableWords == 0 ? "disabled" : "")>
                 <span class="material-symbols-outlined">play_circle</span>
                 @Text["Settings.StartQuiz"]

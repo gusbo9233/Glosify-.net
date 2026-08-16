@@ -12,6 +12,19 @@ namespace Glosify.Tests;
 public class PublicSharingTests
 {
     [Fact]
+    public async Task CreateFreestyleQuiz_ForcesFreestyleSourceAndTarget()
+    {
+        await using var context = CreateContext();
+        var service = new QuizService(context, new TestLanguageContext("Freestyle"), Anki(context));
+
+        var quiz = await service.CreateQuizAsync("Anatomy", "English", "Freestyle", "owner");
+
+        Assert.Equal("Freestyle", quiz.SourceLanguage);
+        Assert.Equal("Freestyle", quiz.TargetLanguage);
+        Assert.Equal("Freestyle", quiz.Language);
+    }
+
+    [Fact]
     public async Task SetQuizPublic_OnlyUpdatesOwnedQuiz()
     {
         await using var context = CreateContext();

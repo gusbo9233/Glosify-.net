@@ -51,6 +51,12 @@ public sealed class ShippedConfigurationTests
 
         Assert.Equal("glosify-quiz-assistant", foundry.Agents.QuizAssistant.Name);
         Assert.Equal("6", foundry.Agents.QuizAssistant.Version);
+        Assert.Equal("glosify-freestyle-librarian", foundry.Agents.FreestyleLibrarian.Name);
+        Assert.Equal("1", foundry.Agents.FreestyleLibrarian.Version);
+        Assert.Equal("glosify-freestyle-quiz-assistant", foundry.Agents.FreestyleQuizAssistant.Name);
+        Assert.Equal("1", foundry.Agents.FreestyleQuizAssistant.Version);
+        Assert.Equal("glosify-freestyle-quiz-builder", foundry.Agents.FreestyleCustomQuizBuilder.Name);
+        Assert.Equal("1", foundry.Agents.FreestyleCustomQuizBuilder.Version);
 
         if (budget.MetersProvider(AiUsageProviders.Foundry))
         {

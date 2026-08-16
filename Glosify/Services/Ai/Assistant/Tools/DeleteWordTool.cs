@@ -17,6 +17,7 @@ internal sealed class DeleteWordTool : IAssistantTool
         }, required: ["word_id"]));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
+    public IReadOnlyList<string> Aliases => ["delete_item"];
 
     public Task<object> ExecuteAsync(
         JsonElement args,
@@ -31,7 +32,7 @@ internal sealed class DeleteWordTool : IAssistantTool
             return QuizContextRequired();
         }
 
-        var wordId = GetString(args, "word_id");
+        var wordId = FirstNonBlank(GetString(args, "word_id"), GetString(args, "item_id"));
         if (string.IsNullOrWhiteSpace(wordId))
         {
             return new { error = "word_id is required." };

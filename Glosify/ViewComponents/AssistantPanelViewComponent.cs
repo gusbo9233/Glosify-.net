@@ -135,7 +135,7 @@ public sealed class AssistantPanelViewComponent : ViewComponent
         CancellationToken cancellationToken)
     {
         var selectedLanguage = await _languagePreferences.GetSelectedAsync(userId, cancellationToken);
-        if (selectedLanguage is null)
+        if (selectedLanguage is null || !selectedLanguage.IsLanguageLearning)
         {
             return [];
         }

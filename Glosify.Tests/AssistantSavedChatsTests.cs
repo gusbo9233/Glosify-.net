@@ -987,6 +987,98 @@ public class AssistantSavedChatsTests
         Assert.DoesNotContain("list_sentences", toolNames);
     }
 
+    [Fact]
+    public async Task FreestyleQuizPage_RoutesToGenericQuizAssistant()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        var quiz = CreateQuiz(quizId, "user-1");
+        quiz.Name = "Cardiology";
+        quiz.SourceLanguage = "Freestyle";
+        quiz.TargetLanguage = "Freestyle";
+        quiz.Language = "Freestyle";
+        context.Quizzes.Add(quiz);
+        await context.SaveChangesAsync();
+        var generativeAi = new CapturingGenerativeAiClient("Queued the items.");
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: generativeAi,
+            tools: AssistantToolFactory.Create(context),
+            languageContext: new StaticLanguageContext("Freestyle"));
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(
+            chat.Id,
+            "user-1",
+            "Add ten prompts about cardiac conduction.",
+            contextQuizId: quizId);
+
+        var request = Assert.IsType<AgentRequest>(generativeAi.LastAgentRequest);
+        Assert.Equal(AssistantAgentProfile.FreestyleQuizAssistant, request.Profile);
+        Assert.Contains("add_items", request.Tools.Select(tool => tool.Name));
+        Assert.Contains("list_items", request.Tools.Select(tool => tool.Name));
+        Assert.DoesNotContain("list_sentences", request.Tools.Select(tool => tool.Name));
+        Assert.DoesNotContain("language-learning", request.SystemInstruction, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("prompt-and-answer", request.SystemInstruction, StringComparison.OrdinalIgnoreCase);
+        context.ChangeTracker.Clear();
+        var turn = await context.AssistantTurns.SingleAsync(candidate => candidate.ThreadId == chat.Id);
+        Assert.Equal(nameof(AssistantAgentProfile.FreestyleQuizAssistant), turn.Profile);
+        Assert.Contains("add_items", turn.AllowedTools);
+        Assert.DoesNotContain("add_words", turn.AllowedTools);
+    }
+
+    [Fact]
+    public async Task FreestyleGlobalMessage_RoutesToGenericLibrarian()
+    {
+        await using var context = CreateContext();
+        var generativeAi = new CapturingGenerativeAiClient("Created the quiz.");
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: generativeAi,
+            tools: AssistantToolFactory.Create(context),
+            languageContext: new StaticLanguageContext("Freestyle"));
+
+        await orchestrator.SendGlobalMessageAsync("user-1", "Create an anatomy quiz.");
+
+        var request = Assert.IsType<AgentRequest>(generativeAi.LastAgentRequest);
+        Assert.Equal(AssistantAgentProfile.FreestyleLibrarian, request.Profile);
+        Assert.Contains("create_quiz", request.Tools.Select(tool => tool.Name));
+        Assert.DoesNotContain("list_saved_transcripts", request.Tools.Select(tool => tool.Name));
+    }
+
+    [Fact]
+    public async Task FreestyleCustomEditor_RoutesToGenericBuilder()
+    {
+        await using var context = CreateContext();
+        var quizId = Guid.NewGuid();
+        var customQuizId = Guid.NewGuid();
+        var quiz = CreateQuiz(quizId, "user-1");
+        quiz.SourceLanguage = quiz.TargetLanguage = quiz.Language = "Freestyle";
+        context.Quizzes.Add(quiz);
+        context.CustomQuizzes.Add(CreateCustomQuiz(customQuizId, quizId, "Medical review"));
+        await context.SaveChangesAsync();
+        var generativeAi = new CapturingGenerativeAiClient("Built the exercise.");
+        var orchestrator = CreateOrchestrator(
+            context,
+            generativeAi: generativeAi,
+            tools: AssistantToolFactory.Create(context),
+            languageContext: new StaticLanguageContext("Freestyle"));
+        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
+
+        await orchestrator.SendChatMessageAsync(
+            chat.Id,
+            "user-1",
+            "Build a multiple choice question.",
+            contextQuizId: quizId,
+            customQuizId: customQuizId);
+
+        var request = Assert.IsType<AgentRequest>(generativeAi.LastAgentRequest);
+        Assert.Equal(AssistantAgentProfile.FreestyleCustomQuizBuilder, request.Profile);
+        Assert.Contains("add_choice", request.Tools.Select(tool => tool.Name));
+        Assert.Contains("list_items", request.Tools.Select(tool => tool.Name));
+        Assert.DoesNotContain("create_custom_quiz", request.Tools.Select(tool => tool.Name));
+    }
+
     // An authored agent receives only the context block, so page text must be in it or
     // "add words from this page" silently stops working.
     [Fact]

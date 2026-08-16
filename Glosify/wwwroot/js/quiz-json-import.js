@@ -221,9 +221,9 @@ function initialize() {
         });
         errors.replaceChildren(title, list);
         setHidden(errors, false);
-        const isRepairable = statusCode === 400;
+        const isRepairable = statusCode === 400 && form.dataset.freestyle !== 'true';
         setHidden(aiRepairButton, !isRepairable);
-        setHidden(repairPromptButton, !(isRepairable || statusCode === 409));
+        setHidden(repairPromptButton, form.dataset.freestyle === 'true' || !(isRepairable || statusCode === 409));
         setStatus(problem?.canonicalJson
             ? 'Free repair normalized the JSON, but schema or content errors remain.'
             : 'No content was created. Fix the errors or use one of the repair options.');

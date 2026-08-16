@@ -3,6 +3,7 @@ using Glosify.Data;
 using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Services;
+using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Typing;
@@ -35,11 +36,17 @@ public class TypingQuizService : ITypingQuizService
             };
         }
 
+        var contentDirection = QuizLanguageCatalog.IsFreestyle(quiz.TargetLanguage)
+            ? PracticeDirection.IsSourceToTarget(normalizedDirection)
+                ? PracticeDirection.TargetToSource
+                : PracticeDirection.SourceToTarget
+            : normalizedDirection;
+
         var words = wordIds is { Count: > 0 }
-            ? await LoadWordsByIdsAsync(quizId, wordIds, normalizedDirection)
+            ? await LoadWordsByIdsAsync(quizId, wordIds, contentDirection)
             : PracticeItemType.IsSentences(normalizedItemType)
-                ? await LoadSentencesAsync(quizId, wordCount, normalizedDirection, rangeStartPercent, rangeEndPercent)
-                : await LoadWordsAsync(quizId, wordCount, normalizedDirection, rangeStartPercent, rangeEndPercent);
+                ? await LoadSentencesAsync(quizId, wordCount, contentDirection, rangeStartPercent, rangeEndPercent)
+                : await LoadWordsAsync(quizId, wordCount, contentDirection, rangeStartPercent, rangeEndPercent);
 
         return new TypingQuizData
         {

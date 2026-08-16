@@ -6,12 +6,15 @@
     ViewData["HideAssistantPanel"] = true;
 
     var backCollectionId = ViewData["BackCollectionId"] is Guid id ? id : (Guid?)null;
+    var isFreestyle = Model.SelectedQuiz.IsFreestyle;
+    var itemLabel = isFreestyle ? "Items" : Text["Settings.Words"].Value;
+    var itemLabelLower = isFreestyle ? "items" : Text["Settings.WordsLower"].Value;
 }
 
 <section class="workspace explore-page">
     <section class="workspace-hero">
         <div class="workspace-hero-content">
-            <p class="hero-label">@Text["Explore.PublicQuiz"] - @QuizLanguageDisplay.Name(Model.SelectedQuiz.SourceLanguage) &rarr; @QuizLanguageDisplay.Name(Model.SelectedQuiz.TargetLanguage)</p>
+            <p class="hero-label">@Text["Explore.PublicQuiz"] - @(isFreestyle ? "Freestyle" : $"{QuizLanguageDisplay.Name(Model.SelectedQuiz.SourceLanguage)} → {QuizLanguageDisplay.Name(Model.SelectedQuiz.TargetLanguage)}")</p>
             <h1 class="hero-title">@Model.SelectedQuiz.Name</h1>
             <div class="hero-actions">
                 @if (backCollectionId.HasValue)
@@ -62,12 +65,12 @@
     <section>
         <div class="collection-header">
             <div>
-                <h2 class="collection-title" id="collectionTitle">@Text["Settings.Words"]</h2>
-                <p class="collection-subtitle" id="collectionSubtitle">@Text["Quiz.ItemsIn", Model.Words.Count, Text["Settings.WordsLower"], Model.SelectedQuiz.Name]</p>
+                <h2 class="collection-title" id="collectionTitle">@itemLabel</h2>
+                <p class="collection-subtitle" id="collectionSubtitle">@Text["Quiz.ItemsIn", Model.Words.Count, itemLabelLower, Model.SelectedQuiz.Name]</p>
             </div>
             <div class="tab-group" role="tablist" aria-label="@Text["Quiz.ContentAria"]">
-                <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="wordsPanel" data-tab="words">@Text["Settings.Words"]</button>
-                <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="sentencesPanel" data-tab="sentences">@Text["Settings.Sentences"]</button>
+                <button class="tab active" type="button" role="tab" aria-selected="true" aria-controls="wordsPanel" data-tab="words">@itemLabel</button>
+                @if (!isFreestyle) { <button class="tab" type="button" role="tab" aria-selected="false" aria-controls="sentencesPanel" data-tab="sentences">@Text["Settings.Sentences"]</button> }
             </div>
         </div>
 
@@ -75,7 +78,7 @@
             <div class="word-grid" data-word-grid>
                 @foreach (var word in Model.Words)
                 {
-                    var wiktionaryUrl = WiktionaryLink.ForWord(Model.SelectedQuiz.TargetLanguage, word.Lemma);
+                    var wiktionaryUrl = isFreestyle ? null : WiktionaryLink.ForWord(Model.SelectedQuiz.TargetLanguage, word.Lemma);
                     <article class="word-card">
                         <div class="word-card-main">
                             @if (wiktionaryUrl != null)
@@ -107,6 +110,8 @@
             </div>
         </div>
 
+        @if (!isFreestyle)
+        {
         <div class="tab-panel" id="sentencesPanel" data-title="@Text["Settings.Sentences"]" data-subtitle="@Text["Quiz.ItemsIn", Model.Sentences.Count, Text["Settings.SentencesLower"], Model.SelectedQuiz.Name]" hidden>
             <div class="sentence-grid" data-sentence-grid>
                 @foreach (var sentence in Model.Sentences)
@@ -133,6 +138,7 @@
                 }
             </div>
         </div>
+        }
     </section>
 </section>
 

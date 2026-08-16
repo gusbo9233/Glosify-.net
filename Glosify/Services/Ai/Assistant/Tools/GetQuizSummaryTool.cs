@@ -16,6 +16,7 @@ internal sealed class GetQuizSummaryTool : IAssistantTool
         BuildSchema([]));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
+    public IReadOnlyList<string> Aliases => ["get_quiz_overview"];
 
     private readonly GlosifyContext _context;
 
@@ -55,6 +56,20 @@ internal sealed class GetQuizSummaryTool : IAssistantTool
 
         var wordCount = await _context.Words.CountAsync(w => w.QuizId == quiz.Id, ct);
         var sentenceCount = await _context.QuizSentences.CountAsync(s => s.QuizId == quiz.Id, ct);
+
+        if (context.IsFreestyle)
+        {
+            return new
+            {
+                id = quiz.Id,
+                name = quiz.Name,
+                is_public = quiz.IsPublic,
+                created_at = quiz.CreatedAt,
+                collection_id = quiz.CollectionId,
+                collection_name = quiz.CollectionName,
+                item_count = wordCount,
+            };
+        }
 
         return new
         {

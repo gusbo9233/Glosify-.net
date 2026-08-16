@@ -114,6 +114,30 @@ public sealed class SpeakingIntegrationTests
     }
 
     [Fact]
+    public async Task Freestyle_hides_language_only_navigation_and_guards_direct_pages()
+    {
+        using var factory = CreateFactory("Freestyle");
+        var noRedirect = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var speaking = await noRedirect.GetAsync("/Speaking");
+        var transcripts = await noRedirect.GetAsync("/Transcripts");
+
+        Assert.Equal(HttpStatusCode.Redirect, speaking.StatusCode);
+        Assert.Equal("/", speaking.Headers.Location?.OriginalString);
+        Assert.Equal(HttpStatusCode.Redirect, transcripts.StatusCode);
+        Assert.Equal("/", transcripts.Headers.Location?.OriginalString);
+
+        var homeResponse = await factory.CreateClient().GetAsync("/");
+        homeResponse.EnsureSuccessStatusCode();
+        var document = await new HtmlParser().ParseDocumentAsync(await homeResponse.Content.ReadAsStringAsync());
+        Assert.Null(document.QuerySelector("aside a[href='/Speaking']"));
+        Assert.Null(document.QuerySelector("aside a[href='/Transcripts']"));
+        Assert.Null(document.QuerySelector(".app-mobile-nav a[href='/Speaking']"));
+        Assert.Null(document.QuerySelector(".app-mobile-nav a[href='/Transcripts']"));
+        Assert.Contains("Study anything with Freestyle", document.QuerySelector("#home-title")?.TextContent);
+    }
+
+    [Fact]
     public async Task Speaking_page_renders_navigation_scenes_and_no_floating_assistant()
     {
         using var factory = CreateFactory();

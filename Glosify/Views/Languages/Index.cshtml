@@ -1,7 +1,7 @@
 @inject Glosify.Services.Language.ILanguageContext LangContext
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = Text["Languages.Title"];
+    ViewData["Title"] = "Choose a learning mode";
     ViewData["ActiveNav"] = "languages";
 
     var languages = Glosify.Services.Language.QuizLanguageCatalog.All;
@@ -11,9 +11,9 @@
 
 <section class="language-page" data-language-picker>
     <header class="language-hero">
-        <h1 class="language-brand">Sonic Polyglot</h1>
+        <h1 class="language-brand">Choose a learning mode</h1>
         <h2 class="language-tagline">
-            @Text["Languages.Tagline"]
+            Learn a language, or build quizzes for any subject.
         </h2>
         @if (!string.IsNullOrEmpty(current))
         {
@@ -25,13 +25,13 @@
     </header>
 
     <div class="language-search-panel">
-        <label for="languageSearch">@Text["Languages.Find"]</label>
+        <label for="languageSearch">Find a mode or language</label>
         <div class="language-search-control">
             <span class="material-symbols-outlined" aria-hidden="true">search</span>
             <input id="languageSearch"
                    type="search"
                    autocomplete="off"
-                   placeholder="@Text["Languages.SearchPlaceholder"]"
+                   placeholder="Search modes and languages"
                    data-language-search />
         </div>
         <p class="language-result-count" aria-live="polite" data-language-result-count>
@@ -66,7 +66,16 @@
                     aria-pressed="@(isCurrent ? "true" : "false")"
                     data-language-card
                     data-language-search-terms="@searchTerms">
-                <span class="flag-frame" aria-hidden="true">@language.Flag</span>
+                <span class="flag-frame" aria-hidden="true">
+                    @if (language.IsLanguageLearning)
+                    {
+                        @language.Flag
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined">category</span>
+                    }
+                </span>
                 <span class="language-labels">
                     <span class="language-name">@displayName</span>
                     <span class="language-native-name" dir="auto" lang="@language.Locale">@language.NativeName</span>

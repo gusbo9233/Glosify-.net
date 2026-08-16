@@ -5,6 +5,7 @@ using Glosify.Models.ViewModels;
 using Glosify.Services;
 using Glosify.Services.Classrooms;
 using Glosify.Services.Flashcards;
+using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Words;
 using Microsoft.AspNetCore.Authorization;
@@ -63,6 +64,10 @@ public class FlashcardQuizController : Controller
 
         if (selectedQuiz == null)
             return View(FlashcardQuizViewModel.Empty());
+        if (QuizLanguageCatalog.IsFreestyle(selectedQuiz.TargetLanguage))
+        {
+            normalizedItemType = PracticeItemType.Words;
+        }
 
         // Hand-picked word sets always start a fresh session rather than resuming
         // one matched only by count/range, since the exact word set can't be
@@ -181,6 +186,7 @@ public class FlashcardQuizController : Controller
 
     private static FlashcardQuizViewModel BuildViewModel(FlashcardSessionData session, Quiz quiz)
     {
+        var isFreestyle = QuizLanguageCatalog.IsFreestyle(quiz.TargetLanguage);
         var totalCards = session.Cards.Count;
         var completedCards = Math.Min(session.CurrentIndex, totalCards);
         var currentCardData = session.CurrentIndex < totalCards ? session.Cards[session.CurrentIndex] : null;
@@ -216,11 +222,13 @@ public class FlashcardQuizController : Controller
             PracticeDirection = session.PracticeDirection,
             PromptLanguage = session.PromptLanguage,
             AnswerLanguage = session.AnswerLanguage,
-            DirectionLabel = PracticeDirection.Label(session.PracticeDirection, session.SourceLanguage, session.TargetLanguage),
+            DirectionLabel = isFreestyle
+                ? (PracticeDirection.IsTargetToSource(session.PracticeDirection) ? "Answer → Prompt" : "Prompt → Answer")
+                : PracticeDirection.Label(session.PracticeDirection, session.SourceLanguage, session.TargetLanguage),
             PracticeItemType = session.PracticeItemType,
-            ItemSingularLabel = PracticeItemType.SingularLabel(session.PracticeItemType),
-            ItemPluralLabel = PracticeItemType.PluralLabel(session.PracticeItemType),
-            CardLabel = PracticeItemType.CardLabel(session.PracticeItemType),
+            ItemSingularLabel = isFreestyle ? "item" : PracticeItemType.SingularLabel(session.PracticeItemType),
+            ItemPluralLabel = isFreestyle ? "items" : PracticeItemType.PluralLabel(session.PracticeItemType),
+            CardLabel = isFreestyle ? "Item" : PracticeItemType.CardLabel(session.PracticeItemType),
             IsAnswerRevealed = session.IsAnswerRevealed,
             IsComplete = totalCards > 0 && currentCard == null,
             ClassroomId = session.ClassroomId,

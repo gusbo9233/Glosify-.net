@@ -7,6 +7,7 @@ public sealed class AgentToolContext
     public required string UserId { get; init; }
     public string? CurrentLanguage { get; init; }
     public string? CurrentLanguageCode { get; init; }
+    public bool IsFreestyle { get; init; }
 
     /// <summary>The language quiz content is translated into, when it is known.</summary>
     /// <remarks>

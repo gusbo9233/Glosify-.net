@@ -34,12 +34,17 @@ public sealed class AssistantToolRegistry : IAssistantTools
         var byType = all.ToDictionary(tool => tool.GetType());
         IReadOnlyList<AgentToolDeclaration> Surface(IReadOnlyList<Type> types) =>
             types.Select(type => byType[type].Declaration).ToArray();
+        IReadOnlyList<AgentToolDeclaration> FreestyleSurface(IReadOnlyList<Type> types) =>
+            types.Select(type => FreestyleToolDeclarations.For(byType[type].Declaration)).ToArray();
 
         Declarations = Surface(AssistantToolSurfaces.Quiz);
         QuizAssistantDeclarations = Surface(AssistantToolSurfaces.QuizAssistant);
         GlobalDeclarations = Surface(AssistantToolSurfaces.Global);
         LibrarianDeclarations = Surface(AssistantToolSurfaces.Librarian);
         CustomQuizBuilderDeclarations = Surface(AssistantToolSurfaces.CustomQuizBuilder);
+        FreestyleQuizAssistantDeclarations = FreestyleSurface(AssistantToolSurfaces.FreestyleQuizAssistant);
+        FreestyleLibrarianDeclarations = FreestyleSurface(AssistantToolSurfaces.FreestyleLibrarian);
+        FreestyleCustomQuizBuilderDeclarations = FreestyleSurface(AssistantToolSurfaces.FreestyleCustomQuizBuilder);
     }
 
     public IReadOnlyList<AgentToolDeclaration> Declarations { get; }
@@ -47,6 +52,9 @@ public sealed class AssistantToolRegistry : IAssistantTools
     public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; }
     public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; }
     public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; }
+    public IReadOnlyList<AgentToolDeclaration> FreestyleCustomQuizBuilderDeclarations { get; }
+    public IReadOnlyList<AgentToolDeclaration> FreestyleQuizAssistantDeclarations { get; }
+    public IReadOnlyList<AgentToolDeclaration> FreestyleLibrarianDeclarations { get; }
 
     public string? ResolveCanonicalName(string name) =>
         _byName.TryGetValue(name, out var tool) ? tool.Name : null;

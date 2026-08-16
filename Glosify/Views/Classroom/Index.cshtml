@@ -5,8 +5,9 @@
 
     var language = LangContext.CurrentLanguage;
     var displayLanguage = QuizLanguageDisplay.Name(language);
-    var shelfTitle = string.IsNullOrEmpty(language) ? Text["Classroom.MyClassrooms"] : Text["Classroom.LanguageClassrooms", displayLanguage];
-    ViewData["Title"] = string.IsNullOrEmpty(language) ? Text["Classroom.Title"] : Text["Classroom.LanguageTitle", displayLanguage];
+    var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(language);
+    var shelfTitle = isFreestyle ? "Freestyle classrooms" : string.IsNullOrEmpty(language) ? Text["Classroom.MyClassrooms"] : Text["Classroom.LanguageClassrooms", displayLanguage];
+    ViewData["Title"] = isFreestyle ? "Subject classrooms" : string.IsNullOrEmpty(language) ? Text["Classroom.Title"] : Text["Classroom.LanguageTitle", displayLanguage];
 
     var totalMembers = Model.Classrooms.Sum(summary => summary.MemberCount);
 }

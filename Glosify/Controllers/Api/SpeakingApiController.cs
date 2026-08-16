@@ -61,6 +61,10 @@ public sealed class SpeakingApiController : ControllerBase
         {
             return BadRequest(new { error = "Select a language before starting speaking practice." });
         }
+        if (QuizLanguageCatalog.IsFreestyle(language))
+        {
+            return BadRequest(new { error = "Speaking practice is not available in Freestyle mode." });
+        }
 
         if (!SpeakingAvatarCatalog.TryParseForLanguage(request.AvatarId, language, out var avatar))
         {
