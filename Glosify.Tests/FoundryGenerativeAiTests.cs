@@ -983,6 +983,28 @@ public sealed class FoundryGenerativeAiTests
     }
 
     [Fact]
+    public void Options_validator_requires_gateway_key_for_api_management_endpoint()
+    {
+        var options = ValidOptions();
+        options.Foundry.ProjectEndpoint =
+            "https://glosify-assistant-gateway.azure-api.net/assistant/api/projects/glosify";
+        var validator = new GenerativeAiOptionsValidator(
+            Options.Create(new GeminiOptions()),
+            UnbudgetedUsage());
+
+        var missingKey = validator.Validate(null, options);
+
+        Assert.True(missingKey.Failed);
+        Assert.Contains(
+            missingKey.Failures,
+            failure => failure.Contains("GatewayApiKey", StringComparison.Ordinal));
+
+        options.Foundry.GatewayApiKey = "configured-secret";
+
+        Assert.True(validator.Validate(null, options).Succeeded);
+    }
+
+    [Fact]
     public void Options_validator_rejects_gemini_rollback_when_the_enabled_budget_cannot_price_it()
     {
         var options = ValidOptions();

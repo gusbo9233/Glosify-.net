@@ -192,8 +192,10 @@ in [`docs/STRIPE.md`](docs/STRIPE.md). Payments remain disabled until the deploy
 provides Stripe test/live settings outside the repository.
 
 Local Azure access uses `DefaultAzureCredential`; run `az login` before using
-Foundry, Speech, or Blob Storage features. Production uses managed identity and
-does not require Foundry or Speech keys.
+Foundry, Speech, or Blob Storage features. Production normally uses managed
+identity. When the assistant is routed through an API Management AI Gateway,
+store its subscription key in `GenerativeAi__Foundry__GatewayApiKey`; never put
+that value in `appsettings.json`. Speech continues to use managed identity.
 
 ### Publishing an authored agent version
 
