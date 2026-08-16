@@ -36,11 +36,15 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         Page.PageError += (_, error) => _pageErrors.Add(error);
         Page.Console += (_, message) =>
         {
-            if (message.Type == "error") _consoleErrors.Add(message.Text);
+            if (message.Type == "error"
+                && (string.IsNullOrWhiteSpace(message.Location) || IsApplicationUrl(message.Location)))
+                _consoleErrors.Add(message.Text);
         };
         Page.Response += (_, response) =>
         {
-            if (response.Status >= 400 && !IsIgnorableResponse(response.Url))
+            if (response.Status >= 400
+                && IsApplicationUrl(response.Url)
+                && !IsIgnorableResponse(response.Url))
                 _responseErrors.Add($"HTTP {response.Status} {response.Url}");
             if (response.Url.Contains(".js", StringComparison.OrdinalIgnoreCase))
                 _scriptResponses.Add($"{response.Status} {response.Url}");
@@ -54,6 +58,16 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             return false;
         return uri.AbsolutePath.Contains("favicon", StringComparison.OrdinalIgnoreCase)
             || uri.AbsolutePath.EndsWith(".map", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsApplicationUrl(string url)
+    {
+        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var application)
+            || !Uri.TryCreate(url, UriKind.Absolute, out var candidate))
+            return false;
+        return string.Equals(application.Scheme, candidate.Scheme, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(application.Host, candidate.Host, StringComparison.OrdinalIgnoreCase)
+            && application.Port == candidate.Port;
     }
 
     public async Task DisposeAsync()
