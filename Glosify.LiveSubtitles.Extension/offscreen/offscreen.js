@@ -301,22 +301,28 @@ function handleRelayMessage({ data }, connection) {
   if (!isCurrentConnection(connection)) {
     return;
   }
+  let providerEvent;
   try {
-    const providerEvent = JSON.parse(data);
-    if (providerEvent?.type === "glosify.relay.error") {
-      reportRelayFailure(connection, providerEvent.message || "Glosify ended the subtitle relay.");
-      return;
-    }
-    if (providerEvent?.type === "glosify.transcript.warning") {
-      chrome.runtime.sendMessage({
-        type: "media:storage-warning",
-        message: providerEvent.message,
-      }).catch(() => {});
-      return;
-    }
-    sendNormalizedEvent(connection.accumulator.apply(providerEvent), connection);
+    providerEvent = JSON.parse(data);
   } catch {
     // Ignore malformed/non-JSON provider events; raw event content is never logged.
+    return;
+  }
+  if (providerEvent?.type === "glosify.relay.error") {
+    reportRelayFailure(connection, providerEvent.message || "Glosify ended the subtitle relay.");
+    return;
+  }
+  if (providerEvent?.type === "glosify.transcript.warning") {
+    chrome.runtime.sendMessage({
+      type: "media:storage-warning",
+      message: providerEvent.message,
+    }).catch(() => {});
+    return;
+  }
+  try {
+    sendNormalizedEvent(connection.accumulator.apply(providerEvent), connection);
+  } catch {
+    reportRelayFailure(connection, "The subtitle relay returned an unsupported event sequence.");
   }
 }
 
