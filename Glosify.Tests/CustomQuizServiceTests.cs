@@ -363,7 +363,7 @@ public sealed class CustomQuizServiceTests
         var copied = await service.GetForEditorAsync(copiedSummary.Id, OwnerId);
         Assert.Equal(targetWord.Id, copied!.Document.Blocks.Single(block => block.Id == "answer").ExpectedBinding!.WordId);
 
-        await new WordService(db).DeleteWordAsync(targetWord.Id, OwnerId);
+        await new WordService(db, new Glosify.Services.Anki.AnkiCollectionService(db, TimeProvider.System)).DeleteWordAsync(targetWord.Id, OwnerId);
         copied = await service.GetForEditorAsync(copiedSummary.Id, OwnerId);
         Assert.DoesNotContain(copied!.Document.Blocks, block => block.Id is "prompt" or "answer");
         Assert.False(copied.IsPlayable);

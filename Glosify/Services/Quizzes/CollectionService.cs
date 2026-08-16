@@ -10,9 +10,9 @@ public class CollectionService : ICollectionService
 {
     private readonly GlosifyContext _context;
     private readonly CollectionVisibility _collectionVisibility;
-    private readonly IAnkiCollectionService? _ankiCollections;
+    private readonly IAnkiCollectionService _ankiCollections;
 
-    public CollectionService(GlosifyContext context, IAnkiCollectionService? ankiCollections = null)
+    public CollectionService(GlosifyContext context, IAnkiCollectionService ankiCollections)
     {
         _context = context;
         _collectionVisibility = new CollectionVisibility(context);
@@ -223,8 +223,8 @@ public class CollectionService : ICollectionService
         if (quizzes.Count > 0)
         {
             var quizIds = quizzes.Select(q => q.Id).ToList();
-            if (_ankiCollections is not null)
-                foreach (var quizId in quizIds) await _ankiCollections.RetireQuizAsync(quizId, cancellationToken);
+            foreach (var quizId in quizIds)
+                await _ankiCollections.RetireQuizAsync(quizId, cancellationToken);
 
             var words = await _context.Words
                 .Where(word => quizIds.Contains(word.QuizId))
@@ -265,7 +265,6 @@ public class CollectionService : ICollectionService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-
         return true;
     }
 

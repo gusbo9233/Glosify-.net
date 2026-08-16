@@ -92,8 +92,8 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         var quizzes = await _context.Quizzes
             .AsNoTracking()
             .Where(quiz => quiz.UserId == userId
-                && quiz.SourceLanguage == collection.SourceLanguage
-                && quiz.TargetLanguage == collection.TargetLanguage)
+                && quiz.SourceLanguage.ToLower() == collection.SourceLanguage.ToLower()
+                && quiz.TargetLanguage.ToLower() == collection.TargetLanguage.ToLower())
             .OrderBy(quiz => quiz.Name)
             .ToListAsync(cancellationToken);
         var quizIds = quizzes.Select(quiz => quiz.Id).ToList();
@@ -130,12 +130,12 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         var source = Required(input.SourceLanguage, "Choose a source language.", 64);
         var target = Required(input.TargetLanguage, "Choose a target language.", 64);
         if (string.Equals(source, target, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Source and target languages must be different.");
+            throw new AnkiValidationException("Source and target languages must be different.");
         if (await _context.AnkiCollections.AnyAsync(
             collection => collection.UserId == userId && collection.Name == name,
             cancellationToken))
         {
-            throw new InvalidOperationException("An Anki collection with that name already exists.");
+            throw new AnkiValidationException("An Anki collection with that name already exists.");
         }
 
         var now = _timeProvider.GetUtcNow();
@@ -151,8 +151,38 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
             UpdatedAt = now,
         };
         _context.AnkiCollections.Add(collection);
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            throw new AnkiValidationException("An Anki collection with that name already exists.");
+        }
         return collection;
+    }
+
+    public async Task<AnkiCollection?> CreateFromQuizAsync(
+        CreateAnkiCollectionFromQuizInput input,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await ExecuteAtomicallyAsync(async () =>
+        {
+            var quiz = await _context.Quizzes.AsNoTracking().SingleOrDefaultAsync(
+                candidate => candidate.Id == input.QuizId && candidate.UserId == userId,
+                cancellationToken);
+            if (quiz is null)
+                return null;
+            var collection = await CreateAsync(new CreateAnkiCollectionInput(
+                input.Name, quiz.SourceLanguage, quiz.TargetLanguage, input.TimeZoneId), userId, cancellationToken);
+            var linked = await AddQuizAsync(new AddAnkiQuizInput(collection.Id, quiz.Id,
+                input.WordsSourceToTarget, input.WordsTargetToSource,
+                input.SentencesSourceToTarget, input.SentencesTargetToSource), userId, cancellationToken);
+            if (!linked)
+                throw new AnkiValidationException("The quiz is not compatible with this collection.");
+            return collection;
+        }, cancellationToken);
     }
 
     public async Task<bool> RenameAsync(
@@ -169,11 +199,18 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
             candidate => candidate.UserId == userId && candidate.Id != collectionId && candidate.Name == normalized,
             cancellationToken))
         {
-            throw new InvalidOperationException("An Anki collection with that name already exists.");
+            throw new AnkiValidationException("An Anki collection with that name already exists.");
         }
         collection.Name = normalized;
         collection.UpdatedAt = _timeProvider.GetUtcNow();
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            throw new AnkiValidationException("An Anki collection with that name already exists.");
+        }
         return true;
     }
 
@@ -227,9 +264,17 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         if (!input.WordsSourceToTarget && !input.WordsTargetToSource
             && !input.SentencesSourceToTarget && !input.SentencesTargetToSource)
         {
-            throw new InvalidOperationException("Choose at least one content type and direction.");
+            throw new AnkiValidationException("Choose at least one content type and direction.");
         }
+        return await ExecuteAtomicallyAsync(
+            () => AddQuizCoreAsync(input, userId, cancellationToken), cancellationToken);
+    }
 
+    private async Task<bool> AddQuizCoreAsync(
+        AddAnkiQuizInput input,
+        string userId,
+        CancellationToken cancellationToken)
+    {
         var collection = await OwnedCollectionAsync(input.CollectionId, userId, cancellationToken);
         var quiz = await _context.Quizzes.SingleOrDefaultAsync(
             item => item.Id == input.QuizId && item.UserId == userId,
@@ -257,7 +302,9 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         link.SentencesSourceToTarget = input.SentencesSourceToTarget;
         link.SentencesTargetToSource = input.SentencesTargetToSource;
         link.UpdatedAt = now;
-        collection.DefaultDirection = input.WordsTargetToSource && !input.WordsSourceToTarget
+        var hasSourceToTarget = input.WordsSourceToTarget || input.SentencesSourceToTarget;
+        var hasTargetToSource = input.WordsTargetToSource || input.SentencesTargetToSource;
+        collection.DefaultDirection = hasTargetToSource && !hasSourceToTarget
             ? PracticeDirection.TargetToSource
             : PracticeDirection.SourceToTarget;
         collection.UpdatedAt = now;
@@ -285,17 +332,20 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         string userId,
         CancellationToken cancellationToken = default)
     {
-        if (!await OwnsCollectionAsync(collectionId, userId, cancellationToken))
-            return false;
-        var link = await _context.AnkiQuizLinks.SingleOrDefaultAsync(
-            item => item.AnkiCollectionId == collectionId && item.QuizId == quizId,
-            cancellationToken);
-        if (link is null)
-            return false;
-        _context.AnkiQuizLinks.Remove(link);
-        await _context.SaveChangesAsync(cancellationToken);
-        await SyncCollectionAsync(collectionId, cancellationToken);
-        return true;
+        return await ExecuteAtomicallyAsync(async () =>
+        {
+            if (!await OwnsCollectionAsync(collectionId, userId, cancellationToken))
+                return false;
+            var link = await _context.AnkiQuizLinks.SingleOrDefaultAsync(
+                item => item.AnkiCollectionId == collectionId && item.QuizId == quizId,
+                cancellationToken);
+            if (link is null)
+                return false;
+            _context.AnkiQuizLinks.Remove(link);
+            await _context.SaveChangesAsync(cancellationToken);
+            await SyncCollectionAsync(collectionId, cancellationToken);
+            return true;
+        }, cancellationToken);
     }
 
     public async Task<bool> AddItemAsync(
@@ -304,7 +354,16 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         CancellationToken cancellationToken = default)
     {
         if (!input.SourceToTarget && !input.TargetToSource)
-            throw new InvalidOperationException("Choose at least one direction.");
+            throw new AnkiValidationException("Choose at least one direction.");
+        return await ExecuteAtomicallyAsync(
+            () => AddItemCoreAsync(input, userId, cancellationToken), cancellationToken);
+    }
+
+    private async Task<bool> AddItemCoreAsync(
+        AddAnkiItemInput input,
+        string userId,
+        CancellationToken cancellationToken)
+    {
         var collection = await OwnedCollectionAsync(input.CollectionId, userId, cancellationToken);
         var quiz = await _context.Quizzes.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == input.QuizId && item.UserId == userId,
@@ -421,7 +480,6 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
                 card.DirectlyIncluded = false;
             }
         }
-        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task SyncCollectionAsync(Guid collectionId, CancellationToken cancellationToken = default)
@@ -450,6 +508,12 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
             .ToListAsync(cancellationToken);
         var wordsById = words.ToDictionary(word => word.Id, StringComparer.Ordinal);
         var sentencesById = sentences.ToDictionary(sentence => sentence.Id);
+        var wordsByQuiz = words.ToLookup(word => word.QuizId);
+        var sentencesByQuiz = sentences.ToLookup(sentence => sentence.QuizId);
+        var notesByWord = notes.Where(note => note.WordId is not null)
+            .ToDictionary(note => note.WordId!, StringComparer.Ordinal);
+        var notesBySentence = notes.Where(note => note.SentenceId.HasValue)
+            .ToDictionary(note => note.SentenceId!.Value);
 
         foreach (var note in notes)
         {
@@ -457,13 +521,11 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
                 card.QuizLinkIncluded = false;
             if (note.WordId is not null && wordsById.TryGetValue(note.WordId, out var word))
             {
-                note.TargetText = word.Lemma.Trim();
-                note.SourceText = word.Translation.Trim();
+                UpdateSnapshot(note, word.Lemma, word.Translation);
             }
             else if (note.SentenceId.HasValue && sentencesById.TryGetValue(note.SentenceId.Value, out var sentence))
             {
-                note.TargetText = sentence.Text.Trim();
-                note.SourceText = sentence.Translation.Trim();
+                UpdateSnapshot(note, sentence.Text, sentence.Translation);
             }
         }
 
@@ -471,17 +533,17 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         {
             if (!quizzes.TryGetValue(link.QuizId, out var quiz) || !Matches(collection, quiz))
                 continue;
-            foreach (var word in words.Where(item => item.QuizId == link.QuizId))
+            foreach (var word in wordsByQuiz[link.QuizId])
             {
-                var note = GetOrCreateNote(notes, collectionId, link.QuizId, PracticeItemType.Words, word.Id, null, word.Lemma, word.Translation);
+                var note = GetOrCreateNote(notes, notesByWord, notesBySentence, collectionId, link.QuizId, PracticeItemType.Words, word.Id, null, word.Lemma, word.Translation);
                 if (link.WordsSourceToTarget)
                     EnsureLinkedCard(note, PracticeDirection.SourceToTarget);
                 if (link.WordsTargetToSource)
                     EnsureLinkedCard(note, PracticeDirection.TargetToSource);
             }
-            foreach (var sentence in sentences.Where(item => item.QuizId == link.QuizId))
+            foreach (var sentence in sentencesByQuiz[link.QuizId])
             {
-                var note = GetOrCreateNote(notes, collectionId, link.QuizId, PracticeItemType.Sentences, null, sentence.Id, sentence.Text, sentence.Translation);
+                var note = GetOrCreateNote(notes, notesByWord, notesBySentence, collectionId, link.QuizId, PracticeItemType.Sentences, null, sentence.Id, sentence.Text, sentence.Translation);
                 if (link.SentencesSourceToTarget)
                     EnsureLinkedCard(note, PracticeDirection.SourceToTarget);
                 if (link.SentencesTargetToSource)
@@ -496,8 +558,12 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
                 : note.SentenceId.HasValue && sentencesById.ContainsKey(note.SentenceId.Value);
             foreach (var card in note.Cards)
                 card.IsActive = sourceExists && (card.DirectlyIncluded || (card.QuizLinkIncluded && !card.ExcludedFromQuizLink));
-            note.IsActive = note.Cards.Any(card => card.IsActive);
-            note.UpdatedAt = _timeProvider.GetUtcNow();
+            var isActive = note.Cards.Any(card => card.IsActive);
+            if (note.IsActive != isActive)
+            {
+                note.IsActive = isActive;
+                note.UpdatedAt = _timeProvider.GetUtcNow();
+            }
         }
         await _context.SaveChangesAsync(cancellationToken);
     }
@@ -533,6 +599,31 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
 
     private bool IsSqlite() => _context.Database.ProviderName?.Contains("Sqlite", StringComparison.Ordinal) == true;
 
+    private async Task<T> ExecuteAtomicallyAsync<T>(
+        Func<Task<T>> operation,
+        CancellationToken cancellationToken)
+    {
+        if (!_context.Database.IsRelational() || _context.Database.CurrentTransaction is not null)
+            return await operation();
+
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var result = await operation();
+                await transaction.CommitAsync(cancellationToken);
+                return result;
+            }
+            catch
+            {
+                _context.ChangeTracker.Clear();
+                throw;
+            }
+        });
+    }
+
     internal static DateTimeOffset StartOfNextCollectionDay(string timeZoneId, DateTimeOffset now)
     {
         var zone = FindTimeZone(timeZoneId);
@@ -563,6 +654,8 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
 
     private AnkiNote GetOrCreateNote(
         List<AnkiNote> notes,
+        Dictionary<string, AnkiNote> notesByWord,
+        Dictionary<Guid, AnkiNote> notesBySentence,
         Guid collectionId,
         Guid quizId,
         string itemType,
@@ -571,19 +664,33 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         string target,
         string source)
     {
-        var note = notes.FirstOrDefault(item => wordId is not null
-            ? item.WordId == wordId
-            : item.SentenceId == sentenceId);
+        AnkiNote? note = wordId is not null
+            ? notesByWord.GetValueOrDefault(wordId)
+            : sentenceId.HasValue ? notesBySentence.GetValueOrDefault(sentenceId.Value) : null;
         if (note is not null)
         {
-            note.TargetText = target.Trim();
-            note.SourceText = source.Trim();
+            UpdateSnapshot(note, target, source);
             return note;
         }
         note = NewNote(collectionId, quizId, itemType, wordId, sentenceId, target, source);
         notes.Add(note);
+        if (wordId is not null)
+            notesByWord[wordId] = note;
+        else if (sentenceId.HasValue)
+            notesBySentence[sentenceId.Value] = note;
         _context.AnkiNotes.Add(note);
         return note;
+    }
+
+    private void UpdateSnapshot(AnkiNote note, string target, string source)
+    {
+        var normalizedTarget = target.Trim();
+        var normalizedSource = source.Trim();
+        if (note.TargetText == normalizedTarget && note.SourceText == normalizedSource)
+            return;
+        note.TargetText = normalizedTarget;
+        note.SourceText = normalizedSource;
+        note.UpdatedAt = _timeProvider.GetUtcNow();
     }
 
     private AnkiNote NewNote(
@@ -651,7 +758,7 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
     {
         var normalized = value?.Trim() ?? string.Empty;
         if (normalized.Length == 0)
-            throw new InvalidOperationException(error);
+            throw new AnkiValidationException(error);
         return normalized.Length <= maxLength ? normalized : normalized[..maxLength];
     }
 

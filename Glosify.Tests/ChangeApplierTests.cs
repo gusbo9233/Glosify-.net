@@ -1016,11 +1016,13 @@ public class ChangeApplierTests
 
     private static ChangeApplier CreateApplier(GlosifyContext db)
     {
+        var anki = new Glosify.Services.Anki.AnkiCollectionService(db, TimeProvider.System);
         return new ChangeApplier(
             db,
-            new QuizService(db, null!),
-            new CollectionService(db),
-            NullLogger<ChangeApplier>.Instance);
+            new QuizService(db, null!, anki),
+            new CollectionService(db, anki),
+            NullLogger<ChangeApplier>.Instance,
+            anki);
     }
 
     private static async Task<Guid> SeedProposalAsync(

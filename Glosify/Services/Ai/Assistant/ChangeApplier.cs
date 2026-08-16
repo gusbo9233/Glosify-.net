@@ -17,14 +17,14 @@ public sealed class ChangeApplier : IChangeApplier
     private readonly IQuizService _quizService;
     private readonly ICollectionService _collectionService;
     private readonly ILogger<ChangeApplier> _logger;
-    private readonly IAnkiCollectionService? _ankiCollections;
+    private readonly IAnkiCollectionService _ankiCollections;
 
     public ChangeApplier(
         GlosifyContext context,
         IQuizService quizService,
         ICollectionService collectionService,
         ILogger<ChangeApplier> logger,
-        IAnkiCollectionService? ankiCollections = null)
+        IAnkiCollectionService ankiCollections)
     {
         _context = context;
         _quizService = quizService;
@@ -227,7 +227,7 @@ public sealed class ChangeApplier : IChangeApplier
             await new CustomQuizService(_context).PruneWordBindingsAsync(quiz.Id, batch.DeletedWordIds, cancellationToken);
         }
         await _context.SaveChangesAsync(cancellationToken);
-        if (quiz is not null && _ankiCollections is not null)
+        if (quiz is not null)
             await _ankiCollections.SyncQuizAsync(quiz.Id, cancellationToken);
         return new AssistantApplyResult(
             applied,

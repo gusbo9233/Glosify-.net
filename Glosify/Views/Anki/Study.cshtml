@@ -19,14 +19,15 @@
             <button class="btn-icon-tts" type="button" data-tts="@card.Prompt" data-tts-lang="@card.PromptLanguage" aria-label="Play prompt"><span class="material-symbols-outlined">volume_up</span></button>
             @if (!Model.AnswerRevealed)
             {
-                <form method="post" asp-action="Reveal">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@card.CollectionId"/><button class="btn-submit" type="submit" data-reveal-answer>Show answer</button></form>
+                <form method="post" asp-action="Reveal">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@card.CollectionId"/><input type="hidden" name="cardId" value="@card.CardId"/><button class="btn-submit" type="submit" data-reveal-answer>Show answer</button></form>
             }
             else
             {
                 <div class="anki-answer"><small>@card.AnswerLanguage</small><h2>@card.Answer</h2><button class="btn-icon-tts" type="button" data-tts="@card.Answer" data-tts-lang="@card.AnswerLanguage" aria-label="Play answer"><span class="material-symbols-outlined">volume_up</span></button></div>
                 <form method="post" asp-action="Rate" class="anki-ratings" data-anki-rating-form>
                     @Html.AntiForgeryToken()<input type="hidden" name="CollectionId" value="@card.CollectionId"/><input type="hidden" name="CardId" value="@card.CardId"/><input type="hidden" name="ClientToken" value="@Model.ClientToken"/><input type="hidden" name="RowVersion" value="@card.RowVersion"/><input type="hidden" name="DurationMilliseconds" data-study-duration/>
-                    @foreach (var rating in new[] { "again", "hard", "good", "easy" }) { var key = Array.IndexOf(new[] { "again", "hard", "good", "easy" }, rating) + 1; <button type="submit" name="Rating" value="@rating" data-rating-key="@key"><kbd>@key</kbd><strong>@rating</strong><span>@card.Intervals[rating]</span></button> }
+                    @{ var ratings = new[] { (Name: "again", Key: 1), (Name: "hard", Key: 2), (Name: "good", Key: 3), (Name: "easy", Key: 4) }; }
+                    @foreach (var rating in ratings) { <button type="submit" name="Rating" value="@rating.Name" data-rating-key="@rating.Key"><kbd>@rating.Key</kbd><strong>@rating.Name</strong><span>@card.Intervals.GetValueOrDefault(rating.Name, string.Empty)</span></button> }
                 </form>
             }
         </section>

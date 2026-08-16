@@ -359,7 +359,8 @@ namespace Glosify.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "Name");
+                    b.HasIndex("UserId", "Name")
+                        .IsUnique();
 
                     b.HasIndex("UserId", "SourceLanguage", "TargetLanguage");
 

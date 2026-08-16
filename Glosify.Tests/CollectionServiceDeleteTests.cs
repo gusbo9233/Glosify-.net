@@ -61,7 +61,7 @@ public class CollectionServiceDeleteTests
             message);
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-        var service = new CollectionService(context);
+        var service = new CollectionService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
 
         var deleted = await service.DeleteCollectionTreeAsync(root.Id, UserId);
 
@@ -81,7 +81,7 @@ public class CollectionServiceDeleteTests
         context.Add(collection);
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-        var service = new CollectionService(context);
+        var service = new CollectionService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
 
         var deleted = await service.DeleteCollectionTreeAsync(collection.Id, "someone-else");
 

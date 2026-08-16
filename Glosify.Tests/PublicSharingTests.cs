@@ -17,7 +17,7 @@ public class PublicSharingTests
         var quiz = CreateQuiz("owner", "Polish");
         context.Quizzes.Add(quiz);
         await context.SaveChangesAsync();
-        var service = new QuizService(context, new TestLanguageContext("Polish"));
+        var service = new QuizService(context, new TestLanguageContext("Polish"), Anki(context));
 
         Assert.False(await service.SetQuizPublicAsync(quiz.Id, "other-user", true));
         Assert.False((await context.Quizzes.SingleAsync(q => q.Id == quiz.Id)).IsPublic);
@@ -36,7 +36,7 @@ public class PublicSharingTests
         var independentPublicChild = CreateCollection("owner", "Independent Child", "Polish", privateRoot.Id, isPublic: true);
         context.Collections.AddRange(publicRoot, publicChild, privateRoot, independentPublicChild);
         await context.SaveChangesAsync();
-        var service = new CollectionService(context);
+        var service = new CollectionService(context, Anki(context));
 
         var roots = await service.GetPublicCollectionRootsAsync("Polish");
 
@@ -56,7 +56,7 @@ public class PublicSharingTests
         context.Collections.Add(publicCollection);
         context.Quizzes.AddRange(collectionQuiz, standaloneQuiz);
         await context.SaveChangesAsync();
-        var service = new QuizService(context, new TestLanguageContext("Polish"));
+        var service = new QuizService(context, new TestLanguageContext("Polish"), Anki(context));
 
         var quizzes = await service.GetPublicQuizzesAsync("Polish");
 
@@ -80,7 +80,7 @@ public class PublicSharingTests
             CreatedAt = DateTimeOffset.UtcNow
         });
         await context.SaveChangesAsync();
-        var service = new QuizService(context, new TestLanguageContext("Polish"));
+        var service = new QuizService(context, new TestLanguageContext("Polish"), Anki(context));
 
         var copy = await service.CopyPublicQuizAsync(source.Id, "learner");
 
@@ -99,7 +99,7 @@ public class PublicSharingTests
         var source = CreateQuiz("owner", "Polish");
         context.Quizzes.Add(source);
         await context.SaveChangesAsync();
-        var service = new QuizService(context, new TestLanguageContext("Polish"));
+        var service = new QuizService(context, new TestLanguageContext("Polish"), Anki(context));
 
         var copy = await service.CopyPublicQuizAsync(source.Id, "learner");
 
@@ -115,7 +115,7 @@ public class PublicSharingTests
         context.Collections.Add(publicCollection);
         context.Quizzes.Add(collectionQuiz);
         await context.SaveChangesAsync();
-        var service = new QuizService(context, new TestLanguageContext("Polish"));
+        var service = new QuizService(context, new TestLanguageContext("Polish"), Anki(context));
 
         var quiz = await service.GetPublicQuizAsync(collectionQuiz.Id);
 
@@ -132,7 +132,7 @@ public class PublicSharingTests
         context.Collections.Add(privateCollection);
         context.Quizzes.Add(collectionQuiz);
         await context.SaveChangesAsync();
-        var service = new QuizService(context, new TestLanguageContext("Polish"));
+        var service = new QuizService(context, new TestLanguageContext("Polish"), Anki(context));
 
         var quiz = await service.GetPublicQuizAsync(collectionQuiz.Id);
 
@@ -161,7 +161,7 @@ public class PublicSharingTests
             CreatedAt = DateTimeOffset.UtcNow
         });
         await context.SaveChangesAsync();
-        var service = new CollectionService(context);
+        var service = new CollectionService(context, Anki(context));
 
         var copiedRoot = await service.CopyPublicCollectionAsync(root.Id, "learner");
 
@@ -194,7 +194,7 @@ public class PublicSharingTests
         var child = CreateCollection("owner", "Child", "Polish", root.Id);
         context.Collections.AddRange(root, child);
         await context.SaveChangesAsync();
-        var service = new CollectionService(context);
+        var service = new CollectionService(context, Anki(context));
 
         var tree = await service.GetPublicCollectionTreeAsync(child.Id);
 
@@ -209,6 +209,9 @@ public class PublicSharingTests
             .Options;
         return new GlosifyContext(options);
     }
+
+    private static Glosify.Services.Anki.IAnkiCollectionService Anki(GlosifyContext context) =>
+        new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System);
 
     private static Quiz CreateQuiz(
         string userId,

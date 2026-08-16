@@ -4,7 +4,6 @@ using Glosify.Services.Anki;
 using Glosify.Services.Language;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Glosify.Services.Quizzes;
 
 namespace Glosify.Controllers;
 
@@ -15,29 +14,27 @@ public sealed class AnkiController : Controller
     private readonly IAnkiStudyService _study;
     private readonly IAnkiStatisticsService _statistics;
     private readonly ILanguageContext _languages;
-    private readonly IQuizService _quizzes;
 
     public AnkiController(
         IAnkiCollectionService collections,
         IAnkiStudyService study,
         IAnkiStatisticsService statistics,
-        ILanguageContext languages,
-        IQuizService quizzes)
+        ILanguageContext languages)
     {
         _collections = collections;
         _study = study;
         _statistics = statistics;
         _languages = languages;
-        _quizzes = quizzes;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    public async Task<IActionResult> Index(bool create = false, CancellationToken cancellationToken = default)
     {
         return View(new AnkiIndexViewModel
         {
             Collections = await _collections.ListAsync(User.GetUserId(), cancellationToken),
             Languages = _languages.SupportedLanguages.Concat(["English", "Swedish"]).Distinct().Order().ToList(),
+            CreateDialogOpen = create,
         });
     }
 
@@ -54,7 +51,7 @@ public sealed class AnkiController : Controller
                 User.GetUserId(), cancellationToken);
             return RedirectToAction(nameof(Collection), new { id = collection.Id });
         }
-        catch (InvalidOperationException exception)
+        catch (AnkiValidationException exception)
         {
             TempData["AnkiMessage"] = exception.Message;
             return RedirectToAction(nameof(Index));
@@ -81,7 +78,7 @@ public sealed class AnkiController : Controller
             if (!await _collections.RenameAsync(id, name, User.GetUserId(), cancellationToken))
                 return NotFound();
         }
-        catch (InvalidOperationException exception)
+        catch (AnkiValidationException exception)
         {
             TempData["AnkiMessage"] = exception.Message;
         }
@@ -120,7 +117,7 @@ public sealed class AnkiController : Controller
                 User.GetUserId(), cancellationToken);
             if (!added) return NotFound();
         }
-        catch (InvalidOperationException exception)
+        catch (AnkiValidationException exception)
         {
             TempData["AnkiMessage"] = exception.Message;
         }
@@ -132,18 +129,15 @@ public sealed class AnkiController : Controller
     public async Task<IActionResult> CreateFromQuiz(CreateAnkiFromQuizForm form, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
-        var quiz = await _quizzes.GetQuizByIdAsync(form.QuizId, userId, cancellationToken);
-        if (quiz is null) return NotFound();
         try
         {
-            var collection = await _collections.CreateAsync(new(form.Name, quiz.SourceLanguage,
-                quiz.TargetLanguage, form.TimeZoneId), userId, cancellationToken);
-            await _collections.AddQuizAsync(new(collection.Id, quiz.Id,
+            var collection = await _collections.CreateFromQuizAsync(new(form.Name, form.QuizId, form.TimeZoneId,
                 form.WordsSourceToTarget, form.WordsTargetToSource,
                 form.SentencesSourceToTarget, form.SentencesTargetToSource), userId, cancellationToken);
+            if (collection is null) return NotFound();
             return RedirectToAction(nameof(Collection), new { id = collection.Id });
         }
-        catch (InvalidOperationException exception)
+        catch (AnkiValidationException exception)
         {
             TempData["AnkiMessage"] = exception.Message;
             return RedirectToAction("Settings", "Quiz", new { id = form.QuizId });
@@ -171,7 +165,7 @@ public sealed class AnkiController : Controller
                 User.GetUserId(), cancellationToken);
             if (!added) return NotFound();
         }
-        catch (InvalidOperationException exception)
+        catch (AnkiValidationException exception)
         {
             TempData["AnkiMessage"] = exception.Message;
         }
@@ -189,9 +183,13 @@ public sealed class AnkiController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Study(Guid id, bool reveal = false, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Study(
+        Guid id,
+        bool reveal = false,
+        Guid? cardId = null,
+        CancellationToken cancellationToken = default)
     {
-        var state = await _study.GetNextAsync(id, User.GetUserId(), cancellationToken);
+        var state = await _study.GetNextAsync(id, User.GetUserId(), cardId, cancellationToken);
         if (state is null) return NotFound();
         return View(new AnkiStudyViewModel
         {
@@ -203,7 +201,8 @@ public sealed class AnkiController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Reveal(Guid id) => RedirectToAction(nameof(Study), new { id, reveal = true });
+    public IActionResult Reveal(Guid id, Guid cardId) =>
+        RedirectToAction(nameof(Study), new { id, cardId, reveal = true });
 
     [HttpPost]
     [ValidateAntiForgeryToken]

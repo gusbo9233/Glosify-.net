@@ -12,9 +12,9 @@ namespace Glosify.Services.Words;
 public class WordService : IWordService
 {
     private readonly GlosifyContext _context;
-    private readonly IAnkiCollectionService? _ankiCollections;
+    private readonly IAnkiCollectionService _ankiCollections;
 
-    public WordService(GlosifyContext context, IAnkiCollectionService? ankiCollections = null)
+    public WordService(GlosifyContext context, IAnkiCollectionService ankiCollections)
     {
         _context = context;
         _ankiCollections = ankiCollections;
@@ -184,7 +184,7 @@ public class WordService : IWordService
         });
 
         await _context.SaveChangesAsync(cancellationToken);
-        if (_ankiCollections is not null) await _ankiCollections.SyncQuizAsync(quizId, cancellationToken);
+        await _ankiCollections.SyncQuizAsync(quizId, cancellationToken);
         return true;
     }
 
@@ -206,7 +206,7 @@ public class WordService : IWordService
         await new CustomQuizService(_context).PruneWordBindingsAsync(word.QuizId, [word.Id], cancellationToken);
         _context.Words.Remove(word);
         await _context.SaveChangesAsync(cancellationToken);
-        if (_ankiCollections is not null) await _ankiCollections.SyncQuizAsync(word.QuizId, cancellationToken);
+        await _ankiCollections.SyncQuizAsync(word.QuizId, cancellationToken);
 
         return word;
     }
@@ -219,7 +219,7 @@ public class WordService : IWordService
             return null;
         _context.QuizSentences.Remove(sentence);
         await _context.SaveChangesAsync(cancellationToken);
-        if (_ankiCollections is not null) await _ankiCollections.SyncQuizAsync(sentence.QuizId, cancellationToken);
+        await _ankiCollections.SyncQuizAsync(sentence.QuizId, cancellationToken);
         return sentence;
     }
 

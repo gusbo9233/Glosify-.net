@@ -35,7 +35,7 @@ public class QuizServiceDeleteTests
             });
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-        var service = new QuizService(context, new TestLanguageContext());
+        var service = new QuizService(context, new TestLanguageContext(), new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
 
         var deleted = await service.DeleteQuizAsync(quiz.Id, quiz.UserId);
 
@@ -83,7 +83,7 @@ public class QuizServiceDeleteTests
             message);
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-        var service = new QuizService(context, new TestLanguageContext());
+        var service = new QuizService(context, new TestLanguageContext(), new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
 
         var deleted = await service.DeleteQuizAsync(quiz.Id, quiz.UserId);
 
@@ -111,7 +111,7 @@ public class QuizServiceDeleteTests
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
         context.FailWhenQuizIsDeleted = true;
-        var service = new QuizService(context, new TestLanguageContext());
+        var service = new QuizService(context, new TestLanguageContext(), new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
 
         await Assert.ThrowsAsync<DbUpdateException>(
             () => service.DeleteQuizAsync(quiz.Id, quiz.UserId));

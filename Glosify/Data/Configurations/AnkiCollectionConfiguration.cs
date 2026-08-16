@@ -16,7 +16,7 @@ internal sealed class AnkiCollectionConfiguration : IEntityTypeConfiguration<Ank
         entity.Property(collection => collection.DefaultDirection).HasMaxLength(32).IsRequired();
         entity.Property(collection => collection.TimeZoneId).HasMaxLength(128).IsRequired();
         entity.HasIndex(collection => new { collection.UserId, collection.SourceLanguage, collection.TargetLanguage });
-        entity.HasIndex(collection => new { collection.UserId, collection.Name });
+        entity.HasIndex(collection => new { collection.UserId, collection.Name }).IsUnique();
 
         entity.HasOne<ApplicationUser>()
             .WithMany()

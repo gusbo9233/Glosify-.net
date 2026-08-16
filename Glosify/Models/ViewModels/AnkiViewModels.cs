@@ -7,6 +7,7 @@ public sealed class AnkiIndexViewModel
 {
     public IReadOnlyList<AnkiCollectionSummary> Collections { get; init; } = [];
     public IReadOnlyList<string> Languages { get; init; } = [];
+    public bool CreateDialogOpen { get; init; }
 }
 
 public sealed class AnkiCollectionViewModel

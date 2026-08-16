@@ -207,7 +207,8 @@ namespace Glosify.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_AnkiCollections_UserId_Name",
                 table: "AnkiCollections",
-                columns: new[] { "UserId", "Name" });
+                columns: new[] { "UserId", "Name" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_AnkiCollections_UserId_SourceLanguage_TargetLanguage",

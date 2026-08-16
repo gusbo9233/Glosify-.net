@@ -119,11 +119,11 @@
                                 <span class="material-symbols-outlined">volume_up</span>
                             </button>
                             <details class="item-action-menu" data-item-menu>
-                                <summary aria-label="Actions for @word.Lemma"><span class="material-symbols-outlined">more_vert</span></summary>
+                                <summary aria-label="@Text["Quiz.ItemActions", word.Lemma]"><span class="material-symbols-outlined">more_vert</span></summary>
                                 <div class="item-action-popover">
-                                    <button type="button" data-open-anki-item data-item-type="word" data-item-id="@word.Id" data-item-label="@word.Lemma"><span class="material-symbols-outlined">style</span> Add to Anki</button>
+                                    <button type="button" data-open-anki-item data-item-type="word" data-item-id="@word.Id" data-item-label="@word.Lemma"><span class="material-symbols-outlined">style</span> @Text["Anki.AddToAnki"]</button>
                                     <form method="post" asp-controller="Quiz" asp-action="DeleteWord" asp-route-id="@word.Id" data-confirm="@Text["Quiz.DeleteWordConfirm"]">
-                                        @Html.AntiForgeryToken()<button type="submit"><span class="material-symbols-outlined">delete</span> Remove</button>
+                                        @Html.AntiForgeryToken()<button type="submit"><span class="material-symbols-outlined">delete</span> @Text["Common.Remove"]</button>
                                     </form>
                                 </div>
                             </details>
@@ -156,10 +156,10 @@
                             <span>@Text["Quiz.LinkedWords", sentence.WordCount, sentence.WordCount == 1 ? Text["Settings.WordLower"] : Text["Settings.WordsLower"]]</span>
                             <button class="btn-icon-tts" type="button" data-tts="@sentence.Text" data-tts-lang="@Model.SelectedQuiz.TargetLanguage" aria-label="@Text["Quiz.PlayPronunciation", sentence.Text]"><span class="material-symbols-outlined">volume_up</span></button>
                             <details class="item-action-menu" data-item-menu>
-                                <summary aria-label="Actions for sentence"><span class="material-symbols-outlined">more_vert</span></summary>
+                                <summary aria-label="@Text["Quiz.ItemActions", sentence.Text]"><span class="material-symbols-outlined">more_vert</span></summary>
                                 <div class="item-action-popover">
-                                    <button type="button" data-open-anki-item data-item-type="sentence" data-item-id="@sentence.Id" data-item-label="@sentence.Text"><span class="material-symbols-outlined">style</span> Add to Anki</button>
-                                    <form method="post" asp-controller="Quiz" asp-action="DeleteSentence" asp-route-id="@sentence.Id" data-confirm="Remove this sentence?">@Html.AntiForgeryToken()<button type="submit"><span class="material-symbols-outlined">delete</span> Remove</button></form>
+                                    <button type="button" data-open-anki-item data-item-type="sentence" data-item-id="@sentence.Id" data-item-label="@sentence.Text"><span class="material-symbols-outlined">style</span> @Text["Anki.AddToAnki"]</button>
+                                    <form method="post" asp-controller="Quiz" asp-action="DeleteSentence" asp-route-id="@sentence.Id" data-confirm="@Text["Quiz.DeleteSentenceConfirm"]">@Html.AntiForgeryToken()<button type="submit"><span class="material-symbols-outlined">delete</span> @Text["Common.Remove"]</button></form>
                                 </div>
                             </details>
                         </div>

@@ -538,4 +538,8 @@
   <data name="Speaking.ClickShowLanguage" xml:space="preserve"><value>Click to show {0}</value></data>
   <data name="Speaking.CoachFeedback" xml:space="preserve"><value>Coach feedback</value></data>
   <data name="Speaking.MoreNatural" xml:space="preserve"><value>More natural {0}</value></data>
+  <data name="Anki.AddToAnki" xml:space="preserve"><value>Add to Anki</value></data>
+  <data name="Quiz.ItemActions" xml:space="preserve"><value>Actions for {0}</value></data>
+  <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Remove this sentence?</value></data>
+  <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Deleted sentence.</value></data>
 </root>

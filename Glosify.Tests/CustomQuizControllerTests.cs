@@ -124,8 +124,8 @@ public sealed class CustomQuizControllerTests
         return new CustomQuizController(
             new CustomQuizService(context),
             new CustomQuizTemplateCatalog(),
-            new QuizService(context, new StaticLanguage()),
-            new WordService(context))
+            new QuizService(context, new StaticLanguage(), new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System)),
+            new WordService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System)))
         {
             ControllerContext = new ControllerContext
             {

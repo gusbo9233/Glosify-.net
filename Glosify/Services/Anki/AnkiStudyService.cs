@@ -27,6 +27,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
     public async Task<AnkiStudyState?> GetNextAsync(
         Guid collectionId,
         string userId,
+        Guid? preferredCardId = null,
         CancellationToken cancellationToken = default)
     {
         var collection = await _context.AnkiCollections.AsNoTracking().SingleOrDefaultAsync(
@@ -38,9 +39,12 @@ public sealed class AnkiStudyService : IAnkiStudyService
 
         var now = _timeProvider.GetUtcNow();
         var dayStart = AnkiCollectionService.StartOfCollectionDay(collection.TimeZoneId, now);
-        var reviews = await _context.AnkiReviews.AsNoTracking()
+        var reviewQuery = _context.AnkiReviews.AsNoTracking()
             .Where(review => review.AnkiCollectionId == collectionId)
-            .Select(review => new { review.AnkiCardId, review.Card.AnkiNoteId, review.PreviousState, review.ReviewedAt })
+            .Select(review => new { review.AnkiCardId, review.Card.AnkiNoteId, review.PreviousState, review.ReviewedAt });
+        if (_context.Database.ProviderName?.Contains("Sqlite", StringComparison.Ordinal) != true)
+            reviewQuery = reviewQuery.Where(review => review.ReviewedAt >= dayStart);
+        var reviews = await reviewQuery
             .ToListAsync(cancellationToken);
         // Filter after the indexed collection query so relational providers without native
         // DateTimeOffset ordering (notably SQLite in tests) preserve collection-day behavior.
@@ -61,12 +65,18 @@ public sealed class AnkiStudyService : IAnkiStudyService
             .Where(card => !reviewedNoteIds.Contains(card.AnkiNoteId) || reviewedCardIds.Contains(card.Id))
             .ToList();
 
-        AnkiCard? selected = cards
-            .Where(card => (card.State == AnkiCardStates.Learning || card.State == AnkiCardStates.Relearning)
-                && card.DueAt <= now)
-            .OrderBy(card => card.DueAt)
-            .FirstOrDefault();
-        if (selected is null && reviewsStudied < collection.MaximumReviewsPerDay)
+        AnkiCard? selected = preferredCardId.HasValue
+            ? cards.SingleOrDefault(card => card.Id == preferredCardId.Value)
+            : null;
+        if (selected is null && !preferredCardId.HasValue)
+        {
+            selected = cards
+                .Where(card => (card.State == AnkiCardStates.Learning || card.State == AnkiCardStates.Relearning)
+                    && card.DueAt <= now)
+                .OrderBy(card => card.DueAt)
+                .FirstOrDefault();
+        }
+        if (selected is null && !preferredCardId.HasValue && reviewsStudied < collection.MaximumReviewsPerDay)
         {
             selected = cards
                 .Where(card => card.State == AnkiCardStates.Review && card.DueAt <= now)
@@ -74,7 +84,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
                 .ThenBy(card => card.DueAt)
                 .FirstOrDefault();
         }
-        if (selected is null && newStudied < collection.NewCardsPerDay)
+        if (selected is null && !preferredCardId.HasValue && newStudied < collection.NewCardsPerDay)
         {
             selected = cards
                 .Where(card => card.State == AnkiCardStates.New)

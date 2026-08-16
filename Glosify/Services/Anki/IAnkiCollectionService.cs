@@ -41,6 +41,15 @@ public sealed record CreateAnkiCollectionInput(
     string TargetLanguage,
     string TimeZoneId);
 
+public sealed record CreateAnkiCollectionFromQuizInput(
+    string Name,
+    Guid QuizId,
+    string TimeZoneId,
+    bool WordsSourceToTarget,
+    bool WordsTargetToSource,
+    bool SentencesSourceToTarget,
+    bool SentencesTargetToSource);
+
 public sealed record AddAnkiQuizInput(
     Guid CollectionId,
     Guid QuizId,
@@ -62,6 +71,7 @@ public interface IAnkiCollectionService
     Task<IReadOnlyList<AnkiCollectionSummary>> ListAsync(string userId, CancellationToken cancellationToken = default);
     Task<AnkiCollectionDetails?> GetDetailsAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default);
     Task<AnkiCollection> CreateAsync(CreateAnkiCollectionInput input, string userId, CancellationToken cancellationToken = default);
+    Task<AnkiCollection?> CreateFromQuizAsync(CreateAnkiCollectionFromQuizInput input, string userId, CancellationToken cancellationToken = default);
     Task<bool> RenameAsync(Guid collectionId, string name, string userId, CancellationToken cancellationToken = default);
     Task<bool> UpdateSettingsAsync(Guid collectionId, double desiredRetention, int newCardsPerDay, int maximumReviewsPerDay, string timeZoneId, string userId, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default);
@@ -72,4 +82,9 @@ public interface IAnkiCollectionService
     Task SyncCollectionAsync(Guid collectionId, CancellationToken cancellationToken = default);
     Task SyncQuizAsync(Guid quizId, CancellationToken cancellationToken = default);
     Task RetireQuizAsync(Guid quizId, CancellationToken cancellationToken = default);
+}
+
+public sealed class AnkiValidationException : InvalidOperationException
+{
+    public AnkiValidationException(string message) : base(message) { }
 }

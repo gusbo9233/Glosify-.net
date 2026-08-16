@@ -726,8 +726,8 @@ flowchart LR
   Swapping a model is a settings change.
 - **Authored agents over inline prompts where behaviour is stable.**
   `GenerativeAi:Foundry:Agents` pins a *name and version* per agent
-  (`glosify-quiz-builder` v3, `glosify-quiz-assistant` v3, `glosify-librarian`
-  v3). Each profile falls back to in-code instructions when no agent is
+  (`glosify-quiz-builder` v3, `glosify-quiz-assistant` v6, `glosify-librarian`
+  v4). Each profile falls back to in-code instructions when no agent is
   configured, so the app runs without Foundry-side setup.
 - **Structured output is validated, not trusted.** Model responses that become
   data go through validation that throws `GenerativeAiValidationException` → 400

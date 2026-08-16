@@ -17,17 +17,32 @@ namespace Glosify.Tests;
 public sealed class AssistantToolSurfaceRegressionTests
 {
     [Fact]
-    public void Published_quiz_assistant_v5_has_no_repair_tool_or_instruction()
+    public void Published_quiz_assistant_v6_has_required_book_search_and_no_repair_surface()
     {
-        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "../../../../.foundry/agents/glosify-quiz-assistant-v5.json"));
+        var path = Path.Combine(FindRepositoryRoot(),
+            ".foundry/agents/glosify-quiz-assistant-v6.json");
         var json = File.ReadAllText(path);
         Assert.DoesNotContain("repair_sentence", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("repair", json, StringComparison.OrdinalIgnoreCase);
         using var document = System.Text.Json.JsonDocument.Parse(json);
-        Assert.Equal("5", document.RootElement.GetProperty("version").GetString());
+        Assert.Equal("6", document.RootElement.GetProperty("version").GetString());
         Assert.Equal("active", document.RootElement.GetProperty("status").GetString());
         Assert.False(document.RootElement.GetProperty("draft").GetBoolean());
+        Assert.Contains(document.RootElement.GetProperty("definition").GetProperty("tools").EnumerateArray(),
+            tool => tool.GetProperty("name").GetString() == "search_book_pages");
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
+             directory is not null;
+             directory = directory.Parent)
+        {
+            if (Directory.Exists(Path.Combine(directory.FullName, ".foundry")))
+                return directory.FullName;
+        }
+        throw new DirectoryNotFoundException(
+            $"Could not find the repository root above {AppContext.BaseDirectory}.");
     }
 
     [Fact]

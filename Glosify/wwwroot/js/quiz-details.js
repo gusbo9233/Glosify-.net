@@ -28,8 +28,10 @@
     let ankiTrigger = null;
     document.querySelectorAll('[data-open-anki-item]').forEach(button => button.addEventListener('click', () => {
         ankiTrigger = button;
-        ankiDialog?.querySelector('[data-anki-item-type]')?.setAttribute('value', button.dataset.itemType || '');
-        ankiDialog?.querySelector('[data-anki-item-id]')?.setAttribute('value', button.dataset.itemId || '');
+        const itemType = ankiDialog?.querySelector('[data-anki-item-type]');
+        const itemId = ankiDialog?.querySelector('[data-anki-item-id]');
+        if (itemType instanceof HTMLInputElement) itemType.value = button.dataset.itemType || '';
+        if (itemId instanceof HTMLInputElement) itemId.value = button.dataset.itemId || '';
         const label = ankiDialog?.querySelector('[data-anki-item-label]');
         if (label) label.textContent = button.dataset.itemLabel || 'card';
         button.closest('[data-item-menu]')?.removeAttribute('open');

@@ -13,9 +13,9 @@ public class QuizService : IQuizService
     private readonly GlosifyContext _context;
     private readonly ILanguageContext _languageContext;
     private readonly CollectionVisibility _collectionVisibility;
-    private readonly IAnkiCollectionService? _ankiCollections;
+    private readonly IAnkiCollectionService _ankiCollections;
 
-    public QuizService(GlosifyContext context, ILanguageContext languageContext, IAnkiCollectionService? ankiCollections = null)
+    public QuizService(GlosifyContext context, ILanguageContext languageContext, IAnkiCollectionService ankiCollections)
     {
         _context = context;
         _languageContext = languageContext;
@@ -98,7 +98,7 @@ public class QuizService : IQuizService
         if (quiz == null)
             return null;
 
-        if (_ankiCollections is not null) await _ankiCollections.RetireQuizAsync(quiz.Id, cancellationToken);
+        await _ankiCollections.RetireQuizAsync(quiz.Id, cancellationToken);
 
         var words = await _context.Words
             .Where(word => word.QuizId == quiz.Id)
@@ -141,7 +141,6 @@ public class QuizService : IQuizService
         // Save reference cleanup and both deletions together so a constraint
         // failure cannot leave the quiz behind after its words are removed.
         await _context.SaveChangesAsync(cancellationToken);
-
         return quiz;
     }
 

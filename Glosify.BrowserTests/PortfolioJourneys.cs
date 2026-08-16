@@ -138,9 +138,9 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await CreateQuizWithWordAsync();
         await Page.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("Start Quiz", RegexOptions.IgnoreCase) }).ClickAsync();
 
-        await Page.Locator("details.anki-create-inline > summary").ClickAsync();
-        var createForm = Page.Locator("form[action*='CreateFromQuiz']");
-        await createForm.Locator("input[name='Name']").FillAsync("Portfolio Anki");
+        await Page.GetByText("Create a new compatible collection", new() { Exact = true }).ClickAsync();
+        var createForm = Page.GetByRole(AriaRole.Form, new() { Name = "Create Anki collection from quiz" });
+        await createForm.GetByLabel("Name", new() { Exact = true }).FillAsync("Portfolio Anki");
         await createForm.GetByRole(AriaRole.Button, new() { Name = "Create and link" }).ClickAsync();
         await Expect(Page).ToHaveURLAsync(new Regex("/Anki/Collection", RegexOptions.IgnoreCase));
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Portfolio Anki", Exact = true }).First).ToBeVisibleAsync();
@@ -148,17 +148,18 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
         // Adding the already-linked word individually is intentionally idempotent and
         // preserves the same durable card while recording both inclusion sources.
-        await Page.Locator(".anki-item-picker form").First.GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true }).ClickAsync();
+        await Page.GetByRole(AriaRole.Form, new() { NameRegex = new Regex("^Add .+ to Anki$") }).First
+            .GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true }).ClickAsync();
         await Page.GetByRole(AriaRole.Link, new() { Name = "Start session" }).ClickAsync();
         await Page.GetByRole(AriaRole.Button, new() { Name = "Show answer" }).ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "dom", Exact = true })).ToBeVisibleAsync();
-        await Page.Keyboard.PressAsync("3");
+        await Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("good", RegexOptions.IgnoreCase) }).ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You’re done for now" })).ToBeVisibleAsync();
 
         await Page.GetByRole(AriaRole.Link, new() { Name = "Back to collections" }).ClickAsync();
         await Page.GetByRole(AriaRole.Link, new() { Name = "Portfolio Anki" }).ClickAsync();
-        await Expect(Page.GetByText("Studied today").Locator("..")).ToContainTextAsync("1");
-        await Expect(Page.GetByText("30-day retention").Locator("..")).ToContainTextAsync("100%");
+        await Expect(Page.GetByText("Studied today").Locator("..").Locator("strong")).ToHaveTextAsync("1");
+        await Expect(Page.GetByText("30-day retention").Locator("..").Locator("strong")).ToHaveTextAsync("100%");
         await AssertNoPageErrorsAsync();
     }
 

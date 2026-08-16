@@ -30,7 +30,11 @@ public sealed record RateAnkiCardInput(
 
 public interface IAnkiStudyService
 {
-    Task<AnkiStudyState?> GetNextAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default);
+    Task<AnkiStudyState?> GetNextAsync(
+        Guid collectionId,
+        string userId,
+        Guid? preferredCardId = null,
+        CancellationToken cancellationToken = default);
     Task<bool> RateAsync(RateAnkiCardInput input, string userId, CancellationToken cancellationToken = default);
 }
 

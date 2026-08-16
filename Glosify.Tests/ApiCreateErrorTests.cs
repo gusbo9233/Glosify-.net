@@ -80,8 +80,8 @@ public class ApiCreateErrorTests
     private static QuizzesApiController CreateQuizzesController(GlosifyContext context)
     {
         var controller = new QuizzesApiController(
-            new QuizService(context, new StaticLanguage()),
-            new WordService(context),
+            new QuizService(context, new StaticLanguage(), new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System)),
+            new WordService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System)),
             new TypingQuizService(context),
             new StubImageTextExtractionService());
         controller.ControllerContext = CreateControllerContext();
@@ -90,7 +90,7 @@ public class ApiCreateErrorTests
 
     private static CollectionsApiController CreateCollectionsController(GlosifyContext context)
     {
-        var controller = new CollectionsApiController(new CollectionService(context));
+        var controller = new CollectionsApiController(new CollectionService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System)));
         controller.ControllerContext = CreateControllerContext();
         return controller;
     }

@@ -34,7 +34,7 @@
         }
         <details class="anki-create-inline">
             <summary>Create a new compatible collection</summary>
-            <form method="post" asp-controller="Anki" asp-action="CreateFromQuiz" class="anki-settings-form">
+            <form method="post" asp-controller="Anki" asp-action="CreateFromQuiz" class="anki-settings-form" aria-label="Create Anki collection from quiz">
                 @Html.AntiForgeryToken()<input type="hidden" name="QuizId" value="@Model.SelectedQuiz.Id"/><input type="hidden" name="TimeZoneId" value="UTC" data-browser-timezone/>
                 <label>Name<input class="form-input" name="Name" required maxlength="160"/></label>
                 <fieldset><legend>Words</legend><label><input type="checkbox" name="WordsSourceToTarget" value="true" checked/> @sourceLanguage &rarr; @targetLanguage</label><label><input type="checkbox" name="WordsTargetToSource" value="true"/> @targetLanguage &rarr; @sourceLanguage</label></fieldset>

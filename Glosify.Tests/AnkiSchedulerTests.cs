@@ -6,6 +6,8 @@ namespace Glosify.Tests;
 
 public sealed class AnkiSchedulerTests
 {
+    // Reference values use the FSRS4Anki v6.1.1 default 21-weight vector from
+    // ff5bbd644f118583ccf98d75dc36598193c44b9e.
     private static readonly DateTimeOffset Now = new(2026, 8, 15, 12, 0, 0, TimeSpan.Zero);
     private readonly Fsrs6AnkiScheduler _scheduler = new();
 
@@ -43,7 +45,7 @@ public sealed class AnkiSchedulerTests
         var review = CardFrom(second, Now.AddMinutes(10));
         var third = _scheduler.Schedule(review, AnkiRatings.Good, .9, Now.AddMinutes(10).AddDays(1));
         Assert.Equal(7.3033289053, third.Stability, 6);
-        Assert.InRange(third.Retrievability, .94660, .94661);
+        Assert.Equal(.9466, third.Retrievability, 4);
     }
 
     [Fact]
@@ -79,7 +81,7 @@ public sealed class AnkiSchedulerTests
 
         card.Stability = 1_000_000_000;
         var capped = _scheduler.Schedule(card, AnkiRatings.Easy, .7, Now);
-        Assert.InRange(capped.ScheduledDays, 1, 36_500);
+        Assert.Equal(36_500, capped.ScheduledDays);
     }
 
     [Fact]

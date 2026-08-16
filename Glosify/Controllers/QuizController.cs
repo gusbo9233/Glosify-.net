@@ -27,7 +27,7 @@ public class QuizController : Controller
     private readonly ILanguageContext _languageContext;
     private readonly ICustomQuizService _customQuizService;
     private readonly UiTextStringLocalizer _text = new();
-    private readonly IAnkiCollectionService? _ankiCollections;
+    private readonly IAnkiCollectionService _ankiCollections;
 
     public QuizController(
         IQuizService quizService,
@@ -36,7 +36,7 @@ public class QuizController : Controller
         IImageTextExtractionService imageTextExtractionService,
         ILanguageContext languageContext,
         ICustomQuizService customQuizService,
-        IAnkiCollectionService? ankiCollections = null)
+        IAnkiCollectionService ankiCollections)
     {
         _quizService = quizService;
         _collectionService = collectionService;
@@ -91,12 +91,10 @@ public class QuizController : Controller
         var words = await _wordService.GetWordsAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
         var sentences = await _wordService.GetSentencesAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
 
-        var ankiCollections = _ankiCollections is null
-            ? []
-            : (await _ankiCollections.ListAsync(userId, cancellationToken))
-                .Where(collection => collection.SourceLanguage == selectedQuiz.SourceLanguage
-                    && collection.TargetLanguage == selectedQuiz.TargetLanguage)
-                .ToList();
+        var ankiCollections = (await _ankiCollections.ListAsync(userId, cancellationToken))
+            .Where(collection => string.Equals(collection.SourceLanguage, selectedQuiz.SourceLanguage, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(collection.TargetLanguage, selectedQuiz.TargetLanguage, StringComparison.OrdinalIgnoreCase))
+            .ToList();
         return View(new QuizWorkspaceViewModel
         {
             SelectedQuiz = QuizCard.From(selectedQuiz),
@@ -187,7 +185,7 @@ public class QuizController : Controller
     {
         var deleted = await _wordService.DeleteSentenceAsync(id, User.GetUserId(), cancellationToken);
         if (deleted is null) return NotFound();
-        TempData[NotificationKeys.Quiz] = "Deleted sentence.";
+        TempData[NotificationKeys.Quiz] = _text["Quiz.DeletedSentence"].Value;
         return RedirectToAction(nameof(Details), new { id = deleted.QuizId });
     }
 
@@ -319,11 +317,11 @@ public class QuizController : Controller
             ? []
             : await _wordService.GetWordsAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
 
-        var ankiCollections = selectedQuiz is null || _ankiCollections is null
+        var ankiCollections = selectedQuiz is null
             ? []
             : (await _ankiCollections.ListAsync(userId, cancellationToken))
-                .Where(collection => collection.SourceLanguage == selectedQuiz.SourceLanguage
-                    && collection.TargetLanguage == selectedQuiz.TargetLanguage)
+                .Where(collection => string.Equals(collection.SourceLanguage, selectedQuiz.SourceLanguage, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(collection.TargetLanguage, selectedQuiz.TargetLanguage, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         return View(new QuizSettingsViewModel
         {

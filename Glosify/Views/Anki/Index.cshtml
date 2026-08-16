@@ -9,7 +9,7 @@
 <main class="anki-shell">
     <header class="anki-header">
         <div><p class="eyebrow">Tracked flashcards</p><h1>Anki collections</h1><p>Study with durable FSRS scheduling and review history.</p></div>
-        <button class="btn-submit" type="button" data-open-create-anki><span class="material-symbols-outlined">add</span> New collection</button>
+        <a class="btn-submit" asp-action="Index" asp-route-create="true" data-open-create-anki><span class="material-symbols-outlined">add</span> New collection</a>
     </header>
 
     @if (TempData["AnkiMessage"] is string message) { <div class="panel-message">@message</div> }
@@ -35,7 +35,7 @@
     </section>
 </main>
 
-<dialog class="anki-dialog" data-create-anki-dialog>
+<dialog class="anki-dialog" data-create-anki-dialog @(Model.CreateDialogOpen ? "open" : null)>
     <form method="post" asp-action="Create" data-anki-create-form>
         @Html.AntiForgeryToken()
         <header><h2>Create Anki collection</h2><button type="button" class="btn-icon" data-close-create-anki aria-label="Close"><span class="material-symbols-outlined">close</span></button></header>

@@ -2,7 +2,10 @@
     const createButton = document.querySelector('[data-open-create-anki]');
     const createDialog = document.querySelector('[data-create-anki-dialog]');
     const closeButton = document.querySelector('[data-close-create-anki]');
-    createButton?.addEventListener('click', () => createDialog?.showModal());
+    createButton?.addEventListener('click', event => {
+        event.preventDefault();
+        if (createDialog && !createDialog.open) createDialog.showModal();
+    });
     closeButton?.addEventListener('click', () => { createDialog?.close(); createButton?.focus(); });
     createDialog?.addEventListener('click', event => {
         if (event.target === createDialog) { createDialog.close(); createButton?.focus(); }
@@ -44,7 +47,10 @@
     });
     document.addEventListener('keydown', event => {
         if (!ratingForm || event.metaKey || event.ctrlKey || event.altKey) return;
-        const button = ratingForm.querySelector(`[data-rating-key="${event.key}"]`);
+        const target = event.target;
+        if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName))) return;
+        const button = [...ratingForm.querySelectorAll('[data-rating-key]')]
+            .find(candidate => candidate.dataset.ratingKey === event.key);
         if (button) { event.preventDefault(); ratingForm.requestSubmit(button); }
     });
 })();

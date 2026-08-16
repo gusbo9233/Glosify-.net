@@ -82,15 +82,35 @@ public sealed class AnkiCollectionServiceTests
         Assert.True(await fixture.Study.RateAsync(rating, UserId));
         Assert.False(await fixture.Study.RateAsync(rating, UserId));
         Assert.Single(await fixture.Context.AnkiReviews.ToListAsync());
-        Assert.Contains(await fixture.Context.AnkiCards.Where(card => card.AnkiNoteId ==
-            fixture.Context.AnkiCards.Single(reviewed => reviewed.Id == first.CardId).AnkiNoteId).ToListAsync(),
-            card => card.Id != first.CardId && card.BuriedUntil.HasValue);
+        var ratedNoteId = (await fixture.Context.AnkiCards.SingleAsync(card => card.Id == first.CardId)).AnkiNoteId;
+        var siblings = await fixture.Context.AnkiCards
+            .Where(card => card.AnkiNoteId == ratedNoteId && card.Id != first.CardId)
+            .ToListAsync();
+        Assert.All(siblings, card => Assert.True(card.BuriedUntil.HasValue));
 
         await fixture.Collections.AddItemAsync(new(collection.Id, fixture.Quiz.Id, "word", fixture.SecondWord.Id, true, false), UserId);
         var after = await fixture.Study.GetNextAsync(collection.Id, UserId);
         Assert.NotNull(after);
         Assert.Null(after!.Card);
         Assert.Equal(2, await fixture.Context.AnkiCards.CountAsync(card => card.Note.WordId == fixture.Word.Id));
+    }
+
+    [Fact]
+    public async Task Reveal_can_pin_the_exact_card_selected_by_the_previous_request()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var collection = await fixture.Collections.CreateAsync(new("Pinned", "English", "Polish", "UTC"), UserId);
+        await fixture.Collections.AddItemAsync(new(collection.Id, fixture.Quiz.Id, "word", fixture.Word.Id, true, false), UserId);
+        await fixture.Collections.AddItemAsync(new(collection.Id, fixture.Quiz.Id, "word", fixture.SecondWord.Id, true, false), UserId);
+
+        var secondCardId = await fixture.Context.AnkiCards
+            .Where(card => card.Note.WordId == fixture.SecondWord.Id)
+            .Select(card => card.Id)
+            .SingleAsync();
+        var pinned = await fixture.Study.GetNextAsync(collection.Id, UserId, secondCardId);
+
+        Assert.Equal(secondCardId, pinned!.Card!.CardId);
+        Assert.Equal("cat", pinned.Card.Prompt);
     }
 
     [Fact]
@@ -148,17 +168,32 @@ public sealed class AnkiCollectionServiceTests
 
             var card = (await study.GetNextAsync(collection.Id, UserId))!.Card!;
             Assert.NotEmpty(card.RowVersion);
+            await context.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE AnkiCards SET ReviewCount = ReviewCount + 1 WHERE Id = {card.CardId}");
             // MVC resolves each request with a fresh scoped DbContext. Clear the setup/read
             // graph so the rating path exercises SQL Server exactly as the POST request does.
             context.ChangeTracker.Clear();
-            Assert.True(await study.RateAsync(new(
+            await Assert.ThrowsAsync<AnkiReviewConflictException>(() => study.RateAsync(new(
                 collection.Id,
                 card.CardId,
                 AnkiRatings.Good,
                 Guid.NewGuid(),
                 card.RowVersion,
                 250), UserId));
+            var currentRowVersion = Convert.ToBase64String(await context.AnkiCards.AsNoTracking()
+                .Where(candidate => candidate.Id == card.CardId)
+                .Select(candidate => candidate.RowVersion)
+                .SingleAsync());
+            Assert.True(await study.RateAsync(new(
+                collection.Id,
+                card.CardId,
+                AnkiRatings.Good,
+                Guid.NewGuid(),
+                currentRowVersion,
+                250), UserId));
             Assert.Single(await context.AnkiReviews.ToListAsync());
+            var summary = Assert.Single(await collections.ListAsync(UserId));
+            Assert.Equal(1, summary.Counts.StudiedToday);
         }
         finally
         {
