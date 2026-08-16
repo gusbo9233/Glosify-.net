@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     buildExternalRepairPrompt,
+    isRequestTimeout,
     previewMatches,
     problemMessages
 } from '../Glosify/wwwroot/js/quiz-json-import.js';
@@ -33,4 +34,10 @@ test('external repair prompt carries errors and content without provider couplin
     assert.match(prompt, /Glosify version 1/);
     assert.match(prompt, /\$\.version: Missing\./);
     assert.match(prompt, /\{ bad json \}/);
+});
+
+test('request timeouts recognize browser abort and timeout errors', () => {
+    assert.equal(isRequestTimeout({ name: 'AbortError' }), true);
+    assert.equal(isRequestTimeout({ name: 'TimeoutError' }), true);
+    assert.equal(isRequestTimeout(new TypeError('offline')), false);
 });

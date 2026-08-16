@@ -2869,4 +2869,23 @@
   <data name="Quiz.ItemActions" xml:space="preserve"><value>{0} 的操作</value></data>
   <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>移除此句子？</value></data>
   <data name="Quiz.DeletedSentence" xml:space="preserve"><value>句子已移除。</value></data>
+  <data name="Quiz.JsonImportTopLevel" xml:space="preserve"><value>测验库顶层</value></data>
+  <data name="Quiz.JsonImport" xml:space="preserve"><value>导入 JSON</value></data>
+  <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>从外部 AI 导入</value></data>
+  <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>无需使用点数即可创建测验</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>让任意 AI 生成 Glosify JSON，将其粘贴到此处，核对准确结果，然后导入到{0}。</value></data>
+  <data name="Quiz.JsonImportClose" xml:space="preserve"><value>关闭导入对话框</value></data>
+  <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. 复制给 AI 的说明</value></data>
+  <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>添加你想学习的内容，然后将此提示发送给 ChatGPT、Claude、Gemini 或其他 AI。</value></data>
+  <data name="Quiz.JsonImportCopyInstructions" xml:space="preserve"><value>复制 AI 说明</value></data>
+  <data name="Quiz.JsonImportPasteLabel" xml:space="preserve"><value>2. 粘贴生成的 JSON</value></data>
+  <data name="Quiz.JsonImportPastePlaceholder" xml:space="preserve"><value>在此粘贴 JSON 对象...</value></data>
+  <data name="Quiz.JsonImportFreeMeta" xml:space="preserve"><value>免费预览和导入 · 不调用 AI</value></data>
+  <data name="Quiz.JsonImportReviewKicker" xml:space="preserve"><value>3. 创建前检查</value></data>
+  <data name="Quiz.JsonImportPreviewTitle" xml:space="preserve"><value>导入预览</value></data>
+  <data name="Quiz.JsonImportCopyRepair" xml:space="preserve"><value>复制修复提示</value></data>
+  <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>使用 AI 修复 · 消耗点数</value></data>
+  <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>预览 JSON</value></data>
+  <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>全部导入</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>预览和导入是确定性的，不会联系 AI 提供商。“使用 AI 修复”会将粘贴的文本发送给 Glosify 配置的 AI 并扣除点数。</value></data>
 </root>

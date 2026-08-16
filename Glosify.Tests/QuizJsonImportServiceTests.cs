@@ -311,6 +311,25 @@ public sealed class QuizJsonImportServiceTests
         };
         var repair = new QuizJsonImportRepairService(CreateService(db), ai);
 
+        var exception = await Assert.ThrowsAsync<QuizJsonImportAiUnprocessableException>(() =>
+            repair.RepairAsync("{ bad json", "Polish", null, "user-1"));
+
+        Assert.NotNull(exception.Errors);
+        Assert.Contains("$", exception.Errors.Keys);
+        Assert.Null(exception.CanonicalJson);
+        Assert.Empty(db.Collections);
+        Assert.Empty(db.Quizzes);
+        Assert.Empty(db.Words);
+        Assert.Empty(db.QuizSentences);
+    }
+
+    [Fact]
+    public async Task Ai_repair_rejects_a_null_provider_envelope_without_saving()
+    {
+        await using var db = CreateContext();
+        var ai = new RecordingAiClient { ReturnNull = true };
+        var repair = new QuizJsonImportRepairService(CreateService(db), ai);
+
         await Assert.ThrowsAsync<QuizJsonImportAiUnprocessableException>(() =>
             repair.RepairAsync("{ bad json", "Polish", null, "user-1"));
 
@@ -401,6 +420,7 @@ public sealed class QuizJsonImportServiceTests
     private sealed class RecordingAiClient : IGenerativeAiClient
     {
         public object? Response { get; init; }
+        public bool ReturnNull { get; init; }
         public AiUsageContext? Usage { get; private set; }
 
         public Task<T> GenerateStructuredAsync<T>(
@@ -417,6 +437,10 @@ public sealed class QuizJsonImportServiceTests
             CancellationToken cancellationToken = default)
         {
             Usage = usageContext;
+            if (ReturnNull)
+            {
+                return Task.FromResult((T)(object?)null!);
+            }
             return Task.FromResult((T)(Response ?? throw new InvalidOperationException("No response configured.")));
         }
 

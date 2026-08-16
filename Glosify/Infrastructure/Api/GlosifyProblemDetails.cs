@@ -53,13 +53,15 @@ public static class GlosifyProblemDetails
     public static ObjectResult ValidationResult(
         HttpContext httpContext,
         IReadOnlyDictionary<string, string[]> errors,
-        string? canonicalJson = null)
+        string? canonicalJson = null,
+        int statusCode = StatusCodes.Status400BadRequest,
+        string code = ApiErrorCodes.ValidationFailed)
     {
         var problem = new HttpValidationProblemDetails(errors)
         {
-            Type = $"urn:glosify:error:{ApiErrorCodes.ValidationFailed}",
-            Title = TitleFor(StatusCodes.Status400BadRequest),
-            Status = StatusCodes.Status400BadRequest,
+            Type = $"urn:glosify:error:{code}",
+            Title = TitleFor(statusCode),
+            Status = statusCode,
             Detail = "One or more validation errors occurred.",
             Instance = httpContext.Request.Path,
         };
@@ -67,8 +69,8 @@ public static class GlosifyProblemDetails
         {
             problem.Extensions["canonicalJson"] = canonicalJson;
         }
-        AddCommonExtensions(httpContext, problem, ApiErrorCodes.ValidationFailed);
-        return ToResult(problem, StatusCodes.Status400BadRequest);
+        AddCommonExtensions(httpContext, problem, code);
+        return ToResult(problem, statusCode);
     }
 
     public static ProblemDetails Create(

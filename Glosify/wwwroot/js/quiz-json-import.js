@@ -20,6 +20,14 @@ export function previewMatches(canonicalJson, currentJson) {
     return typeof canonicalJson === 'string' && canonicalJson === currentJson;
 }
 
+export function isRequestTimeout(error) {
+    return error?.name === 'AbortError' || error?.name === 'TimeoutError';
+}
+
+const previewTimeoutMs = 30_000;
+const applyTimeoutMs = 60_000;
+const aiRepairTimeoutMs = 195_000;
+
 function initialize() {
     const form = document.querySelector('[data-json-import-form]');
     if (!form) {
@@ -83,16 +91,24 @@ function initialize() {
         }
     };
 
-    const request = async (url) => {
+    const request = async (url, timeoutMs) => {
         const body = new FormData();
         body.set('Json', input.value);
         body.set('ParentCollectionId', parentCollectionId);
         body.set('__RequestVerificationToken', token);
-        const response = await fetch(url, {
-            method: 'POST',
-            body,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+        let response;
+        try {
+            response = await fetch(url, {
+                method: 'POST',
+                body,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                signal: controller.signal
+            });
+        } finally {
+            window.clearTimeout(timeout);
+        }
         let payload = null;
         try {
             payload = await response.json();
@@ -220,10 +236,12 @@ function initialize() {
         }
         setBusy(true, 'Validating and building the free preview…');
         try {
-            const { response, payload } = await request(form.dataset.previewUrl);
+            const { response, payload } = await request(form.dataset.previewUrl, previewTimeoutMs);
             response.ok ? renderPreview(payload) : renderProblem(payload, response.status);
-        } catch {
-            renderProblem({ detail: 'Could not reach Glosify. Check your connection and try again.' }, 0);
+        } catch (error) {
+            renderProblem({ detail: isRequestTimeout(error)
+                ? 'The preview timed out. No content was created; try again.'
+                : 'Could not reach Glosify. Check your connection and try again.' }, 0);
         } finally {
             setBusy(false);
         }
@@ -232,10 +250,12 @@ function initialize() {
     const repairWithAi = async () => {
         setBusy(true, 'Repairing with Glosify AI. This uses credits…');
         try {
-            const { response, payload } = await request(form.dataset.repairUrl);
+            const { response, payload } = await request(form.dataset.repairUrl, aiRepairTimeoutMs);
             response.ok ? renderPreview(payload, true) : renderProblem(payload, response.status);
-        } catch {
-            renderProblem({ detail: 'Could not reach the AI repair service. Try again.' }, 0);
+        } catch (error) {
+            renderProblem({ detail: isRequestTimeout(error)
+                ? 'AI repair timed out. Nothing was imported; try again.'
+                : 'Could not reach the AI repair service. Try again.' }, 0);
         } finally {
             setBusy(false);
         }
@@ -249,7 +269,7 @@ function initialize() {
         }
         setBusy(true, 'Creating every collection, quiz, word, and sentence in one transaction…');
         try {
-            const { response, payload } = await request(form.dataset.applyUrl);
+            const { response, payload } = await request(form.dataset.applyUrl, applyTimeoutMs);
             if (!response.ok) {
                 renderProblem(payload, response.status);
                 return;
@@ -262,8 +282,10 @@ function initialize() {
             setHidden(success, false);
             setStatus('Import complete.');
             window.setTimeout(() => { window.location.assign(payload.redirectUrl); }, 1100);
-        } catch {
-            renderProblem({ detail: 'The import could not be completed. Nothing was created.' }, 0);
+        } catch (error) {
+            renderProblem({ detail: isRequestTimeout(error)
+                ? 'The import request timed out. Reload the library and check whether content was created before trying again.'
+                : 'The import could not be completed. Nothing was created.' }, 0);
         } finally {
             setBusy(false);
         }

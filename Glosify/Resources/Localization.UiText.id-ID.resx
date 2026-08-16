@@ -2869,4 +2869,23 @@
   <data name="Quiz.ItemActions" xml:space="preserve"><value>Tindakan untuk {0}</value></data>
   <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Hapus kalimat ini?</value></data>
   <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Kalimat dihapus.</value></data>
+  <data name="Quiz.JsonImportTopLevel" xml:space="preserve"><value>tingkat teratas pustaka kuis</value></data>
+  <data name="Quiz.JsonImport" xml:space="preserve"><value>Impor JSON</value></data>
+  <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Impor dari AI eksternal</value></data>
+  <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Buat kuis tanpa menggunakan kredit</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Minta JSON Glosify dari AI apa pun, tempel di sini, tinjau hasil persisnya, lalu impor ke {0}.</value></data>
+  <data name="Quiz.JsonImportClose" xml:space="preserve"><value>Tutup dialog impor</value></data>
+  <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Salin petunjuk untuk AI Anda</value></data>
+  <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Tambahkan apa yang ingin Anda pelajari, lalu kirim prompt ini ke ChatGPT, Claude, Gemini, atau AI lainnya.</value></data>
+  <data name="Quiz.JsonImportCopyInstructions" xml:space="preserve"><value>Salin petunjuk AI</value></data>
+  <data name="Quiz.JsonImportPasteLabel" xml:space="preserve"><value>2. Tempel JSON yang dihasilkan</value></data>
+  <data name="Quiz.JsonImportPastePlaceholder" xml:space="preserve"><value>Tempel objek JSON di sini...</value></data>
+  <data name="Quiz.JsonImportFreeMeta" xml:space="preserve"><value>Pratinjau dan impor gratis · tanpa panggilan AI</value></data>
+  <data name="Quiz.JsonImportReviewKicker" xml:space="preserve"><value>3. Tinjau sebelum membuat</value></data>
+  <data name="Quiz.JsonImportPreviewTitle" xml:space="preserve"><value>Pratinjau impor</value></data>
+  <data name="Quiz.JsonImportCopyRepair" xml:space="preserve"><value>Salin prompt perbaikan</value></data>
+  <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Perbaiki dengan AI · menggunakan kredit</value></data>
+  <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Pratinjau JSON</value></data>
+  <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Impor semuanya</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Pratinjau dan impor bersifat deterministik dan tidak menghubungi penyedia AI. “Perbaiki dengan AI” mengirim teks yang ditempel ke AI yang dikonfigurasi Glosify dan mengenakan biaya kredit.</value></data>
 </root>

@@ -2869,4 +2869,23 @@
   <data name="Quiz.ItemActions" xml:space="preserve"><value>Дії для {0}</value></data>
   <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Видалити це речення?</value></data>
   <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Речення видалено.</value></data>
+  <data name="Quiz.JsonImportTopLevel" xml:space="preserve"><value>верхній рівень бібліотеки тестів</value></data>
+  <data name="Quiz.JsonImport" xml:space="preserve"><value>Імпортувати JSON</value></data>
+  <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Імпорт із зовнішнього ШІ</value></data>
+  <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Створюйте тести без використання кредитів</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Попросіть будь-який ШІ створити JSON для Glosify, вставте його сюди, перевірте точний результат та імпортуйте до {0}.</value></data>
+  <data name="Quiz.JsonImportClose" xml:space="preserve"><value>Закрити діалог імпорту</value></data>
+  <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Скопіюйте інструкції для свого ШІ</value></data>
+  <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Додайте те, що хочете вивчити, і надішліть цей запит до ChatGPT, Claude, Gemini або іншого ШІ.</value></data>
+  <data name="Quiz.JsonImportCopyInstructions" xml:space="preserve"><value>Скопіювати інструкції для ШІ</value></data>
+  <data name="Quiz.JsonImportPasteLabel" xml:space="preserve"><value>2. Вставте створений JSON</value></data>
+  <data name="Quiz.JsonImportPastePlaceholder" xml:space="preserve"><value>Вставте об’єкт JSON сюди...</value></data>
+  <data name="Quiz.JsonImportFreeMeta" xml:space="preserve"><value>Безкоштовний перегляд та імпорт · без звернення до ШІ</value></data>
+  <data name="Quiz.JsonImportReviewKicker" xml:space="preserve"><value>3. Перевірте перед створенням</value></data>
+  <data name="Quiz.JsonImportPreviewTitle" xml:space="preserve"><value>Попередній перегляд імпорту</value></data>
+  <data name="Quiz.JsonImportCopyRepair" xml:space="preserve"><value>Скопіювати запит на виправлення</value></data>
+  <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Виправити за допомогою ШІ · використовує кредити</value></data>
+  <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Переглянути JSON</value></data>
+  <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Імпортувати все</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Попередній перегляд та імпорт є детермінованими й не звертаються до постачальника ШІ. «Виправити за допомогою ШІ» надсилає вставлений текст до налаштованого ШІ Glosify та списує кредити.</value></data>
 </root>

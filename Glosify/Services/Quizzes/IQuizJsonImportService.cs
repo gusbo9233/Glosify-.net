@@ -27,5 +27,11 @@ public sealed class QuizJsonImportValidationException(
     public string? CanonicalJson { get; } = canonicalJson;
 }
 
-public sealed class QuizJsonImportAiUnprocessableException()
-    : InvalidOperationException("The AI could not repair this import into a valid Glosify document.");
+public sealed class QuizJsonImportAiUnprocessableException(
+    IReadOnlyDictionary<string, string[]>? errors = null,
+    string? canonicalJson = null)
+    : InvalidOperationException("The AI could not repair this import into a valid Glosify document.")
+{
+    public IReadOnlyDictionary<string, string[]>? Errors { get; } = errors;
+    public string? CanonicalJson { get; } = canonicalJson;
+}

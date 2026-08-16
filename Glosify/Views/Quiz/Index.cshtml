@@ -14,7 +14,7 @@
     var pageSubtitle = currentCollection == null
         ? Text["Quiz.ShowingLanguage", displayLanguage]
         : Text["Quiz.LanguageCollection", displayLanguage];
-    var importDestination = currentCollection?.Name ?? "the top level of the quiz library";
+    var importDestination = currentCollection?.Name ?? Text["Quiz.JsonImportTopLevel"];
     var jsonGenerationPrompt = $$"""
         Create a Glosify version 1 quiz-import JSON document for a learner studying {{displayLanguage}}. The import will be placed in {{importDestination}}.
 
@@ -104,9 +104,9 @@
                     </a>
                 }
             }
-            <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="jsonImportModal" aria-label="Import JSON">
+            <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="jsonImportModal" aria-label="@Text["Quiz.JsonImport"]">
                 <span class="material-symbols-outlined" aria-hidden="true">data_object</span>
-                Import JSON
+                @Text["Quiz.JsonImport"]
             </button>
             <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="createCollectionModal">
                 <span class="material-symbols-outlined">create_new_folder</span>
@@ -211,9 +211,9 @@
             <h2 class="empty-title">@Text["Quiz.EmptyTitle"]</h2>
             <p class="empty-copy">@Text["Quiz.EmptyText"]</p>
             <div class="empty-actions">
-                <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="jsonImportModal" aria-label="Import JSON">
+                <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="jsonImportModal" aria-label="@Text["Quiz.JsonImport"]">
                     <span class="material-symbols-outlined" aria-hidden="true">data_object</span>
-                    Import JSON
+                    @Text["Quiz.JsonImport"]
                 </button>
                 <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="createCollectionModal">
                     <span class="material-symbols-outlined">create_new_folder</span>
@@ -250,22 +250,22 @@
     <div class="modal json-import-modal" role="dialog" aria-modal="true" aria-labelledby="jsonImportTitle">
         <header class="json-import-header">
             <div>
-                <p class="json-import-kicker">External AI import</p>
-                <h2 class="modal-title" id="jsonImportTitle">Create quizzes without using credits</h2>
-                <p>Ask any AI for Glosify JSON, paste it here, review the exact result, and import it into <strong>@importDestination</strong>.</p>
+                <p class="json-import-kicker">@Text["Quiz.JsonImportKicker"]</p>
+                <h2 class="modal-title" id="jsonImportTitle">@Text["Quiz.JsonImportTitle"]</h2>
+                <p>@Text["Quiz.JsonImportDescription", importDestination]</p>
             </div>
-            <button class="json-import-close" type="button" data-modal-close aria-label="Close import dialog">
+            <button class="json-import-close" type="button" data-modal-close aria-label="@Text["Quiz.JsonImportClose"]">
                 <span class="material-symbols-outlined" aria-hidden="true">close</span>
             </button>
         </header>
 
         <details class="json-import-instructions">
-            <summary>1. Copy instructions for your AI</summary>
-            <p>Add what you want to learn, then send this prompt to ChatGPT, Claude, Gemini, or another AI.</p>
+            <summary>@Text["Quiz.JsonImportInstructionsSummary"]</summary>
+            <p>@Text["Quiz.JsonImportInstructionsHelp"]</p>
             <textarea class="json-import-prompt" data-json-import-generation-prompt readonly>@jsonGenerationPrompt</textarea>
             <button class="json-import-copy" type="button" data-copy-json-import-prompt>
                 <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
-                Copy AI instructions
+                @Text["Quiz.JsonImportCopyInstructions"]
             </button>
         </details>
 
@@ -277,17 +277,17 @@
             @Html.AntiForgeryToken()
             <input type="hidden" name="ParentCollectionId" value="@currentCollectionId" />
             <div class="form-group">
-                <label class="form-label" for="jsonImportText">2. Paste generated JSON</label>
+                <label class="form-label" for="jsonImportText">@Text["Quiz.JsonImportPasteLabel"]</label>
                 <textarea class="json-import-textarea"
                           id="jsonImportText"
                           name="Json"
                           data-json-import-text
                           maxlength="65536"
                           spellcheck="false"
-                          placeholder="Paste the JSON object here..."
+                          placeholder="@Text["Quiz.JsonImportPastePlaceholder"]"
                           required></textarea>
                 <div class="json-import-input-meta">
-                    <span>Free preview and import · no AI call</span>
+                    <span>@Text["Quiz.JsonImportFreeMeta"]</span>
                     <span data-json-import-size>0 / 64 KiB</span>
                 </div>
             </div>
@@ -298,8 +298,8 @@
             <section class="json-import-preview" data-json-import-preview hidden aria-labelledby="jsonImportPreviewTitle">
                 <div class="json-import-preview-header">
                     <div>
-                        <p class="json-import-kicker">3. Review before creating</p>
-                        <h3 id="jsonImportPreviewTitle">Import preview</h3>
+                        <p class="json-import-kicker">@Text["Quiz.JsonImportReviewKicker"]</p>
+                        <h3 id="jsonImportPreviewTitle">@Text["Quiz.JsonImportPreviewTitle"]</h3>
                     </div>
                     <div class="json-import-totals" data-json-import-totals></div>
                 </div>
@@ -310,21 +310,21 @@
             <section class="json-import-success" data-json-import-success hidden aria-live="polite"></section>
 
             <div class="json-import-actions">
-                <button class="btn-cancel" type="button" data-modal-close>Cancel</button>
+                <button class="btn-cancel" type="button" data-modal-close>@Text["Common.Cancel"]</button>
                 <button class="json-import-copy json-import-copy--repair" type="button" data-copy-json-repair-prompt hidden>
-                    Copy repair prompt
+                    @Text["Quiz.JsonImportCopyRepair"]
                 </button>
                 <button class="json-import-ai-repair" type="button" data-json-import-ai-repair hidden>
                     <span class="material-symbols-outlined" aria-hidden="true">auto_fix_high</span>
-                    Repair with AI · uses credits
+                    @Text["Quiz.JsonImportRepairWithAi"]
                 </button>
-                <button class="btn-create" type="button" data-json-import-preview-button>Preview JSON</button>
-                <button class="btn-create" type="button" data-json-import-apply hidden>Import everything</button>
+                <button class="btn-create" type="button" data-json-import-preview-button>@Text["Quiz.JsonImportPreviewButton"]</button>
+                <button class="btn-create" type="button" data-json-import-apply hidden>@Text["Quiz.JsonImportApplyButton"]</button>
             </div>
         </form>
 
         <p class="json-import-privacy">
-            Preview and import are deterministic and do not contact an AI provider. “Repair with AI” sends the pasted text to Glosify’s configured AI and charges credits.
+            @Text["Quiz.JsonImportPrivacy"]
         </p>
     </div>
 </div>

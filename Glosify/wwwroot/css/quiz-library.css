@@ -617,6 +617,13 @@
     cursor: pointer;
 }
 
+.json-import-close:focus-visible,
+.json-import-copy:focus-visible,
+.json-import-ai-repair:focus-visible {
+    outline: 3px solid rgba(120, 183, 255, 0.9);
+    outline-offset: 3px;
+}
+
 .json-import-instructions {
     margin: 20px 0;
     padding: 16px 18px;
@@ -912,7 +919,7 @@
 
     .json-import-actions {
         align-items: stretch;
-        flex-direction: column-reverse;
+        flex-direction: column;
     }
 
     .json-import-actions button {

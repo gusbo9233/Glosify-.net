@@ -2869,4 +2869,23 @@
   <data name="Quiz.ItemActions" xml:space="preserve"><value>Thao tác cho {0}</value></data>
   <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Xóa câu này?</value></data>
   <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Đã xóa câu.</value></data>
+  <data name="Quiz.JsonImportTopLevel" xml:space="preserve"><value>cấp cao nhất của thư viện bài kiểm tra</value></data>
+  <data name="Quiz.JsonImport" xml:space="preserve"><value>Nhập JSON</value></data>
+  <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Nhập từ AI bên ngoài</value></data>
+  <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Tạo bài kiểm tra mà không dùng tín dụng</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Yêu cầu bất kỳ AI nào tạo JSON Glosify, dán vào đây, xem lại kết quả chính xác rồi nhập vào {0}.</value></data>
+  <data name="Quiz.JsonImportClose" xml:space="preserve"><value>Đóng hộp thoại nhập</value></data>
+  <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Sao chép hướng dẫn cho AI của bạn</value></data>
+  <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Thêm nội dung bạn muốn học, rồi gửi lời nhắc này cho ChatGPT, Claude, Gemini hoặc AI khác.</value></data>
+  <data name="Quiz.JsonImportCopyInstructions" xml:space="preserve"><value>Sao chép hướng dẫn AI</value></data>
+  <data name="Quiz.JsonImportPasteLabel" xml:space="preserve"><value>2. Dán JSON đã tạo</value></data>
+  <data name="Quiz.JsonImportPastePlaceholder" xml:space="preserve"><value>Dán đối tượng JSON vào đây...</value></data>
+  <data name="Quiz.JsonImportFreeMeta" xml:space="preserve"><value>Xem trước và nhập miễn phí · không gọi AI</value></data>
+  <data name="Quiz.JsonImportReviewKicker" xml:space="preserve"><value>3. Xem lại trước khi tạo</value></data>
+  <data name="Quiz.JsonImportPreviewTitle" xml:space="preserve"><value>Xem trước nội dung nhập</value></data>
+  <data name="Quiz.JsonImportCopyRepair" xml:space="preserve"><value>Sao chép lời nhắc sửa chữa</value></data>
+  <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Sửa bằng AI · dùng tín dụng</value></data>
+  <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Xem trước JSON</value></data>
+  <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Nhập tất cả</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Việc xem trước và nhập có tính xác định và không liên hệ nhà cung cấp AI. “Sửa bằng AI” gửi văn bản đã dán đến AI được cấu hình của Glosify và tính tín dụng.</value></data>
 </root>

@@ -2869,4 +2869,23 @@
   <data name="Quiz.ItemActions" xml:space="preserve"><value>Acciones para {0}</value></data>
   <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>¿Eliminar esta oración?</value></data>
   <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Oración eliminada.</value></data>
+  <data name="Quiz.JsonImportTopLevel" xml:space="preserve"><value>el nivel superior de la biblioteca de cuestionarios</value></data>
+  <data name="Quiz.JsonImport" xml:space="preserve"><value>Importar JSON</value></data>
+  <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Importación desde IA externa</value></data>
+  <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Crea cuestionarios sin usar créditos</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Pídele a cualquier IA un JSON de Glosify, pégalo aquí, revisa el resultado exacto e impórtalo en {0}.</value></data>
+  <data name="Quiz.JsonImportClose" xml:space="preserve"><value>Cerrar diálogo de importación</value></data>
+  <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Copia las instrucciones para tu IA</value></data>
+  <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Agrega lo que quieres aprender y envía este mensaje a ChatGPT, Claude, Gemini u otra IA.</value></data>
+  <data name="Quiz.JsonImportCopyInstructions" xml:space="preserve"><value>Copiar instrucciones para la IA</value></data>
+  <data name="Quiz.JsonImportPasteLabel" xml:space="preserve"><value>2. Pega el JSON generado</value></data>
+  <data name="Quiz.JsonImportPastePlaceholder" xml:space="preserve"><value>Pega aquí el objeto JSON...</value></data>
+  <data name="Quiz.JsonImportFreeMeta" xml:space="preserve"><value>Vista previa e importación gratis · sin llamada a IA</value></data>
+  <data name="Quiz.JsonImportReviewKicker" xml:space="preserve"><value>3. Revisa antes de crear</value></data>
+  <data name="Quiz.JsonImportPreviewTitle" xml:space="preserve"><value>Vista previa de importación</value></data>
+  <data name="Quiz.JsonImportCopyRepair" xml:space="preserve"><value>Copiar mensaje de reparación</value></data>
+  <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Reparar con IA · usa créditos</value></data>
+  <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Previsualizar JSON</value></data>
+  <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Importar todo</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>La vista previa y la importación son deterministas y no contactan a un proveedor de IA. “Reparar con IA” envía el texto pegado a la IA configurada de Glosify y cobra créditos.</value></data>
 </root>

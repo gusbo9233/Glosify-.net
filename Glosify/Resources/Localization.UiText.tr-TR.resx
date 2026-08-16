@@ -2869,4 +2869,23 @@
   <data name="Quiz.ItemActions" xml:space="preserve"><value>{0} için işlemler</value></data>
   <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Bu cümle kaldırılsın mı?</value></data>
   <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Cümle kaldırıldı.</value></data>
+  <data name="Quiz.JsonImportTopLevel" xml:space="preserve"><value>quiz kitaplığının en üst düzeyi</value></data>
+  <data name="Quiz.JsonImport" xml:space="preserve"><value>JSON içe aktar</value></data>
+  <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Harici yapay zekâdan içe aktarma</value></data>
+  <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Kredi kullanmadan quiz oluşturun</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Herhangi bir yapay zekâdan Glosify JSON isteyin, buraya yapıştırın, sonucu aynen inceleyin ve {0} konumuna aktarın.</value></data>
+  <data name="Quiz.JsonImportClose" xml:space="preserve"><value>İçe aktarma penceresini kapat</value></data>
+  <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Yapay zekânız için talimatları kopyalayın</value></data>
+  <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Öğrenmek istediğinizi ekleyin ve bu istemi ChatGPT, Claude, Gemini veya başka bir yapay zekâya gönderin.</value></data>
+  <data name="Quiz.JsonImportCopyInstructions" xml:space="preserve"><value>Yapay zekâ talimatlarını kopyala</value></data>
+  <data name="Quiz.JsonImportPasteLabel" xml:space="preserve"><value>2. Oluşturulan JSON’u yapıştırın</value></data>
+  <data name="Quiz.JsonImportPastePlaceholder" xml:space="preserve"><value>JSON nesnesini buraya yapıştırın...</value></data>
+  <data name="Quiz.JsonImportFreeMeta" xml:space="preserve"><value>Ücretsiz önizleme ve içe aktarma · yapay zekâ çağrısı yok</value></data>
+  <data name="Quiz.JsonImportReviewKicker" xml:space="preserve"><value>3. Oluşturmadan önce inceleyin</value></data>
+  <data name="Quiz.JsonImportPreviewTitle" xml:space="preserve"><value>İçe aktarma önizlemesi</value></data>
+  <data name="Quiz.JsonImportCopyRepair" xml:space="preserve"><value>Onarım istemini kopyala</value></data>
+  <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Yapay zekâ ile onar · kredi kullanır</value></data>
+  <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>JSON’u önizle</value></data>
+  <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Tümünü içe aktar</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Önizleme ve içe aktarma deterministiktir ve bir yapay zekâ sağlayıcısıyla iletişim kurmaz. “Yapay zekâ ile onar”, yapıştırılan metni Glosify’ın yapılandırılmış yapay zekâsına gönderir ve kredi harcar.</value></data>
 </root>

@@ -137,6 +137,34 @@ public sealed class QuizJsonImportEndpointTests
     }
 
     [Fact]
+    public async Task ExplicitAiRepair_ReturnsPostRepairValidationErrorsWithThe422Contract()
+    {
+        var repairs = new RecordingRepairService
+        {
+            Failure = new QuizJsonImportAiUnprocessableException(
+                new Dictionary<string, string[]> { ["$.quizzes[0].words[0].translation"] = ["A translation is required."] },
+                "{\"version\":1}"),
+        };
+        using var factory = CreateFactory(new RecordingImportService(), repairs: repairs);
+        var response = await SendWithAntiforgeryAsync(
+            factory,
+            factory.CreateClient(),
+            "/Quiz/RepairJsonImportWithAi",
+            "invalid");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(ApiErrorCodes.UnprocessableEntity, problem.RootElement.GetProperty("code").GetString());
+        Assert.Equal(
+            "A translation is required.",
+            problem.RootElement.GetProperty("errors")
+                .GetProperty("$.quizzes[0].words[0].translation")[0]
+                .GetString());
+        Assert.Equal("{\"version\":1}", problem.RootElement.GetProperty("canonicalJson").GetString());
+    }
+
+    [Fact]
     public void ImportActions_DeclareAntiforgeryAndTheBrowserRequestSizeLimit()
     {
         foreach (var actionName in new[]

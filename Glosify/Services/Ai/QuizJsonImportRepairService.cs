@@ -51,7 +51,7 @@ public sealed class QuizJsonImportRepairService : IQuizJsonImportRepairService
                 Guid.NewGuid(),
                 "quiz_import"),
             cancellationToken: cancellationToken);
-        if (string.IsNullOrWhiteSpace(repaired.RepairedJson))
+        if (repaired is null || string.IsNullOrWhiteSpace(repaired.RepairedJson))
         {
             throw new QuizJsonImportAiUnprocessableException();
         }
@@ -65,9 +65,11 @@ public sealed class QuizJsonImportRepairService : IQuizJsonImportRepairService
                 userId,
                 cancellationToken);
         }
-        catch (QuizJsonImportValidationException)
+        catch (QuizJsonImportValidationException exception)
         {
-            throw new QuizJsonImportAiUnprocessableException();
+            throw new QuizJsonImportAiUnprocessableException(
+                exception.Errors,
+                exception.CanonicalJson);
         }
     }
 

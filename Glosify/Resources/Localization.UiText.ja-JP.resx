@@ -2869,4 +2869,23 @@
   <data name="Quiz.ItemActions" xml:space="preserve"><value>{0} の操作</value></data>
   <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>この文を削除しますか？</value></data>
   <data name="Quiz.DeletedSentence" xml:space="preserve"><value>文を削除しました。</value></data>
+  <data name="Quiz.JsonImportTopLevel" xml:space="preserve"><value>クイズライブラリの最上位</value></data>
+  <data name="Quiz.JsonImport" xml:space="preserve"><value>JSONをインポート</value></data>
+  <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>外部AIからインポート</value></data>
+  <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>クレジットを使わずにクイズを作成</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>任意のAIにGlosify JSONを作成してもらい、ここに貼り付け、正確な結果を確認して{0}にインポートします。</value></data>
+  <data name="Quiz.JsonImportClose" xml:space="preserve"><value>インポートダイアログを閉じる</value></data>
+  <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. AI向けの指示をコピー</value></data>
+  <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>学びたい内容を追加し、このプロンプトをChatGPT、Claude、Gemini、または別のAIに送信してください。</value></data>
+  <data name="Quiz.JsonImportCopyInstructions" xml:space="preserve"><value>AI向け指示をコピー</value></data>
+  <data name="Quiz.JsonImportPasteLabel" xml:space="preserve"><value>2. 生成されたJSONを貼り付け</value></data>
+  <data name="Quiz.JsonImportPastePlaceholder" xml:space="preserve"><value>JSONオブジェクトをここに貼り付け...</value></data>
+  <data name="Quiz.JsonImportFreeMeta" xml:space="preserve"><value>プレビューとインポートは無料 · AI呼び出しなし</value></data>
+  <data name="Quiz.JsonImportReviewKicker" xml:space="preserve"><value>3. 作成前に確認</value></data>
+  <data name="Quiz.JsonImportPreviewTitle" xml:space="preserve"><value>インポートのプレビュー</value></data>
+  <data name="Quiz.JsonImportCopyRepair" xml:space="preserve"><value>修復プロンプトをコピー</value></data>
+  <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>AIで修復 · クレジットを使用</value></data>
+  <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>JSONをプレビュー</value></data>
+  <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>すべてインポート</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>プレビューとインポートは決定論的で、AIプロバイダーには接続しません。「AIで修復」は貼り付けたテキストをGlosifyで設定されたAIに送信し、クレジットを消費します。</value></data>
 </root>

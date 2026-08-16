@@ -74,12 +74,24 @@ public sealed class QuizImportController : ControllerBase
         {
             return MissingLanguage();
         }
-        return Ok(await _repair.RepairAsync(
-            request.Json,
-            targetLanguage,
-            request.ParentCollectionId,
-            User.GetUserId(),
-            cancellationToken));
+        try
+        {
+            return Ok(await _repair.RepairAsync(
+                request.Json,
+                targetLanguage,
+                request.ParentCollectionId,
+                User.GetUserId(),
+                cancellationToken));
+        }
+        catch (QuizJsonImportAiUnprocessableException exception) when (exception.Errors is not null)
+        {
+            return GlosifyProblemDetails.ValidationResult(
+                HttpContext,
+                exception.Errors,
+                exception.CanonicalJson,
+                StatusCodes.Status422UnprocessableEntity,
+                ApiErrorCodes.UnprocessableEntity);
+        }
     }
 
     [HttpPost("ApplyJsonImport")]
