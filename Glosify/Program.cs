@@ -94,19 +94,25 @@ builder.Services.AddAuthorization(options =>
         .RequireAuthenticatedUser()
         .Build();
     var adminEmails = builder.Configuration.GetSection("Admin:Emails").Get<string[]>() ?? [];
-    options.AddPolicy("AiCreditAdmin", policy =>
+    bool IsAdmin(AuthorizationHandlerContext context)
+    {
+        var email = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+            ?? context.User.Identity?.Name
+            ?? string.Empty;
+        return adminEmails.Any(adminEmail => string.Equals(
+            adminEmail,
+            email,
+            StringComparison.OrdinalIgnoreCase));
+    }
+
+    options.AddPolicy(AuthorizationPolicyNames.AiCreditAdmin, policy =>
     {
         policy.RequireAuthenticatedUser();
-        policy.RequireAssertion(context =>
-        {
-            var email = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-                ?? context.User.Identity?.Name
-                ?? string.Empty;
-            return adminEmails.Any(adminEmail => string.Equals(
-                adminEmail,
-                email,
-                StringComparison.OrdinalIgnoreCase));
-        });
+        policy.RequireAssertion(IsAdmin);
+    });
+    options.AddPolicy(AuthorizationPolicyNames.SpeakingAvailability, policy =>
+    {
+        policy.RequireAssertion(context => !builder.Environment.IsProduction() || IsAdmin(context));
     });
 });
 builder.Services.AddMemoryCache();

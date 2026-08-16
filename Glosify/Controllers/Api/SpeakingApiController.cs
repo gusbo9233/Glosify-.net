@@ -1,6 +1,7 @@
 using Glosify.Extensions;
 using Glosify.Filters;
 using Glosify.Models.Api;
+using Glosify.Services.Auth;
 using Glosify.Services.Language;
 using Glosify.Services.Speaking;
 using Glosify.Services.Speech;
@@ -12,6 +13,7 @@ namespace Glosify.Controllers.Api;
 
 [ApiController]
 [Authorize]
+[Authorize(Policy = AuthorizationPolicyNames.SpeakingAvailability)]
 [AiServiceExceptionFilter]
 [Route("api/speaking")]
 public sealed class SpeakingApiController : ControllerBase

@@ -11,8 +11,11 @@ using Glosify.Services.Speaking;
 using Glosify.Services.Speech;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -23,6 +26,58 @@ namespace Glosify.Tests;
 
 public sealed class SpeakingIntegrationTests
 {
+    [Fact]
+    public async Task Production_denies_the_speaking_page_and_api_to_non_admins()
+    {
+        using var factory = CreateFactory(environment: "Production");
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false,
+        });
+
+        var pageResponse = await client.GetAsync("/Speaking");
+        using var apiRequest = new HttpRequestMessage(HttpMethod.Post, "/api/speaking/sessions")
+        {
+            Content = JsonContent("""{"avatarId":"bartender","cefrLevel":"A1"}"""),
+        };
+        var apiResponse = await client.SendAsync(apiRequest);
+
+        Assert.Equal(HttpStatusCode.Forbidden, pageResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, apiResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task Production_keeps_speaking_navigation_visible_but_disabled_for_non_admins()
+    {
+        using var factory = CreateFactory(environment: "Production");
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/");
+        response.EnsureSuccessStatusCode();
+        var document = await new HtmlParser().ParseDocumentAsync(
+            await response.Content.ReadAsStringAsync());
+
+        Assert.NotNull(document.QuerySelector("aside .app-nav-item.is-disabled[aria-disabled='true']"));
+        Assert.Null(document.QuerySelector("aside a[href='/Speaking']"));
+        Assert.NotNull(document.QuerySelector(".app-mobile-nav .app-nav-item.is-disabled[aria-disabled='true']"));
+        Assert.Null(document.QuerySelector(".app-mobile-nav a[href='/Speaking']"));
+    }
+
+    [Fact]
+    public async Task Production_allows_admins_to_open_speaking_and_use_its_navigation_link()
+    {
+        using var factory = CreateFactory(
+            environment: "Production",
+            adminEmail: "learner@example.test");
+        var client = factory.CreateClient();
+
+        var document = await GetDocumentAsync(client);
+
+        Assert.NotNull(document.QuerySelector("#speaking-app"));
+        Assert.NotNull(document.QuerySelector("aside a[href='/Speaking']"));
+        Assert.Null(document.QuerySelector("aside .app-nav-item.is-disabled"));
+    }
+
     [Fact]
     public async Task Speaking_page_redirects_to_language_selection_when_none_is_selected()
     {
@@ -686,12 +741,29 @@ public sealed class SpeakingIntegrationTests
     private static WebApplicationFactory<Program> CreateFactory(
         string? language = "Polish",
         bool interactiveEnabled = true,
-        bool genericTutorEnabled = false) =>
+        bool genericTutorEnabled = false,
+        string environment = "Development",
+        string? adminEmail = null) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
-            builder.UseEnvironment("Development");
+            builder.UseEnvironment(environment);
+            builder.ConfigureAppConfiguration((_, configuration) =>
+            {
+                var settings = new Dictionary<string, string?>
+                {
+                    ["Legal:ControllerName"] = "Glosify test operator",
+                    ["Legal:ContactEmail"] = "privacy@glosify.app",
+                };
+                if (adminEmail is not null)
+                {
+                    settings["Admin:Emails:0"] = adminEmail;
+                }
+                configuration.AddInMemoryCollection(settings);
+            });
             builder.ConfigureTestServices(services =>
             {
+                services.Configure<MvcOptions>(options =>
+                    options.Filters.Add(new HideAssistantPanelFilter()));
                 services.RemoveAll<IAiCreditService>();
                 services.AddSingleton<IAiCreditService, PageCredits>();
                 services.RemoveAll<IPaidServiceGate>();
@@ -722,6 +794,21 @@ public sealed class SpeakingIntegrationTests
                         _ => { });
             });
         });
+
+    private sealed class HideAssistantPanelFilter : IAsyncResultFilter
+    {
+        public async Task OnResultExecutionAsync(
+            ResultExecutingContext context,
+            ResultExecutionDelegate next)
+        {
+            if (context.Controller is Controller controller)
+            {
+                controller.ViewData["HideAssistantPanel"] = true;
+            }
+
+            await next();
+        }
+    }
 
     private sealed class FixedLanguageContext(string? currentLanguage) : ILanguageContext
     {

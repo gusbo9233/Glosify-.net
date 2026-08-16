@@ -3539,6 +3539,14 @@ body { margin: 0; }
     background: var(--surface-container-high);
 }
 
+.app-nav-item.is-disabled,
+.app-nav-item.is-disabled:hover {
+    color: var(--on-surface-var);
+    background: transparent;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
 .app-nav-item.is-active {
     background: var(--secondary-container);
     color: var(--primary);

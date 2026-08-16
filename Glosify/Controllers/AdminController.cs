@@ -4,6 +4,7 @@ using Glosify.Models.Entities;
 using Glosify.Models.ViewModels;
 using Glosify.Services;
 using Glosify.Services.Ai;
+using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Controllers;
 
-[Authorize(Policy = "AiCreditAdmin")]
+[Authorize(Policy = AuthorizationPolicyNames.AiCreditAdmin)]
 public sealed class AdminController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
