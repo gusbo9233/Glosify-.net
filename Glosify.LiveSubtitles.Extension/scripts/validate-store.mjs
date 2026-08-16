@@ -7,7 +7,7 @@ const root = path.resolve(process.argv[2] ?? "artifacts/store");
 const manifest = JSON.parse(await readFile(path.join(root, "manifest.json"), "utf8"));
 const failures = [];
 
-if (manifest.version !== "0.4.0") failures.push("manifest version must be 0.4.0");
+if (manifest.version !== "0.5.0") failures.push("manifest version must be 0.5.0");
 if (manifest.key !== "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3EWb0lg1qHn+jCKdT5RdBP7WQ5TzaEvs3XC4WoXwijmdGApbCjgsHV7PwcCn/Qwemj3x2YmBoUO1efXXHnTawC1gjfgmsCz41aRaIiBnBhNbRtjMalB0cZ59qjEm6Ivyzy+n8NZMDpTY25GBDcb4WFMG9HC8BFBlyc+g5bfvwZYHrnh75HKQ343v5JmR/37m9M74zxYrXYzO4xzNkojWUntuEenNd7/KQz004+FwFIC+GenXlqQd3KwmTHeUChoSMC0Xw1FlDd6bKETE8EZy+ZzFxHDTvv8AUsWWeCyoOo9XNI4VjkvLSiZTfuKc3D0GiJn5Nkca4nnwKFdAHC3X3QIDAQAB") failures.push("pinned extension key changed");
 const extensionId = extensionIdForKey(manifest.key);
 if (extensionId !== "akepdpjieiokffdapibipomhbplikock") failures.push(`pinned extension ID changed to ${extensionId}`);

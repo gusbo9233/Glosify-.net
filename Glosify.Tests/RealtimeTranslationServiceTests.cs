@@ -268,6 +268,10 @@ public sealed class RealtimeTranslationServiceTests
         Assert.Equal(1, duplicate.ChargedMinutes);
         Assert.Equal(8, duplicate.CreditsCharged);
         Assert.Equal(17, duplicate.AvailableCredits);
+        Assert.Equal(clock.GetUtcNow(), first.SessionStartedAtUtc);
+        Assert.Equal(clock.GetUtcNow().AddMinutes(1), first.AudioSendAuthorizedUntilUtc);
+        Assert.Equal(first.SessionStartedAtUtc, duplicate.SessionStartedAtUtc);
+        Assert.Equal(first.AudioSendAuthorizedUntilUtc, duplicate.AudioSendAuthorizedUntilUtc);
         var transaction = Assert.Single(await context.AiCreditTransactions.Where(transaction =>
             transaction.Kind == AiCreditTransactionKinds.UsageDebit
             && transaction.AudioDurationSeconds == 60).ToListAsync());
@@ -417,14 +421,21 @@ public sealed class RealtimeTranslationServiceTests
         var clock = new ManualTimeProvider(TestNow);
         var service = CreateService(context, clock, new FakeRelayTokenStore());
         var created = await service.CreateSessionAsync("user-1", "es");
-        await service.BeginMinuteAsync("user-1", created.SessionId, 1);
+        var begun = await service.BeginMinuteAsync("user-1", created.SessionId, 1);
+        clock.Advance(TimeSpan.FromSeconds(55));
 
         var first = await service.ReserveMinuteAsync("user-1", created.SessionId, 2);
         var duplicate = await service.ReserveMinuteAsync("user-1", created.SessionId, 2);
+        var heartbeat = await service.HeartbeatAsync("user-1", created.SessionId);
         await service.EndSessionAsync("user-1", created.SessionId);
 
         Assert.Equal(first.MinuteIndex, duplicate.MinuteIndex);
         Assert.Equal(9, first.AvailableCredits);
+        Assert.Equal(begun.SessionStartedAtUtc, first.SessionStartedAtUtc);
+        Assert.Equal(begun.SessionStartedAtUtc!.Value.AddMinutes(2), first.AudioSendAuthorizedUntilUtc);
+        Assert.Equal(first.AudioSendAuthorizedUntilUtc, duplicate.AudioSendAuthorizedUntilUtc);
+        Assert.Equal(first.SessionStartedAtUtc, heartbeat.SessionStartedAtUtc);
+        Assert.Equal(first.AudioSendAuthorizedUntilUtc, heartbeat.AudioSendAuthorizedUntilUtc);
         var account = await context.AiCreditAccounts.SingleAsync();
         Assert.Equal(17, account.AvailableCredits);
         Assert.Equal(RealtimeTranslationMinuteStatuses.Released,

@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { appendBounded, normalizeRealtimeEvent } from "../lib/realtime-events.js";
+import {
+  appendBounded,
+  createRealtimeEventAccumulator,
+  normalizeRealtimeEvent,
+} from "../lib/realtime-events.js";
 
 test("Scribe finalized segments normalize into committed translation events", () => {
   const event = normalizeRealtimeEvent({
@@ -82,4 +86,78 @@ test("unrelated realtime events are ignored", () => {
 
 test("subtitle buffers keep only the configured tail", () => {
   assert.equal(appendBounded("12345", "67890", 6), "567890");
+});
+
+test("Foundry deltas replace one stable caption and the final prefers complete text", () => {
+  let sequence = 0;
+  const accumulator = createRealtimeEventAccumulator({
+    sessionId: "s1",
+    targetLanguage: "sv",
+    nextSequence: () => ++sequence,
+  });
+  const first = accumulator.apply({
+    type: "response.output_text.delta",
+    response_id: "response-1",
+    output_index: 0,
+    content_index: 0,
+    delta: "God ",
+  }, 1_000);
+  const second = accumulator.apply({
+    type: "response.output_text.delta",
+    response_id: "response-1",
+    output_index: 0,
+    content_index: 0,
+    delta: "morgon",
+  }, 1_100);
+  const final = accumulator.apply({
+    type: "response.output_text.done",
+    response_id: "response-1",
+    output_index: 0,
+    content_index: 0,
+    text: "God morgon!",
+  }, 1_200);
+
+  assert.equal(first.sequence, second.sequence);
+  assert.equal(second.delta, "God morgon");
+  assert.equal(second.replace, true);
+  assert.equal(final.sequence, first.sequence);
+  assert.equal(final.delta, "God morgon!");
+  assert.equal(final.isFinal, true);
+});
+
+test("final-only provider events render once", () => {
+  let sequence = 0;
+  const accumulator = createRealtimeEventAccumulator({
+    sessionId: "s1",
+    targetLanguage: "de",
+    nextSequence: () => ++sequence,
+  });
+  const providerEvent = {
+    type: "response.text.done",
+    item_id: "item-7",
+    content_index: 1,
+    transcript: "Guten Abend",
+  };
+
+  assert.equal(accumulator.apply(providerEvent, 2_000).delta, "Guten Abend");
+  assert.equal(accumulator.apply(providerEvent, 2_100), null);
+});
+
+test("delta-only captions finalize after four idle seconds", () => {
+  const accumulator = createRealtimeEventAccumulator({
+    sessionId: "s1",
+    targetLanguage: "pl",
+    nextSequence: () => 4,
+  });
+  accumulator.apply({
+    type: "response.text.delta",
+    response_id: "response-idle",
+    delta: "Dobry wieczór",
+  }, 1_000);
+
+  assert.deepEqual(accumulator.flushIdle(4_999), []);
+  const [final] = accumulator.flushIdle(5_000);
+  assert.equal(final.delta, "Dobry wieczór");
+  assert.equal(final.sequence, 4);
+  assert.equal(final.isFinal, true);
 });

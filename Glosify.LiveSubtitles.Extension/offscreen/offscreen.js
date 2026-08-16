@@ -1,26 +1,31 @@
-import { StreamingPcm16Downsampler, pcm16ToBase64 } from "../lib/audio-pcm.js";
-import { normalizeRealtimeEvent } from "../lib/realtime-events.js";
+import {
+  StreamingPcm16Downsampler,
+  accumulateSkippedAudioMilliseconds,
+  pcm16ToBase64,
+} from "../lib/audio-pcm.js";
+import { createRealtimeEventAccumulator } from "../lib/realtime-events.js";
 import { buildRelayProtocols, buildRelayWebSocketUrl } from "../lib/relay-url.js";
 
 const RELAY_CONNECT_TIMEOUT_MS = 15_000;
+const RELAY_DISCONNECT_TIMEOUT_MS = 1_000;
 const MAX_RELAY_BUFFERED_BYTES = 512 * 1024;
+const MAX_AUTHORIZATION_AHEAD_MS = 61 * 60_000;
+const BACKPRESSURE_STOP_MS = 2_000;
 
 let sourceStream = null;
 let audioContext = null;
 let sourceNode = null;
 let processorNode = null;
 let mutedProcessorOutput = null;
+let testOscillator = null;
 let downsampler = null;
-let relaySocket = null;
-let relayReady = false;
-let relayAuthorizedUntil = 0;
+let relayConnection = null;
+let relayGeneration = 0;
 let tickTimer = null;
-let expectedRelayClose = false;
 let expectedCaptureEnd = false;
-let relayErrorReported = false;
-let sequence = 0;
-let currentSessionId = null;
-let currentTargetLanguage = null;
+let backpressureActive = false;
+let continuousDroppedAudioMs = 0;
+let unreportedDroppedAudioMs = 0;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.target !== "offscreen") {
@@ -35,9 +40,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function handleMessage(message) {
   switch (message.type) {
-    case "media:start":
+    case "media:start-capture":
       await stopAll();
       await startCapture(message.streamId);
+      return { capturing: true };
+    case "media:start-test-capture":
+      await stopAll();
+      await startTestCapture();
+      return { capturing: true };
+    case "media:connect-relay":
+      if (!sourceStream?.active) {
+        throw new Error("The captured tab audio is no longer available.");
+      }
       await connectRelay(message);
       return { connected: true };
     case "media:reconnect":
@@ -47,9 +61,11 @@ async function handleMessage(message) {
       await disconnectRelay();
       await connectRelay(message);
       return { connected: true };
-    case "media:authorize-minute":
-      authorizeMinute(message);
+    case "media:authorize-until":
+      authorizeUntil(message);
       return { authorized: true };
+    case "media:get-state":
+      return mediaState();
     case "media:disconnect-relay":
       await disconnectRelay();
       return { disconnected: true };
@@ -72,6 +88,22 @@ async function startCapture(streamId) {
     },
     video: false,
   });
+  await initializeAudioGraph();
+}
+
+async function startTestCapture() {
+  expectedCaptureEnd = false;
+  audioContext = new AudioContext();
+  const destination = audioContext.createMediaStreamDestination();
+  testOscillator = audioContext.createOscillator();
+  testOscillator.frequency.value = 220;
+  testOscillator.connect(destination);
+  testOscillator.start();
+  sourceStream = destination.stream;
+  await initializeAudioGraph(audioContext);
+}
+
+async function initializeAudioGraph(existingAudioContext = null) {
   const audioTrack = sourceStream.getAudioTracks()[0];
   if (!audioTrack) {
     throw new Error("The selected tab does not expose an audio track.");
@@ -83,9 +115,9 @@ async function startCapture(streamId) {
     }
   });
 
-  // tabCapture mutes the tab's normal output. Route the captured stream back to
-  // the local destination, then separately encode a muted branch for Foundry.
-  audioContext = new AudioContext();
+  // tabCapture mutes the tab's normal output. Route the stream back to the
+  // local destination, then encode a separate muted branch for the relay.
+  audioContext ??= existingAudioContext ?? new AudioContext();
   sourceNode = audioContext.createMediaStreamSource(sourceStream);
   sourceNode.connect(audioContext.destination);
 
@@ -100,55 +132,141 @@ async function startCapture(streamId) {
   await audioContext.resume();
 
   tickTimer = setInterval(() => {
+    flushIdleEvents();
     chrome.runtime.sendMessage({ type: "media:tick" }).catch(() => {});
   }, 1000);
 }
 
 function processAudio(event) {
-  if (!relayReady
-      || Date.now() >= relayAuthorizedUntil
-      || relaySocket?.readyState !== WebSocket.OPEN
-      || relaySocket.bufferedAmount > MAX_RELAY_BUFFERED_BYTES) {
+  const connection = relayConnection;
+  if (!isCurrentConnection(connection)
+      || !connection.ready
+      || connection.errorReported
+      || Date.now() >= connection.authorizedUntil
+      || connection.socket.readyState !== WebSocket.OPEN) {
     return;
   }
 
+  if (connection.socket.bufferedAmount > MAX_RELAY_BUFFERED_BYTES) {
+    const previousDroppedAudioMs = continuousDroppedAudioMs;
+    continuousDroppedAudioMs = accumulateSkippedAudioMilliseconds(
+      continuousDroppedAudioMs,
+      event.inputBuffer.length,
+      audioContext.sampleRate);
+    const droppedMs = continuousDroppedAudioMs - previousDroppedAudioMs;
+    unreportedDroppedAudioMs += droppedMs;
+    if (!backpressureActive) {
+      backpressureActive = true;
+      chrome.runtime.sendMessage({
+        type: "media:degraded",
+        active: true,
+        droppedAudioMilliseconds: 0,
+        backpressureEvents: 1,
+      }).catch(() => {});
+    }
+    if (continuousDroppedAudioMs >= BACKPRESSURE_STOP_MS) {
+      reportBackpressureDiagnostics(true);
+      reportRelayFailure(connection, "The subtitle connection was too slow, so audio capture stopped.");
+    }
+    return;
+  }
+
+  if (backpressureActive) {
+    reportBackpressureDiagnostics(false);
+  }
   const pcm = downsampler.process(event.inputBuffer.getChannelData(0));
   if (pcm.length === 0) {
     return;
   }
-  relaySocket.send(JSON.stringify({
+  connection.socket.send(JSON.stringify({
     type: "session.input_audio_buffer.append",
     audio: pcm16ToBase64(pcm),
   }));
 }
 
 async function connectRelay({ sessionId, targetLanguage, relayToken, relayPath, glosifyBaseUrl }) {
+  if (relayConnection) {
+    throw new Error("The previous subtitle relay is still connected.");
+  }
   const relayUrl = buildRelayWebSocketUrl(glosifyBaseUrl, relayPath, sessionId);
   const protocols = buildRelayProtocols(relayToken);
-  expectedRelayClose = false;
-  relayErrorReported = false;
-  relayReady = false;
-  relayAuthorizedUntil = 0;
-  currentSessionId = sessionId;
-  currentTargetLanguage = targetLanguage;
-  sequence = 0;
-
+  const generation = ++relayGeneration;
   const socket = new WebSocket(relayUrl, protocols);
-  relaySocket = socket;
-  await new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      cleanup();
-      socket.close();
-      reject(new Error("Timed out while connecting to Glosify live subtitles."));
-    }, RELAY_CONNECT_TIMEOUT_MS);
+  const connection = {
+    socket,
+    generation,
+    sessionId,
+    targetLanguage,
+    ready: false,
+    sessionStartedAt: 0,
+    authorizedUntil: 0,
+    expectedClose: false,
+    errorReported: false,
+    error: null,
+    sequence: 0,
+    accumulator: null,
+  };
+  connection.accumulator = createRealtimeEventAccumulator({
+    sessionId,
+    targetLanguage,
+    nextSequence: () => ++connection.sequence,
+  });
+  relayConnection = connection;
 
-    const cleanup = () => {
+  try {
+    await waitForRelayReady(connection);
+    if (!isCurrentConnection(connection)) {
+      throw new Error("The subtitle relay was replaced while connecting.");
+    }
+    if (socket.protocol !== "glosify-realtime") {
+      throw new Error("Glosify returned an invalid subtitle relay protocol.");
+    }
+    connection.ready = true;
+    socket.onmessage = event => handleRelayMessage(event, connection);
+    socket.onerror = () => reportRelayFailure(
+      connection,
+      "The Glosify subtitle relay encountered a network error.");
+    socket.onclose = () => {
+      if (!isCurrentConnection(connection)) {
+        return;
+      }
+      connection.ready = false;
+      connection.authorizedUntil = 0;
+      if (!connection.expectedClose) {
+        reportRelayFailure(connection, "The Glosify subtitle relay ended.");
+      }
+    };
+  } catch (error) {
+    if (isCurrentConnection(connection)) {
+      await disconnectRelay();
+    }
+    throw error;
+  }
+}
+
+function waitForRelayReady(connection) {
+  return new Promise((resolve, reject) => {
+    const { socket } = connection;
+    let settled = false;
+    const timeout = setTimeout(() => finish(new Error(
+      isCurrentConnection(connection)
+        ? "Timed out while connecting to Glosify live subtitles."
+        : "The subtitle relay was replaced while connecting.")), RELAY_CONNECT_TIMEOUT_MS);
+    const finish = error => {
+      if (settled) {
+        return;
+      }
+      settled = true;
       clearTimeout(timeout);
       socket.removeEventListener("message", onMessage);
       socket.removeEventListener("close", onClose);
       socket.removeEventListener("error", onError);
+      error ? reject(error) : resolve();
     };
     const onMessage = event => {
+      if (!isCurrentConnection(connection)) {
+        return;
+      }
       let providerEvent;
       try {
         providerEvent = JSON.parse(event.data);
@@ -156,49 +274,35 @@ async function connectRelay({ sessionId, targetLanguage, relayToken, relayPath, 
         return;
       }
       if (providerEvent?.type === "glosify.relay.ready") {
-        cleanup();
-        relayReady = true;
-        resolve();
+        finish();
       } else if (providerEvent?.type === "glosify.relay.error") {
-        cleanup();
-        reject(new Error(providerEvent.message || "Glosify ended the subtitle relay."));
+        finish(new Error(providerEvent.message || "Glosify ended the subtitle relay."));
       }
     };
     const onClose = () => {
-      cleanup();
-      reject(new Error("The Glosify subtitle relay closed while connecting."));
+      finish(new Error(isCurrentConnection(connection)
+        ? "The Glosify subtitle relay closed while connecting."
+        : "The subtitle relay was replaced while connecting."));
     };
     const onError = () => {
-      cleanup();
-      reject(new Error("The Glosify subtitle relay could not be reached."));
+      finish(new Error(isCurrentConnection(connection)
+        ? "The Glosify subtitle relay could not be reached."
+        : "The subtitle relay was replaced while connecting."));
     };
-
     socket.addEventListener("message", onMessage);
     socket.addEventListener("close", onClose);
     socket.addEventListener("error", onError);
   });
-
-  if (socket.protocol !== "glosify-realtime") {
-    await disconnectRelay();
-    throw new Error("Glosify returned an invalid subtitle relay protocol.");
-  }
-
-  socket.onmessage = handleRelayMessage;
-  socket.onerror = () => reportRelayFailure("The Glosify subtitle relay encountered a network error.");
-  socket.onclose = () => {
-    relayReady = false;
-    relayAuthorizedUntil = 0;
-    if (!expectedRelayClose) {
-      reportRelayFailure("The Glosify subtitle relay ended.");
-    }
-  };
 }
 
-function handleRelayMessage({ data }) {
+function handleRelayMessage({ data }, connection) {
+  if (!isCurrentConnection(connection)) {
+    return;
+  }
   try {
     const providerEvent = JSON.parse(data);
     if (providerEvent?.type === "glosify.relay.error") {
-      reportRelayFailure(providerEvent.message || "Glosify ended the subtitle relay.");
+      reportRelayFailure(connection, providerEvent.message || "Glosify ended the subtitle relay.");
       return;
     }
     if (providerEvent?.type === "glosify.transcript.warning") {
@@ -208,53 +312,116 @@ function handleRelayMessage({ data }) {
       }).catch(() => {});
       return;
     }
-    const normalized = normalizeRealtimeEvent(providerEvent, {
-      sessionId: currentSessionId,
-      targetLanguage: currentTargetLanguage,
-      nextSequence: () => ++sequence,
-    });
-    if (normalized) {
-      chrome.runtime.sendMessage({ type: "media:event", event: normalized }).catch(() => {});
-    }
+    sendNormalizedEvent(connection.accumulator.apply(providerEvent), connection);
   } catch {
     // Ignore malformed/non-JSON provider events; raw event content is never logged.
   }
 }
 
-function authorizeMinute({ sessionId, minuteIndex, sessionStartedAt }) {
-  if (sessionId !== currentSessionId
-      || !Number.isInteger(minuteIndex)
-      || minuteIndex < 1
-      || !Number.isFinite(sessionStartedAt)
-      || sessionStartedAt <= 0) {
-    throw new Error("Glosify returned invalid minute authorization.");
-  }
-  relayAuthorizedUntil = sessionStartedAt + minuteIndex * 60_000;
-}
-
-function reportRelayFailure(error) {
-  if (expectedRelayClose || relayErrorReported) {
+function flushIdleEvents() {
+  const connection = relayConnection;
+  if (!isCurrentConnection(connection)) {
     return;
   }
-  relayErrorReported = true;
+  for (const event of connection.accumulator.flushIdle()) {
+    sendNormalizedEvent(event, connection);
+  }
+}
+
+function sendNormalizedEvent(event, connection) {
+  if (event && isCurrentConnection(connection)) {
+    chrome.runtime.sendMessage({ type: "media:event", event }).catch(() => {});
+  }
+}
+
+function authorizeUntil({
+  sessionId,
+  sessionStartedAtUtc,
+  audioSendAuthorizedUntilUtc,
+  maxSessionMinutes,
+}) {
+  const connection = relayConnection;
+  const sessionStartedAt = Date.parse(sessionStartedAtUtc);
+  const deadline = Date.parse(audioSendAuthorizedUntilUtc);
+  const now = Date.now();
+  const maximumMinutes = Number(maxSessionMinutes);
+  if (!isCurrentConnection(connection)
+      || sessionId !== connection.sessionId
+      || !Number.isFinite(sessionStartedAt)
+      || !Number.isFinite(deadline)
+      || !Number.isInteger(maximumMinutes)
+      || maximumMinutes < 1
+      || maximumMinutes > 60
+      || deadline <= now
+      || deadline > now + MAX_AUTHORIZATION_AHEAD_MS
+      || deadline > sessionStartedAt + maximumMinutes * 60_000 + 2_000
+      || (connection.sessionStartedAt && connection.sessionStartedAt !== sessionStartedAt)
+      || deadline < connection.authorizedUntil) {
+    throw new Error("Glosify returned invalid minute authorization.");
+  }
+  connection.sessionStartedAt = sessionStartedAt;
+  connection.authorizedUntil = deadline;
+}
+
+function reportRelayFailure(connection, error) {
+  if (!isCurrentConnection(connection)
+      || connection.expectedClose
+      || connection.errorReported) {
+    return;
+  }
+  connection.errorReported = true;
+  connection.error = error;
   chrome.runtime.sendMessage({ type: "media:error", error }).catch(() => {});
 }
 
-async function disconnectRelay() {
-  expectedRelayClose = true;
-  relayReady = false;
-  relayAuthorizedUntil = 0;
-  const socket = relaySocket;
-  relaySocket = null;
-  if (socket && socket.readyState < WebSocket.CLOSING) {
-    socket.close(1000, "Subtitle relay disconnected.");
+function reportBackpressureDiagnostics(stillActive) {
+  chrome.runtime.sendMessage({
+    type: "media:degraded",
+    active: stillActive,
+    droppedAudioMilliseconds: unreportedDroppedAudioMs,
+    backpressureEvents: 0,
+  }).catch(() => {});
+  unreportedDroppedAudioMs = 0;
+  if (!stillActive) {
+    backpressureActive = false;
+    continuousDroppedAudioMs = 0;
   }
-  currentSessionId = null;
-  currentTargetLanguage = null;
+}
+
+async function disconnectRelay() {
+  const connection = relayConnection;
+  ++relayGeneration;
+  relayConnection = null;
+  if (!connection) {
+    return;
+  }
+  connection.expectedClose = true;
+  connection.ready = false;
+  connection.authorizedUntil = 0;
+  const { socket } = connection;
+  socket.onmessage = null;
+  socket.onerror = null;
+  socket.onclose = null;
+  if (socket.readyState === WebSocket.CLOSED) {
+    return;
+  }
+  await new Promise(resolve => {
+    const timeout = setTimeout(resolve, RELAY_DISCONNECT_TIMEOUT_MS);
+    socket.addEventListener("close", () => {
+      clearTimeout(timeout);
+      resolve();
+    }, { once: true });
+    if (socket.readyState < WebSocket.CLOSING) {
+      socket.close(1000, "Subtitle relay disconnected.");
+    }
+  });
 }
 
 async function stopAll() {
   expectedCaptureEnd = true;
+  if (backpressureActive && unreportedDroppedAudioMs > 0) {
+    reportBackpressureDiagnostics(false);
+  }
   await disconnectRelay();
   if (tickTimer) {
     clearInterval(tickTimer);
@@ -269,9 +436,38 @@ async function stopAll() {
   sourceNode = null;
   sourceStream?.getTracks().forEach(track => track.stop());
   sourceStream = null;
+  testOscillator?.stop();
+  testOscillator?.disconnect();
+  testOscillator = null;
   downsampler = null;
   if (audioContext && audioContext.state !== "closed") {
     await audioContext.close();
   }
   audioContext = null;
+  backpressureActive = false;
+  continuousDroppedAudioMs = 0;
+  unreportedDroppedAudioMs = 0;
+}
+
+function mediaState() {
+  const connection = relayConnection;
+  return {
+    captureActive: Boolean(sourceStream?.active),
+    sessionId: connection?.sessionId ?? null,
+    targetLanguage: connection?.targetLanguage ?? null,
+    relayReady: Boolean(connection?.ready && connection.socket.readyState === WebSocket.OPEN),
+    sessionStartedAtUtc: connection?.sessionStartedAt
+      ? new Date(connection.sessionStartedAt).toISOString()
+      : null,
+    audioSendAuthorizedUntilUtc: connection?.authorizedUntil
+      ? new Date(connection.authorizedUntil).toISOString()
+      : null,
+    backpressureActive,
+  };
+}
+
+function isCurrentConnection(connection) {
+  return Boolean(connection
+    && relayConnection === connection
+    && relayGeneration === connection.generation);
 }

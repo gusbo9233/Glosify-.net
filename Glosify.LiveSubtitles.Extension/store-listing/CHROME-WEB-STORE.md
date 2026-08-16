@@ -1,10 +1,9 @@
-# Chrome Web Store submission — 0.4.0 BETA
+# Chrome Web Store submission — 0.5.0 BETA
 
 ## Publishing settings
 
-- Visibility: **Unlisted**
+- Visibility: **Public**
 - Publishing: **Deferred publishing**
-- Pilot period before considering public distribution: at least seven days
 - Support URL: `https://glosify.se/Home/Support`
 - Privacy URL: `https://glosify.se/Home/Privacy`
 - Terms URL: `https://glosify.se/Home/Terms`
@@ -27,7 +26,7 @@ In Enhanced mode, tab audio is streamed through Glosify to Microsoft Foundry. In
 
 Provider-reported audio usage consumes the displayed credits even if captions are interrupted, inaccurate, or unusable; mandatory consumer rights still apply. AI-generated captions and translations may be incorrect and must not be relied on for safety-critical or other high-stakes decisions. Privacy, Terms, and Support links are available directly in the extension popup.
 
-This is an unlisted BETA pilot. Paid features may close for the rest of the Europe/Stockholm month when Glosify's application budget is reached. The extension displays the reset time and stops at a paid-minute boundary.
+This is a public BETA. A full page navigation stops capture immediately; same-document app navigation continues. If the connection cannot keep up, the overlay reports degraded service and stops safely after two continuous seconds rather than silently dropping or rebilling audio. Paid features may close for the rest of the Europe/Stockholm month when Glosify's application budget is reached. The extension displays the reset time and stops at a paid-minute boundary.
 
 Eligible Google- or Microsoft-linked accounts receive one 25-credit trial. Password-only registrations do not receive automatic trial credits.
 
@@ -41,7 +40,7 @@ The extension's single purpose is to capture audio from a user-selected Chrome t
 - `tabCapture`: captures audio from that explicitly selected tab for live subtitle processing.
 - `scripting`: injects the local subtitle overlay script into the selected page. No remote code is downloaded or executed.
 - `offscreen`: keeps the user-selected tab audio pipeline running and audible while the popup is closed.
-- `storage`: stores the refresh token and subtitle-language preference in extension-local trusted contexts. Transcript consent resets after every session.
+- `storage`: stores the refresh token and subtitle preferences locally, plus a versioned active-session reconciliation record in trusted session storage. Transcript consent resets after every session.
 - `identity`: opens Chrome's extension authentication redirect for the Glosify PKCE connection flow.
 - `https://glosify.se/*`: connects to Glosify for authentication, credits, service status, realtime session authorization, and optional transcript management. The Store build has no localhost or broad-host permission.
 
@@ -84,8 +83,8 @@ The screenshots are deterministic frames around the actual extension screenshots
 
 ## Manual dashboard checklist
 
-- Upload only `artifacts/package/glosify-live-subtitles-0.4.0-beta.zip`.
+- Upload only `artifacts/package/glosify-live-subtitles-0.5.0-beta.zip`.
 - Enter the temporary reviewer credentials only in the dashboard reviewer field.
 - Confirm data-use declarations match the answers above.
-- Confirm unlisted visibility and deferred publishing before submitting.
+- Confirm Public visibility, BETA branding, and deferred publishing before submitting.
 - Do not publish until `Legal__ControllerName` and `Legal__ContactEmail` are configured in production and all three public pages return 200.

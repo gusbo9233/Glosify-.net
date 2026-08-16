@@ -10,9 +10,10 @@ export function getBillingAction({
 }) {
   const boundaryMs = currentMinute * MINUTE_MS;
   if (currentMinute >= maxSessionMinutes) {
-    return elapsedMs >= boundaryMs
-      ? { type: "reconnect" }
-      : { type: "none" };
+    if (elapsedMs < boundaryMs) {
+      return { type: "none" };
+    }
+    return stopAtBoundary ? { type: "stop" } : { type: "reconnect" };
   }
   if (elapsedMs >= boundaryMs) {
     if (stopAtBoundary || !nextMinuteReserved) {

@@ -65,6 +65,21 @@ jobs:
       - name: Test browser extension JavaScript
         run: npm test --prefix Glosify.LiveSubtitles.Extension
 
+      - name: Install extension browser-test dependencies
+        run: npm ci --prefix Glosify.LiveSubtitles.Extension
+
+      - name: Install extension Playwright Chromium
+        working-directory: Glosify.LiveSubtitles.Extension
+        run: npx playwright install --with-deps chromium
+
+      - name: Test MV3 extension in persistent Chromium
+        working-directory: Glosify.LiveSubtitles.Extension
+        run: xvfb-run --auto-servernum npm run test:browser
+
+      - name: Build and validate Chrome Web Store package
+        working-directory: Glosify.LiveSubtitles.Extension
+        run: npm run package:store
+
       - name: Test assistant state modules
         run: npm test --prefix Glosify.ClientTests
 
@@ -119,6 +134,12 @@ jobs:
         with:
           name: glosify-migration
           path: ${{ runner.temp }}/migration/efbundle
+
+      - name: Upload Chrome Web Store artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: glosify-live-subtitles-0.5.0-beta
+          path: Glosify.LiveSubtitles.Extension/artifacts/package/glosify-live-subtitles-0.5.0-beta.zip
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'

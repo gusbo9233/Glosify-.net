@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { StreamingPcm16Downsampler, pcm16ToBase64 } from "../lib/audio-pcm.js";
+import {
+  StreamingPcm16Downsampler,
+  accumulateSkippedAudioMilliseconds,
+  pcm16ToBase64,
+} from "../lib/audio-pcm.js";
 
 test("downsamples continuous 48 kHz blocks to 24 kHz PCM16", () => {
   const downsampler = new StreamingPcm16Downsampler(48_000);
@@ -22,4 +26,15 @@ test("preserves sample count across non-integer block ratios", () => {
 
 test("encodes signed PCM samples as little-endian base64", () => {
   assert.equal(pcm16ToBase64(Int16Array.from([1, -2])), "AQD+/w==");
+});
+
+test("sustained 48 kHz backpressure reaches the stop threshold after two seconds", () => {
+  let skippedMs = 0;
+  for (let block = 0; block < 23; block += 1) {
+    skippedMs = accumulateSkippedAudioMilliseconds(skippedMs, 4096, 48_000);
+  }
+  assert.ok(skippedMs < 2_000);
+
+  skippedMs = accumulateSkippedAudioMilliseconds(skippedMs, 4096, 48_000);
+  assert.ok(skippedMs >= 2_000);
 });

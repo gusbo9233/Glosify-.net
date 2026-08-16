@@ -4,7 +4,9 @@ The source directory is intentionally not a loadable unpacked extension. Build o
 
 - `npm run build:dev` produces `artifacts/development` with `https://localhost/*` and `http://localhost/*` permissions and connects to `https://localhost:7032`.
 - `npm run build:store` produces `artifacts/store` with only `https://glosify.se/*`.
-- `npm run package:store` rebuilds, validates, and creates `artifacts/package/glosify-live-subtitles-0.4.0-beta.zip` with `manifest.json` at its root.
+- `npm run build:test` produces the localhost-only profile used by persistent Chromium tests.
+- `npm run test:browser` builds that profile and exercises the MV3 worker, offscreen audio, mock HTTP/WebSocket relay, concurrency, and navigation shutdown.
+- `npm run package:store` rebuilds, validates, and creates `artifacts/package/glosify-live-subtitles-0.5.0-beta.zip` with `manifest.json` at its root.
 
 The Store validator rejects unexpected files, localhost references, missing or incorrectly sized icons, likely embedded secrets, and common remote/dynamic-code patterns.
 

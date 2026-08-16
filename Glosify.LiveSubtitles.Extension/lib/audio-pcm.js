@@ -47,6 +47,18 @@ export function pcm16ToBase64(samples) {
   return btoa(binary);
 }
 
+export function accumulateSkippedAudioMilliseconds(current, frameCount, sampleRate) {
+  if (!Number.isFinite(current)
+      || current < 0
+      || !Number.isFinite(frameCount)
+      || frameCount < 0
+      || !Number.isFinite(sampleRate)
+      || sampleRate <= 0) {
+    throw new Error("Invalid skipped-audio duration input.");
+  }
+  return current + frameCount / sampleRate * 1000;
+}
+
 function toPcm16(sample) {
   return sample < 0
     ? Math.round(sample * 0x8000)
