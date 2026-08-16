@@ -2865,4 +2865,8 @@
   <data name="Speaking.MoreNatural" xml:space="preserve">
     <value>Daha doğal {0}</value>
   </data>
+  <data name="Anki.AddToAnki" xml:space="preserve"><value>Anki'ye ekle</value></data>
+  <data name="Quiz.ItemActions" xml:space="preserve"><value>{0} için işlemler</value></data>
+  <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Bu cümle kaldırılsın mı?</value></data>
+  <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Cümle kaldırıldı.</value></data>
 </root>

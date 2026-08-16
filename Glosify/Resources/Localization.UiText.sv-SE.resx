@@ -538,4 +538,8 @@
   <data name="Speaking.ClickShowLanguage" xml:space="preserve"><value>Klicka för att visa {0}</value></data>
   <data name="Speaking.CoachFeedback" xml:space="preserve"><value>Handledarens återkoppling</value></data>
   <data name="Speaking.MoreNatural" xml:space="preserve"><value>Mer naturlig {0}</value></data>
+  <data name="Anki.AddToAnki" xml:space="preserve"><value>Lägg till i Anki</value></data>
+  <data name="Quiz.ItemActions" xml:space="preserve"><value>Åtgärder för {0}</value></data>
+  <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Ta bort den här meningen?</value></data>
+  <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Meningen har tagits bort.</value></data>
 </root>

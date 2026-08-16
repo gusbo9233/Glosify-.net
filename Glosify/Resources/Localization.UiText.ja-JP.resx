@@ -2865,4 +2865,8 @@
   <data name="Speaking.MoreNatural" xml:space="preserve">
     <value>より自然な{0}</value>
   </data>
+  <data name="Anki.AddToAnki" xml:space="preserve"><value>Anki に追加</value></data>
+  <data name="Quiz.ItemActions" xml:space="preserve"><value>{0} の操作</value></data>
+  <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>この文を削除しますか？</value></data>
+  <data name="Quiz.DeletedSentence" xml:space="preserve"><value>文を削除しました。</value></data>
 </root>

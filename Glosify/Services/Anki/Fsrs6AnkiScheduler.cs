@@ -187,6 +187,11 @@ public sealed class Fsrs6AnkiScheduler : IAnkiScheduler
 
     private static int FuzzedInterval(AnkiCard card, int grade, int interval)
     {
+        // The configured cap is authoritative: once the FSRS target reaches it,
+        // fuzz must not shorten an otherwise maximum-length interval.
+        if (interval >= MaximumIntervalDays)
+            return MaximumIntervalDays;
+
         if (interval < 3)
             return interval;
 

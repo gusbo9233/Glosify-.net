@@ -2865,4 +2865,8 @@
   <data name="Speaking.MoreNatural" xml:space="preserve">
     <value>{0} tự nhiên hơn</value>
   </data>
+  <data name="Anki.AddToAnki" xml:space="preserve"><value>Thêm vào Anki</value></data>
+  <data name="Quiz.ItemActions" xml:space="preserve"><value>Thao tác cho {0}</value></data>
+  <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Xóa câu này?</value></data>
+  <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Đã xóa câu.</value></data>
 </root>

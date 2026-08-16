@@ -2865,4 +2865,8 @@
   <data name="Speaking.MoreNatural" xml:space="preserve">
     <value>更自然的 {0}</value>
   </data>
+  <data name="Anki.AddToAnki" xml:space="preserve"><value>添加到 Anki</value></data>
+  <data name="Quiz.ItemActions" xml:space="preserve"><value>{0} 的操作</value></data>
+  <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>移除此句子？</value></data>
+  <data name="Quiz.DeletedSentence" xml:space="preserve"><value>句子已移除。</value></data>
 </root>
