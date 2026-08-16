@@ -7,6 +7,7 @@ public sealed class AiUsageOptions
     public int TrialGrantCredits { get; set; } = 25;
     public int CreditsPerThousandTokens { get; set; } = 1;
     public int AssistantOutputTokenReserve { get; set; } = 16384;
+    public int JsonImportRepairOutputTokenReserve { get; set; } = 16384;
     public int ImageExtractionOutputTokenReserve { get; set; } = 1024;
     public int SpeakingOutputTokenReserve { get; set; } = 768;
     public int PageTranslationOutputTokenReserve { get; set; } = 4096;
@@ -17,6 +18,7 @@ public sealed class AiUsageOptions
         return feature switch
         {
             AiUsageFeatures.Assistant => AssistantOutputTokenReserve,
+            AiUsageFeatures.JsonImportRepair => JsonImportRepairOutputTokenReserve,
             AiUsageFeatures.ImageExtraction => ImageExtractionOutputTokenReserve,
             AiUsageFeatures.Speaking => SpeakingOutputTokenReserve,
             AiUsageFeatures.PageTranslation => PageTranslationOutputTokenReserve,
@@ -103,6 +105,11 @@ public sealed class AiUsageOptionsValidator : IValidateOptions<AiUsageOptions>
             failures.Add("AiUsage:PageTranslationOutputTokenReserve must be greater than zero.");
         }
 
+        if (options.JsonImportRepairOutputTokenReserve <= 0)
+        {
+            failures.Add("AiUsage:JsonImportRepairOutputTokenReserve must be greater than zero.");
+        }
+
         if (!budget.Enabled)
         {
             return failures.Count == 0
@@ -185,6 +192,7 @@ public sealed class AiUsageOptionsValidator : IValidateOptions<AiUsageOptions>
 public static class AiUsageFeatures
 {
     public const string Assistant = "assistant";
+    public const string JsonImportRepair = "json_import_repair";
     public const string ImageExtraction = "image_extraction";
     public const string Speaking = "speaking";
     public const string PageTranslation = "page_translation";

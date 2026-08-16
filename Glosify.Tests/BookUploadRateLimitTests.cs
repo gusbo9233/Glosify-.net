@@ -131,6 +131,31 @@ public sealed class BookUploadRateLimitTests
         }
     }
 
+    [Fact]
+    public async Task ThirteenthJsonImportAiRepairWithinWindow_IsRejectedPerUser()
+    {
+        using var services = new ServiceCollection()
+            .AddLogging()
+            .AddGlosifyRateLimiting()
+            .BuildServiceProvider();
+        var limiter = services.GetRequiredService<IOptions<RateLimiterOptions>>().Value.GlobalLimiter!;
+        var context = CreateContext("/Quiz/RepairJsonImportWithAi", "user-1");
+
+        for (var attempt = 0; attempt < 12; attempt++)
+        {
+            using var lease = await limiter.AcquireAsync(context, 1);
+            Assert.True(lease.IsAcquired);
+        }
+
+        using var rejected = await limiter.AcquireAsync(context, 1);
+        Assert.False(rejected.IsAcquired);
+
+        using var anotherUser = await limiter.AcquireAsync(
+            CreateContext("/Quiz/RepairJsonImportWithAi", "user-2"),
+            1);
+        Assert.True(anotherUser.IsAcquired);
+    }
+
     private static HttpContext CreateContext(string path, string userId)
     {
         var context = new DefaultHttpContext();

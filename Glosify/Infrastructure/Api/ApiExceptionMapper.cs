@@ -18,6 +18,7 @@ public static class ApiExceptionMapper
         CollectionParentNotFoundException => Error(400, ApiErrorCodes.CollectionParentNotFound, exception),
         CollectionNameConflictException => Error(409, ApiErrorCodes.CollectionNameConflict, exception),
         QuizCollectionNotFoundException => Error(400, ApiErrorCodes.QuizCollectionNotFound, exception),
+        QuizJsonImportAiUnprocessableException => Error(422, ApiErrorCodes.UnprocessableEntity, exception),
         AssistantTurnInProgressException => Error(409, ApiErrorCodes.Conflict, exception),
         AssistantFeedbackValidationException => Error(400, ApiErrorCodes.BadRequest, exception),
         AssistantTurnNotFoundException => new ApiError(
