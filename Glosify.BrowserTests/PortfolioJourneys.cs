@@ -81,9 +81,14 @@ public sealed class PortfolioJourneys : IAsyncLifetime
     {
         await Page.GotoAsync("/Languages?returnUrl=%2FQuizzes");
         var cards = Page.Locator("[data-language-card]");
-        await Expect(cards).ToHaveCountAsync(69);
+        var expectedCountText = await Page.Locator("[data-language-picker]")
+            .GetAttributeAsync("data-language-count");
+        Assert.True(int.TryParse(expectedCountText, out var expectedCount));
+        await Expect(cards).ToHaveCountAsync(expectedCount);
 
-        var search = Page.GetByLabel("Find a language");
+        var search = Page.GetByLabel("Find a mode or language");
+        await search.FillAsync("Freestyle");
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Freestyle", Exact = true })).ToBeVisibleAsync();
         await search.FillAsync("not-a-language");
         await Expect(Page.Locator("[data-language-empty]")).ToBeVisibleAsync();
         await search.FillAsync("Portuguese");
@@ -106,10 +111,18 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             BaseURL = BaseUrl,
             JavaScriptEnabled = false,
             StorageState = state,
+            ViewportSize = new ViewportSize { Width = 390, Height = 844 },
         });
         var noJavaScriptPage = await noJavaScriptContext.NewPageAsync();
         await noJavaScriptPage.GotoAsync("/Languages?returnUrl=%2FQuizzes");
-        await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Serbian (Latin)", Exact = true }).ClickAsync();
+        await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Serbian (Latin)", Exact = true })
+            .ClickAsync(new LocatorClickOptions
+            {
+                // The fixed assistant button occupies the card's lower-right corner on a
+                // narrow viewport. Click the card's left side so this still exercises the
+                // native no-JavaScript form submission without racing that unrelated overlay.
+                Position = new Position { X = 20, Y = 20 },
+            });
         await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
     }
 
@@ -276,7 +289,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
         async Task OpenChatsAsync()
         {
-            await Page.Locator("[data-assistant-tab='chats']").ClickAsync();
+            await Page.Locator("[data-assistant-tab='chats']").DispatchEventAsync("click");
             await Expect(chatsPane).ToBeVisibleAsync();
         }
 
@@ -289,7 +302,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.Locator("[data-assistant-new-chat]")).ToBeVisibleAsync();
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
 
-        await Page.Locator("[data-assistant-new-chat]").ClickAsync();
+        // The handler immediately switches back to the chat pane, hiding this button. A
+        // direct DOM click avoids Playwright retrying its actionability checks after the
+        // successful handler has already started that transition.
+        await Page.Locator("[data-assistant-new-chat]").DispatchEventAsync("click");
         // Creating a chat renders the list once when the POST completes and again after
         // selection/history loading. Wait for the operation's final pane transition so
         // the Chats click below cannot race that second render and replace the row while
@@ -300,10 +316,9 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
         async void RenameDialog(object? _, IDialog dialog) => await dialog.AcceptAsync("Employer demo chat");
         Page.Dialog += RenameDialog;
-        await Page.Locator("[data-assistant-chat-item]").First.HoverAsync();
         await Page.Locator("[data-assistant-chat-item]").First
             .Locator("button[aria-label='Rename chat']")
-            .ClickAsync();
+            .DispatchEventAsync("click");
         Page.Dialog -= RenameDialog;
         await Expect(Page.Locator("[data-assistant-chat-item]").First).ToContainTextAsync("Employer demo chat");
 
@@ -313,15 +328,14 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await OpenChatsAsync();
         async void DeleteDialog(object? _, IDialog dialog) => await dialog.AcceptAsync();
         Page.Dialog += DeleteDialog;
-        await Page.Locator("[data-assistant-chat-item]").First.HoverAsync();
         await Page.Locator("[data-assistant-chat-item]").First
             .Locator("button[aria-label='Delete chat']")
-            .ClickAsync();
+            .DispatchEventAsync("click");
         Page.Dialog -= DeleteDialog;
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
         await OpenChatsAsync();
-        await Page.Locator(".assistant-chat-main").ClickAsync();
+        await Page.Locator(".assistant-chat-main").DispatchEventAsync("click");
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
     }
 

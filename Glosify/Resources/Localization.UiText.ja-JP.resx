@@ -114,6 +114,14 @@
   <data name="Nav.Class" xml:space="preserve">
     <value>クラス</value>
   </data>
+  <data name="Languages.ModeTitle" xml:space="preserve"><value>学習モードを選ぶ</value></data>
+  <data name="Languages.ModeTagline" xml:space="preserve"><value>言語を学ぶか、好きなテーマのクイズを作成できます。</value></data>
+  <data name="Languages.CurrentMode" xml:space="preserve"><value>現在のモード: {0}</value></data>
+  <data name="Languages.ModeFind" xml:space="preserve"><value>モードまたは言語を探す</value></data>
+  <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>モードと言語を検索</value></data>
+  <data name="Languages.ModeCount" xml:space="preserve"><value>{0} 件のモードと言語</value></data>
+  <data name="Languages.ModeNone" xml:space="preserve"><value>一致するモードまたは言語がありません</value></data>
+  <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>テーマ、言語名、またはコードを試してください。</value></data>
   <data name="Languages.Title" xml:space="preserve">
     <value>言語セレクター</value>
   </data>

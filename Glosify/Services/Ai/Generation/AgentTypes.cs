@@ -23,6 +23,15 @@ public enum AssistantAgentProfile
 
     /// <summary>The custom quiz creator: element tools only, no quiz-creation tools.</summary>
     CustomQuizBuilder,
+
+    /// <summary>A Freestyle quiz page with generic prompt-and-answer items.</summary>
+    FreestyleQuizAssistant,
+
+    /// <summary>The Freestyle library with no quiz selected.</summary>
+    FreestyleLibrarian,
+
+    /// <summary>The custom quiz creator while its backing quiz is Freestyle.</summary>
+    FreestyleCustomQuizBuilder,
 }
 
 /// <param name="SystemInstruction">

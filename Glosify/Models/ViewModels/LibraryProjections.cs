@@ -1,5 +1,6 @@
 using Glosify.Models.Entities;
 using Glosify.Models.Library;
+using Glosify.Services.Language;
 
 namespace Glosify.Models.ViewModels;
 
@@ -22,6 +23,8 @@ public sealed record QuizCard(
     Guid? CollectionId,
     bool IsPublic)
 {
+    public bool IsFreestyle => QuizLanguageCatalog.IsFreestyle(TargetLanguage);
+
     public static QuizCard From(Quiz quiz) => new(
         quiz.Id,
         quiz.Name,
@@ -41,6 +44,8 @@ public sealed record CollectionCard(
     DateTimeOffset CreatedAt,
     bool IsPublic)
 {
+    public bool IsFreestyle => QuizLanguageCatalog.IsFreestyle(Language);
+
     public static CollectionCard From(Collection collection) => new(
         collection.Id,
         collection.Name,
@@ -148,4 +153,3 @@ public sealed record AiCreditTransactionRow(
         transaction.Note,
         transaction.CreatedAt);
 }
-

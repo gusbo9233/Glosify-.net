@@ -68,17 +68,24 @@ internal sealed class CreateQuizTool : IAssistantTool
     private static object QueueCreateQuiz(JsonElement args, AgentToolContext context)
     {
         var name = GetString(args, "name");
-        var sourceLanguage = FirstNonBlank(GetString(args, "source_language"), context.SourceLanguage);
-        var targetLanguage = FirstNonBlank(GetString(args, "target_language"), context.CurrentLanguage);
+        var sourceLanguage = context.IsFreestyle
+            ? Glosify.Services.Language.QuizLanguageCatalog.FreestyleName
+            : FirstNonBlank(GetString(args, "source_language"), context.SourceLanguage);
+        var targetLanguage = context.IsFreestyle
+            ? Glosify.Services.Language.QuizLanguageCatalog.FreestyleName
+            : FirstNonBlank(GetString(args, "target_language"), context.CurrentLanguage);
         var collectionId = GetNullableGuidString(args, "collection_id");
         // Every skipped report is in request-array coordinates. The source map has to be built
         // from the parse failures alone, before any later stage adds entries of its own:
         // mixing coordinate systems in one list is what made the reported positions wrong.
-        var parsedWords = GetWordDrafts(args, "words");
+        var wordProperty = args.TryGetProperty("items", out _) ? "items" : "words";
+        var parsedWords = GetWordDrafts(args, wordProperty);
         var wordIndexes = SourceIndexes(parsedWords.Words.Count, parsedWords.Skipped);
         var (words, skippedWords) = Cap(parsedWords.Words, parsedWords.Skipped, wordIndexes);
 
-        var parsedSentences = GetSentenceDrafts(args, "sentences");
+        var parsedSentences = context.IsFreestyle
+            ? (Sentences: (IReadOnlyList<SentenceDraft>)[], Skipped: (IReadOnlyList<SkippedItem>)[])
+            : GetSentenceDrafts(args, "sentences");
         var sentenceIndexes = SourceIndexes(parsedSentences.Sentences.Count, parsedSentences.Skipped);
         var (sentences, skippedSentences) =
             Cap(parsedSentences.Sentences, parsedSentences.Skipped, sentenceIndexes);

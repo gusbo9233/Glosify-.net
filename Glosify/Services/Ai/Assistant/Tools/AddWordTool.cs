@@ -18,6 +18,7 @@ internal sealed class AddWordTool : IAssistantTool
         }, required: ["word", "translation"]));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
+    public IReadOnlyList<string> Aliases => ["add_item"];
 
     public Task<object> ExecuteAsync(
         JsonElement args,
@@ -37,8 +38,8 @@ internal sealed class AddWordTool : IAssistantTool
             return mismatch;
         }
 
-        var word = GetString(args, "word");
-        var translation = GetString(args, "translation");
+        var word = FirstNonBlank(GetString(args, "word"), GetString(args, "prompt"));
+        var translation = FirstNonBlank(GetString(args, "translation"), GetString(args, "answer"));
         if (string.IsNullOrWhiteSpace(word) || string.IsNullOrWhiteSpace(translation))
         {
             return new { error = "word and translation are required." };

@@ -5,6 +5,7 @@ using Glosify.Data;
 using Glosify.Infrastructure.Concurrency;
 using Glosify.Models.Entities;
 using Glosify.Models.QuizImports;
+using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Quizzes;
@@ -151,7 +152,13 @@ public sealed class QuizJsonImportService : IQuizJsonImportService
 
         var warnings = new List<string>();
         var counters = new ImportCounters();
-        var normalized = NormalizeDocument(parsed, targetLanguage, errors, warnings, counters);
+        var canonicalTarget = targetLanguage?.Trim() ?? string.Empty;
+        if (QuizLanguageCatalog.IsFreestyle(canonicalTarget))
+        {
+            canonicalTarget = QuizLanguageCatalog.FreestyleName;
+        }
+
+        var normalized = NormalizeDocument(parsed, canonicalTarget, errors, warnings, counters);
         var provisionalJson = JsonSerializer.Serialize(normalized, WriteOptions);
 
         if (counters.CollectionCount > MaxCollections)
@@ -167,7 +174,6 @@ public sealed class QuizJsonImportService : IQuizJsonImportService
             errors.Add("$", $"An import may contain at most {MaxTotalItems} word and sentence items.");
         }
 
-        var canonicalTarget = targetLanguage?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(canonicalTarget) || canonicalTarget.Length > 64)
         {
             errors.Add("$.target_language", "The selected quiz language is invalid.");
@@ -258,12 +264,15 @@ public sealed class QuizJsonImportService : IQuizJsonImportService
             errors.Add("$.version", "Only Glosify JSON import version 1 is supported.");
         }
 
-        var sourceLanguage = RequiredTrimmed(
-            document.SourceLanguage,
-            "$.source_language",
-            64,
-            errors,
-            "Source language is required.");
+        var isFreestyle = QuizLanguageCatalog.IsFreestyle(targetLanguage);
+        var sourceLanguage = isFreestyle
+            ? QuizLanguageCatalog.FreestyleName
+            : RequiredTrimmed(
+                document.SourceLanguage,
+                "$.source_language",
+                64,
+                errors,
+                "Source language is required.");
         var quizzes = NormalizeQuizList(
             document.Quizzes,
             "$.quizzes",
@@ -391,7 +400,10 @@ public sealed class QuizJsonImportService : IQuizJsonImportService
 
             counters.QuizCount++;
             var name = RequiredTrimmed(quiz.Name, $"{itemPath}.name", 120, errors, "Quiz name is required.");
-            var sourceLanguage = string.IsNullOrWhiteSpace(quiz.SourceLanguage)
+            var isFreestyle = QuizLanguageCatalog.IsFreestyle(targetLanguage);
+            var sourceLanguage = isFreestyle
+                ? QuizLanguageCatalog.FreestyleName
+                : string.IsNullOrWhiteSpace(quiz.SourceLanguage)
                 ? defaultSourceLanguage
                 : RequiredTrimmed(
                     quiz.SourceLanguage,
@@ -407,7 +419,13 @@ public sealed class QuizJsonImportService : IQuizJsonImportService
                 errors.Add(itemPath, $"A quiz may contain at most {MaxItemsPerQuiz} words and sentences.");
             }
 
-            var sentences = NormalizeSentences(quiz.Sentences, $"{itemPath}.sentences", errors, warnings);
+            if (isFreestyle && rawSentenceCount > 0)
+            {
+                errors.Add($"{itemPath}.sentences", "Sentence items are not supported in Freestyle mode. Use prompt and answer items instead.");
+            }
+            var sentences = isFreestyle
+                ? []
+                : NormalizeSentences(quiz.Sentences, $"{itemPath}.sentences", errors, warnings);
             var sentenceTexts = sentences.Select(sentence => sentence.Text!).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var words = NormalizeWords(quiz.Words, $"{itemPath}.words", sentenceTexts, errors, warnings);
             if (words.Count == 0 && sentences.Count == 0)

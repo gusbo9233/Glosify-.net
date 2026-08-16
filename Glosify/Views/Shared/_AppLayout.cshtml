@@ -5,11 +5,13 @@
 @inject IAuthorizationService AuthorizationService
 @inject IWebHostEnvironment HostEnvironment
 @inject IStripePaymentService StripePayments
+@inject Glosify.Services.Language.ILanguageContext LanguageContext
 @{
-    var speakingIsAvailable = !HostEnvironment.IsProduction()
+    var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(LanguageContext.CurrentLanguage);
+    var speakingIsAvailable = !isFreestyle && (!HostEnvironment.IsProduction()
         || (await AuthorizationService.AuthorizeAsync(
             User,
-            AuthorizationPolicyNames.SpeakingAvailability)).Succeeded;
+            AuthorizationPolicyNames.SpeakingAvailability)).Succeeded);
 }
 @functions {
     string MetaDescription => ViewData["Description"] as string ?? Text["Layout.MetaDescription"];
@@ -184,7 +186,7 @@
             <nav class="app-nav">
                 <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
                     @NavIcon("language")
-                    @Text["Nav.LanguageSelector"]
+                    @(isFreestyle ? "Learning mode" : Text["Nav.LanguageSelector"])
                 </a>
                 <a class="@NavClass("Home")" asp-controller="Home" asp-action="Index">
                     @NavIcon("home")
@@ -198,10 +200,13 @@
                     @NavIcon("auto_stories")
                     @Text["Nav.Books"]
                 </a>
-                <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
-                    @NavIcon("subtitles")
-                    @Text["Nav.Transcripts"]
-                </a>
+                @if (!isFreestyle)
+                {
+                    <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
+                        @NavIcon("subtitles")
+                        @Text["Nav.Transcripts"]
+                    </a>
+                }
                 <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
                     @NavIcon("quiz")
                     @Text["Nav.Quizzes"]
@@ -298,7 +303,7 @@
     <nav class="app-mobile-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
         <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
             @NavIcon("language")
-            <span>@Text["Nav.Language"]</span>
+            <span>@(isFreestyle ? "Mode" : Text["Nav.Language"])</span>
         </a>
         <a class="@NavClass("Home")" asp-controller="Home" asp-action="Index">
             @NavIcon("home")
@@ -331,10 +336,13 @@
             @NavIcon("auto_stories")
             <span>@Text["Nav.Books"]</span>
         </a>
-        <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
-            @NavIcon("subtitles")
-            <span>@Text["Nav.Transcripts"]</span>
-        </a>
+        @if (!isFreestyle)
+        {
+            <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
+                @NavIcon("subtitles")
+                <span>@Text["Nav.Transcripts"]</span>
+            </a>
+        }
         @if (User.Identity?.IsAuthenticated == true)
         {
             <a class="@NavClass("Explore")" asp-controller="Explore" asp-action="Index">

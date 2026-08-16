@@ -114,6 +114,30 @@ public sealed class SpeakingIntegrationTests
     }
 
     [Fact]
+    public async Task Freestyle_hides_language_only_navigation_and_guards_direct_pages()
+    {
+        using var factory = CreateFactory("Freestyle");
+        var noRedirect = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var speaking = await noRedirect.GetAsync("/Speaking");
+        var transcripts = await noRedirect.GetAsync("/Transcripts");
+
+        Assert.Equal(HttpStatusCode.Redirect, speaking.StatusCode);
+        Assert.Equal("/", speaking.Headers.Location?.OriginalString);
+        Assert.Equal(HttpStatusCode.Redirect, transcripts.StatusCode);
+        Assert.Equal("/", transcripts.Headers.Location?.OriginalString);
+
+        var homeResponse = await factory.CreateClient().GetAsync("/");
+        homeResponse.EnsureSuccessStatusCode();
+        var document = await new HtmlParser().ParseDocumentAsync(await homeResponse.Content.ReadAsStringAsync());
+        Assert.Null(document.QuerySelector("aside a[href='/Speaking']"));
+        Assert.Null(document.QuerySelector("aside a[href='/Transcripts']"));
+        Assert.Null(document.QuerySelector(".app-mobile-nav a[href='/Speaking']"));
+        Assert.Null(document.QuerySelector(".app-mobile-nav a[href='/Transcripts']"));
+        Assert.Contains("Study anything with Freestyle", document.QuerySelector("#home-title")?.TextContent);
+    }
+
+    [Fact]
     public async Task Speaking_page_renders_navigation_scenes_and_no_floating_assistant()
     {
         using var factory = CreateFactory();
@@ -756,6 +780,68 @@ public sealed class SpeakingIntegrationTests
         var limitedResponse = await client.SendAsync(limited);
 
         Assert.Equal(HttpStatusCode.TooManyRequests, limitedResponse.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("/api/speaking/speech-token", null)]
+    [InlineData("/api/speaking/sessions", "{\"avatarId\":\"bartender\",\"cefrLevel\":\"A1\"}")]
+    [InlineData("/api/speaking/sessions/11111111-1111-1111-1111-111111111111/turns", "{\"text\":\"hello\",\"inputMode\":\"text\"}")]
+    [InlineData("/api/speaking/sessions/11111111-1111-1111-1111-111111111111/actions", "{\"action\":\"drink\"}")]
+    public async Task Freestyle_rejects_direct_speaking_paid_boundaries_with_problem_details(
+        string path,
+        string? body)
+    {
+        using var factory = CreateFactory(language: "Freestyle");
+        var client = factory.CreateClient();
+        using var missingTokenRequest = new HttpRequestMessage(
+            HttpMethod.Delete,
+            "/api/speaking/sessions/11111111-1111-1111-1111-111111111111");
+        var missingTokenResponse = await client.SendAsync(missingTokenRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, missingTokenResponse.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            missingTokenResponse.Content.Headers.ContentType?.MediaType);
+        using var missingTokenProblem = JsonDocument.Parse(
+            await missingTokenResponse.Content.ReadAsStringAsync());
+        Assert.Equal("bad_request", missingTokenProblem.RootElement.GetProperty("code").GetString());
+        Assert.Equal("Bad Request", missingTokenProblem.RootElement.GetProperty("error").GetString());
+
+        var languagePage = await client.GetStringAsync("/Languages");
+        var document = await new HtmlParser().ParseDocumentAsync(languagePage);
+        var token = document.QuerySelector("input[name='__RequestVerificationToken']")
+            ?.GetAttribute("value")
+            ?? throw new InvalidOperationException("The language page did not render an antiforgery token.");
+        using var request = Post(path, token, body);
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("feature_unavailable_for_mode", problem.RootElement.GetProperty("code").GetString());
+        Assert.Equal(
+            "Speaking practice is not available in Freestyle mode.",
+            problem.RootElement.GetProperty("error").GetString());
+    }
+
+    [Fact]
+    public async Task Freestyle_still_allows_an_existing_speaking_session_to_be_deleted()
+    {
+        using var factory = CreateFactory(language: "Freestyle");
+        var client = factory.CreateClient();
+        var languagePage = await client.GetStringAsync("/Languages");
+        var document = await new HtmlParser().ParseDocumentAsync(languagePage);
+        var token = document.QuerySelector("input[name='__RequestVerificationToken']")
+            ?.GetAttribute("value")
+            ?? throw new InvalidOperationException("The language page did not render an antiforgery token.");
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            "/api/speaking/sessions/11111111-1111-1111-1111-111111111111");
+        request.Headers.Add("RequestVerificationToken", token);
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
     private static WebApplicationFactory<Program> CreateFactory(

@@ -217,7 +217,7 @@ public sealed class RealtimeTranslationServiceTests
 
         Assert.Equal(69, catalog.QuizLanguages.Count);
         Assert.Equal(
-            QuizLanguageCatalog.All.Select(language => (language.Code, language.Name)),
+            QuizLanguageCatalog.LanguageLearning.Select(language => (language.Code, language.Name)),
             catalog.QuizLanguages.Select(language => (language.Code, language.Name)));
         Assert.Equal("pl", catalog.SelectedQuizLanguage?.Code);
         Assert.Equal("Polish", catalog.SelectedQuizLanguage?.Name);

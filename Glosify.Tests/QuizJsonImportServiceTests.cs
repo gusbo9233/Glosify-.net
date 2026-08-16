@@ -16,6 +16,43 @@ namespace Glosify.Tests;
 public sealed class QuizJsonImportServiceTests
 {
     [Fact]
+    public async Task FreestyleImport_ForcesDurableModeValuesAndRejectsSentences()
+    {
+        await using var db = CreateContext();
+        var service = CreateService(db);
+        var json = """
+            {
+              "version": 1,
+              "source_language": "English",
+              "quizzes": [{
+                "name": "Cardiology",
+                "source_language": "Polish",
+                "words": [{ "word": "What is preload?", "translation": "Ventricular stretch before contraction." }],
+                "sentences": []
+              }],
+              "collections": []
+            }
+            """;
+
+        var preview = await service.PreviewAsync(json, "free", null, "user-1");
+        await service.ApplyAsync(preview.CanonicalJson, "free", null, "user-1");
+
+        var quiz = await db.Quizzes.SingleAsync();
+        Assert.Equal("Freestyle", quiz.SourceLanguage);
+        Assert.Equal("Freestyle", quiz.TargetLanguage);
+        Assert.Equal("Freestyle", quiz.Language);
+        Assert.Equal("What is preload?", (await db.Words.SingleAsync()).Lemma);
+
+        var sentenceError = await Assert.ThrowsAsync<QuizJsonImportValidationException>(() =>
+            service.PreviewAsync(
+                """{"version":1,"source_language":"Freestyle","quizzes":[{"name":"Bad","words":[],"sentences":[{"text":"Not offered","translation":"No"}]}],"collections":[]}""",
+                "Freestyle",
+                null,
+                "user-1"));
+        Assert.Contains("$.quizzes[0].sentences", sentenceError.Errors.Keys);
+    }
+
+    [Fact]
     public async Task Preview_repairs_safe_wrappers_and_reports_deduplicated_content()
     {
         await using var db = CreateContext();

@@ -45,13 +45,16 @@ internal sealed class CreateCustomQuizFromContentTool : IAssistantTool
         // The published schema still marks it required here, but the prompt tells the model it
         // may omit a language the conversation already established, and that has to hold for
         // every creation path or the custom-quiz turn dies on a field nobody needed to ask for.
-        var sourceLanguage = FirstNonBlank(
-            GetString(args, "source_language"),
-            context.SourceLanguage)?.Trim();
-        var targetLanguage = FirstNonBlank(GetString(args, "target_language"), context.CurrentLanguage)?.Trim();
+        var sourceLanguage = context.IsFreestyle
+            ? Glosify.Services.Language.QuizLanguageCatalog.FreestyleName
+            : FirstNonBlank(GetString(args, "source_language"), context.SourceLanguage)?.Trim();
+        var targetLanguage = context.IsFreestyle
+            ? Glosify.Services.Language.QuizLanguageCatalog.FreestyleName
+            : FirstNonBlank(GetString(args, "target_language"), context.CurrentLanguage)?.Trim();
         var collectionId = GetNullableGuidString(args, "collection_id");
         var template = ResolveCustomQuizTemplate(args);
-        var (words, skippedWords) = GetWordDrafts(args, "words");
+        var itemProperty = args.TryGetProperty("items", out _) ? "items" : "words";
+        var (words, skippedWords) = GetWordDrafts(args, itemProperty);
         if (string.IsNullOrWhiteSpace(quizName)
             || string.IsNullOrWhiteSpace(customQuizName)
             || string.IsNullOrWhiteSpace(sourceLanguage))

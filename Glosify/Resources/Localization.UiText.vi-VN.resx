@@ -114,6 +114,14 @@
   <data name="Nav.Class" xml:space="preserve">
     <value>Lớp</value>
   </data>
+  <data name="Languages.ModeTitle" xml:space="preserve"><value>Chọn chế độ học</value></data>
+  <data name="Languages.ModeTagline" xml:space="preserve"><value>Học một ngôn ngữ hoặc tạo bài kiểm tra cho bất kỳ chủ đề nào.</value></data>
+  <data name="Languages.CurrentMode" xml:space="preserve"><value>Đang sử dụng {0}</value></data>
+  <data name="Languages.ModeFind" xml:space="preserve"><value>Tìm chế độ hoặc ngôn ngữ</value></data>
+  <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Tìm kiếm chế độ và ngôn ngữ</value></data>
+  <data name="Languages.ModeCount" xml:space="preserve"><value>{0} chế độ và ngôn ngữ</value></data>
+  <data name="Languages.ModeNone" xml:space="preserve"><value>Không có chế độ hoặc ngôn ngữ phù hợp</value></data>
+  <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Hãy thử một chủ đề, tên ngôn ngữ hoặc mã.</value></data>
   <data name="Languages.Title" xml:space="preserve">
     <value>Bộ chọn ngôn ngữ</value>
   </data>

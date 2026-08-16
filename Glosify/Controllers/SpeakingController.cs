@@ -34,6 +34,10 @@ public sealed class SpeakingController : Controller
         {
             return RedirectToAction("Index", "Languages");
         }
+        if (QuizLanguageCatalog.IsFreestyle(language))
+        {
+            return RedirectToAction("Index", "Home");
+        }
 
         ViewData["HideAssistantPanel"] = true;
         var quizzes = _options.GenericTutorEnabled

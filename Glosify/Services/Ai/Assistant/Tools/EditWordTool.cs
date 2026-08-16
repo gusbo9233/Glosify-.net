@@ -21,6 +21,7 @@ internal sealed class EditWordTool : IAssistantTool
         }, required: ["word_id"]));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
+    public IReadOnlyList<string> Aliases => ["edit_item"];
 
     private readonly GlosifyContext _context;
 
@@ -33,7 +34,7 @@ internal sealed class EditWordTool : IAssistantTool
             return QuizContextRequired();
         }
 
-        var wordId = GetString(args, "word_id");
+        var wordId = FirstNonBlank(GetString(args, "word_id"), GetString(args, "item_id"));
         if (string.IsNullOrWhiteSpace(wordId))
         {
             return new { error = "word_id is required." };
@@ -50,8 +51,8 @@ internal sealed class EditWordTool : IAssistantTool
             word_id = wordId,
             original_word = original?.Word,
             original_translation = original?.Translation,
-            word = GetString(args, "word")?.Trim(),
-            translation = GetString(args, "translation")?.Trim(),
+            word = FirstNonBlank(GetString(args, "word"), GetString(args, "prompt"))?.Trim(),
+            translation = FirstNonBlank(GetString(args, "translation"), GetString(args, "answer"))?.Trim(),
         }, JsonOptions);
 
         context.PendingChanges.Add(new PendingChange(PendingChangeKinds.EditWord, payload));

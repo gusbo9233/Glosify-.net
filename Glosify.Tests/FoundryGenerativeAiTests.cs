@@ -629,6 +629,57 @@ public sealed class FoundryGenerativeAiTests
         Assert.Equal("3", result.Metadata.AgentVersion);
     }
 
+    [Theory]
+    [InlineData(AssistantAgentProfile.FreestyleQuizAssistant, "glosify-freestyle-quiz-assistant")]
+    [InlineData(AssistantAgentProfile.FreestyleLibrarian, "glosify-freestyle-librarian")]
+    [InlineData(AssistantAgentProfile.FreestyleCustomQuizBuilder, "glosify-freestyle-quiz-builder")]
+    public async Task Freestyle_profiles_use_their_dedicated_authored_agents(
+        AssistantAgentProfile profile,
+        string expectedAgentName)
+    {
+        var invoker = new FakeInvoker
+        {
+            AuthoredAgent = new FoundryAuthoredAgent("You are a general study assistant.", "gpt-5.6-luna", []),
+        };
+        var client = CreateClient(invoker, new FakeCredits(), foundry =>
+        {
+            foundry.AllowedAssistantDeployments = ["gpt-5.4-mini", "gpt-5.6-luna"];
+            var configured = new FoundryAgentVersionOptions
+            {
+                Name = expectedAgentName,
+                Version = "1",
+            };
+            switch (profile)
+            {
+                case AssistantAgentProfile.FreestyleQuizAssistant:
+                    foundry.Agents.FreestyleQuizAssistant = configured;
+                    break;
+                case AssistantAgentProfile.FreestyleLibrarian:
+                    foundry.Agents.FreestyleLibrarian = configured;
+                    break;
+                default:
+                    foundry.Agents.FreestyleCustomQuizBuilder = configured;
+                    break;
+            }
+        });
+
+        var result = await client.RunAgentTurnAsync(
+            new AgentRequest(
+                "Generic fallback.",
+                [],
+                [],
+                Model: null,
+                Profile: profile,
+                ContextInstruction: "The Cardiology quiz is open."),
+            Usage(AiUsageFeatures.Assistant));
+
+        Assert.Equal($"{expectedAgentName}@1", Assert.Single(invoker.AuthoredLookups));
+        Assert.Contains("general study assistant", invoker.Instructions);
+        Assert.Contains("The Cardiology quiz is open.", invoker.Instructions);
+        Assert.Equal("gpt-5.6-luna", invoker.Deployment);
+        Assert.Equal(expectedAgentName, result.Metadata!.AgentName);
+    }
+
     // Tools are defined in Foundry, but which of them a given turn may use is the
     // application's call: the per-turn allowlist subtracts from the authored surface.
     [Fact]

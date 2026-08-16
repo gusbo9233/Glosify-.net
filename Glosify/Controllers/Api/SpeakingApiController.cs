@@ -1,5 +1,6 @@
 using Glosify.Extensions;
 using Glosify.Filters;
+using Glosify.Infrastructure.Api;
 using Glosify.Models.Api;
 using Glosify.Services.Auth;
 using Glosify.Services.Language;
@@ -39,6 +40,11 @@ public sealed class SpeakingApiController : ControllerBase
     [RequirePaidServices]
     public async Task<IActionResult> SpeechToken(CancellationToken cancellationToken)
     {
+        if (FreestyleUnavailable() is { } unavailable)
+        {
+            return unavailable;
+        }
+
         var token = await _speechTokens.GetTokenAsync(cancellationToken);
         Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
         Response.Headers.Pragma = "no-cache";
@@ -56,12 +62,16 @@ public sealed class SpeakingApiController : ControllerBase
         [FromBody] CreateSpeakingSessionRequest request,
         CancellationToken cancellationToken)
     {
+        if (FreestyleUnavailable() is { } unavailable)
+        {
+            return unavailable;
+        }
+
         var language = _languageContext.CurrentLanguage;
         if (language is null)
         {
             return BadRequest(new { error = "Select a language before starting speaking practice." });
         }
-
         if (!SpeakingAvatarCatalog.TryParseForLanguage(request.AvatarId, language, out var avatar))
         {
             return BadRequest(new { error = $"That avatar is not available for {language}." });
@@ -93,6 +103,11 @@ public sealed class SpeakingApiController : ControllerBase
         [FromBody] SendSpeakingTurnRequest request,
         CancellationToken cancellationToken)
     {
+        if (FreestyleUnavailable() is { } unavailable)
+        {
+            return unavailable;
+        }
+
         if (!SpeakingAvatarCatalog.TryParseInputMode(request.InputMode, out var inputMode))
         {
             return BadRequest(new { error = "Input mode must be voice or text." });
@@ -114,6 +129,11 @@ public sealed class SpeakingApiController : ControllerBase
         [FromBody] SelectSpeakingQuizRequest request,
         CancellationToken cancellationToken)
     {
+        if (FreestyleUnavailable() is { } unavailable)
+        {
+            return unavailable;
+        }
+
         var activeQuiz = await _speaking.SelectQuizAsync(
             sessionId,
             User.GetUserId(),
@@ -129,6 +149,11 @@ public sealed class SpeakingApiController : ControllerBase
         [FromBody] SendSpeakingActionRequest request,
         CancellationToken cancellationToken)
     {
+        if (FreestyleUnavailable() is { } unavailable)
+        {
+            return unavailable;
+        }
+
         if (!BartenderInteractionCatalog.TryParseUserAction(request.Action, out var action))
         {
             return BadRequest(new
@@ -158,4 +183,13 @@ public sealed class SpeakingApiController : ControllerBase
             cancellationToken);
         return NoContent();
     }
+
+    private ObjectResult? FreestyleUnavailable() =>
+        QuizLanguageCatalog.IsFreestyle(_languageContext.CurrentLanguage)
+            ? GlosifyProblemDetails.Result(
+                HttpContext,
+                StatusCodes.Status400BadRequest,
+                ApiErrorCodes.FeatureUnavailableForMode,
+                "Speaking practice is not available in Freestyle mode.")
+            : null;
 }

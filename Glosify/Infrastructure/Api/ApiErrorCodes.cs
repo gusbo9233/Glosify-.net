@@ -20,4 +20,5 @@ public static class ApiErrorCodes
     public const string CollectionParentNotFound = "collection_parent_not_found";
     public const string CollectionNameConflict = "collection_name_conflict";
     public const string QuizCollectionNotFound = "quiz_collection_not_found";
+    public const string FeatureUnavailableForMode = "feature_unavailable_for_mode";
 }

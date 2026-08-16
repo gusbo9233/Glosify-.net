@@ -22,20 +22,31 @@ public sealed class TranscriptsController : Controller
     private const int DetailPageSize = RealtimeTranslationTranscriptService.DetailPageSize;
     private readonly IRealtimeTranslationTranscriptService _transcripts;
     private readonly IQuizLanguagePreferenceService _preferences;
+    private readonly ILanguageContext _languageContext;
     private readonly UiTextStringLocalizer _text = new();
 
     public TranscriptsController(
         IRealtimeTranslationTranscriptService transcripts,
-        IQuizLanguagePreferenceService preferences)
+        IQuizLanguagePreferenceService preferences,
+        ILanguageContext languageContext)
     {
         _transcripts = transcripts;
         _preferences = preferences;
+        _languageContext = languageContext;
     }
 
     [HttpGet("")]
     public async Task<IActionResult> Index(int page = 1, CancellationToken cancellationToken = default)
     {
+        if (QuizLanguageCatalog.IsFreestyle(_languageContext.CurrentLanguage))
+        {
+            return RedirectToAction("Index", "Home");
+        }
         var language = await _preferences.GetSelectedAsync(User.GetUserId(), cancellationToken);
+        if (language is { IsLanguageLearning: false })
+        {
+            return RedirectToAction("Index", "Home");
+        }
         if (language is null)
         {
             return RedirectToAction("Index", "Languages", new { returnUrl = Url.Action(nameof(Index), "Transcripts") });
@@ -52,7 +63,15 @@ public sealed class TranscriptsController : Controller
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Details(Guid id, int page = 1, string? stream = null, CancellationToken cancellationToken = default)
     {
+        if (QuizLanguageCatalog.IsFreestyle(_languageContext.CurrentLanguage))
+        {
+            return RedirectToAction("Index", "Home");
+        }
         var language = await _preferences.GetSelectedAsync(User.GetUserId(), cancellationToken);
+        if (language is { IsLanguageLearning: false })
+        {
+            return RedirectToAction("Index", "Home");
+        }
         if (language is null)
         {
             return RedirectToAction("Index", "Languages", new { returnUrl = Url.Action(nameof(Details), "Transcripts", new { id }) });
@@ -83,7 +102,15 @@ public sealed class TranscriptsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Rename(Guid id, string title, CancellationToken cancellationToken = default)
     {
+        if (QuizLanguageCatalog.IsFreestyle(_languageContext.CurrentLanguage))
+        {
+            return RedirectToAction("Index", "Home");
+        }
         var language = await _preferences.GetSelectedAsync(User.GetUserId(), cancellationToken);
+        if (language is { IsLanguageLearning: false })
+        {
+            return RedirectToAction("Index", "Home");
+        }
         if (language is null)
         {
             return RedirectToAction("Index", "Languages", new { returnUrl = Url.Action(nameof(Details), "Transcripts", new { id }) });
@@ -108,7 +135,15 @@ public sealed class TranscriptsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken = default)
     {
+        if (QuizLanguageCatalog.IsFreestyle(_languageContext.CurrentLanguage))
+        {
+            return RedirectToAction("Index", "Home");
+        }
         var language = await _preferences.GetSelectedAsync(User.GetUserId(), cancellationToken);
+        if (language is { IsLanguageLearning: false })
+        {
+            return RedirectToAction("Index", "Home");
+        }
         if (language is null)
         {
             return RedirectToAction("Index", "Languages", new { returnUrl = Url.Action(nameof(Index), "Transcripts") });

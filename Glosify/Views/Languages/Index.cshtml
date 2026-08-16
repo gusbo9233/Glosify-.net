@@ -1,7 +1,7 @@
 @inject Glosify.Services.Language.ILanguageContext LangContext
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
-    ViewData["Title"] = Text["Languages.Title"];
+    ViewData["Title"] = Text["Languages.ModeTitle"];
     ViewData["ActiveNav"] = "languages";
 
     var languages = Glosify.Services.Language.QuizLanguageCatalog.All;
@@ -9,33 +9,33 @@
     var currentDisplay = QuizLanguageDisplay.Name(current);
 }
 
-<section class="language-page" data-language-picker>
+<section class="language-page" data-language-picker data-language-count="@languages.Count">
     <header class="language-hero">
-        <h1 class="language-brand">Sonic Polyglot</h1>
+        <h1 class="language-brand">@Text["Languages.ModeTitle"]</h1>
         <h2 class="language-tagline">
-            @Text["Languages.Tagline"]
+            @Text["Languages.ModeTagline"]
         </h2>
         @if (!string.IsNullOrEmpty(current))
         {
             <span class="language-current">
                 <span class="material-symbols-outlined icon-sm">check_circle</span>
-                @Text["Languages.Current", currentDisplay]
+                @Text["Languages.CurrentMode", currentDisplay]
             </span>
         }
     </header>
 
     <div class="language-search-panel">
-        <label for="languageSearch">@Text["Languages.Find"]</label>
+        <label for="languageSearch">@Text["Languages.ModeFind"]</label>
         <div class="language-search-control">
             <span class="material-symbols-outlined" aria-hidden="true">search</span>
             <input id="languageSearch"
                    type="search"
                    autocomplete="off"
-                   placeholder="@Text["Languages.SearchPlaceholder"]"
+                   placeholder="@Text["Languages.ModeSearchPlaceholder"]"
                    data-language-search />
         </div>
         <p class="language-result-count" aria-live="polite" data-language-result-count>
-            @Text["Languages.Count", languages.Count]
+            @Text["Languages.ModeCount", languages.Count]
         </p>
     </div>
 
@@ -66,7 +66,16 @@
                     aria-pressed="@(isCurrent ? "true" : "false")"
                     data-language-card
                     data-language-search-terms="@searchTerms">
-                <span class="flag-frame" aria-hidden="true">@language.Flag</span>
+                <span class="flag-frame" aria-hidden="true">
+                    @if (language.IsLanguageLearning)
+                    {
+                        @language.Flag
+                    }
+                    else
+                    {
+                        <span class="material-symbols-outlined">category</span>
+                    }
+                </span>
                 <span class="language-labels">
                     <span class="language-name">@displayName</span>
                     <span class="language-native-name" dir="auto" lang="@language.Locale">@language.NativeName</span>
@@ -78,8 +87,8 @@
 
     <div class="language-empty-state" data-language-empty hidden>
         <span class="material-symbols-outlined" aria-hidden="true">search_off</span>
-        <strong>@Text["Languages.None"]</strong>
-        <span>@Text["Languages.NoneHelp"]</span>
+        <strong>@Text["Languages.ModeNone"]</strong>
+        <span>@Text["Languages.ModeNoneHelp"]</span>
     </div>
 </section>
 

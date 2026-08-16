@@ -338,6 +338,9 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
             AssistantAgentProfile.CustomQuizBuilder => _options.Agents.CustomQuizBuilder,
             AssistantAgentProfile.QuizAssistant => _options.Agents.QuizAssistant,
             AssistantAgentProfile.Librarian => _options.Agents.Librarian,
+            AssistantAgentProfile.FreestyleCustomQuizBuilder => _options.Agents.FreestyleCustomQuizBuilder,
+            AssistantAgentProfile.FreestyleQuizAssistant => _options.Agents.FreestyleQuizAssistant,
+            AssistantAgentProfile.FreestyleLibrarian => _options.Agents.FreestyleLibrarian,
             _ => null,
         };
     }

@@ -19,6 +19,7 @@ internal sealed class SearchWordsTool : IAssistantTool
         }, required: ["query"]));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
+    public IReadOnlyList<string> Aliases => ["search_items"];
 
     private readonly GlosifyContext _context;
 
@@ -56,6 +57,18 @@ internal sealed class SearchWordsTool : IAssistantTool
             .Take(limit)
             .Select(w => new { id = w.Id, word = w.Lemma, translation = w.Translation })
             .ToListAsync(ct);
+
+        if (context.IsFreestyle)
+        {
+            return new
+            {
+                query = search,
+                items = rows.Select(row => new { item_id = row.id, prompt = row.word, answer = row.translation }),
+                total_count = totalCount,
+                returned_count = rows.Count,
+                has_more = rows.Count < totalCount,
+            };
+        }
 
         return new
         {

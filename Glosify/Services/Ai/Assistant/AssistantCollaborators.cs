@@ -140,6 +140,10 @@ internal sealed class AssistantContextResolver(
         }
 
         var selectedLanguage = await languagePreferences.GetSelectedAsync(userId, cancellationToken);
+        if (selectedLanguage is { IsLanguageLearning: false })
+        {
+            return null;
+        }
         if (selectedLanguage is null)
         {
             throw new InvalidOperationException("Choose a Glosify quiz language before using saved transcripts.");

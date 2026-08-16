@@ -5,6 +5,7 @@
     ViewData["ActiveNav"] = "quizzes";
 
     var quizName = Model.SelectedQuiz?.Name ?? Text["Quiz.TypingTitle"];
+    var isFreestyle = Model.SelectedQuiz?.IsFreestyle == true;
 }
 
 <section class="typing-shell"
@@ -23,11 +24,11 @@
         <div>
             <p class="flash-kicker">@Model.DirectionLabel</p>
             <h1 class="flash-title">@quizName</h1>
-            <p class="flash-subtitle">@Text["Quiz.TypeInstruction", QuizLanguageDisplay.Name(Model.AnswerLanguage), Model.ItemSingularLabel, QuizLanguageDisplay.Name(Model.PromptLanguage)]</p>
+            <p class="flash-subtitle">@(isFreestyle ? "Type the answer for each prompt." : Text["Quiz.TypeInstruction", QuizLanguageDisplay.Name(Model.AnswerLanguage), Model.ItemSingularLabel, QuizLanguageDisplay.Name(Model.PromptLanguage)])</p>
         </div>
         @if (Model.SelectedQuiz != null)
         {
-            <a asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">@Text["Quiz.BackWords"]</a>
+            <a asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">@(isFreestyle ? "Back to items" : Text["Quiz.BackWords"])</a>
         }
     </header>
 
@@ -54,13 +55,13 @@
         <div class="typing-stage">
             <article class="typing-card" data-card>
                 <span class="card-label" data-card-label>@Model.CardLabel @Model.CurrentWordNumber</span>
-                <p class="typing-prompt-label">@Text["Quiz.PromptLabel", QuizLanguageDisplay.Name(Model.PromptLanguage)]</p>
+                <p class="typing-prompt-label">@(isFreestyle ? "Prompt" : Text["Quiz.PromptLabel", QuizLanguageDisplay.Name(Model.PromptLanguage)])</p>
                 @{
                     var typingPromptIsTarget = Glosify.Models.PracticeDirection.IsTargetToSource(Model.PracticeDirection);
                 }
                 <h2 class="typing-prompt">
                     <span data-prompt dir="auto">@Model.CurrentWord?.Prompt</span>
-                    @if (typingPromptIsTarget && Model.CurrentWord != null && !string.IsNullOrWhiteSpace(Model.CurrentWord.Prompt))
+                    @if (!isFreestyle && typingPromptIsTarget && Model.CurrentWord != null && !string.IsNullOrWhiteSpace(Model.CurrentWord.Prompt))
                     {
                         <button class="btn-icon-tts"
                                 type="button"

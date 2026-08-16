@@ -173,4 +173,60 @@ internal static class AssistantToolSurfaces
         typeof(ConfigureCustomQuizElementTool),
         typeof(RemoveCustomQuizElementTool),
     ];
+
+    public static readonly Type[] FreestyleQuizAssistant =
+    [
+        typeof(ListWordsTool),
+        typeof(SearchWordsTool),
+        typeof(GetWordTool),
+        typeof(GetQuizSummaryTool),
+        typeof(AddWordTool),
+        typeof(AddWordsTool),
+        typeof(EditWordTool),
+        typeof(EditWordsTool),
+        typeof(DeleteWordTool),
+        typeof(CreateQuizTool),
+        typeof(CreateCustomQuizTool),
+        typeof(ListBooksTool),
+        typeof(GetBookPagesTool),
+        typeof(SearchBookPagesTool),
+        .. CustomQuizElements,
+    ];
+
+    public static readonly Type[] FreestyleLibrarian =
+    [
+        typeof(ListCollectionsTool),
+        typeof(ListQuizzesTool),
+        typeof(CreateCollectionTool),
+        typeof(CreateQuizTool),
+        typeof(MoveQuizTool),
+        typeof(RenameCollectionTool),
+        typeof(MoveCollectionTool),
+        typeof(ListBooksTool),
+        typeof(GetBookPagesTool),
+        typeof(SearchBookPagesTool),
+        typeof(CreateCustomQuizFromContentTool),
+        .. CustomQuizElements,
+    ];
+
+    public static readonly Type[] FreestyleCustomQuizBuilder =
+    [
+        typeof(GetCustomQuizTool),
+        typeof(ListCustomQuizTemplatesTool),
+        typeof(ListWordsTool),
+        typeof(SearchWordsTool),
+        typeof(ListBooksTool),
+        typeof(GetBookPagesTool),
+        typeof(SearchBookPagesTool),
+        typeof(AddLabelTool),
+        typeof(AddTextInputTool),
+        typeof(AddCheckboxTool),
+        typeof(AddChoiceTool),
+        typeof(AddWordBankTool),
+        typeof(AddSubmitButtonTool),
+        typeof(AddFeedbackMessageTool),
+        typeof(AddCustomQuizElementTool),
+        typeof(ConfigureCustomQuizElementTool),
+        typeof(RemoveCustomQuizElementTool),
+    ];
 }

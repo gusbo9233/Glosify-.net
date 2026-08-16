@@ -3,6 +3,7 @@ using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
 
@@ -269,6 +270,7 @@ internal sealed class AssistantTurnRunner
         try
         {
             var contextQuiz = await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
+            var contextQuizIsFreestyle = QuizLanguageCatalog.IsFreestyle(contextQuiz?.TargetLanguage);
             var contextCustomQuiz = await ValidateCustomQuizAsync(customQuizId, contextQuiz, userId, cancellationToken);
             var focusedWord = contextQuiz is null
                 ? null
@@ -276,11 +278,13 @@ internal sealed class AssistantTurnRunner
             var documentPage = documentContext is null
                 ? null
                 : await _contextResolver.ResolveDocumentPageAsync(documentContext, userId, cancellationToken);
-            var transcriptContext = await _contextResolver.ResolveTranscriptAsync(
-                transcriptId,
-                transcriptPageContext,
-                userId,
-                cancellationToken);
+            var transcriptContext = contextQuizIsFreestyle
+                ? null
+                : await _contextResolver.ResolveTranscriptAsync(
+                    transcriptId,
+                    transcriptPageContext,
+                    userId,
+                    cancellationToken);
             var bookContext = await _contextResolver.ResolveBookAsync(bookDocumentId, userId, cancellationToken);
             var selectedLanguageCode = await _contextResolver.ResolveLanguageCodeAsync(userId, cancellationToken);
             var currentLanguage = contextQuiz?.TargetLanguage
@@ -294,15 +298,35 @@ internal sealed class AssistantTurnRunner
                 userId,
                 thread,
                 cancellationToken);
+            var isFreestyle = contextQuizIsFreestyle
+                || QuizLanguageCatalog.IsFreestyle(currentLanguage);
+            if (isFreestyle)
+            {
+                sourceLanguage = QuizLanguageCatalog.FreestyleName;
+            }
 
             // The page the user is on selects the profile, which fixes both the tool set and
             // which authored agent supplies the instructions. Each profile falls back to the
             // in-code instruction and declarations when no agent is configured for it.
-            var (profile, declarations) = contextCustomQuiz is not null && contextQuiz is not null
-                ? (AssistantAgentProfile.CustomQuizBuilder, _tools.CustomQuizBuilderDeclarations)
-                : contextQuiz is not null
-                    ? (AssistantAgentProfile.QuizAssistant, _tools.QuizAssistantDeclarations)
-                    : (AssistantAgentProfile.Librarian, _tools.LibrarianDeclarations);
+            var (profile, declarations) = (isFreestyle, contextCustomQuiz is not null, contextQuiz is not null) switch
+            {
+                (true, true, true) => (
+                    AssistantAgentProfile.FreestyleCustomQuizBuilder,
+                    _tools.FreestyleCustomQuizBuilderDeclarations),
+                (true, _, true) => (
+                    AssistantAgentProfile.FreestyleQuizAssistant,
+                    _tools.FreestyleQuizAssistantDeclarations),
+                (true, _, false) => (
+                    AssistantAgentProfile.FreestyleLibrarian,
+                    _tools.FreestyleLibrarianDeclarations),
+                (false, true, true) => (
+                    AssistantAgentProfile.CustomQuizBuilder,
+                    _tools.CustomQuizBuilderDeclarations),
+                (false, _, true) => (
+                    AssistantAgentProfile.QuizAssistant,
+                    _tools.QuizAssistantDeclarations),
+                _ => (AssistantAgentProfile.Librarian, _tools.LibrarianDeclarations),
+            };
             // The page says which surface is reachable; the request says which part of it the
             // user actually asked for. Narrowing on both is what stops "create a quiz" landing
             // in the custom builder and sentence requests landing in word storage.
@@ -342,6 +366,7 @@ internal sealed class AssistantTurnRunner
                 UserId = userId,
                 CurrentLanguage = currentLanguage,
                 CurrentLanguageCode = selectedLanguageCode,
+                IsFreestyle = isFreestyle,
                 SourceLanguage = sourceLanguage,
                 ReplyLanguage = replyLanguage,
                 FocusedWordId = focusedWord?.Id,
@@ -521,7 +546,8 @@ internal sealed class AssistantTurnRunner
                         // answered, not dispatched, so the model can correct itself while the
                         // rejection stays visible in tool analytics.
                         var canonicalName = _tools.ResolveCanonicalName(call.Name);
-                        var allowed = canonicalName is not null && allowedToolNames.Contains(canonicalName);
+                        var allowed = allowedToolNames.Contains(call.Name)
+                            || canonicalName is not null && allowedToolNames.Contains(canonicalName);
                         if (!allowed)
                         {
                             toolActivity?.SetTag("assistant.tool.rejected", true);

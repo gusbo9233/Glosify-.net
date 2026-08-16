@@ -58,6 +58,12 @@ public class QuizService : IQuizService
 
     public async Task<Quiz> CreateQuizAsync(string name, string sourceLanguage, string targetLanguage, string userId, Guid? collectionId = null, CancellationToken cancellationToken = default)
     {
+        if (QuizLanguageCatalog.IsFreestyle(targetLanguage))
+        {
+            sourceLanguage = QuizLanguageCatalog.FreestyleName;
+            targetLanguage = QuizLanguageCatalog.FreestyleName;
+        }
+
         if (collectionId.HasValue)
         {
             var collectionExists = await _context.Collections.AnyAsync(c =>

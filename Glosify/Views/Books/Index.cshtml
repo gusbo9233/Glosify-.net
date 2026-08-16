@@ -5,8 +5,9 @@
 
     var language = LangContext.CurrentLanguage;
     var displayLanguage = QuizLanguageDisplay.Name(language);
-    var shelfTitle = string.IsNullOrEmpty(language) ? Text["Books.YourBooks"] : Text["Books.LanguageBooks", displayLanguage];
-    ViewData["Title"] = string.IsNullOrEmpty(language) ? Text["Books.Title"] : Text["Books.LanguageTitle", displayLanguage];
+    var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(language);
+    var shelfTitle = isFreestyle ? "Your study books" : string.IsNullOrEmpty(language) ? Text["Books.YourBooks"] : Text["Books.LanguageBooks", displayLanguage];
+    ViewData["Title"] = isFreestyle ? "Study books" : string.IsNullOrEmpty(language) ? Text["Books.Title"] : Text["Books.LanguageTitle", displayLanguage];
 
     var totalPages = Model.Books.Sum(book => book.PageCount);
 }

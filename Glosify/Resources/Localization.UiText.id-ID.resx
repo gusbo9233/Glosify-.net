@@ -114,6 +114,14 @@
   <data name="Nav.Class" xml:space="preserve">
     <value>Kelas</value>
   </data>
+  <data name="Languages.ModeTitle" xml:space="preserve"><value>Pilih mode belajar</value></data>
+  <data name="Languages.ModeTagline" xml:space="preserve"><value>Pelajari bahasa atau buat kuis untuk topik apa pun.</value></data>
+  <data name="Languages.CurrentMode" xml:space="preserve"><value>Sedang menggunakan {0}</value></data>
+  <data name="Languages.ModeFind" xml:space="preserve"><value>Temukan mode atau bahasa</value></data>
+  <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Cari mode dan bahasa</value></data>
+  <data name="Languages.ModeCount" xml:space="preserve"><value>{0} mode dan bahasa</value></data>
+  <data name="Languages.ModeNone" xml:space="preserve"><value>Tidak ada mode atau bahasa yang cocok</value></data>
+  <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Coba topik, nama bahasa, atau kode.</value></data>
   <data name="Languages.Title" xml:space="preserve">
     <value>Pemilih bahasa</value>
   </data>

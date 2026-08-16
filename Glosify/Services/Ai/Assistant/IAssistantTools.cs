@@ -8,6 +8,9 @@ public interface IAssistantTools
     IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; }
     IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; }
     IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; }
+    IReadOnlyList<AgentToolDeclaration> FreestyleCustomQuizBuilderDeclarations => CustomQuizBuilderDeclarations;
+    IReadOnlyList<AgentToolDeclaration> FreestyleQuizAssistantDeclarations => QuizAssistantDeclarations;
+    IReadOnlyList<AgentToolDeclaration> FreestyleLibrarianDeclarations => LibrarianDeclarations;
 
     /// <summary>
     /// The declared name of the tool registered under <paramref name="name"/>, or null when no

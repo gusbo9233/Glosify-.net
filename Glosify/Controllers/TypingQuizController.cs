@@ -67,6 +67,10 @@ public class TypingQuizController : Controller
 
         if (selectedQuiz == null)
             return View(TypingQuizViewModel.Empty());
+        if (QuizLanguageCatalog.IsFreestyle(selectedQuiz.TargetLanguage))
+        {
+            normalizedItemType = PracticeItemType.Words;
+        }
 
         // Hand-picked word sets always start a fresh session rather than resuming
         // one matched only by count/range, since the exact word set can't be
@@ -206,6 +210,7 @@ public class TypingQuizController : Controller
 
     private static TypingQuizViewModel BuildViewModel(TypingSessionData session, bool showsUkrainianKeyboard)
     {
+        var isFreestyle = QuizLanguageCatalog.IsFreestyle(session.TargetLanguage);
         var totalWords = session.Words.Count;
         var completedWords = Math.Min(session.CurrentIndex, totalWords);
         var currentWordData = session.CurrentIndex < totalWords ? session.Words[session.CurrentIndex] : null;
@@ -245,11 +250,13 @@ public class TypingQuizController : Controller
             PracticeDirection = session.PracticeDirection,
             PromptLanguage = session.PromptLanguage,
             AnswerLanguage = session.AnswerLanguage,
-            DirectionLabel = PracticeDirection.Label(session.PracticeDirection, session.SourceLanguage, session.TargetLanguage),
+            DirectionLabel = isFreestyle
+                ? (PracticeDirection.IsTargetToSource(session.PracticeDirection) ? "Answer → Prompt" : "Prompt → Answer")
+                : PracticeDirection.Label(session.PracticeDirection, session.SourceLanguage, session.TargetLanguage),
             PracticeItemType = session.PracticeItemType,
-            ItemSingularLabel = PracticeItemType.SingularLabel(session.PracticeItemType),
-            ItemPluralLabel = PracticeItemType.PluralLabel(session.PracticeItemType),
-            CardLabel = PracticeItemType.CardLabel(session.PracticeItemType),
+            ItemSingularLabel = isFreestyle ? "item" : PracticeItemType.SingularLabel(session.PracticeItemType),
+            ItemPluralLabel = isFreestyle ? "items" : PracticeItemType.PluralLabel(session.PracticeItemType),
+            CardLabel = isFreestyle ? "Item" : PracticeItemType.CardLabel(session.PracticeItemType),
             ShowsUkrainianKeyboard = showsUkrainianKeyboard,
             IsComplete = totalWords > 0 && currentWord == null,
             ClassroomId = session.ClassroomId

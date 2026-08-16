@@ -34,6 +34,7 @@ internal sealed class EditWordsTool : IAssistantTool
         }, required: ["changes"]));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
+    public IReadOnlyList<string> Aliases => ["edit_items"];
 
     private readonly GlosifyContext _context;
 

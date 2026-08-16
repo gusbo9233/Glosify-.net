@@ -1,5 +1,6 @@
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Language;
 using Glosify.Services.RealtimeTranslation;
 
 namespace Glosify.Services.Ai.Assistant;
@@ -17,7 +18,7 @@ internal sealed class AssistantPromptBuilder
     /// after the prompt has moved on. An authored Foundry agent supplies its own instructions
     /// and its own version, which is recorded separately as agent_version.
     /// </remarks>
-    public const string Version = "2026-08-15.1";
+    public const string Version = "2026-08-16.1";
 
     private const string InlineBlankMarker = "{{blank}}";
 
@@ -29,9 +30,11 @@ internal sealed class AssistantPromptBuilder
         TranscriptAssistantContext? transcript,
         BookAssistantContext? book,
         string? currentLanguage) =>
-        quiz is null
-            ? ComposeGlobalSystemInstruction(currentLanguage, documentPage, transcript, book)
-            : ComposeQuizSystemInstruction(quiz, focusedWord, documentPage, customQuiz, transcript, book);
+        QuizLanguageCatalog.IsFreestyle(quiz?.TargetLanguage ?? currentLanguage)
+            ? ComposeFreestyleSystemInstruction(quiz, focusedWord, documentPage, customQuiz, book)
+            : quiz is null
+                ? ComposeGlobalSystemInstruction(currentLanguage, documentPage, transcript, book)
+                : ComposeQuizSystemInstruction(quiz, focusedWord, documentPage, customQuiz, transcript, book);
 
     public string BuildProfileContext(
         AssistantAgentProfile profile,
@@ -45,6 +48,19 @@ internal sealed class AssistantPromptBuilder
         string? sourceLanguage = null,
         string? replyLanguage = null)
     {
+        if (profile is AssistantAgentProfile.FreestyleCustomQuizBuilder
+            or AssistantAgentProfile.FreestyleQuizAssistant
+            or AssistantAgentProfile.FreestyleLibrarian)
+        {
+            return ComposeFreestyleProfileContext(
+                profile,
+                quiz,
+                focusedWord,
+                documentPage,
+                customQuiz,
+                book);
+        }
+
         var context = profile switch
         {
             AssistantAgentProfile.CustomQuizBuilder =>
@@ -55,6 +71,114 @@ internal sealed class AssistantPromptBuilder
         };
 
         return context + BuildLanguageInstruction(currentLanguage, sourceLanguage, replyLanguage);
+    }
+
+    private static string ComposeFreestyleSystemInstruction(
+        Quiz? quiz,
+        Word? focusedItem,
+        DocumentPageContext? documentPage,
+        CustomQuiz? customQuiz,
+        BookAssistantContext? book)
+    {
+        var selected = quiz is null
+            ? "No quiz is selected. Help the user create and organize quizzes for any subject."
+            : $"The user is working in the quiz \"{quiz.Name}\". Standard entries are prompt-and-answer items.";
+        var focus = focusedItem is null
+            ? string.Empty
+            : $"\n- The focused item is \"{focusedItem.Lemma}\" with answer \"{focusedItem.Translation}\" and id {focusedItem.Id}. Mutating calls must target only this item.";
+        var custom = customQuiz is null
+            ? string.Empty
+            : $"\n- The custom quiz \"{customQuiz.Name}\" (id {customQuiz.Id}) is open. Inspect and edit this document; do not create a replacement unless explicitly requested.";
+
+        return $"""
+        You are Glosify's general study and quiz assistant. Help with any academic,
+        professional, or personal subject. Explain concepts clearly, create accurate study
+        material, and organize the user's quiz library.
+
+        {selected}{focus}{custom}
+        {(documentPage is null ? string.Empty : BuildFreestyleDocumentInstruction(documentPage))}
+        {BuildFreestyleBookInstruction(book)}
+
+        Standard quizzes contain prompt-and-answer items. A prompt may be a question, term,
+        scenario, or cue; its answer may be a fact, definition, explanation, or solution.
+        Use interactive custom quizzes for multiple choice, checkboxes, cloze fields, and
+        other composed exercises.
+
+        Read-only tools run immediately. Mutating tools queue proposals for the user to
+        review and Apply. Finish all related proposals in the same turn, including every
+        required custom-quiz element. Prefer batch tools for multiple items. Inspect existing
+        work before editing it, and never invent ids.
+
+        Match the response to the request and do not expose tool names, ids, JSON, routes,
+        or implementation details.
+        """;
+    }
+
+    private static string ComposeFreestyleProfileContext(
+        AssistantAgentProfile profile,
+        Quiz? quiz,
+        Word? focusedItem,
+        DocumentPageContext? documentPage,
+        CustomQuiz? customQuiz,
+        BookAssistantContext? book)
+    {
+        var page = documentPage is null ? string.Empty : BuildFreestyleDocumentInstruction(documentPage);
+        var bookContext = BuildFreestyleBookInstruction(book);
+        return profile switch
+        {
+            AssistantAgentProfile.FreestyleCustomQuizBuilder => $"""
+                Current context:
+                - Backing quiz: "{quiz!.Name}" (id {quiz.Id}). Its prompt-and-answer items are available for bindings.
+                - Open custom quiz: "{customQuiz!.Name}" (id {customQuiz.Id}). Every request targets this document.
+                {page}
+                {bookContext}
+                """,
+            AssistantAgentProfile.FreestyleQuizAssistant => $"""
+                Current context:
+                - Quiz: "{quiz!.Name}" (id {quiz.Id}). Item tools act on this quiz.
+                {(focusedItem is null ? string.Empty : $"- Focused item: \"{focusedItem.Lemma}\" with answer \"{focusedItem.Translation}\" (id {focusedItem.Id}).")}
+                {page}
+                {bookContext}
+                """,
+            _ => $"""
+                Current context:
+                - Freestyle mode is active and no quiz is selected. Create standard prompt-and-answer quizzes or interactive custom quizzes as requested.
+                {page}
+                {bookContext}
+                """,
+        };
+    }
+
+    private static string BuildFreestyleBookInstruction(BookAssistantContext? book) =>
+        book is null
+            ? string.Empty
+            : $"""
+
+            Selected book context:
+            - Book: "{book.Title}"
+            - Book id: {book.Id}
+            - Pages: {book.PageCount}
+            - Fetch or search the relevant pages before answering from this source. Reading it never authorizes changes; propose quiz changes only when requested.
+            """;
+
+    private static string BuildFreestyleDocumentInstruction(DocumentPageContext documentPage)
+    {
+        var pageText = string.IsNullOrWhiteSpace(documentPage.Text)
+            ? $"[{documentPage.Warning ?? "No selectable text found on this page."}]"
+            : documentPage.Text;
+        return $"""
+
+            Current source page:
+            - Document: "{documentPage.Title}"
+            - Page: {documentPage.PageNumber}
+            - References to "this page" or "what I am reading" mean the material below.
+            - Use the material itself when the user requests items from it; general knowledge may supplement explanations.
+
+            Page material:
+            ---
+            {pageText}
+            ---
+            """;
     }
 
     /// <summary>

@@ -74,6 +74,14 @@ public sealed class QuizImportController : ControllerBase
         {
             return MissingLanguage();
         }
+        if (QuizLanguageCatalog.IsFreestyle(targetLanguage))
+        {
+            return GlosifyProblemDetails.Result(
+                HttpContext,
+                StatusCodes.Status400BadRequest,
+                ApiErrorCodes.FeatureUnavailableForMode,
+                "AI language repair is not available in Freestyle mode.");
+        }
         try
         {
             return Ok(await _repair.RepairAsync(

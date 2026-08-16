@@ -10,12 +10,23 @@
     var childCollections = Model.Collections.Where(collection => collection.ParentCollectionId == currentCollectionId).ToList();
     var visibleQuizzes = Model.Quizzes.Where(quiz => quiz.CollectionId == currentCollectionId).ToList();
     var displayLanguage = QuizLanguageDisplay.Name(currentLanguage);
+    var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(currentLanguage);
     var pageTitle = currentCollection?.Name ?? Text["Quiz.SelectQuiz"];
-    var pageSubtitle = currentCollection == null
+    var pageSubtitle = isFreestyle
+        ? (currentCollection == null ? "General-subject quizzes using prompts and answers." : "A Freestyle collection for any subject.")
+        : currentCollection == null
         ? Text["Quiz.ShowingLanguage", displayLanguage]
         : Text["Quiz.LanguageCollection", displayLanguage];
     var importDestination = currentCollection?.Name ?? Text["Quiz.JsonImportTopLevel"];
-    var jsonGenerationPrompt = $$"""
+    var jsonGenerationPrompt = isFreestyle ? $$"""
+        Create a Glosify version 1 quiz-import JSON document about the requested subject. The import will be placed in {{importDestination}}.
+
+        Return JSON only. Use source_language "Freestyle". Each quiz must contain a words array whose word value is a prompt, question, or term and whose translation value is its answer or definition. Do not include sentences.
+
+        Shape: { "version": 1, "source_language": "Freestyle", "quizzes": [{ "name": "Quiz name", "words": [{ "word": "Prompt", "translation": "Answer" }], "sentences": [] }], "collections": [] }
+
+        Limits: 25 collections, five collection levels, 50 quizzes, 100 items per quiz, and 1,000 items total.
+        """ : $$"""
         Create a Glosify version 1 quiz-import JSON document for a learner studying {{displayLanguage}}. The import will be placed in {{importDestination}}.
 
         Return JSON only: no markdown fence, prose, ids, visibility, target_language, or custom-quiz fields. Put words and sentence text in {{displayLanguage}} and translations in source_language. Each quiz needs at least one word or sentence. Use one root source_language and add a per-quiz source_language only when it differs.
@@ -185,7 +196,7 @@
                                 <span class="material-symbols-outlined quiz-arrow" aria-hidden="true">arrow_outward</span>
                             </div>
                             <h2 class="quiz-name">@quiz.Name</h2>
-                            <p class="quiz-languages">@QuizLanguageDisplay.Name(quiz.SourceLanguage) &rarr; @QuizLanguageDisplay.Name(quiz.TargetLanguage)</p>
+                            <p class="quiz-languages">@(quiz.IsFreestyle ? "Freestyle · prompts and answers" : $"{QuizLanguageDisplay.Name(quiz.SourceLanguage)} → {QuizLanguageDisplay.Name(quiz.TargetLanguage)}")</p>
                         </a>
                         <div class="quiz-meta">
                             <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@quiz.CreatedAt.ToString("d")</span>
@@ -271,6 +282,7 @@
 
         <form class="json-import-form"
               data-json-import-form
+              data-freestyle="@isFreestyle.ToString().ToLowerInvariant()"
               data-preview-url="@Url.Action("PreviewJsonImport", "QuizImport")"
               data-repair-url="@Url.Action("RepairJsonImportWithAi", "QuizImport")"
               data-apply-url="@Url.Action("ApplyJsonImport", "QuizImport")">
@@ -344,18 +356,25 @@
                 <label class="form-label" for="quizName">@Text["Quiz.Name"]</label>
                 <input class="form-input" id="quizName" type="text" name="Name" placeholder="@Text["Quiz.NameExample"]" required />
             </div>
+            @if (isFreestyle)
+            {
+                <input type="hidden" name="SourceLanguage" value="Freestyle" />
+            }
+            else
+            {
             <div class="form-group">
                 <label class="form-label" for="quizSourceLanguage">@Text["Quiz.SourceLanguage"]</label>
                 <select class="select-input" id="quizSourceLanguage" name="SourceLanguage" required>
                     <option value="">@Text["Quiz.SelectLanguage"]</option>
-                    @foreach (var language in Glosify.Services.Language.QuizLanguageCatalog.All)
+                    @foreach (var language in Glosify.Services.Language.QuizLanguageCatalog.LanguageLearning)
                     {
                         <option value="@language.Name">@QuizLanguageDisplay.Name(language.Name)</option>
                     }
                 </select>
             </div>
+            }
             <div class="form-group">
-                <label class="form-label">@Text["Quiz.TargetLanguage"]</label>
+                <label class="form-label">@(isFreestyle ? "Learning mode" : Text["Quiz.TargetLanguage"])</label>
                 <input type="hidden" name="TargetLanguage" value="@currentLanguage" />
                 <div class="form-input target-language-display">
                     <span>@displayLanguage</span>

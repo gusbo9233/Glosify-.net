@@ -22,6 +22,7 @@ internal sealed class ListWordsTool : IAssistantTool
         }));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
+    public IReadOnlyList<string> Aliases => ["list_items"];
 
     private readonly GlosifyContext _context;
 
@@ -43,6 +44,17 @@ internal sealed class ListWordsTool : IAssistantTool
             .Take(ListPageSize)
             .Select(w => new { id = w.Id, word = w.Lemma, translation = w.Translation })
             .ToListAsync(ct);
+
+        if (context.IsFreestyle)
+        {
+            return new
+            {
+                items = rows.Select(row => new { item_id = row.id, prompt = row.word, answer = row.translation }),
+                total_count = totalCount,
+                offset,
+                has_more = offset + rows.Count < totalCount,
+            };
+        }
 
         return new
         {

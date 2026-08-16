@@ -32,6 +32,39 @@ public sealed class AssistantToolSurfaceRegressionTests
             tool => tool.GetProperty("name").GetString() == "search_book_pages");
     }
 
+    [Fact]
+    public void Published_freestyle_v1_definitions_match_generic_runtime_surfaces()
+    {
+        using var context = CreateContext();
+        var tools = AssistantToolFactory.Create(context);
+        var profiles = new[]
+        {
+            ("glosify-freestyle-librarian-v1.json", tools.FreestyleLibrarianDeclarations),
+            ("glosify-freestyle-quiz-assistant-v1.json", tools.FreestyleQuizAssistantDeclarations),
+            ("glosify-freestyle-quiz-builder-v1.json", tools.FreestyleCustomQuizBuilderDeclarations),
+        };
+
+        foreach (var (fileName, declarations) in profiles)
+        {
+            var json = File.ReadAllText(Path.Combine(FindRepositoryRoot(), ".foundry/agents", fileName));
+            foreach (var excluded in new[] { "language", "vocabulary", "grammar", "translation", "pronunciation" })
+            {
+                Assert.DoesNotContain(excluded, json, StringComparison.OrdinalIgnoreCase);
+            }
+
+            using var document = System.Text.Json.JsonDocument.Parse(json);
+            var root = document.RootElement;
+            Assert.Equal("1", root.GetProperty("version").GetString());
+            Assert.Equal("active", root.GetProperty("status").GetString());
+            Assert.Equal("gpt-5.6-luna", root.GetProperty("definition").GetProperty("model").GetString());
+            var exportedNames = root.GetProperty("definition").GetProperty("tools")
+                .EnumerateArray()
+                .Select(tool => tool.GetProperty("name").GetString())
+                .ToArray();
+            Assert.Equal(declarations.Select(tool => tool.Name), exportedNames);
+        }
+    }
+
     private static string FindRepositoryRoot()
     {
         for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -147,6 +180,37 @@ public sealed class AssistantToolSurfaceRegressionTests
             tools => tools.CustomQuizBuilderDeclarations);
 
     [Fact]
+    public void Freestyle_surfaces_use_generic_items_and_exclude_language_only_tools()
+    {
+        using var context = CreateContext();
+        var tools = AssistantToolFactory.Create(context);
+        var quizNames = tools.FreestyleQuizAssistantDeclarations.Select(tool => tool.Name).ToArray();
+        var librarianNames = tools.FreestyleLibrarianDeclarations.Select(tool => tool.Name).ToArray();
+        var builderNames = tools.FreestyleCustomQuizBuilderDeclarations.Select(tool => tool.Name).ToArray();
+
+        Assert.Contains("list_items", quizNames);
+        Assert.Contains("add_items", quizNames);
+        Assert.Contains("edit_item", quizNames);
+        Assert.Contains("create_quiz", quizNames);
+        Assert.DoesNotContain("list_words", quizNames);
+        Assert.DoesNotContain("list_sentences", quizNames);
+        Assert.DoesNotContain("list_saved_transcripts", quizNames);
+        Assert.Contains("create_quiz", librarianNames);
+        Assert.Contains("add_choice", builderNames);
+
+        var authoredSurface = System.Text.Json.JsonSerializer.Serialize(
+            tools.FreestyleQuizAssistantDeclarations
+                .Concat(tools.FreestyleLibrarianDeclarations)
+                .Concat(tools.FreestyleCustomQuizBuilderDeclarations)
+                .DistinctBy(tool => tool.Name));
+        Assert.DoesNotContain("language", authoredSurface, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("vocabulary", authoredSurface, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("translation", authoredSurface, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("pronunciation", authoredSurface, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("grammar", authoredSurface, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Global_surface_is_unchanged() =>
         AssertSurface(
         [
@@ -217,6 +281,9 @@ public sealed class AssistantToolSurfaceRegressionTests
             .Concat(tools.QuizAssistantDeclarations)
             .Concat(tools.LibrarianDeclarations)
             .Concat(tools.CustomQuizBuilderDeclarations)
+            .Concat(tools.FreestyleQuizAssistantDeclarations)
+            .Concat(tools.FreestyleLibrarianDeclarations)
+            .Concat(tools.FreestyleCustomQuizBuilderDeclarations)
             .Concat(tools.Declarations)
             .Select(declaration => declaration.Name)
             .Distinct(StringComparer.Ordinal);

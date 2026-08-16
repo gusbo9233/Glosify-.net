@@ -242,6 +242,14 @@ public class QuizController : Controller
         if (language == null)
             return RedirectToAction("Index", "Languages");
 
+        if (QuizLanguageCatalog.IsFreestyle(language))
+        {
+            input.SourceLanguage = QuizLanguageCatalog.FreestyleName;
+            input.TargetLanguage = QuizLanguageCatalog.FreestyleName;
+            ModelState.Remove(nameof(input.SourceLanguage));
+            ModelState.Remove(nameof(input.TargetLanguage));
+        }
+
         if (!ModelState.IsValid)
         {
             TempData[NotificationKeys.Quiz] = string.Join(" ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
@@ -348,9 +356,18 @@ public class QuizController : Controller
             return RedirectToAction(nameof(Index));
         }
 
+        var normalizedItemType = PracticeItemType.Normalize(settings.PracticeItemType);
         if (settings.QuizId.HasValue)
         {
-            var normalizedItemType = PracticeItemType.Normalize(settings.PracticeItemType);
+            var selectedQuiz = await _quizService.GetQuizByIdAsync(settings.QuizId.Value, userId, cancellationToken: cancellationToken);
+            if (selectedQuiz is null)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+            if (QuizLanguageCatalog.IsFreestyle(selectedQuiz.TargetLanguage))
+            {
+                normalizedItemType = PracticeItemType.Words;
+            }
             var availableItemCount = PracticeItemType.IsSentences(normalizedItemType)
                 ? await _quizService.GetAvailableSentenceCountAsync(settings.QuizId.Value, cancellationToken: cancellationToken)
                 : await _quizService.GetAvailableWordCountAsync(settings.QuizId.Value, cancellationToken: cancellationToken);
@@ -363,8 +380,8 @@ public class QuizController : Controller
 
         return settings.Mode switch
         {
-            "flashcards" => RedirectToAction("Index", "FlashcardQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = PracticeItemType.Normalize(settings.PracticeItemType), wordRangeStart = settings.WordRangeStart, wordRangeEnd = settings.WordRangeEnd, selectedWordIds = settings.SelectedWordIds }),
-            "typing" => RedirectToAction("Index", "TypingQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = PracticeItemType.Normalize(settings.PracticeItemType), wordRangeStart = settings.WordRangeStart, wordRangeEnd = settings.WordRangeEnd, selectedWordIds = settings.SelectedWordIds }),
+            "flashcards" => RedirectToAction("Index", "FlashcardQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = normalizedItemType, wordRangeStart = settings.WordRangeStart, wordRangeEnd = settings.WordRangeEnd, selectedWordIds = settings.SelectedWordIds }),
+            "typing" => RedirectToAction("Index", "TypingQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = normalizedItemType, wordRangeStart = settings.WordRangeStart, wordRangeEnd = settings.WordRangeEnd, selectedWordIds = settings.SelectedWordIds }),
             // "multiple-choice" mode is exposed in settings UI but not yet implemented; route back to settings.
             _ => RedirectToAction(nameof(Settings))
         };

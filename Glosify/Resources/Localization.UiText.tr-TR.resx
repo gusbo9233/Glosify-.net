@@ -114,6 +114,14 @@
   <data name="Nav.Class" xml:space="preserve">
     <value>Sınıf</value>
   </data>
+  <data name="Languages.ModeTitle" xml:space="preserve"><value>Bir öğrenme modu seçin</value></data>
+  <data name="Languages.ModeTagline" xml:space="preserve"><value>Bir dil öğrenin veya istediğiniz konuda testler oluşturun.</value></data>
+  <data name="Languages.CurrentMode" xml:space="preserve"><value>Şu anda kullanılan: {0}</value></data>
+  <data name="Languages.ModeFind" xml:space="preserve"><value>Bir mod veya dil bulun</value></data>
+  <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Modlarda ve dillerde ara</value></data>
+  <data name="Languages.ModeCount" xml:space="preserve"><value>{0} mod ve dil</value></data>
+  <data name="Languages.ModeNone" xml:space="preserve"><value>Eşleşen mod veya dil yok</value></data>
+  <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Bir konu, dil adı veya kod deneyin.</value></data>
   <data name="Languages.Title" xml:space="preserve">
     <value>Dil seçici</value>
   </data>

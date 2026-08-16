@@ -114,6 +114,14 @@
   <data name="Nav.Class" xml:space="preserve">
     <value>صف</value>
   </data>
+  <data name="Languages.ModeTitle" xml:space="preserve"><value>اختر نمط تعلّم</value></data>
+  <data name="Languages.ModeTagline" xml:space="preserve"><value>تعلّم لغة أو أنشئ اختبارات لأي موضوع.</value></data>
+  <data name="Languages.CurrentMode" xml:space="preserve"><value>تستخدم حاليًا {0}</value></data>
+  <data name="Languages.ModeFind" xml:space="preserve"><value>ابحث عن نمط أو لغة</value></data>
+  <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>ابحث في الأنماط واللغات</value></data>
+  <data name="Languages.ModeCount" xml:space="preserve"><value>{0} من الأنماط واللغات</value></data>
+  <data name="Languages.ModeNone" xml:space="preserve"><value>لا يوجد نمط أو لغة مطابقان</value></data>
+  <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>جرّب موضوعًا أو اسم لغة أو رمزًا.</value></data>
   <data name="Languages.Title" xml:space="preserve">
     <value>محدد اللغة</value>
   </data>

@@ -19,6 +19,7 @@ internal sealed class GetWordTool : IAssistantTool
         }, required: ["word_id"]));
 
     public AgentToolDeclaration Declaration => DeclarationValue;
+    public IReadOnlyList<string> Aliases => ["get_item"];
 
     private readonly GlosifyContext _context;
 
@@ -31,7 +32,7 @@ internal sealed class GetWordTool : IAssistantTool
             return QuizContextRequired();
         }
 
-        var wordId = args.TryGetProperty("word_id", out var idProp) ? idProp.GetString() : null;
+        var wordId = FirstNonBlank(GetString(args, "word_id"), GetString(args, "item_id"));
         if (string.IsNullOrWhiteSpace(wordId))
         {
             return new { error = "word_id is required." };
@@ -41,6 +42,11 @@ internal sealed class GetWordTool : IAssistantTool
         if (word == null)
         {
             return new { error = $"Word {wordId} not found in this quiz." };
+        }
+
+        if (context.IsFreestyle)
+        {
+            return new { item_id = word.Id, prompt = word.Lemma, answer = word.Translation };
         }
 
         var lemma = word.Lemma.Trim();

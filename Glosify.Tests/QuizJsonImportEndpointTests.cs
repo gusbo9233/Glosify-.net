@@ -165,6 +165,30 @@ public sealed class QuizJsonImportEndpointTests
     }
 
     [Fact]
+    public async Task ExplicitAiRepair_RejectsFreestyleWithTheSharedProblemDetailsContract()
+    {
+        var repairs = new RecordingRepairService();
+        using var factory = CreateFactory(
+            new RecordingImportService(),
+            repairs: repairs,
+            language: "Freestyle");
+        var response = await SendWithAntiforgeryAsync(
+            factory,
+            factory.CreateClient(),
+            "/Quiz/RepairJsonImportWithAi",
+            ValidJson);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(ApiErrorCodes.FeatureUnavailableForMode, problem.RootElement.GetProperty("code").GetString());
+        Assert.Equal(
+            "AI language repair is not available in Freestyle mode.",
+            problem.RootElement.GetProperty("error").GetString());
+        Assert.Equal(0, repairs.RepairCount);
+    }
+
+    [Fact]
     public void ImportActions_DeclareAntiforgeryAndTheBrowserRequestSizeLimit()
     {
         foreach (var actionName in new[]
@@ -184,7 +208,8 @@ public sealed class QuizJsonImportEndpointTests
     private static WebApplicationFactory<Program> CreateFactory(
         RecordingImportService imports,
         bool authenticated = true,
-        RecordingRepairService? repairs = null) =>
+        RecordingRepairService? repairs = null,
+        string language = "Polish") =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Testing");
@@ -195,7 +220,7 @@ public sealed class QuizJsonImportEndpointTests
                 services.RemoveAll<IQuizJsonImportRepairService>();
                 services.AddSingleton<IQuizJsonImportRepairService>(repairs ?? new RecordingRepairService());
                 services.RemoveAll<ILanguageContext>();
-                services.AddSingleton<ILanguageContext>(new FixedLanguageContext("Polish"));
+                services.AddSingleton<ILanguageContext>(new FixedLanguageContext(language));
                 if (authenticated)
                 {
                     services.RemoveAll<IPolicyEvaluator>();

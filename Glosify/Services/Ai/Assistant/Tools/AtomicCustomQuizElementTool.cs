@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Glosify.Data;
 using Glosify.Models.CustomQuizzes;
 using Glosify.Models.Entities;
@@ -30,7 +31,41 @@ internal abstract class AtomicCustomQuizElementTool : IAssistantTool
         JsonElement args,
         AgentToolContext context,
         CancellationToken cancellationToken) =>
-        QueueAtomicCustomQuizElementAsync(Declaration.Name, args, context, cancellationToken);
+        QueueAtomicCustomQuizElementAsync(
+            Declaration.Name,
+            context.IsFreestyle ? NormalizeFreestyleBindings(args) : args,
+            context,
+            cancellationToken);
+
+    private static JsonElement NormalizeFreestyleBindings(JsonElement args)
+    {
+        var root = JsonNode.Parse(args.GetRawText());
+        Rewrite(root);
+        return JsonSerializer.SerializeToElement(root, JsonOptions);
+
+        static void Rewrite(JsonNode? node)
+        {
+            if (node is JsonObject value)
+            {
+                if (value.Remove("item_id", out var itemId)) value["word_id"] = itemId;
+                if (value.Remove("item_prompt", out var itemPrompt)) value["word"] = itemPrompt;
+                if (value["field"] is JsonValue field && field.TryGetValue<string>(out var fieldName))
+                {
+                    value["field"] = fieldName switch
+                    {
+                        "prompt" => "lemma",
+                        "answer" => "translation",
+                        _ => fieldName,
+                    };
+                }
+                foreach (var child in value.ToArray()) Rewrite(child.Value);
+            }
+            else if (node is JsonArray array)
+            {
+                foreach (var child in array) Rewrite(child);
+            }
+        }
+    }
 
     private async Task<object> QueueAtomicCustomQuizElementAsync(
         string toolName,

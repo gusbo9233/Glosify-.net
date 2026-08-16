@@ -5,6 +5,7 @@
     ViewData["ActiveNav"] = "quizzes";
 
     var quizName = Model.SelectedQuiz?.Name ?? Text["Quiz.FlashcardsTitle"];
+    var isFreestyle = Model.SelectedQuiz?.IsFreestyle == true;
 }
 
 <section class="flash-shell" data-flashcard-quiz>
@@ -16,7 +17,7 @@
         </div>
         @if (Model.SelectedQuiz != null)
         {
-            <a asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">@Text["Quiz.BackWords"]</a>
+            <a asp-controller="Quiz" asp-action="Details" asp-route-id="@Model.SelectedQuiz.Id" class="btn-linkish">@(isFreestyle ? "Back to items" : Text["Quiz.BackWords"])</a>
         }
     </header>
 

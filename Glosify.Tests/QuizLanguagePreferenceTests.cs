@@ -16,15 +16,16 @@ namespace Glosify.Tests;
 public sealed class QuizLanguagePreferenceTests
 {
     [Fact]
-    public void Catalog_ContainsExactly69CompleteUniqueProviderMappings()
+    public void Catalog_ContainsProviderLanguagesAndFreestyleMode()
     {
-        Assert.Equal(69, QuizLanguageCatalog.All.Count);
-        Assert.Equal(69, QuizLanguageCatalog.All.Select(language => language.Code).Distinct(StringComparer.OrdinalIgnoreCase).Count());
-        Assert.Equal(69, QuizLanguageCatalog.All.Select(language => language.TranslatorCode).Distinct(StringComparer.OrdinalIgnoreCase).Count());
-        Assert.Equal(69, QuizLanguageCatalog.All.Select(language => language.ScribeCode).Distinct(StringComparer.OrdinalIgnoreCase).Count());
-        Assert.Equal(69, QuizLanguageCatalog.All.Select(language => language.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Equal(70, QuizLanguageCatalog.All.Count);
+        Assert.Equal(69, QuizLanguageCatalog.LanguageLearning.Count);
+        Assert.Equal(70, QuizLanguageCatalog.All.Select(language => language.Code).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Equal(69, QuizLanguageCatalog.LanguageLearning.Select(language => language.TranslatorCode).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Equal(69, QuizLanguageCatalog.LanguageLearning.Select(language => language.ScribeCode).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Equal(70, QuizLanguageCatalog.All.Select(language => language.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count());
 
-        Assert.All(QuizLanguageCatalog.All, language =>
+        Assert.All(QuizLanguageCatalog.LanguageLearning, language =>
         {
             Assert.NotEmpty(language.Code);
             Assert.True(language.Code.Length <= QuizLanguageCatalog.StorageCodeMaximumLength);
@@ -36,6 +37,11 @@ public sealed class QuizLanguagePreferenceTests
             Assert.Matches(new Regex("^[A-Z]{2}$"), language.FlagRegion);
             Assert.NotEmpty(language.Flag);
         });
+        var freestyle = Assert.Single(QuizLanguageCatalog.All, language => !language.IsLanguageLearning);
+        Assert.Equal("free", freestyle.Code);
+        Assert.Equal("Freestyle", freestyle.Name);
+        Assert.True(QuizLanguageCatalog.IsFreestyle("free"));
+        Assert.True(QuizLanguageCatalog.IsFreestyle("Freestyle"));
     }
 
     [Fact]
@@ -56,7 +62,7 @@ public sealed class QuizLanguagePreferenceTests
         Assert.True(scribe.GetProperty("maximumPublishedWerPercent").GetInt32() <= 20);
         Assert.Equal(69, azureCodes.Count);
         Assert.Equal(69, scribeCodes.Count);
-        Assert.All(QuizLanguageCatalog.All, language =>
+        Assert.All(QuizLanguageCatalog.LanguageLearning, language =>
         {
             Assert.Contains(language.TranslatorCode, azureCodes);
             Assert.Contains(language.ScribeCode, scribeCodes);
@@ -82,6 +88,7 @@ public sealed class QuizLanguagePreferenceTests
     [InlineData("fil", "fil")]
     [InlineData("zh-Hans", "zh-Hans")]
     [InlineData("sr-Latn", "sr-Latn")]
+    [InlineData("free", "free")]
     public async Task Preference_PersistsCanonicalCodes(string selection, string expectedCode)
     {
         await using var context = CreateContext();
@@ -117,14 +124,14 @@ public sealed class QuizLanguagePreferenceTests
         var result = Assert.IsType<OkObjectResult>(controller.List().Result);
         var values = Assert.IsAssignableFrom<IReadOnlyList<string>>(result.Value);
 
-        Assert.Equal(69, values.Count);
+        Assert.Equal(70, values.Count);
         Assert.Equal(expected, values);
     }
 
     [Fact]
     public void Migration_ReplacesOnlyThePreferenceConstraint()
     {
-        var operations = new InspectableCatalogMigration().GetUpOperations();
+        var operations = new InspectableFreestyleMigration().GetUpOperations();
         var drop = Assert.IsType<DropCheckConstraintOperation>(operations[0]);
         var add = Assert.IsType<AddCheckConstraintOperation>(operations[1]);
 
@@ -133,7 +140,7 @@ public sealed class QuizLanguagePreferenceTests
         Assert.Equal("CK_AspNetUsers_SelectedQuizLanguageCode", drop.Name);
         Assert.Equal("AspNetUsers", add.Table);
         Assert.Equal("CK_AspNetUsers_SelectedQuizLanguageCode", add.Name);
-        Assert.Equal(69, QuizLanguageCatalog.All.Count(language =>
+        Assert.Equal(70, QuizLanguageCatalog.All.Count(language =>
             add.Sql.Contains($"'{language.Code}'", StringComparison.Ordinal)));
     }
 
@@ -206,7 +213,7 @@ public sealed class QuizLanguagePreferenceTests
         public void Clear() { }
     }
 
-    private sealed class InspectableCatalogMigration : ExpandLearningLanguageCatalog
+    private sealed class InspectableFreestyleMigration : AddFreestyleQuizMode
     {
         public IReadOnlyList<MigrationOperation> GetUpOperations()
         {

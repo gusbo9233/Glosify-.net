@@ -1,4 +1,5 @@
 using Glosify.Models;
+using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -33,6 +34,9 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
     {
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
+        var promptIsLemma = QuizLanguageCatalog.IsFreestyle(targetLanguage)
+            ? PracticeDirection.IsSourceToTarget(normalizedDirection)
+            : PracticeDirection.IsTargetToSource(normalizedDirection);
         return new FlashcardSessionData
         {
             SessionId = Guid.NewGuid().ToString("N"),
@@ -51,8 +55,8 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
             SelectedWordIds = string.IsNullOrWhiteSpace(selectedWordIds) ? null : selectedWordIds,
             Cards = cards.Select(card => card with
             {
-                Prompt = PracticeDirection.IsSourceToTarget(normalizedDirection) ? card.Translation : card.Lemma,
-                Answer = PracticeDirection.IsSourceToTarget(normalizedDirection) ? card.Lemma : card.Translation
+                Prompt = promptIsLemma ? card.Lemma : card.Translation,
+                Answer = promptIsLemma ? card.Translation : card.Lemma
             }).ToList()
         };
     }
