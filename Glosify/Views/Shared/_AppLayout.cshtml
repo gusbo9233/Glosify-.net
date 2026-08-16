@@ -3,11 +3,13 @@
 @using Microsoft.AspNetCore.Authorization
 @using Glosify.Services.Auth
 @inject IAuthorizationService AuthorizationService
+@inject IWebHostEnvironment HostEnvironment
 @inject IStripePaymentService StripePayments
 @{
-    var speakingIsAvailable = (await AuthorizationService.AuthorizeAsync(
-        User,
-        AuthorizationPolicyNames.SpeakingAvailability)).Succeeded;
+    var speakingIsAvailable = !HostEnvironment.IsProduction()
+        || (await AuthorizationService.AuthorizeAsync(
+            User,
+            AuthorizationPolicyNames.SpeakingAvailability)).Succeeded;
 }
 @functions {
     string MetaDescription => ViewData["Description"] as string ?? Text["Layout.MetaDescription"];

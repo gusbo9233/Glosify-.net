@@ -77,14 +77,25 @@ public sealed class SpeakingIntegrationTests
     {
         using var factory = CreateFactory(
             environment: "Production",
-            adminEmail: "learner@example.test");
+            adminEmail: "LEARNER@EXAMPLE.TEST");
         var client = factory.CreateClient();
 
         var document = await GetDocumentAsync(client);
+        var token = document.QuerySelector("input[name='__RequestVerificationToken']")
+            ?.GetAttribute("value")
+            ?? throw new InvalidOperationException("The speaking page did not render an antiforgery token.");
+        using var apiRequest = Post(
+            "/api/speaking/sessions",
+            token,
+            """{"avatarId":"bartender","cefrLevel":"A2"}""");
+        var apiResponse = await client.SendAsync(apiRequest);
 
+        apiResponse.EnsureSuccessStatusCode();
         Assert.NotNull(document.QuerySelector("#speaking-app"));
         Assert.NotNull(document.QuerySelector("aside a[href='/Speaking']"));
         Assert.Null(document.QuerySelector("aside .app-nav-item.is-disabled"));
+        Assert.NotNull(document.QuerySelector(".app-mobile-nav a[href='/Speaking']"));
+        Assert.Null(document.QuerySelector(".app-mobile-nav [data-speaking-unavailable]"));
     }
 
     [Fact]
@@ -762,11 +773,8 @@ public sealed class SpeakingIntegrationTests
                 {
                     ["Legal:ControllerName"] = "Glosify test operator",
                     ["Legal:ContactEmail"] = "privacy@glosify.app",
+                    ["Admin:Emails:0"] = adminEmail ?? string.Empty,
                 };
-                if (adminEmail is not null)
-                {
-                    settings["Admin:Emails:0"] = adminEmail;
-                }
                 configuration.AddInMemoryCollection(settings);
             });
             builder.ConfigureTestServices(services =>

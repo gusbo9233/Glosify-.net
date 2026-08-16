@@ -122,6 +122,7 @@ builder.Services.AddAuthorization(options =>
     });
     options.AddPolicy(AuthorizationPolicyNames.SpeakingAvailability, policy =>
     {
+        policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context => !builder.Environment.IsProduction() || IsAdmin(context));
     });
 });
