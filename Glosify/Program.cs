@@ -72,7 +72,17 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
 // Gives the bearer-token API surface a consistent RFC 7807 error body instead of an
 // empty response, and backs UseStatusCodePages below.
-builder.Services.AddProblemDetails();
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        var statusCode = context.ProblemDetails.Status ?? context.HttpContext.Response.StatusCode;
+        GlosifyProblemDetails.AddCommonExtensions(
+            context.HttpContext,
+            context.ProblemDetails,
+            GlosifyProblemDetails.CodeForStatus(statusCode));
+    };
+});
 builder.Services.AddOpenApi();
 
 // Kestrel serves the rendered views uncompressed and nothing in front of it

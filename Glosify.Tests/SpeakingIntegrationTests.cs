@@ -44,6 +44,12 @@ public sealed class SpeakingIntegrationTests
 
         Assert.Equal(HttpStatusCode.Forbidden, pageResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, apiResponse.StatusCode);
+        Assert.Equal(
+            "application/problem+json",
+            apiResponse.Content.Headers.ContentType?.MediaType);
+        using var apiProblem = JsonDocument.Parse(await apiResponse.Content.ReadAsStringAsync());
+        Assert.Equal("forbidden", apiProblem.RootElement.GetProperty("code").GetString());
+        Assert.Equal("Forbidden", apiProblem.RootElement.GetProperty("error").GetString());
     }
 
     [Fact]
@@ -57,10 +63,13 @@ public sealed class SpeakingIntegrationTests
         var document = await new HtmlParser().ParseDocumentAsync(
             await response.Content.ReadAsStringAsync());
 
-        Assert.NotNull(document.QuerySelector("aside .app-nav-item.is-disabled[aria-disabled='true']"));
+        Assert.NotNull(document.QuerySelector(
+            "aside [data-speaking-unavailable].app-nav-item.is-disabled[aria-disabled='true']"));
         Assert.Null(document.QuerySelector("aside a[href='/Speaking']"));
-        Assert.NotNull(document.QuerySelector(".app-mobile-nav .app-nav-item.is-disabled[aria-disabled='true']"));
+        Assert.NotNull(document.QuerySelector(
+            ".app-mobile-nav [data-speaking-unavailable].app-nav-item.is-disabled[aria-disabled='true']"));
         Assert.Null(document.QuerySelector(".app-mobile-nav a[href='/Speaking']"));
+        Assert.Equal(2, document.QuerySelectorAll("[data-speaking-unavailable]").Length);
     }
 
     [Fact]

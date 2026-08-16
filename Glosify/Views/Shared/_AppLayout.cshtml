@@ -217,7 +217,8 @@
                 }
                 else
                 {
-                    <span class="app-nav-item is-disabled" aria-disabled="true" title="@Text["Speaking.Unavailable"]">
+                    <span class="app-nav-item is-disabled" aria-disabled="true" data-speaking-unavailable
+                          title="@Text["Speaking.Unavailable"]">
                         @NavIcon("mic")
                         @Text["Nav.Speaking"]
                     </span>
@@ -318,7 +319,8 @@
         }
         else
         {
-            <span class="app-nav-item is-disabled" aria-disabled="true" title="@Text["Speaking.Unavailable"]">
+            <span class="app-nav-item is-disabled" aria-disabled="true" data-speaking-unavailable
+                  title="@Text["Speaking.Unavailable"]">
                 @NavIcon("mic")
                 <span>@Text["Nav.Speak"]</span>
             </span>
