@@ -241,9 +241,11 @@ public sealed class RealtimeTranslationServiceTests
         var catalog = await service.GetCatalogAsync("user-1");
         var created = await service.CreateSessionAsync("user-1", "es");
         var begun = await service.BeginMinuteAsync("user-1", created.SessionId, 1);
+        var session = await context.RealtimeTranslationSessions.SingleAsync();
 
         Assert.Null(catalog.SelectedQuizLanguage);
         Assert.Contains(catalog.Languages, language => language.Code == "es");
+        Assert.Equal("es", session.TargetLanguage);
         Assert.Null(created.TranscriptId);
         Assert.Equal(1, begun.ChargedMinutes);
         Assert.Equal(QuizLanguageCatalog.FreestyleCode, user.SelectedQuizLanguageCode);
