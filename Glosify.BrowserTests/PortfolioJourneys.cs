@@ -114,7 +114,14 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         });
         var noJavaScriptPage = await noJavaScriptContext.NewPageAsync();
         await noJavaScriptPage.GotoAsync("/Languages?returnUrl=%2FQuizzes");
-        await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Serbian (Latin)", Exact = true }).ClickAsync();
+        await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Serbian (Latin)", Exact = true })
+            .ClickAsync(new LocatorClickOptions
+            {
+                // The fixed assistant button occupies the card's lower-right corner on a
+                // narrow viewport. Click the card's left side so this still exercises the
+                // native no-JavaScript form submission without racing that unrelated overlay.
+                Position = new Position { X = 20, Y = 20 },
+            });
         await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
     }
 
@@ -294,7 +301,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.Locator("[data-assistant-new-chat]")).ToBeVisibleAsync();
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
 
-        await Page.Locator("[data-assistant-new-chat]").ClickAsync();
+        // The handler immediately switches back to the chat pane, hiding this button. A
+        // direct DOM click avoids Playwright retrying its actionability checks after the
+        // successful handler has already started that transition.
+        await Page.Locator("[data-assistant-new-chat]").DispatchEventAsync("click");
         // Creating a chat renders the list once when the POST completes and again after
         // selection/history loading. Wait for the operation's final pane transition so
         // the Chats click below cannot race that second render and replace the row while
