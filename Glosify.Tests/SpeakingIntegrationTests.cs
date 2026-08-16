@@ -793,6 +793,12 @@ public sealed class SpeakingIntegrationTests
     {
         using var factory = CreateFactory(language: "Freestyle");
         var client = factory.CreateClient();
+        using var missingTokenRequest = new HttpRequestMessage(
+            HttpMethod.Delete,
+            "/api/speaking/sessions/11111111-1111-1111-1111-111111111111");
+        var missingTokenResponse = await client.SendAsync(missingTokenRequest);
+        Assert.Equal(HttpStatusCode.BadRequest, missingTokenResponse.StatusCode);
+
         var languagePage = await client.GetStringAsync("/Languages");
         var document = await new HtmlParser().ParseDocumentAsync(languagePage);
         var token = document.QuerySelector("input[name='__RequestVerificationToken']")
