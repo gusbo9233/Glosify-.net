@@ -56,10 +56,24 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.DoesNotContain("href=\"#\"", login);
         Assert.DoesNotContain("href=\"#\"", register);
         Assert.Contains("Chrome Web Store Limited Use", privacy);
-        Assert.Contains("Tab audio is not written to Glosify storage", privacy);
+        Assert.Contains("complete effective model request", privacy);
         Assert.Contains("Transcript saving is off by default", privacy);
-        Assert.Contains("Paid features close", terms);
+        Assert.Contains("provider reports token or audio usage", terms);
+        Assert.Contains("mandatory consumer rights", terms);
+        Assert.Contains("AI-generated replies", terms);
         Assert.Contains("Do not send passwords", support);
+    }
+
+    [Fact]
+    public async Task ApplicationLayoutKeepsLegalPagesAccessible()
+    {
+        var document = await GetDocumentAsync(CreateClient(), "/");
+        var footer = document.QuerySelector("footer.app-legal-footer");
+
+        Assert.NotNull(footer);
+        Assert.NotNull(footer!.QuerySelector("a[href='/Home/Privacy']"));
+        Assert.NotNull(footer.QuerySelector("a[href='/Home/Terms']"));
+        Assert.NotNull(footer.QuerySelector("a[href='/Home/Support']"));
     }
 
     [Theory]

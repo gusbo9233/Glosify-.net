@@ -91,20 +91,130 @@ test("Scribe revisions replace live text before the finalized segment commits", 
   assert.deepEqual(chat.messages, [{ text: "Good morning!", timestamp: 321 }]);
 });
 
-test("Scribe finalized replacements remain one provider-defined bubble", () => {
-  const chat = new ChatBuffer({ maximumBubbleCharacters: 12 });
+test("Scribe partial replacements commit completed sentences without duplicating them", () => {
+  const chat = new ChatBuffer();
   chat.apply({
     stream: "translation",
+    sequence: 7,
+    delta: "First sentence. Second",
+    replace: true,
+    isFinal: false,
+    clientTimestamp: 322,
+  });
+  assert.deepEqual(chat.messages, []);
+  assert.equal(chat.translation, "First sentence. Second");
+
+  chat.apply({
+    stream: "translation",
+    sequence: 7,
+    delta: "First sentence. Second sentence. Third",
+    replace: true,
+    isFinal: false,
+    clientTimestamp: 323,
+  });
+  assert.deepEqual(chat.messages, [
+    { text: "First sentence.", timestamp: 323 },
+  ]);
+  assert.equal(chat.translation, "Second sentence. Third");
+
+  chat.apply({
+    stream: "translation",
+    sequence: 7,
+    delta: "First sentence. Second sentence. Third sentence.",
+    replace: true,
+    isFinal: true,
+    clientTimestamp: 324,
+  });
+  assert.deepEqual(chat.messages, [
+    { text: "First sentence.", timestamp: 323 },
+    { text: "Second sentence.", timestamp: 324 },
+    { text: "Third sentence.", timestamp: 324 },
+  ]);
+  assert.equal(chat.translation, "");
+});
+
+test("Scribe waits for text after terminal punctuation before committing a partial", () => {
+  const chat = new ChatBuffer();
+  chat.apply({
+    stream: "translation",
+    sequence: 8,
+    delta: "First sentence.",
+    replace: true,
+    isFinal: false,
+    clientTimestamp: 325,
+  });
+
+  assert.deepEqual(chat.messages, []);
+  assert.equal(chat.translation, "First sentence.");
+
+  chat.apply({
+    stream: "translation",
+    sequence: 8,
     delta: "First sentence. Second sentence.",
     replace: true,
     isFinal: true,
-    clientTimestamp: 322,
+    clientTimestamp: 326,
+  });
+  assert.deepEqual(chat.messages, [
+    { text: "First sentence.", timestamp: 326 },
+    { text: "Second sentence.", timestamp: 326 },
+  ]);
+});
+
+test("Scribe does not commit punctuation that changes in the next partial", () => {
+  const chat = new ChatBuffer();
+  chat.apply({
+    stream: "translation",
+    sequence: 9,
+    delta: "The party is in trouble. More",
+    replace: true,
+    isFinal: false,
+    clientTimestamp: 327,
+  });
+  chat.apply({
+    stream: "translation",
+    sequence: 9,
+    delta: "The party is in a tense situation after the vote. More details",
+    replace: true,
+    isFinal: false,
+    clientTimestamp: 328,
   });
 
+  assert.deepEqual(chat.messages, []);
+  assert.equal(chat.translation, "The party is in a tense situation after the vote. More details");
+
+  chat.apply({
+    stream: "translation",
+    sequence: 9,
+    delta: "The party is in a tense situation after the vote. More details follow",
+    replace: true,
+    isFinal: false,
+    clientTimestamp: 329,
+  });
   assert.deepEqual(chat.messages, [{
-    text: "First sentence. Second sentence.",
-    timestamp: 322,
+    text: "The party is in a tense situation after the vote.",
+    timestamp: 329,
   }]);
+  assert.equal(chat.translation, "More details follow");
+});
+
+test("Scribe splits a long finalized sentence at word boundaries", () => {
+  const chat = new ChatBuffer({ maximumBubbleCharacters: 16 });
+  chat.apply({
+    stream: "translation",
+    sequence: 10,
+    delta: "One unusually long translated sentence finishes here.",
+    replace: true,
+    isFinal: true,
+    clientTimestamp: 330,
+  });
+
+  assert.deepEqual(chat.messages, [
+    { text: "One unusually", timestamp: 330 },
+    { text: "long translated", timestamp: 330 },
+    { text: "sentence", timestamp: 330 },
+    { text: "finishes here.", timestamp: 330 },
+  ]);
 });
 
 test("ignores source speech so the overlay remains translation-only", () => {

@@ -3760,6 +3760,35 @@ body { margin: 0; }
     width: 100%;
 }
 
+.app-legal-footer {
+    padding: 0 32px 28px;
+}
+
+.app-legal-footer nav,
+.payment-legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+}
+
+.app-legal-footer a,
+.payment-legal-links a {
+    color: var(--on-surface-var);
+    font-size: 12px;
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.app-legal-footer a:hover,
+.payment-legal-links a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
+.payment-legal-links {
+    margin-top: 10px;
+}
+
 .app-mobile-brand,
 .app-mobile-nav {
     display: none;
@@ -3790,6 +3819,10 @@ body { margin: 0; }
     }
 
     .app-canvas { padding: 24px 18px 32px; }
+
+    .app-legal-footer {
+        padding: 0 18px 24px;
+    }
 
     .app-topbar { padding: 12px 18px; }
 

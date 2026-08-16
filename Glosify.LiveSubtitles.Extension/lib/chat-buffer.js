@@ -10,6 +10,9 @@
       this.maximumBubbleCharacters = maximumBubbleCharacters;
       this.messages = [];
       this.translation = "";
+      this.replacementSequence = null;
+      this.previousReplacementSentences = [];
+      this.committedReplacementSentences = 0;
     }
 
     apply(event) {
@@ -17,18 +20,20 @@
         return { changed: false, committed: false };
       }
 
-      if (event.delta) {
-        this.translation = appendBounded(
-          event.replace ? "" : this.translation,
-          event.delta,
-          this.maximumTranslationCharacters);
-      }
       const timestamp = Number.isFinite(event.clientTimestamp)
         ? event.clientTimestamp
         : Date.now();
-      const committedBubbles = event.replace
-        ? 0
-        : this.commitEnhancedBubbles(timestamp);
+      if (event.replace) {
+        return this.applyReplacement(event, timestamp);
+      }
+
+      if (event.delta) {
+        this.translation = appendBounded(
+          this.translation,
+          event.delta,
+          this.maximumTranslationCharacters);
+      }
+      const committedBubbles = this.commitEnhancedBubbles(timestamp);
       if (!event.isFinal) {
         return {
           changed: Boolean(event.delta) || committedBubbles > 0,
@@ -44,6 +49,48 @@
 
       this.pushMessage(text, timestamp);
       return { changed: true, committed: true };
+    }
+
+    applyReplacement(event, timestamp) {
+      if (this.replacementSequence !== event.sequence) {
+        this.replacementSequence = event.sequence;
+        this.previousReplacementSentences = [];
+        this.committedReplacementSentences = 0;
+      }
+
+      const text = appendBounded("", event.delta, this.maximumTranslationCharacters).trim();
+      const split = splitSentences(text);
+      let committed = 0;
+
+      if (event.isFinal) {
+        for (const sentence of split.completed.slice(this.committedReplacementSentences)) {
+          committed += this.pushTextAsBubbles(sentence, timestamp);
+        }
+        committed += this.pushTextAsBubbles(split.remainder, timestamp);
+        this.translation = "";
+        this.resetReplacement();
+        return { changed: true, committed: committed > 0 };
+      }
+
+      while (this.committedReplacementSentences < split.completed.length
+          && this.committedReplacementSentences < this.previousReplacementSentences.length
+          && split.completed[this.committedReplacementSentences]
+            === this.previousReplacementSentences[this.committedReplacementSentences]) {
+        committed += this.pushTextAsBubbles(
+          split.completed[this.committedReplacementSentences],
+          timestamp);
+        this.committedReplacementSentences += 1;
+      }
+
+      this.previousReplacementSentences = split.completed;
+      this.translation = [
+        ...split.completed.slice(this.committedReplacementSentences),
+        split.remainder,
+      ].filter(Boolean).join(" ");
+      return {
+        changed: Boolean(event.delta) || committed > 0,
+        committed: committed > 0,
+      };
     }
 
     commitEnhancedBubbles(timestamp) {
@@ -74,9 +121,31 @@
       }
     }
 
+    pushTextAsBubbles(text, timestamp) {
+      let remaining = text.trim();
+      let committed = 0;
+      while (remaining) {
+        const splitAt = findLengthSplit(remaining, this.maximumBubbleCharacters);
+        const bubble = splitAt > 0 ? remaining.slice(0, splitAt).trim() : remaining;
+        remaining = splitAt > 0 ? remaining.slice(splitAt).trimStart() : "";
+        if (bubble) {
+          this.pushMessage(bubble, timestamp);
+          committed += 1;
+        }
+      }
+      return committed;
+    }
+
+    resetReplacement() {
+      this.replacementSequence = null;
+      this.previousReplacementSentences = [];
+      this.committedReplacementSentences = 0;
+    }
+
     clear() {
       this.messages.length = 0;
       this.translation = "";
+      this.resetReplacement();
     }
   }
 
@@ -90,6 +159,21 @@
   function findCompletedSentenceEnd(text) {
     const boundary = /[.!?…]+(?:["'”’»\)\]]+)?(?=\s|$)|[。！？]+(?:["'”’»）\]]+)?/u.exec(text);
     return boundary ? boundary.index + boundary[0].length : -1;
+  }
+
+  function splitSentences(text) {
+    const completed = [];
+    let remainder = text.trim();
+    while (remainder) {
+      const sentenceEnd = findCompletedSentenceEnd(remainder);
+      if (sentenceEnd <= 0) {
+        break;
+      }
+      const trailingText = remainder.slice(sentenceEnd).trimStart();
+      completed.push(remainder.slice(0, sentenceEnd).trim());
+      remainder = trailingText;
+    }
+    return { completed, remainder };
   }
 
   function findLengthSplit(text, maximumLength) {

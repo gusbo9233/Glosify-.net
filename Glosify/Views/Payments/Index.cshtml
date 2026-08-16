@@ -49,5 +49,9 @@
             }
         </div>
         <p class="muted-copy">@Text["Payments.StripeNotice"]</p>
+        <nav class="payment-legal-links" aria-label="@Text["Legal.Label"]">
+            <a asp-controller="Home" asp-action="Terms">@Text["Legal.TermsOfService"]</a>
+            <a asp-controller="Home" asp-action="Privacy">@Text["Legal.PrivacyPolicy"]</a>
+        </nav>
     }
 </div>
