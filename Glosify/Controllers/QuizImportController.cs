@@ -32,6 +32,7 @@ public sealed class QuizImportController : ControllerBase
     }
 
     [HttpPost("PreviewJsonImport")]
+    [ValidateAntiForgeryToken]
     [RequestSizeLimit(ImportRequestLimit)]
     public async Task<ActionResult<QuizJsonImportPreview>> PreviewJsonImport(
         [FromForm] QuizJsonImportRequest request,
@@ -61,6 +62,7 @@ public sealed class QuizImportController : ControllerBase
     }
 
     [HttpPost("RepairJsonImportWithAi")]
+    [ValidateAntiForgeryToken]
     [RequestSizeLimit(ImportRequestLimit)]
     [AiServiceExceptionFilter]
     public async Task<ActionResult<QuizJsonImportPreview>> RepairJsonImportWithAi(
@@ -81,6 +83,7 @@ public sealed class QuizImportController : ControllerBase
     }
 
     [HttpPost("ApplyJsonImport")]
+    [ValidateAntiForgeryToken]
     [RequestSizeLimit(ImportRequestLimit)]
     public async Task<ActionResult<QuizJsonImportApplyResponse>> ApplyJsonImport(
         [FromForm] QuizJsonImportRequest request,

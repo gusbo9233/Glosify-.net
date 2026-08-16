@@ -137,7 +137,7 @@ public sealed class QuizJsonImportEndpointTests
     }
 
     [Fact]
-    public void ImportActions_DeclareTheBrowserRequestSizeLimit()
+    public void ImportActions_DeclareAntiforgeryAndTheBrowserRequestSizeLimit()
     {
         foreach (var actionName in new[]
                  {
@@ -147,6 +147,7 @@ public sealed class QuizJsonImportEndpointTests
                  })
         {
             var method = typeof(QuizImportController).GetMethod(actionName, BindingFlags.Public | BindingFlags.Instance);
+            Assert.Single(method!.GetCustomAttributes<ValidateAntiForgeryTokenAttribute>());
             var limit = Assert.Single(method!.GetCustomAttributes<RequestSizeLimitAttribute>());
             Assert.Equal(96 * 1024, ((IRequestSizeLimitMetadata)limit).MaxRequestBodySize);
         }
