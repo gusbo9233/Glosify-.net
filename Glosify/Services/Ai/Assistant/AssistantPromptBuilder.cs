@@ -17,7 +17,7 @@ internal sealed class AssistantPromptBuilder
     /// after the prompt has moved on. An authored Foundry agent supplies its own instructions
     /// and its own version, which is recorded separately as agent_version.
     /// </remarks>
-    public const string Version = "2026-08-13.1";
+    public const string Version = "2026-08-15.1";
 
     private const string InlineBlankMarker = "{{blank}}";
 
@@ -118,7 +118,7 @@ internal sealed class AssistantPromptBuilder
 
         Current page context:
         - The assistant is focused on "{focusedWord.Lemma}" -> "{focusedWord.Translation}".
-        - Any mutating tool call that edits, deletes, or repairs content must target only this word id when a word id is required: {focusedWord.Id}.
+        - Any mutating tool call that edits or deletes content must target only this word id when a word id is required: {focusedWord.Id}.
         - Do not propose changes to other words unless the user leaves this context.
         """;
         var documentInstruction = documentPage == null
@@ -158,7 +158,7 @@ internal sealed class AssistantPromptBuilder
         - When adding or editing more than one sentence, prefer add_sentences or edit_sentences over repeated single-sentence calls.
         - Use list_words when you need to know what is already in the quiz before proposing edits or deletions.
         - Use search_words when looking for specific vocabulary and get_quiz_summary when the user asks about quiz size, language, collection, or visibility.
-        - Use list_sentences before editing, repairing, or deleting quiz sentences. Prefer edit_sentence/edit_sentences for id-based edits; repair_sentence replaces every exact text match.
+        - Use list_sentences before editing or deleting quiz sentences. Prefer edit_sentence/edit_sentences for id-based edits.
         - For library-level requests, use list_collections and list_quizzes to find existing structure before creating, moving, or renaming items. Never invent quiz or collection ids — ask the user if you cannot identify the item.
         - For custom quizzes, inspect an existing document first. Before creating or substantially redesigning one, call list_custom_quiz_templates and use the best template as visual and layout guidance. Pass its template_id during creation. Prefer the compact textbook exercise patterns represented by the Textbook drill template: a short heading and instruction followed by consecutive rows, with minimal card chrome. A playable document needs exactly one submit_button, exactly one feedback_message, and at least one answer control. Every answer control must have a specific learner-visible label that contains its question or gap; multiple answer controls must have distinct labels. Text inputs need either an expected word binding or literal expected_text; choice controls need at least two options and valid correct selections. Use stable descriptive element ids and non-overlapping 12-column layout coordinates.
         {customQuizCreationRule}
@@ -169,7 +169,6 @@ internal sealed class AssistantPromptBuilder
         - Convert inflected forms to a natural dictionary headword, merge repeated forms of the same headword, and keep first-appearance order, unless the user wants the exact forms.
         - Words go in add_word/add_words; full sentences go in add_sentence/add_sentences. Follow the user's intent about whether they want words, sentences, or both.
         - Good example sentences are short, grammatical, and context-rich; avoid pronunciation hints, dictionary glosses, fragments, or markup as sentence text.
-        - For sentence repair, keep the same learning target where possible and prefer natural inflection over forcing the exact dictionary form.
         - Words are normally in {quiz.TargetLanguage} with translations in {quiz.SourceLanguage}; deviate only when the user clearly wants otherwise.
         - If the current book page has no selectable text, explain that Glosify cannot read this page and suggest choosing another page or pasting text.
 
@@ -400,4 +399,3 @@ internal sealed class AssistantPromptBuilder
     }
 
 }
-

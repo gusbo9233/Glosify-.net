@@ -33,7 +33,6 @@ public sealed class CreditPricingOptionsValidator : IValidateOptions<CreditPrici
     private static readonly HashSet<string> KnownFeatures = new(StringComparer.OrdinalIgnoreCase)
     {
         AiUsageFeatures.Assistant,
-        AiUsageFeatures.Repair,
         AiUsageFeatures.ImageExtraction,
         AiUsageFeatures.Speaking,
         AiUsageFeatures.PageTranslation,
@@ -136,7 +135,6 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
     private static readonly (string Code, string Name)[] TokenFeatureNames =
     [
         (AiUsageFeatures.Assistant, "Assistant"),
-        (AiUsageFeatures.Repair, "Vocabulary generation and repair"),
         (AiUsageFeatures.ImageExtraction, "Image text extraction"),
         (AiUsageFeatures.Speaking, "Speaking practice"),
         (AiUsageFeatures.PageTranslation, "Book page translation"),

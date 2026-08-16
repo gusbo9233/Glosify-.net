@@ -80,10 +80,9 @@ public class ApiCreateErrorTests
     private static QuizzesApiController CreateQuizzesController(GlosifyContext context)
     {
         var controller = new QuizzesApiController(
-            new QuizService(context, new StaticLanguage()),
-            new WordService(context),
+            new QuizService(context, new StaticLanguage(), new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System)),
+            new WordService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System)),
             new TypingQuizService(context),
-            new StubQuizRepairService(),
             new StubImageTextExtractionService());
         controller.ControllerContext = CreateControllerContext();
         return controller;
@@ -91,7 +90,7 @@ public class ApiCreateErrorTests
 
     private static CollectionsApiController CreateCollectionsController(GlosifyContext context)
     {
-        var controller = new CollectionsApiController(new CollectionService(context));
+        var controller = new CollectionsApiController(new CollectionService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System)));
         controller.ControllerContext = CreateControllerContext();
         return controller;
     }
@@ -103,15 +102,6 @@ public class ApiCreateErrorTests
         {
             HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) }
         };
-    }
-
-    private sealed class StubQuizRepairService : IQuizRepairService
-    {
-        public Task<QuizRepairResult> RepairWordAsync(string wordId, string userId, CancellationToken cancellationToken) =>
-            Task.FromResult(new QuizRepairResult(QuizRepairStatus.NotFound));
-
-        public Task<QuizRepairResult> RepairSentenceAsync(Guid quizId, string sentenceText, string userId, CancellationToken cancellationToken) =>
-            Task.FromResult(new QuizRepairResult(QuizRepairStatus.NotFound));
     }
 
     private sealed class StubImageTextExtractionService : IImageTextExtractionService

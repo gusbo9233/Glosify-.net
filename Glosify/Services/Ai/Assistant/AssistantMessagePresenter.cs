@@ -75,7 +75,6 @@ internal sealed class AssistantMessagePresenter
                 PendingChangeKinds.EditWord => BuildEditWordSummary(change.Payload, wordLabels),
                 PendingChangeKinds.EditSentence => BuildEditSentenceSummary(change.Payload),
                 PendingChangeKinds.DeleteWord => $"Remove {GetWordDisplay(change.Payload, wordLabels)}",
-                PendingChangeKinds.RepairSentence => BuildRepairSentenceSummary(change.Payload),
                 PendingChangeKinds.DeleteSentence => BuildDeleteSentenceSummary(change.Payload),
                 PendingChangeKinds.CreateQuiz => BuildCreateQuizSummary(change.Payload),
                 PendingChangeKinds.CreateCollection => BuildCreateCollectionSummary(change.Payload),
@@ -162,13 +161,6 @@ internal sealed class AssistantMessagePresenter
         }
 
         return $"Edit {GetWordDisplay(payload, wordLabels)}";
-    }
-
-    private static string BuildRepairSentenceSummary(JsonElement payload)
-    {
-        var original = TruncateValue(GetString(payload, "original_text"), 70);
-        var replacement = TruncateValue(GetString(payload, "new_text"), 70);
-        return $"Replace \"{original}\" with \"{replacement}\"";
     }
 
     private static string BuildEditSentenceSummary(JsonElement payload)

@@ -17,20 +17,17 @@ public class QuizzesApiController : ApiControllerBase
     private readonly IQuizService _quizService;
     private readonly IWordService _wordService;
     private readonly ITypingQuizService _typingQuizService;
-    private readonly IQuizRepairService _quizRepairService;
     private readonly IImageTextExtractionService _imageTextExtractionService;
 
     public QuizzesApiController(
         IQuizService quizService,
         IWordService wordService,
         ITypingQuizService typingQuizService,
-        IQuizRepairService quizRepairService,
         IImageTextExtractionService imageTextExtractionService)
     {
         _quizService = quizService;
         _wordService = wordService;
         _typingQuizService = typingQuizService;
-        _quizRepairService = quizRepairService;
         _imageTextExtractionService = imageTextExtractionService;
     }
 
@@ -173,34 +170,6 @@ public class QuizzesApiController : ApiControllerBase
 
         var sentences = await _wordService.GetSentencesAsync(id, cancellationToken: cancellationToken);
         return Ok(sentences.Select(s => new SentenceDto(s.Id, s.Text, s.Translation, s.WordCount)).ToList());
-    }
-
-    [HttpPost("words/{wordId}/repair")]
-    [AiServiceExceptionFilter]
-    public async Task<IActionResult> RepairWord(string wordId, CancellationToken cancellationToken)
-    {
-        var result = await _quizRepairService.RepairWordAsync(wordId, User.GetUserId(), cancellationToken);
-        return result.Status switch
-        {
-            QuizRepairStatus.NotFound => NotFound("Word not found."),
-            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, ServiceWarmupMessage.LlmAssistant),
-            _ => Ok(new RepairResultDto($"Repaired {result.Word}."))
-        };
-    }
-
-    [HttpPost("{id:guid}/sentences/repair")]
-    [AiServiceExceptionFilter]
-    public async Task<IActionResult> RepairSentence(Guid id, [FromBody] RepairSentenceRequest request, CancellationToken cancellationToken)
-    {
-        var result = await _quizRepairService.RepairSentenceAsync(id, request.Text, User.GetUserId(), cancellationToken);
-        return result.Status switch
-        {
-            QuizRepairStatus.NotFound => NotFound("Quiz not found."),
-            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, ServiceWarmupMessage.LlmAssistant),
-            _ => Ok(new RepairResultDto(result.UpdatedCount == 1
-                ? "Sentence repaired."
-                : $"Sentence repaired in {result.UpdatedCount} places."))
-        };
     }
 
     [HttpPost("{id:guid}/extract-image-text")]

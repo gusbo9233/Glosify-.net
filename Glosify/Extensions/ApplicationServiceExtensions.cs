@@ -2,6 +2,7 @@ using Azure.AI.Projects;
 using Azure.Core;
 using Glosify.Services;
 using Glosify.Services.Ai;
+using Glosify.Services.Anki;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Assistant.Mcp;
 using Glosify.Services.Ai.Generation;
@@ -108,7 +109,10 @@ public static class ApplicationServiceExtensions
         services.Configure<BlobStorageOptions>(configuration.GetSection("BlobStorage"));
         services.AddScoped<IQuizService, QuizService>();
         services.AddScoped<ICollectionService, CollectionService>();
-        services.AddScoped<IQuizRepairService, QuizRepairService>();
+        services.AddSingleton<IAnkiScheduler, Fsrs6AnkiScheduler>();
+        services.AddScoped<IAnkiCollectionService, AnkiCollectionService>();
+        services.AddScoped<IAnkiStudyService, AnkiStudyService>();
+        services.AddScoped<IAnkiStatisticsService, AnkiStatisticsService>();
         services.AddScoped<IWordService, WordService>();
         services.AddSingleton<IQuizSessionRegistry, QuizSessionRegistry>();
         services.AddScoped<IFlashcardSessionService, FlashcardSessionService>();
@@ -202,7 +206,6 @@ public static class ApplicationServiceExtensions
                 ? services.GetRequiredService<GeminiGenerativeAiClient>()
                 : services.GetRequiredService<FoundryGenerativeAiClient>();
         });
-        services.AddScoped<IVocabularyGenerationService, LlmVocabularyGenerationService>();
         services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();
         services.AddAssistantTools();
         services.AddScoped<IChangeApplier, ChangeApplier>();

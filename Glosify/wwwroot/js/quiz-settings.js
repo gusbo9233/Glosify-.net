@@ -1,5 +1,8 @@
 (() => {
     const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
+    document.querySelectorAll('[data-browser-timezone]').forEach(input => {
+        input.value = Intl.DateTimeFormat().resolvedOptions().timeZone || input.value || 'UTC';
+    });
     const modeLabel = document.querySelector('[data-selected-mode]');
     const modes = document.querySelectorAll('input[name="Mode"]');
     const directionLabel = document.querySelector('[data-selected-direction]');

@@ -70,6 +70,7 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("/Explore")]
     [InlineData("/FlashcardQuiz")]
     [InlineData("/TypingQuiz")]
+    [InlineData("/Anki")]
     [InlineData("/Speaking")]
     [InlineData("/CustomQuizzes/00000000-0000-0000-0000-000000000001/Play")]
     [InlineData("/Admin/AiCredits")]
@@ -186,6 +187,7 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains(hrefs, h => h.Equals("/", StringComparison.Ordinal) || h.Contains("/Home", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(hrefs, h => h.Contains("/Languages", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(hrefs, h => h.Contains("/Quiz", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(hrefs, h => h.Contains("/Anki", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

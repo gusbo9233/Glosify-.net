@@ -49,6 +49,9 @@ public sealed class ShippedConfigurationTests
 
         var unpriced = new List<string>();
 
+        Assert.Equal("glosify-quiz-assistant", foundry.Agents.QuizAssistant.Name);
+        Assert.Equal("6", foundry.Agents.QuizAssistant.Version);
+
         if (budget.MetersProvider(AiUsageProviders.Foundry))
         {
             string[] routable =

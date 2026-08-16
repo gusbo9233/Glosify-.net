@@ -4,6 +4,7 @@ using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Services;
 using Glosify.Services.CustomQuizzes;
+using Glosify.Services.Anki;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Words;
@@ -11,10 +12,12 @@ namespace Glosify.Services.Words;
 public class WordService : IWordService
 {
     private readonly GlosifyContext _context;
+    private readonly IAnkiCollectionService _ankiCollections;
 
-    public WordService(GlosifyContext context)
+    public WordService(GlosifyContext context, IAnkiCollectionService ankiCollections)
     {
         _context = context;
+        _ankiCollections = ankiCollections;
     }
 
     public async Task<IReadOnlyList<Word>> GetWordsAsync(Guid quizId, CancellationToken cancellationToken = default)
@@ -172,16 +175,20 @@ public class WordService : IWordService
         if (string.IsNullOrWhiteSpace(word) || string.IsNullOrWhiteSpace(translation))
             return false;
 
-        _context.Words.Add(new Word
+        return await ExecuteAtomicallyAsync(async token =>
         {
-            Id = Guid.NewGuid().ToString("N"),
-            QuizId = quizId,
-            Lemma = word.Trim(),
-            Translation = translation.Trim()
-        });
+            _context.Words.Add(new Word
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                QuizId = quizId,
+                Lemma = word.Trim(),
+                Translation = translation.Trim()
+            });
 
-        await _context.SaveChangesAsync(cancellationToken);
-        return true;
+            await _context.SaveChangesAsync(token);
+            await _ankiCollections.SyncQuizAsync(quizId, token);
+            return true;
+        }, cancellationToken);
     }
 
     public async Task<Word?> DeleteWordAsync(string wordId, string userId, CancellationToken cancellationToken = default)
@@ -189,21 +196,38 @@ public class WordService : IWordService
         if (string.IsNullOrWhiteSpace(wordId))
             return null;
 
-        var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == wordId, cancellationToken);
-        if (word == null)
-            return null;
+        return await ExecuteAtomicallyAsync(async token =>
+        {
+            var word = await _context.Words.FirstOrDefaultAsync(w => w.Id == wordId, token);
+            if (word == null)
+                return null;
 
-        var ownsQuiz = await _context.Quizzes
-            .AnyAsync(q => q.Id == word.QuizId && q.UserId == userId, cancellationToken);
+            var ownsQuiz = await _context.Quizzes
+                .AnyAsync(q => q.Id == word.QuizId && q.UserId == userId, token);
+            if (!ownsQuiz)
+                return null;
 
-        if (!ownsQuiz)
-            return null;
+            await new CustomQuizService(_context).PruneWordBindingsAsync(word.QuizId, [word.Id], token);
+            _context.Words.Remove(word);
+            await _context.SaveChangesAsync(token);
+            await _ankiCollections.SyncQuizAsync(word.QuizId, token);
+            return word;
+        }, cancellationToken);
+    }
 
-        await new CustomQuizService(_context).PruneWordBindingsAsync(word.QuizId, [word.Id], cancellationToken);
-        _context.Words.Remove(word);
-        await _context.SaveChangesAsync(cancellationToken);
-
-        return word;
+    public async Task<QuizSentence?> DeleteSentenceAsync(Guid sentenceId, string userId, CancellationToken cancellationToken = default)
+    {
+        return await ExecuteAtomicallyAsync(async token =>
+        {
+            var sentence = await _context.QuizSentences.SingleOrDefaultAsync(item => item.Id == sentenceId, token);
+            if (sentence is null || !await _context.Quizzes.AnyAsync(
+                    quiz => quiz.Id == sentence.QuizId && quiz.UserId == userId, token))
+                return null;
+            _context.QuizSentences.Remove(sentence);
+            await _context.SaveChangesAsync(token);
+            await _ankiCollections.SyncQuizAsync(sentence.QuizId, token);
+            return sentence;
+        }, cancellationToken);
     }
 
     public async Task<bool> WordExistsAsync(Guid quizId, string word, CancellationToken cancellationToken = default)
@@ -230,5 +254,30 @@ public class WordService : IWordService
 
         var pattern = $@"(?<![\p{{L}}\p{{M}}]){Regex.Escape(word.Trim())}(?![\p{{L}}\p{{M}}])";
         return new Regex(pattern, RegexOptions.IgnoreCase);
+    }
+
+    private async Task<T> ExecuteAtomicallyAsync<T>(
+        Func<CancellationToken, Task<T>> operation,
+        CancellationToken cancellationToken)
+    {
+        if (!_context.Database.IsRelational() || _context.Database.CurrentTransaction is not null)
+            return await operation(cancellationToken);
+
+        var strategy = _context.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync(async token =>
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync(token);
+            try
+            {
+                var result = await operation(token);
+                await transaction.CommitAsync(token);
+                return result;
+            }
+            catch
+            {
+                _context.ChangeTracker.Clear();
+                throw;
+            }
+        }, cancellationToken);
     }
 }

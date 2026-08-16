@@ -17,6 +17,35 @@ namespace Glosify.Tests;
 public sealed class AssistantToolSurfaceRegressionTests
 {
     [Fact]
+    public void Published_quiz_assistant_v6_has_required_book_search_and_no_repair_surface()
+    {
+        var path = Path.Combine(FindRepositoryRoot(),
+            ".foundry/agents/glosify-quiz-assistant-v6.json");
+        var json = File.ReadAllText(path);
+        Assert.DoesNotContain("repair_sentence", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("repair", json, StringComparison.OrdinalIgnoreCase);
+        using var document = System.Text.Json.JsonDocument.Parse(json);
+        Assert.Equal("6", document.RootElement.GetProperty("version").GetString());
+        Assert.Equal("active", document.RootElement.GetProperty("status").GetString());
+        Assert.False(document.RootElement.GetProperty("draft").GetBoolean());
+        Assert.Contains(document.RootElement.GetProperty("definition").GetProperty("tools").EnumerateArray(),
+            tool => tool.GetProperty("name").GetString() == "search_book_pages");
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
+             directory is not null;
+             directory = directory.Parent)
+        {
+            if (Directory.Exists(Path.Combine(directory.FullName, ".foundry")))
+                return directory.FullName;
+        }
+        throw new DirectoryNotFoundException(
+            $"Could not find the repository root above {AppContext.BaseDirectory}.");
+    }
+
+    [Fact]
     public void Quiz_page_surface_is_unchanged() =>
         AssertSurface(
         [
@@ -34,7 +63,6 @@ public sealed class AssistantToolSurfaceRegressionTests
             "edit_sentence",
             "edit_sentences",
             "delete_word",
-            "repair_sentence",
             "delete_sentence",
             // Standard creation is reachable from a selected quiz as of the intent-routing
             // change: "create another normal quiz" had no path but create_custom_quiz before.
@@ -170,7 +198,6 @@ public sealed class AssistantToolSurfaceRegressionTests
             "edit_sentence",
             "edit_sentences",
             "delete_word",
-            "repair_sentence",
             "delete_sentence",
         ],
             tools => tools.Declarations);

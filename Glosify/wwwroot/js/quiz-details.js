@@ -12,51 +12,38 @@
         messageHost.appendChild(message);
     };
 
-    const postRepair = async (button, body) => {
-        if (!button?.dataset.repairUrl) return;
-        const originalHtml = button.innerHTML;
-        button.disabled = true;
-        button.innerHTML = '<span class="material-symbols-outlined">progress_activity</span>';
-
-        try {
-            const response = await fetch(button.dataset.repairUrl, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'RequestVerificationToken': tokenInput?.value ?? ''
-                },
-                body
-            });
-            const data = await response.json().catch(() => null);
-            if (!response.ok) {
-                setMessage(t('Client.RepairFailed', 'Repair failed. Please try again.'), 'error');
-                return;
-            }
-
-            setMessage(data?.message || `${t('Quiz.Repair', 'Repair')} ✓`);
-            window.setTimeout(() => window.location.reload(), 450);
-        } catch {
-            setMessage(t('Client.RepairStopped', 'The repair request stopped unexpectedly. Please try again.'), 'error');
-        } finally {
-            button.disabled = false;
-            button.innerHTML = originalHtml;
-        }
-    };
-
-    document.querySelectorAll('[data-repair-word-button]').forEach(button => {
-        button.addEventListener('click', event => {
-            postRepair(event.currentTarget, new FormData());
-        });
+    const menus = [...document.querySelectorAll('[data-item-menu]')];
+    menus.forEach(menu => menu.addEventListener('toggle', () => {
+        if (menu.open) menus.filter(other => other !== menu).forEach(other => other.removeAttribute('open'));
+    }));
+    document.addEventListener('click', event => {
+        menus.filter(menu => menu.open && !menu.contains(event.target)).forEach(menu => menu.removeAttribute('open'));
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        menus.filter(menu => menu.open).forEach(menu => { menu.removeAttribute('open'); menu.querySelector('summary')?.focus(); });
     });
 
-    document.querySelectorAll('[data-repair-sentence-button]').forEach(button => {
-        button.addEventListener('click', event => {
-            const body = new FormData();
-            body.append('quizId', event.currentTarget.dataset.quizId || '');
-            body.append('text', event.currentTarget.dataset.sentenceText || '');
-            postRepair(event.currentTarget, body);
-        });
-    });
+    const ankiDialog = document.querySelector('[data-anki-item-dialog]');
+    let ankiTrigger = null;
+    document.querySelectorAll('[data-open-anki-item]').forEach(button => button.addEventListener('click', () => {
+        ankiTrigger = button;
+        const itemType = ankiDialog?.querySelector('[data-anki-item-type]');
+        const itemId = ankiDialog?.querySelector('[data-anki-item-id]');
+        if (itemType instanceof HTMLInputElement) itemType.value = button.dataset.itemType || '';
+        if (itemId instanceof HTMLInputElement) itemId.value = button.dataset.itemId || '';
+        const label = ankiDialog?.querySelector('[data-anki-item-label]');
+        if (label) label.textContent = button.dataset.itemLabel || 'card';
+        button.closest('[data-item-menu]')?.removeAttribute('open');
+        ankiDialog?.showModal();
+    }));
+    ankiDialog?.querySelector('[data-close-anki-item]')?.addEventListener('click', () => ankiDialog.close());
+    ankiDialog?.addEventListener('close', () => ankiTrigger?.focus());
+    ankiDialog?.addEventListener('click', event => { if (event.target === ankiDialog) ankiDialog.close(); });
+
+    document.querySelectorAll('[data-confirm]').forEach(form => form.addEventListener('submit', event => {
+        if (!window.confirm(form.dataset.confirm)) event.preventDefault();
+    }));
 
     document.querySelectorAll('[data-delete-custom-quiz]').forEach(button => {
         button.addEventListener('click', async () => {

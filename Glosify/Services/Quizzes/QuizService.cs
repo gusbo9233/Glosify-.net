@@ -3,6 +3,7 @@ using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Language;
+using Glosify.Services.Anki;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Quizzes;
@@ -12,12 +13,14 @@ public class QuizService : IQuizService
     private readonly GlosifyContext _context;
     private readonly ILanguageContext _languageContext;
     private readonly CollectionVisibility _collectionVisibility;
+    private readonly IAnkiCollectionService _ankiCollections;
 
-    public QuizService(GlosifyContext context, ILanguageContext languageContext)
+    public QuizService(GlosifyContext context, ILanguageContext languageContext, IAnkiCollectionService ankiCollections)
     {
         _context = context;
         _languageContext = languageContext;
         _collectionVisibility = new CollectionVisibility(context);
+        _ankiCollections = ankiCollections;
     }
 
     public async Task<Quiz?> FindQuizAsync(string userId, Guid? quizId, CancellationToken cancellationToken = default)
@@ -95,6 +98,8 @@ public class QuizService : IQuizService
         if (quiz == null)
             return null;
 
+        await _ankiCollections.RetireQuizAsync(quiz.Id, cancellationToken);
+
         var words = await _context.Words
             .Where(word => word.QuizId == quiz.Id)
             .ToListAsync(cancellationToken);
@@ -136,7 +141,6 @@ public class QuizService : IQuizService
         // Save reference cleanup and both deletions together so a constraint
         // failure cannot leave the quiz behind after its words are removed.
         await _context.SaveChangesAsync(cancellationToken);
-
         return quiz;
     }
 
@@ -247,11 +251,6 @@ public class QuizService : IQuizService
             SourceLanguage = source.SourceLanguage,
             TargetLanguage = source.TargetLanguage,
             Language = source.Language,
-            AnkiTrackingEnabled = source.AnkiTrackingEnabled,
-            AnkiTrackWordsForward = source.AnkiTrackWordsForward,
-            AnkiTrackWordsReverse = source.AnkiTrackWordsReverse,
-            AnkiTrackSentencesForward = source.AnkiTrackSentencesForward,
-            AnkiTrackSentencesReverse = source.AnkiTrackSentencesReverse,
             IsPublic = false,
             OriginalQuizId = source.Id
         };

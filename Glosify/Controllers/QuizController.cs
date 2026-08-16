@@ -11,6 +11,7 @@ using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Words;
 using Glosify.Localization;
+using Glosify.Services.Anki;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,28 +23,28 @@ public class QuizController : Controller
     private readonly IQuizService _quizService;
     private readonly ICollectionService _collectionService;
     private readonly IWordService _wordService;
-    private readonly IQuizRepairService _quizRepairService;
     private readonly IImageTextExtractionService _imageTextExtractionService;
     private readonly ILanguageContext _languageContext;
     private readonly ICustomQuizService _customQuizService;
     private readonly UiTextStringLocalizer _text = new();
+    private readonly IAnkiCollectionService _ankiCollections;
 
     public QuizController(
         IQuizService quizService,
         ICollectionService collectionService,
         IWordService wordService,
-        IQuizRepairService quizRepairService,
         IImageTextExtractionService imageTextExtractionService,
         ILanguageContext languageContext,
-        ICustomQuizService customQuizService)
+        ICustomQuizService customQuizService,
+        IAnkiCollectionService ankiCollections)
     {
         _quizService = quizService;
         _collectionService = collectionService;
         _wordService = wordService;
-        _quizRepairService = quizRepairService;
         _imageTextExtractionService = imageTextExtractionService;
         _languageContext = languageContext;
         _customQuizService = customQuizService;
+        _ankiCollections = ankiCollections;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken = default)
@@ -90,6 +91,10 @@ public class QuizController : Controller
         var words = await _wordService.GetWordsAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
         var sentences = await _wordService.GetSentencesAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
 
+        var ankiCollections = (await _ankiCollections.ListAsync(userId, cancellationToken))
+            .Where(collection => string.Equals(collection.SourceLanguage, selectedQuiz.SourceLanguage, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(collection.TargetLanguage, selectedQuiz.TargetLanguage, StringComparison.OrdinalIgnoreCase))
+            .ToList();
         return View(new QuizWorkspaceViewModel
         {
             SelectedQuiz = QuizCard.From(selectedQuiz),
@@ -97,43 +102,13 @@ public class QuizController : Controller
             CustomQuizzes = await _customQuizService.ListForQuizAsync(selectedQuiz.Id, cancellationToken: cancellationToken),
             Sentences = sentences.Select(s => new QuizSentenceViewModel
             {
+                Id = s.Id,
                 Text = s.Text,
                 Translation = s.Translation,
                 WordCount = s.WordCount
-            }).ToList()
+            }).ToList(),
+            AnkiCollections = ankiCollections,
         });
-    }
-
-    [HttpPost]
-    [AiServiceExceptionFilter]
-    public async Task<IActionResult> RepairWord(string id, CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-        var result = await _quizRepairService.RepairWordAsync(id, userId, cancellationToken);
-        return result.Status switch
-        {
-            QuizRepairStatus.NotFound => NotFound(new { error = "Word not found." }),
-            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
-            _ => Json(new { message = $"Repaired {result.Word}." })
-        };
-    }
-
-    [HttpPost]
-    [AiServiceExceptionFilter]
-    public async Task<IActionResult> RepairSentence(Guid quizId, string text, CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-
-        if (string.IsNullOrWhiteSpace(text))
-            return BadRequest(new { error = "Choose a sentence to repair." });
-
-        var result = await _quizRepairService.RepairSentenceAsync(quizId, text, userId, cancellationToken);
-        return result.Status switch
-        {
-            QuizRepairStatus.NotFound => NotFound(new { error = "Quiz not found." }),
-            QuizRepairStatus.LlmUnavailable => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = ServiceWarmupMessage.LlmAssistant }),
-            _ => Json(new { message = result.UpdatedCount == 1 ? "Sentence repaired." : $"Sentence repaired in {result.UpdatedCount} places." })
-        };
     }
 
     [HttpPost]
@@ -201,6 +176,16 @@ public class QuizController : Controller
             return RedirectToAction(nameof(Index));
 
         TempData[NotificationKeys.Quiz] = _text["Quiz.DeletedWord", deleted.Lemma].Value;
+        return RedirectToAction(nameof(Details), new { id = deleted.QuizId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteSentence(Guid id, CancellationToken cancellationToken = default)
+    {
+        var deleted = await _wordService.DeleteSentenceAsync(id, User.GetUserId(), cancellationToken);
+        if (deleted is null) return NotFound();
+        TempData[NotificationKeys.Quiz] = _text["Quiz.DeletedSentence"].Value;
         return RedirectToAction(nameof(Details), new { id = deleted.QuizId });
     }
 
@@ -332,13 +317,20 @@ public class QuizController : Controller
             ? []
             : await _wordService.GetWordsAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
 
+        var ankiCollections = selectedQuiz is null
+            ? []
+            : (await _ankiCollections.ListAsync(userId, cancellationToken))
+                .Where(collection => string.Equals(collection.SourceLanguage, selectedQuiz.SourceLanguage, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(collection.TargetLanguage, selectedQuiz.TargetLanguage, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         return View(new QuizSettingsViewModel
         {
             SelectedQuiz = selectedQuiz is null ? null : QuizCard.From(selectedQuiz),
             AvailableWordCount = availableWordCount,
             AvailableSentenceCount = availableSentenceCount,
             SelectedWordCount = Math.Min(Math.Max(availableWordCount, 1), 20),
-            Words = words.Select(WordRow.From).ToList()
+            Words = words.Select(WordRow.From).ToList(),
+            AnkiCollections = ankiCollections,
         });
     }
 

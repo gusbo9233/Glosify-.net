@@ -906,12 +906,6 @@
   <data name="Client.DeleteQuizFailed" xml:space="preserve">
     <value>Özel quiz silinemedi. Lütfen tekrar deneyin.</value>
   </data>
-  <data name="Client.RepairFailed" xml:space="preserve">
-    <value>Onarma başarısız oldu. Lütfen tekrar deneyin.</value>
-  </data>
-  <data name="Client.RepairStopped" xml:space="preserve">
-    <value>Onarma isteği beklenmedik şekilde durdu. Lütfen tekrar deneyin.</value>
-  </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>Sohbeti sil</value>
   </data>
@@ -1719,12 +1713,6 @@
   <data name="Quiz.OpenWiktionary" xml:space="preserve">
     <value>Wiktionary'de {0} sayfasını aç</value>
   </data>
-  <data name="Quiz.RepairWord" xml:space="preserve">
-    <value>Kelimeyi düzelt</value>
-  </data>
-  <data name="Quiz.RepairNamed" xml:space="preserve">
-    <value>{0} öğesini düzelt</value>
-  </data>
   <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
     <value>Bu kelime silinsin mi?</value>
   </data>
@@ -1733,9 +1721,6 @@
   </data>
   <data name="Quiz.LinkedWords" xml:space="preserve">
     <value>{0} bağlantılı {1}</value>
-  </data>
-  <data name="Quiz.Repair" xml:space="preserve">
-    <value>Düzelt</value>
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>Henüz cümle yok. Asistandan cümle eklemesini isteyin veya metinden cümleleri çıkarmasını isteyin.</value>
@@ -2880,4 +2865,8 @@
   <data name="Speaking.MoreNatural" xml:space="preserve">
     <value>Daha doğal {0}</value>
   </data>
+  <data name="Anki.AddToAnki" xml:space="preserve"><value>Anki'ye ekle</value></data>
+  <data name="Quiz.ItemActions" xml:space="preserve"><value>{0} için işlemler</value></data>
+  <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Bu cümle kaldırılsın mı?</value></data>
+  <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Cümle kaldırıldı.</value></data>
 </root>

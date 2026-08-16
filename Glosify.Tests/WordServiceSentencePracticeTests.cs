@@ -34,7 +34,7 @@ public class WordServiceSentencePracticeTests
                 CreatedAt = firstAddedAt.AddMinutes(1)
             });
         await context.SaveChangesAsync();
-        var service = new WordService(context);
+        var service = new WordService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
 
         var words = await service.GetWordsAsync(quizId);
 
@@ -65,7 +65,7 @@ public class WordServiceSentencePracticeTests
                 CreatedAt = firstAddedAt.AddMinutes(1)
             });
         await context.SaveChangesAsync();
-        var service = new WordService(context);
+        var service = new WordService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
 
         var sentences = await service.GetSentencesAsync(quizId);
 
@@ -79,7 +79,7 @@ public class WordServiceSentencePracticeTests
     {
         await using var context = CreateContext();
         var quizId = await SeedQuizAsync(context);
-        var service = new WordService(context);
+        var service = new WordService(context, new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
 
         var cards = await service.LoadSentenceCardsAsync(quizId, 10);
 
@@ -113,7 +113,7 @@ public class WordServiceSentencePracticeTests
             CreatedAt = DateTimeOffset.UtcNow
         });
         await context.SaveChangesAsync();
-        var service = new QuizService(context, new TestLanguageContext("Spanish"));
+        var service = new QuizService(context, new TestLanguageContext("Spanish"), new Glosify.Services.Anki.AnkiCollectionService(context, TimeProvider.System));
 
         var count = await service.GetAvailableSentenceCountAsync(quizId);
 

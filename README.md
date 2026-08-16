@@ -109,7 +109,7 @@ the code and its behavior, not just generate more code.
 
 - Account-based quiz and collection management with ASP.NET Core Identity.
 - Vocabulary and sentence practice with flashcard and typing modes.
-- AI-assisted vocabulary generation, image text extraction, and quiz repair.
+- AI-assisted vocabulary generation and image text extraction.
 - Assistant conversations with selectable context: a quiz to act on, plus a book
   or saved transcript to read from. A transcript is read in the same 100-caption
   pages the reader shows, so "summarize the first page" means one thing to the

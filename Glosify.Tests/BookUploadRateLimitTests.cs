@@ -88,6 +88,49 @@ public sealed class BookUploadRateLimitTests
         Assert.True(anotherUser.IsAcquired);
     }
 
+    [Theory]
+    [InlineData("/Assistant/Chats")]
+    [InlineData("/api/assistant/chats")]
+    [InlineData("/Quiz/11111111-1111-1111-1111-111111111111/Assistant/History")]
+    public async Task SixtyFirstAssistantRequestWithinWindow_IsRejectedPerUser(string path)
+    {
+        using var services = new ServiceCollection()
+            .AddLogging()
+            .AddGlosifyRateLimiting()
+            .BuildServiceProvider();
+        var limiter = services.GetRequiredService<IOptions<RateLimiterOptions>>().Value.GlobalLimiter!;
+        var context = CreateContext(path, "user-1");
+
+        for (var attempt = 0; attempt < 60; attempt++)
+        {
+            using var lease = await limiter.AcquireAsync(context, 1);
+            Assert.True(lease.IsAcquired);
+        }
+
+        using var rejected = await limiter.AcquireAsync(context, 1);
+        Assert.False(rejected.IsAcquired);
+
+        using var anotherUser = await limiter.AcquireAsync(CreateContext(path, "user-2"), 1);
+        Assert.True(anotherUser.IsAcquired);
+    }
+
+    [Fact]
+    public async Task AssistantStaticAsset_IsNotRateLimited()
+    {
+        using var services = new ServiceCollection()
+            .AddLogging()
+            .AddGlosifyRateLimiting()
+            .BuildServiceProvider();
+        var limiter = services.GetRequiredService<IOptions<RateLimiterOptions>>().Value.GlobalLimiter!;
+        var context = CreateContext("/js/assistant.js", "user-1");
+
+        for (var attempt = 0; attempt < 100; attempt++)
+        {
+            using var lease = await limiter.AcquireAsync(context, 1);
+            Assert.True(lease.IsAcquired);
+        }
+    }
+
     private static HttpContext CreateContext(string path, string userId)
     {
         var context = new DefaultHttpContext();

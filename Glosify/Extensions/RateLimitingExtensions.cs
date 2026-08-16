@@ -79,8 +79,14 @@ public static class RateLimitingExtensions
                     });
                 }
 
+                var pathSegments = path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                var isQuizAssistantPath = pathSegments is { Length: >= 3 }
+                    && string.Equals(pathSegments[0], "Quiz", StringComparison.OrdinalIgnoreCase)
+                    && Guid.TryParse(pathSegments[1], out _)
+                    && string.Equals(pathSegments[2], "Assistant", StringComparison.OrdinalIgnoreCase);
                 var isAssistantPath = path.StartsWithSegments("/Assistant")
-                    || (path.Value?.Contains("/Assistant", StringComparison.OrdinalIgnoreCase) ?? false);
+                    || path.StartsWithSegments("/api/assistant")
+                    || isQuizAssistantPath;
                 if (isAssistantPath)
                 {
                     // UseRateLimiter runs after UseAuthentication, so the user id claim is

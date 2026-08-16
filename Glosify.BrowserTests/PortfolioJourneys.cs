@@ -17,6 +17,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
     private IPage Page { get; set; } = null!;
     private readonly List<string> _pageErrors = [];
     private readonly List<string> _consoleErrors = [];
+    private readonly List<string> _responseErrors = [];
     private readonly List<string> _scriptResponses = [];
 
     public async Task InitializeAsync()
@@ -39,10 +40,20 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         };
         Page.Response += (_, response) =>
         {
+            if (response.Status >= 400 && !IsIgnorableResponse(response.Url))
+                _responseErrors.Add($"HTTP {response.Status} {response.Url}");
             if (response.Url.Contains(".js", StringComparison.OrdinalIgnoreCase))
                 _scriptResponses.Add($"{response.Status} {response.Url}");
         };
         Page.RequestFailed += (_, request) => _scriptResponses.Add($"FAILED {request.Url}: {request.Failure}");
+    }
+
+    private static bool IsIgnorableResponse(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return false;
+        return uri.AbsolutePath.Contains("favicon", StringComparison.OrdinalIgnoreCase)
+            || uri.AbsolutePath.EndsWith(".map", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task DisposeAsync()
@@ -123,6 +134,41 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
         await Expect(Page).ToHaveURLAsync(new Regex("/FlashcardQuiz", RegexOptions.IgnoreCase));
         await Expect(Page.Locator("[data-flashcard-session]")).ToBeVisibleAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Browser")]
+    public async Task CreateLinkStudyAndInspectAnkiCollection()
+    {
+        if (BaseUrl is null) return;
+
+        await RegisterAndSelectPolishAsync();
+        await CreateQuizWithWordAsync();
+        await Page.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("Start Quiz", RegexOptions.IgnoreCase) }).ClickAsync();
+
+        await Page.GetByText("Create a new compatible collection", new() { Exact = true }).ClickAsync();
+        var createForm = Page.GetByRole(AriaRole.Form, new() { Name = "Create Anki collection from quiz" });
+        await createForm.GetByLabel("Name", new() { Exact = true }).FillAsync("Portfolio Anki");
+        await createForm.GetByRole(AriaRole.Button, new() { Name = "Create and link" }).ClickAsync();
+        await Expect(Page).ToHaveURLAsync(new Regex("/Anki/Collection", RegexOptions.IgnoreCase));
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Portfolio Anki", Exact = true }).First).ToBeVisibleAsync();
+        await Expect(Page.Locator(".anki-list").GetByText("Portfolio Polish", new() { Exact = true })).ToBeVisibleAsync();
+
+        // Adding the already-linked word individually is intentionally idempotent and
+        // preserves the same durable card while recording both inclusion sources.
+        await Page.GetByRole(AriaRole.Form, new() { NameRegex = new Regex("^Add .+ to Anki$") }).First
+            .GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true }).ClickAsync();
+        await Page.GetByRole(AriaRole.Link, new() { Name = "Start session" }).ClickAsync();
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Show answer" }).ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "dom", Exact = true })).ToBeVisibleAsync();
+        await Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("good", RegexOptions.IgnoreCase) }).ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You’re done for now" })).ToBeVisibleAsync();
+
+        await Page.GetByRole(AriaRole.Link, new() { Name = "Back to collections" }).ClickAsync();
+        await Page.GetByRole(AriaRole.Link, new() { Name = "Portfolio Anki" }).ClickAsync();
+        await Expect(Page.GetByText("Studied today").Locator("..").Locator("strong")).ToHaveTextAsync("1");
+        await Expect(Page.GetByText("30-day retention").Locator("..").Locator("strong")).ToHaveTextAsync("100%");
+        await AssertNoPageErrorsAsync();
     }
 
     [Fact]
@@ -533,7 +579,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
     {
         await Page.WaitForTimeoutAsync(100);
         Assert.True(
-            _pageErrors.Count == 0 && _consoleErrors.Count == 0,
-            $"Browser errors:{Environment.NewLine}{string.Join(Environment.NewLine, _pageErrors.Concat(_consoleErrors))}");
+            _pageErrors.Count == 0 && _consoleErrors.Count == 0 && _responseErrors.Count == 0,
+            $"Browser errors:{Environment.NewLine}{string.Join(Environment.NewLine, _pageErrors.Concat(_consoleErrors).Concat(_responseErrors))}");
     }
 }

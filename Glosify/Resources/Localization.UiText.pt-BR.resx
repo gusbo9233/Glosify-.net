@@ -906,12 +906,6 @@
   <data name="Client.DeleteQuizFailed" xml:space="preserve">
     <value>Não foi possível excluir o quiz personalizado. Tente novamente.</value>
   </data>
-  <data name="Client.RepairFailed" xml:space="preserve">
-    <value>A reparação falhou. Tente novamente.</value>
-  </data>
-  <data name="Client.RepairStopped" xml:space="preserve">
-    <value>A solicitação de reparo foi interrompida inesperadamente. Tente novamente.</value>
-  </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>Excluir chat</value>
   </data>
@@ -1719,12 +1713,6 @@
   <data name="Quiz.OpenWiktionary" xml:space="preserve">
     <value>Abrir {0} no Wiktionary</value>
   </data>
-  <data name="Quiz.RepairWord" xml:space="preserve">
-    <value>Corrigir palavra</value>
-  </data>
-  <data name="Quiz.RepairNamed" xml:space="preserve">
-    <value>Corrigir {0}</value>
-  </data>
   <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
     <value>Excluir esta palavra?</value>
   </data>
@@ -1733,9 +1721,6 @@
   </data>
   <data name="Quiz.LinkedWords" xml:space="preserve">
     <value>{0} palavras vinculadas em {1}</value>
-  </data>
-  <data name="Quiz.Repair" xml:space="preserve">
-    <value>Corrigir</value>
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>Ainda não há frases. Peça ao assistente para adicionar frases ou extraí-las do texto.</value>
@@ -2880,4 +2865,8 @@
   <data name="Speaking.MoreNatural" xml:space="preserve">
     <value>Mais natural {0}</value>
   </data>
+  <data name="Anki.AddToAnki" xml:space="preserve"><value>Adicionar ao Anki</value></data>
+  <data name="Quiz.ItemActions" xml:space="preserve"><value>Ações para {0}</value></data>
+  <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Remover esta frase?</value></data>
+  <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Frase removida.</value></data>
 </root>

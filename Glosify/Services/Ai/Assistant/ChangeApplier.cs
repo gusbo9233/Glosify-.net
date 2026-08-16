@@ -5,6 +5,7 @@ using Glosify.Models.Entities;
 using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Quizzes;
 using Microsoft.EntityFrameworkCore;
+using Glosify.Services.Anki;
 
 namespace Glosify.Services.Ai.Assistant;
 
@@ -16,17 +17,20 @@ public sealed class ChangeApplier : IChangeApplier
     private readonly IQuizService _quizService;
     private readonly ICollectionService _collectionService;
     private readonly ILogger<ChangeApplier> _logger;
+    private readonly IAnkiCollectionService _ankiCollections;
 
     public ChangeApplier(
         GlosifyContext context,
         IQuizService quizService,
         ICollectionService collectionService,
-        ILogger<ChangeApplier> logger)
+        ILogger<ChangeApplier> logger,
+        IAnkiCollectionService ankiCollections)
     {
         _context = context;
         _quizService = quizService;
         _collectionService = collectionService;
         _logger = logger;
+        _ankiCollections = ankiCollections;
     }
 
     public async Task<AssistantApplyResult> ApplyAsync(
@@ -124,9 +128,6 @@ public sealed class ChangeApplier : IChangeApplier
                     break;
                 case PendingChangeKinds.DeleteWord:
                     applied += ApplyDeleteWord(change.Payload, batch) ? 1 : 0;
-                    break;
-                case PendingChangeKinds.RepairSentence:
-                    applied += ApplyRepairSentence(change.Payload, batch);
                     break;
                 case PendingChangeKinds.DeleteSentence:
                     applied += ApplyDeleteSentence(change.Payload, batch) ? 1 : 0;
@@ -226,6 +227,8 @@ public sealed class ChangeApplier : IChangeApplier
             await new CustomQuizService(_context).PruneWordBindingsAsync(quiz.Id, batch.DeletedWordIds, cancellationToken);
         }
         await _context.SaveChangesAsync(cancellationToken);
+        if (quiz is not null)
+            await _ankiCollections.SyncQuizAsync(quiz.Id, cancellationToken);
         return new AssistantApplyResult(
             applied,
             createdQuizId,
@@ -266,7 +269,6 @@ public sealed class ChangeApplier : IChangeApplier
             or PendingChangeKinds.EditWord
             or PendingChangeKinds.EditSentence
             or PendingChangeKinds.DeleteWord
-            or PendingChangeKinds.RepairSentence
             or PendingChangeKinds.DeleteSentence;
     }
 
@@ -349,7 +351,6 @@ public sealed class ChangeApplier : IChangeApplier
             is PendingChangeKinds.AddSentence
             or PendingChangeKinds.EditSentence
             or PendingChangeKinds.DeleteSentence
-            or PendingChangeKinds.RepairSentence
             or PendingChangeKinds.AddWord);
         if (needsSentences)
         {
@@ -431,26 +432,6 @@ public sealed class ChangeApplier : IChangeApplier
                     break;
                 }
 
-                case PendingChangeKinds.RepairSentence:
-                {
-                    var original = GetString(change.Payload, "original_text");
-                    var replacement = GetString(change.Payload, "new_text").Trim();
-                    if (string.IsNullOrWhiteSpace(original) || string.IsNullOrWhiteSpace(replacement))
-                    {
-                        break;
-                    }
-
-                    // Repair replaces every exact text match, which is how the apply loop
-                    // selects its targets.
-                    foreach (var id in projected
-                        .Where(entry => string.Equals(entry.Value, original, StringComparison.Ordinal))
-                        .Select(entry => entry.Key)
-                        .ToArray())
-                    {
-                        projected[id] = replacement;
-                    }
-                    break;
-                }
             }
         }
 
@@ -584,37 +565,6 @@ public sealed class ChangeApplier : IChangeApplier
         batch.DeletedWordIds.Add(wordId);
         _context.Words.Remove(word);
         return true;
-    }
-
-    private int ApplyRepairSentence(JsonElement payload, QuizContentBatch batch)
-    {
-        var original = GetString(payload, "original_text");
-        var newText = GetString(payload, "new_text");
-        var newTranslation = GetString(payload, "new_translation");
-        if (string.IsNullOrWhiteSpace(original) || string.IsNullOrWhiteSpace(newText))
-        {
-            return 0;
-        }
-
-        var matches = batch.Sentences
-            .Where(sentence => string.Equals(sentence.Text, original, StringComparison.Ordinal))
-            .ToList();
-
-        foreach (var sentence in matches)
-        {
-            sentence.Text = newText;
-            sentence.Translation = newTranslation;
-        }
-
-        if (matches.Count > 0)
-        {
-            // Repair rewrote rows without telling the dedupe set, so the repaired text was not
-            // registered and the text it replaced lingered.
-            batch.SentenceTexts.Add(newText);
-            ReleaseSentenceText(batch, original);
-        }
-
-        return matches.Count;
     }
 
     /// <summary>

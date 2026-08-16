@@ -906,12 +906,6 @@
   <data name="Client.DeleteQuizFailed" xml:space="preserve">
     <value>Tidak dapat menghapus kuis khusus. Coba lagi.</value>
   </data>
-  <data name="Client.RepairFailed" xml:space="preserve">
-    <value>Perbaikan gagal. Silakan coba lagi.</value>
-  </data>
-  <data name="Client.RepairStopped" xml:space="preserve">
-    <value>Permintaan perbaikan berhenti secara tidak terduga. Silakan coba lagi.</value>
-  </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>Hapus chat</value>
   </data>
@@ -1719,12 +1713,6 @@
   <data name="Quiz.OpenWiktionary" xml:space="preserve">
     <value>Buka {0} di Wiktionary</value>
   </data>
-  <data name="Quiz.RepairWord" xml:space="preserve">
-    <value>Perbaiki kata</value>
-  </data>
-  <data name="Quiz.RepairNamed" xml:space="preserve">
-    <value>Perbaiki {0}</value>
-  </data>
   <data name="Quiz.DeleteWordConfirm" xml:space="preserve">
     <value>Hapus kata ini?</value>
   </data>
@@ -1733,9 +1721,6 @@
   </data>
   <data name="Quiz.LinkedWords" xml:space="preserve">
     <value>{0} kata tertaut {1}</value>
-  </data>
-  <data name="Quiz.Repair" xml:space="preserve">
-    <value>Perbaiki</value>
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>Belum ada kalimat. Minta asisten untuk menambahkan kalimat atau mengekstraknya dari teks.</value>
@@ -2880,4 +2865,8 @@
   <data name="Speaking.MoreNatural" xml:space="preserve">
     <value>{0} yang lebih alami</value>
   </data>
+  <data name="Anki.AddToAnki" xml:space="preserve"><value>Tambahkan ke Anki</value></data>
+  <data name="Quiz.ItemActions" xml:space="preserve"><value>Tindakan untuk {0}</value></data>
+  <data name="Quiz.DeleteSentenceConfirm" xml:space="preserve"><value>Hapus kalimat ini?</value></data>
+  <data name="Quiz.DeletedSentence" xml:space="preserve"><value>Kalimat dihapus.</value></data>
 </root>

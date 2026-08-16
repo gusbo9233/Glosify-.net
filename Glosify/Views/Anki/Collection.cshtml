@@ -1,0 +1,88 @@
+@model AnkiCollectionViewModel
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Model.Details.Collection.Name;
+    ViewData["ActiveNav"] = "anki";
+    var c = Model.Details.Collection;
+    var maxActivity = Math.Max(1, Model.Statistics.ReviewActivity.Max(point => point.Value));
+    var maxForecast = Math.Max(1, Model.Statistics.DueForecast.Max(point => point.Value));
+    var collectionZone = TimeZoneInfo.FindSystemTimeZoneById(c.TimeZoneId);
+}
+@section Styles { <link rel="stylesheet" href="~/css/anki.css" asp-append-version="true" /> }
+
+<main class="anki-shell">
+    <header class="anki-header">
+        <div><a asp-action="Index" class="back-link">&larr; Anki collections</a><p class="eyebrow">@c.SourceLanguage &rarr; @c.TargetLanguage</p><h1>@c.Name</h1></div>
+        <a class="btn-submit" asp-action="Study" asp-route-id="@c.Id"><span class="material-symbols-outlined">play_circle</span> Start session</a>
+    </header>
+    @if (TempData["AnkiMessage"] is string message) { <div class="panel-message">@message</div> }
+
+    <section class="anki-metric-grid" aria-label="Collection statistics">
+        <article><span>Due today</span><strong>@Model.Statistics.Counts.Due</strong></article>
+        <article><span>New</span><strong>@Model.Statistics.Counts.New</strong></article>
+        <article><span>Learning</span><strong>@Model.Statistics.Counts.Learning</strong></article>
+        <article><span>Studied today</span><strong>@Model.Statistics.Counts.StudiedToday</strong></article>
+        <article><span>30-day retention</span><strong>@Model.Statistics.RetentionPercent.ToString("0.#")%</strong><small>@Model.Statistics.ReviewsLast30Days reviews</small></article>
+    </section>
+
+    <section class="anki-dashboard-grid">
+        <article class="anki-panel">
+            <h2>Review activity</h2><p>Last 30 collection days</p>
+            <div class="anki-bars" role="img" aria-label="Review activity over the last 30 days">
+                @foreach (var point in Model.Statistics.ReviewActivity) { <span style="--bar-size:@(100 * point.Value / maxActivity)%" title="@point.Label: @point.Value reviews"></span> }
+            </div>
+            <details><summary>Review activity table</summary><table><thead><tr><th>Date</th><th>Reviews</th></tr></thead><tbody>@foreach (var p in Model.Statistics.ReviewActivity) { <tr><td>@p.Label</td><td>@p.Value</td></tr> }</tbody></table></details>
+        </article>
+        <article class="anki-panel">
+            <h2>Due forecast</h2><p>Next 14 collection days</p>
+            <div class="anki-bars forecast" role="img" aria-label="Due card forecast for the next 14 days">
+                @foreach (var point in Model.Statistics.DueForecast) { <span style="--bar-size:@(100 * point.Value / maxForecast)%" title="@point.Label: @point.Value due"></span> }
+            </div>
+            <details><summary>Due forecast table</summary><table><thead><tr><th>Date</th><th>Due</th></tr></thead><tbody>@foreach (var p in Model.Statistics.DueForecast) { <tr><td>@p.Label</td><td>@p.Value</td></tr> }</tbody></table></details>
+        </article>
+    </section>
+
+    <div class="anki-content-grid">
+        <section class="anki-panel">
+            <h2>Add a whole quiz</h2><p>Choose content types and directions independently.</p>
+            <form method="post" asp-action="AddQuiz" class="anki-stack">
+                @Html.AntiForgeryToken()<input type="hidden" name="CollectionId" value="@c.Id" />
+                <label>Quiz<select name="QuizId" class="form-input" required>@foreach (var quiz in Model.Details.CompatibleQuizzes) { <option value="@quiz.Id">@quiz.Name</option> }</select></label>
+                <fieldset><legend>Words</legend><label><input type="checkbox" name="WordsSourceToTarget" value="true" checked /> @c.SourceLanguage &rarr; @c.TargetLanguage</label><label><input type="checkbox" name="WordsTargetToSource" value="true" /> @c.TargetLanguage &rarr; @c.SourceLanguage</label></fieldset>
+                <fieldset><legend>Sentences</legend><label><input type="checkbox" name="SentencesSourceToTarget" value="true" /> @c.SourceLanguage &rarr; @c.TargetLanguage</label><label><input type="checkbox" name="SentencesTargetToSource" value="true" /> @c.TargetLanguage &rarr; @c.SourceLanguage</label></fieldset>
+                <button class="btn-submit" type="submit">Add or update quiz</button>
+            </form>
+            <h3>Linked quizzes</h3>
+            <ul class="anki-list">@foreach (var link in Model.Details.QuizLinks) { <li><span>@link.Quiz.Name</span><form method="post" asp-action="RemoveQuiz" data-confirm="Unlink this quiz? Individually added cards remain.">@Html.AntiForgeryToken()<input type="hidden" name="collectionId" value="@c.Id"/><input type="hidden" name="quizId" value="@link.QuizId"/><button class="btn-linkish" type="submit">Unlink</button></form></li> }</ul>
+        </section>
+
+        <section class="anki-panel">
+            <h2>Add individual cards</h2><p>Search words and sentences from compatible quizzes.</p>
+            <label>Search cards<input class="form-input" type="search" placeholder="Search quiz, word, or sentence" data-anki-item-search /></label>
+            <div class="anki-item-picker" data-anki-item-list>
+                @foreach (var item in Model.Details.AvailableItems)
+                {
+                    <form method="post" asp-action="AddItem" aria-label="Add @item.TargetText to Anki" data-anki-search-item="@item.QuizName @item.TargetText @item.SourceText">
+                        @Html.AntiForgeryToken()<input type="hidden" name="CollectionId" value="@c.Id"/><input type="hidden" name="QuizId" value="@item.QuizId"/><input type="hidden" name="ItemType" value="@item.ItemType"/><input type="hidden" name="ItemId" value="@item.ItemId"/>
+                        <div><small>@item.QuizName · @item.ItemType</small><strong>@item.TargetText</strong><span>@item.SourceText</span></div>
+                        <label><input type="checkbox" name="SourceToTarget" value="true" checked /> @c.SourceLanguage &rarr; @c.TargetLanguage</label><label><input type="checkbox" name="TargetToSource" value="true" /> @c.TargetLanguage &rarr; @c.SourceLanguage</label><button class="btn-secondary" type="submit">Add</button>
+                    </form>
+                }
+            </div>
+        </section>
+    </div>
+
+    <section class="anki-panel">
+        <h2>Cards <span class="count-badge">@Model.Details.Cards.Count</span></h2>
+        <div class="anki-card-table"><table><thead><tr><th>Card</th><th>Type</th><th>Direction</th><th>State</th><th>Due</th><th></th></tr></thead><tbody>
+        @foreach (var card in Model.Details.Cards) { <tr><td><strong>@card.TargetText</strong><br/><span>@card.SourceText</span></td><td>@card.ItemType</td><td>@(card.Direction == "source-to-target" ? "→" : "←")</td><td>@card.State</td><td>@(card.DueAt.HasValue ? TimeZoneInfo.ConvertTime(card.DueAt.Value, collectionZone).ToString("g") : "New")</td><td><form method="post" asp-action="RemoveCard" data-confirm="Remove this card from the collection?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@card.CardId"/><input type="hidden" name="collectionId" value="@c.Id"/><button class="btn-linkish" type="submit">Remove</button></form></td></tr> }
+        </tbody></table></div>
+    </section>
+
+    <section class="anki-dashboard-grid">
+        <form class="anki-panel anki-stack" method="post" asp-action="Rename">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@c.Id"/><h2>Collection name</h2><label>Name<input class="form-input" name="name" value="@c.Name" maxlength="160" required/></label><button class="btn-secondary" type="submit">Rename</button></form>
+        <form class="anki-panel anki-stack" method="post" asp-action="Settings">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@c.Id"/><h2>Scheduling settings</h2><label>Desired retention (70–97%)<input class="form-input" type="number" name="desiredRetention" min="0.70" max="0.97" step="0.01" value="@c.DesiredRetention.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)"/></label><label>New cards/day<input class="form-input" type="number" name="newCardsPerDay" min="0" max="999" value="@c.NewCardsPerDay"/></label><label>Reviews/day<input class="form-input" type="number" name="maximumReviewsPerDay" min="1" max="9999" value="@c.MaximumReviewsPerDay"/></label><input type="hidden" name="timeZoneId" value="@c.TimeZoneId" data-browser-timezone/><button class="btn-secondary" type="submit">Save settings</button></form>
+    </section>
+    <form method="post" asp-action="Delete" data-confirm="Delete this Anki collection and its scheduling history?">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@c.Id"/><button class="btn-danger" type="submit">Delete collection</button></form>
+</main>
+@section Scripts { <script src="~/js/anki.js" asp-append-version="true"></script> }
