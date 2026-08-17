@@ -167,6 +167,62 @@ test("concurrent starts share refresh and survive five-second session creation",
   }
 });
 
+test("stopping during session creation cleans up and permits a later start", async () => {
+  const mock = await startMockGlosify({ createDelayMs: 1_000 });
+  const profile = await mkdtemp(path.join(os.tmpdir(), "glosify-extension-test-"));
+  const context = await chromium.launchPersistentContext(profile, {
+    headless: false,
+    args: [
+      `--disable-extensions-except=${extensionRoot}`,
+      `--load-extension=${extensionRoot}`,
+      "--autoplay-policy=no-user-gesture-required",
+      "--use-fake-ui-for-media-stream",
+    ],
+  });
+  try {
+    const worker = context.serviceWorkers()[0]
+      ?? await context.waitForEvent("serviceworker");
+    await worker.evaluate(() => chrome.storage.local.set({ glosifyRefreshToken: "refresh-token" }));
+    const control = context.pages()[0] ?? await context.newPage();
+    await control.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    const page = await context.newPage();
+    await page.goto("http://127.0.0.1:4173/audio");
+    await page.bringToFront();
+
+    const restored = await control.evaluate(() => chrome.runtime.sendMessage({
+      type: "test:restore-local-state",
+    }));
+    expect(restored.ok, JSON.stringify(restored)).toBe(true);
+
+    const starting = control.evaluate(() => chrome.runtime.sendMessage({ type: "popup:start" }));
+    await expect.poll(() => mock.createdSessions).toBe(1);
+    const stopped = await control.evaluate(() => chrome.runtime.sendMessage({
+      type: "overlay:stop",
+    }));
+    expect(stopped.ok, JSON.stringify(stopped)).toBe(true);
+    expect((await starting).ok).toBe(true);
+    await expect.poll(() => mock.deletedSessions).toBe(1);
+    await expect.poll(() => extensionState(worker)).toMatchObject({ active: false });
+
+    const restarted = await control.evaluate(() => chrome.runtime.sendMessage({
+      type: "popup:start",
+    }));
+    expect(restarted.ok, JSON.stringify(restarted)).toBe(true);
+    await expect.poll(() => extensionState(worker)).toMatchObject({ active: true });
+    expect(mock.createdSessions).toBe(2);
+
+    const finalStop = await control.evaluate(() => chrome.runtime.sendMessage({
+      type: "overlay:stop",
+    }));
+    expect(finalStop.ok, JSON.stringify(finalStop)).toBe(true);
+    await expect.poll(() => mock.deletedSessions).toBe(2);
+  } finally {
+    await context.close();
+    await mock.close();
+    await rm(profile, { recursive: true, force: true });
+  }
+});
+
 async function extensionState(worker) {
   return worker.evaluate(async () => {
     const { glosifyActiveSession: active } = await chrome.storage.session.get(
