@@ -6,7 +6,8 @@ namespace Glosify.Models.ViewModels;
 public sealed class AnkiIndexViewModel
 {
     public IReadOnlyList<AnkiCollectionSummary> Collections { get; init; } = [];
-    public IReadOnlyList<string> Languages { get; init; } = [];
+    public IReadOnlyList<string> SourceLanguages { get; init; } = [];
+    public required string TargetLanguage { get; init; }
     public bool CreateDialogOpen { get; init; }
 }
 
@@ -27,7 +28,6 @@ public sealed class CreateAnkiCollectionForm
 {
     [Required, StringLength(160)] public string Name { get; set; } = string.Empty;
     [Required, StringLength(64)] public string SourceLanguage { get; set; } = string.Empty;
-    [Required, StringLength(64)] public string TargetLanguage { get; set; } = string.Empty;
     [StringLength(128)] public string TimeZoneId { get; set; } = "UTC";
 }
 

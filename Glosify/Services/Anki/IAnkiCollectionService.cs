@@ -45,6 +45,7 @@ public sealed record CreateAnkiCollectionFromQuizInput(
     string Name,
     Guid QuizId,
     string TimeZoneId,
+    string TargetLanguage,
     bool WordsSourceToTarget,
     bool WordsTargetToSource,
     bool SentencesSourceToTarget,
@@ -69,6 +70,9 @@ public sealed record AddAnkiItemInput(
 public interface IAnkiCollectionService
 {
     Task<IReadOnlyList<AnkiCollectionSummary>> ListAsync(string userId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<AnkiCollectionSummary>> ListForLanguageAsync(string userId, string targetLanguage, CancellationToken cancellationToken = default);
+    Task<bool> IsOwnedByLanguageAsync(Guid collectionId, string targetLanguage, string userId, CancellationToken cancellationToken = default);
+    Task<bool> IsCardInOwnedLanguageAsync(Guid cardId, Guid collectionId, string targetLanguage, string userId, CancellationToken cancellationToken = default);
     Task<AnkiCollectionDetails?> GetDetailsAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default);
     Task<AnkiCollection> CreateAsync(CreateAnkiCollectionInput input, string userId, CancellationToken cancellationToken = default);
     Task<AnkiCollection?> CreateFromQuizAsync(CreateAnkiCollectionFromQuizInput input, string userId, CancellationToken cancellationToken = default);

@@ -81,6 +81,39 @@ public sealed class AnkiCollectionServiceTests
     }
 
     [Fact]
+    public async Task Create_from_quiz_rejects_a_different_app_language()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+
+        var exception = await Assert.ThrowsAsync<AnkiValidationException>(() =>
+            fixture.Collections.CreateFromQuizAsync(new(
+                "Wrong language", fixture.Quiz.Id, "UTC", "Spanish",
+                true, false, false, false), UserId));
+
+        Assert.Contains("different app language", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(await fixture.Context.AnkiCollections.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Language_scoped_queries_only_return_matching_owned_collections_and_cards()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var polish = await fixture.Collections.CreateAsync(new("Polish", "English", "Polish", "UTC"), UserId);
+        await fixture.Collections.CreateAsync(new("Spanish", "English", "Spanish", "UTC"), UserId);
+        await fixture.Collections.AddItemAsync(
+            new(polish.Id, fixture.Quiz.Id, "word", fixture.Word.Id, true, false), UserId);
+        var cardId = await fixture.Context.AnkiCards.Select(card => card.Id).SingleAsync();
+
+        var collections = await fixture.Collections.ListForLanguageAsync(UserId, "polish");
+
+        Assert.Equal(polish.Id, Assert.Single(collections).Id);
+        Assert.True(await fixture.Collections.IsOwnedByLanguageAsync(polish.Id, "POLISH", UserId));
+        Assert.False(await fixture.Collections.IsOwnedByLanguageAsync(polish.Id, "Spanish", UserId));
+        Assert.True(await fixture.Collections.IsCardInOwnedLanguageAsync(cardId, polish.Id, "Polish", UserId));
+        Assert.False(await fixture.Collections.IsCardInOwnedLanguageAsync(cardId, polish.Id, "Spanish", UserId));
+    }
+
+    [Fact]
     public async Task Rating_is_idempotent_buries_sibling_and_daily_new_limit_is_durable()
     {
         await using var fixture = await Fixture.CreateAsync();
@@ -105,6 +138,7 @@ public sealed class AnkiCollectionServiceTests
         var after = await fixture.Study.GetNextAsync(collection.Id, UserId);
         Assert.NotNull(after);
         Assert.Null(after!.Card);
+        Assert.Equal("UTC", after.TimeZoneId);
         Assert.Equal(2, await fixture.Context.AnkiCards.CountAsync(card => card.Note.WordId == fixture.Word.Id));
     }
 

@@ -98,7 +98,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
             var nextDue = cards
                 .Where(card => card.State != AnkiCardStates.New && card.DueAt > now)
                 .MinBy(card => card.DueAt)?.DueAt;
-            return new AnkiStudyState(null, nextDue);
+            return new AnkiStudyState(null, nextDue, collection.TimeZoneId);
         }
 
         var sourceToTarget = PracticeDirection.IsSourceToTarget(selected.Direction);
@@ -121,7 +121,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
             selected.State,
             previews.ToDictionary(pair => pair.Key, pair => pair.Value.IntervalLabel, StringComparer.Ordinal),
             dueRemaining,
-            newRemaining), null);
+            newRemaining), null, collection.TimeZoneId);
     }
 
     public async Task<bool> RateAsync(

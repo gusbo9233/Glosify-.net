@@ -18,7 +18,7 @@ public sealed record AnkiStudyCard(
     int DueRemaining,
     int NewRemaining);
 
-public sealed record AnkiStudyState(AnkiStudyCard? Card, DateTimeOffset? NextDueAt);
+public sealed record AnkiStudyState(AnkiStudyCard? Card, DateTimeOffset? NextDueAt, string TimeZoneId);
 
 public sealed record RateAnkiCardInput(
     Guid CollectionId,
