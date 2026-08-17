@@ -8,7 +8,13 @@ The source directory is intentionally not a loadable unpacked extension. Build o
 - `npm run test:browser` builds that profile and exercises the MV3 worker, offscreen audio, mock HTTP/WebSocket relay, concurrency, and navigation shutdown.
 - `npm run package:store` rebuilds, validates, and creates `artifacts/package/glosify-live-subtitles-0.5.0-beta.zip` with `manifest.json` at its root.
 
-The Store validator rejects unexpected files, localhost references, missing or incorrectly sized icons, likely embedded secrets, and common remote/dynamic-code patterns.
+Development and test builds pin a public key so their unpacked extension ID
+stays stable. The Store build deliberately omits `key` so Chrome Web Store can
+use the signing key associated with the existing dashboard item.
+
+The Store validator rejects a pinned key, unexpected files, localhost references,
+missing or incorrectly sized icons, likely embedded secrets, and common
+remote/dynamic-code patterns.
 
 The server catalog supplies the available top-level subtitle modes and the
 current Azure Translator target-language list. Scribe uses ElevenLabs Scribe v2
