@@ -31,6 +31,7 @@ let refreshPromise = null;
 let offscreenCreationPromise = null;
 let startPromise = null;
 let startAbortController = null;
+let sessionCreationPromise = null;
 let stopPromise = null;
 let lifecycleGeneration = 0;
 let billingBusy = false;
@@ -167,6 +168,7 @@ async function handleMessage(message) {
       await restoreLocalState();
       return publicState();
     case "popup:stop":
+    case "overlay:stop":
       await stopSession(null, "ready");
       return publicState();
     case "media:event":
@@ -690,11 +692,7 @@ async function startSessionCore(generation, signal) {
       await sendToOffscreen({ type: "media:start-capture", streamId });
     }
     throwIfLifecycleCancelled(generation, signal);
-    const created = await apiFetch("/api/realtime-translation/sessions", {
-      method: "POST",
-      body: JSON.stringify(buildTranscriptSessionRequest(state)),
-      signal,
-    });
+    const created = await createRelaySession(generation, signal);
     state.sessionId = created.sessionId;
     state.transcriptId = created.transcriptId ?? null;
     state.availableCredits = created.availableCredits;
@@ -954,11 +952,7 @@ async function reconnectRelaySession({
     state.serverClockMonotonicAtSync = 0;
     await persistActiveSession();
 
-    const created = await apiFetch("/api/realtime-translation/sessions", {
-      method: "POST",
-      body: JSON.stringify(buildTranscriptSessionRequest(state)),
-      signal: controller.signal,
-    });
+    const created = await createRelaySession(generation, controller.signal);
     state.sessionId = created.sessionId;
     state.transcriptId = created.transcriptId ?? state.transcriptId;
     state.connectionStartedAt = Date.now();
@@ -1019,18 +1013,34 @@ function stopSession(message, finalStatus) {
 
 async function stopSessionCore(message, finalStatus) {
   stopping = true;
-  const sessionId = state.sessionId;
+  const sessionIds = new Set(state.sessionId ? [state.sessionId] : []);
+  const pendingCreation = sessionCreationPromise;
   try {
     try {
       await sendToOffscreen({ type: "media:stop" });
     } catch {
       // The offscreen document may already have closed after a capture failure.
     }
-    if (sessionId && refreshToken) {
+    if (pendingCreation) {
       try {
-        await apiFetch(`/api/realtime-translation/sessions/${sessionId}`, { method: "DELETE" });
+        const created = await pendingCreation;
+        if (created?.sessionId) {
+          sessionIds.add(created.sessionId);
+        }
       } catch {
-        // The cleanup service will release any pending reservation if this request cannot arrive.
+        // A failed creation has no server session for the client to release.
+      }
+    }
+    if (state.sessionId) {
+      sessionIds.add(state.sessionId);
+    }
+    if (refreshToken) {
+      for (const sessionId of sessionIds) {
+        try {
+          await apiFetch(`/api/realtime-translation/sessions/${sessionId}`, { method: "DELETE" });
+        } catch {
+          // The cleanup service will release any pending reservation if this request cannot arrive.
+        }
       }
     }
     await sendToTab({ type: "overlay:clear" });
@@ -1075,6 +1085,25 @@ async function stopSessionCore(message, finalStatus) {
     }
   } finally {
     await closeOffscreenDocument();
+  }
+}
+
+async function createRelaySession(generation, signal) {
+  // Do not abort the creation request. The server may finish creating a
+  // session after the browser cancels its fetch, leaving no ID to delete.
+  const creation = apiFetch("/api/realtime-translation/sessions", {
+    method: "POST",
+    body: JSON.stringify(buildTranscriptSessionRequest(state)),
+  });
+  sessionCreationPromise = creation;
+  try {
+    const created = await creation;
+    throwIfLifecycleCancelled(generation, signal);
+    return created;
+  } finally {
+    if (sessionCreationPromise === creation) {
+      sessionCreationPromise = null;
+    }
   }
 }
 

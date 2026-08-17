@@ -145,6 +145,9 @@
       }
       .action:hover { color: #fff; background: rgba(255, 255, 255, .1); }
       .action:focus-visible { outline: 2px solid #a78bfa; outline-offset: 1px; }
+      .action:disabled { cursor: wait; opacity: .62; }
+      .stop { color: #fca5a5; }
+      .stop:hover:not(:disabled) { color: #fff; background: rgba(239, 68, 68, .24); }
       .minimize { font-size: 18px; line-height: 1; }
       .body {
         min-height: 0;
@@ -300,6 +303,7 @@
         </div>
         <div class="actions">
           <button class="action clear" type="button" title="Clear subtitle chat">Clear</button>
+          <button class="action stop" type="button" title="Stop live subtitles">Stop</button>
           <button class="action minimize" type="button" title="Minimize subtitle chat" aria-label="Minimize subtitle chat">−</button>
         </div>
       </header>
@@ -328,6 +332,7 @@
   const currentTranslation = shadow.querySelector(".current-translation");
   const statusText = shadow.querySelector(".status-text");
   const clearButton = shadow.querySelector(".clear");
+  const stopButton = shadow.querySelector(".stop");
   const minimizeButton = shadow.querySelector(".minimize");
   const chat = new ChatBuffer();
   let minimized = false;
@@ -419,6 +424,28 @@
     }
   }
 
+  async function stopSubtitles() {
+    if (stopButton.disabled) {
+      return;
+    }
+    stopButton.disabled = true;
+    stopButton.textContent = "Stopping…";
+    statusText.textContent = "Stopping live subtitles…";
+    try {
+      const response = await chrome.runtime.sendMessage({ type: "overlay:stop" });
+      if (!response?.ok) {
+        throw new Error(response?.error || "Live subtitles could not be stopped.");
+      }
+    } catch (error) {
+      statusText.textContent = error instanceof Error
+        ? error.message
+        : "Live subtitles could not be stopped.";
+    } finally {
+      stopButton.disabled = false;
+      stopButton.textContent = "Stop";
+    }
+  }
+
   function beginDrag(event) {
     if (event.button !== 0 || event.target.closest("button")) {
       return;
@@ -491,6 +518,7 @@
   }
 
   clearButton.addEventListener("click", clearTranscript);
+  stopButton.addEventListener("click", stopSubtitles);
   minimizeButton.addEventListener("click", toggleMinimized);
   header.addEventListener("pointerdown", beginDrag);
   header.addEventListener("pointermove", moveDrag);
