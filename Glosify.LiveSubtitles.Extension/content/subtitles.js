@@ -5,7 +5,8 @@
   globalThis.__glosifyLiveSubtitlesInstalled = true;
 
   const ChatBuffer = globalThis.GlosifySubtitleChat?.ChatBuffer;
-  if (!ChatBuffer) {
+  const SubtitleAppearance = globalThis.GlosifySubtitleAppearance;
+  if (!ChatBuffer || !SubtitleAppearance) {
     return;
   }
   let activeSessionId = null;
@@ -259,6 +260,36 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .panel.transparent:not(:hover):not(:focus-within) {
+        resize: none;
+        border-color: transparent;
+        background: transparent;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      .panel.transparent:not(:hover):not(:focus-within)::after,
+      .panel.transparent:not(:hover):not(:focus-within) .header,
+      .panel.transparent:not(:hover):not(:focus-within) .empty,
+      .panel.transparent:not(:hover):not(:focus-within) .meta,
+      .panel.transparent:not(:hover):not(:focus-within) .typing,
+      .panel.transparent:not(:hover):not(:focus-within) .footer {
+        opacity: 0;
+      }
+      .panel.transparent:not(:hover):not(:focus-within) .message {
+        border-color: transparent;
+        background: transparent;
+        box-shadow: none;
+      }
+      .panel.transparent:not(:hover):not(:focus-within) .translation {
+        text-shadow: 0 1px 3px rgba(0, 0, 0, .95), 0 0 8px rgba(0, 0, 0, .72);
+      }
+      .panel.transparent:not(:hover):not(:focus-within) .messages {
+        scrollbar-color: transparent transparent;
+      }
+      .panel.transparent:not(:hover):not(:focus-within) .messages::-webkit-scrollbar-thumb {
+        background: transparent;
+      }
     </style>
     <section class="panel hidden" role="region" aria-label="Glosify translated subtitle chat">
       <header class="header">
@@ -474,7 +505,19 @@
         sendResponse({ activeSessionId });
         break;
       case "overlay:get-state":
-        sendResponse({ activeSessionId, installed: true, overlayInstanceId });
+        sendResponse({
+          activeSessionId,
+          installed: true,
+          overlayInstanceId,
+          transparentSubtitles: panel.classList.contains("transparent"),
+        });
+        break;
+      case "overlay:set-appearance":
+        sendResponse({
+          transparentSubtitles: SubtitleAppearance.applyTransparentSubtitles(
+            panel,
+            message.transparentSubtitles),
+        });
         break;
       case "overlay:subtitle": {
         show();

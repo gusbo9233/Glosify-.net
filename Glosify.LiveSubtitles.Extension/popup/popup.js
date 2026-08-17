@@ -15,6 +15,7 @@ const elements = {
   translationMode: document.querySelector("#translation-mode"),
   sourceLanguage: document.querySelector("#source-language"),
   sourceLanguageGroup: document.querySelector("#source-language-group"),
+  transparentSubtitles: document.querySelector("#transparent-subtitles"),
   saveTranscript: document.querySelector("#save-transcript"),
   saveTranscriptHelp: document.querySelector("#save-transcript-help"),
   price: document.querySelector("#price"),
@@ -46,6 +47,12 @@ elements.sourceLanguage.addEventListener("change", () => run("popup:set-source",
 elements.quizLanguage.addEventListener("change", () => run("popup:set-quiz-language", {
   code: elements.quizLanguage.value,
 }));
+elements.transparentSubtitles.addEventListener("change", () => {
+  const enabled = elements.transparentSubtitles.checked;
+  void run("popup:set-transparent-subtitles", { enabled }, true, {
+    transparentSubtitles: enabled,
+  });
+});
 elements.saveTranscript.addEventListener("change", () => {
   const enabled = elements.saveTranscript.checked;
   const catalog = currentState?.catalog;
@@ -182,6 +189,9 @@ function render() {
   }
   elements.language.value = currentState.targetLanguage ?? languages[0]?.code ?? "";
   elements.language.disabled = busy || currentState.active || languages.length === 0;
+
+  elements.transparentSubtitles.checked = Boolean(currentState.transparentSubtitles);
+  elements.transparentSubtitles.disabled = busy;
 
   elements.saveTranscript.checked = Boolean(currentState.saveTranscript);
   elements.saveTranscript.disabled = isTranscriptToggleDisabled({
