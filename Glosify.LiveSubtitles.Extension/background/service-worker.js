@@ -1,5 +1,6 @@
 import { CONFIG } from "../config.js";
 import { getBillingAction } from "../lib/billing.js";
+import "../lib/subtitle-appearance.js";
 import {
   buildTranscriptSessionRequest,
   canSaveSourceTranscript,
@@ -8,11 +9,14 @@ import {
   selectAvailableTranslationMode,
 } from "../lib/transcript-storage.js";
 
+const SubtitleAppearance = globalThis.GlosifySubtitleAppearance;
+
 const STORAGE_KEYS = Object.freeze({
   refreshToken: "glosifyRefreshToken",
   targetLanguage: "glosifyTargetLanguage",
   translationMode: "glosifyTranslationMode",
   sourceLanguage: "glosifySourceLanguage",
+  transparentSubtitles: SubtitleAppearance.STORAGE_KEY,
   activeSession: "glosifyActiveSession",
 });
 
@@ -51,6 +55,7 @@ const state = {
   targetLanguage: "en",
   translationMode: "scribe",
   sourceLanguage: "auto",
+  transparentSubtitles: false,
   saveTranscript: false,
   tabId: null,
   overlayInstanceId: null,
@@ -132,6 +137,9 @@ async function handleMessage(message) {
       return publicState();
     case "popup:set-source":
       await setSourceLanguage(message.sourceLanguage);
+      return publicState();
+    case "popup:set-transparent-subtitles":
+      await setTransparentSubtitles(message.enabled);
       return publicState();
     case "popup:set-quiz-language":
       await setQuizLanguage(message.code);
@@ -216,12 +224,15 @@ async function restoreLocalState() {
     STORAGE_KEYS.targetLanguage,
     STORAGE_KEYS.translationMode,
     STORAGE_KEYS.sourceLanguage,
+    STORAGE_KEYS.transparentSubtitles,
   ]);
   refreshToken = stored[STORAGE_KEYS.refreshToken] ?? null;
   refreshTokenGeneration += 1;
   state.targetLanguage = stored[STORAGE_KEYS.targetLanguage] ?? "en";
   state.translationMode = stored[STORAGE_KEYS.translationMode] ?? "scribe";
   state.sourceLanguage = stored[STORAGE_KEYS.sourceLanguage] ?? "auto";
+  state.transparentSubtitles = SubtitleAppearance.normalizeTransparentSubtitles(
+    stored[STORAGE_KEYS.transparentSubtitles]);
   state.signedIn = Boolean(refreshToken);
   state.status = refreshToken ? "ready" : "disconnected";
 }
@@ -498,6 +509,15 @@ async function setSourceLanguage(sourceLanguage) {
   broadcastState();
 }
 
+async function setTransparentSubtitles(enabled) {
+  state.transparentSubtitles = SubtitleAppearance.normalizeTransparentSubtitles(enabled);
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.transparentSubtitles]: state.transparentSubtitles,
+  });
+  await syncOverlayAppearance();
+  broadcastState();
+}
+
 async function setQuizLanguage(code) {
   if (state.sessionId) {
     throw new Error("Stop the current subtitles before changing quiz language.");
@@ -655,6 +675,7 @@ async function startSessionCore(generation, signal) {
       throw new Error("The subtitle overlay did not initialize.");
     }
     state.overlayInstanceId = overlay.overlayInstanceId;
+    await syncOverlayAppearance();
     await sendToTab({ type: "overlay:status", text: "Connecting to Glosify…" });
     await ensureOffscreenDocument();
     throwIfLifecycleCancelled(generation, signal);
@@ -1105,7 +1126,7 @@ async function ensureContentOverlay(tabId) {
   try {
     await chrome.scripting.executeScript({
       target: { tabId },
-      files: ["lib/chat-buffer.js", "content/subtitles.js"],
+      files: ["lib/chat-buffer.js", "lib/subtitle-appearance.js", "content/subtitles.js"],
     });
   } catch {
     throw new Error("Chrome does not allow subtitles on this page.");
@@ -1170,6 +1191,13 @@ async function sendToTab(message) {
     // triggers fail-closed shutdown through tabs.onUpdated.
     return undefined;
   }
+}
+
+async function syncOverlayAppearance() {
+  return sendToTab({
+    type: "overlay:set-appearance",
+    transparentSubtitles: state.transparentSubtitles,
+  });
 }
 
 async function persistActiveSession() {
@@ -1297,6 +1325,7 @@ async function reconcileActiveSession() {
     await applyServerAuthorization(server);
     pendingDiagnostics.workerRecovered = true;
     await persistActiveSession();
+    await syncOverlayAppearance();
     await sendToTab({ type: "overlay:status", text: "Listening…" });
     broadcastState();
   } catch {
@@ -1425,6 +1454,7 @@ function publicState() {
     targetLanguage: state.targetLanguage,
     translationMode: state.translationMode,
     sourceLanguage: state.sourceLanguage,
+    transparentSubtitles: state.transparentSubtitles,
     saveTranscript: state.saveTranscript,
     canSaveTranscript: canSaveTranscript(),
     effectiveCreditsPerMinute: effectiveCreditsPerMinute(),

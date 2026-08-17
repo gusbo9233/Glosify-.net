@@ -12,6 +12,9 @@ test("popup offers mode, optional language hint, target, quiz-language, and tran
   assert.doesNotMatch(markup, /<select id="speech-provider">/);
   assert.match(markup, /<select id="source-language">/);
   assert.match(markup, /<input id="save-transcript" type="checkbox">/);
+  assert.match(markup, /<input id="transparent-subtitles" type="checkbox">/);
+  assert.match(markup, /Transparent subtitle window/);
+  assert.match(markup, /Shows only subtitle text until you hover over or focus the window/);
   assert.match(markup, /audio is streamed through Glosify to Microsoft services/);
   assert.match(markup, /Audio is not stored/);
   assert.match(markup, /Each started minute consumes credits/);

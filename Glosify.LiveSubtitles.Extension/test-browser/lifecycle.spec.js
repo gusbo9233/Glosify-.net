@@ -27,7 +27,10 @@ test("same-document navigation continues and full navigation stops capture", asy
     const worker = context.serviceWorkers()[0]
       ?? await context.waitForEvent("serviceworker");
     expect(worker.url()).toBe(`chrome-extension://${extensionId}/background/service-worker.js`);
-    await worker.evaluate(() => chrome.storage.local.set({ glosifyRefreshToken: "refresh-token" }));
+    await worker.evaluate(() => chrome.storage.local.set({
+      glosifyRefreshToken: "refresh-token",
+      glosifyTransparentSubtitles: true,
+    }));
 
     const control = context.pages()[0] ?? await context.newPage();
     await control.goto(`chrome-extension://${extensionId}/popup/popup.html`);
@@ -37,6 +40,7 @@ test("same-document navigation continues and full navigation stops capture", asy
     await page.bringToFront();
     const started = await control.evaluate(() => chrome.runtime.sendMessage({ type: "test:start" }));
     expect(started.ok, JSON.stringify(started)).toBe(true);
+    expect(started.result.transparentSubtitles).toBe(true);
 
     await expect.poll(() => extensionState(worker)).toMatchObject({
       active: true,
@@ -45,6 +49,21 @@ test("same-document navigation continues and full navigation stops capture", asy
     });
     await expect.poll(() => mock.audioMessages).toBeGreaterThan(0);
     await expect(page.locator("#glosify-live-subtitles-host")).toHaveCount(1);
+    await expect.poll(() => overlayState(control)).toMatchObject({
+      installed: true,
+      transparentSubtitles: true,
+    });
+
+    const updated = await control.evaluate(() => chrome.runtime.sendMessage({
+      type: "popup:set-transparent-subtitles",
+      enabled: false,
+    }));
+    expect(updated.ok, JSON.stringify(updated)).toBe(true);
+    expect(updated.result.transparentSubtitles).toBe(false);
+    await expect.poll(() => overlayState(control)).toMatchObject({ transparentSubtitles: false });
+    await expect.poll(() => worker.evaluate(async () => (
+      await chrome.storage.local.get("glosifyTransparentSubtitles")
+    ).glosifyTransparentSubtitles)).toBe(false);
 
     await page.evaluate(() => history.pushState({}, "", "/audio/episode/2"));
     await expect.poll(() => extensionState(worker)).toMatchObject({
@@ -150,6 +169,13 @@ async function extensionState(worker) {
       status: active?.status ?? "ready",
       currentMinute: active?.currentMinute ?? 0,
     };
+  });
+}
+
+async function overlayState(control) {
+  return control.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    return chrome.tabs.sendMessage(tab.id, { type: "overlay:get-state" });
   });
 }
 

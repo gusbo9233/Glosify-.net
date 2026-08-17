@@ -17,7 +17,7 @@ const expected = new Set([
   "background/service-worker.js", "config.js", "content/subtitles.js",
   "icons/icon16.png", "icons/icon32.png", "icons/icon48.png", "icons/icon128.png",
   "lib/audio-pcm.js", "lib/billing.js", "lib/chat-buffer.js", "lib/popup-visibility.js", "lib/realtime-events.js",
-  "lib/relay-url.js", "lib/transcript-storage.js", "manifest.json",
+  "lib/relay-url.js", "lib/subtitle-appearance.js", "lib/transcript-storage.js", "manifest.json",
   "offscreen/offscreen.html", "offscreen/offscreen.js",
   "popup/popup.css", "popup/popup.html", "popup/popup.js",
 ]);
