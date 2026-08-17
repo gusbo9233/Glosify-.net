@@ -64,7 +64,7 @@
             }
             else
             {
-                <ul class="anki-list">@foreach (var link in Model.Details.QuizLinks) { <li><span><span class="material-symbols-outlined" aria-hidden="true">quiz</span>@link.Quiz.Name</span><form method="post" asp-action="RemoveQuiz" data-confirm="Unlink this quiz? Individually added cards remain.">@Html.AntiForgeryToken()<input type="hidden" name="collectionId" value="@c.Id"/><input type="hidden" name="quizId" value="@link.QuizId"/><button class="btn-linkish" type="submit">Unlink</button></form></li> }</ul>
+                <ul class="anki-list">@foreach (var link in Model.Details.QuizLinks) { <li><span><span class="material-symbols-outlined" aria-hidden="true">quiz</span><span>@link.Quiz.Name</span></span><form method="post" asp-action="RemoveQuiz" data-confirm="Unlink this quiz? Individually added cards remain.">@Html.AntiForgeryToken()<input type="hidden" name="collectionId" value="@c.Id"/><input type="hidden" name="quizId" value="@link.QuizId"/><button class="btn-linkish" type="submit">Unlink</button></form></li> }</ul>
             }
         </section>
 
