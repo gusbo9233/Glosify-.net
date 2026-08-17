@@ -4,12 +4,13 @@
     ViewData["Title"] = "Anki session";
     ViewData["ActiveNav"] = "anki";
     var card = Model.State.Card;
+    var collectionZone = TimeZoneInfo.FindSystemTimeZoneById(Model.State.TimeZoneId);
 }
 @section Styles { <link rel="stylesheet" href="~/css/anki.css" asp-append-version="true" /> }
 <main class="anki-study" data-anki-study>
     @if (card is null)
     {
-        <section class="anki-complete"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span><p class="eyebrow is-primary">Session complete</p><h1>You’re done for now</h1>@if (Model.State.NextDueAt.HasValue) { <p>Next card is due @Model.State.NextDueAt.Value.ToLocalTime().ToString("g").</p> } else { <p>No active cards are waiting.</p> }<a class="btn-submit anki-primary-action" asp-action="Index"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Back to collections</a></section>
+        <section class="anki-complete"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span><p class="eyebrow is-primary">Session complete</p><h1>You’re done for now</h1>@if (Model.State.NextDueAt.HasValue) { <p>Next card is due @TimeZoneInfo.ConvertTime(Model.State.NextDueAt.Value, collectionZone).ToString("g").</p> } else { <p>No active cards are waiting.</p> }<a class="btn-submit anki-primary-action" asp-action="Index"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Back to collections</a></section>
     }
     else
     {

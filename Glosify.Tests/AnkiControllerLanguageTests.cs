@@ -8,6 +8,7 @@ using Glosify.Services.Language;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -15,6 +16,7 @@ namespace Glosify.Tests;
 public sealed class AnkiControllerLanguageTests
 {
     private const string UserId = "anki-controller-user";
+    private static readonly DateTimeOffset Now = new(2026, 8, 17, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
     public async Task Index_only_shows_collections_for_the_current_app_language()
@@ -55,7 +57,7 @@ public sealed class AnkiControllerLanguageTests
     }
 
     [Fact]
-    public async Task Collection_redirects_when_it_belongs_to_another_app_language()
+    public async Task Collection_is_not_found_when_it_belongs_to_another_app_language()
     {
         await using var context = CreateContext();
         var collections = CreateCollectionService(context);
@@ -64,13 +66,40 @@ public sealed class AnkiControllerLanguageTests
 
         var result = await controller.Collection(spanish.Id, CancellationToken.None);
 
-        Assert.Equal(nameof(AnkiController.Index), Assert.IsType<RedirectToActionResult>(result).ActionName);
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task Rename_cannot_mutate_a_collection_from_another_app_language()
+    {
+        await using var context = CreateContext();
+        var collections = CreateCollectionService(context);
+        var spanish = await collections.CreateAsync(new("Spanish deck", "English", "Spanish", "UTC"), UserId);
+        var controller = CreateController(context, "Polish");
+
+        var result = await controller.Rename(spanish.Id, "Changed", CancellationToken.None);
+
+        Assert.IsType<NotFoundResult>(result);
+        Assert.Equal("Spanish deck", (await context.AnkiCollections.SingleAsync()).Name);
+    }
+
+    [Fact]
+    public async Task Study_cannot_open_a_collection_from_another_app_language()
+    {
+        await using var context = CreateContext();
+        var collections = CreateCollectionService(context);
+        var spanish = await collections.CreateAsync(new("Spanish deck", "English", "Spanish", "UTC"), UserId);
+        var controller = CreateController(context, "Polish");
+
+        var result = await controller.Study(spanish.Id, cancellationToken: CancellationToken.None);
+
+        Assert.IsType<NotFoundResult>(result);
     }
 
     private static AnkiController CreateController(GlosifyContext context, string language)
     {
         var collections = CreateCollectionService(context);
-        var clock = TimeProvider.System;
+        var clock = new FakeTimeProvider(Now);
         var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, UserId)], "Test");
         return new AnkiController(
             collections,
@@ -86,7 +115,7 @@ public sealed class AnkiControllerLanguageTests
     }
 
     private static AnkiCollectionService CreateCollectionService(GlosifyContext context) =>
-        new(context, TimeProvider.System);
+        new(context, new FakeTimeProvider(Now));
 
     private static GlosifyContext CreateContext()
     {

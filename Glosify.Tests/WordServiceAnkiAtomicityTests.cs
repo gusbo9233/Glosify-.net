@@ -111,6 +111,9 @@ public sealed class WordServiceAnkiAtomicityTests
             throw new InvalidOperationException("Simulated Anki synchronization failure.");
 
         public Task<IReadOnlyList<AnkiCollectionSummary>> ListAsync(string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<IReadOnlyList<AnkiCollectionSummary>> ListForLanguageAsync(string userId, string targetLanguage, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> IsOwnedByLanguageAsync(Guid collectionId, string targetLanguage, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> IsCardInOwnedLanguageAsync(Guid cardId, Guid collectionId, string targetLanguage, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AnkiCollectionDetails?> GetDetailsAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AnkiCollection> CreateAsync(CreateAnkiCollectionInput input, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AnkiCollection?> CreateFromQuizAsync(CreateAnkiCollectionFromQuizInput input, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
