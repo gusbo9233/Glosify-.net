@@ -153,6 +153,13 @@ test("concurrent starts share refresh and survive five-second session creation",
     expect(mock.refreshRequests).toBe(1);
     expect(mock.createdSessions).toBe(1);
     await expect.poll(() => mock.audioMessages).toBeGreaterThan(0);
+
+    const stopped = await control.evaluate(() => chrome.runtime.sendMessage({
+      type: "overlay:stop",
+    }));
+    expect(stopped.ok, JSON.stringify(stopped)).toBe(true);
+    await expect.poll(() => extensionState(worker)).toMatchObject({ active: false });
+    await expect.poll(() => mock.deletedSessions).toBe(1);
   } finally {
     await context.close();
     await mock.close();

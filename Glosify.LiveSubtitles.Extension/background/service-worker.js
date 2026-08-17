@@ -167,6 +167,7 @@ async function handleMessage(message) {
       await restoreLocalState();
       return publicState();
     case "popup:stop":
+    case "overlay:stop":
       await stopSession(null, "ready");
       return publicState();
     case "media:event":
