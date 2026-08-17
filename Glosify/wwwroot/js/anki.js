@@ -2,6 +2,12 @@
     const createButton = document.querySelector('[data-open-create-anki]');
     const createDialog = document.querySelector('[data-create-anki-dialog]');
     const closeButton = document.querySelector('[data-close-create-anki]');
+    if (createDialog?.open) {
+        // Server-rendered `open` is non-modal and participates in page layout.
+        // Reopen it through the API so deep links match the button interaction.
+        createDialog.close();
+        createDialog.showModal();
+    }
     createButton?.addEventListener('click', event => {
         event.preventDefault();
         if (createDialog && !createDialog.open) createDialog.showModal();

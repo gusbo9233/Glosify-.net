@@ -81,6 +81,20 @@ public sealed class AnkiCollectionServiceTests
     }
 
     [Fact]
+    public async Task Create_from_quiz_rejects_a_different_app_language()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+
+        var exception = await Assert.ThrowsAsync<AnkiValidationException>(() =>
+            fixture.Collections.CreateFromQuizAsync(new(
+                "Wrong language", fixture.Quiz.Id, "UTC", "Spanish",
+                true, false, false, false), UserId));
+
+        Assert.Contains("different app language", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(await fixture.Context.AnkiCollections.ToListAsync());
+    }
+
+    [Fact]
     public async Task Rating_is_idempotent_buries_sibling_and_daily_new_limit_is_durable()
     {
         await using var fixture = await Fixture.CreateAsync();

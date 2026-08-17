@@ -6,10 +6,21 @@
 }
 @section Styles { <link rel="stylesheet" href="~/css/anki.css" asp-append-version="true" /> }
 
-<main class="anki-shell">
-    <header class="anki-header">
-        <div><p class="eyebrow">Tracked flashcards</p><h1>Anki collections</h1><p>Study with durable FSRS scheduling and review history.</p></div>
-        <a class="btn-submit" asp-action="Index" asp-route-create="true" data-open-create-anki><span class="material-symbols-outlined">add</span> New collection</a>
+<main class="anki-shell anki-index-shell">
+    <header class="anki-header anki-hero">
+        <div class="anki-hero-copy">
+            <p class="eyebrow is-primary"><span class="material-symbols-outlined" aria-hidden="true">style</span> Tracked flashcards</p>
+            <h1>Anki collections</h1>
+            <p>Build lasting recall with FSRS scheduling, focused study sessions, and review history that stays with you.</p>
+            <div class="anki-hero-meta" aria-label="Collection overview">
+                <span><strong>@Model.Collections.Count</strong> @(Model.Collections.Count == 1 ? "collection" : "collections")</span>
+                <span><span class="material-symbols-outlined" aria-hidden="true">timer</span> Scheduled to your pace</span>
+            </div>
+        </div>
+        <a class="btn-submit anki-primary-action" asp-action="Index" asp-route-create="true" data-open-create-anki>
+            <span class="material-symbols-outlined" aria-hidden="true">add</span>
+            New collection
+        </a>
     </header>
 
     @if (TempData["AnkiMessage"] is string message) { <div class="panel-message">@message</div> }
@@ -18,19 +29,28 @@
         @foreach (var collection in Model.Collections)
         {
             <a class="anki-collection-card" asp-action="Collection" asp-route-id="@collection.Id">
-                <div class="anki-card-title"><span class="material-symbols-outlined">style</span><h2>@collection.Name</h2></div>
-                <p>@collection.SourceLanguage &rarr; @collection.TargetLanguage</p>
+                <div class="anki-card-topline">
+                    <span class="anki-card-icon material-symbols-outlined" aria-hidden="true">style</span>
+                    <span class="anki-language-pair">@collection.SourceLanguage <span aria-hidden="true">&rarr;</span> @collection.TargetLanguage</span>
+                </div>
+                <div class="anki-card-title"><h2>@collection.Name</h2></div>
                 <dl class="anki-counts">
                     <div><dt>Due</dt><dd>@collection.Counts.Due</dd></div>
                     <div><dt>New</dt><dd>@collection.Counts.New</dd></div>
                     <div><dt>Learning</dt><dd>@collection.Counts.Learning</dd></div>
                     <div><dt>Total</dt><dd>@collection.Counts.Total</dd></div>
                 </dl>
+                <span class="anki-card-link">Open collection <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
             </a>
         }
         @if (Model.Collections.Count == 0)
         {
-            <div class="empty-state"><h2>No Anki collections yet</h2><p>Create one for a language pair, then add a quiz or selected cards.</p></div>
+            <div class="empty-state anki-empty-state">
+                <span class="material-symbols-outlined" aria-hidden="true">stacks</span>
+                <h2>Your first collection starts here</h2>
+                <p>Choose a language pair, then add a whole quiz or just the cards you want to remember.</p>
+                <a class="btn-submit" asp-action="Index" asp-route-create="true" data-open-create-anki>Create a collection</a>
+            </div>
         }
     </section>
 </main>
@@ -38,11 +58,11 @@
 <dialog class="anki-dialog" data-create-anki-dialog @(Model.CreateDialogOpen ? "open" : null)>
     <form method="post" asp-action="Create" data-anki-create-form>
         @Html.AntiForgeryToken()
-        <header><h2>Create Anki collection</h2><button type="button" class="btn-icon" data-close-create-anki aria-label="Close"><span class="material-symbols-outlined">close</span></button></header>
-        <label>Name <input class="form-input" name="Name" maxlength="160" required /></label>
+        <header><div><p class="eyebrow is-primary">New study space</p><h2>Create collection</h2></div><button type="button" class="btn-icon" data-close-create-anki aria-label="Close"><span class="material-symbols-outlined">close</span></button></header>
+        <label>Collection name <input class="form-input" name="Name" maxlength="160" placeholder="e.g. Everyday Ukrainian" required /></label>
         <div class="anki-form-grid">
-            <label>Source language<select class="form-input" name="SourceLanguage" required>@foreach (var language in Model.Languages) { <option>@language</option> }</select></label>
-            <label>Target language<select class="form-input" name="TargetLanguage" required>@foreach (var language in Model.Languages) { <option>@language</option> }</select></label>
+                <label>Source language<select class="form-input" name="SourceLanguage" required>@foreach (var language in Model.SourceLanguages) { <option>@language</option> }</select></label>
+                <label>Learning language<span class="anki-fixed-language"><span class="material-symbols-outlined" aria-hidden="true">lock</span><strong>@Model.TargetLanguage</strong><small>Set by your app language</small></span></label>
         </div>
         <input type="hidden" name="TimeZoneId" value="UTC" data-browser-timezone />
         <button class="btn-submit" type="submit">Create collection</button>

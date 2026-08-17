@@ -30,10 +30,26 @@ public sealed class AnkiController : Controller
     [HttpGet]
     public async Task<IActionResult> Index(bool create = false, CancellationToken cancellationToken = default)
     {
+        var targetLanguage = _languages.CurrentLanguage;
+        if (targetLanguage is null)
+            return RedirectToAction("Index", "Languages");
+
+        var collections = await _collections.ListAsync(User.GetUserId(), cancellationToken);
         return View(new AnkiIndexViewModel
         {
-            Collections = await _collections.ListAsync(User.GetUserId(), cancellationToken),
-            Languages = _languages.SupportedLanguages.Concat(["English", "Swedish"]).Distinct().Order().ToList(),
+            Collections = collections
+                .Where(collection => string.Equals(
+                    collection.TargetLanguage,
+                    targetLanguage,
+                    StringComparison.OrdinalIgnoreCase))
+                .ToList(),
+            SourceLanguages = _languages.SupportedLanguages
+                .Where(language => QuizLanguageCatalog.Find(language)?.IsLanguageLearning == true)
+                .Where(language => !string.Equals(language, targetLanguage, StringComparison.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Order(StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            TargetLanguage = targetLanguage,
             CreateDialogOpen = create,
         });
     }
@@ -42,12 +58,16 @@ public sealed class AnkiController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateAnkiCollectionForm form, CancellationToken cancellationToken)
     {
+        var targetLanguage = _languages.CurrentLanguage;
+        if (targetLanguage is null)
+            return RedirectToAction("Index", "Languages");
+
         if (!ModelState.IsValid)
             return RedirectToAction(nameof(Index));
         try
         {
             var collection = await _collections.CreateAsync(new(
-                form.Name, form.SourceLanguage, form.TargetLanguage, form.TimeZoneId),
+                form.Name, form.SourceLanguage, targetLanguage, form.TimeZoneId),
                 User.GetUserId(), cancellationToken);
             return RedirectToAction(nameof(Collection), new { id = collection.Id });
         }
@@ -66,6 +86,11 @@ public sealed class AnkiController : Controller
         var statistics = await _statistics.GetAsync(id, userId, cancellationToken);
         if (details is null || statistics is null)
             return NotFound();
+        if (!string.Equals(
+                details.Collection.TargetLanguage,
+                _languages.CurrentLanguage,
+                StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction(nameof(Index));
         return View(new AnkiCollectionViewModel { Details = details, Statistics = statistics });
     }
 
@@ -128,10 +153,14 @@ public sealed class AnkiController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateFromQuiz(CreateAnkiFromQuizForm form, CancellationToken cancellationToken)
     {
+        var targetLanguage = _languages.CurrentLanguage;
+        if (targetLanguage is null)
+            return RedirectToAction("Index", "Languages");
+
         var userId = User.GetUserId();
         try
         {
-            var collection = await _collections.CreateFromQuizAsync(new(form.Name, form.QuizId, form.TimeZoneId,
+            var collection = await _collections.CreateFromQuizAsync(new(form.Name, form.QuizId, form.TimeZoneId, targetLanguage,
                 form.WordsSourceToTarget, form.WordsTargetToSource,
                 form.SentencesSourceToTarget, form.SentencesTargetToSource), userId, cancellationToken);
             if (collection is null) return NotFound();

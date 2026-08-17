@@ -174,6 +174,9 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
                 cancellationToken);
             if (quiz is null)
                 return null;
+            var targetLanguage = Required(input.TargetLanguage, "Choose an app language.", 64);
+            if (!string.Equals(quiz.TargetLanguage, targetLanguage, StringComparison.OrdinalIgnoreCase))
+                throw new AnkiValidationException("This quiz belongs to a different app language.");
             var collection = await CreateAsync(new CreateAnkiCollectionInput(
                 input.Name, quiz.SourceLanguage, quiz.TargetLanguage, input.TimeZoneId), userId, cancellationToken);
             var linked = await AddQuizAsync(new AddAnkiQuizInput(collection.Id, quiz.Id,

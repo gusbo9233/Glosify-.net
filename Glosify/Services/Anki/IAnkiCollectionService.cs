@@ -45,6 +45,7 @@ public sealed record CreateAnkiCollectionFromQuizInput(
     string Name,
     Guid QuizId,
     string TimeZoneId,
+    string TargetLanguage,
     bool WordsSourceToTarget,
     bool WordsTargetToSource,
     bool SentencesSourceToTarget,
