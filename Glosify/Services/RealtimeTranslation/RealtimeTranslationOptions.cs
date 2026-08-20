@@ -149,7 +149,7 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
             }
             if (options.ElevenLabs.Enabled)
             {
-                if (!TryValidateElevenLabsEndpoint(options.ElevenLabs.Endpoint, out _))
+                if (!IsValidElevenLabsEndpoint(options.ElevenLabs.Endpoint))
                 {
                     failures.Add(
                         "RealtimeTranslation:ElevenLabs:Endpoint must be a secure ElevenLabs WebSocket endpoint.");
@@ -326,11 +326,9 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
         && (endpoint.AbsolutePath == "/" || endpoint.AbsolutePath.Length == 0)
         && endpoint.Host.EndsWith(".cognitiveservices.azure.com", StringComparison.OrdinalIgnoreCase);
 
-    internal static bool TryValidateElevenLabsEndpoint(
-        string? value,
-        [NotNullWhen(true)] out Uri? endpoint)
+    internal static bool IsValidElevenLabsEndpoint(string? value)
     {
-        if (!Uri.TryCreate(value?.Trim(), UriKind.Absolute, out endpoint)
+        if (!Uri.TryCreate(value?.Trim(), UriKind.Absolute, out var endpoint)
             || endpoint.Scheme != "wss"
             || !string.IsNullOrEmpty(endpoint.UserInfo)
             || !string.IsNullOrEmpty(endpoint.Query)
@@ -342,7 +340,6 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 "/v1/speech-to-text/realtime",
                 StringComparison.OrdinalIgnoreCase))
         {
-            endpoint = null;
             return false;
         }
         return true;

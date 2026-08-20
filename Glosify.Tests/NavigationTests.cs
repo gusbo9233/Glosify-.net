@@ -234,20 +234,6 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.All(homeLinks, link => Assert.Equal("/", link.GetAttribute("href")));
     }
 
-    private static async Task<(string form, string cookie)> AntiForgeryAsync(HttpClient client, string url)
-    {
-        var response = await client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        var html = await response.Content.ReadAsStringAsync();
-        var parser = new HtmlParser();
-        var doc = await parser.ParseDocumentAsync(html);
-        var token = doc.QuerySelector("input[name='__RequestVerificationToken']")!.GetAttribute("value")!;
-
-        var setCookies = response.Headers.TryGetValues("Set-Cookie", out var sc) ? sc : Enumerable.Empty<string>();
-        var cookie = string.Join("; ", setCookies.Select(c => c.Split(';')[0]));
-        return (token, cookie);
-    }
-
     private static async Task<AngleSharp.Dom.IDocument> GetDocumentAsync(HttpClient client, string url)
     {
         var response = await client.GetAsync(url);

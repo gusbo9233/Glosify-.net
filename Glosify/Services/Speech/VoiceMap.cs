@@ -43,8 +43,8 @@ public static class VoiceMap
             ["german"] = "de-DE-Seraphina:DragonHDLatestNeural",
         }.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
 
-    public static bool TryResolve(string languageCode, out string locale, out string voice)
-        => TryResolve(languageCode, voicePreference: null, out locale, out voice);
+    public static bool TryResolve(string languageCode, out string voice)
+        => TryResolve(languageCode, voicePreference: null, out _, out voice);
 
     public static bool TryResolve(
         string languageCode,

@@ -44,8 +44,6 @@ public sealed record CollectionCard(
     DateTimeOffset CreatedAt,
     bool IsPublic)
 {
-    public bool IsFreestyle => QuizLanguageCatalog.IsFreestyle(Language);
-
     public static CollectionCard From(Collection collection) => new(
         collection.Id,
         collection.Name,

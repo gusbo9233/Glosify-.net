@@ -1,7 +1,5 @@
 using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
-using System.Text;
 
 namespace Glosify.Services.Language;
 
@@ -151,8 +149,6 @@ public static class QuizLanguageCatalog
     public static IReadOnlyList<QuizLanguage> LanguageLearning { get; } =
         Array.AsReadOnly(Languages.Where(language => language.IsLanguageLearning).ToArray());
 
-    public static int MaximumCodeLength { get; } = Languages.Max(language => language.Code.Length);
-
     public const int StorageCodeMaximumLength = 8;
 
     public static string SelectedLanguageCheckConstraintSql { get; } =
@@ -178,10 +174,6 @@ public static class QuizLanguageCatalog
     public static bool IsFreestyle(string? value) =>
         Find(value) is { IsLanguageLearning: false };
 
-    public static string NormalizeForSearch(string value) => string.Concat(
-        value.Normalize(NormalizationForm.FormD)
-            .Where(character => CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark))
-        .ToLowerInvariant();
 }
 
 public interface IQuizLanguagePreferenceService

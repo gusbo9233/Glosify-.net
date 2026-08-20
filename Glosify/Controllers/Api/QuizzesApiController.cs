@@ -113,7 +113,10 @@ public class QuizzesApiController : ApiControllerBase
         }
 
         var added = await _wordService.AddWordAsync(
-            id, request.Word.Trim(), request.Translation.Trim(), quiz.SourceLanguage, quiz.TargetLanguage, cancellationToken: cancellationToken);
+            id,
+            request.Word.Trim(),
+            request.Translation.Trim(),
+            cancellationToken);
 
         return added ? NoContent() : BadRequest("Could not add the word.");
     }

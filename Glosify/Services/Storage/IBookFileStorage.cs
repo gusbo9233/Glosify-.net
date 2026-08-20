@@ -1,5 +1,3 @@
-using Azure.Storage.Blobs.Models;
-
 namespace Glosify.Services.Storage;
 
 public interface IBookFileStorage
@@ -12,9 +10,5 @@ public interface IBookFileStorage
 
     Task<Stream> OpenReadAsync(string blobName, CancellationToken cancellationToken = default);
 
-    Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken = default);
-
     Task DeleteIfExistsAsync(string blobName, CancellationToken cancellationToken = default);
-
-    Task<BlobProperties> GetPropertiesAsync(string blobName, CancellationToken cancellationToken = default);
 }

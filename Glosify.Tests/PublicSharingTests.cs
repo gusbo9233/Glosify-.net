@@ -271,7 +271,6 @@ public class PublicSharingTests
         }
 
         public string? CurrentLanguage { get; }
-        public bool HasLanguage => CurrentLanguage != null;
         public IReadOnlyList<string> SupportedLanguages { get; } = ["Polish"];
         public bool TrySetLanguage(string language) => false;
         public void Clear()

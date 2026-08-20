@@ -277,7 +277,6 @@ public sealed class QuizJsonImportEndpointTests
     private sealed class FixedLanguageContext(string? language) : ILanguageContext
     {
         public string? CurrentLanguage { get; } = language;
-        public bool HasLanguage => CurrentLanguage is not null;
         public IReadOnlyList<string> SupportedLanguages => CurrentLanguage is null ? [] : [CurrentLanguage];
         public bool TrySetLanguage(string value) => false;
         public void Clear() { }

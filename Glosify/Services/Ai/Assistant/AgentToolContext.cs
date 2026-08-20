@@ -16,8 +16,6 @@ public sealed class AgentToolContext
     /// </remarks>
     public string? SourceLanguage { get; init; }
 
-    /// <summary>The language the assistant replies in.</summary>
-    public string? ReplyLanguage { get; init; }
     public string? FocusedWordId { get; init; }
     public string? FocusedWordLabel { get; init; }
     public Guid? TranscriptId { get; init; }

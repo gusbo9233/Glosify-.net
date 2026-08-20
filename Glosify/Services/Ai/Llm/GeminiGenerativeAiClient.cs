@@ -40,7 +40,6 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
         var generativeModel = GetModel(selectedModel, jsonMode: true);
         var outputTokenReserve = _aiUsageOptions.GetOutputReserve(usageContext.Feature);
         var generationConfig = CreateGenerationConfig(
-            selectedModel,
             0.2f,
             outputTokenReserve,
             responseMimeType: "application/json");
@@ -110,7 +109,7 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
         };
 
         var outputTokenReserve = _aiUsageOptions.GetOutputReserve(usageContext.Feature);
-        var generationConfig = CreateGenerationConfig(_options.VisionModel, 0.1f, outputTokenReserve);
+        var generationConfig = CreateGenerationConfig(0.1f, outputTokenReserve);
         var apiRequest = new GenerateContentRequest
         {
             Contents = [new Content(parts, role: "user")],
@@ -155,7 +154,7 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
             Contents = contents,
             Tools = tools,
             SystemInstruction = systemInstruction,
-            GenerationConfig = CreateGenerationConfig(assistantModel, 0.3f, outputTokenReserve),
+            GenerationConfig = CreateGenerationConfig(0.3f, outputTokenReserve),
         };
 
         var generation = await GenerateChargedAsync(
@@ -323,8 +322,7 @@ public sealed class GeminiGenerativeAiClient : IGenerativeAiClient
     private GenerativeModel GetModel(string modelName, bool jsonMode)
         => _modelFactory.GetModel(modelName, jsonMode);
 
-    private GenerationConfig CreateGenerationConfig(
-        string modelName,
+    private static GenerationConfig CreateGenerationConfig(
         float temperature,
         int maxOutputTokens,
         string? responseMimeType = null)

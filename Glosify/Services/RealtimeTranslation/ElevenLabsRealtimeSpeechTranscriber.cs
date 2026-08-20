@@ -105,9 +105,8 @@ public sealed class ElevenLabsRealtimeSpeechTranscriber : IRealtimeSpeechTranscr
         }
         if (!_options.ElevenLabs.Enabled
             || string.IsNullOrWhiteSpace(_options.ElevenLabs.ApiKey)
-            || !RealtimeTranslationOptionsValidator.TryValidateElevenLabsEndpoint(
-                _options.ElevenLabs.Endpoint,
-                out _))
+            || !RealtimeTranslationOptionsValidator.IsValidElevenLabsEndpoint(
+                _options.ElevenLabs.Endpoint))
         {
             throw new RealtimeTranslationUnavailableException(
                 "ElevenLabs Scribe v2 is not configured.");

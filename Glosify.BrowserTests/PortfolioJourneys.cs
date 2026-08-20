@@ -24,7 +24,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
     {
         if (BaseUrl is null) return;
 
-        _playwright = await Microsoft.Playwright.Playwright.CreateAsync();
+        _playwright = await Playwright.CreateAsync();
         _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
             ExecutablePath = Environment.GetEnvironmentVariable("GLOSIFY_BROWSER_EXECUTABLE_PATH"),
@@ -293,6 +293,25 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             await Expect(chatsPane).ToBeVisibleAsync();
         }
 
+        async Task DispatchAndAcceptDialogAsync(ILocator trigger, string? promptText = null)
+        {
+            Task? acceptTask = null;
+            void AcceptDialog(object? _, IDialog dialog) => acceptTask = dialog.AcceptAsync(promptText);
+
+            Page.Dialog += AcceptDialog;
+            try
+            {
+                await trigger.DispatchEventAsync("click");
+                if (acceptTask is null)
+                    throw new InvalidOperationException("The action completed without opening a dialog.");
+                await acceptTask;
+            }
+            finally
+            {
+                Page.Dialog -= AcceptDialog;
+            }
+        }
+
         // Opening initializes/selects the first chat and finishes by activating the
         // chat pane. Wait for that state before choosing Chats, otherwise a slow SQL
         // test host can switch the pane back while this click is in flight.
@@ -314,24 +333,19 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await OpenChatsAsync();
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(2);
 
-        async void RenameDialog(object? _, IDialog dialog) => await dialog.AcceptAsync("Employer demo chat");
-        Page.Dialog += RenameDialog;
-        await Page.Locator("[data-assistant-chat-item]").First
-            .Locator("button[aria-label='Rename chat']")
-            .DispatchEventAsync("click");
-        Page.Dialog -= RenameDialog;
+        await DispatchAndAcceptDialogAsync(
+            Page.Locator("[data-assistant-chat-item]").First
+                .Locator("button[aria-label='Rename chat']"),
+            "Employer demo chat");
         await Expect(Page.Locator("[data-assistant-chat-item]").First).ToContainTextAsync("Employer demo chat");
 
         // Renaming replaces the list rows asynchronously. Reassert the pane before
         // interacting with the replacement row so a delayed selection transition
         // cannot leave Playwright targeting a row inside the hidden Chats pane.
         await OpenChatsAsync();
-        async void DeleteDialog(object? _, IDialog dialog) => await dialog.AcceptAsync();
-        Page.Dialog += DeleteDialog;
-        await Page.Locator("[data-assistant-chat-item]").First
-            .Locator("button[aria-label='Delete chat']")
-            .DispatchEventAsync("click");
-        Page.Dialog -= DeleteDialog;
+        await DispatchAndAcceptDialogAsync(
+            Page.Locator("[data-assistant-chat-item]").First
+                .Locator("button[aria-label='Delete chat']"));
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
         await OpenChatsAsync();

@@ -1,4 +1,3 @@
-using Glosify.Data;
 using Glosify.Services.Ai.Generation;
 using static Glosify.Services.Ai.Assistant.Tools.ToolSchema;
 
@@ -17,8 +16,8 @@ internal sealed class AddWordBankTool : AtomicCustomQuizElementTool
 
     public override AgentToolDeclaration Declaration => DeclarationValue;
 
-    public AddWordBankTool(GlosifyContext context, CustomQuizToolStore customQuizzes)
-        : base(context, customQuizzes)
+    public AddWordBankTool(CustomQuizToolStore customQuizzes)
+        : base(customQuizzes)
     {
     }
 }

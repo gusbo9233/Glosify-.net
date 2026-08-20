@@ -14,7 +14,6 @@ public interface IClassroomRoster
     Task<ClassroomHeader?> AcceptInvitationAsync(Guid invitationId, string userId, CancellationToken cancellationToken = default);
     Task DeclineInvitationAsync(Guid invitationId, string userId, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<ClassroomMemberInfo>> GetMembersAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task<string?> GetMemberNameAsync(Guid classroomId, string requesterUserId, string memberUserId, CancellationToken cancellationToken = default);
     Task RemoveMemberAsync(Guid classroomId, string requesterUserId, string memberUserId, CancellationToken cancellationToken = default);
     Task LeaveAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
@@ -25,16 +24,13 @@ public sealed class ClassroomRoster : IClassroomRoster
 {
     private readonly GlosifyContext _context;
     private readonly IClassroomAccess _access;
-    private readonly ClassroomQueries _queries;
 
     public ClassroomRoster(
         GlosifyContext context,
-        IClassroomAccess access,
-        ClassroomQueries queries)
+        IClassroomAccess access)
     {
         _context = context;
         _access = access;
-        _queries = queries;
     }
 
     public async Task InviteByEmailAsync(Guid classroomId, string userId, string email, ClassroomRole role, CancellationToken cancellationToken = default)
@@ -152,12 +148,6 @@ public sealed class ClassroomRoster : IClassroomRoster
             _context.ClassroomInvitations.Remove(invitation);
             await _context.SaveChangesAsync(cancellationToken);
         }
-    }
-
-    public async Task<IReadOnlyList<ClassroomMemberInfo>> GetMembersAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
-    {
-        await _access.RequireMemberAsync(classroomId, userId, cancellationToken);
-        return await _queries.MembersAsync(classroomId, cancellationToken);
     }
 
     public async Task<string?> GetMemberNameAsync(Guid classroomId, string requesterUserId, string memberUserId, CancellationToken cancellationToken = default)

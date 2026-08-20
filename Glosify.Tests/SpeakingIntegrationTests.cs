@@ -916,7 +916,6 @@ public sealed class SpeakingIntegrationTests
     private sealed class FixedLanguageContext(string? currentLanguage) : ILanguageContext
     {
         public string? CurrentLanguage { get; } = currentLanguage;
-        public bool HasLanguage => CurrentLanguage is not null;
         public IReadOnlyList<string> SupportedLanguages { get; } =
             ["Estonian", "German", "Polish", "Ukrainian"];
 

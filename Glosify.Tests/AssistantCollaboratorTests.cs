@@ -297,7 +297,6 @@ public sealed class AssistantCollaboratorTests
     private sealed class FixedLanguageContext(string language) : ILanguageContext
     {
         public string? CurrentLanguage => language;
-        public bool HasLanguage => true;
         public IReadOnlyList<string> SupportedLanguages => [language];
         public bool TrySetLanguage(string value) => false;
         public void Clear() { }

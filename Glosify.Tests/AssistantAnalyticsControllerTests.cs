@@ -238,9 +238,33 @@ public sealed class AssistantAnalyticsControllerTests
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
-        var problem = Assert.IsType<ProblemDetails>(
-            await response.Content.ReadFromJsonAsync<ProblemDetails>());
+        var problem = Assert.IsType<HttpValidationProblemDetails>(
+            await response.Content.ReadFromJsonAsync<HttpValidationProblemDetails>());
         Assert.Equal(ApiErrorCodes.ValidationFailed, problem.Extensions["code"]?.ToString());
+        Assert.Contains(nameof(AssistantClientMetricsInput.ClientDurationMs), problem.Errors.Keys);
+        Assert.Null(orchestrator.ClientDurationMs);
+    }
+
+    [Fact]
+    public async Task BearerClientMetrics_RejectsMissingDurationWithValidationProblemDetails()
+    {
+        var orchestrator = new RecordingOrchestrator();
+        using var factory = CreateAuthenticatedFactory(orchestrator);
+
+        var response = await factory.CreateClient().PutAsJsonAsync(
+            $"/api/assistant/turns/{Guid.NewGuid()}/client-metrics",
+            new { });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var problem = Assert.IsType<HttpValidationProblemDetails>(
+            await response.Content.ReadFromJsonAsync<HttpValidationProblemDetails>());
+        Assert.Equal(ApiErrorCodes.ValidationFailed, problem.Extensions["code"]?.ToString());
+        Assert.Contains(
+            problem.Errors.SelectMany(error => error.Value),
+            message => message.Contains(
+                nameof(AssistantClientMetricsInput.ClientDurationMs),
+                StringComparison.OrdinalIgnoreCase));
         Assert.Null(orchestrator.ClientDurationMs);
     }
 

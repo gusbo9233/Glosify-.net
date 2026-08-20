@@ -1,9 +1,11 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Assistant.Tools;
 using Glosify.Services.Ai.Generation;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -12,6 +14,23 @@ namespace Glosify.Tests;
 
 public class AssistantToolsTests
 {
+    [Fact]
+    public void Optional_integer_tool_arguments_use_invariant_machine_format()
+    {
+        var originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("ar");
+            using var document = JsonDocument.Parse("""{"offset":"+1"}""");
+
+            Assert.Equal(1, ToolArguments.GetOptionalInt(document.RootElement, "offset"));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
+    }
+
     [Fact]
     public void Declarations_SeparateVocabularyAndCustomQuizCreation()
     {
@@ -1338,6 +1357,83 @@ public class AssistantToolsTests
     }
 
     [Fact]
+    public async Task SearchWords_IsOrdinalIgnoreCaseUnderTurkishRequestCulture()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(new Quiz
+        {
+            Id = quizId,
+            UserId = "user-1",
+            Name = "English",
+            SourceLanguage = "Polish",
+            TargetLanguage = "English",
+            Language = "English",
+        });
+        db.Words.Add(new Word { Id = "w-index", QuizId = quizId, Lemma = "INDEX", Translation = "entry" });
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
+        var originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
+
+            var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+                "search_words",
+                """{"query":"index"}""",
+                context,
+                CancellationToken.None));
+
+            Assert.Equal(1, result.GetProperty("total_count").GetInt32());
+            Assert.Equal("INDEX", Assert.Single(result.GetProperty("words").EnumerateArray())
+                .GetProperty("word").GetString());
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
+    }
+
+    [Fact]
+    public void Assistant_search_filters_translate_with_a_pinned_sql_server_collation()
+    {
+        var options = new DbContextOptionsBuilder<GlosifyContext>()
+            .UseSqlServer("Server=localhost;Database=translation-only;User Id=sa;Password=unused;TrustServerCertificate=True")
+            .Options;
+        using var db = new GlosifyContext(options);
+
+        var pageSql = AssistantSearchQuery
+            .WherePageContains(db.BookPages, "index", db.Database)
+            .ToQueryString();
+        var wordSql = AssistantSearchQuery
+            .WhereWordContains(db.Words, "index", db.Database)
+            .ToQueryString();
+
+        Assert.Contains("COLLATE Latin1_General_100_CI_AS_SC", pageSql, StringComparison.Ordinal);
+        Assert.Contains("COLLATE Latin1_General_100_CI_AS_SC", wordSql, StringComparison.Ordinal);
+        Assert.DoesNotContain("LOWER(", pageSql, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("LOWER(", wordSql, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Assistant_search_rejects_unsupported_relational_providers_before_execution()
+    {
+        var options = new DbContextOptionsBuilder<GlosifyContext>()
+            .UseSqlite("Data Source=:memory:")
+            .Options;
+        using var db = new GlosifyContext(options);
+
+        var pageError = Assert.Throws<NotSupportedException>(() =>
+            AssistantSearchQuery.WherePageContains(db.BookPages, "index", db.Database));
+        var wordError = Assert.Throws<NotSupportedException>(() =>
+            AssistantSearchQuery.WhereWordContains(db.Words, "index", db.Database));
+
+        Assert.Contains("Microsoft.EntityFrameworkCore.Sqlite", pageError.Message, StringComparison.Ordinal);
+        Assert.Contains("Microsoft.EntityFrameworkCore.Sqlite", wordError.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task GetQuizSummary_ReturnsMetadataAndContentCounts()
     {
         await using var db = CreateContext();
@@ -1538,6 +1634,34 @@ public class AssistantToolsTests
         Assert.Contains("Page 140 text.", match.GetProperty("snippet").GetString());
         Assert.Equal(1, result.GetProperty("match_count").GetInt32());
         Assert.False(result.GetProperty("has_more").GetBoolean());
+    }
+
+    [Fact]
+    public async Task SearchBookPages_IsOrdinalIgnoreCaseUnderTurkishRequestCulture()
+    {
+        await using var db = CreateContext();
+        var bookId = await SeedPagesAsync(db, "user-1", "The INDEX is on this page.");
+        var tools = AssistantToolFactory.Create(db);
+        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
+        var originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
+
+            var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+                "search_book_pages",
+                """{"query":"index"}""",
+                context,
+                CancellationToken.None));
+
+            var match = Assert.Single(result.GetProperty("matches").EnumerateArray());
+            Assert.Equal(1, match.GetProperty("page_number").GetInt32());
+            Assert.Equal(1, match.GetProperty("hits").GetInt32());
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
     }
 
     // Several words are an AND, so a page holding only one of them is not a match.

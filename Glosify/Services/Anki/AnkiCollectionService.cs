@@ -1,6 +1,7 @@
 using Glosify.Data;
 using Glosify.Models;
 using Glosify.Models.Entities;
+using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Anki;
@@ -25,32 +26,28 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         string userId,
         string targetLanguage,
         CancellationToken cancellationToken = default) =>
-        await ListAsync(userId, Required(targetLanguage, "Choose an app language.", 64), cancellationToken);
+        await ListAsync(userId, CanonicalLanguageName(targetLanguage), cancellationToken);
 
     private async Task<IReadOnlyList<AnkiCollectionSummary>> ListAsync(
         string userId,
         string? targetLanguage,
         CancellationToken cancellationToken)
     {
-        var query = _context.AnkiCollections
+        var collections = await _context.AnkiCollections
             .AsNoTracking()
-            .Where(collection => collection.UserId == userId);
+            .Where(collection => collection.UserId == userId)
+            .OrderBy(collection => collection.Name)
+            .ToListAsync(cancellationToken);
         if (targetLanguage is not null)
         {
-            var normalizedTarget = targetLanguage.ToLower();
-            query = query.Where(collection => collection.TargetLanguage.ToLower() == normalizedTarget);
+            collections = collections
+                .Where(collection => SameLanguage(collection.TargetLanguage, targetLanguage))
+                .ToList();
         }
-        var ids = await query
-            .OrderBy(collection => collection.Name)
-            .Select(collection => collection.Id)
-            .ToListAsync(cancellationToken);
-        foreach (var id in ids)
-            await SyncCollectionAsync(id, cancellationToken);
+        foreach (var collection in collections)
+            await SyncCollectionAsync(collection.Id, cancellationToken);
 
         var now = _timeProvider.GetUtcNow();
-        var collections = await query
-            .OrderBy(collection => collection.Name)
-            .ToListAsync(cancellationToken);
         var summaries = new List<AnkiCollectionSummary>(collections.Count);
         foreach (var collection in collections)
         {
@@ -65,34 +62,36 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         return summaries;
     }
 
-    public Task<bool> IsOwnedByLanguageAsync(
+    public async Task<bool> IsOwnedByLanguageAsync(
         Guid collectionId,
         string targetLanguage,
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var normalizedTarget = Required(targetLanguage, "Choose an app language.", 64).ToLower();
-        return _context.AnkiCollections.AsNoTracking().AnyAsync(
-            collection => collection.Id == collectionId
-                && collection.UserId == userId
-                && collection.TargetLanguage.ToLower() == normalizedTarget,
-            cancellationToken);
+        var canonicalTarget = CanonicalLanguageName(targetLanguage);
+        var storedTarget = await _context.AnkiCollections.AsNoTracking()
+            .Where(collection => collection.Id == collectionId
+                && collection.UserId == userId)
+            .Select(collection => collection.TargetLanguage)
+            .SingleOrDefaultAsync(cancellationToken);
+        return storedTarget is not null && SameLanguage(storedTarget, canonicalTarget);
     }
 
-    public Task<bool> IsCardInOwnedLanguageAsync(
+    public async Task<bool> IsCardInOwnedLanguageAsync(
         Guid cardId,
         Guid collectionId,
         string targetLanguage,
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var normalizedTarget = Required(targetLanguage, "Choose an app language.", 64).ToLower();
-        return _context.AnkiCards.AsNoTracking().AnyAsync(
-            card => card.Id == cardId
+        var canonicalTarget = CanonicalLanguageName(targetLanguage);
+        var storedTarget = await _context.AnkiCards.AsNoTracking()
+            .Where(card => card.Id == cardId
                 && card.Note.AnkiCollectionId == collectionId
-                && card.Note.Collection.UserId == userId
-                && card.Note.Collection.TargetLanguage.ToLower() == normalizedTarget,
-            cancellationToken);
+                && card.Note.Collection.UserId == userId)
+            .Select(card => card.Note.Collection.TargetLanguage)
+            .SingleOrDefaultAsync(cancellationToken);
+        return storedTarget is not null && SameLanguage(storedTarget, canonicalTarget);
     }
 
     public async Task<AnkiCollectionDetails?> GetDetailsAsync(
@@ -135,13 +134,14 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
                 card.DirectlyIncluded,
                 card.QuizLinkIncluded))
             .ToListAsync(cancellationToken);
-        var quizzes = await _context.Quizzes
+        var quizzes = (await _context.Quizzes
             .AsNoTracking()
-            .Where(quiz => quiz.UserId == userId
-                && quiz.SourceLanguage.ToLower() == collection.SourceLanguage.ToLower()
-                && quiz.TargetLanguage.ToLower() == collection.TargetLanguage.ToLower())
+            .Where(quiz => quiz.UserId == userId)
             .OrderBy(quiz => quiz.Name)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken))
+            .Where(quiz => SameLanguage(quiz.SourceLanguage, collection.SourceLanguage)
+                && SameLanguage(quiz.TargetLanguage, collection.TargetLanguage))
+            .ToList();
         var quizIds = quizzes.Select(quiz => quiz.Id).ToList();
         var quizNames = quizzes.ToDictionary(quiz => quiz.Id, quiz => quiz.Name);
         var availableItems = (await _context.Words.AsNoTracking()
@@ -174,8 +174,8 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
     {
         var name = Required(input.Name, "Enter a collection name.", 160);
         var source = Required(input.SourceLanguage, "Choose a source language.", 64);
-        var target = Required(input.TargetLanguage, "Choose a target language.", 64);
-        if (string.Equals(source, target, StringComparison.OrdinalIgnoreCase))
+        var target = CanonicalLanguageName(input.TargetLanguage);
+        if (SameLanguage(source, target))
             throw new AnkiValidationException("Source and target languages must be different.");
         if (await _context.AnkiCollections.AnyAsync(
             collection => collection.UserId == userId && collection.Name == name,
@@ -220,11 +220,12 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
                 cancellationToken);
             if (quiz is null)
                 return null;
-            var targetLanguage = Required(input.TargetLanguage, "Choose an app language.", 64);
-            if (!string.Equals(quiz.TargetLanguage, targetLanguage, StringComparison.OrdinalIgnoreCase))
+            var targetLanguage = CanonicalLanguageName(input.TargetLanguage);
+            var quizTargetLanguage = CanonicalLanguageName(quiz.TargetLanguage);
+            if (!SameLanguage(quizTargetLanguage, targetLanguage))
                 throw new AnkiValidationException("This quiz belongs to a different app language.");
             var collection = await CreateAsync(new CreateAnkiCollectionInput(
-                input.Name, quiz.SourceLanguage, quiz.TargetLanguage, input.TimeZoneId), userId, cancellationToken);
+                input.Name, quiz.SourceLanguage, quizTargetLanguage, input.TimeZoneId), userId, cancellationToken);
             var linked = await AddQuizAsync(new AddAnkiQuizInput(collection.Id, quiz.Id,
                 input.WordsSourceToTarget, input.WordsTargetToSource,
                 input.SentencesSourceToTarget, input.SentencesTargetToSource), userId, cancellationToken);
@@ -800,8 +801,15 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
     }
 
     private static bool Matches(AnkiCollection collection, Quiz quiz) =>
-        string.Equals(collection.SourceLanguage, quiz.SourceLanguage, StringComparison.OrdinalIgnoreCase)
-        && string.Equals(collection.TargetLanguage, quiz.TargetLanguage, StringComparison.OrdinalIgnoreCase);
+        SameLanguage(collection.SourceLanguage, quiz.SourceLanguage)
+        && SameLanguage(collection.TargetLanguage, quiz.TargetLanguage);
+
+    private static bool SameLanguage(string left, string right)
+    {
+        var normalizedLeft = QuizLanguageCatalog.Find(left)?.Name ?? left.Trim();
+        var normalizedRight = QuizLanguageCatalog.Find(right)?.Name ?? right.Trim();
+        return string.Equals(normalizedLeft, normalizedRight, StringComparison.OrdinalIgnoreCase);
+    }
 
     private static string Required(string? value, string error, int maxLength)
     {
@@ -811,6 +819,13 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         if (normalized.Length > maxLength)
             throw new AnkiValidationException($"Value cannot exceed {maxLength} characters.");
         return normalized;
+    }
+
+    private static string CanonicalLanguageName(string? value)
+    {
+        var candidate = Required(value, "Choose an app language.", 64);
+        return QuizLanguageCatalog.Find(candidate)?.Name
+            ?? throw new AnkiValidationException("Choose a supported app language.");
     }
 
     private static string NormalizeTimeZone(string? value)

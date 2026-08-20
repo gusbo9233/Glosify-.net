@@ -43,16 +43,7 @@ internal static class FoundryTranslationProtocol
         });
 
     internal static bool IsAllowedBrowserMessage(ReadOnlySpan<byte> payload) =>
-        TryGetBrowserAudioByteCount(payload, out _);
-
-    internal static bool TryGetBrowserAudioByteCount(
-        ReadOnlySpan<byte> payload,
-        out int audioByteCount)
-    {
-        var valid = TryDecodeBrowserAudio(payload, out var audio);
-        audioByteCount = audio.Length;
-        return valid;
-    }
+        TryDecodeBrowserAudio(payload, out _);
 
     internal static bool TryDecodeBrowserAudio(
         ReadOnlySpan<byte> payload,

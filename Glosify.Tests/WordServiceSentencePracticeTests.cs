@@ -156,7 +156,6 @@ public class WordServiceSentencePracticeTests
     private sealed class TestLanguageContext(string language) : ILanguageContext
     {
         public string? CurrentLanguage => language;
-        public bool HasLanguage => !string.IsNullOrWhiteSpace(language);
         public IReadOnlyList<string> SupportedLanguages { get; } = [language];
         public bool TrySetLanguage(string language) => true;
         public void Clear() { }

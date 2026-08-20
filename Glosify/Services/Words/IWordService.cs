@@ -10,7 +10,7 @@ public interface IWordService
     Task<IReadOnlyList<QuizCardData>> LoadCardsByIdsAsync(Guid quizId, IReadOnlyCollection<string> wordIds, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<QuizCardData>> LoadSentenceCardsAsync(Guid quizId, int sentenceCount, int rangeStartPercent = 0, int rangeEndPercent = 100, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<QuizSentenceData>> GetSentencesAsync(Guid quizId, CancellationToken cancellationToken = default);
-    Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage, CancellationToken cancellationToken = default);
+    Task<bool> AddWordAsync(Guid quizId, string word, string translation, CancellationToken cancellationToken = default);
     Task<Word?> DeleteWordAsync(string wordId, string userId, CancellationToken cancellationToken = default);
     Task<QuizSentence?> DeleteSentenceAsync(Guid sentenceId, string userId, CancellationToken cancellationToken = default);
     Task<bool> WordExistsAsync(Guid quizId, string word, CancellationToken cancellationToken = default);

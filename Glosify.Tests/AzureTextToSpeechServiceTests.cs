@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http;
 using Azure.Core;
 using Glosify.Services.Speech;
 using Glosify.Services.Storage;
@@ -48,14 +47,14 @@ public class AzureTextToSpeechServiceTests
     [InlineData("uk-UA", "uk-UA-PolinaNeural")]
     public void Voice_map_resolves_supported_languages(string code, string expectedVoice)
     {
-        Assert.True(VoiceMap.TryResolve(code, out _, out var voice));
+        Assert.True(VoiceMap.TryResolve(code, out var voice));
         Assert.Equal(expectedVoice, voice);
     }
 
     [Fact]
     public void Voice_map_rejects_unknown_language()
     {
-        Assert.False(VoiceMap.TryResolve("sv-SE", out _, out _));
+        Assert.False(VoiceMap.TryResolve("sv-SE", out _));
     }
 
     [Theory]

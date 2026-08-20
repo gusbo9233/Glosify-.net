@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Glosify.Data;
 using Glosify.Models.CustomQuizzes;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
@@ -16,14 +15,10 @@ namespace Glosify.Services.Ai.Assistant.Tools;
 /// </summary>
 internal abstract class AtomicCustomQuizElementTool : IAssistantTool
 {
-    private readonly GlosifyContext _context;
     private readonly CustomQuizToolStore _customQuizzes;
 
-    protected AtomicCustomQuizElementTool(GlosifyContext context, CustomQuizToolStore customQuizzes)
-    {
-        _context = context;
+    protected AtomicCustomQuizElementTool(CustomQuizToolStore customQuizzes) =>
         _customQuizzes = customQuizzes;
-    }
 
     public abstract AgentToolDeclaration Declaration { get; }
 

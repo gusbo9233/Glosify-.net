@@ -1,4 +1,3 @@
-using Glosify.Data;
 using Glosify.Services.Ai.Generation;
 using static Glosify.Services.Ai.Assistant.Tools.ToolSchema;
 
@@ -18,8 +17,8 @@ internal sealed class AddCheckboxTool : AtomicCustomQuizElementTool
 
     public override AgentToolDeclaration Declaration => DeclarationValue;
 
-    public AddCheckboxTool(GlosifyContext context, CustomQuizToolStore customQuizzes)
-        : base(context, customQuizzes)
+    public AddCheckboxTool(CustomQuizToolStore customQuizzes)
+        : base(customQuizzes)
     {
     }
 }

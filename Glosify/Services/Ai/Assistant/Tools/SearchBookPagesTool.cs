@@ -101,8 +101,7 @@ internal sealed class SearchBookPagesTool : IAssistantTool
         var query = bookPages.Where(page => page.PageNumber >= fromPage);
         foreach (var term in terms)
         {
-            var needle = term;
-            query = query.Where(page => page.Text.ToLower().Contains(needle));
+            query = AssistantSearchQuery.WherePageContains(query, term, _context.Database);
         }
 
         var totalMatches = await query.CountAsync(cancellationToken);
@@ -202,9 +201,9 @@ internal sealed class SearchBookPagesTool : IAssistantTool
         var missing = new List<string>();
         foreach (var term in terms)
         {
-            var needle = term;
-            var hitPages = await bookPages.CountAsync(
-                page => page.Text.ToLower().Contains(needle), cancellationToken);
+            var hitPages = await AssistantSearchQuery
+                .WherePageContains(bookPages, term, _context.Database)
+                .CountAsync(cancellationToken);
             termPages.Add(new { term, page_count = hitPages });
             if (hitPages == 0)
             {

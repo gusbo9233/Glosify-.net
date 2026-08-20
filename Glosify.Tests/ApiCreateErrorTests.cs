@@ -113,7 +113,6 @@ public class ApiCreateErrorTests
     private sealed class StaticLanguage : ILanguageContext
     {
         public string? CurrentLanguage => "Polish";
-        public bool HasLanguage => true;
         public IReadOnlyList<string> SupportedLanguages { get; } = ["Polish"];
         public bool TrySetLanguage(string language) => true;
         public void Clear() { }

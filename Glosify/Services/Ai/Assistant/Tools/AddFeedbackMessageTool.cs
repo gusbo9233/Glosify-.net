@@ -1,4 +1,3 @@
-using Glosify.Data;
 using Glosify.Services.Ai.Generation;
 using static Glosify.Services.Ai.Assistant.Tools.ToolSchema;
 
@@ -13,8 +12,8 @@ internal sealed class AddFeedbackMessageTool : AtomicCustomQuizElementTool
 
     public override AgentToolDeclaration Declaration => DeclarationValue;
 
-    public AddFeedbackMessageTool(GlosifyContext context, CustomQuizToolStore customQuizzes)
-        : base(context, customQuizzes)
+    public AddFeedbackMessageTool(CustomQuizToolStore customQuizzes)
+        : base(customQuizzes)
     {
     }
 }

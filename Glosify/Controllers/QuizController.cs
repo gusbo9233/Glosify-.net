@@ -126,7 +126,11 @@ public class QuizController : Controller
         if (quiz == null)
             return RedirectToAction(nameof(Index));
 
-        await _wordService.AddWordAsync(input.QuizId, input.Word, input.Translation, quiz.SourceLanguage, quiz.TargetLanguage, cancellationToken: cancellationToken);
+        await _wordService.AddWordAsync(
+            input.QuizId,
+            input.Word,
+            input.Translation,
+            cancellationToken);
 
         return RedirectToAction(nameof(Details), new { id = input.QuizId });
     }

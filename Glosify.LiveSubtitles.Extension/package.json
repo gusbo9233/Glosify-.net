@@ -9,10 +9,15 @@
     "build:test": "node scripts/build.mjs test",
     "build:store": "node scripts/build.mjs store",
     "validate:store": "node scripts/validate-store.mjs artifacts/store",
-    "package:store": "node scripts/package-store.mjs"
+    "package:store": "node scripts/package-store.mjs",
+    "lint": "cd .. && ./Glosify.LiveSubtitles.Extension/node_modules/.bin/eslint --config eslint.config.mjs Glosify.LiveSubtitles.Extension Glosify.ClientTests tools/acs-bundle",
+    "lint:report": "cd .. && ./Glosify.LiveSubtitles.Extension/node_modules/.bin/eslint --config eslint.config.mjs Glosify.LiveSubtitles.Extension Glosify.ClientTests tools/acs-bundle -f html -o ESLintIssues.html"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "1.62.1",
+    "eslint": "^10.8.1",
+    "globals": "^17.11.0",
     "ws": "8.21.3"
   }
 }

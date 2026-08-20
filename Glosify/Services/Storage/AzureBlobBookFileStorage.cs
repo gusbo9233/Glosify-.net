@@ -68,26 +68,11 @@ public sealed class AzureBlobBookFileStorage : IBookFileStorage
         return await blobClient.OpenReadAsync(cancellationToken: cancellationToken);
     }
 
-    public async Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken = default)
-    {
-        blobName = RequireBlobName(blobName);
-        var blobClient = _containerClient.GetBlobClient(blobName);
-        return await blobClient.ExistsAsync(cancellationToken);
-    }
-
     public async Task DeleteIfExistsAsync(string blobName, CancellationToken cancellationToken = default)
     {
         blobName = RequireBlobName(blobName);
         var blobClient = _containerClient.GetBlobClient(blobName);
         await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
-    }
-
-    public async Task<BlobProperties> GetPropertiesAsync(string blobName, CancellationToken cancellationToken = default)
-    {
-        blobName = RequireBlobName(blobName);
-        var blobClient = _containerClient.GetBlobClient(blobName);
-        var response = await blobClient.GetPropertiesAsync(cancellationToken: cancellationToken);
-        return response.Value;
     }
 
     private static string RequireBlobName(string blobName)

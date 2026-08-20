@@ -283,8 +283,6 @@ public static class SpeakingAvatarCatalog
                 group => group.ToArray(),
                 StringComparer.OrdinalIgnoreCase);
 
-    public static IReadOnlyList<SpeakingAvatarDefinition> All => Definitions;
-
     public static SpeakingAvatarDefinition Get(SpeakingAvatarId id) => ById[id];
 
     public static bool IsTutor(SpeakingAvatarId id) => id is

@@ -14,7 +14,6 @@ public interface IClassroomLibrary
     Task ShareQuizAsync(Guid classroomId, string userId, Guid quizId, CancellationToken cancellationToken = default);
     Task ShareBookAsync(Guid classroomId, string userId, Guid bookDocumentId, CancellationToken cancellationToken = default);
     Task UnshareContentAsync(Guid classroomId, string userId, Guid contentId, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<ClassroomContentItem>> GetContentAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default);
     Task<Quiz> RequireSharedQuizAsync(Guid classroomId, Guid quizId, string userId, CancellationToken cancellationToken = default);
     Task<BookDocument> RequireSharedBookAsync(Guid classroomId, Guid bookDocumentId, string userId, CancellationToken cancellationToken = default);
 }
@@ -23,16 +22,13 @@ public sealed class ClassroomLibrary : IClassroomLibrary
 {
     private readonly GlosifyContext _context;
     private readonly IClassroomAccess _access;
-    private readonly ClassroomQueries _queries;
 
     public ClassroomLibrary(
         GlosifyContext context,
-        IClassroomAccess access,
-        ClassroomQueries queries)
+        IClassroomAccess access)
     {
         _context = context;
         _access = access;
-        _queries = queries;
     }
 
     public async Task ShareQuizAsync(Guid classroomId, string userId, Guid quizId, CancellationToken cancellationToken = default)
@@ -105,12 +101,6 @@ public sealed class ClassroomLibrary : IClassroomLibrary
             _context.ClassroomContents.Remove(content);
             await _context.SaveChangesAsync(cancellationToken);
         }
-    }
-
-    public async Task<IReadOnlyList<ClassroomContentItem>> GetContentAsync(Guid classroomId, string userId, CancellationToken cancellationToken = default)
-    {
-        await _access.RequireMemberAsync(classroomId, userId, cancellationToken);
-        return await _queries.ContentAsync(classroomId, cancellationToken);
     }
 
     public async Task<Quiz> RequireSharedQuizAsync(Guid classroomId, Guid quizId, string userId, CancellationToken cancellationToken = default)

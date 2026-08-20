@@ -154,7 +154,6 @@ public sealed class LayoutViewComponentTests
     private sealed class FixedLanguageContext(string? currentLanguage) : ILanguageContext
     {
         public string? CurrentLanguage { get; } = currentLanguage;
-        public bool HasLanguage => CurrentLanguage is not null;
         public IReadOnlyList<string> SupportedLanguages { get; } = ["Polish"];
         public bool TrySetLanguage(string language) => false;
         public void Clear()

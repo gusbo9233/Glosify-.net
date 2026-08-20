@@ -45,12 +45,11 @@ internal sealed class SearchWordsTool : IAssistantTool
             return QuizContextRequired();
         }
 
-        var normalized = search.ToLowerInvariant();
         var limit = GetBoundedInt(args, "limit", defaultValue: 20, min: 1, max: 50);
-        var query = _context.Words
-            .Where(w => w.QuizId == context.QuizId.Value
-                && (w.Lemma.ToLower().Contains(normalized)
-                    || w.Translation.ToLower().Contains(normalized)));
+        var query = AssistantSearchQuery.WhereWordContains(
+            _context.Words.Where(word => word.QuizId == context.QuizId.Value),
+            search,
+            _context.Database);
         var totalCount = await query.CountAsync(ct);
         var rows = await query
             .OrderBy(w => w.Lemma)

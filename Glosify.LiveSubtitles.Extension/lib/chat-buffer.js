@@ -157,7 +157,7 @@
   }
 
   function findCompletedSentenceEnd(text) {
-    const boundary = /[.!?…]+(?:["'”’»\)\]]+)?(?=\s|$)|[。！？]+(?:["'”’»）\]]+)?/u.exec(text);
+    const boundary = /[.!?…]+(?:["'”’»)\]]+)?(?=\s|$)|[。！？]+(?:["'”’»）\]]+)?/u.exec(text);
     return boundary ? boundary.index + boundary[0].length : -1;
   }
 

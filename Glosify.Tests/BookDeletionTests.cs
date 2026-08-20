@@ -1,4 +1,3 @@
-using Azure.Storage.Blobs.Models;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Models.Library;
@@ -225,11 +224,6 @@ public sealed class BookDeletionTests
         public Task<Stream> OpenReadAsync(string blobName, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken = default) =>
-            Task.FromResult(true);
-
-        public Task<BlobProperties> GetPropertiesAsync(string blobName, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
     }
 
     private sealed class ThrowingBookFileStorage : IBookFileStorage
@@ -243,11 +237,6 @@ public sealed class BookDeletionTests
         public Task<Stream> OpenReadAsync(string blobName, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken = default) =>
-            Task.FromResult(true);
-
-        public Task<BlobProperties> GetPropertiesAsync(string blobName, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
     }
 
     private sealed class UploadingBookFileStorage : IBookFileStorage
@@ -270,11 +259,6 @@ public sealed class BookDeletionTests
         public Task<Stream> OpenReadAsync(string blobName, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task<bool> ExistsAsync(string blobName, CancellationToken cancellationToken = default) =>
-            Task.FromResult(true);
-
-        public Task<BlobProperties> GetPropertiesAsync(string blobName, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
     }
 
     private sealed class UnusedPdfTextExtractionService : IPdfTextExtractionService
@@ -301,7 +285,6 @@ public sealed class BookDeletionTests
     private sealed class StaticLanguageContext : ILanguageContext
     {
         public string? CurrentLanguage => "Polish";
-        public bool HasLanguage => true;
         public IReadOnlyList<string> SupportedLanguages { get; } = ["Polish"];
         public bool TrySetLanguage(string language) => true;
         public void Clear() { }

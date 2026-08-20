@@ -1,4 +1,3 @@
-using Glosify.Data;
 using Glosify.Services.Ai.Generation;
 using static Glosify.Services.Ai.Assistant.Tools.ToolSchema;
 
@@ -17,8 +16,8 @@ internal sealed class AddSubmitButtonTool : AtomicCustomQuizElementTool
 
     public override AgentToolDeclaration Declaration => DeclarationValue;
 
-    public AddSubmitButtonTool(GlosifyContext context, CustomQuizToolStore customQuizzes)
-        : base(context, customQuizzes)
+    public AddSubmitButtonTool(CustomQuizToolStore customQuizzes)
+        : base(customQuizzes)
     {
     }
 }

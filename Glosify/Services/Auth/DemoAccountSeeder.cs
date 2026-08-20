@@ -68,6 +68,7 @@ public sealed class DemoAccountSeeder
 
     private async Task<(ApplicationUser? User, string? Error)> EnsureUserAsync(CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var user = await _userManager.FindByEmailAsync(_options.Email);
         if (user is not null)
         {
@@ -83,6 +84,7 @@ public sealed class DemoAccountSeeder
             EmailConfirmed = true,
         };
 
+        cancellationToken.ThrowIfCancellationRequested();
         var result = await _userManager.CreateAsync(user, _options.Password!);
         if (result.Succeeded)
         {
@@ -92,6 +94,7 @@ public sealed class DemoAccountSeeder
 
         // Two instances starting together race here; the loser sees a duplicate-user
         // error and can just use the row the winner wrote.
+        cancellationToken.ThrowIfCancellationRequested();
         var existing = await _userManager.FindByEmailAsync(_options.Email);
         if (existing is not null)
         {

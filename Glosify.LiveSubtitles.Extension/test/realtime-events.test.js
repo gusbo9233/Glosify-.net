@@ -15,9 +15,9 @@ test("Scribe finalized segments normalize into committed translation events", ()
     text: "God morgon",
   }, { sessionId: "s1", targetLanguage: "sv", nextSequence: () => 99 });
 
-  assert.equal(typeof event.clientTimestamp, "number");
-  assert.ok(Number.isFinite(event.clientTimestamp));
   const { clientTimestamp, ...stableFields } = event;
+  assert.equal(typeof clientTimestamp, "number");
+  assert.ok(Number.isFinite(clientTimestamp));
   assert.deepEqual(stableFields, {
     sessionId: "s1",
     stream: "translation",

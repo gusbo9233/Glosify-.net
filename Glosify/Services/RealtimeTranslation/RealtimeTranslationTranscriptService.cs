@@ -445,27 +445,6 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteStaleEmptyAsync(DateTimeOffset olderThan, CancellationToken cancellationToken = default)
-    {
-        var stale = await _context.RealtimeTranslationTranscripts
-            .Where(transcript => transcript.CreatedAt < olderThan
-                && !transcript.Segments.Any()
-                && !transcript.Sessions.Any(session =>
-                    session.Status == RealtimeTranslationSessionStatuses.Pending
-                    || session.Status == RealtimeTranslationSessionStatuses.Active))
-            .Include(transcript => transcript.Sessions)
-            .ToListAsync(cancellationToken);
-        foreach (var transcript in stale)
-        {
-            foreach (var session in transcript.Sessions)
-            {
-                session.TranscriptId = null;
-            }
-        }
-        _context.RealtimeTranslationTranscripts.RemoveRange(stale);
-        await _context.SaveChangesAsync(cancellationToken);
-    }
-
     private async Task<RealtimeTranslationTranscript> LoadOwnedAsync(
         Guid transcriptId,
         string userId,
