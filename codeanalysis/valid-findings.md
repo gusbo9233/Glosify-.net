@@ -207,8 +207,9 @@ These reports are true positives, but no current functional or security impact w
 ## Verification
 
 - The complete solution builds with analyzers disabled: 0 warnings and 0 errors.
-- The .NET test suite passed 1,023 tests with 4 intentional live-service skips. The one SQL Server-only integration test was excluded because no local SQL Server was available.
+- The Release .NET test suite passed 1,034 tests (1,025 application tests and 9 browser-project tests) with 4 intentional live-service skips. The one SQL Server-only integration test was excluded because no local SQL Server was available.
 - Focused behavioral regression runs passed: 22 Sonar-related tests and 87 culture/search-related tests.
 - Extension unit tests passed: 56/56.
+- Client unit tests passed: 24/24.
 - `npm run lint` passes with no findings.
 - The browser-test project builds successfully as part of the solution build; browser journeys were not executed because they require a running application and browser environment.

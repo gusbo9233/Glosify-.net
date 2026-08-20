@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using Glosify.Infrastructure.Api;
+using Glosify.Models.Api;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
@@ -33,9 +34,14 @@ public sealed class VisibilityRequestValidationTests
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
-        var problem = Assert.IsType<ProblemDetails>(
-            await response.Content.ReadFromJsonAsync<ProblemDetails>());
+        var problem = Assert.IsType<HttpValidationProblemDetails>(
+            await response.Content.ReadFromJsonAsync<HttpValidationProblemDetails>());
         Assert.Equal(ApiErrorCodes.ValidationFailed, problem.Extensions["code"]?.ToString());
+        Assert.Contains(
+            problem.Errors.SelectMany(error => error.Value),
+            message => message.Contains(
+                nameof(SetVisibilityRequest.IsPublic),
+                StringComparison.OrdinalIgnoreCase));
     }
 
     private static WebApplicationFactory<Program> CreateAuthenticatedFactory() =>

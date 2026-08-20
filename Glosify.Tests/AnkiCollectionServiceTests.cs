@@ -99,11 +99,14 @@ public sealed class AnkiCollectionServiceTests
     public async Task Language_scoped_queries_only_return_matching_owned_collections_and_cards()
     {
         await using var fixture = await Fixture.CreateAsync();
-        var polish = await fixture.Collections.CreateAsync(new("Polish", "English", "Polish", "UTC"), UserId);
+        var polish = await fixture.Collections.CreateAsync(new("Polish", "English", "pl", "UTC"), UserId);
+        Assert.Equal("Polish", polish.TargetLanguage);
         await fixture.Collections.CreateAsync(new("Spanish", "English", "Spanish", "UTC"), UserId);
         await fixture.Collections.AddItemAsync(
             new(polish.Id, fixture.Quiz.Id, "word", fixture.Word.Id, true, false), UserId);
         var cardId = await fixture.Context.AnkiCards.Select(card => card.Id).SingleAsync();
+        polish.TargetLanguage = "PL";
+        await fixture.Context.SaveChangesAsync();
 
         var collections = await fixture.Collections.ListForLanguageAsync(UserId, "polish");
 

@@ -19,22 +19,46 @@ internal static class AssistantSearchQuery
     internal static IQueryable<BookPage> WherePageContains(
         IQueryable<BookPage> query,
         string term,
-        DatabaseFacade database) =>
-        database.IsSqlServer()
-            ? query.Where(page => EF.Functions
+        DatabaseFacade database)
+    {
+        if (database.IsSqlServer())
+        {
+            return query.Where(page => EF.Functions
                 .Collate(page.Text, SqlServerCaseInsensitiveCollation)
-                .Contains(term))
-            : query.Where(page => page.Text.Contains(term, StringComparison.OrdinalIgnoreCase));
+                .Contains(term));
+        }
+
+        EnsureInMemoryProvider(database);
+        return query.Where(page => page.Text.Contains(term, StringComparison.OrdinalIgnoreCase));
+    }
 
     internal static IQueryable<Word> WhereWordContains(
         IQueryable<Word> query,
         string term,
-        DatabaseFacade database) =>
-        database.IsSqlServer()
-            ? query.Where(word =>
+        DatabaseFacade database)
+    {
+        if (database.IsSqlServer())
+        {
+            return query.Where(word =>
                 EF.Functions.Collate(word.Lemma, SqlServerCaseInsensitiveCollation).Contains(term)
-                || EF.Functions.Collate(word.Translation, SqlServerCaseInsensitiveCollation).Contains(term))
-            : query.Where(word =>
-                word.Lemma.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || word.Translation.Contains(term, StringComparison.OrdinalIgnoreCase));
+                || EF.Functions.Collate(word.Translation, SqlServerCaseInsensitiveCollation).Contains(term));
+        }
+
+        EnsureInMemoryProvider(database);
+        return query.Where(word =>
+            word.Lemma.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || word.Translation.Contains(term, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void EnsureInMemoryProvider(DatabaseFacade database)
+    {
+        if (!string.Equals(
+                database.ProviderName,
+                "Microsoft.EntityFrameworkCore.InMemory",
+                StringComparison.Ordinal))
+        {
+            throw new NotSupportedException(
+                $"Assistant text search does not support the EF Core provider '{database.ProviderName}'.");
+        }
+    }
 }

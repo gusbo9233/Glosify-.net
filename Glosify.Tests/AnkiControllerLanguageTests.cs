@@ -134,6 +134,30 @@ public sealed class AnkiControllerLanguageTests
     }
 
     [Fact]
+    public async Task Rate_reports_an_invalid_rating_when_the_client_token_is_valid()
+    {
+        await using var context = CreateContext();
+        var controller = CreateController(context, "Polish");
+        controller.ModelState.AddModelError(
+            nameof(RateAnkiCardForm.Rating),
+            "Choose a supported rating.");
+
+        var result = await controller.Rate(new RateAnkiCardForm
+        {
+            CollectionId = Guid.NewGuid(),
+            CardId = Guid.NewGuid(),
+            Rating = "invalid",
+            ClientToken = Guid.NewGuid(),
+        }, CancellationToken.None);
+
+        Assert.Equal(nameof(AnkiController.Study),
+            Assert.IsType<RedirectToActionResult>(result).ActionName);
+        Assert.Equal(
+            "Choose Again, Hard, Good, or Easy to rate the card.",
+            controller.TempData["AnkiMessage"]);
+    }
+
+    [Fact]
     public async Task Collection_is_not_found_when_it_belongs_to_another_app_language()
     {
         await using var context = CreateContext();

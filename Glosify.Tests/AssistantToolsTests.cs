@@ -1417,6 +1417,23 @@ public class AssistantToolsTests
     }
 
     [Fact]
+    public void Assistant_search_rejects_unsupported_relational_providers_before_execution()
+    {
+        var options = new DbContextOptionsBuilder<GlosifyContext>()
+            .UseSqlite("Data Source=:memory:")
+            .Options;
+        using var db = new GlosifyContext(options);
+
+        var pageError = Assert.Throws<NotSupportedException>(() =>
+            AssistantSearchQuery.WherePageContains(db.BookPages, "index", db.Database));
+        var wordError = Assert.Throws<NotSupportedException>(() =>
+            AssistantSearchQuery.WhereWordContains(db.Words, "index", db.Database));
+
+        Assert.Contains("Microsoft.EntityFrameworkCore.Sqlite", pageError.Message, StringComparison.Ordinal);
+        Assert.Contains("Microsoft.EntityFrameworkCore.Sqlite", wordError.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task GetQuizSummary_ReturnsMetadataAndContentCounts()
     {
         await using var db = CreateContext();

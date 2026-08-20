@@ -271,7 +271,7 @@ public sealed class AnkiController : Controller
 
         if (!ModelState.IsValid)
         {
-            TempData["AnkiMessage"] = ModelState.ContainsKey(nameof(form.ClientToken))
+            TempData["AnkiMessage"] = ModelState[nameof(form.ClientToken)]?.Errors.Count > 0
                 ? "Reload the card before rating it."
                 : "Choose Again, Hard, Good, or Easy to rate the card.";
             return RedirectToAction(nameof(Study), new { id = form.CollectionId });
