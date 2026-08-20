@@ -10,17 +10,6 @@ public static class PracticeItemType
         return IsSentences(value) ? Sentences : Words;
     }
 
-    public static bool IsValid(string? value)
-    {
-        return string.Equals(value, Words, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(value, Sentences, StringComparison.OrdinalIgnoreCase);
-    }
-
-    public static bool IsWords(string? value)
-    {
-        return string.Equals(Normalize(value), Words, StringComparison.OrdinalIgnoreCase);
-    }
-
     public static bool IsSentences(string? value)
     {
         return string.Equals(value, Sentences, StringComparison.OrdinalIgnoreCase);

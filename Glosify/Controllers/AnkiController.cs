@@ -161,6 +161,9 @@ public sealed class AnkiController : Controller
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
 
+        if (!ModelState.IsValid)
+            return RedirectToAction("Settings", "Quiz", new { id = form.QuizId });
+
         var userId = User.GetUserId();
         try
         {
@@ -262,9 +265,15 @@ public sealed class AnkiController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Rate(RateAnkiCardForm form, CancellationToken cancellationToken)
     {
+        var clientToken = form.ClientToken.GetValueOrDefault();
+        if (clientToken == Guid.Empty)
+            ModelState.AddModelError(nameof(form.ClientToken), "A review token is required.");
+
         if (!ModelState.IsValid)
         {
-            TempData["AnkiMessage"] = "Choose Again, Hard, Good, or Easy to rate the card.";
+            TempData["AnkiMessage"] = ModelState.ContainsKey(nameof(form.ClientToken))
+                ? "Reload the card before rating it."
+                : "Choose Again, Hard, Good, or Easy to rate the card.";
             return RedirectToAction(nameof(Study), new { id = form.CollectionId });
         }
         var userId = User.GetUserId();
@@ -273,7 +282,7 @@ public sealed class AnkiController : Controller
         try
         {
             await _study.RateAsync(new(form.CollectionId, form.CardId, form.Rating,
-                form.ClientToken, form.RowVersion, form.DurationMilliseconds),
+                clientToken, form.RowVersion, form.DurationMilliseconds),
                 userId, cancellationToken);
         }
         catch (AnkiReviewConflictException exception)

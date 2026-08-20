@@ -162,7 +162,6 @@ public class QuizServiceDeleteTests
     private sealed class TestLanguageContext : ILanguageContext
     {
         public string? CurrentLanguage => "Polish";
-        public bool HasLanguage => true;
         public IReadOnlyList<string> SupportedLanguages { get; } = ["Polish"];
         public bool TrySetLanguage(string language) => true;
         public void Clear() { }

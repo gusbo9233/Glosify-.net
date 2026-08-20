@@ -11,8 +11,6 @@ namespace Glosify.Services.Ai.Assistant;
 
 public sealed class ChangeApplier : IChangeApplier
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-
     private readonly GlosifyContext _context;
     private readonly IQuizService _quizService;
     private readonly ICollectionService _collectionService;

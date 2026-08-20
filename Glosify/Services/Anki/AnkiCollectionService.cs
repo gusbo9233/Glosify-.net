@@ -1,6 +1,7 @@
 using Glosify.Data;
 using Glosify.Models;
 using Glosify.Models.Entities;
+using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Anki;
@@ -25,7 +26,7 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         string userId,
         string targetLanguage,
         CancellationToken cancellationToken = default) =>
-        await ListAsync(userId, Required(targetLanguage, "Choose an app language.", 64), cancellationToken);
+        await ListAsync(userId, CanonicalLanguageName(targetLanguage), cancellationToken);
 
     private async Task<IReadOnlyList<AnkiCollectionSummary>> ListAsync(
         string userId,
@@ -37,8 +38,7 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
             .Where(collection => collection.UserId == userId);
         if (targetLanguage is not null)
         {
-            var normalizedTarget = targetLanguage.ToLower();
-            query = query.Where(collection => collection.TargetLanguage.ToLower() == normalizedTarget);
+            query = query.Where(collection => collection.TargetLanguage == targetLanguage);
         }
         var ids = await query
             .OrderBy(collection => collection.Name)
@@ -71,11 +71,11 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var normalizedTarget = Required(targetLanguage, "Choose an app language.", 64).ToLower();
+        var canonicalTarget = CanonicalLanguageName(targetLanguage);
         return _context.AnkiCollections.AsNoTracking().AnyAsync(
             collection => collection.Id == collectionId
                 && collection.UserId == userId
-                && collection.TargetLanguage.ToLower() == normalizedTarget,
+                && collection.TargetLanguage == canonicalTarget,
             cancellationToken);
     }
 
@@ -86,12 +86,12 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var normalizedTarget = Required(targetLanguage, "Choose an app language.", 64).ToLower();
+        var canonicalTarget = CanonicalLanguageName(targetLanguage);
         return _context.AnkiCards.AsNoTracking().AnyAsync(
             card => card.Id == cardId
                 && card.Note.AnkiCollectionId == collectionId
                 && card.Note.Collection.UserId == userId
-                && card.Note.Collection.TargetLanguage.ToLower() == normalizedTarget,
+                && card.Note.Collection.TargetLanguage == canonicalTarget,
             cancellationToken);
     }
 
@@ -811,6 +811,13 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         if (normalized.Length > maxLength)
             throw new AnkiValidationException($"Value cannot exceed {maxLength} characters.");
         return normalized;
+    }
+
+    private static string CanonicalLanguageName(string? value)
+    {
+        var candidate = Required(value, "Choose an app language.", 64);
+        return QuizLanguageCatalog.Find(candidate)?.Name
+            ?? throw new AnkiValidationException("Choose a supported app language.");
     }
 
     private static string NormalizeTimeZone(string? value)

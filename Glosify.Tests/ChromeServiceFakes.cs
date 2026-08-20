@@ -82,7 +82,6 @@ internal abstract class ChromeServicesBase
     Task IRealtimeTranslationTranscriptService.RenameAsync(Guid transcriptId, string userId, string quizLanguageCode, string title, CancellationToken cancellationToken) => throw Unused();
     Task IRealtimeTranslationTranscriptService.DeleteAsync(Guid transcriptId, string userId, string quizLanguageCode, CancellationToken cancellationToken) => throw Unused();
     Task IRealtimeTranslationTranscriptService.AppendAsync(Guid sessionId, IReadOnlyList<CapturedTranslationSegment> segments, CancellationToken cancellationToken) => throw Unused();
-    Task IRealtimeTranslationTranscriptService.DeleteStaleEmptyAsync(DateTimeOffset olderThan, CancellationToken cancellationToken) => throw Unused();
 
     Task<QuizLanguage> IQuizLanguagePreferenceService.SetSelectedAsync(string userId, string language, CancellationToken cancellationToken) => throw Unused();
     Task IQuizLanguagePreferenceService.ClearAsync(string userId, CancellationToken cancellationToken) => throw Unused();

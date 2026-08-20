@@ -19,7 +19,7 @@ public sealed class WordServiceAnkiAtomicityTests
         var service = new WordService(fixture.Context, new ThrowingAnkiCollectionService());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.AddWordAsync(fixture.QuizId, "dom", "house", "English", "Polish"));
+            service.AddWordAsync(fixture.QuizId, "dom", "house"));
 
         fixture.Context.ChangeTracker.Clear();
         Assert.Empty(await fixture.Context.Words.ToListAsync());

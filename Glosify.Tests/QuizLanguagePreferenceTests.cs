@@ -207,7 +207,6 @@ public sealed class QuizLanguagePreferenceTests
     private sealed class FixedLanguageContext(IReadOnlyList<string> languages) : ILanguageContext
     {
         public string? CurrentLanguage => null;
-        public bool HasLanguage => false;
         public IReadOnlyList<string> SupportedLanguages => languages;
         public bool TrySetLanguage(string language) => false;
         public void Clear() { }

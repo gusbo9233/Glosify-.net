@@ -1,4 +1,3 @@
-using Glosify.Data;
 using Glosify.Services.Ai.Generation;
 using static Glosify.Services.Ai.Assistant.Tools.ToolSchema;
 
@@ -19,8 +18,8 @@ internal sealed class AddChoiceTool : AtomicCustomQuizElementTool
 
     public override AgentToolDeclaration Declaration => DeclarationValue;
 
-    public AddChoiceTool(GlosifyContext context, CustomQuizToolStore customQuizzes)
-        : base(context, customQuizzes)
+    public AddChoiceTool(CustomQuizToolStore customQuizzes)
+        : base(customQuizzes)
     {
     }
 }

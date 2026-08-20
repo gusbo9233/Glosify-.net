@@ -1566,13 +1566,6 @@ function broadcastState() {
   chrome.runtime.sendMessage({ target: "popup", type: "state:update", state: publicState() }).catch(() => {});
 }
 
-function statusText() {
-  if (state.status === "reconnecting") {
-    return "Reconnecting…";
-  }
-  return state.sessionId ? "Listening…" : "";
-}
-
 function isCapturableUrl(url) {
   try {
     const parsed = new URL(url);

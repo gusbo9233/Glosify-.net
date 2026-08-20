@@ -47,7 +47,7 @@ public sealed class Fsrs6AnkiScheduler : IAnkiScheduler
             ? InitialDifficulty(grade)
             : NextDifficulty(card.Difficulty, grade);
 
-        var state = card.State;
+        string state;
         var learningStep = card.LearningStep;
         DateTimeOffset dueAt;
         int scheduledDays;

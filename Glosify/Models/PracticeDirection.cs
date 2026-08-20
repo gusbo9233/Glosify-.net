@@ -10,12 +10,6 @@ public static class PracticeDirection
         return IsTargetToSource(value) ? TargetToSource : SourceToTarget;
     }
 
-    public static bool IsValid(string? value)
-    {
-        return string.Equals(value, SourceToTarget, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(value, TargetToSource, StringComparison.OrdinalIgnoreCase);
-    }
-
     public static bool IsSourceToTarget(string? value)
     {
         return string.Equals(Normalize(value), SourceToTarget, StringComparison.OrdinalIgnoreCase);

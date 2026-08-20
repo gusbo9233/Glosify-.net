@@ -103,9 +103,6 @@ public class FlashcardQuizViewModel
 
 public class FlashcardWordViewModel
 {
-    public string Id { get; set; } = string.Empty;
-    public string Lemma { get; set; } = string.Empty;
-    public string Translation { get; set; } = string.Empty;
     public string Prompt { get; set; } = string.Empty;
     public string Answer { get; set; } = string.Empty;
     public string ExampleSentence { get; set; } = string.Empty;
@@ -146,9 +143,5 @@ public class TypingQuizViewModel
 
 public class TypingQuizWordViewModel
 {
-    public string Id { get; set; } = string.Empty;
     public string Prompt { get; set; } = string.Empty;
-    public string Answer { get; set; } = string.Empty;
-    public string ExampleSentence { get; set; } = string.Empty;
-    public string ExampleTranslation { get; set; } = string.Empty;
 }

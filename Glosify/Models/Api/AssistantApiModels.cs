@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Glosify.Models.Api;
 
@@ -24,4 +25,5 @@ public sealed record AssistantFeedbackInput(
     [param: StringLength(1000)] string? Comment);
 
 public sealed record AssistantClientMetricsInput(
+    [property: JsonRequired]
     [param: Range(0, 900000)] double ClientDurationMs);

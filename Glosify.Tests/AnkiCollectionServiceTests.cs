@@ -1,3 +1,4 @@
+using System.Globalization;
 using Glosify.Data;
 using Glosify.Models;
 using Glosify.Models.Entities;
@@ -111,6 +112,65 @@ public sealed class AnkiCollectionServiceTests
         Assert.False(await fixture.Collections.IsOwnedByLanguageAsync(polish.Id, "Spanish", UserId));
         Assert.True(await fixture.Collections.IsCardInOwnedLanguageAsync(cardId, polish.Id, "Polish", UserId));
         Assert.False(await fixture.Collections.IsCardInOwnedLanguageAsync(cardId, polish.Id, "Spanish", UserId));
+    }
+
+    [Fact]
+    public async Task Language_scoped_queries_use_canonical_names_under_Turkish_request_culture()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var quiz = new Quiz
+        {
+            Id = Guid.NewGuid(),
+            UserId = UserId,
+            Name = "Indonesian",
+            SourceLanguage = "English",
+            TargetLanguage = "Indonesian",
+            Language = "Indonesian",
+            ProcessingStatus = "Ready",
+            CreatedAt = Now,
+        };
+        var word = new Word
+        {
+            Id = "word-indonesian",
+            QuizId = quiz.Id,
+            Lemma = "indeks",
+            Translation = "index",
+            CreatedAt = Now,
+        };
+        fixture.Context.AddRange(quiz, word);
+        await fixture.Context.SaveChangesAsync();
+        var collection = await fixture.Collections.CreateAsync(
+            new("Indonesian", "English", "Indonesian", "UTC"),
+            UserId);
+        Assert.True(await fixture.Collections.AddItemAsync(
+            new(collection.Id, quiz.Id, "word", word.Id, true, false),
+            UserId));
+        var cardId = await fixture.Context.AnkiCards
+            .Where(card => card.Note.AnkiCollectionId == collection.Id)
+            .Select(card => card.Id)
+            .SingleAsync();
+        var originalCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
+
+            var collections = await fixture.Collections.ListForLanguageAsync(UserId, "Indonesian");
+
+            Assert.Equal(collection.Id, Assert.Single(collections).Id);
+            Assert.True(await fixture.Collections.IsOwnedByLanguageAsync(
+                collection.Id,
+                "Indonesian",
+                UserId));
+            Assert.True(await fixture.Collections.IsCardInOwnedLanguageAsync(
+                cardId,
+                collection.Id,
+                "Indonesian",
+                UserId));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
     }
 
     [Fact]

@@ -3,7 +3,6 @@ namespace Glosify.Services.Language;
 public interface ILanguageContext
 {
     string? CurrentLanguage { get; }
-    bool HasLanguage { get; }
     IReadOnlyList<string> SupportedLanguages { get; }
     bool TrySetLanguage(string language);
     void Clear();
@@ -33,8 +32,6 @@ public class CookieLanguageContext : ILanguageContext
             return QuizLanguageCatalog.Find(value)?.Name;
         }
     }
-
-    public bool HasLanguage => CurrentLanguage != null;
 
     public bool TrySetLanguage(string language)
     {

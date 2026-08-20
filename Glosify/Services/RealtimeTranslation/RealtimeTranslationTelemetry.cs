@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 namespace Glosify.Services.RealtimeTranslation;
@@ -8,7 +7,6 @@ public static class RealtimeTranslationTelemetry
     public const string ActivitySourceName = "Glosify.RealtimeTranslation";
     public const string MeterName = "Glosify.RealtimeTranslation";
 
-    public static readonly ActivitySource ActivitySource = new(ActivitySourceName);
     public static readonly Meter Meter = new(MeterName);
     public static readonly Counter<long> SessionsCreated = Meter.CreateCounter<long>("translation.sessions.created");
     public static readonly Counter<long> SessionsEnded = Meter.CreateCounter<long>("translation.sessions.ended");

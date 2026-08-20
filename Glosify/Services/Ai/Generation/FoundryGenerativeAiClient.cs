@@ -667,7 +667,7 @@ public sealed class FoundryGenerativeAiClient : IGenerativeAiClient
                 throttled);
         }
 
-        if (exception is ClientResultException { Status: >= 500 } unavailable
+        if (exception is ClientResultException { Status: >= 500 }
             || exception is HttpRequestException)
         {
             _logger.LogWarning("Microsoft Foundry was temporarily unavailable.");

@@ -11,7 +11,6 @@ public interface IRealtimeTranslationTranscriptService
     Task RenameAsync(Guid transcriptId, string userId, string quizLanguageCode, string title, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid transcriptId, string userId, string quizLanguageCode, CancellationToken cancellationToken = default);
     Task AppendAsync(Guid sessionId, IReadOnlyList<CapturedTranslationSegment> segments, CancellationToken cancellationToken = default);
-    Task DeleteStaleEmptyAsync(DateTimeOffset olderThan, CancellationToken cancellationToken = default);
 }
 
 public sealed record TranscriptLibraryItem(

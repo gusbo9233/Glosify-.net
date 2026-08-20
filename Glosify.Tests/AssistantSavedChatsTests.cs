@@ -2043,7 +2043,6 @@ public class AssistantSavedChatsTests
     private sealed class StaticLanguageContext(string? language = "Polish") : ILanguageContext
     {
         public string? CurrentLanguage { get; private set; } = language;
-        public bool HasLanguage => CurrentLanguage != null;
         public IReadOnlyList<string> SupportedLanguages { get; } = ["Polish", "German"];
 
         public bool TrySetLanguage(string language)

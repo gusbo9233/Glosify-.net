@@ -368,7 +368,6 @@ internal sealed class AssistantTurnRunner
                 CurrentLanguageCode = selectedLanguageCode,
                 IsFreestyle = isFreestyle,
                 SourceLanguage = sourceLanguage,
-                ReplyLanguage = replyLanguage,
                 FocusedWordId = focusedWord?.Id,
                 FocusedWordLabel = focusedWord == null ? null : $"{focusedWord.Lemma} -> {focusedWord.Translation}",
                 TranscriptId = transcriptContext?.Id,

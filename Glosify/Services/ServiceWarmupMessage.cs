@@ -4,7 +4,6 @@ namespace Glosify.Services;
 
 public static class ServiceWarmupMessage
 {
-    public const string Database = "The database is waking up. This can take a minute after it has been idle. Please try again shortly.";
     public const string LlmAssistant = "The AI assistant is taking longer than usual. Please try again in a moment.";
     public const string Dependencies = "Glosify is waiting for its database and background services to wake up. Please try again in a minute.";
 

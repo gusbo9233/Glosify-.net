@@ -63,7 +63,8 @@ public sealed class RateAnkiCardForm
     public Guid CardId { get; set; }
     [Required, RegularExpression("^(again|hard|good|easy)$")]
     public string Rating { get; set; } = string.Empty;
-    public Guid ClientToken { get; set; }
+    [Required]
+    public Guid? ClientToken { get; set; }
     public string RowVersion { get; set; } = string.Empty;
     public int? DurationMilliseconds { get; set; }
 }

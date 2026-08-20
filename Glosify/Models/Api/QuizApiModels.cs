@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Glosify.Models.Entities;
 namespace Glosify.Models.Api;
 
@@ -37,7 +38,8 @@ public sealed record WordDto(string Id, string Lemma, string Translation, DateTi
 
 public sealed record SentenceDto(Guid Id, string Text, string Translation, int WordCount);
 
-public sealed record SetVisibilityRequest(bool IsPublic);
+public sealed record SetVisibilityRequest(
+    [property: JsonRequired] bool IsPublic);
 
 public sealed record ExtractedTextDto(string Text);
 

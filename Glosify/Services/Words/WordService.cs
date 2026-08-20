@@ -170,7 +170,11 @@ public class WordService : IWordService
             : exampleSentence.Trim();
     }
 
-    public async Task<bool> AddWordAsync(Guid quizId, string word, string translation, string sourceLanguage, string targetLanguage, CancellationToken cancellationToken = default)
+    public async Task<bool> AddWordAsync(
+        Guid quizId,
+        string word,
+        string translation,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(word) || string.IsNullOrWhiteSpace(translation))
             return false;

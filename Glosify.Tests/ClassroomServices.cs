@@ -20,8 +20,8 @@ internal sealed class ClassroomServices
         var queries = new ClassroomQueries(context);
         Access = new ClassroomAccess(context);
         Directory = new ClassroomDirectory(context, Access, queries);
-        Roster = new ClassroomRoster(context, Access, queries);
-        Library = new ClassroomLibrary(context, Access, queries);
+        Roster = new ClassroomRoster(context, Access);
+        Library = new ClassroomLibrary(context, Access);
         Conversation = new ClassroomConversation(context, Access, queries);
         Planner = new ClassroomPlanner(context, Access, queries);
         Results = new ClassroomResults(Access, queries);
@@ -34,7 +34,4 @@ internal sealed class ClassroomServices
     public IClassroomConversation Conversation { get; }
     public IClassroomPlanner Planner { get; }
     public IClassroomResults Results { get; }
-
-    public IClassroomCall Call(IClassroomCallPresence presence) =>
-        new ClassroomCall(Access, Directory, presence);
 }

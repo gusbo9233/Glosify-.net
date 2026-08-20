@@ -19,7 +19,6 @@ public class TypingQuizController : Controller
     private readonly IQuizService _quizService;
     private readonly ITypingQuizService _typingQuizService;
     private readonly ITypingSessionService _sessionService;
-    private readonly ILanguageContext _languageContext;
     private readonly IClassroomLibrary _classroomLibrary;
     private readonly IQuizAttemptService _attemptService;
 
@@ -27,14 +26,12 @@ public class TypingQuizController : Controller
         IQuizService quizService,
         ITypingQuizService typingQuizService,
         ITypingSessionService sessionService,
-        ILanguageContext languageContext,
         IClassroomLibrary classroomLibrary,
         IQuizAttemptService attemptService)
     {
         _quizService = quizService;
         _typingQuizService = typingQuizService;
         _sessionService = sessionService;
-        _languageContext = languageContext;
         _classroomLibrary = classroomLibrary;
         _attemptService = attemptService;
     }
@@ -216,7 +213,6 @@ public class TypingQuizController : Controller
         var currentWordData = session.CurrentIndex < totalWords ? session.Words[session.CurrentIndex] : null;
         var currentWord = currentWordData == null ? null : new TypingQuizWordViewModel
         {
-            Id = currentWordData.Id,
             Prompt = currentWordData.Prompt
         };
 

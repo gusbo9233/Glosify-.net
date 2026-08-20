@@ -7,6 +7,7 @@ using Glosify.Services.Anki;
 using Glosify.Services.Language;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
@@ -57,6 +58,82 @@ public sealed class AnkiControllerLanguageTests
     }
 
     [Fact]
+    public async Task CreateFromQuiz_does_not_create_a_collection_when_model_state_is_invalid()
+    {
+        await using var context = CreateContext();
+        var controller = CreateController(context, "Polish");
+        var form = new CreateAnkiFromQuizForm
+        {
+            Name = "Invalid deck",
+            QuizId = Guid.NewGuid(),
+            TimeZoneId = new string('x', 129),
+            WordsSourceToTarget = true,
+        };
+        controller.ModelState.AddModelError(nameof(form.TimeZoneId), "The time zone is too long.");
+
+        var result = await controller.CreateFromQuiz(form, CancellationToken.None);
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Settings", redirect.ActionName);
+        Assert.Equal("Quiz", redirect.ControllerName);
+        Assert.Equal(form.QuizId, redirect.RouteValues!["id"]);
+        Assert.Empty(await context.AnkiCollections.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Rate_rejects_first_and_repeated_requests_without_a_client_token()
+    {
+        await using var context = CreateContext();
+        var quiz = new Quiz
+        {
+            Id = Guid.NewGuid(),
+            UserId = UserId,
+            Name = "Basics",
+            SourceLanguage = "English",
+            TargetLanguage = "Polish",
+            Language = "Polish",
+            ProcessingStatus = "Ready",
+            CreatedAt = Now,
+        };
+        var word = new Word
+        {
+            Id = $"word-{Guid.NewGuid():N}",
+            QuizId = quiz.Id,
+            Lemma = "dom",
+            Translation = "house",
+            CreatedAt = Now,
+        };
+        context.AddRange(quiz, word);
+        await context.SaveChangesAsync();
+        var collections = CreateCollectionService(context);
+        var collection = await collections.CreateAsync(
+            new("Polish deck", "English", "Polish", "UTC"), UserId);
+        Assert.True(await collections.AddItemAsync(
+            new(collection.Id, quiz.Id, "word", word.Id, true, false), UserId));
+        var cardId = await context.AnkiCards.Select(card => card.Id).SingleAsync();
+
+        var first = await CreateController(context, "Polish").Rate(new RateAnkiCardForm
+        {
+            CollectionId = collection.Id,
+            CardId = cardId,
+            Rating = AnkiRatings.Good,
+            RowVersion = string.Empty,
+        }, CancellationToken.None);
+        var repeated = await CreateController(context, "Polish").Rate(new RateAnkiCardForm
+        {
+            CollectionId = collection.Id,
+            CardId = cardId,
+            Rating = AnkiRatings.Good,
+            RowVersion = string.Empty,
+        }, CancellationToken.None);
+
+        Assert.Equal(nameof(AnkiController.Study), Assert.IsType<RedirectToActionResult>(first).ActionName);
+        Assert.Equal(nameof(AnkiController.Study), Assert.IsType<RedirectToActionResult>(repeated).ActionName);
+        Assert.Empty(await context.AnkiReviews.ToListAsync());
+        Assert.Equal(0, (await context.AnkiCards.SingleAsync(card => card.Id == cardId)).ReviewCount);
+    }
+
+    [Fact]
     public async Task Collection_is_not_found_when_it_belongs_to_another_app_language()
     {
         await using var context = CreateContext();
@@ -101,6 +178,7 @@ public sealed class AnkiControllerLanguageTests
         var collections = CreateCollectionService(context);
         var clock = new FakeTimeProvider(Now);
         var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, UserId)], "Test");
+        var httpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) };
         return new AnkiController(
             collections,
             new AnkiStudyService(context, collections, new Fsrs6AnkiScheduler(), clock),
@@ -109,8 +187,9 @@ public sealed class AnkiControllerLanguageTests
         {
             ControllerContext = new ControllerContext
             {
-                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(identity) },
+                HttpContext = httpContext,
             },
+            TempData = new TempDataDictionary(httpContext, new InMemoryTempDataProvider()),
         };
     }
 
@@ -131,9 +210,18 @@ public sealed class AnkiControllerLanguageTests
     private sealed class FixedLanguageContext(string currentLanguage) : ILanguageContext
     {
         public string? CurrentLanguage => currentLanguage;
-        public bool HasLanguage => true;
         public IReadOnlyList<string> SupportedLanguages { get; } = ["English", "Polish", "Spanish", "Freestyle"];
         public bool TrySetLanguage(string language) => true;
         public void Clear() { }
+    }
+
+    private sealed class InMemoryTempDataProvider : ITempDataProvider
+    {
+        private Dictionary<string, object> _values = [];
+
+        public IDictionary<string, object> LoadTempData(HttpContext context) => _values;
+
+        public void SaveTempData(HttpContext context, IDictionary<string, object> values) =>
+            _values = new Dictionary<string, object>(values, StringComparer.Ordinal);
     }
 }

@@ -1,4 +1,3 @@
-using Glosify.Data;
 using Glosify.Services.Ai.Generation;
 using static Glosify.Services.Ai.Assistant.Tools.ToolSchema;
 
@@ -20,8 +19,8 @@ internal sealed class AddTextInputTool : AtomicCustomQuizElementTool
 
     public override AgentToolDeclaration Declaration => DeclarationValue;
 
-    public AddTextInputTool(GlosifyContext context, CustomQuizToolStore customQuizzes)
-        : base(context, customQuizzes)
+    public AddTextInputTool(CustomQuizToolStore customQuizzes)
+        : base(customQuizzes)
     {
     }
 }

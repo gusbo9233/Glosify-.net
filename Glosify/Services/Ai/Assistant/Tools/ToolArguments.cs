@@ -92,7 +92,11 @@ internal static class ToolArguments
         return value.ValueKind switch
         {
             JsonValueKind.Number when value.TryGetInt32(out var parsed) => parsed,
-            JsonValueKind.String when int.TryParse(value.GetString(), out var parsed) => parsed,
+            JsonValueKind.String when int.TryParse(
+                value.GetString(),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out var parsed) => parsed,
             _ => null,
         };
     }

@@ -192,9 +192,6 @@ public class FlashcardQuizController : Controller
         var currentCardData = session.CurrentIndex < totalCards ? session.Cards[session.CurrentIndex] : null;
         var currentCard = currentCardData == null ? null : new FlashcardWordViewModel
         {
-            Id = currentCardData.Id,
-            Lemma = currentCardData.Lemma,
-            Translation = currentCardData.Translation,
             Prompt = currentCardData.Prompt,
             Answer = currentCardData.Answer,
             ExampleSentence = currentCardData.ExampleSentence,
