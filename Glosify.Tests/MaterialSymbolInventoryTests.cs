@@ -131,6 +131,15 @@ public sealed class MaterialSymbolInventoryTests
         Assert.Equal(WebFonts.IconNames.Length, WebFonts.IconNames.Distinct(StringComparer.Ordinal).Count());
     }
 
+    [Fact]
+    public void Explore_community_badge_uses_a_loaded_symbol_instead_of_leaking_a_ligature()
+    {
+        var view = File.ReadAllText(Path.Combine(WebProjectDirectory(), "Views", "Explore", "Index.cshtml"));
+
+        Assert.Contains(">groups</span>", view, StringComparison.Ordinal);
+        Assert.DoesNotContain("diversity_3", view, StringComparison.Ordinal);
+    }
+
     private static IEnumerable<string> SourceFiles()
     {
         var web = WebProjectDirectory();

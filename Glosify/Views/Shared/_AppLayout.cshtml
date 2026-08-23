@@ -172,7 +172,9 @@
     @await RenderSectionAsync("Styles", required: false)
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body class="app-body" data-i18n="@System.Text.Json.JsonSerializer.Serialize(UiClientText.Create(Text))">
+<body class="app-body"
+      data-i18n="@System.Text.Json.JsonSerializer.Serialize(UiClientText.Create(Text))"
+      data-tts-locales="@System.Text.Json.JsonSerializer.Serialize(Glosify.Services.Speech.VoiceMap.ClientLocaleAliases)">
     <div class="app-shell">
         <aside class="app-sidebar">
             <div class="app-sidebar-brand">

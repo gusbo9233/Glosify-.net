@@ -1,4 +1,6 @@
+using AngleSharp.Html.Parser;
 using Microsoft.AspNetCore.Mvc.Testing;
+using System.Text.Json;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -29,6 +31,24 @@ public sealed class ReaderTtsIntegrationTests : IClassFixture<WebApplicationFact
         Assert.Contains("&voice=", script, StringComparison.Ordinal);
         Assert.Contains("voice: String(item && item.voice", script, StringComparison.Ordinal);
         Assert.Contains("No browser voice was substituted", script, StringComparison.Ordinal);
+        Assert.Contains("dataset.ttsLocales", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("'danish': 'da-DK'", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task App_layout_publishes_server_owned_TTS_locale_aliases()
+    {
+        var client = _factory.CreateClient();
+        var html = await client.GetStringAsync("/");
+        var document = await new HtmlParser().ParseDocumentAsync(html);
+        var serializedAliases = document.Body?.GetAttribute("data-tts-locales");
+
+        Assert.False(string.IsNullOrWhiteSpace(serializedAliases));
+        var aliases = JsonSerializer.Deserialize<Dictionary<string, string>>(serializedAliases);
+        Assert.NotNull(aliases);
+        Assert.Equal("da-DK", aliases["danish"]);
+        Assert.Equal("sv-SE", aliases["swedish"]);
+        Assert.Equal("zh-HK", aliases["cantonese"]);
     }
 
     [Fact]

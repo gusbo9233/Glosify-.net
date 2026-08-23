@@ -24,7 +24,7 @@ public static class WebFonts
         "assignment_add", "auto_awesome", "auto_fix_high", "auto_stories", "backspace", "bakery_dining", "bolt",
         "calendar_today", "call_end", "campaign", "category", "chat_bubble", "check", "check_circle", "checklist",
         "chevron_left", "chevron_right", "close", "cloud", "content_copy", "create_new_folder",
-        "dashboard_customize", "data_object", "delete", "description", "diversity_3", "drag_indicator", "east", "edit",
+        "dashboard_customize", "data_object", "delete", "description", "drag_indicator", "east", "edit",
         "edit_note", "error", "event", "explore", "fit_screen", "flag", "folder", "folder_open",
         "folder_shared", "format_align_left", "format_quote", "forum", "graphic_eq", "grid_4x4",
         "group", "groups", "help", "hourglass_top", "info", "inventory_2", "keep", "key", "keyboard",
