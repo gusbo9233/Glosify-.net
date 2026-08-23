@@ -136,7 +136,8 @@ public sealed class MaterialSymbolInventoryTests
     {
         var view = File.ReadAllText(Path.Combine(WebProjectDirectory(), "Views", "Explore", "Index.cshtml"));
 
-        Assert.Contains(">groups</span>", view, StringComparison.Ordinal);
+        Assert.Contains(">group</span>", view, StringComparison.Ordinal);
+        Assert.DoesNotContain(">groups</span>", view, StringComparison.Ordinal);
         Assert.DoesNotContain("diversity_3", view, StringComparison.Ordinal);
     }
 
