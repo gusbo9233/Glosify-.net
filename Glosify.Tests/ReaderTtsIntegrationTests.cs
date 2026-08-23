@@ -1,4 +1,6 @@
+using AngleSharp.Html.Parser;
 using Microsoft.AspNetCore.Mvc.Testing;
+using System.Text.Json;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -36,13 +38,17 @@ public sealed class ReaderTtsIntegrationTests : IClassFixture<WebApplicationFact
     [Fact]
     public async Task App_layout_publishes_server_owned_TTS_locale_aliases()
     {
-        var viewPath = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "../../../../Glosify/Views/Shared/_AppLayout.cshtml"));
-        var view = await File.ReadAllTextAsync(viewPath);
+        var client = _factory.CreateClient();
+        var html = await client.GetStringAsync("/");
+        var document = await new HtmlParser().ParseDocumentAsync(html);
+        var serializedAliases = document.Body?.GetAttribute("data-tts-locales");
 
-        Assert.Contains("data-tts-locales", view, StringComparison.Ordinal);
-        Assert.Contains("VoiceMap.ClientLocaleAliases", view, StringComparison.Ordinal);
+        Assert.False(string.IsNullOrWhiteSpace(serializedAliases));
+        var aliases = JsonSerializer.Deserialize<Dictionary<string, string>>(serializedAliases);
+        Assert.NotNull(aliases);
+        Assert.Equal("da-DK", aliases["danish"]);
+        Assert.Equal("sv-SE", aliases["swedish"]);
+        Assert.Equal("zh-HK", aliases["cantonese"]);
     }
 
     [Fact]
