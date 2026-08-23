@@ -130,6 +130,15 @@ must also be `300` unless a separately reviewed change intentionally alters the
 ceiling. The application fails startup when an enabled provider cannot be
 priced by the budget configuration.
 
+Quiz text-to-speech uses prebuilt standard neural voices and caches each unique
+voice, output format, and text combination in the `tts-cache` Blob container.
+Configure an Azure Storage lifecycle rule that deletes cache blobs after 180
+days so abandoned quiz audio does not accumulate indefinitely; frequently used
+phrases can be synthesized and cached again after expiry. TTS requests are
+checked by the application-wide paid-service gate, but their character usage is
+not debited through the customer AI-credit ledger. Keep an Azure Cost Management
+budget alert on the Speech resource as the provider-side spending safeguard.
+
 ### Customer credit pricing
 
 Customer charges are independent from the provider-cost estimates in

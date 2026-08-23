@@ -29,6 +29,20 @@ public sealed class ReaderTtsIntegrationTests : IClassFixture<WebApplicationFact
         Assert.Contains("&voice=", script, StringComparison.Ordinal);
         Assert.Contains("voice: String(item && item.voice", script, StringComparison.Ordinal);
         Assert.Contains("No browser voice was substituted", script, StringComparison.Ordinal);
+        Assert.Contains("dataset.ttsLocales", script, StringComparison.Ordinal);
+        Assert.DoesNotContain("'danish': 'da-DK'", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task App_layout_publishes_server_owned_TTS_locale_aliases()
+    {
+        var viewPath = Path.GetFullPath(Path.Combine(
+            AppContext.BaseDirectory,
+            "../../../../Glosify/Views/Shared/_AppLayout.cshtml"));
+        var view = await File.ReadAllTextAsync(viewPath);
+
+        Assert.Contains("data-tts-locales", view, StringComparison.Ordinal);
+        Assert.Contains("VoiceMap.ClientLocaleAliases", view, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -1,5 +1,6 @@
 using System.Net;
 using Azure.Core;
+using Glosify.Services.Language;
 using Glosify.Services.Speech;
 using Glosify.Services.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -37,11 +38,13 @@ public class AzureTextToSpeechServiceTests
             StubHandler.NeverCalled());
 
         await Assert.ThrowsAsync<NotSupportedException>(
-            () => service.GetOrSynthesizeAsync("hej", "sv-SE"));
+            () => service.GetOrSynthesizeAsync("sannu", "ha-NG"));
     }
 
     [Theory]
     [InlineData("et", "et-EE-AnuNeural")]
+    [InlineData("Danish", "da-DK-ChristelNeural")]
+    [InlineData("da-DK", "da-DK-ChristelNeural")]
     [InlineData("de-DE", "de-DE-KatjaNeural")]
     [InlineData("pl", "pl-PL-ZofiaNeural")]
     [InlineData("uk-UA", "uk-UA-PolinaNeural")]
@@ -54,7 +57,38 @@ public class AzureTextToSpeechServiceTests
     [Fact]
     public void Voice_map_rejects_unknown_language()
     {
-        Assert.False(VoiceMap.TryResolve("sv-SE", out _));
+        Assert.False(VoiceMap.TryResolve("not-a-language", out _));
+    }
+
+    [Fact]
+    public void Every_quiz_language_has_an_explicit_Azure_or_browser_fallback_classification()
+    {
+        var browserFallbackOnly = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "ha", // Hausa
+            "ky", // Kyrgyz
+            "mi", // Māori
+        };
+
+        foreach (var language in QuizLanguageCatalog.LanguageLearning.DistinctBy(item => item.Code))
+        {
+            var expectedAzureSupport = !browserFallbackOnly.Contains(language.Code);
+            Assert.Equal(expectedAzureSupport, VoiceMap.TryResolve(language.Code, out _));
+            Assert.Equal(expectedAzureSupport, VoiceMap.TryResolve(language.Name, out _));
+            Assert.Equal(expectedAzureSupport, VoiceMap.TryResolve(language.Locale, out _));
+
+            Assert.True(VoiceMap.ClientLocaleAliases.TryGetValue(language.Code, out var browserLocale));
+            Assert.False(string.IsNullOrWhiteSpace(browserLocale));
+        }
+    }
+
+    [Fact]
+    public void Cantonese_uses_Azures_Hong_Kong_Cantonese_voice_and_locale()
+    {
+        Assert.True(VoiceMap.TryResolve("yue-HK", null, out var locale, out var voice));
+        Assert.Equal("zh-HK", locale);
+        Assert.Equal("zh-HK-HiuMaanNeural", voice);
+        Assert.Equal("zh-HK", VoiceMap.ClientLocaleAliases["Cantonese"]);
     }
 
     [Theory]

@@ -8,19 +8,17 @@
     var currentSession = null;
     var nextSessionId = 0;
 
-    // Map free-form language names / short codes to BCP-47 locales so the
-    // browser chooses a matching voice instead of the OS default when possible.
-    var LOCALE_MAP = {
-        'et': 'et-EE', 'et-ee': 'et-EE', 'estonian': 'et-EE',
-        'de': 'de-DE', 'de-de': 'de-DE', 'german': 'de-DE',
-        'pl': 'pl-PL', 'pl-pl': 'pl-PL', 'polish': 'pl-PL',
-        'uk': 'uk-UA', 'uk-ua': 'uk-UA', 'ukrainian': 'uk-UA',
-        'en': 'en-US', 'en-us': 'en-US', 'english': 'en-US',
-        'sv': 'sv-SE', 'sv-se': 'sv-SE', 'swedish': 'sv-SE',
-        'fr': 'fr-FR', 'fr-fr': 'fr-FR', 'french': 'fr-FR',
-        'es': 'es-ES', 'es-es': 'es-ES', 'spanish': 'es-ES',
-        'it': 'it-IT', 'it-it': 'it-IT', 'italian': 'it-IT',
-    };
+    // The server derives this map from the canonical quiz-language catalog and
+    // Azure voice map so browser fallback cannot drift onto the OS default voice.
+    var LOCALE_MAP = {};
+    try {
+        var configuredLocales = JSON.parse(document.body?.dataset.ttsLocales || '{}');
+        Object.keys(configuredLocales).forEach(function (key) {
+            LOCALE_MAP[key.toLowerCase()] = configuredLocales[key];
+        });
+    } catch (error) {
+        console.warn('TTS locale configuration could not be read.', error);
+    }
 
     function normalizeLocale(lang) {
         if (!lang) return '';
