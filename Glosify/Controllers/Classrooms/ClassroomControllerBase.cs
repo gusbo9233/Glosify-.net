@@ -1,6 +1,7 @@
 using Glosify.Models;
 using Glosify.Services.Classrooms;
 using Glosify.Localization;
+using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,6 +23,7 @@ namespace Glosify.Controllers.Classrooms;
 /// </para>
 /// </remarks>
 [Authorize]
+[Authorize(Policy = AuthorizationPolicyNames.ClassroomAvailability)]
 [Route("Classroom/[action]/{id?}")]
 public abstract class ClassroomControllerBase : Controller
 {

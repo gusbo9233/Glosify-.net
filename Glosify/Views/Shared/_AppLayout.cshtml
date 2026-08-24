@@ -12,6 +12,10 @@
         || (await AuthorizationService.AuthorizeAsync(
             User,
             AuthorizationPolicyNames.SpeakingAvailability)).Succeeded);
+    var classroomIsAvailable = !HostEnvironment.IsProduction()
+        || (await AuthorizationService.AuthorizeAsync(
+            User,
+            AuthorizationPolicyNames.ClassroomAvailability)).Succeeded;
 }
 @functions {
     string MetaDescription => ViewData["Description"] as string ?? Text["Layout.MetaDescription"];
@@ -232,10 +236,20 @@
                         @Text["Nav.Speaking"]
                     </span>
                 }
-                <a class="@NavClass("Classroom")" asp-controller="Classroom" asp-action="Index">
-                    @NavIcon("school")
-                    @Text["Nav.Classrooms"]
-                </a>
+                @if (classroomIsAvailable)
+                {
+                    <a class="@NavClass("Classroom")" asp-controller="Classroom" asp-action="Index">
+                        @NavIcon("school")
+                        @Text["Nav.Classrooms"]
+                    </a>
+                }
+                else
+                {
+                    <span class="app-nav-item is-disabled" aria-disabled="true" data-classroom-unavailable>
+                        @NavIcon("school")
+                        @Text["Nav.Classrooms"]
+                    </span>
+                }
                 @if (User.Identity?.IsAuthenticated == true && StripePayments.IsEnabled)
                 {
                     <a class="@NavClass("Payments")" asp-controller="Payments" asp-action="Index">
@@ -358,10 +372,20 @@
                 @NavIcon("explore")
                 <span>@Text["Nav.Explore"]</span>
             </a>
-            <a class="@NavClass("Classroom")" asp-controller="Classroom" asp-action="Index">
-                @NavIcon("school")
-                <span>@Text["Nav.Class"]</span>
-            </a>
+            @if (classroomIsAvailable)
+            {
+                <a class="@NavClass("Classroom")" asp-controller="Classroom" asp-action="Index">
+                    @NavIcon("school")
+                    <span>@Text["Nav.Class"]</span>
+                </a>
+            }
+            else
+            {
+                <span class="app-nav-item is-disabled" aria-disabled="true" data-classroom-unavailable>
+                    @NavIcon("school")
+                    <span>@Text["Nav.Class"]</span>
+                </span>
+            }
         }
         else
         {

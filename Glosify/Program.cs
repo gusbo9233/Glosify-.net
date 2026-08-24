@@ -124,6 +124,11 @@ builder.Services.AddAuthorization(options =>
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(context => !builder.Environment.IsProduction() || IsAdmin(context));
     });
+    options.AddPolicy(AuthorizationPolicyNames.ClassroomAvailability, policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireAssertion(context => !builder.Environment.IsProduction() || IsAdmin(context));
+    });
 });
 builder.Services.AddMemoryCache();
 

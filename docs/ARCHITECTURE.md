@@ -80,7 +80,9 @@ Each conversation retains complete turns locally. Bartender scene tools and tuto
 quiz tools are declared in code and run sequentially. Speaking keeps the
 five-iteration tool limit, the bartender's three-action limit, clone-and-commit
 transaction behavior, tutor ownership checks, and existing credit settlement.
-The speaking UI and production-admin policy are unchanged.
+Speaking and the classroom surface, including classroom SignalR connections, are
+restricted to configured administrators in production while those features are
+under operational review. Development environments keep both surfaces available.
 
 ## Realtime subtitles
 

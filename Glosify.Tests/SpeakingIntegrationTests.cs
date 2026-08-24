@@ -27,7 +27,7 @@ namespace Glosify.Tests;
 public sealed class SpeakingIntegrationTests
 {
     [Fact]
-    public async Task Production_denies_the_speaking_page_and_api_to_non_admins()
+    public async Task Production_denies_restricted_features_to_non_admins()
     {
         using var factory = CreateFactory(environment: "Production");
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions
@@ -41,9 +41,16 @@ public sealed class SpeakingIntegrationTests
             Content = JsonContent("""{"avatarId":"bartender","cefrLevel":"A1"}"""),
         };
         var apiResponse = await client.SendAsync(apiRequest);
+        var classroomResponse = await client.GetAsync("/Classroom");
+        using var hubRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/hubs/classroom-chat/negotiate?negotiateVersion=1");
+        var hubResponse = await client.SendAsync(hubRequest);
 
         Assert.Equal(HttpStatusCode.Forbidden, pageResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, apiResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, classroomResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, hubResponse.StatusCode);
         Assert.Equal(
             "application/problem+json",
             apiResponse.Content.Headers.ContentType?.MediaType);
@@ -53,7 +60,7 @@ public sealed class SpeakingIntegrationTests
     }
 
     [Fact]
-    public async Task Production_keeps_speaking_navigation_visible_but_disabled_for_non_admins()
+    public async Task Production_keeps_restricted_navigation_visible_but_disabled_for_non_admins()
     {
         using var factory = CreateFactory(environment: "Production");
         var client = factory.CreateClient();
@@ -69,11 +76,20 @@ public sealed class SpeakingIntegrationTests
         Assert.NotNull(document.QuerySelector(
             ".app-mobile-nav [data-speaking-unavailable].app-nav-item.is-disabled[aria-disabled='true']"));
         Assert.Null(document.QuerySelector(".app-mobile-nav a[href='/Speaking']"));
-        Assert.Equal(2, document.QuerySelectorAll("[data-speaking-unavailable]").Length);
+        Assert.Equal(4, document.QuerySelectorAll("[data-speaking-unavailable]").Length);
+        Assert.Null(document.QuerySelector(".home-page a[href='/Speaking']"));
+        Assert.NotNull(document.QuerySelector(
+            "aside [data-classroom-unavailable].app-nav-item.is-disabled[aria-disabled='true']"));
+        Assert.Null(document.QuerySelector("aside a[href^='/Classroom']"));
+        Assert.NotNull(document.QuerySelector(
+            ".app-mobile-nav [data-classroom-unavailable].app-nav-item.is-disabled[aria-disabled='true']"));
+        Assert.Null(document.QuerySelector(".app-mobile-nav a[href^='/Classroom']"));
+        Assert.Equal(3, document.QuerySelectorAll("[data-classroom-unavailable]").Length);
+        Assert.Null(document.QuerySelector(".home-page a[href^='/Classroom']"));
     }
 
     [Fact]
-    public async Task Production_allows_admins_to_open_speaking_and_use_its_navigation_link()
+    public async Task Production_allows_admins_to_use_restricted_features_and_navigation()
     {
         using var factory = CreateFactory(
             environment: "Production",
@@ -89,13 +105,21 @@ public sealed class SpeakingIntegrationTests
             token,
             """{"avatarId":"bartender","cefrLevel":"A2"}""");
         var apiResponse = await client.SendAsync(apiRequest);
+        using var hubRequest = new HttpRequestMessage(
+            HttpMethod.Post,
+            "/hubs/classroom-chat/negotiate?negotiateVersion=1");
+        var hubResponse = await client.SendAsync(hubRequest);
 
         apiResponse.EnsureSuccessStatusCode();
+        hubResponse.EnsureSuccessStatusCode();
         Assert.NotNull(document.QuerySelector("#speaking-app"));
         Assert.NotNull(document.QuerySelector("aside a[href='/Speaking']"));
         Assert.Null(document.QuerySelector("aside .app-nav-item.is-disabled"));
         Assert.NotNull(document.QuerySelector(".app-mobile-nav a[href='/Speaking']"));
         Assert.Null(document.QuerySelector(".app-mobile-nav [data-speaking-unavailable]"));
+        Assert.NotNull(document.QuerySelector("aside a[href^='/Classroom']"));
+        Assert.NotNull(document.QuerySelector(".app-mobile-nav a[href^='/Classroom']"));
+        Assert.Null(document.QuerySelector("[data-classroom-unavailable]"));
     }
 
     [Fact]

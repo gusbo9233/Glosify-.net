@@ -1,3 +1,7 @@
+@using Glosify.Services.Auth
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+@inject IWebHostEnvironment HostEnvironment
 @inject Glosify.Services.Language.ILanguageContext LangContext
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
@@ -9,6 +13,14 @@
     var currentLanguage = LangContext.CurrentLanguage;
     var hasLanguage = !string.IsNullOrWhiteSpace(currentLanguage);
     var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(currentLanguage);
+    var speakingIsAvailable = !isFreestyle && (!HostEnvironment.IsProduction()
+        || (await AuthorizationService.AuthorizeAsync(
+            User,
+            AuthorizationPolicyNames.SpeakingAvailability)).Succeeded);
+    var classroomIsAvailable = !HostEnvironment.IsProduction()
+        || (await AuthorizationService.AuthorizeAsync(
+            User,
+            AuthorizationPolicyNames.ClassroomAvailability)).Succeeded;
     if (isFreestyle)
     {
         ViewData["AssistantTitle"] = "Study assistant";
@@ -76,10 +88,20 @@
                 }
                 else
                 {
-                    <a class="home-button home-button-primary" asp-controller="Speaking" asp-action="Index">
-                        @Text["Home.StartSpeaking"]
-                        <span class="material-symbols-outlined" aria-hidden="true">mic</span>
-                    </a>
+                    @if (speakingIsAvailable)
+                    {
+                        <a class="home-button home-button-primary" asp-controller="Speaking" asp-action="Index">
+                            @Text["Home.StartSpeaking"]
+                            <span class="material-symbols-outlined" aria-hidden="true">mic</span>
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="home-button home-button-primary is-disabled" aria-disabled="true" data-speaking-unavailable>
+                            @Text["Home.StartSpeaking"]
+                            <span class="material-symbols-outlined" aria-hidden="true">mic</span>
+                        </span>
+                    }
                     <a class="home-button home-button-secondary" asp-controller="Quiz" asp-action="Index">
                         @Text["Home.OpenQuizzes"]
                     </a>
@@ -164,17 +186,34 @@
                 <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
             </a>
 
-            <a class="home-action-card home-action-card-speaking" asp-controller="@(isFreestyle ? "Quiz" : "Speaking")" asp-action="Index">
-                <span class="home-action-number">03</span>
-                <span class="home-action-icon">
-                    <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "dashboard_customize" : "mic")</span>
+            @if (isFreestyle || speakingIsAvailable)
+            {
+                <a class="home-action-card home-action-card-speaking" asp-controller="@(isFreestyle ? "Quiz" : "Speaking")" asp-action="Index">
+                    <span class="home-action-number">03</span>
+                    <span class="home-action-icon">
+                        <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "dashboard_customize" : "mic")</span>
+                    </span>
+                    <span class="home-action-content">
+                        <strong>@(isFreestyle ? "Create interactive quizzes" : Text["Home.SpeakNaturally"])</strong>
+                        <small>@(isFreestyle ? "Use multiple choice, checkbox, cloze, and more." : Text["Home.SpeakNaturallyText"])</small>
+                    </span>
+                    <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
+                </a>
+            }
+            else
+            {
+                <span class="home-action-card home-action-card-speaking is-disabled" aria-disabled="true" data-speaking-unavailable>
+                    <span class="home-action-number">03</span>
+                    <span class="home-action-icon">
+                        <span class="material-symbols-outlined" aria-hidden="true">mic</span>
+                    </span>
+                    <span class="home-action-content">
+                        <strong>@Text["Home.SpeakNaturally"]</strong>
+                        <small>@Text["Home.SpeakNaturallyText"]</small>
+                    </span>
+                    <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
                 </span>
-                <span class="home-action-content">
-                    <strong>@(isFreestyle ? "Create interactive quizzes" : Text["Home.SpeakNaturally"])</strong>
-                    <small>@(isFreestyle ? "Use multiple choice, checkbox, cloze, and more." : Text["Home.SpeakNaturallyText"])</small>
-                </span>
-                <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
-            </a>
+            }
         </div>
     </section>
 
@@ -208,14 +247,28 @@
                 <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
             </a>
 
-            <a class="home-feature-card home-feature-card-classroom" asp-controller="Classroom" asp-action="Index">
-                <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">school</span>
-                <span>
-                    <strong>@Text["Home.JoinClassroom"]</strong>
-                    <small>@Text["Home.JoinClassroomText"]</small>
+            @if (classroomIsAvailable)
+            {
+                <a class="home-feature-card home-feature-card-classroom" asp-controller="Classroom" asp-action="Index">
+                    <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">school</span>
+                    <span>
+                        <strong>@Text["Home.JoinClassroom"]</strong>
+                        <small>@Text["Home.JoinClassroomText"]</small>
+                    </span>
+                    <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
+                </a>
+            }
+            else
+            {
+                <span class="home-feature-card home-feature-card-classroom is-disabled" aria-disabled="true" data-classroom-unavailable>
+                    <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">school</span>
+                    <span>
+                        <strong>@Text["Home.JoinClassroom"]</strong>
+                        <small>@Text["Home.JoinClassroomText"]</small>
+                    </span>
+                    <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
                 </span>
-                <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
-            </a>
+            }
         </div>
     </section>
 
