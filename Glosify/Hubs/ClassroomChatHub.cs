@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Glosify.Extensions;
+using Glosify.Services.Auth;
 using Glosify.Services.Classrooms;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.SignalR;
 namespace Glosify.Hubs;
 
 [Authorize]
+[Authorize(Policy = AuthorizationPolicyNames.ClassroomAvailability)]
 public class ClassroomChatHub : Hub
 {
     public const string RateLimitedErrorCode = "CHAT_RATE_LIMITED";

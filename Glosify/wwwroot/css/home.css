@@ -166,6 +166,26 @@
     color: var(--on-surface);
 }
 
+.home-button.is-disabled,
+.home-action-card.is-disabled,
+.home-feature-card.is-disabled {
+    cursor: not-allowed;
+    filter: saturate(0.35);
+    opacity: 0.52;
+}
+
+.home-button.is-disabled:hover,
+.home-action-card.is-disabled:hover,
+.home-feature-card.is-disabled:hover {
+    box-shadow: none;
+    transform: none;
+}
+
+.home-action-card.is-disabled:hover::before {
+    opacity: 0.68;
+    transform: none;
+}
+
 .home-hero-points {
     display: flex;
     flex-wrap: wrap;
