@@ -19,14 +19,15 @@ public sealed class OpenAiTranslationRelayTests
     {
         var uri = OpenAiTranslationProtocol.BuildWebSocketUri();
         var update = Encoding.UTF8.GetString(
-            OpenAiTranslationProtocol.CreateSessionUpdate("es", "safe-learner"));
+            OpenAiTranslationProtocol.CreateSessionUpdate("es"));
 
         Assert.Equal(
             "wss://api.openai.com/v1/realtime/translations?model=gpt-realtime-translate",
             uri.ToString());
         Assert.Equal(
-            "{\"type\":\"session.update\",\"session\":{\"safety_identifier\":\"safe-learner\",\"audio\":{\"output\":{\"language\":\"es\"}}}}",
+            "{\"type\":\"session.update\",\"session\":{\"audio\":{\"output\":{\"language\":\"es\"}}}}",
             update);
+        Assert.DoesNotContain("safety_identifier", update, StringComparison.Ordinal);
     }
 
     [Fact]

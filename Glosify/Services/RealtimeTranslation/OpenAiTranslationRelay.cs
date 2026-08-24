@@ -81,8 +81,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         {
             await openAiSocket.ConnectAsync(openAiUri, relayToken);
             var sessionUpdate = OpenAiTranslationProtocol.CreateSessionUpdate(
-                authorization.TargetLanguage,
-                safetyIdentifier);
+                authorization.TargetLanguage);
             await openAiSocket.SendAsync(
                 sessionUpdate,
                 WebSocketMessageType.Text,
