@@ -22,15 +22,12 @@ internal static class OpenAiTranslationProtocol
         return ($"Bearer {apiKey.Trim()}", safetyIdentifier);
     }
 
-    internal static byte[] CreateSessionUpdate(
-        string targetLanguage,
-        string safetyIdentifier) =>
+    internal static byte[] CreateSessionUpdate(string targetLanguage) =>
         JsonSerializer.SerializeToUtf8Bytes(new
         {
             type = "session.update",
             session = new
             {
-                safety_identifier = safetyIdentifier,
                 audio = new
                 {
                     output = new { language = targetLanguage },

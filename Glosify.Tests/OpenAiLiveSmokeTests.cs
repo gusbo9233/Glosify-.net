@@ -1,6 +1,9 @@
+using System.Net.WebSockets;
+using System.Text.Json;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.RealtimeTranslation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -10,6 +13,44 @@ namespace Glosify.Tests;
 
 public sealed class OpenAiLiveSmokeTests
 {
+    [LiveOpenAiFact]
+    [Trait("Category", "LiveOpenAI")]
+    public async Task Realtime_translation_accepts_the_production_session_configuration()
+    {
+        using var socket = new ClientWebSocket();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        var headers = OpenAiTranslationProtocol.CreateRequestHeaders(
+            ReadLocalApiKey()!,
+            "live-realtime-smoke-learner");
+        socket.Options.SetRequestHeader("Authorization", headers.Authorization);
+        socket.Options.SetRequestHeader("OpenAI-Safety-Identifier", headers.SafetyIdentifier);
+
+        await socket.ConnectAsync(OpenAiTranslationProtocol.BuildWebSocketUri(), timeout.Token);
+        await socket.SendAsync(
+            OpenAiTranslationProtocol.CreateSessionUpdate("es"),
+            WebSocketMessageType.Text,
+            endOfMessage: true,
+            timeout.Token);
+
+        while (true)
+        {
+            var message = await ReceiveTextAsync(socket, timeout.Token);
+            using var document = JsonDocument.Parse(message);
+            var type = document.RootElement.GetProperty("type").GetString();
+            if (type == "session.updated")
+            {
+                break;
+            }
+            Assert.NotEqual("error", type);
+        }
+
+        await socket.SendAsync(
+            OpenAiTranslationProtocol.CreateSessionClose(),
+            WebSocketMessageType.Text,
+            endOfMessage: true,
+            timeout.Token);
+    }
+
     [LiveOpenAiFact]
     [Trait("Category", "LiveOpenAI")]
     public async Task Luna_returns_strict_structured_output_with_usage()
@@ -118,6 +159,25 @@ public sealed class OpenAiLiveSmokeTests
 
     private static AiUsageContext Usage(string operation) =>
         new("live-smoke-learner", AiUsageFeatures.Assistant, operation, Guid.NewGuid());
+
+    private static async Task<byte[]> ReceiveTextAsync(
+        WebSocket socket,
+        CancellationToken cancellationToken)
+    {
+        var buffer = new byte[16 * 1024];
+        using var message = new MemoryStream();
+        while (true)
+        {
+            var result = await socket.ReceiveAsync(buffer, cancellationToken);
+            Assert.Equal(WebSocketMessageType.Text, result.MessageType);
+            await message.WriteAsync(buffer.AsMemory(0, result.Count), cancellationToken);
+            Assert.True(message.Length <= 256 * 1024, "OpenAI returned an oversized smoke-test message.");
+            if (result.EndOfMessage)
+            {
+                return message.ToArray();
+            }
+        }
+    }
 
     internal static string? ReadLocalApiKey()
     {
