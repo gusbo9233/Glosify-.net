@@ -131,16 +131,6 @@
                                     data-extract-url="@Url.Action("ExtractTextFromImage", "Quiz", new { quizId = panel.QuizId })" />
                                 <span class="scan-status" data-assistant-scan-status hidden></span>
                             }
-                            <label class="assistant-model-picker">
-                                <span class="visually-hidden">@Text["Assistant.Model"]</span>
-                                <select data-assistant-model-select aria-label="@Text["Assistant.Model"]">
-                                    <option value="">@Text["Assistant.AutoModel", Model.DefaultModelLabel]</option>
-                                    @foreach (var assistantModel in Model.Models)
-                                    {
-                                        <option value="@assistantModel.Deployment">@assistantModel.Label</option>
-                                    }
-                                </select>
-                            </label>
                         </div>
                         <button class="assistant-send" type="submit" aria-label="@Text["Assistant.Send"]" data-assistant-submit>
                             <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>

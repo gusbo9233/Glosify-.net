@@ -34,7 +34,7 @@ public sealed class AssistantAnalyticsBackgroundWriterTests
             TurnId = Guid.NewGuid(),
             Sequence = 0,
             Profile = "Librarian",
-            Provider = "foundry",
+            Provider = "openai",
             RequestJson = "{}",
             Status = AssistantInvocationStatus.Completed,
             StartedAt = DateTimeOffset.UtcNow,

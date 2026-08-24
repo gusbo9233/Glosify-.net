@@ -188,12 +188,6 @@
   <data name="Assistant.Picture" xml:space="preserve">
     <value>Зображення</value>
   </data>
-  <data name="Assistant.Model" xml:space="preserve">
-    <value>Модель помічника</value>
-  </data>
-  <data name="Assistant.AutoModel" xml:space="preserve">
-    <value>Авто · {0}</value>
-  </data>
   <data name="Assistant.Send" xml:space="preserve">
     <value>Надіслати</value>
   </data>
@@ -1344,7 +1338,7 @@
     <value>Безкоштовний урок</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>Працює на Microsoft Foundry та Azure AI Speech</value>
+    <value>Працює на OpenAI та Azure AI Speech</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>Налаштування практики</value>

@@ -188,12 +188,6 @@
   <data name="Assistant.Picture" xml:space="preserve">
     <value>Hình ảnh</value>
   </data>
-  <data name="Assistant.Model" xml:space="preserve">
-    <value>Mô hình trợ lý</value>
-  </data>
-  <data name="Assistant.AutoModel" xml:space="preserve">
-    <value>Tự động · {0}</value>
-  </data>
   <data name="Assistant.Send" xml:space="preserve">
     <value>Gửi</value>
   </data>
@@ -1344,7 +1338,7 @@
     <value>Bài học miễn phí</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>Được hỗ trợ bởi Microsoft Foundry và Azure AI Speech</value>
+    <value>Được hỗ trợ bởi OpenAI và Azure AI Speech</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>Cài đặt luyện tập</value>

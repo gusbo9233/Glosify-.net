@@ -89,7 +89,7 @@ flowchart LR
     Extension --> API
     Extension --> Relay["Short-lived WebSocket relay"]
     EF --> SQL["SQL Server / Azure SQL"]
-    Services --> Foundry["Microsoft Foundry"]
+    Services --> OpenAI["OpenAI Responses and realtime translation"]
     Services --> Speech["Azure AI Speech"]
     Services --> Storage["Azure Blob Storage"]
     Services --> ACS["Azure Communication Services"]
@@ -129,8 +129,8 @@ when they make responsibilities clearer or make code easier to test.
 
 The current automated suite contains:
 
-- 595 .NET test cases, with four credential-gated Foundry tests skipped by
-  default;
+- a broad .NET unit, integration, and contract suite, with direct OpenAI smoke
+  tests credential-gated and skipped by default;
 - 29 dependency-free JavaScript tests;
 - four Playwright journeys covering accounts, quizzes, custom quizzes, and
   assistant chat management;

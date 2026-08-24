@@ -15,7 +15,7 @@ from translate_ui import API_URL, CACHE, LOCALES, ROOT, api_json
 SOURCE_DIR = ROOT / "Glosify/Views/Home"
 PAGES = ("Privacy", "Terms", "Support")
 PROTECTED = (
-    "Glosify, Glosify Live Subtitles, Microsoft Foundry, Azure Speech, Azure Translator, "
+    "Glosify, Glosify Live Subtitles, OpenAI, Azure Speech, Azure Translator, "
     "ElevenLabs Scribe v2, Google, Microsoft, Stripe, Chrome, OAuth, API, and email addresses"
 )
 

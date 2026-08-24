@@ -173,6 +173,20 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_210765179BDB40158ADE7F23514669FF }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_EE07FD7E4DAF4E32BF67F3AFE307E71F }}
 
+      - name: Require direct OpenAI App Service key
+        shell: bash
+        run: |
+          openai_key="$(az webapp config appsettings list \
+            --name glosify-app \
+            --resource-group glosify \
+            --query "[?name=='OPENAI_SECRET_KEY'].value | [0]" \
+            --output tsv)"
+          if [[ -z "$openai_key" ]]; then
+            echo "::error::App Service setting OPENAI_SECRET_KEY is missing or empty."
+            exit 1
+          fi
+          unset openai_key
+
       - name: Apply reviewed database migrations
         env:
           PRODUCTION_SQL_CONNECTION_STRING: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
@@ -187,3 +201,45 @@ jobs:
           app-name: glosify-app
           slot-name: Production
           package: app
+
+      # Remove these only after the direct-OpenAI artifact is deployed. The prior
+      # production artifact still needs its Foundry settings during the rollout.
+      - name: Remove retired AI App Service settings
+        run: >-
+          az webapp config appsettings delete
+          --name glosify-app
+          --resource-group glosify
+          --setting-names
+          GEMINI_API_KEY
+          GenerativeAi__Foundry__GatewayApiKey
+          GenerativeAi__Foundry__ProjectEndpoint
+          RealtimeTranslation__Deployment
+          RealtimeTranslation__FoundryEndpoint
+          RealtimeTranslation__Model
+          RealtimeTranslation__SourceTranscriptionDelay
+          RealtimeTranslation__SourceTranscriptionDeployment
+          Speaking__Agents__Andriy__Version
+          Speaking__Agents__Bartender__Name
+          Speaking__Agents__Bartender__Version
+          Speaking__Agents__FrauSchneider__Version
+          Speaking__Agents__Hanna__Version
+          Speaking__Agents__Jonas__Version
+          Speaking__Agents__Karl__Version
+          Speaking__Agents__Kasia__Name
+          Speaking__Agents__Kasia__Version
+          Speaking__Agents__Liis__Version
+          Speaking__Agents__Maarja__Version
+          Speaking__Agents__Mietek__Name
+          Speaking__Agents__Mietek__Version
+          Speaking__Agents__Oksana__Version
+          Speaking__Agents__PanMykola__Version
+          Speaking__ModelDeployment
+          Speaking__ProjectEndpoint
+          CreditPricing__DefaultModelMultiplier
+          CreditPricing__Models__0__Deployment
+          CreditPricing__Models__0__Multiplier
+          CreditPricing__Models__1__Deployment
+          CreditPricing__Models__1__Multiplier
+          CreditPricing__Models__2__Deployment
+          CreditPricing__Models__2__Multiplier
+          --output none

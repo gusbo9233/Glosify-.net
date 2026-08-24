@@ -126,9 +126,9 @@ public sealed class AiServiceExceptionFilterTests
             "Session ended."
         },
         {
-            new RealtimeTranslationUpstreamException("Microsoft Foundry unavailable."),
+            new RealtimeTranslationUpstreamException("OpenAI unavailable."),
             StatusCodes.Status502BadGateway,
-            "Microsoft Foundry unavailable."
+            "OpenAI unavailable."
         },
     };
 }

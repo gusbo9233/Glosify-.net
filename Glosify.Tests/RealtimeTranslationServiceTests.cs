@@ -2,7 +2,6 @@ using Glosify.Data;
 using Glosify.Infrastructure.Concurrency;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
-using Glosify.Services.Ai.Llm;
 using Glosify.Services.Language;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.EntityFrameworkCore;
@@ -156,7 +155,7 @@ public sealed class RealtimeTranslationServiceTests
 
         Assert.Equal(16, created.CreditsPerMinute);
         var session = await context.RealtimeTranslationSessions.SingleAsync();
-        Assert.Equal(RealtimeSpeechProviders.Foundry, session.SpeechProvider);
+        Assert.Equal(RealtimeSpeechProviders.OpenAi, session.SpeechProvider);
         Assert.Equal("pl", session.SourceLanguage);
         Assert.Equal("scribe_v2_realtime", session.SourceTranscriptionDeployment);
         Assert.Equal("gpt-realtime-translate+elevenlabs-scribe-v2-realtime", session.BillingModel);
@@ -277,7 +276,7 @@ public sealed class RealtimeTranslationServiceTests
         var transaction = Assert.Single(await context.AiCreditTransactions.Where(transaction =>
             transaction.Kind == AiCreditTransactionKinds.UsageDebit
             && transaction.AudioDurationSeconds == 60).ToListAsync());
-        Assert.Equal("foundry", transaction.Provider);
+        Assert.Equal("openai", transaction.Provider);
         Assert.Equal(
             $"/api/realtime-translation/sessions/{created.SessionId:D}/stream",
             created.RelayPath);
@@ -286,10 +285,10 @@ public sealed class RealtimeTranslationServiceTests
         Assert.Empty(context.RealtimeTranslationTranscripts);
         var liveSession = await context.RealtimeTranslationSessions.SingleAsync();
         Assert.Equal(RealtimeTranslationModes.Enhanced, liveSession.TranslationMode);
-        Assert.Equal(RealtimeSpeechProviders.Foundry, liveSession.SpeechProvider);
+        Assert.Equal(RealtimeSpeechProviders.OpenAi, liveSession.SpeechProvider);
         Assert.Null(liveSession.SourceLanguage);
         Assert.Null(liveSession.SourceTranscriptionDeployment);
-        Assert.Equal("glosify-realtime-translate", liveSession.BillingModel);
+        Assert.Equal("gpt-realtime-translate", liveSession.BillingModel);
         Assert.Equal(8, liveSession.CreditsPerStartedMinute);
     }
 
@@ -536,26 +535,6 @@ public sealed class RealtimeTranslationServiceTests
         Action<RealtimeTranslationOptions>? configure = null,
         CreditPricingOptions? pricingOptions = null)
     {
-        var generativeOptions = new GenerativeAiOptions
-        {
-            Foundry = new FoundryGenerativeAiOptions
-            {
-                AssistantDeployment = "test-model",
-                AllowedAssistantDeployments = ["test-model"],
-                AssistantModels =
-                [
-                    new AssistantModelOptions
-                    {
-                        Deployment = "test-model",
-                        DisplayName = "Test",
-                        Provider = "Test",
-                        SpeedTier = "Test",
-                        CostTier = "Test",
-                        CreditMultiplier = 1,
-                    },
-                ],
-            },
-        };
         var usageOptions = new AiUsageOptions
         {
             TrialGrantCredits = 25,
@@ -564,7 +543,6 @@ public sealed class RealtimeTranslationServiceTests
         var creditPricing = new CreditPricingResolver(
             Options.Create(new CreditPricingOptions()),
             Options.Create(usageOptions),
-            Options.Create(generativeOptions),
             Options.Create(new RealtimeTranslationOptions()));
         var credits = new AiCreditService(
             context,
@@ -576,11 +554,8 @@ public sealed class RealtimeTranslationServiceTests
         var realtimeOptions = new RealtimeTranslationOptions
         {
             Enabled = true,
-            Model = "gpt-realtime-translate",
-            Deployment = "glosify-realtime-translate",
             SavedSourceTranscriptsEnabled = true,
             SavedTranscriptBillingModel = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime",
-            FoundryEndpoint = "https://glosify-foundry.openai.azure.com/",
             CreditsPerStartedMinute = 8,
             SavedTranscriptCreditsPerStartedMinute = 16,
             ElevenLabs = new ElevenLabsRealtimeSpeechOptions
@@ -602,7 +577,6 @@ public sealed class RealtimeTranslationServiceTests
         var realtimePricing = new CreditPricingResolver(
             Options.Create(pricingOptions ?? new CreditPricingOptions()),
             Options.Create(usageOptions),
-            Options.Create(generativeOptions),
             Options.Create(realtimeOptions));
         return new RealtimeTranslationService(
             context,
@@ -656,7 +630,7 @@ public sealed class RealtimeTranslationServiceTests
             LastRequestedSourceLanguage = sourceLanguage;
             if (fail)
             {
-                throw new RealtimeTranslationUpstreamException("Microsoft Foundry unavailable.");
+                throw new RealtimeTranslationUpstreamException("OpenAI unavailable.");
             }
             return new RealtimeTranslationRelayGrant(
                 "relay-token",

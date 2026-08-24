@@ -7,7 +7,7 @@ namespace Glosify.Data;
 /// <summary>
 /// Keeps EF design-time operations independent from web-host startup and external services.
 /// Configuration is read directly rather than through the host, so `dotnet ef` never has to
-/// reach Foundry, Blob Storage, or anything else the app resolves at boot.
+/// reach OpenAI, Blob Storage, or anything else the app resolves at boot.
 /// </summary>
 public sealed class GlosifyContextFactory : IDesignTimeDbContextFactory<GlosifyContext>
 {

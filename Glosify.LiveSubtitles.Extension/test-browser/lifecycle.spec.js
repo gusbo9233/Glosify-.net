@@ -74,6 +74,7 @@ test("same-document navigation continues and full navigation stops capture", asy
     await page.goto("http://127.0.0.1:4173/next");
     await expect.poll(() => extensionState(worker)).toMatchObject({ active: false });
     await expect.poll(() => mock.deletedSessions).toBe(1);
+    await expect.poll(() => mock.drainRequests).toBe(1);
   } finally {
     await context.close();
     await mock.close();
@@ -110,6 +111,7 @@ test("cross-origin full navigation stops capture", async () => {
     await page.goto("http://localhost:4173/next");
     await expect.poll(() => extensionState(worker)).toMatchObject({ active: false });
     await expect.poll(() => mock.deletedSessions).toBe(1);
+    await expect.poll(() => mock.drainRequests).toBe(1);
   } finally {
     await context.close();
     await mock.close();
@@ -160,6 +162,7 @@ test("concurrent starts share refresh and survive five-second session creation",
     expect(stopped.ok, JSON.stringify(stopped)).toBe(true);
     await expect.poll(() => extensionState(worker)).toMatchObject({ active: false });
     await expect.poll(() => mock.deletedSessions).toBe(1);
+    await expect.poll(() => mock.drainRequests).toBe(1);
   } finally {
     await context.close();
     await mock.close();
@@ -249,6 +252,7 @@ async function startMockGlosify({ createDelayMs = 0 } = {}) {
     deletedSessions: 0,
     refreshRequests: 0,
     createdSessions: 0,
+    drainRequests: 0,
   };
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, "http://127.0.0.1:4173");
@@ -339,7 +343,18 @@ async function startMockGlosify({ createDelayMs = 0 } = {}) {
   });
   sockets.on("connection", socket => {
     socket.send(JSON.stringify({ type: "glosify.relay.ready" }));
-    socket.on("message", () => {
+    socket.on("message", raw => {
+      const message = JSON.parse(raw.toString());
+      if (message.type === "glosify.relay.close") {
+        state.drainRequests += 1;
+        socket.send(JSON.stringify({
+          type: "response.text.done",
+          response_id: "shutdown-final",
+          text: "Shutdown final caption",
+        }));
+        socket.send(JSON.stringify({ type: "glosify.relay.closed" }));
+        return;
+      }
       state.audioMessages += 1;
       if (state.audioMessages === 1) {
         socket.send(JSON.stringify({

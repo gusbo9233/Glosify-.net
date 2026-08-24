@@ -209,7 +209,7 @@ public class AzureTextToSpeechServiceTests
     [Fact]
     public async Task High_definition_request_uses_Dragon_HD_Omni_and_dedicated_resource()
     {
-        const string hdResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/foundry";
+        const string hdResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/speech";
         Uri? requestUri = null;
         string? authorization = null;
         string? ssml = null;
@@ -269,7 +269,7 @@ public class AzureTextToSpeechServiceTests
             HighDefinition = new SpeechHighDefinitionOptions
             {
                 Enabled = true,
-                ResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/foundry",
+                ResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/speech",
                 Region = "eastus",
             },
         }, handler, new StubTokenCredential("entra-token"));
@@ -306,7 +306,7 @@ public class AzureTextToSpeechServiceTests
             HighDefinition = new SpeechHighDefinitionOptions
             {
                 Enabled = true,
-                ResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/foundry",
+                ResourceId = "/subscriptions/sub/resourceGroups/rg/providers/Microsoft.CognitiveServices/accounts/speech",
                 Region = "eastus",
             },
         }, handler, new StubTokenCredential("entra-token"));

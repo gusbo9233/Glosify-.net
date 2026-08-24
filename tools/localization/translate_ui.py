@@ -39,8 +39,8 @@ LOCALES = {
 }
 
 PROTECTED = (
-    "Glosify, Microsoft Foundry, Azure Speech, Azure Translator, ElevenLabs, "
-    "Google, Microsoft, Stripe, Chrome, PDF, API, MCP, SignalR, WebRTC, AI, "
+    "Glosify, OpenAI, Azure Speech, Azure Translator, ElevenLabs, "
+    "Google, Microsoft, Stripe, Chrome, PDF, API, SignalR, WebRTC, AI, "
     "email addresses, URLs, personal names, language-learning examples, and currency codes"
 )
 

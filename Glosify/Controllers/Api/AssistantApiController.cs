@@ -90,7 +90,6 @@ public class AssistantApiController : ApiControllerBase
                 input.Message,
                 input.ContextQuizId,
                 input.FocusedWordId,
-                input.Model,
                 input.DocumentId is Guid documentId
                     ? new AssistantDocumentContext(documentId, input.PageNumber ?? 1)
                     : null,

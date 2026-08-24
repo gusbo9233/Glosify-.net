@@ -3,7 +3,6 @@ using Glosify.Models.Entities;
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
-using Glosify.Services.Ai.Llm;
 using Glosify.Services.Auth;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.EntityFrameworkCore;
@@ -128,7 +127,7 @@ public sealed class AiCreditServiceTests
         var service = CreateService(context);
 
         var ex = await Assert.ThrowsAsync<InsufficientAiCreditsException>(() =>
-            service.ReserveAsync(UsageContext("user-1"), "gemini", "test-model", 26_000));
+            service.ReserveAsync(UsageContext("user-1"), "openai", "test-model", 26_000));
 
         Assert.Equal(25, ex.AvailableCredits);
         Assert.Equal(26, ex.RequiredCredits);
@@ -142,7 +141,7 @@ public sealed class AiCreditServiceTests
         await context.SaveChangesAsync();
         var service = CreateService(context);
 
-        var reservation = await service.ReserveAsync(UsageContext("user-1"), "gemini", "test-model", 2_500);
+        var reservation = await service.ReserveAsync(UsageContext("user-1"), "openai", "test-model", 2_500);
         await service.CommitUsageAsync(reservation.ReservationId, new AiTokenUsage(900, 200, 0, 0, 1_100));
 
         var account = await service.GetOrCreateAccountAsync("user-1");
@@ -153,16 +152,16 @@ public sealed class AiCreditServiceTests
     }
 
     [Fact]
-    public async Task CommitUsage_AppliesTheConfiguredModelCreditMultiplier()
+    public async Task CommitUsage_UsesTheSingleLunaCreditMultiplier()
     {
         await using var context = CreateContext();
         context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
         await context.SaveChangesAsync();
-        var service = CreateService(context, creditMultiplier: 2m);
+        var service = CreateService(context);
 
         var reservation = await service.ReserveAsync(
             UsageContext("user-1"),
-            "foundry",
+            "openai",
             "test-model",
             2_500);
         await service.CommitUsageAsync(
@@ -170,11 +169,11 @@ public sealed class AiCreditServiceTests
             new AiTokenUsage(900, 200, 0, 0, 1_100));
 
         var account = await service.GetOrCreateAccountAsync("user-1");
-        Assert.Equal(21, account.BalanceCredits);
+        Assert.Equal(23, account.BalanceCredits);
         Assert.Equal(0, account.ReservedCredits);
         var debit = await context.AiCreditTransactions
             .SingleAsync(transaction => transaction.Kind == AiCreditTransactionKinds.UsageDebit);
-        Assert.Equal(-4, debit.CreditAmount);
+        Assert.Equal(-2, debit.CreditAmount);
         Assert.Single(await context.AiCreditTransactions
             .Where(transaction => transaction.Kind == AiCreditTransactionKinds.Release)
             .ToListAsync());
@@ -188,7 +187,7 @@ public sealed class AiCreditServiceTests
         await context.SaveChangesAsync();
         var service = CreateService(context);
 
-        var reservation = await service.ReserveAsync(UsageContext("user-1"), "gemini", "test-model", 2_000);
+        var reservation = await service.ReserveAsync(UsageContext("user-1"), "openai", "test-model", 2_000);
         await service.ReleaseAsync(reservation.ReservationId);
 
         var account = await service.GetOrCreateAccountAsync("user-1");
@@ -212,7 +211,7 @@ public sealed class AiCreditServiceTests
 
         var reservation = await service.ReserveAsync(
             UsageContext("user-1"),
-            "foundry",
+            "openai",
             "test-model",
             100);
 
@@ -276,7 +275,7 @@ public sealed class AiCreditServiceTests
             Guid.NewGuid().ToString(),
             turnId);
 
-        var reservation = await service.ReserveAsync(usage, "foundry", "test-model", 2_500);
+        var reservation = await service.ReserveAsync(usage, "openai", "test-model", 2_500);
         await service.CommitUsageAsync(reservation.ReservationId, new AiTokenUsage(900, 200, 0, 0, 1_100));
 
         var correlated = await context.AiCreditTransactions
@@ -302,7 +301,7 @@ public sealed class AiCreditServiceTests
         {
             var reservation = await service.ReserveDurationAsync(
                 new AiUsageContext("user-1", AiUsageFeatures.RealtimeTranslation, "subtitle_minute", Guid.NewGuid()),
-                "foundry",
+                "openai",
                 "test-model",
                 60,
                 8);
@@ -314,7 +313,7 @@ public sealed class AiCreditServiceTests
         var exception = await Assert.ThrowsAsync<InsufficientAiCreditsException>(() =>
             service.ReserveDurationAsync(
                 new AiUsageContext("user-1", AiUsageFeatures.RealtimeTranslation, "subtitle_minute", Guid.NewGuid()),
-                "foundry",
+                "openai",
                 "test-model",
                 60,
                 8));
@@ -335,7 +334,7 @@ public sealed class AiCreditServiceTests
 
         var reservation = await service.ReserveDurationAsync(
             new AiUsageContext("user-1", AiUsageFeatures.RealtimeTranslation, "subtitle_minute", Guid.NewGuid()),
-            "foundry",
+            "openai",
             "test-model",
             60,
             8);
@@ -362,7 +361,7 @@ public sealed class AiCreditServiceTests
             inputSekPerMillionTokens: 1_000_000m,
             outputSekPerMillionTokens: 1_000_000m);
 
-        await service.ReserveAsync(UsageContext("user-1"), "foundry", "test-model", 100);
+        await service.ReserveAsync(UsageContext("user-1"), "openai", "test-model", 100);
         var callerQuiz = new Quiz
         {
             Id = Guid.NewGuid(),
@@ -376,7 +375,7 @@ public sealed class AiCreditServiceTests
         };
         context.Quizzes.Add(callerQuiz);
         var exception = await Assert.ThrowsAsync<MonthlyAiBudgetExceededException>(() =>
-            service.ReserveAsync(UsageContext("user-2"), "foundry", "test-model", 101));
+            service.ReserveAsync(UsageContext("user-2"), "openai", "test-model", 101));
 
         Assert.Equal("2026-07", exception.PeriodKey);
         Assert.Equal(200_000_000, exception.LimitMicros);
@@ -396,7 +395,7 @@ public sealed class AiCreditServiceTests
             .ToListAsync());
 
         var repeated = await Assert.ThrowsAsync<MonthlyAiBudgetExceededException>(() =>
-            service.ReserveAsync(UsageContext("user-2"), "foundry", "test-model", 1));
+            service.ReserveAsync(UsageContext("user-2"), "openai", "test-model", 1));
         Assert.Equal(new DateTimeOffset(2026, 7, 31, 22, 0, 0, TimeSpan.Zero), repeated.ResetsAtUtc);
         await context.SaveChangesAsync();
         Assert.Null(await context.AiCreditAccounts.SingleOrDefaultAsync(
@@ -420,7 +419,7 @@ public sealed class AiCreditServiceTests
 
         var reservation = await service.ReserveAsync(
             UsageContext("user-1"),
-            "foundry",
+            "openai",
             "test-model",
             100);
         await service.CommitUsageAsync(
@@ -454,7 +453,7 @@ public sealed class AiCreditServiceTests
 
         var reservation = await service.ReserveAsync(
             UsageContext("user-1"),
-            "foundry",
+            "openai",
             "test-model",
             100);
         await service.CommitUsageAsync(
@@ -482,7 +481,7 @@ public sealed class AiCreditServiceTests
 
         var reservation = await service.ReserveAsync(
             UsageContext("user-1"),
-            "foundry",
+            "openai",
             "test-model",
             100);
         options.MonthlyBudget.LimitSek = 75m;
@@ -513,7 +512,7 @@ public sealed class AiCreditServiceTests
 
         var reservation = await service.ReserveDurationAsync(
             new AiUsageContext("user-1", AiUsageFeatures.RealtimeTranslation, "subtitle_minute", Guid.NewGuid()),
-            "foundry",
+            "openai",
             "test-model",
             60,
             8);
@@ -542,7 +541,7 @@ public sealed class AiCreditServiceTests
 
         var reservation = await service.ReserveAsync(
             UsageContext("user-1"),
-            "foundry",
+            "openai",
             "test-model",
             200);
         await service.ReleaseAsync(reservation.ReservationId);
@@ -567,9 +566,9 @@ public sealed class AiCreditServiceTests
             outputSekPerMillionTokens: 1_000_000m,
             timeProvider: clock);
 
-        await service.ReserveAsync(UsageContext("user-1"), "foundry", "test-model", 200);
+        await service.ReserveAsync(UsageContext("user-1"), "openai", "test-model", 200);
         clock.Advance(TimeSpan.FromHours(1));
-        await service.ReserveAsync(UsageContext("user-1"), "foundry", "test-model", 1);
+        await service.ReserveAsync(UsageContext("user-1"), "openai", "test-model", 1);
 
         var budgets = await context.AiMonthlyBudgets
             .OrderBy(item => item.PeriodKey)
@@ -641,7 +640,6 @@ public sealed class AiCreditServiceTests
 
     private static AiCreditService CreateService(
         GlosifyContext context,
-        decimal creditMultiplier = 1m,
         decimal monthlyLimitSek = 200m,
         decimal inputSekPerMillionTokens = 1m,
         decimal outputSekPerMillionTokens = 1m,
@@ -650,26 +648,6 @@ public sealed class AiCreditServiceTests
         ITrialEligibilityService? trialEligibility = null,
         AiUsageOptions? usageOptions = null)
     {
-        var generativeAiOptions = new GenerativeAiOptions
-        {
-            Foundry = new FoundryGenerativeAiOptions
-            {
-                AssistantDeployment = "test-model",
-                AllowedAssistantDeployments = ["test-model"],
-                AssistantModels =
-                [
-                    new AssistantModelOptions
-                    {
-                        Deployment = "test-model",
-                        DisplayName = "Test Model",
-                        Provider = "Test",
-                        SpeedTier = "Test",
-                        CostTier = "Test",
-                        CreditMultiplier = creditMultiplier,
-                    },
-                ],
-            },
-        };
         var effectiveUsageOptions = usageOptions ?? CreateUsageOptions(
             monthlyLimitSek,
             inputSekPerMillionTokens,
@@ -678,7 +656,6 @@ public sealed class AiCreditServiceTests
         var pricing = new CreditPricingResolver(
             Options.Create(new CreditPricingOptions()),
             Options.Create(effectiveUsageOptions),
-            Options.Create(generativeAiOptions),
             Options.Create(new RealtimeTranslationOptions()));
         return new AiCreditService(
             context,
@@ -705,7 +682,7 @@ public sealed class AiCreditServiceTests
                 LimitSek = monthlyLimitSek,
                 TimeZoneId = "Europe/Stockholm",
                 ReservationSafetyMultiplier = 1m,
-                Providers = ["foundry", "azure_ai_foundry"],
+                Providers = ["openai"],
                 Models =
                 [
                     new AiModelPriceOptions

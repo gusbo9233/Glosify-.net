@@ -6,7 +6,6 @@ using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Generation;
-using Glosify.Services.Ai.Llm;
 using Glosify.Services.Books;
 using Glosify.Services.Language;
 using Microsoft.AspNetCore.Http;
@@ -381,6 +380,22 @@ public class AssistantSavedChatsTests
         Assert.Equal("lookup-1", toolResponse.GetProperty("callId").GetString());
         using var toolResult = JsonDocument.Parse(toolResponse.GetProperty("responseJson").GetString()!);
         Assert.True(toolResult.RootElement.GetProperty("ok").GetBoolean());
+
+        var providerOutputItems = JsonDocument.Parse(invocations[1].RequestJson).RootElement
+            .GetProperty("history")
+            .EnumerateArray()
+            .Select(turn => JsonDocument.Parse(turn.GetProperty("contentJson").GetString()!).RootElement)
+            .Select(content => content.TryGetProperty("outputItemsJson", out var items)
+                ? items
+                : default)
+            .Where(items => items.ValueKind == JsonValueKind.Array)
+            .SelectMany(items => items.EnumerateArray())
+            .Select(item => item.GetString())
+            .ToList();
+        Assert.Collection(
+            providerOutputItems,
+            item => Assert.Contains("encrypted_content", item, StringComparison.Ordinal),
+            item => Assert.Contains("function_call", item, StringComparison.Ordinal));
 
         var execution = await context.AssistantToolExecutions.SingleAsync();
         Assert.NotEqual("{}", execution.ResultJson);
@@ -1407,7 +1422,6 @@ public class AssistantSavedChatsTests
         var turnRunner = new AssistantTurnRunner(
             context,
             generativeAi ?? new StaticGenerativeAiClient("Done."),
-            CreateModelResolver(),
             tools ?? new NoopAssistantTools(),
             threadStore,
             contextResolver,
@@ -1429,39 +1443,6 @@ public class AssistantSavedChatsTests
                 timeProvider),
             new AssistantFeedbackService(context, timeProvider));
     }
-
-    private static IGenerativeAiModelResolver CreateModelResolver() =>
-        new GenerativeAiModelResolver(
-            Options.Create(new GenerativeAiOptions
-            {
-                Provider = GenerativeAiOptions.FoundryProvider,
-                Foundry = new FoundryGenerativeAiOptions
-                {
-                    ProjectEndpoint = "https://example.services.ai.azure.com/api/projects/test",
-                    AssistantDeployment = "test-model",
-                    StructuredDeployment = "test-model",
-                    VisionDeployment = "test-model",
-                    AllowedAssistantDeployments = ["test-model"],
-                    AssistantModels =
-                    [
-                        new AssistantModelOptions
-                        {
-                            Deployment = "test-model",
-                            DisplayName = "Test Model",
-                            Provider = "Test",
-                            SpeedTier = "Test",
-                            CostTier = "Test",
-                            CreditMultiplier = 1m,
-                        },
-                    ],
-                },
-            }),
-            Options.Create(new GeminiOptions
-            {
-                Model = "test-model",
-                AssistantModel = "test-model",
-                StructuredModel = "test-model",
-            }));
 
     private static Quiz CreateQuiz(Guid id, string userId) => new()
     {
@@ -1640,12 +1621,19 @@ public class AssistantSavedChatsTests
                 [
                     new AgentFunctionCall("loop", "{}") { CallId = "lookup-1" },
                 ])
+                {
+                    OutputItemsJson =
+                    [
+                        """{"type":"reasoning","id":"rs_saved","encrypted_content":"saved-state","summary":[]}""",
+                        """{"type":"function_call","call_id":"lookup-1","name":"loop","arguments":"{}"}""",
+                    ],
+                }
                 : new AgentTurnResult("Done.", []);
             return Task.FromResult(result with
             {
                 Metadata = new AgentInvocationMetadata(
-                    "foundry",
-                    "test-model",
+                    AiUsageProviders.OpenAi,
+                    OpenAiModels.Luna,
                     $"response-{_calls}",
                     new AiTokenUsage(10, 5, 0, 0, 15),
                     "glosify-librarian",
@@ -1658,7 +1646,7 @@ public class AssistantSavedChatsTests
                                 contextInstruction = request.ContextInstruction,
                                 history = request.History,
                                 tools = request.Tools,
-                                model = request.Model,
+                                model = OpenAiModels.Luna,
                                 profile = request.Profile.ToString(),
                             },
                             EffectiveRequestOptions)

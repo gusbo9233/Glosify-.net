@@ -125,7 +125,6 @@ public class AssistantController : ControllerBase
                 input.Message,
                 input.ContextQuizId,
                 input.FocusedWordId,
-                input.Model,
                 input.DocumentContext is null
                     ? null
                     : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),
@@ -162,7 +161,6 @@ public class AssistantController : ControllerBase
         var response = await _orchestrator.SendGlobalMessageAsync(
             userId,
             input.Message,
-            input.Model,
             input.DocumentContext is null
                 ? null
                 : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),
@@ -280,7 +278,6 @@ public class AssistantController : ControllerBase
                 userId,
                 input.Message,
                 input.FocusedWordId,
-                input.Model,
                 input.DocumentContext is null
                     ? null
                     : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),

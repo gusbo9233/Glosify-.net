@@ -9,7 +9,7 @@ public sealed class AiUsageOptions
     public int AssistantOutputTokenReserve { get; set; } = 16384;
     public int JsonImportRepairOutputTokenReserve { get; set; } = 16384;
     public int ImageExtractionOutputTokenReserve { get; set; } = 1024;
-    public int SpeakingOutputTokenReserve { get; set; } = 768;
+    public int SpeakingOutputTokenReserve { get; set; } = 4096;
     public int PageTranslationOutputTokenReserve { get; set; } = 4096;
     public AiMonthlyBudgetOptions MonthlyBudget { get; set; } = new();
 
@@ -33,7 +33,7 @@ public sealed class AiMonthlyBudgetOptions
     public decimal LimitSek { get; set; } = 300m;
     public string TimeZoneId { get; set; } = "Europe/Stockholm";
     public decimal ReservationSafetyMultiplier { get; set; } = 1.25m;
-    public List<string> Providers { get; set; } = [AiUsageProviders.Foundry, AiUsageProviders.AzureAiFoundry];
+    public List<string> Providers { get; set; } = [AiUsageProviders.OpenAi];
     public List<AiModelPriceOptions> Models { get; set; } = [];
 
     /// <summary>Whether this budget meters the given credit provider.</summary>
@@ -70,14 +70,8 @@ public sealed class AiMonthlyBudgetOptions
 /// </summary>
 public static class AiUsageProviders
 {
-    /// <summary>Generative AI through Microsoft Foundry (assistant, vision, translation).</summary>
-    public const string Foundry = "foundry";
-
-    /// <summary>Speaking practice through Microsoft Foundry.</summary>
-    public const string AzureAiFoundry = "azure_ai_foundry";
-
-    /// <summary>Explicit rollback through the Google Gemini API.</summary>
-    public const string Gemini = "gemini";
+    /// <summary>Direct OpenAI API usage for all text and vision features.</summary>
+    public const string OpenAi = "openai";
 }
 
 public sealed class AiModelPriceOptions

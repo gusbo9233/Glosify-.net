@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Glosify.Services.Ai;
+using Glosify.Services.Ai.Generation;
 using Glosify.Services.Auth;
 using Microsoft.Extensions.Options;
 
@@ -10,7 +11,6 @@ public sealed class RealtimeTranslationOptions
     public const string SectionName = "RealtimeTranslation";
 
     public bool Enabled { get; set; }
-    public string Model { get; set; } = "gpt-realtime-translate";
     public int CreditsPerStartedMinute { get; set; } = 8;
     public int MaxSessionMinutes { get; set; } = 30;
     public int RenewalLeadSeconds { get; set; } = 5;
@@ -20,8 +20,6 @@ public sealed class RealtimeTranslationOptions
     public int RelayTokenLifetimeSeconds { get; set; } = 120;
     public int RelayStartupTimeoutSeconds { get; set; } = 15;
     public int RelayBillingGraceSeconds { get; set; } = 3;
-    public string FoundryEndpoint { get; set; } = string.Empty;
-    public string Deployment { get; set; } = "gpt-realtime-translate";
     public bool EconomicalEnabled { get; set; }
     public int EconomicalCreditsPerStartedMinute { get; set; } = 6;
     public string EconomicalBillingModel { get; set; } = "azure-speech-standard+azure-translator-nmt";
@@ -99,19 +97,6 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
         }
 
         var failures = new List<string>();
-        if (!TryValidateFoundryEndpoint(options.FoundryEndpoint, out _))
-        {
-            failures.Add(
-                "RealtimeTranslation:FoundryEndpoint must be an Azure OpenAI HTTPS resource root.");
-        }
-        if (string.IsNullOrWhiteSpace(options.Model))
-        {
-            failures.Add("RealtimeTranslation:Model is required.");
-        }
-        if (string.IsNullOrWhiteSpace(options.Deployment))
-        {
-            failures.Add("RealtimeTranslation:Deployment is required.");
-        }
         if (options.EconomicalEnabled)
         {
             if (!TryValidateCognitiveEndpoint(options.SpeechEndpoint, out _))
@@ -281,10 +266,10 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
 
         if (_aiUsageOptions.MonthlyBudget.Enabled)
         {
-            var foundryIsBudgeted = _aiUsageOptions.MonthlyBudget.Providers.Any(provider =>
+            var openAiIsBudgeted = _aiUsageOptions.MonthlyBudget.Providers.Any(provider =>
                 string.Equals(provider?.Trim(), RealtimeTranslationConstants.Provider, StringComparison.OrdinalIgnoreCase));
             var durationPrice = _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
-                string.Equals(model.Deployment?.Trim(), options.Deployment.Trim(), StringComparison.OrdinalIgnoreCase));
+                string.Equals(model.Deployment?.Trim(), OpenAiModels.RealtimeTranslation, StringComparison.OrdinalIgnoreCase));
             var savedDurationPrice = options.SavedSourceTranscriptsEnabled
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
                     string.Equals(model.Deployment?.Trim(), options.SavedTranscriptBillingModel.Trim(), StringComparison.OrdinalIgnoreCase))
@@ -306,7 +291,7 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                         options.ElevenLabs.BillingModel.Trim(),
                         StringComparison.OrdinalIgnoreCase))
                 : null;
-            if (!foundryIsBudgeted || durationPrice?.AudioSekPerMinute is not > 0
+            if (!openAiIsBudgeted || durationPrice?.AudioSekPerMinute is not > 0
                 || (options.SavedSourceTranscriptsEnabled && savedDurationPrice?.AudioSekPerMinute is not > 0)
                 || (options.EconomicalEnabled && economicalDurationPrice?.AudioSekPerMinute is not > 0)
                 || !elevenLabsIsBudgeted
@@ -404,29 +389,4 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
         return true;
     }
 
-    internal static bool TryValidateFoundryEndpoint(
-        string? value,
-        [NotNullWhen(true)] out Uri? endpoint)
-    {
-        if (!Uri.TryCreate(value?.Trim(), UriKind.Absolute, out endpoint)
-            || endpoint.Scheme != Uri.UriSchemeHttps
-            || !string.IsNullOrEmpty(endpoint.UserInfo)
-            || !string.IsNullOrEmpty(endpoint.Query)
-            || !string.IsNullOrEmpty(endpoint.Fragment)
-            || (endpoint.AbsolutePath != "/" && endpoint.AbsolutePath.Length != 0))
-        {
-            endpoint = null;
-            return false;
-        }
-
-        var host = endpoint.Host;
-        if (!host.EndsWith(".openai.azure.com", StringComparison.OrdinalIgnoreCase)
-            && !host.EndsWith(".cognitiveservices.azure.com", StringComparison.OrdinalIgnoreCase))
-        {
-            endpoint = null;
-            return false;
-        }
-
-        return true;
-    }
 }

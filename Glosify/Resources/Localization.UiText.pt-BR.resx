@@ -188,12 +188,6 @@
   <data name="Assistant.Picture" xml:space="preserve">
     <value>Imagem</value>
   </data>
-  <data name="Assistant.Model" xml:space="preserve">
-    <value>Modelo do assistente</value>
-  </data>
-  <data name="Assistant.AutoModel" xml:space="preserve">
-    <value>Automático · {0}</value>
-  </data>
   <data name="Assistant.Send" xml:space="preserve">
     <value>Enviar</value>
   </data>
@@ -1344,7 +1338,7 @@
     <value>Aula gratuita</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>Desenvolvido por Microsoft Foundry e Azure AI Speech</value>
+    <value>Desenvolvido por OpenAI e Azure AI Speech</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>Configurações de prática</value>

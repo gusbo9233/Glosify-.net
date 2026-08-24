@@ -1,8 +1,5 @@
-using System.Globalization;
 using Glosify.Extensions;
 using Glosify.Models.ViewModels;
-using Glosify.Services.Ai;
-using Glosify.Services.Ai.Generation;
 using Glosify.Services.Books;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
@@ -25,8 +22,6 @@ public sealed class AssistantPanelViewComponent : ViewComponent
 {
     private const int TranscriptPageSize = 50;
 
-    private readonly IGenerativeAiModelResolver _models;
-    private readonly ICreditPricingResolver _pricing;
     private readonly IQuizService _quizzes;
     private readonly IBookDocumentService _books;
     private readonly IRealtimeTranslationTranscriptService _transcripts;
@@ -34,16 +29,12 @@ public sealed class AssistantPanelViewComponent : ViewComponent
     private readonly ILogger<AssistantPanelViewComponent> _logger;
 
     public AssistantPanelViewComponent(
-        IGenerativeAiModelResolver models,
-        ICreditPricingResolver pricing,
         IQuizService quizzes,
         IBookDocumentService books,
         IRealtimeTranslationTranscriptService transcripts,
         IQuizLanguagePreferenceService languagePreferences,
         ILogger<AssistantPanelViewComponent> logger)
     {
-        _models = models;
-        _pricing = pricing;
         _quizzes = quizzes;
         _books = books;
         _transcripts = transcripts;
@@ -53,19 +44,11 @@ public sealed class AssistantPanelViewComponent : ViewComponent
 
     public async Task<IViewComponentResult> InvokeAsync(AssistantPanelViewModel panel)
     {
-        var models = ModelOptions();
-        var defaultModelLabel = models.FirstOrDefault(model => string.Equals(
-            model.Deployment,
-            _models.DefaultAssistantModel,
-            StringComparison.OrdinalIgnoreCase))?.Label ?? "default model";
-
         if (UserClaimsPrincipal.Identity?.IsAuthenticated != true)
         {
             return View(new AssistantPanelContentViewModel
             {
                 Panel = panel,
-                DefaultModelLabel = defaultModelLabel,
-                Models = models,
             });
         }
 
@@ -94,8 +77,6 @@ public sealed class AssistantPanelViewComponent : ViewComponent
         return View(new AssistantPanelContentViewModel
         {
             Panel = panel,
-            DefaultModelLabel = defaultModelLabel,
-            Models = models,
             Quizzes = quizzes,
             Books = books,
             Transcripts = transcripts,
@@ -152,12 +133,4 @@ public sealed class AssistantPanelViewComponent : ViewComponent
             .ToArray();
     }
 
-    private IReadOnlyList<AssistantModelOption> ModelOptions() =>
-        _models.AssistantModels
-            .Select(model => new AssistantModelOption(
-                model.Deployment,
-                string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"{model.DisplayName} · {model.Provider} · {model.SpeedTier} · {_pricing.GetModelMultiplier(model.Deployment):0.##}× credits")))
-            .ToArray();
 }

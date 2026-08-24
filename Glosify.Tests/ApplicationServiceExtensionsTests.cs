@@ -7,6 +7,27 @@ namespace Glosify.Tests;
 public sealed class ApplicationServiceExtensionsTests
 {
     [Fact]
+    public void OpenAiApiKey_UsesOnlyTheExactAppServiceSetting()
+    {
+        var exactConfiguration = Configuration(new Dictionary<string, string?>
+        {
+            ["OPENAI_SECRET_KEY"] = "  direct-openai-key  ",
+            ["GenerativeAi:ApiKey"] = "legacy-bound-key",
+            ["OPENAI_API_KEY"] = "common-alias-key",
+        });
+        var legacyOnlyConfiguration = Configuration(new Dictionary<string, string?>
+        {
+            ["GenerativeAi:ApiKey"] = "legacy-bound-key",
+            ["OPENAI_API_KEY"] = "common-alias-key",
+        });
+
+        Assert.Equal(
+            "direct-openai-key",
+            ApplicationServiceExtensions.ResolveOpenAiApiKey(exactConfiguration));
+        Assert.Empty(ApplicationServiceExtensions.ResolveOpenAiApiKey(legacyOnlyConfiguration));
+    }
+
+    [Fact]
     public void ElevenLabsApiKey_CanonicalSettingTakesPriorityOverLegacyAliases()
     {
         var configuration = Configuration(new Dictionary<string, string?>

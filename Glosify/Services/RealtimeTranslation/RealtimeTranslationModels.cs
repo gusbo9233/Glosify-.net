@@ -2,7 +2,7 @@ namespace Glosify.Services.RealtimeTranslation;
 
 public static class RealtimeTranslationConstants
 {
-    public const string Provider = "foundry";
+    public const string Provider = "openai";
     public const string ElevenLabsProvider = "elevenlabs";
 }
 
@@ -17,7 +17,7 @@ public static class RealtimeSpeechProviders
 {
     public const string Azure = "azure";
     public const string ElevenLabs = "elevenlabs";
-    public const string Foundry = "foundry";
+    public const string OpenAi = "openai";
 }
 
 public sealed record RealtimeTranslationLanguage(string Code, string Name);

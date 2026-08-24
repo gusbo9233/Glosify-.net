@@ -188,12 +188,6 @@
   <data name="Assistant.Picture" xml:space="preserve">
     <value>图片</value>
   </data>
-  <data name="Assistant.Model" xml:space="preserve">
-    <value>助手模型</value>
-  </data>
-  <data name="Assistant.AutoModel" xml:space="preserve">
-    <value>自动 · {0}</value>
-  </data>
   <data name="Assistant.Send" xml:space="preserve">
     <value>发送</value>
   </data>
@@ -1344,7 +1338,7 @@
     <value>免费课程</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>由 Microsoft Foundry 和 Azure AI Speech 提供支持</value>
+    <value>由 OpenAI 和 Azure AI Speech 提供支持</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>练习设置</value>

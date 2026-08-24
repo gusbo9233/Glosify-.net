@@ -2,6 +2,7 @@ using Glosify.Data;
 using Glosify.Infrastructure.Concurrency;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai;
+using Glosify.Services.Ai.Generation;
 using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -97,7 +98,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             _options.MaxSessionMinutes,
             _options.RenewalLeadSeconds,
             _options.HeartbeatSeconds,
-            _options.Model,
+            OpenAiModels.RealtimeTranslation,
             account.AvailableCredits,
             modes,
             sourceLanguages);
@@ -133,7 +134,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         var canonicalSpeechProvider = mode switch
         {
             RealtimeTranslationModes.Scribe => RealtimeSpeechProviders.ElevenLabs,
-            _ => RealtimeSpeechProviders.Foundry,
+            _ => RealtimeSpeechProviders.OpenAi,
         };
         var usesScribe = mode == RealtimeTranslationModes.Scribe || saveTranscript;
         var canonicalSourceLanguage = usesScribe
@@ -237,14 +238,14 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 SourceLanguage = canonicalSourceLanguage,
                 Model = mode == RealtimeTranslationModes.Scribe
                     ? _options.ElevenLabs.Model
-                    : _options.Deployment,
+                    : OpenAiModels.RealtimeTranslation,
                 SourceTranscriptionDeployment = mode == RealtimeTranslationModes.Enhanced && transcript is not null
                     ? _options.ElevenLabs.Model
                     : null,
                 BillingModel = mode == RealtimeTranslationModes.Scribe
                     ? _options.ElevenLabs.BillingModel
                     : transcript is null
-                        ? _options.Deployment
+                        ? OpenAiModels.RealtimeTranslation
                         : _options.SavedTranscriptBillingModel,
                 CreditsPerStartedMinute = mode == RealtimeTranslationModes.Scribe
                     ? _pricing.ScribeSubtitleCreditsPerStartedMinute

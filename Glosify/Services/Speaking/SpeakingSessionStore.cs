@@ -65,6 +65,7 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
         EnsureCapacity(userId);
 
         var conversation = await _agentClient.CreateConversationAsync(
+            userId,
             avatar.Id,
             interactiveMode,
             cancellationToken);
@@ -80,10 +81,8 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
             _ttl,
             quizContext);
 
-        // Decide under the lock, but dispose outside it: DisposeAsync reaches Foundry to
-        // tear down the remote conversation, and awaiting that is not possible inside a
-        // lock. Discarding the ValueTask instead would leave the remote conversation to
-        // expire on its own and swallow any fault.
+        // Decide under the lock, but dispose outside it: awaiting disposal is not possible
+        // inside a lock and every detached conversation must be finalized deterministically.
         bool atCapacity;
         lock (_mutationLock)
         {
@@ -158,7 +157,7 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
     /// Disposes a conversation without awaiting it, for the synchronous <see cref="Get"/> path
     /// where awaiting is not an option. <c>AsTask</c> consumes the <see cref="ValueTask"/> exactly
     /// once — it must never be consumed twice — and the continuation observes any fault so a
-    /// failed Foundry teardown cannot resurface later as an unobserved task exception.
+    /// failed local teardown cannot resurface later as an unobserved task exception.
     /// </summary>
     private static void DisposeDetached(ISpeakingAgentConversation conversation) =>
         _ = conversation.DisposeAsync().AsTask().ContinueWith(
@@ -206,8 +205,8 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
             if (_sessions.TryRemove(state.Id, out _))
             {
                 removed++;
-                // Best effort: one conversation failing to tear down on the Foundry side
-                // must not stop the sweep from reaping the rest.
+                // Best effort: one conversation failing to tear down must not stop the
+                // sweep from reaping the rest.
                 try
                 {
                     await state.Conversation.DisposeAsync();
@@ -216,7 +215,7 @@ public sealed class SpeakingSessionStore : ISpeakingSessionStore
                 {
                     _logger.LogWarning(
                         exception,
-                        "Could not dispose the Foundry conversation for expired speaking session {SessionId}",
+                        "Could not dispose the OpenAI conversation for expired speaking session {SessionId}",
                         state.Id);
                 }
             }

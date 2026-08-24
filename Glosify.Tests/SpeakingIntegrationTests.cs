@@ -860,6 +860,7 @@ public sealed class SpeakingIntegrationTests
                     ["Legal:ControllerName"] = "Glosify test operator",
                     ["Legal:ContactEmail"] = "privacy@glosify.app",
                     ["Admin:Emails:0"] = adminEmail ?? string.Empty,
+                    ["OPENAI_SECRET_KEY"] = "test-openai-key",
                 };
                 configuration.AddInMemoryCollection(settings);
             });

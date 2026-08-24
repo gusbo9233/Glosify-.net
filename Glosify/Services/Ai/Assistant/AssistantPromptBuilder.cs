@@ -15,10 +15,9 @@ internal sealed class AssistantPromptBuilder
     /// Recorded on every turn so completed turns stay attributable to the instructions that
     /// produced them. The composed instruction itself is per-turn and carries user context,
     /// so it is not stored here; the version is what makes a turn comparable to another turn
-    /// after the prompt has moved on. An authored Foundry agent supplies its own instructions
-    /// and its own version, which is recorded separately as agent_version.
+    /// after the prompt has moved on. Static profile instructions are versioned in code too.
     /// </remarks>
-    public const string Version = "2026-08-16.1";
+    public const string Version = AssistantProfileInstructions.Version;
 
     private const string InlineBlankMarker = "{{blank}}";
 
@@ -303,9 +302,7 @@ internal sealed class AssistantPromptBuilder
     }
 
     /// <summary>
-    /// The per-turn facts handed to the authored quiz-builder agent. Everything static —
-    /// how elements are composed, what makes a document playable, style rules — lives in
-    /// the agent's own instructions in Foundry, not here.
+    /// The per-turn facts appended to the code-owned quiz-builder profile.
     /// </summary>
     private static string ComposeCustomQuizBuilderContext(
         Quiz quiz,

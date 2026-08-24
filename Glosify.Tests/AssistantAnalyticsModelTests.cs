@@ -48,7 +48,7 @@ public sealed class AssistantAnalyticsModelTests
             TurnId = turn.Id,
             Sequence = 0,
             Profile = turn.Profile,
-            Provider = "foundry",
+            Provider = "openai",
             RequestJson = "{}",
             Status = AssistantInvocationStatus.Completed,
             StartedAt = turn.StartedAt,

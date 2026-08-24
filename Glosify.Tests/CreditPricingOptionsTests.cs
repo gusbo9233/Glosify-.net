@@ -10,15 +10,12 @@ namespace Glosify.Tests;
 public sealed class CreditPricingOptionsTests
 {
     [Fact]
-    public void AppServiceStyleConfiguration_BindsNamedFeaturesModelsAndSubtitleRates()
+    public void AppServiceStyleConfiguration_BindsNamedFeaturesAndSubtitleRates()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["CreditPricing:TokenFeatures:assistant"] = "1.5",
-                ["CreditPricing:Models:0:Deployment"] = "gpt-5.6-luna",
-                ["CreditPricing:Models:0:Multiplier"] = "0.6",
-                ["CreditPricing:DefaultModelMultiplier"] = "1",
                 ["CreditPricing:Subtitles:EnhancedCreditsPerStartedMinute"] = "8",
                 ["CreditPricing:Subtitles:ScribeCreditsPerStartedMinute"] = "4",
                 ["CreditPricing:Subtitles:EnhancedWithTranscriptCreditsPerStartedMinute"] = "16",
@@ -31,8 +28,6 @@ public sealed class CreditPricingOptionsTests
 
         Assert.NotNull(options);
         Assert.Equal(1.5m, options.TokenFeatures["assistant"]);
-        Assert.Equal("gpt-5.6-luna", options.Models[0].Deployment);
-        Assert.Equal(0.6m, options.Models[0].Multiplier);
         Assert.Equal(4, options.Subtitles.ScribeCreditsPerStartedMinute);
     }
 
@@ -41,19 +36,11 @@ public sealed class CreditPricingOptionsTests
     {
         var options = new CreditPricingOptions
         {
-            DefaultModelMultiplier = 0,
             TokenFeatures =
             {
                 ["unknown"] = 1,
                 [AiUsageFeatures.Assistant] = 0,
             },
-            ModelMultipliers = { ["model"] = -1 },
-            Models =
-            [
-                new ModelCreditPricingOptions { Deployment = "duplicate", Multiplier = 1 },
-                new ModelCreditPricingOptions { Deployment = "DUPLICATE", Multiplier = 1 },
-                new ModelCreditPricingOptions { Deployment = "", Multiplier = 0 },
-            ],
             Subtitles = new SubtitleCreditPricingOptions
             {
                 ScribeCreditsPerStartedMinute = 0,
@@ -65,25 +52,21 @@ public sealed class CreditPricingOptionsTests
         Assert.False(result.Succeeded);
         Assert.Contains(result.Failures!, failure => failure.Contains("unknown feature", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("assistant", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("DefaultModelMultiplier", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("ScribeCredits", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("duplicate deployment", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void Resolver_AppliesFeatureRateModelOverrideAndRounding()
+    public void Resolver_AppliesFeatureRateWithTheSingleLunaMultiplier()
     {
         var resolver = CreateResolver(new CreditPricingOptions
         {
             TokenFeatures = { [AiUsageFeatures.Speaking] = 1.5m },
-            DefaultModelMultiplier = 1m,
-            Models = [new ModelCreditPricingOptions { Deployment = "test-model", Multiplier = 0.6m }],
         });
 
-        Assert.Equal(5, resolver.CalculateTokenCredits(
+        Assert.Equal(8, resolver.CalculateTokenCredits(
             5_000,
             AiUsageFeatures.Speaking,
-            "TEST-MODEL"));
+            OpenAiModels.Luna));
         Assert.Equal(0, resolver.CalculateTokenCredits(
             0,
             AiUsageFeatures.Speaking,
@@ -91,18 +74,21 @@ public sealed class CreditPricingOptionsTests
     }
 
     [Fact]
-    public void Resolver_UsesLegacyValuesOnlyWhenUnifiedPricesAreAbsent()
+    public void Resolver_UsesSingleModelMultiplierWhenNoOverrideIsConfigured()
     {
         var resolver = CreateResolver(new CreditPricingOptions());
 
         Assert.Equal(2m, resolver.GetTokenFeatureRate(AiUsageFeatures.Assistant));
-        Assert.Equal(0.3m, resolver.GetModelMultiplier("test-model"));
+        Assert.Equal(1m, resolver.GetModelMultiplier("test-model"));
         Assert.Equal(8, resolver.EnhancedSubtitleCreditsPerStartedMinute);
         Assert.Equal(6, resolver.ScribeSubtitleCreditsPerStartedMinute);
         Assert.Equal(16, resolver.EnhancedWithTranscriptCreditsPerStartedMinute);
         Assert.All(
             resolver.GetCatalog().TokenFeatures,
             price => Assert.Equal(CreditPriceSources.LegacyFallback, price.Source));
+        var model = Assert.Single(resolver.GetCatalog().ModelMultipliers);
+        Assert.Equal(OpenAiModels.Luna, model.Code);
+        Assert.Equal(1m, model.Value);
     }
 
     [Fact]
@@ -121,20 +107,6 @@ public sealed class CreditPricingOptionsTests
             {
                 CreditsPerThousandTokens = 2,
                 MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
-            }),
-            Options.Create(new GenerativeAiOptions
-            {
-                Foundry = new FoundryGenerativeAiOptions
-                {
-                    AssistantModels =
-                    [
-                        new AssistantModelOptions
-                        {
-                            Deployment = "test-model",
-                            CreditMultiplier = 0.3m,
-                        },
-                    ],
-                },
             }),
             Options.Create(new RealtimeTranslationOptions
             {

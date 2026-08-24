@@ -6,7 +6,7 @@ using Microsoft.Extensions.AI;
 namespace Glosify.Services.Speaking;
 
 /// <summary>
-/// Owns the executable scene tools for one Foundry bartender conversation.
+/// Owns the executable scene tools for one direct OpenAI bartender conversation.
 /// A turn binds these tools to a cloned interaction state; only the caller can
 /// commit that clone after the final structured reply and credit usage succeed.
 /// </summary>

@@ -5,7 +5,6 @@ using Glosify.Models.Entities;
 using Glosify.Models.Library;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
-using Glosify.Services.Ai.Llm;
 using Glosify.Services.Books;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -44,7 +43,7 @@ public sealed class BookPageTranslationServiceTests
         var usage = Assert.Single(client.UsageContexts);
         Assert.Equal(AiUsageFeatures.PageTranslation, usage.Feature);
         Assert.Equal("translate_book_page", usage.Operation);
-        Assert.Equal("gpt-5.4-mini", Assert.Single(client.Models));
+        Assert.Equal(OpenAiModels.Luna, Assert.Single(client.Models));
         Assert.Single(await context.BookPageTranslations.ToListAsync());
     }
 
@@ -215,40 +214,26 @@ public sealed class BookPageTranslationServiceTests
     }
 
     [Fact]
-    public async Task Invalid_translation_output_retries_gpt_then_uses_configured_fallback()
+    public async Task Invalid_translation_output_retries_luna_then_fails_without_fallback()
     {
         await using var context = CreateContext();
         var (document, _) = await SeedBookAsync(context, "owner");
         var client = new FakeGenerativeAiClient
         {
-            PromptResponseFactory = (call, _) => call <= 2
-                ? new BookPageTranslationAiResponse
+            PromptResponseFactory = (_, _) => new BookPageTranslationAiResponse
                 {
                     DetectedSourceLanguage = "English",
                     Segments = [new() { Index = 0, Translation = "Incomplete" }],
-                }
-                : new BookPageTranslationAiResponse
-                {
-                    DetectedSourceLanguage = "English",
-                    Segments =
-                    [
-                        new() { Index = 0, Translation = "Hej där." },
-                        new() { Index = 1, Translation = "Hur mår du?" },
-                    ],
                 },
         };
 
-        var result = await CreateService(context, client).TranslatePageAsync(
-            document.Id, 1, "owner", "Swedish", SourceSegments);
+        await Assert.ThrowsAsync<GenerativeAiStructuredOutputException>(() =>
+            CreateService(context, client).TranslatePageAsync(
+                document.Id, 1, "owner", "Swedish", SourceSegments));
 
-        Assert.Equal(3, client.CallCount);
-        Assert.Equal(
-            ["gpt-5.4-mini", "gpt-5.4-mini", "grok-4-1-fast-non-reasoning"],
-            client.Models.Cast<string>());
-        Assert.Equal("Hej där.", result.Segments[0].Translation);
-        Assert.Equal(
-            "grok-4-1-fast-non-reasoning",
-            Assert.Single(await context.BookPageTranslations.ToListAsync()).Model);
+        Assert.Equal(2, client.CallCount);
+        Assert.All(client.Models, model => Assert.Equal(OpenAiModels.Luna, model));
+        Assert.Empty(await context.BookPageTranslations.ToListAsync());
     }
 
     [Fact]
@@ -411,26 +396,11 @@ public sealed class BookPageTranslationServiceTests
     private static BookPageTranslationService CreateService(
         GlosifyContext context,
         IGenerativeAiClient client,
-        IBookPageTranslationCoordinator? coordinator = null,
-        string provider = GenerativeAiOptions.FoundryProvider) =>
+        IBookPageTranslationCoordinator? coordinator = null) =>
         new(
             context,
             client,
             coordinator ?? new BookPageTranslationCoordinator(),
-            Options.Create(new GenerativeAiOptions
-            {
-                Provider = provider,
-                Foundry = new FoundryGenerativeAiOptions
-                {
-                    StructuredDeployment = "gpt-5.4-mini",
-                    PageTranslationDeployment = "gpt-5.4-mini",
-                    PageTranslationFallbackDeployment = "grok-4-1-fast-non-reasoning",
-                },
-            }),
-            Options.Create(new GeminiOptions
-            {
-                PageTranslationModel = "gemini-3.1-flash-lite",
-            }),
             TimeProvider.System);
 
     private sealed class FakeGenerativeAiClient : IGenerativeAiClient

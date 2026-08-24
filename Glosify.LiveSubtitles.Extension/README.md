@@ -18,7 +18,7 @@ remote/dynamic-code patterns.
 
 The server catalog supplies the available top-level subtitle modes and the
 current Azure Translator target-language list. Scribe uses ElevenLabs Scribe v2
-plus Azure Translator, and Enhanced uses Microsoft Foundry. Spoken-language
+plus Azure Translator, and Enhanced uses OpenAI's realtime translation API. Spoken-language
 detection defaults to automatic; the optional hint selector appears whenever
 Scribe will process audio, including Enhanced transcript saving. Scribe remains
 absent until its server-side key and monthly-budget price are configured.

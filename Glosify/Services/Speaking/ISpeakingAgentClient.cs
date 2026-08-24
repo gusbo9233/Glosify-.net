@@ -5,6 +5,7 @@ public interface ISpeakingAgentClient
     bool IsConfigured { get; }
 
     Task<ISpeakingAgentConversation> CreateConversationAsync(
+        string userId,
         SpeakingAvatarId avatar,
         bool interactiveMode = false,
         CancellationToken cancellationToken = default);
