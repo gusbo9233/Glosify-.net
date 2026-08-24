@@ -6,7 +6,9 @@ customMetrics
 | where timestamp > ago(24h)
 | where name in ("glosify.ai.requests", "glosify.ai.duration")
 | extend provider = tostring(customDimensions["ai.provider"]),
-         model = tostring(customDimensions["ai.model"]),
+         model = coalesce(
+             tostring(customDimensions["ai.model"]),
+             tostring(customDimensions["ai.deployment"])),
          outcome = tostring(customDimensions["ai.outcome"])
 | where provider == "openai" and model == "gpt-5.6-luna"
 | summarize samples=sum(value), average=avg(value), p95=percentile(value, 95)
@@ -18,7 +20,9 @@ customMetrics
 | where timestamp > ago(7d)
 | where name in ("glosify.ai.input_tokens", "glosify.ai.output_tokens", "glosify.ai.total_tokens")
 | extend provider = tostring(customDimensions["ai.provider"]),
-         model = tostring(customDimensions["ai.model"]),
+         model = coalesce(
+             tostring(customDimensions["ai.model"]),
+             tostring(customDimensions["ai.deployment"])),
          feature = tostring(customDimensions["ai.feature"])
 | where provider == "openai" and model == "gpt-5.6-luna"
 | summarize tokens=sum(value) by feature, name, bin(timestamp, 1d)

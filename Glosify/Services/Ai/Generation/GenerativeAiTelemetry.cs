@@ -24,13 +24,13 @@ internal static class GenerativeAiTelemetry
     internal static readonly Histogram<double> Duration =
         Meter.CreateHistogram<double>("glosify.ai.duration", "ms");
 
-    internal static TagList Tags(string feature, string provider, string deployment, string outcome = "success")
+    internal static TagList Tags(string feature, string provider, string model, string outcome = "success")
     {
         var tags = new TagList
         {
             { "ai.feature", feature },
             { "ai.provider", provider },
-            { "ai.deployment", deployment },
+            { "ai.model", model },
             { "ai.outcome", outcome },
         };
         return tags;
