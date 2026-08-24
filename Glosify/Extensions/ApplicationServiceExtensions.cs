@@ -1,14 +1,9 @@
-using Azure.AI.Projects;
 using Azure.Core;
-using System.ClientModel;
-using System.ClientModel.Primitives;
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Anki;
 using Glosify.Services.Ai.Assistant;
-using Glosify.Services.Ai.Assistant.Mcp;
 using Glosify.Services.Ai.Generation;
-using Glosify.Services.Ai.Llm;
 using Glosify.Services.Auth;
 using Glosify.Services.Books;
 using Glosify.Services.Classrooms;
@@ -59,11 +54,17 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ILanguageContext, CookieLanguageContext>();
         services.AddScoped<IQuizLanguagePreferenceService, QuizLanguagePreferenceService>();
 
-        services.AddOptions<GeminiOptions>()
-            .Bind(configuration.GetSection("Gemini"));
         services.AddOptions<GenerativeAiOptions>()
             .Bind(configuration.GetSection(GenerativeAiOptions.SectionName))
             .ValidateOnStart();
+        services.Configure<GenerativeAiOptions>(options =>
+        {
+            var apiKey = configuration["OPENAI_SECRET_KEY"];
+            if (!string.IsNullOrWhiteSpace(apiKey))
+            {
+                options.ApiKey = apiKey.Trim();
+            }
+        });
         services.AddSingleton<IValidateOptions<GenerativeAiOptions>, GenerativeAiOptionsValidator>();
         services.AddOptions<AiUsageOptions>()
             .Bind(configuration.GetSection("AiUsage"))
@@ -95,18 +96,6 @@ public static class ApplicationServiceExtensions
                 options.ElevenLabs.ApiKey = elevenLabsApiKey;
             }
         });
-        // Keep the legacy Gemini credential alias only while the explicit rollback
-        // provider is available. All model and timeout settings use standard ASP.NET
-        // double-underscore configuration binding.
-        services.Configure<GeminiOptions>(options =>
-        {
-            var apiKey = configuration["GEMINI_API_KEY"];
-            if (!string.IsNullOrWhiteSpace(apiKey))
-            {
-                options.ApiKey = apiKey;
-            }
-        });
-
         // Register application services
         services.Configure<BlobStorageOptions>(configuration.GetSection("BlobStorage"));
         services.AddScoped<IQuizService, QuizService>();
@@ -185,35 +174,20 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IRealtimeTextTranslator, AzureRealtimeTextTranslator>();
         services.AddSingleton<IEconomicalSubtitleTranslator, EconomicalSubtitleTranslator>();
         services.AddSingleton<RealtimeTranslationRelayAuthorizationMonitor>();
-        services.AddSingleton<IEnhancedTranslationRelay, FoundryTranslationRelay>();
+        services.AddSingleton<IEnhancedTranslationRelay, OpenAiTranslationRelay>();
         services.AddSingleton<IScribeTranslationRelay, ScribeTranslationRelay>();
-        services.AddSingleton<IFoundryTranslationRelay, RealtimeTranslationRelayRouter>();
+        services.AddSingleton<IRealtimeTranslationRelay, RealtimeTranslationRelayRouter>();
         services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();
         services.AddScoped<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>();
         services.AddHostedService<RealtimeTranslationCleanupService>();
-        // The Gemini model factory remains only for the explicit deployment-level
-        // rollback path during the Foundry soak.
-        services.AddSingleton<IGeminiModelFactory, GeminiModelFactory>();
-        services.AddSingleton<IGenerativeAiModelResolver, GenerativeAiModelResolver>();
-        services.AddSingleton<IFoundryAgentInvoker, FoundryAgentInvoker>();
-        services.AddScoped<FoundryGenerativeAiClient>();
-        services.AddScoped<GeminiGenerativeAiClient>();
+        services.AddSingleton<IOpenAiResponsesTransport, OpenAiResponsesTransport>();
+        services.AddScoped<OpenAiGenerativeAiClient>();
         services.AddScoped<IGenerativeAiClient>(services =>
-        {
-            var provider = services.GetRequiredService<IOptions<GenerativeAiOptions>>()
-                .Value.Provider.Trim();
-            return string.Equals(
-                provider,
-                GenerativeAiOptions.GeminiProvider,
-                StringComparison.OrdinalIgnoreCase)
-                ? services.GetRequiredService<GeminiGenerativeAiClient>()
-                : services.GetRequiredService<FoundryGenerativeAiClient>();
-        });
+            services.GetRequiredService<OpenAiGenerativeAiClient>());
         services.AddScoped<IQuizJsonImportRepairService, QuizJsonImportRepairService>();
         services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();
         services.AddAssistantTools();
         services.AddScoped<IChangeApplier, ChangeApplier>();
-        services.AddScoped<IAssistantPendingChangeStore, AssistantPendingChangeStore>();
         services.AddScoped<AssistantContextResolver>();
         services.AddScoped<AssistantMessagePresenter>();
         services.AddScoped<AssistantPromptBuilder>();
@@ -245,7 +219,6 @@ public static class ApplicationServiceExtensions
         services.AddScoped<AssistantTurnRunner>();
         services.AddScoped<AssistantChangeWorkflow>();
         services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
-        services.AddAssistantMcp(configuration);
 
         services.Configure<SpeechOptions>(configuration.GetSection(SpeechOptions.SectionName));
         services.AddOptions<SpeakingOptions>()
@@ -253,16 +226,8 @@ public static class ApplicationServiceExtensions
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<SpeakingOptions>, SpeakingOptionsValidator>();
         services.AddSingleton<TokenCredential>(_ =>
-            FoundryCredentialFactory.Create(environment, configuration));
+            AzureCredentialFactory.Create(environment, configuration));
         services.AddSingleton<GlosifyBlobServiceClient>();
-        services.AddSingleton(services =>
-        {
-            var foundry = services.GetRequiredService<IOptions<GenerativeAiOptions>>()
-                .Value.Foundry;
-            return CreateFoundryProjectClient(
-                foundry,
-                services.GetRequiredService<TokenCredential>());
-        });
         // Without a resilience handler this client falls back to HttpClient's 100-second
         // default with no retry and no circuit breaker, so a Speech regional brownout would
         // hold a request thread for the full 100 seconds per call.
@@ -270,7 +235,7 @@ public static class ApplicationServiceExtensions
             .AddStandardResilienceHandler();
         services.AddScoped<ITextToSpeechService, AzureTextToSpeechService>();
         services.AddScoped<ISpeechAuthorizationTokenService, SpeechAuthorizationTokenService>();
-        services.AddSingleton<ISpeakingAgentClient, FoundrySpeakingAgentClient>();
+        services.AddSingleton<ISpeakingAgentClient, OpenAiSpeakingAgentClient>();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ISpeakingSessionStore, SpeakingSessionStore>();
         services.AddHostedService<SpeakingSessionCleanupService>();
@@ -278,26 +243,6 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ISpeakingQuizReader, SpeakingQuizReader>();
 
         return services;
-    }
-
-    internal static AIProjectClient CreateFoundryProjectClient(
-        FoundryGenerativeAiOptions options,
-        TokenCredential credential)
-    {
-        var endpoint = new Uri(options.ProjectEndpoint, UriKind.Absolute);
-        if (string.IsNullOrWhiteSpace(options.GatewayApiKey))
-        {
-            return new AIProjectClient(endpoint, credential);
-        }
-
-        var clientOptions = new AIProjectClientOptions();
-        clientOptions.AddPolicy(
-            ApiKeyAuthenticationPolicy.CreateHeaderApiKeyPolicy(
-                new ApiKeyCredential(options.GatewayApiKey.Trim()),
-                "api-key",
-                keyPrefix: null),
-            PipelinePosition.PerCall);
-        return new AIProjectClient(endpoint, credential, clientOptions);
     }
 
     internal static string? ResolveElevenLabsApiKey(IConfiguration configuration)

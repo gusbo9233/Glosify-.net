@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Glosify.Services.Ai;
+using Glosify.Services.Ai.Generation;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.Speaking;
@@ -312,8 +313,8 @@ public sealed class SpeakingService : ISpeakingService
                     Guid.NewGuid(),
                     "speaking_session",
                     session.Id.ToString()),
-                AiUsageProviders.AzureAiFoundry,
-                _speakingOptions.ModelDeployment,
+                AiUsageProviders.OpenAi,
+                OpenAiModels.Luna,
                 estimatedTokens,
                 cancellationToken);
             var transactionalAgentDispatched = false;

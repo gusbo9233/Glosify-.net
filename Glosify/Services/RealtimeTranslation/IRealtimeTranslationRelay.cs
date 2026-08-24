@@ -2,7 +2,7 @@ using System.Net.WebSockets;
 
 namespace Glosify.Services.RealtimeTranslation;
 
-public interface IFoundryTranslationRelay
+public interface IRealtimeTranslationRelay
 {
     Task RelayAsync(
         WebSocket browserSocket,

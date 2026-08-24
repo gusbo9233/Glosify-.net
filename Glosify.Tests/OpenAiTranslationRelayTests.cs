@@ -1,6 +1,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using Glosify.Controllers.Api;
+using Glosify.Services.Ai.Generation;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -8,7 +9,7 @@ using Xunit;
 
 namespace Glosify.Tests;
 
-public sealed class FoundryTranslationRelayTests
+public sealed class OpenAiTranslationRelayTests
 {
     private static readonly DateTimeOffset TestNow =
         new(2026, 8, 11, 8, 0, 0, TimeSpan.Zero);
@@ -16,54 +17,71 @@ public sealed class FoundryTranslationRelayTests
     [Fact]
     public void Protocol_UsesDedicatedTranslationEndpointAndLanguageConfiguration()
     {
-        var options = new RealtimeTranslationOptions
-        {
-            FoundryEndpoint = "https://glosify-foundry.openai.azure.com/",
-            Deployment = "glosify-realtime-translate",
-        };
-
-        var uri = FoundryTranslationProtocol.BuildWebSocketUri(options);
+        var uri = OpenAiTranslationProtocol.BuildWebSocketUri();
         var update = Encoding.UTF8.GetString(
-            FoundryTranslationProtocol.CreateSessionUpdate("es"));
+            OpenAiTranslationProtocol.CreateSessionUpdate("es", "safe-learner"));
 
         Assert.Equal(
-            "wss://glosify-foundry.openai.azure.com/openai/v1/realtime/translations?model=glosify-realtime-translate",
+            "wss://api.openai.com/v1/realtime/translations?model=gpt-realtime-translate",
             uri.ToString());
         Assert.Equal(
-            "{\"type\":\"session.update\",\"session\":{\"audio\":{\"output\":{\"language\":\"es\"}}}}",
+            "{\"type\":\"session.update\",\"session\":{\"safety_identifier\":\"safe-learner\",\"audio\":{\"output\":{\"language\":\"es\"}}}}",
             update);
+    }
+
+    [Fact]
+    public void Protocol_UsesBearerKeyAndHashedLearnerSafetyIdentifier()
+    {
+        var headers = OpenAiTranslationProtocol.CreateRequestHeaders(
+            "  secret-test-key  ",
+            "learner-7");
+
+        Assert.Equal("Bearer secret-test-key", headers.Authorization);
+        Assert.Equal(64, headers.SafetyIdentifier.Length);
+        Assert.DoesNotContain("learner-7", headers.SafetyIdentifier, StringComparison.Ordinal);
+        Assert.Equal(
+            OpenAiRequestFactory.CreateSafetyIdentifier("learner-7"),
+            headers.SafetyIdentifier);
+    }
+
+    [Fact]
+    public void Protocol_SendsSessionCloseForGracefulShutdown()
+    {
+        Assert.Equal(
+            "{\"type\":\"session.close\"}",
+            Encoding.UTF8.GetString(OpenAiTranslationProtocol.CreateSessionClose()));
     }
 
     [Fact]
     public void Protocol_AcceptsOnlyBoundedInputAudioMessages()
     {
-        Assert.True(FoundryTranslationProtocol.IsAllowedBrowserMessage(
+        Assert.True(OpenAiTranslationProtocol.IsAllowedBrowserMessage(
             "{\"type\":\"session.input_audio_buffer.append\",\"audio\":\"AQIDBA==\"}"u8));
-        Assert.False(FoundryTranslationProtocol.IsAllowedBrowserMessage(
+        Assert.False(OpenAiTranslationProtocol.IsAllowedBrowserMessage(
             "{\"type\":\"session.update\",\"session\":{}}"u8));
-        Assert.False(FoundryTranslationProtocol.IsAllowedBrowserMessage(
+        Assert.False(OpenAiTranslationProtocol.IsAllowedBrowserMessage(
             "{\"type\":\"session.input_audio_buffer.append\",\"audio\":\"\"}"u8));
     }
 
     [Fact]
     public void Protocol_DropsAudioOutputButForwardsTranslationText()
     {
-        Assert.True(FoundryTranslationProtocol.ShouldForwardFoundryMessage(
+        Assert.True(OpenAiTranslationProtocol.ShouldForwardOpenAiMessage(
             "{\"type\":\"response.text.delta\",\"text\":\"Hola\"}"u8));
-        Assert.False(FoundryTranslationProtocol.ShouldForwardFoundryMessage(
+        Assert.False(OpenAiTranslationProtocol.ShouldForwardOpenAiMessage(
             "{\"type\":\"response.output_audio.delta\",\"delta\":\"AQID\"}"u8));
-        Assert.False(FoundryTranslationProtocol.ShouldForwardFoundryMessage(
+        Assert.False(OpenAiTranslationProtocol.ShouldForwardOpenAiMessage(
             "{\"type\":\"session.output_audio.delta\",\"delta\":\"AQID\"}"u8));
-        Assert.False(FoundryTranslationProtocol.ShouldForwardFoundryMessage(
+        Assert.False(OpenAiTranslationProtocol.ShouldForwardOpenAiMessage(
             "{\"type\":\"session.input_transcript.delta\",\"delta\":\"Hello\"}"u8));
-        Assert.False(FoundryTranslationProtocol.ShouldForwardFoundryMessage(
+        Assert.False(OpenAiTranslationProtocol.ShouldForwardOpenAiMessage(
             "{\"type\":\"conversation.item.input_audio_transcription.completed\",\"transcript\":\"Hello\"}"u8));
     }
 
     [Fact]
     public void TranscriptAccumulator_PersistsOnlyFinalTranslatedText()
     {
-        var accumulator = new FoundryTranslationTranscriptAccumulator();
+        var accumulator = new OpenAiTranslationTranscriptAccumulator();
         var now = TestNow;
 
         Assert.Null(accumulator.Apply(
@@ -88,7 +106,7 @@ public sealed class FoundryTranslationRelayTests
     [Fact]
     public void TranscriptAccumulator_StoresDeltaOnlyCaptionsOnceTheyGoQuiet()
     {
-        var accumulator = new FoundryTranslationTranscriptAccumulator();
+        var accumulator = new OpenAiTranslationTranscriptAccumulator();
         var start = TestNow;
 
         // A caption that only ever arrives as deltas, with no id fields to group on.
@@ -101,7 +119,7 @@ public sealed class FoundryTranslationRelayTests
         Assert.Empty(accumulator.FlushIdle(start));
 
         var flushed = Assert.Single(
-            accumulator.FlushIdle(start + FoundryTranslationTranscriptAccumulator.IdleFlush));
+            accumulator.FlushIdle(start + OpenAiTranslationTranscriptAccumulator.IdleFlush));
         Assert.Equal("Dzień dobry", flushed.Text);
         Assert.Equal(RealtimeTranslationTranscriptStreams.Translation, flushed.Stream);
 
@@ -119,7 +137,7 @@ public sealed class FoundryTranslationRelayTests
     [Fact]
     public void TranscriptAccumulator_RecordsEventTypesWithoutCaptionText()
     {
-        var accumulator = new FoundryTranslationTranscriptAccumulator();
+        var accumulator = new OpenAiTranslationTranscriptAccumulator();
         var now = TestNow;
 
         accumulator.Apply(
@@ -152,7 +170,7 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "es",
             translationMode: RealtimeTranslationModes.Enhanced,
-            speechProvider: RealtimeSpeechProviders.Foundry,
+            speechProvider: RealtimeSpeechProviders.OpenAi,
             sourceLanguage: "de",
             saveTranscript: true,
             transcriptSourceLanguage: "Polish");
@@ -222,7 +240,7 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "es",
             translationMode: RealtimeTranslationModes.Enhanced,
-            speechProvider: RealtimeSpeechProviders.Foundry,
+            speechProvider: RealtimeSpeechProviders.OpenAi,
             sourceLanguage: null,
             saveTranscript: false,
             transcriptSourceLanguage: null);
@@ -235,7 +253,7 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "es",
             translationMode: RealtimeTranslationModes.Enhanced,
-            speechProvider: RealtimeSpeechProviders.Foundry,
+            speechProvider: RealtimeSpeechProviders.OpenAi,
             sourceLanguage: null,
             saveTranscript: false,
             transcriptSourceLanguage: null);
@@ -254,7 +272,7 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "es",
             translationMode: RealtimeTranslationModes.Enhanced,
-            speechProvider: RealtimeSpeechProviders.Foundry,
+            speechProvider: RealtimeSpeechProviders.OpenAi,
             sourceLanguage: null,
             saveTranscript: true,
             transcriptSourceLanguage: "tlh"));
@@ -292,7 +310,7 @@ public sealed class FoundryTranslationRelayTests
             mode switch
             {
                 RealtimeTranslationModes.Scribe => RealtimeSpeechProviders.ElevenLabs,
-                _ => RealtimeSpeechProviders.Foundry,
+                _ => RealtimeSpeechProviders.OpenAi,
             },
             mode == RealtimeTranslationModes.Scribe ? "pl" : null,
             SaveTranscript: false,
@@ -331,7 +349,7 @@ public sealed class FoundryTranslationRelayTests
             "user-1",
             "sv",
             "unknown",
-            RealtimeSpeechProviders.Foundry,
+            RealtimeSpeechProviders.OpenAi,
             SourceLanguage: null,
             SaveTranscript: false,
             TranscriptSourceLanguage: null);
@@ -347,7 +365,7 @@ public sealed class FoundryTranslationRelayTests
             "ElevenLabs Scribe v2 ended the transcription stream.");
 
         var exception = await Assert.ThrowsAsync<RealtimeTranslationUpstreamException>(() =>
-            FoundryTranslationRelay.AwaitScribePipelineAsync(
+            OpenAiTranslationRelay.AwaitScribePipelineAsync(
                 Task.FromException(producerFailure),
                 Task.CompletedTask));
 

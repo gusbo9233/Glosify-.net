@@ -5,7 +5,7 @@ using Glosify.Models.Entities;
 
 namespace Glosify.Services.RealtimeTranslation;
 
-internal sealed class FoundryTranslationTranscriptAccumulator
+internal sealed class OpenAiTranslationTranscriptAccumulator
 {
     // How long a buffer may sit untouched before it is stored without a closing
     // event. The translate deployment is not guaranteed to end a caption with a

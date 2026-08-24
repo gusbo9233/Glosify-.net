@@ -61,7 +61,6 @@ import {
     // Session-scoped on purpose: a new browser session starts on a fresh chat
     // instead of resuming whatever was open days ago.
     const activeChatStorageKey = 'glosify.assistant.activeChatId';
-    const modelStorageKey = 'glosify.assistant.model';
 
     const focusedWordId = panel.dataset.focusedWordId || null;
     const customQuizId = panel.dataset.customQuizId || null;
@@ -78,7 +77,6 @@ import {
     const submit = panel.querySelector('[data-assistant-submit]');
     const imageInput = panel.querySelector('[data-assistant-image-input]');
     const scanStatus = panel.querySelector('[data-assistant-scan-status]');
-    const modelSelect = panel.querySelector('[data-assistant-model-select]');
     const quizSelector = panel.querySelector('[data-assistant-quiz-selector]');
     const materialSelector = panel.querySelector('[data-assistant-material-selector]');
     const chatList = panel.querySelector('[data-assistant-chat-list]');
@@ -87,16 +85,6 @@ import {
     const tokenInput = panel.querySelector('input[name="__RequestVerificationToken"]')
         || document.querySelector('input[name="__RequestVerificationToken"]');
     const defaultEmptyText = empty?.textContent?.trim() || t('Assistant.Empty', 'Ask for help anywhere in Glosify.');
-
-    if (modelSelect) {
-        const storedModel = localStorage.getItem(modelStorageKey);
-        if (storedModel && Array.from(modelSelect.options).some(option => option.value === storedModel)) {
-            modelSelect.value = storedModel;
-        }
-        modelSelect.addEventListener('change', () => {
-            localStorage.setItem(modelStorageKey, modelSelect.value);
-        });
-    }
 
     const requestHeaders = (json = false) => {
         const headers = {
@@ -1033,7 +1021,6 @@ import {
                     customQuizId,
                     transcriptId: materialKind === 'transcript' ? materialId : null,
                     bookDocumentId: materialKind === 'book' ? materialId : null,
-                    model: modelSelect?.value || null,
                     documentContext,
                     transcriptContext,
                 }),

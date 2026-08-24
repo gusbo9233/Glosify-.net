@@ -1344,7 +1344,7 @@
     <value>Ücretsiz ders</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>Microsoft Foundry ve Azure AI Speech desteklidir</value>
+    <value>OpenAI ve Azure AI Speech desteklidir</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>Pratik ayarları</value>

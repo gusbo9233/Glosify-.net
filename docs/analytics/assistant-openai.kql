@@ -1,0 +1,57 @@
+// Glosify assistant direct OpenAI / Application Insights query pack.
+// Content fields are included only when the configured analytics policy permits it.
+
+// Assistant request volume, success rate, and latency by fixed model.
+customMetrics
+| where timestamp > ago(24h)
+| where name in ("glosify.ai.requests", "glosify.ai.duration")
+| extend provider = tostring(customDimensions["ai.provider"]),
+         model = tostring(customDimensions["ai.model"]),
+         outcome = tostring(customDimensions["ai.outcome"])
+| where provider == "openai" and model == "gpt-5.6-luna"
+| summarize samples=sum(value), average=avg(value), p95=percentile(value, 95)
+    by name, outcome, bin(timestamp, 1h)
+| order by timestamp desc
+
+// Token usage by application feature.
+customMetrics
+| where timestamp > ago(7d)
+| where name in ("glosify.ai.input_tokens", "glosify.ai.output_tokens", "glosify.ai.total_tokens")
+| extend provider = tostring(customDimensions["ai.provider"]),
+         model = tostring(customDimensions["ai.model"]),
+         feature = tostring(customDimensions["ai.feature"])
+| where provider == "openai" and model == "gpt-5.6-luna"
+| summarize tokens=sum(value) by feature, name, bin(timestamp, 1d)
+| order by timestamp desc
+
+// Tool-loop activity and failures without learner free text.
+customEvents
+| where timestamp > ago(24h)
+| where name startswith "glosify.assistant"
+| project timestamp, name,
+          turnId=tostring(customDimensions["assistant.turn_id"]),
+          tool=tostring(customDimensions["assistant.tool"]),
+          outcome=tostring(customDimensions["assistant.outcome"]),
+          error=tostring(customDimensions["assistant.error_class"])
+| order by timestamp desc
+
+// Credit settlement health for direct Responses calls.
+customMetrics
+| where timestamp > ago(24h)
+| where name in ("glosify.ai.credit_reservations", "glosify.ai.credit_commits", "glosify.ai.credit_releases")
+| extend provider = tostring(customDimensions["ai.provider"]),
+         outcome = tostring(customDimensions["ai.outcome"])
+| where provider == "openai"
+| summarize count=sum(value) by name, outcome, bin(timestamp, 1h)
+| order by timestamp desc
+
+// User feedback. Free-text comments are intentionally not selected here.
+customEvents
+| where timestamp > ago(7d)
+| where name == "glosify.assistant.feedback"
+| project timestamp,
+          rating=tostring(customDimensions["assistant.feedback.rating"]),
+          reasons=tostring(customDimensions["assistant.feedback.reasons"]),
+          turnId=tostring(customDimensions["assistant.turn_id"])
+| summarize count() by rating, reasons, bin(timestamp, 1d)
+| order by timestamp desc

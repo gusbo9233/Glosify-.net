@@ -1344,7 +1344,7 @@
     <value>Bài học miễn phí</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>Được hỗ trợ bởi Microsoft Foundry và Azure AI Speech</value>
+    <value>Được hỗ trợ bởi OpenAI và Azure AI Speech</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>Cài đặt luyện tập</value>

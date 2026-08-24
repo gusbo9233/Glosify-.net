@@ -5,7 +5,6 @@ using Glosify.Infrastructure.Api;
 using Glosify.Infrastructure.Health;
 using Glosify.Localization;
 using Glosify.Models.Entities;
-using Glosify.Services.Ai.Assistant.Mcp;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Auth;
 using Glosify.Services.RealtimeTranslation;
@@ -398,12 +397,6 @@ app.MapHub<Glosify.Hubs.ClassroomChatHub>("/hubs/classroom-chat");
 // AllowAnonymous is required because of the fallback authorization policy; the /manage
 // endpoints in the group resolve the user from the bearer token and 404 without one.
 app.MapGroup("/api/auth").MapIdentityApi<ApplicationUser>().AllowAnonymous();
-
-// Microsoft Foundry agents call assistant tools back through here. The route carries a
-// signed, short-lived session that names the acting user; the endpoint filter rejects a
-// missing signing key, a bad shared secret, or an expired session.
-app.MapAssistantMcp();
-
 
 app.Run();
 return 0;

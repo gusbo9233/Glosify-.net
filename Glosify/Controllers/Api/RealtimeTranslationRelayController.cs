@@ -12,13 +12,13 @@ namespace Glosify.Controllers.Api;
 public sealed class RealtimeTranslationRelayController : ControllerBase
 {
     private readonly IRealtimeTranslationRelayTokenStore _tokens;
-    private readonly IFoundryTranslationRelay _relay;
+    private readonly IRealtimeTranslationRelay _relay;
     private readonly IRealtimeTranslationService _sessions;
     private readonly ILogger<RealtimeTranslationRelayController> _logger;
 
     public RealtimeTranslationRelayController(
         IRealtimeTranslationRelayTokenStore tokens,
-        IFoundryTranslationRelay relay,
+        IRealtimeTranslationRelay relay,
         IRealtimeTranslationService sessions,
         ILogger<RealtimeTranslationRelayController> logger)
     {
@@ -47,7 +47,7 @@ public sealed class RealtimeTranslationRelayController : ControllerBase
         }
 
         using var browserSocket = await HttpContext.WebSockets.AcceptWebSocketAsync(
-            FoundryTranslationProtocol.BrowserProtocol);
+            OpenAiTranslationProtocol.BrowserProtocol);
         try
         {
             await _relay.RelayAsync(browserSocket, authorization, cancellationToken);
@@ -99,7 +99,7 @@ public sealed class RealtimeTranslationRelayController : ControllerBase
         foreach (var protocol in requestedProtocols)
         {
             if (!protocol.StartsWith(
-                    FoundryTranslationProtocol.RelayTokenProtocolPrefix,
+                    OpenAiTranslationProtocol.RelayTokenProtocolPrefix,
                     StringComparison.Ordinal))
             {
                 continue;
@@ -108,7 +108,7 @@ public sealed class RealtimeTranslationRelayController : ControllerBase
             {
                 return null;
             }
-            token = protocol[FoundryTranslationProtocol.RelayTokenProtocolPrefix.Length..];
+            token = protocol[OpenAiTranslationProtocol.RelayTokenProtocolPrefix.Length..];
         }
         return RealtimeTranslationRelayTokenStore.IsValidToken(token) ? token : null;
     }
@@ -121,7 +121,7 @@ public sealed class RealtimeTranslationRelayController : ControllerBase
         }
         try
         {
-            await FoundryTranslationRelay.SendBrowserControlAsync(
+            await OpenAiTranslationRelay.SendBrowserControlAsync(
                 socket,
                 "glosify.relay.error",
                 message,

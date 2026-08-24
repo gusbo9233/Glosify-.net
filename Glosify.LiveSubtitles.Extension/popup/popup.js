@@ -203,8 +203,8 @@ function render() {
   elements.serviceDisclosure.textContent = currentState.translationMode === "scribe"
     ? "When you start, this tab’s audio is streamed through Glosify to ElevenLabs Scribe v2, and finalized phrases are sent to Azure Translator. ElevenLabs may retain standard API logs under its service policy. Glosify does not store tab audio. Each started minute consumes credits."
     : currentState.saveTranscript
-      ? "When you start, this tab’s audio is streamed through Glosify to Microsoft Foundry for enhanced live translation and to ElevenLabs Scribe v2 for the saved source transcript. ElevenLabs may retain standard API logs under its service policy. Glosify does not store tab audio. Each started minute consumes credits."
-      : "When you start, this tab’s audio is streamed through Glosify to Microsoft Foundry for enhanced live translation. Audio is not stored. Each started minute consumes credits.";
+      ? "When you start, this tab’s audio is streamed through Glosify to OpenAI for enhanced live translation and to ElevenLabs Scribe v2 for the saved source transcript. ElevenLabs may retain standard API logs under its service policy. Glosify does not store tab audio. Each started minute consumes credits."
+      : "When you start, this tab’s audio is streamed through Glosify to OpenAI for enhanced live translation. Audio is not stored. Each started minute consumes credits.";
 
   const canStart = !busy
     && !currentState.active

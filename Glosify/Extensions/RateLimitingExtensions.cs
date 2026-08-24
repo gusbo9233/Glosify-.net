@@ -59,26 +59,6 @@ public static class RateLimitingExtensions
                     });
                 }
 
-                // Must precede the assistant rule, which would otherwise match this path.
-                // Microsoft Foundry calls the MCP endpoint as one shared identity with no user
-                // claim, so partitioning on the caller address would drop every user's tool calls
-                // into a single bucket. The signed session token in the route is per response and
-                // names the acting user, so it isolates them; the limit then bounds how many tool
-                // calls one agent response can make rather than how many any one user can.
-                if (path.StartsWithSegments("/assistant/mcp", out _, out var mcpRemainder))
-                {
-                    var session = mcpRemainder.Value?.Trim('/');
-                    var partition = string.IsNullOrEmpty(session)
-                        ? $"mcp-anon:{context.Connection.RemoteIpAddress?.ToString() ?? "unknown"}"
-                        : $"mcp:{session}";
-                    return RateLimitPartition.GetFixedWindowLimiter(partition, _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 120,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueLimit = 0,
-                    });
-                }
-
                 var pathSegments = path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries);
                 var isQuizAssistantPath = pathSegments is { Length: >= 3 }
                     && string.Equals(pathSegments[0], "Quiz", StringComparison.OrdinalIgnoreCase)

@@ -6,7 +6,6 @@ using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Generation;
-using Glosify.Services.Ai.Llm;
 using Glosify.Services.Books;
 using Glosify.Services.Language;
 using Microsoft.AspNetCore.Http;
@@ -1407,7 +1406,6 @@ public class AssistantSavedChatsTests
         var turnRunner = new AssistantTurnRunner(
             context,
             generativeAi ?? new StaticGenerativeAiClient("Done."),
-            CreateModelResolver(),
             tools ?? new NoopAssistantTools(),
             threadStore,
             contextResolver,
@@ -1429,39 +1427,6 @@ public class AssistantSavedChatsTests
                 timeProvider),
             new AssistantFeedbackService(context, timeProvider));
     }
-
-    private static IGenerativeAiModelResolver CreateModelResolver() =>
-        new GenerativeAiModelResolver(
-            Options.Create(new GenerativeAiOptions
-            {
-                Provider = GenerativeAiOptions.FoundryProvider,
-                Foundry = new FoundryGenerativeAiOptions
-                {
-                    ProjectEndpoint = "https://example.services.ai.azure.com/api/projects/test",
-                    AssistantDeployment = "test-model",
-                    StructuredDeployment = "test-model",
-                    VisionDeployment = "test-model",
-                    AllowedAssistantDeployments = ["test-model"],
-                    AssistantModels =
-                    [
-                        new AssistantModelOptions
-                        {
-                            Deployment = "test-model",
-                            DisplayName = "Test Model",
-                            Provider = "Test",
-                            SpeedTier = "Test",
-                            CostTier = "Test",
-                            CreditMultiplier = 1m,
-                        },
-                    ],
-                },
-            }),
-            Options.Create(new GeminiOptions
-            {
-                Model = "test-model",
-                AssistantModel = "test-model",
-                StructuredModel = "test-model",
-            }));
 
     private static Quiz CreateQuiz(Guid id, string userId) => new()
     {
@@ -1644,8 +1609,8 @@ public class AssistantSavedChatsTests
             return Task.FromResult(result with
             {
                 Metadata = new AgentInvocationMetadata(
-                    "foundry",
-                    "test-model",
+                    AiUsageProviders.OpenAi,
+                    OpenAiModels.Luna,
                     $"response-{_calls}",
                     new AiTokenUsage(10, 5, 0, 0, 15),
                     "glosify-librarian",
@@ -1658,7 +1623,7 @@ public class AssistantSavedChatsTests
                                 contextInstruction = request.ContextInstruction,
                                 history = request.History,
                                 tools = request.Tools,
-                                model = request.Model,
+                                model = OpenAiModels.Luna,
                                 profile = request.Profile.ToString(),
                             },
                             EffectiveRequestOptions)

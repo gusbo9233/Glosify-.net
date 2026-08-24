@@ -1,5 +1,6 @@
 using Glosify.Data;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Generation;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -17,65 +18,42 @@ namespace Glosify.Tests;
 public sealed class AssistantToolSurfaceRegressionTests
 {
     [Fact]
-    public void Published_quiz_assistant_v6_has_required_book_search_and_no_repair_surface()
+    public void Code_owned_quiz_assistant_has_required_book_search_and_no_repair_surface()
     {
-        var path = Path.Combine(FindRepositoryRoot(),
-            ".foundry/agents/glosify-quiz-assistant-v6.json");
-        var json = File.ReadAllText(path);
-        Assert.DoesNotContain("repair_sentence", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("repair", json, StringComparison.OrdinalIgnoreCase);
-        using var document = System.Text.Json.JsonDocument.Parse(json);
-        Assert.Equal("6", document.RootElement.GetProperty("version").GetString());
-        Assert.Equal("active", document.RootElement.GetProperty("status").GetString());
-        Assert.False(document.RootElement.GetProperty("draft").GetBoolean());
-        Assert.Contains(document.RootElement.GetProperty("definition").GetProperty("tools").EnumerateArray(),
-            tool => tool.GetProperty("name").GetString() == "search_book_pages");
+        using var context = CreateContext();
+        var tools = AssistantToolFactory.Create(context);
+        var instructions = AssistantProfileInstructions.Get(AssistantAgentProfile.QuizAssistant);
+
+        Assert.DoesNotContain("repair_sentence", instructions, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(
+            tools.QuizAssistantDeclarations,
+            tool => tool.Name.Contains("repair", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(tools.QuizAssistantDeclarations,
+            tool => tool.Name == "search_book_pages");
+        Assert.StartsWith("2026-08-24.direct-openai", AssistantProfileInstructions.Version);
     }
 
     [Fact]
-    public void Published_freestyle_v1_definitions_match_generic_runtime_surfaces()
+    public void Code_owned_freestyle_profiles_match_generic_runtime_surfaces()
     {
         using var context = CreateContext();
         var tools = AssistantToolFactory.Create(context);
         var profiles = new[]
         {
-            ("glosify-freestyle-librarian-v1.json", tools.FreestyleLibrarianDeclarations),
-            ("glosify-freestyle-quiz-assistant-v1.json", tools.FreestyleQuizAssistantDeclarations),
-            ("glosify-freestyle-quiz-builder-v1.json", tools.FreestyleCustomQuizBuilderDeclarations),
+            (AssistantAgentProfile.FreestyleLibrarian, tools.FreestyleLibrarianDeclarations),
+            (AssistantAgentProfile.FreestyleQuizAssistant, tools.FreestyleQuizAssistantDeclarations),
+            (AssistantAgentProfile.FreestyleCustomQuizBuilder, tools.FreestyleCustomQuizBuilderDeclarations),
         };
 
-        foreach (var (fileName, declarations) in profiles)
+        foreach (var (profile, declarations) in profiles)
         {
-            var json = File.ReadAllText(Path.Combine(FindRepositoryRoot(), ".foundry/agents", fileName));
+            var instructions = AssistantProfileInstructions.Get(profile);
             foreach (var excluded in new[] { "language", "vocabulary", "grammar", "translation", "pronunciation" })
             {
-                Assert.DoesNotContain(excluded, json, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain(excluded, instructions, StringComparison.OrdinalIgnoreCase);
             }
-
-            using var document = System.Text.Json.JsonDocument.Parse(json);
-            var root = document.RootElement;
-            Assert.Equal("1", root.GetProperty("version").GetString());
-            Assert.Equal("active", root.GetProperty("status").GetString());
-            Assert.Equal("gpt-5.6-luna", root.GetProperty("definition").GetProperty("model").GetString());
-            var exportedNames = root.GetProperty("definition").GetProperty("tools")
-                .EnumerateArray()
-                .Select(tool => tool.GetProperty("name").GetString())
-                .ToArray();
-            Assert.Equal(declarations.Select(tool => tool.Name), exportedNames);
+            Assert.NotEmpty(declarations);
         }
-    }
-
-    private static string FindRepositoryRoot()
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
-             directory is not null;
-             directory = directory.Parent)
-        {
-            if (Directory.Exists(Path.Combine(directory.FullName, ".foundry")))
-                return directory.FullName;
-        }
-        throw new DirectoryNotFoundException(
-            $"Could not find the repository root above {AppContext.BaseDirectory}.");
     }
 
     [Fact]

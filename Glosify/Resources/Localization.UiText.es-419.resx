@@ -1344,7 +1344,7 @@
     <value>Lección gratis</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>Con tecnología de Microsoft Foundry y Azure AI Speech</value>
+    <value>Con tecnología de OpenAI y Azure AI Speech</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>Ajustes de práctica</value>

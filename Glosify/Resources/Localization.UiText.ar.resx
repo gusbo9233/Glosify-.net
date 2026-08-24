@@ -1344,7 +1344,7 @@
     <value>درس مجاني</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>بدعم من Microsoft Foundry و Azure AI Speech</value>
+    <value>بدعم من OpenAI و Azure AI Speech</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>إعدادات التدريب</value>

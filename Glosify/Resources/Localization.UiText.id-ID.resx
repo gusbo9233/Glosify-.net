@@ -1344,7 +1344,7 @@
     <value>Pelajaran gratis</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>Didukung oleh Microsoft Foundry dan Azure AI Speech</value>
+    <value>Didukung oleh OpenAI dan Azure AI Speech</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>Pengaturan latihan</value>

@@ -61,14 +61,14 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         if (speechProvider is not (
                 RealtimeSpeechProviders.Azure
                 or RealtimeSpeechProviders.ElevenLabs
-                or RealtimeSpeechProviders.Foundry))
+                or RealtimeSpeechProviders.OpenAi))
         {
             throw new ArgumentException("Unsupported speech provider.", nameof(speechProvider));
         }
         var expectedSpeechProvider = translationMode switch
         {
             RealtimeTranslationModes.Scribe => RealtimeSpeechProviders.ElevenLabs,
-            _ => RealtimeSpeechProviders.Foundry,
+            _ => RealtimeSpeechProviders.OpenAi,
         };
         if (!string.Equals(speechProvider, expectedSpeechProvider, StringComparison.Ordinal))
         {

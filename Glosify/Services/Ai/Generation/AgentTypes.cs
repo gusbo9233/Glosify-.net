@@ -6,13 +6,11 @@ public sealed record AgentToolDeclaration(
     object ParametersJsonSchema);
 
 /// <summary>
-/// Selects which authored Foundry agent should answer a turn. Each profile pairs a
-/// persisted agent (its instructions live in Foundry, not in this repository) with the
-/// narrow tool set that profile is allowed to call.
+/// Selects the code-owned profile instruction and narrow tool surface for a turn.
 /// </summary>
 public enum AssistantAgentProfile
 {
-    /// <summary>No authored agent: full tool surface, instructions built in code.</summary>
+    /// <summary>Full code-owned tool surface and general instruction.</summary>
     General,
 
     /// <summary>A quiz page: its words, sentences, and custom quizzes.</summary>
@@ -35,11 +33,10 @@ public enum AssistantAgentProfile
 }
 
 /// <param name="SystemInstruction">
-/// The complete instruction, used when no persisted agent backs the profile.
+/// The complete code-owned instruction.
 /// </param>
 /// <param name="ContextInstruction">
-/// Only the facts that change per turn (open quiz, languages). Appended to a persisted
-/// agent's authored instructions, which carry everything static.
+/// The facts that change per turn (open quiz, languages).
 /// </param>
 /// <param name="AllowedToolNames">
 /// The tool names this turn may offer, or null for no restriction.
@@ -49,16 +46,13 @@ public enum AssistantAgentProfile
 /// <see cref="AgentInvocationMetadata.EffectiveRequestJson"/>.
 /// </param>
 /// <remarks>
-/// A persisted agent owns which tools exist and how they are described, and that stays true:
-/// <paramref name="AllowedToolNames"/> can only remove entries from whichever declaration list
-/// is in force. It never adds one, and never replaces an authored schema — an authored tool
-/// the application did not allow for this turn is simply not offered.
+/// <paramref name="AllowedToolNames"/> can only remove entries from the code-owned
+/// declaration list. It can never widen the tool surface.
 /// </remarks>
 public sealed record AgentRequest(
     string SystemInstruction,
     IReadOnlyList<AgentTurn> History,
     IReadOnlyList<AgentToolDeclaration> Tools,
-    string? Model = null,
     AssistantAgentProfile Profile = AssistantAgentProfile.General,
     string? ContextInstruction = null,
     IReadOnlySet<string>? AllowedToolNames = null,

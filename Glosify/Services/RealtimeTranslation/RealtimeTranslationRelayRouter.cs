@@ -4,7 +4,7 @@ namespace Glosify.Services.RealtimeTranslation;
 
 public sealed class RealtimeTranslationRelayRouter(
     IEnhancedTranslationRelay enhancedRelay,
-    IScribeTranslationRelay scribeRelay) : IFoundryTranslationRelay
+    IScribeTranslationRelay scribeRelay) : IRealtimeTranslationRelay
 {
     public async Task RelayAsync(
         WebSocket browserSocket,

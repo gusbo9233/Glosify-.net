@@ -19,7 +19,7 @@ public sealed class RealtimeTranslationOptionsTests
     }
 
     [Fact]
-    public void EnabledFeature_RequiresFoundryDurationBudgetConfiguration()
+    public void EnabledFeature_RequiresOpenAiDurationBudgetConfiguration()
     {
         var validator = new RealtimeTranslationOptionsValidator(
             Options.Create(new AiUsageOptions
@@ -27,7 +27,7 @@ public sealed class RealtimeTranslationOptionsTests
                 MonthlyBudget = new AiMonthlyBudgetOptions
                 {
                     Enabled = true,
-                    Providers = ["foundry", "elevenlabs"],
+                    Providers = ["openai", "elevenlabs"],
                     Models =
                     [
                         new AiModelPriceOptions
@@ -53,7 +53,7 @@ public sealed class RealtimeTranslationOptionsTests
                 MonthlyBudget = new AiMonthlyBudgetOptions
                 {
                     Enabled = true,
-                    Providers = ["foundry", "elevenlabs"],
+                    Providers = ["openai", "elevenlabs"],
                     Models =
                     [
                         new AiModelPriceOptions
@@ -75,23 +75,6 @@ public sealed class RealtimeTranslationOptionsTests
                 },
             }), ExtensionAuth());
         Assert.True(validator.Validate(null, ValidOptions()).Succeeded);
-    }
-
-    [Fact]
-    public void EnabledFeature_RejectsThePublicOpenAiEndpoint()
-    {
-        var validator = new RealtimeTranslationOptionsValidator(
-            Options.Create(new AiUsageOptions
-            {
-                MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
-            }), ExtensionAuth());
-        var options = ValidOptions();
-        options.FoundryEndpoint = "https://api.openai.com/";
-
-        var result = validator.Validate(null, options);
-
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, failure => failure.Contains("FoundryEndpoint", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -199,7 +182,7 @@ public sealed class RealtimeTranslationOptionsTests
             MonthlyBudget = new AiMonthlyBudgetOptions
             {
                 Enabled = true,
-                Providers = ["foundry"],
+                Providers = ["openai"],
                 Models =
                 [
                     new AiModelPriceOptions
@@ -324,8 +307,6 @@ public sealed class RealtimeTranslationOptionsTests
     private static RealtimeTranslationOptions ValidOptions() => new()
     {
         Enabled = true,
-        FoundryEndpoint = "https://glosify-foundry.openai.azure.com/",
-        Deployment = "gpt-realtime-translate",
         SavedSourceTranscriptsEnabled = true,
         SavedTranscriptBillingModel = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime",
         TranslatorResourceId = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/glosify/providers/Microsoft.CognitiveServices/accounts/glosify-translator",

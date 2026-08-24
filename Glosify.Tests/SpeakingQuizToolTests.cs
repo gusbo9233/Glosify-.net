@@ -109,40 +109,25 @@ public sealed class SpeakingQuizToolTests
     }
 
     [Fact]
-    public void Tutor_agent_v1_pins_the_read_only_tools_and_strict_practice_contract()
+    public async Task Tutor_profile_pins_the_read_only_tools_and_strict_practice_contract()
     {
-        var path = Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory,
-            "../../../../.foundry/agents/glosify-tutor-v1.json"));
-        Assert.True(File.Exists(path), $"Tutor agent contract was not found at {path}.");
-
-        using var document = JsonDocument.Parse(File.ReadAllText(path));
-        var root = document.RootElement;
-        Assert.Equal("glosify-tutor", root.GetProperty("name").GetString());
-        Assert.Equal("v1-read-only-quiz-tools", root.GetProperty("metadata")
-            .GetProperty("contract").GetString());
-
-        var definition = root.GetProperty("definition");
-        var instructions = definition.GetProperty("instructions").GetString() ?? string.Empty;
+        var profile = SpeakingPromptCatalog.Get(SpeakingAvatarId.TutorGerman, false);
+        var instructions = profile.Instructions;
         Assert.Contains("scenario-neutral", instructions, StringComparison.Ordinal);
         Assert.Contains("untrusted learner content", instructions, StringComparison.Ordinal);
-        Assert.Contains("duplicated or ambiguous", instructions, StringComparison.Ordinal);
-        Assert.Contains("Never gate conversation", instructions, StringComparison.Ordinal);
+        Assert.Contains("duplicated or", instructions, StringComparison.Ordinal);
+        Assert.Contains("ambiguous, ask", instructions, StringComparison.Ordinal);
+        Assert.Contains("Never gate", instructions, StringComparison.Ordinal);
 
-        var tools = definition.GetProperty("tools").EnumerateArray().ToArray();
+        await using var provider = await CreateProviderAsync();
+        var runtime = new SpeakingQuizToolRuntime(provider.GetRequiredService<IServiceScopeFactory>());
+        var tools = runtime.Tools.Select(tool => Assert.IsAssignableFrom<AIFunction>(tool)).ToArray();
         Assert.Equal(
             ["list_user_quizzes", "select_quiz", "list_quiz_words", "list_quiz_sentences"],
-            tools.Select(tool => tool.GetProperty("name").GetString()));
-        Assert.All(
-            tools.Where(tool => tool.GetProperty("name").GetString() != "select_quiz"),
-            tool => Assert.Equal(
-                50,
-                tool.GetProperty("parameters").GetProperty("properties")
-                    .GetProperty("limit").GetProperty("maximum").GetInt32()));
+            tools.Select(tool => tool.Name));
 
-        var schema = definition.GetProperty("text").GetProperty("format").GetProperty("schema");
-        Assert.True(definition.GetProperty("text").GetProperty("format")
-            .GetProperty("strict").GetBoolean());
+        using var document = JsonDocument.Parse(profile.JsonSchema);
+        var schema = document.RootElement;
         Assert.Contains(
             "practice",
             schema.GetProperty("required").EnumerateArray().Select(item => item.GetString()));
@@ -159,7 +144,7 @@ public sealed class SpeakingQuizToolTests
     public void Tutor_reply_parser_tolerates_provider_empty_coaching_without_losing_the_drill(
         string coachJson)
     {
-        var reply = FoundrySpeakingAgentClient.DeserializeTutorReply(
+        var reply = OpenAiSpeakingAgentClient.DeserializeTutorReply(
             $$"""
             {
               "replyPolish": "Wo ist der Bahnhof?",
@@ -181,7 +166,7 @@ public sealed class SpeakingQuizToolTests
     [Fact]
     public void Tutor_reply_parser_maps_provider_language_specific_fields_to_legacy_names()
     {
-        var reply = FoundrySpeakingAgentClient.DeserializeTutorReply(
+        var reply = OpenAiSpeakingAgentClient.DeserializeTutorReply(
             """
             {
               "replyGerman": "Wo ist der Bahnhof?",

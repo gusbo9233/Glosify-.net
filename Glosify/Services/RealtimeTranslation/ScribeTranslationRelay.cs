@@ -80,7 +80,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
 
         try
         {
-            await FoundryTranslationRelay.SendBrowserControlAsync(
+            await OpenAiTranslationRelay.SendBrowserControlAsync(
                 browserSocket,
                 "glosify.relay.ready",
                 null,
@@ -239,7 +239,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 {
                     return;
                 }
-                if (!FoundryTranslationProtocol.TryDecodeBrowserAudio(message, out var bytes))
+                if (!OpenAiTranslationProtocol.TryDecodeBrowserAudio(message, out var bytes))
                 {
                     await browserSocket.CloseOutputAsync(
                         WebSocketCloseStatus.PolicyViolation,
@@ -378,7 +378,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 return null;
             }
             if (result.MessageType != WebSocketMessageType.Text
-                || message.Length + result.Count > FoundryTranslationProtocol.MaximumBrowserMessageBytes)
+                || message.Length + result.Count > OpenAiTranslationProtocol.MaximumBrowserMessageBytes)
             {
                 throw new WebSocketException("The relay received an unsupported WebSocket message.");
             }

@@ -7,7 +7,7 @@ namespace Glosify.Models.Entities;
 /// </summary>
 /// <remarks>
 /// While the assistant loop runs in-process these accumulate in memory and are written
-/// onto the assistant message. A tool call made by an agent in Foundry has no such turn
+/// onto the assistant message. Historical hosted-agent tool calls had no such turn
 /// to collect it, so it lands here instead, grouped by the conversation that produced it.
 /// </remarks>
 [Table("assistant_pending_changes")]

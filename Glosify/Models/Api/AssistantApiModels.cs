@@ -12,7 +12,6 @@ public sealed record AssistantSendInput(
     [param: Required, StringLength(8000)] string Message,
     Guid? ContextQuizId,
     string? FocusedWordId,
-    string? Model,
     Guid? DocumentId,
     int? PageNumber,
     Guid? CustomQuizId,

@@ -1,36 +1,33 @@
-using System.Net.Http.Headers;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
-using Azure.Core;
-using Azure.Identity;
 using Glosify.Models.Entities;
+using Glosify.Services.Ai.Generation;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.RealtimeTranslation;
 
-public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
+public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
 {
-    private const string FoundryTokenScope = "https://ai.azure.com/.default";
-    private readonly TokenCredential _credential;
+    private readonly GenerativeAiOptions _openAi;
     private readonly IRealtimeSpeechTranscriber _speech;
     private readonly RealtimeTranslationRelayAuthorizationMonitor _authorizationMonitor;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly RealtimeTranslationOptions _options;
     private readonly TimeProvider _timeProvider;
-    private readonly ILogger<FoundryTranslationRelay> _logger;
+    private readonly ILogger<OpenAiTranslationRelay> _logger;
 
-    public FoundryTranslationRelay(
-        TokenCredential credential,
+    public OpenAiTranslationRelay(
         IRealtimeSpeechTranscriber speech,
         RealtimeTranslationRelayAuthorizationMonitor authorizationMonitor,
         IServiceScopeFactory scopeFactory,
         IOptions<RealtimeTranslationOptions> options,
+        IOptions<GenerativeAiOptions> openAiOptions,
         TimeProvider timeProvider,
-        ILogger<FoundryTranslationRelay> logger)
+        ILogger<OpenAiTranslationRelay> logger)
     {
-        _credential = credential;
+        _openAi = openAiOptions.Value;
         _speech = speech;
         _authorizationMonitor = authorizationMonitor;
         _scopeFactory = scopeFactory;
@@ -50,55 +47,46 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
             throw new RealtimeTranslationUnavailableException(
                 "Live subtitles are not enabled on this Glosify deployment.");
         }
-        var foundryUri = FoundryTranslationProtocol.BuildWebSocketUri(_options);
-        using var foundrySocket = new ClientWebSocket();
+        if (string.IsNullOrWhiteSpace(_openAi.ApiKey))
+        {
+            throw new RealtimeTranslationUnavailableException(
+                "OpenAI is not configured for live subtitles.");
+        }
+        var openAiUri = OpenAiTranslationProtocol.BuildWebSocketUri();
+        using var openAiSocket = new ClientWebSocket();
         using var browserSendLock = new SemaphoreSlim(1, 1);
-        foundrySocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
+        openAiSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(20);
         if (authorization.SaveTranscript && !_options.ElevenLabs.Enabled)
         {
             throw new RealtimeTranslationUnavailableException(
                 "Saved transcripts require ElevenLabs Scribe v2 on this Glosify deployment.");
         }
 
-        AccessToken token;
-        try
-        {
-            token = await _credential.GetTokenAsync(
-                new TokenRequestContext([FoundryTokenScope]),
-                cancellationToken);
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            RealtimeTranslationTelemetry.UpstreamFailures.Add(1);
-            throw new RealtimeTranslationUpstreamException(
-                "Microsoft Foundry timed out while authorizing live subtitles.");
-        }
-        catch (AuthenticationFailedException)
-        {
-            RealtimeTranslationTelemetry.UpstreamFailures.Add(1);
-            throw new RealtimeTranslationUpstreamException(
-                "Microsoft Foundry could not authorize live subtitles.");
-        }
-
-        foundrySocket.Options.SetRequestHeader(
-            "Authorization",
-            new AuthenticationHeaderValue("Bearer", token.Token).ToString());
+        var requestHeaders = OpenAiTranslationProtocol.CreateRequestHeaders(
+            _openAi.ApiKey,
+            authorization.UserId);
+        openAiSocket.Options.SetRequestHeader("Authorization", requestHeaders.Authorization);
+        var safetyIdentifier = requestHeaders.SafetyIdentifier;
+        openAiSocket.Options.SetRequestHeader(
+            "OpenAI-Safety-Identifier",
+            safetyIdentifier);
         using var relayCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         relayCancellation.CancelAfter(TimeSpan.FromMinutes(_options.MaxSessionMinutes + 1));
         var relayToken = relayCancellation.Token;
 
         try
         {
-            await foundrySocket.ConnectAsync(foundryUri, relayToken);
-            var sessionUpdate = FoundryTranslationProtocol.CreateSessionUpdate(
-                authorization.TargetLanguage);
-            await foundrySocket.SendAsync(
+            await openAiSocket.ConnectAsync(openAiUri, relayToken);
+            var sessionUpdate = OpenAiTranslationProtocol.CreateSessionUpdate(
+                authorization.TargetLanguage,
+                safetyIdentifier);
+            await openAiSocket.SendAsync(
                 sessionUpdate,
                 WebSocketMessageType.Text,
                 endOfMessage: true,
                 relayToken);
 
-            await WaitForFoundrySessionUpdatedAsync(foundrySocket, relayToken);
+            await WaitForOpenAiSessionUpdatedAsync(openAiSocket, relayToken);
             await SendBrowserControlAsync(browserSocket, "glosify.relay.ready", null, relayToken);
             var sessionState = await _authorizationMonitor.WaitForSessionStartAsync(
                 authorization,
@@ -137,16 +125,16 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                 });
             }
 
-            var browserToFoundry = PumpBrowserToFoundryAsync(
+            var browserToOpenAi = PumpBrowserToOpenAiAsync(
                 browserSocket,
-                foundrySocket,
+                openAiSocket,
                 sourceAudio?.Writer,
                 transcriptState,
                 sessionState.StartedAt!.Value,
                 billingState,
                 relayToken);
-            var foundryToBrowser = PumpFoundryToBrowserAsync(
-                foundrySocket,
+            var openAiToBrowser = PumpOpenAiToBrowserAsync(
+                openAiSocket,
                 browserSocket,
                 browserSendLock,
                 authorization.SessionId,
@@ -179,16 +167,16 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                 relayToken);
 
             var completed = await Task.WhenAny(
-                browserToFoundry,
-                foundryToBrowser,
+                browserToOpenAi,
+                openAiToBrowser,
                 sourceTranscription,
                 sourceToTranscript,
                 authorizationMonitor);
             try
             {
-                if (completed == browserToFoundry && sourceAudio is not null)
+                if (completed == browserToOpenAi && sourceAudio is not null)
                 {
-                    await browserToFoundry;
+                    await browserToOpenAi;
                     await sourceTranscription;
                     await sourceToTranscript;
                 }
@@ -205,8 +193,8 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
             {
                 relayCancellation.Cancel();
                 await IgnoreCancellationAsync(Task.WhenAll(
-                    browserToFoundry,
-                    foundryToBrowser,
+                    browserToOpenAi,
+                    openAiToBrowser,
                     sourceTranscription,
                     sourceToTranscript,
                     authorizationMonitor));
@@ -241,20 +229,21 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
             RealtimeTranslationTelemetry.UpstreamFailures.Add(1);
             _logger.LogWarning(
                 exception,
-                "Foundry subtitle relay transport failed for session {SessionId}",
+                "OpenAI subtitle relay transport failed for session {SessionId}",
                 authorization.SessionId);
             throw new RealtimeTranslationUpstreamException(
-                "Microsoft Foundry ended the live subtitle connection.");
+                "OpenAI ended the live subtitle connection.");
         }
         finally
         {
-            await CloseQuietlyAsync(foundrySocket, CancellationToken.None);
+            await SendSessionCloseQuietlyAsync(openAiSocket);
+            await CloseQuietlyAsync(openAiSocket, CancellationToken.None);
             await CloseQuietlyAsync(browserSocket, CancellationToken.None);
         }
     }
 
-    private async Task WaitForFoundrySessionUpdatedAsync(
-        WebSocket foundrySocket,
+    private async Task WaitForOpenAiSessionUpdatedAsync(
+        WebSocket openAiSocket,
         CancellationToken cancellationToken)
     {
         using var startupCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -264,35 +253,35 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
             while (true)
             {
                 var message = await ReceiveTextMessageAsync(
-                    foundrySocket,
-                    FoundryTranslationProtocol.MaximumFoundryMessageBytes,
+                    openAiSocket,
+                    OpenAiTranslationProtocol.MaximumOpenAiMessageBytes,
                     startupCancellation.Token);
                 if (message is null)
                 {
                     throw new RealtimeTranslationUpstreamException(
-                        "Microsoft Foundry ended the subtitle connection during setup.");
+                        "OpenAI ended the subtitle connection during setup.");
                 }
-                if (FoundryTranslationProtocol.HasType(message, "session.updated"))
+                if (OpenAiTranslationProtocol.HasType(message, "session.updated"))
                 {
                     return;
                 }
-                if (FoundryTranslationProtocol.HasType(message, "error"))
+                if (OpenAiTranslationProtocol.HasType(message, "error"))
                 {
                     throw new RealtimeTranslationUpstreamException(
-                        "Microsoft Foundry rejected the live subtitle configuration.");
+                        "OpenAI rejected the live subtitle configuration.");
                 }
             }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             throw new RealtimeTranslationUpstreamException(
-                "Microsoft Foundry timed out while configuring live subtitles.");
+                "OpenAI timed out while configuring live subtitles.");
         }
     }
 
-    private async Task PumpBrowserToFoundryAsync(
+    private async Task PumpBrowserToOpenAiAsync(
         WebSocket browserSocket,
-        WebSocket foundrySocket,
+        WebSocket openAiSocket,
         ChannelWriter<byte[]>? sourceAudio,
         RelayTranscriptState transcriptState,
         DateTimeOffset startedAt,
@@ -304,17 +293,17 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         {
             while (!cancellationToken.IsCancellationRequested
                 && browserSocket.State == WebSocketState.Open
-                && foundrySocket.State == WebSocketState.Open)
+                && openAiSocket.State == WebSocketState.Open)
             {
                 var message = await ReceiveTextMessageAsync(
                     browserSocket,
-                    FoundryTranslationProtocol.MaximumBrowserMessageBytes,
+                    OpenAiTranslationProtocol.MaximumBrowserMessageBytes,
                     cancellationToken);
                 if (message is null)
                 {
                     return;
                 }
-                if (!FoundryTranslationProtocol.TryDecodeBrowserAudio(message, out var audioBytes))
+                if (!OpenAiTranslationProtocol.TryDecodeBrowserAudio(message, out var audioBytes))
                 {
                     await browserSocket.CloseOutputAsync(
                         WebSocketCloseStatus.PolicyViolation,
@@ -329,7 +318,7 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                     billingState,
                     cancellationToken);
 
-                await foundrySocket.SendAsync(
+                await openAiSocket.SendAsync(
                     message,
                     WebSocketMessageType.Text,
                     endOfMessage: true,
@@ -350,8 +339,8 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         }
     }
 
-    private async Task PumpFoundryToBrowserAsync(
-        WebSocket foundrySocket,
+    private async Task PumpOpenAiToBrowserAsync(
+        WebSocket openAiSocket,
         WebSocket browserSocket,
         SemaphoreSlim browserSendLock,
         Guid sessionId,
@@ -360,19 +349,19 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         CancellationToken cancellationToken)
     {
         // The translated captions are already on this socket for the live overlay, so
-        // saving them alongside the source costs no extra Foundry usage.
+        // saving them alongside the source costs no extra OpenAI usage.
         var accumulator = transcriptWriter is null
             ? null
-            : new FoundryTranslationTranscriptAccumulator();
+            : new OpenAiTranslationTranscriptAccumulator();
         try
         {
             while (!cancellationToken.IsCancellationRequested
-                && foundrySocket.State == WebSocketState.Open
+                && openAiSocket.State == WebSocketState.Open
                 && browserSocket.State == WebSocketState.Open)
             {
                 var message = await ReceiveTextMessageAsync(
-                    foundrySocket,
-                    FoundryTranslationProtocol.MaximumFoundryMessageBytes,
+                    openAiSocket,
+                    OpenAiTranslationProtocol.MaximumOpenAiMessageBytes,
                     cancellationToken);
                 if (message is null)
                 {
@@ -391,7 +380,7 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
                         WriteCaption(idle, transcriptWriter!, transcriptState, sessionId);
                     }
                 }
-                if (!FoundryTranslationProtocol.ShouldForwardFoundryMessage(message))
+                if (!OpenAiTranslationProtocol.ShouldForwardOpenAiMessage(message))
                 {
                     continue;
                 }
@@ -593,6 +582,26 @@ public sealed class FoundryTranslationRelay : IEnhancedTranslationRelay
         catch (WebSocketException)
         {
             // The other peer already closed the transport.
+        }
+    }
+
+    private static async Task SendSessionCloseQuietlyAsync(WebSocket socket)
+    {
+        if (socket.State != WebSocketState.Open)
+        {
+            return;
+        }
+        try
+        {
+            await socket.SendAsync(
+                OpenAiTranslationProtocol.CreateSessionClose(),
+                WebSocketMessageType.Text,
+                endOfMessage: true,
+                CancellationToken.None);
+        }
+        catch (WebSocketException)
+        {
+            // The upstream already closed the translation session.
         }
     }
 

@@ -6,49 +6,42 @@
 
 **[Live app](https://glosify.se)** · [Case study](docs/portfolio-case-study.md) · [Architecture](docs/ARCHITECTURE.md) · [ADRs](docs/adr/) · [Tests](Glosify.Tests/)
 
-Glosify is a language-learning app made with ASP.NET Core 10 MVC. It started as
-a school project and became a portfolio project with a real database,
-authentication, tests, Azure services, AI features, and a live deployment.
+Glosify is an ASP.NET Core 10 MVC language-learning application with quizzes,
+FSRS-6 study collections, books, classrooms, speaking practice, saved chats, and
+a Chrome extension for live translated subtitles.
 
-## Features
+## AI services
 
-- Vocabulary and sentence quizzes with flashcards, typing, JSON import, and
-  custom interactive quizzes.
-- Anki-style collections with the FSRS-6 scheduler.
-- An AI assistant that can create and edit quizzes and use books or saved
-  transcripts as context.
-- PDF reading, page translation, and file storage in Azure Blob Storage.
-- Speaking practice with pronunciation assessment, coaching, and animated
-  language-specific scenes.
-- A Manifest V3 Chrome extension for live translated subtitles from tab audio.
-  It uses the same account and AI credits as the web app. Audio is not stored.
-- Classrooms with members, shared content, planning, assignments, results,
-  SignalR chat, and Azure Communication Services calls.
-- Public quiz and collection sharing, 69 learning languages, and a localized UI.
-- ASP.NET Core Identity, optional Google and Microsoft login, bearer-token APIs,
-  AI credit accounting, and optional Stripe credit packs.
+All generative, text-agent, and vision work goes directly from the Glosify server
+to the OpenAI Responses API. The model is fixed in code to `gpt-5.6-luna`; there
+is no model picker, configured alternative, or provider fallback. Prompts, JSON
+schemas, and function tools are defined and executed in this repository. Glosify
+replays its own saved history and every Responses request uses `store: false`.
 
-| Speaking practice | Assistant quiz creation |
-| --- | --- |
-| [![Speaking practice](docs/screenshots/speaking-practice.png)](docs/screenshots/speaking-practice.png) | [![Assistant quiz creation](docs/screenshots/create-quiz-chat.png)](docs/screenshots/create-quiz-chat.png) |
-| **Book reader** | **Live subtitles** |
-| [![Book reader](docs/screenshots/book-quiz-assistant.png)](docs/screenshots/book-quiz-assistant.png) | [![Live subtitles](docs/screenshots/live-subtitles-in-action.png)](docs/screenshots/live-subtitles-in-action.png) |
+Speaking keeps Azure Speech transcription, pronunciation assessment, neural
+voices, and text-to-speech. Only its text coaching and personas use Luna. The
+Enhanced subtitle relay connects server-side to `gpt-realtime-translate` while
+the Scribe alternative uses ElevenLabs Scribe v2 followed by Azure Translator.
+Provider keys never reach the browser or extension.
+
+The production key is the Azure App Service setting `OPENAI_SECRET_KEY`. For
+local AI work, set the same name with user secrets:
+
+```bash
+dotnet user-secrets set "OPENAI_SECRET_KEY" "<key>" --project Glosify
+```
 
 ## Design and stack
 
-The repository has one ASP.NET Core web project. MVC and API controllers handle
-HTTP work, feature services hold application logic, and EF Core talks directly
-to SQL Server. There is no generic repository or separate domain assembly.
+The repository deliberately keeps one web project. MVC and API controllers
+orchestrate HTTP work, feature services own application rules, and EF Core talks
+directly to SQL Server. There is no generic repository, CQRS layer, or separate
+domain assembly.
 
-Main technologies are .NET 10, EF Core 10, SQL Server/Azure SQL, ASP.NET Core
-Identity and SignalR, Microsoft Foundry, Azure AI Speech, Azure Translator,
-Azure Communication Services, Azure Blob Storage, ElevenLabs Scribe v2, Stripe,
-PdfPig, OpenTelemetry, xUnit, AngleSharp, and Playwright. Gemini can be selected
-by configuration as a manual rollback. It is not automatic failover.
-
-The live deployment uses one Azure App Service instance. See
-[ADR 0001](docs/adr/0001-single-instance-state.md) for its limits and the work
-needed before scale-out.
+Main technologies include .NET 10, EF Core 10, Azure SQL, ASP.NET Core Identity
+and SignalR, OpenAI, Azure Speech, Azure Translator, Azure Communication
+Services, Azure Blob Storage, ElevenLabs Scribe v2, Stripe, OpenTelemetry,
+xUnit, AngleSharp, and Playwright.
 
 ```text
 Glosify/                         Web app and EF migrations
@@ -56,24 +49,14 @@ Glosify.Tests/                   .NET unit, integration, and contract tests
 Glosify.BrowserTests/            Chromium user journeys
 Glosify.ClientTests/             Browser JavaScript tests
 Glosify.LiveSubtitles.Extension/ Chrome extension and tests
-.foundry/                        Agent exports, evaluations, and datasets
 docs/                            Guides, ADRs, and screenshots
 scripts/                         Development and operations helpers
 ```
 
 ## Local setup
 
-You need the .NET 10 SDK, Docker or another container runtime, and network access
-for the first package and container downloads. Development uses only the local
-SQL Server container, never Azure SQL.
-
-On Apple Silicon, start Colima with Rosetta because the SQL Server image is amd64:
-
-```bash
-colima start --arch aarch64 --vm-type vz --vz-rosetta --cpu 4 --memory 4 --disk 40
-```
-
-Then run:
+You need the .NET 10 SDK and Docker or another container runtime. Development
+uses the local SQL Server container rather than Azure SQL.
 
 ```bash
 dotnet tool restore
@@ -87,73 +70,29 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
 dotnet run --project Glosify
 ```
 
-Register at `https://localhost:7032/Account/Register`. The login route is
-`/login`. Email confirmation is off by default. External login buttons appear
-only when their client IDs and secrets are configured.
+Register at `https://localhost:7032/Account/Register`; the login route is
+`/login`. Ordinary quiz, classroom, Anki, sharing, and UI development does not
+need external service credentials. Azure-backed features use `az login` during
+local development.
 
-Normal quiz, Anki, classroom, sharing, and UI work does not need Azure. Foundry,
-Speech, Translator, Communication Services, Blob Storage, live subtitles, and
-other external features need network access and valid configuration.
-For local Azure authentication, run `az login`.
-
-## Configuration and database
-
-The app requires `ConnectionStrings:DefaultConnection`. Checked-in
-[`appsettings.json`](Glosify/appsettings.json) has non-secret defaults. Put secrets
-in .NET user secrets, environment variables, or Azure App Service settings.
-Never commit credentials. Stripe setup is in [docs/STRIPE.md](docs/STRIPE.md).
-
-The migration history starts with a complete `InitialCreate`. Startup never
-changes the schema. To update or check a database, use:
+The application never changes the schema at startup. Use:
 
 ```bash
 dotnet ef database update --project Glosify
 dotnet ef migrations has-pending-model-changes --project Glosify
 ```
 
-`scripts/dev-db-reset.sh` drops only the fixed local development database and
-then applies the migrations.
-
-Foundry agent versions are pinned under `GenerativeAi:Foundry:Agents` in
-[`appsettings.json`](Glosify/appsettings.json). Agent changes must be published as
-a new immutable version in Foundry, exported to `.foundry/agents/`, and then
-pinned in the same code change.
-
 ## Tests
 
-Run the main test suites with:
-
 ```bash
-dotnet test Glosify.Tests/Glosify.Tests.csproj
+dotnet test Glosify.slnx -c Release
 npm test --prefix Glosify.ClientTests
 npm test --prefix Glosify.LiveSubtitles.Extension
 ```
 
-CI also runs extension browser tests and nine Glosify Chromium journeys against
-an empty migrated SQL Server database. For a local browser run:
+Credential-gated direct OpenAI smoke tests can be enabled with
+`RUN_OPENAI_SMOKE_TESTS=true` and `OPENAI_SECRET_KEY`.
 
-```bash
-pwsh Glosify.BrowserTests/bin/Debug/net10.0/playwright.ps1 install chromium
-GLOSIFY_BROWSER_BASE_URL=http://localhost:5099 \
-  dotnet test Glosify.BrowserTests/Glosify.BrowserTests.csproj
-```
-
-On macOS without PowerShell, set `GLOSIFY_BROWSER_EXECUTABLE_PATH` to a local
-Chrome or Chromium executable.
-
-Live Foundry smoke tests are optional:
-
-```bash
-RUN_FOUNDRY_SMOKE_TESTS=true \
-dotnet test Glosify.slnx -c Release --filter Category=LiveFoundry
-```
-
-## Deployment
-
-The workflow in `.github/workflows/master_glosify.yml` builds and tests pull
-requests. A push to `master` also applies the reviewed EF migration bundle and
-deploys to Azure Web App `glosify-app`. Production uses managed identity,
-`/healthz` for liveness, and `/readyz` for SQL readiness.
-
-Use the [deployment runbook](docs/DEPLOYMENT.md) for release, verification,
-recovery, and Chrome Web Store steps.
+The workflow in `.github/workflows/master_glosify.yml` validates pull requests.
+A push to `master` applies the reviewed EF migration bundle and deploys Azure
+Web App `glosify-app`. See [the deployment runbook](docs/DEPLOYMENT.md).

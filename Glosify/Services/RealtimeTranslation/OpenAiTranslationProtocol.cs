@@ -1,46 +1,45 @@
 using System.Text.Json;
+using Glosify.Services.Ai.Generation;
 
 namespace Glosify.Services.RealtimeTranslation;
 
-internal static class FoundryTranslationProtocol
+internal static class OpenAiTranslationProtocol
 {
     internal const string BrowserProtocol = "glosify-realtime";
     internal const string RelayTokenProtocolPrefix = "relay-token.";
     internal const int MaximumBrowserMessageBytes = 64 * 1024;
-    internal const int MaximumFoundryMessageBytes = 256 * 1024;
+    internal const int MaximumOpenAiMessageBytes = 256 * 1024;
 
-    internal static Uri BuildWebSocketUri(RealtimeTranslationOptions options)
+    internal static Uri BuildWebSocketUri() => new(
+        "wss://api.openai.com/v1/realtime/translations?model="
+        + Uri.EscapeDataString(OpenAiModels.RealtimeTranslation));
+
+    internal static (string Authorization, string SafetyIdentifier) CreateRequestHeaders(
+        string apiKey,
+        string userId)
     {
-        if (!RealtimeTranslationOptionsValidator.TryValidateFoundryEndpoint(
-                options.FoundryEndpoint,
-                out var endpoint))
-        {
-            throw new RealtimeTranslationUnavailableException(
-                "Live subtitles are not configured on this Glosify deployment.");
-        }
-
-        var builder = new UriBuilder(endpoint)
-        {
-            Scheme = "wss",
-            Port = -1,
-            Path = "openai/v1/realtime/translations",
-            Query = "model=" + Uri.EscapeDataString(options.Deployment),
-        };
-        return builder.Uri;
+        var safetyIdentifier = OpenAiRequestFactory.CreateSafetyIdentifier(userId);
+        return ($"Bearer {apiKey.Trim()}", safetyIdentifier);
     }
 
-    internal static byte[] CreateSessionUpdate(string targetLanguage) =>
+    internal static byte[] CreateSessionUpdate(
+        string targetLanguage,
+        string safetyIdentifier) =>
         JsonSerializer.SerializeToUtf8Bytes(new
         {
             type = "session.update",
             session = new
             {
+                safety_identifier = safetyIdentifier,
                 audio = new
                 {
                     output = new { language = targetLanguage },
                 },
             },
         });
+
+    internal static byte[] CreateSessionClose() =>
+        JsonSerializer.SerializeToUtf8Bytes(new { type = "session.close" });
 
     internal static bool IsAllowedBrowserMessage(ReadOnlySpan<byte> payload) =>
         TryDecodeBrowserAudio(payload, out _);
@@ -80,7 +79,7 @@ internal static class FoundryTranslationProtocol
         }
     }
 
-    internal static bool ShouldForwardFoundryMessage(ReadOnlySpan<byte> payload)
+    internal static bool ShouldForwardOpenAiMessage(ReadOnlySpan<byte> payload)
     {
         try
         {

@@ -1344,7 +1344,7 @@
     <value>無料レッスン</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>Microsoft Foundry と Azure AI Speech を使用</value>
+    <value>OpenAI と Azure AI Speech を使用</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>練習設定</value>

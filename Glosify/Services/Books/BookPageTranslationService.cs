@@ -5,9 +5,7 @@ using Glosify.Data;
 using Glosify.Models.Library;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
-using Glosify.Services.Ai.Llm;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.Books;
 
@@ -24,23 +22,17 @@ public sealed class BookPageTranslationService : IBookPageTranslationService
     private readonly GlosifyContext _context;
     private readonly IGenerativeAiClient _generativeAi;
     private readonly IBookPageTranslationCoordinator _coordinator;
-    private readonly GenerativeAiOptions _generativeOptions;
-    private readonly GeminiOptions _geminiOptions;
     private readonly TimeProvider _timeProvider;
 
     public BookPageTranslationService(
         GlosifyContext context,
         IGenerativeAiClient generativeAi,
         IBookPageTranslationCoordinator coordinator,
-        IOptions<GenerativeAiOptions> generativeOptions,
-        IOptions<GeminiOptions> geminiOptions,
         TimeProvider timeProvider)
     {
         _context = context;
         _generativeAi = generativeAi;
         _coordinator = coordinator;
-        _generativeOptions = generativeOptions.Value;
-        _geminiOptions = geminiOptions.Value;
         _timeProvider = timeProvider;
     }
 
@@ -442,23 +434,14 @@ public sealed class BookPageTranslationService : IBookPageTranslationService
             string primaryModel,
             CancellationToken cancellationToken)
     {
-        var primaryUsesNativeStructuredOutput = UsesNativeStructuredOutput(primaryModel);
         var attempts = new List<(string Model, string Operation, bool NativeStructuredOutput)>
         {
-            (primaryModel, usageContext.Operation, primaryUsesNativeStructuredOutput),
+            (primaryModel, usageContext.Operation, true),
             (
                 primaryModel,
                 $"{usageContext.Operation}_retry",
-                primaryUsesNativeStructuredOutput),
+                true),
         };
-        var foundryFallback = ResolveFoundryFallbackModel(primaryModel);
-        if (foundryFallback is not null)
-        {
-            attempts.Add((
-                foundryFallback,
-                $"{usageContext.Operation}_fallback",
-                UsesNativeStructuredOutput(foundryFallback)));
-        }
 
         for (var attemptIndex = 0; attemptIndex < attempts.Count; attemptIndex++)
         {
@@ -491,29 +474,6 @@ public sealed class BookPageTranslationService : IBookPageTranslationService
 
         throw new InvalidOperationException("The translation attempt sequence was empty.");
     }
-
-    private string? ResolveFoundryFallbackModel(string primaryModel)
-    {
-        if (!string.Equals(
-                _generativeOptions.Provider?.Trim(),
-                GenerativeAiOptions.FoundryProvider,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return null;
-        }
-
-        var fallback = _generativeOptions.Foundry.PageTranslationFallbackDeployment?.Trim();
-        return string.IsNullOrWhiteSpace(fallback)
-            || string.Equals(fallback, primaryModel, StringComparison.OrdinalIgnoreCase)
-                ? null
-                : fallback;
-    }
-
-    private bool UsesNativeStructuredOutput(string model) =>
-        string.Equals(
-            model,
-            _generativeOptions.Foundry.StructuredDeployment?.Trim(),
-            StringComparison.OrdinalIgnoreCase);
 
     private static bool LooksLikeSentence(string sourceText)
     {
@@ -578,21 +538,5 @@ public sealed class BookPageTranslationService : IBookPageTranslationService
                 : normalized[..64];
     }
 
-    private string ResolveTranslationModel()
-    {
-        var isGemini = string.Equals(
-            _generativeOptions.Provider?.Trim(),
-            GenerativeAiOptions.GeminiProvider,
-            StringComparison.OrdinalIgnoreCase);
-        var model = isGemini
-            ? _geminiOptions.PageTranslationModel
-            : _generativeOptions.Foundry.PageTranslationDeployment;
-        if (string.IsNullOrWhiteSpace(model))
-        {
-            throw new GenerativeAiValidationException(
-                "The page translation model is not configured.");
-        }
-
-        return model.Trim();
-    }
+    private static string ResolveTranslationModel() => OpenAiModels.Luna;
 }

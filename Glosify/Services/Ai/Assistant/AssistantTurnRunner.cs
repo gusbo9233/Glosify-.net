@@ -16,7 +16,6 @@ internal sealed class AssistantTurnRunner
 
     private readonly GlosifyContext _context;
     private readonly IGenerativeAiClient _generativeAi;
-    private readonly IGenerativeAiModelResolver _modelResolver;
     private readonly IAssistantTools _tools;
     private readonly AssistantThreadStore _threads;
     private readonly AssistantContextResolver _contextResolver;
@@ -31,7 +30,6 @@ internal sealed class AssistantTurnRunner
     public AssistantTurnRunner(
         GlosifyContext context,
         IGenerativeAiClient generativeAi,
-        IGenerativeAiModelResolver modelResolver,
         IAssistantTools tools,
         AssistantThreadStore threads,
         AssistantContextResolver contextResolver,
@@ -45,7 +43,6 @@ internal sealed class AssistantTurnRunner
     {
         _context = context;
         _generativeAi = generativeAi;
-        _modelResolver = modelResolver;
         _tools = tools;
         _threads = threads;
         _contextResolver = contextResolver;
@@ -64,7 +61,6 @@ internal sealed class AssistantTurnRunner
         string userMessage,
         Guid? contextQuizId,
         string? focusedWordId,
-        string? model,
         AssistantDocumentContext? documentContext,
         Guid? customQuizId,
         Guid? transcriptId,
@@ -79,7 +75,6 @@ internal sealed class AssistantTurnRunner
             userMessage,
             contextQuizId,
             focusedWordId,
-            model,
             documentContext,
             customQuizId,
             cancellationToken,
@@ -93,7 +88,6 @@ internal sealed class AssistantTurnRunner
         string userId,
         string userMessage,
         string? focusedWordId,
-        string? model,
         AssistantDocumentContext? documentContext,
         CancellationToken cancellationToken)
     {
@@ -104,7 +98,6 @@ internal sealed class AssistantTurnRunner
             userMessage,
             quizId,
             focusedWordId,
-            model,
             documentContext,
             null,
             cancellationToken,
@@ -115,7 +108,6 @@ internal sealed class AssistantTurnRunner
     public async Task<AssistantTurnResponse> RunGlobalAsync(
         string userId,
         string userMessage,
-        string? model,
         AssistantDocumentContext? documentContext,
         CancellationToken cancellationToken)
     {
@@ -126,7 +118,6 @@ internal sealed class AssistantTurnRunner
             userMessage,
             thread.ContextQuizId,
             null,
-            model,
             documentContext,
             null,
             cancellationToken,
@@ -140,7 +131,6 @@ internal sealed class AssistantTurnRunner
         string userMessage,
         Guid? contextQuizId,
         string? focusedWordId,
-        string? model,
         AssistantDocumentContext? documentContext,
         Guid? customQuizId,
         CancellationToken cancellationToken,
@@ -159,7 +149,6 @@ internal sealed class AssistantTurnRunner
                 userMessage,
                 contextQuizId,
                 focusedWordId,
-                model,
                 documentContext,
                 customQuizId,
                 leaseId,
@@ -192,7 +181,6 @@ internal sealed class AssistantTurnRunner
         string userMessage,
         Guid? contextQuizId,
         string? focusedWordId,
-        string? model,
         AssistantDocumentContext? documentContext,
         Guid? customQuizId,
         Guid leaseId,
@@ -214,14 +202,14 @@ internal sealed class AssistantTurnRunner
             thread.Id,
             null,
             preliminaryProfile.ToString(),
-            model);
+            OpenAiModels.Luna);
 
         var turnEntity = new AssistantTurn
         {
             Id = turnId,
             ThreadId = thread.Id,
             Profile = preliminaryProfile.ToString(),
-            RequestedModel = model,
+            RequestedModel = OpenAiModels.Luna,
             Status = AssistantTurnStatus.Started,
             StartedAt = now,
             TraceId = turnActivity?.TraceId.ToHexString(),
@@ -263,7 +251,6 @@ internal sealed class AssistantTurnRunner
         var toolSequence = 0;
         AgentInvocationMetadata? lastMetadata = null;
         AgentToolContext? toolContext = null;
-        string? resolvedModel = null;
         var analyticsInvocations = new List<AssistantModelInvocation>();
         var analyticsExecutions = new List<AssistantToolExecution>();
 
@@ -332,8 +319,7 @@ internal sealed class AssistantTurnRunner
             // in the custom builder and sentence requests landing in word storage.
             var intent = _intentResolver.Resolve(userMessage);
             var allowedToolNames = AssistantToolNarrowing.AllowedNames(declarations, intent, profile);
-            var selectedModel = _modelResolver.ResolveAssistantModel(model);
-            resolvedModel = selectedModel;
+            const string selectedModel = OpenAiModels.Luna;
             var subjectId = await _context.Users
                 .AsNoTracking()
                 .Where(user => user.Id == userId)
@@ -375,7 +361,9 @@ internal sealed class AssistantTurnRunner
                 RequestedContentKind = intent.ContentKind,
             };
 
-            var systemInstruction = _promptBuilder.BuildSystemInstruction(
+            var systemInstruction = AssistantProfileInstructions.Get(profile)
+                + "\n\n"
+                + _promptBuilder.BuildSystemInstruction(
                 contextQuiz,
                 focusedWord,
                 documentPage,
@@ -410,7 +398,6 @@ internal sealed class AssistantTurnRunner
                     systemInstruction,
                     history,
                     declarations,
-                    selectedModel,
                     profile,
                     contextInstruction,
                     allowedToolNames,
@@ -540,8 +527,8 @@ internal sealed class AssistantTurnRunner
                     var toolStartedAt = Stopwatch.GetTimestamp();
                     try
                     {
-                        // History outlives tool surfaces, and an authored agent can declare a
-                        // tool this turn never offered. A name outside the allowlist is
+                        // History outlives tool surfaces, and an older stored turn can name a
+                        // tool this turn no longer offers. A name outside the allowlist is
                         // answered, not dispatched, so the model can correct itself while the
                         // rejection stays visible in tool analytics.
                         var canonicalName = _tools.ResolveCanonicalName(call.Name);
@@ -687,7 +674,7 @@ internal sealed class AssistantTurnRunner
                 : AssistantTurnStatus.Failed;
             turnEntity.ErrorCategory = AssistantAnalyticsErrors.Classify(ex);
             turnEntity.Provider = lastMetadata?.Provider ?? ResolveProviderName();
-            turnEntity.ActualModel = lastMetadata?.Model ?? resolvedModel ?? model;
+            turnEntity.ActualModel = lastMetadata?.Model ?? OpenAiModels.Luna;
             turnEntity.ProviderResponseId = lastMetadata?.ResponseId;
             turnEntity.ToolCallCount = toolSequence;
             turnEntity.ProposedChangeCount = toolContext?.PendingChanges.Count ?? 0;
@@ -796,10 +783,7 @@ internal sealed class AssistantTurnRunner
         }
     }
 
-    private string ResolveProviderName() =>
-        _generativeAi is Glosify.Services.Ai.Llm.GeminiGenerativeAiClient
-            ? AiUsageProviders.Gemini
-            : AiUsageProviders.Foundry;
+    private static string ResolveProviderName() => AiUsageProviders.OpenAi;
 
     private async Task<CustomQuiz?> ValidateCustomQuizAsync(
         Guid? customQuizId,

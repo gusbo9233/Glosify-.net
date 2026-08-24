@@ -3,7 +3,11 @@ using Azure.Identity;
 
 namespace Glosify.Services.Ai.Generation;
 
-internal static class FoundryCredentialFactory
+/// <summary>
+/// Creates the Azure credential still used by Blob Storage, Azure Speech,
+/// Translator, and telemetry. OpenAI authentication uses OPENAI_SECRET_KEY.
+/// </summary>
+internal static class AzureCredentialFactory
 {
     internal static TokenCredential Create(
         IHostEnvironment environment,

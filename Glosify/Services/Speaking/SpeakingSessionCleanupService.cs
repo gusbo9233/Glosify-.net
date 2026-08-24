@@ -6,9 +6,8 @@ namespace Glosify.Services.Speaking;
 /// <remarks>
 /// The store only ever pruned as a side effect of the same user starting another session, so a
 /// user who closed the tab left their session in memory for the lifetime of the process. Each
-/// one pinned a SemaphoreSlim, an agent, a session and a chat pipeline — and, because disposal
-/// is what tears the conversation down on the Foundry side, left remote state alive too. That
-/// last part costs money in a credit-metered app, which is the real reason this exists.
+/// one pinned a SemaphoreSlim, a session, and locally retained conversation history. The
+/// cleanup service bounds that process-local state even when the browser disappears.
 /// </remarks>
 public sealed class SpeakingSessionCleanupService : BackgroundService
 {

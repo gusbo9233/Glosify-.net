@@ -1,4 +1,5 @@
 using Glosify.Services.Ai;
+using Glosify.Services.Ai.Generation;
 using Glosify.Services.Speaking;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -207,7 +208,7 @@ public sealed class SpeakingServiceTests
     }
 
     [Fact]
-    public async Task Turn_commits_exact_foundry_usage_after_validated_output()
+    public async Task Turn_commits_exact_openai_usage_after_validated_output()
     {
         var expectedUsage = new AiTokenUsage(91, 27, 0, 0, 118);
         var conversation = new FakeConversation((_, _) =>
@@ -225,7 +226,7 @@ public sealed class SpeakingServiceTests
         var reservation = Assert.Single(credits.Reservations);
         Assert.Equal(AiUsageFeatures.Speaking, reservation.Context.Feature);
         Assert.Equal("speaking_turn", reservation.Context.Operation);
-        Assert.Equal("grok-4-1-fast-non-reasoning", reservation.Model);
+        Assert.Equal(OpenAiModels.Luna, reservation.Model);
         Assert.Equal(expectedUsage, Assert.Single(credits.Commits).Usage);
         Assert.Empty(credits.Releases);
         Assert.Contains("Poproszę piwo.", Assert.Single(conversation.Messages));
@@ -766,8 +767,8 @@ public sealed class SpeakingServiceTests
     public async Task Expired_sessions_are_reaped_for_users_who_never_come_back()
     {
         // Pruning used to happen only as a side effect of the same user starting another
-        // session, so someone who closed the tab left their session — and the remote Foundry
-        // conversation behind it — alive for the lifetime of the process.
+        // session, so someone who closed the tab left its local conversation state alive
+        // for the lifetime of the process.
         var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
         var conversations = new List<FakeConversation>();
         var agentClient = new FakeAgentClient(() =>
@@ -847,7 +848,6 @@ public sealed class SpeakingServiceTests
             Options.Create(new AiUsageOptions { SpeakingOutputTokenReserve = 768 }),
             Options.Create(new SpeakingOptions
             {
-                ModelDeployment = "grok-4-1-fast-non-reasoning",
                 InteractiveBartenderEnabled = interactiveMode,
             }),
             timeProvider,
@@ -882,6 +882,7 @@ public sealed class SpeakingServiceTests
         public bool IsConfigured => true;
 
         public Task<ISpeakingAgentConversation> CreateConversationAsync(
+            string userId,
             SpeakingAvatarId avatar,
             bool interactiveMode = false,
             CancellationToken cancellationToken = default) =>

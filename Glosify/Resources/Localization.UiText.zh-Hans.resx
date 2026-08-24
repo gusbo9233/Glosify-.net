@@ -1344,7 +1344,7 @@
     <value>免费课程</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>由 Microsoft Foundry 和 Azure AI Speech 提供支持</value>
+    <value>由 OpenAI 和 Azure AI Speech 提供支持</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>练习设置</value>

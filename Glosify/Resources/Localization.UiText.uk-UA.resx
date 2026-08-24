@@ -1344,7 +1344,7 @@
     <value>Безкоштовний урок</value>
   </data>
   <data name="Speaking.PoweredBy" xml:space="preserve">
-    <value>Працює на Microsoft Foundry та Azure AI Speech</value>
+    <value>Працює на OpenAI та Azure AI Speech</value>
   </data>
   <data name="Speaking.Settings" xml:space="preserve">
     <value>Налаштування практики</value>

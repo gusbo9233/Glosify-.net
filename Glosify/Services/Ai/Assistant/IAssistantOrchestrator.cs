@@ -39,7 +39,6 @@ public interface IAssistantOrchestrator
         string userMessage,
         Guid? contextQuizId = null,
         string? focusedWordId = null,
-        string? model = null,
         AssistantDocumentContext? documentContext = null,
         Guid? customQuizId = null,
         CancellationToken cancellationToken = default,
@@ -52,14 +51,12 @@ public interface IAssistantOrchestrator
         string userId,
         string userMessage,
         string? focusedWordId = null,
-        string? model = null,
         AssistantDocumentContext? documentContext = null,
         CancellationToken cancellationToken = default);
 
     Task<AssistantTurnResponse> SendGlobalMessageAsync(
         string userId,
         string userMessage,
-        string? model = null,
         AssistantDocumentContext? documentContext = null,
         CancellationToken cancellationToken = default);
 
