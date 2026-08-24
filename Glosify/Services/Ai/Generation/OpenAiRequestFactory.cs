@@ -22,6 +22,7 @@ internal static class OpenAiRequestFactory
                 ReasoningEffortLevel = ResponseReasoningEffortLevel.Medium,
             },
         };
+        request.IncludedProperties.Add(IncludedResponseProperty.ReasoningEncryptedContent);
         return request;
     }
 

@@ -1,6 +1,7 @@
 #pragma warning disable OPENAI001
 
 using System.ClientModel;
+using System.ClientModel.Primitives;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Responses;
@@ -21,7 +22,10 @@ public sealed record OpenAiResponseEnvelope(
     string Model,
     AiTokenUsage Usage,
     bool IsIncomplete,
-    bool IsRefusal);
+    bool IsRefusal)
+{
+    public IReadOnlyList<string> OutputItemsJson { get; init; } = [];
+}
 
 public sealed record OpenAiFunctionCall(
     string CallId,
@@ -89,8 +93,16 @@ public sealed class OpenAiResponsesTransport : IOpenAiResponsesTransport
                 hasRefusal
                     || response.Error is not null
                     || (string.IsNullOrWhiteSpace(text)
-                        && calls.Length == 0
-                        && !status.Contains("completed", StringComparison.OrdinalIgnoreCase)));
+                    && calls.Length == 0
+                    && !status.Contains("completed", StringComparison.OrdinalIgnoreCase)))
+            {
+                // With store=false, callers must replay every output item on the next
+                // request. This includes encrypted reasoning items as well as messages
+                // and function calls, in the exact order returned by the API.
+                OutputItemsJson = response.OutputItems
+                    .Select(item => ModelReaderWriter.Write(item).ToString())
+                    .ToArray(),
+            };
         }
         catch (ClientResultException ex)
         {

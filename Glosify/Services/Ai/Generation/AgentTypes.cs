@@ -78,6 +78,7 @@ public sealed record AgentTurnResult(
     IReadOnlyList<AgentFunctionCall> FunctionCalls)
 {
     public AgentInvocationMetadata? Metadata { get; init; }
+    public IReadOnlyList<string> OutputItemsJson { get; init; } = [];
 }
 
 public sealed record AgentInvocationMetadata(

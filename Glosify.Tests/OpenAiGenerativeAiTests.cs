@@ -33,6 +33,9 @@ public sealed class OpenAiGenerativeAiTests
         Assert.Equal(
             ResponseReasoningEffortLevel.Medium,
             request.ReasoningOptions?.ReasoningEffortLevel);
+        Assert.Contains(
+            IncludedResponseProperty.ReasoningEncryptedContent,
+            request.IncludedProperties);
     }
 
     [Fact]
@@ -57,6 +60,11 @@ public sealed class OpenAiGenerativeAiTests
         var format = json.GetProperty("text").GetProperty("format");
         Assert.Equal("json_schema", format.GetProperty("type").GetString());
         Assert.True(format.GetProperty("strict").GetBoolean());
+        var schema = format.GetProperty("schema");
+        Assert.False(schema.GetProperty("additionalProperties").GetBoolean());
+        Assert.Equal(
+            ["value"],
+            schema.GetProperty("required").EnumerateArray().Select(item => item.GetString()));
         Assert.Equal(11, Assert.Single(credits.Commits).Usage.PromptTokens);
         Assert.Equal(18, Assert.Single(credits.Commits).Usage.TotalTokens);
         Assert.Equal(AiUsageProviders.OpenAi, Assert.Single(credits.Reservations).Provider);
@@ -145,6 +153,72 @@ public sealed class OpenAiGenerativeAiTests
         Assert.Contains("function_call_output", requestJson, StringComparison.Ordinal);
         Assert.Contains("lookup", requestJson, StringComparison.Ordinal);
         Assert.DoesNotContain("previous_response_id", requestJson, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Agent_turn_preserves_and_replays_encrypted_reasoning_output_in_order()
+    {
+        const string reasoningJson =
+            """{"type":"reasoning","id":"rs_1","encrypted_content":"encrypted-state","summary":[]}""";
+        var functionCallJson = ModelReaderWriter.Write(
+            ResponseItem.CreateFunctionCallItem(
+                "call-1",
+                "lookup",
+                BinaryData.FromString("""{"word":"hej"}""")))
+            .ToString();
+        var transport = new RecordingTransport
+        {
+            Response = Envelope(
+                string.Empty,
+                [new OpenAiFunctionCall("call-1", "lookup", """{"word":"hej"}""")]) with
+            {
+                OutputItemsJson = [reasoningJson, functionCallJson],
+            },
+        };
+        var client = CreateClient(transport, new RecordingCredits());
+
+        var result = await client.RunAgentTurnAsync(
+            new AgentRequest(
+                "Use tools.",
+                [new AgentTurn("user", Content(new { kind = "text", text = "Translate hej." }))],
+                []),
+            Usage(AiUsageFeatures.Assistant));
+
+        Assert.Equal([reasoningJson, functionCallJson], result.OutputItemsJson);
+
+        var replay = new List<ResponseItem>();
+        OpenAiMessageMapper.AddHistory(replay,
+        [
+            new AgentTurn("user", Content(new { kind = "text", text = "Translate hej." })),
+            new AgentTurn("assistant", JsonSerializer.Serialize(new
+            {
+                parts = new[]
+                {
+                    new
+                    {
+                        kind = "function_call",
+                        name = "lookup",
+                        argsJson = """{"word":"hej"}""",
+                        callId = "call-1",
+                    },
+                },
+                outputItemsJson = result.OutputItemsJson,
+            }, JsonOptions)),
+            new AgentTurn("user", Content(new
+            {
+                kind = "function_response",
+                name = "lookup",
+                responseJson = """{"translation":"hello"}""",
+                callId = "call-1",
+            })),
+        ]);
+
+        Assert.Collection(
+            replay,
+            item => Assert.IsAssignableFrom<MessageResponseItem>(item),
+            item => Assert.Equal("encrypted-state", Assert.IsType<ReasoningResponseItem>(item).EncryptedContent),
+            item => Assert.Equal("call-1", Assert.IsType<FunctionCallResponseItem>(item).CallId),
+            item => Assert.Equal("call-1", Assert.IsType<FunctionCallOutputResponseItem>(item).CallId));
     }
 
     [Fact]

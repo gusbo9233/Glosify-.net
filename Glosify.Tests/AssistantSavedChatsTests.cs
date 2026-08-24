@@ -381,6 +381,22 @@ public class AssistantSavedChatsTests
         using var toolResult = JsonDocument.Parse(toolResponse.GetProperty("responseJson").GetString()!);
         Assert.True(toolResult.RootElement.GetProperty("ok").GetBoolean());
 
+        var providerOutputItems = JsonDocument.Parse(invocations[1].RequestJson).RootElement
+            .GetProperty("history")
+            .EnumerateArray()
+            .Select(turn => JsonDocument.Parse(turn.GetProperty("contentJson").GetString()!).RootElement)
+            .Select(content => content.TryGetProperty("outputItemsJson", out var items)
+                ? items
+                : default)
+            .Where(items => items.ValueKind == JsonValueKind.Array)
+            .SelectMany(items => items.EnumerateArray())
+            .Select(item => item.GetString())
+            .ToList();
+        Assert.Collection(
+            providerOutputItems,
+            item => Assert.Contains("encrypted_content", item, StringComparison.Ordinal),
+            item => Assert.Contains("function_call", item, StringComparison.Ordinal));
+
         var execution = await context.AssistantToolExecutions.SingleAsync();
         Assert.NotEqual("{}", execution.ResultJson);
     }
@@ -1605,6 +1621,13 @@ public class AssistantSavedChatsTests
                 [
                     new AgentFunctionCall("loop", "{}") { CallId = "lookup-1" },
                 ])
+                {
+                    OutputItemsJson =
+                    [
+                        """{"type":"reasoning","id":"rs_saved","encrypted_content":"saved-state","summary":[]}""",
+                        """{"type":"function_call","call_id":"lookup-1","name":"loop","arguments":"{}"}""",
+                    ],
+                }
                 : new AgentTurnResult("Done.", []);
             return Task.FromResult(result with
             {

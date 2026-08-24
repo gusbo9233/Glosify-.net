@@ -68,8 +68,6 @@
   <data name="Assistant.ReadingMaterial" xml:space="preserve"><value>Reading material</value></data>
   <data name="Assistant.NoMaterial" xml:space="preserve"><value>No material selected</value></data>
   <data name="Assistant.Picture" xml:space="preserve"><value>Picture</value></data>
-  <data name="Assistant.Model" xml:space="preserve"><value>Assistant model</value></data>
-  <data name="Assistant.AutoModel" xml:space="preserve"><value>Auto · {0}</value></data>
   <data name="Assistant.Send" xml:space="preserve"><value>Send</value></data>
   <data name="Assistant.PreviousChats" xml:space="preserve"><value>Previous chats</value></data>
   <data name="Assistant.NoChats" xml:space="preserve"><value>No saved chats yet.</value></data>

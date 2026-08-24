@@ -475,16 +475,6 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await RegisterAndSelectPolishAsync();
         await Page.GotoAsync("/Quizzes");
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
-        var modelSelector = Page.Locator("[data-assistant-model-select]");
-        await Expect(modelSelector.Locator("option")).ToHaveCountAsync(4);
-        await Expect(modelSelector.Locator("option[value='']"))
-            .ToContainTextAsync("Auto · GPT-5.6 Luna · OpenAI · Balanced · 1× credits");
-        await Expect(modelSelector.Locator("option[value='gpt-5.6-luna']"))
-            .ToContainTextAsync("Balanced · 1× credits");
-        await Expect(modelSelector.Locator("option[value='grok-4.3']"))
-            .ToContainTextAsync("Thoughtful · 0.6× credits");
-        await Expect(modelSelector.Locator("option[value='DeepSeek-V4-Flash']"))
-            .ToContainTextAsync("Economy · 0.3× credits");
         await Page.Locator("[data-assistant-textarea]").FillAsync("Create a travel quiz");
         await Page.Locator("[data-assistant-submit]").ClickAsync();
         await Expect(Page.Locator("[data-assistant-pending-card]")).ToBeVisibleAsync();

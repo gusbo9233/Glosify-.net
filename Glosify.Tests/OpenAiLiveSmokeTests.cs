@@ -1,6 +1,7 @@
 using Glosify.Models.Entities;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -27,7 +28,7 @@ public sealed class OpenAiLiveSmokeTests
 
     [LiveOpenAiFact]
     [Trait("Category", "LiveOpenAI")]
-    public async Task Luna_returns_code_owned_function_call()
+    public async Task Luna_completes_store_false_code_owned_function_loop()
     {
         var credits = new SmokeCredits();
         var client = CreateClient(credits);
@@ -53,14 +54,53 @@ public sealed class OpenAiLiveSmokeTests
         Assert.Equal("lookup_word", call.Name);
         Assert.False(string.IsNullOrWhiteSpace(call.CallId));
         Assert.Contains("hej", call.ArgsJson, StringComparison.OrdinalIgnoreCase);
-        Assert.Single(credits.Commits);
+
+        var continued = await client.RunAgentTurnAsync(
+            new AgentRequest(
+                "Call lookup_word when needed and use its result to answer.",
+                [
+                    new AgentTurn("user", """{"parts":[{"kind":"text","text":"Translate hej."}]}"""),
+                    new AgentTurn("assistant", System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        parts = new[]
+                        {
+                            new
+                            {
+                                kind = "function_call",
+                                name = call.Name,
+                                argsJson = call.ArgsJson,
+                                callId = call.CallId,
+                            },
+                        },
+                        outputItemsJson = turn.OutputItemsJson,
+                    })),
+                    new AgentTurn("user", System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        parts = new[]
+                        {
+                            new
+                            {
+                                kind = "function_response",
+                                name = call.Name,
+                                responseJson = """{"translation":"hello"}""",
+                                callId = call.CallId,
+                            },
+                        },
+                    })),
+                ],
+                []),
+            Usage("live_function_result"));
+
+        Assert.Empty(continued.FunctionCalls);
+        Assert.Contains("hello", continued.Text, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(2, credits.Commits.Count);
     }
 
     private static OpenAiGenerativeAiClient CreateClient(SmokeCredits credits)
     {
         var options = Options.Create(new GenerativeAiOptions
         {
-            ApiKey = Environment.GetEnvironmentVariable("OPENAI_SECRET_KEY")!,
+            ApiKey = ReadLocalApiKey()!,
             TimeoutSeconds = 180,
         });
         return new OpenAiGenerativeAiClient(
@@ -68,8 +108,8 @@ public sealed class OpenAiLiveSmokeTests
             options,
             Options.Create(new AiUsageOptions
             {
-                AssistantOutputTokenReserve = 512,
-                JsonImportRepairOutputTokenReserve = 256,
+                AssistantOutputTokenReserve = 4096,
+                JsonImportRepairOutputTokenReserve = 4096,
                 MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
             }),
             credits,
@@ -78,6 +118,20 @@ public sealed class OpenAiLiveSmokeTests
 
     private static AiUsageContext Usage(string operation) =>
         new("live-smoke-learner", AiUsageFeatures.Assistant, operation, Guid.NewGuid());
+
+    internal static string? ReadLocalApiKey()
+    {
+        var environmentKey = Environment.GetEnvironmentVariable("OPENAI_SECRET_KEY");
+        if (!string.IsNullOrWhiteSpace(environmentKey))
+        {
+            return environmentKey.Trim();
+        }
+
+        return new ConfigurationBuilder()
+            .AddUserSecrets<Program>(optional: true)
+            .Build()["OPENAI_SECRET_KEY"]?
+            .Trim();
+    }
 
     private sealed class SmokeReply
     {
@@ -131,9 +185,9 @@ internal sealed class LiveOpenAiFactAttribute : FactAttribute
         {
             Skip = "Set RUN_OPENAI_SMOKE_TESTS=true to run direct OpenAI smoke tests.";
         }
-        else if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENAI_SECRET_KEY")))
+        else if (string.IsNullOrWhiteSpace(OpenAiLiveSmokeTests.ReadLocalApiKey()))
         {
-            Skip = "Set OPENAI_SECRET_KEY to run direct OpenAI smoke tests.";
+            Skip = "Set OPENAI_SECRET_KEY in the environment or Glosify user secrets to run direct OpenAI smoke tests.";
         }
     }
 }

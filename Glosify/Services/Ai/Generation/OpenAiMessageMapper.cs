@@ -1,5 +1,6 @@
 #pragma warning disable OPENAI001
 
+using System.ClientModel.Primitives;
 using System.Text.Json;
 using OpenAI.Responses;
 
@@ -18,7 +19,36 @@ internal static class OpenAiMessageMapper
         {
             var turn = turns[turnIndex];
             var stored = DeserializeContent(turn.ContentJson);
+            if (stored.OutputItemsJson is { Count: > 0 })
+            {
+                foreach (var itemJson in stored.OutputItemsJson)
+                {
+                    var item = ModelReaderWriter.Read<ResponseItem>(BinaryData.FromString(itemJson))
+                        ?? throw new InvalidDataException("Stored OpenAI response state was empty.");
+                    destination.Add(item);
+                    if (item is FunctionCallResponseItem functionCall)
+                    {
+                        if (!pendingCallIds.TryGetValue(functionCall.FunctionName, out var ids))
+                        {
+                            ids = new Queue<string>();
+                            pendingCallIds[functionCall.FunctionName] = ids;
+                        }
+                        ids.Enqueue(functionCall.CallId);
+                    }
+                }
+                continue;
+            }
             var textParts = new List<string>();
+
+            void FlushText()
+            {
+                if (textParts.Count == 0)
+                {
+                    return;
+                }
+                destination.Add(MapText(turn.Role, string.Join("\n", textParts)));
+                textParts.Clear();
+            }
 
             for (var partIndex = 0; partIndex < stored.Parts.Count; partIndex++)
             {
@@ -30,6 +60,7 @@ internal static class OpenAiMessageMapper
                         break;
                     case "function_call":
                     {
+                        FlushText();
                         var name = part.Name ?? string.Empty;
                         var callId = string.IsNullOrWhiteSpace(part.CallId)
                             ? $"legacy-call-{turnIndex}-{partIndex}"
@@ -48,6 +79,7 @@ internal static class OpenAiMessageMapper
                     }
                     case "function_response":
                     {
+                        FlushText();
                         var name = part.Name ?? string.Empty;
                         var callId = part.CallId;
                         if (string.IsNullOrWhiteSpace(callId)
@@ -65,11 +97,7 @@ internal static class OpenAiMessageMapper
                 }
             }
 
-            if (textParts.Count > 0)
-            {
-                var text = string.Join("\n", textParts);
-                destination.Add(MapText(turn.Role, text));
-            }
+            FlushText();
         }
     }
 
@@ -127,6 +155,7 @@ internal static class OpenAiMessageMapper
     private sealed class StoredContent
     {
         public List<StoredPart> Parts { get; set; } = [];
+        public List<string>? OutputItemsJson { get; set; }
     }
 
     private sealed class StoredPart

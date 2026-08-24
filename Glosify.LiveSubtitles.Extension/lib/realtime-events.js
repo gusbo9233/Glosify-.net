@@ -95,9 +95,17 @@ export function createRealtimeEventAccumulator(context, {
   }
 
   function flushIdle(now = Date.now()) {
+    return flushMatching(buffer => now - buffer.lastUpdatedAt >= idleFlushMs, now);
+  }
+
+  function flushAll(now = Date.now()) {
+    return flushMatching(() => true, now);
+  }
+
+  function flushMatching(shouldFlush, now) {
     const result = [];
     for (const [key, buffer] of buffers) {
-      if (now - buffer.lastUpdatedAt < idleFlushMs) {
+      if (!shouldFlush(buffer)) {
         continue;
       }
       buffers.delete(key);
@@ -114,7 +122,7 @@ export function createRealtimeEventAccumulator(context, {
     return result;
   }
 
-  return Object.freeze({ apply, flushIdle });
+  return Object.freeze({ apply, flushIdle, flushAll });
 }
 
 function eventKey(event) {

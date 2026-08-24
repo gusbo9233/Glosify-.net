@@ -53,6 +53,58 @@ public sealed class OpenAiTranslationRelayTests
     }
 
     [Fact]
+    public void Protocol_RecognizesBrowserDrainRequestWithoutTreatingItAsAudio()
+    {
+        var request = """{"type":"glosify.relay.close"}"""u8;
+
+        Assert.True(OpenAiTranslationProtocol.IsBrowserCloseRequest(request));
+        Assert.False(OpenAiTranslationProtocol.IsAllowedBrowserMessage(request));
+    }
+
+    [Fact]
+    public async Task Shutdown_sends_session_close_then_waits_for_receive_pump_to_observe_session_closed()
+    {
+        using var socket = new RecordingWebSocket();
+        var sessionClosedObserved = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var draining = OpenAiTranslationRelay.DrainOpenAiSessionAsync(
+            socket,
+            sessionClosedObserved.Task,
+            TimeSpan.FromSeconds(2),
+            CancellationToken.None);
+
+        var closePayload = await socket.MessageSent.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        Assert.Equal(
+            """{"type":"session.close"}""",
+            Encoding.UTF8.GetString(closePayload));
+        Assert.False(draining.IsCompleted);
+
+        // The receive pump forwards any final caption events before it completes on
+        // session.closed. Teardown must keep the upstream socket alive until then.
+        sessionClosedObserved.SetResult();
+        Assert.True(await draining);
+    }
+
+    [Fact]
+    public async Task Shutdown_drain_has_a_bounded_deadline_when_session_closed_never_arrives()
+    {
+        using var socket = new RecordingWebSocket();
+        var receivePump = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var drained = await OpenAiTranslationRelay.DrainOpenAiSessionAsync(
+                socket,
+                receivePump.Task,
+                TimeSpan.FromMilliseconds(25),
+                CancellationToken.None)
+            .WaitAsync(TimeSpan.FromSeconds(1));
+
+        Assert.True(drained);
+        Assert.True(socket.MessageSent.Task.IsCompletedSuccessfully);
+    }
+
+    [Fact]
     public void Protocol_AcceptsOnlyBoundedInputAudioMessages()
     {
         Assert.True(OpenAiTranslationProtocol.IsAllowedBrowserMessage(
@@ -411,6 +463,50 @@ public sealed class OpenAiTranslationRelayTests
             CancellationToken cancellationToken = default)
         {
             Calls++;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class RecordingWebSocket : WebSocket
+    {
+        public TaskCompletionSource<byte[]> MessageSent { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override WebSocketCloseStatus? CloseStatus => null;
+        public override string? CloseStatusDescription => null;
+        public override WebSocketState State => WebSocketState.Open;
+        public override string? SubProtocol => null;
+
+        public override void Abort()
+        {
+        }
+
+        public override Task CloseAsync(
+            WebSocketCloseStatus closeStatus,
+            string? statusDescription,
+            CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public override Task CloseOutputAsync(
+            WebSocketCloseStatus closeStatus,
+            string? statusDescription,
+            CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public override void Dispose()
+        {
+        }
+
+        public override Task<WebSocketReceiveResult> ReceiveAsync(
+            ArraySegment<byte> buffer,
+            CancellationToken cancellationToken) =>
+            Task.FromException<WebSocketReceiveResult>(new NotSupportedException());
+
+        public override Task SendAsync(
+            ArraySegment<byte> buffer,
+            WebSocketMessageType messageType,
+            bool endOfMessage,
+            CancellationToken cancellationToken)
+        {
+            MessageSent.TrySetResult(buffer.ToArray());
             return Task.CompletedTask;
         }
     }

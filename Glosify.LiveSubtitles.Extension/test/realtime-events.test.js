@@ -162,6 +162,24 @@ test("delta-only captions finalize after four idle seconds", () => {
   assert.equal(final.isFinal, true);
 });
 
+test("relay shutdown finalizes buffered captions without waiting for idle timeout", () => {
+  const accumulator = createRealtimeEventAccumulator({
+    sessionId: "s1",
+    targetLanguage: "en",
+    nextSequence: () => 5,
+  }, { idleFlushMs: 4_000 });
+  accumulator.apply({
+    type: "session.output_transcript.delta",
+    delta: "Late final caption",
+  }, 1_000);
+
+  const [final] = accumulator.flushAll(1_001);
+
+  assert.equal(final.delta, "Late final caption");
+  assert.equal(final.isFinal, true);
+  assert.deepEqual(accumulator.flushAll(1_002), []);
+});
+
 test("completed provider IDs retain only a bounded deduplication window", () => {
   const accumulator = createRealtimeEventAccumulator({
     sessionId: "s1",

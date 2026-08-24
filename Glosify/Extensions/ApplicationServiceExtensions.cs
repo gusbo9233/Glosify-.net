@@ -59,11 +59,9 @@ public static class ApplicationServiceExtensions
             .ValidateOnStart();
         services.Configure<GenerativeAiOptions>(options =>
         {
-            var apiKey = configuration["OPENAI_SECRET_KEY"];
-            if (!string.IsNullOrWhiteSpace(apiKey))
-            {
-                options.ApiKey = apiKey.Trim();
-            }
+            // Always overwrite the bound property so GenerativeAi:ApiKey and old
+            // provider settings can never become credential fallbacks.
+            options.ApiKey = ResolveOpenAiApiKey(configuration);
         });
         services.AddSingleton<IValidateOptions<GenerativeAiOptions>, GenerativeAiOptionsValidator>();
         services.AddOptions<AiUsageOptions>()
@@ -257,5 +255,13 @@ public static class ApplicationServiceExtensions
         return !string.IsNullOrWhiteSpace(legacy)
             ? legacy
             : configuration["ELEVENLABS_API_KEY"];
+    }
+
+    internal static string ResolveOpenAiApiKey(IConfiguration configuration)
+    {
+        var apiKey = configuration["OPENAI_SECRET_KEY"];
+        return string.IsNullOrWhiteSpace(apiKey)
+            ? string.Empty
+            : apiKey.Trim();
     }
 }

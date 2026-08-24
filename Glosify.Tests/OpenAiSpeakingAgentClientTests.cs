@@ -128,6 +128,48 @@ public sealed class OpenAiSpeakingAgentClientTests
         Assert.Contains("next turn", secondJson, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Tool_continuation_replays_encrypted_reasoning_before_function_result()
+    {
+        const string reasoningJson =
+            """{"type":"reasoning","id":"rs_speaking","encrypted_content":"speaking-state","summary":[]}""";
+        var functionCall = new OpenAiFunctionCall("call-speaking", "unknown_tool", "{}");
+        var functionCallJson = ModelReaderWriter.Write(
+            ResponseItem.CreateFunctionCallItem(
+                functionCall.CallId,
+                functionCall.Name,
+                BinaryData.FromString(functionCall.ArgumentsJson)))
+            .ToString();
+        var toolResponse = Envelope("", "", new AiTokenUsage(4, 2, 1, 0, 6)) with
+        {
+            FunctionCalls = [functionCall],
+            OutputItemsJson = [reasoningJson, functionCallJson],
+        };
+        var finalResponse = Envelope("Dobrze.", "Good.", new AiTokenUsage(5, 3, 1, 0, 8));
+        using var services = new ServiceCollection().BuildServiceProvider();
+        var transport = new QueueTransport(toolResponse, finalResponse);
+        var client = new OpenAiSpeakingAgentClient(
+            Options.Create(new GenerativeAiOptions { ApiKey = "test-key" }),
+            Options.Create(new AiUsageOptions { SpeakingOutputTokenReserve = 4096 }),
+            transport,
+            services.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<OpenAiSpeakingAgentClient>.Instance);
+        await using var conversation = await client.CreateConversationAsync(
+            "learner-7",
+            SpeakingAvatarId.Kasia);
+
+        var turn = await conversation.RunTurnAsync("Pomóż mi.");
+
+        Assert.Equal(14, turn.Usage?.TotalTokens);
+        var continuation = transport.Requests[1].InputItems;
+        Assert.Collection(
+            continuation,
+            item => Assert.IsAssignableFrom<MessageResponseItem>(item),
+            item => Assert.Equal("speaking-state", Assert.IsType<ReasoningResponseItem>(item).EncryptedContent),
+            item => Assert.Equal("call-speaking", Assert.IsType<FunctionCallResponseItem>(item).CallId),
+            item => Assert.Equal("call-speaking", Assert.IsType<FunctionCallOutputResponseItem>(item).CallId));
+    }
+
     private static OpenAiResponseEnvelope Envelope(
         string replyPolish,
         string replyEnglish,

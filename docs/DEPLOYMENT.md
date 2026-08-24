@@ -20,6 +20,12 @@ to configuration files.
 that exact environment variable explicitly. It is never emitted in HTML, API
 responses, relay tokens, logs, or extension configuration.
 
+The deployment workflow verifies that the setting is non-empty before changing
+production. After the direct-OpenAI artifact is deployed, it removes the retired
+Foundry/Gemini credentials, endpoints, deployments, speaking-agent pins, and
+model-multiplier overrides. The cleanup deliberately runs after deployment so
+the previous artifact remains functional during rollout.
+
 Feature-specific settings remain required when those features are enabled:
 
 - Azure Speech endpoint/resource/region settings for speaking transcription,
@@ -87,8 +93,9 @@ npm test --prefix Glosify.LiveSubtitles.Extension
 ```
 
 Run the browser suite when its dependencies are installed. Direct OpenAI smoke
-tests are opt-in and require both `RUN_OPENAI_SMOKE_TESTS=true` and
-`OPENAI_SECRET_KEY`; never print the key in test output.
+tests are opt-in and require `RUN_OPENAI_SMOKE_TESTS=true`; they read the exact
+`OPENAI_SECRET_KEY` from the environment or the Glosify user-secret store. Never
+print the key in test output.
 
 ## Post-deployment checks
 

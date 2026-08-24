@@ -188,12 +188,6 @@
   <data name="Assistant.Picture" xml:space="preserve">
     <value>Зображення</value>
   </data>
-  <data name="Assistant.Model" xml:space="preserve">
-    <value>Модель помічника</value>
-  </data>
-  <data name="Assistant.AutoModel" xml:space="preserve">
-    <value>Авто · {0}</value>
-  </data>
   <data name="Assistant.Send" xml:space="preserve">
     <value>Надіслати</value>
   </data>

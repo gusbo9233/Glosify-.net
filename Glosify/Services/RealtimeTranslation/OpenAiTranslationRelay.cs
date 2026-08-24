@@ -1,4 +1,5 @@
 using System.Net.WebSockets;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
@@ -10,6 +11,7 @@ namespace Glosify.Services.RealtimeTranslation;
 
 public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
 {
+    private static readonly TimeSpan SessionDrainTimeout = TimeSpan.FromSeconds(5);
     private readonly GenerativeAiOptions _openAi;
     private readonly IRealtimeSpeechTranscriber _speech;
     private readonly RealtimeTranslationRelayAuthorizationMonitor _authorizationMonitor;
@@ -73,6 +75,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         using var relayCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         relayCancellation.CancelAfter(TimeSpan.FromMinutes(_options.MaxSessionMinutes + 1));
         var relayToken = relayCancellation.Token;
+        var sessionCloseSent = false;
 
         try
         {
@@ -125,6 +128,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                 });
             }
 
+            using var inputCancellation = CancellationTokenSource.CreateLinkedTokenSource(relayToken);
             var browserToOpenAi = PumpBrowserToOpenAiAsync(
                 browserSocket,
                 openAiSocket,
@@ -132,7 +136,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                 transcriptState,
                 sessionState.StartedAt!.Value,
                 billingState,
-                relayToken);
+                inputCancellation.Token);
             var openAiToBrowser = PumpOpenAiToBrowserAsync(
                 openAiSocket,
                 browserSocket,
@@ -174,19 +178,57 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                 authorizationMonitor);
             try
             {
-                if (completed == browserToOpenAi && sourceAudio is not null)
+                Exception? completionError = null;
+                try
                 {
-                    await browserToOpenAi;
-                    await sourceTranscription;
-                    await sourceToTranscript;
+                    if (completed == sourceTranscription || completed == sourceToTranscript)
+                    {
+                        await AwaitScribePipelineAsync(sourceTranscription, sourceToTranscript);
+                    }
+                    else
+                    {
+                        await completed;
+                    }
                 }
-                else if (completed == sourceTranscription || completed == sourceToTranscript)
+                catch (Exception exception)
                 {
-                    await AwaitScribePipelineAsync(sourceTranscription, sourceToTranscript);
+                    completionError = exception;
                 }
-                else
+
+                if (completed != openAiToBrowser && !relayToken.IsCancellationRequested)
                 {
-                    await completed;
+                    // Stop accepting audio before asking OpenAI to close, then keep the
+                    // receive pump alive until it has forwarded every final caption and
+                    // observed session.closed (or the bounded drain expires).
+                    inputCancellation.Cancel();
+                    await IgnoreCancellationAsync(browserToOpenAi);
+                    if (sourceAudio is not null)
+                    {
+                        try
+                        {
+                            await AwaitScribePipelineAsync(sourceTranscription, sourceToTranscript);
+                        }
+                        catch (Exception exception)
+                        {
+                            completionError ??= exception;
+                        }
+                    }
+                    sessionCloseSent = await DrainOpenAiSessionAsync(
+                        openAiSocket,
+                        openAiToBrowser,
+                        SessionDrainTimeout,
+                        CancellationToken.None);
+                    if (!openAiToBrowser.IsCompleted)
+                    {
+                        _logger.LogWarning(
+                            "Timed out waiting for OpenAI to finish subtitle session {SessionId}",
+                            authorization.SessionId);
+                    }
+                }
+
+                if (completionError is not null)
+                {
+                    ExceptionDispatchInfo.Capture(completionError).Throw();
                 }
             }
             finally
@@ -236,7 +278,10 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         }
         finally
         {
-            await SendSessionCloseQuietlyAsync(openAiSocket);
+            if (!sessionCloseSent)
+            {
+                await SendSessionCloseQuietlyAsync(openAiSocket);
+            }
             await CloseQuietlyAsync(openAiSocket, CancellationToken.None);
             await CloseQuietlyAsync(browserSocket, CancellationToken.None);
         }
@@ -303,6 +348,10 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                 {
                     return;
                 }
+                if (OpenAiTranslationProtocol.IsBrowserCloseRequest(message))
+                {
+                    return;
+                }
                 if (!OpenAiTranslationProtocol.TryDecodeBrowserAudio(message, out var audioBytes))
                 {
                     await browserSocket.CloseOutputAsync(
@@ -356,8 +405,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         try
         {
             while (!cancellationToken.IsCancellationRequested
-                && openAiSocket.State == WebSocketState.Open
-                && browserSocket.State == WebSocketState.Open)
+                && openAiSocket.State == WebSocketState.Open)
             {
                 var message = await ReceiveTextMessageAsync(
                     openAiSocket,
@@ -380,12 +428,35 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                         WriteCaption(idle, transcriptWriter!, transcriptState, sessionId);
                     }
                 }
+                if (OpenAiTranslationProtocol.HasType(message, "session.closed"))
+                {
+                    if (browserSocket.State == WebSocketState.Open)
+                    {
+                        await browserSendLock.WaitAsync(cancellationToken);
+                        try
+                        {
+                            await SendBrowserControlAsync(
+                                browserSocket,
+                                "glosify.relay.closed",
+                                null,
+                                cancellationToken);
+                        }
+                        finally
+                        {
+                            browserSendLock.Release();
+                        }
+                    }
+                    return;
+                }
                 if (!OpenAiTranslationProtocol.ShouldForwardOpenAiMessage(message))
                 {
                     continue;
                 }
 
-                await SendBrowserBytesAsync(browserSocket, browserSendLock, message, cancellationToken);
+                if (browserSocket.State == WebSocketState.Open)
+                {
+                    await SendBrowserBytesAsync(browserSocket, browserSendLock, message, cancellationToken);
+                }
             }
         }
         finally
@@ -602,6 +673,43 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         catch (WebSocketException)
         {
             // The upstream already closed the translation session.
+        }
+    }
+
+    internal static async Task<bool> DrainOpenAiSessionAsync(
+        WebSocket openAiSocket,
+        Task receivePump,
+        TimeSpan timeout,
+        CancellationToken cancellationToken)
+    {
+        if (openAiSocket.State != WebSocketState.Open)
+        {
+            return false;
+        }
+
+        using var drainCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        drainCancellation.CancelAfter(timeout);
+        var closeSent = false;
+        try
+        {
+            await openAiSocket.SendAsync(
+                OpenAiTranslationProtocol.CreateSessionClose(),
+                WebSocketMessageType.Text,
+                endOfMessage: true,
+                drainCancellation.Token);
+            closeSent = true;
+            await receivePump.WaitAsync(drainCancellation.Token);
+            return true;
+        }
+        catch (OperationCanceledException) when (drainCancellation.IsCancellationRequested)
+        {
+            // Do not send a duplicate from the outer teardown merely because OpenAI
+            // missed the drain deadline after accepting the close request.
+            return closeSent;
+        }
+        catch (WebSocketException)
+        {
+            return false;
         }
     }
 

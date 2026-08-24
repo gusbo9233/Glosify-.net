@@ -7,7 +7,7 @@ import { createRealtimeEventAccumulator } from "../lib/realtime-events.js";
 import { buildRelayProtocols, buildRelayWebSocketUrl } from "../lib/relay-url.js";
 
 const RELAY_CONNECT_TIMEOUT_MS = 15_000;
-const RELAY_DISCONNECT_TIMEOUT_MS = 1_000;
+const RELAY_DISCONNECT_TIMEOUT_MS = 6_000;
 const MAX_RELAY_BUFFERED_BYTES = 512 * 1024;
 const MAX_AUTHORIZATION_AHEAD_MS = 61 * 60_000;
 const BACKPRESSURE_STOP_MS = 2_000;
@@ -314,6 +314,12 @@ function handleRelayMessage({ data }, connection) {
       "Glosify ended the subtitle relay."));
     return;
   }
+  if (providerEvent?.type === "glosify.relay.closed") {
+    for (const event of connection.accumulator.flushAll()) {
+      sendNormalizedEvent(event, connection);
+    }
+    return;
+  }
   if (providerEvent?.type === "glosify.transcript.warning") {
     chrome.runtime.sendMessage({
       type: "media:storage-warning",
@@ -412,32 +418,67 @@ function reportBackpressureDiagnostics(stillActive) {
 
 async function disconnectRelay() {
   const connection = relayConnection;
-  ++relayGeneration;
-  relayConnection = null;
   if (!connection) {
     return;
   }
+  const { socket } = connection;
+  const shouldDrain = connection.ready && socket.readyState === WebSocket.OPEN;
   connection.expectedClose = true;
   connection.ready = false;
   connection.authorizedUntil = 0;
   connection.authorizedUntilMonotonic = 0;
-  const { socket } = connection;
-  socket.onmessage = null;
-  socket.onerror = null;
-  socket.onclose = null;
-  if (socket.readyState === WebSocket.CLOSED) {
-    return;
-  }
-  await new Promise(resolve => {
-    const timeout = setTimeout(resolve, RELAY_DISCONNECT_TIMEOUT_MS);
-    socket.addEventListener("close", () => {
-      clearTimeout(timeout);
-      resolve();
-    }, { once: true });
-    if (socket.readyState < WebSocket.CLOSING) {
-      socket.close(1000, "Subtitle relay disconnected.");
+  try {
+    if (socket.readyState !== WebSocket.CLOSED) {
+      await new Promise(resolve => {
+        let settled = false;
+        const finish = () => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          clearTimeout(timeout);
+          socket.removeEventListener("message", onMessage);
+          socket.removeEventListener("close", finish);
+          resolve();
+        };
+        const timeout = setTimeout(() => {
+          if (socket.readyState < WebSocket.CLOSING) {
+            socket.close(1000, "Subtitle relay drain timed out.");
+          }
+          finish();
+        }, RELAY_DISCONNECT_TIMEOUT_MS);
+        const onMessage = event => {
+          let providerEvent;
+          try {
+            providerEvent = JSON.parse(event.data);
+          } catch {
+            return;
+          }
+          if (providerEvent?.type === "glosify.relay.closed"
+              && socket.readyState < WebSocket.CLOSING) {
+            socket.close(1000, "Subtitle relay disconnected.");
+          }
+        };
+        socket.addEventListener("message", onMessage);
+        socket.addEventListener("close", finish);
+        if (shouldDrain) {
+          socket.send(JSON.stringify({ type: "glosify.relay.close" }));
+        } else if (socket.readyState < WebSocket.CLOSING) {
+          socket.close(1000, "Subtitle relay disconnected.");
+        } else if (socket.readyState >= WebSocket.CLOSING) {
+          finish();
+        }
+      });
     }
-  });
+  } finally {
+    socket.onmessage = null;
+    socket.onerror = null;
+    socket.onclose = null;
+    if (relayConnection === connection) {
+      ++relayGeneration;
+      relayConnection = null;
+    }
+  }
 }
 
 async function stopAll() {

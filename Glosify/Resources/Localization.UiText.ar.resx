@@ -188,12 +188,6 @@
   <data name="Assistant.Picture" xml:space="preserve">
     <value>صورة</value>
   </data>
-  <data name="Assistant.Model" xml:space="preserve">
-    <value>نموذج المساعد</value>
-  </data>
-  <data name="Assistant.AutoModel" xml:space="preserve">
-    <value>تلقائي · {0}</value>
-  </data>
   <data name="Assistant.Send" xml:space="preserve">
     <value>إرسال</value>
   </data>

@@ -188,12 +188,6 @@
   <data name="Assistant.Picture" xml:space="preserve">
     <value>图片</value>
   </data>
-  <data name="Assistant.Model" xml:space="preserve">
-    <value>助手模型</value>
-  </data>
-  <data name="Assistant.AutoModel" xml:space="preserve">
-    <value>自动 · {0}</value>
-  </data>
   <data name="Assistant.Send" xml:space="preserve">
     <value>发送</value>
   </data>

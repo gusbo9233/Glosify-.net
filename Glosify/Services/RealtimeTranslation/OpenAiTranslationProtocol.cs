@@ -41,6 +41,9 @@ internal static class OpenAiTranslationProtocol
     internal static byte[] CreateSessionClose() =>
         JsonSerializer.SerializeToUtf8Bytes(new { type = "session.close" });
 
+    internal static bool IsBrowserCloseRequest(ReadOnlySpan<byte> payload) =>
+        HasType(payload, "glosify.relay.close");
+
     internal static bool IsAllowedBrowserMessage(ReadOnlySpan<byte> payload) =>
         TryDecodeBrowserAudio(payload, out _);
 

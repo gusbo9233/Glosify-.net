@@ -188,12 +188,6 @@
   <data name="Assistant.Picture" xml:space="preserve">
     <value>Görsel</value>
   </data>
-  <data name="Assistant.Model" xml:space="preserve">
-    <value>Asistan modeli</value>
-  </data>
-  <data name="Assistant.AutoModel" xml:space="preserve">
-    <value>Otomatik · {0}</value>
-  </data>
   <data name="Assistant.Send" xml:space="preserve">
     <value>Gönder</value>
   </data>

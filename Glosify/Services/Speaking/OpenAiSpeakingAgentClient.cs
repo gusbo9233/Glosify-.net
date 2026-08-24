@@ -1,5 +1,6 @@
 #pragma warning disable OPENAI001
 
+using System.ClientModel.Primitives;
 using System.Diagnostics;
 using System.Text.Json;
 using Glosify.Services.Ai;
@@ -251,12 +252,9 @@ public sealed class OpenAiSpeakingAgentClient : ISpeakingAgentClient
 
                     if (response.FunctionCalls.Count > 0)
                     {
+                        AddResponseOutputItems(turnItems, response);
                         foreach (var call in response.FunctionCalls)
                         {
-                            turnItems.Add(ResponseItem.CreateFunctionCallItem(
-                                call.CallId,
-                                call.Name,
-                                BinaryData.FromString(call.ArgumentsJson)));
                             var result = await InvokeFunctionAsync(
                                 functions,
                                 call,
@@ -271,7 +269,7 @@ public sealed class OpenAiSpeakingAgentClient : ISpeakingAgentClient
                     var reply = profile.UsesQuizTools
                         ? DeserializeTutorReply(response.Text)
                         : DeserializeReply(response.Text);
-                    turnItems.Add(ResponseItem.CreateAssistantMessageItem(response.Text, []));
+                    AddResponseOutputItems(turnItems, response);
                     _history.AddRange(turnItems);
                     var commands = sceneTools?.CompleteTurn();
                     quizTools?.CompleteTurn();
@@ -359,6 +357,38 @@ public sealed class OpenAiSpeakingAgentClient : ISpeakingAgentClient
                 left.ThoughtTokens + right.ThoughtTokens,
                 left.ToolPromptTokens + right.ToolPromptTokens,
                 left.TotalTokens + right.TotalTokens);
+
+        private static void AddResponseOutputItems(
+            ICollection<ResponseItem> destination,
+            OpenAiResponseEnvelope response)
+        {
+            if (response.OutputItemsJson.Count == 0)
+            {
+                // Test transports and older callers may not carry raw provider state.
+                // Preserve their prior behavior while production transport always does.
+                if (response.FunctionCalls.Count > 0)
+                {
+                    foreach (var call in response.FunctionCalls)
+                    {
+                        destination.Add(ResponseItem.CreateFunctionCallItem(
+                            call.CallId,
+                            call.Name,
+                            BinaryData.FromString(call.ArgumentsJson)));
+                    }
+                }
+                else
+                {
+                    destination.Add(ResponseItem.CreateAssistantMessageItem(response.Text, []));
+                }
+                return;
+            }
+
+            foreach (var itemJson in response.OutputItemsJson)
+            {
+                destination.Add(ModelReaderWriter.Read<ResponseItem>(BinaryData.FromString(itemJson))
+                    ?? throw new InvalidDataException("OpenAI response state was empty."));
+            }
+        }
     }
 }
 

@@ -135,6 +135,14 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                     audio.Writer.TryComplete();
                     await speechPump;
                     await translationPump;
+                    if (browserSocket.State == WebSocketState.Open)
+                    {
+                        await OpenAiTranslationRelay.SendBrowserControlAsync(
+                            browserSocket,
+                            "glosify.relay.closed",
+                            null,
+                            relayToken);
+                    }
                 }
                 else
                 {
@@ -236,6 +244,10 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
             {
                 var message = await ReceiveTextMessageAsync(browserSocket, cancellationToken);
                 if (message is null)
+                {
+                    return;
+                }
+                if (OpenAiTranslationProtocol.IsBrowserCloseRequest(message))
                 {
                     return;
                 }

@@ -14,6 +14,14 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
     private const string Provider = AiUsageProviders.OpenAi;
     private const int ImageTokenEstimate = 1024;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly AIJsonSchemaCreateOptions StrictSchemaOptions = new()
+    {
+        TransformOptions = new AIJsonSchemaTransformOptions
+        {
+            DisallowAdditionalProperties = true,
+            RequireAllProperties = true,
+        },
+    };
 
     private readonly IOpenAiResponsesTransport _transport;
     private readonly GenerativeAiOptions _options;
@@ -49,7 +57,8 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
         request.InputItems.Add(ResponseItem.CreateUserMessageItem(prompt));
         var schema = AIJsonUtilities.CreateJsonSchema(
             typeof(T),
-            serializerOptions: JsonOptions);
+            serializerOptions: JsonOptions,
+            inferenceOptions: StrictSchemaOptions);
         request.TextOptions = new ResponseTextOptions
         {
             TextFormat = ResponseTextFormat.CreateJsonSchemaFormat(
@@ -209,6 +218,7 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
 
         return new AgentTurnResult(response.Text, calls)
         {
+            OutputItemsJson = response.OutputItemsJson,
             Metadata = new AgentInvocationMetadata(
                 Provider,
                 OpenAiModels.Luna,

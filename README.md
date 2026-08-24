@@ -25,7 +25,8 @@ the Scribe alternative uses ElevenLabs Scribe v2 followed by Azure Translator.
 Provider keys never reach the browser or extension.
 
 The production key is the Azure App Service setting `OPENAI_SECRET_KEY`. For
-local AI work, set the same name with user secrets:
+local AI work, set the same name with user secrets. No OpenAI key belongs in an
+appsettings file, browser storage, or the extension:
 
 ```bash
 dotnet user-secrets set "OPENAI_SECRET_KEY" "<key>" --project Glosify
@@ -67,13 +68,39 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
   --project Glosify
 
 ./scripts/dev-db-reset.sh
-dotnet run --project Glosify
+dotnet dev-certs https --trust
+dotnet run --project Glosify --launch-profile https
 ```
 
 Register at `https://localhost:7032/Account/Register`; the login route is
 `/login`. Ordinary quiz, classroom, Anki, sharing, and UI development does not
 need external service credentials. Azure-backed features use `az login` during
 local development.
+
+### Test direct OpenAI locally
+
+The HTTPS launch profile enables Enhanced subtitles and allowlists the pinned
+development extension callback. It still reads the exact `OPENAI_SECRET_KEY`
+from the Glosify user-secret store.
+
+Run the two opt-in direct API smoke tests (structured output plus a stateless
+two-request function loop) with:
+
+```bash
+RUN_OPENAI_SMOKE_TESTS=true dotnet test Glosify.Tests \
+  --filter FullyQualifiedName~OpenAiLiveSmokeTests
+```
+
+For the extension, build and load
+`Glosify.LiveSubtitles.Extension/artifacts/development` as an unpacked Chrome
+extension, then sign in and select Enhanced:
+
+```bash
+npm run build:dev --prefix Glosify.LiveSubtitles.Extension
+```
+
+Chrome must trust the local ASP.NET Core HTTPS certificate. Scribe mode also
+requires its retained ElevenLabs and Azure Translator configuration.
 
 The application never changes the schema at startup. Use:
 
@@ -91,7 +118,8 @@ npm test --prefix Glosify.LiveSubtitles.Extension
 ```
 
 Credential-gated direct OpenAI smoke tests can be enabled with
-`RUN_OPENAI_SMOKE_TESTS=true` and `OPENAI_SECRET_KEY`.
+`RUN_OPENAI_SMOKE_TESTS=true`; they read `OPENAI_SECRET_KEY` from the environment
+or the Glosify user-secret store.
 
 The workflow in `.github/workflows/master_glosify.yml` validates pull requests.
 A push to `master` applies the reviewed EF migration bundle and deploys Azure

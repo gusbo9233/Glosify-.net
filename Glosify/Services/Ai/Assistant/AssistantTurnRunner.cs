@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
@@ -490,7 +491,9 @@ internal sealed class AssistantTurnRunner
                     });
                 }
 
-                var modelTurn = new AgentTurn(AssistantMessageRole.Model, SerializeContent(modelParts));
+                var modelTurn = new AgentTurn(
+                    AssistantMessageRole.Model,
+                    SerializeContent(modelParts, turn.OutputItemsJson));
                 history.Add(modelTurn);
                 completedTurnMessages.Add(new AssistantMessage
                 {
@@ -607,7 +610,9 @@ internal sealed class AssistantTurnRunner
                 ContextQuizId = contextQuizId,
                 Sequence = nextSequence,
                 Role = AssistantMessageRole.Model,
-                ContentJson = SerializeContent([new StoredPart { Kind = "text", Text = finalText }]),
+                ContentJson = SerializeContent(
+                    [new StoredPart { Kind = "text", Text = finalText }],
+                    finalTurn?.OutputItemsJson),
                 PendingChangesJson = pendingChangesJson,
                 Status = AssistantMessageStatus.Active,
                 CreatedAt = _timeProvider.GetUtcNow(),
@@ -849,9 +854,17 @@ internal sealed class AssistantTurnRunner
         return new AgentTurn(message.Role, message.ContentJson);
     }
 
-    private static string SerializeContent(IReadOnlyList<StoredPart> parts)
+    private static string SerializeContent(
+        IReadOnlyList<StoredPart> parts,
+        IReadOnlyList<string>? outputItemsJson = null)
     {
-        return JsonSerializer.Serialize(new StoredContent { Parts = parts.ToList() }, JsonOptions);
+        return JsonSerializer.Serialize(new StoredContent
+        {
+            Parts = parts.ToList(),
+            OutputItemsJson = outputItemsJson is { Count: > 0 }
+                ? outputItemsJson.ToList()
+                : null,
+        }, JsonOptions);
     }
 
     private static string SummarizeResult(object result)
@@ -863,6 +876,8 @@ internal sealed class AssistantTurnRunner
     private sealed class StoredContent
     {
         public List<StoredPart>? Parts { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<string>? OutputItemsJson { get; set; }
     }
 
     private sealed class StoredPart
