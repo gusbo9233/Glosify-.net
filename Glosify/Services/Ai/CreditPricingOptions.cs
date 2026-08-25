@@ -8,6 +8,7 @@ public sealed class CreditPricingOptions
 {
     public const string SectionName = "CreditPricing";
 
+    public decimal? DefaultModelMultiplier { get; set; }
     public Dictionary<string, decimal> TokenFeatures { get; set; } = [];
     public SubtitleCreditPricingOptions Subtitles { get; set; } = new();
 }
@@ -32,6 +33,10 @@ public sealed class CreditPricingOptionsValidator : IValidateOptions<CreditPrici
     public ValidateOptionsResult Validate(string? name, CreditPricingOptions options)
     {
         var failures = new List<string>();
+        if (options.DefaultModelMultiplier is <= 0)
+        {
+            failures.Add("CreditPricing:DefaultModelMultiplier must be greater than zero when specified.");
+        }
         foreach (var (feature, rate) in options.TokenFeatures)
         {
             if (!KnownFeatures.Contains(feature))
@@ -84,6 +89,8 @@ public interface ICreditPricingResolver
 
 public sealed class CreditPricingResolver : ICreditPricingResolver
 {
+    private const decimal DefaultLunaMultiplier = 0.08m;
+
     private static readonly (string Code, string Name)[] TokenFeatureNames =
     [
         (AiUsageFeatures.Assistant, "Assistant"),
@@ -148,7 +155,8 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
             : _usage.CreditsPerThousandTokens;
     }
 
-    public decimal GetModelMultiplier(string model) => 1m;
+    public decimal GetModelMultiplier(string model) =>
+        _pricing.DefaultModelMultiplier ?? DefaultLunaMultiplier;
 
     public EffectiveCreditPricingCatalog GetCatalog()
     {
@@ -168,9 +176,11 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
             new(
                 OpenAiModels.Luna,
                 OpenAiModels.Luna,
-                1m,
+                GetModelMultiplier(OpenAiModels.Luna),
                 "multiplier",
-                CreditPriceSources.BuiltInDefault),
+                _pricing.DefaultModelMultiplier.HasValue
+                    ? CreditPriceSources.CreditPricing
+                    : CreditPriceSources.BuiltInDefault),
         ];
 
         return new EffectiveCreditPricingCatalog(

@@ -15,6 +15,7 @@ public sealed class CreditPricingOptionsTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
+                ["CreditPricing:DefaultModelMultiplier"] = "0.12",
                 ["CreditPricing:TokenFeatures:assistant"] = "1.5",
                 ["CreditPricing:Subtitles:EnhancedCreditsPerStartedMinute"] = "8",
                 ["CreditPricing:Subtitles:ScribeCreditsPerStartedMinute"] = "4",
@@ -27,6 +28,7 @@ public sealed class CreditPricingOptionsTests
             .Get<CreditPricingOptions>();
 
         Assert.NotNull(options);
+        Assert.Equal(0.12m, options.DefaultModelMultiplier);
         Assert.Equal(1.5m, options.TokenFeatures["assistant"]);
         Assert.Equal(4, options.Subtitles.ScribeCreditsPerStartedMinute);
     }
@@ -36,6 +38,7 @@ public sealed class CreditPricingOptionsTests
     {
         var options = new CreditPricingOptions
         {
+            DefaultModelMultiplier = 0,
             TokenFeatures =
             {
                 ["unknown"] = 1,
@@ -50,6 +53,7 @@ public sealed class CreditPricingOptionsTests
         var result = new CreditPricingOptionsValidator().Validate(null, options);
 
         Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure => failure.Contains("DefaultModelMultiplier", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("unknown feature", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("assistant", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("ScribeCredits", StringComparison.Ordinal));
@@ -60,10 +64,11 @@ public sealed class CreditPricingOptionsTests
     {
         var resolver = CreateResolver(new CreditPricingOptions
         {
+            DefaultModelMultiplier = 0.5m,
             TokenFeatures = { [AiUsageFeatures.Speaking] = 1.5m },
         });
 
-        Assert.Equal(8, resolver.CalculateTokenCredits(
+        Assert.Equal(4, resolver.CalculateTokenCredits(
             5_000,
             AiUsageFeatures.Speaking,
             OpenAiModels.Luna));
@@ -79,16 +84,17 @@ public sealed class CreditPricingOptionsTests
         var resolver = CreateResolver(new CreditPricingOptions());
 
         Assert.Equal(2m, resolver.GetTokenFeatureRate(AiUsageFeatures.Assistant));
-        Assert.Equal(1m, resolver.GetModelMultiplier("test-model"));
-        Assert.Equal(8, resolver.EnhancedSubtitleCreditsPerStartedMinute);
-        Assert.Equal(6, resolver.ScribeSubtitleCreditsPerStartedMinute);
-        Assert.Equal(16, resolver.EnhancedWithTranscriptCreditsPerStartedMinute);
+        Assert.Equal(0.08m, resolver.GetModelMultiplier("test-model"));
+        Assert.Equal(7, resolver.EnhancedSubtitleCreditsPerStartedMinute);
+        Assert.Equal(5, resolver.ScribeSubtitleCreditsPerStartedMinute);
+        Assert.Equal(8, resolver.EnhancedWithTranscriptCreditsPerStartedMinute);
         Assert.All(
             resolver.GetCatalog().TokenFeatures,
             price => Assert.Equal(CreditPriceSources.LegacyFallback, price.Source));
         var model = Assert.Single(resolver.GetCatalog().ModelMultipliers);
         Assert.Equal(OpenAiModels.Luna, model.Code);
-        Assert.Equal(1m, model.Value);
+        Assert.Equal(0.08m, model.Value);
+        Assert.Equal(CreditPriceSources.BuiltInDefault, model.Source);
     }
 
     [Fact]
@@ -110,11 +116,11 @@ public sealed class CreditPricingOptionsTests
             }),
             Options.Create(new RealtimeTranslationOptions
             {
-                CreditsPerStartedMinute = 8,
-                SavedTranscriptCreditsPerStartedMinute = 16,
+                CreditsPerStartedMinute = 7,
+                SavedTranscriptCreditsPerStartedMinute = 8,
                 ElevenLabs = new ElevenLabsRealtimeSpeechOptions
                 {
-                    CreditsPerStartedMinute = 6,
+                    CreditsPerStartedMinute = 5,
                 },
             }));
 }

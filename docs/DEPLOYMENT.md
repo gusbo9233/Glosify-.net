@@ -63,7 +63,7 @@ matching price. The shipped configuration prices:
 - `gpt-5.6-luna`: 2.2373 SEK per million input tokens and 13.4233 SEK per million
   output tokens;
 - `gpt-realtime-translate`: 0.3804 SEK per audio minute;
-- `gpt-realtime-translate+elevenlabs-scribe-v2-realtime`: 0.7304 SEK per minute;
+- `gpt-realtime-translate+elevenlabs-scribe-v2-realtime`: 0.4531 SEK per minute;
 - `elevenlabs-scribe-v2-realtime+azure-translator-nmt`: 0.35 SEK per minute.
 
 Before enabling realtime translation, verify the relevant provider is budgeted,

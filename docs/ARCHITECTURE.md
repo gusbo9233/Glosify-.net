@@ -119,7 +119,7 @@ markup:
 | Luna input | 2.2373 SEK / million tokens |
 | Luna output | 13.4233 SEK / million tokens |
 | Realtime translation | 0.3804 SEK / audio minute |
-| Realtime translation + saved Scribe transcript | 0.7304 SEK / minute |
+| Realtime translation + saved Scribe transcript | 0.4531 SEK / minute |
 | Scribe + Azure Translator estimate | 0.35 SEK / minute |
 
 ## Security and privacy boundaries
