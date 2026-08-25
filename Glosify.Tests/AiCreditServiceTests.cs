@@ -152,12 +152,12 @@ public sealed class AiCreditServiceTests
     }
 
     [Fact]
-    public async Task CommitUsage_UsesTheSingleLunaCreditMultiplier()
+    public async Task CommitUsage_AppliesConfiguredModelMultiplier()
     {
         await using var context = CreateContext();
         context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
         await context.SaveChangesAsync();
-        var service = CreateService(context);
+        var service = CreateService(context, modelMultiplier: 0.5m);
 
         var reservation = await service.ReserveAsync(
             UsageContext("user-1"),
@@ -169,11 +169,11 @@ public sealed class AiCreditServiceTests
             new AiTokenUsage(900, 200, 0, 0, 1_100));
 
         var account = await service.GetOrCreateAccountAsync("user-1");
-        Assert.Equal(23, account.BalanceCredits);
+        Assert.Equal(24, account.BalanceCredits);
         Assert.Equal(0, account.ReservedCredits);
         var debit = await context.AiCreditTransactions
             .SingleAsync(transaction => transaction.Kind == AiCreditTransactionKinds.UsageDebit);
-        Assert.Equal(-2, debit.CreditAmount);
+        Assert.Equal(-1, debit.CreditAmount);
         Assert.Single(await context.AiCreditTransactions
             .Where(transaction => transaction.Kind == AiCreditTransactionKinds.Release)
             .ToListAsync());
@@ -646,7 +646,8 @@ public sealed class AiCreditServiceTests
         decimal? audioSekPerMinute = null,
         TimeProvider? timeProvider = null,
         ITrialEligibilityService? trialEligibility = null,
-        AiUsageOptions? usageOptions = null)
+        AiUsageOptions? usageOptions = null,
+        decimal modelMultiplier = 1m)
     {
         var effectiveUsageOptions = usageOptions ?? CreateUsageOptions(
             monthlyLimitSek,
@@ -654,7 +655,10 @@ public sealed class AiCreditServiceTests
             outputSekPerMillionTokens,
             audioSekPerMinute);
         var pricing = new CreditPricingResolver(
-            Options.Create(new CreditPricingOptions()),
+            Options.Create(new CreditPricingOptions
+            {
+                DefaultModelMultiplier = modelMultiplier,
+            }),
             Options.Create(effectiveUsageOptions),
             Options.Create(new RealtimeTranslationOptions()));
         return new AiCreditService(
