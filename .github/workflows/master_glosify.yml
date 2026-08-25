@@ -235,7 +235,6 @@ jobs:
           Speaking__Agents__PanMykola__Version
           Speaking__ModelDeployment
           Speaking__ProjectEndpoint
-          CreditPricing__DefaultModelMultiplier
           CreditPricing__Models__0__Deployment
           CreditPricing__Models__0__Multiplier
           CreditPricing__Models__1__Deployment

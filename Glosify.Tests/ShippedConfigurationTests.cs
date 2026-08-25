@@ -101,7 +101,7 @@ public sealed class ShippedConfigurationTests
         var budget = services.GetRequiredService<IOptions<AiUsageOptions>>().Value.MonthlyBudget;
 
         Assert.False(options.EconomicalEnabled);
-        Assert.Equal(6, options.ElevenLabs.CreditsPerStartedMinute);
+        Assert.Equal(5, options.ElevenLabs.CreditsPerStartedMinute);
         Assert.Contains("elevenlabs", budget.Providers, StringComparer.OrdinalIgnoreCase);
         Assert.All(
             options.Languages.Where(language => language.Enabled),
@@ -119,8 +119,13 @@ public sealed class ShippedConfigurationTests
         var pricing = scope.ServiceProvider.GetRequiredService<ICreditPricingResolver>();
 
         Assert.All(pricing.GetCatalog().TokenFeatures, price => Assert.True(price.Value > 0));
-        Assert.All(pricing.GetCatalog().ModelMultipliers, price => Assert.True(price.Value > 0));
-        Assert.All(pricing.GetCatalog().Subtitles, price => Assert.True(price.Value > 0));
+        var multiplier = Assert.Single(pricing.GetCatalog().ModelMultipliers);
+        Assert.Equal(0.08m, multiplier.Value);
+        Assert.Collection(
+            pricing.GetCatalog().Subtitles,
+            enhanced => Assert.Equal(7m, enhanced.Value),
+            scribe => Assert.Equal(5m, scribe.Value),
+            enhancedTranscript => Assert.Equal(8m, enhancedTranscript.Value));
     }
 
     [Fact]
