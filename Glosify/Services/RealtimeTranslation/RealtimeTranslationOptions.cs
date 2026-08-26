@@ -55,6 +55,10 @@ public sealed class ElevenLabsRealtimeSpeechOptions
     public bool EnableLogging { get; set; } = true;
     public double VadSilenceThresholdSeconds { get; set; } = 1.5;
     public double VadThreshold { get; set; } = 0.4;
+    public bool TranslatePartials { get; set; } = true;
+    public double PartialInitialDelaySeconds { get; set; } = 1;
+    public double PartialIntervalSeconds { get; set; } = 2;
+    public int PartialMinimumGrowthCharacters { get; set; } = 8;
 }
 
 public sealed class RealtimeTranslationLanguageOptions
@@ -171,6 +175,23 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 {
                     failures.Add(
                         "RealtimeTranslation:ElevenLabs:VadThreshold must be greater than zero and less than one.");
+                }
+                if (!double.IsFinite(options.ElevenLabs.PartialInitialDelaySeconds)
+                    || options.ElevenLabs.PartialInitialDelaySeconds is < 0 or > 10)
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:PartialInitialDelaySeconds must be between 0 and 10.");
+                }
+                if (!double.IsFinite(options.ElevenLabs.PartialIntervalSeconds)
+                    || options.ElevenLabs.PartialIntervalSeconds is < 0.75 or > 10)
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:PartialIntervalSeconds must be between 0.75 and 10.");
+                }
+                if (options.ElevenLabs.PartialMinimumGrowthCharacters is < 1 or > 100)
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:PartialMinimumGrowthCharacters must be between 1 and 100.");
                 }
             }
 

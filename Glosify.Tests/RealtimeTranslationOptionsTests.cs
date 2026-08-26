@@ -259,6 +259,71 @@ public sealed class RealtimeTranslationOptionsTests
         Assert.Contains(result.Failures!, failure => failure.Contains("ElevenLabs:Endpoint", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void ElevenLabsPartialScheduler_DefaultsAndFinalOnlyModeAreValid()
+    {
+        var defaults = new ElevenLabsRealtimeSpeechOptions();
+        Assert.True(defaults.TranslatePartials);
+        Assert.Equal(1, defaults.PartialInitialDelaySeconds);
+        Assert.Equal(2, defaults.PartialIntervalSeconds);
+        Assert.Equal(8, defaults.PartialMinimumGrowthCharacters);
+
+        var options = ValidOptions();
+        ConfigureScribe(options);
+        options.ElevenLabs.TranslatePartials = false;
+
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions { MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false } }),
+            ExtensionAuth());
+
+        Assert.True(validator.Validate(null, options).Succeeded);
+    }
+
+    [Fact]
+    public void ElevenLabsPartialScheduler_AcceptsLegacyRollbackValues()
+    {
+        var options = ValidOptions();
+        ConfigureScribe(options);
+        options.ElevenLabs.PartialInitialDelaySeconds = 0;
+        options.ElevenLabs.PartialIntervalSeconds = 0.75;
+        options.ElevenLabs.PartialMinimumGrowthCharacters = 1;
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions { MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false } }),
+            ExtensionAuth());
+
+        Assert.True(validator.Validate(null, options).Succeeded);
+    }
+
+    [Theory]
+    [InlineData(-0.01, 2, 8, "PartialInitialDelaySeconds")]
+    [InlineData(10.01, 2, 8, "PartialInitialDelaySeconds")]
+    [InlineData(double.NaN, 2, 8, "PartialInitialDelaySeconds")]
+    [InlineData(1, 0.74, 8, "PartialIntervalSeconds")]
+    [InlineData(1, 10.01, 8, "PartialIntervalSeconds")]
+    [InlineData(1, double.PositiveInfinity, 8, "PartialIntervalSeconds")]
+    [InlineData(1, 2, 0, "PartialMinimumGrowthCharacters")]
+    [InlineData(1, 2, 101, "PartialMinimumGrowthCharacters")]
+    public void ElevenLabsPartialScheduler_RejectsInvalidValues(
+        double initialDelay,
+        double interval,
+        int minimumGrowth,
+        string expectedFailure)
+    {
+        var options = ValidOptions();
+        ConfigureScribe(options);
+        options.ElevenLabs.PartialInitialDelaySeconds = initialDelay;
+        options.ElevenLabs.PartialIntervalSeconds = interval;
+        options.ElevenLabs.PartialMinimumGrowthCharacters = minimumGrowth;
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions { MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false } }),
+            ExtensionAuth());
+
+        var result = validator.Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure => failure.Contains(expectedFailure, StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(1)]

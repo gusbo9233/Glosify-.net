@@ -22,6 +22,10 @@ public static class RealtimeTranslationTelemetry
         Meter.CreateCounter<long>("translation.backpressure.events");
     public static readonly Counter<long> TranslatedCharacters =
         Meter.CreateCounter<long>("translation.characters.translated", "characters");
+    public static readonly Counter<long> TranslationRequests =
+        Meter.CreateCounter<long>("translation.requests", "requests");
+    public static readonly Counter<long> PartialTranslationsSuppressed =
+        Meter.CreateCounter<long>("translation.partial.suppressed", "partials");
     public static readonly Histogram<double> FirstCaptionLatency =
         Meter.CreateHistogram<double>("translation.first_caption.latency", "ms");
 }

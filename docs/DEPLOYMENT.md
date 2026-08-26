@@ -39,6 +39,22 @@ Feature-specific settings remain required when those features are enabled:
 Managed identity is still used for supported Azure services such as Blob
 Storage, Azure Speech, Translator, and telemetry. OpenAI uses its API key.
 
+Scribe translates the latest partial after one second and then at most every
+two seconds, with eight Unicode characters of accumulated growth. These
+non-secret App Service settings can tune or disable that behavior without a
+deployment:
+
+| Setting | Default | Purpose |
+|---|---:|---|
+| `RealtimeTranslation__ElevenLabs__TranslatePartials` | `true` | Set to `false` to translate committed transcripts only. |
+| `RealtimeTranslation__ElevenLabs__PartialInitialDelaySeconds` | `1` | Delay before the first partial translation. |
+| `RealtimeTranslation__ElevenLabs__PartialIntervalSeconds` | `2` | Minimum interval between partial translations. |
+| `RealtimeTranslation__ElevenLabs__PartialMinimumGrowthCharacters` | `8` | Accumulated Unicode growth required for a partial update. |
+
+For a temporary legacy-like cadence, use an initial delay of `0`, an interval
+of `0.75`, and minimum growth of `1`. Prefer adjusting only the initial delay
+for latency tuning and the recurring interval for cost tuning.
+
 ## Fixed AI configuration
 
 The deployer cannot select generative models or providers through settings.
