@@ -45,6 +45,34 @@ test("Scribe partial translations replace the mutable live line", () => {
   assert.equal(event.sequence, 3);
 });
 
+test("Scribe events preserve server-finalized bubbles and pending text", () => {
+  const event = normalizeRealtimeEvent({
+    type: "glosify.translation.partial",
+    sequence: 3,
+    sourceLanguage: "de",
+    targetLanguage: "en",
+    text: "First sentence. Second",
+    committedBubbles: ["First sentence."],
+    pendingText: "Second",
+  }, { sessionId: "s1", targetLanguage: "en", nextSequence: () => 99 });
+
+  assert.deepEqual(event.committedBubbles, ["First sentence."]);
+  assert.equal(event.pendingText, "Second");
+});
+
+test("malformed server bubble metadata falls back to legacy client finalization", () => {
+  const event = normalizeRealtimeEvent({
+    type: "glosify.translation.segment",
+    sequence: 3,
+    text: "Complete text",
+    committedBubbles: [""],
+    pendingText: "",
+  }, { sessionId: "s1", targetLanguage: "en", nextSequence: () => 99 });
+
+  assert.equal("committedBubbles" in event, false);
+  assert.equal("pendingText" in event, false);
+});
+
 test("translation deltas normalize without retaining provider payloads", () => {
   let sequence = 0;
   const event = normalizeRealtimeEvent(

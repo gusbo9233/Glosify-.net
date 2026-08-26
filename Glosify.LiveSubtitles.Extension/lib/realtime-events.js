@@ -159,7 +159,7 @@ export function normalizeRealtimeEvent(event, context) {
       || event.type === "glosify.translation.partial")
       && typeof event.text === "string"
       && event.text.trim()) {
-    return {
+    const normalized = {
       sessionId: context.sessionId,
       stream: "translation",
       language: event.targetLanguage ?? context.targetLanguage,
@@ -170,6 +170,12 @@ export function normalizeRealtimeEvent(event, context) {
       isFinal: event.type === "glosify.translation.segment",
       clientTimestamp: Date.now(),
     };
+    const finalization = normalizeServerFinalization(event);
+    if (finalization) {
+      normalized.committedBubbles = finalization.committedBubbles;
+      normalized.pendingText = finalization.pendingText;
+    }
+    return normalized;
   }
 
   const isTranslation = TRANSLATION_DELTA_TYPES.has(event.type)
@@ -196,4 +202,21 @@ export function normalizeRealtimeEvent(event, context) {
     isFinal,
     clientTimestamp: Date.now(),
   };
+}
+
+function normalizeServerFinalization(event) {
+  if (!Array.isArray(event.committedBubbles)
+      || event.committedBubbles.length > 32
+      || typeof event.pendingText !== "string"
+      || event.pendingText.length > 800) {
+    return null;
+  }
+  const committedBubbles = [];
+  for (const bubble of event.committedBubbles) {
+    if (typeof bubble !== "string" || !bubble.trim() || bubble.length > 180) {
+      return null;
+    }
+    committedBubbles.push(bubble);
+  }
+  return { committedBubbles, pendingText: event.pendingText };
 }

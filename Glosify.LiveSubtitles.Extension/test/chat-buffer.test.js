@@ -91,6 +91,41 @@ test("Scribe revisions replace live text before the finalized segment commits", 
   assert.deepEqual(chat.messages, [{ text: "Good morning!", timestamp: 321 }]);
 });
 
+test("Scribe uses server-finalized bubbles as the display authority", () => {
+  const chat = new ChatBuffer();
+  const partial = chat.apply({
+    stream: "translation",
+    sequence: 6,
+    delta: "Client-side text that would otherwise be split.",
+    replace: true,
+    isFinal: false,
+    committedBubbles: ["Server bubble."],
+    pendingText: "Server pending text",
+    clientTimestamp: 300,
+  });
+
+  assert.deepEqual(partial, { changed: true, committed: true });
+  assert.deepEqual(chat.messages, [{ text: "Server bubble.", timestamp: 300 }]);
+  assert.equal(chat.translation, "Server pending text");
+
+  chat.apply({
+    stream: "translation",
+    sequence: 6,
+    delta: "Ignored client final text",
+    replace: true,
+    isFinal: true,
+    committedBubbles: ["Server final bubble."],
+    pendingText: "",
+    clientTimestamp: 301,
+  });
+
+  assert.deepEqual(chat.messages, [
+    { text: "Server bubble.", timestamp: 300 },
+    { text: "Server final bubble.", timestamp: 301 },
+  ]);
+  assert.equal(chat.translation, "");
+});
+
 test("Scribe partial replacements commit completed sentences without duplicating them", () => {
   const chat = new ChatBuffer();
   chat.apply({

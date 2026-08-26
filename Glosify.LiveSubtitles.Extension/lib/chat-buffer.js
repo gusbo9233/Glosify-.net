@@ -52,6 +52,10 @@
     }
 
     applyReplacement(event, timestamp) {
+      if (Array.isArray(event.committedBubbles)
+          && typeof event.pendingText === "string") {
+        return this.applyServerReplacement(event, timestamp);
+      }
       if (this.replacementSequence !== event.sequence) {
         this.replacementSequence = event.sequence;
         this.previousReplacementSentences = [];
@@ -89,6 +93,29 @@
       ].filter(Boolean).join(" ");
       return {
         changed: Boolean(event.delta) || committed > 0,
+        committed: committed > 0,
+      };
+    }
+
+    applyServerReplacement(event, timestamp) {
+      let committed = 0;
+      for (const bubble of event.committedBubbles) {
+        if (typeof bubble === "string" && bubble.trim()) {
+          this.pushMessage(bubble, timestamp);
+          committed += 1;
+        }
+      }
+      this.translation = appendBounded(
+        "",
+        event.pendingText,
+        this.maximumTranslationCharacters).trim();
+      if (event.isFinal) {
+        this.resetReplacement();
+      } else {
+        this.replacementSequence = event.sequence;
+      }
+      return {
+        changed: committed > 0 || Boolean(event.pendingText) || event.isFinal,
         committed: committed > 0,
       };
     }

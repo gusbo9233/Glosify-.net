@@ -41,6 +41,7 @@ public sealed class AdaptivePartialTranslationSchedulerTests
 
         var call = Assert.Single(fixture.Translated);
         Assert.True(call.IsFinal);
+        Assert.Equal([false, true], fixture.Observed.Select(segment => segment.IsFinal));
     }
 
     [Fact]
@@ -149,6 +150,8 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         Assert.Equal(2, fixture.Published.Count);
         Assert.False(fixture.Published[0].Segment.IsFinal);
         Assert.True(fixture.Published[1].Segment.IsFinal);
+        Assert.True(fixture.Published[0].ProviderRequest);
+        Assert.False(fixture.Published[1].ProviderRequest);
         Assert.Equal(fixture.Published[0].Result.TranslatedText, fixture.Published[1].Result.TranslatedText);
     }
 
@@ -166,6 +169,7 @@ public sealed class AdaptivePartialTranslationSchedulerTests
 
         Assert.Equal(2, fixture.Translated.Count);
         Assert.True(fixture.Translated[1].IsFinal);
+        Assert.All(fixture.Published, published => Assert.True(published.ProviderRequest));
     }
 
     [Fact]
@@ -256,18 +260,29 @@ public sealed class AdaptivePartialTranslationSchedulerTests
 
         public FakeTimeProvider Clock { get; }
         public List<RecognizedSpeechSegment> Translated { get; } = [];
-        public List<(RecognizedSpeechSegment Segment, TranslatedSubtitleSegment Result)> Published { get; } = [];
+        public List<RecognizedSpeechSegment> Observed { get; } = [];
+        public List<(
+            RecognizedSpeechSegment Segment,
+            TranslatedSubtitleSegment Result,
+            bool ProviderRequest)>
+            Published
+        { get; } = [];
 
         public Task RunAsync(CancellationToken cancellationToken = default) =>
             _scheduler.RunAsync(
                 _input.Reader,
                 _translate,
-                (segment, result, _) =>
+                (segment, result, providerRequest, _) =>
                 {
-                    Published.Add((segment, result));
+                    Published.Add((segment, result, providerRequest));
                     return Task.CompletedTask;
                 },
-                cancellationToken);
+                cancellationToken,
+                (segment, _) =>
+                {
+                    Observed.Add(segment);
+                    return Task.CompletedTask;
+                });
 
         public void Write(RecognizedSpeechSegment segment) => Assert.True(_input.Writer.TryWrite(segment));
 

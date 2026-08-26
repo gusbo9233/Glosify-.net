@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Microsoft.AspNetCore.Authentication;
@@ -18,6 +19,9 @@ namespace Glosify.Tests;
 
 public sealed class AdminAuthorizationTests
 {
+    private static readonly Guid AdminCaptureSessionId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    private static readonly Guid LearnerCaptureSessionId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+
     [Fact]
     public async Task AiCredits_RedirectsAnonymousUsersToLogin()
     {
@@ -55,6 +59,54 @@ public sealed class AdminAuthorizationTests
         Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType?.ToString());
     }
 
+    [Fact]
+    public async Task TranslationCaptures_ForbidsNonAdminEmail()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Add(TestAuthHandler.EmailHeader, "learner@example.test");
+
+        var response = await client.GetAsync("/Admin/TranslationCaptures");
+
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task TranslationCaptures_DownloadsLatestOwnedSession()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Add(TestAuthHandler.EmailHeader, "gusbo923@gmail.com");
+
+        var response = await client.GetAsync("/Admin/TranslationCaptures");
+
+        response.EnsureSuccessStatusCode();
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        Assert.Equal(
+            $"translation-capture-{AdminCaptureSessionId:N}.json",
+            response.Content.Headers.ContentDisposition?.FileNameStar);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(
+            AdminCaptureSessionId,
+            json.RootElement.GetProperty("session").GetProperty("id").GetGuid());
+        var captured = Assert.Single(json.RootElement.GetProperty("events").EnumerateArray());
+        Assert.Equal("translator", captured.GetProperty("stage").GetString());
+        Assert.Equal("Hej världen", captured.GetProperty("text").GetString());
+    }
+
+    [Fact]
+    public async Task TranslationCaptures_DoesNotReturnAnotherUsersSession()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Add(TestAuthHandler.EmailHeader, "gusbo923@gmail.com");
+
+        var response = await client.GetAsync($"/Admin/TranslationCaptures?sessionId={LearnerCaptureSessionId}");
+
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     private static WebApplicationFactory<Program> CreateFactory()
     {
         var databaseName = Guid.NewGuid().ToString("N");
@@ -82,9 +134,52 @@ public sealed class AdminAuthorizationTests
         context.Users.AddRange(
             new ApplicationUser { Id = "admin-1", Email = "gusbo923@gmail.com", UserName = "gusbo923@gmail.com" },
             new ApplicationUser { Id = "learner-1", Email = "learner@example.test", UserName = "learner@example.test" });
+        var capturedAt = DateTimeOffset.Parse("2026-08-26T18:00:00Z");
+        context.RealtimeTranslationSessions.AddRange(
+            CreateCaptureSession(AdminCaptureSessionId, "admin-1", capturedAt),
+            CreateCaptureSession(LearnerCaptureSessionId, "learner-1", capturedAt.AddMinutes(1)));
+        context.RealtimeTranslationCaptureEvents.AddRange(
+            CreateCaptureEvent(AdminCaptureSessionId, "Hej världen", capturedAt),
+            CreateCaptureEvent(LearnerCaptureSessionId, "Private learner text", capturedAt.AddMinutes(1)));
         context.SaveChanges();
         return factory;
     }
+
+    private static RealtimeTranslationSession CreateCaptureSession(
+        Guid sessionId,
+        string userId,
+        DateTimeOffset createdAt) => new()
+        {
+            Id = sessionId,
+            UserId = userId,
+            TargetLanguage = "sv",
+            TranslationMode = "alternative",
+            SpeechProvider = "elevenlabs",
+            Model = "scribe_v2_realtime",
+            BillingModel = "elevenlabs-scribe-v2-realtime+azure-translator-nmt",
+            CreatedAt = createdAt,
+            LastHeartbeatAt = createdAt,
+            ExpiresAt = createdAt.AddMinutes(30),
+        };
+
+    private static RealtimeTranslationCaptureEvent CreateCaptureEvent(
+        Guid sessionId,
+        string text,
+        DateTimeOffset capturedAt) => new()
+        {
+            SessionId = sessionId,
+            Ordinal = 1,
+            Sequence = 1,
+            Stage = RealtimeTranslationCaptureStages.Translator,
+            Kind = RealtimeTranslationCaptureKinds.Final,
+            Text = text,
+            SourceText = "Hello world",
+            SourceLanguage = "en",
+            TargetLanguage = "sv",
+            ProviderRequest = true,
+            CapturedAt = capturedAt,
+            StoredAt = capturedAt,
+        };
 
     private sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
     {

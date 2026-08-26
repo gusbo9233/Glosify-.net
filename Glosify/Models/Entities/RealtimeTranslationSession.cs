@@ -24,6 +24,7 @@ public sealed class RealtimeTranslationSession
     public int CreditsCharged { get; set; }
     public byte[] RowVersion { get; set; } = [];
     public ICollection<RealtimeTranslationMinute> Minutes { get; set; } = [];
+    public ICollection<RealtimeTranslationCaptureEvent> CaptureEvents { get; set; } = [];
     public RealtimeTranslationTranscript? Transcript { get; set; }
 }
 

@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Glosify.Data;
 using Glosify.Extensions;
 using Glosify.Models;
 using Glosify.Models.Entities;
@@ -18,15 +20,84 @@ public sealed class AdminController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IAiCreditService _credits;
     private readonly ICreditPricingResolver _pricing;
+    private readonly GlosifyContext _context;
 
     public AdminController(
         UserManager<ApplicationUser> userManager,
         IAiCreditService credits,
-        ICreditPricingResolver pricing)
+        ICreditPricingResolver pricing,
+        GlosifyContext context)
     {
         _userManager = userManager;
         _credits = credits;
         _pricing = pricing;
+        _context = context;
+    }
+
+    [HttpGet("/Admin/TranslationCaptures")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> TranslationCaptures(
+        Guid? sessionId,
+        CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        var sessions = _context.RealtimeTranslationSessions
+            .AsNoTracking()
+            .Where(session => session.UserId == userId && session.CaptureEvents.Any());
+
+        var session = sessionId.HasValue
+            ? await sessions.SingleOrDefaultAsync(
+                candidate => candidate.Id == sessionId.Value,
+                cancellationToken)
+            : await sessions
+                .OrderByDescending(candidate => candidate.CreatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+        if (session is null)
+        {
+            return NotFound();
+        }
+
+        var events = await _context.RealtimeTranslationCaptureEvents
+            .AsNoTracking()
+            .Where(captured => captured.SessionId == session.Id)
+            .OrderBy(captured => captured.Ordinal)
+            .Select(captured => new
+            {
+                captured.Ordinal,
+                captured.Sequence,
+                captured.Stage,
+                captured.Kind,
+                captured.Text,
+                captured.SourceText,
+                captured.SourceLanguage,
+                captured.TargetLanguage,
+                captured.ProviderRequest,
+                captured.CapturedAt,
+                captured.StoredAt,
+            })
+            .ToListAsync(cancellationToken);
+
+        var payload = new
+        {
+            session = new
+            {
+                session.Id,
+                session.TranslationMode,
+                session.SpeechProvider,
+                session.SourceLanguage,
+                session.TargetLanguage,
+                session.Model,
+                session.Status,
+                session.CreatedAt,
+                session.StartedAt,
+                session.EndedAt,
+            },
+            events,
+        };
+        var json = JsonSerializer.SerializeToUtf8Bytes(
+            payload,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true });
+        return File(json, "application/json", $"translation-capture-{session.Id:N}.json");
     }
 
     [HttpGet]

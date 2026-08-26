@@ -55,6 +55,27 @@ For a temporary legacy-like cadence, use an initial delay of `0`, an interval
 of `0.75`, and minimum growth of `1`. Prefer adjusting only the initial delay
 for latency tuning and the recurring interval for cost tuning.
 
+### Administrator Scribe capture
+
+Scribe sessions started by an account listed in `Admin__Emails` automatically
+store an internal analysis trace in `RealtimeTranslationCaptureEvents`. This is
+separate from the user-facing saved-transcript feature and does not capture
+ordinary accounts. Each trace contains the Scribe source partials and finals,
+every Azure Translator partial or final result, whether that result required a
+provider request, and every bubble finalized by the server. Caption text is
+stored only in this database table; logs and metrics remain text-free.
+
+Configure each administrator email as an indexed App Service setting, for
+example `Admin__Emails__0=admin@example.com`. After completing a Scribe run,
+open `/Admin/TranslationCaptures` while signed in as that administrator to
+download the latest run as JSON. Pass a captured `sessionId` query parameter to
+download an older run. The endpoint never returns another user's sessions.
+
+The server is authoritative for Scribe bubble boundaries. Relay events retain
+their existing `text` field for older extension builds and add
+`committedBubbles` plus `pendingText` for extension builds that render the
+server decision directly.
+
 ## Fixed AI configuration
 
 The deployer cannot select generative models or providers through settings.

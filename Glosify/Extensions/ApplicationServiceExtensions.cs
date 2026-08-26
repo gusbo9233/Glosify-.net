@@ -177,6 +177,7 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IRealtimeTranslationRelay, RealtimeTranslationRelayRouter>();
         services.AddScoped<IRealtimeTranslationService, RealtimeTranslationService>();
         services.AddScoped<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>();
+        services.AddScoped<IRealtimeTranslationCaptureService, RealtimeTranslationCaptureService>();
         services.AddHostedService<RealtimeTranslationCleanupService>();
         services.AddSingleton<IOpenAiResponsesTransport, OpenAiResponsesTransport>();
         services.AddScoped<OpenAiGenerativeAiClient>();
