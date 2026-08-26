@@ -38,6 +38,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<RealtimeTranslationMinute> RealtimeTranslationMinutes { get; set; }
     public DbSet<RealtimeTranslationTranscript> RealtimeTranslationTranscripts { get; set; }
     public DbSet<RealtimeTranslationTranscriptSegment> RealtimeTranslationTranscriptSegments { get; set; }
+    public DbSet<RealtimeTranslationCaptureEvent> RealtimeTranslationCaptureEvents { get; set; }
 
     public DbSet<Collection> Collections { get; set; }
 

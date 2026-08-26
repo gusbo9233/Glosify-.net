@@ -28,8 +28,9 @@ internal sealed class AdaptivePartialTranslationScheduler
     public async Task RunAsync(
         ChannelReader<RecognizedSpeechSegment> recognized,
         Func<RecognizedSpeechSegment, CancellationToken, Task<TranslatedSubtitleSegment>> translate,
-        Func<RecognizedSpeechSegment, TranslatedSubtitleSegment, CancellationToken, Task> publish,
-        CancellationToken cancellationToken)
+        Func<RecognizedSpeechSegment, TranslatedSubtitleSegment, bool, CancellationToken, Task> publish,
+        CancellationToken cancellationToken,
+        Func<RecognizedSpeechSegment, CancellationToken, Task>? observeSource = null)
     {
         RecognizedSpeechSegment? pendingPartial = null;
         DateTimeOffset? pendingSince = null;
@@ -44,6 +45,10 @@ internal sealed class AdaptivePartialTranslationScheduler
         {
             while (recognized.TryRead(out var segment))
             {
+                if (observeSource is not null)
+                {
+                    await observeSource(segment, cancellationToken);
+                }
                 if (segment.IsFinal)
                 {
                     if (pendingPartial is not null)
@@ -66,12 +71,12 @@ internal sealed class AdaptivePartialTranslationScheduler
                             SourceLanguage = segment.SourceLanguage,
                             CapturedAt = segment.CapturedAt,
                         };
-                        await publish(segment, reused, cancellationToken);
+                        await publish(segment, reused, false, cancellationToken);
                     }
                     else
                     {
                         var result = await TranslateAsync(segment, translate, FinalKind, cancellationToken);
-                        await publish(segment, result, cancellationToken);
+                        await publish(segment, result, true, cancellationToken);
                     }
 
                     activeSequence = null;
@@ -145,7 +150,7 @@ internal sealed class AdaptivePartialTranslationScheduler
                     pendingSince = null;
                     smallGrowthRecorded = false;
                     var result = await TranslateAsync(partial, translate, PartialKind, cancellationToken);
-                    await publish(partial, result, cancellationToken);
+                    await publish(partial, result, true, cancellationToken);
                     lastPartialSubmittedAt = _timeProvider.GetUtcNow();
                     lastSubmittedText = partial.Text;
                     lastTranslation = result;

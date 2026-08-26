@@ -56,6 +56,10 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 "The selected speech recognition mode is not configured on this Glosify deployment.");
         }
 
+        var captureAdminSession = await IsAdminCaptureEnabledAsync(
+            authorization.UserId,
+            cancellationToken);
+
         using var relayCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         relayCancellation.CancelAfter(TimeSpan.FromMinutes(_options.MaxSessionMinutes + 1));
         var relayToken = relayCancellation.Token;
@@ -79,7 +83,19 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 FullMode = BoundedChannelFullMode.Wait,
             })
             : null;
+        Channel<CapturedRealtimeTranslationEvent>? captures = captureAdminSession
+            ? Channel.CreateBounded<CapturedRealtimeTranslationEvent>(new BoundedChannelOptions(1024)
+            {
+                SingleReader = true,
+                SingleWriter = true,
+                FullMode = BoundedChannelFullMode.Wait,
+            })
+            : null;
         Task? transcriptWriter = null;
+        Task? captureWriter = null;
+        var captureRecorder = captures is null
+            ? null
+            : new AdminCaptureRecorder(captures.Writer, _timeProvider);
 
         try
         {
@@ -99,6 +115,14 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                     transcripts.Reader,
                     CancellationToken.None);
             }
+            if (captures is not null)
+            {
+                captureWriter = WriteCapturesAsync(
+                    authorization.SessionId,
+                    authorization.UserId,
+                    captures.Reader,
+                    CancellationToken.None);
+            }
 
             var browserPump = PumpBrowserAudioAsync(
                 browserSocket,
@@ -111,13 +135,14 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 authorization.SourceLanguage,
                 audio.Reader,
                 recognized.Writer,
-                emitPartials: _options.ElevenLabs.TranslatePartials,
+                emitPartials: _options.ElevenLabs.TranslatePartials || captureAdminSession,
                 cancellationToken: relayToken);
             var translationPump = TranslateAndSendAsync(
                 browserSocket,
                 authorization,
                 recognized.Reader,
                 transcripts?.Writer,
+                captureRecorder,
                 relayToken);
             var authorizationMonitor = _authorizationMonitor.MonitorAuthorizationAsync(
                 authorization,
@@ -215,16 +240,22 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
             audio.Writer.TryComplete();
             recognized.Writer.TryComplete();
             transcripts?.Writer.TryComplete();
-            if (transcriptWriter is not null)
+            captures?.Writer.TryComplete();
+            var storageWriters = new[] { transcriptWriter, captureWriter }
+                .Where(task => task is not null)
+                .Cast<Task>()
+                .ToArray();
+            if (storageWriters.Length > 0)
             {
                 try
                 {
-                    await transcriptWriter.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
+                    await Task.WhenAll(storageWriters)
+                        .WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
                 }
                 catch (TimeoutException)
                 {
                     _logger.LogWarning(
-                        "Timed out while flushing speech-recognition captions for session {SessionId}",
+                        "Timed out while flushing speech-recognition data for session {SessionId}",
                         authorization.SessionId);
                 }
             }
@@ -282,30 +313,51 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         RealtimeTranslationRelayAuthorization authorization,
         ChannelReader<RecognizedSpeechSegment> recognized,
         ChannelWriter<CapturedTranslationSegment>? transcripts,
+        AdminCaptureRecorder? captureRecorder,
         CancellationToken cancellationToken)
     {
         var scheduler = new AdaptivePartialTranslationScheduler(
             _timeProvider,
             _options.ElevenLabs);
+        var bubbleFinalizer = new TranslationBubbleFinalizer();
         await scheduler.RunAsync(
             recognized,
             (segment, token) => _translator.TranslateAsync(
                 segment,
                 authorization.TargetLanguage,
                 token),
-            (segment, result, token) => SendTranslationAsync(
-                browserSocket,
-                segment,
-                result,
-                transcripts,
-                token),
-            cancellationToken);
+            async (segment, result, providerRequest, token) =>
+            {
+                var bubbleUpdate = bubbleFinalizer.Apply(
+                    segment.Sequence,
+                    result.TranslatedText,
+                    segment.IsFinal);
+                if (captureRecorder is not null)
+                {
+                    await captureRecorder.RecordTranslationAsync(
+                        segment,
+                        result,
+                        bubbleUpdate,
+                        providerRequest,
+                        token);
+                }
+                await SendTranslationAsync(
+                    browserSocket,
+                    segment,
+                    result,
+                    bubbleUpdate,
+                    transcripts,
+                    token);
+            },
+            cancellationToken,
+            captureRecorder is null ? null : captureRecorder.RecordSourceAsync);
     }
 
     private static async Task SendTranslationAsync(
         WebSocket browserSocket,
         RecognizedSpeechSegment segment,
         TranslatedSubtitleSegment result,
+        TranslationBubbleUpdate bubbleUpdate,
         ChannelWriter<CapturedTranslationSegment>? transcripts,
         CancellationToken cancellationToken)
     {
@@ -318,6 +370,8 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
             sourceLanguage = result.SourceLanguage,
             targetLanguage = result.TargetLanguage,
             text = result.TranslatedText,
+            committedBubbles = bubbleUpdate.CommittedBubbles,
+            pendingText = bubbleUpdate.PendingText,
         });
         await browserSocket.SendAsync(
             payload,
@@ -338,6 +392,59 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 result.TranslatedText,
                 result.CapturedAt,
                 RealtimeTranslationTranscriptStreams.Translation), cancellationToken);
+        }
+    }
+
+    private async Task<bool> IsAdminCaptureEnabledAsync(
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var service = scope.ServiceProvider.GetRequiredService<IRealtimeTranslationCaptureService>();
+            return await service.IsAdminUserAsync(userId, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _logger.LogWarning(
+                exception,
+                "Could not determine whether Scribe diagnostics are enabled for the current account");
+            return false;
+        }
+    }
+
+    private async Task WriteCapturesAsync(
+        Guid sessionId,
+        string userId,
+        ChannelReader<CapturedRealtimeTranslationEvent> reader,
+        CancellationToken cancellationToken)
+    {
+        var batch = new List<CapturedRealtimeTranslationEvent>(50);
+        await foreach (var captured in reader.ReadAllAsync(cancellationToken))
+        {
+            batch.Add(captured);
+            while (batch.Count < 50 && reader.TryRead(out var next))
+            {
+                batch.Add(next);
+            }
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var service = scope.ServiceProvider.GetRequiredService<IRealtimeTranslationCaptureService>();
+                await service.AppendAsync(sessionId, userId, batch, cancellationToken);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                _logger.LogWarning(
+                    exception,
+                    "Could not store admin Scribe diagnostics for session {SessionId}",
+                    sessionId);
+            }
+            finally
+            {
+                batch.Clear();
+            }
         }
     }
 
@@ -435,4 +542,87 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         }
     }
 
+    private sealed class AdminCaptureRecorder(
+        ChannelWriter<CapturedRealtimeTranslationEvent> writer,
+        TimeProvider timeProvider)
+    {
+        private int _ordinal;
+
+        public Task RecordSourceAsync(
+            RecognizedSpeechSegment segment,
+            CancellationToken cancellationToken) =>
+            WriteAsync(
+                segment.Sequence,
+                RealtimeTranslationCaptureStages.Scribe,
+                segment.IsFinal
+                    ? RealtimeTranslationCaptureKinds.Final
+                    : RealtimeTranslationCaptureKinds.Partial,
+                segment.Text,
+                null,
+                segment.SourceLanguage,
+                null,
+                providerRequest: false,
+                segment.CapturedAt,
+                cancellationToken);
+
+        public async Task RecordTranslationAsync(
+            RecognizedSpeechSegment segment,
+            TranslatedSubtitleSegment result,
+            TranslationBubbleUpdate bubbleUpdate,
+            bool providerRequest,
+            CancellationToken cancellationToken)
+        {
+            var capturedAt = timeProvider.GetUtcNow();
+            await WriteAsync(
+                segment.Sequence,
+                RealtimeTranslationCaptureStages.Translator,
+                segment.IsFinal
+                    ? RealtimeTranslationCaptureKinds.Final
+                    : RealtimeTranslationCaptureKinds.Partial,
+                result.TranslatedText,
+                result.SourceText,
+                result.SourceLanguage,
+                result.TargetLanguage,
+                providerRequest,
+                capturedAt,
+                cancellationToken);
+            foreach (var bubble in bubbleUpdate.CommittedBubbles)
+            {
+                await WriteAsync(
+                    segment.Sequence,
+                    RealtimeTranslationCaptureStages.Bubble,
+                    RealtimeTranslationCaptureKinds.Final,
+                    bubble,
+                    result.SourceText,
+                    result.SourceLanguage,
+                    result.TargetLanguage,
+                    providerRequest: false,
+                    capturedAt,
+                    cancellationToken);
+            }
+        }
+
+        private Task WriteAsync(
+            int sequence,
+            string stage,
+            string kind,
+            string text,
+            string? sourceText,
+            string? sourceLanguage,
+            string? targetLanguage,
+            bool providerRequest,
+            DateTimeOffset capturedAt,
+            CancellationToken cancellationToken) =>
+            writer.WriteAsync(new CapturedRealtimeTranslationEvent(
+                Interlocked.Increment(ref _ordinal),
+                sequence,
+                stage,
+                kind,
+                text,
+                sourceText,
+                sourceLanguage,
+                targetLanguage,
+                providerRequest,
+                capturedAt), cancellationToken).AsTask();
+    }
 }
