@@ -21,6 +21,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
     private readonly RealtimeTranslationRelayAuthorizationMonitor _authorizationMonitor;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly RealtimeTranslationOptions _options;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<ScribeTranslationRelay> _logger;
 
     public ScribeTranslationRelay(
@@ -29,6 +30,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         RealtimeTranslationRelayAuthorizationMonitor authorizationMonitor,
         IServiceScopeFactory scopeFactory,
         IOptions<RealtimeTranslationOptions> options,
+        TimeProvider timeProvider,
         ILogger<ScribeTranslationRelay> logger)
     {
         _speech = speech;
@@ -36,6 +38,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         _authorizationMonitor = authorizationMonitor;
         _scopeFactory = scopeFactory;
         _options = options.Value;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
@@ -108,7 +111,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 authorization.SourceLanguage,
                 audio.Reader,
                 recognized.Writer,
-                emitPartials: true,
+                emitPartials: _options.ElevenLabs.TranslatePartials,
                 cancellationToken: relayToken);
             var translationPump = TranslateAndSendAsync(
                 browserSocket,
@@ -281,65 +284,60 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         ChannelWriter<CapturedTranslationSegment>? transcripts,
         CancellationToken cancellationToken)
     {
-        RecognizedSpeechSegment? pending = null;
-        while (pending is not null || await recognized.WaitToReadAsync(cancellationToken))
-        {
-            if (pending is null && !recognized.TryRead(out pending))
-            {
-                continue;
-            }
-
-            var segment = pending;
-            pending = null;
-            while (!segment.IsFinal && recognized.TryRead(out var newer))
-            {
-                if (newer.Sequence == segment.Sequence)
-                {
-                    segment = newer;
-                }
-                else
-                {
-                    pending = newer;
-                    break;
-                }
-            }
-
-            var result = await _translator.TranslateAsync(
+        var scheduler = new AdaptivePartialTranslationScheduler(
+            _timeProvider,
+            _options.ElevenLabs);
+        await scheduler.RunAsync(
+            recognized,
+            (segment, token) => _translator.TranslateAsync(
                 segment,
                 authorization.TargetLanguage,
-                cancellationToken);
+                token),
+            (segment, result, token) => SendTranslationAsync(
+                browserSocket,
+                segment,
+                result,
+                transcripts,
+                token),
+            cancellationToken);
+    }
 
-            var payload = JsonSerializer.SerializeToUtf8Bytes(new
-            {
-                type = segment.IsFinal
-                    ? "glosify.translation.segment"
-                    : "glosify.translation.partial",
-                sequence = segment.Sequence,
-                sourceLanguage = result.SourceLanguage,
-                targetLanguage = result.TargetLanguage,
-                text = result.TranslatedText,
-            });
-            await browserSocket.SendAsync(
-                payload,
-                WebSocketMessageType.Text,
-                endOfMessage: true,
-                cancellationToken);
-            RealtimeTranslationTelemetry.TranslatedCharacters.Add(result.SourceText.Length);
+    private static async Task SendTranslationAsync(
+        WebSocket browserSocket,
+        RecognizedSpeechSegment segment,
+        TranslatedSubtitleSegment result,
+        ChannelWriter<CapturedTranslationSegment>? transcripts,
+        CancellationToken cancellationToken)
+    {
+        var payload = JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            type = segment.IsFinal
+                ? "glosify.translation.segment"
+                : "glosify.translation.partial",
+            sequence = segment.Sequence,
+            sourceLanguage = result.SourceLanguage,
+            targetLanguage = result.TargetLanguage,
+            text = result.TranslatedText,
+        });
+        await browserSocket.SendAsync(
+            payload,
+            WebSocketMessageType.Text,
+            endOfMessage: true,
+            cancellationToken);
 
-            if (transcripts is not null && segment.IsFinal)
-            {
-                await transcripts.WriteAsync(new CapturedTranslationSegment(
-                    segment.Sequence,
-                    $"scribe:source:{segment.Sequence}",
-                    result.SourceText,
-                    result.CapturedAt), cancellationToken);
-                await transcripts.WriteAsync(new CapturedTranslationSegment(
-                    segment.Sequence,
-                    $"scribe:translation:{segment.Sequence}",
-                    result.TranslatedText,
-                    result.CapturedAt,
-                    RealtimeTranslationTranscriptStreams.Translation), cancellationToken);
-            }
+        if (transcripts is not null && segment.IsFinal)
+        {
+            await transcripts.WriteAsync(new CapturedTranslationSegment(
+                segment.Sequence,
+                $"scribe:source:{segment.Sequence}",
+                result.SourceText,
+                result.CapturedAt), cancellationToken);
+            await transcripts.WriteAsync(new CapturedTranslationSegment(
+                segment.Sequence,
+                $"scribe:translation:{segment.Sequence}",
+                result.TranslatedText,
+                result.CapturedAt,
+                RealtimeTranslationTranscriptStreams.Translation), cancellationToken);
         }
     }
 
