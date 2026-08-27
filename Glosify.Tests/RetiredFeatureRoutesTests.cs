@@ -43,7 +43,7 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
 
     [Theory]
     [InlineData("/Speaking")]
-    [InlineData("/api/speaking/token")]
+    [InlineData("/api/speaking/speech-token")]
     [InlineData("/api/speaking/sessions")]
     [InlineData("/Classroom")]
     [InlineData("/Classroom/00000000-0000-0000-0000-000000000001")]

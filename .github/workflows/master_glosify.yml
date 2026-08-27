@@ -190,14 +190,6 @@ jobs:
           fi
           unset openai_key
 
-      - name: Apply reviewed database migrations
-        env:
-          PRODUCTION_SQL_CONNECTION_STRING: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
-          ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
-        run: |
-          chmod +x migration/efbundle
-          migration/efbundle --connection "$PRODUCTION_SQL_CONNECTION_STRING"
-
       - name: Deploy Azure Web App
         uses: azure/webapps-deploy@v3
         with:
@@ -205,7 +197,7 @@ jobs:
           slot-name: Production
           package: app
 
-      - name: Verify replacement artifact health and retired routes
+      - name: Verify replacement artifact health
         shell: bash
         run: |
           for attempt in {1..30}; do
@@ -215,13 +207,31 @@ jobs:
             sleep 10
           done
           curl --fail https://glosify-app.azurewebsites.net/healthz
-          for route in Speaking api/speaking/token Classroom hubs/classroom-chat; do
-            status="$(curl --silent --output /dev/null --write-out '%{http_code}' "https://glosify-app.azurewebsites.net/$route")"
-            if [[ "$status" != "404" ]]; then
-              echo "::error::Retired route /$route returned $status instead of 404."
-              exit 1
+
+      # The replacement artifact ignores the retired nullable column and extra
+      # tables, so it is safe on the old schema. Applying the destructive migration
+      # only after that artifact is healthy prevents the previous artifact from
+      # running against a schema it cannot read. Authenticated retired-route 404s
+      # are covered by the integration suite; anonymous production probes are
+      # challenged by the fallback authorization policy and cannot prove absence.
+      - name: Apply reviewed database migrations
+        env:
+          PRODUCTION_SQL_CONNECTION_STRING: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
+          ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
+        run: |
+          chmod +x migration/efbundle
+          migration/efbundle --connection "$PRODUCTION_SQL_CONNECTION_STRING"
+
+      - name: Verify health after database migration
+        shell: bash
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent https://glosify-app.azurewebsites.net/healthz > /dev/null; then
+              exit 0
             fi
+            sleep 10
           done
+          curl --fail https://glosify-app.azurewebsites.net/healthz
 
       # Remove these only after the replacement artifact is healthy. The prior
       # production artifact still needs its retired feature settings during rollout.

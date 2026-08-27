@@ -9,8 +9,9 @@ to avoid feedback on unfinished work.
 Copilot review is advisory: its comments do not count as an approval, replace
 CI, or establish that a finding is correct. Validate its findings against the
 current code, tests, migrations, configuration, and applicable primary
-documentation. A reviewed push to `master` creates and applies the EF migration
-bundle before deploying the web application.
+documentation. A reviewed push to `master` deploys and health-checks the
+replacement application, then applies the reviewed EF migration bundle and
+checks health again.
 
 ## Required App Service settings
 
@@ -123,7 +124,10 @@ dotnet ef migrations has-pending-model-changes --project Glosify
 dotnet ef migrations bundle --project Glosify --configuration Release
 ```
 
-The workflow applies the reviewed bundle. Migration
+The workflow deploys the replacement artifact before applying the reviewed
+bundle. The new artifact tolerates the retired nullable column and extra tables,
+while the previous artifact is incompatible with their removal; this order
+prevents old code from serving traffic against the new schema. Migration
 `20260827095613_RemoveSpeakingAndClassrooms` is intentionally destructive: it
 drops `AcsUserIdentities`, all `Classroom*` tables, and only the retired
 `QuizAttempts.ClassroomId` foreign key, index, and column. It preserves

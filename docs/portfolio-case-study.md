@@ -110,7 +110,8 @@ when they make responsibilities clearer or make code easier to test.
 
 - One clean `InitialCreate` migration for the current schema.
 - SQL Server locally and Azure SQL in production.
-- A reviewed EF migration bundle runs before application deployment.
+- The replacement artifact is health-checked before its reviewed EF migration
+  bundle runs, preventing old code from serving against a newer schema.
 - Blob compensation removes uploaded files when later persistence fails.
 - Managed identity is used for supported Azure resources.
 - Optional AI, speech, and storage providers stay outside readiness checks.
