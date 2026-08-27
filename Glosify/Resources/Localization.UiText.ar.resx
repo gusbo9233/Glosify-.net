@@ -909,12 +909,6 @@
   <data name="Client.MessageFailed" xml:space="preserve">
     <value>فشلت عملية إرسال الرسالة.</value>
   </data>
-  <data name="Client.JoinCallFailed" xml:space="preserve">
-    <value>تعذّر الانضمام إلى المكالمة.</value>
-  </data>
-  <data name="Client.CallTokenFailed" xml:space="preserve">
-    <value>تعذّر الحصول على رمز المكالمة.</value>
-  </data>
   <data name="Client.PageOf" xml:space="preserve">
     <value>الصفحة {0} من {1}</value>
   </data>

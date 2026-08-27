@@ -909,12 +909,6 @@
   <data name="Client.MessageFailed" xml:space="preserve">
     <value>L’envoi du message a échoué.</value>
   </data>
-  <data name="Client.JoinCallFailed" xml:space="preserve">
-    <value>Impossible de rejoindre l’appel.</value>
-  </data>
-  <data name="Client.CallTokenFailed" xml:space="preserve">
-    <value>Impossible d’obtenir un jeton d’appel.</value>
-  </data>
   <data name="Client.PageOf" xml:space="preserve">
     <value>Page {0} sur {1}</value>
   </data>

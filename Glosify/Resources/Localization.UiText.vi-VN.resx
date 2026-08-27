@@ -909,12 +909,6 @@
   <data name="Client.MessageFailed" xml:space="preserve">
     <value>Không thể gửi tin nhắn.</value>
   </data>
-  <data name="Client.JoinCallFailed" xml:space="preserve">
-    <value>Không thể tham gia cuộc gọi.</value>
-  </data>
-  <data name="Client.CallTokenFailed" xml:space="preserve">
-    <value>Không thể lấy mã cuộc gọi.</value>
-  </data>
   <data name="Client.PageOf" xml:space="preserve">
     <value>Trang {0} trên {1}</value>
   </data>

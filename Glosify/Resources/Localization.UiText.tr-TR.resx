@@ -909,12 +909,6 @@
   <data name="Client.MessageFailed" xml:space="preserve">
     <value>Mesaj gönderilemedi.</value>
   </data>
-  <data name="Client.JoinCallFailed" xml:space="preserve">
-    <value>Aramaya katılınamadı.</value>
-  </data>
-  <data name="Client.CallTokenFailed" xml:space="preserve">
-    <value>Arama belirteci alınamadı.</value>
-  </data>
   <data name="Client.PageOf" xml:space="preserve">
     <value>Sayfa {0} / {1}</value>
   </data>

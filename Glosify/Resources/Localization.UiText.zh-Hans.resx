@@ -909,12 +909,6 @@
   <data name="Client.MessageFailed" xml:space="preserve">
     <value>消息发送失败。</value>
   </data>
-  <data name="Client.JoinCallFailed" xml:space="preserve">
-    <value>无法加入通话。</value>
-  </data>
-  <data name="Client.CallTokenFailed" xml:space="preserve">
-    <value>无法获取通话令牌。</value>
-  </data>
   <data name="Client.PageOf" xml:space="preserve">
     <value>第 {0} 页，共 {1} 页</value>
   </data>

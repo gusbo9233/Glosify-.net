@@ -909,12 +909,6 @@
   <data name="Client.MessageFailed" xml:space="preserve">
     <value>メッセージの送信に失敗しました。</value>
   </data>
-  <data name="Client.JoinCallFailed" xml:space="preserve">
-    <value>通話に参加できませんでした。</value>
-  </data>
-  <data name="Client.CallTokenFailed" xml:space="preserve">
-    <value>通話トークンを取得できませんでした。</value>
-  </data>
   <data name="Client.PageOf" xml:space="preserve">
     <value>{0}/{1}ページ</value>
   </data>

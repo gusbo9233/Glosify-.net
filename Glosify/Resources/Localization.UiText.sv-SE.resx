@@ -309,8 +309,6 @@
   <data name="Client.PictureFailed" xml:space="preserve"><value>Texten i bilden kunde inte läsas.</value></data>
   <data name="Client.PictureNetwork" xml:space="preserve"><value>Nätverksfel när bilden skulle läsas.</value></data>
   <data name="Client.MessageFailed" xml:space="preserve"><value>Meddelandet kunde inte skickas.</value></data>
-  <data name="Client.JoinCallFailed" xml:space="preserve"><value>Det gick inte att ansluta till samtalet.</value></data>
-  <data name="Client.CallTokenFailed" xml:space="preserve"><value>Det gick inte att hämta en samtalstoken.</value></data>
   <data name="Client.PageOf" xml:space="preserve"><value>Sida {0} av {1}</value></data>
   <data name="Client.TtsNoText" xml:space="preserve"><value>Det finns ingen markerbar text att läsa upp.</value></data>
   <data name="Client.TtsUnavailable" xml:space="preserve"><value>Textuppläsning är inte tillgänglig i den här webbläsaren.</value></data>

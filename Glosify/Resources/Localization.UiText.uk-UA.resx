@@ -909,12 +909,6 @@
   <data name="Client.MessageFailed" xml:space="preserve">
     <value>Не вдалося надіслати повідомлення.</value>
   </data>
-  <data name="Client.JoinCallFailed" xml:space="preserve">
-    <value>Не вдалося приєднатися до дзвінка.</value>
-  </data>
-  <data name="Client.CallTokenFailed" xml:space="preserve">
-    <value>Не вдалося отримати токен дзвінка.</value>
-  </data>
   <data name="Client.PageOf" xml:space="preserve">
     <value>Сторінка {0} з {1}</value>
   </data>

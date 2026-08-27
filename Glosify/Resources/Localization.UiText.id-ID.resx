@@ -909,12 +909,6 @@
   <data name="Client.MessageFailed" xml:space="preserve">
     <value>Pesan gagal dikirim.</value>
   </data>
-  <data name="Client.JoinCallFailed" xml:space="preserve">
-    <value>Tidak dapat bergabung ke panggilan.</value>
-  </data>
-  <data name="Client.CallTokenFailed" xml:space="preserve">
-    <value>Tidak dapat mendapatkan token panggilan.</value>
-  </data>
   <data name="Client.PageOf" xml:space="preserve">
     <value>Halaman {0} dari {1}</value>
   </data>

@@ -100,6 +100,8 @@ public sealed class DisplayLocalizationTests
         var clientText = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
             document.Body?.GetAttribute("data-i18n") ?? "{}");
         Assert.Equal("Något gick fel. Försök igen.", clientText?["Client.GenericError"]);
+        Assert.DoesNotContain("Client.JoinCallFailed", clientText!.Keys);
+        Assert.DoesNotContain("Client.CallTokenFailed", clientText.Keys);
     }
 
     [Fact]

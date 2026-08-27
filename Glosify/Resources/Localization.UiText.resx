@@ -309,8 +309,6 @@
   <data name="Client.PictureFailed" xml:space="preserve"><value>Could not read text from that picture.</value></data>
   <data name="Client.PictureNetwork" xml:space="preserve"><value>Network error reading picture.</value></data>
   <data name="Client.MessageFailed" xml:space="preserve"><value>Message failed to send.</value></data>
-  <data name="Client.JoinCallFailed" xml:space="preserve"><value>Could not join the call.</value></data>
-  <data name="Client.CallTokenFailed" xml:space="preserve"><value>Could not get a call token.</value></data>
   <data name="Client.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
   <data name="Client.TtsNoText" xml:space="preserve"><value>No selectable text is available to read.</value></data>
   <data name="Client.TtsUnavailable" xml:space="preserve"><value>Text-to-speech is unavailable in this browser.</value></data>
