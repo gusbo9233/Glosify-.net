@@ -10,7 +10,8 @@
     "offscreen",
     "scripting",
     "storage",
-    "tabCapture"
+    "tabCapture",
+    "webNavigation"
   ],
   "background": {
     "service_worker": "background/service-worker.js",

@@ -106,8 +106,8 @@ chrome.tabs.onRemoved.addListener(tabId => {
   }
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-  if (tabId !== state.tabId || changeInfo.status !== "loading") {
+chrome.webNavigation.onCommitted.addListener(details => {
+  if (details.tabId !== state.tabId || details.frameId !== 0) {
     return;
   }
   void stopSession("Subtitles stopped because the captured tab navigated.", "ready");

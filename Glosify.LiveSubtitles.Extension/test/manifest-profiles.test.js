@@ -20,6 +20,12 @@ test("Store manifest omits the development key", async () => {
   assert.equal("key" in { ...base, ...store }, false);
 });
 
+test("navigation lifecycle uses the committed-document permission", async () => {
+  const base = await readManifest("base");
+
+  assert.ok(base.permissions.includes("webNavigation"));
+});
+
 test("development and test profiles retain the stable unpacked extension ID", async () => {
   const development = await readManifest("development");
   const browserTest = await readManifest("test");
