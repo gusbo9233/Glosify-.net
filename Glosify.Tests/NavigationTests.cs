@@ -85,7 +85,6 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("/FlashcardQuiz")]
     [InlineData("/TypingQuiz")]
     [InlineData("/Anki")]
-    [InlineData("/Speaking")]
     [InlineData("/CustomQuizzes/00000000-0000-0000-0000-000000000001/Play")]
     [InlineData("/Admin/AiCredits")]
     public async Task Get_AuthorizedRoute_RedirectsToLoginWhenAnonymous(string url)
@@ -159,7 +158,7 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task Responses_allow_speech_sdk_blob_audio_in_csp()
+    public async Task ResponsesKeepTtsObjectUrlsButRemoveRetiredBrowserCapabilities()
     {
         var client = CreateClient();
 
@@ -168,6 +167,15 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         response.EnsureSuccessStatusCode();
         var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
         Assert.Contains("media-src 'self' blob:", csp);
+        Assert.Contains("connect-src 'self';", csp);
+        Assert.Contains("worker-src 'self';", csp);
+        Assert.DoesNotContain("jsdelivr", csp, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("communication.azure.com", csp, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("speech.microsoft.com", csp, StringComparison.OrdinalIgnoreCase);
+
+        var permissions = Assert.Single(response.Headers.GetValues("Permissions-Policy"));
+        Assert.Contains("microphone=()", permissions);
+        Assert.Contains("camera=()", permissions);
     }
 
     [Fact]
@@ -216,10 +224,11 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.NotNull(document.QuerySelector("a[href*='/Account/Register']"));
         Assert.NotNull(document.QuerySelector("a[href='/login'], a[href*='/Account/Login']"));
         Assert.NotNull(document.QuerySelector("a[href*='/Quiz']"));
-        Assert.NotNull(document.QuerySelector("a[href*='/Speaking']"));
         Assert.NotNull(document.QuerySelector("a[href*='/Books']"));
         Assert.NotNull(document.QuerySelector("a[href*='/Explore']"));
-        Assert.NotNull(document.QuerySelector("a[href*='/Classroom']"));
+        Assert.NotNull(document.QuerySelector("a[href*='/Anki']"));
+        Assert.Null(document.QuerySelector("a[href*='/Speaking']"));
+        Assert.Null(document.QuerySelector("a[href*='/Classroom']"));
     }
 
     [Fact]

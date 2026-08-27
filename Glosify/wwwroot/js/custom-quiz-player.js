@@ -37,7 +37,7 @@
             const response = await fetch(root.dataset.gradeUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'RequestVerificationToken': token },
-                body: JSON.stringify({ attemptId: root.dataset.attemptId, classroomId: root.dataset.classroomId || null, answers: collectAnswers() })
+                body: JSON.stringify({ attemptId: root.dataset.attemptId, answers: collectAnswers() })
             });
             const result = await response.json().catch(() => null);
             if (!response.ok || !result) throw new Error();

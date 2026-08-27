@@ -16,10 +16,4 @@ public interface IBookDocumentService
     /// when the book does not exist or belongs to someone else.
     /// </summary>
     Task<bool> DeleteAsync(Guid documentId, string userId, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Opens a PDF without an ownership check. The caller must have already
-    /// authorized access (e.g. via a classroom share link).
-    /// </summary>
-    Task<Stream> OpenPdfUncheckedAsync(Guid documentId, CancellationToken cancellationToken = default);
 }

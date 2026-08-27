@@ -100,6 +100,8 @@ public sealed class DisplayLocalizationTests
         var clientText = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
             document.Body?.GetAttribute("data-i18n") ?? "{}");
         Assert.Equal("Något gick fel. Försök igen.", clientText?["Client.GenericError"]);
+        Assert.DoesNotContain("Client.JoinCallFailed", clientText!.Keys);
+        Assert.DoesNotContain("Client.CallTokenFailed", clientText.Keys);
     }
 
     [Fact]
@@ -200,6 +202,10 @@ public sealed class DisplayLocalizationTests
                 resourceDirectory,
                 $"Localization.UiText.{culture.Name}.resx"));
             Assert.Equal(english.Keys.Order(), localized.Keys.Order());
+            Assert.DoesNotContain(localized, item =>
+                item.Value.Contains('Ã')
+                || item.Value.Contains('Ð')
+                || item.Value.Any(character => character is >= '\u0080' and <= '\u009F'));
             foreach (var key in english.Keys)
             {
                 Assert.Equal(Placeholders(english[key]), Placeholders(localized[key]));
@@ -232,6 +238,20 @@ public sealed class DisplayLocalizationTests
         Assert.Equal(13, document.QuerySelectorAll("link[rel='alternate'][hreflang]").Length);
         Assert.Contains(response.Headers.GetValues("Set-Cookie"), value =>
             value.StartsWith(CookieRequestCultureProvider.DefaultCookieName, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData("/sv-SE/privacy")]
+    [InlineData("/sv-SE/terms")]
+    public async Task Swedish_legal_pages_do_not_describe_retired_features(string path)
+    {
+        using var factory = CreateFactory();
+        var response = await factory.CreateClient().GetAsync(path);
+        var html = await response.Content.ReadAsStringAsync();
+
+        response.EnsureSuccessStatusCode();
+        Assert.DoesNotContain("klassrum", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("talöv", html, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

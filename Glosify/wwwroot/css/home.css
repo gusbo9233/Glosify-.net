@@ -362,13 +362,13 @@
     color: var(--home-violet);
 }
 
-.home-orbit-node-speak {
+.home-orbit-node-review {
     right: 4%;
     bottom: 12%;
     transform: rotate(-2deg);
 }
 
-.home-orbit-node-speak .material-symbols-outlined {
+.home-orbit-node-review .material-symbols-outlined {
     color: var(--home-coral);
 }
 
@@ -525,7 +525,7 @@
     --card-glow: radial-gradient(circle, rgba(181, 156, 255, 0.2), transparent 68%);
 }
 
-.home-action-card-speaking {
+.home-action-card-anki {
     --card-accent: var(--home-coral);
     --card-border: rgba(255, 143, 135, 0.34);
     --card-glow: radial-gradient(circle, rgba(255, 143, 135, 0.2), transparent 68%);
@@ -671,10 +671,6 @@
     color: var(--home-blue);
 }
 
-.home-feature-card-classroom .home-feature-icon {
-    background: rgba(181, 156, 255, 0.1);
-    color: var(--home-violet);
-}
 
 .home-feature-card > span:nth-child(2) {
     min-width: 0;
@@ -869,7 +865,7 @@
         right: 0;
     }
 
-    .home-orbit-node-speak {
+    .home-orbit-node-review {
         right: 2%;
         bottom: 10%;
     }

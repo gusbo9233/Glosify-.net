@@ -1,5 +1,4 @@
 using Glosify.Services.Ai.Assistant;
-using Glosify.Services.Classrooms;
 using Glosify.Services.Ai;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -9,14 +8,13 @@ using Xunit;
 namespace Glosify.Tests;
 
 /// <summary>
-/// Resolves the services whose registration changed when the classroom service and the
-/// assistant tools were split apart.
+/// Resolves the assistant services whose registrations are discovered at startup.
 /// </summary>
 /// <remarks>
 /// A missing or mis-scoped registration in either would not fail a build and would not
-/// fail a page render either — it would surface as a 500 the first time a user opened a
-/// classroom or sent an assistant message. This resolves them from a real request scope
-/// instead, which is where the scoped DbContext they all share lives.
+/// fail a page render either — it would surface as a 500 the first time a user sent an
+/// assistant message. This resolves them from a real request scope instead, which is where
+/// the scoped DbContext they all share lives.
 /// </remarks>
 public sealed class ServiceGraphTests : IClassFixture<WebApplicationFactory<Program>>
 {
@@ -28,15 +26,6 @@ public sealed class ServiceGraphTests : IClassFixture<WebApplicationFactory<Prog
     }
 
     [Theory]
-    [InlineData(typeof(IClassroomAccess))]
-    [InlineData(typeof(IClassroomDirectory))]
-    [InlineData(typeof(IClassroomRoster))]
-    [InlineData(typeof(IClassroomLibrary))]
-    [InlineData(typeof(IClassroomConversation))]
-    [InlineData(typeof(IClassroomPlanner))]
-    [InlineData(typeof(IClassroomResults))]
-    [InlineData(typeof(IClassroomCall))]
-    [InlineData(typeof(IClassroomCallPresence))]
     [InlineData(typeof(IAssistantTools))]
     [InlineData(typeof(IQuizJsonImportService))]
     [InlineData(typeof(IQuizJsonImportRepairService))]

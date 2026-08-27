@@ -162,18 +162,18 @@ public sealed class CustomQuizService : ICustomQuizService
         return true;
     }
 
-    public async Task<CustomQuizPlayData?> GetForPlayAsync(Guid id, string userId, Guid? classroomId = null, CancellationToken cancellationToken = default)
+    public async Task<CustomQuizPlayData?> GetForPlayAsync(Guid id, string userId, CancellationToken cancellationToken = default)
     {
         var entity = await _context.CustomQuizzes.AsNoTracking().Include(item => item.Quiz)
             .FirstOrDefaultAsync(item => item.Id == id && item.IsPlayable, cancellationToken);
-        if (entity == null || !await CanPlayAsync(entity.Quiz, userId, classroomId, cancellationToken)) return null;
+        if (entity == null || !await CanPlayAsync(entity.Quiz, userId, cancellationToken)) return null;
         var words = await LoadWordsAsync(entity.QuizId, cancellationToken);
         var document = Deserialize(entity.DefinitionJson);
         var validation = Validate(document, words);
         if (!validation.IsPlayable) return null;
         return new CustomQuizPlayData(entity.Id, entity.QuizId, entity.Name, entity.Quiz.Name,
             entity.Quiz.SourceLanguage, entity.Quiz.TargetLanguage, Guid.NewGuid(),
-            SanitizeForPlayer(document), ResolveValues(document, words), classroomId);
+            SanitizeForPlayer(document), ResolveValues(document, words));
     }
 
     public async Task<CustomQuizGradeResult?> GradeAsync(Guid id, GradeCustomQuizRequest request, string userId, CancellationToken cancellationToken = default)
@@ -190,7 +190,7 @@ public sealed class CustomQuizService : ICustomQuizService
 
         var entity = await _context.CustomQuizzes.AsNoTracking().Include(item => item.Quiz)
             .FirstOrDefaultAsync(item => item.Id == id && item.IsPlayable, cancellationToken);
-        if (entity == null || !await CanPlayAsync(entity.Quiz, userId, request.ClassroomId, cancellationToken)) return null;
+        if (entity == null || !await CanPlayAsync(entity.Quiz, userId, cancellationToken)) return null;
         var words = await LoadWordsAsync(entity.QuizId, cancellationToken);
         var document = Deserialize(entity.DefinitionJson);
         if (!Validate(document, words).IsPlayable) return null;
@@ -211,7 +211,6 @@ public sealed class CustomQuizService : ICustomQuizService
             Id = request.AttemptId == Guid.Empty ? Guid.NewGuid() : request.AttemptId,
             QuizId = entity.QuizId,
             UserId = userId,
-            ClassroomId = request.ClassroomId,
             Mode = Truncate($"Custom · {entity.Name}", 200),
             TotalItems = grades.Count,
             CorrectCount = grades.Count(grade => grade.State == "correct"),
@@ -390,19 +389,9 @@ public sealed class CustomQuizService : ICustomQuizService
         return new CustomQuizValidationResult(structural.Count == 0, structural.Count == 0 && playable.Count == 0, structural, playable);
     }
 
-    private async Task<bool> CanPlayAsync(Quiz quiz, string userId, Guid? classroomId, CancellationToken cancellationToken)
+    private async Task<bool> CanPlayAsync(Quiz quiz, string userId, CancellationToken cancellationToken)
     {
         if (quiz.UserId == userId) return true;
-        if (classroomId.HasValue)
-        {
-            // One round trip rather than two: this runs on every play authorization.
-            var membershipAndShare = await _context.ClassroomMemberships
-                .Where(item => item.ClassroomId == classroomId && item.UserId == userId)
-                .Select(_ => _context.ClassroomContents
-                    .Any(content => content.ClassroomId == classroomId && content.QuizId == quiz.Id))
-                .FirstOrDefaultAsync(cancellationToken);
-            if (membershipAndShare) return true;
-        }
         return quiz.IsPublic || quiz.CollectionId.HasValue && await _collectionVisibility.IsCollectionPubliclyReadableAsync(quiz.CollectionId.Value, cancellationToken);
     }
 

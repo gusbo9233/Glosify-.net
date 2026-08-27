@@ -65,16 +65,16 @@ public sealed class CreditPricingOptionsTests
         var resolver = CreateResolver(new CreditPricingOptions
         {
             DefaultModelMultiplier = 0.5m,
-            TokenFeatures = { [AiUsageFeatures.Speaking] = 1.5m },
+            TokenFeatures = { [AiUsageFeatures.Assistant] = 1.5m },
         });
 
         Assert.Equal(4, resolver.CalculateTokenCredits(
             5_000,
-            AiUsageFeatures.Speaking,
+            AiUsageFeatures.Assistant,
             OpenAiModels.Luna));
         Assert.Equal(0, resolver.CalculateTokenCredits(
             0,
-            AiUsageFeatures.Speaking,
+            AiUsageFeatures.Assistant,
             "test-model"));
     }
 

@@ -91,6 +91,5 @@ public sealed class CustomQuizPlayViewModelTests
             "Polish",
             Guid.NewGuid(),
             new CustomQuizDocumentV1 { Blocks = blocks.ToList() },
-            resolvedValues,
-            null);
+            resolvedValues);
 }

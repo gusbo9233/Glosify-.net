@@ -122,7 +122,6 @@ public sealed class CustomQuizAnswerInput
 public sealed class GradeCustomQuizRequest
 {
     public Guid AttemptId { get; set; }
-    public Guid? ClassroomId { get; set; }
     public List<CustomQuizAnswerInput> Answers { get; set; } = [];
 }
 

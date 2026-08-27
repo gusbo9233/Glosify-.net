@@ -27,8 +27,9 @@ import {
             return t('Client.TryAgain', 'Please try again.');
         }
         if (code === 'payment_required' || code === 'paid_services_budget_exhausted') {
-            return t('Speaking.PaidPaused', 'Paid features are paused until {0}.',
-                t('Speaking.NextMonth', 'the start of next month'));
+            return t('Books.PaidUnavailable', '{0} Paid features reopen at {1}.',
+                t('Books.PaidReason', 'The monthly application budget has been reached.'),
+                t('Common.NextMonth', 'the start of next month'));
         }
         return t(fallbackKey, fallback);
     };

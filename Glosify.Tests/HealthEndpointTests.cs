@@ -36,4 +36,17 @@ public sealed class HealthEndpointTests
         Assert.Equal(System.Net.HttpStatusCode.ServiceUnavailable, response.StatusCode);
         Assert.Equal("Unhealthy", await response.Content.ReadAsStringAsync());
     }
+
+    [Fact]
+    public async Task DeploymentVersionAnswersAnonymouslyAndIsNotCached()
+    {
+        using var factory = new WebApplicationFactory<Program>();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+
+        var response = await client.GetAsync("/deployment-version");
+
+        response.EnsureSuccessStatusCode();
+        Assert.Equal("local", await response.Content.ReadAsStringAsync());
+        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
+    }
 }

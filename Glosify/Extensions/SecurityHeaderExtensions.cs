@@ -5,9 +5,9 @@ public static class SecurityHeaderExtensions
     /// <summary>
     /// Writes the security headers on every response. App scripts live in wwwroot/js and
     /// behaviors use data-* attributes instead of inline on* handlers; the only external
-    /// script origin is jsDelivr for the pinned Three.js module. 'unsafe-inline' for styles
-    /// remains because views use style attributes, while fonts.googleapis.com/gstatic.com
-    /// serve the web fonts linked by the layout.
+    /// scripts are self-hosted. 'unsafe-inline' for styles remains because views use style
+    /// attributes, while fonts.googleapis.com/gstatic.com serve the web fonts linked by the
+    /// layout.
     /// </summary>
     public static IApplicationBuilder UseGlosifySecurityHeaders(
         this IApplicationBuilder app,
@@ -16,21 +16,8 @@ public static class SecurityHeaderExtensions
         var configuredFormActionOrigins = configuration
             .GetSection("Security:Csp:FormActionOrigins")
             .Get<string[]>() ?? [];
-        // Extra connect-src entries for the ACS calling SDK (video signaling/media
-        // endpoints); configurable so new ACS domains don't require a code change.
-        var configuredConnectSources = configuration
-            .GetSection("Security:Csp:ConnectSources")
-            .Get<string[]>() ?? [];
-        configuredConnectSources =
-        [
-            .. configuredConnectSources,
-            .. BuildSpeechConnectSources(
-                configuration["Speech:Region"],
-                configuration["Speech:Endpoint"]),
-        ];
         var contentSecurityPolicy = BuildContentSecurityPolicy(
-            configuredFormActionOrigins,
-            configuredConnectSources);
+            configuredFormActionOrigins);
 
         return app.Use(async (context, next) =>
         {
@@ -38,15 +25,13 @@ public static class SecurityHeaderExtensions
             headers["X-Content-Type-Options"] = "nosniff";
             headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
             headers["Content-Security-Policy"] = contentSecurityPolicy;
-            // Speaking and the classroom call need the microphone and camera on this origin;
-            // everything else is denied outright rather than left to the browser default.
             headers["Permissions-Policy"] =
-                "microphone=(self), camera=(self), geolocation=(), payment=(), usb=(), interest-cohort=()";
+                "microphone=(), camera=(), geolocation=(), payment=(), usb=(), interest-cohort=()";
             await next();
         });
     }
 
-    private static string BuildContentSecurityPolicy(IEnumerable<string> formActionOrigins, IEnumerable<string> extraConnectSources)
+    private static string BuildContentSecurityPolicy(IEnumerable<string> formActionOrigins)
     {
         var allowedFormActionSources = formActionOrigins
             .Select(NormalizeCspOrigin)
@@ -55,28 +40,16 @@ public static class SecurityHeaderExtensions
 
         var formActionDirective = string.Join(' ', ["'self'", .. allowedFormActionSources]);
 
-        // Wildcard hosts (e.g. https://*.communication.azure.com) are valid CSP
-        // sources but not absolute URIs, so they bypass NormalizeCspOrigin and are
-        // sanitized to a conservative character set instead.
-        var connectSources = extraConnectSources
-            .Select(source => source?.Trim())
-            .Where(source => !string.IsNullOrWhiteSpace(source)
-                && source.All(c => char.IsLetterOrDigit(c) || c is '.' or '-' or ':' or '/' or '*'))
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-        var connectDirective = string.Join(' ', ["'self'", .. connectSources]);
-
         return
             "default-src 'self'; " +
-            "script-src 'self' https://cdn.jsdelivr.net; " +
+            "script-src 'self'; " +
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
             "font-src 'self' https://fonts.gstatic.com; " +
             "img-src 'self' data: blob:; " +
-            // The browser Speech SDK renders synthesized replies through a blob:
-            // URL, while the server-side fallback streams same-origin MP3 audio.
+            // tts.js renders server-generated audio through object URLs.
             "media-src 'self' blob:; " +
-            $"connect-src {connectDirective}; " +
-            // The ACS calling SDK spins up blob: web workers for media handling.
-            "worker-src 'self' blob:; " +
+            "connect-src 'self'; " +
+            "worker-src 'self'; " +
             "frame-ancestors 'none'; " +
             "base-uri 'self'; " +
             $"form-action {formActionDirective}";
@@ -95,29 +68,5 @@ public static class SecurityHeaderExtensions
         }
 
         return uri.GetLeftPart(UriPartial.Authority);
-    }
-
-    private static IEnumerable<string> BuildSpeechConnectSources(string? region, string? endpoint)
-    {
-        if (!string.IsNullOrWhiteSpace(endpoint)
-            && Uri.TryCreate(endpoint.Trim(), UriKind.Absolute, out var endpointUri)
-            && endpointUri.Scheme == Uri.UriSchemeHttps)
-        {
-            yield return endpointUri.GetLeftPart(UriPartial.Authority);
-        }
-
-        var normalizedRegion = region?.Trim().ToLowerInvariant();
-        if (string.IsNullOrWhiteSpace(normalizedRegion)
-            || normalizedRegion.Any(character =>
-                !char.IsAsciiLetterOrDigit(character) && character != '-'))
-        {
-            yield break;
-        }
-
-        yield return $"https://{normalizedRegion}.api.cognitive.microsoft.com";
-        yield return $"https://{normalizedRegion}.stt.speech.microsoft.com";
-        yield return $"wss://{normalizedRegion}.stt.speech.microsoft.com";
-        yield return $"https://{normalizedRegion}.tts.speech.microsoft.com";
-        yield return $"wss://{normalizedRegion}.tts.speech.microsoft.com";
     }
 }

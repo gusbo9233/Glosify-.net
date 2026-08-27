@@ -7,8 +7,8 @@
 **[Live app](https://glosify.se)** · [Case study](docs/portfolio-case-study.md) · [Architecture](docs/ARCHITECTURE.md) · [ADRs](docs/adr/) · [Tests](Glosify.Tests/)
 
 Glosify is an ASP.NET Core 10 MVC language-learning application with quizzes,
-FSRS-6 study collections, books, classrooms, speaking practice, saved chats, and
-a Chrome extension for live translated subtitles.
+FSRS-6 study collections, books, saved assistant chats, and a Chrome extension
+for live translated subtitles.
 
 ## AI services
 
@@ -18,9 +18,8 @@ is no model picker, configured alternative, or provider fallback. Prompts, JSON
 schemas, and function tools are defined and executed in this repository. Glosify
 replays its own saved history and every Responses request uses `store: false`.
 
-Speaking keeps Azure Speech transcription, pronunciation assessment, neural
-voices, and text-to-speech. Only its text coaching and personas use Luna. The
-Enhanced subtitle relay connects server-side to `gpt-realtime-translate` while
+Azure Speech provides server-side text-to-speech for book reading. The Enhanced
+subtitle relay connects server-side to `gpt-realtime-translate` while
 the Scribe alternative uses ElevenLabs Scribe v2 followed by Azure Translator.
 Provider keys never reach the browser or extension.
 
@@ -39,9 +38,9 @@ orchestrate HTTP work, feature services own application rules, and EF Core talks
 directly to SQL Server. There is no generic repository, CQRS layer, or separate
 domain assembly.
 
-Main technologies include .NET 10, EF Core 10, Azure SQL, ASP.NET Core Identity
-and SignalR, OpenAI, Azure Speech, Azure Translator, Azure Communication
-Services, Azure Blob Storage, ElevenLabs Scribe v2, Stripe, OpenTelemetry,
+Main technologies include .NET 10, EF Core 10, Azure SQL, ASP.NET Core Identity,
+OpenAI, Azure Speech, Azure Translator, Azure Blob Storage, ElevenLabs Scribe v2,
+Stripe, OpenTelemetry,
 xUnit, AngleSharp, and Playwright.
 
 ```text
@@ -73,7 +72,7 @@ dotnet run --project Glosify --launch-profile https
 ```
 
 Register at `https://localhost:7032/Account/Register`; the login route is
-`/login`. Ordinary quiz, classroom, Anki, sharing, and UI development does not
+`/login`. Ordinary quiz, Anki, sharing, and UI development does not
 need external service credentials. Azure-backed features use `az login` during
 local development.
 

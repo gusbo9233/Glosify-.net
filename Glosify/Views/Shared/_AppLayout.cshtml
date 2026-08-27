@@ -1,21 +1,9 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Html
-@using Microsoft.AspNetCore.Authorization
-@using Glosify.Services.Auth
-@inject IAuthorizationService AuthorizationService
-@inject IWebHostEnvironment HostEnvironment
 @inject IStripePaymentService StripePayments
 @inject Glosify.Services.Language.ILanguageContext LanguageContext
 @{
     var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(LanguageContext.CurrentLanguage);
-    var speakingIsAvailable = !isFreestyle && (!HostEnvironment.IsProduction()
-        || (await AuthorizationService.AuthorizeAsync(
-            User,
-            AuthorizationPolicyNames.SpeakingAvailability)).Succeeded);
-    var classroomIsAvailable = !HostEnvironment.IsProduction()
-        || (await AuthorizationService.AuthorizeAsync(
-            User,
-            AuthorizationPolicyNames.ClassroomAvailability)).Succeeded;
     var assistantPageContext = ViewData.GetAssistantPageContext();
     var assistantPanel = new AssistantPanelViewModel
     {
@@ -112,17 +100,6 @@
                 <path d="M7 10h7"></path>
                 <path d="M10.5 6.5v7"></path>
                 """,
-            "school" => """
-                <path d="m12 4 10 5-10 5L2 9l10-5Z"></path>
-                <path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"></path>
-                <path d="M22 9v5"></path>
-                """,
-            "mic" => """
-                <rect x="9" y="3" width="6" height="11" rx="3"></rect>
-                <path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path>
-                <path d="M12 17.5V21"></path>
-                <path d="M9 21h6"></path>
-                """,
             "subtitles" => """
                 <rect x="3" y="5" width="18" height="14" rx="2"></rect>
                 <path d="M7 11h4"></path>
@@ -206,35 +183,6 @@
                     @NavIcon("anki")
                     Anki
                 </a>
-                @if (speakingIsAvailable)
-                {
-                    <a class="@NavClass("Speaking")" asp-controller="Speaking" asp-action="Index">
-                        @NavIcon("mic")
-                        @Text["Nav.Speaking"]
-                    </a>
-                }
-                else
-                {
-                    <span class="app-nav-item is-disabled" aria-disabled="true" data-speaking-unavailable
-                          title="@Text["Speaking.Unavailable"]">
-                        @NavIcon("mic")
-                        @Text["Nav.Speaking"]
-                    </span>
-                }
-                @if (classroomIsAvailable)
-                {
-                    <a class="@NavClass("Classroom")" asp-controller="Classroom" asp-action="Index">
-                        @NavIcon("school")
-                        @Text["Nav.Classrooms"]
-                    </a>
-                }
-                else
-                {
-                    <span class="app-nav-item is-disabled" aria-disabled="true" data-classroom-unavailable>
-                        @NavIcon("school")
-                        @Text["Nav.Classrooms"]
-                    </span>
-                }
                 @if (User.Identity?.IsAuthenticated == true && StripePayments.IsEnabled)
                 {
                     <a class="@NavClass("Payments")" asp-controller="Payments" asp-action="Index">
@@ -318,21 +266,6 @@
             @NavIcon("anki")
             <span>Anki</span>
         </a>
-        @if (speakingIsAvailable)
-        {
-            <a class="@NavClass("Speaking")" asp-controller="Speaking" asp-action="Index">
-                @NavIcon("mic")
-                <span>@Text["Nav.Speak"]</span>
-            </a>
-        }
-        else
-        {
-            <span class="app-nav-item is-disabled" aria-disabled="true" data-speaking-unavailable
-                  title="@Text["Speaking.Unavailable"]">
-                @NavIcon("mic")
-                <span>@Text["Nav.Speak"]</span>
-            </span>
-        }
         <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
             @NavIcon("auto_stories")
             <span>@Text["Nav.Books"]</span>
@@ -350,20 +283,6 @@
                 @NavIcon("explore")
                 <span>@Text["Nav.Explore"]</span>
             </a>
-            @if (classroomIsAvailable)
-            {
-                <a class="@NavClass("Classroom")" asp-controller="Classroom" asp-action="Index">
-                    @NavIcon("school")
-                    <span>@Text["Nav.Class"]</span>
-                </a>
-            }
-            else
-            {
-                <span class="app-nav-item is-disabled" aria-disabled="true" data-classroom-unavailable>
-                    @NavIcon("school")
-                    <span>@Text["Nav.Class"]</span>
-                </span>
-            }
         }
         else
         {

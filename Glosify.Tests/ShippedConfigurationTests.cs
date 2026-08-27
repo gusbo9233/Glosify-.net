@@ -2,7 +2,6 @@ using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Payments;
 using Glosify.Services.RealtimeTranslation;
-using Glosify.Services.Speaking;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

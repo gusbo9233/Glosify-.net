@@ -5,7 +5,6 @@ using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Books;
 using Glosify.Services.Quizzes;
 using Glosify.Services.RealtimeTranslation;
-using Glosify.Services.Speaking;
 
 namespace Glosify.Infrastructure.Api;
 
@@ -41,15 +40,6 @@ public static class ApiExceptionMapper
         RealtimeTranslationExpiredException => Error(410, ApiErrorCodes.Gone, exception),
         RealtimeTranslationUnavailableException => Error(503, ApiErrorCodes.DependencyUnavailable, exception),
         RealtimeTranslationUpstreamException => Error(502, ApiErrorCodes.UpstreamFailure, exception),
-        SpeakingValidationException => Error(400, ApiErrorCodes.ValidationFailed, exception),
-        SpeakingQuizNotFoundException => Error(404, ApiErrorCodes.NotFound, exception),
-        SpeakingSessionNotFoundException => Error(404, ApiErrorCodes.NotFound, exception),
-        SpeakingSessionExpiredException => Error(410, ApiErrorCodes.Gone, exception),
-        SpeakingSessionInvalidatedException => Error(410, ApiErrorCodes.Gone, exception),
-        SpeakingSessionBusyException => Error(409, ApiErrorCodes.Conflict, exception),
-        SpeakingSessionLimitException => Error(409, ApiErrorCodes.Conflict, exception),
-        SpeakingDependencyUnavailableException => Error(503, ApiErrorCodes.DependencyUnavailable, exception),
-        SpeakingUpstreamException => Error(502, ApiErrorCodes.UpstreamFailure, exception),
         QuizNotFoundException => Error(404, ApiErrorCodes.NotFound, exception),
         UnauthorizedAccessException => new ApiError(403, ApiErrorCodes.Forbidden, "You do not have access to this resource."),
         _ => null,

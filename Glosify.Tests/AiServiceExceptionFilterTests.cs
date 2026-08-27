@@ -4,7 +4,6 @@ using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Books;
 using Glosify.Services.RealtimeTranslation;
-using Glosify.Services.Speaking;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -83,17 +82,6 @@ public sealed class AiServiceExceptionFilterTests
                 1),
             StatusCodes.Status503ServiceUnavailable,
             "Paid features are unavailable because Glosify's monthly application budget has been reached."
-        },
-        {
-            new SpeakingSessionInvalidatedException(
-                new InvalidOperationException("private failure detail")),
-            StatusCodes.Status410Gone,
-            "This speaking session could not be continued safely. Start a new one to continue."
-        },
-        {
-            new SpeakingQuizNotFoundException(),
-            StatusCodes.Status404NotFound,
-            "Quiz not found."
         },
         {
             new BookPageTranslationValidationException("Invalid translation input."),

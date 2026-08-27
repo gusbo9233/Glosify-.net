@@ -69,7 +69,6 @@ internal abstract class ChromeServicesBase
     Task<IReadOnlyList<Quiz>> IQuizService.GetPublicQuizzesAsync(string language, CancellationToken cancellationToken) => throw Unused();
     Task<Quiz?> IQuizService.GetPublicQuizAsync(Guid id, CancellationToken cancellationToken) => throw Unused();
     Task<Quiz?> IQuizService.CopyPublicQuizAsync(Guid id, string userId, Guid? collectionId, CancellationToken cancellationToken) => throw Unused();
-    Task<Quiz?> IQuizService.CopyClassroomQuizAsync(Guid id, Guid classroomId, string userId, CancellationToken cancellationToken) => throw Unused();
     Task<int> IQuizService.GetAvailableWordCountAsync(Guid quizId, CancellationToken cancellationToken) => throw Unused();
     Task<IReadOnlyDictionary<Guid, int>> IQuizService.GetWordCountsAsync(IReadOnlyCollection<Guid> quizIds, CancellationToken cancellationToken) => throw Unused();
     Task<int> IQuizService.GetAvailableSentenceCountAsync(Guid quizId, CancellationToken cancellationToken) => throw Unused();
@@ -79,7 +78,6 @@ internal abstract class ChromeServicesBase
     Task<BookPage?> IBookDocumentService.GetOwnedPageAsync(Guid documentId, int pageNumber, string userId, CancellationToken cancellationToken) => throw Unused();
     Task<Stream> IBookDocumentService.OpenOwnedPdfAsync(Guid documentId, string userId, CancellationToken cancellationToken) => throw Unused();
     Task<bool> IBookDocumentService.DeleteAsync(Guid documentId, string userId, CancellationToken cancellationToken) => throw Unused();
-    Task<Stream> IBookDocumentService.OpenPdfUncheckedAsync(Guid documentId, CancellationToken cancellationToken) => throw Unused();
 
     Task<TranscriptDetailPage?> IRealtimeTranslationTranscriptService.GetDetailAsync(Guid transcriptId, string userId, string quizLanguageCode, int page, int pageSize, string? stream, CancellationToken cancellationToken) => throw Unused();
     Task<TranscriptTextPage?> IRealtimeTranslationTranscriptService.GetTextPageAsync(Guid transcriptId, string userId, string quizLanguageCode, TranscriptTextPageRequest request, CancellationToken cancellationToken) => throw Unused();

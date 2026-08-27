@@ -9,7 +9,6 @@ public sealed class AiUsageOptions
     public int AssistantOutputTokenReserve { get; set; } = 16384;
     public int JsonImportRepairOutputTokenReserve { get; set; } = 16384;
     public int ImageExtractionOutputTokenReserve { get; set; } = 1024;
-    public int SpeakingOutputTokenReserve { get; set; } = 4096;
     public int PageTranslationOutputTokenReserve { get; set; } = 4096;
     public AiMonthlyBudgetOptions MonthlyBudget { get; set; } = new();
 
@@ -20,7 +19,6 @@ public sealed class AiUsageOptions
             AiUsageFeatures.Assistant => AssistantOutputTokenReserve,
             AiUsageFeatures.JsonImportRepair => JsonImportRepairOutputTokenReserve,
             AiUsageFeatures.ImageExtraction => ImageExtractionOutputTokenReserve,
-            AiUsageFeatures.Speaking => SpeakingOutputTokenReserve,
             AiUsageFeatures.PageTranslation => PageTranslationOutputTokenReserve,
             _ => AssistantOutputTokenReserve,
         };
@@ -188,7 +186,6 @@ public static class AiUsageFeatures
     public const string Assistant = "assistant";
     public const string JsonImportRepair = "json_import_repair";
     public const string ImageExtraction = "image_extraction";
-    public const string Speaking = "speaking";
     public const string PageTranslation = "page_translation";
     public const string RealtimeTranslation = "realtime_translation";
 }

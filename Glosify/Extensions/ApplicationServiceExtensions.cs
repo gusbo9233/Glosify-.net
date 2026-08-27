@@ -6,14 +6,12 @@ using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Auth;
 using Glosify.Services.Books;
-using Glosify.Services.Classrooms;
 using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Flashcards;
 using Glosify.Services.Language;
 using Glosify.Services.Legal;
 using Glosify.Services.Quizzes;
 using Glosify.Services.RealtimeTranslation;
-using Glosify.Services.Speaking;
 using Glosify.Services.Speech;
 using Glosify.Services.Storage;
 using Glosify.Services.Typing;
@@ -113,24 +111,9 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IBookDocumentService, BookDocumentService>();
         services.AddSingleton<IBookPageTranslationCoordinator, BookPageTranslationCoordinator>();
         services.AddScoped<IBookPageTranslationService, BookPageTranslationService>();
-        // One classroom service per capability, all sharing the role checks in
-        // IClassroomAccess and the unchecked reads in ClassroomQueries.
-        services.AddScoped<ClassroomQueries>();
-        services.AddScoped<IClassroomAccess, ClassroomAccess>();
-        services.AddScoped<IClassroomDirectory, ClassroomDirectory>();
-        services.AddScoped<IClassroomRoster, ClassroomRoster>();
-        services.AddScoped<IClassroomLibrary, ClassroomLibrary>();
-        services.AddScoped<IClassroomConversation, ClassroomConversation>();
-        services.AddScoped<IClassroomPlanner, ClassroomPlanner>();
-        services.AddScoped<IClassroomResults, ClassroomResults>();
-        services.AddScoped<IClassroomCall, ClassroomCall>();
-        services.AddSingleton<IClassroomCallPresence, Glosify.Hubs.HubClassroomCallPresence>();
         services.AddScoped<IQuizAttemptService, QuizAttemptService>();
         services.AddScoped<ICustomQuizService, CustomQuizService>();
         services.AddSingleton<ICustomQuizTemplateCatalog, CustomQuizTemplateCatalog>();
-        services.Configure<Glosify.Services.Communication.AcsOptions>(
-            configuration.GetSection(Glosify.Services.Communication.AcsOptions.SectionName));
-        services.AddScoped<Glosify.Services.Communication.IAcsTokenService, Glosify.Services.Communication.AcsTokenService>();
         services.AddScoped<IAiCreditService, AiCreditService>();
         services.AddScoped<IStripePaymentService, StripePaymentService>();
         services.AddScoped<IPaidServiceGate, PaidServiceGate>();
@@ -221,10 +204,6 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
 
         services.Configure<SpeechOptions>(configuration.GetSection(SpeechOptions.SectionName));
-        services.AddOptions<SpeakingOptions>()
-            .Bind(configuration.GetSection(SpeakingOptions.SectionName))
-            .ValidateOnStart();
-        services.AddSingleton<IValidateOptions<SpeakingOptions>, SpeakingOptionsValidator>();
         services.AddSingleton<TokenCredential>(_ =>
             AzureCredentialFactory.Create(environment, configuration));
         services.AddSingleton<GlosifyBlobServiceClient>();
@@ -234,13 +213,7 @@ public static class ApplicationServiceExtensions
         services.AddHttpClient(nameof(AzureTextToSpeechService))
             .AddStandardResilienceHandler();
         services.AddScoped<ITextToSpeechService, AzureTextToSpeechService>();
-        services.AddScoped<ISpeechAuthorizationTokenService, SpeechAuthorizationTokenService>();
-        services.AddSingleton<ISpeakingAgentClient, OpenAiSpeakingAgentClient>();
         services.AddSingleton(TimeProvider.System);
-        services.AddSingleton<ISpeakingSessionStore, SpeakingSessionStore>();
-        services.AddHostedService<SpeakingSessionCleanupService>();
-        services.AddScoped<ISpeakingService, SpeakingService>();
-        services.AddScoped<ISpeakingQuizReader, SpeakingQuizReader>();
 
         return services;
     }

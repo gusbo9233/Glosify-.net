@@ -14,7 +14,7 @@ public interface ICustomQuizService
     Task<CustomQuizEditorDto> CreateAsync(SaveCustomQuizRequest request, string userId, CancellationToken cancellationToken = default);
     Task<CustomQuizEditorDto?> UpdateAsync(Guid id, SaveCustomQuizRequest request, string userId, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(Guid id, string userId, CancellationToken cancellationToken = default);
-    Task<CustomQuizPlayData?> GetForPlayAsync(Guid id, string userId, Guid? classroomId = null, CancellationToken cancellationToken = default);
+    Task<CustomQuizPlayData?> GetForPlayAsync(Guid id, string userId, CancellationToken cancellationToken = default);
     Task<CustomQuizGradeResult?> GradeAsync(Guid id, GradeCustomQuizRequest request, string userId, CancellationToken cancellationToken = default);
     Task PruneWordBindingsAsync(Guid quizId, IReadOnlyCollection<string> wordIds, CancellationToken cancellationToken = default);
     Task CloneForCopiedQuizAsync(Guid sourceQuizId, Guid targetQuizId, IReadOnlyDictionary<string, string> wordIdMap, CancellationToken cancellationToken = default);
@@ -31,5 +31,4 @@ public sealed record CustomQuizPlayData(
     string TargetLanguage,
     Guid AttemptId,
     CustomQuizDocumentV1 Document,
-    IReadOnlyDictionary<string, string> ResolvedValues,
-    Guid? ClassroomId);
+    IReadOnlyDictionary<string, string> ResolvedValues);

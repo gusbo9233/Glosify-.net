@@ -323,7 +323,7 @@ public sealed class CustomQuizServiceTests
     }
 
     [Fact]
-    public async Task Play_InheritsPublicAndClassroomAccess_ButDraftsRemainPrivate()
+    public async Task Play_InheritsPublicAccess_ButPrivateAndDraftQuizzesRemainUnavailable()
     {
         await using var db = CreateContext();
         var (quiz, word) = await SeedQuizAsync(db);
@@ -338,11 +338,8 @@ public sealed class CustomQuizServiceTests
         Assert.Null(await service.GetForPlayAsync(draft.Id!.Value, "learner"));
 
         quiz.IsPublic = false;
-        var classroomId = Guid.NewGuid();
-        db.ClassroomMemberships.Add(new ClassroomMembership { Id = Guid.NewGuid(), ClassroomId = classroomId, UserId = "learner" });
-        db.ClassroomContents.Add(new ClassroomContent { Id = Guid.NewGuid(), ClassroomId = classroomId, QuizId = quiz.Id, SharedByUserId = OwnerId, ContentType = ClassroomContentType.Quiz });
         await db.SaveChangesAsync();
-        Assert.NotNull(await service.GetForPlayAsync(playable.Id.Value, "learner", classroomId));
+        Assert.Null(await service.GetForPlayAsync(playable.Id.Value, "learner"));
     }
 
     [Fact]

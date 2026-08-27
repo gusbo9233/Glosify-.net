@@ -11,14 +11,14 @@ CQRS, or mediator layers over EF Core.
 Browser / Chrome extension
           |
           v
-ASP.NET Core MVC + APIs + SignalR
+ASP.NET Core MVC + APIs
           |
           +--> EF Core --> Azure SQL
           +--> OpenAI Responses API (gpt-5.6-luna)
           +--> OpenAI Realtime Translation (gpt-realtime-translate)
           +--> Azure Speech / Translator
           +--> ElevenLabs Scribe v2
-          +--> Azure Blob Storage / Communication Services
+          +--> Azure Blob Storage
           +--> Stripe
 ```
 
@@ -44,9 +44,9 @@ Every request:
 - maps throttling, upstream failures, timeouts, cancellation, and invalid output
   into the existing service exceptions and Problem Details behavior.
 
-Glosify retains all conversation history. Saved assistant turns and complete
-speaking turns are replayed manually; OpenAI-hosted conversation state is not
-used. Structured generation supplies strict JSON schemas. Image extraction sends
+Glosify retains saved assistant conversation history and replays it manually;
+OpenAI-hosted conversation state is not used. Structured generation supplies
+strict JSON schemas. Image extraction sends
 image input to the same fixed model.
 
 ## Assistant
@@ -69,21 +69,6 @@ changes; the user must apply or reject them. The historical pending-change
 staging table remains mapped so existing rows are not destroyed, but it is not a
 model callback or remote tool surface.
 
-## Speaking
-
-Azure Speech remains responsible for transcription, pronunciation assessment,
-voices, and text-to-speech. `OpenAiSpeakingAgentClient` handles only persona and
-coaching text with Luna.
-
-`SpeakingPromptCatalog` owns every persona instruction and strict reply schema.
-Each conversation retains complete turns locally. Bartender scene tools and tutor
-quiz tools are declared in code and run sequentially. Speaking keeps the
-five-iteration tool limit, the bartender's three-action limit, clone-and-commit
-transaction behavior, tutor ownership checks, and existing credit settlement.
-Speaking and the classroom surface, including classroom SignalR connections, are
-restricted to configured administrators in production while those features are
-under operational review. Development environments keep both surfaces available.
-
 ## Realtime subtitles
 
 Enhanced subtitles use a server-side WebSocket relay to the fixed URL:
@@ -105,11 +90,11 @@ transcripts. Glosify does not store tab audio.
 
 ## Data and accounting
 
-SQL Server stores Identity data, quizzes, books, classrooms, chats, transcripts,
-credit reservations, usage debits, and provider usage. New text/vision/speaking
-usage rows use provider `openai` and model `gpt-5.6-luna`; enhanced subtitle rows
+SQL Server stores Identity data, quizzes, books, chats, transcripts, credit
+reservations, usage debits, and provider usage. New text and vision usage rows
+use provider `openai` and model `gpt-5.6-luna`; enhanced subtitle rows
 use provider `openai` and model `gpt-realtime-translate`. Historical provider
-values remain valid database history.
+values, including rows from retired features, remain valid database history.
 
 The checked-in budget prices include the reviewed SEK conversion and 15% safety
 markup:

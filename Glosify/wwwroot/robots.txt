@@ -7,13 +7,11 @@ Disallow: /Account/
 Disallow: /Admin/
 Disallow: /api/
 Disallow: /Books/
-Disallow: /Classroom/
 Disallow: /CustomQuizzes/
 Disallow: /Explore/
 Disallow: /FlashcardQuiz/
 Disallow: /Quiz/
 Disallow: /Quizzes/
-Disallow: /Speaking/
 Disallow: /Transcripts/
 Disallow: /TypingQuiz/
 Allow: /

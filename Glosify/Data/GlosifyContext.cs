@@ -46,11 +46,6 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<BookPage> BookPages { get; set; }
     public DbSet<BookPageTranslation> BookPageTranslations { get; set; }
 
-    public DbSet<Classroom> Classrooms { get; set; }
-    public DbSet<ClassroomMembership> ClassroomMemberships { get; set; }
-    public DbSet<ClassroomInvitation> ClassroomInvitations { get; set; }
-    public DbSet<ClassroomContent> ClassroomContents { get; set; }
-    public DbSet<ClassroomMessage> ClassroomMessages { get; set; }
     public DbSet<QuizAttempt> QuizAttempts { get; set; }
     public DbSet<QuizAttemptItem> QuizAttemptItems { get; set; }
     public DbSet<AnkiCollection> AnkiCollections { get; set; }
@@ -59,9 +54,6 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<AnkiCard> AnkiCards { get; set; }
     public DbSet<AnkiReview> AnkiReviews { get; set; }
     public DbSet<CustomQuiz> CustomQuizzes { get; set; }
-    public DbSet<AcsUserIdentity> AcsUserIdentities { get; set; }
-    public DbSet<ClassroomLesson> ClassroomLessons { get; set; }
-    public DbSet<ClassroomAssignment> ClassroomAssignments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -109,20 +109,6 @@ public class QuizService : IQuizService
         var words = await _context.Words
             .Where(word => word.QuizId == quiz.Id)
             .ToListAsync(cancellationToken);
-        // Classroom share links reference quizzes with NoAction FKs, so they must
-        // go before the quiz row or SQL Server rejects the delete.
-        var classroomLinks = await _context.ClassroomContents
-            .Where(link => link.QuizId == quiz.Id)
-            .ToListAsync(cancellationToken);
-        // Assignments keep their row (title/instructions still matter) but lose
-        // the quiz reference, mirroring the assistant-thread context cleanup.
-        var assignments = await _context.ClassroomAssignments
-            .Where(assignment => assignment.QuizId == quiz.Id)
-            .ToListAsync(cancellationToken);
-        foreach (var assignment in assignments)
-        {
-            assignment.QuizId = null;
-        }
         var assistantThreads = await _context.AssistantThreads
             .Where(thread => thread.ContextQuizId == quiz.Id)
             .ToListAsync(cancellationToken);
@@ -141,7 +127,6 @@ public class QuizService : IQuizService
         }
 
         _context.Words.RemoveRange(words);
-        _context.ClassroomContents.RemoveRange(classroomLinks);
         _context.Quizzes.Remove(quiz);
 
         // Save reference cleanup and both deletions together so a constraint
@@ -216,30 +201,6 @@ public class QuizService : IQuizService
         }
 
         return await CopyQuizCoreAsync(source, userId, collectionId, cancellationToken);
-    }
-
-    public async Task<Quiz?> CopyClassroomQuizAsync(Guid id, Guid classroomId, string userId, CancellationToken cancellationToken = default)
-    {
-        var isMember = await _context.ClassroomMemberships
-            .AnyAsync(m => m.ClassroomId == classroomId && m.UserId == userId, cancellationToken);
-        var isShared = await _context.ClassroomContents
-            .AnyAsync(c => c.ClassroomId == classroomId && c.QuizId == id, cancellationToken);
-
-        if (!isMember || !isShared)
-        {
-            return null;
-        }
-
-        var source = await _context.Quizzes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
-
-        if (source == null)
-        {
-            return null;
-        }
-
-        return await CopyQuizCoreAsync(source, userId, collectionId: null, cancellationToken);
     }
 
     private async Task<Quiz> CopyQuizCoreAsync(Quiz source, string userId, Guid? collectionId, CancellationToken cancellationToken)
