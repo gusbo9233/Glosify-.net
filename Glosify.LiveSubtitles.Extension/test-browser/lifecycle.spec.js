@@ -231,7 +231,6 @@ async function launchHarness({
           `--disable-extensions-except=${extensionRoot}`,
           `--load-extension=${extensionRoot}`,
           "--autoplay-policy=no-user-gesture-required",
-          "--use-fake-ui-for-media-stream",
         ],
       })));
     const worker = context.serviceWorkers()[0]
