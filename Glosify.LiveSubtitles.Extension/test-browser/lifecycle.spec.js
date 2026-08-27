@@ -162,15 +162,15 @@ test("tab-capture profile streams real tab audio and renders the final caption",
   try {
     const page = await openAudioPage(harness);
     await page.getByRole("button", { name: "Play synthetic speech" }).click();
-    await page.bringToFront();
     await restoreTestState(harness.control);
-    const targetTabId = await activeTabId(harness.control);
+    const targetTabId = await tabIdForUrl(harness.control, page.url());
     const command = await harness.worker.evaluate(async () => (
       await chrome.commands.getAll()
     ).find(item => item.name === "test-start-tab-capture"));
     expect(command?.shortcut).toBe("Ctrl+Shift+8");
 
-    await pressNativeTabCaptureShortcut();
+    await page.bringToFront();
+    await pressNativeTabCaptureShortcut("Glosify tab capture test");
 
     await expect.poll(() => extensionState(harness.worker)).toMatchObject({
       active: true,
@@ -267,7 +267,7 @@ async function launchHarness({
   }
 }
 
-async function pressNativeTabCaptureShortcut() {
+async function pressNativeTabCaptureShortcut(windowTitle) {
   if (!process.env.DISPLAY) {
     throw new Error("The real tab-capture gate requires an X11 DISPLAY.");
   }
@@ -276,8 +276,8 @@ async function pressNativeTabCaptureShortcut() {
     ({ stdout: browserWindows } = await execFileAsync("xdotool", [
       "search",
       "--onlyvisible",
-      "--class",
-      "[Cc]hrom(e|ium)",
+      "--name",
+      windowTitle,
     ], { encoding: "utf8" }));
   } catch (error) {
     throw new Error(
@@ -312,11 +312,14 @@ async function restoreTestState(control) {
   expect(restored.ok, JSON.stringify(restored)).toBe(true);
 }
 
-async function activeTabId(control) {
-  return control.evaluate(async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    return tab.id;
-  });
+async function tabIdForUrl(control, url) {
+  return control.evaluate(async expectedUrl => {
+    const tabs = await chrome.tabs.query({ url: expectedUrl });
+    if (tabs.length !== 1 || !tabs[0].id) {
+      throw new Error(`Expected one browser-test tab for ${expectedUrl}; found ${tabs.length}.`);
+    }
+    return tabs[0].id;
+  }, url);
 }
 
 async function extensionState(worker) {
@@ -358,7 +361,7 @@ async function startMockGlosify({ createDelayMs = 0, finalCaption } = {}) {
     const url = new URL(request.url, "http://127.0.0.1");
     if (url.pathname === "/audio" || url.pathname.startsWith("/audio/") || url.pathname === "/next") {
       response.writeHead(200, { "Content-Type": "text/html" });
-      response.end(`<!doctype html><button>Play synthetic speech</button><script>
+      response.end(`<!doctype html><title>Glosify tab capture test</title><button>Play synthetic speech</button><script>
         document.querySelector('button').onclick = async () => {
           const context = new AudioContext();
           const oscillator = context.createOscillator();
