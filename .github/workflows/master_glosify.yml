@@ -56,6 +56,7 @@ jobs:
 
       - name: Verify database migrations from empty SQL Server
         run: |
+          dotnet ef database update 20260827093000_PrepareClassroomRetirement --project Glosify/Glosify.csproj --configuration Release --no-build
           dotnet ef database update --project Glosify/Glosify.csproj --configuration Release --no-build
           dotnet ef migrations has-pending-model-changes --project Glosify/Glosify.csproj --configuration Release --no-build
 
@@ -190,6 +191,45 @@ jobs:
           fi
           unset openai_key
 
+      - name: Read retirement compatibility state
+        id: retirement-compatibility
+        shell: bash
+        run: |
+          prepared="$(az sql db show \
+            --resource-group glosify \
+            --server glosify \
+            --name glosifydb \
+            --query "tags.classroomRetirementPrepared" \
+            --output tsv)"
+          if [[ "$prepared" == "true" ]]; then
+            echo "prepared=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prepared=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Detach only references from retired tables into retained data. Both the
+      # previous and replacement artifacts can run on this compatibility schema.
+      - name: Prepare schema for artifact replacement
+        if: steps.retirement-compatibility.outputs.prepared != 'true'
+        env:
+          PRODUCTION_SQL_CONNECTION_STRING: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
+          ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
+        run: |
+          chmod +x migration/efbundle
+          migration/efbundle 20260827093000_PrepareClassroomRetirement --connection "$PRODUCTION_SQL_CONNECTION_STRING"
+
+      # This durable marker prevents a later workflow rerun from targeting the
+      # compatibility migration after the destructive migration is already applied.
+      - name: Record retirement compatibility state
+        if: steps.retirement-compatibility.outputs.prepared != 'true'
+        run: >-
+          az sql db update
+          --resource-group glosify
+          --server glosify
+          --name glosifydb
+          --set tags.classroomRetirementPrepared=true
+          --output none
+
       - name: Deploy Azure Web App
         uses: azure/webapps-deploy@v3
         with:
@@ -197,23 +237,21 @@ jobs:
           slot-name: Production
           package: app
 
-      - name: Verify replacement artifact health
+      - name: Verify replacement artifact readiness
         shell: bash
         run: |
           for attempt in {1..30}; do
-            if curl --fail --silent https://glosify-app.azurewebsites.net/healthz > /dev/null; then
+            if curl --fail --silent https://glosify-app.azurewebsites.net/readyz > /dev/null; then
               break
             fi
             sleep 10
           done
-          curl --fail https://glosify-app.azurewebsites.net/healthz
+          curl --fail https://glosify-app.azurewebsites.net/readyz
 
-      # The replacement artifact ignores the retired nullable column and extra
-      # tables, so it is safe on the old schema. Applying the destructive migration
-      # only after that artifact is healthy prevents the previous artifact from
-      # running against a schema it cannot read. Authenticated retired-route 404s
-      # are covered by the integration suite; anonymous production probes are
-      # challenged by the fallback authorization policy and cannot prove absence.
+      # Apply the destructive migration only after the replacement artifact is
+      # ready on the compatibility schema. Authenticated retired-route 404s are
+      # covered by the integration suite; anonymous production probes are challenged
+      # by the fallback authorization policy and cannot prove absence.
       - name: Apply reviewed database migrations
         env:
           PRODUCTION_SQL_CONNECTION_STRING: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
@@ -222,16 +260,25 @@ jobs:
           chmod +x migration/efbundle
           migration/efbundle --connection "$PRODUCTION_SQL_CONNECTION_STRING"
 
+      - name: Record retirement migration completion
+        run: >-
+          az sql db update
+          --resource-group glosify
+          --server glosify
+          --name glosifydb
+          --set tags.classroomRetirementComplete=true
+          --output none
+
       - name: Verify health after database migration
         shell: bash
         run: |
           for attempt in {1..30}; do
-            if curl --fail --silent https://glosify-app.azurewebsites.net/healthz > /dev/null; then
+            if curl --fail --silent https://glosify-app.azurewebsites.net/readyz > /dev/null; then
               exit 0
             fi
             sleep 10
           done
-          curl --fail https://glosify-app.azurewebsites.net/healthz
+          curl --fail https://glosify-app.azurewebsites.net/readyz
 
       # Remove these only after the replacement artifact is healthy. The prior
       # production artifact still needs its retired feature settings during rollout.
@@ -286,9 +333,9 @@ jobs:
         shell: bash
         run: |
           for attempt in {1..30}; do
-            if curl --fail --silent https://glosify-app.azurewebsites.net/healthz > /dev/null; then
+            if curl --fail --silent https://glosify-app.azurewebsites.net/readyz > /dev/null; then
               exit 0
             fi
             sleep 10
           done
-          curl --fail https://glosify-app.azurewebsites.net/healthz
+          curl --fail https://glosify-app.azurewebsites.net/readyz

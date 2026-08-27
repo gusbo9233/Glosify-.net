@@ -68,12 +68,6 @@ namespace Glosify.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AcsUserIdentities", x => x.UserId);
-                    table.ForeignKey(
-                        name: "FK_AcsUserIdentities_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -94,12 +88,6 @@ namespace Glosify.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Classrooms", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Classrooms_AspNetUsers_OwnerUserId",
-                        column: x => x.OwnerUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -119,26 +107,11 @@ namespace Glosify.Migrations
                 {
                     table.PrimaryKey("PK_ClassroomContents", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ClassroomContents_AspNetUsers_SharedByUserId",
-                        column: x => x.SharedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_ClassroomContents_BookDocuments_BookDocumentId",
-                        column: x => x.BookDocumentId,
-                        principalTable: "BookDocuments",
-                        principalColumn: "Id");
-                    table.ForeignKey(
                         name: "FK_ClassroomContents_Classrooms_ClassroomId",
                         column: x => x.ClassroomId,
                         principalTable: "Classrooms",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ClassroomContents_Quizzes_QuizId",
-                        column: x => x.QuizId,
-                        principalTable: "Quizzes",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -157,11 +130,6 @@ namespace Glosify.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ClassroomInvitations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ClassroomInvitations_AspNetUsers_InvitedByUserId",
-                        column: x => x.InvitedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ClassroomInvitations_Classrooms_ClassroomId",
                         column: x => x.ClassroomId,
@@ -186,11 +154,6 @@ namespace Glosify.Migrations
                 {
                     table.PrimaryKey("PK_ClassroomLessons", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ClassroomLessons_AspNetUsers_CreatedByUserId",
-                        column: x => x.CreatedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id");
-                    table.ForeignKey(
                         name: "FK_ClassroomLessons_Classrooms_ClassroomId",
                         column: x => x.ClassroomId,
                         principalTable: "Classrooms",
@@ -212,11 +175,6 @@ namespace Glosify.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ClassroomMemberships", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_ClassroomMemberships_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ClassroomMemberships_Classrooms_ClassroomId",
                         column: x => x.ClassroomId,
@@ -243,11 +201,6 @@ namespace Glosify.Migrations
                 {
                     table.PrimaryKey("PK_ClassroomMessages", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ClassroomMessages_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id");
-                    table.ForeignKey(
                         name: "FK_ClassroomMessages_Classrooms_ClassroomId",
                         column: x => x.ClassroomId,
                         principalTable: "Classrooms",
@@ -273,11 +226,6 @@ namespace Glosify.Migrations
                 {
                     table.PrimaryKey("PK_ClassroomAssignments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ClassroomAssignments_AspNetUsers_CreatedByUserId",
-                        column: x => x.CreatedByUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id");
-                    table.ForeignKey(
                         name: "FK_ClassroomAssignments_ClassroomLessons_LessonId",
                         column: x => x.LessonId,
                         principalTable: "ClassroomLessons",
@@ -288,11 +236,6 @@ namespace Glosify.Migrations
                         principalTable: "Classrooms",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ClassroomAssignments_Quizzes_QuizId",
-                        column: x => x.QuizId,
-                        principalTable: "Quizzes",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(

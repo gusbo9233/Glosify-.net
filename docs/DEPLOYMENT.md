@@ -9,9 +9,9 @@ to avoid feedback on unfinished work.
 Copilot review is advisory: its comments do not count as an approval, replace
 CI, or establish that a finding is correct. Validate its findings against the
 current code, tests, migrations, configuration, and applicable primary
-documentation. A reviewed push to `master` deploys and health-checks the
-replacement application, then applies the reviewed EF migration bundle and
-checks health again.
+documentation. A reviewed push to `master` applies a compatibility migration,
+deploys and readiness-checks the replacement application, then applies the
+destructive EF migration and checks readiness again.
 
 ## Required App Service settings
 
@@ -124,15 +124,22 @@ dotnet ef migrations has-pending-model-changes --project Glosify
 dotnet ef migrations bundle --project Glosify --configuration Release
 ```
 
-The workflow deploys the replacement artifact before applying the reviewed
-bundle. The new artifact tolerates the retired nullable column and extra tables,
-while the previous artifact is incompatible with their removal; this order
-prevents old code from serving traffic against the new schema. Migration
-`20260827095613_RemoveSpeakingAndClassrooms` is intentionally destructive: it
-drops `AcsUserIdentities`, all `Classroom*` tables, and only the retired
-`QuizAttempts.ClassroomId` foreign key, index, and column. It preserves
-`QuizAttempts`, `QuizAttemptItems`, Identity, quizzes, books, assistant data,
-credits, and provider-usage history. Historical migrations must remain unchanged.
+The workflow first targets migration
+`20260827093000_PrepareClassroomRetirement`, which detaches foreign keys from
+retired tables into retained Identity, quiz, and book tables without deleting
+data. Both the previous and replacement artifacts remain functional on that
+compatibility schema. After the replacement artifact passes `/readyz`, the
+workflow applies migration `20260827095613_RemoveSpeakingAndClassrooms`. That
+migration is intentionally destructive: it drops `AcsUserIdentities`, all
+`Classroom*` tables, and only the retired `QuizAttempts.ClassroomId` foreign key,
+index, and column. It preserves `QuizAttempts`, `QuizAttemptItems`, Identity,
+quizzes, books, assistant data, credits, and provider-usage history. Historical
+migrations must remain unchanged.
+
+The workflow records `classroomRetirementPrepared=true` and
+`classroomRetirementComplete=true` as tags on the Azure SQL database resource.
+The prepared tag prevents a rerun or later deployment from targeting the
+compatibility migration after the destructive migration has already completed.
 
 ### Required retirement BACPAC
 
