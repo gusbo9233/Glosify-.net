@@ -35,7 +35,7 @@ public sealed class ClassroomCallController : ClassroomControllerBase
         try
         {
             var entry = await _call.GetEntryAsync(id, User.GetUserId(), cancellationToken);
-            ViewData["HideAssistantPanel"] = true;
+            ViewData.HideAssistantPanel();
             return View(new ClassroomCallViewModel
             {
                 Classroom = entry.Classroom,

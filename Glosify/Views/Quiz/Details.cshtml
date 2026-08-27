@@ -3,11 +3,14 @@
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Model.SelectedQuiz.Name;
     ViewData["ActiveNav"] = "quizzes";
-    ViewData["AssistantQuizId"] = Model.SelectedQuiz.Id;
-    ViewData["AssistantContextLabel"] = Model.SelectedQuiz.Name;
     var isFreestyle = Model.SelectedQuiz.IsFreestyle;
-    ViewData["AssistantEmptyText"] = isFreestyle ? "Ask for study items, explanations, or quiz ideas." : Text["Quiz.AssistantEmpty"];
-    ViewData["AssistantPlaceholder"] = isFreestyle ? "Ask about this subject or request quiz changes…" : Text["Quiz.AssistantPlaceholder"];
+    ViewData.SetAssistantPageContext(new AssistantPageContext
+    {
+        QuizId = Model.SelectedQuiz.Id,
+        ContextLabel = Model.SelectedQuiz.Name,
+        EmptyText = isFreestyle ? "Ask for study items, explanations, or quiz ideas." : Text["Quiz.AssistantEmpty"],
+        Placeholder = isFreestyle ? "Ask about this subject or request quiz changes…" : Text["Quiz.AssistantPlaceholder"]
+    });
     var itemLabel = isFreestyle ? "Items" : Text["Settings.Words"].Value;
     var itemLabelLower = isFreestyle ? "items" : Text["Settings.WordsLower"].Value;
 }

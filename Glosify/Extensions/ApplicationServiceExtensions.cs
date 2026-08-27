@@ -188,6 +188,7 @@ public static class ApplicationServiceExtensions
         services.AddAssistantTools();
         services.AddScoped<IChangeApplier, ChangeApplier>();
         services.AddScoped<AssistantContextResolver>();
+        services.AddScoped<AssistantContextOptionsProvider>();
         services.AddScoped<AssistantMessagePresenter>();
         services.AddScoped<AssistantPromptBuilder>();
         services.AddSingleton<AssistantIntentResolver>();

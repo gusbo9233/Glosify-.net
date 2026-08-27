@@ -7,6 +7,14 @@ export const normalizeLanguageSearch = value => String(value || '')
 export const languageMatches = (searchTerms, query) =>
     normalizeLanguageSearch(searchTerms).includes(normalizeLanguageSearch(query));
 
+export const formatLanguageCount = (template, count, oneTemplate = template) => {
+    const value = String(count);
+    const localizedTemplate = String((count === 1 ? oneTemplate : template) || '');
+    return localizedTemplate.includes('{0}')
+        ? localizedTemplate.replace('{0}', value)
+        : value;
+};
+
 (() => {
     'use strict';
 
@@ -18,6 +26,8 @@ export const languageMatches = (searchTerms, query) =>
     const cards = Array.from(picker.querySelectorAll('[data-language-card]'));
     const count = picker.querySelector('[data-language-result-count]');
     const empty = picker.querySelector('[data-language-empty]');
+    const countTemplate = picker.dataset.languageCountTemplate;
+    const countOneTemplate = picker.dataset.languageCountOneTemplate;
     if (!search || cards.length === 0) return;
 
     const indexedCards = cards.map(card => ({
@@ -34,7 +44,7 @@ export const languageMatches = (searchTerms, query) =>
             if (matches) visible += 1;
         }
 
-        if (count) count.textContent = `${visible} ${visible === 1 ? 'language' : 'languages'}`;
+        if (count) count.textContent = formatLanguageCount(countTemplate, visible, countOneTemplate);
         if (empty) empty.hidden = visible !== 0;
     };
 

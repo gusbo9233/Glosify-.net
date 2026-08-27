@@ -116,13 +116,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         var noJavaScriptPage = await noJavaScriptContext.NewPageAsync();
         await noJavaScriptPage.GotoAsync("/Languages?returnUrl=%2FQuizzes");
         await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Serbian (Latin)", Exact = true })
-            .ClickAsync(new LocatorClickOptions
-            {
-                // The fixed assistant button occupies the card's lower-right corner on a
-                // narrow viewport. Click the card's left side so this still exercises the
-                // native no-JavaScript form submission without racing that unrelated overlay.
-                Position = new Position { X = 20, Y = 20 },
-            });
+            .PressAsync("Enter");
         await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
     }
 
@@ -157,10 +151,126 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await CreateQuizWithWordAsync();
 
         await Page.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("Start Quiz", RegexOptions.IgnoreCase) }).ClickAsync();
+        var reverseDirection = Page.Locator("label.choice").Filter(new()
+        {
+            Has = Page.Locator("input[name='PracticeDirection'][value='target-to-source']"),
+        });
+        await reverseDirection.ClickAsync();
+        await Expect(reverseDirection.Locator("input")).ToBeCheckedAsync();
         await Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Start Quiz", RegexOptions.IgnoreCase) }).ClickAsync();
 
         await Expect(Page).ToHaveURLAsync(new Regex("/FlashcardQuiz", RegexOptions.IgnoreCase));
         await Expect(Page.Locator("[data-flashcard-session]")).ToBeVisibleAsync();
+        var revealForm = Page.Locator("[data-card-reveal-form]");
+        var revealButton = revealForm.Locator(":scope > .flashcard-clickable");
+        var pronunciationButton = revealForm.Locator(":scope > button[data-tts]");
+        await Expect(revealButton).ToBeVisibleAsync();
+        await Expect(revealButton.Locator("[data-tts]")).ToHaveCountAsync(0);
+        await Expect(pronunciationButton).ToBeVisibleAsync();
+        await Expect(pronunciationButton).ToHaveAttributeAsync("aria-pressed", "false");
+        await pronunciationButton.FocusAsync();
+        await Expect(pronunciationButton).ToBeFocusedAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Browser")]
+    public async Task QuizDialogTrapsFocusClosesWithEscapeAndRestoresItsTrigger()
+    {
+        if (BaseUrl is null) return;
+
+        await RegisterAndSelectPolishAsync();
+        var assistantToggle = Page.Locator("[data-assistant-toggle]");
+        var assistantWindow = Page.Locator("[data-assistant-window]");
+        await assistantToggle.ClickAsync();
+        await Expect(assistantWindow).ToBeVisibleAsync();
+
+        var trigger = Page.GetByRole(AriaRole.Button, new() { Name = "New Collection", Exact = true });
+        await trigger.FocusAsync();
+        await trigger.PressAsync("Enter");
+
+        var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Create New Collection", Exact = true });
+        var name = dialog.GetByLabel("Collection Name", new() { Exact = true });
+        var create = dialog.GetByRole(AriaRole.Button, new() { Name = "Create Collection", Exact = true });
+        await Expect(dialog).ToBeVisibleAsync();
+        await Expect(name).ToBeFocusedAsync();
+
+        await Page.Keyboard.PressAsync("Shift+Tab");
+        await Expect(create).ToBeFocusedAsync();
+        await Page.Keyboard.PressAsync("Tab");
+        await Expect(name).ToBeFocusedAsync();
+
+        await Page.Keyboard.PressAsync("Escape");
+        await Expect(dialog).ToBeHiddenAsync();
+        await Expect(assistantWindow).ToBeVisibleAsync();
+        await Expect(assistantToggle).ToHaveAttributeAsync("aria-expanded", "true");
+        await Expect(trigger).ToBeFocusedAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Browser")]
+    public async Task QuizDropRecoversFromHttpAndNetworkFailures()
+    {
+        if (BaseUrl is null) return;
+
+        await RegisterAndSelectPolishAsync();
+        await Page.GetByRole(AriaRole.Button, new() { Name = "New Collection", Exact = true }).ClickAsync();
+        await Page.GetByLabel("Collection Name", new() { Exact = true }).FillAsync("Drop target");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Create Collection", Exact = true }).Last.ClickAsync();
+
+        await Page.GotoAsync("/Quizzes");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "New Quiz", Exact = true }).ClickAsync();
+        await Page.GetByLabel("Quiz Name", new() { Exact = true }).FillAsync("Movable quiz");
+        await Page.GetByLabel("Source Language", new() { Exact = true })
+            .SelectOptionAsync(new SelectOptionValue { Label = "English" });
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Create Quiz", Exact = true }).Last.ClickAsync();
+        await Page.GotoAsync("/Quizzes");
+
+        var attempts = 0;
+        string? moveRequestUrl = null;
+        await Page.RouteAsync("**/*", async route =>
+        {
+            if (!string.Equals(route.Request.Method, "POST", StringComparison.OrdinalIgnoreCase))
+            {
+                await route.FallbackAsync();
+                return;
+            }
+
+            attempts++;
+            moveRequestUrl = route.Request.Url;
+            if (attempts == 1)
+            {
+                await route.FulfillAsync(new RouteFulfillOptions
+                {
+                    Status = 503,
+                    ContentType = "application/problem+json",
+                    Body = "{\"detail\":\"Moving is temporarily unavailable.\"}",
+                });
+                return;
+            }
+
+            await route.AbortAsync();
+        });
+
+        var card = Page.Locator("[data-quiz-card]").Filter(new() { HasText = "Movable quiz" });
+        var target = Page.Locator("[data-collection-drop-target]").Filter(new() { HasText = "Drop target" });
+        var message = Page.Locator("[data-quiz-library-message]");
+
+        async Task DropQuizAsync()
+        {
+            var quizId = await card.GetAttributeAsync("data-quiz-id");
+            await target.EvaluateAsync("(element, id) => { const data = new DataTransfer(); data.setData('text/plain', id); element.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: data })); }", quizId);
+        }
+
+        await DropQuizAsync();
+        await Expect(message).ToContainTextAsync("Moving is temporarily unavailable.");
+        Assert.Contains("MoveQuizToCollection", moveRequestUrl, StringComparison.OrdinalIgnoreCase);
+        await Expect(target).Not.ToHaveClassAsync(new Regex("is-drop-saving"));
+
+        await message.EvaluateAsync("element => { element.hidden = true; element.textContent = ''; }");
+        await DropQuizAsync();
+        await Expect(message).ToContainTextAsync("Could not move that quiz.");
+        await Expect(message).ToBeVisibleAsync();
+        await Expect(target).Not.ToHaveClassAsync(new Regex("is-drop-saving"));
     }
 
     [Fact]

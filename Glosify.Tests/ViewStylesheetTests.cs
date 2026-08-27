@@ -15,6 +15,7 @@ public sealed class ViewStylesheetTests
     private static readonly (string RootClass, string Stylesheet)[] PageStylesheets =
     [
         ("library-page", "css/quiz-library.css"),
+        ("anki-settings-panel", "css/quiz-settings.css"),
     ];
 
     [Fact]

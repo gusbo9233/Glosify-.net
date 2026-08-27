@@ -1,4 +1,5 @@
 using Glosify.Extensions;
+using Glosify.Localization;
 using Glosify.Models.CustomQuizzes;
 using Glosify.Models.ViewModels;
 using Glosify.Services.CustomQuizzes;
@@ -16,6 +17,7 @@ public sealed class CustomQuizController : Controller
     private readonly ICustomQuizTemplateCatalog _templates;
     private readonly IQuizService _quizzes;
     private readonly IWordService _words;
+    private readonly UiTextStringLocalizer _text = new();
 
     public CustomQuizController(ICustomQuizService customQuizzes, ICustomQuizTemplateCatalog templates, IQuizService quizzes, IWordService words)
     {
@@ -137,7 +139,9 @@ public sealed class CustomQuizController : Controller
     public async Task<IActionResult> Play(Guid id, Guid? classroomId, CancellationToken cancellationToken)
     {
         var play = await _customQuizzes.GetForPlayAsync(id, User.GetUserId(), classroomId, cancellationToken);
-        return play == null ? NotFound() : View(new CustomQuizPlayViewModel { Play = play });
+        return play == null
+            ? NotFound()
+            : View(CustomQuizPlayViewModel.Create(play, _text["Custom.Answer"].Value));
     }
 
     [HttpPost("/CustomQuizzes/{id:guid}/Grade")]

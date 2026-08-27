@@ -1,9 +1,30 @@
 namespace Glosify.Models.ViewModels;
 
 /// <summary>
-/// What the page being rendered knows about the assistant's context. Supplied by the
-/// layout from ViewData; everything else the panel shows is loaded by
-/// <see cref="Glosify.ViewComponents.AssistantPanelViewComponent"/>.
+/// The assistant context owned by an individual Razor page. Keeping this as one typed
+/// value avoids the layout having to interpret a collection of unrelated string keys.
+/// </summary>
+public sealed class AssistantPageContext
+{
+    public bool IsHidden { get; init; }
+    public Guid? QuizId { get; init; }
+    public string? FocusedWordId { get; init; }
+    public Guid? DocumentId { get; init; }
+    public int? CurrentPage { get; init; }
+    public Guid? CustomQuizId { get; init; }
+    public Guid? TranscriptId { get; init; }
+    public int? TranscriptPage { get; init; }
+    public string? TranscriptStream { get; init; }
+    public string? Title { get; init; }
+    public string? ContextLabel { get; init; }
+    public string? EmptyText { get; init; }
+    public string? Placeholder { get; init; }
+
+    public static AssistantPageContext Hidden { get; } = new() { IsHidden = true };
+}
+
+/// <summary>
+/// The resolved, display-ready settings rendered by the assistant panel.
 /// </summary>
 public class AssistantPanelViewModel
 {
@@ -28,26 +49,19 @@ public class AssistantPanelViewModel
 }
 
 /// <summary>
-/// Everything the assistant panel renders: the page's context plus the picker options
-/// loaded for it. The options are projections, not entities, so the view cannot reach
-/// past what it is meant to show and trigger further loading.
+/// Everything the assistant panel shell renders. Picker options are requested only when
+/// the user opens the panel, so ordinary page requests do no assistant-library work.
 /// </summary>
 public sealed class AssistantPanelContentViewModel
 {
     public required AssistantPanelViewModel Panel { get; init; }
-    public IReadOnlyList<AssistantQuizOption> Quizzes { get; init; } = [];
-    public IReadOnlyList<AssistantMaterialOption> Books { get; init; } = [];
-    public IReadOnlyList<AssistantMaterialOption> Transcripts { get; init; } = [];
-
-    /// <summary>
-    /// The material picker carries books and transcripts in one control, so the option
-    /// value encodes which kind it is. Matches the parsing in wwwroot/js/assistant.js.
-    /// </summary>
-    public string SelectedMaterial =>
-        Panel.TranscriptId.HasValue ? $"transcript:{Panel.TranscriptId}"
-        : Panel.DocumentId.HasValue ? $"book:{Panel.DocumentId}"
-        : string.Empty;
+    public required string ContextOptionsUrl { get; init; }
 }
+
+public sealed record AssistantContextOptions(
+    IReadOnlyList<AssistantQuizOption> Quizzes,
+    IReadOnlyList<AssistantMaterialOption> Books,
+    IReadOnlyList<AssistantMaterialOption> Transcripts);
 
 public sealed record AssistantQuizOption(
     Guid Id,

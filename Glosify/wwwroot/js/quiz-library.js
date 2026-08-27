@@ -8,6 +8,26 @@
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
     const quizCards = library.querySelectorAll('[data-quiz-card]');
     const dropTargets = library.querySelectorAll('[data-collection-drop-target]');
+    const pageMessage = library.querySelector('[data-quiz-library-message]');
+    const movingQuizIds = new Set();
+
+    const showMoveError = (message) => {
+        if (!pageMessage) {
+            return;
+        }
+
+        pageMessage.textContent = message || 'Could not move that quiz.';
+        pageMessage.hidden = false;
+    };
+
+    const responseError = async (response) => {
+        try {
+            const payload = await response.json();
+            return payload.error || payload.detail;
+        } catch {
+            return null;
+        }
+    };
 
     const createDragImage = (card) => {
         const title = card.querySelector('.quiz-name')?.textContent?.trim() || 'Quiz';
@@ -70,6 +90,10 @@
                 return;
             }
 
+            if (target.classList.contains('is-drop-saving') || movingQuizIds.has(quizId)) {
+                return;
+            }
+
             const formData = new FormData();
             formData.append('quizId', quizId);
             formData.append('collectionId', collectionId);
@@ -78,24 +102,30 @@
             }
 
             target.classList.add('is-drop-saving');
+            movingQuizIds.add(quizId);
+            library.setAttribute('aria-busy', 'true');
 
-            const response = await fetch(moveUrl, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+            try {
+                const response = await fetch(moveUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    showMoveError(await responseError(response));
+                    return;
                 }
-            });
 
-            if (response.ok) {
                 window.location.reload();
-                return;
-            }
-
-            target.classList.remove('is-drop-saving');
-            const pageMessage = document.querySelector('.page-message');
-            if (pageMessage) {
-                pageMessage.textContent = 'Could not move that quiz.';
+            } catch {
+                showMoveError();
+            } finally {
+                target.classList.remove('is-drop-saving');
+                movingQuizIds.delete(quizId);
+                library.setAttribute('aria-busy', String(movingQuizIds.size > 0));
             }
         });
     });

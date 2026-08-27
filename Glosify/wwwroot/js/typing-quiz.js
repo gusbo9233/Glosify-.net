@@ -9,6 +9,8 @@
         incorrect: Number(shell.dataset.incorrectCount) || 0,
         total: Number(shell.dataset.totalWords) || 0,
         checked: false,
+        submitting: false,
+        sessionExpired: false,
         nextWord: null,
         isComplete: shell.dataset.isComplete === 'true',
         itemPluralLabel: shell.dataset.itemPluralLabel || 'words',
@@ -32,6 +34,19 @@
     const results = shell.querySelector('[data-results]');
     const practiceIncorrect = shell.querySelector('[data-practice-incorrect]');
     const token = form?.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+
+    const setSubmitting = submitting => {
+        state.submitting = submitting;
+        form?.setAttribute('aria-busy', submitting ? 'true' : 'false');
+        checkButton.disabled = submitting || state.sessionExpired;
+
+        if (submitting) {
+            input.disabled = true;
+        } else if (!state.checked && !state.sessionExpired) {
+            input.disabled = false;
+            input.focus();
+        }
+    };
 
     const updateProgress = () => {
         if (!state.total) return;
@@ -94,6 +109,7 @@
                 || problem?.code === 'gone'
                 || response.status === 401
                 || response.status === 410;
+            state.sessionExpired = expired;
             feedback.textContent = expired
                 ? t('Client.SessionExpired', 'Session expired. Restart the quiz to continue.')
                 : t('Client.CheckFailed', 'Could not check your answer. Please try again.');
@@ -167,15 +183,32 @@
         });
     }
 
-    form?.addEventListener('submit', event => {
+    form?.addEventListener('submit', async event => {
         event.preventDefault();
+        if (state.submitting) {
+            return;
+        }
+
         if (state.checked) {
+            // Keep the same submit control disabled through the browser's next paint.
+            // Otherwise the second click of a double-click lands on the newly rendered
+            // word and submits its still-empty answer.
+            setSubmitting(true);
             nextWord();
-        } else {
-            checkAnswer().catch(() => {
+            window.requestAnimationFrame(() => setSubmitting(false));
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            await checkAnswer();
+        } catch {
+            if (!state.sessionExpired) {
                 feedback.textContent = t('Client.CheckFailed', 'Could not check that answer. Try again.');
                 feedback.className = 'typing-feedback is-incorrect';
-            });
+            }
+        } finally {
+            setSubmitting(false);
         }
     });
 

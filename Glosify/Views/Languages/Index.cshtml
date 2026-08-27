@@ -9,7 +9,11 @@
     var currentDisplay = QuizLanguageDisplay.Name(current);
 }
 
-<section class="language-page" data-language-picker data-language-count="@languages.Count">
+<section class="language-page"
+         data-language-picker
+         data-language-count="@languages.Count"
+         data-language-count-template="@Text["Languages.ModeCount"].Value"
+         data-language-count-one-template="@Text["Languages.ModeCountOne"].Value">
     <header class="language-hero">
         <h1 class="language-brand">@Text["Languages.ModeTitle"]</h1>
         <h2 class="language-tagline">

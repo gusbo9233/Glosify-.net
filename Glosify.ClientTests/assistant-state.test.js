@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chooseInitialChat, createRecoverablePromiseQueue, materialPayload, removeChat, replaceChat, upsertChat } from '../Glosify/wwwroot/js/assistant/state.js';
+import { chooseInitialChat, createRecoverablePromiseQueue, createRecoverableSingleFlight, materialPayload, removeChat, replaceChat, upsertChat } from '../Glosify/wwwroot/js/assistant/state.js';
 
 test('material context is all-or-nothing', () => {
     assert.deepEqual(materialPayload('book', 'book-1'), { contextTranscriptId: null, contextBookDocumentId: 'book-1' });
@@ -43,4 +43,27 @@ test('context writes run in invocation order and continue after failure', async 
     assert.deepEqual(writes, ['first', 'second', 'third']);
     assert.deepEqual(results.map(result => result.status), ['fulfilled', 'rejected', 'fulfilled']);
     assert.deepEqual(stored, { contextQuizId: 'third', contextBookDocumentId: 'book-3' });
+});
+
+test('single-flight initialization shares concurrent work and retries a failure', async () => {
+    let attempts = 0;
+    let rejectFirst;
+    const firstAttempt = new Promise((_, reject) => { rejectFirst = reject; });
+    const initialize = createRecoverableSingleFlight(() => {
+        attempts += 1;
+        return attempts === 1 ? firstAttempt : Promise.resolve('ready');
+    });
+
+    const first = initialize();
+    const duplicate = initialize();
+    assert.equal(first, duplicate);
+    assert.equal(attempts, 0);
+
+    await Promise.resolve();
+    assert.equal(attempts, 1);
+    rejectFirst(new Error('temporary failure'));
+    await assert.rejects(first, /temporary failure/);
+
+    assert.equal(await initialize(), 'ready');
+    assert.equal(attempts, 2);
 });

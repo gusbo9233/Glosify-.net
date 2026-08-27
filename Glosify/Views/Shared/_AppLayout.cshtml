@@ -16,6 +16,22 @@
         || (await AuthorizationService.AuthorizeAsync(
             User,
             AuthorizationPolicyNames.ClassroomAvailability)).Succeeded;
+    var assistantPageContext = ViewData.GetAssistantPageContext();
+    var assistantPanel = new AssistantPanelViewModel
+    {
+        QuizId = assistantPageContext?.QuizId,
+        FocusedWordId = assistantPageContext?.FocusedWordId,
+        DocumentId = assistantPageContext?.DocumentId,
+        CurrentPage = assistantPageContext?.CurrentPage,
+        CustomQuizId = assistantPageContext?.CustomQuizId,
+        TranscriptId = assistantPageContext?.TranscriptId,
+        TranscriptPage = assistantPageContext?.TranscriptPage,
+        TranscriptStream = assistantPageContext?.TranscriptStream,
+        Title = assistantPageContext?.Title ?? Text["Assistant.Title"],
+        ContextLabel = assistantPageContext?.ContextLabel ?? "Glosify",
+        EmptyText = assistantPageContext?.EmptyText ?? Text["Assistant.Empty"],
+        Placeholder = assistantPageContext?.Placeholder ?? Text["Assistant.Placeholder"]
+    };
 }
 @functions {
     string MetaDescription => ViewData["Description"] as string ?? Text["Layout.MetaDescription"];
@@ -41,37 +57,6 @@
 
     string QuizzesNavClass() =>
         IsQuizzesActive() ? "app-nav-item is-active" : "app-nav-item";
-
-    Guid? AssistantGuid(string key)
-    {
-        var value = ViewData[key];
-        if (value is Guid guid)
-        {
-            return guid;
-        }
-        if (value is string text && Guid.TryParse(text, out var parsed))
-        {
-            return parsed;
-        }
-        return null;
-    }
-
-    int? AssistantInt(string key)
-    {
-        var value = ViewData[key];
-        if (value is int number)
-        {
-            return number;
-        }
-        if (value is string text && int.TryParse(text, out var parsed))
-        {
-            return parsed;
-        }
-        return null;
-    }
-
-    string AssistantText(string key, string fallback) =>
-        ViewData[key] as string ?? fallback;
 
     IHtmlContent NavIcon(string name)
     {
@@ -266,15 +251,8 @@
                 <a class="app-mobile-brand" asp-controller="Home" asp-action="Index" aria-label="Glosify @Text["Nav.Home"]">
                     Glosify
                 </a>
-                <div class="app-search">
-                    <span class="material-symbols-outlined">search</span>
-                    <input placeholder="@Text["Layout.SearchPlaceholder"]" type="text" />
-                </div>
                 <div class="app-topbar-right">
                     @await Html.PartialAsync("_DisplayLanguageSelector")
-                    <button type="button" class="icon-button" aria-label="@Text["Layout.Notifications"]">
-                        <span class="material-symbols-outlined">notifications</span>
-                    </button>
                     @if (User.Identity?.IsAuthenticated == true)
                     {
                         @if (StripePayments.IsEnabled)
@@ -395,25 +373,11 @@
             </a>
         }
     </nav>
-    @if (User.Identity?.IsAuthenticated == true && ViewData["HideAssistantPanel"] is not true)
+    @if (User.Identity?.IsAuthenticated == true && assistantPageContext?.IsHidden is not true)
     {
         @await Component.InvokeAsync("AssistantPanel", new
         {
-            panel = new AssistantPanelViewModel
-            {
-                QuizId = AssistantGuid("AssistantQuizId"),
-                FocusedWordId = ViewData["AssistantFocusedWordId"] as string,
-                DocumentId = AssistantGuid("AssistantDocumentId"),
-                CurrentPage = AssistantInt("AssistantCurrentPage"),
-                CustomQuizId = AssistantGuid("AssistantCustomQuizId"),
-                TranscriptId = AssistantGuid("AssistantTranscriptId"),
-                TranscriptPage = AssistantInt("AssistantTranscriptPage"),
-                TranscriptStream = ViewData["AssistantTranscriptStream"] as string,
-                Title = AssistantText("AssistantTitle", Text["Assistant.Title"]),
-                ContextLabel = AssistantText("AssistantContextLabel", "Glosify"),
-                EmptyText = AssistantText("AssistantEmptyText", Text["Assistant.Empty"]),
-                Placeholder = AssistantText("AssistantPlaceholder", Text["Assistant.Placeholder"])
-            }
+            panel = assistantPanel
         })
         <script type="module" src="~/js/assistant.js" asp-append-version="true"></script>
     }

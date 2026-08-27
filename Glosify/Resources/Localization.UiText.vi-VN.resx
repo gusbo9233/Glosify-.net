@@ -120,6 +120,7 @@
   <data name="Languages.ModeFind" xml:space="preserve"><value>Tìm chế độ hoặc ngôn ngữ</value></data>
   <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Tìm kiếm chế độ và ngôn ngữ</value></data>
   <data name="Languages.ModeCount" xml:space="preserve"><value>{0} chế độ và ngôn ngữ</value></data>
+  <data name="Languages.ModeCountOne" xml:space="preserve"><value>{0} chế độ hoặc ngôn ngữ</value></data>
   <data name="Languages.ModeNone" xml:space="preserve"><value>Không có chế độ hoặc ngôn ngữ phù hợp</value></data>
   <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Hãy thử một chủ đề, tên ngôn ngữ hoặc mã.</value></data>
   <data name="Languages.Title" xml:space="preserve">

@@ -4,55 +4,17 @@
     ViewData["Title"] = Text["Quiz.LibraryTitle"];
     ViewData["ActiveNav"] = "quizzes";
 
-    var currentLanguage = Model.CurrentLanguage;
     var currentCollection = Model.CurrentCollection;
     var currentCollectionId = currentCollection?.Id;
-    var childCollections = Model.Collections.Where(collection => collection.ParentCollectionId == currentCollectionId).ToList();
-    var visibleQuizzes = Model.Quizzes.Where(quiz => quiz.CollectionId == currentCollectionId).ToList();
-    var displayLanguage = QuizLanguageDisplay.Name(currentLanguage);
-    var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(currentLanguage);
-    var pageTitle = currentCollection?.Name ?? Text["Quiz.SelectQuiz"];
-    var pageSubtitle = isFreestyle
-        ? (currentCollection == null ? "General-subject quizzes using prompts and answers." : "A Freestyle collection for any subject.")
-        : currentCollection == null
-        ? Text["Quiz.ShowingLanguage", displayLanguage]
-        : Text["Quiz.LanguageCollection", displayLanguage];
-    var importDestination = currentCollection?.Name ?? Text["Quiz.JsonImportTopLevel"];
-    var jsonGenerationPrompt = isFreestyle ? $$"""
-        Create a Glosify version 1 quiz-import JSON document about the requested subject. The import will be placed in {{importDestination}}.
-
-        Return JSON only. Use source_language "Freestyle". Each quiz must contain a words array whose word value is a prompt, question, or term and whose translation value is its answer or definition. Do not include sentences.
-
-        Shape: { "version": 1, "source_language": "Freestyle", "quizzes": [{ "name": "Quiz name", "words": [{ "word": "Prompt", "translation": "Answer" }], "sentences": [] }], "collections": [] }
-
-        Limits: 25 collections, five collection levels, 50 quizzes, 100 items per quiz, and 1,000 items total.
-        """ : $$"""
-        Create a Glosify version 1 quiz-import JSON document for a learner studying {{displayLanguage}}. The import will be placed in {{importDestination}}.
-
-        Return JSON only: no markdown fence, prose, ids, visibility, target_language, or custom-quiz fields. Put words and sentence text in {{displayLanguage}} and translations in source_language. Each quiz needs at least one word or sentence. Use one root source_language and add a per-quiz source_language only when it differs.
-
-        Shape:
-        {
-          "version": 1,
-          "source_language": "English",
-          "quizzes": [
-            {
-              "name": "Quiz name",
-              "words": [{ "word": "word or short phrase", "translation": "translation" }],
-              "sentences": [{ "text": "full sentence", "translation": "translation" }]
-            }
-          ],
-          "collections": [
-            {
-              "name": "Collection name",
-              "quizzes": [],
-              "collections": []
-            }
-          ]
-        }
-
-        Limits: 25 collections, five collection levels, 50 quizzes, 100 items per quiz, and 1,000 items total. Preserve the requested learning content and use natural translations.
-        """;
+    var childCollections = Model.ChildCollections;
+    var visibleQuizzes = Model.VisibleQuizzes;
+    var presentation = Model.Presentation;
+    var currentLanguage = presentation.CurrentLanguage;
+    var displayLanguage = presentation.DisplayLanguage;
+    var isFreestyle = presentation.IsFreestyle;
+    var pageTitle = presentation.PageTitle;
+    var pageSubtitle = presentation.PageSubtitle;
+    var importDestination = presentation.ImportDestination;
 }
 
 @section Styles {
@@ -115,16 +77,16 @@
                     </a>
                 }
             }
-            <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="jsonImportModal" aria-label="@Text["Quiz.JsonImport"]">
+            <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="jsonImportModal" aria-haspopup="dialog" aria-controls="jsonImportModal" aria-expanded="false" aria-label="@Text["Quiz.JsonImport"]">
                 <span class="material-symbols-outlined" aria-hidden="true">data_object</span>
                 @Text["Quiz.JsonImport"]
             </button>
-            <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="createCollectionModal">
-                <span class="material-symbols-outlined">create_new_folder</span>
+            <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="createCollectionModal" aria-haspopup="dialog" aria-controls="createCollectionModal" aria-expanded="false">
+                <span class="material-symbols-outlined" aria-hidden="true">create_new_folder</span>
                 @Text["Quiz.NewCollection"]
             </button>
-            <button class="btn-new-quiz" type="button" data-modal-open="createModal">
-                <span class="material-symbols-outlined">add</span>
+            <button class="btn-new-quiz" type="button" data-modal-open="createModal" aria-haspopup="dialog" aria-controls="createModal" aria-expanded="false">
+                <span class="material-symbols-outlined" aria-hidden="true">add</span>
                 @Text["Quiz.NewQuiz"]
             </button>
         </div>
@@ -132,7 +94,11 @@
 
     @if (TempData[NotificationKeys.Quiz] is string quizMessage)
     {
-        <div class="page-message">@quizMessage</div>
+        <div class="page-message" data-quiz-library-message role="status" aria-live="polite">@quizMessage</div>
+    }
+    else
+    {
+        <div class="page-message" data-quiz-library-message role="status" aria-live="polite" hidden></div>
     }
 
     @if (childCollections.Any())
@@ -145,10 +111,11 @@
                 </div>
             </div>
             <div class="quiz-grid">
-                @foreach (var collection in childCollections)
+                @foreach (var collectionCard in childCollections)
                 {
-                    var childCollectionCount = Model.Collections.Count(child => child.ParentCollectionId == collection.Id);
-                    var quizCount = Model.Quizzes.Count(quiz => quiz.CollectionId == collection.Id);
+                    var collection = collectionCard.Collection;
+                    var childCollectionCount = collectionCard.ChildCollectionCount;
+                    var quizCount = collectionCard.QuizCount;
 
                     <article class="quiz-card collection-card"
                              data-collection-drop-target
@@ -222,16 +189,16 @@
             <h2 class="empty-title">@Text["Quiz.EmptyTitle"]</h2>
             <p class="empty-copy">@Text["Quiz.EmptyText"]</p>
             <div class="empty-actions">
-                <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="jsonImportModal" aria-label="@Text["Quiz.JsonImport"]">
+                <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="jsonImportModal" aria-haspopup="dialog" aria-controls="jsonImportModal" aria-expanded="false" aria-label="@Text["Quiz.JsonImport"]">
                     <span class="material-symbols-outlined" aria-hidden="true">data_object</span>
                     @Text["Quiz.JsonImport"]
                 </button>
-                <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="createCollectionModal">
-                    <span class="material-symbols-outlined">create_new_folder</span>
+                <button class="btn-new-quiz btn-secondary-action" type="button" data-modal-open="createCollectionModal" aria-haspopup="dialog" aria-controls="createCollectionModal" aria-expanded="false">
+                    <span class="material-symbols-outlined" aria-hidden="true">create_new_folder</span>
                     @Text["Quiz.CreateCollection"]
                 </button>
-                <button class="btn-new-quiz" type="button" data-modal-open="createModal">
-                    <span class="material-symbols-outlined">add</span>
+                <button class="btn-new-quiz" type="button" data-modal-open="createModal" aria-haspopup="dialog" aria-controls="createModal" aria-expanded="false">
+                    <span class="material-symbols-outlined" aria-hidden="true">add</span>
                     @Text["Quiz.CreateQuiz"]
                 </button>
             </div>
@@ -239,14 +206,14 @@
     }
 </section>
 
-<div class="modal-backdrop" id="createCollectionModal">
-    <div class="modal">
-        <h2 class="modal-title">@Text["Quiz.CreateNewCollection"]</h2>
+<div class="modal-backdrop" id="createCollectionModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="createCollectionTitle" tabindex="-1">
+        <h2 class="modal-title" id="createCollectionTitle">@Text["Quiz.CreateNewCollection"]</h2>
         <form method="post" asp-controller="Quiz" asp-action="CreateCollection">
             @Html.AntiForgeryToken()
             <div class="form-group">
                 <label class="form-label" for="collectionName">@Text["Quiz.CollectionName"]</label>
-                <input class="form-input" id="collectionName" type="text" name="Name" placeholder="@Text["Quiz.CollectionExample"]" required />
+                <input class="form-input" id="collectionName" type="text" name="Name" placeholder="@Text["Quiz.CollectionExample"]" data-modal-initial-focus required />
             </div>
             <input type="hidden" name="ParentCollectionId" value="@currentCollectionId" />
             <div class="modal-actions">
@@ -257,8 +224,8 @@
     </div>
 </div>
 
-<div class="modal-backdrop" id="jsonImportModal">
-    <div class="modal json-import-modal" role="dialog" aria-modal="true" aria-labelledby="jsonImportTitle">
+<div class="modal-backdrop" id="jsonImportModal" aria-hidden="true">
+    <div class="modal json-import-modal" role="dialog" aria-modal="true" aria-labelledby="jsonImportTitle" tabindex="-1">
         <header class="json-import-header">
             <div>
                 <p class="json-import-kicker">@Text["Quiz.JsonImportKicker"]</p>
@@ -273,7 +240,7 @@
         <details class="json-import-instructions">
             <summary>@Text["Quiz.JsonImportInstructionsSummary"]</summary>
             <p>@Text["Quiz.JsonImportInstructionsHelp"]</p>
-            <textarea class="json-import-prompt" data-json-import-generation-prompt readonly>@jsonGenerationPrompt</textarea>
+            <textarea class="json-import-prompt" data-json-import-generation-prompt readonly>@presentation.JsonGenerationPrompt</textarea>
             <button class="json-import-copy" type="button" data-copy-json-import-prompt>
                 <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
                 @Text["Quiz.JsonImportCopyInstructions"]
@@ -296,6 +263,7 @@
                           data-json-import-text
                           maxlength="65536"
                           spellcheck="false"
+                          data-modal-initial-focus
                           placeholder="@Text["Quiz.JsonImportPastePlaceholder"]"
                           required></textarea>
                 <div class="json-import-input-meta">
@@ -346,15 +314,15 @@
     <script type="module" src="~/js/quiz-json-import.js" asp-append-version="true"></script>
 }
 
-<div class="modal-backdrop" id="createModal">
-    <div class="modal">
-        <h2 class="modal-title">@Text["Quiz.CreateNewQuiz"]</h2>
+<div class="modal-backdrop" id="createModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="createQuizTitle" tabindex="-1">
+        <h2 class="modal-title" id="createQuizTitle">@Text["Quiz.CreateNewQuiz"]</h2>
         <form method="post" asp-controller="Quiz" asp-action="Create">
             @Html.AntiForgeryToken()
             <input type="hidden" name="CollectionId" value="@currentCollectionId" />
             <div class="form-group">
                 <label class="form-label" for="quizName">@Text["Quiz.Name"]</label>
-                <input class="form-input" id="quizName" type="text" name="Name" placeholder="@Text["Quiz.NameExample"]" required />
+                <input class="form-input" id="quizName" type="text" name="Name" placeholder="@Text["Quiz.NameExample"]" data-modal-initial-focus required />
             </div>
             @if (isFreestyle)
             {

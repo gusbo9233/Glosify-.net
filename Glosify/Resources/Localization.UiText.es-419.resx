@@ -120,6 +120,7 @@
   <data name="Languages.ModeFind" xml:space="preserve"><value>Busca un modo o idioma</value></data>
   <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Buscar modos e idiomas</value></data>
   <data name="Languages.ModeCount" xml:space="preserve"><value>{0} modos e idiomas</value></data>
+  <data name="Languages.ModeCountOne" xml:space="preserve"><value>{0} modo o idioma</value></data>
   <data name="Languages.ModeNone" xml:space="preserve"><value>No hay modos ni idiomas que coincidan</value></data>
   <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Prueba con un tema, el nombre de un idioma o un código.</value></data>
   <data name="Languages.Title" xml:space="preserve">

@@ -1,6 +1,7 @@
 import { createAssistantApi } from './assistant/api.js';
-import { chooseInitialChat, createRecoverablePromiseQueue, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
+import { chooseInitialChat, createRecoverablePromiseQueue, createRecoverableSingleFlight, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
 import { escapeHtml, formatChatDate } from './assistant/presentation.js';
+import { currentBookPageContext, matchesOwnedStatus, populateContextOptions } from './assistant/context-options.js';
 import {
     createLatestRequestGate,
     feedbackFormValues,
@@ -58,6 +59,7 @@ import {
     const rejectUrl = (messageId) => `/Assistant/Reject/${messageId}`;
     const feedbackUrl = (turnId) => `/Assistant/Turns/${turnId}/Feedback`;
     const clientMetricsUrl = (turnId) => `/Assistant/Turns/${turnId}/ClientMetrics`;
+    const contextOptionsUrl = panel.dataset.contextOptionsUrl || '/Assistant/ContextOptions';
     // Session-scoped on purpose: a new browser session starts on a fresh chat
     // instead of resuming whatever was open days ago.
     const activeChatStorageKey = 'glosify.assistant.activeChatId';
@@ -85,6 +87,8 @@ import {
     const tokenInput = panel.querySelector('input[name="__RequestVerificationToken"]')
         || document.querySelector('input[name="__RequestVerificationToken"]');
     const defaultEmptyText = empty?.textContent?.trim() || t('Assistant.Empty', 'Ask for help anywhere in Glosify.');
+    const canFocusAssistant = () => !windowEl?.hidden
+        && !document.querySelector('.modal-backdrop.open');
 
     const requestHeaders = (json = false) => {
         const headers = {
@@ -97,6 +101,55 @@ import {
         return headers;
     };
     const api = createAssistantApi(() => tokenInput?.value);
+    let visibleAssistantLoadError = null;
+
+    const setContextSelectorsBusy = (busy) => {
+        for (const selector of [quizSelector, materialSelector]) {
+            if (!selector) {
+                continue;
+            }
+            selector.disabled = busy;
+            selector.setAttribute('aria-busy', String(busy));
+        }
+    };
+
+    const loadContextOptions = async () => {
+        if (!quizSelector || !materialSelector) {
+            return;
+        }
+
+        setContextSelectorsBusy(true);
+        try {
+            const options = await api.json(
+                contextOptionsUrl,
+                {},
+                t('Client.GenericError', 'Something went wrong. Please try again.'));
+            populateContextOptions({
+                quizSelector,
+                materialSelector,
+                options,
+                selectedQuizId: quizId,
+                selectedMaterialKind: materialKind,
+                selectedMaterialId: materialId,
+                fallbackContextLabel: pageContextLabel,
+            });
+        } catch (error) {
+            populateContextOptions({
+                quizSelector,
+                materialSelector,
+                options: {},
+                selectedQuizId: quizId,
+                selectedMaterialKind: materialKind,
+                selectedMaterialId: materialId,
+                fallbackContextLabel: pageContextLabel,
+            });
+            throw error;
+        } finally {
+            setContextSelectorsBusy(false);
+        }
+    };
+
+    const ensureContextOptions = createRecoverableSingleFlight(loadContextOptions);
 
     const setStatus = (message, isError = false) => {
         if (!message) {
@@ -135,7 +188,11 @@ import {
             pane.classList.toggle('is-active', active);
         }
         if (name === 'chat') {
-            window.requestAnimationFrame(() => textarea?.focus());
+            window.requestAnimationFrame(() => {
+                if (canFocusAssistant()) {
+                    textarea?.focus();
+                }
+            });
         }
     };
 
@@ -317,7 +374,7 @@ import {
         }
     };
 
-    const ensureInitialChat = async () => {
+    const ensureInitialChat = createRecoverableSingleFlight(async () => {
         if (initialized) {
             return;
         }
@@ -331,7 +388,7 @@ import {
             || await createChat(quizId);
         await selectChat(chat.id);
         initialized = true;
-    };
+    });
 
     const selectChat = async (threadId) => {
         activeThreadId = threadId;
@@ -913,12 +970,28 @@ import {
         windowEl.hidden = false;
         panel.classList.add('is-open');
         toggle.setAttribute('aria-expanded', 'true');
-        try {
-            await ensureInitialChat();
-        } catch (err) {
-            setStatus(err.message || 'Could not load chats.', true);
+        const [chatResult, contextResult] = await Promise.allSettled([
+            ensureInitialChat(),
+            ensureContextOptions(),
+        ]);
+        if (chatResult.status === 'rejected') {
+            visibleAssistantLoadError = chatResult.reason?.message || 'Could not load the assistant.';
+            setStatus(visibleAssistantLoadError, true);
+        } else if (contextResult.status === 'rejected') {
+            visibleAssistantLoadError = contextResult.reason?.message
+                || t('Client.GenericError', 'Something went wrong. Please try again.');
+            setStatus(visibleAssistantLoadError, true);
+        } else {
+            if (matchesOwnedStatus(status.textContent, visibleAssistantLoadError)) {
+                setStatus('');
+            }
+            visibleAssistantLoadError = null;
         }
-        window.requestAnimationFrame(() => textarea?.focus());
+        window.requestAnimationFrame(() => {
+            if (canFocusAssistant()) {
+                textarea?.focus();
+            }
+        });
     };
 
     const closeAssistant = () => {
@@ -965,7 +1038,10 @@ import {
     });
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !windowEl?.hidden) {
+        if (!event.defaultPrevented
+            && event.key === 'Escape'
+            && !windowEl?.hidden
+            && !document.querySelector('.modal-backdrop.open')) {
             closeAssistant();
         }
     });
@@ -984,11 +1060,12 @@ import {
             }
         }
 
-        const documentId = panel.dataset.documentId || null;
-        const currentPage = Number(panel.dataset.currentPage || 1);
-        const documentContext = documentId
-            ? { documentId, pageNumber: Number.isFinite(currentPage) ? currentPage : 1 }
-            : null;
+        const documentContext = currentBookPageContext({
+            pageDocumentId: pageDocumentId,
+            currentPage: panel.dataset.currentPage,
+            selectedMaterialKind: materialKind,
+            selectedMaterialId: materialId,
+        });
         // The picker can move the chat to another transcript while the reader still shows
         // this one, and then the page on screen is not the selected material's page.
         const transcriptContext = materialKind === 'transcript'

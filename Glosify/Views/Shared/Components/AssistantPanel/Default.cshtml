@@ -16,7 +16,8 @@
      data-transcript-id="@panel.TranscriptId"
      data-transcript-page="@panel.TranscriptPage"
      data-transcript-stream="@panel.TranscriptStream"
-     data-custom-quiz-id="@panel.CustomQuizId">
+     data-custom-quiz-id="@panel.CustomQuizId"
+     data-context-options-url="@Model.ContextOptionsUrl">
     @Html.AntiForgeryToken()
     @* The accessible name has to contain the button's visible text (WCAG 2.5.3),
        so it is built from the same title rather than a fixed "Open assistant". *@
@@ -61,48 +62,22 @@
                 <div class="assistant-context-bar">
                     <label class="assistant-context-picker">
                         <span class="visually-hidden">@Text["Assistant.QuizContext"]</span>
-                        <select aria-label="@Text["Assistant.QuizContext"]" data-assistant-quiz-selector>
+                        <select aria-label="@Text["Assistant.QuizContext"]"
+                                aria-busy="true"
+                                disabled
+                                data-assistant-quiz-selector>
                             <option value="" data-context-label="Glosify">@Text["Assistant.NoQuiz"]</option>
-                            @foreach (var quiz in Model.Quizzes)
-                            {
-                                <option value="@quiz.Id"
-                                        data-context-label="@quiz.Name"
-                                        selected="@(panel.QuizId == quiz.Id)">
-                                    @quiz.Name @(Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(quiz.TargetLanguage) ? "(Freestyle)" : $"({quiz.SourceLanguage} → {quiz.TargetLanguage})")
-                                </option>
-                            }
                         </select>
                     </label>
                     <label class="assistant-context-picker">
                         <span class="visually-hidden">@Text["Assistant.ReadingMaterial"]</span>
-                        <select aria-label="@Text["Assistant.ReadingMaterial"]" data-assistant-material-selector>
+                        <select aria-label="@Text["Assistant.ReadingMaterial"]"
+                                aria-busy="true"
+                                disabled
+                                data-books-label="@Text["Nav.Books"]"
+                                data-transcripts-label="@Text["Nav.Transcripts"]"
+                                data-assistant-material-selector>
                             <option value="" data-context-label="">@Text["Assistant.NoMaterial"]</option>
-                            @if (Model.Books.Count > 0)
-                            {
-                                <optgroup label="@Text["Nav.Books"]">
-                                    @foreach (var book in Model.Books)
-                                    {
-                                        <option value="book:@book.Id"
-                                                data-context-label="@book.Title"
-                                                selected="@(Model.SelectedMaterial == $"book:{book.Id}")">
-                                            @book.Title
-                                        </option>
-                                    }
-                                </optgroup>
-                            }
-                            @if (Model.Transcripts.Count > 0)
-                            {
-                                <optgroup label="@Text["Nav.Transcripts"]">
-                                    @foreach (var savedTranscript in Model.Transcripts)
-                                    {
-                                        <option value="transcript:@savedTranscript.Id"
-                                                data-context-label="@savedTranscript.Title"
-                                                selected="@(Model.SelectedMaterial == $"transcript:{savedTranscript.Id}")">
-                                            @savedTranscript.Title
-                                        </option>
-                                    }
-                                </optgroup>
-                            }
                         </select>
                     </label>
                 </div>

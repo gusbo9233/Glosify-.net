@@ -21,6 +21,23 @@ export const createRecoverablePromiseQueue = (write) => {
     };
 };
 
+export const createRecoverableSingleFlight = (work) => {
+    let current = null;
+
+    return (...args) => {
+        if (!current) {
+            current = Promise.resolve()
+                .then(() => work(...args))
+                .catch(error => {
+                    current = null;
+                    throw error;
+                });
+        }
+
+        return current;
+    };
+};
+
 export const chooseInitialChat = (chats, storedId) => {
     const stored = storedId ? chats.find(chat => sameId(chat.id, storedId)) : null;
     return stored || (chats[0] && !chats[0].preview ? chats[0] : null);

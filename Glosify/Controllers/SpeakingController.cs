@@ -39,7 +39,7 @@ public sealed class SpeakingController : Controller
             return RedirectToAction("Index", "Home");
         }
 
-        ViewData["HideAssistantPanel"] = true;
+        ViewData.HideAssistantPanel();
         var quizzes = _options.GenericTutorEnabled
             ? await _quizReader.ListAsync(
                 User.GetUserId(),

@@ -68,6 +68,9 @@ jobs:
       - name: Install extension browser-test dependencies
         run: npm ci --prefix Glosify.LiveSubtitles.Extension
 
+      - name: Lint JavaScript
+        run: npm run lint --prefix Glosify.LiveSubtitles.Extension
+
       - name: Audit extension dependencies
         run: npm audit --prefix Glosify.LiveSubtitles.Extension
 

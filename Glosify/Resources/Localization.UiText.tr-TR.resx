@@ -120,6 +120,7 @@
   <data name="Languages.ModeFind" xml:space="preserve"><value>Bir mod veya dil bulun</value></data>
   <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Modlarda ve dillerde ara</value></data>
   <data name="Languages.ModeCount" xml:space="preserve"><value>{0} mod ve dil</value></data>
+  <data name="Languages.ModeCountOne" xml:space="preserve"><value>{0} mod veya dil</value></data>
   <data name="Languages.ModeNone" xml:space="preserve"><value>Eşleşen mod veya dil yok</value></data>
   <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Bir konu, dil adı veya kod deneyin.</value></data>
   <data name="Languages.Title" xml:space="preserve">
