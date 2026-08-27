@@ -10,22 +10,27 @@ public sealed class ReferenceCountedKeyedAsyncLockTests
     {
         using var keyedLock = new ReferenceCountedKeyedAsyncLock();
         var first = await keyedLock.AcquireAsync("session:1");
+        var waiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var second = Task.Run(async () =>
-        {
-            await using var lease = await keyedLock.AcquireAsync("session:1");
-            entered.SetResult();
-        });
+        var second = AcquireSecondAsync();
 
-        await Task.Delay(25);
+        await waiting.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.False(entered.Task.IsCompleted);
         Assert.Equal(1, keyedLock.ActiveKeyCount);
 
         await first.DisposeAsync();
-        await second;
+        await second.WaitAsync(TimeSpan.FromSeconds(5));
 
         Assert.True(entered.Task.IsCompletedSuccessfully);
         Assert.Equal(0, keyedLock.ActiveKeyCount);
+
+        async Task AcquireSecondAsync()
+        {
+            var pendingLease = keyedLock.AcquireAsync("session:1");
+            waiting.SetResult();
+            await using var lease = await pendingLease;
+            entered.SetResult();
+        }
     }
 
     [Fact]

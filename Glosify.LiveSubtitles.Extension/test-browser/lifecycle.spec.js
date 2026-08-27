@@ -1,230 +1,323 @@
 import { test, expect, chromium } from "@playwright/test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
+import process from "node:process";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
 
-const extensionRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)), "../artifacts/test");
+const artifactsRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)), "../artifacts");
 const sessionId = "11111111-1111-4111-8111-111111111111";
 const extensionId = "akepdpjieiokffdapibipomhbplikock";
+const execFileAsync = promisify(execFile);
 
 test("same-document navigation continues and full navigation stops capture", async () => {
-  const mock = await startMockGlosify();
-  const profile = await mkdtemp(path.join(os.tmpdir(), "glosify-extension-test-"));
-  const context = await chromium.launchPersistentContext(profile, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionRoot}`,
-      `--load-extension=${extensionRoot}`,
-      "--autoplay-policy=no-user-gesture-required",
-      "--use-fake-ui-for-media-stream",
-    ],
+  const harness = await launchHarness({
+    storage: { glosifyTransparentSubtitles: true },
   });
   try {
-    const worker = context.serviceWorkers()[0]
-      ?? await context.waitForEvent("serviceworker");
-    expect(worker.url()).toBe(`chrome-extension://${extensionId}/background/service-worker.js`);
-    await worker.evaluate(() => chrome.storage.local.set({
-      glosifyRefreshToken: "refresh-token",
-      glosifyTransparentSubtitles: true,
-    }));
-
-    const control = context.pages()[0] ?? await context.newPage();
-    await control.goto(`chrome-extension://${extensionId}/popup/popup.html`);
-    const page = await context.newPage();
-    await page.goto("http://127.0.0.1:4173/audio");
+    const page = await openAudioPage(harness);
     await page.getByRole("button", { name: "Play synthetic speech" }).click();
     await page.bringToFront();
-    const started = await control.evaluate(() => chrome.runtime.sendMessage({ type: "test:start" }));
+    const started = await harness.control.evaluate(() => chrome.runtime.sendMessage({
+      type: "test:start",
+    }));
     expect(started.ok, JSON.stringify(started)).toBe(true);
     expect(started.result.transparentSubtitles).toBe(true);
 
-    await expect.poll(() => extensionState(worker)).toMatchObject({
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({
       active: true,
       status: "subtitling",
       currentMinute: 1,
     });
-    await expect.poll(() => mock.audioMessages).toBeGreaterThan(0);
+    await expect.poll(() => harness.mock.audioMessages).toBeGreaterThan(0);
     await expect(page.locator("#glosify-live-subtitles-host")).toHaveCount(1);
-    await expect.poll(() => overlayState(control)).toMatchObject({
+    await expect.poll(() => overlayState(harness.control)).toMatchObject({
       installed: true,
       transparentSubtitles: true,
     });
 
-    const updated = await control.evaluate(() => chrome.runtime.sendMessage({
+    const updated = await harness.control.evaluate(() => chrome.runtime.sendMessage({
       type: "popup:set-transparent-subtitles",
       enabled: false,
     }));
     expect(updated.ok, JSON.stringify(updated)).toBe(true);
     expect(updated.result.transparentSubtitles).toBe(false);
-    await expect.poll(() => overlayState(control)).toMatchObject({ transparentSubtitles: false });
-    await expect.poll(() => worker.evaluate(async () => (
+    await expect.poll(() => overlayState(harness.control)).toMatchObject({
+      transparentSubtitles: false,
+    });
+    await expect.poll(() => harness.worker.evaluate(async () => (
       await chrome.storage.local.get("glosifyTransparentSubtitles")
     ).glosifyTransparentSubtitles)).toBe(false);
 
     await page.evaluate(() => history.pushState({}, "", "/audio/episode/2"));
-    await expect.poll(() => extensionState(worker)).toMatchObject({
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({
       active: true,
       status: "subtitling",
     });
 
-    await page.goto("http://127.0.0.1:4173/next");
-    await expect.poll(() => extensionState(worker)).toMatchObject({ active: false });
-    await expect.poll(() => mock.deletedSessions).toBe(1);
-    await expect.poll(() => mock.drainRequests).toBe(1);
+    await page.goto(`${harness.mock.baseUrl}/next`);
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({ active: false });
+    await expect.poll(() => harness.mock.deletedSessions).toBe(1);
+    await expect.poll(() => harness.mock.drainRequests).toBe(1);
   } finally {
-    await context.close();
-    await mock.close();
-    await rm(profile, { recursive: true, force: true });
+    await harness.close();
   }
 });
 
 test("cross-origin full navigation stops capture", async () => {
-  const mock = await startMockGlosify();
-  const profile = await mkdtemp(path.join(os.tmpdir(), "glosify-extension-test-"));
-  const context = await chromium.launchPersistentContext(profile, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionRoot}`,
-      `--load-extension=${extensionRoot}`,
-      "--autoplay-policy=no-user-gesture-required",
-      "--use-fake-ui-for-media-stream",
-    ],
-  });
+  const harness = await launchHarness();
   try {
-    const worker = context.serviceWorkers()[0]
-      ?? await context.waitForEvent("serviceworker");
-    await worker.evaluate(() => chrome.storage.local.set({ glosifyRefreshToken: "refresh-token" }));
-    const control = context.pages()[0] ?? await context.newPage();
-    await control.goto(`chrome-extension://${extensionId}/popup/popup.html`);
-    const page = await context.newPage();
-    await page.goto("http://127.0.0.1:4173/audio");
+    const page = await openAudioPage(harness);
     await page.getByRole("button", { name: "Play synthetic speech" }).click();
     await page.bringToFront();
-    const started = await control.evaluate(() => chrome.runtime.sendMessage({ type: "test:start" }));
+    const started = await harness.control.evaluate(() => chrome.runtime.sendMessage({
+      type: "test:start",
+    }));
     expect(started.ok, JSON.stringify(started)).toBe(true);
-    await expect.poll(() => extensionState(worker)).toMatchObject({ active: true });
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({ active: true });
 
-    await page.goto("http://localhost:4173/next");
-    await expect.poll(() => extensionState(worker)).toMatchObject({ active: false });
-    await expect.poll(() => mock.deletedSessions).toBe(1);
-    await expect.poll(() => mock.drainRequests).toBe(1);
+    await page.goto(`${harness.mock.alternateBaseUrl}/next`);
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({ active: false });
+    await expect.poll(() => harness.mock.deletedSessions).toBe(1);
+    await expect.poll(() => harness.mock.drainRequests).toBe(1);
   } finally {
-    await context.close();
-    await mock.close();
-    await rm(profile, { recursive: true, force: true });
+    await harness.close();
   }
 });
 
 test("concurrent starts share refresh and survive five-second session creation", async () => {
-  const mock = await startMockGlosify({ createDelayMs: 5_000 });
-  const profile = await mkdtemp(path.join(os.tmpdir(), "glosify-extension-test-"));
-  const context = await chromium.launchPersistentContext(profile, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionRoot}`,
-      `--load-extension=${extensionRoot}`,
-      "--autoplay-policy=no-user-gesture-required",
-      "--use-fake-ui-for-media-stream",
-    ],
-  });
+  const harness = await launchHarness({ createDelayMs: 5_000 });
   try {
-    const worker = context.serviceWorkers()[0]
-      ?? await context.waitForEvent("serviceworker");
-    await worker.evaluate(() => chrome.storage.local.set({ glosifyRefreshToken: "refresh-token" }));
-    const control = context.pages()[0] ?? await context.newPage();
-    await control.goto(`chrome-extension://${extensionId}/popup/popup.html`);
-    const page = await context.newPage();
-    await page.goto("http://127.0.0.1:4173/audio");
+    const page = await openAudioPage(harness);
     await page.bringToFront();
+    await restoreTestState(harness.control);
 
-    const restored = await control.evaluate(() => chrome.runtime.sendMessage({
-      type: "test:restore-local-state",
-    }));
-    expect(restored.ok, JSON.stringify(restored)).toBe(true);
-
-    const results = await control.evaluate(() => Promise.all([
+    const results = await harness.control.evaluate(() => Promise.all([
       chrome.runtime.sendMessage({ type: "popup:start" }),
       chrome.runtime.sendMessage({ type: "popup:start" }),
     ]));
     expect(results.every(result => result.ok), JSON.stringify(results)).toBe(true);
-    await expect.poll(() => extensionState(worker)).toMatchObject({ active: true });
-    expect(mock.refreshRequests).toBe(1);
-    expect(mock.createdSessions).toBe(1);
-    await expect.poll(() => mock.audioMessages).toBeGreaterThan(0);
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({ active: true });
+    expect(harness.mock.refreshRequests).toBe(1);
+    expect(harness.mock.createdSessions).toBe(1);
+    await expect.poll(() => harness.mock.audioMessages).toBeGreaterThan(0);
 
-    const stopped = await control.evaluate(() => chrome.runtime.sendMessage({
+    const stopped = await harness.control.evaluate(() => chrome.runtime.sendMessage({
       type: "overlay:stop",
     }));
     expect(stopped.ok, JSON.stringify(stopped)).toBe(true);
-    await expect.poll(() => extensionState(worker)).toMatchObject({ active: false });
-    await expect.poll(() => mock.deletedSessions).toBe(1);
-    await expect.poll(() => mock.drainRequests).toBe(1);
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({ active: false });
+    await expect.poll(() => harness.mock.deletedSessions).toBe(1);
+    await expect.poll(() => harness.mock.drainRequests).toBe(1);
   } finally {
-    await context.close();
-    await mock.close();
-    await rm(profile, { recursive: true, force: true });
+    await harness.close();
   }
 });
 
 test("stopping during session creation cleans up and permits a later start", async () => {
-  const mock = await startMockGlosify({ createDelayMs: 1_000 });
-  const profile = await mkdtemp(path.join(os.tmpdir(), "glosify-extension-test-"));
-  const context = await chromium.launchPersistentContext(profile, {
-    headless: false,
-    args: [
-      `--disable-extensions-except=${extensionRoot}`,
-      `--load-extension=${extensionRoot}`,
-      "--autoplay-policy=no-user-gesture-required",
-      "--use-fake-ui-for-media-stream",
-    ],
-  });
+  const harness = await launchHarness({ createDelayMs: 1_000 });
   try {
-    const worker = context.serviceWorkers()[0]
-      ?? await context.waitForEvent("serviceworker");
-    await worker.evaluate(() => chrome.storage.local.set({ glosifyRefreshToken: "refresh-token" }));
-    const control = context.pages()[0] ?? await context.newPage();
-    await control.goto(`chrome-extension://${extensionId}/popup/popup.html`);
-    const page = await context.newPage();
-    await page.goto("http://127.0.0.1:4173/audio");
+    const page = await openAudioPage(harness);
     await page.bringToFront();
+    await restoreTestState(harness.control);
 
-    const restored = await control.evaluate(() => chrome.runtime.sendMessage({
-      type: "test:restore-local-state",
+    const starting = harness.control.evaluate(() => chrome.runtime.sendMessage({
+      type: "popup:start",
     }));
-    expect(restored.ok, JSON.stringify(restored)).toBe(true);
-
-    const starting = control.evaluate(() => chrome.runtime.sendMessage({ type: "popup:start" }));
-    await expect.poll(() => mock.createdSessions).toBe(1);
-    const stopped = await control.evaluate(() => chrome.runtime.sendMessage({
+    await expect.poll(() => harness.mock.createdSessions).toBe(1);
+    const stopped = await harness.control.evaluate(() => chrome.runtime.sendMessage({
       type: "overlay:stop",
     }));
     expect(stopped.ok, JSON.stringify(stopped)).toBe(true);
     expect((await starting).ok).toBe(true);
-    await expect.poll(() => mock.deletedSessions).toBe(1);
-    await expect.poll(() => extensionState(worker)).toMatchObject({ active: false });
+    await expect.poll(() => harness.mock.deletedSessions).toBe(1);
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({ active: false });
 
-    const restarted = await control.evaluate(() => chrome.runtime.sendMessage({
+    const restarted = await harness.control.evaluate(() => chrome.runtime.sendMessage({
       type: "popup:start",
     }));
     expect(restarted.ok, JSON.stringify(restarted)).toBe(true);
-    await expect.poll(() => extensionState(worker)).toMatchObject({ active: true });
-    expect(mock.createdSessions).toBe(2);
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({ active: true });
+    expect(harness.mock.createdSessions).toBe(2);
 
-    const finalStop = await control.evaluate(() => chrome.runtime.sendMessage({
+    const finalStop = await harness.control.evaluate(() => chrome.runtime.sendMessage({
       type: "overlay:stop",
     }));
     expect(finalStop.ok, JSON.stringify(finalStop)).toBe(true);
-    await expect.poll(() => mock.deletedSessions).toBe(2);
+    await expect.poll(() => harness.mock.deletedSessions).toBe(2);
   } finally {
-    await context.close();
-    await mock.close();
-    await rm(profile, { recursive: true, force: true });
+    await harness.close();
   }
 });
+
+test("tab-capture profile streams real tab audio and renders the final caption", async () => {
+  test.skip(process.platform !== "linux", "Real tab capture requires native X11 input; Playwright virtual keyboard input cannot activate browser-scoped chrome.commands shortcuts.");
+  const finalCaption = "Real tab final caption";
+  const harness = await launchHarness({ captureMode: "tab", finalCaption });
+  try {
+    const page = await openAudioPage(harness);
+    await page.getByRole("button", { name: "Play synthetic speech" }).click();
+    await page.bringToFront();
+    await restoreTestState(harness.control);
+    const targetTabId = await activeTabId(harness.control);
+    const command = await harness.worker.evaluate(async () => (
+      await chrome.commands.getAll()
+    ).find(item => item.name === "test-start-tab-capture"));
+    expect(command?.shortcut).toBe("Ctrl+Shift+8");
+
+    await pressNativeTabCaptureShortcut();
+
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({
+      active: true,
+      status: "subtitling",
+      currentMinute: 1,
+    });
+    await expect.poll(() => capturedTabStatus(harness.worker, targetTabId)).toBe("active");
+    await expect.poll(() => harness.mock.audioMessages).toBeGreaterThan(0);
+    await expect.poll(() => overlayState(harness.control)).toMatchObject({
+      activeSessionId: sessionId,
+      captionText: finalCaption,
+      installed: true,
+    });
+
+    const stopped = await harness.control.evaluate(() => chrome.runtime.sendMessage({
+      type: "overlay:stop",
+    }));
+    expect(stopped.ok, JSON.stringify(stopped)).toBe(true);
+    await expect.poll(() => extensionState(harness.worker)).toMatchObject({ active: false });
+    await expect.poll(() => harness.mock.deletedSessions).toBe(1);
+    await expect.poll(() => harness.mock.drainRequests).toBe(1);
+    await expect.poll(() => capturedTabStatus(harness.worker, targetTabId)).not.toBe("active");
+  } finally {
+    await harness.close();
+  }
+});
+
+async function launchHarness({
+  captureMode = "synthetic",
+  createDelayMs = 0,
+  finalCaption = "Synthetic final caption",
+  storage = {},
+} = {}) {
+  const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "glosify-extension-test-"));
+  let context = null;
+  let mock = null;
+  try {
+    mock = await test.step("start isolated mock backend", () => (
+      startMockGlosify({ createDelayMs, finalCaption })));
+    const builtProfile = captureMode === "tab" ? "test-tab" : "test";
+    const extensionRoot = path.join(temporaryRoot, "extension");
+    await test.step("generate isolated extension profile", async () => {
+      await cp(path.join(artifactsRoot, builtProfile), extensionRoot, { recursive: true });
+      await writeFile(path.join(extensionRoot, "config.js"), `export const CONFIG = Object.freeze(${JSON.stringify({
+        glosifyBaseUrl: mock.baseUrl,
+        testHooksEnabled: true,
+        captureMode,
+        allowInsecureRelay: true,
+      }, null, 2)});\n`);
+    });
+
+    context = await test.step("launch Chromium with the generated extension", () => (
+      chromium.launchPersistentContext(path.join(temporaryRoot, "profile"), {
+        headless: false,
+        args: [
+          `--disable-extensions-except=${extensionRoot}`,
+          `--load-extension=${extensionRoot}`,
+          "--autoplay-policy=no-user-gesture-required",
+          "--use-fake-ui-for-media-stream",
+        ],
+      })));
+    const worker = context.serviceWorkers()[0]
+      ?? await test.step("wait for the extension service worker", () => (
+        context.waitForEvent("serviceworker", { timeout: 10_000 })));
+    expect(worker.url()).toBe(
+      `chrome-extension://${extensionId}/background/service-worker.js`);
+    await worker.evaluate(values => chrome.storage.local.set(values), {
+      glosifyRefreshToken: "refresh-token",
+      ...storage,
+    });
+    const control = context.pages()[0] ?? await context.newPage();
+    await control.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    let closed = false;
+    return {
+      close: async () => {
+        if (closed) {
+          return;
+        }
+        closed = true;
+        await context.close();
+        await mock.close();
+        await rm(temporaryRoot, { recursive: true, force: true });
+      },
+      context,
+      control,
+      mock,
+      worker,
+    };
+  } catch (error) {
+    await context?.close();
+    await mock?.close();
+    await rm(temporaryRoot, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+async function pressNativeTabCaptureShortcut() {
+  if (!process.env.DISPLAY) {
+    throw new Error("The real tab-capture gate requires an X11 DISPLAY.");
+  }
+  let browserWindows;
+  try {
+    ({ stdout: browserWindows } = await execFileAsync("xdotool", [
+      "search",
+      "--onlyvisible",
+      "--class",
+      "[Cc]hrom(e|ium)",
+    ], { encoding: "utf8" }));
+  } catch (error) {
+    throw new Error(
+      "The real tab-capture gate requires xdotool and a visible Chromium X11 window.",
+      { cause: error });
+  }
+  const windowId = browserWindows.trim().split(/\s+/u).at(-1);
+  if (!/^\d+$/u.test(windowId)) {
+    throw new Error("xdotool did not return a visible Chromium X11 window.");
+  }
+  await execFileAsync(
+    "xdotool",
+    ["windowfocus", "--sync", windowId],
+    { timeout: 10_000 });
+  await execFileAsync("xdotool", [
+    "key",
+    "--clearmodifiers",
+    "ctrl+shift+8",
+  ], { timeout: 10_000 });
+}
+
+async function openAudioPage(harness) {
+  const page = await harness.context.newPage();
+  await page.goto(`${harness.mock.baseUrl}/audio`);
+  return page;
+}
+
+async function restoreTestState(control) {
+  const restored = await control.evaluate(() => chrome.runtime.sendMessage({
+    type: "test:restore-local-state",
+  }));
+  expect(restored.ok, JSON.stringify(restored)).toBe(true);
+}
+
+async function activeTabId(control) {
+  return control.evaluate(async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    return tab.id;
+  });
+}
 
 async function extensionState(worker) {
   return worker.evaluate(async () => {
@@ -238,6 +331,13 @@ async function extensionState(worker) {
   });
 }
 
+async function capturedTabStatus(worker, tabId) {
+  return worker.evaluate(async expectedTabId => {
+    const capturedTabs = await chrome.tabCapture.getCapturedTabs();
+    return capturedTabs.find(tab => tab.tabId === expectedTabId)?.status ?? null;
+  }, tabId);
+}
+
 async function overlayState(control) {
   return control.evaluate(async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -245,7 +345,7 @@ async function overlayState(control) {
   });
 }
 
-async function startMockGlosify({ createDelayMs = 0 } = {}) {
+async function startMockGlosify({ createDelayMs = 0, finalCaption } = {}) {
   let startedAtUtc = null;
   const state = {
     audioMessages: 0,
@@ -254,8 +354,8 @@ async function startMockGlosify({ createDelayMs = 0 } = {}) {
     createdSessions: 0,
     drainRequests: 0,
   };
-  const server = http.createServer(async (request, response) => {
-    const url = new URL(request.url, "http://127.0.0.1:4173");
+  const requestHandler = async (request, response) => {
+    const url = new URL(request.url, "http://127.0.0.1");
     if (url.pathname === "/audio" || url.pathname.startsWith("/audio/") || url.pathname === "/next") {
       response.writeHead(200, { "Content-Type": "text/html" });
       response.end(`<!doctype html><button>Play synthetic speech</button><script>
@@ -334,7 +434,10 @@ async function startMockGlosify({ createDelayMs = 0 } = {}) {
       return;
     }
     response.writeHead(404).end();
-  });
+  };
+
+  const server = http.createServer(requestHandler);
+  const alternateServer = http.createServer(requestHandler);
   const sockets = new WebSocketServer({
     server,
     handleProtocols: protocols => protocols.has("glosify-realtime")
@@ -360,17 +463,42 @@ async function startMockGlosify({ createDelayMs = 0 } = {}) {
         socket.send(JSON.stringify({
           type: "response.text.done",
           response_id: "final-only",
-          text: "Synthetic final caption",
+          text: finalCaption,
         }));
       }
     });
   });
-  await new Promise((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(4173, "0.0.0.0", resolve);
-  });
+
+  await listenOnLoopback(server);
+  await listenOnLoopback(alternateServer);
   return Object.assign(state, {
-    close: () => new Promise(resolve => sockets.close(() => server.close(resolve))),
+    baseUrl: loopbackUrl(server),
+    alternateBaseUrl: loopbackUrl(alternateServer),
+    close: async () => {
+      await new Promise(resolve => sockets.close(resolve));
+      await Promise.all([closeServer(server), closeServer(alternateServer)]);
+    },
+  });
+}
+
+function listenOnLoopback(server) {
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+}
+
+function loopbackUrl(server) {
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    throw new Error("The mock server did not bind to a TCP port.");
+  }
+  return `http://127.0.0.1:${address.port}`;
+}
+
+function closeServer(server) {
+  return new Promise((resolve, reject) => {
+    server.close(error => error ? reject(error) : resolve());
   });
 }
 

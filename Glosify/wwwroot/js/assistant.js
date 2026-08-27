@@ -365,6 +365,7 @@ import {
             const data = await response.json().catch(() => null);
             throw new Error(localizedProblem(data, response, 'Client.GenericError', 'Could not delete chat.'));
         }
+        await response.text();
 
         chats = removeChat(chats, threadId);
         if (activeThreadId === threadId) {
@@ -596,7 +597,7 @@ import {
             }
         };
 
-        const makeVote = (rating, icon, label) => {
+        const makeVote = ({ rating, icon, label }) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'assistant-feedback-vote';
@@ -624,8 +625,8 @@ import {
             return button;
         };
 
-        const up = makeVote('up', 'thumb_up', 'Helpful');
-        const down = makeVote('down', 'thumb_down', 'Not helpful');
+        const up = makeVote({ rating: 'up', icon: 'thumb_up', label: 'Helpful' });
+        const down = makeVote({ rating: 'down', icon: 'thumb_down', label: 'Not helpful' });
 
         const reasonList = document.createElement('div');
         reasonList.className = 'assistant-feedback-reasons';
@@ -1052,13 +1053,14 @@ import {
         const message = textarea.value.trim();
         if (!message) return;
 
-        if (!activeThreadId) {
-            try {
-                await ensureInitialChat();
-            } catch (err) {
-                setStatus(err.message || 'Could not create chat.', true);
-                return;
-            }
+        // Opening the assistant selects a thread before its history has finished loading.
+        // Always join that initialization flight so a late history response cannot erase
+        // the message (and any pending-change card) that this submission renders.
+        try {
+            await ensureInitialChat();
+        } catch (err) {
+            setStatus(err.message || 'Could not create chat.', true);
+            return;
         }
 
         const documentContext = currentBookPageContext({

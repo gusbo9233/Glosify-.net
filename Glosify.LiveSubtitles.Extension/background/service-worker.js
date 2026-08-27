@@ -113,6 +113,25 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   void stopSession("Subtitles stopped because the captured tab navigated.", "ready");
 });
 
+chrome.commands?.onCommand.addListener(command => {
+  if (command !== "test-start-tab-capture"
+      || !testHooksEnabled()
+      || CONFIG.captureMode !== "tab") {
+    return;
+  }
+  void startTabCaptureFromTestCommand();
+});
+
+async function startTabCaptureFromTestCommand() {
+  try {
+    await initialization;
+    await restoreLocalState();
+    await startSession();
+  } catch (error) {
+    console.error("The tab-capture test command failed.", error);
+  }
+}
+
 async function handleMessage(message) {
   await initialization;
   switch (message.type) {
@@ -155,14 +174,14 @@ async function handleMessage(message) {
       await startSession();
       return publicState();
     case "test:start":
-      if (!isLocalTestProfile()) {
+      if (!testHooksEnabled() || CONFIG.captureMode !== "synthetic") {
         throw new Error("The browser-test start hook is unavailable in this build.");
       }
       await restoreLocalState();
       await startSession();
       return publicState();
     case "test:restore-local-state":
-      if (!isLocalTestProfile()) {
+      if (!testHooksEnabled()) {
         throw new Error("The browser-test state hook is unavailable in this build.");
       }
       await restoreLocalState();
@@ -682,14 +701,19 @@ async function startSessionCore(generation, signal) {
     await ensureOffscreenDocument();
     throwIfLifecycleCancelled(generation, signal);
 
-    if (isLocalTestProfile()) {
+    if (CONFIG.captureMode === "synthetic") {
+      if (!testHooksEnabled()) {
+        throw new Error("Synthetic audio capture is unavailable outside browser-test builds.");
+      }
       await sendToOffscreen({ type: "media:start-test-capture" });
-    } else {
+    } else if (CONFIG.captureMode === "tab") {
       // Chrome stream IDs are short-lived. Claim it only after preparation,
       // then consume it before making the server request.
       const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tab.id });
       throwIfLifecycleCancelled(generation, signal);
       await sendToOffscreen({ type: "media:start-capture", streamId });
+    } else {
+      throw new Error("The extension has an invalid audio capture mode.");
     }
     throwIfLifecycleCancelled(generation, signal);
     const created = await createRelaySession(generation, signal);
@@ -710,6 +734,7 @@ async function startSessionCore(generation, signal) {
       relayToken: created.relayToken,
       relayPath: created.relayPath,
       glosifyBaseUrl: CONFIG.glosifyBaseUrl,
+      allowInsecureRelay: CONFIG.allowInsecureRelay === true,
     });
     throwIfLifecycleCancelled(generation, signal);
     const begun = await apiFetch(
@@ -1297,7 +1322,7 @@ async function reconcileActiveSession() {
     }
 
     await chrome.tabs.get(stored.tabId);
-    if (!isLocalTestProfile()) {
+    if (CONFIG.captureMode === "tab") {
       const capturedTabs = await chrome.tabCapture.getCapturedTabs();
       if (!capturedTabs.some(tab => tab.tabId === stored.tabId && tab.status === "active")) {
         throw new Error("Chrome no longer identifies the tab as captured.");
@@ -1575,14 +1600,8 @@ function isCapturableUrl(url) {
   }
 }
 
-function isLocalTestProfile() {
-  try {
-    const base = new URL(CONFIG.glosifyBaseUrl);
-    return base.protocol === "http:"
-      && (base.hostname === "127.0.0.1" || base.hostname === "localhost");
-  } catch {
-    return false;
-  }
+function testHooksEnabled() {
+  return CONFIG.testHooksEnabled === true;
 }
 
 function base64Url(bytes) {

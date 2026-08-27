@@ -2,9 +2,12 @@
   "name": "glosify-live-subtitles-extension",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "test:browser": "node scripts/build.mjs test && playwright test",
+    "test:browser": "node scripts/build.mjs test && node scripts/build.mjs test-tab && playwright test",
     "build:dev": "node scripts/build.mjs development",
     "build:test": "node scripts/build.mjs test",
     "build:store": "node scripts/build.mjs store",

@@ -21,12 +21,16 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Browser tests run the built app in the Testing environment rather than from a
-// publish directory. Explicitly load the development manifest so those tests exercise
-// the real JavaScript and CSS assets instead of receiving empty placeholder responses.
-if (builder.Environment.IsEnvironment("Testing"))
+const string browserTestingEnvironment = "BrowserTesting";
+const string browserTestTokenHeader = "X-Glosify-Browser-Test-Token";
+var browserTestRunToken = builder.Environment.IsEnvironment(browserTestingEnvironment)
+    ? builder.Configuration["BrowserTests:RunToken"]
+    : null;
+if (builder.Environment.IsEnvironment(browserTestingEnvironment)
+    && string.IsNullOrWhiteSpace(browserTestRunToken))
 {
-    builder.WebHost.UseStaticWebAssets();
+    throw new InvalidOperationException(
+        "BrowserTests:RunToken is required when ASPNETCORE_ENVIRONMENT is BrowserTesting.");
 }
 
 // Add services to the container.
@@ -319,6 +323,27 @@ app.MapHealthChecks("/readyz", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("ready"),
 }).AllowAnonymous();
+
+// A browser suite must prove it is talking to the explicitly launched test host before
+// it creates accounts or mutates data. Keep the endpoint absent in every other environment
+// and require a per-run token so an accidentally configured URL fails closed.
+if (app.Environment.IsEnvironment(browserTestingEnvironment))
+{
+    app.MapGet("/_test/browser-handshake", (HttpContext context) =>
+    {
+        var suppliedTokens = context.Request.Headers[browserTestTokenHeader];
+        if (suppliedTokens.Count != 1
+            || !string.Equals(
+                suppliedTokens[0],
+                browserTestRunToken,
+                StringComparison.Ordinal))
+        {
+            return Results.NotFound();
+        }
+
+        return Results.NoContent();
+    }).AllowAnonymous();
+}
 
 var deploymentCommitPath = Path.Combine(app.Environment.ContentRootPath, "deployment-commit.txt");
 var deploymentCommit = File.Exists(deploymentCommitPath)

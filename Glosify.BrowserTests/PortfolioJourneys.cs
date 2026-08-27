@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using Microsoft.Playwright;
@@ -6,23 +8,33 @@ using static Microsoft.Playwright.Assertions;
 
 namespace Glosify.BrowserTests;
 
-public sealed class PortfolioJourneys : IAsyncLifetime
+public sealed partial class PortfolioJourneys : IAsyncLifetime
 {
-    private static string? BaseUrl => Environment.GetEnvironmentVariable("GLOSIFY_BROWSER_BASE_URL");
     private static int _nextTestClient;
+    private readonly ConcurrentQueue<string> _pageErrors = [];
+    private readonly ConcurrentQueue<string> _consoleErrors = [];
+    private readonly ConcurrentQueue<string> _responseErrors = [];
+    private readonly ConcurrentQueue<string> _requestErrors = [];
+    private readonly ConcurrentQueue<string> _scriptResponses = [];
+    private readonly ConcurrentDictionary<IRequest, TaskCompletionSource> _inflightRequests = [];
+    private readonly Lock _observedPagesLock = new();
+    private readonly HashSet<IPage> _observedPages = [];
+    private readonly Lock _expectedFailuresLock = new();
+    private readonly List<BrowserFailureExpectation> _expectedFailures = [];
     private string TestClientIp { get; set; } = null!;
+    private BrowserTestSettings _settings = null!;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
     private IBrowserContext? _context;
+    private string? _tracePath;
     private IPage Page { get; set; } = null!;
-    private readonly List<string> _pageErrors = [];
-    private readonly List<string> _consoleErrors = [];
-    private readonly List<string> _responseErrors = [];
-    private readonly List<string> _scriptResponses = [];
+
+    private string BaseUrl => _settings.BaseUri.AbsoluteUri;
 
     public async Task InitializeAsync()
     {
-        if (BaseUrl is null) return;
+        _settings = BrowserTestConfiguration.Load();
+        await ValidateHandshakeAsync(_settings);
 
         _playwright = await Playwright.CreateAsync();
         _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
@@ -31,50 +43,212 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             Headless = true,
         });
         TestClientIp = $"192.0.2.{Interlocked.Increment(ref _nextTestClient)}";
-        _context = await _browser.NewContextAsync(new BrowserNewContextOptions { BaseURL = BaseUrl });
+        _context = await NewObservedContextAsync(new BrowserNewContextOptions { BaseURL = BaseUrl });
+        if (!string.IsNullOrWhiteSpace(_settings.TraceDirectory))
+        {
+            var traceDirectory = Path.GetFullPath(_settings.TraceDirectory);
+            Directory.CreateDirectory(traceDirectory);
+            _tracePath = Path.Combine(
+                traceDirectory,
+                $"portfolio-journey-{DateTimeOffset.UtcNow:yyyyMMddTHHmmssfff}-{Guid.NewGuid():N}.zip");
+            await _context.Tracing.StartAsync(new TracingStartOptions
+            {
+                Screenshots = true,
+                Snapshots = true,
+                Sources = true,
+            });
+        }
+
         Page = await _context.NewPageAsync();
-        Page.PageError += (_, error) => _pageErrors.Add(error);
-        Page.Console += (_, message) =>
+    }
+
+    private static async Task ValidateHandshakeAsync(BrowserTestSettings settings)
+    {
+        using var client = new HttpClient { BaseAddress = settings.BaseUri, Timeout = TimeSpan.FromSeconds(10) };
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/_test/browser-handshake");
+        request.Headers.TryAddWithoutValidation(BrowserTestConfiguration.RunTokenHeader, settings.RunToken);
+        using var response = await client.SendAsync(request);
+        if (response.StatusCode != HttpStatusCode.NoContent)
+        {
+            throw new InvalidOperationException(
+                $"Browser test handshake failed with HTTP {(int)response.StatusCode}. "
+                + "Confirm that the target is the published Glosify app in BrowserTesting and both run tokens match.");
+        }
+    }
+
+    private async Task<IBrowserContext> NewObservedContextAsync(BrowserNewContextOptions options)
+    {
+        var context = await _browser!.NewContextAsync(options);
+        // Web fonts are an external presentation dependency, not part of the application
+        // contract exercised by these journeys. Stub their stylesheets so the observer can
+        // treat every other failed request as a test failure without depending on the public
+        // Google Fonts service or a runner's outbound-network policy.
+        await context.RouteAsync("https://fonts.googleapis.com/**", route =>
+            route.FulfillAsync(new RouteFulfillOptions
+            {
+                Status = 200,
+                ContentType = "text/css",
+                Body = string.Empty,
+            }));
+        context.Page += (_, page) => ObservePage(page);
+        return context;
+    }
+
+    private void ObservePage(IPage page)
+    {
+        lock (_observedPagesLock)
+        {
+            if (!_observedPages.Add(page))
+                return;
+        }
+
+        page.PageError += (_, error) => _pageErrors.Enqueue($"PAGE {page.Url}: {error}");
+        page.Console += (_, message) =>
         {
             if (message.Type == "error"
-                && (string.IsNullOrWhiteSpace(message.Location) || IsApplicationUrl(message.Location)))
-                _consoleErrors.Add(message.Text);
+                // Response and RequestFailed provide the exact method, URL, and status for
+                // these generic browser messages, including exact expected-failure matching.
+                && !IsBrowserNetworkConsoleError(message.Text))
+            {
+                _consoleErrors.Enqueue($"CONSOLE {page.Url}: {message.Text}");
+            }
         };
-        Page.Response += (_, response) =>
+        page.Request += (_, request) =>
+            _inflightRequests.TryAdd(
+                request,
+                new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        page.Response += (_, response) => RecordResponse(response);
+        page.RequestFinished += (_, request) => CompleteRequest(request);
+        page.RequestFailed += (_, request) =>
         {
-            if (response.Status >= 400
-                && IsApplicationUrl(response.Url)
-                && !IsIgnorableResponse(response.Url))
-                _responseErrors.Add($"HTTP {response.Status} {response.Url}");
-            if (response.Url.Contains(".js", StringComparison.OrdinalIgnoreCase))
-                _scriptResponses.Add($"{response.Status} {response.Url}");
+            RecordFailedRequest(request);
+            CompleteRequest(request);
         };
-        Page.RequestFailed += (_, request) => _scriptResponses.Add($"FAILED {request.Url}: {request.Failure}");
     }
 
-    private static bool IsIgnorableResponse(string url)
+    private void RecordResponse(IResponse response)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            return false;
-        return uri.AbsolutePath.Contains("favicon", StringComparison.OrdinalIgnoreCase)
-            || uri.AbsolutePath.EndsWith(".map", StringComparison.OrdinalIgnoreCase);
+        if (response.Url.Contains(".js", StringComparison.OrdinalIgnoreCase))
+            _scriptResponses.Enqueue($"{response.Status} {response.Url}");
+
+        if (response.Status < 400)
+            return;
+
+        if (!ConsumeExpectedFailure(BrowserFailureKind.HttpResponse, response.Request, response.Status))
+        {
+            _responseErrors.Enqueue(
+                $"HTTP {response.Status} {response.Request.Method} {response.Url}");
+        }
     }
 
-    private static bool IsApplicationUrl(string url)
+    private void RecordFailedRequest(IRequest request)
     {
-        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var application)
-            || !Uri.TryCreate(url, UriKind.Absolute, out var candidate))
-            return false;
-        return string.Equals(application.Scheme, candidate.Scheme, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(application.Host, candidate.Host, StringComparison.OrdinalIgnoreCase)
-            && application.Port == candidate.Port;
+        _scriptResponses.Enqueue($"FAILED {request.Method} {request.Url}: {request.Failure}");
+        if (!ConsumeExpectedFailure(BrowserFailureKind.RequestFailed, request, status: null))
+        {
+            _requestErrors.Enqueue($"FAILED {request.Method} {request.Url}: {request.Failure}");
+        }
+    }
+
+    private void CompleteRequest(IRequest request)
+    {
+        if (_inflightRequests.TryRemove(request, out var completed))
+            completed.TrySetResult();
+    }
+
+    private static bool IsBrowserNetworkConsoleError(string message) =>
+        message.StartsWith(
+            "Failed to load resource: the server responded with a status of",
+            StringComparison.Ordinal)
+        || message.StartsWith("Failed to load resource: net::ERR_", StringComparison.Ordinal);
+
+    private async Task WaitForNetworkQuiescenceAsync()
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try
+        {
+            while (true)
+            {
+                var pending = _inflightRequests.Values.Select(completion => completion.Task).ToArray();
+                if (pending.Length == 0)
+                {
+                    // Let request callbacks already queued by Playwright run before declaring
+                    // the context quiet. Any request that starts during disposal is still
+                    // observed and its failure is collected in the final snapshot below.
+                    await Task.Yield();
+                    if (_inflightRequests.IsEmpty)
+                        return;
+                    continue;
+                }
+
+                await Task.WhenAll(pending).WaitAsync(timeout.Token);
+            }
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+        {
+            var pending = _inflightRequests.Keys
+                .Select(request => $"{request.Method} {request.Url}")
+                .Order(StringComparer.Ordinal)
+                .ToArray();
+            throw new TimeoutException(
+                $"Browser network did not become idle. Pending requests:{Environment.NewLine}"
+                + string.Join(Environment.NewLine, pending));
+        }
     }
 
     public async Task DisposeAsync()
     {
-        if (_context is not null) await _context.DisposeAsync();
-        if (_browser is not null) await _browser.DisposeAsync();
+        var failures = new List<string>();
+        if (_context is not null)
+        {
+            try
+            {
+                await WaitForNetworkQuiescenceAsync();
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"Could not reach browser network quiescence: {ex.Message}");
+            }
+
+            if (_tracePath is not null)
+            {
+                try
+                {
+                    await _context.Tracing.StopAsync(new TracingStopOptions { Path = _tracePath });
+                }
+                catch (Exception ex)
+                {
+                    failures.Add($"Could not save Playwright trace '{_tracePath}': {ex.Message}");
+                }
+            }
+
+            try
+            {
+                await _context.DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"Could not dispose browser context: {ex.Message}");
+            }
+        }
+
+        if (_browser is not null)
+        {
+            try
+            {
+                await _browser.DisposeAsync();
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"Could not dispose browser: {ex.Message}");
+            }
+        }
+
         _playwright?.Dispose();
+        failures.AddRange(SnapshotBrowserFailures(includeUnmetExpectations: true));
+        Assert.True(
+            failures.Count == 0,
+            $"Browser diagnostics:{Environment.NewLine}{string.Join(Environment.NewLine, failures)}");
     }
 
     private async Task AssertLanguageCatalogSupportsSearchKeyboardMobileAndNoJavaScriptSelectionAsync()
@@ -106,7 +280,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
 
         var state = await _context!.StorageStateAsync();
-        await using var noJavaScriptContext = await _browser!.NewContextAsync(new BrowserNewContextOptions
+        await using var noJavaScriptContext = await NewObservedContextAsync(new BrowserNewContextOptions
         {
             BaseURL = BaseUrl,
             JavaScriptEnabled = false,
@@ -120,12 +294,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task RegisterLoginLogoutAndProtectedRedirect()
     {
-        if (BaseUrl is null) return;
-
         await Page.GotoAsync("/Quizzes");
         await Expect(Page).ToHaveURLAsync(new Regex("/login", RegexOptions.IgnoreCase));
 
@@ -139,14 +311,16 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Page.GetByLabel("Password").FillAsync(credentials.Password);
         await Page.GetByRole(AriaRole.Button, new() { Name = "Log In" }).ClickAsync();
         await Expect(Page).Not.ToHaveURLAsync(new Regex("/login", RegexOptions.IgnoreCase));
+        await Page.GotoAsync("/Quizzes");
+        await Expect(Page).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Log out", Exact = true }))
+            .ToBeVisibleAsync();
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task CreateQuizAddWordAndStartPractice()
     {
-        if (BaseUrl is null) return;
-
         await RegisterAndSelectPolishAsync();
         await CreateQuizWithWordAsync();
 
@@ -172,12 +346,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(pronunciationButton).ToBeFocusedAsync();
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task QuizDialogTrapsFocusClosesWithEscapeAndRestoresItsTrigger()
     {
-        if (BaseUrl is null) return;
-
         await RegisterAndSelectPolishAsync();
         var assistantToggle = Page.Locator("[data-assistant-toggle]");
         var assistantWindow = Page.Locator("[data-assistant-window]");
@@ -206,12 +378,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(trigger).ToBeFocusedAsync();
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task QuizDropRecoversFromHttpAndNetworkFailures()
     {
-        if (BaseUrl is null) return;
-
         await RegisterAndSelectPolishAsync();
         await Page.GetByRole(AriaRole.Button, new() { Name = "New Collection", Exact = true }).ClickAsync();
         await Page.GetByLabel("Collection Name", new() { Exact = true }).FillAsync("Drop target");
@@ -227,14 +397,8 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
         var attempts = 0;
         string? moveRequestUrl = null;
-        await Page.RouteAsync("**/*", async route =>
+        await Page.RouteAsync("**/Quizzes/MoveQuizToCollection", async route =>
         {
-            if (!string.Equals(route.Request.Method, "POST", StringComparison.OrdinalIgnoreCase))
-            {
-                await route.FallbackAsync();
-                return;
-            }
-
             attempts++;
             moveRequestUrl = route.Request.Url;
             if (attempts == 1)
@@ -250,6 +414,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
             await route.AbortAsync();
         });
+        ExpectHttpFailure("POST", "/Quizzes/MoveQuizToCollection", 503);
 
         var card = Page.Locator("[data-quiz-card]").Filter(new() { HasText = "Movable quiz" });
         var target = Page.Locator("[data-collection-drop-target]").Filter(new() { HasText = "Drop target" });
@@ -267,18 +432,17 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(target).Not.ToHaveClassAsync(new Regex("is-drop-saving"));
 
         await message.EvaluateAsync("element => { element.hidden = true; element.textContent = ''; }");
+        ExpectRequestFailure("POST", "/Quizzes/MoveQuizToCollection");
         await DropQuizAsync();
         await Expect(message).ToContainTextAsync("Could not move that quiz.");
         await Expect(message).ToBeVisibleAsync();
         await Expect(target).Not.ToHaveClassAsync(new Regex("is-drop-saving"));
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task PreviewAndImportExternalAiJsonHierarchy()
     {
-        if (BaseUrl is null) return;
-
         await RegisterAndSelectPolishAsync();
         await Page.GetByRole(AriaRole.Button, new() { Name = "Import JSON", Exact = true }).First.ClickAsync();
         const string json = """
@@ -319,12 +483,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await AssertNoPageErrorsAsync();
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task CreateLinkStudyAndInspectAnkiCollection()
     {
-        if (BaseUrl is null) return;
-
         await RegisterAndSelectPolishAsync();
         await CreateQuizWithWordAsync();
         await Page.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("Start Quiz", RegexOptions.IgnoreCase) }).ClickAsync();
@@ -354,12 +516,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await AssertNoPageErrorsAsync();
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task CreateSaveAndPlayCustomQuiz()
     {
-        if (BaseUrl is null) return;
-
         await RegisterAndSelectPolishAsync();
         await CreateQuizWithWordAsync();
         await Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Build custom quiz", RegexOptions.IgnoreCase) }).ClickAsync();
@@ -386,12 +546,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Portfolio custom quiz" })).ToBeVisibleAsync();
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task CreateRenameSwitchAndDeleteAssistantChatsWithoutAi()
     {
-        if (BaseUrl is null) return;
-
         await RegisterAndSelectPolishAsync();
         await Page.GotoAsync("/Quizzes");
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
@@ -453,9 +611,14 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         // interacting with the replacement row so a delayed selection transition
         // cannot leave Playwright targeting a row inside the hidden Chats pane.
         await OpenChatsAsync();
+        var deleteResponseTask = Page.WaitForResponseAsync(response =>
+            response.Request.Method.Equals("DELETE", StringComparison.OrdinalIgnoreCase)
+            && new Uri(response.Url).AbsolutePath.StartsWith("/Assistant/Chats/", StringComparison.Ordinal));
         await DispatchAndAcceptDialogAsync(
             Page.Locator("[data-assistant-chat-item]").First
                 .Locator("button[aria-label='Delete chat']"));
+        var deleteResponse = await deleteResponseTask;
+        Assert.Equal(200, deleteResponse.Status);
         await Expect(Page.Locator("[data-assistant-chat-item]")).ToHaveCountAsync(1);
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
         await OpenChatsAsync();
@@ -463,12 +626,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task AssistantApplySelectsReturnedQuizWithoutCallingBearerQuizApi()
     {
-        if (BaseUrl is null) return;
-
         var createdQuizId = Guid.NewGuid();
         var assistantMessageId = Guid.NewGuid();
         var apiQuizRequests = 0;
@@ -487,7 +648,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             ContentType = "application/json",
             Body = JsonSerializer.Serialize(new
             {
-                threadId = Guid.NewGuid(),
+                threadId = new Uri(route.Request.Url).Segments[^2].Trim('/'),
                 assistantMessageId,
                 assistantText = "I prepared a travel quiz.",
                 toolEvents = Array.Empty<object>(),
@@ -546,6 +707,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
             contextPatch = route.Request.PostData;
             if (failContextPatch)
             {
+                ExpectHttpFailure("PATCH", new Uri(route.Request.Url).AbsolutePath, 503);
                 await route.FulfillAsync(new RouteFulfillOptions
                 {
                     Status = 503,
@@ -585,8 +747,13 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await RegisterAndSelectPolishAsync();
         await Page.GotoAsync("/Quizzes");
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
-        await Page.Locator("[data-assistant-textarea]").FillAsync("Create a travel quiz");
-        await Page.Locator("[data-assistant-submit]").ClickAsync();
+        await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
+        var assistantInput = Page.Locator("[data-assistant-textarea]");
+        var assistantSubmit = Page.Locator("[data-assistant-submit]");
+        await Expect(assistantInput).ToBeEditableAsync();
+        await Expect(assistantSubmit).ToBeEnabledAsync();
+        await assistantInput.FillAsync("Create a travel quiz");
+        await assistantSubmit.ClickAsync();
         await Expect(Page.Locator("[data-assistant-pending-card]")).ToBeVisibleAsync();
 
         var pendingCard = Page.Locator("[data-assistant-pending-card]");
@@ -596,6 +763,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(pendingCard).Not.ToContainTextAsync("custom quiz");
         var applyButton = pendingCard.GetByRole(AriaRole.Button, new() { Name = "Apply", Exact = true });
         var rejectButton = pendingCard.GetByRole(AriaRole.Button, new() { Name = "Reject", Exact = true });
+        ExpectHttpFailure("POST", $"/Assistant/Apply/{assistantMessageId}", 409);
         await applyButton.ClickAsync();
         await Expect(Page.Locator("[data-assistant-status]")).ToContainTextAsync("Could not apply changes.");
         await Expect(applyButton).ToBeEnabledAsync();
@@ -623,12 +791,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Travel Polish" })).ToBeVisibleAsync();
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task SwedishDisplayLanguagePersistsAcrossNavigationReloadMobileAndSignIn()
     {
-        if (BaseUrl is null) return;
-
         await Page.GotoAsync("/");
         await Page.GetByLabel("Display language").SelectOptionAsync("sv-SE");
         await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
@@ -651,7 +817,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Page.GetByRole(AriaRole.Button, new() { Name = "Skapa konto" }).ClickAsync();
         await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
 
-        await using var otherDevice = await _browser!.NewContextAsync(new BrowserNewContextOptions { BaseURL = BaseUrl });
+        await using var otherDevice = await NewObservedContextAsync(new BrowserNewContextOptions { BaseURL = BaseUrl });
         var signedInPage = await otherDevice.NewPageAsync();
         await signedInPage.GotoAsync("/login");
         await signedInPage.GetByLabel("Email Address").FillAsync(email);
@@ -668,12 +834,10 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         }
     }
 
-    [Fact]
+    [BrowserFact]
     [Trait("Category", "Browser")]
     public async Task EveryDisplayLanguageSwitchesPersistsAndKeepsPublicRoutesAccessible()
     {
-        if (BaseUrl is null) return;
-
         var cultures = new[]
         {
             "en-GB", "sv-SE", "es-419", "pt-BR", "fr-FR", "ja-JP",
@@ -765,9 +929,91 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
     private async Task AssertNoPageErrorsAsync()
     {
-        await Page.WaitForTimeoutAsync(100);
+        await WaitForNetworkQuiescenceAsync();
+        var failures = SnapshotBrowserFailures(includeUnmetExpectations: false);
         Assert.True(
-            _pageErrors.Count == 0 && _consoleErrors.Count == 0 && _responseErrors.Count == 0,
-            $"Browser errors:{Environment.NewLine}{string.Join(Environment.NewLine, _pageErrors.Concat(_consoleErrors).Concat(_responseErrors))}");
+            failures.Count == 0,
+            $"Browser errors:{Environment.NewLine}{string.Join(Environment.NewLine, failures)}");
+    }
+
+    private void ExpectHttpFailure(string method, string path, int status) =>
+        AddExpectedFailure(new BrowserFailureExpectation(
+            BrowserFailureKind.HttpResponse,
+            method,
+            path,
+            status));
+
+    private void ExpectRequestFailure(string method, string path) =>
+        AddExpectedFailure(new BrowserFailureExpectation(
+            BrowserFailureKind.RequestFailed,
+            method,
+            path,
+            Status: null));
+
+    private void AddExpectedFailure(BrowserFailureExpectation expectation)
+    {
+        if (!expectation.Path.StartsWith("/", StringComparison.Ordinal))
+            throw new ArgumentException("Expected browser failure paths must be absolute paths.", nameof(expectation));
+
+        lock (_expectedFailuresLock)
+        {
+            _expectedFailures.Add(expectation);
+        }
+    }
+
+    private bool ConsumeExpectedFailure(BrowserFailureKind kind, IRequest request, int? status)
+    {
+        if (!Uri.TryCreate(request.Url, UriKind.Absolute, out var uri))
+            return false;
+
+        lock (_expectedFailuresLock)
+        {
+            var index = _expectedFailures.FindIndex(expectation =>
+                expectation.Kind == kind
+                && string.Equals(expectation.Method, request.Method, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(expectation.Path, uri.AbsolutePath, StringComparison.Ordinal)
+                && expectation.Status == status);
+            if (index < 0)
+                return false;
+
+            _expectedFailures.RemoveAt(index);
+            return true;
+        }
+    }
+
+    private List<string> SnapshotBrowserFailures(bool includeUnmetExpectations)
+    {
+        var failures = _pageErrors
+            .Concat(_consoleErrors)
+            .Concat(_responseErrors)
+            .Concat(_requestErrors)
+            .ToList();
+        if (!includeUnmetExpectations)
+            return failures;
+
+        lock (_expectedFailuresLock)
+        {
+            failures.AddRange(_expectedFailures.Select(expectation =>
+                $"EXPECTED FAILURE DID NOT OCCUR: {expectation}"));
+        }
+
+        return failures;
+    }
+
+    private enum BrowserFailureKind
+    {
+        HttpResponse,
+        RequestFailed,
+    }
+
+    private sealed record BrowserFailureExpectation(
+        BrowserFailureKind Kind,
+        string Method,
+        string Path,
+        int? Status)
+    {
+        public override string ToString() => Status is null
+            ? $"{Kind} {Method} {Path}"
+            : $"{Kind} {Status} {Method} {Path}";
     }
 }

@@ -53,6 +53,7 @@ function initialize() {
     const parentCollectionId = form.querySelector('input[name="ParentCollectionId"]')?.value || '';
     let previewCanonicalJson = null;
     let lastErrorMessages = [];
+    let inputRevision = 0;
 
     const setHidden = (element, hidden) => {
         if (element) {
@@ -82,18 +83,21 @@ function initialize() {
         setStatus('');
     };
 
-    const setBusy = (busy, message = '') => {
+    const setBusy = (busy, message = '', lockInput = false) => {
         [previewButton, applyButton, aiRepairButton, repairPromptButton]
             .filter(Boolean)
             .forEach(button => { button.disabled = busy; });
+        if (lockInput) {
+            input.disabled = busy;
+        }
         if (message) {
             setStatus(message);
         }
     };
 
-    const request = async (url, timeoutMs) => {
+    const request = async (url, timeoutMs, json) => {
         const body = new FormData();
-        body.set('Json', input.value);
+        body.set('Json', json);
         body.set('ParentCollectionId', parentCollectionId);
         body.set('__RequestVerificationToken', token);
         const controller = new AbortController();
@@ -116,6 +120,14 @@ function initialize() {
             payload = { detail: response.status === 413 ? 'The JSON request is too large.' : 'The server returned an unreadable response.' };
         }
         return { response, payload };
+    };
+
+    const renderStaleResponse = (repairedByAi = false) => {
+        invalidatePreview();
+        setHidden(previewButton, false);
+        setStatus(repairedByAi
+            ? 'The JSON changed while AI repair was running. Your edits were kept and the repaired response was discarded; the request may still have used credits.'
+            : 'The JSON changed while preview was running. Your edits were kept and the older response was discarded; preview it again.');
     };
 
     const addQuiz = (list, quiz) => {
@@ -234,11 +246,21 @@ function initialize() {
             renderProblem({ errors: { '$.json': ['Paste a JSON import document.'] } }, 400);
             return;
         }
+        const revision = inputRevision;
+        const json = input.value;
         setBusy(true, 'Validating and building the free preview…');
         try {
-            const { response, payload } = await request(form.dataset.previewUrl, previewTimeoutMs);
+            const { response, payload } = await request(form.dataset.previewUrl, previewTimeoutMs, json);
+            if (revision !== inputRevision) {
+                renderStaleResponse();
+                return;
+            }
             response.ok ? renderPreview(payload) : renderProblem(payload, response.status);
         } catch (error) {
+            if (revision !== inputRevision) {
+                renderStaleResponse();
+                return;
+            }
             renderProblem({ detail: isRequestTimeout(error)
                 ? 'The preview timed out. No content was created; try again.'
                 : 'Could not reach Glosify. Check your connection and try again.' }, 0);
@@ -248,11 +270,21 @@ function initialize() {
     };
 
     const repairWithAi = async () => {
+        const revision = inputRevision;
+        const json = input.value;
         setBusy(true, 'Repairing with Glosify AI. This uses credits…');
         try {
-            const { response, payload } = await request(form.dataset.repairUrl, aiRepairTimeoutMs);
+            const { response, payload } = await request(form.dataset.repairUrl, aiRepairTimeoutMs, json);
+            if (revision !== inputRevision) {
+                renderStaleResponse(true);
+                return;
+            }
             response.ok ? renderPreview(payload, true) : renderProblem(payload, response.status);
         } catch (error) {
+            if (revision !== inputRevision) {
+                renderStaleResponse(true);
+                return;
+            }
             renderProblem({ detail: isRequestTimeout(error)
                 ? 'AI repair timed out. Nothing was imported; try again.'
                 : 'Could not reach the AI repair service. Try again.' }, 0);
@@ -267,13 +299,16 @@ function initialize() {
             setStatus('The JSON changed after preview. Preview it again before importing.');
             return;
         }
-        setBusy(true, 'Creating every collection, quiz, word, and sentence in one transaction…');
+        const json = input.value;
+        let completed = false;
+        setBusy(true, 'Creating every collection, quiz, word, and sentence in one transaction…', true);
         try {
-            const { response, payload } = await request(form.dataset.applyUrl, applyTimeoutMs);
+            const { response, payload } = await request(form.dataset.applyUrl, applyTimeoutMs, json);
             if (!response.ok) {
                 renderProblem(payload, response.status);
                 return;
             }
+            completed = true;
             setHidden(preview, true);
             setHidden(errors, true);
             setHidden(applyButton, true);
@@ -287,7 +322,8 @@ function initialize() {
                 ? 'The import request timed out. Reload the library and check whether content was created before trying again.'
                 : 'The import could not be completed. Nothing was created.' }, 0);
         } finally {
-            setBusy(false);
+            setBusy(false, '', true);
+            input.disabled = completed;
         }
     };
 
@@ -309,6 +345,7 @@ function initialize() {
     };
 
     input.addEventListener('input', () => {
+        inputRevision++;
         updateSize();
         invalidatePreview();
         setHidden(previewButton, false);

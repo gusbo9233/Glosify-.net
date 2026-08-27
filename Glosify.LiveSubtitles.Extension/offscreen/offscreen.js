@@ -184,11 +184,22 @@ function processAudio(event) {
   }));
 }
 
-async function connectRelay({ sessionId, targetLanguage, relayToken, relayPath, glosifyBaseUrl }) {
+async function connectRelay({
+  sessionId,
+  targetLanguage,
+  relayToken,
+  relayPath,
+  glosifyBaseUrl,
+  allowInsecureRelay,
+}) {
   if (relayConnection) {
     throw new Error("The previous subtitle relay is still connected.");
   }
-  const relayUrl = buildRelayWebSocketUrl(glosifyBaseUrl, relayPath, sessionId);
+  const relayUrl = buildRelayWebSocketUrl(
+    glosifyBaseUrl,
+    relayPath,
+    sessionId,
+    { allowInsecure: allowInsecureRelay === true });
   const protocols = buildRelayProtocols(relayToken);
   const generation = ++relayGeneration;
   const socket = new WebSocket(relayUrl, protocols);

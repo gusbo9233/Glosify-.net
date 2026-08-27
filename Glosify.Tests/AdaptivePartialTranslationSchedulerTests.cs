@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Threading.Channels;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.Extensions.Time.Testing;
@@ -32,7 +33,7 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         var fixture = new SchedulerFixture(Options(translatePartials: false));
         var run = fixture.RunAsync();
         fixture.Write(Partial(1, "abcdefgh"));
-        await fixture.AdvanceAsync(TimeSpan.FromMinutes(1));
+        await fixture.NextObservedAsync();
         Assert.Empty(fixture.Translated);
         fixture.Write(Final(1, "abcdefgh!"));
         fixture.Complete();
@@ -52,14 +53,19 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         for (var index = 1; index <= 14; index++)
         {
             fixture.Write(Partial(1, new string('a', index * 8)));
-            await fixture.AdvanceAsync(TimeSpan.FromMilliseconds(750));
+            await fixture.NextObservedAsync();
+            await fixture.AdvanceAfterTimerAsync(TimeSpan.FromMilliseconds(750));
+            if ((index - 2) % 3 == 0)
+            {
+                await fixture.NextTranslationAsync();
+            }
         }
         fixture.Write(Final(1, new string('a', 14 * 8)));
         fixture.Complete();
 
         await run;
 
-        Assert.InRange(fixture.Translated.Count, 1, 6);
+        Assert.InRange(fixture.Translated.Length, 1, 6);
         Assert.True(fixture.Published[^1].Segment.IsFinal);
     }
 
@@ -71,11 +77,12 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         fixture.Write(Partial(1, "abcdefghijklmnop"));
         fixture.Write(Partial(1, "abcdefghijklmnopqrstuvwx"));
         var run = fixture.RunAsync();
-        await WaitForAsync(() => fixture.Translated.Count == 1);
+        var translated = await fixture.NextTranslationAsync();
         fixture.Complete();
         await run;
 
-        Assert.Equal("abcdefghijklmnopqrstuvwx", fixture.Translated[0].Text);
+        Assert.Equal("abcdefghijklmnopqrstuvwx", translated.Text);
+        Assert.Single(fixture.Translated);
     }
 
     [Fact]
@@ -84,19 +91,19 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         var fixture = new SchedulerFixture(Options(initialDelay: 0));
         var run = fixture.RunAsync();
         fixture.Write(Partial(1, "abcdefgh"));
-        await WaitForAsync(() => fixture.Translated.Count == 1);
+        await fixture.NextTranslationAsync();
 
         fixture.Write(Partial(1, "abcdefghi"));
-        await YieldAsync();
-        await fixture.AdvanceAsync(TimeSpan.FromSeconds(2) + TimeSpan.FromMilliseconds(1));
+        await fixture.AdvanceAfterTimerAsync(TimeSpan.FromSeconds(2) + TimeSpan.FromMilliseconds(1));
         Assert.Single(fixture.Translated);
 
-        await fixture.AdvanceAsync(TimeSpan.FromSeconds(2));
-        await WaitForAsync(() => fixture.Translated.Count == 2);
+        fixture.Advance(TimeSpan.FromSeconds(2));
+        var translated = await fixture.NextTranslationAsync();
         fixture.Complete();
         await run;
 
-        Assert.Equal("abcdefghi", fixture.Translated[1].Text);
+        Assert.Equal("abcdefghi", translated.Text);
+        Assert.Equal(2, fixture.Translated.Length);
     }
 
     [Fact]
@@ -105,17 +112,18 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         var fixture = new SchedulerFixture(Options(initialDelay: 0));
         var run = fixture.RunAsync();
         fixture.Write(Partial(1, "abcdefgh"));
-        await WaitForAsync(() => fixture.Translated.Count == 1);
+        await fixture.NextTranslationAsync();
 
         fixture.Write(Partial(1, "abcdXfgh"));
-        await fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
+        await fixture.AdvanceAfterTimerAsync(TimeSpan.FromSeconds(1));
         Assert.Single(fixture.Translated);
-        await fixture.AdvanceAsync(TimeSpan.FromSeconds(1));
-        await WaitForAsync(() => fixture.Translated.Count == 2);
+        fixture.Advance(TimeSpan.FromSeconds(1));
+        var translated = await fixture.NextTranslationAsync();
         fixture.Complete();
         await run;
 
-        Assert.Equal("abcdXfgh", fixture.Translated[1].Text);
+        Assert.Equal("abcdXfgh", translated.Text);
+        Assert.Equal(2, fixture.Translated.Length);
     }
 
     [Fact]
@@ -124,7 +132,7 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         var fixture = new SchedulerFixture();
         var run = fixture.RunAsync();
         fixture.Write(Partial(1, "abcdefgh"));
-        await YieldAsync();
+        await fixture.NextTimerCreatedAsync();
         fixture.Write(Final(1, "abcdefgh!"));
         fixture.Complete();
 
@@ -140,14 +148,14 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         var fixture = new SchedulerFixture(Options(initialDelay: 0));
         var run = fixture.RunAsync();
         fixture.Write(Partial(1, "abcdefgh"));
-        await WaitForAsync(() => fixture.Translated.Count == 1);
+        await fixture.NextTranslationAsync();
         fixture.Write(Final(1, "abcdefgh"));
         fixture.Complete();
 
         await run;
 
         Assert.Single(fixture.Translated);
-        Assert.Equal(2, fixture.Published.Count);
+        Assert.Equal(2, fixture.Published.Length);
         Assert.False(fixture.Published[0].Segment.IsFinal);
         Assert.True(fixture.Published[1].Segment.IsFinal);
         Assert.True(fixture.Published[0].ProviderRequest);
@@ -161,13 +169,13 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         var fixture = new SchedulerFixture(Options(initialDelay: 0));
         var run = fixture.RunAsync();
         fixture.Write(Partial(1, "abcdefgh"));
-        await WaitForAsync(() => fixture.Translated.Count == 1);
+        await fixture.NextTranslationAsync();
         fixture.Write(Final(1, "abcdefgh!"));
         fixture.Complete();
 
         await run;
 
-        Assert.Equal(2, fixture.Translated.Count);
+        Assert.Equal(2, fixture.Translated.Length);
         Assert.True(fixture.Translated[1].IsFinal);
         Assert.All(fixture.Published, published => Assert.True(published.ProviderRequest));
     }
@@ -179,17 +187,17 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         using var cancellation = new CancellationTokenSource();
         var cancelledRun = cancelled.RunAsync(cancellation.Token);
         cancelled.Write(Partial(1, "abcdefgh"));
-        await YieldAsync();
+        await cancelled.NextTimerCreatedAsync();
         await cancellation.CancelAsync();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancelledRun);
-        await cancelled.AdvanceAsync(TimeSpan.FromMinutes(1));
+        cancelled.Advance(TimeSpan.FromMinutes(1));
         Assert.Empty(cancelled.Translated);
 
         var completed = new SchedulerFixture();
         completed.Write(Partial(1, "abcdefgh"));
         completed.Complete();
         await completed.RunAsync();
-        await completed.AdvanceAsync(TimeSpan.FromMinutes(1));
+        completed.Advance(TimeSpan.FromMinutes(1));
         Assert.Empty(completed.Translated);
     }
 
@@ -231,56 +239,54 @@ public sealed class AdaptivePartialTranslationSchedulerTests
     private static RecognizedSpeechSegment Final(int sequence, string text) =>
         new(sequence, text, "en", "en-US", Origin, IsFinal: true);
 
-    private static async Task WaitForAsync(Func<bool> condition)
-    {
-        for (var attempt = 0; attempt < 1_000 && !condition(); attempt++)
-        {
-            await Task.Delay(1).ConfigureAwait(false);
-        }
-        Assert.True(condition(), "The scheduler did not reach the expected state.");
-    }
-
-    private static Task YieldAsync() => Task.Delay(10);
-
     private sealed class SchedulerFixture
     {
         private readonly Channel<RecognizedSpeechSegment> _input =
             Channel.CreateUnbounded<RecognizedSpeechSegment>();
+        private readonly Channel<RecognizedSpeechSegment> _observedEvents =
+            Channel.CreateUnbounded<RecognizedSpeechSegment>();
+        private readonly Channel<RecognizedSpeechSegment> _translationEvents =
+            Channel.CreateUnbounded<RecognizedSpeechSegment>();
         private readonly AdaptivePartialTranslationScheduler _scheduler;
         private readonly Func<RecognizedSpeechSegment, CancellationToken, Task<TranslatedSubtitleSegment>> _translate;
+        private readonly ConcurrentQueue<RecognizedSpeechSegment> _translated = new();
+        private readonly ConcurrentQueue<RecognizedSpeechSegment> _observed = new();
+        private readonly ConcurrentQueue<(
+            RecognizedSpeechSegment Segment,
+            TranslatedSubtitleSegment Result,
+            bool ProviderRequest)> _published = new();
 
         public SchedulerFixture(
             ElevenLabsRealtimeSpeechOptions? options = null,
             Func<RecognizedSpeechSegment, CancellationToken, Task<TranslatedSubtitleSegment>>? translate = null)
         {
-            Clock = new FakeTimeProvider(Origin);
+            Clock = new NotifyingTimeProvider(Origin);
             _scheduler = new AdaptivePartialTranslationScheduler(Clock, options ?? Options());
-            _translate = translate ?? TranslateAsync;
+            _translate = translate ?? CreateTranslationAsync;
         }
 
-        public FakeTimeProvider Clock { get; }
-        public List<RecognizedSpeechSegment> Translated { get; } = [];
-        public List<RecognizedSpeechSegment> Observed { get; } = [];
-        public List<(
+        public NotifyingTimeProvider Clock { get; }
+        public RecognizedSpeechSegment[] Translated => _translated.ToArray();
+        public RecognizedSpeechSegment[] Observed => _observed.ToArray();
+        public (
             RecognizedSpeechSegment Segment,
             TranslatedSubtitleSegment Result,
-            bool ProviderRequest)>
-            Published
-        { get; } = [];
+            bool ProviderRequest)[] Published => _published.ToArray();
 
         public Task RunAsync(CancellationToken cancellationToken = default) =>
             _scheduler.RunAsync(
                 _input.Reader,
-                _translate,
+                TranslateAndRecordAsync,
                 (segment, result, providerRequest, _) =>
                 {
-                    Published.Add((segment, result, providerRequest));
+                    _published.Enqueue((segment, result, providerRequest));
                     return Task.CompletedTask;
                 },
                 cancellationToken,
                 (segment, _) =>
                 {
-                    Observed.Add(segment);
+                    _observed.Enqueue(segment);
+                    Assert.True(_observedEvents.Writer.TryWrite(segment));
                     return Task.CompletedTask;
                 });
 
@@ -288,18 +294,37 @@ public sealed class AdaptivePartialTranslationSchedulerTests
 
         public void Complete() => _input.Writer.TryComplete();
 
-        public async Task AdvanceAsync(TimeSpan amount)
+        public void Advance(TimeSpan amount) => Clock.Advance(amount);
+
+        public async Task AdvanceAfterTimerAsync(TimeSpan amount)
         {
+            await NextTimerCreatedAsync();
             Clock.Advance(amount);
-            await YieldAsync().ConfigureAwait(false);
         }
 
-        private Task<TranslatedSubtitleSegment> TranslateAsync(
+        public Task<RecognizedSpeechSegment> NextObservedAsync() =>
+            _observedEvents.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+
+        public Task<RecognizedSpeechSegment> NextTranslationAsync() =>
+            _translationEvents.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+
+        public Task<TimeSpan> NextTimerCreatedAsync() => Clock.NextTimerCreatedAsync();
+
+        private async Task<TranslatedSubtitleSegment> TranslateAndRecordAsync(
             RecognizedSpeechSegment segment,
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Translated.Add(segment);
+            _translated.Enqueue(segment);
+            Assert.True(_translationEvents.Writer.TryWrite(segment));
+            return await _translate(segment, cancellationToken);
+        }
+
+        private static Task<TranslatedSubtitleSegment> CreateTranslationAsync(
+            RecognizedSpeechSegment segment,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(new TranslatedSubtitleSegment(
                 segment.Sequence,
                 segment.Text,
@@ -308,5 +333,35 @@ public sealed class AdaptivePartialTranslationSchedulerTests
                 "sv",
                 segment.CapturedAt));
         }
+    }
+
+    private sealed class NotifyingTimeProvider(DateTimeOffset start) : TimeProvider
+    {
+        private readonly FakeTimeProvider _clock = new(start);
+        private readonly Channel<TimeSpan> _createdTimers = Channel.CreateUnbounded<TimeSpan>();
+
+        public override TimeZoneInfo LocalTimeZone => _clock.LocalTimeZone;
+
+        public override long TimestampFrequency => _clock.TimestampFrequency;
+
+        public void Advance(TimeSpan amount) => _clock.Advance(amount);
+
+        public override ITimer CreateTimer(
+            TimerCallback callback,
+            object? state,
+            TimeSpan dueTime,
+            TimeSpan period)
+        {
+            var timer = _clock.CreateTimer(callback, state, dueTime, period);
+            Assert.True(_createdTimers.Writer.TryWrite(dueTime));
+            return timer;
+        }
+
+        public override long GetTimestamp() => _clock.GetTimestamp();
+
+        public override DateTimeOffset GetUtcNow() => _clock.GetUtcNow();
+
+        public Task<TimeSpan> NextTimerCreatedAsync() =>
+            _createdTimers.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
     }
 }

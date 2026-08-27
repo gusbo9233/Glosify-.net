@@ -1,6 +1,10 @@
 const RELAY_PATH = /^\/api\/realtime-translation\/sessions\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/stream$/iu;
 
-export function buildRelayWebSocketUrl(baseUrl, relayPath, sessionId) {
+export function buildRelayWebSocketUrl(
+  baseUrl,
+  relayPath,
+  sessionId,
+  { allowInsecure = false } = {}) {
   let base;
   let relay;
   try {
@@ -12,9 +16,8 @@ export function buildRelayWebSocketUrl(baseUrl, relayPath, sessionId) {
 
   const match = RELAY_PATH.exec(relay.pathname);
   const secureOrigin = base.protocol === "https:";
-  const localOrigin = base.protocol === "http:"
-    && (base.hostname === "localhost" || base.hostname === "127.0.0.1");
-  if ((!secureOrigin && !localOrigin)
+  const explicitlyAllowedInsecureOrigin = allowInsecure && base.protocol === "http:";
+  if ((!secureOrigin && !explicitlyAllowedInsecureOrigin)
       || base.pathname !== "/"
       || base.username
       || base.password

@@ -4,6 +4,8 @@ namespace Glosify.Tests;
 
 internal static class TestEnvironment
 {
+    internal static string? ConfiguredSqlServerConnectionString { get; private set; }
+
     /// <summary>
     /// Points the test host's database at nothing reachable before any host is built.
     /// </summary>
@@ -21,8 +23,12 @@ internal static class TestEnvironment
     internal static void PinDatabaseAwayFromProduction()
     {
         const string key = "ConnectionStrings__DefaultConnection";
+        var configuredConnection = Environment.GetEnvironmentVariable(key);
+        ConfiguredSqlServerConnectionString = string.IsNullOrWhiteSpace(configuredConnection)
+            ? null
+            : configuredConnection;
 
-        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(key)))
+        if (ConfiguredSqlServerConnectionString is null)
         {
             Environment.SetEnvironmentVariable(
                 key,

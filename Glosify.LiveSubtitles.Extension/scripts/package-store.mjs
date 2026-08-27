@@ -1,4 +1,4 @@
-import { mkdir, readdir, rm } from "node:fs/promises";
+import { mkdir, readdir, rm, utimes } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +12,11 @@ const zipPath = path.join(packageDirectory, "glosify-live-subtitles-0.5.0-beta.z
 await mkdir(packageDirectory, { recursive: true });
 await rm(zipPath, { force: true });
 const files = await listFiles(path.join(root, "artifacts/store"));
+const packageTimestamp = new Date("2020-01-01T00:00:00.000Z");
+await Promise.all(files.map(file => utimes(
+  path.join(root, "artifacts/store", file),
+  packageTimestamp,
+  packageTimestamp)));
 run("zip", ["-X", "-q", zipPath, ...files], path.join(root, "artifacts/store"));
 console.log(zipPath);
 
