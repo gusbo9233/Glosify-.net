@@ -109,6 +109,7 @@ jobs:
           trap 'pulseaudio --kill || true' EXIT
           pactl load-module module-null-sink sink_name=glosify_test
           pactl set-default-sink glosify_test
+          pactl set-default-source glosify_test.monitor
           xvfb-run --auto-servernum npm run test:browser
 
       - name: Build and validate Chrome Web Store package
