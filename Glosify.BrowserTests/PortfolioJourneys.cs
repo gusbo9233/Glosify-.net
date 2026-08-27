@@ -17,7 +17,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
     private readonly ConcurrentQueue<ObservedFailedRequest> _requestErrors = [];
     private readonly ConcurrentQueue<string> _scriptResponses = [];
     private readonly ConcurrentDictionary<IRequest, ObservedRequest> _inflightRequests = [];
-    private readonly ConcurrentDictionary<IFrame, long> _frameNavigationGenerations = [];
+    private readonly ConcurrentDictionary<IPage, long> _pageNavigationGenerations = [];
     private readonly Lock _observedPagesLock = new();
     private readonly HashSet<IPage> _observedPages = [];
     private readonly Lock _expectedFailuresLock = new();
@@ -146,9 +146,9 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         {
             var navigationGeneration = _inflightRequests.TryGetValue(request, out var observed)
                 ? observed.NavigationGeneration
-                : _frameNavigationGenerations.GetOrAdd(request.Frame, 0);
+                : _pageNavigationGenerations.GetOrAdd(request.Frame.Page, 0);
             _requestErrors.Enqueue(new ObservedFailedRequest(
-                request.Frame,
+                request.Frame.Page,
                 navigationGeneration,
                 $"FAILED {request.Method} {request.Url}: {request.Failure}",
                 request.Failure));
@@ -164,8 +164,8 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
     private void ObserveRequest(IRequest request)
     {
         var navigationGeneration = request.IsNavigationRequest
-            ? _frameNavigationGenerations.AddOrUpdate(request.Frame, 1, (_, current) => current + 1)
-            : _frameNavigationGenerations.GetOrAdd(request.Frame, 0);
+            ? _pageNavigationGenerations.AddOrUpdate(request.Frame.Page, 1, (_, current) => current + 1)
+            : _pageNavigationGenerations.GetOrAdd(request.Frame.Page, 0);
         _inflightRequests.TryAdd(
             request,
             new ObservedRequest(
@@ -175,7 +175,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
     private bool IsSupersededNavigationAbort(ObservedFailedRequest request) =>
         string.Equals(request.Failure, "net::ERR_ABORTED", StringComparison.Ordinal)
-        && _frameNavigationGenerations.TryGetValue(request.Frame, out var currentGeneration)
+        && _pageNavigationGenerations.TryGetValue(request.Page, out var currentGeneration)
         && currentGeneration > request.NavigationGeneration;
 
     private static bool IsBrowserNetworkConsoleError(string message) =>
@@ -1046,7 +1046,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         TaskCompletionSource Completion);
 
     private sealed record ObservedFailedRequest(
-        IFrame Frame,
+        IPage Page,
         long NavigationGeneration,
         string Description,
         string? Failure);
