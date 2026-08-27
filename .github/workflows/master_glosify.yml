@@ -198,11 +198,10 @@ jobs:
         id: retirement-compatibility
         shell: bash
         run: |
-          prepared="$(az sql db show \
+          prepared="$(az webapp config appsettings list \
+            --name glosify-app \
             --resource-group glosify \
-            --server glosify \
-            --name glosifydb \
-            --query "tags.classroomRetirementPrepared" \
+            --query "[?name=='ClassroomRetirement__Prepared'].value | [0]" \
             --output tsv)"
           if [[ "$prepared" == "true" ]]; then
             echo "prepared=true" >> "$GITHUB_OUTPUT"
@@ -226,11 +225,10 @@ jobs:
       - name: Record retirement compatibility state
         if: steps.retirement-compatibility.outputs.prepared != 'true'
         run: >-
-          az sql db update
+          az webapp config appsettings set
+          --name glosify-app
           --resource-group glosify
-          --server glosify
-          --name glosifydb
-          --set tags.classroomRetirementPrepared=true
+          --settings ClassroomRetirement__Prepared=true
           --output none
 
       - name: Deploy Azure Web App
@@ -272,11 +270,10 @@ jobs:
 
       - name: Record retirement migration completion
         run: >-
-          az sql db update
+          az webapp config appsettings set
+          --name glosify-app
           --resource-group glosify
-          --server glosify
-          --name glosifydb
-          --set tags.classroomRetirementComplete=true
+          --settings ClassroomRetirement__Complete=true
           --output none
 
       - name: Verify health after database migration
