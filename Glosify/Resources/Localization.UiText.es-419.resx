@@ -397,7 +397,7 @@
     <value>Aprende de lo que ya tiene tu atención.</value>
   </data>
   <data name="Home.ConnectedText" xml:space="preserve">
-    <value>Un libro o una lista de palabras compartida pueden convertirse en el inicio de tu siguiente sesiÃ³n de prÃ¡ctica. Tu vocabulario se mantiene cerca vayas a donde vayas.</value>
+    <value>Un libro o una lista de palabras compartida pueden convertirse en el inicio de tu siguiente sesión de práctica. Tu vocabulario se mantiene cerca vayas a donde vayas.</value>
   </data>
   <data name="Home.ExploreCollections" xml:space="preserve">
     <value>Explorar colecciones de la comunidad</value>
@@ -1642,7 +1642,7 @@
     <value>Tarjetas aurora</value>
   </data>
   <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>Colores suaves, tarjetas de prÃ¡ctica emparejadas y un ambiente de estudio dinÃ¡mico.</value>
+    <value>Colores suaves, tarjetas de práctica emparejadas y un ambiente de estudio dinámico.</value>
   </data>
   <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
     <value>Conjuntos cortos de vocabulario y lectura visual rápida</value>

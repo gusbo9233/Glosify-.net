@@ -355,7 +355,7 @@
     <value>Entraîner la mémorisation</value>
   </data>
   <data name="Home.LoopAria" xml:space="preserve">
-    <value>Une boucle dâapprentissage connectÃ©e, de la lecture Ã  la mÃ©morisation active</value>
+    <value>Une boucle d’apprentissage connectée, de la lecture à la mémorisation active</value>
   </data>
   <data name="Home.Discover" xml:space="preserve">
     <value>Découvrir</value>
@@ -397,7 +397,7 @@
     <value>Apprenez à partir de tout ce qui retient déjà votre attention.</value>
   </data>
   <data name="Home.ConnectedText" xml:space="preserve">
-    <value>Un livre ou une liste de mots partagÃ©e peuvent devenir le point de dÃ©part de votre prochaine sÃ©ance de pratique. Votre vocabulaire reste Ã  portÃ©e de main oÃ¹ que vous alliez ensuite.</value>
+    <value>Un livre ou une liste de mots partagée peuvent devenir le point de départ de votre prochaine séance de pratique. Votre vocabulaire reste à portée de main où que vous alliez ensuite.</value>
   </data>
   <data name="Home.ExploreCollections" xml:space="preserve">
     <value>Explorer les collections de la communauté</value>
@@ -1642,7 +1642,7 @@
     <value>Cartes aurora</value>
   </data>
   <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>Des couleurs douces, des cartes de pratique associÃ©es et une ambiance dâÃ©tude dynamique.</value>
+    <value>Des couleurs douces, des cartes de pratique associées et une ambiance d’étude dynamique.</value>
   </data>
   <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
     <value>Séries courtes de vocabulaire et repérage visuel</value>

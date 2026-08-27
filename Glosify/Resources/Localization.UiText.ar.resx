@@ -355,7 +355,7 @@
     <value>تدريب الاسترجاع</value>
   </data>
   <data name="Home.LoopAria" xml:space="preserve">
-    <value>Ø­ÙÙØ© ØªØ¹ÙÙ ÙØªØ±Ø§Ø¨Ø·Ø© ÙÙ Ø§ÙÙØ±Ø§Ø¡Ø© Ø¥ÙÙ Ø§ÙØªØ°ÙÙØ±</value>
+    <value>حلقة تعلم مترابطة من القراءة إلى التذكّر</value>
   </data>
   <data name="Home.Discover" xml:space="preserve">
     <value>اكتشف</value>
@@ -397,7 +397,7 @@
     <value>تعلّم من أي شيء يستحوذ على انتباهك أصلًا.</value>
   </data>
   <data name="Home.ConnectedText" xml:space="preserve">
-    <value>ÙÙÙÙ Ø£Ù ÙØµØ¨Ø­ ÙØªØ§Ø¨ Ø£Ù ÙØ§Ø¦ÙØ© ÙÙÙØ§Øª ÙØ´ØªØ±ÙØ© Ø¨Ø¯Ø§ÙØ© Ø¬ÙØ³Ø© Ø§ÙØªØ¯Ø±ÙØ¨ Ø§ÙØªØ§ÙÙØ©. Ø³ØªØ¨ÙÙ ÙÙØ±Ø¯Ø§ØªÙ ÙØ±ÙØ¨Ø© ÙÙÙ Ø£ÙÙÙØ§ Ø°ÙØ¨Øª Ø¨Ø¹Ø¯ Ø°ÙÙ.</value>
+    <value>يمكن أن يصبح كتاب أو قائمة كلمات مشتركة بداية جلسة التدريب التالية. ستبقى مفرداتك قريبة منك أينما ذهبت بعد ذلك.</value>
   </data>
   <data name="Home.ExploreCollections" xml:space="preserve">
     <value>استكشف المجموعات المجتمعية</value>
@@ -1642,7 +1642,7 @@
     <value>بطاقات الشفق القطبي</value>
   </data>
   <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>Ø£ÙÙØ§Ù ÙØ§Ø¹ÙØ© ÙØ¨Ø·Ø§ÙØ§Øª ØªØ¯Ø±ÙØ¨ ÙØªØ±Ø§Ø¨Ø·Ø© ÙØ£Ø¬ÙØ§Ø¡ Ø¯Ø±Ø§Ø³Ø© Ø­ÙÙÙØ©.</value>
+    <value>ألوان ناعمة وبطاقات تدريب مترابطة وأجواء دراسة حيوية.</value>
   </data>
   <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
     <value>مجموعات مفردات قصيرة والتصفح البصري</value>

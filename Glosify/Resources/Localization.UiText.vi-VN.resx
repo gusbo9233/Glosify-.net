@@ -355,7 +355,7 @@
     <value>Luyện ghi nhớ</value>
   </data>
   <data name="Home.LoopAria" xml:space="preserve">
-    <value>Má»t vÃ²ng há»c liÃªn káº¿t tá»« Äá»c Äáº¿n chá»§ Äá»ng ghi nhá»</value>
+    <value>Một vòng học liên kết từ đọc đến chủ động ghi nhớ</value>
   </data>
   <data name="Home.Discover" xml:space="preserve">
     <value>Khám phá</value>
@@ -397,7 +397,7 @@
     <value>Học từ bất cứ thứ gì đã thu hút sự chú ý của bạn.</value>
   </data>
   <data name="Home.ConnectedText" xml:space="preserve">
-    <value>Má»t cuá»n sÃ¡ch hoáº·c má»t danh sÃ¡ch tá»« ÄÆ°á»£c chia sáº» cÃ³ thá» trá» thÃ nh Äiá»m báº¯t Äáº§u cho buá»i luyá»n táº­p tiáº¿p theo cá»§a báº¡n. Vá»n tá»« cá»§a báº¡n luÃ´n á» gáº§n, dÃ¹ báº¡n Äi Äáº¿n ÄÃ¢u.</value>
+    <value>Một cuốn sách hoặc một danh sách từ được chia sẻ có thể trở thành điểm bắt đầu cho buổi luyện tập tiếp theo của bạn. Vốn từ của bạn luôn ở gần, dù bạn đi đến đâu.</value>
   </data>
   <data name="Home.ExploreCollections" xml:space="preserve">
     <value>Khám phá các bộ sưu tập cộng đồng</value>
@@ -1642,7 +1642,7 @@
     <value>Thẻ Aurora</value>
   </data>
   <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>MÃ u sáº¯c dá»u nháº¹, cÃ¡c tháº» luyá»n táº­p theo cáº·p vÃ  khÃ´ng khÃ­ há»c táº­p Äáº§y nÄng lÆ°á»£ng.</value>
+    <value>Màu sắc dịu nhẹ, các thẻ luyện tập theo cặp và không khí học tập đầy năng lượng.</value>
   </data>
   <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
     <value>Bộ từ vựng ngắn và quét nhìn trực quan</value>

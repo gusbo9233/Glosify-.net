@@ -355,7 +355,7 @@
     <value>想起を練習する</value>
   </data>
   <data name="Home.LoopAria" xml:space="preserve">
-    <value>èª­ããã¨ããæãåºãç·´ç¿ã¸ã¤ãªããå­¦ç¿ã«ã¼ã</value>
+    <value>読むことから思い出す練習へつながる学習ループ</value>
   </data>
   <data name="Home.Discover" xml:space="preserve">
     <value>見つける</value>
@@ -397,7 +397,7 @@
     <value>すでに興味のあるものから学べます。</value>
   </data>
   <data name="Home.ConnectedText" xml:space="preserve">
-    <value>æ¬ãå±æåèªãªã¹ãããæ¬¡ã®å­¦ç¿ã»ãã·ã§ã³ã®ãã£ããã«ã§ãã¾ããæ¬¡ã«ã©ãã¸è¡ã£ã¦ããèªå½ã¯ãããã°ã«ããã¾ãã</value>
+    <value>本や共有単語リストを、次の学習セッションのきっかけにできます。次にどこへ行っても、語彙はすぐそばにあります。</value>
   </data>
   <data name="Home.ExploreCollections" xml:space="preserve">
     <value>コミュニティのコレクションを見る</value>
@@ -1642,7 +1642,7 @@
     <value>オーロラカード</value>
   </data>
   <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>æãããªè²åããå¯¾ã«ãªã£ãç·´ç¿ã«ã¼ããæ´»æ°ããå­¦ç¿ã®é°å²æ°ã</value>
+    <value>柔らかな色合い、対になった練習カード、活気ある学習の雰囲気。</value>
   </data>
   <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
     <value>短い語彙セットと視覚的な確認</value>

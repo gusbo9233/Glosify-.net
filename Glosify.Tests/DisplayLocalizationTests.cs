@@ -200,6 +200,10 @@ public sealed class DisplayLocalizationTests
                 resourceDirectory,
                 $"Localization.UiText.{culture.Name}.resx"));
             Assert.Equal(english.Keys.Order(), localized.Keys.Order());
+            Assert.DoesNotContain(localized, item =>
+                item.Value.Contains('Ã')
+                || item.Value.Contains('Ð')
+                || item.Value.Any(character => character is >= '\u0080' and <= '\u009F'));
             foreach (var key in english.Keys)
             {
                 Assert.Equal(Placeholders(english[key]), Placeholders(localized[key]));

@@ -355,7 +355,7 @@
     <value>练习回忆</value>
   </data>
   <data name="Home.LoopAria" xml:space="preserve">
-    <value>ä»éè¯»å°ä¸»å¨åå¿çè¿è´¯å­¦ä¹ é­ç¯</value>
+    <value>从阅读到主动回忆的连贯学习闭环</value>
   </data>
   <data name="Home.Discover" xml:space="preserve">
     <value>发现</value>
@@ -397,7 +397,7 @@
     <value>从您已经关注的任何内容中学习。</value>
   </data>
   <data name="Home.ConnectedText" xml:space="preserve">
-    <value>ä¸æ¬ä¹¦æä¸ä¸ªå±äº«è¯è¡¨ï¼é½å¯ä»¥æä¸ºæ¨ä¸ä¸æ¬¡ç»ä¹ çèµ·ç¹ãæ è®ºæ¥ä¸æ¥å»åªå¿ï¼è¯æ±é½å§ç»ä¼´æ¨å·¦å³ã</value>
+    <value>一本书或一个共享词表，都可以成为您下一次练习的起点。无论接下来去哪儿，词汇都始终伴您左右。</value>
   </data>
   <data name="Home.ExploreCollections" xml:space="preserve">
     <value>探索社区集合</value>
@@ -1642,7 +1642,7 @@
     <value>极光卡片</value>
   </data>
   <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>æåçéè²ãæå¯¹çç»ä¹ å¡çï¼ä»¥ååæ»¡æ´»åçå­¦ä¹ æ°å´ã</value>
+    <value>柔和的配色、成对的练习卡片，以及充满活力的学习氛围。</value>
   </data>
   <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
     <value>短词汇集和视觉浏览</value>

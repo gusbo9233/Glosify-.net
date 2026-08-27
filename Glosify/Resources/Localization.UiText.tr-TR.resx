@@ -355,7 +355,7 @@
     <value>Hatırlamayı çalışın</value>
   </data>
   <data name="Home.LoopAria" xml:space="preserve">
-    <value>Okumadan aktif hatÄ±rlamaya uzanan baÄlantÄ±lÄ± bir Ã¶Ärenme dÃ¶ngÃ¼sÃ¼</value>
+    <value>Okumadan aktif hatırlamaya uzanan bağlantılı bir öğrenme döngüsü</value>
   </data>
   <data name="Home.Discover" xml:space="preserve">
     <value>Keşfet</value>
@@ -397,7 +397,7 @@
     <value>Zaten ilginizi çeken her şeyden öğrenin.</value>
   </data>
   <data name="Home.ConnectedText" xml:space="preserve">
-    <value>Bir kitap ya da paylaÅÄ±lan bir kelime listesi bir sonraki pratik oturumunuzun baÅlangÄ±cÄ± olabilir. Kelime hazineniz bir sonraki adÄ±mÄ±nÄ±zda da size yakÄ±n kalÄ±r.</value>
+    <value>Bir kitap ya da paylaşılan bir kelime listesi bir sonraki pratik oturumunuzun başlangıcı olabilir. Kelime hazineniz bir sonraki adımınızda da size yakın kalır.</value>
   </data>
   <data name="Home.ExploreCollections" xml:space="preserve">
     <value>Topluluk koleksiyonlarını keşfet</value>
@@ -1642,7 +1642,7 @@
     <value>Aurora kartları</value>
   </data>
   <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>YumuÅak renkler, eÅleÅtirilmiÅ pratik kartlarÄ± ve enerjik bir Ã§alÄ±Åma havasÄ±.</value>
+    <value>Yumuşak renkler, eşleştirilmiş pratik kartları ve enerjik bir çalışma havası.</value>
   </data>
   <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
     <value>Kısa kelime listeleri ve görsel tarama</value>

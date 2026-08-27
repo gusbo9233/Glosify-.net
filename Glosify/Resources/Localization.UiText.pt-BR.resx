@@ -355,7 +355,7 @@
     <value>Praticar a memorização</value>
   </data>
   <data name="Home.LoopAria" xml:space="preserve">
-    <value>Um ciclo de aprendizagem conectado da leitura Ã  recordaÃ§Ã£o ativa</value>
+    <value>Um ciclo de aprendizagem conectado da leitura à recordação ativa</value>
   </data>
   <data name="Home.Discover" xml:space="preserve">
     <value>Descobrir</value>
@@ -397,7 +397,7 @@
     <value>Aprenda com o que já chama a sua atenção.</value>
   </data>
   <data name="Home.ConnectedText" xml:space="preserve">
-    <value>Um livro ou uma lista de palavras compartilhada pode se tornar o comeÃ§o da sua prÃ³xima sessÃ£o de prÃ¡tica. Seu vocabulÃ¡rio fica por perto onde quer que vocÃª vÃ¡ em seguida.</value>
+    <value>Um livro ou uma lista de palavras compartilhada pode se tornar o começo da sua próxima sessão de prática. Seu vocabulário fica por perto onde quer que você vá em seguida.</value>
   </data>
   <data name="Home.ExploreCollections" xml:space="preserve">
     <value>Explorar coleções da comunidade</value>
@@ -1642,7 +1642,7 @@
     <value>Cartões aurora</value>
   </data>
   <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>Cores suaves, cartÃµes de prÃ¡tica em pares e um clima de estudo dinÃ¢mico.</value>
+    <value>Cores suaves, cartões de prática em pares e um clima de estudo dinâmico.</value>
   </data>
   <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
     <value>Conjuntos curtos de vocabulário e leitura visual rápida</value>
