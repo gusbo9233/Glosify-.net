@@ -116,13 +116,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         var noJavaScriptPage = await noJavaScriptContext.NewPageAsync();
         await noJavaScriptPage.GotoAsync("/Languages?returnUrl=%2FQuizzes");
         await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Serbian (Latin)", Exact = true })
-            .ClickAsync(new LocatorClickOptions
-            {
-                // The fixed assistant button occupies the card's lower-right corner on a
-                // narrow viewport. Click the card's left side so this still exercises the
-                // native no-JavaScript form submission without racing that unrelated overlay.
-                Position = new Position { X = 20, Y = 20 },
-            });
+            .PressAsync("Enter");
         await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
     }
 
@@ -157,7 +151,12 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await CreateQuizWithWordAsync();
 
         await Page.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("Start Quiz", RegexOptions.IgnoreCase) }).ClickAsync();
-        await Page.Locator("input[name='PracticeDirection'][value='target-to-source']").CheckAsync();
+        var reverseDirection = Page.Locator("label.choice").Filter(new()
+        {
+            Has = Page.Locator("input[name='PracticeDirection'][value='target-to-source']"),
+        });
+        await reverseDirection.ClickAsync();
+        await Expect(reverseDirection.Locator("input")).ToBeCheckedAsync();
         await Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Start Quiz", RegexOptions.IgnoreCase) }).ClickAsync();
 
         await Expect(Page).ToHaveURLAsync(new Regex("/FlashcardQuiz", RegexOptions.IgnoreCase));
@@ -186,7 +185,8 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Expect(assistantWindow).ToBeVisibleAsync();
 
         var trigger = Page.GetByRole(AriaRole.Button, new() { Name = "New Collection", Exact = true });
-        await trigger.ClickAsync();
+        await trigger.FocusAsync();
+        await trigger.PressAsync("Enter");
 
         var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Create New Collection", Exact = true });
         var name = dialog.GetByLabel("Collection Name", new() { Exact = true });
@@ -217,6 +217,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Page.GetByLabel("Collection Name", new() { Exact = true }).FillAsync("Drop target");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Create Collection", Exact = true }).Last.ClickAsync();
 
+        await Page.GotoAsync("/Quizzes");
         await Page.GetByRole(AriaRole.Button, new() { Name = "New Quiz", Exact = true }).ClickAsync();
         await Page.GetByLabel("Quiz Name", new() { Exact = true }).FillAsync("Movable quiz");
         await Page.GetByLabel("Source Language", new() { Exact = true })
@@ -225,9 +226,17 @@ public sealed class PortfolioJourneys : IAsyncLifetime
         await Page.GotoAsync("/Quizzes");
 
         var attempts = 0;
-        await Page.RouteAsync("**/Quiz/MoveQuizToCollection", async route =>
+        string? moveRequestUrl = null;
+        await Page.RouteAsync("**/*", async route =>
         {
+            if (!string.Equals(route.Request.Method, "POST", StringComparison.OrdinalIgnoreCase))
+            {
+                await route.FallbackAsync();
+                return;
+            }
+
             attempts++;
+            moveRequestUrl = route.Request.Url;
             if (attempts == 1)
             {
                 await route.FulfillAsync(new RouteFulfillOptions
@@ -254,6 +263,7 @@ public sealed class PortfolioJourneys : IAsyncLifetime
 
         await DropQuizAsync();
         await Expect(message).ToContainTextAsync("Moving is temporarily unavailable.");
+        Assert.Contains("MoveQuizToCollection", moveRequestUrl, StringComparison.OrdinalIgnoreCase);
         await Expect(target).Not.ToHaveClassAsync(new Regex("is-drop-saving"));
 
         await message.EvaluateAsync("element => { element.hidden = true; element.textContent = ''; }");
