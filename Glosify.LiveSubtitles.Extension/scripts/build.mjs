@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const profile = process.argv[2];
-if (!new Set(["development", "store", "test"]).has(profile)) {
-  throw new Error("Build profile must be 'development', 'store', or 'test'.");
+if (!new Set(["development", "store", "test", "test-tab"]).has(profile)) {
+  throw new Error("Build profile must be 'development', 'store', 'test', or 'test-tab'.");
 }
 
 const output = path.join(root, "artifacts", profile);

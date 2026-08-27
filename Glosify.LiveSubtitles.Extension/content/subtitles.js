@@ -535,6 +535,9 @@
       case "overlay:get-state":
         sendResponse({
           activeSessionId,
+          captionText: [...chat.messages.map(message => message.text), chat.translation]
+            .filter(Boolean)
+            .join("\n"),
           installed: true,
           overlayInstanceId,
           transparentSubtitles: panel.classList.contains("transparent"),

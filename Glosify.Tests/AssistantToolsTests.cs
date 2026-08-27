@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
@@ -1834,14 +1835,19 @@ public class AssistantToolsTests
         var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
         using var listener = ListenToAssistantSpans(out var stopped);
+        var turnId = Guid.NewGuid();
+        var invocationId = Guid.NewGuid();
 
-        using (StartToolSpan())
+        using (StartToolSpan(turnId, invocationId))
         {
             await tools.ExecuteAsync(
                 "search_book_pages", """{"query":"aspekt"}""", context, CancellationToken.None);
         }
 
-        var span = Assert.Single(stopped);
+        var span = Assert.Single(
+            stopped,
+            activity => (string?)activity.GetTagItem("assistant.turn.id") == turnId.ToString()
+                && (string?)activity.GetTagItem("assistant.invocation.id") == invocationId.ToString());
         Assert.Equal(1, span.GetTagItem("assistant.search.term_count"));
         Assert.Equal(1, span.GetTagItem("assistant.search.match_count"));
         Assert.Equal(1, span.GetTagItem("assistant.search.returned_count"));
@@ -1857,36 +1863,41 @@ public class AssistantToolsTests
         var tools = AssistantToolFactory.Create(db);
         var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
         using var listener = ListenToAssistantSpans(out var stopped);
+        var turnId = Guid.NewGuid();
+        var invocationId = Guid.NewGuid();
 
-        using (StartToolSpan())
+        using (StartToolSpan(turnId, invocationId))
         {
             await tools.ExecuteAsync(
                 "search_book_pages", """{"query":"odmiana gerund"}""", context, CancellationToken.None);
         }
 
-        var span = Assert.Single(stopped);
+        var span = Assert.Single(
+            stopped,
+            activity => (string?)activity.GetTagItem("assistant.turn.id") == turnId.ToString()
+                && (string?)activity.GetTagItem("assistant.invocation.id") == invocationId.ToString());
         Assert.Equal(2, span.GetTagItem("assistant.search.term_count"));
         Assert.Equal(0, span.GetTagItem("assistant.search.match_count"));
         Assert.Equal(1, span.GetTagItem("assistant.search.zero_page_terms"));
     }
 
-    private static ActivityListener ListenToAssistantSpans(out List<Activity> stopped)
+    private static ActivityListener ListenToAssistantSpans(out ConcurrentQueue<Activity> stopped)
     {
-        var captured = new List<Activity>();
+        var captured = new ConcurrentQueue<Activity>();
         stopped = captured;
         var listener = new ActivityListener
         {
             ShouldListenTo = source => source.Name == GenerativeAiTelemetry.ActivitySourceName,
             Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = captured.Add,
+            ActivityStopped = captured.Enqueue,
         };
         ActivitySource.AddActivityListener(listener);
         return listener;
     }
 
     /// <summary>The span the turn runner has open while a tool executes.</summary>
-    private static Activity? StartToolSpan() =>
-        AssistantAnalyticsTelemetry.StartTool(Guid.NewGuid(), Guid.NewGuid(), "search_book_pages");
+    private static Activity? StartToolSpan(Guid turnId, Guid invocationId) =>
+        AssistantAnalyticsTelemetry.StartTool(turnId, invocationId, "search_book_pages");
 
     [Fact]
     public async Task SearchBookPages_RejectsAnotherUsersBook()

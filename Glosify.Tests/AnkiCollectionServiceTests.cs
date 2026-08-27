@@ -3,7 +3,6 @@ using Glosify.Data;
 using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Services.Anki;
-using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
@@ -223,24 +222,11 @@ public sealed class AnkiCollectionServiceTests
         Assert.Equal("cat", pinned.Card.Prompt);
     }
 
-    [Fact]
+    [SqlServerFact]
     public async Task SqlServer_rating_persists_review_with_generated_rowversion()
     {
-        var configuredConnection = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
-        if (string.IsNullOrWhiteSpace(configuredConnection))
-            return;
-
-        var connection = new SqlConnectionStringBuilder(configuredConnection)
+        await SqlServerTestDatabase.RunAsync("anki-rating", async context =>
         {
-            InitialCatalog = $"glosify-anki-rating-{Guid.NewGuid():N}",
-        };
-        var options = new DbContextOptionsBuilder<GlosifyContext>()
-            .UseSqlServer(connection.ConnectionString)
-            .Options;
-        await using var context = new GlosifyContext(options);
-        try
-        {
-            await context.Database.EnsureCreatedAsync();
             context.Users.Add(new ApplicationUser
             {
                 Id = UserId,
@@ -304,11 +290,7 @@ public sealed class AnkiCollectionServiceTests
             Assert.Single(await context.AnkiReviews.ToListAsync());
             var summary = Assert.Single(await collections.ListAsync(UserId));
             Assert.Equal(1, summary.Counts.StudiedToday);
-        }
-        finally
-        {
-            await context.Database.EnsureDeletedAsync();
-        }
+        });
     }
 
     [Fact]

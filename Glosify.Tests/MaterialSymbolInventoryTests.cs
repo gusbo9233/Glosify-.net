@@ -27,18 +27,23 @@ public sealed class MaterialSymbolInventoryTests
         @"material-symbols-outlined[^>]*>\s*@\(([^)]*)\)",
         RegexOptions.Compiled);
 
-    private static readonly Regex QuotedName = new(@"""([a-z0-9_]+)""", RegexOptions.Compiled);
+    private static readonly Regex RazorQuotedName = new(@"""([a-z0-9_]+)""", RegexOptions.Compiled);
 
-    /// <summary>
-    /// Icons a script assigns through <c>textContent</c> after building the
-    /// element, which no pattern over the markup can see. Each is listed with
-    /// the call site that produces it so the pairing can be re-checked by hand.
-    /// </summary>
-    private static readonly (string Icon, string Source)[] ScriptAssignedIcons =
-    [
-        ("thumb_down", "assistant.js — feedback vote"),
-        ("thumb_up", "assistant.js — feedback vote"),
-    ];
+    private static readonly Regex JavaScriptIconProperty = new(
+        @"\bicon\s*:\s*['""]([a-z0-9_]+)['""]",
+        RegexOptions.Compiled);
+
+    private static readonly Regex JavaScriptIconButton = new(
+        @"\biconButton\s*\(\s*['""]([a-z0-9_]+)['""]",
+        RegexOptions.Compiled);
+
+    private static readonly Regex JavaScriptIconTextContent = new(
+        @"\b(?:[A-Za-z_$][\w$]*)?[Ii]con\.textContent\s*=\s*([^;]+)",
+        RegexOptions.Compiled);
+
+    private static readonly Regex JavaScriptQuotedName = new(
+        @"['""]([a-z0-9_]+)['""]",
+        RegexOptions.Compiled);
 
     /// <summary>
     /// The custom-quiz templates name their own icon in C#, so the catalog is
@@ -58,21 +63,13 @@ public sealed class MaterialSymbolInventoryTests
         {
             var text = File.ReadAllText(file);
 
-            foreach (Match match in LiteralLigature.Matches(text))
+            foreach (var icon in IconsIn(text))
             {
-                Record(match.Groups[1].Value, file);
-            }
-
-            foreach (Match match in ConditionalLigature.Matches(text))
-            {
-                foreach (Match name in QuotedName.Matches(match.Groups[1].Value))
-                {
-                    Record(name.Groups[1].Value, file);
-                }
+                Record(icon, file);
             }
         }
 
-        foreach (var (icon, source) in ScriptAssignedIcons.Concat(CatalogIcons()))
+        foreach (var (icon, source) in CatalogIcons())
         {
             Record(icon, source);
         }
@@ -95,17 +92,14 @@ public sealed class MaterialSymbolInventoryTests
     [Fact]
     public void The_requested_subset_carries_nothing_the_app_stopped_using()
     {
-        var used = ScriptAssignedIcons.Concat(CatalogIcons())
+        var used = CatalogIcons()
             .Select(entry => entry.Icon)
             .ToHashSet(StringComparer.Ordinal);
 
         foreach (var file in SourceFiles())
         {
             var text = File.ReadAllText(file);
-            used.UnionWith(LiteralLigature.Matches(text).Select(match => match.Groups[1].Value));
-            used.UnionWith(ConditionalLigature.Matches(text)
-                .SelectMany(match => QuotedName.Matches(match.Groups[1].Value))
-                .Select(name => name.Groups[1].Value));
+            used.UnionWith(IconsIn(text));
         }
 
         var unused = WebFonts.IconNames.Where(icon => !used.Contains(icon)).ToArray();
@@ -122,6 +116,23 @@ public sealed class MaterialSymbolInventoryTests
         // duplicate would only bloat an already long URL.
         Assert.Equal(WebFonts.IconNames.Order(StringComparer.Ordinal).ToArray(), WebFonts.IconNames);
         Assert.Equal(WebFonts.IconNames.Length, WebFonts.IconNames.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    public static TheoryData<string, string[]> DynamicIconExamples => new()
+    {
+        { "<span class=\"material-symbols-outlined\">search</span>", ["search"] },
+        { "<span class=\"material-symbols-outlined\">@(visible ? \"lock\" : \"public\")</span>", ["lock", "public"] },
+        { "const state = { icon: 'progress_activity' };", ["progress_activity"] },
+        { "iconButton('arrow_downward', 'Move down', action);", ["arrow_downward"] },
+        { "readerTtsIcon.textContent = playing ? 'stop_circle' : 'volume_up';", ["stop_circle", "volume_up"] },
+        { "icon.textContent = 'auto_awesome';", ["auto_awesome"] },
+    };
+
+    [Theory]
+    [MemberData(nameof(DynamicIconExamples))]
+    public void Dynamic_icon_scanner_recognizes_supported_source_forms(string source, string[] expected)
+    {
+        Assert.Equal(expected.Order(StringComparer.Ordinal), IconsIn(source).Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -147,6 +158,40 @@ public sealed class MaterialSymbolInventoryTests
             .SelectMany(root => Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
             .Where(file => file.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase)
                 || file.EndsWith(".js", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static IEnumerable<string> IconsIn(string text)
+    {
+        foreach (Match match in LiteralLigature.Matches(text))
+        {
+            yield return match.Groups[1].Value;
+        }
+
+        foreach (Match match in ConditionalLigature.Matches(text))
+        {
+            foreach (Match name in RazorQuotedName.Matches(match.Groups[1].Value))
+            {
+                yield return name.Groups[1].Value;
+            }
+        }
+
+        foreach (Match match in JavaScriptIconProperty.Matches(text))
+        {
+            yield return match.Groups[1].Value;
+        }
+
+        foreach (Match match in JavaScriptIconButton.Matches(text))
+        {
+            yield return match.Groups[1].Value;
+        }
+
+        foreach (Match match in JavaScriptIconTextContent.Matches(text))
+        {
+            foreach (Match name in JavaScriptQuotedName.Matches(match.Groups[1].Value))
+            {
+                yield return name.Groups[1].Value;
+            }
+        }
     }
 
     private static string WebProjectDirectory()

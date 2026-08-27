@@ -11,8 +11,18 @@ test("builds a secure same-origin Glosify relay URL", () => {
     buildRelayWebSocketUrl("https://glosify.example", path, sessionId),
     `wss://glosify.example${path}`);
   assert.equal(
-    buildRelayWebSocketUrl("http://localhost:5000", path, sessionId),
+    buildRelayWebSocketUrl(
+      "http://localhost:5000",
+      path,
+      sessionId,
+      { allowInsecure: true }),
     `ws://localhost:5000${path}`);
+});
+
+test("rejects insecure relay origins unless the build explicitly permits them", () => {
+  assert.throws(
+    () => buildRelayWebSocketUrl("http://localhost:5000", path, sessionId),
+    /invalid subtitle relay URL/);
 });
 
 test("rejects cross-origin, query, and mismatched session relay paths", () => {

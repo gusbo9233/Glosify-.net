@@ -29,6 +29,7 @@ jobs:
           --health-retries 12
     env:
       ConnectionStrings__DefaultConnection: Server=localhost,1433;Database=glosify-ci;User Id=sa;Password=Glosify_CI_Only_1!;Encrypt=True;TrustServerCertificate=True
+      RUN_SQLSERVER_TESTS: "true"
 
     steps:
       - uses: actions/checkout@v7
@@ -39,6 +40,15 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+          cache: npm
+          cache-dependency-path: |
+            Glosify.ClientTests/package-lock.json
+            Glosify.LiveSubtitles.Extension/package-lock.json
 
       - name: Restore tools and packages
         run: |
@@ -61,13 +71,21 @@ jobs:
           dotnet ef migrations has-pending-model-changes --project Glosify/Glosify.csproj --configuration Release --no-build
 
       - name: Test
-        run: dotnet test Glosify.Tests/Glosify.Tests.csproj --configuration Release --no-build --no-restore
+        run: >-
+          dotnet test Glosify.Tests/Glosify.Tests.csproj
+          --configuration Release
+          --no-build
+          --no-restore
+          --logger "trx;LogFileName=glosify-tests.trx"
+          --results-directory "${{ runner.temp }}/test-results/dotnet"
+
+      - name: Install JavaScript dependencies
+        run: |
+          npm ci --prefix Glosify.ClientTests
+          npm ci --prefix Glosify.LiveSubtitles.Extension
 
       - name: Test browser extension JavaScript
         run: npm test --prefix Glosify.LiveSubtitles.Extension
-
-      - name: Install extension browser-test dependencies
-        run: npm ci --prefix Glosify.LiveSubtitles.Extension
 
       - name: Lint JavaScript
         run: npm run lint --prefix Glosify.LiveSubtitles.Extension
@@ -79,47 +97,50 @@ jobs:
         working-directory: Glosify.LiveSubtitles.Extension
         run: npx playwright install --with-deps chromium
 
+      - name: Install extension native-input dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes pulseaudio xdotool
+
       - name: Test MV3 extension in persistent Chromium
         working-directory: Glosify.LiveSubtitles.Extension
-        run: xvfb-run --auto-servernum npm run test:browser
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          trap 'pulseaudio --kill || true' EXIT
+          pactl load-module module-null-sink sink_name=glosify_test
+          pactl set-default-sink glosify_test
+          pactl set-default-source glosify_test.monitor
+          xvfb-run --auto-servernum npm run test:browser
 
       - name: Build and validate Chrome Web Store package
         working-directory: Glosify.LiveSubtitles.Extension
-        run: npm run package:store
+        run: |
+          npm run package:store
+          sha256sum artifacts/package/glosify-live-subtitles-0.5.0-beta.zip > "${{ runner.temp }}/extension-package.sha256"
+          npm run package:store
+          sha256sum --check "${{ runner.temp }}/extension-package.sha256"
 
       - name: Test assistant state modules
         run: npm test --prefix Glosify.ClientTests
+
+      - name: Publish web application
+        run: dotnet publish Glosify/Glosify.csproj --configuration Release --no-build --output "${{ runner.temp }}/myapp"
 
       - name: Install Playwright Chromium
         run: pwsh Glosify.BrowserTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: Run browser journeys
         env:
-          ASPNETCORE_ENVIRONMENT: Testing
-          ASPNETCORE_URLS: http://127.0.0.1:5099
+          REQUIRE_BROWSER_TESTS: "true"
           GLOSIFY_BROWSER_BASE_URL: http://localhost:5099
-        run: |
-          dotnet run --project Glosify/Glosify.csproj --configuration Release --no-build --no-launch-profile > "${{ runner.temp }}/glosify-browser.log" 2>&1 &
-          app_pid=$!
-          trap 'kill "$app_pid" 2>/dev/null || true' EXIT
-          for attempt in {1..30}; do
-            if curl --fail --silent http://localhost:5099/healthz > /dev/null; then
-              break
-            fi
-            if ! kill -0 "$app_pid" 2>/dev/null; then
-              cat "${{ runner.temp }}/glosify-browser.log"
-              exit 1
-            fi
-            sleep 2
-          done
-          if ! curl --fail http://localhost:5099/healthz; then
-            cat "${{ runner.temp }}/glosify-browser.log"
-            exit 1
-          fi
-          dotnet test Glosify.BrowserTests/Glosify.BrowserTests.csproj --configuration Release --no-build --no-restore
-
-      - name: Publish web application
-        run: dotnet publish Glosify/Glosify.csproj --configuration Release --no-build --output "${{ runner.temp }}/myapp"
+          GLOSIFY_BROWSER_RUN_TOKEN: glosify-ci-${{ github.run_id }}-${{ github.run_attempt }}
+          GLOSIFY_BROWSER_TRACE_DIRECTORY: ${{ runner.temp }}/playwright-traces/application
+          GLOSIFY_BROWSER_RESULTS_DIRECTORY: ${{ runner.temp }}/test-results/browser
+          GLOSIFY_BROWSER_APP_LOG: ${{ runner.temp }}/glosify-browser.log
+          OPENAI_SECRET_KEY: browser-testing-placeholder
+          Legal__ControllerName: Browser Test Operator
+          Legal__ContactEmail: browser-tests@example.invalid
+        run: bash scripts/run-browser-tests.sh "${{ runner.temp }}/myapp"
 
       - name: Stamp deployment artifact
         run: printf '%s\n' "$GITHUB_SHA" > "${{ runner.temp }}/myapp/deployment-commit.txt"
@@ -150,6 +171,18 @@ jobs:
         with:
           name: glosify-live-subtitles-0.5.0-beta
           path: Glosify.LiveSubtitles.Extension/artifacts/package/glosify-live-subtitles-0.5.0-beta.zip
+
+      - name: Upload test failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: test-failure-diagnostics
+          if-no-files-found: ignore
+          path: |
+            ${{ runner.temp }}/test-results
+            ${{ runner.temp }}/playwright-traces
+            ${{ runner.temp }}/glosify-browser.log
+            Glosify.LiveSubtitles.Extension/test-results
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
