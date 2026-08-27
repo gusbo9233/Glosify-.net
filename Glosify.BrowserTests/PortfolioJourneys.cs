@@ -419,7 +419,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Page.GetByLabel("Collection Name", new() { Exact = true }).FillAsync("Drop target");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Create Collection", Exact = true }).Last.ClickAsync();
 
-        await Page.GotoAsync("/Quizzes");
+        await Expect(Page).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
         await Page.GetByRole(AriaRole.Button, new() { Name = "New Quiz", Exact = true }).ClickAsync();
         await Page.GetByLabel("Quiz Name", new() { Exact = true }).FillAsync("Movable quiz");
         await Page.GetByLabel("Source Language", new() { Exact = true })
