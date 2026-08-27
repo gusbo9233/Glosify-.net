@@ -44,6 +44,7 @@
   <data name="Languages.ModeFind" xml:space="preserve"><value>Find a mode or language</value></data>
   <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Search modes and languages</value></data>
   <data name="Languages.ModeCount" xml:space="preserve"><value>{0} modes and languages</value></data>
+  <data name="Languages.ModeCountOne" xml:space="preserve"><value>{0} mode or language</value></data>
   <data name="Languages.ModeNone" xml:space="preserve"><value>No matching mode or language</value></data>
   <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Try a subject, language name, or code.</value></data>
   <data name="Languages.Title" xml:space="preserve"><value>Language selector</value></data>

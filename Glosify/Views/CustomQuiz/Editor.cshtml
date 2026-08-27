@@ -3,12 +3,15 @@
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Model.Editor.Id.HasValue ? Text["Custom.EditNamed", Model.Editor.Name] : Text["Quiz.NewCustom"];
-    ViewData["AssistantQuizId"] = Model.Quiz.Id;
-    ViewData["AssistantCustomQuizId"] = Model.Editor.Id;
-    ViewData["AssistantTitle"] = Text["Custom.AssistantTitle"];
-    ViewData["AssistantContextLabel"] = Model.Editor.Name;
-    ViewData["AssistantEmptyText"] = Text["Custom.AssistantEmpty"];
-    ViewData["AssistantPlaceholder"] = Text["Custom.AssistantPlaceholder"];
+    ViewData.SetAssistantPageContext(new AssistantPageContext
+    {
+        QuizId = Model.Quiz.Id,
+        CustomQuizId = Model.Editor.Id,
+        Title = Text["Custom.AssistantTitle"],
+        ContextLabel = Model.Editor.Name,
+        EmptyText = Text["Custom.AssistantEmpty"],
+        Placeholder = Text["Custom.AssistantPlaceholder"]
+    });
     var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
 }
 

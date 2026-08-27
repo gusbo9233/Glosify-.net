@@ -30,7 +30,7 @@ public static class WebFonts
         "group", "help", "hourglass_top", "info", "inventory_2", "keep", "key", "keyboard",
         "library_add", "library_books", "local_bar", "lock", "lock_reset", "login", "logout",
         "mark_email_unread", "menu_book", "mic", "mic_off", "more_vert", "neurology", "north_east", "notes",
-        "notifications", "outgoing_mail", "person", "person_add", "person_search", "picture_as_pdf",
+        "outgoing_mail", "person", "person_add", "person_search", "picture_as_pdf",
         "play_circle", "psychology", "public", "quiz", "remove", "replay",
         "rotate_right", "school", "science", "search", "search_off", "send", "settings", "share", "short_text",
         "shot_bar", "stacks", "style", "subject", "subtitles", "subtitles_off", "swap_horiz",
@@ -53,7 +53,7 @@ public static class WebFonts
     /// <summary>
     /// The icon subset. Unlike the text faces this uses `display=block`: an icon
     /// font swapping in late would otherwise flash each ligature as its literal
-    /// name ("notifications", "search") and then reflow around it.
+    /// name (for example, "search") and then reflow around it.
     /// </summary>
     /// <remarks>
     /// The axis ranges match the two variations site.css asks for — 'wght' 400

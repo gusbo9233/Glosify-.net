@@ -2,7 +2,6 @@
 @using System.Text.Json
 @{
     ViewData["Title"] = Text["Speaking.LanguagePractice", QuizLanguageDisplay.Name(Model.Language)];
-    ViewData["HideAssistantPanel"] = true;
     var pageData = JsonSerializer.Serialize(Model, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 }
 

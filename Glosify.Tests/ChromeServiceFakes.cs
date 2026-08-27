@@ -10,9 +10,9 @@ using Microsoft.AspNetCore.Http;
 namespace Glosify.Tests;
 
 /// <summary>
-/// The five services behind the layout's chrome, in one fake. Only the members the chrome
-/// actually calls are meaningful; everything else throws so a test that starts depending on
-/// something new fails loudly instead of silently reading a default.
+/// The services used by the layout chrome and the lazy assistant-context endpoint, in one fake.
+/// Only the exercised members are meaningful; everything else throws so a test that starts
+/// depending on something new fails loudly instead of silently reading a default.
 /// </summary>
 internal abstract class ChromeServicesBase
     : IAiCreditService,
@@ -21,6 +21,11 @@ internal abstract class ChromeServicesBase
         IRealtimeTranslationTranscriptService,
         IQuizLanguagePreferenceService
 {
+    public int QuizLibraryCalls { get; protected set; }
+    public int BookLibraryCalls { get; protected set; }
+    public int LanguagePreferenceCalls { get; protected set; }
+    public int TranscriptLibraryCalls { get; protected set; }
+
     public virtual Task<AiCreditAccountView> GetOrCreateAccountAsync(
         string userId,
         CancellationToken cancellationToken = default) => throw Unused();
@@ -45,9 +50,9 @@ internal abstract class ChromeServicesBase
         CancellationToken cancellationToken = default) => throw Unused();
 
     protected static NotSupportedException Unused() =>
-        new("This member is not part of the layout chrome under test.");
+        new("This member is not part of the chrome or context-options behavior under test.");
 
-    // --- Everything below is interface surface the chrome never touches. ---
+    // --- Everything below is interface surface these tests never touch. ---
 
     Task<IReadOnlyList<AiCreditTransaction>> IAiCreditService.GetRecentTransactionsAsync(string userId, int count, CancellationToken cancellationToken) => throw Unused();
     Task<AiCreditReservation> IAiCreditService.ReserveAsync(AiUsageContext context, string provider, string model, int estimatedTokens, CancellationToken cancellationToken) => throw Unused();
@@ -96,8 +101,10 @@ internal sealed class StubChromeServices : ChromeServicesBase
 
     public override Task<IReadOnlyList<Quiz>> GetUserQuizzesAsync(
         string userId,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<Quiz>>(
+        CancellationToken cancellationToken = default)
+    {
+        QuizLibraryCalls++;
+        return Task.FromResult<IReadOnlyList<Quiz>>(
         [
             new Quiz
             {
@@ -107,11 +114,14 @@ internal sealed class StubChromeServices : ChromeServicesBase
                 TargetLanguage = "Polish",
             },
         ]);
+    }
 
     public override Task<IReadOnlyList<BookDocument>> GetUserBooksAsync(
         string userId,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<BookDocument>>(
+        CancellationToken cancellationToken = default)
+    {
+        BookLibraryCalls++;
+        return Task.FromResult<IReadOnlyList<BookDocument>>(
         [
             new BookDocument
             {
@@ -119,19 +129,25 @@ internal sealed class StubChromeServices : ChromeServicesBase
                 Title = "Tatry Guide",
             },
         ]);
+    }
 
     public override Task<QuizLanguage?> GetSelectedAsync(
         string userId,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(QuizLanguageCatalog.Find("pl"));
+        CancellationToken cancellationToken = default)
+    {
+        LanguagePreferenceCalls++;
+        return Task.FromResult(QuizLanguageCatalog.Find("pl"));
+    }
 
     public override Task<TranscriptLibraryPage> GetLibraryAsync(
         string userId,
         string quizLanguageCode,
         int page,
         int pageSize,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(new TranscriptLibraryPage(
+        CancellationToken cancellationToken = default)
+    {
+        TranscriptLibraryCalls++;
+        return Task.FromResult(new TranscriptLibraryPage(
             [
                 new TranscriptLibraryItem(
                     Guid.Parse("33333333-3333-3333-3333-333333333333"),
@@ -145,9 +161,10 @@ internal sealed class StubChromeServices : ChromeServicesBase
             page,
             pageSize,
             1));
+    }
 }
 
 /// <summary>
-/// Every lookup the chrome makes fails. Inherits the base's throwing members unchanged.
+/// Every optional chrome/context lookup fails. Inherits the base's throwing members unchanged.
 /// </summary>
 internal sealed class ThrowingChromeServices : ChromeServicesBase;

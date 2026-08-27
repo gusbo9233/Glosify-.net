@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using System.Text.Encodings.Web;
 using AngleSharp.Dom;
 using AngleSharp.Html.Parser;
@@ -22,44 +23,39 @@ using Xunit;
 namespace Glosify.Tests;
 
 /// <summary>
-/// Covers the chrome the layout renders through view components. The panel's pickers used
-/// to be loaded by the partial itself, so a failing lookup took the whole page with it.
-/// <see cref="Chrome_still_renders_when_every_lookup_fails"/> pins the error path that
-/// replaced that: narrowing either component's catch so the failure escapes turns the
-/// request back into a 500, which is how it was verified to be load-bearing.
+/// Covers the chrome the layout renders through view components. Assistant libraries are
+/// fetched only after the panel opens, and a failure in one optional picker must not turn
+/// either the page or the options request into a 500.
 /// </summary>
 public sealed class LayoutViewComponentTests
 {
     [Fact]
-    public async Task Assistant_panel_renders_the_context_pickers_it_loaded()
+    public async Task Assistant_panel_defers_context_picker_lookups_until_requested()
     {
         using var factory = CreateFactory();
         var client = factory.CreateClient();
 
         var document = await GetHomeAsync(client);
+        var services = factory.Services.GetRequiredService<ChromeServicesBase>();
 
-        Assert.NotNull(document.QuerySelector("[data-assistant-panel]"));
-        var quizOptions = document
-            .QuerySelectorAll("[data-assistant-quiz-selector] option")
-            .Select(option => option.TextContent.Trim())
-            .ToArray();
-        Assert.Equal(
-            ["No quiz selected", "Market Polish (English → Polish)"],
-            quizOptions);
+        var panel = Assert.IsAssignableFrom<IElement>(document.QuerySelector("[data-assistant-panel]"));
+        Assert.Equal("/Assistant/ContextOptions", panel.GetAttribute("data-context-options-url"));
+        Assert.Equal(0, services.QuizLibraryCalls);
+        Assert.Equal(0, services.BookLibraryCalls);
+        Assert.Equal(0, services.LanguagePreferenceCalls);
+        Assert.Equal(0, services.TranscriptLibraryCalls);
 
-        var groups = document
-            .QuerySelectorAll("[data-assistant-material-selector] optgroup")
-            .Select(group => group.GetAttribute("label") ?? string.Empty)
-            .ToArray();
-        Assert.Equal(["Books", "Transcripts"], groups);
-        Assert.Equal(
-            "Tatry Guide",
-            document.QuerySelector("[data-assistant-material-selector] optgroup[label='Books'] option")
-                ?.TextContent.Trim());
-        Assert.Equal(
-            "Kraków market",
-            document.QuerySelector("[data-assistant-material-selector] optgroup[label='Transcripts'] option")
-                ?.TextContent.Trim());
+        var response = await client.GetAsync("/Assistant/ContextOptions");
+        response.EnsureSuccessStatusCode();
+        using var options = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        Assert.Equal("Market Polish", options.RootElement.GetProperty("quizzes")[0].GetProperty("name").GetString());
+        Assert.Equal("Tatry Guide", options.RootElement.GetProperty("books")[0].GetProperty("title").GetString());
+        Assert.Equal("Kraków market", options.RootElement.GetProperty("transcripts")[0].GetProperty("title").GetString());
+        Assert.Equal(1, services.QuizLibraryCalls);
+        Assert.Equal(1, services.BookLibraryCalls);
+        Assert.Equal(1, services.LanguagePreferenceCalls);
+        Assert.Equal(1, services.TranscriptLibraryCalls);
     }
 
     [Fact]
@@ -80,8 +76,8 @@ public sealed class LayoutViewComponentTests
     }
 
     /// <summary>
-    /// Every lookup behind the chrome throws. The page must still be the page the user
-    /// asked for: a missing dropdown or credit badge is not a reason to serve a 500.
+    /// Every lookup behind the chrome throws. The page and the best-effort options endpoint
+    /// must still respond; a missing dropdown or credit badge is not a reason to serve a 500.
     /// </summary>
     [Fact]
     public async Task Chrome_still_renders_when_every_lookup_fails()
@@ -93,11 +89,17 @@ public sealed class LayoutViewComponentTests
 
         Assert.NotNull(document.QuerySelector("[data-assistant-panel]"));
         Assert.Null(document.QuerySelector(".credit-pill"));
-        Assert.Equal(
-            ["No quiz selected"],
-            document.QuerySelectorAll("[data-assistant-quiz-selector] option")
-                .Select(option => option.TextContent.Trim()));
+        Assert.Equal(["No quiz selected"], document
+            .QuerySelectorAll("[data-assistant-quiz-selector] option")
+            .Select(option => option.TextContent.Trim()));
         Assert.Empty(document.QuerySelectorAll("[data-assistant-material-selector] optgroup"));
+
+        var response = await client.GetAsync("/Assistant/ContextOptions");
+        response.EnsureSuccessStatusCode();
+        using var options = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(0, options.RootElement.GetProperty("quizzes").GetArrayLength());
+        Assert.Equal(0, options.RootElement.GetProperty("books").GetArrayLength());
+        Assert.Equal(0, options.RootElement.GetProperty("transcripts").GetArrayLength());
     }
 
     private static async Task<IDocument> GetHomeAsync(HttpClient client)
@@ -121,22 +123,15 @@ public sealed class LayoutViewComponentTests
                 services.RemoveAll<ILanguageContext>();
 
                 services.AddSingleton<ILanguageContext>(new FixedLanguageContext("Polish"));
-                if (failing)
-                {
-                    services.AddSingleton<IAiCreditService, ThrowingChromeServices>();
-                    services.AddSingleton<IQuizService, ThrowingChromeServices>();
-                    services.AddSingleton<IBookDocumentService, ThrowingChromeServices>();
-                    services.AddSingleton<IRealtimeTranslationTranscriptService, ThrowingChromeServices>();
-                    services.AddSingleton<IQuizLanguagePreferenceService, ThrowingChromeServices>();
-                }
-                else
-                {
-                    services.AddSingleton<IAiCreditService, StubChromeServices>();
-                    services.AddSingleton<IQuizService, StubChromeServices>();
-                    services.AddSingleton<IBookDocumentService, StubChromeServices>();
-                    services.AddSingleton<IRealtimeTranslationTranscriptService, StubChromeServices>();
-                    services.AddSingleton<IQuizLanguagePreferenceService, StubChromeServices>();
-                }
+                ChromeServicesBase chrome = failing
+                    ? new ThrowingChromeServices()
+                    : new StubChromeServices();
+                services.AddSingleton(chrome);
+                services.AddSingleton<IAiCreditService>(chrome);
+                services.AddSingleton<IQuizService>(chrome);
+                services.AddSingleton<IBookDocumentService>(chrome);
+                services.AddSingleton<IRealtimeTranslationTranscriptService>(chrome);
+                services.AddSingleton<IQuizLanguagePreferenceService>(chrome);
 
                 services
                     .AddAuthentication(options =>

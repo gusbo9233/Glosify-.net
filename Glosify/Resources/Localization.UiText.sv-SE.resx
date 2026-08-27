@@ -44,6 +44,7 @@
   <data name="Languages.ModeFind" xml:space="preserve"><value>Hitta ett studiesätt eller språk</value></data>
   <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Sök bland studiesätt och språk</value></data>
   <data name="Languages.ModeCount" xml:space="preserve"><value>{0} studiesätt och språk</value></data>
+  <data name="Languages.ModeCountOne" xml:space="preserve"><value>{0} studiesätt eller språk</value></data>
   <data name="Languages.ModeNone" xml:space="preserve"><value>Inget studiesätt eller språk matchar</value></data>
   <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Prova ett ämne, språknamn eller en kod.</value></data>
   <data name="Languages.Title" xml:space="preserve"><value>Välj studiespråk</value></data>

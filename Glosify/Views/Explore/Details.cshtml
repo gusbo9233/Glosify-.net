@@ -3,7 +3,7 @@
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Model.SelectedQuiz.Name;
     ViewData["ActiveNav"] = "Explore";
-    ViewData["HideAssistantPanel"] = true;
+    ViewData.HideAssistantPanel();
 
     var backCollectionId = ViewData["BackCollectionId"] is Guid id ? id : (Guid?)null;
     var isFreestyle = Model.SelectedQuiz.IsFreestyle;

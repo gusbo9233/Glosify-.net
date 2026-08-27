@@ -335,14 +335,24 @@ public class QuizController : Controller
                 .Where(collection => string.Equals(collection.SourceLanguage, selectedQuiz.SourceLanguage, StringComparison.OrdinalIgnoreCase)
                     && string.Equals(collection.TargetLanguage, selectedQuiz.TargetLanguage, StringComparison.OrdinalIgnoreCase))
                 .ToList();
+        var selectedQuizCard = selectedQuiz is null ? null : QuizCard.From(selectedQuiz);
+        var selectedWordCount = Math.Min(Math.Max(availableWordCount, 1), 20);
         return View(new QuizSettingsViewModel
         {
-            SelectedQuiz = selectedQuiz is null ? null : QuizCard.From(selectedQuiz),
+            SelectedQuiz = selectedQuizCard,
             AvailableWordCount = availableWordCount,
             AvailableSentenceCount = availableSentenceCount,
-            SelectedWordCount = Math.Min(Math.Max(availableWordCount, 1), 20),
             Words = words.Select(WordRow.From).ToList(),
             AnkiCollections = ankiCollections,
+            Presentation = QuizSettingsPresentation.Create(
+                selectedQuizCard,
+                availableWordCount,
+                availableSentenceCount,
+                selectedWordCount,
+                _text["Settings.FlashcardQuiz"].Value,
+                _text["Settings.Source"].Value,
+                _text["Settings.Target"].Value,
+                _text["Settings.Words"].Value),
         });
     }
 
@@ -414,13 +424,45 @@ public class QuizController : Controller
             parentCollection = collections.FirstOrDefault(collection => collection.Id == parentCollectionId);
         }
 
+        var quizCards = quizzes.Select(QuizCard.From).ToArray();
+        var collectionCards = collections.Select(CollectionCard.From).ToArray();
+        var currentCollectionCard = currentCollection is null ? null : CollectionCard.From(currentCollection);
+        var currentCollectionId = currentCollectionCard?.Id;
+        var displayLanguage = QuizLanguageDisplay.Name(language);
+        var isFreestyle = QuizLanguageCatalog.IsFreestyle(language);
+        var pageTitle = currentCollectionCard?.Name ?? _text["Quiz.SelectQuiz"].Value;
+        var pageSubtitle = isFreestyle
+            ? currentCollectionCard is null
+                ? "General-subject quizzes using prompts and answers."
+                : "A Freestyle collection for any subject."
+            : currentCollectionCard is null
+                ? _text["Quiz.ShowingLanguage", displayLanguage].Value
+                : _text["Quiz.LanguageCollection", displayLanguage].Value;
+        var importDestination = currentCollectionCard?.Name
+            ?? _text["Quiz.JsonImportTopLevel"].Value;
+
         return new QuizIndexViewModel
         {
-            Quizzes = quizzes.Select(QuizCard.From).ToList(),
-            Collections = collections.Select(CollectionCard.From).ToList(),
-            CurrentCollection = currentCollection is null ? null : CollectionCard.From(currentCollection),
+            VisibleQuizzes = quizCards
+                .Where(quiz => quiz.CollectionId == currentCollectionId)
+                .ToArray(),
+            ChildCollections = collectionCards
+                .Where(collection => collection.ParentCollectionId == currentCollectionId)
+                .Select(collection => new QuizLibraryCollectionCard(
+                    collection,
+                    collectionCards.Count(child => child.ParentCollectionId == collection.Id),
+                    quizCards.Count(quiz => quiz.CollectionId == collection.Id)))
+                .ToArray(),
+            CurrentCollection = currentCollectionCard,
             ParentCollection = parentCollection is null ? null : CollectionCard.From(parentCollection),
-            CurrentLanguage = language
+            Presentation = new QuizIndexPresentation(
+                language,
+                displayLanguage,
+                isFreestyle,
+                pageTitle,
+                pageSubtitle,
+                importDestination,
+                QuizJsonGenerationPrompt.Build(isFreestyle, displayLanguage, importDestination))
         };
     }
 

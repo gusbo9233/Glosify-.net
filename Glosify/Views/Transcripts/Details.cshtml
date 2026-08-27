@@ -2,13 +2,16 @@
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Model.Transcript.Title;
-    ViewData["AssistantTranscriptId"] = Model.Transcript.Id;
-    ViewData["AssistantTranscriptPage"] = Model.Transcript.Page;
-    ViewData["AssistantTranscriptStream"] = Model.Transcript.SelectedStream;
-    ViewData["AssistantTitle"] = Text["Transcripts.AssistantTitle"];
-    ViewData["AssistantContextLabel"] = Model.Transcript.Title;
-    ViewData["AssistantEmptyText"] = Text["Transcripts.AssistantEmpty"];
-    ViewData["AssistantPlaceholder"] = Text["Transcripts.AssistantPlaceholder"];
+    ViewData.SetAssistantPageContext(new AssistantPageContext
+    {
+        TranscriptId = Model.Transcript.Id,
+        TranscriptPage = Model.Transcript.Page,
+        TranscriptStream = Model.Transcript.SelectedStream,
+        Title = Text["Transcripts.AssistantTitle"],
+        ContextLabel = Model.Transcript.Title,
+        EmptyText = Text["Transcripts.AssistantEmpty"],
+        Placeholder = Text["Transcripts.AssistantPlaceholder"]
+    });
     var totalPages = Math.Max(1, (int)Math.Ceiling(Model.Transcript.TotalSegments / (double)Model.Transcript.PageSize));
     var learningLanguage = Glosify.Services.Language.QuizLanguageCatalog.Find(Model.Transcript.TargetLanguage)?.Name
         ?? Model.Transcript.TargetLanguage.ToUpperInvariant();

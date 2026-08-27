@@ -771,7 +771,16 @@ body {
     }
 
     .card-reveal-form {
+        position: relative;
         width: min(100%, 720px);
+    }
+
+    .card-preview-tts {
+        position: absolute;
+        top: 24px;
+        inset-inline-end: 24px;
+        z-index: 1;
+        margin-left: 0;
     }
 
     .flashcard {
@@ -2071,7 +2080,7 @@ body {
         display: none;
         position: fixed;
         inset: 0;
-        z-index: 100;
+        z-index: 1300;
         align-items: center;
         justify-content: center;
         padding: 24px;
@@ -3594,41 +3603,13 @@ body { margin: 0; }
     z-index: 40;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 24px;
     padding: 14px 32px;
     background: rgba(4, 19, 41, 0.72);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
 }
-
-.app-search {
-    flex: 1;
-    max-width: 480px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--surface-container-high);
-    border-radius: 9999px;
-    padding: 8px 16px;
-}
-
-.app-search .material-symbols-outlined {
-    color: var(--on-surface-var);
-    font-size: 20px;
-}
-
-.app-search input {
-    flex: 1;
-    background: transparent;
-    border: 0;
-    outline: none;
-    color: var(--on-surface);
-    font: inherit;
-    font-size: 14px;
-}
-
-.app-search input::placeholder { color: var(--outline); }
 
 .app-topbar-right {
     display: flex;
@@ -3824,11 +3805,9 @@ body { margin: 0; }
         padding: 0 18px 24px;
     }
 
-    .app-topbar { padding: 12px 18px; }
-
-    .app-search {
-        max-width: none;
-        min-width: 0;
+    .app-topbar {
+        justify-content: space-between;
+        padding: 12px 18px;
     }
 
     .app-topbar-right {
@@ -3896,11 +3875,6 @@ body { margin: 0; }
 @media (max-width: 700px) {
     .app-topbar {
         gap: 12px;
-    }
-
-    .app-search,
-    .app-topbar-right .icon-button:not([title="Log out"]) {
-        display: none;
     }
 
     .app-topbar .account-avatar {
@@ -6381,8 +6355,7 @@ body { margin: 0; }
     .form-textarea,
     .assistant-composer .form-textarea,
     .assistant-context-picker select,
-    .assistant-model-picker select,
-    .app-search input {
+    .assistant-model-picker select {
         font-size: 16px;
     }
 }
@@ -8083,6 +8056,11 @@ body.call-in-progress {
 
 .btn-icon-tts:hover {
     background: rgba(83, 224, 118, 0.18);
+}
+
+.btn-icon-tts:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 .btn-icon-tts .material-symbols-outlined {

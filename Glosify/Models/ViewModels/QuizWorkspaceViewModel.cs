@@ -1,14 +1,44 @@
+using Glosify.Localization;
 using Glosify.Models.CustomQuizzes;
 using Glosify.Services.Anki;
+
 namespace Glosify.Models.ViewModels;
 
 public class QuizIndexViewModel
 {
-    public IReadOnlyList<QuizCard> Quizzes { get; set; } = [];
-    public IReadOnlyList<CollectionCard> Collections { get; set; } = [];
+    public IReadOnlyList<QuizCard> VisibleQuizzes { get; set; } = [];
+    public IReadOnlyList<QuizLibraryCollectionCard> ChildCollections { get; set; } = [];
     public CollectionCard? CurrentCollection { get; set; }
     public CollectionCard? ParentCollection { get; set; }
-    public string CurrentLanguage { get; set; } = string.Empty;
+    public QuizIndexPresentation Presentation { get; set; } = QuizIndexPresentation.Empty;
+}
+
+public sealed record QuizLibraryCollectionCard(
+    CollectionCard Collection,
+    int ChildCollectionCount,
+    int QuizCount);
+
+/// <summary>
+/// Display-ready library metadata. Filtering and prompt construction happen before Razor
+/// receives the model, leaving the view responsible only for markup.
+/// </summary>
+public sealed record QuizIndexPresentation(
+    string CurrentLanguage,
+    string DisplayLanguage,
+    bool IsFreestyle,
+    string PageTitle,
+    string PageSubtitle,
+    string ImportDestination,
+    string JsonGenerationPrompt)
+{
+    public static QuizIndexPresentation Empty { get; } = new(
+        string.Empty,
+        string.Empty,
+        false,
+        string.Empty,
+        string.Empty,
+        string.Empty,
+        string.Empty);
 }
 
 public class QuizWorkspaceViewModel
@@ -60,9 +90,95 @@ public class QuizSettingsViewModel
     public QuizCard? SelectedQuiz { get; set; }
     public int AvailableWordCount { get; set; }
     public int AvailableSentenceCount { get; set; }
-    public int SelectedWordCount { get; set; }
     public IReadOnlyList<WordRow> Words { get; set; } = [];
     public IReadOnlyList<AnkiCollectionSummary> AnkiCollections { get; set; } = [];
+    public QuizSettingsPresentation Presentation { get; set; } = QuizSettingsPresentation.Empty;
+}
+
+public sealed record QuizSettingsLengthOption(
+    int WordCount,
+    int SentenceCount,
+    bool IsSelected);
+
+/// <summary>
+/// Display-ready values for the quiz settings page. Keeping the count normalization,
+/// option selection, and language-label choices here makes the Razor view declarative.
+/// </summary>
+public sealed record QuizSettingsPresentation(
+    string QuizName,
+    string SourceLanguage,
+    string TargetLanguage,
+    string ItemLabel,
+    string PromptLabel,
+    string AnswerLabel,
+    bool IsFreestyle,
+    QuizSettingsLengthOption QuickLength,
+    QuizSettingsLengthOption StandardLength,
+    QuizSettingsLengthOption AllLength)
+{
+    public static QuizSettingsPresentation Empty { get; } = new(
+        string.Empty,
+        string.Empty,
+        string.Empty,
+        string.Empty,
+        string.Empty,
+        string.Empty,
+        false,
+        new(1, 1, true),
+        new(1, 1, false),
+        new(1, 1, false));
+
+    public static QuizSettingsPresentation Create(
+        QuizCard? selectedQuiz,
+        int availableWordCount,
+        int availableSentenceCount,
+        int selectedWordCount,
+        string defaultQuizName,
+        string defaultSourceLanguage,
+        string defaultTargetLanguage,
+        string wordsLabel)
+    {
+        var normalizedWordCount = Math.Max(availableWordCount, 1);
+        var normalizedSentenceCount = Math.Max(availableSentenceCount, 1);
+        var isFreestyle = selectedQuiz?.IsFreestyle == true;
+        var sourceLanguage = QuizLanguageDisplay.Name(selectedQuiz?.SourceLanguage);
+        var targetLanguage = QuizLanguageDisplay.Name(selectedQuiz?.TargetLanguage);
+
+        if (string.IsNullOrWhiteSpace(sourceLanguage))
+        {
+            sourceLanguage = defaultSourceLanguage;
+        }
+
+        if (string.IsNullOrWhiteSpace(targetLanguage))
+        {
+            targetLanguage = defaultTargetLanguage;
+        }
+
+        var itemLabel = isFreestyle ? "Items" : wordsLabel;
+        var promptLabel = isFreestyle ? "Prompt" : sourceLanguage;
+        var answerLabel = isFreestyle ? "Answer" : targetLanguage;
+
+        return new QuizSettingsPresentation(
+            selectedQuiz?.Name ?? defaultQuizName,
+            sourceLanguage,
+            targetLanguage,
+            itemLabel,
+            promptLabel,
+            answerLabel,
+            isFreestyle,
+            new(
+                Math.Min(10, normalizedWordCount),
+                Math.Min(10, normalizedSentenceCount),
+                selectedWordCount <= 10),
+            new(
+                Math.Min(20, normalizedWordCount),
+                Math.Min(20, normalizedSentenceCount),
+                selectedWordCount is > 10 and <= 20),
+            new(
+                normalizedWordCount,
+                normalizedSentenceCount,
+                selectedWordCount > 20));
+    }
 }
 
 public class FlashcardQuizViewModel

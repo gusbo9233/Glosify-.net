@@ -6,8 +6,6 @@
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Text["Home.Title"];
-    ViewData["AssistantTitle"] = Text["Home.Coach"];
-    ViewData["AssistantContextLabel"] = Text["Home.Title"];
 
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var currentLanguage = LangContext.CurrentLanguage;
@@ -21,11 +19,11 @@
         || (await AuthorizationService.AuthorizeAsync(
             User,
             AuthorizationPolicyNames.ClassroomAvailability)).Succeeded;
-    if (isFreestyle)
+    ViewData.SetAssistantPageContext(new AssistantPageContext
     {
-        ViewData["AssistantTitle"] = "Study assistant";
-        ViewData["AssistantContextLabel"] = "Freestyle";
-    }
+        Title = isFreestyle ? "Study assistant" : Text["Home.Coach"],
+        ContextLabel = isFreestyle ? "Freestyle" : Text["Home.Title"]
+    });
 }
 
 @section Styles {

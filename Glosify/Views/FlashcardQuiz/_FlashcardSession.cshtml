@@ -17,6 +17,11 @@
 </div>
 
 <div class="card-stage">
+    <p class="page-message flashcard-request-status"
+       data-flashcard-status
+       role="status"
+       aria-live="polite"
+       hidden></p>
     @if (Model.IsComplete)
     {
         <section class="results visible" aria-live="polite">
@@ -65,8 +70,9 @@
                                 data-tts="@Model.CurrentCard.Prompt"
                                 data-tts-lang="@Model.PromptLanguage"
                                 title="@Text["Quiz.PlayPronunciationGeneric"]"
-                                aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Prompt]">
-                            <span class="material-symbols-outlined">volume_up</span>
+                                aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Prompt]"
+                                aria-pressed="false">
+                            <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
                         </button>
                     }
                 </h2>
@@ -80,8 +86,9 @@
                                     data-tts="@Model.CurrentCard.Answer"
                                     data-tts-lang="@Model.AnswerLanguage"
                                     title="@Text["Quiz.PlayPronunciationGeneric"]"
-                                    aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Answer]">
-                                <span class="material-symbols-outlined">volume_up</span>
+                                    aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Answer]"
+                                    aria-pressed="false">
+                                <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
                             </button>
                         }
                     </div>
@@ -103,22 +110,20 @@
                 <input type="hidden" name="sessionId" value="@Model.SessionId" />
                 <button class="flashcard flashcard-clickable" type="submit" aria-label="@Text["Quiz.RevealAnswer", Model.CurrentCard.Prompt]">
                     <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
-                    <span class="card-word" dir="auto">
-                        @Model.CurrentCard.Prompt
-                        @if (!isFreestyle && promptIsTarget)
-                        {
-                            <span class="btn-icon-tts"
-                                  role="button"
-                                  tabindex="0"
-                                  data-tts="@Model.CurrentCard.Prompt"
-                                  data-tts-lang="@Model.PromptLanguage"
-                                  title="@Text["Quiz.PlayPronunciationGeneric"]"
-                                  aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Prompt]">
-                                <span class="material-symbols-outlined">volume_up</span>
-                            </span>
-                        }
-                    </span>
+                    <span class="card-word" dir="auto">@Model.CurrentCard.Prompt</span>
                 </button>
+                @if (!isFreestyle && promptIsTarget)
+                {
+                    <button class="btn-icon-tts card-preview-tts"
+                            type="button"
+                            data-tts="@Model.CurrentCard.Prompt"
+                            data-tts-lang="@Model.PromptLanguage"
+                            title="@Text["Quiz.PlayPronunciationGeneric"]"
+                            aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Prompt]"
+                            aria-pressed="false">
+                        <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
+                    </button>
+                }
             </form>
         }
 

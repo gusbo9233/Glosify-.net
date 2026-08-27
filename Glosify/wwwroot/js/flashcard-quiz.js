@@ -4,6 +4,19 @@
         return;
     }
 
+    const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
+    let submissionInFlight = false;
+
+    const setRequestError = (message = '') => {
+        const status = container.querySelector('[data-flashcard-status]');
+        if (!status) {
+            return;
+        }
+
+        status.textContent = message;
+        status.hidden = !message;
+    };
+
     container.addEventListener('submit', async event => {
         const form = event.target.closest('[data-flashcard-form]');
         if (!form) {
@@ -11,7 +24,20 @@
         }
 
         event.preventDefault();
+        if (submissionInFlight) {
+            return;
+        }
+
+        submissionInFlight = true;
+        container.setAttribute('aria-busy', 'true');
+        setRequestError();
+
         const submitter = event.submitter;
+        const enabledSubmitControls = [...container.querySelectorAll(
+            '[data-flashcard-form] button[type="submit"]:not(:disabled), [data-flashcard-form] input[type="submit"]:not(:disabled)'
+        )];
+        enabledSubmitControls.forEach(control => { control.disabled = true; });
+
         const clickableCard = form.querySelector('.flashcard-clickable');
         clickableCard?.classList.add('is-flipping');
 
@@ -21,23 +47,39 @@
         }
 
         const swipingCard = container.querySelector('.flashcard.is-swipe-out-left, .flashcard.is-swipe-out-right');
-        if ((clickableCard || swipingCard) && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            await new Promise(resolve => window.setTimeout(resolve, 180));
-        }
+        try {
+            if ((clickableCard || swipingCard) && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                await new Promise(resolve => window.setTimeout(resolve, 180));
+            }
 
-        const response = await fetch(form.action, {
-            method: form.method || 'post',
-            body,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
+            const response = await fetch(form.action, {
+                method: form.method || 'post',
+                body,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
 
-        if (response.redirected) {
-            window.location.href = response.url;
-            return;
-        }
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
 
-        if (response.ok) {
-            container.innerHTML = await response.text();
+            if (response.ok) {
+                container.innerHTML = await response.text();
+            } else {
+                setRequestError(t(
+                    'Client.GenericError',
+                    'Something went wrong. Please try again.'));
+            }
+        } catch {
+            setRequestError(t(
+                'Client.GenericError',
+                'Something went wrong. Please try again.'));
+        } finally {
+            submissionInFlight = false;
+            container.setAttribute('aria-busy', 'false');
+            clickableCard?.classList.remove('is-flipping');
+            swipingCard?.classList.remove('is-swipe-out-left', 'is-swipe-out-right');
+            enabledSubmitControls.forEach(control => { control.disabled = false; });
         }
     });
 

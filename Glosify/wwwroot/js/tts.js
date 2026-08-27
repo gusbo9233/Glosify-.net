@@ -59,7 +59,7 @@
         if (session.audio) {
             session.audio.onended = null;
             session.audio.onerror = null;
-            try { session.audio.pause(); } catch (error) { /* ignore */ }
+            try { session.audio.pause(); } catch { /* ignore */ }
             session.audio.removeAttribute('src');
             session.audio = null;
         }
@@ -259,7 +259,8 @@
                 if (isCancellation(error)) throw error;
                 if (item.voice) {
                     throw new Error(
-                        'The selected Azure voice could not be played. No browser voice was substituted.');
+                        'The selected Azure voice could not be played. No browser voice was substituted.',
+                        { cause: error });
                 }
                 session.azureFailed = true;
                 console.warn('Azure TTS failed, falling back to browser TTS.', error);

@@ -120,6 +120,7 @@
   <data name="Languages.ModeFind" xml:space="preserve"><value>Temukan mode atau bahasa</value></data>
   <data name="Languages.ModeSearchPlaceholder" xml:space="preserve"><value>Cari mode dan bahasa</value></data>
   <data name="Languages.ModeCount" xml:space="preserve"><value>{0} mode dan bahasa</value></data>
+  <data name="Languages.ModeCountOne" xml:space="preserve"><value>{0} mode atau bahasa</value></data>
   <data name="Languages.ModeNone" xml:space="preserve"><value>Tidak ada mode atau bahasa yang cocok</value></data>
   <data name="Languages.ModeNoneHelp" xml:space="preserve"><value>Coba topik, nama bahasa, atau kode.</value></data>
   <data name="Languages.Title" xml:space="preserve">

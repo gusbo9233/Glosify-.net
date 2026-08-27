@@ -5,6 +5,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
+using Glosify.Extensions;
 using Glosify.Services.Ai;
 using Glosify.Services.Language;
 using Glosify.Services.Speaking;
@@ -931,7 +932,7 @@ public sealed class SpeakingIntegrationTests
         {
             if (context.Controller is Controller controller)
             {
-                controller.ViewData["HideAssistantPanel"] = true;
+                controller.ViewData.HideAssistantPanel();
             }
 
             await next();
