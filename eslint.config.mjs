@@ -31,23 +31,11 @@ export default [
     },
   },
   {
-    files: ['Glosify/wwwroot/js/**/*.js'],
-    languageOptions: {
-      globals: {
-        acs: 'readonly',
-        signalR: 'readonly',
-      },
-    },
-  },
-  {
     // Existing large browser scripts are linted with the recommended rules,
     // while these narrowly scoped exceptions baseline known cleanup work.
     files: [
       'Glosify/wwwroot/js/assistant.js',
       'Glosify/wwwroot/js/book-reader.js',
-      'Glosify/wwwroot/js/classroom-call.js',
-      'Glosify/wwwroot/js/speaking-bartender-three.js',
-      'Glosify/wwwroot/js/speaking-kasia-three.js',
     ],
     rules: {
       'no-unused-vars': 'off',
@@ -60,13 +48,6 @@ export default [
     ],
     rules: {
       'no-useless-assignment': 'off',
-    },
-  },
-  {
-    files: ['Glosify/wwwroot/js/speaking.js'],
-    rules: {
-      'no-case-declarations': 'off',
-      'no-empty': 'off',
     },
   },
 ];

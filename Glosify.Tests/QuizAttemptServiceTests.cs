@@ -17,13 +17,11 @@ public sealed class QuizAttemptServiceTests
         await using var context = CreateContext();
         var service = new QuizAttemptService(context);
         var quizId = Guid.NewGuid();
-        var classroomId = Guid.NewGuid();
         var session = new FlashcardSessionData
         {
             SessionId = "session-1",
             UserId = UserId,
             QuizId = quizId,
-            ClassroomId = classroomId,
             PracticeDirection = PracticeDirection.SourceToTarget,
             PracticeItemType = PracticeItemType.Words,
             RememberedCount = 7,
@@ -40,7 +38,6 @@ public sealed class QuizAttemptServiceTests
         var attempt = Assert.Single(context.QuizAttempts.ToList());
         Assert.Equal(quizId, attempt.QuizId);
         Assert.Equal(UserId, attempt.UserId);
-        Assert.Equal(classroomId, attempt.ClassroomId);
         Assert.Equal("flashcards", attempt.Mode);
         Assert.Equal(10, attempt.TotalItems);
         Assert.Equal(7, attempt.CorrectCount);
@@ -75,7 +72,6 @@ public sealed class QuizAttemptServiceTests
 
         var attempt = Assert.Single(context.QuizAttempts.ToList());
         Assert.Equal("typing", attempt.Mode);
-        Assert.Null(attempt.ClassroomId);
         Assert.Equal(3, attempt.TotalItems);
 
         var items = context.QuizAttemptItems.OrderBy(i => i.Sequence).ToList();

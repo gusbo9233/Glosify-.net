@@ -1,7 +1,3 @@
-@using Glosify.Services.Auth
-@using Microsoft.AspNetCore.Authorization
-@inject IAuthorizationService AuthorizationService
-@inject IWebHostEnvironment HostEnvironment
 @inject Glosify.Services.Language.ILanguageContext LangContext
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
@@ -11,14 +7,6 @@
     var currentLanguage = LangContext.CurrentLanguage;
     var hasLanguage = !string.IsNullOrWhiteSpace(currentLanguage);
     var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(currentLanguage);
-    var speakingIsAvailable = !isFreestyle && (!HostEnvironment.IsProduction()
-        || (await AuthorizationService.AuthorizeAsync(
-            User,
-            AuthorizationPolicyNames.SpeakingAvailability)).Succeeded);
-    var classroomIsAvailable = !HostEnvironment.IsProduction()
-        || (await AuthorizationService.AuthorizeAsync(
-            User,
-            AuthorizationPolicyNames.ClassroomAvailability)).Succeeded;
     ViewData.SetAssistantPageContext(new AssistantPageContext
     {
         Title = isFreestyle ? "Study assistant" : Text["Home.Coach"],
@@ -86,22 +74,12 @@
                 }
                 else
                 {
-                    @if (speakingIsAvailable)
-                    {
-                        <a class="home-button home-button-primary" asp-controller="Speaking" asp-action="Index">
-                            @Text["Home.StartSpeaking"]
-                            <span class="material-symbols-outlined" aria-hidden="true">mic</span>
-                        </a>
-                    }
-                    else
-                    {
-                        <span class="home-button home-button-primary is-disabled" aria-disabled="true" data-speaking-unavailable>
-                            @Text["Home.StartSpeaking"]
-                            <span class="material-symbols-outlined" aria-hidden="true">mic</span>
-                        </span>
-                    }
-                    <a class="home-button home-button-secondary" asp-controller="Quiz" asp-action="Index">
+                    <a class="home-button home-button-primary" asp-controller="Quiz" asp-action="Index">
                         @Text["Home.OpenQuizzes"]
+                        <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
+                    </a>
+                    <a class="home-button home-button-secondary" asp-controller="Books" asp-action="Index">
+                        @Text["Nav.Books"]
                     </a>
                 }
             </div>
@@ -109,7 +87,7 @@
             <ul class="home-hero-points" aria-label="@Text["Home.WaysAria"]">
                 <li><span class="material-symbols-outlined" aria-hidden="true">check</span> @(isFreestyle ? "Organize material by subject" : Text["Home.ReadContext"])</li>
                 <li><span class="material-symbols-outlined" aria-hidden="true">check</span> @Text["Home.PracticeRecall"]</li>
-                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> @(isFreestyle ? "Build interactive exercises" : Text["Home.SpeakConfidence"])</li>
+                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> @(isFreestyle ? "Build interactive exercises" : Text["Anki.AddToAnki"])</li>
             </ul>
         </div>
 
@@ -125,9 +103,9 @@
                 <span class="material-symbols-outlined" aria-hidden="true">neurology</span>
                 <small>@Text["Home.Remember"]</small>
             </div>
-            <div class="home-orbit-node home-orbit-node-speak">
-                <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "checklist" : "graphic_eq")</span>
-                <small>@(isFreestyle ? "Test" : Text["Nav.Speak"])</small>
+            <div class="home-orbit-node home-orbit-node-review">
+                <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "checklist" : "style")</span>
+                <small>@(isFreestyle ? "Test" : "Anki")</small>
             </div>
 
             <div class="home-orbit-core">
@@ -184,34 +162,17 @@
                 <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
             </a>
 
-            @if (isFreestyle || speakingIsAvailable)
-            {
-                <a class="home-action-card home-action-card-speaking" asp-controller="@(isFreestyle ? "Quiz" : "Speaking")" asp-action="Index">
-                    <span class="home-action-number">03</span>
-                    <span class="home-action-icon">
-                        <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "dashboard_customize" : "mic")</span>
-                    </span>
-                    <span class="home-action-content">
-                        <strong>@(isFreestyle ? "Create interactive quizzes" : Text["Home.SpeakNaturally"])</strong>
-                        <small>@(isFreestyle ? "Use multiple choice, checkbox, cloze, and more." : Text["Home.SpeakNaturallyText"])</small>
-                    </span>
-                    <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
-                </a>
-            }
-            else
-            {
-                <span class="home-action-card home-action-card-speaking is-disabled" aria-disabled="true" data-speaking-unavailable>
-                    <span class="home-action-number">03</span>
-                    <span class="home-action-icon">
-                        <span class="material-symbols-outlined" aria-hidden="true">mic</span>
-                    </span>
-                    <span class="home-action-content">
-                        <strong>@Text["Home.SpeakNaturally"]</strong>
-                        <small>@Text["Home.SpeakNaturallyText"]</small>
-                    </span>
-                    <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
+            <a class="home-action-card home-action-card-anki" asp-controller="@(isFreestyle ? "Quiz" : "Anki")" asp-action="Index">
+                <span class="home-action-number">03</span>
+                <span class="home-action-icon">
+                    <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "dashboard_customize" : "style")</span>
                 </span>
-            }
+                <span class="home-action-content">
+                    <strong>@(isFreestyle ? "Create interactive quizzes" : "Anki")</strong>
+                    <small>@(isFreestyle ? "Use multiple choice, checkbox, cloze, and more." : Text["Anki.AddToAnki"])</small>
+                </span>
+                <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
+            </a>
         </div>
     </section>
 
@@ -245,28 +206,6 @@
                 <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
             </a>
 
-            @if (classroomIsAvailable)
-            {
-                <a class="home-feature-card home-feature-card-classroom" asp-controller="Classroom" asp-action="Index">
-                    <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">school</span>
-                    <span>
-                        <strong>@Text["Home.JoinClassroom"]</strong>
-                        <small>@Text["Home.JoinClassroomText"]</small>
-                    </span>
-                    <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
-                </a>
-            }
-            else
-            {
-                <span class="home-feature-card home-feature-card-classroom is-disabled" aria-disabled="true" data-classroom-unavailable>
-                    <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">school</span>
-                    <span>
-                        <strong>@Text["Home.JoinClassroom"]</strong>
-                        <small>@Text["Home.JoinClassroomText"]</small>
-                    </span>
-                    <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
-                </span>
-            }
         </div>
     </section>
 

@@ -15,7 +15,6 @@ internal sealed class QuizAttemptConfiguration : IEntityTypeConfiguration<QuizAt
         entity.Property(a => a.PracticeItemType).HasMaxLength(32);
 
         entity.HasIndex(a => new { a.UserId, a.CompletedAt });
-        entity.HasIndex(a => new { a.ClassroomId, a.QuizId, a.CompletedAt });
 
         entity.HasOne<Quiz>()
             .WithMany()
@@ -27,12 +26,6 @@ internal sealed class QuizAttemptConfiguration : IEntityTypeConfiguration<QuizAt
             .WithMany()
             .HasForeignKey(a => a.UserId)
             .HasConstraintName("FK_QuizAttempts_AspNetUsers_UserId")
-            .OnDelete(DeleteBehavior.NoAction);
-
-        entity.HasOne<Classroom>()
-            .WithMany()
-            .HasForeignKey(a => a.ClassroomId)
-            .HasConstraintName("FK_QuizAttempts_Classrooms_ClassroomId")
             .OnDelete(DeleteBehavior.NoAction);
 
     }

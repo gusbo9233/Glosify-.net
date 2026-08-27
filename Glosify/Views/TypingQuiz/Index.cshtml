@@ -99,7 +99,6 @@
                     <input type="hidden" name="selectedWordIds" value="@Model.SelectedWordIds" />
                     <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
                     <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
-                    <input type="hidden" name="classroomId" value="@Model.ClassroomId" />
                     <button class="btn-linkish" type="submit">@Text["Quiz.Reset"]</button>
                 </form>
             </article>
@@ -153,7 +152,6 @@
                     <input type="hidden" name="selectedWordIds" value="@Model.SelectedWordIds" />
                     <input type="hidden" name="practiceDirection" value="@Model.PracticeDirection" />
                     <input type="hidden" name="practiceItemType" value="@Model.PracticeItemType" />
-                    <input type="hidden" name="classroomId" value="@Model.ClassroomId" />
                     <button class="btn-main" type="submit">@Text["Quiz.Restart"]</button>
                 </form>
                 <form method="post" asp-controller="TypingQuiz" asp-action="RestartIncorrect" data-practice-incorrect hidden>

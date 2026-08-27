@@ -19,23 +19,20 @@ public static class WebFonts
     /// </remarks>
     public static readonly string[] IconNames =
     [
-        "account_balance_wallet", "account_circle", "account_tree", "add", "add_circle",
-        "add_home_work", "arrow_back", "arrow_forward", "arrow_outward", "arrow_upward", "assignment",
-        "assignment_add", "auto_awesome", "auto_fix_high", "auto_stories", "backspace", "bakery_dining", "bolt",
-        "calendar_today", "call_end", "campaign", "category", "chat_bubble", "check", "check_circle", "checklist",
-        "chevron_left", "chevron_right", "close", "cloud", "content_copy", "create_new_folder",
+        "account_circle", "account_tree", "add", "add_circle", "arrow_back", "arrow_forward",
+        "arrow_outward", "arrow_upward", "auto_awesome", "auto_fix_high", "auto_stories", "backspace", "bolt",
+        "calendar_today", "category", "chat_bubble", "check", "check_circle", "checklist",
+        "chevron_left", "chevron_right", "close", "content_copy", "create_new_folder",
         "dashboard_customize", "data_object", "delete", "description", "drag_indicator", "east", "edit",
         "edit_note", "error", "event", "explore", "fit_screen", "flag", "folder", "folder_open",
-        "folder_shared", "format_align_left", "format_quote", "forum", "graphic_eq", "grid_4x4",
-        "group", "help", "hourglass_top", "info", "inventory_2", "keep", "key", "keyboard",
-        "library_add", "library_books", "local_bar", "lock", "lock_reset", "login", "logout",
-        "mark_email_unread", "menu_book", "mic", "mic_off", "more_vert", "neurology", "north_east", "notes",
-        "outgoing_mail", "person", "person_add", "person_search", "picture_as_pdf",
-        "play_circle", "psychology", "public", "quiz", "remove", "replay",
-        "rotate_right", "school", "science", "search", "search_off", "send", "settings", "share", "short_text",
-        "shot_bar", "stacks", "style", "subject", "subtitles", "subtitles_off", "swap_horiz",
-        "task_alt", "thumb_down", "thumb_up", "timer", "translate", "travel_explore", "tune", "undo", "upload_file", "videocam",
-        "videocam_off", "view_column_2", "volume_up", "waving_hand", "west",
+        "folder_shared", "format_align_left", "format_quote", "graphic_eq", "grid_4x4",
+        "group", "help", "hourglass_top", "info", "inventory_2", "keyboard",
+        "library_add", "library_books", "lock", "lock_reset", "login", "logout",
+        "menu_book", "more_vert", "neurology", "north_east", "notes", "person_search", "picture_as_pdf",
+        "play_circle", "psychology", "public", "quiz", "remove", "rotate_right", "school", "science", "search",
+        "search_off", "settings", "short_text", "stacks", "style", "subject", "subtitles", "subtitles_off",
+        "swap_horiz", "task_alt", "thumb_down", "thumb_up", "timer", "translate", "travel_explore", "tune",
+        "upload_file", "view_column_2", "volume_up", "waving_hand", "west",
     ];
 
     /// <summary>

@@ -149,7 +149,5 @@ public sealed class BookFileRangeTests
         public Task<BookPage?> GetOwnedPageAsync(Guid documentId, int pageNumber, string userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task<Stream> OpenPdfUncheckedAsync(Guid documentId, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
     }
 }

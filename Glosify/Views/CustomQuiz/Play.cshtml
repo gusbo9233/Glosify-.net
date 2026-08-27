@@ -9,7 +9,6 @@
          data-custom-style="@Model.Play.Document.StylePreset"
          data-custom-id="@Model.Play.Id"
          data-attempt-id="@Model.Play.AttemptId"
-         data-classroom-id="@Model.Play.ClassroomId"
          data-grade-url="@Url.Action("Grade", "CustomQuiz", new { id = Model.Play.Id })">
     @Html.AntiForgeryToken()
     <header class="custom-player-header">

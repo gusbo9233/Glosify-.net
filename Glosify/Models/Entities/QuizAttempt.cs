@@ -5,7 +5,6 @@ public class QuizAttempt
     public Guid Id { get; set; }
     public Guid QuizId { get; set; }
     public string UserId { get; set; } = string.Empty;
-    public Guid? ClassroomId { get; set; }
     public string Mode { get; set; } = string.Empty;
     public string? PracticeDirection { get; set; }
     public string? PracticeItemType { get; set; }

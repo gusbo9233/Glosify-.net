@@ -14,20 +14,11 @@ Glosify brings several language-learning activities into one account:
 - save vocabulary and sentences in quizzes and collections;
 - practise with flashcards, typing exercises, and custom quizzes;
 - upload PDF books, translate pages, and create learning material from them;
-- practise conversations in animated speaking scenes;
-- manage classrooms, assignments, chat, and calls;
+- review durable study cards with the FSRS-6 Anki workflow;
 - create and update quizzes through an assistant;
 - translate audio from a Chrome tab with the Live Subtitles extension.
 
 ## Product tour
-
-### Speaking practice
-
-[![Speaking practice with an AI bartender scene](screenshots/speaking-practice.png)](screenshots/speaking-practice.png)
-
-The speaking feature combines an animated scene, text or microphone input,
-generated replies, optional translations, and structured scene actions. The
-application owns and validates every action before changing the scene.
 
 ### Assistant-driven quiz creation
 
@@ -92,7 +83,6 @@ flowchart LR
     Services --> OpenAI["OpenAI Responses and realtime translation"]
     Services --> Speech["Azure AI Speech"]
     Services --> Storage["Azure Blob Storage"]
-    Services --> ACS["Azure Communication Services"]
 ```
 
 Controllers deal with HTTP concerns such as routes, request validation, and
@@ -151,7 +141,7 @@ do not survive a restart and the app should not be scaled to multiple instances
 without more work.
 
 [ADR 0001](adr/0001-single-instance-state.md) records the current state and a
-future Redis, SignalR backplane, and data-protection upgrade path.
+future Redis and data-protection upgrade path.
 
 ## What I would improve next
 

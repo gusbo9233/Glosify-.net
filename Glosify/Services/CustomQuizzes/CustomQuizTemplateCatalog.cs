@@ -16,7 +16,7 @@ public sealed class CustomQuizTemplateCatalog : ICustomQuizTemplateCatalog
         new("editorial_flow", "Editorial flow", "Quiet hierarchy, generous spacing, and one clear task per row.",
             CustomQuizStylePresets.Editorial, "format_align_left", "Translations, grammar prompts, focused recall",
             "Use a full-width heading and instruction. Pair a 4-column live prompt with a 6-column answer on the same row, leaving deliberate breathing room between them. Keep actions together on the final row."),
-        new("aurora_cards", "Aurora cards", "Soft color, paired practice cards, and an energetic classroom feel.",
+        new("aurora_cards", "Aurora cards", "Soft color, paired practice cards, and an energetic study feel.",
             CustomQuizStylePresets.Aurora, "auto_awesome", "Short vocabulary sets and visual scanning",
             "Use two 6-column question cards per band. Put each live prompt above its answer in the same half of the grid. Limit the first screen to four questions."),
         new("paper_choices", "Textbook drill", "Compact numbered rows modelled on the photographed workbook exercises.",

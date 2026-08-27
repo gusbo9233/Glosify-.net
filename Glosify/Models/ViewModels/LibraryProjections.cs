@@ -8,8 +8,8 @@ namespace Glosify.Models.ViewModels;
 /// The library entities as the pages that show them need them.
 /// </summary>
 /// <remarks>
-/// These finish the job the classroom projections started: no view model above the service
-/// layer holds a tracked EF entity. Property names deliberately match the entities they
+/// No view model above the service layer holds a tracked EF entity. Property names
+/// deliberately match the entities they
 /// replace, so most Razor reads unchanged — the point is what a view can no longer do,
 /// which is walk a navigation property and trigger a load mid-render.
 /// </remarks>

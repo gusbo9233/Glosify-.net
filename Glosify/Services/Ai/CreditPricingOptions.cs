@@ -26,7 +26,6 @@ public sealed class CreditPricingOptionsValidator : IValidateOptions<CreditPrici
     {
         AiUsageFeatures.Assistant,
         AiUsageFeatures.ImageExtraction,
-        AiUsageFeatures.Speaking,
         AiUsageFeatures.PageTranslation,
     };
 
@@ -95,7 +94,6 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
     [
         (AiUsageFeatures.Assistant, "Assistant"),
         (AiUsageFeatures.ImageExtraction, "Image text extraction"),
-        (AiUsageFeatures.Speaking, "Speaking practice"),
         (AiUsageFeatures.PageTranslation, "Book page translation"),
     ];
 

@@ -328,7 +328,5 @@ public sealed class AssistantCollaboratorTests
             throw new NotSupportedException();
         public Task<bool> DeleteAsync(Guid documentId, string userId, CancellationToken cancellationToken = default) =>
             Task.FromResult(false);
-        public Task<Stream> OpenPdfUncheckedAsync(Guid documentId, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
     }
 }

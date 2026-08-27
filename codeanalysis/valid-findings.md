@@ -115,14 +115,6 @@ These reports are true positives, but no current functional or security impact w
 
 - **Cleanup — line 69 — Sonar S1172 / JetBrains:** private `EnsureUserAsync` never uses its cancellation token. Remove it or explicitly check cancellation before invoking the non-cancellable Identity APIs.
 
-### `Glosify/Services/Classrooms/ClassroomLibrary.cs`
-
-- **Cleanup — line 17 — JetBrains:** `GetContentAsync` has no production or test caller; only its interface and implementation exist.
-
-### `Glosify/Services/Classrooms/ClassroomRoster.cs`
-
-- **Cleanup — line 17 — JetBrains:** `GetMembersAsync` has no production or test caller; only its interface and implementation exist.
-
 ### `Glosify/Services/Language/LanguageContext.cs`
 
 - **Cleanup — line 6 — JetBrains:** `ILanguageContext.HasLanguage` is never consumed. Removing it also removes corresponding fake implementation boilerplate.
@@ -151,14 +143,6 @@ These reports are true positives, but no current functional or security impact w
 
 - **Cleanup — line 7 — JetBrains:** the `Database` message constant has no references.
 
-### `Glosify/Services/Speaking/SpeakingAvatarCatalog.cs`
-
-- **Cleanup — line 286 — JetBrains:** `All` has no references.
-
-### `Glosify/Services/Speaking/SpeakingTelemetry.cs`
-
-- **Cleanup — line 16 — JetBrains:** `SceneProposalsIgnored` is created but never incremented or otherwise referenced.
-
 ### `Glosify/Services/Speech/VoiceMap.cs`
 
 - **Cleanup — line 46 — JetBrains:** callers of the three-argument `TryResolve` overload always discard `locale`. The five-argument production overload does use it; simplify only the smaller overload.
@@ -183,10 +167,6 @@ These reports are true positives, but no current functional or security impact w
 
 - **Cleanup — line 20 — ESLint `no-unused-vars`:** `clientTimestamp` is intentionally destructured only to exclude it from `stableFields`, but the local binding itself is never used and fails lint. Preserve the omission with a lint-compatible destructuring/refactor or an explicit ignored-name convention.
 
-### `Glosify.Tests/ClassroomServices.cs`
-
-- **Cleanup — line 38 — JetBrains:** test helper `Call` has no caller.
-
 ### `Glosify.Tests/NavigationTests.cs`
 
 - **Cleanup — line 237 — JetBrains:** private helper `AntiForgeryAsync` has no caller.
@@ -199,7 +179,7 @@ These reports are true positives, but no current functional or security impact w
 - The Stripe raw-body warning conflicts with required signature verification.
 - The reported regular expressions are fixed, escaped, or linear; no catastrophic-backtracking path was found.
 - JetBrains' roughly one thousand `_AppLayout.cshtml` syntax/symbol reports and similar Razor findings result from lost Razor parsing context.
-- EF tooling, hosting, dependency injection, model binding, JSON, SignalR, and assembly scanning account for the apparently unused context factory, `Program`, request/DTO members, stored JSON models, and assistant tool classes.
+- EF tooling, hosting, dependency injection, model binding, JSON, and assembly scanning account for the apparently unused context factory, `Program`, request/DTO members, stored JSON models, and assistant tool classes.
 - The three C# 14 span-overload diagnostics are non-actionable in this repository. Raw interpreted expression trees can fail, but EF Core 10.0.8 normalizes the current queries; the focused trial-eligibility and telemetry-deletion paths pass.
 - Meziantou's `ConfigureAwait(false)`, file/type naming, explicit comparer, string-operator, method-length, collection-abstraction, brace, primary-constructor, `init`, and similar reports are policy/style preferences rather than demonstrated defects. `.editorconfig` already records the ASP.NET Core synchronization-context policy.
 - The remaining Sonar under-posting reports fail closed through ownership/not-found checks, represent optional checkbox semantics, or are manually validated by the receiving service.

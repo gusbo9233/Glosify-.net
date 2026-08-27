@@ -1,9 +1,16 @@
 # Deployment runbook
 
 Glosify deploys to Azure App Service from
-`.github/workflows/master_glosify.yml`. Pull requests build and test; a reviewed
-push to `master` creates and applies the EF migration bundle before deploying the
-web application.
+`.github/workflows/master_glosify.yml`. Pull requests targeting `master` build
+and test. The repository ruleset should automatically request GitHub Copilot
+code review for new pull requests and new pushes; draft reviews remain disabled
+to avoid feedback on unfinished work.
+
+Copilot review is advisory: its comments do not count as an approval, replace
+CI, or establish that a finding is correct. Validate its findings against the
+current code, tests, migrations, configuration, and applicable primary
+documentation. A reviewed push to `master` creates and applies the EF migration
+bundle before deploying the web application.
 
 ## Required App Service settings
 
@@ -21,19 +28,18 @@ that exact environment variable explicitly. It is never emitted in HTML, API
 responses, relay tokens, logs, or extension configuration.
 
 The deployment workflow verifies that the setting is non-empty before changing
-production. After the direct-OpenAI artifact is deployed, it removes the retired
-Foundry/Gemini credentials, endpoints, deployments, speaking-agent pins, and
-model-multiplier overrides. The cleanup deliberately runs after deployment so
-the previous artifact remains functional during rollout.
+production. After the replacement artifact is deployed, it removes retired
+Foundry/Gemini, Speaking, and Azure Communication Services settings. The cleanup
+deliberately runs after deployment so the previous artifact remains functional
+during rollout.
 
 Feature-specific settings remain required when those features are enabled:
 
-- Azure Speech endpoint/resource/region settings for speaking transcription,
-  pronunciation assessment, voices, and TTS;
+- Azure Speech endpoint/resource/region settings for server-side TTS;
 - Azure Translator resource settings for Scribe subtitle mode;
 - `RealtimeTranslation__ElevenLabs__ApiKey` for Scribe mode and optional saved
   source transcripts;
-- Blob Storage, Azure Communication Services, Stripe, OAuth, and email settings
+- Blob Storage, Stripe, OAuth, and email settings
   for their corresponding features.
 
 Managed identity is still used for supported Azure services such as Blob
@@ -83,10 +89,10 @@ Application constants fix these routes:
 
 | Feature | Route |
 |---|---|
-| Assistant, structured generation, image extraction, page translation, speaking text | OpenAI Responses API, `gpt-5.6-luna` |
+| Assistant, structured generation, image extraction, page translation | OpenAI Responses API, `gpt-5.6-luna` |
 | Enhanced live subtitles | OpenAI realtime translation, `gpt-realtime-translate` |
 | Alternative subtitles | ElevenLabs `scribe_v2_realtime` + Azure Translator |
-| Speaking audio | Azure Speech |
+| Book text-to-speech | Azure Speech |
 
 `GenerativeAi__TimeoutSeconds` may override the default 180-second timeout. Do
 not add model names, alternate provider keys, agent pins, callback secrets, or
@@ -117,9 +123,31 @@ dotnet ef migrations has-pending-model-changes --project Glosify
 dotnet ef migrations bundle --project Glosify --configuration Release
 ```
 
-The workflow applies the reviewed bundle. This migration deliberately leaves the
-historical assistant staging table in place; no destructive data migration is
-part of the direct OpenAI change.
+The workflow applies the reviewed bundle. Migration
+`20260827095613_RemoveSpeakingAndClassrooms` is intentionally destructive: it
+drops `AcsUserIdentities`, all `Classroom*` tables, and only the retired
+`QuizAttempts.ClassroomId` foreign key, index, and column. It preserves
+`QuizAttempts`, `QuizAttemptItems`, Identity, quizzes, books, assistant data,
+credits, and provider-usage history. Historical migrations must remain unchanged.
+
+### Required retirement BACPAC
+
+Immediately before merging or deploying the retirement migration:
+
+1. Confirm the remote `foundry-version` branch is available and no administrator
+   is using the retired features.
+2. Export the full production Azure SQL database to a BACPAC.
+3. Store it encrypted in private, operator-controlled Azure storage with public
+   access disabled. Verify that the object exists and has a non-zero size.
+4. Record the database name, UTC export timestamp, blob URI, size, and deletion
+   date in the private operations record—not in this repository.
+5. Set a 90-day deletion date or lifecycle rule and verify deletion after that
+   date.
+
+Do not deploy the migration until the export has completed successfully. A
+migration rollback recreates only empty retired tables and the nullable attempt
+column; it cannot restore classroom or ACS identity rows. Restoring those rows
+requires the BACPAC and the archived `foundry-version` code.
 
 ## Pre-deployment verification
 
@@ -127,6 +155,9 @@ part of the direct OpenAI change.
 dotnet test Glosify.slnx -c Release
 npm test --prefix Glosify.ClientTests
 npm test --prefix Glosify.LiveSubtitles.Extension
+dotnet ef migrations has-pending-model-changes --project Glosify
+dotnet ef migrations bundle --project Glosify --configuration Release
+dotnet publish Glosify/Glosify.csproj -c Release
 ```
 
 Run the browser suite when its dependencies are installed. Direct OpenAI smoke
@@ -139,18 +170,26 @@ print the key in test output.
 1. Confirm startup validation succeeds and the health endpoint is healthy.
 2. Send a basic assistant turn and a tool-using turn; confirm usage rows show
    provider `openai`, model `gpt-5.6-luna`, and no hosted conversation ID.
-3. Verify structured import, image extraction, and book-page translation.
-4. Verify one speaking turn still uses Azure Speech for audio and Luna for text.
-5. Start Enhanced subtitles and confirm relay readiness, translated captions,
+3. Verify quiz practice, custom quizzes, Anki review, Books/TTS, structured
+   import, image extraction, and book-page translation.
+4. Start Enhanced subtitles and confirm relay readiness, translated captions,
    duration billing, reconnect, and graceful close.
-6. Start Scribe mode and confirm Azure Translator output remains unchanged.
-7. Review Application Insights errors, latency, throttling, token usage, and
+5. Start Scribe mode and confirm Azure Translator output remains unchanged.
+6. Verify authentication, payments, and saved assistant/transcript flows.
+7. Confirm `/Speaking`, `/api/speaking/*`, `/Classroom/*`, and
+   `/hubs/classroom-chat` return 404 for an authenticated administrator.
+8. Review Application Insights for startup, routing, missing-service, and SQL
+   failures, plus latency, throttling, token usage, and
    credit reservation/settlement counters.
+9. Confirm the post-deployment settings cleanup completed, then repeat health
+   and smoke checks.
 
 ## Rollback
 
-Roll back the application artifact to the previous reviewed release. Do not add
-an alternate provider/model setting as an emergency switch. If direct OpenAI is
-unavailable, disable the affected feature through its existing feature flag or
-restore the prior application release after reviewing data and schema
-compatibility.
+Do not roll back the application artifact across this migration without first
+reviewing schema compatibility. Rolling the migration down recreates empty
+retired schema only. Restoring the old implementation with its production data
+requires the archived `foundry-version` code and a restore/import from the
+private BACPAC. For unrelated application failures, restore the previous
+schema-compatible reviewed artifact; do not add an alternate provider/model
+setting as an emergency switch.

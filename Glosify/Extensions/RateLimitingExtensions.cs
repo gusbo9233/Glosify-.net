@@ -1,5 +1,4 @@
 using System.Threading.RateLimiting;
-using Glosify.Services.Speaking;
 
 namespace Glosify.Extensions;
 
@@ -16,15 +15,6 @@ public static class RateLimitingExtensions
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-            options.OnRejected = (context, _) =>
-            {
-                if (context.HttpContext.Request.Path.StartsWithSegments("/api/speaking"))
-                {
-                    SpeakingTelemetry.RateLimits.Add(1);
-                }
-
-                return ValueTask.CompletedTask;
-            };
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
                 var path = context.Request.Path;
@@ -145,35 +135,6 @@ public static class RateLimitingExtensions
                     });
                 }
 
-                if (string.Equals(
-                    path.Value,
-                    "/api/speaking/speech-token",
-                    StringComparison.OrdinalIgnoreCase))
-                {
-                    var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                        ?? context.Connection.RemoteIpAddress?.ToString()
-                        ?? "unknown";
-                    return RateLimitPartition.GetFixedWindowLimiter($"speaking-token:{caller}", _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 12,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueLimit = 0,
-                    });
-                }
-
-                if (path.StartsWithSegments("/api/speaking"))
-                {
-                    var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                        ?? context.Connection.RemoteIpAddress?.ToString()
-                        ?? "unknown";
-                    return RateLimitPartition.GetFixedWindowLimiter($"speaking:{caller}", _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 30,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueLimit = 0,
-                    });
-                }
-
                 if (path.StartsWithSegments("/api/realtime-translation"))
                 {
                     var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
@@ -200,19 +161,6 @@ public static class RateLimitingExtensions
                     {
                         PermitLimit = 10,
                         Window = TimeSpan.FromMinutes(10),
-                        QueueLimit = 0,
-                    });
-                }
-
-                if (path.StartsWithSegments("/Classroom") && HttpMethods.IsPost(context.Request.Method))
-                {
-                    var member = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                        ?? context.Connection.RemoteIpAddress?.ToString()
-                        ?? "unknown";
-                    return RateLimitPartition.GetFixedWindowLimiter($"classroom:{member}", _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 30,
-                        Window = TimeSpan.FromMinutes(1),
                         QueueLimit = 0,
                     });
                 }

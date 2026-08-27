@@ -136,9 +136,9 @@ public sealed class CustomQuizController : Controller
         await _customQuizzes.DeleteAsync(id, User.GetUserId(), cancellationToken) ? NoContent() : NotFound();
 
     [HttpGet("/CustomQuizzes/{id:guid}/Play")]
-    public async Task<IActionResult> Play(Guid id, Guid? classroomId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Play(Guid id, CancellationToken cancellationToken)
     {
-        var play = await _customQuizzes.GetForPlayAsync(id, User.GetUserId(), classroomId, cancellationToken);
+        var play = await _customQuizzes.GetForPlayAsync(id, User.GetUserId(), cancellationToken);
         return play == null
             ? NotFound()
             : View(CustomQuizPlayViewModel.Create(play, _text["Custom.Answer"].Value));

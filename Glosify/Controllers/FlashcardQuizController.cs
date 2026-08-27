@@ -3,7 +3,6 @@ using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Models.ViewModels;
 using Glosify.Services;
-using Glosify.Services.Classrooms;
 using Glosify.Services.Flashcards;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
@@ -19,48 +18,29 @@ public class FlashcardQuizController : Controller
     private readonly IQuizService _quizService;
     private readonly IWordService _wordService;
     private readonly IFlashcardSessionService _sessionService;
-    private readonly IClassroomLibrary _classroomLibrary;
     private readonly IQuizAttemptService _attemptService;
 
     public FlashcardQuizController(
         IQuizService quizService,
         IWordService wordService,
         IFlashcardSessionService sessionService,
-        IClassroomLibrary classroomLibrary,
         IQuizAttemptService attemptService)
     {
         _quizService = quizService;
         _wordService = wordService;
         _sessionService = sessionService;
-        _classroomLibrary = classroomLibrary;
         _attemptService = attemptService;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
         var wordIds = WordIdList.Parse(selectedWordIds);
 
-        Quiz? selectedQuiz;
-        if (classroomId.HasValue && id.HasValue)
-        {
-            // Classroom-shared quizzes are practicable by members who don't own them.
-            try
-            {
-                selectedQuiz = await _classroomLibrary.RequireSharedQuizAsync(classroomId.Value, id.Value, userId, cancellationToken);
-            }
-            catch (ClassroomAccessDeniedException)
-            {
-                return RedirectToAction("Index", "Classroom");
-            }
-        }
-        else
-        {
-            selectedQuiz = await _quizService.FindQuizAsync(userId, id, cancellationToken: cancellationToken);
-        }
+        var selectedQuiz = await _quizService.FindQuizAsync(userId, id, cancellationToken: cancellationToken);
 
         if (selectedQuiz == null)
             return View(FlashcardQuizViewModel.Empty());
@@ -77,12 +57,6 @@ public class FlashcardQuizController : Controller
             : _sessionService.FindResumableSession(userId, selectedQuiz.Id, normalizedDirection, normalizedItemType, wordCount, wordRangeStart, wordRangeEnd);
         if (resumed != null)
         {
-            if (classroomId.HasValue && resumed.ClassroomId == null)
-            {
-                resumed.ClassroomId = classroomId;
-                _sessionService.SaveSession(resumed);
-            }
-
             return View(BuildViewModel(resumed, selectedQuiz));
         }
 
@@ -113,7 +87,6 @@ public class FlashcardQuizController : Controller
             wordRangeStart,
             wordRangeEnd,
             selectedWordIds);
-        session.ClassroomId = classroomId;
         _sessionService.SaveSession(session);
 
         return View(BuildViewModel(session, selectedQuiz));
@@ -161,10 +134,10 @@ public class FlashcardQuizController : Controller
     }
 
     [HttpPost]
-    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null)
+    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null)
     {
         _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount, wordRangeStart, wordRangeEnd);
-        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType), classroomId, wordRangeStart, wordRangeEnd, selectedWordIds });
+        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType), wordRangeStart, wordRangeEnd, selectedWordIds });
     }
 
     private IActionResult FlashcardResponse(FlashcardSessionData session)
@@ -228,7 +201,6 @@ public class FlashcardQuizController : Controller
             CardLabel = isFreestyle ? "Item" : PracticeItemType.CardLabel(session.PracticeItemType),
             IsAnswerRevealed = session.IsAnswerRevealed,
             IsComplete = totalCards > 0 && currentCard == null,
-            ClassroomId = session.ClassroomId,
             ScorePercent = totalAnswered == 0 ? 0 : (int)Math.Round(session.RememberedCount * 100d / totalAnswered),
             ProgressPercent = totalCards == 0 ? 0 : (int)Math.Round(completedCards * 100d / totalCards)
         };
@@ -255,7 +227,6 @@ public class FlashcardQuizController : Controller
             session.PracticeDirection,
             session.PracticeItemType);
 
-        restarted.ClassroomId = session.ClassroomId;
         _sessionService.SaveSession(restarted);
         return FlashcardResponse(restarted);
     }

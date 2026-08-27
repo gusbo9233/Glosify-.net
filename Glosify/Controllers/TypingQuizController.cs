@@ -4,7 +4,6 @@ using Glosify.Models.Entities;
 using Glosify.Models.Requests;
 using Glosify.Models.ViewModels;
 using Glosify.Services;
-using Glosify.Services.Classrooms;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Typing;
@@ -19,48 +18,29 @@ public class TypingQuizController : Controller
     private readonly IQuizService _quizService;
     private readonly ITypingQuizService _typingQuizService;
     private readonly ITypingSessionService _sessionService;
-    private readonly IClassroomLibrary _classroomLibrary;
     private readonly IQuizAttemptService _attemptService;
 
     public TypingQuizController(
         IQuizService quizService,
         ITypingQuizService typingQuizService,
         ITypingSessionService sessionService,
-        IClassroomLibrary classroomLibrary,
         IQuizAttemptService attemptService)
     {
         _quizService = quizService;
         _typingQuizService = typingQuizService;
         _sessionService = sessionService;
-        _classroomLibrary = classroomLibrary;
         _attemptService = attemptService;
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(Guid? id, int wordCount = 20, string? practiceDirection = null, string? practiceItemType = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
         var wordIds = WordIdList.Parse(selectedWordIds);
 
-        Quiz? selectedQuiz;
-        if (classroomId.HasValue && id.HasValue)
-        {
-            // Classroom-shared quizzes are practicable by members who don't own them.
-            try
-            {
-                selectedQuiz = await _classroomLibrary.RequireSharedQuizAsync(classroomId.Value, id.Value, userId, cancellationToken);
-            }
-            catch (ClassroomAccessDeniedException)
-            {
-                return RedirectToAction("Index", "Classroom");
-            }
-        }
-        else
-        {
-            selectedQuiz = await _quizService.FindQuizAsync(userId, id, cancellationToken: cancellationToken);
-        }
+        var selectedQuiz = await _quizService.FindQuizAsync(userId, id, cancellationToken: cancellationToken);
 
         if (selectedQuiz == null)
             return View(TypingQuizViewModel.Empty());
@@ -77,12 +57,6 @@ public class TypingQuizController : Controller
             : _sessionService.FindResumableSession(userId, selectedQuiz.Id, normalizedDirection, normalizedItemType, wordCount, wordRangeStart, wordRangeEnd);
         if (resumed != null)
         {
-            if (classroomId.HasValue && resumed.ClassroomId == null)
-            {
-                resumed.ClassroomId = classroomId;
-                _sessionService.SaveSession(resumed);
-            }
-
             return RedirectToAction(nameof(Session), new { sessionId = resumed.SessionId });
         }
 
@@ -100,7 +74,6 @@ public class TypingQuizController : Controller
             wordRangeStart,
             wordRangeEnd,
             selectedWordIds);
-        session.ClassroomId = classroomId;
         _sessionService.SaveSession(session);
 
         return RedirectToAction(nameof(Session), new { sessionId = session.SessionId });
@@ -172,10 +145,10 @@ public class TypingQuizController : Controller
     }
 
     [HttpPost]
-    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, Guid? classroomId = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null)
+    public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null)
     {
         _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount, wordRangeStart, wordRangeEnd);
-        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType), classroomId, wordRangeStart, wordRangeEnd, selectedWordIds });
+        return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType), wordRangeStart, wordRangeEnd, selectedWordIds });
     }
 
     [HttpPost]
@@ -199,7 +172,6 @@ public class TypingQuizController : Controller
             session.PracticeDirection,
             session.PracticeItemType);
 
-        restarted.ClassroomId = session.ClassroomId;
         _sessionService.SaveSession(restarted);
 
         return RedirectToAction(nameof(Session), new { sessionId = restarted.SessionId });
@@ -254,8 +226,7 @@ public class TypingQuizController : Controller
             ItemPluralLabel = isFreestyle ? "items" : PracticeItemType.PluralLabel(session.PracticeItemType),
             CardLabel = isFreestyle ? "Item" : PracticeItemType.CardLabel(session.PracticeItemType),
             ShowsUkrainianKeyboard = showsUkrainianKeyboard,
-            IsComplete = totalWords > 0 && currentWord == null,
-            ClassroomId = session.ClassroomId
+            IsComplete = totalWords > 0 && currentWord == null
         };
     }
 

@@ -633,8 +633,8 @@ const updateReaderTtsButton = (playing) => {
 
 const clearSpeechHighlights = () => {
     removeHighlightFragments('speech');
-    translationContent?.querySelectorAll('.is-speaking')
-        .forEach(element => element.classList.remove('is-speaking'));
+    translationContent?.querySelectorAll('.is-reading')
+        .forEach(element => element.classList.remove('is-reading'));
 };
 
 const stopReaderTts = () => {
@@ -883,7 +883,7 @@ const startReaderTts = () => {
                 const indices = item.meta.selectionIndices || [];
                 translationContent?.querySelectorAll('[data-translation-segment]').forEach(element => {
                     element.classList.toggle(
-                        'is-speaking',
+                        'is-reading',
                         indices.includes(Number(element.dataset.translationSegment)));
                 });
             }

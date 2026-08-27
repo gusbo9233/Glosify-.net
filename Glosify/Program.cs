@@ -8,7 +8,6 @@ using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Auth;
 using Glosify.Services.RealtimeTranslation;
-using Glosify.Services.Speaking;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
@@ -95,8 +94,6 @@ builder.Services.AddResponseCompression(options =>
     options.Providers.Add<GzipCompressionProvider>();
 });
 
-builder.Services.AddSignalR();
-
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
@@ -118,16 +115,6 @@ builder.Services.AddAuthorization(options =>
     {
         policy.RequireAuthenticatedUser();
         policy.RequireAssertion(IsAdmin);
-    });
-    options.AddPolicy(AuthorizationPolicyNames.SpeakingAvailability, policy =>
-    {
-        policy.RequireAuthenticatedUser();
-        policy.RequireAssertion(context => !builder.Environment.IsProduction() || IsAdmin(context));
-    });
-    options.AddPolicy(AuthorizationPolicyNames.ClassroomAvailability, policy =>
-    {
-        policy.RequireAuthenticatedUser();
-        policy.RequireAssertion(context => !builder.Environment.IsProduction() || IsAdmin(context));
     });
 });
 builder.Services.AddMemoryCache();
@@ -157,11 +144,9 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNEC
     builder.Services
         .AddOpenTelemetry()
         .WithTracing(tracing => tracing
-            .AddSource(SpeakingTelemetry.ActivitySourceName)
             .AddSource(GenerativeAiTelemetry.ActivitySourceName)
             .AddSource(RealtimeTranslationTelemetry.ActivitySourceName))
         .WithMetrics(metrics => metrics
-            .AddMeter(SpeakingTelemetry.MeterName)
             .AddMeter(GenerativeAiTelemetry.MeterName)
             .AddMeter(RealtimeTranslationTelemetry.MeterName)
             .AddMeter(DisplayLanguageTelemetry.MeterName))
@@ -395,8 +380,6 @@ app.MapControllerRoute(
 // which would silently disable those conventions. The pages that must stay open (Login,
 // Register, ExternalLogin, the 2fa pages) carry their own [AllowAnonymous].
 app.MapRazorPages();
-
-app.MapHub<Glosify.Hubs.ClassroomChatHub>("/hubs/classroom-chat");
 
 // Token auth endpoints for the mobile app (/api/auth/login, /register, /refresh, ...).
 // AllowAnonymous is required because of the fallback authorization policy; the /manage

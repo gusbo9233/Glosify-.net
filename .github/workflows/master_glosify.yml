@@ -205,9 +205,27 @@ jobs:
           slot-name: Production
           package: app
 
-      # Remove these only after the direct-OpenAI artifact is deployed. The prior
-      # production artifact still needs its Foundry settings during the rollout.
-      - name: Remove retired AI App Service settings
+      - name: Verify replacement artifact health and retired routes
+        shell: bash
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent https://glosify-app.azurewebsites.net/healthz > /dev/null; then
+              break
+            fi
+            sleep 10
+          done
+          curl --fail https://glosify-app.azurewebsites.net/healthz
+          for route in Speaking api/speaking/token Classroom hubs/classroom-chat; do
+            status="$(curl --silent --output /dev/null --write-out '%{http_code}' "https://glosify-app.azurewebsites.net/$route")"
+            if [[ "$status" != "404" ]]; then
+              echo "::error::Retired route /$route returned $status instead of 404."
+              exit 1
+            fi
+          done
+
+      # Remove these only after the replacement artifact is healthy. The prior
+      # production artifact still needs its retired feature settings during rollout.
+      - name: Remove retired AI and feature App Service settings
         run: >-
           az webapp config appsettings delete
           --name glosify-app
@@ -221,6 +239,14 @@ jobs:
           RealtimeTranslation__Model
           RealtimeTranslation__SourceTranscriptionDelay
           RealtimeTranslation__SourceTranscriptionDeployment
+          Acs__ConnectionString
+          Acs__Endpoint
+          AiUsage__SpeakingOutputTokenReserve
+          CreditPricing__TokenFeatures__speaking
+          Speaking__GenericTutorEnabled
+          Speaking__InteractiveBartenderEnabled
+          Speaking__MaxSessionsPerUser
+          Speaking__SessionTtlMinutes
           Speaking__Agents__Andriy__Version
           Speaking__Agents__Bartender__Name
           Speaking__Agents__Bartender__Version
@@ -245,3 +271,14 @@ jobs:
           CreditPricing__Models__2__Deployment
           CreditPricing__Models__2__Multiplier
           --output none
+
+      - name: Verify health after settings cleanup
+        shell: bash
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent https://glosify-app.azurewebsites.net/healthz > /dev/null; then
+              exit 0
+            fi
+            sleep 10
+          done
+          curl --fail https://glosify-app.azurewebsites.net/healthz

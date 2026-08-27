@@ -7,8 +7,7 @@
       "launchBrowser": true,
       "applicationUrl": "http://localhost:5276",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "Speaking__GenericTutorEnabled": "true"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
     "https": {
@@ -18,7 +17,6 @@
       "applicationUrl": "https://localhost:7032;http://localhost:5276",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "Speaking__GenericTutorEnabled": "true",
         "RealtimeTranslation__Enabled": "true",
         "ExtensionAuth__AllowedRedirectUris__0": "https://akepdpjieiokffdapibipomhbplikock.chromiumapp.org/glosify"
       }
