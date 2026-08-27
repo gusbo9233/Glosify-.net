@@ -225,6 +225,7 @@ async function launchHarness({
     context = await test.step("launch Chromium with the generated extension", () => (
       chromium.launchPersistentContext(path.join(temporaryRoot, "profile"), {
         headless: false,
+        ignoreDefaultArgs: captureMode === "tab" ? ["--mute-audio"] : undefined,
         args: [
           `--disable-extensions-except=${extensionRoot}`,
           `--load-extension=${extensionRoot}`,
