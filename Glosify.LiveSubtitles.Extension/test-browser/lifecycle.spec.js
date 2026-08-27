@@ -294,6 +294,8 @@ async function pressNativeTabCaptureShortcut(windowTitle) {
     { timeout: 10_000 });
   await execFileAsync("xdotool", [
     "key",
+    "--window",
+    windowId,
     "--clearmodifiers",
     "ctrl+shift+8",
   ], { timeout: 10_000 });

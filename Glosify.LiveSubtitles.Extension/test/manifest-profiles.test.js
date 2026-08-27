@@ -48,7 +48,7 @@ test("test hooks and audio capture mode are independent profile settings", async
   assert.equal((await readConfig("test-tab")).testHooksEnabled, true);
 });
 
-test("real tab capture has a test-only global keyboard command", async () => {
+test("real tab capture has a test-only browser-scoped keyboard command", async () => {
   const tabCaptureTest = await readManifest("test-tab");
 
   assert.deepEqual(tabCaptureTest.commands["test-start-tab-capture"], {
@@ -57,7 +57,6 @@ test("real tab capture has a test-only global keyboard command", async () => {
       mac: "Command+Shift+8",
     },
     description: "Start the real tab-capture browser test",
-    global: true,
   });
 });
 

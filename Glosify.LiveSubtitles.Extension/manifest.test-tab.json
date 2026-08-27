@@ -10,8 +10,7 @@
         "default": "Ctrl+Shift+8",
         "mac": "Command+Shift+8"
       },
-      "description": "Start the real tab-capture browser test",
-      "global": true
+      "description": "Start the real tab-capture browser test"
     }
   }
 }
