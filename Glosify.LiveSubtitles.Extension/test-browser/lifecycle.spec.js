@@ -168,6 +168,7 @@ test("tab-capture profile streams real tab audio and renders the final caption",
       await chrome.commands.getAll()
     ).find(item => item.name === "test-start-tab-capture"));
     expect(command?.shortcut).toBe("Ctrl+Shift+8");
+    await expect.poll(() => tabIsAudible(harness.worker, targetTabId)).toBe(true);
 
     await page.bringToFront();
     await pressNativeTabCaptureShortcut("Glosify tab capture test");
@@ -342,6 +343,12 @@ async function capturedTabStatus(worker, tabId) {
     const capturedTabs = await chrome.tabCapture.getCapturedTabs();
     return capturedTabs.find(tab => tab.tabId === expectedTabId)?.status ?? null;
   }, tabId);
+}
+
+async function tabIsAudible(worker, tabId) {
+  return worker.evaluate(async expectedTabId => (
+    await chrome.tabs.get(expectedTabId)
+  ).audible === true, tabId);
 }
 
 async function overlayState(control) {

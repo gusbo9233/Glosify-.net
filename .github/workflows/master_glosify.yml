@@ -100,11 +100,16 @@ jobs:
       - name: Install extension native-input dependency
         run: |
           sudo apt-get update
-          sudo apt-get install --yes xdotool
+          sudo apt-get install --yes pulseaudio xdotool
 
       - name: Test MV3 extension in persistent Chromium
         working-directory: Glosify.LiveSubtitles.Extension
-        run: xvfb-run --auto-servernum npm run test:browser
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          trap 'pulseaudio --kill || true' EXIT
+          pactl load-module module-null-sink sink_name=glosify_test
+          pactl set-default-sink glosify_test
+          xvfb-run --auto-servernum npm run test:browser
 
       - name: Build and validate Chrome Web Store package
         working-directory: Glosify.LiveSubtitles.Extension
