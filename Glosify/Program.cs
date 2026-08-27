@@ -320,6 +320,16 @@ app.MapHealthChecks("/readyz", new HealthCheckOptions
     Predicate = check => check.Tags.Contains("ready"),
 }).AllowAnonymous();
 
+var deploymentCommitPath = Path.Combine(app.Environment.ContentRootPath, "deployment-commit.txt");
+var deploymentCommit = File.Exists(deploymentCommitPath)
+    ? File.ReadAllText(deploymentCommitPath).Trim()
+    : "local";
+app.MapGet("/deployment-version", (HttpContext context) =>
+{
+    context.Response.Headers.CacheControl = "no-store";
+    return Results.Text(deploymentCommit);
+}).AllowAnonymous();
+
 app.MapStaticAssets().AllowAnonymous();
 
 app.MapControllerRoute(

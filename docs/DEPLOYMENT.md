@@ -128,9 +128,12 @@ The workflow first targets migration
 `20260827093000_PrepareClassroomRetirement`, which detaches foreign keys from
 retired tables into retained Identity, quiz, and book tables without deleting
 data. Both the previous and replacement artifacts remain functional on that
-compatibility schema. After the replacement artifact passes `/readyz`, the
-workflow applies migration `20260827095613_RemoveSpeakingAndClassrooms`. That
-migration is intentionally destructive: it drops `AcsUserIdentities`, all
+compatibility schema. The published artifact contains the exact Git commit SHA,
+which the application exposes from the non-cacheable `/deployment-version`
+endpoint. The workflow requires that value to match the workflow commit and
+also requires `/readyz` to pass before it applies migration
+`20260827095613_RemoveSpeakingAndClassrooms`. That migration is intentionally
+destructive: it drops `AcsUserIdentities`, all
 `Classroom*` tables, and only the retired `QuizAttempts.ClassroomId` foreign key,
 index, and column. It preserves `QuizAttempts`, `QuizAttemptItems`, Identity,
 quizzes, books, assistant data, credits, and provider-usage history. Historical

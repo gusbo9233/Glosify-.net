@@ -234,6 +234,20 @@ public sealed class DisplayLocalizationTests
             value.StartsWith(CookieRequestCultureProvider.DefaultCookieName, StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData("/sv-SE/privacy")]
+    [InlineData("/sv-SE/terms")]
+    public async Task Swedish_legal_pages_do_not_describe_retired_features(string path)
+    {
+        using var factory = CreateFactory();
+        var response = await factory.CreateClient().GetAsync(path);
+        var html = await response.Content.ReadAsStringAsync();
+
+        response.EnsureSuccessStatusCode();
+        Assert.DoesNotContain("klassrum", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("talöv", html, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public async Task Invalid_localized_public_route_is_not_found()
     {
