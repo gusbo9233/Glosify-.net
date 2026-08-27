@@ -17,7 +17,6 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
     private readonly ConcurrentQueue<ObservedFailedRequest> _requestErrors = [];
     private readonly ConcurrentQueue<string> _scriptResponses = [];
     private readonly ConcurrentDictionary<IRequest, ObservedRequest> _inflightRequests = [];
-    private readonly ConcurrentDictionary<IPage, long> _pageNavigationGenerations = [];
     private readonly Lock _observedPagesLock = new();
     private readonly HashSet<IPage> _observedPages = [];
     private readonly Lock _expectedFailuresLock = new();
@@ -144,12 +143,13 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         _scriptResponses.Enqueue($"FAILED {request.Method} {request.Url}: {request.Failure}");
         if (!ConsumeExpectedFailure(BrowserFailureKind.RequestFailed, request, status: null))
         {
-            var navigationGeneration = _inflightRequests.TryGetValue(request, out var observed)
-                ? observed.NavigationGeneration
-                : _pageNavigationGenerations.GetOrAdd(request.Frame.Page, 0);
+            var observed = _inflightRequests.TryGetValue(request, out var inflight)
+                ? inflight
+                : CreateObservedRequest(request);
             _requestErrors.Enqueue(new ObservedFailedRequest(
                 request.Frame.Page,
-                navigationGeneration,
+                observed.InitiatorUrl,
+                request.ResourceType,
                 $"FAILED {request.Method} {request.Url}: {request.Failure}",
                 request.Failure));
         }
@@ -163,20 +163,30 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
     private void ObserveRequest(IRequest request)
     {
-        var navigationGeneration = request.IsNavigationRequest
-            ? _pageNavigationGenerations.AddOrUpdate(request.Frame.Page, 1, (_, current) => current + 1)
-            : _pageNavigationGenerations.GetOrAdd(request.Frame.Page, 0);
-        _inflightRequests.TryAdd(
-            request,
-            new ObservedRequest(
-                navigationGeneration,
-                new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)));
+        _inflightRequests.TryAdd(request, CreateObservedRequest(request));
     }
 
-    private bool IsSupersededNavigationAbort(ObservedFailedRequest request) =>
+    private static ObservedRequest CreateObservedRequest(IRequest request)
+    {
+        request.Headers.TryGetValue("referer", out var initiatorUrl);
+        return new ObservedRequest(
+            initiatorUrl ?? request.Frame.Url,
+            new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+    }
+
+    private static bool IsSupersededNavigationAbort(ObservedFailedRequest request) =>
         string.Equals(request.Failure, "net::ERR_ABORTED", StringComparison.Ordinal)
-        && _pageNavigationGenerations.TryGetValue(request.Page, out var currentGeneration)
-        && currentGeneration > request.NavigationGeneration;
+        // Limit the exception to document-owned resources. Failed fetch/XHR requests
+        // remain fatal unless the journey registered their exact method and path.
+        && request.ResourceType is "stylesheet" or "script" or "image" or "media" or "font" or "texttrack" or "manifest"
+        && Uri.TryCreate(request.InitiatorUrl, UriKind.Absolute, out var initiator)
+        && Uri.TryCreate(request.Page.Url, UriKind.Absolute, out var currentPage)
+        && Uri.Compare(
+            initiator,
+            currentPage,
+            UriComponents.SchemeAndServer | UriComponents.PathAndQuery,
+            UriFormat.Unescaped,
+            StringComparison.OrdinalIgnoreCase) != 0;
 
     private static bool IsBrowserNetworkConsoleError(string message) =>
         message.StartsWith(
@@ -1042,12 +1052,13 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
     }
 
     private sealed record ObservedRequest(
-        long NavigationGeneration,
+        string InitiatorUrl,
         TaskCompletionSource Completion);
 
     private sealed record ObservedFailedRequest(
         IPage Page,
-        long NavigationGeneration,
+        string InitiatorUrl,
+        string ResourceType,
         string Description,
         string? Failure);
 }
