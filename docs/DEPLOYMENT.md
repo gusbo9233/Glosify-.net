@@ -139,10 +139,14 @@ index, and column. It preserves `QuizAttempts`, `QuizAttemptItems`, Identity,
 quizzes, books, assistant data, credits, and provider-usage history. Historical
 migrations must remain unchanged.
 
-The workflow records `classroomRetirementPrepared=true` and
-`classroomRetirementComplete=true` as tags on the Azure SQL database resource.
-The prepared tag prevents a rerun or later deployment from targeting the
-compatibility migration after the destructive migration has already completed.
+The workflow records `ClassroomRetirement__Prepared=true` and
+`ClassroomRetirement__Complete=true` as persistent App Service settings. The
+prepared marker prevents a rerun or later deployment from targeting the
+compatibility migration after the destructive migration has already completed,
+without expanding the deployment identity's Azure SQL management permissions.
+Do not remove these markers while the staged retirement logic remains in the
+workflow. If the database is restored from the retirement BACPAC, clear both
+markers before deploying so the restored migration state is prepared again.
 
 ### Required retirement BACPAC
 
