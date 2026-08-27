@@ -267,6 +267,7 @@ public sealed class RealtimeTranslationOptionsTests
         Assert.Equal(1, defaults.PartialInitialDelaySeconds);
         Assert.Equal(2, defaults.PartialIntervalSeconds);
         Assert.Equal(8, defaults.PartialMinimumGrowthCharacters);
+        Assert.Equal(10, defaults.AutoDetectedLanguageRefreshSeconds);
 
         var options = ValidOptions();
         ConfigureScribe(options);
@@ -322,6 +323,27 @@ public sealed class RealtimeTranslationOptionsTests
 
         Assert.False(result.Succeeded);
         Assert.Contains(result.Failures!, failure => failure.Contains(expectedFailure, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(30.01)]
+    [InlineData(double.NaN)]
+    public void ElevenLabsPartialScheduler_RejectsInvalidLanguageRefresh(double refreshSeconds)
+    {
+        var options = ValidOptions();
+        ConfigureScribe(options);
+        options.ElevenLabs.AutoDetectedLanguageRefreshSeconds = refreshSeconds;
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions { MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false } }),
+            ExtensionAuth());
+
+        var result = validator.Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(
+            result.Failures!,
+            failure => failure.Contains("AutoDetectedLanguageRefreshSeconds", StringComparison.Ordinal));
     }
 
     [Theory]

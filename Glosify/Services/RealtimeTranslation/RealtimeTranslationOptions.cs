@@ -59,6 +59,7 @@ public sealed class ElevenLabsRealtimeSpeechOptions
     public double PartialInitialDelaySeconds { get; set; } = 1;
     public double PartialIntervalSeconds { get; set; } = 2;
     public int PartialMinimumGrowthCharacters { get; set; } = 8;
+    public double AutoDetectedLanguageRefreshSeconds { get; set; } = 10;
 }
 
 public sealed class RealtimeTranslationLanguageOptions
@@ -192,6 +193,12 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 {
                     failures.Add(
                         "RealtimeTranslation:ElevenLabs:PartialMinimumGrowthCharacters must be between 1 and 100.");
+                }
+                if (!double.IsFinite(options.ElevenLabs.AutoDetectedLanguageRefreshSeconds)
+                    || options.ElevenLabs.AutoDetectedLanguageRefreshSeconds is < 1 or > 30)
+                {
+                    failures.Add(
+                        "RealtimeTranslation:ElevenLabs:AutoDetectedLanguageRefreshSeconds must be between 1 and 30.");
                 }
             }
 

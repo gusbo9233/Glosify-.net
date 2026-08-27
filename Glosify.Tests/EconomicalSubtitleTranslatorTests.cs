@@ -16,7 +16,7 @@ public sealed class EconomicalSubtitleTranslatorTests
     public async Task FinalizedSegments_AreTranslatedInCallOrder()
     {
         var client = new FakeTranslator();
-        var sut = new EconomicalSubtitleTranslator(client);
+        var sut = CreateSubtitleTranslator(client);
         var now = TestNow;
 
         var first = await sut.TranslateAsync(
@@ -31,6 +31,7 @@ public sealed class EconomicalSubtitleTranslatorTests
         Assert.Equal(["Dzień dobry", "Do widzenia"], client.Requests);
         Assert.Equal(1, first.Sequence);
         Assert.Equal("translated:Dzień dobry", first.TranslatedText);
+        Assert.True(first.ProviderRequest);
         Assert.Equal(2, second.Sequence);
     }
 
@@ -38,7 +39,7 @@ public sealed class EconomicalSubtitleTranslatorTests
     public async Task MatchingSourceAndTarget_BypassesTranslator()
     {
         var client = new FakeTranslator();
-        var sut = new EconomicalSubtitleTranslator(client);
+        var sut = CreateSubtitleTranslator(client);
 
         var result = await sut.TranslateAsync(
             new RecognizedSpeechSegment(1, "Hej", "sv", "sv-SE", TestNow),
@@ -47,20 +48,60 @@ public sealed class EconomicalSubtitleTranslatorTests
 
         Assert.Empty(client.Requests);
         Assert.Equal("Hej", result.TranslatedText);
+        Assert.False(result.ProviderRequest);
     }
+
+    [Fact]
+    public async Task AutoDetectedSource_UsesProviderLanguageInResult()
+    {
+        var client = new FakeTranslator { DetectedSourceLanguage = "nb" };
+        var options = new RealtimeTranslationOptions
+        {
+            SourceLanguages =
+            [
+                new RealtimeTranslationSourceLanguageOptions
+                {
+                    Code = "no", TranslatorCode = "nb", Enabled = true,
+                },
+            ],
+        };
+        var sut = new EconomicalSubtitleTranslator(client, Options.Create(options));
+
+        var result = await sut.TranslateAsync(
+            new RecognizedSpeechSegment(
+                1,
+                "God morgen",
+                "auto",
+                "auto",
+                TestNow,
+                IsAutoDetected: true,
+                IsFinal: false),
+            "en",
+            CancellationToken.None);
+
+        Assert.Equal("no", result.SourceLanguage);
+        Assert.True(result.ProviderRequest);
+    }
+
+    private static EconomicalSubtitleTranslator CreateSubtitleTranslator(
+        IRealtimeTextTranslator translator) =>
+        new(translator, Options.Create(new RealtimeTranslationOptions()));
 
     private sealed class FakeTranslator : IRealtimeTextTranslator
     {
         public List<string> Requests { get; } = [];
+        public string? DetectedSourceLanguage { get; init; }
 
-        public Task<string> TranslateAsync(
+        public Task<RealtimeTextTranslation> TranslateAsync(
             string text,
             string sourceLanguage,
             string targetLanguage,
             CancellationToken cancellationToken)
         {
             Requests.Add(text);
-            return Task.FromResult("translated:" + text);
+            return Task.FromResult(new RealtimeTextTranslation(
+                "translated:" + text,
+                DetectedSourceLanguage));
         }
     }
 }
@@ -86,7 +127,7 @@ public sealed class AzureRealtimeTextTranslatorTests
 
         var result = await sut.TranslateAsync("God morgen", "no", "zh", CancellationToken.None);
 
-        Assert.Equal("translated", result);
+        Assert.Equal("translated", result.Text);
         Assert.Equal(
             "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&from=nb&to=zh-Hans",
             handler.RequestUri?.AbsoluteUri);
@@ -129,6 +170,26 @@ public sealed class AzureRealtimeTextTranslatorTests
         Assert.Equal(
             "https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=fr",
             handler.RequestUri?.AbsoluteUri);
+    }
+
+    [Fact]
+    public async Task AutoDetectedSource_ReturnsDetectedProviderLanguage()
+    {
+        var handler = new CapturingHandler
+        {
+            ResponseBody =
+                "[{\"detectedLanguage\":{\"language\":\"en\",\"score\":1.0},\"translations\":[{\"text\":\"Hello\"}]}]",
+        };
+        var sut = CreateTranslator(handler, options =>
+        {
+            options.TranslatorEndpoint = "https://api.cognitive.microsofttranslator.com/";
+            options.TranslatorResourceId = TranslatorResourceId;
+        });
+
+        var result = await sut.TranslateAsync("Hello", "auto", "en", CancellationToken.None);
+
+        Assert.Equal("Hello", result.Text);
+        Assert.Equal("en", result.DetectedSourceLanguage);
     }
 
     [Fact]
