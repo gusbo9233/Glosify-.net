@@ -67,6 +67,24 @@ public sealed class TranslationBubbleFinalizerTests
     }
 
     [Fact]
+    public void LengthSplit_RebalancesAShortTrailingBubble()
+    {
+        var finalizer = new TranslationBubbleFinalizer();
+        var text = string.Join(' ', Enumerable.Repeat("word", 26));
+
+        var result = finalizer.Apply(1, text, isFinal: true);
+
+        Assert.Equal(2, result.CommittedBubbles.Count);
+        Assert.All(
+            result.CommittedBubbles,
+            bubble => Assert.InRange(
+                bubble.Length,
+                TranslationBubbleFinalizer.MinimumBalancedBubbleCharacters,
+                TranslationBubbleFinalizer.MaximumBubbleCharacters));
+        Assert.Equal(text, string.Join(' ', result.CommittedBubbles));
+    }
+
+    [Fact]
     public void NewSequence_DiscardsPreviousPartialState()
     {
         var finalizer = new TranslationBubbleFinalizer();

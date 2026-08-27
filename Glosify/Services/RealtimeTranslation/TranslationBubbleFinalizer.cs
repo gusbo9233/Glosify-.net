@@ -3,7 +3,8 @@ namespace Glosify.Services.RealtimeTranslation;
 internal sealed class TranslationBubbleFinalizer
 {
     internal const int MaximumTranslationCharacters = 800;
-    internal const int MaximumBubbleCharacters = 180;
+    internal const int MaximumBubbleCharacters = 120;
+    internal const int MinimumBalancedBubbleCharacters = 40;
 
     private int? _sequence;
     private IReadOnlyList<string> _previousCompletedSentences = [];
@@ -134,8 +135,29 @@ internal sealed class TranslationBubbleFinalizer
             return -1;
         }
         var wordBoundary = text.LastIndexOf(' ', maximumLength);
-        return wordBoundary > 0 ? wordBoundary : maximumLength;
+        if (wordBoundary <= 0)
+        {
+            return maximumLength;
+        }
+        if (RemainingLength(text, wordBoundary) >= MinimumBalancedBubbleCharacters)
+        {
+            return wordBoundary;
+        }
+
+        var ideal = text.Length / 2;
+        var beforeIdeal = text.LastIndexOf(' ', Math.Min(ideal, maximumLength));
+        var afterIdeal = text.IndexOf(' ', ideal);
+        var balanced = new[] { beforeIdeal, afterIdeal }
+            .Where(candidate => candidate >= MinimumBalancedBubbleCharacters
+                && candidate <= maximumLength
+                && RemainingLength(text, candidate) >= MinimumBalancedBubbleCharacters)
+            .OrderBy(candidate => Math.Abs(candidate - ideal))
+            .FirstOrDefault();
+        return balanced > 0 ? balanced : wordBoundary;
     }
+
+    private static int RemainingLength(string text, int splitAt) =>
+        text[(splitAt + 1)..].TrimStart().Length;
 
     private static string KeepLast(string text, int maximumLength) =>
         text.Length <= maximumLength ? text : text[^maximumLength..];

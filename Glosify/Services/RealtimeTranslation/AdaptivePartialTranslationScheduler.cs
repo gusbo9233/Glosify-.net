@@ -13,6 +13,7 @@ internal sealed class AdaptivePartialTranslationScheduler
     private readonly TimeSpan _initialDelay;
     private readonly TimeSpan _interval;
     private readonly int _minimumGrowthCharacters;
+    private readonly TimeSpan _autoDetectedLanguageRefresh;
 
     public AdaptivePartialTranslationScheduler(
         TimeProvider timeProvider,
@@ -23,6 +24,8 @@ internal sealed class AdaptivePartialTranslationScheduler
         _initialDelay = TimeSpan.FromSeconds(options.PartialInitialDelaySeconds);
         _interval = TimeSpan.FromSeconds(options.PartialIntervalSeconds);
         _minimumGrowthCharacters = options.PartialMinimumGrowthCharacters;
+        _autoDetectedLanguageRefresh = TimeSpan.FromSeconds(
+            options.AutoDetectedLanguageRefreshSeconds);
     }
 
     public async Task RunAsync(
@@ -40,6 +43,8 @@ internal sealed class AdaptivePartialTranslationScheduler
         int? activeSequence = null;
         var smallGrowthRecorded = false;
         var inputCompleted = false;
+        var detectedLanguage = new AutoDetectedLanguageCache(
+            _autoDetectedLanguageRefresh);
 
         while (!inputCompleted)
         {
@@ -70,13 +75,26 @@ internal sealed class AdaptivePartialTranslationScheduler
                             SourceText = segment.Text,
                             SourceLanguage = segment.SourceLanguage,
                             CapturedAt = segment.CapturedAt,
+                            ProviderRequest = false,
                         };
                         await publish(segment, reused, false, cancellationToken);
                     }
                     else
                     {
-                        var result = await TranslateAsync(segment, translate, FinalKind, cancellationToken);
-                        await publish(segment, result, true, cancellationToken);
+                        var result = await TranslateAsync(
+                            segment,
+                            translate,
+                            FinalKind,
+                            cancellationToken);
+                        detectedLanguage.Observe(
+                            segment,
+                            result,
+                            _timeProvider.GetUtcNow());
+                        await publish(
+                            segment,
+                            result,
+                            result.ProviderRequest,
+                            cancellationToken);
                     }
 
                     activeSequence = null;
@@ -104,6 +122,7 @@ internal sealed class AdaptivePartialTranslationScheduler
                     lastSubmittedText = null;
                     lastTranslation = null;
                     smallGrowthRecorded = false;
+                    detectedLanguage.Reset(segment.Sequence);
                 }
 
                 var comparisonText = pendingPartial?.Text ?? lastSubmittedText;
@@ -149,8 +168,23 @@ internal sealed class AdaptivePartialTranslationScheduler
                     pendingPartial = null;
                     pendingSince = null;
                     smallGrowthRecorded = false;
-                    var result = await TranslateAsync(partial, translate, PartialKind, cancellationToken);
-                    await publish(partial, result, true, cancellationToken);
+                    var translationInput = detectedLanguage.Apply(
+                        partial,
+                        _timeProvider.GetUtcNow());
+                    var result = await TranslateAsync(
+                        translationInput,
+                        translate,
+                        PartialKind,
+                        cancellationToken);
+                    detectedLanguage.Observe(
+                        partial,
+                        result,
+                        _timeProvider.GetUtcNow());
+                    await publish(
+                        partial,
+                        result,
+                        result.ProviderRequest,
+                        cancellationToken);
                     lastPartialSubmittedAt = _timeProvider.GetUtcNow();
                     lastSubmittedText = partial.Text;
                     lastTranslation = result;
@@ -177,10 +211,67 @@ internal sealed class AdaptivePartialTranslationScheduler
         KeyValuePair<string, object?> kind,
         CancellationToken cancellationToken)
     {
-        RealtimeTranslationTelemetry.TranslationRequests.Add(1, kind);
         var result = await translate(segment, cancellationToken);
-        RealtimeTranslationTelemetry.TranslatedCharacters.Add(result.SourceText.Length, kind);
+        if (result.ProviderRequest)
+        {
+            RealtimeTranslationTelemetry.TranslationRequests.Add(1, kind);
+            RealtimeTranslationTelemetry.TranslatedCharacters.Add(result.SourceText.Length, kind);
+        }
         return result;
+    }
+
+    private sealed class AutoDetectedLanguageCache(TimeSpan refreshInterval)
+    {
+        private int? _sequence;
+        private string? _language;
+        private DateTimeOffset _refreshAt;
+
+        public RecognizedSpeechSegment Apply(
+            RecognizedSpeechSegment segment,
+            DateTimeOffset now)
+        {
+            EnsureSequence(segment.Sequence);
+            return segment.IsAutoDetected
+                && !string.IsNullOrWhiteSpace(_language)
+                && now < _refreshAt
+                    ? segment with { SourceLanguage = _language }
+                    : segment;
+        }
+
+        public void Observe(
+            RecognizedSpeechSegment source,
+            TranslatedSubtitleSegment result,
+            DateTimeOffset now)
+        {
+            EnsureSequence(source.Sequence);
+            if (!source.IsAutoDetected
+                || !result.ProviderRequest
+                || string.IsNullOrWhiteSpace(result.SourceLanguage)
+                || string.Equals(
+                    result.SourceLanguage,
+                    "auto",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+            _language = result.SourceLanguage;
+            _refreshAt = now + refreshInterval;
+        }
+
+        public void Reset(int sequence)
+        {
+            _sequence = sequence;
+            _language = null;
+            _refreshAt = default;
+        }
+
+        private void EnsureSequence(int sequence)
+        {
+            if (_sequence != sequence)
+            {
+                Reset(sequence);
+            }
+        }
     }
 
     private async Task<WaitOutcome> WaitForInputOrDelayAsync(

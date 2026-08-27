@@ -57,6 +57,7 @@ deployment:
 | `RealtimeTranslation__ElevenLabs__PartialInitialDelaySeconds` | `1` | Delay before the first partial translation. |
 | `RealtimeTranslation__ElevenLabs__PartialIntervalSeconds` | `2` | Minimum interval between partial translations. |
 | `RealtimeTranslation__ElevenLabs__PartialMinimumGrowthCharacters` | `8` | Accumulated Unicode growth required for a partial update. |
+| `RealtimeTranslation__ElevenLabs__AutoDetectedLanguageRefreshSeconds` | `10` | Maximum time to reuse a detected source language within one committed speech segment. |
 
 For a temporary legacy-like cadence, use an initial delay of `0`, an interval
 of `0.75`, and minimum growth of `1`. Prefer adjusting only the initial delay

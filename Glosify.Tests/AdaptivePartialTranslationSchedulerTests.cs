@@ -181,6 +181,66 @@ public sealed class AdaptivePartialTranslationSchedulerTests
     }
 
     [Fact]
+    public async Task AutoDetectedLanguage_IsReusedBrieflyAndRefreshedWithinASequence()
+    {
+        var fixture = new SchedulerFixture(
+            Options(initialDelay: 0, interval: 1, languageRefresh: 10),
+            translate: (segment, _) => Task.FromResult(new TranslatedSubtitleSegment(
+                segment.Sequence,
+                segment.Text,
+                segment.Text,
+                segment.SourceLanguage == "auto" ? "en" : segment.SourceLanguage,
+                "en",
+                segment.CapturedAt,
+                ProviderRequest: segment.SourceLanguage == "auto")));
+        var run = fixture.RunAsync();
+        fixture.Write(AutoPartial(1, "abcdefgh"));
+        var initial = await fixture.NextTranslationAsync();
+
+        fixture.Write(AutoPartial(1, "abcdefghijklmnop"));
+        await fixture.AdvanceAfterTimerAsync(TimeSpan.FromSeconds(1));
+        var cached = await fixture.NextTranslationAsync();
+
+        fixture.Advance(TimeSpan.FromSeconds(10));
+        fixture.Write(AutoPartial(1, "abcdefghijklmnopqrstuvwx"));
+        var refreshed = await fixture.NextTranslationAsync();
+        fixture.Complete();
+        await run;
+
+        Assert.Equal("auto", initial.SourceLanguage);
+        Assert.Equal("en", cached.SourceLanguage);
+        Assert.Equal("auto", refreshed.SourceLanguage);
+        Assert.Equal(
+            [true, false, true],
+            fixture.Published.Select(published => published.ProviderRequest));
+    }
+
+    [Fact]
+    public async Task AutoDetectedLanguageCache_ResetsForEachProviderSequence()
+    {
+        var fixture = new SchedulerFixture(
+            Options(initialDelay: 0),
+            translate: (segment, _) => Task.FromResult(new TranslatedSubtitleSegment(
+                segment.Sequence,
+                segment.Text,
+                segment.Text,
+                "en",
+                "en",
+                segment.CapturedAt,
+                ProviderRequest: segment.SourceLanguage == "auto")));
+        var run = fixture.RunAsync();
+        fixture.Write(AutoPartial(1, "abcdefgh"));
+        _ = await fixture.NextTranslationAsync();
+        fixture.Write(AutoPartial(2, "ijklmnop"));
+        var nextSequence = await fixture.NextTranslationAsync();
+        fixture.Complete();
+        await run;
+
+        Assert.Equal("auto", nextSequence.SourceLanguage);
+        Assert.All(fixture.Published, published => Assert.True(published.ProviderRequest));
+    }
+
+    [Fact]
     public async Task CancellationAndCompletion_LeaveNoDeferredTranslation()
     {
         var cancelled = new SchedulerFixture();
@@ -225,12 +285,14 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         bool translatePartials = true,
         double initialDelay = 1,
         double interval = 2,
-        int minimumGrowth = 8) => new()
+        int minimumGrowth = 8,
+        double languageRefresh = 10) => new()
         {
             TranslatePartials = translatePartials,
             PartialInitialDelaySeconds = initialDelay,
             PartialIntervalSeconds = interval,
             PartialMinimumGrowthCharacters = minimumGrowth,
+            AutoDetectedLanguageRefreshSeconds = languageRefresh,
         };
 
     private static RecognizedSpeechSegment Partial(int sequence, string text) =>
@@ -238,6 +300,16 @@ public sealed class AdaptivePartialTranslationSchedulerTests
 
     private static RecognizedSpeechSegment Final(int sequence, string text) =>
         new(sequence, text, "en", "en-US", Origin, IsFinal: true);
+
+    private static RecognizedSpeechSegment AutoPartial(int sequence, string text) =>
+        new(
+            sequence,
+            text,
+            "auto",
+            "auto",
+            Origin,
+            IsAutoDetected: true,
+            IsFinal: false);
 
     private sealed class SchedulerFixture
     {
