@@ -390,6 +390,7 @@ import {
             || await createChat(quizId);
         await selectChat(chat.id);
         initialized = true;
+        panel.dataset.assistantInitialized = 'true';
     });
 
     const selectChat = async (threadId) => {

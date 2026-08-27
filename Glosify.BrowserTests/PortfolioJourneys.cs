@@ -612,10 +612,11 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
             }
         }
 
-        // Opening initializes/selects the first chat and finishes by activating the
-        // chat pane. Wait for that state before choosing Chats, otherwise a slow SQL
-        // test host can switch the pane back while this click is in flight.
-        await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
+        // The chat pane is visible in the initial markup, so visibility alone is not a
+        // readiness barrier. Wait until first-chat selection and history loading finish;
+        // otherwise their final pane switch can overwrite the Chats click below.
+        await Expect(Page.Locator("[data-assistant-panel]"))
+            .ToHaveAttributeAsync("data-assistant-initialized", "true");
         await AssertNoPageErrorsAsync();
         await OpenChatsAsync();
         await Expect(Page.Locator("[data-assistant-new-chat]")).ToBeVisibleAsync();
