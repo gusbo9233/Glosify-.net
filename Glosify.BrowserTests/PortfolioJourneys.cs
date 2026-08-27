@@ -16,7 +16,8 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
     private readonly ConcurrentQueue<string> _responseErrors = [];
     private readonly ConcurrentQueue<string> _requestErrors = [];
     private readonly ConcurrentQueue<string> _scriptResponses = [];
-    private readonly ConcurrentDictionary<IRequest, TaskCompletionSource> _inflightRequests = [];
+    private readonly ConcurrentDictionary<IRequest, ObservedRequest> _inflightRequests = [];
+    private readonly ConcurrentDictionary<IFrame, long> _frameNavigationGenerations = [];
     private readonly Lock _observedPagesLock = new();
     private readonly HashSet<IPage> _observedPages = [];
     private readonly Lock _expectedFailuresLock = new();
@@ -113,10 +114,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
                 _consoleErrors.Enqueue($"CONSOLE {page.Url}: {message.Text}");
             }
         };
-        page.Request += (_, request) =>
-            _inflightRequests.TryAdd(
-                request,
-                new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        page.Request += (_, request) => ObserveRequest(request);
         page.Response += (_, response) => RecordResponse(response);
         page.RequestFinished += (_, request) => CompleteRequest(request);
         page.RequestFailed += (_, request) =>
@@ -143,6 +141,9 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
     private void RecordFailedRequest(IRequest request)
     {
+        if (IsSupersededNavigationAbort(request))
+            return;
+
         _scriptResponses.Enqueue($"FAILED {request.Method} {request.Url}: {request.Failure}");
         if (!ConsumeExpectedFailure(BrowserFailureKind.RequestFailed, request, status: null))
         {
@@ -153,8 +154,26 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
     private void CompleteRequest(IRequest request)
     {
         if (_inflightRequests.TryRemove(request, out var completed))
-            completed.TrySetResult();
+            completed.Completion.TrySetResult();
     }
+
+    private void ObserveRequest(IRequest request)
+    {
+        var navigationGeneration = request.IsNavigationRequest
+            ? _frameNavigationGenerations.AddOrUpdate(request.Frame, 1, (_, current) => current + 1)
+            : _frameNavigationGenerations.GetOrAdd(request.Frame, 0);
+        _inflightRequests.TryAdd(
+            request,
+            new ObservedRequest(
+                navigationGeneration,
+                new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)));
+    }
+
+    private bool IsSupersededNavigationAbort(IRequest request) =>
+        string.Equals(request.Failure, "net::ERR_ABORTED", StringComparison.Ordinal)
+        && _inflightRequests.TryGetValue(request, out var observed)
+        && _frameNavigationGenerations.TryGetValue(request.Frame, out var currentGeneration)
+        && currentGeneration > observed.NavigationGeneration;
 
     private static bool IsBrowserNetworkConsoleError(string message) =>
         message.StartsWith(
@@ -169,7 +188,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         {
             while (true)
             {
-                var pending = _inflightRequests.Values.Select(completion => completion.Task).ToArray();
+                var pending = _inflightRequests.Values.Select(request => request.Completion.Task).ToArray();
                 if (pending.Length == 0)
                 {
                     // Let request callbacks already queued by Playwright run before declaring
@@ -1016,4 +1035,8 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
             ? $"{Kind} {Method} {Path}"
             : $"{Kind} {Status} {Method} {Path}";
     }
+
+    private sealed record ObservedRequest(
+        long NavigationGeneration,
+        TaskCompletionSource Completion);
 }
