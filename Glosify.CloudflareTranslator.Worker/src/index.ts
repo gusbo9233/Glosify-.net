@@ -34,9 +34,14 @@ export default {
       return json({ error: "Request body is too large" }, 413);
     }
 
+    const bodyResult = await readRequestBody(request, 16_384);
+    if (bodyResult.tooLarge) {
+      return json({ error: "Request body is too large" }, 413);
+    }
+
     let body: unknown;
     try {
-      body = await request.json();
+      body = JSON.parse(bodyResult.text);
     } catch {
       return json({ error: "Invalid JSON body" }, 400);
     }
@@ -80,6 +85,43 @@ export default {
     }
   },
 } satisfies ExportedHandler<Env>;
+
+type RequestBodyResult =
+  | { tooLarge: true }
+  | { tooLarge: false; text: string };
+
+async function readRequestBody(
+  request: Request,
+  maxBytes: number,
+): Promise<RequestBodyResult> {
+  if (!request.body) {
+    return { tooLarge: false, text: "" };
+  }
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    totalBytes += value.byteLength;
+    if (totalBytes > maxBytes) {
+      await reader.cancel("Request body is too large");
+      return { tooLarge: true };
+    }
+    chunks.push(value);
+  }
+
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return { tooLarge: false, text: new TextDecoder().decode(bytes) };
+}
 
 function readTranslation(result: unknown): string | null {
   if (typeof result === "string") {

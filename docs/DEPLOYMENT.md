@@ -69,22 +69,24 @@ Managed identity is still used for supported Azure services such as Blob
 Storage, Azure Speech, and telemetry. OpenAI and the protected Cloudflare Worker
 use server-side API credentials.
 
-Scribe translates the latest partial after one second and then at most every
-two seconds, with eight Unicode characters of accumulated growth. These
-non-secret App Service settings can tune or disable that behavior without a
-deployment:
+Scribe + Cloudflare translates the latest partial after one second and then at
+most once per second, with eight Unicode characters of accumulated growth.
+These non-secret App Service settings can tune or disable that behavior without
+a deployment:
 
 | Setting | Default | Purpose |
 |---|---:|---|
 | `RealtimeTranslation__ElevenLabs__TranslatePartials` | `true` | Set to `false` to translate committed transcripts only. |
 | `RealtimeTranslation__ElevenLabs__PartialInitialDelaySeconds` | `1` | Delay before the first partial translation. |
-| `RealtimeTranslation__ElevenLabs__PartialIntervalSeconds` | `2` | Minimum interval between partial translations. |
+| `RealtimeTranslation__Cloudflare__PartialIntervalSeconds` | `1` | Minimum interval between Cloudflare partial translations. |
 | `RealtimeTranslation__ElevenLabs__PartialMinimumGrowthCharacters` | `8` | Accumulated Unicode growth required for a partial update. |
 | `RealtimeTranslation__ElevenLabs__AutoDetectedLanguageRefreshSeconds` | `10` | Maximum time to reuse a detected source language within one committed speech segment. |
 
-For a temporary legacy-like cadence, use an initial delay of `0`, an interval
-of `0.75`, and minimum growth of `1`. Prefer adjusting only the initial delay
-for latency tuning and the recurring interval for cost tuning.
+For a temporary legacy-like cadence, use an initial delay of `0`, a Cloudflare
+interval of `0.75`, and minimum growth of `1`. Prefer adjusting only the initial
+delay for latency tuning and the recurring interval for cost tuning. The
+`RealtimeTranslation__ElevenLabs__PartialIntervalSeconds` setting remains the
+cadence for non-Cloudflare scheduler paths.
 
 ### Administrator Scribe capture
 

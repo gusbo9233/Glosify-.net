@@ -331,7 +331,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
             translatePartials: authorization.PartialCaptionsEnabled
                 && (_options.ElevenLabs.TranslatePartials || captureRecorder is not null),
             partialInterval: authorization.TranslationMode == RealtimeTranslationModes.ScribeCloudflare
-                ? TimeSpan.FromSeconds(1)
+                ? TimeSpan.FromSeconds(_options.Cloudflare.PartialIntervalSeconds)
                 : null,
             paceFromRequestStart:
                 authorization.TranslationMode == RealtimeTranslationModes.ScribeCloudflare,

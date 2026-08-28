@@ -76,6 +76,7 @@ public sealed class CloudflareRealtimeTranslationOptions
     public string BillingModel { get; set; } = "elevenlabs-scribe-v2-realtime+cloudflare-m2m100-1.2b";
     public int CreditsPerStartedMinute { get; set; } = 4;
     public int TimeoutSeconds { get; set; } = 20;
+    public double PartialIntervalSeconds { get; set; } = 1;
     public int MaxInputCharacters { get; set; } = 2_000;
     public int PreferredChunkCharacters { get; set; } = 240;
     public int MaxParallelRequests { get; set; } = 4;
@@ -298,6 +299,12 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
             {
                 failures.Add(
                     "RealtimeTranslation:Cloudflare:TimeoutSeconds must be between 1 and 60.");
+            }
+            if (!double.IsFinite(options.Cloudflare.PartialIntervalSeconds)
+                || options.Cloudflare.PartialIntervalSeconds is < 0.75 or > 10)
+            {
+                failures.Add(
+                    "RealtimeTranslation:Cloudflare:PartialIntervalSeconds must be between 0.75 and 10.");
             }
             if (options.Cloudflare.MaxInputCharacters is < 100 or > 2_000)
             {

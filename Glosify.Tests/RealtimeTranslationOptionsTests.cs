@@ -347,6 +347,29 @@ public sealed class RealtimeTranslationOptionsTests
             failure.Contains("MaxInputCharacters", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(0.74)]
+    [InlineData(10.01)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void CloudflareMode_RejectsInvalidPartialCadence(double interval)
+    {
+        var options = ValidOptions();
+        options.Cloudflare.Enabled = true;
+        options.Cloudflare.Endpoint = "https://glosify-test.workers.dev/translate";
+        options.Cloudflare.ApiToken = "secret";
+        options.Cloudflare.PartialIntervalSeconds = interval;
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions { MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false } }),
+            ExtensionAuth());
+
+        var result = validator.Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure =>
+            failure.Contains("Cloudflare:PartialIntervalSeconds", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void CloudflareScribe_DoesNotRequireAzureTranslatorConfiguration()
     {
