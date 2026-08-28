@@ -8,7 +8,7 @@ namespace Glosify.Services.Ai.Assistant;
 /// </summary>
 internal static class AssistantProfileInstructions
 {
-    internal const string Version = "2026-08-28.custom-quiz-retirement.2";
+    internal const string Version = "20260828.custom-quiz-retire.2";
 
     internal static string Get(AssistantAgentProfile profile) => profile switch
     {

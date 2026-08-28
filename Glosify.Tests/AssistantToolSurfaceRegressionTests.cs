@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Models.Entities;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Generation;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +34,14 @@ public sealed class AssistantToolSurfaceRegressionTests
             Assert.DoesNotContain("create_custom_quiz", AssistantProfileInstructions.Get(profile));
         }
 
-        Assert.StartsWith("2026-08-28.custom-quiz-retirement", AssistantProfileInstructions.Version);
+        Assert.StartsWith("20260828.custom-quiz-retire", AssistantProfileInstructions.Version);
+
+        var promptVersionProperty = context.Model
+            .FindEntityType(typeof(AssistantTurn))!
+            .FindProperty(nameof(AssistantTurn.PromptVersion))!;
+        Assert.True(
+            AssistantProfileInstructions.Version.Length <= promptVersionProperty.GetMaxLength(),
+            $"Prompt version exceeds its {promptVersionProperty.GetMaxLength()}-character database column.");
     }
 
     [Fact]
