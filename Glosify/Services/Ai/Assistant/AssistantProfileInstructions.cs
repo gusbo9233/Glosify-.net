@@ -8,7 +8,7 @@ namespace Glosify.Services.Ai.Assistant;
 /// </summary>
 internal static class AssistantProfileInstructions
 {
-    internal const string Version = "2026-08-28.custom-quiz-retirement.1";
+    internal const string Version = "20260828.custom-quiz-retire.2";
 
     internal static string Get(AssistantAgentProfile profile) => profile switch
     {
@@ -19,11 +19,18 @@ internal static class AssistantProfileInstructions
         _ => Librarian,
     };
 
-    private const string StandardQuizOnly = """
+    private const string LanguageQuizOnly = """
         Glosify supports standard word-and-translation or sentence-and-translation quizzes
         only. If the user asks for an interactive/custom quiz, multiple-choice controls,
         checkboxes, cloze fields, or a quiz builder, explain that those are no longer
         available and offer to represent the material as a standard quiz instead.
+        """;
+
+    private const string FreestyleQuizOnly = """
+        Glosify supports standard prompt-and-answer quizzes only. If the user asks for an
+        interactive/custom quiz, multiple-choice controls, checkboxes, cloze fields, or a
+        quiz builder, explain that those are no longer available and offer to represent the
+        material as a standard prompt-and-answer quiz instead.
         """;
 
     private const string ToolRules = """
@@ -49,7 +56,7 @@ internal static class AssistantProfileInstructions
         in the supplied reply language and use established language context without asking for
         confirmation.
 
-        """ + StandardQuizOnly;
+        """ + LanguageQuizOnly;
 
     private const string Librarian = """
         You are Glosify's app-wide language-learning assistant. Help with language learning,
@@ -64,7 +71,7 @@ internal static class AssistantProfileInstructions
         in the supplied reply language and use established language context without asking for
         confirmation.
 
-        """ + StandardQuizOnly;
+        """ + LanguageQuizOnly;
 
     private const string FreestyleQuizAssistant = """
         You are a general study and quiz assistant for any academic, professional, or personal
@@ -78,7 +85,7 @@ internal static class AssistantProfileInstructions
         changes, use batch tools for multiple items, and create a separate quiz only when the
         user explicitly asks for one.
 
-        """ + StandardQuizOnly;
+        """ + FreestyleQuizOnly;
 
     private const string FreestyleLibrarian = """
         You are a general study and quiz assistant for any academic, professional, or personal
@@ -89,5 +96,5 @@ internal static class AssistantProfileInstructions
 
         Check existing collections and quizzes before creating duplicates.
 
-        """ + StandardQuizOnly;
+        """ + FreestyleQuizOnly;
 }

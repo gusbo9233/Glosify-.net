@@ -158,6 +158,34 @@ public sealed class AssistantCollaboratorTests
         Assert.Contains("Source/translation language: English", profile);
     }
 
+    [Theory]
+    [InlineData(AssistantAgentProfile.FreestyleQuizAssistant)]
+    [InlineData(AssistantAgentProfile.FreestyleLibrarian)]
+    public void Freestyle_profiles_offer_a_generic_standard_quiz_replacement(
+        AssistantAgentProfile profile)
+    {
+        var instruction = AssistantProfileInstructions.Get(profile);
+
+        Assert.Contains("standard prompt-and-answer quiz", instruction);
+        Assert.DoesNotContain("word-and-translation", instruction);
+        Assert.DoesNotContain("sentence-and-translation", instruction);
+    }
+
+    [Fact]
+    public void Freestyle_prompt_does_not_narrow_standard_quizzes_to_language_pairs()
+    {
+        var instruction = new AssistantPromptBuilder().BuildSystemInstruction(
+            quiz: null,
+            focusedWord: null,
+            documentPage: null,
+            transcript: null,
+            book: null,
+            currentLanguage: "Freestyle");
+
+        Assert.Contains("equivalent standard prompt-and-answer quiz", instruction);
+        Assert.DoesNotContain("word or sentence pairs", instruction);
+    }
+
     [Fact]
     public async Task Context_resolver_enforces_quiz_ownership_and_prefers_request_language()
     {

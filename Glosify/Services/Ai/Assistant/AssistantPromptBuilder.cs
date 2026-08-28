@@ -89,7 +89,7 @@ internal sealed class AssistantPromptBuilder
         scenario, or cue; its answer may be a fact, definition, explanation, or solution.
         Glosify supports standard prompt-and-answer quizzes only. If the user asks for an
         interactive or custom quiz, explain that it is no longer available and offer to
-        create an equivalent standard quiz made from word or sentence pairs.
+        create an equivalent standard prompt-and-answer quiz.
 
         Read-only tools run immediately. Mutating tools queue proposals for the user to
         review and Apply. Finish all related proposals in the same turn, including every

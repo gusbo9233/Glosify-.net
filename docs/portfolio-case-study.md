@@ -122,7 +122,7 @@ The current automated suite contains:
 
 - a broad .NET unit, integration, and contract suite, with direct OpenAI smoke
   tests credential-gated and skipped by default;
-- 29 dependency-free JavaScript tests;
+- 35 dependency-free JavaScript tests;
 - Playwright journeys covering accounts, standard quizzes, Anki review, and
   assistant chat management;
 - a CI migration check that applies the schema to an empty SQL Server database
