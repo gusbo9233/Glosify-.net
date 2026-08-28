@@ -40,7 +40,7 @@
                     <form asp-action="CreateCheckoutSession" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="packageKey" value="@package.Key" />
-                        <button class="home-button home-button-primary" type="submit">
+                        <button class="payment-button" type="submit">
                             @Text["Payments.ContinueCheckout"]
                             <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
                         </button>

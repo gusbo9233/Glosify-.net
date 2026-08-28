@@ -4,11 +4,15 @@
     ViewData["Title"] = Text["Payments.Status"];
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/payments.css" asp-append-version="true" />
+}
+
 <div class="content-page">
     <section class="empty-state" aria-live="polite">
         <span class="material-symbols-outlined" aria-hidden="true">@(Model.IsPaid ? "check_circle" : "hourglass_top")</span>
         <h1>@(Model.IsPaid ? Text["Payments.Confirmed"] : Text["Payments.Processing"])</h1>
         <p>@Model.Message</p>
-        <a class="home-button home-button-primary" asp-controller="Home" asp-action="Index">@Text["Payments.Back"]</a>
+        <a class="payment-button" asp-controller="Home" asp-action="Index">@Text["Payments.Back"]</a>
     </section>
 </div>
