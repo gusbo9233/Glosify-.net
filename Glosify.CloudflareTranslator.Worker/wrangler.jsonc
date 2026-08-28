@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "glosify-m2m100-translator",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-28",
+  "ai": {
+    "binding": "AI"
+  }
+}

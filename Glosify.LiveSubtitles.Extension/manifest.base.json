@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Glosify Live Subtitles BETA",
   "description": "Real-time translated subtitles for audio playing in the Chrome tab you choose.",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "minimum_chrome_version": "116",
   "permissions": [
     "activeTab",

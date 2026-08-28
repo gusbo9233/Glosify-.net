@@ -36,6 +36,16 @@ test("development and test profiles retain the stable unpacked extension ID", as
   assert.equal(extensionIdForKey(development.key), "akepdpjieiokffdapibipomhbplikock");
 });
 
+test("Store-local profile retains the published extension ID for local authentication", async () => {
+  const storeLocal = await readManifest("store-local");
+
+  assert.equal(extensionIdForKey(storeLocal.key), "edcgopkkphcbdnmngajjjhkdmlielalc");
+  assert.deepEqual(storeLocal.host_permissions, [
+    "https://localhost/*",
+    "http://localhost/*",
+  ]);
+});
+
 test("test hooks and audio capture mode are independent profile settings", async () => {
   assert.deepEqual(await readConfig("development"), {
     glosifyBaseUrl: "https://localhost:7032",
@@ -45,6 +55,12 @@ test("test hooks and audio capture mode are independent profile settings", async
   });
   assert.deepEqual(await readConfig("store"), {
     glosifyBaseUrl: "https://glosify.se",
+    testHooksEnabled: false,
+    captureMode: "tab",
+    allowInsecureRelay: false,
+  });
+  assert.deepEqual(await readConfig("store-local"), {
+    glosifyBaseUrl: "https://localhost:7032",
     testHooksEnabled: false,
     captureMode: "tab",
     allowInsecureRelay: false,

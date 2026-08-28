@@ -189,6 +189,11 @@
         flex-direction: column;
         gap: 10px;
       }
+      .live {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
       .message {
         align-self: flex-start;
         width: fit-content;
@@ -311,10 +316,7 @@
         <div class="messages" role="log" aria-live="polite" aria-relevant="additions text">
           <div class="empty">Translated speech will appear here as a private, in-memory chat.</div>
           <div class="history"></div>
-          <div class="message current" hidden>
-            <div class="translation current-translation"></div>
-            <div class="typing" aria-label="Translation in progress"><i></i><i></i><i></i></div>
-          </div>
+          <div class="live"></div>
         </div>
       </div>
       <footer class="footer" role="status">
@@ -327,9 +329,8 @@
   const header = shadow.querySelector(".header");
   const messages = shadow.querySelector(".messages");
   const history = shadow.querySelector(".history");
+  const live = shadow.querySelector(".live");
   const empty = shadow.querySelector(".empty");
-  const current = shadow.querySelector(".current");
-  const currentTranslation = shadow.querySelector(".current-translation");
   const statusText = shadow.querySelector(".status-text");
   const clearButton = shadow.querySelector(".clear");
   const stopButton = shadow.querySelector(".stop");
@@ -377,9 +378,28 @@
     if (committed) {
       rebuildHistory();
     }
-    currentTranslation.textContent = chat.translation;
-    current.hidden = !chat.translation;
-    empty.classList.toggle("hidden", chat.messages.length > 0 || !current.hidden);
+    const liveBubbles = chat.liveBubbles;
+    const fragment = document.createDocumentFragment();
+    for (const [index, text] of liveBubbles.entries()) {
+      const bubble = document.createElement("article");
+      bubble.className = "message current";
+
+      const translationLine = document.createElement("div");
+      translationLine.className = "translation";
+      translationLine.textContent = text;
+      bubble.append(translationLine);
+
+      if (index === liveBubbles.length - 1) {
+        const typing = document.createElement("div");
+        typing.className = "typing";
+        typing.setAttribute("aria-label", "Translation in progress");
+        typing.innerHTML = "<i></i><i></i><i></i>";
+        bubble.append(typing);
+      }
+      fragment.append(bubble);
+    }
+    live.replaceChildren(fragment);
+    empty.classList.toggle("hidden", chat.messages.length > 0 || liveBubbles.length > 0);
     if (shouldFollow || committed) {
       requestAnimationFrame(() => {
         messages.scrollTop = messages.scrollHeight;

@@ -13,6 +13,7 @@ public interface IRealtimeTranslationService
         Guid? transcriptId = null,
         string? translationMode = null,
         string? sourceLanguage = null,
+        bool partialCaptionsEnabled = true,
         CancellationToken cancellationToken = default);
 
     Task<RealtimeTranslationMinuteResult> ReserveMinuteAsync(

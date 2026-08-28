@@ -3,7 +3,8 @@ namespace Glosify.Services.RealtimeTranslation;
 internal sealed class TranslationBubbleFinalizer
 {
     internal const int MaximumTranslationCharacters = 800;
-    internal const int MaximumBubbleCharacters = 180;
+    internal const int MaximumBubbleCharacters = 240;
+    internal const int MaximumSentencesPerBubble = 2;
 
     private int? _sequence;
     private IReadOnlyList<string> _previousCompletedSentences = [];
@@ -17,31 +18,39 @@ internal sealed class TranslationBubbleFinalizer
         }
 
         var boundedText = KeepLast(text, MaximumTranslationCharacters).Trim();
-        var split = SplitSentences(boundedText);
+        var split = SubtitleSentenceSegmenter.Split(boundedText);
         var committedBubbles = new List<string>();
 
         if (isFinal)
         {
-            foreach (var sentence in split.Completed.Skip(_committedSentenceCount))
-            {
-                AddBubbles(sentence, committedBubbles);
-            }
-            AddBubbles(split.Remainder, committedBubbles);
+            AddSentenceBubbles(
+                split.Completed.Skip(_committedSentenceCount)
+                    .Append(split.Remainder)
+                    .Where(value => value.Length > 0),
+                committedBubbles);
             Reset(null);
             return new TranslationBubbleUpdate(committedBubbles, string.Empty);
         }
 
-        while (_committedSentenceCount < split.Completed.Count
-            && _committedSentenceCount < _previousCompletedSentences.Count
+        var commitThrough = _committedSentenceCount;
+        while (commitThrough < split.Completed.Count
+            && commitThrough < _previousCompletedSentences.Count
             && string.Equals(
-                split.Completed[_committedSentenceCount],
-                _previousCompletedSentences[_committedSentenceCount],
+                split.Completed[commitThrough],
+                _previousCompletedSentences[commitThrough],
                 StringComparison.Ordinal))
         {
-            AddBubbles(split.Completed[_committedSentenceCount], committedBubbles);
-            _committedSentenceCount++;
+            commitThrough++;
         }
 
+        // Once another complete sentence follows, the earlier sentence is far enough
+        // behind the speech head to publish even if Translator slightly rephrased it.
+        commitThrough = Math.Max(commitThrough, split.Completed.Count - 1);
+        AddSentenceBubbles(
+            split.Completed.Skip(_committedSentenceCount)
+                .Take(commitThrough - _committedSentenceCount),
+            committedBubbles);
+        _committedSentenceCount = commitThrough;
         _previousCompletedSentences = split.Completed;
         var pendingText = string.Join(
             ' ',
@@ -58,58 +67,40 @@ internal sealed class TranslationBubbleFinalizer
         _committedSentenceCount = 0;
     }
 
-    private static SentenceSplit SplitSentences(string text)
+    private static void AddSentenceBubbles(
+        IEnumerable<string> sentences,
+        ICollection<string> destination)
     {
-        var completed = new List<string>();
-        var remainder = text.Trim();
-        while (remainder.Length > 0)
+        var group = new List<string>(MaximumSentencesPerBubble);
+        var groupLength = 0;
+        foreach (var sentence in sentences)
         {
-            var sentenceEnd = FindCompletedSentenceEnd(remainder);
-            if (sentenceEnd <= 0)
+            var trimmed = sentence.Trim();
+            if (trimmed.Length == 0)
             {
-                break;
+                continue;
             }
-            completed.Add(remainder[..sentenceEnd].Trim());
-            remainder = remainder[sentenceEnd..].TrimStart();
-        }
-        return new SentenceSplit(completed, remainder);
-    }
 
-    private static int FindCompletedSentenceEnd(string text)
-    {
-        for (var index = 0; index < text.Length; index++)
-        {
-            if (IsWesternSentenceMark(text[index]))
+            var combinedLength = groupLength + (group.Count > 0 ? 1 : 0) + trimmed.Length;
+            if (group.Count >= MaximumSentencesPerBubble
+                || (group.Count > 0 && combinedLength > MaximumBubbleCharacters))
             {
-                var end = index + 1;
-                while (end < text.Length && IsWesternSentenceMark(text[end]))
-                {
-                    end++;
-                }
-                while (end < text.Length && IsSentenceCloser(text[end]))
-                {
-                    end++;
-                }
-                if (end == text.Length || char.IsWhiteSpace(text[end]))
-                {
-                    return end;
-                }
+                AddBubbles(string.Join(' ', group), destination);
+                group.Clear();
+                groupLength = 0;
             }
-            else if (IsCjkSentenceMark(text[index]))
+
+            if (trimmed.Length > MaximumBubbleCharacters)
             {
-                var end = index + 1;
-                while (end < text.Length && IsCjkSentenceMark(text[end]))
-                {
-                    end++;
-                }
-                while (end < text.Length && IsSentenceCloser(text[end]))
-                {
-                    end++;
-                }
-                return end;
+                AddBubbles(trimmed, destination);
+                continue;
             }
+
+            group.Add(trimmed);
+            groupLength += (group.Count > 1 ? 1 : 0) + trimmed.Length;
         }
-        return -1;
+
+        AddBubbles(string.Join(' ', group), destination);
     }
 
     private static void AddBubbles(string text, ICollection<string> destination)
@@ -134,19 +125,16 @@ internal sealed class TranslationBubbleFinalizer
             return -1;
         }
         var wordBoundary = text.LastIndexOf(' ', maximumLength);
-        return wordBoundary > 0 ? wordBoundary : maximumLength;
+        if (wordBoundary <= 0)
+        {
+            return maximumLength;
+        }
+        return wordBoundary;
     }
 
     private static string KeepLast(string text, int maximumLength) =>
         text.Length <= maximumLength ? text : text[^maximumLength..];
 
-    private static bool IsWesternSentenceMark(char value) => value is '.' or '!' or '?' or '…';
-
-    private static bool IsCjkSentenceMark(char value) => value is '。' or '！' or '？';
-
-    private static bool IsSentenceCloser(char value) => value is '"' or '\'' or '”' or '’' or '»' or ')' or ']' or '）';
-
-    private sealed record SentenceSplit(IReadOnlyList<string> Completed, string Remainder);
 }
 
 internal sealed record TranslationBubbleUpdate(

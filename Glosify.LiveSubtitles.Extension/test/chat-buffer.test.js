@@ -126,6 +126,40 @@ test("Scribe uses server-finalized bubbles as the display authority", () => {
   assert.equal(chat.translation, "");
 });
 
+test("Scribe presents bounded live bubbles before those same bubbles finalize", () => {
+  const chat = new ChatBuffer();
+  const text = Array.from({ length: 26 }, () => "word").join(" ");
+  chat.apply({
+    stream: "translation",
+    sequence: 11,
+    delta: text,
+    replace: true,
+    isFinal: false,
+    committedBubbles: [],
+    pendingText: text,
+    clientTimestamp: 310,
+  });
+  const liveBubbles = [...chat.liveBubbles];
+
+  assert.equal(liveBubbles.length, 2);
+  assert.equal(liveBubbles[0].length, 119);
+  assert.equal(liveBubbles.join(" "), text);
+
+  chat.apply({
+    stream: "translation",
+    sequence: 11,
+    delta: text,
+    replace: true,
+    isFinal: true,
+    committedBubbles: liveBubbles,
+    pendingText: "",
+    clientTimestamp: 311,
+  });
+
+  assert.deepEqual(chat.messages.map(message => message.text), liveBubbles);
+  assert.deepEqual(chat.liveBubbles, []);
+});
+
 test("Scribe partial replacements commit completed sentences without duplicating them", () => {
   const chat = new ChatBuffer();
   chat.apply({

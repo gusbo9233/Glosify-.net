@@ -13,16 +13,33 @@ internal sealed class AdaptivePartialTranslationScheduler
     private readonly TimeSpan _initialDelay;
     private readonly TimeSpan _interval;
     private readonly int _minimumGrowthCharacters;
+    private readonly TimeSpan _autoDetectedLanguageRefresh;
+    private readonly bool _paceFromRequestStart;
+    private readonly bool _ignorePartialTranslationFailures;
 
     public AdaptivePartialTranslationScheduler(
         TimeProvider timeProvider,
-        ElevenLabsRealtimeSpeechOptions options)
+        ElevenLabsRealtimeSpeechOptions options,
+        bool? translatePartials = null,
+        TimeSpan? partialInterval = null,
+        bool paceFromRequestStart = false,
+        bool ignorePartialTranslationFailures = false)
     {
         _timeProvider = timeProvider;
-        _translatePartials = options.TranslatePartials;
+        _translatePartials = translatePartials ?? options.TranslatePartials;
         _initialDelay = TimeSpan.FromSeconds(options.PartialInitialDelaySeconds);
-        _interval = TimeSpan.FromSeconds(options.PartialIntervalSeconds);
+        _interval = partialInterval ?? TimeSpan.FromSeconds(options.PartialIntervalSeconds);
+        if (_interval <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(partialInterval),
+                "The partial translation interval must be positive.");
+        }
         _minimumGrowthCharacters = options.PartialMinimumGrowthCharacters;
+        _autoDetectedLanguageRefresh = TimeSpan.FromSeconds(
+            options.AutoDetectedLanguageRefreshSeconds);
+        _paceFromRequestStart = paceFromRequestStart;
+        _ignorePartialTranslationFailures = ignorePartialTranslationFailures;
     }
 
     public async Task RunAsync(
@@ -40,6 +57,8 @@ internal sealed class AdaptivePartialTranslationScheduler
         int? activeSequence = null;
         var smallGrowthRecorded = false;
         var inputCompleted = false;
+        var detectedLanguage = new AutoDetectedLanguageCache(
+            _autoDetectedLanguageRefresh);
 
         while (!inputCompleted)
         {
@@ -70,13 +89,26 @@ internal sealed class AdaptivePartialTranslationScheduler
                             SourceText = segment.Text,
                             SourceLanguage = segment.SourceLanguage,
                             CapturedAt = segment.CapturedAt,
+                            ProviderRequest = false,
                         };
                         await publish(segment, reused, false, cancellationToken);
                     }
                     else
                     {
-                        var result = await TranslateAsync(segment, translate, FinalKind, cancellationToken);
-                        await publish(segment, result, true, cancellationToken);
+                        var result = await TranslateAsync(
+                            segment,
+                            translate,
+                            FinalKind,
+                            cancellationToken);
+                        detectedLanguage.Observe(
+                            segment,
+                            result,
+                            _timeProvider.GetUtcNow());
+                        await publish(
+                            segment,
+                            result,
+                            result.ProviderRequest,
+                            cancellationToken);
                     }
 
                     activeSequence = null;
@@ -135,6 +167,9 @@ internal sealed class AdaptivePartialTranslationScheduler
                     lastSubmittedText,
                     pendingPartial.Text,
                     _minimumGrowthCharacters);
+                var completedSentenceAdded =
+                    SubtitleSentenceSegmenter.CountCompletedSentences(pendingPartial.Text)
+                    > SubtitleSentenceSegmenter.CountCompletedSentences(lastSubmittedText);
 
                 if (!meaningfulChange && now >= cadenceDue && !smallGrowthRecorded)
                 {
@@ -142,16 +177,51 @@ internal sealed class AdaptivePartialTranslationScheduler
                     smallGrowthRecorded = true;
                 }
 
-                var translationDue = meaningfulChange ? cadenceDue : stalenessDue;
+                var translationDue = completedSentenceAdded
+                    ? now
+                    : meaningfulChange ? cadenceDue : stalenessDue;
                 if (now >= translationDue)
                 {
                     var partial = pendingPartial;
                     pendingPartial = null;
                     pendingSince = null;
                     smallGrowthRecorded = false;
-                    var result = await TranslateAsync(partial, translate, PartialKind, cancellationToken);
-                    await publish(partial, result, true, cancellationToken);
-                    lastPartialSubmittedAt = _timeProvider.GetUtcNow();
+                    var translationInput = detectedLanguage.Apply(
+                        partial,
+                        _timeProvider.GetUtcNow());
+                    var submittedAt = _timeProvider.GetUtcNow();
+                    TranslatedSubtitleSegment result;
+                    try
+                    {
+                        result = await TranslateAsync(
+                            translationInput,
+                            translate,
+                            PartialKind,
+                            cancellationToken);
+                    }
+                    catch (RealtimeTranslationUpstreamException)
+                        when (_ignorePartialTranslationFailures)
+                    {
+                        RecordSuppression("translation_failed");
+                        lastPartialSubmittedAt = _paceFromRequestStart
+                            ? submittedAt
+                            : _timeProvider.GetUtcNow();
+                        lastSubmittedText = partial.Text;
+                        lastTranslation = null;
+                        continue;
+                    }
+                    detectedLanguage.Observe(
+                        partial,
+                        result,
+                        _timeProvider.GetUtcNow());
+                    await publish(
+                        partial,
+                        result,
+                        result.ProviderRequest,
+                        cancellationToken);
+                    lastPartialSubmittedAt = _paceFromRequestStart
+                        ? submittedAt
+                        : _timeProvider.GetUtcNow();
                     lastSubmittedText = partial.Text;
                     lastTranslation = result;
                     continue;
@@ -177,10 +247,50 @@ internal sealed class AdaptivePartialTranslationScheduler
         KeyValuePair<string, object?> kind,
         CancellationToken cancellationToken)
     {
-        RealtimeTranslationTelemetry.TranslationRequests.Add(1, kind);
         var result = await translate(segment, cancellationToken);
-        RealtimeTranslationTelemetry.TranslatedCharacters.Add(result.SourceText.Length, kind);
+        if (result.ProviderRequest)
+        {
+            RealtimeTranslationTelemetry.TranslationRequests.Add(1, kind);
+            RealtimeTranslationTelemetry.TranslatedCharacters.Add(result.SourceText.Length, kind);
+        }
         return result;
+    }
+
+    private sealed class AutoDetectedLanguageCache(TimeSpan refreshInterval)
+    {
+        private string? _language;
+        private DateTimeOffset _refreshAt;
+
+        public RecognizedSpeechSegment Apply(
+            RecognizedSpeechSegment segment,
+            DateTimeOffset now)
+        {
+            return segment.IsAutoDetected
+                && !string.IsNullOrWhiteSpace(_language)
+                && now < _refreshAt
+                    ? segment with { SourceLanguage = _language }
+                    : segment;
+        }
+
+        public void Observe(
+            RecognizedSpeechSegment source,
+            TranslatedSubtitleSegment result,
+            DateTimeOffset now)
+        {
+            if (!source.IsAutoDetected
+                || !result.ProviderRequest
+                || string.IsNullOrWhiteSpace(result.SourceLanguage)
+                || string.Equals(
+                    result.SourceLanguage,
+                    "auto",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+            _language = result.SourceLanguage;
+            _refreshAt = now + refreshInterval;
+        }
+
     }
 
     private async Task<WaitOutcome> WaitForInputOrDelayAsync(

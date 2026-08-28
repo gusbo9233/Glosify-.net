@@ -31,12 +31,16 @@ public interface IRealtimeSpeechTranscriber
 
 public interface IRealtimeTextTranslator
 {
-    Task<string> TranslateAsync(
+    Task<RealtimeTextTranslation> TranslateAsync(
         string text,
         string sourceLanguage,
         string targetLanguage,
         CancellationToken cancellationToken);
 }
+
+public sealed record RealtimeTextTranslation(
+    string Text,
+    string? DetectedSourceLanguage);
 
 public sealed record TranslatedSubtitleSegment(
     int Sequence,
@@ -44,7 +48,8 @@ public sealed record TranslatedSubtitleSegment(
     string TranslatedText,
     string SourceLanguage,
     string TargetLanguage,
-    DateTimeOffset CapturedAt);
+    DateTimeOffset CapturedAt,
+    bool ProviderRequest = true);
 
 public interface IEconomicalSubtitleTranslator
 {
@@ -54,31 +59,64 @@ public interface IEconomicalSubtitleTranslator
         CancellationToken cancellationToken);
 }
 
-public sealed class EconomicalSubtitleTranslator(IRealtimeTextTranslator translator)
-    : IEconomicalSubtitleTranslator
+public sealed class EconomicalSubtitleTranslator : IEconomicalSubtitleTranslator
 {
+    private readonly IRealtimeTextTranslator _translator;
+    private readonly RealtimeTranslationOptions _options;
+
+    public EconomicalSubtitleTranslator(
+        IRealtimeTextTranslator translator,
+        IOptions<RealtimeTranslationOptions> options)
+    {
+        _translator = translator;
+        _options = options.Value;
+    }
+
     public async Task<TranslatedSubtitleSegment> TranslateAsync(
         RecognizedSpeechSegment segment,
         string targetLanguage,
         CancellationToken cancellationToken)
     {
-        var translated = string.Equals(
+        var sameLanguage = string.Equals(
             segment.SourceLanguage,
             targetLanguage,
-            StringComparison.OrdinalIgnoreCase)
-            ? segment.Text
-            : await translator.TranslateAsync(
+            StringComparison.OrdinalIgnoreCase);
+        RealtimeTextTranslation? translation = null;
+        if (!sameLanguage)
+        {
+            translation = await _translator.TranslateAsync(
                 segment.Text,
                 segment.IsAutoDetected ? "auto" : segment.SourceLanguage,
                 targetLanguage,
                 cancellationToken);
+        }
+        var sourceLanguage = ResolveDetectedSourceLanguage(
+            translation?.DetectedSourceLanguage) ?? segment.SourceLanguage;
         return new TranslatedSubtitleSegment(
             segment.Sequence,
             segment.Text,
-            translated,
-            segment.SourceLanguage,
+            translation?.Text ?? segment.Text,
+            sourceLanguage,
             targetLanguage,
-            segment.CapturedAt);
+            segment.CapturedAt,
+            ProviderRequest: translation is not null);
+    }
+
+    private string? ResolveDetectedSourceLanguage(string? detectedLanguage)
+    {
+        if (string.IsNullOrWhiteSpace(detectedLanguage))
+        {
+            return null;
+        }
+        var normalized = detectedLanguage.Trim();
+        return _options.SourceLanguages.FirstOrDefault(language =>
+                language.Enabled
+                && (string.Equals(language.Code, normalized, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(
+                        language.TranslatorCode,
+                        normalized,
+                        StringComparison.OrdinalIgnoreCase)))
+            ?.Code ?? normalized;
     }
 }
 
@@ -256,7 +294,7 @@ public sealed class AzureRealtimeTextTranslator : IRealtimeTextTranslator
         _options = options.Value;
     }
 
-    public async Task<string> TranslateAsync(
+    public async Task<RealtimeTextTranslation> TranslateAsync(
         string text,
         string sourceLanguage,
         string targetLanguage,
@@ -347,10 +385,20 @@ public sealed class AzureRealtimeTextTranslator : IRealtimeTextTranslator
             }
 
             var translated = textElement.GetString();
-            return !string.IsNullOrWhiteSpace(translated)
-                ? translated
-                : throw new RealtimeTranslationUpstreamException(
+            if (string.IsNullOrWhiteSpace(translated))
+            {
+                throw new RealtimeTranslationUpstreamException(
                     "Azure Translator returned an empty subtitle.");
+            }
+            var detectedSourceLanguage = root[0].TryGetProperty(
+                    "detectedLanguage",
+                    out var detectedLanguage)
+                && detectedLanguage.ValueKind == JsonValueKind.Object
+                && detectedLanguage.TryGetProperty("language", out var language)
+                && language.ValueKind == JsonValueKind.String
+                    ? language.GetString()
+                    : null;
+            return new RealtimeTextTranslation(translated, detectedSourceLanguage);
         }
     }
 }

@@ -86,6 +86,54 @@ public sealed class AdaptivePartialTranslationSchedulerTests
     }
 
     [Fact]
+    public async Task SlowTranslator_KeepsOneRequestInFlightAndCoalescesQueuedPartials()
+    {
+        var releaseFirst = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var concurrentRequests = 0;
+        var maximumConcurrentRequests = 0;
+        var fixture = new SchedulerFixture(
+            Options(initialDelay: 0, interval: 2),
+            async (segment, cancellationToken) =>
+            {
+                var concurrent = Interlocked.Increment(ref concurrentRequests);
+                maximumConcurrentRequests = Math.Max(maximumConcurrentRequests, concurrent);
+                try
+                {
+                    if (segment.Text == "abcdefgh")
+                    {
+                        await releaseFirst.Task.WaitAsync(cancellationToken);
+                    }
+                    return SchedulerFixture.Translation(segment);
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref concurrentRequests);
+                }
+            },
+            paceFromRequestStart: true);
+        var run = fixture.RunAsync();
+        fixture.Write(Partial(1, "abcdefgh"));
+        _ = await fixture.NextTranslationAsync();
+
+        fixture.Advance(TimeSpan.FromSeconds(3));
+        fixture.Write(Partial(1, "abcdefghijklmnop"));
+        fixture.Write(Partial(1, "abcdefghijklmnopqrstuvwx"));
+        releaseFirst.TrySetResult();
+
+        var coalesced = await fixture.NextTranslationAsync();
+        fixture.Complete();
+        await run;
+
+        Assert.Equal("abcdefghijklmnopqrstuvwx", coalesced.Text);
+        Assert.Equal(
+            ["abcdefgh", "abcdefghijklmnopqrstuvwx"],
+            fixture.Translated.Select(segment => segment.Text));
+        Assert.Equal(1, maximumConcurrentRequests);
+        Assert.Equal(2, fixture.Published.Length);
+    }
+
+    [Fact]
     public async Task SmallGrowth_WaitsUntilMaximumStaleness()
     {
         var fixture = new SchedulerFixture(Options(initialDelay: 0));
@@ -124,6 +172,58 @@ public sealed class AdaptivePartialTranslationSchedulerTests
 
         Assert.Equal("abcdXfgh", translated.Text);
         Assert.Equal(2, fixture.Translated.Length);
+    }
+
+    [Fact]
+    public async Task PartialIntervalOverride_UsesProviderSpecificCadence()
+    {
+        var fixture = new SchedulerFixture(
+            Options(initialDelay: 0, interval: 2),
+            partialInterval: TimeSpan.FromSeconds(1));
+        var run = fixture.RunAsync();
+        fixture.Write(Partial(1, "abcdefgh"));
+        await fixture.NextTranslationAsync();
+
+        fixture.Write(Partial(1, "abcdefghijklmnop"));
+        await fixture.AdvanceAfterTimerAsync(TimeSpan.FromSeconds(1));
+        var translated = await fixture.NextTranslationAsync();
+        fixture.Complete();
+        await run;
+
+        Assert.Equal("abcdefghijklmnop", translated.Text);
+        Assert.Equal(2, fixture.Translated.Length);
+    }
+
+    [Fact]
+    public async Task NewSentenceBoundary_BypassesPartialCadence()
+    {
+        var fixture = new SchedulerFixture(Options(initialDelay: 0, interval: 30));
+        var run = fixture.RunAsync();
+        fixture.Write(Partial(1, "This is the first sentence"));
+        await fixture.NextTranslationAsync();
+
+        fixture.Write(Partial(1, "This is the first sentence. The next one starts"));
+        var translated = await fixture.NextTranslationAsync();
+        fixture.Complete();
+        await run;
+
+        Assert.Equal("This is the first sentence. The next one starts", translated.Text);
+        Assert.Equal(2, fixture.Translated.Length);
+    }
+
+    [Fact]
+    public async Task FirstPartialEndingAtSentenceBoundary_BypassesInitialDelay()
+    {
+        var fixture = new SchedulerFixture(Options(initialDelay: 30));
+        var run = fixture.RunAsync();
+        fixture.Write(Partial(1, "A complete sentence."));
+
+        var translated = await fixture.NextTranslationAsync();
+        fixture.Complete();
+        await run;
+
+        Assert.Equal("A complete sentence.", translated.Text);
+        Assert.Single(fixture.Translated);
     }
 
     [Fact]
@@ -181,6 +281,66 @@ public sealed class AdaptivePartialTranslationSchedulerTests
     }
 
     [Fact]
+    public async Task AutoDetectedLanguage_IsReusedBrieflyAndRefreshedWithinASequence()
+    {
+        var fixture = new SchedulerFixture(
+            Options(initialDelay: 0, interval: 1, languageRefresh: 10),
+            translate: (segment, _) => Task.FromResult(new TranslatedSubtitleSegment(
+                segment.Sequence,
+                segment.Text,
+                segment.Text,
+                segment.SourceLanguage == "auto" ? "en" : segment.SourceLanguage,
+                "en",
+                segment.CapturedAt,
+                ProviderRequest: segment.SourceLanguage == "auto")));
+        var run = fixture.RunAsync();
+        fixture.Write(AutoPartial(1, "abcdefgh"));
+        var initial = await fixture.NextTranslationAsync();
+
+        fixture.Write(AutoPartial(1, "abcdefghijklmnop"));
+        await fixture.AdvanceAfterTimerAsync(TimeSpan.FromSeconds(1));
+        var cached = await fixture.NextTranslationAsync();
+
+        fixture.Write(AutoPartial(1, "abcdefghijklmnopqrstuvwx"));
+        await fixture.AdvanceAfterTimerAsync(TimeSpan.FromSeconds(10));
+        var refreshed = await fixture.NextTranslationAsync();
+        fixture.Complete();
+        await run;
+
+        Assert.Equal("auto", initial.SourceLanguage);
+        Assert.Equal("en", cached.SourceLanguage);
+        Assert.Equal("auto", refreshed.SourceLanguage);
+        Assert.Equal(
+            [true, false, true],
+            fixture.Published.Select(published => published.ProviderRequest));
+    }
+
+    [Fact]
+    public async Task AutoDetectedLanguageCache_IsReusedAcrossNearbyProviderSequences()
+    {
+        var fixture = new SchedulerFixture(
+            Options(initialDelay: 0),
+            translate: (segment, _) => Task.FromResult(new TranslatedSubtitleSegment(
+                segment.Sequence,
+                segment.Text,
+                segment.Text,
+                "en",
+                "en",
+                segment.CapturedAt,
+                ProviderRequest: segment.SourceLanguage == "auto")));
+        var run = fixture.RunAsync();
+        fixture.Write(AutoPartial(1, "abcdefgh"));
+        _ = await fixture.NextTranslationAsync();
+        fixture.Write(AutoPartial(2, "ijklmnop"));
+        var nextSequence = await fixture.NextTranslationAsync();
+        fixture.Complete();
+        await run;
+
+        Assert.Equal("en", nextSequence.SourceLanguage);
+        Assert.Equal([true, false], fixture.Published.Select(published => published.ProviderRequest));
+    }
+
+    [Fact]
     public async Task CancellationAndCompletion_LeaveNoDeferredTranslation()
     {
         var cancelled = new SchedulerFixture();
@@ -221,16 +381,42 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         Assert.Equal(1, attempts);
     }
 
+    [Fact]
+    public async Task OptionalPartialFailure_DoesNotPreventFinalTranslation()
+    {
+        var fixture = new SchedulerFixture(
+            Options(initialDelay: 0),
+            (segment, _) => segment.IsFinal
+                ? Task.FromResult(SchedulerFixture.Translation(segment))
+                : Task.FromException<TranslatedSubtitleSegment>(
+                    new RealtimeTranslationUpstreamException("partial failed")),
+            ignorePartialTranslationFailures: true);
+        var run = fixture.RunAsync();
+        fixture.Write(Partial(1, "abcdefgh"));
+        _ = await fixture.NextTranslationAsync();
+        fixture.Write(Final(1, "abcdefgh!"));
+        fixture.Complete();
+
+        await run;
+
+        Assert.Equal(2, fixture.Translated.Length);
+        var published = Assert.Single(fixture.Published);
+        Assert.True(published.Segment.IsFinal);
+        Assert.Equal("abcdefgh!", published.Segment.Text);
+    }
+
     private static ElevenLabsRealtimeSpeechOptions Options(
         bool translatePartials = true,
         double initialDelay = 1,
         double interval = 2,
-        int minimumGrowth = 8) => new()
+        int minimumGrowth = 8,
+        double languageRefresh = 10) => new()
         {
             TranslatePartials = translatePartials,
             PartialInitialDelaySeconds = initialDelay,
             PartialIntervalSeconds = interval,
             PartialMinimumGrowthCharacters = minimumGrowth,
+            AutoDetectedLanguageRefreshSeconds = languageRefresh,
         };
 
     private static RecognizedSpeechSegment Partial(int sequence, string text) =>
@@ -238,6 +424,16 @@ public sealed class AdaptivePartialTranslationSchedulerTests
 
     private static RecognizedSpeechSegment Final(int sequence, string text) =>
         new(sequence, text, "en", "en-US", Origin, IsFinal: true);
+
+    private static RecognizedSpeechSegment AutoPartial(int sequence, string text) =>
+        new(
+            sequence,
+            text,
+            "auto",
+            "auto",
+            Origin,
+            IsAutoDetected: true,
+            IsFinal: false);
 
     private sealed class SchedulerFixture
     {
@@ -258,10 +454,18 @@ public sealed class AdaptivePartialTranslationSchedulerTests
 
         public SchedulerFixture(
             ElevenLabsRealtimeSpeechOptions? options = null,
-            Func<RecognizedSpeechSegment, CancellationToken, Task<TranslatedSubtitleSegment>>? translate = null)
+            Func<RecognizedSpeechSegment, CancellationToken, Task<TranslatedSubtitleSegment>>? translate = null,
+            TimeSpan? partialInterval = null,
+            bool paceFromRequestStart = false,
+            bool ignorePartialTranslationFailures = false)
         {
             Clock = new NotifyingTimeProvider(Origin);
-            _scheduler = new AdaptivePartialTranslationScheduler(Clock, options ?? Options());
+            _scheduler = new AdaptivePartialTranslationScheduler(
+                Clock,
+                options ?? Options(),
+                partialInterval: partialInterval,
+                paceFromRequestStart: paceFromRequestStart,
+                ignorePartialTranslationFailures: ignorePartialTranslationFailures);
             _translate = translate ?? CreateTranslationAsync;
         }
 
@@ -303,10 +507,10 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         }
 
         public Task<RecognizedSpeechSegment> NextObservedAsync() =>
-            _observedEvents.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+            _observedEvents.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10));
 
         public Task<RecognizedSpeechSegment> NextTranslationAsync() =>
-            _translationEvents.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+            _translationEvents.Reader.ReadAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10));
 
         public Task<TimeSpan> NextTimerCreatedAsync() => Clock.NextTimerCreatedAsync();
 
@@ -325,14 +529,17 @@ public sealed class AdaptivePartialTranslationSchedulerTests
             CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            return Task.FromResult(new TranslatedSubtitleSegment(
+            return Task.FromResult(Translation(segment));
+        }
+
+        internal static TranslatedSubtitleSegment Translation(RecognizedSpeechSegment segment) =>
+            new(
                 segment.Sequence,
                 segment.Text,
                 $"translated:{segment.Text}",
                 segment.SourceLanguage,
                 "sv",
-                segment.CapturedAt));
-        }
+                segment.CapturedAt);
     }
 
     private sealed class NotifyingTimeProvider(DateTimeOffset start) : TimeProvider

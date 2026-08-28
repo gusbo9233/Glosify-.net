@@ -1,22 +1,22 @@
 using Azure.Core;
+using Glosify.Infrastructure.Concurrency;
 using Glosify.Services;
 using Glosify.Services.Ai;
-using Glosify.Services.Anki;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Anki;
 using Glosify.Services.Auth;
 using Glosify.Services.Books;
 using Glosify.Services.Flashcards;
 using Glosify.Services.Language;
 using Glosify.Services.Legal;
+using Glosify.Services.Payments;
 using Glosify.Services.Quizzes;
 using Glosify.Services.RealtimeTranslation;
 using Glosify.Services.Speech;
 using Glosify.Services.Storage;
 using Glosify.Services.Typing;
 using Glosify.Services.Words;
-using Glosify.Services.Payments;
-using Glosify.Infrastructure.Concurrency;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
 
@@ -148,9 +148,24 @@ public static class ApplicationServiceExtensions
             options.TotalRequestTimeout.Timeout = translatorTimeout;
             options.AttemptTimeout.Timeout = translatorTimeout;
         });
+        var cloudflareTimeout = TimeSpan.FromSeconds(Math.Clamp(
+            configuration.GetValue<int?>(
+                $"{RealtimeTranslationOptions.SectionName}:Cloudflare:TimeoutSeconds") ?? 20,
+            1,
+            60));
+        services.AddHttpClient(CloudflareSubtitleTranslator.HttpClientName)
+        .AddStandardResilienceHandler(options =>
+        {
+            options.TotalRequestTimeout.Timeout = cloudflareTimeout;
+            options.AttemptTimeout.Timeout = cloudflareTimeout;
+            options.CircuitBreaker.SamplingDuration = cloudflareTimeout * 2;
+            // Worker AI requests consume quota. Never resubmit an ambiguous POST.
+            options.Retry.DisableForUnsafeHttpMethods();
+        });
         services.AddSingleton<IRealtimeTranslationLanguageCatalog, AzureTranslatorLanguageCatalog>();
         services.AddSingleton<IRealtimeTextTranslator, AzureRealtimeTextTranslator>();
         services.AddSingleton<IEconomicalSubtitleTranslator, EconomicalSubtitleTranslator>();
+        services.AddSingleton<ICloudflareSubtitleTranslator, CloudflareSubtitleTranslator>();
         services.AddSingleton<RealtimeTranslationRelayAuthorizationMonitor>();
         services.AddSingleton<IEnhancedTranslationRelay, OpenAiTranslationRelay>();
         services.AddSingleton<IScribeTranslationRelay, ScribeTranslationRelay>();

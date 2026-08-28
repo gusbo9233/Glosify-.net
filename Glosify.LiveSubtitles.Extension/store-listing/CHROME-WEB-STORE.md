@@ -1,4 +1,4 @@
-# Chrome Web Store submission — 0.5.0 BETA
+# Chrome Web Store submission — 0.5.1 BETA
 
 ## Publishing settings
 
@@ -20,9 +20,9 @@ Translate audio from the Chrome tab you choose into live subtitles using your Gl
 
 **Detailed description**
 
-Glosify Live Subtitles adds real-time translated captions to the Chrome tab you explicitly choose. Connect an existing Glosify account, choose ElevenLabs Scribe v2 or Enhanced subtitles, optionally select a spoken-language hint, choose the subtitle language, review the per-minute credit price, and press Start subtitles. Automatic spoken-language detection is the default. The extension captures only that tab's audio, keeps the audio playing locally, and places the translated caption overlay over the page.
+Glosify Live Subtitles adds real-time translated captions to the Chrome tab you explicitly choose. Connect an existing Glosify account, choose Scribe + Cloudflare or Enhanced subtitles, optionally select a spoken-language hint, choose the subtitle language, review the per-minute credit price, and press Start subtitles. Automatic spoken-language detection is the default. The extension captures only that tab's audio, keeps the audio playing locally, and places the translated caption overlay over the page.
 
-In Enhanced mode, tab audio is streamed through Glosify to OpenAI's realtime translation API. In ElevenLabs Scribe v2 mode, it is streamed through Glosify to ElevenLabs and finalized phrases are sent to Azure Translator. If transcript saving is enabled in Enhanced mode, the same audio is also sent to Scribe for the finalized source transcript. Standard ElevenLabs API logging is enabled and ElevenLabs may retain service-log data under its policy. Tab audio is not stored by Glosify. Transcript saving is separate, off by default, and stores only finalized original-language speech in the user's private Glosify account until the user deletes the transcript or account.
+In Enhanced mode, tab audio is streamed through Glosify to OpenAI's realtime translation API. In Scribe + Cloudflare mode, it is streamed through Glosify to ElevenLabs Scribe v2 and evolving phrases are sent through a protected Cloudflare Worker to M2M100 for translation. If transcript saving is enabled in Enhanced mode, the same audio is also sent to Scribe for the finalized source transcript. Standard ElevenLabs API logging is enabled and ElevenLabs may retain service-log data under its policy. Tab audio is not stored by Glosify. Transcript saving is separate, off by default, and stores only finalized original-language speech in the user's private Glosify account until the user deletes the transcript or account.
 
 Provider-reported audio usage consumes the displayed credits even if captions are interrupted, inaccurate, or unusable; mandatory consumer rights still apply. AI-generated captions and translations may be incorrect and must not be relied on for safety-critical or other high-stakes decisions. Privacy, Terms, and Support links are available directly in the extension popup.
 
@@ -58,7 +58,7 @@ The extension's single purpose is to capture audio from a user-selected Chrome t
 
 **Data sale / advertising / unrelated use:** No. Data is not sold, used for personalised advertising, or transferred for lending or unrelated purposes.
 
-**Processors:** Microsoft Azure provides hosting, authentication infrastructure, storage, monitoring, Speech, and Translator processing. OpenAI provides enhanced realtime translation processing. ElevenLabs provides optional Scribe v2 speech processing in Scribe subtitle mode and when source-transcript saving is enabled for Enhanced mode. Google or Microsoft processes authentication data when the user chooses that sign-in provider.
+**Processors:** Microsoft Azure provides hosting, authentication infrastructure, storage, monitoring, and Speech processing. Cloudflare provides M2M100 translation processing for Scribe subtitles. OpenAI provides enhanced realtime translation processing. ElevenLabs provides optional Scribe v2 speech processing in Scribe subtitle mode and when source-transcript saving is enabled for Enhanced mode. Google or Microsoft processes authentication data when the user chooses that sign-in provider.
 
 **Limited Use:** Glosify's use and transfer of information received from Google APIs adheres to the Chrome Web Store User Data Policy, including Limited Use requirements.
 
@@ -83,7 +83,7 @@ The screenshots are deterministic frames around the actual extension screenshots
 
 ## Manual dashboard checklist
 
-- Upload only `artifacts/package/glosify-live-subtitles-0.5.0-beta.zip`.
+- Upload only `artifacts/package/glosify-live-subtitles-0.5.1-beta.zip`.
 - Enter the temporary reviewer credentials only in the dashboard reviewer field.
 - Confirm data-use declarations match the answers above.
 - Confirm Public visibility, BETA branding, and deferred publishing before submitting.

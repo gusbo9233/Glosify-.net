@@ -12,6 +12,9 @@ test("popup offers mode, optional language hint, target, quiz-language, and tran
   assert.doesNotMatch(markup, /<select id="speech-provider">/);
   assert.match(markup, /<select id="source-language">/);
   assert.match(markup, /<input id="save-transcript" type="checkbox">/);
+  assert.match(markup, /<input id="partial-captions" type="checkbox">/);
+  assert.match(markup, /<label id="partial-captions-row"/);
+  assert.match(markup, /Turn off to show finalized captions only/);
   assert.match(markup, /<input id="transparent-subtitles" type="checkbox">/);
   assert.match(markup, /Transparent subtitle window/);
   assert.match(markup, /Shows only subtitle text until you hover over or focus the window/);

@@ -10,7 +10,7 @@ namespace Glosify.Tests;
 public sealed class CreditPricingOptionsTests
 {
     [Fact]
-    public void AppServiceStyleConfiguration_BindsNamedFeaturesAndSubtitleRates()
+    public void AppServiceStyleConfiguration_BindsModeNamesAndBothActiveSubtitleRates()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -18,19 +18,30 @@ public sealed class CreditPricingOptionsTests
                 ["CreditPricing:DefaultModelMultiplier"] = "0.12",
                 ["CreditPricing:TokenFeatures:assistant"] = "1.5",
                 ["CreditPricing:Subtitles:EnhancedCreditsPerStartedMinute"] = "8",
-                ["CreditPricing:Subtitles:ScribeCreditsPerStartedMinute"] = "4",
+                ["CreditPricing:Subtitles:CloudflareScribeCreditsPerStartedMinute"] = "3",
                 ["CreditPricing:Subtitles:EnhancedWithTranscriptCreditsPerStartedMinute"] = "16",
+                ["RealtimeTranslation:Modes:Enhanced:DisplayName"] = "Premium",
+                ["RealtimeTranslation:Modes:Enhanced:Description"] = "Highest quality",
+                ["RealtimeTranslation:Modes:ScribeCloudflare:DisplayName"] = "Economic",
+                ["RealtimeTranslation:Modes:ScribeCloudflare:Description"] = "Lower cost",
             })
             .Build();
 
         var options = configuration
             .GetSection(CreditPricingOptions.SectionName)
             .Get<CreditPricingOptions>();
+        var realtime = configuration
+            .GetSection(RealtimeTranslationOptions.SectionName)
+            .Get<RealtimeTranslationOptions>();
 
         Assert.NotNull(options);
+        Assert.NotNull(realtime);
         Assert.Equal(0.12m, options.DefaultModelMultiplier);
         Assert.Equal(1.5m, options.TokenFeatures["assistant"]);
-        Assert.Equal(4, options.Subtitles.ScribeCreditsPerStartedMinute);
+        Assert.Equal(8, options.Subtitles.EnhancedCreditsPerStartedMinute);
+        Assert.Equal(3, options.Subtitles.CloudflareScribeCreditsPerStartedMinute);
+        Assert.Equal("Premium", realtime.Modes.Enhanced.DisplayName);
+        Assert.Equal("Economic", realtime.Modes.ScribeCloudflare.DisplayName);
     }
 
     [Fact]
@@ -46,7 +57,7 @@ public sealed class CreditPricingOptionsTests
             },
             Subtitles = new SubtitleCreditPricingOptions
             {
-                ScribeCreditsPerStartedMinute = 0,
+                CloudflareScribeCreditsPerStartedMinute = 0,
             },
         };
 
@@ -56,7 +67,7 @@ public sealed class CreditPricingOptionsTests
         Assert.Contains(result.Failures!, failure => failure.Contains("DefaultModelMultiplier", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("unknown feature", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("assistant", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("ScribeCredits", StringComparison.Ordinal));
+        Assert.Contains(result.Failures!, failure => failure.Contains("CloudflareScribeCredits", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -87,6 +98,7 @@ public sealed class CreditPricingOptionsTests
         Assert.Equal(0.08m, resolver.GetModelMultiplier("test-model"));
         Assert.Equal(7, resolver.EnhancedSubtitleCreditsPerStartedMinute);
         Assert.Equal(5, resolver.ScribeSubtitleCreditsPerStartedMinute);
+        Assert.Equal(4, resolver.CloudflareScribeSubtitleCreditsPerStartedMinute);
         Assert.Equal(8, resolver.EnhancedWithTranscriptCreditsPerStartedMinute);
         Assert.All(
             resolver.GetCatalog().TokenFeatures,

@@ -187,6 +187,7 @@ function processAudio(event) {
 async function connectRelay({
   sessionId,
   targetLanguage,
+  partialCaptionsEnabled = true,
   relayToken,
   relayPath,
   glosifyBaseUrl,
@@ -208,6 +209,7 @@ async function connectRelay({
     generation,
     sessionId,
     targetLanguage,
+    partialCaptionsEnabled: partialCaptionsEnabled !== false,
     ready: false,
     sessionStartedAt: 0,
     authorizedUntil: 0,
@@ -222,6 +224,8 @@ async function connectRelay({
     sessionId,
     targetLanguage,
     nextSequence: () => ++connection.sequence,
+  }, {
+    partialCaptionsEnabled: connection.partialCaptionsEnabled,
   });
   relayConnection = connection;
 
@@ -530,6 +534,7 @@ function mediaState() {
     captureActive: Boolean(sourceStream?.active),
     sessionId: connection?.sessionId ?? null,
     targetLanguage: connection?.targetLanguage ?? null,
+    partialCaptionsEnabled: connection?.partialCaptionsEnabled ?? null,
     relayReady: Boolean(connection?.ready && connection.socket.readyState === WebSocket.OPEN),
     sessionStartedAtUtc: connection?.sessionStartedAt
       ? new Date(connection.sessionStartedAt).toISOString()

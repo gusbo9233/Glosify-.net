@@ -1,8 +1,10 @@
 using System.Net.WebSockets;
+using System.Reflection;
 using System.Text;
 using Glosify.Controllers.Api;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.RealtimeTranslation;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -226,7 +228,8 @@ public sealed class OpenAiTranslationRelayTests
             speechProvider: RealtimeSpeechProviders.OpenAi,
             sourceLanguage: "de",
             saveTranscript: true,
-            transcriptSourceLanguage: "Polish");
+            transcriptSourceLanguage: "Polish",
+            partialCaptionsEnabled: false);
 
         Assert.True(store.TryRedeem(sessionId, grant.Token, out var authorization));
         Assert.Equal("user-1", authorization.UserId);
@@ -235,6 +238,7 @@ public sealed class OpenAiTranslationRelayTests
         Assert.True(authorization.SaveTranscript);
         Assert.Equal("de", authorization.SourceLanguage);
         Assert.Equal("pl", authorization.TranscriptSourceLanguage);
+        Assert.False(authorization.PartialCaptionsEnabled);
         Assert.False(store.TryRedeem(sessionId, grant.Token, out _));
     }
 
@@ -343,9 +347,19 @@ public sealed class OpenAiTranslationRelayTests
             ["glosify-realtime", "relay-token.invalid"]));
     }
 
+    [Fact]
+    public void RelayController_DoesNotRestrictWebSocketHandshakeToHttpGet()
+    {
+        var stream = typeof(RealtimeTranslationRelayController)
+            .GetMethod(nameof(RealtimeTranslationRelayController.Stream))!;
+
+        Assert.Empty(stream.GetCustomAttributes<HttpMethodAttribute>(inherit: true));
+    }
+
     [Theory]
     [InlineData(RealtimeTranslationModes.Enhanced, 1, 0)]
     [InlineData(RealtimeTranslationModes.Scribe, 0, 1)]
+    [InlineData(RealtimeTranslationModes.ScribeCloudflare, 0, 1)]
     public async Task RelayRouter_DelegatesToTheAuthorizedMode(
         string mode,
         int expectedEnhancedCalls,
@@ -362,10 +376,13 @@ public sealed class OpenAiTranslationRelayTests
             mode,
             mode switch
             {
-                RealtimeTranslationModes.Scribe => RealtimeSpeechProviders.ElevenLabs,
+                RealtimeTranslationModes.Scribe or RealtimeTranslationModes.ScribeCloudflare =>
+                    RealtimeSpeechProviders.ElevenLabs,
                 _ => RealtimeSpeechProviders.OpenAi,
             },
-            mode == RealtimeTranslationModes.Scribe ? "pl" : null,
+            mode is RealtimeTranslationModes.Scribe or RealtimeTranslationModes.ScribeCloudflare
+                ? "pl"
+                : null,
             SaveTranscript: false,
             TranscriptSourceLanguage: null);
 

@@ -3,7 +3,7 @@
     constructor({
       maximumMessages = 30,
       maximumTranslationCharacters = 800,
-      maximumBubbleCharacters = 180,
+      maximumBubbleCharacters = 120,
     } = {}) {
       this.maximumMessages = maximumMessages;
       this.maximumTranslationCharacters = maximumTranslationCharacters;
@@ -13,6 +13,10 @@
       this.replacementSequence = null;
       this.previousReplacementSentences = [];
       this.committedReplacementSentences = 0;
+    }
+
+    get liveBubbles() {
+      return splitTextAsBubbles(this.translation, this.maximumBubbleCharacters);
     }
 
     apply(event) {
@@ -149,18 +153,11 @@
     }
 
     pushTextAsBubbles(text, timestamp) {
-      let remaining = text.trim();
-      let committed = 0;
-      while (remaining) {
-        const splitAt = findLengthSplit(remaining, this.maximumBubbleCharacters);
-        const bubble = splitAt > 0 ? remaining.slice(0, splitAt).trim() : remaining;
-        remaining = splitAt > 0 ? remaining.slice(splitAt).trimStart() : "";
-        if (bubble) {
-          this.pushMessage(bubble, timestamp);
-          committed += 1;
-        }
+      const bubbles = splitTextAsBubbles(text, this.maximumBubbleCharacters);
+      for (const bubble of bubbles) {
+        this.pushMessage(bubble, timestamp);
       }
-      return committed;
+      return bubbles.length;
     }
 
     resetReplacement() {
@@ -209,6 +206,20 @@
     }
     const wordBoundary = text.lastIndexOf(" ", maximumLength);
     return wordBoundary > 0 ? wordBoundary : maximumLength;
+  }
+
+  function splitTextAsBubbles(text, maximumLength) {
+    const bubbles = [];
+    let remaining = typeof text === "string" ? text.trim() : "";
+    while (remaining) {
+      const splitAt = findLengthSplit(remaining, maximumLength);
+      const bubble = splitAt > 0 ? remaining.slice(0, splitAt).trim() : remaining;
+      remaining = splitAt > 0 ? remaining.slice(splitAt).trimStart() : "";
+      if (bubble) {
+        bubbles.push(bubble);
+      }
+    }
+    return bubbles;
   }
 
   globalThis.GlosifySubtitleChat = Object.freeze({ ChatBuffer });
