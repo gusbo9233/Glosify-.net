@@ -53,8 +53,8 @@ image input to the same fixed model.
 
 The assistant is application-owned end to end:
 
-- `AssistantProfileInstructions` contains the active quiz assistant, librarian,
-  custom builder, and three Freestyle profiles.
+- `AssistantProfileInstructions` contains four active profiles: the language quiz
+  assistant, language librarian, Freestyle quiz assistant, and Freestyle librarian.
 - `AssistantPromptBuilder` appends trusted, turn-specific quiz, language,
   document, transcript, and book context.
 - `AssistantToolRegistry` and the per-tool classes define schemas and execute
