@@ -37,14 +37,32 @@ during rollout.
 Feature-specific settings remain required when those features are enabled:
 
 - Azure Speech endpoint/resource/region settings for server-side TTS;
-- Azure Translator resource settings for Scribe subtitle mode;
+- `RealtimeTranslation__Cloudflare__Endpoint` and
+  `RealtimeTranslation__Cloudflare__ApiToken` for Scribe subtitle mode;
 - `RealtimeTranslation__ElevenLabs__ApiKey` for Scribe mode and optional saved
   source transcripts;
 - Blob Storage, Stripe, OAuth, and email settings
   for their corresponding features.
 
+The two user-selectable subtitle modes can be renamed and repriced without a
+deployment. Set these App Service environment variables and restart the app:
+
+| App Service variable | Default |
+|---|---|
+| `RealtimeTranslation__Modes__Enhanced__DisplayName` | `Enhanced` |
+| `RealtimeTranslation__Modes__Enhanced__Description` | `Best translation quality` |
+| `RealtimeTranslation__Modes__ScribeCloudflare__DisplayName` | `Scribe + Cloudflare` |
+| `RealtimeTranslation__Modes__ScribeCloudflare__Description` | `Lower-cost translation with coalesced live partials` |
+| `CreditPricing__Subtitles__EnhancedCreditsPerStartedMinute` | `7` |
+| `CreditPricing__Subtitles__CloudflareScribeCreditsPerStartedMinute` | `4` |
+
+Display names must contain 1–80 characters, descriptions 1–200 characters,
+and prices must be positive whole credits. Startup validation rejects invalid
+overrides before the application serves a misleading catalog.
+
 Managed identity is still used for supported Azure services such as Blob
-Storage, Azure Speech, Translator, and telemetry. OpenAI uses its API key.
+Storage, Azure Speech, and telemetry. OpenAI and the protected Cloudflare Worker
+use server-side API credentials.
 
 Scribe translates the latest partial after one second and then at most every
 two seconds, with eight Unicode characters of accumulated growth. These
@@ -69,7 +87,7 @@ Scribe sessions started by an account listed in `Admin__Emails` automatically
 store an internal analysis trace in `RealtimeTranslationCaptureEvents`. This is
 separate from the user-facing saved-transcript feature and does not capture
 ordinary accounts. Each trace contains the Scribe source partials and finals,
-every Azure Translator partial or final result, whether that result required a
+every Cloudflare partial or final result, whether that result required a
 provider request, and every bubble finalized by the server. Caption text is
 stored only in this database table; logs and metrics remain text-free.
 
@@ -93,7 +111,7 @@ Application constants fix these routes:
 |---|---|
 | Assistant, structured generation, image extraction, page translation | OpenAI Responses API, `gpt-5.6-luna` |
 | Enhanced live subtitles | OpenAI realtime translation, `gpt-realtime-translate` |
-| Alternative subtitles | ElevenLabs `scribe_v2_realtime` + Azure Translator |
+| Alternative subtitles | ElevenLabs `scribe_v2_realtime` + Cloudflare M2M100 |
 | Book text-to-speech | Azure Speech |
 
 `GenerativeAi__TimeoutSeconds` may override the default 180-second timeout. Do
@@ -109,7 +127,7 @@ matching price. The shipped configuration prices:
   output tokens;
 - `gpt-realtime-translate`: 0.3804 SEK per audio minute;
 - `gpt-realtime-translate+elevenlabs-scribe-v2-realtime`: 0.4531 SEK per minute;
-- `elevenlabs-scribe-v2-realtime+azure-translator-nmt`: 0.35 SEK per minute.
+- `elevenlabs-scribe-v2-realtime+cloudflare-m2m100-1.2b`: 0.35 SEK per minute.
 
 Before enabling realtime translation, verify the relevant provider is budgeted,
 the duration meter has `AudioSekPerMinute`, extension redirect URIs are approved,
@@ -193,7 +211,7 @@ print the key in test output.
    import, image extraction, and book-page translation.
 4. Start Enhanced subtitles and confirm relay readiness, translated captions,
    duration billing, reconnect, and graceful close.
-5. Start Scribe mode and confirm Azure Translator output remains unchanged.
+5. Start Scribe mode and confirm Cloudflare partial and final output appears.
 6. Verify authentication, payments, and saved assistant/transcript flows.
 7. Confirm `/Speaking`, `/api/speaking/*`, `/Classroom/*`, and
    `/hubs/classroom-chat` return 404 for an authenticated administrator.

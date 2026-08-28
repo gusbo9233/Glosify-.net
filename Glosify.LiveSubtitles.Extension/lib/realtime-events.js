@@ -23,6 +23,7 @@ export function createRealtimeEventAccumulator(context, {
   idleFlushMs = 4_000,
   maximumLength = 32_000,
   maximumCompletedKeys = 512,
+  partialCaptionsEnabled = true,
 } = {}) {
   const buffers = new Map();
   const completed = new Set();
@@ -40,6 +41,9 @@ export function createRealtimeEventAccumulator(context, {
     }
     if (event.type === "glosify.translation.segment"
         || event.type === "glosify.translation.partial") {
+      if (event.type === "glosify.translation.partial" && !partialCaptionsEnabled) {
+        return null;
+      }
       return normalizeRealtimeEvent(event, context);
     }
 
@@ -70,6 +74,9 @@ export function createRealtimeEventAccumulator(context, {
       }
       buffer.text = appendBounded(buffer.text, delta, maximumLength);
       buffer.lastUpdatedAt = now;
+      if (!partialCaptionsEnabled) {
+        return null;
+      }
       return normalizedReplacement(context, buffer.sequence, buffer.text, false, now);
     }
 
@@ -213,7 +220,7 @@ function normalizeServerFinalization(event) {
   }
   const committedBubbles = [];
   for (const bubble of event.committedBubbles) {
-    if (typeof bubble !== "string" || !bubble.trim() || bubble.length > 180) {
+    if (typeof bubble !== "string" || !bubble.trim() || bubble.length > 240) {
       return null;
     }
     committedBubbles.push(bubble);

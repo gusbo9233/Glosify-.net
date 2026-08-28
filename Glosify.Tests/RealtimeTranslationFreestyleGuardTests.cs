@@ -48,6 +48,7 @@ public sealed class RealtimeTranslationFreestyleTests
             ["catalog", "create", "reserve", "begin", "heartbeat", "end"],
             service.Calls);
         Assert.Equal(sessionId, service.EndedSessionId);
+        Assert.True(service.LastPartialCaptionsEnabled);
         Assert.Equal(0, preferences.GetCalls);
         Assert.Equal(0, preferences.SetCalls);
     }
@@ -82,6 +83,7 @@ public sealed class RealtimeTranslationFreestyleTests
     {
         public List<string> Calls { get; } = [];
         public Guid? EndedSessionId { get; private set; }
+        public bool LastPartialCaptionsEnabled { get; private set; }
 
         public Task<RealtimeTranslationCatalog> GetCatalogAsync(
             string userId,
@@ -111,9 +113,11 @@ public sealed class RealtimeTranslationFreestyleTests
             Guid? transcriptId = null,
             string? translationMode = null,
             string? sourceLanguage = null,
+            bool partialCaptionsEnabled = true,
             CancellationToken cancellationToken = default)
         {
             Calls.Add("create");
+            LastPartialCaptionsEnabled = partialCaptionsEnabled;
             return Task.FromResult(new RealtimeTranslationSessionCreated(
                 Guid.NewGuid(),
                 "relay-token",

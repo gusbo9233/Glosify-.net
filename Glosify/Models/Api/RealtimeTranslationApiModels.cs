@@ -7,7 +7,8 @@ public sealed record CreateRealtimeTranslationSessionRequest(
     bool SaveTranscript = false,
     Guid? TranscriptId = null,
     [param: StringLength(16)] string? TranslationMode = null,
-    [param: StringLength(16)] string? SourceLanguage = null);
+    [param: StringLength(16)] string? SourceLanguage = null,
+    bool? PartialCaptionsEnabled = null);
 
 public sealed record SetRealtimeTranslationQuizLanguageRequest(
     [param: Required, StringLength(16)] string Code);

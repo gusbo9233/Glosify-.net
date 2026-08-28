@@ -5,11 +5,12 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const profile = process.argv[2];
-if (!new Set(["development", "store", "test", "test-tab"]).has(profile)) {
-  throw new Error("Build profile must be 'development', 'store', 'test', or 'test-tab'.");
+if (!new Set(["development", "store", "store-local", "test", "test-tab"]).has(profile)) {
+  throw new Error("Build profile must be 'development', 'store', 'store-local', 'test', or 'test-tab'.");
 }
 
-const output = path.join(root, "artifacts", profile);
+const outputProfile = profile === "store-local" ? "store" : profile;
+const output = path.join(root, "artifacts", outputProfile);
 const directories = ["background", "content", "lib", "offscreen", "popup", "icons"];
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });

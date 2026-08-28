@@ -84,7 +84,7 @@ receives the OpenAI key. Its existing message protocol and reconnect behavior ar
 preserved.
 
 Scribe mode remains the user-selectable alternative: ElevenLabs Scribe v2
-produces finalized source text and Azure Translator translates it. Enhanced mode
+produces evolving source text and Cloudflare M2M100 translates it. Enhanced mode
 can also send audio to Scribe when the user separately enables saved source
 transcripts. Glosify does not store tab audio.
 
@@ -105,11 +105,11 @@ markup:
 | Luna output | 13.4233 SEK / million tokens |
 | Realtime translation | 0.3804 SEK / audio minute |
 | Realtime translation + saved Scribe transcript | 0.4531 SEK / minute |
-| Scribe + Azure Translator estimate | 0.35 SEK / minute |
+| Scribe + Cloudflare estimate | 0.35 SEK / minute |
 
 ## Security and privacy boundaries
 
-- `OPENAI_SECRET_KEY`, Speech, Translator, Scribe, Stripe, and storage
+- `OPENAI_SECRET_KEY`, Speech, Cloudflare, Scribe, Stripe, and storage
   credentials are server-only.
 - Controllers enforce ownership before loading or changing learner data.
 - Assistant tool results and learner content are treated as untrusted data, not

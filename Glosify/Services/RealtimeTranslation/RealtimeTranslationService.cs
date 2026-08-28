@@ -62,18 +62,18 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             .Select(language => new RealtimeTranslationLanguage(language.Code, language.Name))
             .ToArray();
         var modes = new List<RealtimeTranslationMode>();
-        if (_options.ElevenLabs.Enabled)
+        if (_options.Cloudflare.Enabled && _options.ElevenLabs.Enabled)
         {
             modes.Add(new RealtimeTranslationMode(
-                RealtimeTranslationModes.Scribe,
-                "ElevenLabs Scribe v2",
-                "Scribe v2 speech recognition with Azure translation",
-                _pricing.ScribeSubtitleCreditsPerStartedMinute));
+                RealtimeTranslationModes.ScribeCloudflare,
+                _options.Modes.ScribeCloudflare.DisplayName.Trim(),
+                _options.Modes.ScribeCloudflare.Description.Trim(),
+                _pricing.CloudflareScribeSubtitleCreditsPerStartedMinute));
         }
         modes.Add(new RealtimeTranslationMode(
             RealtimeTranslationModes.Enhanced,
-            "Enhanced",
-            "Best translation quality",
+            _options.Modes.Enhanced.DisplayName.Trim(),
+            _options.Modes.Enhanced.Description.Trim(),
             _pricing.EnhancedSubtitleCreditsPerStartedMinute));
         var sourceLanguages = languages
             .Select(language => new RealtimeTranslationSourceLanguage(
@@ -111,6 +111,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         Guid? transcriptId = null,
         string? translationMode = null,
         string? sourceLanguage = null,
+        bool partialCaptionsEnabled = true,
         CancellationToken cancellationToken = default)
     {
         EnsureEnabled();
@@ -121,22 +122,27 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         var mode = string.IsNullOrWhiteSpace(translationMode)
             ? RealtimeTranslationModes.Enhanced
             : translationMode.Trim().ToLowerInvariant();
-        if (mode is not (RealtimeTranslationModes.Scribe or RealtimeTranslationModes.Enhanced))
+        if (mode is not (
+                RealtimeTranslationModes.ScribeCloudflare
+                or RealtimeTranslationModes.Enhanced))
         {
             throw new RealtimeTranslationValidationException(
-                "Choose ElevenLabs Scribe v2 or Enhanced subtitles.");
+                "Choose an available live subtitle mode.");
         }
-        if (mode == RealtimeTranslationModes.Scribe && !_options.ElevenLabs.Enabled)
+        if (mode == RealtimeTranslationModes.ScribeCloudflare
+            && (!_options.ElevenLabs.Enabled || !_options.Cloudflare.Enabled))
         {
             throw new RealtimeTranslationUnavailableException(
-                "ElevenLabs Scribe v2 is not enabled on this Glosify deployment.");
+                "Scribe with Cloudflare translation is not enabled on this Glosify deployment.");
         }
         var canonicalSpeechProvider = mode switch
         {
-            RealtimeTranslationModes.Scribe => RealtimeSpeechProviders.ElevenLabs,
+            RealtimeTranslationModes.Scribe or RealtimeTranslationModes.ScribeCloudflare =>
+                RealtimeSpeechProviders.ElevenLabs,
             _ => RealtimeSpeechProviders.OpenAi,
         };
-        var usesScribe = mode == RealtimeTranslationModes.Scribe || saveTranscript;
+        var usesScribe = mode is RealtimeTranslationModes.Scribe
+            or RealtimeTranslationModes.ScribeCloudflare || saveTranscript;
         var canonicalSourceLanguage = usesScribe
             ? string.IsNullOrWhiteSpace(sourceLanguage)
                 || string.Equals(sourceLanguage.Trim(), "auto", StringComparison.OrdinalIgnoreCase)
@@ -236,22 +242,30 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 TranslationMode = mode,
                 SpeechProvider = canonicalSpeechProvider,
                 SourceLanguage = canonicalSourceLanguage,
-                Model = mode == RealtimeTranslationModes.Scribe
-                    ? _options.ElevenLabs.Model
-                    : OpenAiModels.RealtimeTranslation,
+                Model = mode switch
+                {
+                    RealtimeTranslationModes.Scribe => _options.ElevenLabs.Model,
+                    RealtimeTranslationModes.ScribeCloudflare => _options.Cloudflare.Model,
+                    _ => OpenAiModels.RealtimeTranslation,
+                },
                 SourceTranscriptionDeployment = mode == RealtimeTranslationModes.Enhanced && transcript is not null
                     ? _options.ElevenLabs.Model
                     : null,
-                BillingModel = mode == RealtimeTranslationModes.Scribe
-                    ? _options.ElevenLabs.BillingModel
-                    : transcript is null
-                        ? OpenAiModels.RealtimeTranslation
-                        : _options.SavedTranscriptBillingModel,
-                CreditsPerStartedMinute = mode == RealtimeTranslationModes.Scribe
-                    ? _pricing.ScribeSubtitleCreditsPerStartedMinute
-                    : transcript is null
-                        ? _pricing.EnhancedSubtitleCreditsPerStartedMinute
-                        : _pricing.EnhancedWithTranscriptCreditsPerStartedMinute,
+                BillingModel = mode switch
+                {
+                    RealtimeTranslationModes.Scribe => _options.ElevenLabs.BillingModel,
+                    RealtimeTranslationModes.ScribeCloudflare => _options.Cloudflare.BillingModel,
+                    _ when transcript is null => OpenAiModels.RealtimeTranslation,
+                    _ => _options.SavedTranscriptBillingModel,
+                },
+                CreditsPerStartedMinute = mode switch
+                {
+                    RealtimeTranslationModes.Scribe => _pricing.ScribeSubtitleCreditsPerStartedMinute,
+                    RealtimeTranslationModes.ScribeCloudflare =>
+                        _pricing.CloudflareScribeSubtitleCreditsPerStartedMinute,
+                    _ when transcript is null => _pricing.EnhancedSubtitleCreditsPerStartedMinute,
+                    _ => _pricing.EnhancedWithTranscriptCreditsPerStartedMinute,
+                },
                 TranscriptId = transcript?.Id,
                 TranscriptConsentAt = transcript is null ? null : now,
                 Status = RealtimeTranslationSessionStatuses.Pending,
@@ -300,7 +314,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                     canonicalSpeechProvider,
                     canonicalSourceLanguage,
                     transcript is not null,
-                    selectedQuizLanguage?.Code);
+                    selectedQuizLanguage?.Code,
+                    partialCaptionsEnabled);
                 var account = await _credits.GetOrCreateAccountAsync(userId, cancellationToken);
                 RealtimeTranslationTelemetry.SessionsCreated.Add(1);
                 return new RealtimeTranslationSessionCreated(
@@ -577,9 +592,14 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 session.Id,
                 "RealtimeTranslationSession",
                 $"{session.Id:N}:{minuteIndex}"),
-            session.SpeechProvider == RealtimeSpeechProviders.ElevenLabs
-                ? RealtimeTranslationConstants.ElevenLabsProvider
-                : RealtimeTranslationConstants.Provider,
+            session.TranslationMode switch
+            {
+                RealtimeTranslationModes.ScribeCloudflare =>
+                    RealtimeTranslationConstants.CloudflareProvider,
+                _ when session.SpeechProvider == RealtimeSpeechProviders.ElevenLabs =>
+                    RealtimeTranslationConstants.ElevenLabsProvider,
+                _ => RealtimeTranslationConstants.Provider,
+            },
             session.BillingModel,
             60,
             session.CreditsPerStartedMinute,

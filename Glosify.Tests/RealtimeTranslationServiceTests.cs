@@ -53,7 +53,35 @@ public sealed class RealtimeTranslationServiceTests
     }
 
     [Fact]
-    public async Task ElevenLabsSession_UsesProviderPriceBillingAndRelayAuthorization()
+    public async Task AzureScribeMode_IsNotAdvertisedOrAccepted()
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var service = CreateService(
+            context,
+            new ManualTimeProvider(TestNow),
+            new FakeRelayTokenStore(),
+            options =>
+            {
+                options.ElevenLabs.Enabled = true;
+                options.Cloudflare.Enabled = true;
+                options.Cloudflare.Endpoint = "https://glosify-test.workers.dev/translate";
+                options.Cloudflare.ApiToken = "secret";
+            });
+
+        var catalog = await service.GetCatalogAsync("user-1");
+        Assert.DoesNotContain(catalog.Modes, mode => mode.Code == RealtimeTranslationModes.Scribe);
+        Assert.Contains(catalog.Modes, mode => mode.Code == RealtimeTranslationModes.ScribeCloudflare);
+        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(() =>
+            service.CreateSessionAsync(
+                "user-1",
+                "es",
+                translationMode: RealtimeTranslationModes.Scribe));
+        Assert.Empty(context.RealtimeTranslationSessions);
+    }
+
+    [Fact]
+    public async Task CloudflareScribeSession_IsIsolatedPricedAndBudgetedAsCloudflare()
     {
         await using var context = CreateContext();
         await SeedUserAsync(context);
@@ -64,46 +92,34 @@ public sealed class RealtimeTranslationServiceTests
             tokens,
             options =>
             {
-                options.ElevenLabs.Enabled = true;
-                options.ElevenLabs.CreditsPerStartedMinute = 7;
-                options.SourceLanguages =
-                [
-                    new RealtimeTranslationSourceLanguageOptions
-                    {
-                        Code = "pl",
-                        Name = "Polish",
-                        Locale = "pl-PL",
-                        TranslatorCode = "pl",
-                        ScribeCode = "pl",
-                        AutoDetect = true,
-                    },
-                ];
+                options.Cloudflare.Enabled = true;
+                options.Cloudflare.Endpoint = "https://glosify-test.workers.dev/translate";
+                options.Cloudflare.ApiToken = "secret";
+                options.Cloudflare.CreditsPerStartedMinute = 4;
             });
 
         var catalog = await service.GetCatalogAsync("user-1");
-        Assert.Equal(
-            [(RealtimeTranslationModes.Scribe, 7), (RealtimeTranslationModes.Enhanced, 8)],
-            catalog.Modes.Select(mode => (mode.Code, mode.CreditsPerMinute)).ToArray());
+        Assert.Equal(4, catalog.Modes.Single(mode =>
+            mode.Code == RealtimeTranslationModes.ScribeCloudflare).CreditsPerMinute);
 
         var created = await service.CreateSessionAsync(
             "user-1",
             "es",
-            translationMode: RealtimeTranslationModes.Scribe);
-        var begun = await service.BeginMinuteAsync("user-1", created.SessionId, 1);
+            translationMode: RealtimeTranslationModes.ScribeCloudflare,
+            sourceLanguage: "pl",
+            partialCaptionsEnabled: true);
+        await service.BeginMinuteAsync("user-1", created.SessionId, 1);
 
-        Assert.Equal(7, created.CreditsPerMinute);
-        Assert.Equal(7, begun.CreditsCharged);
         var session = await context.RealtimeTranslationSessions.SingleAsync();
-        Assert.Equal(RealtimeTranslationModes.Scribe, session.TranslationMode);
         Assert.Equal(RealtimeSpeechProviders.ElevenLabs, session.SpeechProvider);
-        Assert.Equal("auto", session.SourceLanguage);
-        Assert.Equal("scribe_v2_realtime", session.Model);
-        Assert.Equal("elevenlabs-scribe-v2-realtime+azure-translator-nmt", session.BillingModel);
-        Assert.Equal(RealtimeSpeechProviders.ElevenLabs, tokens.LastSpeechProvider);
-        Assert.Equal("auto", tokens.LastRequestedSourceLanguage);
+        Assert.Equal("@cf/meta/m2m100-1.2b", session.Model);
+        Assert.Equal("elevenlabs-scribe-v2-realtime+cloudflare-m2m100-1.2b", session.BillingModel);
+        Assert.Equal(4, session.CreditsPerStartedMinute);
+        Assert.Equal("pl", tokens.LastRequestedSourceLanguage);
+        Assert.True(tokens.LastPartialCaptionsEnabled);
         var transaction = await context.AiCreditTransactions.SingleAsync(transaction =>
             transaction.Kind == AiCreditTransactionKinds.UsageDebit);
-        Assert.Equal(RealtimeTranslationConstants.ElevenLabsProvider, transaction.Provider);
+        Assert.Equal(RealtimeTranslationConstants.CloudflareProvider, transaction.Provider);
     }
 
     [Fact]
@@ -115,25 +131,38 @@ public sealed class RealtimeTranslationServiceTests
             context,
             new ManualTimeProvider(TestNow),
             new FakeRelayTokenStore(),
+            configure: options =>
+            {
+                options.Cloudflare.Enabled = true;
+                options.Cloudflare.Endpoint = "https://glosify-test.workers.dev/translate";
+                options.Cloudflare.ApiToken = "secret";
+                options.Modes.Enhanced.DisplayName = "Premium";
+                options.Modes.ScribeCloudflare.DisplayName = "Economic";
+            },
             pricingOptions: new CreditPricingOptions
             {
                 Subtitles = new SubtitleCreditPricingOptions
                 {
                     EnhancedCreditsPerStartedMinute = 7,
-                    ScribeCreditsPerStartedMinute = 4,
+                    CloudflareScribeCreditsPerStartedMinute = 4,
                     EnhancedWithTranscriptCreditsPerStartedMinute = 12,
                 },
             });
 
         var catalog = await service.GetCatalogAsync("user-1");
-        Assert.Equal(4, catalog.Modes.Single(mode => mode.Code == RealtimeTranslationModes.Scribe).CreditsPerMinute);
+        Assert.Equal(4, catalog.Modes.Single(mode =>
+            mode.Code == RealtimeTranslationModes.ScribeCloudflare).CreditsPerMinute);
+        Assert.Equal("Economic", catalog.Modes.Single(mode =>
+            mode.Code == RealtimeTranslationModes.ScribeCloudflare).Name);
         Assert.Equal(7, catalog.Modes.Single(mode => mode.Code == RealtimeTranslationModes.Enhanced).CreditsPerMinute);
+        Assert.Equal("Premium", catalog.Modes.Single(mode =>
+            mode.Code == RealtimeTranslationModes.Enhanced).Name);
         Assert.Equal(12, catalog.SavedTranscriptCreditsPerMinute);
 
         var created = await service.CreateSessionAsync(
             "user-1",
             "es",
-            translationMode: RealtimeTranslationModes.Scribe);
+            translationMode: RealtimeTranslationModes.ScribeCloudflare);
         Assert.Equal(4, created.CreditsPerMinute);
         Assert.Equal(4, (await context.RealtimeTranslationSessions.SingleAsync()).CreditsPerStartedMinute);
     }
@@ -194,7 +223,7 @@ public sealed class RealtimeTranslationServiceTests
                 "es",
                 translationMode: "unknown",
                 sourceLanguage: "pl"));
-        await Assert.ThrowsAsync<RealtimeTranslationUnavailableException>(() =>
+        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(() =>
             service.CreateSessionAsync(
                 "user-1",
                 "es",
@@ -613,6 +642,7 @@ public sealed class RealtimeTranslationServiceTests
         public string? LastTranslationMode { get; private set; }
         public string? LastSpeechProvider { get; private set; }
         public string? LastRequestedSourceLanguage { get; private set; }
+        public bool LastPartialCaptionsEnabled { get; private set; } = true;
 
         public RealtimeTranslationRelayGrant Create(
             Guid sessionId,
@@ -622,12 +652,14 @@ public sealed class RealtimeTranslationServiceTests
             string speechProvider,
             string? sourceLanguage,
             bool saveTranscript,
-            string? transcriptSourceLanguage)
+            string? transcriptSourceLanguage,
+            bool partialCaptionsEnabled = true)
         {
             LastSourceLanguage = transcriptSourceLanguage;
             LastTranslationMode = translationMode;
             LastSpeechProvider = speechProvider;
             LastRequestedSourceLanguage = sourceLanguage;
+            LastPartialCaptionsEnabled = partialCaptionsEnabled;
             if (fail)
             {
                 throw new RealtimeTranslationUpstreamException("OpenAI unavailable.");

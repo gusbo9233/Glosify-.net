@@ -28,7 +28,9 @@ public sealed class RealtimeTranslationOptions
     public string TranslatorResourceId { get; set; } = string.Empty;
     public string TranslatorRegion { get; set; } = string.Empty;
     public int TranslatorTimeoutSeconds { get; set; } = 5;
+    public RealtimeTranslationModeCatalogOptions Modes { get; set; } = new();
     public ElevenLabsRealtimeSpeechOptions ElevenLabs { get; set; } = new();
+    public CloudflareRealtimeTranslationOptions Cloudflare { get; set; } = new();
     public List<RealtimeTranslationSourceLanguageOptions> SourceLanguages { get; set; } = [];
     public bool SavedSourceTranscriptsEnabled { get; set; }
     public string SavedTranscriptBillingModel { get; set; } = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime";
@@ -44,6 +46,41 @@ public sealed class RealtimeTranslationOptions
             && string.Equals(language.Code, code?.Trim(), StringComparison.OrdinalIgnoreCase));
 }
 
+public sealed class RealtimeTranslationModeCatalogOptions
+{
+    public RealtimeTranslationModeDisplayOptions Enhanced { get; set; } = new()
+    {
+        DisplayName = "Enhanced",
+        Description = "Best translation quality",
+    };
+
+    public RealtimeTranslationModeDisplayOptions ScribeCloudflare { get; set; } = new()
+    {
+        DisplayName = "Scribe + Cloudflare",
+        Description = "Lower-cost translation with coalesced live partials",
+    };
+}
+
+public sealed class RealtimeTranslationModeDisplayOptions
+{
+    public string DisplayName { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+
+public sealed class CloudflareRealtimeTranslationOptions
+{
+    public bool Enabled { get; set; }
+    public string Endpoint { get; set; } = string.Empty;
+    public string ApiToken { get; set; } = string.Empty;
+    public string Model { get; set; } = "@cf/meta/m2m100-1.2b";
+    public string BillingModel { get; set; } = "elevenlabs-scribe-v2-realtime+cloudflare-m2m100-1.2b";
+    public int CreditsPerStartedMinute { get; set; } = 4;
+    public int TimeoutSeconds { get; set; } = 20;
+    public int MaxInputCharacters { get; set; } = 2_000;
+    public int PreferredChunkCharacters { get; set; } = 240;
+    public int MaxParallelRequests { get; set; } = 4;
+}
+
 public sealed class ElevenLabsRealtimeSpeechOptions
 {
     public bool Enabled { get; set; }
@@ -51,7 +88,7 @@ public sealed class ElevenLabsRealtimeSpeechOptions
     public string ApiKey { get; set; } = string.Empty;
     public string Model { get; set; } = "scribe_v2_realtime";
     public int CreditsPerStartedMinute { get; set; } = 6;
-    public string BillingModel { get; set; } = "elevenlabs-scribe-v2-realtime+azure-translator-nmt";
+    public string BillingModel { get; set; } = "elevenlabs-scribe-v2-realtime";
     public bool EnableLogging { get; set; } = true;
     public double VadSilenceThresholdSeconds { get; set; } = 1.5;
     public double VadThreshold { get; set; } = 0.4;
@@ -102,6 +139,14 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
         }
 
         var failures = new List<string>();
+        ValidateModeDisplay(
+            options.Modes.Enhanced,
+            "RealtimeTranslation:Modes:Enhanced",
+            failures);
+        ValidateModeDisplay(
+            options.Modes.ScribeCloudflare,
+            "RealtimeTranslation:Modes:ScribeCloudflare",
+            failures);
         if (options.EconomicalEnabled)
         {
             if (!TryValidateCognitiveEndpoint(options.SpeechEndpoint, out _))
@@ -117,7 +162,7 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 failures.Add("RealtimeTranslation:EconomicalCreditsPerStartedMinute must be greater than zero.");
             }
         }
-        if (options.EconomicalEnabled || options.ElevenLabs.Enabled)
+        if (options.EconomicalEnabled)
         {
             if (!TryValidateTranslatorEndpoint(
                     options.TranslatorEndpoint,
@@ -137,93 +182,140 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
             {
                 failures.Add("RealtimeTranslation:TranslatorTimeoutSeconds must be between 1 and 30.");
             }
-            if (options.ElevenLabs.Enabled)
-            {
-                if (!IsValidElevenLabsEndpoint(options.ElevenLabs.Endpoint))
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:Endpoint must be a secure ElevenLabs WebSocket endpoint.");
-                }
-                if (string.IsNullOrWhiteSpace(options.ElevenLabs.ApiKey))
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:ApiKey is required when ElevenLabs subtitles are enabled.");
-                }
-                if (!string.Equals(
-                        options.ElevenLabs.Model?.Trim(),
-                        "scribe_v2_realtime",
-                        StringComparison.Ordinal))
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:Model must be scribe_v2_realtime.");
-                }
-                if (options.ElevenLabs.CreditsPerStartedMinute <= 0)
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:CreditsPerStartedMinute must be greater than zero when specified.");
-                }
-                if (string.IsNullOrWhiteSpace(options.ElevenLabs.BillingModel))
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:BillingModel is required when ElevenLabs subtitles are enabled.");
-                }
-                if (options.ElevenLabs.VadSilenceThresholdSeconds is < 0.3 or > 5)
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:VadSilenceThresholdSeconds must be between 0.3 and 5.");
-                }
-                if (options.ElevenLabs.VadThreshold is <= 0 or >= 1)
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:VadThreshold must be greater than zero and less than one.");
-                }
-                if (!double.IsFinite(options.ElevenLabs.PartialInitialDelaySeconds)
-                    || options.ElevenLabs.PartialInitialDelaySeconds is < 0 or > 10)
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:PartialInitialDelaySeconds must be between 0 and 10.");
-                }
-                if (!double.IsFinite(options.ElevenLabs.PartialIntervalSeconds)
-                    || options.ElevenLabs.PartialIntervalSeconds is < 0.75 or > 10)
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:PartialIntervalSeconds must be between 0.75 and 10.");
-                }
-                if (options.ElevenLabs.PartialMinimumGrowthCharacters is < 1 or > 100)
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:PartialMinimumGrowthCharacters must be between 1 and 100.");
-                }
-                if (!double.IsFinite(options.ElevenLabs.AutoDetectedLanguageRefreshSeconds)
-                    || options.ElevenLabs.AutoDetectedLanguageRefreshSeconds is < 1 or > 30)
-                {
-                    failures.Add(
-                        "RealtimeTranslation:ElevenLabs:AutoDetectedLanguageRefreshSeconds must be between 1 and 30.");
-                }
-            }
-
             var enabledSources = options.SourceLanguages.Where(language => language.Enabled).ToArray();
-            if (options.EconomicalEnabled && (enabledSources.Length == 0
+            if (enabledSources.Length == 0
                 || enabledSources.Any(language => string.IsNullOrWhiteSpace(language.Code)
                     || string.IsNullOrWhiteSpace(language.Name)
                     || string.IsNullOrWhiteSpace(language.Locale)
                     || string.IsNullOrWhiteSpace(language.TranslatorCode))
                 || enabledSources.Select(language => language.Code.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count()
-                    != enabledSources.Length))
+                    != enabledSources.Length)
             {
                 failures.Add(
                     "RealtimeTranslation:SourceLanguages must contain unique Azure Speech language mappings when the legacy economical provider is enabled.");
             }
             var autoDetectCount = enabledSources.Count(language => language.AutoDetect);
-            if (options.EconomicalEnabled && autoDetectCount is (< 1 or > 4))
+            if (autoDetectCount is < 1 or > 4)
             {
                 failures.Add(
                     "RealtimeTranslation:SourceLanguages must mark between 1 and 4 enabled languages for at-start auto detection.");
             }
         }
+        if (options.ElevenLabs.Enabled)
+        {
+            if (!IsValidElevenLabsEndpoint(options.ElevenLabs.Endpoint))
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:Endpoint must be a secure ElevenLabs WebSocket endpoint.");
+            }
+            if (string.IsNullOrWhiteSpace(options.ElevenLabs.ApiKey))
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:ApiKey is required when ElevenLabs subtitles are enabled.");
+            }
+            if (!string.Equals(
+                    options.ElevenLabs.Model?.Trim(),
+                    "scribe_v2_realtime",
+                    StringComparison.Ordinal))
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:Model must be scribe_v2_realtime.");
+            }
+            if (options.ElevenLabs.VadSilenceThresholdSeconds is < 0.3 or > 5)
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:VadSilenceThresholdSeconds must be between 0.3 and 5.");
+            }
+            if (options.ElevenLabs.VadThreshold is <= 0 or >= 1)
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:VadThreshold must be greater than zero and less than one.");
+            }
+            if (!double.IsFinite(options.ElevenLabs.PartialInitialDelaySeconds)
+                || options.ElevenLabs.PartialInitialDelaySeconds is < 0 or > 10)
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:PartialInitialDelaySeconds must be between 0 and 10.");
+            }
+            if (!double.IsFinite(options.ElevenLabs.PartialIntervalSeconds)
+                || options.ElevenLabs.PartialIntervalSeconds is < 0.75 or > 10)
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:PartialIntervalSeconds must be between 0.75 and 10.");
+            }
+            if (options.ElevenLabs.PartialMinimumGrowthCharacters is < 1 or > 100)
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:PartialMinimumGrowthCharacters must be between 1 and 100.");
+            }
+            if (!double.IsFinite(options.ElevenLabs.AutoDetectedLanguageRefreshSeconds)
+                || options.ElevenLabs.AutoDetectedLanguageRefreshSeconds is < 1 or > 30)
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:AutoDetectedLanguageRefreshSeconds must be between 1 and 30.");
+            }
+        }
         if (options.SavedSourceTranscriptsEnabled && !options.ElevenLabs.Enabled)
         {
             failures.Add("RealtimeTranslation:ElevenLabs must be enabled when saved source transcripts are enabled.");
+        }
+        if (options.Cloudflare.Enabled)
+        {
+            if (!options.ElevenLabs.Enabled)
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs must be enabled when Cloudflare Scribe subtitles are enabled.");
+            }
+            if (!IsValidCloudflareWorkerEndpoint(options.Cloudflare.Endpoint))
+            {
+                failures.Add(
+                    "RealtimeTranslation:Cloudflare:Endpoint must be an HTTPS workers.dev /translate endpoint.");
+            }
+            if (string.IsNullOrWhiteSpace(options.Cloudflare.ApiToken))
+            {
+                failures.Add(
+                    "RealtimeTranslation:Cloudflare:ApiToken is required when Cloudflare Scribe subtitles are enabled.");
+            }
+            if (!string.Equals(
+                    options.Cloudflare.Model?.Trim(),
+                    "@cf/meta/m2m100-1.2b",
+                    StringComparison.Ordinal))
+            {
+                failures.Add(
+                    "RealtimeTranslation:Cloudflare:Model must be @cf/meta/m2m100-1.2b.");
+            }
+            if (string.IsNullOrWhiteSpace(options.Cloudflare.BillingModel))
+            {
+                failures.Add(
+                    "RealtimeTranslation:Cloudflare:BillingModel is required when Cloudflare Scribe subtitles are enabled.");
+            }
+            if (options.Cloudflare.CreditsPerStartedMinute <= 0)
+            {
+                failures.Add(
+                    "RealtimeTranslation:Cloudflare:CreditsPerStartedMinute must be greater than zero.");
+            }
+            if (options.Cloudflare.TimeoutSeconds is < 1 or > 60)
+            {
+                failures.Add(
+                    "RealtimeTranslation:Cloudflare:TimeoutSeconds must be between 1 and 60.");
+            }
+            if (options.Cloudflare.MaxInputCharacters is < 100 or > 10_000)
+            {
+                failures.Add(
+                    "RealtimeTranslation:Cloudflare:MaxInputCharacters must be between 100 and 10000.");
+            }
+            if (options.Cloudflare.PreferredChunkCharacters is < 100
+                || options.Cloudflare.PreferredChunkCharacters
+                    > options.Cloudflare.MaxInputCharacters)
+            {
+                failures.Add(
+                    "RealtimeTranslation:Cloudflare:PreferredChunkCharacters must be between 100 and MaxInputCharacters.");
+            }
+            if (options.Cloudflare.MaxParallelRequests is < 1 or > 8)
+            {
+                failures.Add(
+                    "RealtimeTranslation:Cloudflare:MaxParallelRequests must be between 1 and 8.");
+            }
         }
         if (options.SavedSourceTranscriptsEnabled
             && string.IsNullOrWhiteSpace(options.SavedTranscriptBillingModel))
@@ -269,11 +361,11 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
         {
             if (string.IsNullOrWhiteSpace(language.Code)
                 || string.IsNullOrWhiteSpace(language.Name)
-                || ((options.EconomicalEnabled || options.ElevenLabs.Enabled)
+                || (options.EconomicalEnabled
                     && string.IsNullOrWhiteSpace(language.TranslatorCode))
                 || !codes.Add(language.Code.Trim()))
             {
-                failures.Add(options.EconomicalEnabled || options.ElevenLabs.Enabled
+                failures.Add(options.EconomicalEnabled
                     ? "RealtimeTranslation:Languages must contain unique non-empty codes, names, and Translator codes."
                     : "RealtimeTranslation:Languages must contain unique non-empty codes and names.");
                 break;
@@ -306,24 +398,24 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
                     string.Equals(model.Deployment?.Trim(), options.EconomicalBillingModel.Trim(), StringComparison.OrdinalIgnoreCase))
                 : null;
-            var elevenLabsIsBudgeted = !options.ElevenLabs.Enabled
+            var cloudflareIsBudgeted = !options.Cloudflare.Enabled
                 || _aiUsageOptions.MonthlyBudget.Providers.Any(provider =>
                     string.Equals(
                         provider?.Trim(),
-                        RealtimeTranslationConstants.ElevenLabsProvider,
+                        RealtimeTranslationConstants.CloudflareProvider,
                         StringComparison.OrdinalIgnoreCase));
-            var elevenLabsDurationPrice = options.ElevenLabs.Enabled
+            var cloudflareDurationPrice = options.Cloudflare.Enabled
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
                     string.Equals(
                         model.Deployment?.Trim(),
-                        options.ElevenLabs.BillingModel.Trim(),
+                        options.Cloudflare.BillingModel.Trim(),
                         StringComparison.OrdinalIgnoreCase))
                 : null;
             if (!openAiIsBudgeted || durationPrice?.AudioSekPerMinute is not > 0
                 || (options.SavedSourceTranscriptsEnabled && savedDurationPrice?.AudioSekPerMinute is not > 0)
                 || (options.EconomicalEnabled && economicalDurationPrice?.AudioSekPerMinute is not > 0)
-                || !elevenLabsIsBudgeted
-                || (options.ElevenLabs.Enabled && elevenLabsDurationPrice?.AudioSekPerMinute is not > 0))
+                || !cloudflareIsBudgeted
+                || (options.Cloudflare.Enabled && cloudflareDurationPrice?.AudioSekPerMinute is not > 0))
             {
                 failures.Add("AiUsage:MonthlyBudget must include every enabled realtime subtitle provider and positive AudioSekPerMinute prices for every enabled realtime subtitle billing model.");
             }
@@ -332,6 +424,21 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
         return failures.Count == 0
             ? ValidateOptionsResult.Success
             : ValidateOptionsResult.Fail(failures);
+    }
+
+    private static void ValidateModeDisplay(
+        RealtimeTranslationModeDisplayOptions options,
+        string path,
+        ICollection<string> failures)
+    {
+        if (string.IsNullOrWhiteSpace(options.DisplayName) || options.DisplayName.Trim().Length > 80)
+        {
+            failures.Add($"{path}:DisplayName must contain between 1 and 80 characters.");
+        }
+        if (string.IsNullOrWhiteSpace(options.Description) || options.Description.Trim().Length > 200)
+        {
+            failures.Add($"{path}:Description must contain between 1 and 200 characters.");
+        }
     }
 
     internal static bool TryValidateCognitiveEndpoint(string? value, [NotNullWhen(true)] out Uri? endpoint) =>
@@ -353,6 +460,26 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 "/v1/speech-to-text/realtime",
                 StringComparison.OrdinalIgnoreCase))
         {
+            return false;
+        }
+        return true;
+    }
+
+    internal static bool IsValidCloudflareWorkerEndpoint(string? value) =>
+        IsValidCloudflareWorkerEndpoint(value, out _);
+
+    internal static bool IsValidCloudflareWorkerEndpoint(
+        string? value,
+        [NotNullWhen(true)] out Uri? endpoint)
+    {
+        if (!TryValidateHttpsEndpoint(value, out endpoint)
+            || !endpoint.Host.EndsWith(".workers.dev", StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(
+                endpoint.AbsolutePath.TrimEnd('/'),
+                "/translate",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            endpoint = null;
             return false;
         }
         return true;

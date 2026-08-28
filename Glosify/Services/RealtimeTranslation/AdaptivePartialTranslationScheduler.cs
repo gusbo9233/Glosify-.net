@@ -14,18 +14,32 @@ internal sealed class AdaptivePartialTranslationScheduler
     private readonly TimeSpan _interval;
     private readonly int _minimumGrowthCharacters;
     private readonly TimeSpan _autoDetectedLanguageRefresh;
+    private readonly bool _paceFromRequestStart;
+    private readonly bool _ignorePartialTranslationFailures;
 
     public AdaptivePartialTranslationScheduler(
         TimeProvider timeProvider,
-        ElevenLabsRealtimeSpeechOptions options)
+        ElevenLabsRealtimeSpeechOptions options,
+        bool? translatePartials = null,
+        TimeSpan? partialInterval = null,
+        bool paceFromRequestStart = false,
+        bool ignorePartialTranslationFailures = false)
     {
         _timeProvider = timeProvider;
-        _translatePartials = options.TranslatePartials;
+        _translatePartials = translatePartials ?? options.TranslatePartials;
         _initialDelay = TimeSpan.FromSeconds(options.PartialInitialDelaySeconds);
-        _interval = TimeSpan.FromSeconds(options.PartialIntervalSeconds);
+        _interval = partialInterval ?? TimeSpan.FromSeconds(options.PartialIntervalSeconds);
+        if (_interval <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(partialInterval),
+                "The partial translation interval must be positive.");
+        }
         _minimumGrowthCharacters = options.PartialMinimumGrowthCharacters;
         _autoDetectedLanguageRefresh = TimeSpan.FromSeconds(
             options.AutoDetectedLanguageRefreshSeconds);
+        _paceFromRequestStart = paceFromRequestStart;
+        _ignorePartialTranslationFailures = ignorePartialTranslationFailures;
     }
 
     public async Task RunAsync(
@@ -154,6 +168,9 @@ internal sealed class AdaptivePartialTranslationScheduler
                     lastSubmittedText,
                     pendingPartial.Text,
                     _minimumGrowthCharacters);
+                var completedSentenceAdded =
+                    SubtitleSentenceSegmenter.CountCompletedSentences(pendingPartial.Text)
+                    > SubtitleSentenceSegmenter.CountCompletedSentences(lastSubmittedText);
 
                 if (!meaningfulChange && now >= cadenceDue && !smallGrowthRecorded)
                 {
@@ -161,7 +178,9 @@ internal sealed class AdaptivePartialTranslationScheduler
                     smallGrowthRecorded = true;
                 }
 
-                var translationDue = meaningfulChange ? cadenceDue : stalenessDue;
+                var translationDue = completedSentenceAdded
+                    ? now
+                    : meaningfulChange ? cadenceDue : stalenessDue;
                 if (now >= translationDue)
                 {
                     var partial = pendingPartial;
@@ -171,11 +190,27 @@ internal sealed class AdaptivePartialTranslationScheduler
                     var translationInput = detectedLanguage.Apply(
                         partial,
                         _timeProvider.GetUtcNow());
-                    var result = await TranslateAsync(
-                        translationInput,
-                        translate,
-                        PartialKind,
-                        cancellationToken);
+                    var submittedAt = _timeProvider.GetUtcNow();
+                    TranslatedSubtitleSegment result;
+                    try
+                    {
+                        result = await TranslateAsync(
+                            translationInput,
+                            translate,
+                            PartialKind,
+                            cancellationToken);
+                    }
+                    catch (RealtimeTranslationUpstreamException)
+                        when (_ignorePartialTranslationFailures)
+                    {
+                        RecordSuppression("translation_failed");
+                        lastPartialSubmittedAt = _paceFromRequestStart
+                            ? submittedAt
+                            : _timeProvider.GetUtcNow();
+                        lastSubmittedText = partial.Text;
+                        lastTranslation = null;
+                        continue;
+                    }
                     detectedLanguage.Observe(
                         partial,
                         result,
@@ -185,7 +220,9 @@ internal sealed class AdaptivePartialTranslationScheduler
                         result,
                         result.ProviderRequest,
                         cancellationToken);
-                    lastPartialSubmittedAt = _timeProvider.GetUtcNow();
+                    lastPartialSubmittedAt = _paceFromRequestStart
+                        ? submittedAt
+                        : _timeProvider.GetUtcNow();
                     lastSubmittedText = partial.Text;
                     lastTranslation = result;
                     continue;

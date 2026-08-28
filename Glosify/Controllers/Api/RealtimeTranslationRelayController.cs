@@ -28,7 +28,6 @@ public sealed class RealtimeTranslationRelayController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet]
     public async Task Stream(Guid sessionId, CancellationToken cancellationToken)
     {
         Response.Headers.CacheControl = "no-store";

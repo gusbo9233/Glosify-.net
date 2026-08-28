@@ -17,6 +17,7 @@ public sealed class SubtitleCreditPricingOptions
 {
     public int? EnhancedCreditsPerStartedMinute { get; set; }
     public int? ScribeCreditsPerStartedMinute { get; set; }
+    public int? CloudflareScribeCreditsPerStartedMinute { get; set; }
     public int? EnhancedWithTranscriptCreditsPerStartedMinute { get; set; }
 }
 
@@ -57,6 +58,10 @@ public sealed class CreditPricingOptionsValidator : IValidateOptions<CreditPrici
             "CreditPricing:Subtitles:ScribeCreditsPerStartedMinute",
             failures);
         ValidatePositive(
+            options.Subtitles.CloudflareScribeCreditsPerStartedMinute,
+            "CreditPricing:Subtitles:CloudflareScribeCreditsPerStartedMinute",
+            failures);
+        ValidatePositive(
             options.Subtitles.EnhancedWithTranscriptCreditsPerStartedMinute,
             "CreditPricing:Subtitles:EnhancedWithTranscriptCreditsPerStartedMinute",
             failures);
@@ -82,6 +87,7 @@ public interface ICreditPricingResolver
     decimal GetModelMultiplier(string model);
     int EnhancedSubtitleCreditsPerStartedMinute { get; }
     int ScribeSubtitleCreditsPerStartedMinute { get; }
+    int CloudflareScribeSubtitleCreditsPerStartedMinute { get; }
     int EnhancedWithTranscriptCreditsPerStartedMinute { get; }
     EffectiveCreditPricingCatalog GetCatalog();
 }
@@ -118,6 +124,10 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
     public int ScribeSubtitleCreditsPerStartedMinute =>
         _pricing.Subtitles.ScribeCreditsPerStartedMinute
         ?? _realtime.ElevenLabs.CreditsPerStartedMinute;
+
+    public int CloudflareScribeSubtitleCreditsPerStartedMinute =>
+        _pricing.Subtitles.CloudflareScribeCreditsPerStartedMinute
+        ?? _realtime.Cloudflare.CreditsPerStartedMinute;
 
     public int EnhancedWithTranscriptCreditsPerStartedMinute =>
         _pricing.Subtitles.EnhancedWithTranscriptCreditsPerStartedMinute
@@ -187,14 +197,14 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
             [
                 SubtitlePrice(
                     "enhanced",
-                    "Enhanced subtitles",
+                    _realtime.Modes.Enhanced.DisplayName.Trim(),
                     _pricing.Subtitles.EnhancedCreditsPerStartedMinute,
                     _realtime.CreditsPerStartedMinute),
                 SubtitlePrice(
-                    "scribe",
-                    "ElevenLabs Scribe subtitles",
-                    _pricing.Subtitles.ScribeCreditsPerStartedMinute,
-                    _realtime.ElevenLabs.CreditsPerStartedMinute),
+                    "scribe_cloudflare",
+                    _realtime.Modes.ScribeCloudflare.DisplayName.Trim(),
+                    _pricing.Subtitles.CloudflareScribeCreditsPerStartedMinute,
+                    _realtime.Cloudflare.CreditsPerStartedMinute),
                 SubtitlePrice(
                     "enhanced_transcript",
                     "Enhanced subtitles with saved transcript",

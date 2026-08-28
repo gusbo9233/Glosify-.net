@@ -8,7 +8,7 @@ run(process.execPath, [path.join(root, "scripts/build.mjs"), "store"]);
 run(process.execPath, [path.join(root, "scripts/validate-store.mjs"), path.join(root, "artifacts/store")]);
 
 const packageDirectory = path.join(root, "artifacts/package");
-const zipPath = path.join(packageDirectory, "glosify-live-subtitles-0.5.0-beta.zip");
+const zipPath = path.join(packageDirectory, "glosify-live-subtitles-0.5.1-beta.zip");
 await mkdir(packageDirectory, { recursive: true });
 await rm(zipPath, { force: true });
 const files = await listFiles(path.join(root, "artifacts/store"));
