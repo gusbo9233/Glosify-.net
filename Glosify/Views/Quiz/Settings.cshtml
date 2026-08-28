@@ -10,33 +10,6 @@
 <link rel="stylesheet" href="~/css/quiz-settings.css" asp-append-version="true" />
 }
 
-@if (Model.SelectedQuiz is not null)
-{
-    <section class="settings-shell anki-settings-panel">
-        <header class="settings-header"><span class="config-badge">Tracked flashcards</span><h2 class="section-title">Add this quiz to Anki</h2><p class="page-subtitle">Link the whole quiz to a compatible collection. New quiz content will stay synchronized.</p></header>
-        @if (Model.AnkiCollections.Count > 0)
-        {
-            <form method="post" asp-controller="Anki" asp-action="AddQuiz" class="anki-settings-form">
-                @Html.AntiForgeryToken()<input type="hidden" name="QuizId" value="@Model.SelectedQuiz.Id"/>
-                <label>Collection<select class="form-input" name="CollectionId">@foreach (var collection in Model.AnkiCollections) { <option value="@collection.Id">@collection.Name</option> }</select></label>
-                <fieldset><legend>@presentation.ItemLabel</legend><label><input type="checkbox" name="@(presentation.IsFreestyle ? "WordsTargetToSource" : "WordsSourceToTarget")" value="true" checked/> @presentation.PromptLabel &rarr; @presentation.AnswerLabel</label><label><input type="checkbox" name="@(presentation.IsFreestyle ? "WordsSourceToTarget" : "WordsTargetToSource")" value="true"/> @presentation.AnswerLabel &rarr; @presentation.PromptLabel</label></fieldset>
-                @if (!presentation.IsFreestyle) { <fieldset><legend>Sentences</legend><label><input type="checkbox" name="SentencesSourceToTarget" value="true"/> @presentation.SourceLanguage &rarr; @presentation.TargetLanguage</label><label><input type="checkbox" name="SentencesTargetToSource" value="true"/> @presentation.TargetLanguage &rarr; @presentation.SourceLanguage</label></fieldset> }
-                <button class="btn-secondary" type="submit">Link quiz</button>
-            </form>
-        }
-        <details class="anki-create-inline">
-            <summary>Create a new compatible collection</summary>
-            <form method="post" asp-controller="Anki" asp-action="CreateFromQuiz" class="anki-settings-form" aria-label="Create Anki collection from quiz">
-                @Html.AntiForgeryToken()<input type="hidden" name="QuizId" value="@Model.SelectedQuiz.Id"/><input type="hidden" name="TimeZoneId" value="UTC" data-browser-timezone/>
-                <label>Name<input class="form-input" name="Name" required maxlength="160"/></label>
-                <fieldset><legend>@presentation.ItemLabel</legend><label><input type="checkbox" name="@(presentation.IsFreestyle ? "WordsTargetToSource" : "WordsSourceToTarget")" value="true" checked/> @presentation.PromptLabel &rarr; @presentation.AnswerLabel</label><label><input type="checkbox" name="@(presentation.IsFreestyle ? "WordsSourceToTarget" : "WordsTargetToSource")" value="true"/> @presentation.AnswerLabel &rarr; @presentation.PromptLabel</label></fieldset>
-                @if (!presentation.IsFreestyle) { <fieldset><legend>Sentences</legend><label><input type="checkbox" name="SentencesSourceToTarget" value="true"/> @presentation.SourceLanguage &rarr; @presentation.TargetLanguage</label><label><input type="checkbox" name="SentencesTargetToSource" value="true"/> @presentation.TargetLanguage &rarr; @presentation.SourceLanguage</label></fieldset> }
-                <button class="btn-secondary" type="submit">Create and link</button>
-            </form>
-        </details>
-    </section>
-}
-
 <form class="settings-shell" method="post" asp-controller="Quiz" asp-action="Start">
     @Html.AntiForgeryToken()
     <input type="hidden" name="QuizId" value="@Model.SelectedQuiz?.Id" />

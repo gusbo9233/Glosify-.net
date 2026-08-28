@@ -89,7 +89,6 @@ public class QuizSettingsViewModel
     public int AvailableWordCount { get; set; }
     public int AvailableSentenceCount { get; set; }
     public IReadOnlyList<WordRow> Words { get; set; } = [];
-    public IReadOnlyList<AnkiCollectionSummary> AnkiCollections { get; set; } = [];
     public QuizSettingsPresentation Presentation { get; set; } = QuizSettingsPresentation.Empty;
 }
 

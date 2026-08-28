@@ -15,7 +15,7 @@ public sealed class ViewStylesheetTests
     private static readonly (string RootClass, string Stylesheet)[] PageStylesheets =
     [
         ("library-page", "css/quiz-library.css"),
-        ("anki-settings-panel", "css/quiz-settings.css"),
+        ("word-picker-button-icon", "css/quiz-settings.css"),
         ("content-page", "css/payments.css"),
     ];
 

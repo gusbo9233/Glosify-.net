@@ -521,14 +521,18 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
     {
         await RegisterAndSelectPolishAsync();
         await CreateQuizWithWordAsync();
-        await Page.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("Start Quiz", RegexOptions.IgnoreCase) }).ClickAsync();
+        await Page.GotoAsync("/Anki?create=true");
 
-        await Page.GetByText("Create a new compatible collection", new() { Exact = true }).ClickAsync();
-        var createForm = Page.GetByRole(AriaRole.Form, new() { Name = "Create Anki collection from quiz" });
-        await createForm.GetByLabel("Name", new() { Exact = true }).FillAsync("Portfolio Anki");
-        await createForm.GetByRole(AriaRole.Button, new() { Name = "Create and link" }).ClickAsync();
+        var createForm = Page.Locator("[data-anki-create-form]");
+        await createForm.GetByLabel("Collection name").FillAsync("Portfolio Anki");
+        await createForm.GetByLabel("Source language").SelectOptionAsync(new SelectOptionValue { Label = "English" });
+        await createForm.GetByRole(AriaRole.Button, new() { Name = "Create collection" }).ClickAsync();
         await Expect(Page).ToHaveURLAsync(new Regex("/Anki/Collection", RegexOptions.IgnoreCase));
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Portfolio Anki", Exact = true }).First).ToBeVisibleAsync();
+
+        var addQuizPanel = Page.Locator(".anki-add-quiz-panel");
+        await addQuizPanel.GetByLabel("Quiz").SelectOptionAsync(new SelectOptionValue { Label = "Portfolio Polish" });
+        await addQuizPanel.GetByRole(AriaRole.Button, new() { Name = "Add or update quiz" }).ClickAsync();
         await Expect(Page.Locator(".anki-list").GetByText("Portfolio Polish", new() { Exact = true })).ToBeVisibleAsync();
 
         // Adding the already-linked word individually is intentionally idempotent and

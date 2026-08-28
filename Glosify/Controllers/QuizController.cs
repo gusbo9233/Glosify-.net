@@ -324,12 +324,6 @@ public class QuizController : Controller
             ? []
             : await _wordService.GetWordsAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
 
-        var ankiCollections = selectedQuiz is null
-            ? []
-            : (await _ankiCollections.ListAsync(userId, cancellationToken))
-                .Where(collection => string.Equals(collection.SourceLanguage, selectedQuiz.SourceLanguage, StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(collection.TargetLanguage, selectedQuiz.TargetLanguage, StringComparison.OrdinalIgnoreCase))
-                .ToList();
         var selectedQuizCard = selectedQuiz is null ? null : QuizCard.From(selectedQuiz);
         var selectedWordCount = Math.Min(Math.Max(availableWordCount, 1), 20);
         return View(new QuizSettingsViewModel
@@ -338,7 +332,6 @@ public class QuizController : Controller
             AvailableWordCount = availableWordCount,
             AvailableSentenceCount = availableSentenceCount,
             Words = words.Select(WordRow.From).ToList(),
-            AnkiCollections = ankiCollections,
             Presentation = QuizSettingsPresentation.Create(
                 selectedQuizCard,
                 availableWordCount,
