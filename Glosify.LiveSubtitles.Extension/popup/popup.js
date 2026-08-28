@@ -222,7 +222,7 @@ function render() {
   elements.saveTranscriptHelp.textContent = currentState.saveTranscriptHelp
     ?? "Optional and off by default. Stores finalized original-language speech in your private Glosify account until you delete the transcript or account.";
   elements.serviceDisclosure.textContent = ["scribe", "scribe-cf"].includes(currentState.translationMode)
-    ? "When you start, this tab’s audio is streamed through Glosify to ElevenLabs Scribe v2, and evolving phrases are sent through Glosify to a Cloudflare Worker for M2M100 translation. Glosify keeps at most one translation request in flight and replaces queued revisions with the latest text. Glosify does not store tab audio. Each started minute consumes credits."
+    ? "When you start, this tab’s audio is streamed through Glosify to ElevenLabs Scribe v2, and evolving phrases are sent through Glosify to a Cloudflare Worker for M2M100 translation. Glosify processes one subtitle revision at a time, replaces queued revisions with the latest text, and may translate long revisions in parallel chunks. Glosify does not store tab audio. Each started minute consumes credits."
     : currentState.saveTranscript
       ? "When you start, this tab’s audio is streamed through Glosify to OpenAI for enhanced live translation and to ElevenLabs Scribe v2 for the saved source transcript. ElevenLabs may retain standard API logs under its service policy. Glosify does not store tab audio. Each started minute consumes credits."
       : "When you start, this tab’s audio is streamed through Glosify to OpenAI for enhanced live translation. Audio is not stored. Each started minute consumes credits.";

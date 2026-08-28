@@ -53,7 +53,7 @@ public sealed class RealtimeTranslationServiceTests
     }
 
     [Fact]
-    public async Task AzureScribeMode_IsNotAdvertisedOrAccepted()
+    public async Task LegacyScribeMode_IsAdvertisedAsACompatibilityAliasAndUsesCloudflare()
     {
         await using var context = CreateContext();
         await SeedUserAsync(context);
@@ -70,14 +70,26 @@ public sealed class RealtimeTranslationServiceTests
             });
 
         var catalog = await service.GetCatalogAsync("user-1");
-        Assert.DoesNotContain(catalog.Modes, mode => mode.Code == RealtimeTranslationModes.Scribe);
+        var legacy = Assert.Single(catalog.Modes, mode =>
+            mode.Code == RealtimeTranslationModes.Scribe);
+        var current = Assert.Single(catalog.Modes, mode =>
+            mode.Code == RealtimeTranslationModes.ScribeCloudflare);
+        Assert.Equal(current.Name, legacy.Name);
+        Assert.Equal(current.Description, legacy.Description);
+        Assert.Equal(current.CreditsPerMinute, legacy.CreditsPerMinute);
         Assert.Contains(catalog.Modes, mode => mode.Code == RealtimeTranslationModes.ScribeCloudflare);
-        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(() =>
-            service.CreateSessionAsync(
-                "user-1",
-                "es",
-                translationMode: RealtimeTranslationModes.Scribe));
-        Assert.Empty(context.RealtimeTranslationSessions);
+        var created = await service.CreateSessionAsync(
+            "user-1",
+            "es",
+            translationMode: RealtimeTranslationModes.Scribe);
+
+        var session = await context.RealtimeTranslationSessions.SingleAsync();
+        Assert.Equal(created.SessionId, session.Id);
+        Assert.Equal(RealtimeSpeechProviders.ElevenLabs, session.SpeechProvider);
+        Assert.Equal("@cf/meta/m2m100-1.2b", session.Model);
+        Assert.Equal(
+            "elevenlabs-scribe-v2-realtime+cloudflare-m2m100-1.2b",
+            session.BillingModel);
     }
 
     [Fact]
@@ -223,7 +235,7 @@ public sealed class RealtimeTranslationServiceTests
                 "es",
                 translationMode: "unknown",
                 sourceLanguage: "pl"));
-        await Assert.ThrowsAsync<RealtimeTranslationValidationException>(() =>
+        await Assert.ThrowsAsync<RealtimeTranslationUnavailableException>(() =>
             service.CreateSessionAsync(
                 "user-1",
                 "es",

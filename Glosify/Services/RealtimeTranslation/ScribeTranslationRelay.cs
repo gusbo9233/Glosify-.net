@@ -143,10 +143,8 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 authorization.SourceLanguage,
                 audio.Reader,
                 recognized.Writer,
-                emitPartials: authorization.TranslationMode == RealtimeTranslationModes.ScribeCloudflare
-                    || (authorization.TranslationMode == RealtimeTranslationModes.Scribe
-                        && authorization.PartialCaptionsEnabled
-                        && (_options.ElevenLabs.TranslatePartials || captureAdminSession)),
+                emitPartials: authorization.PartialCaptionsEnabled
+                    && (_options.ElevenLabs.TranslatePartials || captureAdminSession),
                 cancellationToken: relayToken);
             var translationPump = TranslateAndSendAsync(
                 browserSocket,
@@ -330,9 +328,8 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         var scheduler = new AdaptivePartialTranslationScheduler(
             _timeProvider,
             _options.ElevenLabs,
-            translatePartials: authorization.TranslationMode == RealtimeTranslationModes.Scribe
-                ? null
-                : true,
+            translatePartials: authorization.PartialCaptionsEnabled
+                && (_options.ElevenLabs.TranslatePartials || captureRecorder is not null),
             partialInterval: authorization.TranslationMode == RealtimeTranslationModes.ScribeCloudflare
                 ? TimeSpan.FromSeconds(1)
                 : null,

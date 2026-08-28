@@ -20,7 +20,8 @@ replays its own saved history and every Responses request uses `store: false`.
 
 Azure Speech provides server-side text-to-speech for book reading. The Enhanced
 subtitle relay connects server-side to `gpt-realtime-translate` while
-the Scribe alternative uses ElevenLabs Scribe v2 followed by Azure Translator.
+the Scribe alternative uses ElevenLabs Scribe v2 followed by Cloudflare Workers
+AI's M2M100 translator.
 Provider keys never reach the browser or extension.
 
 The production key is the Azure App Service setting `OPENAI_SECRET_KEY`. For
@@ -39,7 +40,7 @@ directly to SQL Server. There is no generic repository, CQRS layer, or separate
 domain assembly.
 
 Main technologies include .NET 10, EF Core 10, Azure SQL, ASP.NET Core Identity,
-OpenAI, Azure Speech, Azure Translator, Azure Blob Storage, ElevenLabs Scribe v2,
+OpenAI, Azure Speech, Cloudflare Workers AI, Azure Blob Storage, ElevenLabs Scribe v2,
 Stripe, OpenTelemetry,
 xUnit, AngleSharp, and Playwright.
 
@@ -99,7 +100,7 @@ npm run build:dev --prefix Glosify.LiveSubtitles.Extension
 ```
 
 Chrome must trust the local ASP.NET Core HTTPS certificate. Scribe mode also
-requires its retained ElevenLabs and Azure Translator configuration.
+requires ElevenLabs and the protected Cloudflare Worker configuration.
 
 The application never changes the schema at startup. Use:
 

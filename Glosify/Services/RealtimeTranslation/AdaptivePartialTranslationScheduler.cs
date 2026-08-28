@@ -136,7 +136,6 @@ internal sealed class AdaptivePartialTranslationScheduler
                     lastSubmittedText = null;
                     lastTranslation = null;
                     smallGrowthRecorded = false;
-                    detectedLanguage.Reset(segment.Sequence);
                 }
 
                 var comparisonText = pendingPartial?.Text ?? lastSubmittedText;
@@ -259,7 +258,6 @@ internal sealed class AdaptivePartialTranslationScheduler
 
     private sealed class AutoDetectedLanguageCache(TimeSpan refreshInterval)
     {
-        private int? _sequence;
         private string? _language;
         private DateTimeOffset _refreshAt;
 
@@ -267,7 +265,6 @@ internal sealed class AdaptivePartialTranslationScheduler
             RecognizedSpeechSegment segment,
             DateTimeOffset now)
         {
-            EnsureSequence(segment.Sequence);
             return segment.IsAutoDetected
                 && !string.IsNullOrWhiteSpace(_language)
                 && now < _refreshAt
@@ -280,7 +277,6 @@ internal sealed class AdaptivePartialTranslationScheduler
             TranslatedSubtitleSegment result,
             DateTimeOffset now)
         {
-            EnsureSequence(source.Sequence);
             if (!source.IsAutoDetected
                 || !result.ProviderRequest
                 || string.IsNullOrWhiteSpace(result.SourceLanguage)
@@ -295,20 +291,6 @@ internal sealed class AdaptivePartialTranslationScheduler
             _refreshAt = now + refreshInterval;
         }
 
-        public void Reset(int sequence)
-        {
-            _sequence = sequence;
-            _language = null;
-            _refreshAt = default;
-        }
-
-        private void EnsureSequence(int sequence)
-        {
-            if (_sequence != sequence)
-            {
-                Reset(sequence);
-            }
-        }
     }
 
     private async Task<WaitOutcome> WaitForInputOrDelayAsync(

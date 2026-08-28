@@ -301,8 +301,8 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         await fixture.AdvanceAfterTimerAsync(TimeSpan.FromSeconds(1));
         var cached = await fixture.NextTranslationAsync();
 
-        fixture.Advance(TimeSpan.FromSeconds(10));
         fixture.Write(AutoPartial(1, "abcdefghijklmnopqrstuvwx"));
+        await fixture.AdvanceAfterTimerAsync(TimeSpan.FromSeconds(10));
         var refreshed = await fixture.NextTranslationAsync();
         fixture.Complete();
         await run;
@@ -316,7 +316,7 @@ public sealed class AdaptivePartialTranslationSchedulerTests
     }
 
     [Fact]
-    public async Task AutoDetectedLanguageCache_ResetsForEachProviderSequence()
+    public async Task AutoDetectedLanguageCache_IsReusedAcrossNearbyProviderSequences()
     {
         var fixture = new SchedulerFixture(
             Options(initialDelay: 0),
@@ -336,8 +336,8 @@ public sealed class AdaptivePartialTranslationSchedulerTests
         fixture.Complete();
         await run;
 
-        Assert.Equal("auto", nextSequence.SourceLanguage);
-        Assert.All(fixture.Published, published => Assert.True(published.ProviderRequest));
+        Assert.Equal("en", nextSequence.SourceLanguage);
+        Assert.Equal([true, false], fixture.Published.Select(published => published.ProviderRequest));
     }
 
     [Fact]

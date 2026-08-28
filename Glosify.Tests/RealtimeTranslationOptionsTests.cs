@@ -329,6 +329,25 @@ public sealed class RealtimeTranslationOptionsTests
     }
 
     [Fact]
+    public void CloudflareMode_RejectsInputLimitsAboveTheWorkerContract()
+    {
+        var options = ValidOptions();
+        options.Cloudflare.Enabled = true;
+        options.Cloudflare.Endpoint = "https://glosify-test.workers.dev/translate";
+        options.Cloudflare.ApiToken = "secret";
+        options.Cloudflare.MaxInputCharacters = 2_001;
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions { MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false } }),
+            ExtensionAuth());
+
+        var result = validator.Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure =>
+            failure.Contains("MaxInputCharacters", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void CloudflareScribe_DoesNotRequireAzureTranslatorConfiguration()
     {
         var options = ValidOptions();

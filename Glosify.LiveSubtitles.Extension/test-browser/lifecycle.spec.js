@@ -28,6 +28,11 @@ test("same-document navigation continues and full navigation stops capture", asy
     }));
     expect(started.ok, JSON.stringify(started)).toBe(true);
     expect(started.result.transparentSubtitles).toBe(true);
+    await expect.poll(() => harness.mock.sessionRequests).toContainEqual(
+      expect.objectContaining({
+        translationMode: "scribe-cf",
+        partialCaptionsEnabled: true,
+      }));
 
     await expect.poll(() => extensionState(harness.worker)).toMatchObject({
       active: true,
@@ -365,6 +370,7 @@ async function startMockGlosify({ createDelayMs = 0, finalCaption } = {}) {
     refreshRequests: 0,
     createdSessions: 0,
     drainRequests: 0,
+    sessionRequests: [],
   };
   const requestHandler = async (request, response) => {
     const url = new URL(request.url, "http://127.0.0.1");
@@ -404,7 +410,7 @@ async function startMockGlosify({ createDelayMs = 0, finalCaption } = {}) {
         heartbeatSeconds: 15,
         savedSourceTranscriptsEnabled: true,
         languages: [{ code: "en", name: "English" }],
-        modes: [{ code: "scribe", name: "Scribe", description: "Test", creditsPerMinute: 8 }],
+        modes: [{ code: "scribe-cf", name: "Scribe + Cloudflare", description: "Test", creditsPerMinute: 8 }],
         sourceLanguages: [{ code: "auto", name: "Auto detect" }],
         quizLanguages: [{ code: "de", name: "German" }],
         selectedQuizLanguage: { code: "de", name: "German" },
@@ -412,6 +418,7 @@ async function startMockGlosify({ createDelayMs = 0, finalCaption } = {}) {
     }
     if (url.pathname === "/api/realtime-translation/sessions" && request.method === "POST") {
       state.createdSessions += 1;
+      state.sessionRequests.push(await readJsonRequest(request));
       if (createDelayMs > 0) {
         await new Promise(resolve => setTimeout(resolve, createDelayMs));
       }
@@ -491,6 +498,14 @@ async function startMockGlosify({ createDelayMs = 0, finalCaption } = {}) {
       await Promise.all([closeServer(server), closeServer(alternateServer)]);
     },
   });
+}
+
+async function readJsonRequest(request) {
+  const chunks = [];
+  for await (const chunk of request) {
+    chunks.push(chunk);
+  }
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
 function listenOnLoopback(server) {

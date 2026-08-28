@@ -46,27 +46,25 @@ public sealed class CloudflareSubtitleTranslatorTests
     }
 
     [Fact]
-    public async Task TranslateAsync_OmitsAutoSourceLanguageForPreFinalPartial()
+    public async Task TranslateAsync_WaitsForDetectedLanguageBeforeCallingWorker()
     {
         var handler = new RecordingHandler("""{"translated":"Bonjour."}""");
         var translator = CreateTranslator(handler);
 
-        var result = await translator.TranslateAsync(
-            new RecognizedSpeechSegment(
-                1,
-                "Hello.",
-                "auto",
-                "auto",
-                DateTimeOffset.UtcNow,
-                IsAutoDetected: true,
-                IsFinal: false),
-            "fr",
-            CancellationToken.None);
+        await Assert.ThrowsAsync<RealtimeTranslationUpstreamException>(() =>
+            translator.TranslateAsync(
+                new RecognizedSpeechSegment(
+                    1,
+                    "Hello.",
+                    "auto",
+                    "auto",
+                    DateTimeOffset.UtcNow,
+                    IsAutoDetected: true,
+                    IsFinal: false),
+                "fr",
+                CancellationToken.None));
 
-        Assert.Equal("Bonjour.", result.TranslatedText);
-        Assert.True(result.ProviderRequest);
-        Assert.DoesNotContain("source_lang", handler.Body, StringComparison.Ordinal);
-        Assert.Contains("\"target_lang\":\"fr\"", handler.Body, StringComparison.Ordinal);
+        Assert.Equal(0, handler.Calls);
     }
 
     [Fact]

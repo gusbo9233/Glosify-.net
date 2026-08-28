@@ -7,6 +7,7 @@ import {
   clearTranscriptStorageState,
   getEffectiveCreditsPerMinute,
   selectAvailableTranslationMode,
+  selectCurrentTranslationModes,
 } from "../lib/transcript-storage.js";
 
 const SubtitleAppearance = globalThis.GlosifySubtitleAppearance;
@@ -460,7 +461,11 @@ async function refreshAccountState() {
     state.signedIn = true;
     state.email = me.email;
     state.availableCredits = me.availableCredits;
-    const catalog = await apiFetch("/api/realtime-translation/catalog");
+    const rawCatalog = await apiFetch("/api/realtime-translation/catalog");
+    const catalog = {
+      ...rawCatalog,
+      modes: selectCurrentTranslationModes(rawCatalog.modes),
+    };
     state.catalog = catalog;
     state.availableCredits = catalog.availableCredits;
     await refreshPaidServiceStatus();

@@ -20,10 +20,11 @@ account's Workers AI quota.
    dotnet user-secrets set 'RealtimeTranslation:Cloudflare:ApiToken' 'THE-SAME-RANDOM-SECRET' --project ../Glosify
    ```
 
-The third mode then appears as **Scribe + Cloudflare**. It translates live
-Scribe revisions with a single in-flight request and a latest-wins pending
-revision, then translates the finalized phrase. The user-facing partial-caption
-toggle remains specific to Azure Scribe.
+The economical mode then appears as **Scribe + Cloudflare**. It processes one
+live Scribe revision at a time, replaces a queued revision with the latest text,
+and may translate sentence-bounded chunks concurrently up to the configured
+limit before translating the finalized phrase. The user-facing partial-caption
+toggle is specific to Scribe + Cloudflare.
 
 Use two-letter language codes when testing the Worker directly:
 

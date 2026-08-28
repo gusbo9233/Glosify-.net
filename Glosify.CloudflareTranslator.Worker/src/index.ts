@@ -3,12 +3,6 @@ export interface Env {
   TRANSLATOR_TOKEN: string;
 }
 
-interface TranslationRequest {
-  text: string;
-  source_lang?: string;
-  target_lang: string;
-}
-
 const MODEL = "@cf/meta/m2m100-1.2b";
 const MAX_TEXT_CHARACTERS = 2_000;
 const LANGUAGE_CODE = /^[a-z]{2,3}$/;
@@ -40,16 +34,20 @@ export default {
       return json({ error: "Request body is too large" }, 413);
     }
 
-    let body: TranslationRequest;
+    let body: unknown;
     try {
-      body = await request.json<TranslationRequest>();
+      body = await request.json();
     } catch {
       return json({ error: "Invalid JSON body" }, 400);
     }
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return json({ error: "JSON body must be an object" }, 400);
+    }
+    const input = body as Record<string, unknown>;
 
-    const text = typeof body.text === "string" ? body.text.trim() : "";
-    const sourceLang = normalizeLanguageCode(body.source_lang ?? "en");
-    const targetLang = normalizeLanguageCode(body.target_lang);
+    const text = typeof input.text === "string" ? input.text.trim() : "";
+    const sourceLang = normalizeLanguageCode(input.source_lang ?? "en");
+    const targetLang = normalizeLanguageCode(input.target_lang);
     if (!text) {
       return json({ error: "Missing required field: text" }, 400);
     }

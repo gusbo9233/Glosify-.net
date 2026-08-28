@@ -72,3 +72,10 @@ export function selectAvailableTranslationMode(modes, requestedMode) {
     ?? modes?.[0]?.code
     ?? "enhanced";
 }
+
+export function selectCurrentTranslationModes(modes) {
+  const available = Array.isArray(modes) ? modes : [];
+  return available.some(mode => mode.code === "scribe-cf")
+    ? available.filter(mode => mode.code !== "scribe")
+    : available;
+}

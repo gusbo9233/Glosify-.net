@@ -47,6 +47,11 @@ Feature-specific settings remain required when those features are enabled:
 The two user-selectable subtitle modes can be renamed and repriced without a
 deployment. Set these App Service environment variables and restart the app:
 
+During the 0.5.0-to-0.5.1 extension rollout, the API also returns the legacy
+`scribe` code as a compatibility alias for Scribe + Cloudflare. Version 0.5.1
+hides that duplicate and sends `scribe-cf`; older clients continue to select
+`scribe`, which the server maps to the same Cloudflare-backed mode and price.
+
 | App Service variable | Default |
 |---|---|
 | `RealtimeTranslation__Modes__Enhanced__DisplayName` | `Enhanced` |

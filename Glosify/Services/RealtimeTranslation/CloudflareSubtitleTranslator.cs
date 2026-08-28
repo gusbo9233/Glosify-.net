@@ -43,6 +43,11 @@ public sealed class CloudflareSubtitleTranslator : ICloudflareSubtitleTranslator
                 ? null
                 : NormalizeLanguageCode(segment.SourceLanguage);
         var targetCode = NormalizeLanguageCode(targetLanguage);
+        if (sourceCode is null)
+        {
+            throw new RealtimeTranslationUpstreamException(
+                "Cloudflare translation is waiting for Scribe to detect the spoken language.");
+        }
         var sameLanguage = sourceCode is not null
             && string.Equals(sourceCode, targetCode, StringComparison.OrdinalIgnoreCase);
         var translated = sameLanguage

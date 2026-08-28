@@ -299,10 +299,10 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 failures.Add(
                     "RealtimeTranslation:Cloudflare:TimeoutSeconds must be between 1 and 60.");
             }
-            if (options.Cloudflare.MaxInputCharacters is < 100 or > 10_000)
+            if (options.Cloudflare.MaxInputCharacters is < 100 or > 2_000)
             {
                 failures.Add(
-                    "RealtimeTranslation:Cloudflare:MaxInputCharacters must be between 100 and 10000.");
+                    "RealtimeTranslation:Cloudflare:MaxInputCharacters must be between 100 and 2000.");
             }
             if (options.Cloudflare.PreferredChunkCharacters is < 100
                 || options.Cloudflare.PreferredChunkCharacters

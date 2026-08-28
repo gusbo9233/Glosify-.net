@@ -7,6 +7,7 @@ import {
   getEffectiveCreditsPerMinute,
   isTranscriptToggleDisabled,
   selectAvailableTranslationMode,
+  selectCurrentTranslationModes,
   isScribeTranslationMode,
 } from "../lib/transcript-storage.js";
 
@@ -164,4 +165,19 @@ test("an unavailable saved mode falls back to Cloudflare Scribe before Enhanced"
   assert.equal(selectAvailableTranslationMode(modes, "scribe"), "scribe-cf");
   assert.equal(selectAvailableTranslationMode(modes, "enhanced"), "enhanced");
   assert.equal(selectAvailableTranslationMode([{ code: "enhanced" }], "scribe"), "enhanced");
+});
+
+test("current clients hide the legacy Scribe compatibility alias", () => {
+  const modes = [
+    { code: "scribe", name: "Scribe + Cloudflare" },
+    { code: "scribe-cf", name: "Scribe + Cloudflare" },
+    { code: "enhanced", name: "Enhanced" },
+  ];
+
+  assert.deepEqual(
+    selectCurrentTranslationModes(modes).map(mode => mode.code),
+    ["scribe-cf", "enhanced"]);
+  assert.deepEqual(
+    selectCurrentTranslationModes([{ code: "scribe" }]).map(mode => mode.code),
+    ["scribe"]);
 });

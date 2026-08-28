@@ -64,6 +64,13 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         var modes = new List<RealtimeTranslationMode>();
         if (_options.Cloudflare.Enabled && _options.ElevenLabs.Enabled)
         {
+            // Keep the legacy code in the API catalog while 0.5.0 clients are still
+            // installed. New clients hide this duplicate and use scribe-cf directly.
+            modes.Add(new RealtimeTranslationMode(
+                RealtimeTranslationModes.Scribe,
+                _options.Modes.ScribeCloudflare.DisplayName.Trim(),
+                _options.Modes.ScribeCloudflare.Description.Trim(),
+                _pricing.CloudflareScribeSubtitleCreditsPerStartedMinute));
             modes.Add(new RealtimeTranslationMode(
                 RealtimeTranslationModes.ScribeCloudflare,
                 _options.Modes.ScribeCloudflare.DisplayName.Trim(),
@@ -119,9 +126,12 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         var language = languages.FirstOrDefault(item =>
                 string.Equals(item.Code, targetLanguage?.Trim(), StringComparison.OrdinalIgnoreCase))
             ?? throw new RealtimeTranslationValidationException("Choose a supported target language.");
-        var mode = string.IsNullOrWhiteSpace(translationMode)
+        var requestedMode = string.IsNullOrWhiteSpace(translationMode)
             ? RealtimeTranslationModes.Enhanced
             : translationMode.Trim().ToLowerInvariant();
+        var mode = requestedMode == RealtimeTranslationModes.Scribe
+            ? RealtimeTranslationModes.ScribeCloudflare
+            : requestedMode;
         if (mode is not (
                 RealtimeTranslationModes.ScribeCloudflare
                 or RealtimeTranslationModes.Enhanced))
