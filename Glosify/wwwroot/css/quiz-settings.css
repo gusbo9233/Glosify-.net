@@ -1,41 +1,4 @@
-.anki-settings-panel {
-    margin-bottom: 1.25rem;
-}
-
-.anki-settings-form {
-    display: grid;
-    grid-template-columns: minmax(180px, 1fr) 1fr 1fr auto;
-    gap: 1rem;
-    align-items: end;
-}
-
-.anki-settings-form fieldset {
-    display: grid;
-    gap: .35rem;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 10px;
-}
-
-.anki-create-inline {
-    margin-top: 1rem;
-}
-
-.anki-create-inline summary {
-    cursor: pointer;
-    font-weight: 600;
-}
-
-.anki-create-inline form {
-    margin-top: 1rem;
-}
-
 .word-picker-button-icon {
     font-size: 16px;
     vertical-align: -3px;
-}
-
-@media (max-width: 900px) {
-    .anki-settings-form {
-        grid-template-columns: 1fr;
-    }
 }
