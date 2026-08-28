@@ -16,7 +16,34 @@ public sealed class ViewStylesheetTests
     [
         ("library-page", "css/quiz-library.css"),
         ("anki-settings-panel", "css/quiz-settings.css"),
+        ("content-page", "css/payments.css"),
     ];
+
+    [Fact]
+    public void Shared_pronunciation_button_is_defined_in_the_site_stylesheet()
+    {
+        var siteCss = File.ReadAllText(Path.Combine(WebRootDirectory(), "css", "site.css"));
+
+        Assert.Contains(".btn-icon-tts {", siteCss, StringComparison.Ordinal);
+        Assert.Contains(".btn-icon-tts.is-playing", siteCss, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Payment_views_use_the_button_defined_by_their_stylesheet()
+    {
+        var paymentsCss = File.ReadAllText(Path.Combine(WebRootDirectory(), "css", "payments.css"));
+        var paymentsViews = Directory.EnumerateFiles(
+            Path.Combine(ViewsDirectory(), "Payments"),
+            "*.cshtml",
+            SearchOption.TopDirectoryOnly);
+
+        Assert.Contains(".payment-button {", paymentsCss, StringComparison.Ordinal);
+        foreach (var view in paymentsViews)
+        {
+            var markup = File.ReadAllText(view);
+            Assert.DoesNotContain("home-button", markup, StringComparison.Ordinal);
+        }
+    }
 
     [Fact]
     public void Pages_link_the_stylesheet_that_styles_them()
@@ -69,4 +96,7 @@ public sealed class ViewStylesheetTests
 
         throw new InvalidOperationException("Could not locate the Glosify Views directory.");
     }
+
+    private static string WebRootDirectory() =>
+        Path.Combine(Directory.GetParent(ViewsDirectory())!.FullName, "wwwroot");
 }

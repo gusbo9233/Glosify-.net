@@ -3639,6 +3639,63 @@ body { margin: 0; }
 
 .icon-button .material-symbols-outlined { font-size: 22px; }
 
+/* Shared pronunciation control used by quiz, flashcard, typing, and Anki views. */
+.btn-icon-tts {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin-inline-start: 6px;
+    vertical-align: middle;
+    border: 1px solid rgba(83, 224, 118, 0.24);
+    border-radius: 8px;
+    background: rgba(83, 224, 118, 0.08);
+    color: var(--primary);
+    font: inherit;
+    cursor: pointer;
+    transition:
+        background var(--dur-fast) var(--ease-standard),
+        border-color var(--dur-fast) var(--ease-standard),
+        transform var(--dur-fast) var(--ease-standard);
+}
+
+.btn-icon-tts:hover {
+    border-color: rgba(83, 224, 118, 0.42);
+    background: rgba(83, 224, 118, 0.18);
+}
+
+.btn-icon-tts:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.btn-icon-tts .material-symbols-outlined {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.btn-icon-tts.is-playing {
+    background: rgba(83, 224, 118, 0.28);
+    animation: btn-icon-tts-pulse 900ms ease-in-out infinite;
+}
+
+@keyframes btn-icon-tts-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn-icon-tts {
+        transition: none;
+    }
+
+    .btn-icon-tts.is-playing {
+        animation: none;
+    }
+}
+
 .credit-pill {
     display: inline-flex;
     align-items: center;
