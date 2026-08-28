@@ -7,10 +7,8 @@ namespace Glosify.Services.Ai.Assistant;
 /// Resolves a tool by name and builds the declaration list each assistant profile is offered.
 /// </summary>
 /// <remarks>
-/// The five profile lists are still curated by hand, because their order is deliberate — the
-/// custom quiz builder puts get_custom_quiz first, the librarian puts
-/// create_custom_quiz_from_content before the element tools — and that ordering is part of
-/// the prompt. What is no longer hand-maintained is the link between a list and the code
+/// The profile lists are curated by hand because their order is part of the prompt. What is
+/// no longer hand-maintained is the link between a list and the code
 /// that runs: the lists name tool <em>types</em>, so a tool that is renamed, removed or
 /// misspelled is a compile error rather than a tool the model is offered and cannot call.
 /// </remarks>
@@ -41,18 +39,14 @@ public sealed class AssistantToolRegistry : IAssistantTools
         QuizAssistantDeclarations = Surface(AssistantToolSurfaces.QuizAssistant);
         GlobalDeclarations = Surface(AssistantToolSurfaces.Global);
         LibrarianDeclarations = Surface(AssistantToolSurfaces.Librarian);
-        CustomQuizBuilderDeclarations = Surface(AssistantToolSurfaces.CustomQuizBuilder);
         FreestyleQuizAssistantDeclarations = FreestyleSurface(AssistantToolSurfaces.FreestyleQuizAssistant);
         FreestyleLibrarianDeclarations = FreestyleSurface(AssistantToolSurfaces.FreestyleLibrarian);
-        FreestyleCustomQuizBuilderDeclarations = FreestyleSurface(AssistantToolSurfaces.FreestyleCustomQuizBuilder);
     }
 
     public IReadOnlyList<AgentToolDeclaration> Declarations { get; }
     public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; }
-    public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; }
     public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; }
     public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; }
-    public IReadOnlyList<AgentToolDeclaration> FreestyleCustomQuizBuilderDeclarations { get; }
     public IReadOnlyList<AgentToolDeclaration> FreestyleQuizAssistantDeclarations { get; }
     public IReadOnlyList<AgentToolDeclaration> FreestyleLibrarianDeclarations { get; }
 

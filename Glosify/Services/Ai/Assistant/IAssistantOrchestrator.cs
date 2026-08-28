@@ -40,7 +40,6 @@ public interface IAssistantOrchestrator
         Guid? contextQuizId = null,
         string? focusedWordId = null,
         AssistantDocumentContext? documentContext = null,
-        Guid? customQuizId = null,
         CancellationToken cancellationToken = default,
         Guid? transcriptId = null,
         Guid? bookDocumentId = null,

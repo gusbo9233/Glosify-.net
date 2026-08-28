@@ -310,6 +310,20 @@ app.UseRateLimiter();
 
 app.UseAuthorization();
 
+// The static-asset endpoint intentionally answers unsupported HTTP methods with 405.
+// Short-circuit the retired custom-quiz paths after authorization so every former
+// authenticated endpoint instead has the same 404 contract, without keeping MVC routes.
+app.Use(async (context, next) =>
+{
+    if (IsRetiredCustomQuizPath(context.Request.Path))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    await next();
+});
+
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 {
     app.MapOpenApi().AllowAnonymous();
@@ -423,6 +437,21 @@ app.MapGroup("/api/auth").MapIdentityApi<ApplicationUser>().AllowAnonymous();
 
 app.Run();
 return 0;
+
+static bool IsRetiredCustomQuizPath(PathString path)
+{
+    if (path.StartsWithSegments("/CustomQuizzes"))
+    {
+        return true;
+    }
+
+    var segments = path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries);
+    return segments is { Length: 4 }
+        && string.Equals(segments[0], "Quizzes", StringComparison.OrdinalIgnoreCase)
+        && Guid.TryParse(segments[1], out _)
+        && string.Equals(segments[2], "Custom", StringComparison.OrdinalIgnoreCase)
+        && string.Equals(segments[3], "New", StringComparison.OrdinalIgnoreCase);
+}
 
 /// <summary>
 /// The version <see cref="IFileVersionProvider"/> just appended, or null when

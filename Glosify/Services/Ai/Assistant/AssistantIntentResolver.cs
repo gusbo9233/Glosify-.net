@@ -51,13 +51,6 @@ internal sealed partial class AssistantIntentResolver
 
     private static AssistantArtifactKind ResolveArtifact(string message)
     {
-        // Interactive wording wins: "custom quiz" contains "quiz", and an explicit request for
-        // a multiple-choice or cloze exercise is the one case where custom is what was meant.
-        if (CustomArtifactTerms().IsMatch(message))
-        {
-            return AssistantArtifactKind.CustomQuiz;
-        }
-
         // An unqualified "quiz" means a standard quiz. A book, transcript or pasted passage is
         // source material for either kind and so implies nothing on its own.
         return StandardArtifactTerms().IsMatch(message)
@@ -81,11 +74,6 @@ internal sealed partial class AssistantIntentResolver
             _ => AssistantContentKind.Auto,
         };
     }
-
-    [GeneratedRegex(
-        @"\b(custom quiz|custom quizzes|interactive quiz|interactive exercise|multiple[- ]choice|cloze|fill[- ]in[- ]the[- ]blanks?|checkboxe?s?|word bank|drag[- ]and[- ]drop)\b",
-        RegexOptions.IgnoreCase)]
-    private static partial Regex CustomArtifactTerms();
 
     [GeneratedRegex(@"\b(quiz|quizzes)\b", RegexOptions.IgnoreCase)]
     private static partial Regex StandardArtifactTerms();

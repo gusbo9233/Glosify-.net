@@ -22,7 +22,6 @@ public static class AssistantToolServiceExtensions
                 && type is { IsAbstract: false, IsInterface: false })
             .OrderBy(type => type.Name, StringComparer.Ordinal);
 
-        services.AddScoped<CustomQuizToolStore>();
         foreach (var type in toolTypes)
         {
             services.AddScoped(typeof(IAssistantTool), type);

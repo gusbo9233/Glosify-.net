@@ -1,6 +1,5 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
-using Glosify.Services.CustomQuizzes;
 using Microsoft.EntityFrameworkCore;
 using Glosify.Services.Anki;
 
@@ -473,11 +472,9 @@ public class CollectionService : ICollectionService
             });
         }
 
-        var wordMapsByQuiz = sourceQuizIds.ToDictionary(id => id, _ => new Dictionary<string, string>(StringComparer.Ordinal));
         foreach (var word in sourceWords)
         {
             var copiedWordId = Guid.NewGuid().ToString("N");
-            wordMapsByQuiz[word.QuizId][word.Id] = copiedWordId;
             _context.Words.Add(new Word
             {
                 Id = copiedWordId,
@@ -495,12 +492,6 @@ public class CollectionService : ICollectionService
             Translation = sentence.Translation,
             CreatedAt = sentence.CreatedAt
         }));
-
-        var customQuizService = new CustomQuizService(_context);
-        foreach (var sourceQuizId in sourceQuizIds)
-        {
-            await customQuizService.CloneForCopiedQuizAsync(sourceQuizId, quizIdMap[sourceQuizId], wordMapsByQuiz[sourceQuizId], cancellationToken);
-        }
 
         await _context.SaveChangesAsync(cancellationToken);
         var copiedRootId = collectionIdMap[collectionId];

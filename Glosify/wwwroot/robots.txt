@@ -7,7 +7,6 @@ Disallow: /Account/
 Disallow: /Admin/
 Disallow: /api/
 Disallow: /Books/
-Disallow: /CustomQuizzes/
 Disallow: /Explore/
 Disallow: /FlashcardQuiz/
 Disallow: /Quiz/

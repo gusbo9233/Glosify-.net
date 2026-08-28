@@ -14,7 +14,6 @@ public sealed record AssistantSendInput(
     string? FocusedWordId,
     Guid? DocumentId,
     int? PageNumber,
-    Guid? CustomQuizId,
     Guid? TranscriptId = null,
     Guid? BookDocumentId = null);
 

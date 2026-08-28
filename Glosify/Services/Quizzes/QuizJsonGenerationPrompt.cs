@@ -20,7 +20,7 @@ public static class QuizJsonGenerationPrompt
             """ : $$"""
             Create a Glosify version 1 quiz-import JSON document for a learner studying {{displayLanguage}}. The import will be placed in {{importDestination}}.
 
-            Return JSON only: no markdown fence, prose, ids, visibility, target_language, or custom-quiz fields. Put words and sentence text in {{displayLanguage}} and translations in source_language. Each quiz needs at least one word or sentence. Use one root source_language and add a per-quiz source_language only when it differs.
+            Return JSON only: no markdown fence, prose, ids, visibility, target_language, or unsupported fields. Put words and sentence text in {{displayLanguage}} and translations in source_language. Each quiz needs at least one word or sentence. Use one root source_language and add a per-quiz source_language only when it differs.
 
             Shape:
             {

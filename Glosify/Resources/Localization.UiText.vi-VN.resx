@@ -387,9 +387,6 @@
   <data name="Home.BuildVocabularyText" xml:space="preserve">
     <value>Tạo các bộ tập trung từ những từ bạn thực sự muốn dùng.</value>
   </data>
-  <data name="Home.PracticeRecallText" xml:space="preserve">
-    <value>Dùng thẻ ghi nhớ, gõ từ và các bài quiz tuỳ chỉnh để ghi nhớ từ lâu hơn.</value>
-  </data>
   <data name="Home.ConnectedKicker" xml:space="preserve">
     <value>Một không gian làm việc kết nối</value>
   </data>
@@ -872,12 +869,6 @@
   </data>
   <data name="Client.CheckFailed" xml:space="preserve">
     <value>Không thể kiểm tra câu trả lời đó. Hãy thử lại.</value>
-  </data>
-  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
-    <value>Xóa câu đố tùy chỉnh này?</value>
-  </data>
-  <data name="Client.DeleteQuizFailed" xml:space="preserve">
-    <value>Không thể xóa câu đố tùy chỉnh. Hãy thử lại.</value>
   </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>Xóa cuộc trò chuyện</value>
@@ -1365,12 +1356,6 @@
   <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
     <value>Hỏi về quiz này...</value>
   </data>
-  <data name="Quiz.CustomCount" xml:space="preserve">
-    <value>{0} tùy chỉnh</value>
-  </data>
-  <data name="Quiz.BuildCustom" xml:space="preserve">
-    <value>Tạo câu đố tuỳ chỉnh</value>
-  </data>
   <data name="Quiz.Public" xml:space="preserve">
     <value>Công khai</value>
   </data>
@@ -1406,24 +1391,6 @@
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>Chưa có câu nào. Hãy yêu cầu trợ lý thêm câu hoặc trích xuất chúng từ văn bản.</value>
-  </data>
-  <data name="Quiz.CustomQuizzes" xml:space="preserve">
-    <value>Câu đố tuỳ chỉnh</value>
-  </data>
-  <data name="Quiz.CustomHelp" xml:space="preserve">
-    <value>Tạo bài tập tự do từ các từ trong câu đố này.</value>
-  </data>
-  <data name="Quiz.NewCustom" xml:space="preserve">
-    <value>Câu đố tuỳ chỉnh mới</value>
-  </data>
-  <data name="Quiz.Playable" xml:space="preserve">
-    <value>Có thể chơi</value>
-  </data>
-  <data name="Quiz.Draft" xml:space="preserve">
-    <value>Bản nháp</value>
-  </data>
-  <data name="Quiz.NoCustom" xml:space="preserve">
-    <value>Chưa có câu đố tuỳ chỉnh nào. Hãy tạo một câu đố bằng cách kéo các khối lên canvas.</value>
   </data>
   <data name="Payments.PackageUnavailable" xml:space="preserve">
     <value>Gói tín dụng đó hiện không còn khả dụng.</value>
@@ -1509,179 +1476,8 @@
   <data name="Common.Preview" xml:space="preserve">
     <value>Xem trước</value>
   </data>
-  <data name="Custom.EditNamed" xml:space="preserve">
-    <value>Chỉnh sửa {0}</value>
-  </data>
-  <data name="Custom.AssistantTitle" xml:space="preserve">
-    <value>Trợ lý tạo câu đố</value>
-  </data>
-  <data name="Custom.AssistantEmpty" xml:space="preserve">
-    <value>Hãy yêu cầu tôi thêm, cấu hình hoặc sắp xếp các thành phần của câu đố.</value>
-  </data>
-  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
-    <value>Thêm câu hỏi vào câu đố tuỳ chỉnh này...</value>
-  </data>
-  <data name="Custom.Name" xml:space="preserve">
-    <value>Tên câu đố tuỳ chỉnh</value>
-  </data>
-  <data name="Custom.LoadingEditor" xml:space="preserve">
-    <value>Đang tải các điều khiển trình chỉnh sửa…</value>
-  </data>
-  <data name="Custom.DesignStarters" xml:space="preserve">
-    <value>Bắt đầu thiết kế</value>
-  </data>
-  <data name="Custom.VisualDirection" xml:space="preserve">
-    <value>Chọn hướng hiển thị</value>
-  </data>
-  <data name="Custom.TemplateHelp" xml:space="preserve">
-    <value>Chỉ áp dụng giao diện, hoặc thay canvas bằng một bố cục hoàn chỉnh được xây dựng từ các từ trong câu đố này.</value>
-  </data>
-  <data name="Custom.UseStyle" xml:space="preserve">
-    <value>Dùng kiểu</value>
-  </data>
-  <data name="Custom.UseLayout" xml:space="preserve">
-    <value>Dùng bố cục</value>
-  </data>
-  <data name="Custom.BuildingBlocks" xml:space="preserve">
-    <value>Các khối xây dựng câu đố</value>
-  </data>
-  <data name="Custom.Blocks" xml:space="preserve">
-    <value>Các khối</value>
-  </data>
-  <data name="Custom.BlocksHelp" xml:space="preserve">
-    <value>Kéo vào bất kỳ vùng trống nào, hoặc nhấp để thêm tự động.</value>
-  </data>
-  <data name="Custom.DragAdd" xml:space="preserve">
-    <value>Kéo hoặc nhấp để thêm {0}</value>
-  </data>
-  <data name="Custom.Add" xml:space="preserve">
-    <value>Thêm {0}</value>
-  </data>
-  <data name="Custom.Grid" xml:space="preserve">
-    <value>Lưới thông minh 12 cột</value>
-  </data>
-  <data name="Custom.GridHelp" xml:space="preserve">
-    <value>Kéo để đặt · cạnh sẽ tự căn · các ô đã chiếm sẽ được tránh</value>
-  </data>
-  <data name="Custom.Canvas" xml:space="preserve">
-    <value>Canvas câu đố tuỳ chỉnh</value>
-  </data>
-  <data name="Custom.Properties" xml:space="preserve">
-    <value>Thuộc tính</value>
-  </data>
-  <data name="Custom.PropertiesHelp" xml:space="preserve">
-    <value>Chọn một khối để chỉnh sửa nội dung và liên kết của nó.</value>
-  </data>
-  <data name="Custom.Answer" xml:space="preserve">
-    <value>Đáp án</value>
-  </data>
-  <data name="Custom.Choose" xml:space="preserve">
-    <value>Chọn...</value>
-  </data>
-  <data name="Custom.CheckAnswers" xml:space="preserve">
-    <value>Kiểm tra đáp án</value>
-  </data>
-  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
-    <value>Hoàn thành câu đố, rồi gửi đáp án của bạn.</value>
-  </data>
-  <data name="Custom.Block.Heading" xml:space="preserve">
-    <value>Tiêu đề</value>
-  </data>
-  <data name="Custom.Block.Instruction" xml:space="preserve">
-    <value>Hướng dẫn</value>
-  </data>
-  <data name="Custom.Block.WordLabel" xml:space="preserve">
-    <value>Nhãn từ</value>
-  </data>
-  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
-    <value>Nhãn bản dịch</value>
-  </data>
-  <data name="Custom.Block.TextInput" xml:space="preserve">
-    <value>Ô nhập văn bản</value>
-  </data>
-  <data name="Custom.Block.LongAnswer" xml:space="preserve">
-    <value>Câu trả lời dài</value>
-  </data>
-  <data name="Custom.Block.Checkbox" xml:space="preserve">
-    <value>Ô chọn</value>
-  </data>
-  <data name="Custom.Block.RadioChoices" xml:space="preserve">
-    <value>Các lựa chọn nút chọn</value>
-  </data>
-  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
-    <value>Các lựa chọn ô chọn</value>
-  </data>
-  <data name="Custom.Block.SelectMenu" xml:space="preserve">
-    <value>Menu chọn</value>
-  </data>
-  <data name="Custom.Block.WordBank" xml:space="preserve">
-    <value>Ngân hàng từ</value>
-  </data>
-  <data name="Custom.Block.SubmitButton" xml:space="preserve">
-    <value>Nút gửi</value>
-  </data>
-  <data name="Custom.Block.Feedback" xml:space="preserve">
-    <value>Phản hồi</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
-    <value>Luồng biên tập</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
-    <value>Thứ bậc gọn gàng, khoảng cách thoáng, và mỗi hàng chỉ có một nhiệm vụ rõ ràng.</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
-    <value>Bản dịch, gợi ý ngữ pháp, ôn tập ghi nhớ có trọng tâm</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
-    <value>Thẻ Aurora</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>Màu sắc dịu nhẹ, các thẻ luyện tập theo cặp và không khí học tập đầy năng lượng.</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
-    <value>Bộ từ vựng ngắn và quét nhìn trực quan</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
-    <value>Bài tập sách giáo khoa</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
-    <value>Các hàng đánh số gọn, mô phỏng bài tập trong vở bài tập được chụp lại.</value>
-  </data>
-  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
-    <value>Chia động từ, biến đổi, điền khuyết và bài tập trang trọng</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
-    <value>Phòng thí nghiệm ngân hàng từ</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
-    <value>Một ngân hàng từ nổi bật dẫn dắt bài tập và khiến việc nhớ lại trở nên thú vị.</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
-    <value>Ôn tập có hướng dẫn và từ vựng cho người mới bắt đầu</value>
-  </data>
-  <data name="Custom.AnswerQuestion" xml:space="preserve">
-    <value>Trả lời câu hỏi này.</value>
-  </data>
-  <data name="Custom.Correct" xml:space="preserve">
-    <value>Đúng.</value>
-  </data>
-  <data name="Custom.CorrectAnswer" xml:space="preserve">
-    <value>Đáp án đúng: {0}</value>
-  </data>
-  <data name="Custom.CompleteAnswers" xml:space="preserve">
-    <value>Hãy hoàn thành tất cả câu trả lời trước khi gửi.</value>
-  </data>
-  <data name="Custom.Score" xml:space="preserve">
-    <value>Điểm: {0}/{1} ({2}%).</value>
-  </data>
-  <data name="Custom.GradeFailed" xml:space="preserve">
-    <value>Không thể chấm bài kiểm tra này. Hãy thử lại.</value>
-  </data>
   <data name="Explore.PublicQuiz" xml:space="preserve">
     <value>Bài kiểm tra công khai</value>
-  </data>
-  <data name="Explore.CustomExercises" xml:space="preserve">
-    <value>Các bài tập được tạo từ từ vựng của bài kiểm tra này.</value>
   </data>
   <data name="Explore.NoPublicWords" xml:space="preserve">
     <value>Chưa có từ nào được thêm vào bài kiểm tra công khai này.</value>
@@ -1755,174 +1551,6 @@
   <data name="Reader.PdfLoadFailed" xml:space="preserve">
     <value>Không thể tải PDF.</value>
   </data>
-  <data name="Editor.Heading" xml:space="preserve">
-    <value>Tiêu đề</value>
-  </data>
-  <data name="Editor.Instruction" xml:space="preserve">
-    <value>Hướng dẫn</value>
-  </data>
-  <data name="Editor.WordLabel" xml:space="preserve">
-    <value>Nhãn từ</value>
-  </data>
-  <data name="Editor.TranslationLabel" xml:space="preserve">
-    <value>Nhãn bản dịch</value>
-  </data>
-  <data name="Editor.TextInput" xml:space="preserve">
-    <value>Ô nhập văn bản</value>
-  </data>
-  <data name="Editor.LongAnswer" xml:space="preserve">
-    <value>Câu trả lời dài</value>
-  </data>
-  <data name="Editor.Checkbox" xml:space="preserve">
-    <value>Ô chọn</value>
-  </data>
-  <data name="Editor.RadioChoices" xml:space="preserve">
-    <value>Các lựa chọn nút chọn</value>
-  </data>
-  <data name="Editor.CheckboxChoices" xml:space="preserve">
-    <value>Các lựa chọn ô chọn</value>
-  </data>
-  <data name="Editor.SelectMenu" xml:space="preserve">
-    <value>Menu chọn</value>
-  </data>
-  <data name="Editor.WordBank" xml:space="preserve">
-    <value>Ngân hàng từ</value>
-  </data>
-  <data name="Editor.SubmitButton" xml:space="preserve">
-    <value>Nút gửi</value>
-  </data>
-  <data name="Editor.Feedback" xml:space="preserve">
-    <value>Phản hồi</value>
-  </data>
-  <data name="Editor.EmptyCanvas" xml:space="preserve">
-    <value>Kéo một khối bất kỳ vào vùng này để bắt đầu.</value>
-  </data>
-  <data name="Editor.MoveLeft" xml:space="preserve">
-    <value>Di chuyển sang trái</value>
-  </data>
-  <data name="Editor.MoveUp" xml:space="preserve">
-    <value>Di chuyển lên</value>
-  </data>
-  <data name="Editor.MoveDown" xml:space="preserve">
-    <value>Di chuyển xuống</value>
-  </data>
-  <data name="Editor.MoveRight" xml:space="preserve">
-    <value>Di chuyển sang phải</value>
-  </data>
-  <data name="Editor.RemoveBlock" xml:space="preserve">
-    <value>Xóa khối</value>
-  </data>
-  <data name="Editor.Resize" xml:space="preserve">
-    <value>Kéo để thay đổi chiều rộng</value>
-  </data>
-  <data name="Editor.Word" xml:space="preserve">
-    <value>Từ</value>
-  </data>
-  <data name="Editor.DisplayField" xml:space="preserve">
-    <value>Trường hiển thị</value>
-  </data>
-  <data name="Editor.Words" xml:space="preserve">
-    <value>Các từ</value>
-  </data>
-  <data name="Editor.Options" xml:space="preserve">
-    <value>Tùy chọn</value>
-  </data>
-  <data name="Editor.CorrectOption" xml:space="preserve">
-    <value>Tùy chọn đúng</value>
-  </data>
-  <data name="Editor.RemoveOption" xml:space="preserve">
-    <value>Xóa tùy chọn</value>
-  </data>
-  <data name="Editor.AddOption" xml:space="preserve">
-    <value>Thêm tùy chọn</value>
-  </data>
-  <data name="Editor.Properties" xml:space="preserve">
-    <value>Thuộc tính</value>
-  </data>
-  <data name="Editor.SelectBlock" xml:space="preserve">
-    <value>Chọn một khối để chỉnh sửa nội dung và ràng buộc của nó.</value>
-  </data>
-  <data name="Editor.TargetInputs" xml:space="preserve">
-    <value>Các ô nhập mục tiêu</value>
-  </data>
-  <data name="Editor.PreviewOnly" xml:space="preserve">
-    <value>Chỉ xem trước — hãy lưu và phát để ghi lại một lần làm có chấm điểm.</value>
-  </data>
-  <data name="Editor.BackToEditor" xml:space="preserve">
-    <value>Quay lại trình chỉnh sửa</value>
-  </data>
-  <data name="Editor.Preview" xml:space="preserve">
-    <value>Xem trước</value>
-  </data>
-  <data name="Editor.PreviewingOne" xml:space="preserve">
-    <value>Đang xem trước khối {0}.</value>
-  </data>
-  <data name="Editor.PreviewingMany" xml:space="preserve">
-    <value>Đang xem trước {0} khối.</value>
-  </data>
-  <data name="Editor.ReadyOne" xml:space="preserve">
-    <value>Trình chỉnh sửa sẵn sàng · có {0} khối trên vùng làm việc. Dùng + để thêm hoặc kéo một khối vào.</value>
-  </data>
-  <data name="Editor.ReadyMany" xml:space="preserve">
-    <value>Trình chỉnh sửa sẵn sàng · có {0} khối trên vùng làm việc. Dùng + để thêm hoặc kéo một khối vào.</value>
-  </data>
-  <data name="Editor.ReplaceConfirm" xml:space="preserve">
-    <value>Thay thế toàn bộ vùng làm việc hiện tại bằng bố cục {0} này? Bạn có thể Hoàn tác thay đổi này.</value>
-  </data>
-  <data name="Editor.SaveFailed" xml:space="preserve">
-    <value>Không thể lưu bài kiểm tra tùy chỉnh này.</value>
-  </data>
-  <data name="Editor.SavedPlayable" xml:space="preserve">
-    <value>Đã lưu. Bài kiểm tra này sẵn sàng để làm.</value>
-  </data>
-  <data name="Editor.DraftSaved" xml:space="preserve">
-    <value>Đã lưu bản nháp. Hãy hoàn thành các trường bắt buộc của bài kiểm tra trước khi làm.</value>
-  </data>
-  <data name="Editor.SaveStopped" xml:space="preserve">
-    <value>Yêu cầu lưu đã dừng đột ngột. Hãy thử lại.</value>
-  </data>
-  <data name="Editor.WordLemma" xml:space="preserve">
-    <value>Từ / dạng gốc</value>
-  </data>
-  <data name="Editor.Translation" xml:space="preserve">
-    <value>Bản dịch</value>
-  </data>
-  <data name="Editor.Width" xml:space="preserve">
-    <value>Chiều rộng</value>
-  </data>
-  <data name="Editor.Column" xml:space="preserve">
-    <value>Cột</value>
-  </data>
-  <data name="Editor.ColumnNumber" xml:space="preserve">
-    <value>Cột {0}</value>
-  </data>
-  <data name="Editor.Row" xml:space="preserve">
-    <value>Hàng</value>
-  </data>
-  <data name="Editor.Text" xml:space="preserve">
-    <value>Văn bản</value>
-  </data>
-  <data name="Editor.LiveBinding" xml:space="preserve">
-    <value>Ràng buộc từ trực tiếp</value>
-  </data>
-  <data name="Editor.ExerciseRow" xml:space="preserve">
-    <value>Hàng bài tập (dùng {{blank}})</value>
-  </data>
-  <data name="Editor.AccessibleLabel" xml:space="preserve">
-    <value>Nhãn hỗ trợ truy cập</value>
-  </data>
-  <data name="Editor.CustomExpected" xml:space="preserve">
-    <value>Đáp án mong đợi tùy chỉnh</value>
-  </data>
-  <data name="Editor.ExpectedBinding" xml:space="preserve">
-    <value>Ràng buộc từ mong đợi</value>
-  </data>
-  <data name="Editor.DisplayedWord" xml:space="preserve">
-    <value>Từ hiển thị</value>
-  </data>
-  <data name="Editor.ExpectedChecked" xml:space="preserve">
-    <value>Dự kiến được chọn</value>
-  </data>
   <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
     <value>Bài kiểm tra đó không còn công khai nữa.</value>
   </data>
@@ -1967,4 +1595,5 @@
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Xem trước JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Nhập tất cả</value></data>
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Việc xem trước và nhập có tính xác định và không liên hệ nhà cung cấp AI. “Sửa bằng AI” gửi văn bản đã dán đến AI được cấu hình của Glosify và tính tín dụng.</value></data>
+  <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
 </root>

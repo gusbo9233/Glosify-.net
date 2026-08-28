@@ -387,9 +387,6 @@
   <data name="Home.BuildVocabularyText" xml:space="preserve">
     <value>Buat set terfokus dari kata-kata yang benar-benar ingin Anda gunakan.</value>
   </data>
-  <data name="Home.PracticeRecallText" xml:space="preserve">
-    <value>Gunakan kartu flash, pengetikan, dan kuis kustom agar kata-kata mudah diingat.</value>
-  </data>
   <data name="Home.ConnectedKicker" xml:space="preserve">
     <value>Satu ruang kerja terhubung</value>
   </data>
@@ -872,12 +869,6 @@
   </data>
   <data name="Client.CheckFailed" xml:space="preserve">
     <value>Tidak dapat memeriksa jawaban itu. Coba lagi.</value>
-  </data>
-  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
-    <value>Hapus kuis khusus ini?</value>
-  </data>
-  <data name="Client.DeleteQuizFailed" xml:space="preserve">
-    <value>Tidak dapat menghapus kuis khusus. Coba lagi.</value>
   </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>Hapus chat</value>
@@ -1365,12 +1356,6 @@
   <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
     <value>Tanyakan tentang quiz ini...</value>
   </data>
-  <data name="Quiz.CustomCount" xml:space="preserve">
-    <value>{0} kustom</value>
-  </data>
-  <data name="Quiz.BuildCustom" xml:space="preserve">
-    <value>Buat kuis kustom</value>
-  </data>
   <data name="Quiz.Public" xml:space="preserve">
     <value>Publik</value>
   </data>
@@ -1406,24 +1391,6 @@
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>Belum ada kalimat. Minta asisten untuk menambahkan kalimat atau mengekstraknya dari teks.</value>
-  </data>
-  <data name="Quiz.CustomQuizzes" xml:space="preserve">
-    <value>Kuis kustom</value>
-  </data>
-  <data name="Quiz.CustomHelp" xml:space="preserve">
-    <value>Buat latihan bebas dari kata-kata dalam kuis ini.</value>
-  </data>
-  <data name="Quiz.NewCustom" xml:space="preserve">
-    <value>Kuis kustom baru</value>
-  </data>
-  <data name="Quiz.Playable" xml:space="preserve">
-    <value>Dapat dimainkan</value>
-  </data>
-  <data name="Quiz.Draft" xml:space="preserve">
-    <value>Draf</value>
-  </data>
-  <data name="Quiz.NoCustom" xml:space="preserve">
-    <value>Belum ada kuis kustom. Buat satu dengan menyeret blok ke kanvas.</value>
   </data>
   <data name="Payments.PackageUnavailable" xml:space="preserve">
     <value>Paket kredit ini sudah tidak tersedia.</value>
@@ -1509,179 +1476,8 @@
   <data name="Common.Preview" xml:space="preserve">
     <value>Pratinjau</value>
   </data>
-  <data name="Custom.EditNamed" xml:space="preserve">
-    <value>Edit {0}</value>
-  </data>
-  <data name="Custom.AssistantTitle" xml:space="preserve">
-    <value>Asisten pembuat kuis</value>
-  </data>
-  <data name="Custom.AssistantEmpty" xml:space="preserve">
-    <value>Minta saya untuk menambahkan, mengonfigurasi, atau menyusun elemen kuis.</value>
-  </data>
-  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
-    <value>Tambahkan pertanyaan ke kuis kustom ini...</value>
-  </data>
-  <data name="Custom.Name" xml:space="preserve">
-    <value>Nama kuis kustom</value>
-  </data>
-  <data name="Custom.LoadingEditor" xml:space="preserve">
-    <value>Memuat kontrol editor…</value>
-  </data>
-  <data name="Custom.DesignStarters" xml:space="preserve">
-    <value>Starter desain</value>
-  </data>
-  <data name="Custom.VisualDirection" xml:space="preserve">
-    <value>Pilih arah visual</value>
-  </data>
-  <data name="Custom.TemplateHelp" xml:space="preserve">
-    <value>Terapkan hanya gayanya, atau ganti kanvas dengan tata letak lengkap yang dibuat dari kata-kata kuis ini.</value>
-  </data>
-  <data name="Custom.UseStyle" xml:space="preserve">
-    <value>Gunakan gaya</value>
-  </data>
-  <data name="Custom.UseLayout" xml:space="preserve">
-    <value>Gunakan tata letak</value>
-  </data>
-  <data name="Custom.BuildingBlocks" xml:space="preserve">
-    <value>Blok penyusun kuis</value>
-  </data>
-  <data name="Custom.Blocks" xml:space="preserve">
-    <value>Blok</value>
-  </data>
-  <data name="Custom.BlocksHelp" xml:space="preserve">
-    <value>Seret ke area kosong mana pun, atau klik untuk menambahkan secara otomatis.</value>
-  </data>
-  <data name="Custom.DragAdd" xml:space="preserve">
-    <value>Seret atau klik untuk menambahkan {0}</value>
-  </data>
-  <data name="Custom.Add" xml:space="preserve">
-    <value>Tambahkan {0}</value>
-  </data>
-  <data name="Custom.Grid" xml:space="preserve">
-    <value>Grid pintar 12 kolom</value>
-  </data>
-  <data name="Custom.GridHelp" xml:space="preserve">
-    <value>Seret untuk menempatkan · tepi menempel · ruang yang sudah terisi dihindari</value>
-  </data>
-  <data name="Custom.Canvas" xml:space="preserve">
-    <value>Kanvas kuis kustom</value>
-  </data>
-  <data name="Custom.Properties" xml:space="preserve">
-    <value>Properti</value>
-  </data>
-  <data name="Custom.PropertiesHelp" xml:space="preserve">
-    <value>Pilih blok untuk mengedit konten dan pengikatannya.</value>
-  </data>
-  <data name="Custom.Answer" xml:space="preserve">
-    <value>Jawaban</value>
-  </data>
-  <data name="Custom.Choose" xml:space="preserve">
-    <value>Pilih...</value>
-  </data>
-  <data name="Custom.CheckAnswers" xml:space="preserve">
-    <value>Periksa jawaban</value>
-  </data>
-  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
-    <value>Selesaikan kuis, lalu kirim jawaban Anda.</value>
-  </data>
-  <data name="Custom.Block.Heading" xml:space="preserve">
-    <value>Judul</value>
-  </data>
-  <data name="Custom.Block.Instruction" xml:space="preserve">
-    <value>Instruksi</value>
-  </data>
-  <data name="Custom.Block.WordLabel" xml:space="preserve">
-    <value>Label kata</value>
-  </data>
-  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
-    <value>Label terjemahan</value>
-  </data>
-  <data name="Custom.Block.TextInput" xml:space="preserve">
-    <value>Input teks</value>
-  </data>
-  <data name="Custom.Block.LongAnswer" xml:space="preserve">
-    <value>Jawaban panjang</value>
-  </data>
-  <data name="Custom.Block.Checkbox" xml:space="preserve">
-    <value>Kotak centang</value>
-  </data>
-  <data name="Custom.Block.RadioChoices" xml:space="preserve">
-    <value>Pilihan radio</value>
-  </data>
-  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
-    <value>Pilihan kotak centang</value>
-  </data>
-  <data name="Custom.Block.SelectMenu" xml:space="preserve">
-    <value>Menu pilihan</value>
-  </data>
-  <data name="Custom.Block.WordBank" xml:space="preserve">
-    <value>Bank kata</value>
-  </data>
-  <data name="Custom.Block.SubmitButton" xml:space="preserve">
-    <value>Tombol kirim</value>
-  </data>
-  <data name="Custom.Block.Feedback" xml:space="preserve">
-    <value>Umpan balik</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
-    <value>Alur editorial</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
-    <value>Hierarki yang tenang, spasi yang lapang, dan satu tugas yang jelas per baris.</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
-    <value>Terjemahan, petunjuk tata bahasa, fokus mengingat</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
-    <value>Kartu aurora</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>Warna lembut, kartu latihan berpasangan, dan suasana belajar yang energik.</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
-    <value>Set kosakata singkat dan pemindaian visual</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
-    <value>Latihan buku teks</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
-    <value>Baris bernomor yang ringkas meniru latihan buku kerja yang difoto.</value>
-  </data>
-  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
-    <value>Konjugasi, transformasi, cloze, dan latihan formal</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
-    <value>Lab bank kata</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
-    <value>Bank kata yang menonjol memandu latihan dan membuat ingatan terasa menyenangkan.</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
-    <value>Ingatan terpandu dan kosakata pemula</value>
-  </data>
-  <data name="Custom.AnswerQuestion" xml:space="preserve">
-    <value>Jawab pertanyaan ini.</value>
-  </data>
-  <data name="Custom.Correct" xml:space="preserve">
-    <value>Benar.</value>
-  </data>
-  <data name="Custom.CorrectAnswer" xml:space="preserve">
-    <value>Jawaban benar: {0}</value>
-  </data>
-  <data name="Custom.CompleteAnswers" xml:space="preserve">
-    <value>Lengkapi semua jawaban sebelum mengirim.</value>
-  </data>
-  <data name="Custom.Score" xml:space="preserve">
-    <value>Skor: {0} dari {1} ({2}%).</value>
-  </data>
-  <data name="Custom.GradeFailed" xml:space="preserve">
-    <value>Tidak dapat menilai kuis ini. Coba lagi.</value>
-  </data>
   <data name="Explore.PublicQuiz" xml:space="preserve">
     <value>Kuis Publik</value>
-  </data>
-  <data name="Explore.CustomExercises" xml:space="preserve">
-    <value>Latihan yang dibuat dari kosakata kuis ini.</value>
   </data>
   <data name="Explore.NoPublicWords" xml:space="preserve">
     <value>Belum ada kata yang ditambahkan ke kuis publik ini.</value>
@@ -1755,174 +1551,6 @@
   <data name="Reader.PdfLoadFailed" xml:space="preserve">
     <value>PDF tidak dapat dimuat.</value>
   </data>
-  <data name="Editor.Heading" xml:space="preserve">
-    <value>Judul</value>
-  </data>
-  <data name="Editor.Instruction" xml:space="preserve">
-    <value>Instruksi</value>
-  </data>
-  <data name="Editor.WordLabel" xml:space="preserve">
-    <value>Label kata</value>
-  </data>
-  <data name="Editor.TranslationLabel" xml:space="preserve">
-    <value>Label terjemahan</value>
-  </data>
-  <data name="Editor.TextInput" xml:space="preserve">
-    <value>Input teks</value>
-  </data>
-  <data name="Editor.LongAnswer" xml:space="preserve">
-    <value>Jawaban panjang</value>
-  </data>
-  <data name="Editor.Checkbox" xml:space="preserve">
-    <value>Kotak centang</value>
-  </data>
-  <data name="Editor.RadioChoices" xml:space="preserve">
-    <value>Pilihan radio</value>
-  </data>
-  <data name="Editor.CheckboxChoices" xml:space="preserve">
-    <value>Pilihan kotak centang</value>
-  </data>
-  <data name="Editor.SelectMenu" xml:space="preserve">
-    <value>Menu pilihan</value>
-  </data>
-  <data name="Editor.WordBank" xml:space="preserve">
-    <value>Bank kata</value>
-  </data>
-  <data name="Editor.SubmitButton" xml:space="preserve">
-    <value>Tombol kirim</value>
-  </data>
-  <data name="Editor.Feedback" xml:space="preserve">
-    <value>Umpan balik</value>
-  </data>
-  <data name="Editor.EmptyCanvas" xml:space="preserve">
-    <value>Seret blok ke mana saja ke kanvas ini untuk memulai.</value>
-  </data>
-  <data name="Editor.MoveLeft" xml:space="preserve">
-    <value>Pindahkan ke kiri</value>
-  </data>
-  <data name="Editor.MoveUp" xml:space="preserve">
-    <value>Pindahkan ke atas</value>
-  </data>
-  <data name="Editor.MoveDown" xml:space="preserve">
-    <value>Pindahkan ke bawah</value>
-  </data>
-  <data name="Editor.MoveRight" xml:space="preserve">
-    <value>Pindahkan ke kanan</value>
-  </data>
-  <data name="Editor.RemoveBlock" xml:space="preserve">
-    <value>Hapus blok</value>
-  </data>
-  <data name="Editor.Resize" xml:space="preserve">
-    <value>Seret untuk mengubah lebar</value>
-  </data>
-  <data name="Editor.Word" xml:space="preserve">
-    <value>Kata</value>
-  </data>
-  <data name="Editor.DisplayField" xml:space="preserve">
-    <value>Bidang tampilan</value>
-  </data>
-  <data name="Editor.Words" xml:space="preserve">
-    <value>Kata</value>
-  </data>
-  <data name="Editor.Options" xml:space="preserve">
-    <value>Opsi</value>
-  </data>
-  <data name="Editor.CorrectOption" xml:space="preserve">
-    <value>Opsi yang benar</value>
-  </data>
-  <data name="Editor.RemoveOption" xml:space="preserve">
-    <value>Hapus opsi</value>
-  </data>
-  <data name="Editor.AddOption" xml:space="preserve">
-    <value>Tambahkan opsi</value>
-  </data>
-  <data name="Editor.Properties" xml:space="preserve">
-    <value>Properti</value>
-  </data>
-  <data name="Editor.SelectBlock" xml:space="preserve">
-    <value>Pilih sebuah blok untuk mengedit konten dan pengikatannya.</value>
-  </data>
-  <data name="Editor.TargetInputs" xml:space="preserve">
-    <value>Input target</value>
-  </data>
-  <data name="Editor.PreviewOnly" xml:space="preserve">
-    <value>Hanya pratinjau — simpan dan mainkan untuk merekam percobaan yang dinilai.</value>
-  </data>
-  <data name="Editor.BackToEditor" xml:space="preserve">
-    <value>Kembali ke editor</value>
-  </data>
-  <data name="Editor.Preview" xml:space="preserve">
-    <value>Pratinjau</value>
-  </data>
-  <data name="Editor.PreviewingOne" xml:space="preserve">
-    <value>Mempratinjau {0} blok.</value>
-  </data>
-  <data name="Editor.PreviewingMany" xml:space="preserve">
-    <value>Mempratinjau {0} blok.</value>
-  </data>
-  <data name="Editor.ReadyOne" xml:space="preserve">
-    <value>Editor siap · {0} blok di kanvas. Gunakan + untuk menambahkan atau seret blok.</value>
-  </data>
-  <data name="Editor.ReadyMany" xml:space="preserve">
-    <value>Editor siap · {0} blok di kanvas. Gunakan + untuk menambahkan atau seret blok.</value>
-  </data>
-  <data name="Editor.ReplaceConfirm" xml:space="preserve">
-    <value>Ganti kanvas saat ini dengan tata letak {0}? Anda dapat membatalkan perubahan ini.</value>
-  </data>
-  <data name="Editor.SaveFailed" xml:space="preserve">
-    <value>Tidak dapat menyimpan kuis kustom ini.</value>
-  </data>
-  <data name="Editor.SavedPlayable" xml:space="preserve">
-    <value>Tersimpan. Kuis ini siap dimainkan.</value>
-  </data>
-  <data name="Editor.DraftSaved" xml:space="preserve">
-    <value>Draf tersimpan. Selesaikan bidang kuis yang diperlukan sebelum bermain.</value>
-  </data>
-  <data name="Editor.SaveStopped" xml:space="preserve">
-    <value>Permintaan penyimpanan berhenti secara tidak terduga. Coba lagi.</value>
-  </data>
-  <data name="Editor.WordLemma" xml:space="preserve">
-    <value>Kata / lema</value>
-  </data>
-  <data name="Editor.Translation" xml:space="preserve">
-    <value>Terjemahan</value>
-  </data>
-  <data name="Editor.Width" xml:space="preserve">
-    <value>Lebar</value>
-  </data>
-  <data name="Editor.Column" xml:space="preserve">
-    <value>Kolom</value>
-  </data>
-  <data name="Editor.ColumnNumber" xml:space="preserve">
-    <value>Kolom {0}</value>
-  </data>
-  <data name="Editor.Row" xml:space="preserve">
-    <value>Baris</value>
-  </data>
-  <data name="Editor.Text" xml:space="preserve">
-    <value>Teks</value>
-  </data>
-  <data name="Editor.LiveBinding" xml:space="preserve">
-    <value>Pengikatan kata langsung</value>
-  </data>
-  <data name="Editor.ExerciseRow" xml:space="preserve">
-    <value>Baris latihan (gunakan {{blank}})</value>
-  </data>
-  <data name="Editor.AccessibleLabel" xml:space="preserve">
-    <value>Label aksesibel</value>
-  </data>
-  <data name="Editor.CustomExpected" xml:space="preserve">
-    <value>Jawaban yang diharapkan kustom</value>
-  </data>
-  <data name="Editor.ExpectedBinding" xml:space="preserve">
-    <value>Pengikatan kata yang diharapkan</value>
-  </data>
-  <data name="Editor.DisplayedWord" xml:space="preserve">
-    <value>Kata yang ditampilkan</value>
-  </data>
-  <data name="Editor.ExpectedChecked" xml:space="preserve">
-    <value>Diharapkan dicentang</value>
-  </data>
   <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
     <value>Kuis itu tidak lagi publik.</value>
   </data>
@@ -1967,4 +1595,5 @@
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Pratinjau JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Impor semuanya</value></data>
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Pratinjau dan impor bersifat deterministik dan tidak menghubungi penyedia AI. “Perbaiki dengan AI” mengirim teks yang ditempel ke AI yang dikonfigurasi Glosify dan mengenakan biaya kredit.</value></data>
+  <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
 </root>

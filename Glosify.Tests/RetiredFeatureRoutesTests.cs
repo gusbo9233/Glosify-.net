@@ -1,8 +1,10 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using AngleSharp.Html.Parser;
 using Glosify.Data;
+using Glosify.Models.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -48,6 +50,8 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
     [InlineData("/Classroom")]
     [InlineData("/Classroom/00000000-0000-0000-0000-000000000001")]
     [InlineData("/hubs/classroom-chat")]
+    [InlineData("/CustomQuizzes/00000000-0000-0000-0000-000000000001/Edit")]
+    [InlineData("/CustomQuizzes/00000000-0000-0000-0000-000000000001/Play")]
     public async Task RetiredRoutesReturnNatural404ForFormerProductionAdministrators(string route)
     {
         using var client = CreateAdminClient();
@@ -55,6 +59,65 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
         var response = await client.GetAsync(route);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    public static TheoryData<HttpMethod, string> RetiredCustomQuizMutations => new()
+    {
+        { HttpMethod.Post, "/Quizzes/00000000-0000-0000-0000-000000000001/Custom/New" },
+        { HttpMethod.Post, "/CustomQuizzes" },
+        { HttpMethod.Put, "/CustomQuizzes/00000000-0000-0000-0000-000000000001" },
+        { HttpMethod.Delete, "/CustomQuizzes/00000000-0000-0000-0000-000000000001" },
+        { HttpMethod.Post, "/CustomQuizzes/00000000-0000-0000-0000-000000000001/Grade" },
+    };
+
+    [Theory]
+    [MemberData(nameof(RetiredCustomQuizMutations))]
+    public async Task RetiredCustomQuizMutationRoutesReturnNatural404(
+        HttpMethod method,
+        string route)
+    {
+        using var client = CreateAdminClient();
+        using var request = new HttpRequestMessage(method, route)
+        {
+            Content = JsonContent.Create(new { }),
+        };
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task QuizAndExploreDetailsContainNoCustomQuizSurface()
+    {
+        var quizId = Guid.NewGuid();
+        await using (var scope = _factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
+            db.Quizzes.Add(new Quiz
+            {
+                Id = quizId,
+                UserId = "admin-1",
+                Name = "Retirement coverage",
+                SourceLanguage = "English",
+                TargetLanguage = "Polish",
+                Language = "Polish",
+                IsPublic = true,
+                CreatedAt = DateTimeOffset.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        using var client = CreateAdminClient();
+        foreach (var route in new[] { $"/Quiz/Details/{quizId}", $"/Explore/Details/{quizId}" })
+        {
+            var response = await client.GetAsync(route);
+            response.EnsureSuccessStatusCode();
+            var html = await response.Content.ReadAsStringAsync();
+            Assert.DoesNotContain("CustomQuizzes", html, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("custom quiz", html, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("data-custom-quiz", html, StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     [Fact]
@@ -78,6 +141,7 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
         Assert.DoesNotContain("/Classroom", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("data-speaking-unavailable", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("data-classroom-unavailable", html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("custom quiz", html, StringComparison.OrdinalIgnoreCase);
     }
 
     public void Dispose() => _factory.Dispose();

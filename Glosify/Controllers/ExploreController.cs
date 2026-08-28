@@ -3,7 +3,6 @@ using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Models.ViewModels;
 using Glosify.Services;
-using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Words;
@@ -20,21 +19,18 @@ public class ExploreController : Controller
     private readonly IQuizService _quizService;
     private readonly IWordService _wordService;
     private readonly ILanguageContext _languageContext;
-    private readonly ICustomQuizService _customQuizService;
     private readonly UiTextStringLocalizer _text = new();
 
     public ExploreController(
         ICollectionService collectionService,
         IQuizService quizService,
         IWordService wordService,
-        ILanguageContext languageContext,
-        ICustomQuizService customQuizService)
+        ILanguageContext languageContext)
     {
         _collectionService = collectionService;
         _quizService = quizService;
         _wordService = wordService;
         _languageContext = languageContext;
-        _customQuizService = customQuizService;
     }
 
     [HttpGet]
@@ -127,7 +123,6 @@ public class ExploreController : Controller
         {
             SelectedQuiz = QuizCard.From(selectedQuiz),
             Words = words.Select(WordRow.From).ToList(),
-            CustomQuizzes = await _customQuizService.ListForQuizAsync(selectedQuiz.Id, playableOnly: true, cancellationToken),
             Sentences = sentences.Select(s => new QuizSentenceViewModel
             {
                 Text = s.Text,

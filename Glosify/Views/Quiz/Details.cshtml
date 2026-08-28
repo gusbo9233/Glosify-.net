@@ -30,18 +30,11 @@
                 {
                     <span>@Model.Sentences.Count @(Model.Sentences.Count == 1 ? Text["Settings.SentenceLower"] : Text["Settings.SentencesLower"])</span>
                 }
-                <span>@Text["Quiz.CustomCount", Model.CustomQuizzes.Count()]</span>
             </p>
             <div class="hero-actions">
                 <a asp-controller="Quiz" asp-action="Settings" asp-route-id="@Model.SelectedQuiz.Id" class="btn-hero">
                     @Text["Settings.StartQuiz"] <span class="material-symbols-outlined">play_circle</span>
                 </a>
-                <form class="custom-quiz-new-form" method="post" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
-                    @Html.AntiForgeryToken()
-                    <button class="btn-hero btn-hero-secondary" type="submit">
-                        @Text["Quiz.BuildCustom"] <span class="material-symbols-outlined">dashboard_customize</span>
-                    </button>
-                </form>
                 <form class="share-form visibility-checkbox-form" method="post" asp-controller="Quiz" asp-action="SetQuizVisibility" asp-route-id="@Model.SelectedQuiz.Id">
                     @Html.AntiForgeryToken()
                     <label class="visibility-checkbox">
@@ -191,43 +184,6 @@
         }
     </section>
 
-    <section class="custom-quiz-library">
-        <div class="collection-header">
-            <div>
-                <h2 class="collection-title">@Text["Quiz.CustomQuizzes"]</h2>
-                <p class="collection-subtitle">@Text["Quiz.CustomHelp"]</p>
-            </div>
-            <form class="custom-quiz-new-form" method="post" asp-controller="CustomQuiz" asp-action="New" asp-route-quizId="@Model.SelectedQuiz.Id">
-                @Html.AntiForgeryToken()
-                <button class="btn-new-quiz" type="submit">
-                    <span class="material-symbols-outlined">add</span> @Text["Quiz.NewCustom"]
-                </button>
-            </form>
-        </div>
-        <div class="custom-quiz-card-grid">
-            @foreach (var customQuiz in Model.CustomQuizzes)
-            {
-                <article class="custom-quiz-card" data-custom-quiz-card>
-                    <div>
-                        <h3>@customQuiz.Name</h3>
-                        <span class="status-pill @(customQuiz.IsPlayable ? "" : "custom-quiz-draft")">@(customQuiz.IsPlayable ? Text["Quiz.Playable"] : Text["Quiz.Draft"])</span>
-                    </div>
-                    <div class="custom-quiz-card-actions">
-                        <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Edit" asp-route-id="@customQuiz.Id">@Text["Common.Edit"]</a>
-                        @if (customQuiz.IsPlayable)
-                        {
-                            <a class="btn-secondary" asp-controller="CustomQuiz" asp-action="Play" asp-route-id="@customQuiz.Id">@Text["Common.Play"]</a>
-                        }
-                        <button class="btn-linkish" type="button" data-delete-custom-quiz data-delete-url="@Url.Action("Delete", "CustomQuiz", new { id = customQuiz.Id })">@Text["Common.Delete"]</button>
-                    </div>
-                </article>
-            }
-            @if (!Model.CustomQuizzes.Any())
-            {
-                <div class="empty-state empty-state-slim">@Text["Quiz.NoCustom"]</div>
-            }
-        </div>
-    </section>
 </section>
 
 <dialog class="anki-add-dialog" data-anki-item-dialog>

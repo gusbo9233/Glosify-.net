@@ -2,7 +2,6 @@ using Glosify.Extensions;
 using Glosify.Filters;
 using Glosify.Infrastructure.Api;
 using Glosify.Models.Api;
-using Glosify.Models.CustomQuizzes;
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
@@ -128,7 +127,6 @@ public class AssistantController : ControllerBase
                 input.DocumentContext is null
                     ? null
                     : new AssistantDocumentContext(input.DocumentContext.DocumentId, input.DocumentContext.PageNumber),
-                input.CustomQuizId,
                 cancellationToken,
                 input.TranscriptId,
                 input.BookDocumentId,
@@ -185,10 +183,6 @@ public class AssistantController : ControllerBase
             and not QuizCollectionNotFoundException)
         {
             return NotFound(new { error = ex.Message });
-        }
-        catch (CustomQuizValidationException ex)
-        {
-            return BadRequest(new { error = string.Join(" ", ex.Errors), errors = ex.Errors });
         }
     }
 
@@ -311,10 +305,6 @@ public class AssistantController : ControllerBase
             and not QuizCollectionNotFoundException)
         {
             return NotFound(new { error = ex.Message });
-        }
-        catch (CustomQuizValidationException ex)
-        {
-            return BadRequest(new { error = string.Join(" ", ex.Errors), errors = ex.Errors });
         }
     }
 

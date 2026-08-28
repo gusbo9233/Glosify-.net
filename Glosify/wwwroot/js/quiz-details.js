@@ -1,17 +1,4 @@
 (() => {
-    const t = (key, fallback) => window.glosifyText?.(key, fallback) ?? fallback;
-    const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-    const messageHost = document.querySelector('[data-ai-message-host]');
-
-    const setMessage = (text, kind = 'success') => {
-        if (!messageHost) return;
-        messageHost.innerHTML = '';
-        const message = document.createElement('div');
-        message.className = `panel-message ${kind}`;
-        message.textContent = text;
-        messageHost.appendChild(message);
-    };
-
     const menus = [...document.querySelectorAll('[data-item-menu]')];
     menus.forEach(menu => menu.addEventListener('toggle', () => {
         if (menu.open) menus.filter(other => other !== menu).forEach(other => other.removeAttribute('open'));
@@ -45,21 +32,4 @@
         if (!window.confirm(form.dataset.confirm)) event.preventDefault();
     }));
 
-    document.querySelectorAll('[data-delete-custom-quiz]').forEach(button => {
-        button.addEventListener('click', async () => {
-            if (!window.confirm(t('Client.DeleteQuizConfirm', 'Delete this custom quiz?'))) return;
-            button.disabled = true;
-            try {
-                const response = await fetch(button.dataset.deleteUrl, {
-                    method: 'DELETE',
-                    headers: { 'RequestVerificationToken': tokenInput?.value ?? '' }
-                });
-                if (!response.ok) throw new Error();
-                button.closest('[data-custom-quiz-card]')?.remove();
-            } catch {
-                setMessage(t('Client.DeleteQuizFailed', 'Could not delete the custom quiz. Try again.'), 'error');
-                button.disabled = false;
-            }
-        });
-    });
 })();

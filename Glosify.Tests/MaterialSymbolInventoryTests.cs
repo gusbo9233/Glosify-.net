@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using Glosify.Services.CustomQuizzes;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -45,14 +44,6 @@ public sealed class MaterialSymbolInventoryTests
         @"['""]([a-z0-9_]+)['""]",
         RegexOptions.Compiled);
 
-    /// <summary>
-    /// The custom-quiz templates name their own icon in C#, so the catalog is
-    /// asked rather than pattern-matched — adding a template keeps working.
-    /// </summary>
-    private static IEnumerable<(string Icon, string Source)> CatalogIcons() =>
-        new CustomQuizTemplateCatalog().List()
-            .Select(template => (template.Icon, $"CustomQuizTemplateCatalog — {template.Name}"));
-
     [Fact]
     public void Every_icon_the_app_renders_is_in_the_requested_subset()
     {
@@ -67,11 +58,6 @@ public sealed class MaterialSymbolInventoryTests
             {
                 Record(icon, file);
             }
-        }
-
-        foreach (var (icon, source) in CatalogIcons())
-        {
-            Record(icon, source);
         }
 
         Assert.True(
@@ -92,9 +78,7 @@ public sealed class MaterialSymbolInventoryTests
     [Fact]
     public void The_requested_subset_carries_nothing_the_app_stopped_using()
     {
-        var used = CatalogIcons()
-            .Select(entry => entry.Icon)
-            .ToHashSet(StringComparer.Ordinal);
+        var used = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var file in SourceFiles())
         {

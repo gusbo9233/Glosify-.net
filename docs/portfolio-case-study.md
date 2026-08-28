@@ -12,7 +12,7 @@ AI features, browser tests, and an Azure delivery pipeline.
 Glosify brings several language-learning activities into one account:
 
 - save vocabulary and sentences in quizzes and collections;
-- practise with flashcards, typing exercises, and custom quizzes;
+- practise with flashcards and typing exercises;
 - upload PDF books, translate pages, and create learning material from them;
 - review durable study cards with the FSRS-6 Anki workflow;
 - create and update quizzes through an assistant;
@@ -123,7 +123,7 @@ The current automated suite contains:
 - a broad .NET unit, integration, and contract suite, with direct OpenAI smoke
   tests credential-gated and skipped by default;
 - 29 dependency-free JavaScript tests;
-- four Playwright journeys covering accounts, quizzes, custom quizzes, and
+- Playwright journeys covering accounts, standard quizzes, Anki review, and
   assistant chat management;
 - a CI migration check that applies the schema to an empty SQL Server database
   and checks for pending model changes.

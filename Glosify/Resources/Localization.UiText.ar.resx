@@ -387,9 +387,6 @@
   <data name="Home.BuildVocabularyText" xml:space="preserve">
     <value>أنشئ مجموعات مركزة من الكلمات التي تريد استخدامها فعلًا.</value>
   </data>
-  <data name="Home.PracticeRecallText" xml:space="preserve">
-    <value>استخدم البطاقات التعليمية والكتابة والتدريبات المخصصة لترسيخ الكلمات.</value>
-  </data>
   <data name="Home.ConnectedKicker" xml:space="preserve">
     <value>مساحة عمل مترابطة واحدة</value>
   </data>
@@ -872,12 +869,6 @@
   </data>
   <data name="Client.CheckFailed" xml:space="preserve">
     <value>تعذّر التحقق من تلك الإجابة. حاول مرة أخرى.</value>
-  </data>
-  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
-    <value>هل تريد حذف هذا الاختبار المخصص؟</value>
-  </data>
-  <data name="Client.DeleteQuizFailed" xml:space="preserve">
-    <value>تعذّر حذف الاختبار المخصص. حاول مرة أخرى.</value>
   </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>حذف المحادثة</value>
@@ -1365,12 +1356,6 @@
   <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
     <value>اسأل عن هذا الاختبار...</value>
   </data>
-  <data name="Quiz.CustomCount" xml:space="preserve">
-    <value>{0} مخصص</value>
-  </data>
-  <data name="Quiz.BuildCustom" xml:space="preserve">
-    <value>إنشاء اختبار مخصص</value>
-  </data>
   <data name="Quiz.Public" xml:space="preserve">
     <value>عام</value>
   </data>
@@ -1406,24 +1391,6 @@
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>لا توجد جمل بعد. اطلب من المساعد إضافة جمل أو استخراجها من النص.</value>
-  </data>
-  <data name="Quiz.CustomQuizzes" xml:space="preserve">
-    <value>اختبارات مخصصة</value>
-  </data>
-  <data name="Quiz.CustomHelp" xml:space="preserve">
-    <value>أنشئ تمرينًا حرًا من الكلمات في هذا الاختبار.</value>
-  </data>
-  <data name="Quiz.NewCustom" xml:space="preserve">
-    <value>اختبار مخصص جديد</value>
-  </data>
-  <data name="Quiz.Playable" xml:space="preserve">
-    <value>قابل للتشغيل</value>
-  </data>
-  <data name="Quiz.Draft" xml:space="preserve">
-    <value>مسودة</value>
-  </data>
-  <data name="Quiz.NoCustom" xml:space="preserve">
-    <value>لا توجد اختبارات مخصصة بعد. أنشئ واحدًا بسحب الكتل إلى اللوحة.</value>
   </data>
   <data name="Payments.PackageUnavailable" xml:space="preserve">
     <value>هذه الحزمة الائتمانية لم تعد متاحة.</value>
@@ -1509,179 +1476,8 @@
   <data name="Common.Preview" xml:space="preserve">
     <value>معاينة</value>
   </data>
-  <data name="Custom.EditNamed" xml:space="preserve">
-    <value>تحرير {0}</value>
-  </data>
-  <data name="Custom.AssistantTitle" xml:space="preserve">
-    <value>مساعد إنشاء الاختبار</value>
-  </data>
-  <data name="Custom.AssistantEmpty" xml:space="preserve">
-    <value>اطلب مني إضافة عناصر الاختبار أو ضبطها أو ترتيبها.</value>
-  </data>
-  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
-    <value>أضف أسئلة إلى هذا الاختبار المخصص...</value>
-  </data>
-  <data name="Custom.Name" xml:space="preserve">
-    <value>اسم الاختبار المخصص</value>
-  </data>
-  <data name="Custom.LoadingEditor" xml:space="preserve">
-    <value>جارٍ تحميل عناصر المحرر…</value>
-  </data>
-  <data name="Custom.DesignStarters" xml:space="preserve">
-    <value>بدايات التصميم</value>
-  </data>
-  <data name="Custom.VisualDirection" xml:space="preserve">
-    <value>اختر اتجاهًا بصريًا</value>
-  </data>
-  <data name="Custom.TemplateHelp" xml:space="preserve">
-    <value>طبّق المظهر فقط، أو استبدل اللوحة بتخطيط كامل مبني من كلمات هذا الاختبار.</value>
-  </data>
-  <data name="Custom.UseStyle" xml:space="preserve">
-    <value>استخدام النمط</value>
-  </data>
-  <data name="Custom.UseLayout" xml:space="preserve">
-    <value>استخدام التخطيط</value>
-  </data>
-  <data name="Custom.BuildingBlocks" xml:space="preserve">
-    <value>كتل بناء الاختبار</value>
-  </data>
-  <data name="Custom.Blocks" xml:space="preserve">
-    <value>الكتل</value>
-  </data>
-  <data name="Custom.BlocksHelp" xml:space="preserve">
-    <value>اسحب إلى أي مساحة مفتوحة، أو انقر للإضافة تلقائيًا.</value>
-  </data>
-  <data name="Custom.DragAdd" xml:space="preserve">
-    <value>اسحب أو انقر لإضافة {0}</value>
-  </data>
-  <data name="Custom.Add" xml:space="preserve">
-    <value>إضافة {0}</value>
-  </data>
-  <data name="Custom.Grid" xml:space="preserve">
-    <value>شبكة ذكية من 12 عمودًا</value>
-  </data>
-  <data name="Custom.GridHelp" xml:space="preserve">
-    <value>اسحب لوضع العنصر · تلتقط الحواف المواضع · تُتجنب المساحات المشغولة</value>
-  </data>
-  <data name="Custom.Canvas" xml:space="preserve">
-    <value>لوحة الاختبار المخصص</value>
-  </data>
-  <data name="Custom.Properties" xml:space="preserve">
-    <value>الخصائص</value>
-  </data>
-  <data name="Custom.PropertiesHelp" xml:space="preserve">
-    <value>حدد كتلة لتعديل محتواها وارتباطاتها.</value>
-  </data>
-  <data name="Custom.Answer" xml:space="preserve">
-    <value>الإجابة</value>
-  </data>
-  <data name="Custom.Choose" xml:space="preserve">
-    <value>اختر...</value>
-  </data>
-  <data name="Custom.CheckAnswers" xml:space="preserve">
-    <value>التحقق من الإجابات</value>
-  </data>
-  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
-    <value>أكمل الاختبار، ثم أرسل إجاباتك.</value>
-  </data>
-  <data name="Custom.Block.Heading" xml:space="preserve">
-    <value>عنوان</value>
-  </data>
-  <data name="Custom.Block.Instruction" xml:space="preserve">
-    <value>تعليمات</value>
-  </data>
-  <data name="Custom.Block.WordLabel" xml:space="preserve">
-    <value>تسمية الكلمة</value>
-  </data>
-  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
-    <value>تسمية الترجمة</value>
-  </data>
-  <data name="Custom.Block.TextInput" xml:space="preserve">
-    <value>حقل إدخال نص</value>
-  </data>
-  <data name="Custom.Block.LongAnswer" xml:space="preserve">
-    <value>إجابة مطولة</value>
-  </data>
-  <data name="Custom.Block.Checkbox" xml:space="preserve">
-    <value>مربع اختيار</value>
-  </data>
-  <data name="Custom.Block.RadioChoices" xml:space="preserve">
-    <value>خيارات أزرار الاختيار</value>
-  </data>
-  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
-    <value>خيارات مربعات الاختيار</value>
-  </data>
-  <data name="Custom.Block.SelectMenu" xml:space="preserve">
-    <value>قائمة اختيار</value>
-  </data>
-  <data name="Custom.Block.WordBank" xml:space="preserve">
-    <value>بنك الكلمات</value>
-  </data>
-  <data name="Custom.Block.SubmitButton" xml:space="preserve">
-    <value>زر الإرسال</value>
-  </data>
-  <data name="Custom.Block.Feedback" xml:space="preserve">
-    <value>ملاحظات</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
-    <value>تسلسل تحريري</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
-    <value>تدرّج هادئ، ومسافات رحبة، ومهمة واحدة واضحة في كل صف.</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
-    <value>الترجمات، ومحفزات القواعد، والاسترجاع المركّز</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
-    <value>بطاقات الشفق القطبي</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>ألوان ناعمة وبطاقات تدريب مترابطة وأجواء دراسة حيوية.</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
-    <value>مجموعات مفردات قصيرة والتصفح البصري</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
-    <value>تمرين كتاب مدرسي</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
-    <value>صفوف مرقمة مضغوطة على غرار تمارين الدفتر المصوَّر.</value>
-  </data>
-  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
-    <value>التصريف، والتحويلات، وتمارين الفراغات، والتمارين الرسمية</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
-    <value>مختبر بنك الكلمات</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
-    <value>يتصدر التمرين بنكُ كلماتٍ بارز ويجعل الاسترجاع ممتعًا.</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
-    <value>الاسترجاع الموجّه ومفردات المبتدئين</value>
-  </data>
-  <data name="Custom.AnswerQuestion" xml:space="preserve">
-    <value>أجب عن هذا السؤال.</value>
-  </data>
-  <data name="Custom.Correct" xml:space="preserve">
-    <value>صحيح.</value>
-  </data>
-  <data name="Custom.CorrectAnswer" xml:space="preserve">
-    <value>الإجابة الصحيحة: {0}</value>
-  </data>
-  <data name="Custom.CompleteAnswers" xml:space="preserve">
-    <value>أكمل كل الإجابات قبل الإرسال.</value>
-  </data>
-  <data name="Custom.Score" xml:space="preserve">
-    <value>النتيجة: {0} من {1} ({2}%).</value>
-  </data>
-  <data name="Custom.GradeFailed" xml:space="preserve">
-    <value>تعذّر تقييم هذا الاختبار. حاول مرة أخرى.</value>
-  </data>
   <data name="Explore.PublicQuiz" xml:space="preserve">
     <value>اختبار عام</value>
-  </data>
-  <data name="Explore.CustomExercises" xml:space="preserve">
-    <value>تمارين أُنشئت من مفردات هذا الاختبار.</value>
   </data>
   <data name="Explore.NoPublicWords" xml:space="preserve">
     <value>لم تُضَف أي كلمات إلى هذا الاختبار العام بعد.</value>
@@ -1755,174 +1551,6 @@
   <data name="Reader.PdfLoadFailed" xml:space="preserve">
     <value>تعذر تحميل ملف PDF.</value>
   </data>
-  <data name="Editor.Heading" xml:space="preserve">
-    <value>العنوان</value>
-  </data>
-  <data name="Editor.Instruction" xml:space="preserve">
-    <value>التعليمات</value>
-  </data>
-  <data name="Editor.WordLabel" xml:space="preserve">
-    <value>تسمية الكلمة</value>
-  </data>
-  <data name="Editor.TranslationLabel" xml:space="preserve">
-    <value>تسمية الترجمة</value>
-  </data>
-  <data name="Editor.TextInput" xml:space="preserve">
-    <value>إدخال نص</value>
-  </data>
-  <data name="Editor.LongAnswer" xml:space="preserve">
-    <value>إجابة طويلة</value>
-  </data>
-  <data name="Editor.Checkbox" xml:space="preserve">
-    <value>مربع اختيار</value>
-  </data>
-  <data name="Editor.RadioChoices" xml:space="preserve">
-    <value>خيارات أزرار الاختيار</value>
-  </data>
-  <data name="Editor.CheckboxChoices" xml:space="preserve">
-    <value>خيارات مربعات الاختيار</value>
-  </data>
-  <data name="Editor.SelectMenu" xml:space="preserve">
-    <value>قائمة اختيار</value>
-  </data>
-  <data name="Editor.WordBank" xml:space="preserve">
-    <value>بنك الكلمات</value>
-  </data>
-  <data name="Editor.SubmitButton" xml:space="preserve">
-    <value>زر الإرسال</value>
-  </data>
-  <data name="Editor.Feedback" xml:space="preserve">
-    <value>ملاحظات</value>
-  </data>
-  <data name="Editor.EmptyCanvas" xml:space="preserve">
-    <value>اسحب كتلة إلى أي مكان على هذه اللوحة للبدء.</value>
-  </data>
-  <data name="Editor.MoveLeft" xml:space="preserve">
-    <value>تحريك لليسار</value>
-  </data>
-  <data name="Editor.MoveUp" xml:space="preserve">
-    <value>تحريك للأعلى</value>
-  </data>
-  <data name="Editor.MoveDown" xml:space="preserve">
-    <value>تحريك للأسفل</value>
-  </data>
-  <data name="Editor.MoveRight" xml:space="preserve">
-    <value>تحريك لليمين</value>
-  </data>
-  <data name="Editor.RemoveBlock" xml:space="preserve">
-    <value>إزالة الكتلة</value>
-  </data>
-  <data name="Editor.Resize" xml:space="preserve">
-    <value>اسحب لتغيير العرض</value>
-  </data>
-  <data name="Editor.Word" xml:space="preserve">
-    <value>كلمة</value>
-  </data>
-  <data name="Editor.DisplayField" xml:space="preserve">
-    <value>حقل العرض</value>
-  </data>
-  <data name="Editor.Words" xml:space="preserve">
-    <value>كلمات</value>
-  </data>
-  <data name="Editor.Options" xml:space="preserve">
-    <value>الخيارات</value>
-  </data>
-  <data name="Editor.CorrectOption" xml:space="preserve">
-    <value>الخيار الصحيح</value>
-  </data>
-  <data name="Editor.RemoveOption" xml:space="preserve">
-    <value>إزالة الخيار</value>
-  </data>
-  <data name="Editor.AddOption" xml:space="preserve">
-    <value>إضافة خيار</value>
-  </data>
-  <data name="Editor.Properties" xml:space="preserve">
-    <value>الخصائص</value>
-  </data>
-  <data name="Editor.SelectBlock" xml:space="preserve">
-    <value>حدد كتلة لتعديل محتواها وارتباطاتها.</value>
-  </data>
-  <data name="Editor.TargetInputs" xml:space="preserve">
-    <value>المدخلات المستهدفة</value>
-  </data>
-  <data name="Editor.PreviewOnly" xml:space="preserve">
-    <value>معاينة فقط — احفظ ثم شغّل لتسجيل محاولة مُقيّمة.</value>
-  </data>
-  <data name="Editor.BackToEditor" xml:space="preserve">
-    <value>العودة إلى المحرر</value>
-  </data>
-  <data name="Editor.Preview" xml:space="preserve">
-    <value>معاينة</value>
-  </data>
-  <data name="Editor.PreviewingOne" xml:space="preserve">
-    <value>تجري معاينة {0} من الكتل.</value>
-  </data>
-  <data name="Editor.PreviewingMany" xml:space="preserve">
-    <value>تجري معاينة {0} من الكتل.</value>
-  </data>
-  <data name="Editor.ReadyOne" xml:space="preserve">
-    <value>المحرر جاهز · {0} كتلة على اللوحة. استخدم + لإضافة كتلة أو اسحب كتلة.</value>
-  </data>
-  <data name="Editor.ReadyMany" xml:space="preserve">
-    <value>المحرر جاهز · توجد {0} كتل على اللوحة. استخدم + للإضافة أو اسحب كتلة.</value>
-  </data>
-  <data name="Editor.ReplaceConfirm" xml:space="preserve">
-    <value>هل تريد استبدال اللوحة الحالية بتخطيط {0}؟ يمكنك التراجع عن هذا التغيير.</value>
-  </data>
-  <data name="Editor.SaveFailed" xml:space="preserve">
-    <value>تعذّر حفظ هذا الاختبار المخصص.</value>
-  </data>
-  <data name="Editor.SavedPlayable" xml:space="preserve">
-    <value>تم الحفظ. هذا الاختبار جاهز للتشغيل.</value>
-  </data>
-  <data name="Editor.DraftSaved" xml:space="preserve">
-    <value>تم حفظ المسودة. أكمل حقول الاختبار المطلوبة قبل التشغيل.</value>
-  </data>
-  <data name="Editor.SaveStopped" xml:space="preserve">
-    <value>توقفت طلب الحفظ بشكل غير متوقع. حاول مرة أخرى.</value>
-  </data>
-  <data name="Editor.WordLemma" xml:space="preserve">
-    <value>الكلمة / الأصل المعجمي</value>
-  </data>
-  <data name="Editor.Translation" xml:space="preserve">
-    <value>الترجمة</value>
-  </data>
-  <data name="Editor.Width" xml:space="preserve">
-    <value>العرض</value>
-  </data>
-  <data name="Editor.Column" xml:space="preserve">
-    <value>عمود</value>
-  </data>
-  <data name="Editor.ColumnNumber" xml:space="preserve">
-    <value>العمود {0}</value>
-  </data>
-  <data name="Editor.Row" xml:space="preserve">
-    <value>صف</value>
-  </data>
-  <data name="Editor.Text" xml:space="preserve">
-    <value>النص</value>
-  </data>
-  <data name="Editor.LiveBinding" xml:space="preserve">
-    <value>ربط مباشر للكلمة</value>
-  </data>
-  <data name="Editor.ExerciseRow" xml:space="preserve">
-    <value>صف التمرين (استخدم {{blank}})</value>
-  </data>
-  <data name="Editor.AccessibleLabel" xml:space="preserve">
-    <value>تسمية وصولية</value>
-  </data>
-  <data name="Editor.CustomExpected" xml:space="preserve">
-    <value>الإجابة المتوقعة المخصصة</value>
-  </data>
-  <data name="Editor.ExpectedBinding" xml:space="preserve">
-    <value>ربط الكلمة المتوقع</value>
-  </data>
-  <data name="Editor.DisplayedWord" xml:space="preserve">
-    <value>الكلمة المعروضة</value>
-  </data>
-  <data name="Editor.ExpectedChecked" xml:space="preserve">
-    <value>متوقع تحديده</value>
-  </data>
   <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
     <value>هذا الاختبار لم يعد عامًا.</value>
   </data>
@@ -1967,4 +1595,5 @@
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>معاينة JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>استيراد الكل</value></data>
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>المعاينة والاستيراد حتميان ولا يتصلان بمزوّد ذكاء اصطناعي. يرسل «الإصلاح بالذكاء الاصطناعي» النص الملصق إلى الذكاء الاصطناعي المُعدّ في Glosify ويخصم الأرصدة.</value></data>
+  <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
 </root>

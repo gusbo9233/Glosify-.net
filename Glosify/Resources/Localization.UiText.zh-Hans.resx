@@ -387,9 +387,6 @@
   <data name="Home.BuildVocabularyText" xml:space="preserve">
     <value>创建聚焦词集，收录您真正想用的词。</value>
   </data>
-  <data name="Home.PracticeRecallText" xml:space="preserve">
-    <value>使用闪卡、输入和自定义测验，让单词牢牢记住。</value>
-  </data>
   <data name="Home.ConnectedKicker" xml:space="preserve">
     <value>一个连贯的工作区</value>
   </data>
@@ -872,12 +869,6 @@
   </data>
   <data name="Client.CheckFailed" xml:space="preserve">
     <value>无法检查该答案。请重试。</value>
-  </data>
-  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
-    <value>删除此自定义测验？</value>
-  </data>
-  <data name="Client.DeleteQuizFailed" xml:space="preserve">
-    <value>无法删除自定义测验。请重试。</value>
   </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>删除聊天</value>
@@ -1365,12 +1356,6 @@
   <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
     <value>询问有关此测验的问题...</value>
   </data>
-  <data name="Quiz.CustomCount" xml:space="preserve">
-    <value>{0} 个自定义</value>
-  </data>
-  <data name="Quiz.BuildCustom" xml:space="preserve">
-    <value>创建自定义测验</value>
-  </data>
   <data name="Quiz.Public" xml:space="preserve">
     <value>公开</value>
   </data>
@@ -1406,24 +1391,6 @@
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>还没有句子。请让助手添加句子，或从文本中提取。</value>
-  </data>
-  <data name="Quiz.CustomQuizzes" xml:space="preserve">
-    <value>自定义测验</value>
-  </data>
-  <data name="Quiz.CustomHelp" xml:space="preserve">
-    <value>根据此测验中的单词创建自由练习。</value>
-  </data>
-  <data name="Quiz.NewCustom" xml:space="preserve">
-    <value>新建自定义测验</value>
-  </data>
-  <data name="Quiz.Playable" xml:space="preserve">
-    <value>可播放</value>
-  </data>
-  <data name="Quiz.Draft" xml:space="preserve">
-    <value>草稿</value>
-  </data>
-  <data name="Quiz.NoCustom" xml:space="preserve">
-    <value>还没有自定义测验。通过将模块拖到画布上来创建一个。</value>
   </data>
   <data name="Payments.PackageUnavailable" xml:space="preserve">
     <value>该积分包已不再可用。</value>
@@ -1509,179 +1476,8 @@
   <data name="Common.Preview" xml:space="preserve">
     <value>预览</value>
   </data>
-  <data name="Custom.EditNamed" xml:space="preserve">
-    <value>编辑 {0}</value>
-  </data>
-  <data name="Custom.AssistantTitle" xml:space="preserve">
-    <value>测验构建助手</value>
-  </data>
-  <data name="Custom.AssistantEmpty" xml:space="preserve">
-    <value>请让我添加、配置或排列测验元素。</value>
-  </data>
-  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
-    <value>向此自定义测验添加问题...</value>
-  </data>
-  <data name="Custom.Name" xml:space="preserve">
-    <value>自定义测验名称</value>
-  </data>
-  <data name="Custom.LoadingEditor" xml:space="preserve">
-    <value>正在加载编辑器控件…</value>
-  </data>
-  <data name="Custom.DesignStarters" xml:space="preserve">
-    <value>设计起点</value>
-  </data>
-  <data name="Custom.VisualDirection" xml:space="preserve">
-    <value>选择视觉方向</value>
-  </data>
-  <data name="Custom.TemplateHelp" xml:space="preserve">
-    <value>只应用样式，或用基于此测验单词构建的完整布局替换画布。</value>
-  </data>
-  <data name="Custom.UseStyle" xml:space="preserve">
-    <value>使用样式</value>
-  </data>
-  <data name="Custom.UseLayout" xml:space="preserve">
-    <value>使用布局</value>
-  </data>
-  <data name="Custom.BuildingBlocks" xml:space="preserve">
-    <value>测验构建模块</value>
-  </data>
-  <data name="Custom.Blocks" xml:space="preserve">
-    <value>模块</value>
-  </data>
-  <data name="Custom.BlocksHelp" xml:space="preserve">
-    <value>拖到任意空白区域，或点击自动添加。</value>
-  </data>
-  <data name="Custom.DragAdd" xml:space="preserve">
-    <value>拖动或点击以添加 {0}</value>
-  </data>
-  <data name="Custom.Add" xml:space="preserve">
-    <value>添加 {0}</value>
-  </data>
-  <data name="Custom.Grid" xml:space="preserve">
-    <value>12 列智能网格</value>
-  </data>
-  <data name="Custom.GridHelp" xml:space="preserve">
-    <value>拖动放置 · 边缘吸附 · 避开已占用空间</value>
-  </data>
-  <data name="Custom.Canvas" xml:space="preserve">
-    <value>自定义测验画布</value>
-  </data>
-  <data name="Custom.Properties" xml:space="preserve">
-    <value>属性</value>
-  </data>
-  <data name="Custom.PropertiesHelp" xml:space="preserve">
-    <value>选择一个模块以编辑其内容和绑定。</value>
-  </data>
-  <data name="Custom.Answer" xml:space="preserve">
-    <value>答案</value>
-  </data>
-  <data name="Custom.Choose" xml:space="preserve">
-    <value>选择...</value>
-  </data>
-  <data name="Custom.CheckAnswers" xml:space="preserve">
-    <value>检查答案</value>
-  </data>
-  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
-    <value>完成测验，然后提交答案。</value>
-  </data>
-  <data name="Custom.Block.Heading" xml:space="preserve">
-    <value>标题</value>
-  </data>
-  <data name="Custom.Block.Instruction" xml:space="preserve">
-    <value>说明</value>
-  </data>
-  <data name="Custom.Block.WordLabel" xml:space="preserve">
-    <value>单词标签</value>
-  </data>
-  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
-    <value>译文标签</value>
-  </data>
-  <data name="Custom.Block.TextInput" xml:space="preserve">
-    <value>文本输入</value>
-  </data>
-  <data name="Custom.Block.LongAnswer" xml:space="preserve">
-    <value>长答案</value>
-  </data>
-  <data name="Custom.Block.Checkbox" xml:space="preserve">
-    <value>复选框</value>
-  </data>
-  <data name="Custom.Block.RadioChoices" xml:space="preserve">
-    <value>单选项</value>
-  </data>
-  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
-    <value>多选项</value>
-  </data>
-  <data name="Custom.Block.SelectMenu" xml:space="preserve">
-    <value>下拉菜单</value>
-  </data>
-  <data name="Custom.Block.WordBank" xml:space="preserve">
-    <value>词库</value>
-  </data>
-  <data name="Custom.Block.SubmitButton" xml:space="preserve">
-    <value>提交按钮</value>
-  </data>
-  <data name="Custom.Block.Feedback" xml:space="preserve">
-    <value>反馈</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
-    <value>编辑式流程</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
-    <value>层级清晰、留白充足，每行只做一项任务。</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
-    <value>翻译、语法提示、集中回忆</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
-    <value>极光卡片</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>柔和的配色、成对的练习卡片，以及充满活力的学习氛围。</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
-    <value>短词汇集和视觉浏览</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
-    <value>课本练习</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
-    <value>紧凑的编号行，仿照拍摄的练习册习题。</value>
-  </data>
-  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
-    <value>动词变位、句式转换、完形填空和正式练习</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
-    <value>词库实验室</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
-    <value>醒目的词库引导练习，让回忆更有趣。</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
-    <value>引导回忆和初级词汇</value>
-  </data>
-  <data name="Custom.AnswerQuestion" xml:space="preserve">
-    <value>回答这个问题。</value>
-  </data>
-  <data name="Custom.Correct" xml:space="preserve">
-    <value>正确。</value>
-  </data>
-  <data name="Custom.CorrectAnswer" xml:space="preserve">
-    <value>正确答案：{0}</value>
-  </data>
-  <data name="Custom.CompleteAnswers" xml:space="preserve">
-    <value>提交前请完成所有答案。</value>
-  </data>
-  <data name="Custom.Score" xml:space="preserve">
-    <value>得分：{0}/{1}（{2}%）。</value>
-  </data>
-  <data name="Custom.GradeFailed" xml:space="preserve">
-    <value>无法批改此测验。请重试。</value>
-  </data>
   <data name="Explore.PublicQuiz" xml:space="preserve">
     <value>公开测验</value>
-  </data>
-  <data name="Explore.CustomExercises" xml:space="preserve">
-    <value>根据此测验的词汇创建的练习。</value>
   </data>
   <data name="Explore.NoPublicWords" xml:space="preserve">
     <value>此公开测验尚未添加任何词汇。</value>
@@ -1755,174 +1551,6 @@
   <data name="Reader.PdfLoadFailed" xml:space="preserve">
     <value>无法加载 PDF。</value>
   </data>
-  <data name="Editor.Heading" xml:space="preserve">
-    <value>标题</value>
-  </data>
-  <data name="Editor.Instruction" xml:space="preserve">
-    <value>说明</value>
-  </data>
-  <data name="Editor.WordLabel" xml:space="preserve">
-    <value>单词标签</value>
-  </data>
-  <data name="Editor.TranslationLabel" xml:space="preserve">
-    <value>译文标签</value>
-  </data>
-  <data name="Editor.TextInput" xml:space="preserve">
-    <value>文本输入</value>
-  </data>
-  <data name="Editor.LongAnswer" xml:space="preserve">
-    <value>长答案</value>
-  </data>
-  <data name="Editor.Checkbox" xml:space="preserve">
-    <value>复选框</value>
-  </data>
-  <data name="Editor.RadioChoices" xml:space="preserve">
-    <value>单选项</value>
-  </data>
-  <data name="Editor.CheckboxChoices" xml:space="preserve">
-    <value>多选项</value>
-  </data>
-  <data name="Editor.SelectMenu" xml:space="preserve">
-    <value>下拉菜单</value>
-  </data>
-  <data name="Editor.WordBank" xml:space="preserve">
-    <value>词库</value>
-  </data>
-  <data name="Editor.SubmitButton" xml:space="preserve">
-    <value>提交按钮</value>
-  </data>
-  <data name="Editor.Feedback" xml:space="preserve">
-    <value>反馈</value>
-  </data>
-  <data name="Editor.EmptyCanvas" xml:space="preserve">
-    <value>将一个块拖到此画布上的任意位置以开始。</value>
-  </data>
-  <data name="Editor.MoveLeft" xml:space="preserve">
-    <value>向左移动</value>
-  </data>
-  <data name="Editor.MoveUp" xml:space="preserve">
-    <value>向上移动</value>
-  </data>
-  <data name="Editor.MoveDown" xml:space="preserve">
-    <value>向下移动</value>
-  </data>
-  <data name="Editor.MoveRight" xml:space="preserve">
-    <value>向右移动</value>
-  </data>
-  <data name="Editor.RemoveBlock" xml:space="preserve">
-    <value>移除块</value>
-  </data>
-  <data name="Editor.Resize" xml:space="preserve">
-    <value>拖动以调整宽度</value>
-  </data>
-  <data name="Editor.Word" xml:space="preserve">
-    <value>单词</value>
-  </data>
-  <data name="Editor.DisplayField" xml:space="preserve">
-    <value>显示字段</value>
-  </data>
-  <data name="Editor.Words" xml:space="preserve">
-    <value>单词</value>
-  </data>
-  <data name="Editor.Options" xml:space="preserve">
-    <value>选项</value>
-  </data>
-  <data name="Editor.CorrectOption" xml:space="preserve">
-    <value>正确选项</value>
-  </data>
-  <data name="Editor.RemoveOption" xml:space="preserve">
-    <value>移除选项</value>
-  </data>
-  <data name="Editor.AddOption" xml:space="preserve">
-    <value>添加选项</value>
-  </data>
-  <data name="Editor.Properties" xml:space="preserve">
-    <value>属性</value>
-  </data>
-  <data name="Editor.SelectBlock" xml:space="preserve">
-    <value>选择一个块以编辑其内容和绑定。</value>
-  </data>
-  <data name="Editor.TargetInputs" xml:space="preserve">
-    <value>目标输入框</value>
-  </data>
-  <data name="Editor.PreviewOnly" xml:space="preserve">
-    <value>仅预览 — 保存并播放后才能记录评分尝试。</value>
-  </data>
-  <data name="Editor.BackToEditor" xml:space="preserve">
-    <value>返回编辑器</value>
-  </data>
-  <data name="Editor.Preview" xml:space="preserve">
-    <value>预览</value>
-  </data>
-  <data name="Editor.PreviewingOne" xml:space="preserve">
-    <value>正在预览 {0} 个块。</value>
-  </data>
-  <data name="Editor.PreviewingMany" xml:space="preserve">
-    <value>正在预览 {0} 个块。</value>
-  </data>
-  <data name="Editor.ReadyOne" xml:space="preserve">
-    <value>编辑器已就绪 · 画布上有 {0} 个块。使用 + 添加或拖动块。</value>
-  </data>
-  <data name="Editor.ReadyMany" xml:space="preserve">
-    <value>编辑器已就绪 · 画布上有 {0} 个块。使用 + 添加或拖动块。</value>
-  </data>
-  <data name="Editor.ReplaceConfirm" xml:space="preserve">
-    <value>要用 {0} 布局替换当前画布吗？你可以撤销此更改。</value>
-  </data>
-  <data name="Editor.SaveFailed" xml:space="preserve">
-    <value>无法保存此自定义测验。</value>
-  </data>
-  <data name="Editor.SavedPlayable" xml:space="preserve">
-    <value>已保存。此测验已可开始。</value>
-  </data>
-  <data name="Editor.DraftSaved" xml:space="preserve">
-    <value>草稿已保存。请先完成所需的测验字段再开始。</value>
-  </data>
-  <data name="Editor.SaveStopped" xml:space="preserve">
-    <value>保存请求意外停止。请重试。</value>
-  </data>
-  <data name="Editor.WordLemma" xml:space="preserve">
-    <value>单词 / 词元</value>
-  </data>
-  <data name="Editor.Translation" xml:space="preserve">
-    <value>翻译</value>
-  </data>
-  <data name="Editor.Width" xml:space="preserve">
-    <value>宽度</value>
-  </data>
-  <data name="Editor.Column" xml:space="preserve">
-    <value>列</value>
-  </data>
-  <data name="Editor.ColumnNumber" xml:space="preserve">
-    <value>第 {0} 列</value>
-  </data>
-  <data name="Editor.Row" xml:space="preserve">
-    <value>行</value>
-  </data>
-  <data name="Editor.Text" xml:space="preserve">
-    <value>文本</value>
-  </data>
-  <data name="Editor.LiveBinding" xml:space="preserve">
-    <value>实时词绑定</value>
-  </data>
-  <data name="Editor.ExerciseRow" xml:space="preserve">
-    <value>练习行（使用 {{blank}}）</value>
-  </data>
-  <data name="Editor.AccessibleLabel" xml:space="preserve">
-    <value>无障碍标签</value>
-  </data>
-  <data name="Editor.CustomExpected" xml:space="preserve">
-    <value>自定义期望答案</value>
-  </data>
-  <data name="Editor.ExpectedBinding" xml:space="preserve">
-    <value>期望词绑定</value>
-  </data>
-  <data name="Editor.DisplayedWord" xml:space="preserve">
-    <value>显示的单词</value>
-  </data>
-  <data name="Editor.ExpectedChecked" xml:space="preserve">
-    <value>应勾选</value>
-  </data>
   <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
     <value>该测验已不再公开。</value>
   </data>
@@ -1967,4 +1595,5 @@
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>预览 JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>全部导入</value></data>
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>预览和导入是确定性的，不会联系 AI 提供商。“使用 AI 修复”会将粘贴的文本发送给 Glosify 配置的 AI 并扣除点数。</value></data>
+  <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
 </root>

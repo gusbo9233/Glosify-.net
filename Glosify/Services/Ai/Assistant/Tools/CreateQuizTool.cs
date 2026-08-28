@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
-using static Glosify.Services.Ai.Assistant.Tools.CustomQuizToolSupport;
 using static Glosify.Services.Ai.Assistant.Tools.ToolArguments;
 using static Glosify.Services.Ai.Assistant.Tools.ToolSchema;
 
@@ -95,39 +94,13 @@ internal sealed class CreateQuizTool : IAssistantTool
 
         // Creation carries both content types in one call, so it needs the same guard the add
         // tools have: without it, this is the one path that can still file content under a type
-        // the user did not ask for. A sentence is never structural, so that check is
-        // unconditional; the words check is deferred until custom_quiz is known, because a
-        // custom quiz's starter words are its bindings rather than requested vocabulary.
+        // the user did not ask for.
         if (sentences.Count > 0 && WrongContentKind(context, AssistantContentKind.Sentences) is { } sentenceMismatch)
         {
             return sentenceMismatch;
         }
 
-        JsonElement? customQuiz = null;
-        if (args.TryGetProperty("custom_quiz", out var customQuizElement)
-            && customQuizElement.ValueKind != JsonValueKind.Null)
-        {
-            if (customQuizElement.ValueKind != JsonValueKind.Object
-                || string.IsNullOrWhiteSpace(GetString(customQuizElement, "name"))
-                || !TryGetArray(customQuizElement, "blocks", out var customBlocks)
-                || customBlocks.GetArrayLength() == 0)
-            {
-                return new { error = "custom_quiz requires a name and at least one block." };
-            }
-            if (words.Count == 0)
-            {
-                return new { error = "A custom quiz created with a new quiz needs starter words for its bindings." };
-            }
-            var promptError = ValidateAssistantAnswerPrompts(customBlocks);
-            if (promptError != null)
-            {
-                return InvalidCustomQuizPrompts(promptError);
-            }
-            customQuiz = customQuizElement.Clone();
-        }
-
-        if (customQuiz is null
-            && words.Count > 0
+        if (words.Count > 0
             && WrongContentKind(context, AssistantContentKind.Words) is { } wordMismatch)
         {
             return wordMismatch;
@@ -157,7 +130,6 @@ internal sealed class CreateQuizTool : IAssistantTool
             collection_id = collectionId.Value,
             words,
             sentences,
-            custom_quiz = customQuiz,
         }, JsonOptions);
 
         context.PendingChanges.Add(new PendingChange(PendingChangeKinds.CreateQuiz, payload));
@@ -166,7 +138,6 @@ internal sealed class CreateQuizTool : IAssistantTool
             queued = true,
             kind = PendingChangeKinds.CreateQuiz,
             name = name.Trim(),
-            includes_custom_quiz = customQuiz.HasValue,
             word_count = words.Count,
             sentence_count = sentences.Count,
             skipped_words = skippedWords,

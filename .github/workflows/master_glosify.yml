@@ -289,8 +289,9 @@ jobs:
           fi
           curl --fail https://glosify-app.azurewebsites.net/readyz
 
-      # Apply the destructive migration only after the replacement artifact is
-      # ready on the compatibility schema. Authenticated retired-route 404s are
+      # Apply destructive retirement migrations, including CustomQuizzes removal,
+      # only after the replacement artifact is ready on the compatibility schema.
+      # Authenticated retired-route 404s are
       # covered by the integration suite; anonymous production probes are challenged
       # by the fallback authorization policy and cannot prove absence.
       - name: Apply reviewed database migrations

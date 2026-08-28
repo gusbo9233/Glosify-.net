@@ -98,4 +98,32 @@ public sealed class RetiredFeaturesMigrationTests
         Assert.Empty(recreatedForeignKeys.Intersect(DetachedRetainedReferenceForeignKeys));
         Assert.DoesNotContain(operations, operation => operation is InsertDataOperation);
     }
+
+    [Fact]
+    public void CustomQuizRetirementRejectsStaleProposalsAndDropsOnlyCustomQuizzes()
+    {
+        var operations = new RemoveCustomQuizzes().UpOperations;
+        var sql = Assert.Single(operations.OfType<SqlOperation>()).Sql;
+        var droppedTable = Assert.Single(operations.OfType<DropTableOperation>());
+
+        Assert.Equal("CustomQuizzes", droppedTable.Name);
+        Assert.Contains("assistant_messages", sql, StringComparison.Ordinal);
+        Assert.Contains("assistant_pending_changes", sql, StringComparison.Ordinal);
+        Assert.Contains("create_custom_quiz", sql, StringComparison.Ordinal);
+        Assert.Contains("JSON_QUERY(change.payload, '$.custom_quiz')", sql, StringComparison.Ordinal);
+        Assert.Contains("status = N'rejected'", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain(operations, operation => operation is DeleteDataOperation);
+    }
+
+    [Fact]
+    public void CustomQuizRetirementDownRecreatesOnlyAnEmptyCustomQuizSchema()
+    {
+        var operations = new RemoveCustomQuizzes().DownOperations;
+        var table = Assert.Single(operations.OfType<CreateTableOperation>());
+
+        Assert.Equal("CustomQuizzes", table.Name);
+        Assert.Equal("FK_CustomQuizzes_Quizzes_QuizId", Assert.Single(table.ForeignKeys).Name);
+        Assert.Equal(2, operations.OfType<CreateIndexOperation>().Count());
+        Assert.DoesNotContain(operations, operation => operation is InsertDataOperation);
+    }
 }

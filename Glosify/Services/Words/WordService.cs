@@ -3,7 +3,6 @@ using Glosify.Data;
 using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Services;
-using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Anki;
 using Microsoft.EntityFrameworkCore;
 
@@ -211,7 +210,6 @@ public class WordService : IWordService
             if (!ownsQuiz)
                 return null;
 
-            await new CustomQuizService(_context).PruneWordBindingsAsync(word.QuizId, [word.Id], token);
             _context.Words.Remove(word);
             await _context.SaveChangesAsync(token);
             await _ankiCollections.SyncQuizAsync(word.QuizId, token);

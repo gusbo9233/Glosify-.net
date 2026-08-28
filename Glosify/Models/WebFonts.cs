@@ -19,17 +19,17 @@ public static class WebFonts
     /// </remarks>
     public static readonly string[] IconNames =
     [
-        "account_circle", "account_tree", "add", "add_circle", "arrow_back", "arrow_downward", "arrow_forward",
+        "account_circle", "account_tree", "add", "add_circle", "arrow_back", "arrow_forward",
         "arrow_outward", "arrow_upward", "auto_awesome", "auto_fix_high", "auto_stories", "backspace", "block", "bolt",
         "calendar_today", "category", "chat_bubble", "check", "check_circle", "checklist",
         "chevron_left", "chevron_right", "close", "content_copy", "create_new_folder",
-        "dashboard_customize", "data_object", "delete", "description", "drag_indicator", "east", "edit",
+        "dashboard_customize", "data_object", "delete", "east", "edit",
         "edit_note", "error", "event", "explore", "fit_screen", "flag", "folder", "folder_open",
-        "folder_shared", "format_align_left", "format_quote", "graphic_eq", "grid_4x4",
+        "folder_shared", "format_quote", "graphic_eq", "grid_4x4",
         "group", "help", "hourglass_top", "info", "inventory_2", "keyboard",
         "library_add", "library_books", "lock", "lock_reset", "login", "logout",
         "menu_book", "more_vert", "neurology", "north_east", "notes", "person_search", "picture_as_pdf",
-        "play_circle", "progress_activity", "psychology", "public", "quiz", "remove", "rotate_right", "school", "science", "search",
+        "play_circle", "progress_activity", "psychology", "public", "quiz", "remove", "rotate_right", "school", "search",
         "search_off", "settings", "short_text", "stacks", "stop_circle", "style", "subject", "subtitles", "subtitles_off",
         "swap_horiz", "task_alt", "thumb_down", "thumb_up", "timer", "translate", "travel_explore", "tune",
         "upload_file", "view_column_2", "volume_up", "waving_hand", "west",

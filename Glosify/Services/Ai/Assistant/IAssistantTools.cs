@@ -5,10 +5,8 @@ public interface IAssistantTools
 {
     IReadOnlyList<AgentToolDeclaration> Declarations { get; }
     IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; }
-    IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; }
     IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; }
     IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; }
-    IReadOnlyList<AgentToolDeclaration> FreestyleCustomQuizBuilderDeclarations => CustomQuizBuilderDeclarations;
     IReadOnlyList<AgentToolDeclaration> FreestyleQuizAssistantDeclarations => QuizAssistantDeclarations;
     IReadOnlyList<AgentToolDeclaration> FreestyleLibrarianDeclarations => LibrarianDeclarations;
 

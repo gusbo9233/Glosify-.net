@@ -85,7 +85,6 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("/FlashcardQuiz")]
     [InlineData("/TypingQuiz")]
     [InlineData("/Anki")]
-    [InlineData("/CustomQuizzes/00000000-0000-0000-0000-000000000001/Play")]
     [InlineData("/Admin/AiCredits")]
     public async Task Get_AuthorizedRoute_RedirectsToLoginWhenAnonymous(string url)
     {

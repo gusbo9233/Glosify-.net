@@ -17,9 +17,33 @@ public static class PendingChangeKinds
     public const string MoveQuiz = "move_quiz";
     public const string RenameCollection = "rename_collection";
     public const string MoveCollection = "move_collection";
-    public const string CreateCustomQuiz = "create_custom_quiz";
-    public const string AddCustomQuizElement = "add_custom_quiz_element";
-    public const string AddCustomQuizElements = "add_custom_quiz_elements";
-    public const string ConfigureCustomQuizElement = "configure_custom_quiz_element";
-    public const string RemoveCustomQuizElement = "remove_custom_quiz_element";
+}
+
+/// <summary>
+/// Recognizes persisted proposals created before the custom-quiz feature was retired.
+/// These names remain only so old saved chats cannot apply a partially supported batch.
+/// </summary>
+internal static class RetiredPendingChangeKinds
+{
+    private static readonly HashSet<string> CustomQuizKinds =
+    [
+        "create_custom_quiz",
+        "add_custom_quiz_element",
+        "add_custom_quiz_elements",
+        "configure_custom_quiz_element",
+        "remove_custom_quiz_element",
+    ];
+
+    public static bool ContainsCustomQuizChange(PendingChange change)
+    {
+        if (CustomQuizKinds.Contains(change.Kind))
+        {
+            return true;
+        }
+
+        return change.Kind == PendingChangeKinds.CreateQuiz
+            && change.Payload.ValueKind == JsonValueKind.Object
+            && change.Payload.TryGetProperty("custom_quiz", out var customQuiz)
+            && customQuiz.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined;
+    }
 }

@@ -7,7 +7,6 @@ using Glosify.Services.Ai.Generation;
 using Glosify.Services.Anki;
 using Glosify.Services.Auth;
 using Glosify.Services.Books;
-using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Flashcards;
 using Glosify.Services.Language;
 using Glosify.Services.Legal;
@@ -112,8 +111,6 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IBookPageTranslationCoordinator, BookPageTranslationCoordinator>();
         services.AddScoped<IBookPageTranslationService, BookPageTranslationService>();
         services.AddScoped<IQuizAttemptService, QuizAttemptService>();
-        services.AddScoped<ICustomQuizService, CustomQuizService>();
-        services.AddSingleton<ICustomQuizTemplateCatalog, CustomQuizTemplateCatalog>();
         services.AddScoped<IAiCreditService, AiCreditService>();
         services.AddScoped<IStripePaymentService, StripePaymentService>();
         services.AddScoped<IPaidServiceGate, PaidServiceGate>();
