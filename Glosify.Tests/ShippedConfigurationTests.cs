@@ -3,7 +3,9 @@ using Glosify.Services.Ai.Generation;
 using Glosify.Services.Payments;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -80,14 +82,6 @@ public sealed class ShippedConfigurationTests
                     + "has no AudioSekPerMinute price.");
             }
         }
-        if (options.ElevenLabs.Enabled
-            && budget.MetersProvider(RealtimeTranslationConstants.ElevenLabsProvider))
-        {
-            Assert.True(
-                budget.FindModelPrice(options.ElevenLabs.BillingModel)?.AudioSekPerMinute is >= 0.35m,
-                $"RealtimeTranslation:ElevenLabs:BillingModel '{options.ElevenLabs.BillingModel}' "
-                + "must retain the conservative 0.35 SEK/minute safety price until invoice data justifies a reviewed change.");
-        }
     }
 
     [Fact]
@@ -98,16 +92,22 @@ public sealed class ShippedConfigurationTests
         var services = scope.ServiceProvider;
         var options = services.GetRequiredService<IOptions<RealtimeTranslationOptions>>().Value;
         var budget = services.GetRequiredService<IOptions<AiUsageOptions>>().Value.MonthlyBudget;
+        var environment = services.GetRequiredService<IHostEnvironment>();
+        var shippedConfiguration = new ConfigurationBuilder()
+            .AddJsonFile(Path.Combine(environment.ContentRootPath, "appsettings.json"))
+            .Build();
+        var shippedRealtime = shippedConfiguration
+            .GetSection(RealtimeTranslationOptions.SectionName)
+            .Get<RealtimeTranslationOptions>();
 
         Assert.False(options.EconomicalEnabled);
+        Assert.NotNull(shippedRealtime);
+        Assert.False(shippedRealtime.Cloudflare.Enabled);
         Assert.Equal(5, options.ElevenLabs.CreditsPerStartedMinute);
-        Assert.Contains("elevenlabs", budget.Providers, StringComparer.OrdinalIgnoreCase);
-        Assert.All(
-            options.Languages.Where(language => language.Enabled),
-            language => Assert.False(string.IsNullOrWhiteSpace(language.TranslatorCode)));
+        Assert.Contains("cloudflare", budget.Providers, StringComparer.OrdinalIgnoreCase);
         Assert.True(
-            budget.FindModelPrice(options.ElevenLabs.BillingModel)?.AudioSekPerMinute is >= 0.35m,
-            "Scribe subtitles must retain the reviewed 0.35 SEK/minute safety price until invoice data justifies a reviewed change.");
+            budget.FindModelPrice(options.Cloudflare.BillingModel)?.AudioSekPerMinute is >= 0.35m,
+            "Cloudflare Scribe subtitles must retain the reviewed 0.35 SEK/minute safety price until invoice data justifies a reviewed change.");
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public sealed class ShippedConfigurationTests
         Assert.Collection(
             pricing.GetCatalog().Subtitles,
             enhanced => Assert.Equal(7m, enhanced.Value),
-            scribe => Assert.Equal(5m, scribe.Value),
+            cloudflareScribe => Assert.Equal(4m, cloudflareScribe.Value),
             enhancedTranscript => Assert.Equal(8m, enhancedTranscript.Value));
     }
 

@@ -18,6 +18,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
 {
     private readonly IRealtimeSpeechTranscriber _speech;
     private readonly IEconomicalSubtitleTranslator _translator;
+    private readonly ICloudflareSubtitleTranslator _cloudflareTranslator;
     private readonly RealtimeTranslationRelayAuthorizationMonitor _authorizationMonitor;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly RealtimeTranslationOptions _options;
@@ -27,6 +28,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
     public ScribeTranslationRelay(
         IRealtimeSpeechTranscriber speech,
         IEconomicalSubtitleTranslator translator,
+        ICloudflareSubtitleTranslator cloudflareTranslator,
         RealtimeTranslationRelayAuthorizationMonitor authorizationMonitor,
         IServiceScopeFactory scopeFactory,
         IOptions<RealtimeTranslationOptions> options,
@@ -35,6 +37,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
     {
         _speech = speech;
         _translator = translator;
+        _cloudflareTranslator = cloudflareTranslator;
         _authorizationMonitor = authorizationMonitor;
         _scopeFactory = scopeFactory;
         _options = options.Value;
@@ -47,8 +50,13 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         RealtimeTranslationRelayAuthorization authorization,
         CancellationToken cancellationToken = default)
     {
-        var supportedMode = authorization.TranslationMode == RealtimeTranslationModes.Scribe
-            && _options.ElevenLabs.Enabled;
+        var supportedMode = authorization.TranslationMode switch
+        {
+            RealtimeTranslationModes.Scribe => _options.ElevenLabs.Enabled,
+            RealtimeTranslationModes.ScribeCloudflare =>
+                _options.ElevenLabs.Enabled && _options.Cloudflare.Enabled,
+            _ => false,
+        };
         if (!supportedMode
             || string.IsNullOrWhiteSpace(authorization.SourceLanguage))
         {
@@ -135,7 +143,8 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 authorization.SourceLanguage,
                 audio.Reader,
                 recognized.Writer,
-                emitPartials: _options.ElevenLabs.TranslatePartials || captureAdminSession,
+                emitPartials: authorization.PartialCaptionsEnabled
+                    && (_options.ElevenLabs.TranslatePartials || captureAdminSession),
                 cancellationToken: relayToken);
             var translationPump = TranslateAndSendAsync(
                 browserSocket,
@@ -318,11 +327,21 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
     {
         var scheduler = new AdaptivePartialTranslationScheduler(
             _timeProvider,
-            _options.ElevenLabs);
+            _options.ElevenLabs,
+            translatePartials: authorization.PartialCaptionsEnabled
+                && (_options.ElevenLabs.TranslatePartials || captureRecorder is not null),
+            partialInterval: authorization.TranslationMode == RealtimeTranslationModes.ScribeCloudflare
+                ? TimeSpan.FromSeconds(_options.Cloudflare.PartialIntervalSeconds)
+                : null,
+            paceFromRequestStart:
+                authorization.TranslationMode == RealtimeTranslationModes.ScribeCloudflare,
+            ignorePartialTranslationFailures:
+                authorization.TranslationMode == RealtimeTranslationModes.ScribeCloudflare);
         var bubbleFinalizer = new TranslationBubbleFinalizer();
         await scheduler.RunAsync(
             recognized,
-            (segment, token) => _translator.TranslateAsync(
+            (segment, token) => TranslateAsync(
+                authorization.TranslationMode,
                 segment,
                 authorization.TargetLanguage,
                 token),
@@ -352,6 +371,24 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
             cancellationToken,
             captureRecorder is null ? null : captureRecorder.RecordSourceAsync);
     }
+
+    private Task<TranslatedSubtitleSegment> TranslateAsync(
+        string translationMode,
+        RecognizedSpeechSegment segment,
+        string targetLanguage,
+        CancellationToken cancellationToken) => translationMode switch
+        {
+            RealtimeTranslationModes.Scribe => _translator.TranslateAsync(
+                segment,
+                targetLanguage,
+                cancellationToken),
+            RealtimeTranslationModes.ScribeCloudflare => _cloudflareTranslator.TranslateAsync(
+                segment,
+                targetLanguage,
+                cancellationToken),
+            _ => throw new RealtimeTranslationValidationException(
+                "The requested Scribe translation mode is not supported."),
+        };
 
     private static async Task SendTranslationAsync(
         WebSocket browserSocket,

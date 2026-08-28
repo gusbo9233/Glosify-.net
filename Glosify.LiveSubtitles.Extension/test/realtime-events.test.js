@@ -73,6 +73,19 @@ test("malformed server bubble metadata falls back to legacy client finalization"
   assert.equal("pendingText" in event, false);
 });
 
+test("Scribe accepts a sentence-aligned server bubble up to 240 characters", () => {
+  const bubble = "a".repeat(240);
+  const event = normalizeRealtimeEvent({
+    type: "glosify.translation.segment",
+    sequence: 3,
+    text: bubble,
+    committedBubbles: [bubble],
+    pendingText: "",
+  }, { sessionId: "s1", targetLanguage: "en", nextSequence: () => 99 });
+
+  assert.deepEqual(event.committedBubbles, [bubble]);
+});
+
 test("translation deltas normalize without retaining provider payloads", () => {
   let sequence = 0;
   const event = normalizeRealtimeEvent(
@@ -151,6 +164,23 @@ test("OpenAI deltas replace one stable caption and the final prefers complete te
   assert.equal(final.sequence, first.sequence);
   assert.equal(final.delta, "God morgon!");
   assert.equal(final.isFinal, true);
+});
+
+test("final-only mode suppresses partial events but preserves Scribe finals", () => {
+  const accumulator = createRealtimeEventAccumulator({
+    sessionId: "s1",
+    targetLanguage: "en",
+    nextSequence: () => 1,
+  }, { partialCaptionsEnabled: false });
+
+  assert.equal(accumulator.apply({
+    type: "glosify.translation.partial",
+    text: "Still speaking",
+  }), null);
+  assert.equal(accumulator.apply({
+    type: "glosify.translation.segment",
+    text: "Finished speaking.",
+  }).delta, "Finished speaking.");
 });
 
 test("final-only provider events render once", () => {

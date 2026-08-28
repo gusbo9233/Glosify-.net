@@ -1,0 +1,15 @@
+{
+  "name": "glosify-cloudflare-translator",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260828.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.127.0"
+  }
+}

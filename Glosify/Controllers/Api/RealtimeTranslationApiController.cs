@@ -61,6 +61,7 @@ public sealed class RealtimeTranslationApiController : ApiControllerBase
             request.TranscriptId,
             request.TranslationMode,
             request.SourceLanguage,
+            request.PartialCaptionsEnabled ?? true,
             cancellationToken);
         return Ok(created);
     }

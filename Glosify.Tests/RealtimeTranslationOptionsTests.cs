@@ -19,6 +19,30 @@ public sealed class RealtimeTranslationOptionsTests
     }
 
     [Fact]
+    public void ModePresentation_RejectsBlankOrOversizedAppServiceValues()
+    {
+        var options = ValidOptions();
+        options.Modes.Enhanced.DisplayName = " ";
+        options.Modes.ScribeCloudflare.Description = new string('x', 201);
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions
+            {
+                MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
+            }),
+            ExtensionAuth());
+
+        var result = validator.Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure => failure.Contains(
+            "Modes:Enhanced:DisplayName",
+            StringComparison.Ordinal));
+        Assert.Contains(result.Failures!, failure => failure.Contains(
+            "Modes:ScribeCloudflare:Description",
+            StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void EnabledFeature_RequiresOpenAiDurationBudgetConfiguration()
     {
         var validator = new RealtimeTranslationOptionsValidator(
@@ -27,7 +51,7 @@ public sealed class RealtimeTranslationOptionsTests
                 MonthlyBudget = new AiMonthlyBudgetOptions
                 {
                     Enabled = true,
-                    Providers = ["openai", "elevenlabs"],
+                    Providers = ["openai"],
                     Models =
                     [
                         new AiModelPriceOptions
@@ -53,7 +77,7 @@ public sealed class RealtimeTranslationOptionsTests
                 MonthlyBudget = new AiMonthlyBudgetOptions
                 {
                     Enabled = true,
-                    Providers = ["openai", "elevenlabs"],
+                    Providers = ["openai"],
                     Models =
                     [
                         new AiModelPriceOptions
@@ -65,11 +89,6 @@ public sealed class RealtimeTranslationOptionsTests
                         {
                             Deployment = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime",
                             AudioSekPerMinute = 1m,
-                        },
-                        new AiModelPriceOptions
-                        {
-                            Deployment = "elevenlabs-scribe-v2-realtime+azure-translator-nmt",
-                            AudioSekPerMinute = 0.4m,
                         },
                     ],
                 },
@@ -175,7 +194,7 @@ public sealed class RealtimeTranslationOptionsTests
     }
 
     [Fact]
-    public void ElevenLabsFeature_RequiresSecureConfigurationAndBudgetCoverage()
+    public void ElevenLabsFeature_RequiresSecureConfiguration()
     {
         var aiUsage = new AiUsageOptions
         {
@@ -216,22 +235,13 @@ public sealed class RealtimeTranslationOptionsTests
         Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:Endpoint", StringComparison.Ordinal));
         Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:ApiKey", StringComparison.Ordinal));
         Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:Model", StringComparison.Ordinal));
-        Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:CreditsPerStartedMinute", StringComparison.Ordinal));
         Assert.Contains(invalid.Failures!, failure => failure.Contains("VadSilenceThresholdSeconds", StringComparison.Ordinal));
-        Assert.Contains(invalid.Failures!, failure => failure.Contains("every enabled", StringComparison.Ordinal));
 
         options.ElevenLabs.Endpoint = "wss://api.elevenlabs.io/v1/speech-to-text/realtime";
         options.ElevenLabs.ApiKey = "test-key";
         options.ElevenLabs.Model = "scribe_v2_realtime";
         options.ElevenLabs.CreditsPerStartedMinute = 7;
         options.ElevenLabs.VadSilenceThresholdSeconds = 1.5;
-        aiUsage.MonthlyBudget.Providers.Add("elevenlabs");
-        aiUsage.MonthlyBudget.Models.Add(new AiModelPriceOptions
-        {
-            Deployment = options.ElevenLabs.BillingModel,
-            AudioSekPerMinute = 0.4m,
-        });
-
         Assert.True(validator.Validate(null, options).Succeeded);
     }
 
@@ -278,6 +288,126 @@ public sealed class RealtimeTranslationOptionsTests
             ExtensionAuth());
 
         Assert.True(validator.Validate(null, options).Succeeded);
+    }
+
+    [Fact]
+    public void CloudflareMode_RequiresProtectedWorkerConfigurationAndBudgetCoverage()
+    {
+        var usage = new AiUsageOptions
+        {
+            MonthlyBudget = new AiMonthlyBudgetOptions
+            {
+                Enabled = true,
+                Providers = ["openai"],
+                Models =
+                [
+                    new() { Deployment = "gpt-realtime-translate", AudioSekPerMinute = 0.5m },
+                    new() { Deployment = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime", AudioSekPerMinute = 0.5m },
+                ],
+            },
+        };
+        var options = ValidOptions();
+        options.Cloudflare.Enabled = true;
+        var validator = new RealtimeTranslationOptionsValidator(Options.Create(usage), ExtensionAuth());
+
+        var invalid = validator.Validate(null, options);
+        Assert.False(invalid.Succeeded);
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("Cloudflare:Endpoint", StringComparison.Ordinal));
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("Cloudflare:ApiToken", StringComparison.Ordinal));
+        Assert.Contains(invalid.Failures!, failure => failure.Contains("every enabled", StringComparison.Ordinal));
+
+        options.Cloudflare.Endpoint = "https://glosify-test.workers.dev/translate";
+        options.Cloudflare.ApiToken = "secret";
+        usage.MonthlyBudget.Providers.Add("cloudflare");
+        usage.MonthlyBudget.Models.Add(new AiModelPriceOptions
+        {
+            Deployment = options.Cloudflare.BillingModel,
+            AudioSekPerMinute = 0.3m,
+        });
+
+        Assert.True(validator.Validate(null, options).Succeeded);
+    }
+
+    [Fact]
+    public void CloudflareMode_RejectsInputLimitsAboveTheWorkerContract()
+    {
+        var options = ValidOptions();
+        options.Cloudflare.Enabled = true;
+        options.Cloudflare.Endpoint = "https://glosify-test.workers.dev/translate";
+        options.Cloudflare.ApiToken = "secret";
+        options.Cloudflare.MaxInputCharacters = 2_001;
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions { MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false } }),
+            ExtensionAuth());
+
+        var result = validator.Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure =>
+            failure.Contains("MaxInputCharacters", StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(0.74)]
+    [InlineData(10.01)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void CloudflareMode_RejectsInvalidPartialCadence(double interval)
+    {
+        var options = ValidOptions();
+        options.Cloudflare.Enabled = true;
+        options.Cloudflare.Endpoint = "https://glosify-test.workers.dev/translate";
+        options.Cloudflare.ApiToken = "secret";
+        options.Cloudflare.PartialIntervalSeconds = interval;
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions { MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false } }),
+            ExtensionAuth());
+
+        var result = validator.Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure =>
+            failure.Contains("Cloudflare:PartialIntervalSeconds", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void CloudflareScribe_DoesNotRequireAzureTranslatorConfiguration()
+    {
+        var options = ValidOptions();
+        options.Cloudflare.Enabled = true;
+        options.Cloudflare.Endpoint = "https://glosify-test.workers.dev/translate";
+        options.Cloudflare.ApiToken = "secret";
+        options.TranslatorEndpoint = "not-an-endpoint";
+        options.TranslatorResourceId = string.Empty;
+        options.TranslatorTimeoutSeconds = 0;
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions
+            {
+                MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false },
+            }),
+            ExtensionAuth());
+
+        Assert.True(validator.Validate(null, options).Succeeded);
+    }
+
+    [Theory]
+    [InlineData("http://glosify.workers.dev/translate")]
+    [InlineData("https://glosify.workers.dev/")]
+    [InlineData("https://glosify.workers.dev/translate?token=secret")]
+    [InlineData("https://workers.dev.attacker.test/translate")]
+    public void CloudflareMode_RejectsUnsafeWorkerEndpoints(string endpoint)
+    {
+        var options = ValidOptions();
+        options.Cloudflare.Enabled = true;
+        options.Cloudflare.Endpoint = endpoint;
+        options.Cloudflare.ApiToken = "secret";
+        var validator = new RealtimeTranslationOptionsValidator(
+            Options.Create(new AiUsageOptions { MonthlyBudget = new AiMonthlyBudgetOptions { Enabled = false } }),
+            ExtensionAuth());
+
+        var result = validator.Validate(null, options);
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure => failure.Contains("Cloudflare:Endpoint", StringComparison.Ordinal));
     }
 
     [Fact]

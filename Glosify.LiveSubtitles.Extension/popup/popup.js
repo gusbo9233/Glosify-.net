@@ -1,5 +1,8 @@
 import { getEffectiveCreditsPerMinute, isTranscriptToggleDisabled } from "../lib/transcript-storage.js";
-import { setQuizLanguageVisibility } from "../lib/popup-visibility.js";
+import {
+  setPartialCaptionsVisibility,
+  setQuizLanguageVisibility,
+} from "../lib/popup-visibility.js";
 
 const elements = {
   loading: document.querySelector("#loading"),
@@ -15,6 +18,8 @@ const elements = {
   translationMode: document.querySelector("#translation-mode"),
   sourceLanguage: document.querySelector("#source-language"),
   sourceLanguageGroup: document.querySelector("#source-language-group"),
+  partialCaptionsRow: document.querySelector("#partial-captions-row"),
+  partialCaptions: document.querySelector("#partial-captions"),
   transparentSubtitles: document.querySelector("#transparent-subtitles"),
   saveTranscript: document.querySelector("#save-transcript"),
   saveTranscriptHelp: document.querySelector("#save-transcript-help"),
@@ -47,6 +52,12 @@ elements.sourceLanguage.addEventListener("change", () => run("popup:set-source",
 elements.quizLanguage.addEventListener("change", () => run("popup:set-quiz-language", {
   code: elements.quizLanguage.value,
 }));
+elements.partialCaptions.addEventListener("change", () => {
+  const enabled = elements.partialCaptions.checked;
+  void run("popup:set-partial-captions", { enabled }, true, {
+    partialCaptionsEnabled: enabled,
+  });
+});
 elements.transparentSubtitles.addEventListener("change", () => {
   const enabled = elements.transparentSubtitles.checked;
   void run("popup:set-transparent-subtitles", { enabled }, true, {
@@ -138,7 +149,9 @@ function render() {
   elements.translationMode.value = currentState.translationMode ?? "enhanced";
   elements.translationMode.disabled = busy || currentState.active;
 
-  const usesScribe = currentState.translationMode === "scribe" || currentState.saveTranscript;
+  const usesScribe = currentState.translationMode === "scribe"
+    || currentState.translationMode === "scribe-cf"
+    || currentState.saveTranscript;
   const sourceLanguages = currentState.catalog?.sourceLanguages ?? [];
   const sourceSignature = sourceLanguages.map(language => `${language.code}:${language.name}`).join(",");
   if (elements.sourceLanguage.dataset.signature !== sourceSignature) {
@@ -190,6 +203,14 @@ function render() {
   elements.language.value = currentState.targetLanguage ?? languages[0]?.code ?? "";
   elements.language.disabled = busy || currentState.active || languages.length === 0;
 
+  elements.partialCaptions.checked = currentState.partialCaptionsEnabled !== false;
+  elements.partialCaptions.disabled = busy
+    || currentState.active
+    || currentState.status === "connecting";
+  setPartialCaptionsVisibility(
+    elements.partialCaptionsRow,
+    currentState.translationMode);
+
   elements.transparentSubtitles.checked = Boolean(currentState.transparentSubtitles);
   elements.transparentSubtitles.disabled = busy;
 
@@ -200,8 +221,8 @@ function render() {
   });
   elements.saveTranscriptHelp.textContent = currentState.saveTranscriptHelp
     ?? "Optional and off by default. Stores finalized original-language speech in your private Glosify account until you delete the transcript or account.";
-  elements.serviceDisclosure.textContent = currentState.translationMode === "scribe"
-    ? "When you start, this tab’s audio is streamed through Glosify to ElevenLabs Scribe v2, and finalized phrases are sent to Azure Translator. ElevenLabs may retain standard API logs under its service policy. Glosify does not store tab audio. Each started minute consumes credits."
+  elements.serviceDisclosure.textContent = ["scribe", "scribe-cf"].includes(currentState.translationMode)
+    ? "When you start, this tab’s audio is streamed through Glosify to ElevenLabs Scribe v2, and evolving phrases are sent through Glosify to a Cloudflare Worker for M2M100 translation. Glosify processes one subtitle revision at a time, replaces queued revisions with the latest text, and may translate long revisions in parallel chunks. Glosify does not store tab audio. Each started minute consumes credits."
     : currentState.saveTranscript
       ? "When you start, this tab’s audio is streamed through Glosify to OpenAI for enhanced live translation and to ElevenLabs Scribe v2 for the saved source transcript. ElevenLabs may retain standard API logs under its service policy. Glosify does not store tab audio. Each started minute consumes credits."
       : "When you start, this tab’s audio is streamed through Glosify to OpenAI for enhanced live translation. Audio is not stored. Each started minute consumes credits.";

@@ -15,7 +15,8 @@ public interface IRealtimeTranslationRelayTokenStore
         string speechProvider,
         string? sourceLanguage,
         bool saveTranscript,
-        string? transcriptSourceLanguage);
+        string? transcriptSourceLanguage,
+        bool partialCaptionsEnabled = true);
 
     bool TryRedeem(
         Guid sessionId,
@@ -49,12 +50,16 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         string speechProvider,
         string? sourceLanguage,
         bool saveTranscript,
-        string? transcriptSourceLanguage)
+        string? transcriptSourceLanguage,
+        bool partialCaptionsEnabled = true)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetLanguage);
 
-        if (translationMode is not (RealtimeTranslationModes.Scribe or RealtimeTranslationModes.Enhanced))
+        if (translationMode is not (
+                RealtimeTranslationModes.Scribe
+                or RealtimeTranslationModes.ScribeCloudflare
+                or RealtimeTranslationModes.Enhanced))
         {
             throw new ArgumentException("Unsupported subtitle mode.", nameof(translationMode));
         }
@@ -67,7 +72,8 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         }
         var expectedSpeechProvider = translationMode switch
         {
-            RealtimeTranslationModes.Scribe => RealtimeSpeechProviders.ElevenLabs,
+            RealtimeTranslationModes.Scribe or RealtimeTranslationModes.ScribeCloudflare =>
+                RealtimeSpeechProviders.ElevenLabs,
             _ => RealtimeSpeechProviders.OpenAi,
         };
         if (!string.Equals(speechProvider, expectedSpeechProvider, StringComparison.Ordinal))
@@ -98,6 +104,7 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
             sourceLanguage,
             saveTranscript,
             canonicalTranscriptSourceLanguage,
+            partialCaptionsEnabled,
             expiresAt);
         _cache.Set(CacheKeyPrefix + HashToken(token), entry, lifetime);
         return new RealtimeTranslationRelayGrant(token, expiresAt);
@@ -136,7 +143,8 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
             entry.SpeechProvider,
             entry.SourceLanguage,
             entry.SaveTranscript,
-            entry.TranscriptSourceLanguage);
+            entry.TranscriptSourceLanguage,
+            entry.PartialCaptionsEnabled);
         return true;
     }
 
@@ -162,5 +170,6 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         string? SourceLanguage,
         bool SaveTranscript,
         string? TranscriptSourceLanguage,
+        bool PartialCaptionsEnabled,
         DateTimeOffset ExpiresAt);
 }

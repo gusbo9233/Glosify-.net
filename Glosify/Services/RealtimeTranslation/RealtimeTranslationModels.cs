@@ -4,12 +4,14 @@ public static class RealtimeTranslationConstants
 {
     public const string Provider = "openai";
     public const string ElevenLabsProvider = "elevenlabs";
+    public const string CloudflareProvider = "cloudflare";
 }
 
 public static class RealtimeTranslationModes
 {
     public const string Economical = "economical";
     public const string Scribe = "scribe";
+    public const string ScribeCloudflare = "scribe-cf";
     public const string Enhanced = "enhanced";
 }
 
@@ -83,7 +85,8 @@ public sealed record RealtimeTranslationRelayAuthorization(
     string SpeechProvider,
     string? SourceLanguage,
     bool SaveTranscript,
-    string? TranscriptSourceLanguage);
+    string? TranscriptSourceLanguage,
+    bool PartialCaptionsEnabled = true);
 
 public sealed class RealtimeTranslationValidationException(string message) : InvalidOperationException(message);
 public sealed class RealtimeTranslationConflictException(string message) : InvalidOperationException(message);

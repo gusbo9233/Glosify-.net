@@ -1,0 +1,7 @@
+{
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvyeaEaYtj2BujcxhELk+f2LC2TMpmdnhRgAv0MKxY4dCZSnDOP7Oskz8iVVqenTnXphAAJqsRi63wm00OSQeNDNUnGV2JMICkPcxeGC1txiD9RDy9c0dEWWxlb81Q022B8rvsRGn6JVcz6r3OmW7XpM4caALtZjzCwPIEMwehswVMt4aa4JRrqsp9tNnnIbzGDRTkOJEB2Ofp3S8WnPLTBEk0W+QX2LD2BMzrCMt1KVfJVwc2pOa51dLLpd+LGoSDThJgcvHDeSCIqYgGV+Cj5A8Sh2QYKWwHq9RhbNsIhEdi73Ry/x4HIDzni4njxl83O/BNHCWR8BkaA2We3++qwIDAQAB",
+  "host_permissions": [
+    "https://localhost/*",
+    "http://localhost/*"
+  ]
+}

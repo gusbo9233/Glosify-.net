@@ -17,8 +17,10 @@
       "applicationUrl": "https://localhost:7032;http://localhost:5276",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
+        "Admin__Emails__1": "dev.luna@glosify.local",
         "RealtimeTranslation__Enabled": "true",
-        "ExtensionAuth__AllowedRedirectUris__0": "https://akepdpjieiokffdapibipomhbplikock.chromiumapp.org/glosify"
+        "ExtensionAuth__AllowedRedirectUris__0": "https://akepdpjieiokffdapibipomhbplikock.chromiumapp.org/glosify",
+        "ExtensionAuth__AllowedRedirectUris__1": "https://edcgopkkphcbdnmngajjjhkdmlielalc.chromiumapp.org/glosify"
       }
     }
   }

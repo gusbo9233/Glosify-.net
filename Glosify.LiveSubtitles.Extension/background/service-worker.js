@@ -7,6 +7,7 @@ import {
   clearTranscriptStorageState,
   getEffectiveCreditsPerMinute,
   selectAvailableTranslationMode,
+  selectCurrentTranslationModes,
 } from "../lib/transcript-storage.js";
 
 const SubtitleAppearance = globalThis.GlosifySubtitleAppearance;
@@ -16,6 +17,7 @@ const STORAGE_KEYS = Object.freeze({
   targetLanguage: "glosifyTargetLanguage",
   translationMode: "glosifyTranslationMode",
   sourceLanguage: "glosifySourceLanguage",
+  partialCaptionsEnabled: "glosifyPartialCaptionsEnabled",
   transparentSubtitles: SubtitleAppearance.STORAGE_KEY,
   activeSession: "glosifyActiveSession",
 });
@@ -54,8 +56,9 @@ const state = {
   availableCredits: 0,
   catalog: null,
   targetLanguage: "en",
-  translationMode: "scribe",
+  translationMode: "scribe-cf",
   sourceLanguage: "auto",
+  partialCaptionsEnabled: true,
   transparentSubtitles: false,
   saveTranscript: false,
   tabId: null,
@@ -158,6 +161,9 @@ async function handleMessage(message) {
     case "popup:set-source":
       await setSourceLanguage(message.sourceLanguage);
       return publicState();
+    case "popup:set-partial-captions":
+      await setPartialCaptionsEnabled(message.enabled);
+      return publicState();
     case "popup:set-transparent-subtitles":
       await setTransparentSubtitles(message.enabled);
       return publicState();
@@ -245,13 +251,15 @@ async function restoreLocalState() {
     STORAGE_KEYS.targetLanguage,
     STORAGE_KEYS.translationMode,
     STORAGE_KEYS.sourceLanguage,
+    STORAGE_KEYS.partialCaptionsEnabled,
     STORAGE_KEYS.transparentSubtitles,
   ]);
   refreshToken = stored[STORAGE_KEYS.refreshToken] ?? null;
   refreshTokenGeneration += 1;
   state.targetLanguage = stored[STORAGE_KEYS.targetLanguage] ?? "en";
-  state.translationMode = stored[STORAGE_KEYS.translationMode] ?? "scribe";
+  state.translationMode = stored[STORAGE_KEYS.translationMode] ?? "scribe-cf";
   state.sourceLanguage = stored[STORAGE_KEYS.sourceLanguage] ?? "auto";
+  state.partialCaptionsEnabled = stored[STORAGE_KEYS.partialCaptionsEnabled] !== false;
   state.transparentSubtitles = SubtitleAppearance.normalizeTransparentSubtitles(
     stored[STORAGE_KEYS.transparentSubtitles]);
   state.signedIn = Boolean(refreshToken);
@@ -453,7 +461,11 @@ async function refreshAccountState() {
     state.signedIn = true;
     state.email = me.email;
     state.availableCredits = me.availableCredits;
-    const catalog = await apiFetch("/api/realtime-translation/catalog");
+    const rawCatalog = await apiFetch("/api/realtime-translation/catalog");
+    const catalog = {
+      ...rawCatalog,
+      modes: selectCurrentTranslationModes(rawCatalog.modes),
+    };
     state.catalog = catalog;
     state.availableCredits = catalog.availableCredits;
     await refreshPaidServiceStatus();
@@ -527,6 +539,17 @@ async function setSourceLanguage(sourceLanguage) {
   }
   state.sourceLanguage = sourceLanguage;
   await chrome.storage.local.set({ [STORAGE_KEYS.sourceLanguage]: sourceLanguage });
+  broadcastState();
+}
+
+async function setPartialCaptionsEnabled(enabled) {
+  if (state.sessionId || startPromise) {
+    throw new Error("Stop the current subtitles before changing partial captions.");
+  }
+  state.partialCaptionsEnabled = enabled !== false;
+  await chrome.storage.local.set({
+    [STORAGE_KEYS.partialCaptionsEnabled]: state.partialCaptionsEnabled,
+  });
   broadcastState();
 }
 
@@ -731,6 +754,7 @@ async function startSessionCore(generation, signal) {
       type: "media:connect-relay",
       sessionId: created.sessionId,
       targetLanguage: state.targetLanguage,
+      partialCaptionsEnabled: effectivePartialCaptionsEnabled(),
       relayToken: created.relayToken,
       relayPath: created.relayPath,
       glosifyBaseUrl: CONFIG.glosifyBaseUrl,
@@ -991,6 +1015,7 @@ async function reconnectRelaySession({
       type: "media:reconnect",
       sessionId: created.sessionId,
       targetLanguage: state.targetLanguage,
+      partialCaptionsEnabled: effectivePartialCaptionsEnabled(),
       relayToken: created.relayToken,
       relayPath: created.relayPath,
       glosifyBaseUrl: CONFIG.glosifyBaseUrl,
@@ -1270,6 +1295,7 @@ async function persistActiveSession() {
       targetLanguage: state.targetLanguage,
       translationMode: state.translationMode,
       sourceLanguage: state.sourceLanguage,
+      partialCaptionsEnabled: state.partialCaptionsEnabled,
       saveTranscript: state.saveTranscript,
       currentMinute: state.currentMinute,
       nextMinuteReserved: state.nextMinuteReserved,
@@ -1316,6 +1342,9 @@ async function reconcileActiveSession() {
         || !media.relayReady
         || media.sessionId !== stored.sessionId
         || media.targetLanguage !== stored.targetLanguage
+        || media.partialCaptionsEnabled !== partialCaptionsForMode(
+          stored.translationMode,
+          stored.partialCaptionsEnabled)
         || Date.parse(media.sessionStartedAtUtc) !== startedAt
         || Date.parse(media.audioSendAuthorizedUntilUtc) !== authorizedUntil) {
       throw new Error("The audio capture process does not match saved state.");
@@ -1361,6 +1390,7 @@ async function reconcileActiveSession() {
       targetLanguage: stored.targetLanguage,
       translationMode: stored.translationMode,
       sourceLanguage: stored.sourceLanguage,
+      partialCaptionsEnabled: stored.partialCaptionsEnabled !== false,
       saveTranscript: Boolean(stored.saveTranscript),
       currentMinute: stored.currentMinute,
       nextMinuteReserved: Boolean(stored.nextMinuteReserved),
@@ -1508,6 +1538,7 @@ function publicState() {
     targetLanguage: state.targetLanguage,
     translationMode: state.translationMode,
     sourceLanguage: state.sourceLanguage,
+    partialCaptionsEnabled: state.partialCaptionsEnabled,
     transparentSubtitles: state.transparentSubtitles,
     saveTranscript: state.saveTranscript,
     canSaveTranscript: canSaveTranscript(),
@@ -1528,6 +1559,14 @@ function canSaveTranscript() {
   return canSaveSourceTranscript(state.catalog);
 }
 
+function effectivePartialCaptionsEnabled() {
+  return partialCaptionsForMode(state.translationMode, state.partialCaptionsEnabled);
+}
+
+function partialCaptionsForMode(translationMode, enabled) {
+  return !["scribe", "scribe-cf"].includes(translationMode) || enabled !== false;
+}
+
 function effectiveCreditsPerMinute() {
   return getEffectiveCreditsPerMinute(
     state.catalog,
@@ -1540,7 +1579,7 @@ function saveTranscriptUnavailableMessage() {
   const speechHint = state.sourceLanguage === "auto"
     ? "automatic spoken-language detection"
     : `${state.catalog?.sourceLanguages?.find(language => language.code === state.sourceLanguage)?.name ?? state.sourceLanguage} as a spoken-language hint`;
-  if (state.translationMode === "scribe") {
+  if (state.translationMode === "scribe" || state.translationMode === "scribe-cf") {
     return state.saveTranscript
       ? `Scribe’s finalized original speech is being saved using ${speechHint}.`
       : `Save Scribe’s finalized original speech using ${speechHint} at no extra credits per minute.`;

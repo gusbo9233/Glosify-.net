@@ -116,7 +116,7 @@ jobs:
         working-directory: Glosify.LiveSubtitles.Extension
         run: |
           npm run package:store
-          sha256sum artifacts/package/glosify-live-subtitles-0.5.0-beta.zip > "${{ runner.temp }}/extension-package.sha256"
+          sha256sum artifacts/package/glosify-live-subtitles-0.5.1-beta.zip > "${{ runner.temp }}/extension-package.sha256"
           npm run package:store
           sha256sum --check "${{ runner.temp }}/extension-package.sha256"
 
@@ -169,8 +169,8 @@ jobs:
       - name: Upload Chrome Web Store artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: glosify-live-subtitles-0.5.0-beta
-          path: Glosify.LiveSubtitles.Extension/artifacts/package/glosify-live-subtitles-0.5.0-beta.zip
+          name: glosify-live-subtitles-0.5.1-beta
+          path: Glosify.LiveSubtitles.Extension/artifacts/package/glosify-live-subtitles-0.5.1-beta.zip
 
       - name: Upload test failure diagnostics
         if: failure()

@@ -29,7 +29,7 @@ export async function validateStore(directory) {
   }
 
   if (manifest) {
-    if (manifest.version !== "0.5.0") failures.push("manifest version must be 0.5.0");
+    if (manifest.version !== "0.5.1") failures.push("manifest version must be 0.5.1");
     if ("key" in manifest) failures.push("Store manifest must not contain a pinned development key");
     if (JSON.stringify(manifest.host_permissions) !== JSON.stringify(["https://glosify.se/*"])) failures.push("Store host permissions must contain only https://glosify.se/*");
   }
