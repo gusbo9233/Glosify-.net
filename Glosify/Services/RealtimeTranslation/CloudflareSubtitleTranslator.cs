@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
+using Polly;
 
 namespace Glosify.Services.RealtimeTranslation;
 
@@ -142,6 +143,11 @@ public sealed class CloudflareSubtitleTranslator : ICloudflareSubtitleTranslator
         {
             throw new RealtimeTranslationUpstreamException(
                 "Cloudflare could not be reached for subtitle translation.");
+        }
+        catch (ExecutionRejectedException)
+        {
+            throw new RealtimeTranslationUpstreamException(
+                "Cloudflare subtitle translation is temporarily unavailable.");
         }
         using (response)
         {

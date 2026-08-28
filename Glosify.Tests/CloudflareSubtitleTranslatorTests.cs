@@ -2,6 +2,8 @@ using System.Net;
 using System.Text;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.Extensions.Options;
+using Polly.CircuitBreaker;
+using Polly.Timeout;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -124,6 +126,31 @@ public sealed class CloudflareSubtitleTranslatorTests
         Assert.Equal(3, handler.Calls);
     }
 
+    [Theory]
+    [InlineData("timeout")]
+    [InlineData("circuit")]
+    public async Task TranslateAsync_ConvertsResilienceRejectionsToUpstreamFailures(
+        string rejection)
+    {
+        var exception = rejection == "timeout"
+            ? (Exception)new TimeoutRejectedException()
+            : new BrokenCircuitException();
+        var translator = CreateTranslator(new ThrowingHandler(exception));
+
+        var result = await Assert.ThrowsAsync<RealtimeTranslationUpstreamException>(() =>
+            translator.TranslateAsync(
+                new RecognizedSpeechSegment(
+                    1,
+                    "Hello.",
+                    "en",
+                    "en-US",
+                    DateTimeOffset.UtcNow),
+                "fr",
+                CancellationToken.None));
+
+        Assert.Contains("temporarily unavailable", result.Message, StringComparison.Ordinal);
+    }
+
     private static CloudflareSubtitleTranslator CreateTranslator(
         HttpMessageHandler handler,
         int preferredChunkCharacters = 240,
@@ -170,6 +197,14 @@ public sealed class CloudflareSubtitleTranslatorTests
                 Content = new StringContent(responseBody, Encoding.UTF8, "application/json"),
             };
         }
+    }
+
+    private sealed class ThrowingHandler(Exception exception) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromException<HttpResponseMessage>(exception);
     }
 
     private sealed class ConcurrentRecordingHandler : HttpMessageHandler
