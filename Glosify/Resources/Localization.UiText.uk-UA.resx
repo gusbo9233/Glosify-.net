@@ -387,9 +387,6 @@
   <data name="Home.BuildVocabularyText" xml:space="preserve">
     <value>Створюйте сфокусовані набори зі слів, які ви справді хочете використовувати.</value>
   </data>
-  <data name="Home.PracticeRecallText" xml:space="preserve">
-    <value>Використовуйте картки, введення тексту та власні вікторини, щоб слова запам’ятовувалися.</value>
-  </data>
   <data name="Home.ConnectedKicker" xml:space="preserve">
     <value>Одне пов’язане робоче середовище</value>
   </data>
@@ -872,12 +869,6 @@
   </data>
   <data name="Client.CheckFailed" xml:space="preserve">
     <value>Не вдалося перевірити цю відповідь. Спробуйте ще раз.</value>
-  </data>
-  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
-    <value>Видалити цю власну вікторину?</value>
-  </data>
-  <data name="Client.DeleteQuizFailed" xml:space="preserve">
-    <value>Не вдалося видалити власну вікторину. Спробуйте ще раз.</value>
   </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>Видалити чат</value>
@@ -1365,12 +1356,6 @@
   <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
     <value>Поставте запитання про цей квіз...</value>
   </data>
-  <data name="Quiz.CustomCount" xml:space="preserve">
-    <value>{0} власних</value>
-  </data>
-  <data name="Quiz.BuildCustom" xml:space="preserve">
-    <value>Створити власний тест</value>
-  </data>
   <data name="Quiz.Public" xml:space="preserve">
     <value>Публічна</value>
   </data>
@@ -1406,24 +1391,6 @@
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>Поки що немає речень. Попросіть помічника додати речення або витягнути їх із тексту.</value>
-  </data>
-  <data name="Quiz.CustomQuizzes" xml:space="preserve">
-    <value>Власні тести</value>
-  </data>
-  <data name="Quiz.CustomHelp" xml:space="preserve">
-    <value>Створіть вправу довільного формату зі слів у цьому тесті.</value>
-  </data>
-  <data name="Quiz.NewCustom" xml:space="preserve">
-    <value>Новий власний тест</value>
-  </data>
-  <data name="Quiz.Playable" xml:space="preserve">
-    <value>Можна пройти</value>
-  </data>
-  <data name="Quiz.Draft" xml:space="preserve">
-    <value>Чернетка</value>
-  </data>
-  <data name="Quiz.NoCustom" xml:space="preserve">
-    <value>Поки що немає власних тестів. Створіть один, перетягнувши блоки на полотно.</value>
   </data>
   <data name="Payments.PackageUnavailable" xml:space="preserve">
     <value>Цей пакет кредитів більше недоступний.</value>
@@ -1509,179 +1476,8 @@
   <data name="Common.Preview" xml:space="preserve">
     <value>Попередній перегляд</value>
   </data>
-  <data name="Custom.EditNamed" xml:space="preserve">
-    <value>Редагувати {0}</value>
-  </data>
-  <data name="Custom.AssistantTitle" xml:space="preserve">
-    <value>Помічник зі створення тестів</value>
-  </data>
-  <data name="Custom.AssistantEmpty" xml:space="preserve">
-    <value>Попросіть мене додати, налаштувати або впорядкувати елементи тесту.</value>
-  </data>
-  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
-    <value>Додайте запитання до цього власного тесту...</value>
-  </data>
-  <data name="Custom.Name" xml:space="preserve">
-    <value>Назва власного тесту</value>
-  </data>
-  <data name="Custom.LoadingEditor" xml:space="preserve">
-    <value>Завантаження елементів редактора…</value>
-  </data>
-  <data name="Custom.DesignStarters" xml:space="preserve">
-    <value>Початкові варіанти дизайну</value>
-  </data>
-  <data name="Custom.VisualDirection" xml:space="preserve">
-    <value>Оберіть візуальний напрям</value>
-  </data>
-  <data name="Custom.TemplateHelp" xml:space="preserve">
-    <value>Застосуйте лише стиль або замініть полотно повним макетом, зібраним зі слів цього тесту.</value>
-  </data>
-  <data name="Custom.UseStyle" xml:space="preserve">
-    <value>Використати стиль</value>
-  </data>
-  <data name="Custom.UseLayout" xml:space="preserve">
-    <value>Використати макет</value>
-  </data>
-  <data name="Custom.BuildingBlocks" xml:space="preserve">
-    <value>Конструктор тесту</value>
-  </data>
-  <data name="Custom.Blocks" xml:space="preserve">
-    <value>Блоки</value>
-  </data>
-  <data name="Custom.BlocksHelp" xml:space="preserve">
-    <value>Перетягніть у будь-яку вільну область або натисніть, щоб додати автоматично.</value>
-  </data>
-  <data name="Custom.DragAdd" xml:space="preserve">
-    <value>Перетягніть або натисніть, щоб додати {0}</value>
-  </data>
-  <data name="Custom.Add" xml:space="preserve">
-    <value>Додати {0}</value>
-  </data>
-  <data name="Custom.Grid" xml:space="preserve">
-    <value>Розумна сітка на 12 колонок</value>
-  </data>
-  <data name="Custom.GridHelp" xml:space="preserve">
-    <value>Перетягніть, щоб розмістити · краї прилипають · зайняті місця оминаються</value>
-  </data>
-  <data name="Custom.Canvas" xml:space="preserve">
-    <value>Полотно власного тесту</value>
-  </data>
-  <data name="Custom.Properties" xml:space="preserve">
-    <value>Властивості</value>
-  </data>
-  <data name="Custom.PropertiesHelp" xml:space="preserve">
-    <value>Виберіть блок, щоб редагувати його вміст і прив’язки.</value>
-  </data>
-  <data name="Custom.Answer" xml:space="preserve">
-    <value>Відповідь</value>
-  </data>
-  <data name="Custom.Choose" xml:space="preserve">
-    <value>Оберіть...</value>
-  </data>
-  <data name="Custom.CheckAnswers" xml:space="preserve">
-    <value>Перевірити відповіді</value>
-  </data>
-  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
-    <value>Завершіть тест, а потім надішліть відповіді.</value>
-  </data>
-  <data name="Custom.Block.Heading" xml:space="preserve">
-    <value>Заголовок</value>
-  </data>
-  <data name="Custom.Block.Instruction" xml:space="preserve">
-    <value>Інструкція</value>
-  </data>
-  <data name="Custom.Block.WordLabel" xml:space="preserve">
-    <value>Підпис слова</value>
-  </data>
-  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
-    <value>Підпис перекладу</value>
-  </data>
-  <data name="Custom.Block.TextInput" xml:space="preserve">
-    <value>Текстове поле</value>
-  </data>
-  <data name="Custom.Block.LongAnswer" xml:space="preserve">
-    <value>Розгорнута відповідь</value>
-  </data>
-  <data name="Custom.Block.Checkbox" xml:space="preserve">
-    <value>Прапорець</value>
-  </data>
-  <data name="Custom.Block.RadioChoices" xml:space="preserve">
-    <value>Варіанти з перемикачами</value>
-  </data>
-  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
-    <value>Варіанти з прапорцями</value>
-  </data>
-  <data name="Custom.Block.SelectMenu" xml:space="preserve">
-    <value>Випадне меню</value>
-  </data>
-  <data name="Custom.Block.WordBank" xml:space="preserve">
-    <value>Банк слів</value>
-  </data>
-  <data name="Custom.Block.SubmitButton" xml:space="preserve">
-    <value>Кнопка надсилання</value>
-  </data>
-  <data name="Custom.Block.Feedback" xml:space="preserve">
-    <value>Зворотний зв’язок</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
-    <value>Редакційний потік</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
-    <value>Спокійна ієрархія, щедрі відступи та одне чітке завдання в кожному рядку.</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
-    <value>Переклади, граматичні підказки, цільове відтворення</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
-    <value>Картки Aurora</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>М’які кольори, парні картки для практики й енергійна атмосфера навчання.</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
-    <value>Короткі набори лексики та візуальне сканування</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
-    <value>Вправи за зразком підручника</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
-    <value>Компактні пронумеровані рядки, змодельовані за зразком вправ із сфотографованого зошита.</value>
-  </data>
-  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
-    <value>Відмінювання, перетворення, пропуски та формальні вправи</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
-    <value>Лабораторія банку слів</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
-    <value>Сміливий банк слів веде вправу й робить відтворення грайливим.</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
-    <value>Кероване відтворення та лексика для початківців</value>
-  </data>
-  <data name="Custom.AnswerQuestion" xml:space="preserve">
-    <value>Дайте відповідь на це запитання.</value>
-  </data>
-  <data name="Custom.Correct" xml:space="preserve">
-    <value>Правильно.</value>
-  </data>
-  <data name="Custom.CorrectAnswer" xml:space="preserve">
-    <value>Правильна відповідь: {0}</value>
-  </data>
-  <data name="Custom.CompleteAnswers" xml:space="preserve">
-    <value>Заповніть усі відповіді, перш ніж надсилати.</value>
-  </data>
-  <data name="Custom.Score" xml:space="preserve">
-    <value>Рахунок: {0} із {1} ({2}%).</value>
-  </data>
-  <data name="Custom.GradeFailed" xml:space="preserve">
-    <value>Не вдалося оцінити цю вікторину. Спробуйте ще раз.</value>
-  </data>
   <data name="Explore.PublicQuiz" xml:space="preserve">
     <value>Публічна вікторина</value>
-  </data>
-  <data name="Explore.CustomExercises" xml:space="preserve">
-    <value>Вправи, створені на основі лексики цієї вікторини.</value>
   </data>
   <data name="Explore.NoPublicWords" xml:space="preserve">
     <value>До цієї публічної вікторини ще не додано жодного слова.</value>
@@ -1755,174 +1551,6 @@
   <data name="Reader.PdfLoadFailed" xml:space="preserve">
     <value>Не вдалося завантажити PDF.</value>
   </data>
-  <data name="Editor.Heading" xml:space="preserve">
-    <value>Заголовок</value>
-  </data>
-  <data name="Editor.Instruction" xml:space="preserve">
-    <value>Інструкція</value>
-  </data>
-  <data name="Editor.WordLabel" xml:space="preserve">
-    <value>Мітка слова</value>
-  </data>
-  <data name="Editor.TranslationLabel" xml:space="preserve">
-    <value>Мітка перекладу</value>
-  </data>
-  <data name="Editor.TextInput" xml:space="preserve">
-    <value>Текстове поле</value>
-  </data>
-  <data name="Editor.LongAnswer" xml:space="preserve">
-    <value>Розгорнута відповідь</value>
-  </data>
-  <data name="Editor.Checkbox" xml:space="preserve">
-    <value>Прапорець</value>
-  </data>
-  <data name="Editor.RadioChoices" xml:space="preserve">
-    <value>Варіанти з радіокнопками</value>
-  </data>
-  <data name="Editor.CheckboxChoices" xml:space="preserve">
-    <value>Варіанти з прапорцями</value>
-  </data>
-  <data name="Editor.SelectMenu" xml:space="preserve">
-    <value>Випадне меню</value>
-  </data>
-  <data name="Editor.WordBank" xml:space="preserve">
-    <value>Банк слів</value>
-  </data>
-  <data name="Editor.SubmitButton" xml:space="preserve">
-    <value>Кнопка «Надіслати»</value>
-  </data>
-  <data name="Editor.Feedback" xml:space="preserve">
-    <value>Відгук</value>
-  </data>
-  <data name="Editor.EmptyCanvas" xml:space="preserve">
-    <value>Перетягніть будь-який блок на це полотно, щоб почати.</value>
-  </data>
-  <data name="Editor.MoveLeft" xml:space="preserve">
-    <value>Перемістити вліво</value>
-  </data>
-  <data name="Editor.MoveUp" xml:space="preserve">
-    <value>Перемістити вгору</value>
-  </data>
-  <data name="Editor.MoveDown" xml:space="preserve">
-    <value>Перемістити вниз</value>
-  </data>
-  <data name="Editor.MoveRight" xml:space="preserve">
-    <value>Перемістити вправо</value>
-  </data>
-  <data name="Editor.RemoveBlock" xml:space="preserve">
-    <value>Видалити блок</value>
-  </data>
-  <data name="Editor.Resize" xml:space="preserve">
-    <value>Перетягніть, щоб змінити ширину</value>
-  </data>
-  <data name="Editor.Word" xml:space="preserve">
-    <value>Слово</value>
-  </data>
-  <data name="Editor.DisplayField" xml:space="preserve">
-    <value>Поле відображення</value>
-  </data>
-  <data name="Editor.Words" xml:space="preserve">
-    <value>Слова</value>
-  </data>
-  <data name="Editor.Options" xml:space="preserve">
-    <value>Варіанти</value>
-  </data>
-  <data name="Editor.CorrectOption" xml:space="preserve">
-    <value>Правильний варіант</value>
-  </data>
-  <data name="Editor.RemoveOption" xml:space="preserve">
-    <value>Видалити варіант</value>
-  </data>
-  <data name="Editor.AddOption" xml:space="preserve">
-    <value>Додати варіант</value>
-  </data>
-  <data name="Editor.Properties" xml:space="preserve">
-    <value>Властивості</value>
-  </data>
-  <data name="Editor.SelectBlock" xml:space="preserve">
-    <value>Виберіть блок, щоб редагувати його вміст і прив’язки.</value>
-  </data>
-  <data name="Editor.TargetInputs" xml:space="preserve">
-    <value>Цільові поля введення</value>
-  </data>
-  <data name="Editor.PreviewOnly" xml:space="preserve">
-    <value>Лише попередній перегляд — збережіть і запустіть, щоб записати оцінювану спробу.</value>
-  </data>
-  <data name="Editor.BackToEditor" xml:space="preserve">
-    <value>Назад до редактора</value>
-  </data>
-  <data name="Editor.Preview" xml:space="preserve">
-    <value>Попередній перегляд</value>
-  </data>
-  <data name="Editor.PreviewingOne" xml:space="preserve">
-    <value>Попередній перегляд {0} блоку.</value>
-  </data>
-  <data name="Editor.PreviewingMany" xml:space="preserve">
-    <value>Попередній перегляд {0} блоків.</value>
-  </data>
-  <data name="Editor.ReadyOne" xml:space="preserve">
-    <value>Редактор готовий · на полотні {0} блок. Скористайтеся +, щоб додати блок, або перетягніть його.</value>
-  </data>
-  <data name="Editor.ReadyMany" xml:space="preserve">
-    <value>Редактор готовий · на полотні {0} блоків. Скористайтеся +, щоб додати блок, або перетягніть його.</value>
-  </data>
-  <data name="Editor.ReplaceConfirm" xml:space="preserve">
-    <value>Замінити поточне полотно макетом {0}? Ви можете скасувати цю зміну.</value>
-  </data>
-  <data name="Editor.SaveFailed" xml:space="preserve">
-    <value>Не вдалося зберегти цю власну вікторину.</value>
-  </data>
-  <data name="Editor.SavedPlayable" xml:space="preserve">
-    <value>Збережено. Цю вікторину можна запускати.</value>
-  </data>
-  <data name="Editor.DraftSaved" xml:space="preserve">
-    <value>Чернетку збережено. Завершіть обов’язкові поля вікторини, перш ніж запускати її.</value>
-  </data>
-  <data name="Editor.SaveStopped" xml:space="preserve">
-    <value>Запит на збереження несподівано зупинився. Спробуйте ще раз.</value>
-  </data>
-  <data name="Editor.WordLemma" xml:space="preserve">
-    <value>Слово / лема</value>
-  </data>
-  <data name="Editor.Translation" xml:space="preserve">
-    <value>Переклад</value>
-  </data>
-  <data name="Editor.Width" xml:space="preserve">
-    <value>Ширина</value>
-  </data>
-  <data name="Editor.Column" xml:space="preserve">
-    <value>Стовпець</value>
-  </data>
-  <data name="Editor.ColumnNumber" xml:space="preserve">
-    <value>Стовпець {0}</value>
-  </data>
-  <data name="Editor.Row" xml:space="preserve">
-    <value>Рядок</value>
-  </data>
-  <data name="Editor.Text" xml:space="preserve">
-    <value>Текст</value>
-  </data>
-  <data name="Editor.LiveBinding" xml:space="preserve">
-    <value>Живе прив’язування слова</value>
-  </data>
-  <data name="Editor.ExerciseRow" xml:space="preserve">
-    <value>Рядок вправи (використовуйте {{blank}})</value>
-  </data>
-  <data name="Editor.AccessibleLabel" xml:space="preserve">
-    <value>Мітка доступності</value>
-  </data>
-  <data name="Editor.CustomExpected" xml:space="preserve">
-    <value>Власна очікувана відповідь</value>
-  </data>
-  <data name="Editor.ExpectedBinding" xml:space="preserve">
-    <value>Очікуване прив’язування слова</value>
-  </data>
-  <data name="Editor.DisplayedWord" xml:space="preserve">
-    <value>Відображуване слово</value>
-  </data>
-  <data name="Editor.ExpectedChecked" xml:space="preserve">
-    <value>Має бути позначено</value>
-  </data>
   <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
     <value>Ця вікторина більше не є публічною.</value>
   </data>
@@ -1967,4 +1595,5 @@
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Переглянути JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Імпортувати все</value></data>
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Попередній перегляд та імпорт є детермінованими й не звертаються до постачальника ШІ. «Виправити за допомогою ШІ» надсилає вставлений текст до налаштованого ШІ Glosify та списує кредити.</value></data>
+  <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
 </root>

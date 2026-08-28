@@ -387,9 +387,6 @@
   <data name="Home.BuildVocabularyText" xml:space="preserve">
     <value>Gerçekten kullanmak istediğiniz kelimelerden odaklı setler oluşturun.</value>
   </data>
-  <data name="Home.PracticeRecallText" xml:space="preserve">
-    <value>Kelimeleri akılda tutmak için kartlar, yazma ve özel quizler kullanın.</value>
-  </data>
   <data name="Home.ConnectedKicker" xml:space="preserve">
     <value>Tek ve bağlantılı bir çalışma alanı</value>
   </data>
@@ -872,12 +869,6 @@
   </data>
   <data name="Client.CheckFailed" xml:space="preserve">
     <value>Bu cevap doğrulanamadı. Tekrar deneyin.</value>
-  </data>
-  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
-    <value>Bu özel quiz silinsin mi?</value>
-  </data>
-  <data name="Client.DeleteQuizFailed" xml:space="preserve">
-    <value>Özel quiz silinemedi. Lütfen tekrar deneyin.</value>
   </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>Sohbeti sil</value>
@@ -1365,12 +1356,6 @@
   <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
     <value>Bu quiz hakkında soru sorun...</value>
   </data>
-  <data name="Quiz.CustomCount" xml:space="preserve">
-    <value>{0} özel</value>
-  </data>
-  <data name="Quiz.BuildCustom" xml:space="preserve">
-    <value>Özel quiz oluştur</value>
-  </data>
   <data name="Quiz.Public" xml:space="preserve">
     <value>Genel</value>
   </data>
@@ -1406,24 +1391,6 @@
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>Henüz cümle yok. Asistandan cümle eklemesini isteyin veya metinden cümleleri çıkarmasını isteyin.</value>
-  </data>
-  <data name="Quiz.CustomQuizzes" xml:space="preserve">
-    <value>Özel quizler</value>
-  </data>
-  <data name="Quiz.CustomHelp" xml:space="preserve">
-    <value>Bu quizdeki kelimelerden serbest biçimli bir alıştırma oluşturun.</value>
-  </data>
-  <data name="Quiz.NewCustom" xml:space="preserve">
-    <value>Yeni özel quiz</value>
-  </data>
-  <data name="Quiz.Playable" xml:space="preserve">
-    <value>Oynanabilir</value>
-  </data>
-  <data name="Quiz.Draft" xml:space="preserve">
-    <value>Taslak</value>
-  </data>
-  <data name="Quiz.NoCustom" xml:space="preserve">
-    <value>Henüz özel quiz yok. Blokları bir kanvasa sürükleyerek bir tane oluşturun.</value>
   </data>
   <data name="Payments.PackageUnavailable" xml:space="preserve">
     <value>Bu kredi paketi artık mevcut değil.</value>
@@ -1509,179 +1476,8 @@
   <data name="Common.Preview" xml:space="preserve">
     <value>Önizleme</value>
   </data>
-  <data name="Custom.EditNamed" xml:space="preserve">
-    <value>{0} öğesini düzenle</value>
-  </data>
-  <data name="Custom.AssistantTitle" xml:space="preserve">
-    <value>Quiz oluşturucu asistanı</value>
-  </data>
-  <data name="Custom.AssistantEmpty" xml:space="preserve">
-    <value>Benden quiz öğeleri eklememi, yapılandırmamı veya düzenlememi isteyin.</value>
-  </data>
-  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
-    <value>Bu özel quize sorular ekle...</value>
-  </data>
-  <data name="Custom.Name" xml:space="preserve">
-    <value>Özel quiz adı</value>
-  </data>
-  <data name="Custom.LoadingEditor" xml:space="preserve">
-    <value>Düzenleyici kontrolleri yükleniyor…</value>
-  </data>
-  <data name="Custom.DesignStarters" xml:space="preserve">
-    <value>Tasarım başlangıçları</value>
-  </data>
-  <data name="Custom.VisualDirection" xml:space="preserve">
-    <value>Görsel bir yön seçin</value>
-  </data>
-  <data name="Custom.TemplateHelp" xml:space="preserve">
-    <value>Yalnızca görünümü uygulayın ya da bu quizin kelimelerinden oluşturulmuş eksiksiz bir düzenle kanvası değiştirin.</value>
-  </data>
-  <data name="Custom.UseStyle" xml:space="preserve">
-    <value>Stili kullan</value>
-  </data>
-  <data name="Custom.UseLayout" xml:space="preserve">
-    <value>Düzeni kullan</value>
-  </data>
-  <data name="Custom.BuildingBlocks" xml:space="preserve">
-    <value>Quiz yapı taşları</value>
-  </data>
-  <data name="Custom.Blocks" xml:space="preserve">
-    <value>Bloklar</value>
-  </data>
-  <data name="Custom.BlocksHelp" xml:space="preserve">
-    <value>Boş bir alana sürükleyin veya otomatik eklemek için tıklayın.</value>
-  </data>
-  <data name="Custom.DragAdd" xml:space="preserve">
-    <value>{0} eklemek için sürükleyin veya tıklayın</value>
-  </data>
-  <data name="Custom.Add" xml:space="preserve">
-    <value>{0} ekle</value>
-  </data>
-  <data name="Custom.Grid" xml:space="preserve">
-    <value>12 sütunlu akıllı ızgara</value>
-  </data>
-  <data name="Custom.GridHelp" xml:space="preserve">
-    <value>Yerleştirmek için sürükleyin · kenarlar hizalanır · dolu alanlardan kaçınılır</value>
-  </data>
-  <data name="Custom.Canvas" xml:space="preserve">
-    <value>Özel quiz kanvası</value>
-  </data>
-  <data name="Custom.Properties" xml:space="preserve">
-    <value>Özellikler</value>
-  </data>
-  <data name="Custom.PropertiesHelp" xml:space="preserve">
-    <value>İçeriğini ve bağlamalarını düzenlemek için bir blok seçin.</value>
-  </data>
-  <data name="Custom.Answer" xml:space="preserve">
-    <value>Cevap</value>
-  </data>
-  <data name="Custom.Choose" xml:space="preserve">
-    <value>Seçin...</value>
-  </data>
-  <data name="Custom.CheckAnswers" xml:space="preserve">
-    <value>Cevapları kontrol et</value>
-  </data>
-  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
-    <value>Quizi tamamlayın, ardından cevaplarınızı gönderin.</value>
-  </data>
-  <data name="Custom.Block.Heading" xml:space="preserve">
-    <value>Başlık</value>
-  </data>
-  <data name="Custom.Block.Instruction" xml:space="preserve">
-    <value>Yönerge</value>
-  </data>
-  <data name="Custom.Block.WordLabel" xml:space="preserve">
-    <value>Kelime etiketi</value>
-  </data>
-  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
-    <value>Çeviri etiketi</value>
-  </data>
-  <data name="Custom.Block.TextInput" xml:space="preserve">
-    <value>Metin girişi</value>
-  </data>
-  <data name="Custom.Block.LongAnswer" xml:space="preserve">
-    <value>Uzun cevap</value>
-  </data>
-  <data name="Custom.Block.Checkbox" xml:space="preserve">
-    <value>Onay kutusu</value>
-  </data>
-  <data name="Custom.Block.RadioChoices" xml:space="preserve">
-    <value>Radyo seçenekleri</value>
-  </data>
-  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
-    <value>Onay kutusu seçenekleri</value>
-  </data>
-  <data name="Custom.Block.SelectMenu" xml:space="preserve">
-    <value>Açılır menü</value>
-  </data>
-  <data name="Custom.Block.WordBank" xml:space="preserve">
-    <value>Kelime havuzu</value>
-  </data>
-  <data name="Custom.Block.SubmitButton" xml:space="preserve">
-    <value>Gönder düğmesi</value>
-  </data>
-  <data name="Custom.Block.Feedback" xml:space="preserve">
-    <value>Geri bildirim</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
-    <value>Editoryal akış</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
-    <value>Sakin bir hiyerarşi, cömert boşluklar ve her satırda tek bir net görev.</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
-    <value>Çeviriler, dilbilgisi yönergeleri, odaklanmış hatırlama</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
-    <value>Aurora kartları</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>Yumuşak renkler, eşleştirilmiş pratik kartları ve enerjik bir çalışma havası.</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
-    <value>Kısa kelime listeleri ve görsel tarama</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
-    <value>Ders kitabı alıştırması</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
-    <value>Fotoğraflanmış çalışma kitabı alıştırmalarından esinlenen, sıkı aralıklı numaralı satırlar.</value>
-  </data>
-  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
-    <value>Çekimler, dönüşümler, boşluk doldurma ve resmî alıştırmalar</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
-    <value>Kelime havuzu laboratuvarı</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
-    <value>Göz alıcı bir kelime havuzu alıştırmaya yön verir ve hatırlamayı eğlenceli kılar.</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
-    <value>Yönlendirilmiş hatırlama ve başlangıç düzeyi kelimeler</value>
-  </data>
-  <data name="Custom.AnswerQuestion" xml:space="preserve">
-    <value>Bu soruyu cevaplayın.</value>
-  </data>
-  <data name="Custom.Correct" xml:space="preserve">
-    <value>Doğru.</value>
-  </data>
-  <data name="Custom.CorrectAnswer" xml:space="preserve">
-    <value>Doğru cevap: {0}</value>
-  </data>
-  <data name="Custom.CompleteAnswers" xml:space="preserve">
-    <value>Göndermeden önce tüm cevapları tamamlayın.</value>
-  </data>
-  <data name="Custom.Score" xml:space="preserve">
-    <value>Puan: {0} / {1} ({2}%).</value>
-  </data>
-  <data name="Custom.GradeFailed" xml:space="preserve">
-    <value>Bu sınav değerlendirilemedi. Tekrar deneyin.</value>
-  </data>
   <data name="Explore.PublicQuiz" xml:space="preserve">
     <value>Genel Test</value>
-  </data>
-  <data name="Explore.CustomExercises" xml:space="preserve">
-    <value>Bu testin kelime hazinesinden oluşturulan alıştırmalar.</value>
   </data>
   <data name="Explore.NoPublicWords" xml:space="preserve">
     <value>Bu herkese açık teste henüz kelime eklenmedi.</value>
@@ -1755,174 +1551,6 @@
   <data name="Reader.PdfLoadFailed" xml:space="preserve">
     <value>PDF yüklenemedi.</value>
   </data>
-  <data name="Editor.Heading" xml:space="preserve">
-    <value>Başlık</value>
-  </data>
-  <data name="Editor.Instruction" xml:space="preserve">
-    <value>Yönerge</value>
-  </data>
-  <data name="Editor.WordLabel" xml:space="preserve">
-    <value>Kelime etiketi</value>
-  </data>
-  <data name="Editor.TranslationLabel" xml:space="preserve">
-    <value>Çeviri etiketi</value>
-  </data>
-  <data name="Editor.TextInput" xml:space="preserve">
-    <value>Metin girişi</value>
-  </data>
-  <data name="Editor.LongAnswer" xml:space="preserve">
-    <value>Uzun yanıt</value>
-  </data>
-  <data name="Editor.Checkbox" xml:space="preserve">
-    <value>Onay kutusu</value>
-  </data>
-  <data name="Editor.RadioChoices" xml:space="preserve">
-    <value>Radyo seçenekleri</value>
-  </data>
-  <data name="Editor.CheckboxChoices" xml:space="preserve">
-    <value>Onay kutusu seçenekleri</value>
-  </data>
-  <data name="Editor.SelectMenu" xml:space="preserve">
-    <value>Açılır menü</value>
-  </data>
-  <data name="Editor.WordBank" xml:space="preserve">
-    <value>Kelime havuzu</value>
-  </data>
-  <data name="Editor.SubmitButton" xml:space="preserve">
-    <value>Gönder düğmesi</value>
-  </data>
-  <data name="Editor.Feedback" xml:space="preserve">
-    <value>Geri bildirim</value>
-  </data>
-  <data name="Editor.EmptyCanvas" xml:space="preserve">
-    <value>Başlamak için bu tuval üzerine istediğiniz herhangi bir yere bir blok sürükleyin.</value>
-  </data>
-  <data name="Editor.MoveLeft" xml:space="preserve">
-    <value>Sola taşı</value>
-  </data>
-  <data name="Editor.MoveUp" xml:space="preserve">
-    <value>Yukarı taşı</value>
-  </data>
-  <data name="Editor.MoveDown" xml:space="preserve">
-    <value>Aşağı taşı</value>
-  </data>
-  <data name="Editor.MoveRight" xml:space="preserve">
-    <value>Sağa taşı</value>
-  </data>
-  <data name="Editor.RemoveBlock" xml:space="preserve">
-    <value>Bloğu kaldır</value>
-  </data>
-  <data name="Editor.Resize" xml:space="preserve">
-    <value>Genişliği ayarlamak için sürükleyin</value>
-  </data>
-  <data name="Editor.Word" xml:space="preserve">
-    <value>Kelime</value>
-  </data>
-  <data name="Editor.DisplayField" xml:space="preserve">
-    <value>Görüntü alanı</value>
-  </data>
-  <data name="Editor.Words" xml:space="preserve">
-    <value>Kelimeler</value>
-  </data>
-  <data name="Editor.Options" xml:space="preserve">
-    <value>Seçenekler</value>
-  </data>
-  <data name="Editor.CorrectOption" xml:space="preserve">
-    <value>Doğru seçenek</value>
-  </data>
-  <data name="Editor.RemoveOption" xml:space="preserve">
-    <value>Seçeneği kaldır</value>
-  </data>
-  <data name="Editor.AddOption" xml:space="preserve">
-    <value>Seçenek ekle</value>
-  </data>
-  <data name="Editor.Properties" xml:space="preserve">
-    <value>Özellikler</value>
-  </data>
-  <data name="Editor.SelectBlock" xml:space="preserve">
-    <value>İçeriğini ve bağlamalarını düzenlemek için bir blok seçin.</value>
-  </data>
-  <data name="Editor.TargetInputs" xml:space="preserve">
-    <value>Hedef girişler</value>
-  </data>
-  <data name="Editor.PreviewOnly" xml:space="preserve">
-    <value>Yalnızca önizleme — puanlanan bir denemeyi kaydetmek ve oynamak için kaydedin.</value>
-  </data>
-  <data name="Editor.BackToEditor" xml:space="preserve">
-    <value>Düzenleyiciye dön</value>
-  </data>
-  <data name="Editor.Preview" xml:space="preserve">
-    <value>Önizleme</value>
-  </data>
-  <data name="Editor.PreviewingOne" xml:space="preserve">
-    <value>{0} blok önizleniyor.</value>
-  </data>
-  <data name="Editor.PreviewingMany" xml:space="preserve">
-    <value>{0} blok önizleniyor.</value>
-  </data>
-  <data name="Editor.ReadyOne" xml:space="preserve">
-    <value>Düzenleyici hazır · tuvalde {0} blok var. Eklemek için + simgesini kullanın veya bir blok sürükleyin.</value>
-  </data>
-  <data name="Editor.ReadyMany" xml:space="preserve">
-    <value>Düzenleyici hazır · tuvalde {0} blok var. Eklemek için + simgesini kullanın veya bir blok sürükleyin.</value>
-  </data>
-  <data name="Editor.ReplaceConfirm" xml:space="preserve">
-    <value>Geçerli tuvali {0} düzeniyle değiştirmek ister misiniz? Bu değişikliği Geri Alabilirsiniz.</value>
-  </data>
-  <data name="Editor.SaveFailed" xml:space="preserve">
-    <value>Bu özel sınav kaydedilemedi.</value>
-  </data>
-  <data name="Editor.SavedPlayable" xml:space="preserve">
-    <value>Kaydedildi. Bu sınav artık oynatılmaya hazır.</value>
-  </data>
-  <data name="Editor.DraftSaved" xml:space="preserve">
-    <value>Taslak kaydedildi. Oynamadan önce gerekli sınav alanlarını tamamlayın.</value>
-  </data>
-  <data name="Editor.SaveStopped" xml:space="preserve">
-    <value>Kaydetme isteği beklenmedik şekilde durdu. Tekrar deneyin.</value>
-  </data>
-  <data name="Editor.WordLemma" xml:space="preserve">
-    <value>Kelime / kök</value>
-  </data>
-  <data name="Editor.Translation" xml:space="preserve">
-    <value>Çeviri</value>
-  </data>
-  <data name="Editor.Width" xml:space="preserve">
-    <value>Genişlik</value>
-  </data>
-  <data name="Editor.Column" xml:space="preserve">
-    <value>Sütun</value>
-  </data>
-  <data name="Editor.ColumnNumber" xml:space="preserve">
-    <value>Sütun {0}</value>
-  </data>
-  <data name="Editor.Row" xml:space="preserve">
-    <value>Satır</value>
-  </data>
-  <data name="Editor.Text" xml:space="preserve">
-    <value>Metin</value>
-  </data>
-  <data name="Editor.LiveBinding" xml:space="preserve">
-    <value>Canlı kelime bağlama</value>
-  </data>
-  <data name="Editor.ExerciseRow" xml:space="preserve">
-    <value>Alıştırma satırı ({{blank}} kullanın)</value>
-  </data>
-  <data name="Editor.AccessibleLabel" xml:space="preserve">
-    <value>Erişilebilir etiket</value>
-  </data>
-  <data name="Editor.CustomExpected" xml:space="preserve">
-    <value>Özel beklenen yanıt</value>
-  </data>
-  <data name="Editor.ExpectedBinding" xml:space="preserve">
-    <value>Beklenen kelime bağlaması</value>
-  </data>
-  <data name="Editor.DisplayedWord" xml:space="preserve">
-    <value>Gösterilen kelime</value>
-  </data>
-  <data name="Editor.ExpectedChecked" xml:space="preserve">
-    <value>İşaretli olması beklenir</value>
-  </data>
   <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
     <value>Bu sınav artık herkese açık değil.</value>
   </data>
@@ -1967,4 +1595,5 @@
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>JSON’u önizle</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Tümünü içe aktar</value></data>
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Önizleme ve içe aktarma deterministiktir ve bir yapay zekâ sağlayıcısıyla iletişim kurmaz. “Yapay zekâ ile onar”, yapıştırılan metni Glosify’ın yapılandırılmış yapay zekâsına gönderir ve kredi harcar.</value></data>
+  <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
 </root>

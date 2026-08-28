@@ -68,6 +68,14 @@ internal sealed class AssistantChangeWorkflow(
             return new AssistantApplyResult(0);
         }
 
+        if (changes.Any(RetiredPendingChangeKinds.ContainsCustomQuizChange))
+        {
+            message.Status = AssistantMessageStatus.Rejected;
+            await UpdateTurnOutcomeAsync(message.TurnId, AssistantChangeOutcome.Rejected, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+            return new AssistantApplyResult(0);
+        }
+
         var result = await changeApplier.ApplyAsync(
             message.ContextQuizId,
             userId,

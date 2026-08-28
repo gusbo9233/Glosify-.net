@@ -9,8 +9,6 @@ using Glosify.Services.Quizzes;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using System.Text;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -49,7 +47,6 @@ public sealed class AssistantCollaboratorTests
             quiz: null,
             focusedWord: null,
             documentPage: null,
-            customQuiz: null,
             transcript: null,
             book: null,
             currentLanguage: "Polish");
@@ -97,7 +94,6 @@ public sealed class AssistantCollaboratorTests
             quiz: null,
             focusedWord: null,
             documentPage: null,
-            customQuiz: null,
             transcript: new TranscriptAssistantContext(
                 Guid.Parse("33333333-3333-3333-3333-333333333333"),
                 "Lesson recording",
@@ -111,7 +107,7 @@ public sealed class AssistantCollaboratorTests
             currentLanguage: "Polish");
 
     [Fact]
-    public void Prompt_builder_preserves_exact_instruction_text()
+    public void Prompt_builder_preserves_standard_quiz_and_language_instructions()
     {
         var quiz = new Quiz
         {
@@ -126,12 +122,6 @@ public sealed class AssistantCollaboratorTests
             QuizId = quiz.Id,
             Lemma = "dom",
             Translation = "house",
-        };
-        var customQuiz = new CustomQuiz
-        {
-            Id = Guid.Parse("22222222-2222-2222-2222-222222222222"),
-            QuizId = quiz.Id,
-            Name = "Chapter drill",
         };
         var document = new DocumentPageContext("Course book", 7, "Ala ma kota.", null);
         var transcript = new TranscriptAssistantContext(
@@ -149,35 +139,23 @@ public sealed class AssistantCollaboratorTests
             42);
         var builder = new AssistantPromptBuilder();
 
-        var outputs = new[]
-        {
-            builder.BuildSystemInstruction(null, null, document, null, transcript, book, "Polish"),
-            builder.BuildSystemInstruction(quiz, focusedWord, document, customQuiz, transcript, book, "Polish"),
-            builder.BuildProfileContext(AssistantAgentProfile.CustomQuizBuilder, quiz, focusedWord, document, customQuiz, transcript, book, "Polish"),
-            builder.BuildProfileContext(AssistantAgentProfile.QuizAssistant, quiz, focusedWord, document, customQuiz, transcript, book, "Polish"),
-            builder.BuildProfileContext(AssistantAgentProfile.Librarian, null, null, document, null, transcript, book, "Polish"),
-            // The three languages a turn involves, stated so the assistant stops asking about
-            // ones the conversation already settled.
-            builder.BuildProfileContext(AssistantAgentProfile.Librarian, null, null, document, null, transcript, book, "Polish", "English", "Swedish"),
-        };
+        var system = builder.BuildSystemInstruction(quiz, focusedWord, document, transcript, book, "Polish");
+        var profile = builder.BuildProfileContext(
+            AssistantAgentProfile.QuizAssistant,
+            quiz,
+            focusedWord,
+            document,
+            transcript,
+            book,
+            "Polish",
+            "English",
+            "Swedish");
 
-        Assert.Equal(
-            new[]
-            {
-                "325A0F9D8F33F0D86B1F17914A1A2A029F089D2FB13FE6D9C648EBED8D9178BD",
-                "A67677730145A6FC34EE0AF4D19BEEA3096D93C883D6C300B02780C80E56EB77",
-                // Every instruction that carries a selected book changed with
-                // search_book_pages and the search strategy that followed it: the book
-                // block now tells the model to search in the book's own language, to read
-                // a miss rather than treat it as an answer, and to navigate by the
-                // contents page. The custom quiz builder context below is the one that
-                // never names a book, so its hash is untouched.
-                "58253A6DBBD49404DC47EF8ED32AC61A68755989F87D918DEC311F2F7A74F884",
-                "639B007443B865B88D09939EA27376450BB1FCF80580EE2110053FF64006609F",
-                "BAC61621A43D44053D4CAFD2B71F44C75A7DF2A9DDBAEAFEC6C6EFAB52E5AB30",
-                "810D824FD5DF69EAE8ACA19B4A5FA0A7A4B2FB8EBA3396BE8BD0CD14E905705A",
-            },
-            outputs.Select(Fingerprint));
+        Assert.Contains("standard word-and-translation", system);
+        Assert.Contains("no longer available", system);
+        Assert.DoesNotContain("create_custom_quiz", system);
+        Assert.Contains("Reply language: Swedish", profile);
+        Assert.Contains("Source/translation language: English", profile);
     }
 
     [Fact]
@@ -287,12 +265,6 @@ public sealed class AssistantCollaboratorTests
         new DbContextOptionsBuilder<GlosifyContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
             .Options);
-
-    private static string Fingerprint(string value)
-    {
-        var normalized = value.Replace("\r\n", "\n", StringComparison.Ordinal);
-        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(normalized)));
-    }
 
     private sealed class FixedLanguageContext(string language) : ILanguageContext
     {

@@ -13,7 +13,7 @@ export function problemMessages(problem) {
 }
 
 export function buildExternalRepairPrompt(json, messages) {
-    return `Repair this into Glosify version 1 quiz-import JSON. Return only the complete JSON object. Preserve all usable learning content and translations; do not invent ids, visibility, target_language, or custom quizzes.\n\nValidation errors:\n${messages.join('\n')}\n\nJSON to repair:\n${json}`;
+    return `Repair this into Glosify version 1 quiz-import JSON. Return only the complete JSON object. Preserve all usable learning content and translations; do not invent ids, visibility, target_language, or unsupported fields.\n\nValidation errors:\n${messages.join('\n')}\n\nJSON to repair:\n${json}`;
 }
 
 export function previewMatches(canonicalJson, currentJson) {

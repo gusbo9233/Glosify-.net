@@ -1,7 +1,6 @@
 using Glosify.Data;
 using Glosify.Models;
 using Glosify.Models.Entities;
-using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Language;
 using Glosify.Services.Anki;
 using Microsoft.EntityFrameworkCore;
@@ -232,11 +231,9 @@ public class QuizService : IQuizService
             .ToListAsync(cancellationToken);
 
         _context.Quizzes.Add(copy);
-        var wordIdMap = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var word in words)
         {
             var copiedWordId = Guid.NewGuid().ToString("N");
-            wordIdMap[word.Id] = copiedWordId;
             _context.Words.Add(new Word
             {
                 Id = copiedWordId,
@@ -254,8 +251,6 @@ public class QuizService : IQuizService
             Translation = sentence.Translation,
             CreatedAt = sentence.CreatedAt
         }));
-
-        await new CustomQuizService(_context).CloneForCopiedQuizAsync(source.Id, copy.Id, wordIdMap, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);
         return copy;

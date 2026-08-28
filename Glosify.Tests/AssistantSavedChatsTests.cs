@@ -206,36 +206,6 @@ public class AssistantSavedChatsTests
     }
 
     [Fact]
-    public async Task Context_resolution_failure_still_persists_input_and_finalizes_turn()
-    {
-        await using var context = CreateContext();
-        var quizId = Guid.NewGuid();
-        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
-        await context.SaveChangesAsync();
-        var orchestrator = CreateOrchestrator(context);
-        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            orchestrator.SendChatMessageAsync(
-                chat.Id,
-                "user-1",
-                "Build this custom quiz.",
-                contextQuizId: quizId,
-                customQuizId: Guid.NewGuid()));
-
-        context.ChangeTracker.Clear();
-        var message = Assert.Single(await context.AssistantMessages.ToListAsync());
-        var turn = await context.AssistantTurns.SingleAsync();
-        Assert.Equal(AssistantMessageRole.User, message.Role);
-        Assert.Contains("Build this custom quiz.", message.ContentJson);
-        Assert.Equal(turn.Id, message.TurnId);
-        Assert.Equal(AssistantTurnStatus.Failed, turn.Status);
-        Assert.Equal("unhandled_error", turn.ErrorCategory);
-        Assert.NotNull(turn.CompletedAt);
-        Assert.Empty(context.AssistantModelInvocations);
-    }
-
-    [Fact]
     public async Task Final_message_save_failure_detaches_pending_output_and_finalizes_turn_as_failed()
     {
         var interceptor = new FailFinalMessageSaveOnceInterceptor();
@@ -805,27 +775,6 @@ public class AssistantSavedChatsTests
 
     // A turn that fails before routing is resolved still finalizes; the columns stay null
     // rather than carrying a value the turn never used.
-    [Fact]
-    public async Task SendChatMessage_LeavesRoutingCaptureNullWhenTheTurnFailsBeforeRouting()
-    {
-        await using var context = CreateContext();
-        var quizId = Guid.NewGuid();
-        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
-        await context.SaveChangesAsync();
-        var orchestrator = CreateOrchestrator(context);
-        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            orchestrator.SendChatMessageAsync(chat.Id, "user-1", "Edit it.", customQuizId: Guid.NewGuid()));
-
-        context.ChangeTracker.Clear();
-        var turn = await context.AssistantTurns.SingleAsync(candidate => candidate.ThreadId == chat.Id);
-        Assert.Equal(AssistantTurnStatus.Failed, turn.Status);
-        Assert.Null(turn.PromptVersion);
-        Assert.Null(turn.IntentArtifact);
-        Assert.Null(turn.AllowedTools);
-    }
-
     // The capture is in-memory onto an already tracked row, so it must ride on the saves the
     // turn was going to make anyway: the pre-flight save, the completion save, and the
     // analytics batch, which this harness routes through the same context.
@@ -912,41 +861,6 @@ public class AssistantSavedChatsTests
             generativeAi.LastAgentRequest.SystemInstruction);
     }
 
-    // Opening the creator routes the turn to the quiz-builder agent, whose tool surface
-    // cannot create a second custom quiz.
-    [Fact]
-    public async Task SendChatMessage_RoutesTheOpenCustomQuizToTheBuilderProfile()
-    {
-        await using var context = CreateContext();
-        var quizId = Guid.NewGuid();
-        var customQuizId = Guid.NewGuid();
-        context.Quizzes.Add(CreateQuiz(quizId, "user-1"));
-        context.CustomQuizzes.Add(CreateCustomQuiz(customQuizId, quizId, "Verb drills"));
-        await context.SaveChangesAsync();
-        var generativeAi = new CapturingGenerativeAiClient("Added the rows.");
-        var orchestrator = CreateOrchestrator(
-            context,
-            generativeAi: generativeAi,
-            tools: AssistantToolFactory.Create(context));
-        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
-
-        await orchestrator.SendChatMessageAsync(
-            chat.Id,
-            "user-1",
-            "Generate ten conjugation exercises.",
-            contextQuizId: quizId,
-            customQuizId: customQuizId);
-
-        var request = generativeAi.LastAgentRequest;
-        Assert.NotNull(request);
-        Assert.Equal(AssistantAgentProfile.CustomQuizBuilder, request.Profile);
-        Assert.Contains("Verb drills", request.ContextInstruction);
-        Assert.Contains(customQuizId.ToString(), request.ContextInstruction);
-        var toolNames = request.Tools.Select(tool => tool.Name).ToList();
-        Assert.DoesNotContain("create_custom_quiz", toolNames);
-        Assert.Contains("add_text_input", toolNames);
-    }
-
     [Fact]
     public async Task SendChatMessage_RoutesAQuizPageToTheQuizAssistantProfile()
     {
@@ -973,7 +887,7 @@ public class AssistantSavedChatsTests
         Assert.Contains(quizId.ToString(), request.ContextInstruction);
         var toolNames = request.Tools.Select(tool => tool.Name).ToList();
         Assert.Contains("add_words", toolNames);
-        Assert.Contains("create_custom_quiz", toolNames);
+        Assert.DoesNotContain(toolNames, name => name.Contains("custom_quiz", StringComparison.Ordinal));
         // Library management belongs to the librarian, not to the quiz being worked in.
         Assert.DoesNotContain("move_quiz", toolNames);
         Assert.DoesNotContain("create_collection", toolNames);
@@ -1103,39 +1017,6 @@ public class AssistantSavedChatsTests
         Assert.Equal(AssistantAgentProfile.FreestyleLibrarian, request.Profile);
         Assert.Contains("create_quiz", request.Tools.Select(tool => tool.Name));
         Assert.DoesNotContain("list_saved_transcripts", request.Tools.Select(tool => tool.Name));
-    }
-
-    [Fact]
-    public async Task FreestyleCustomEditor_RoutesToGenericBuilder()
-    {
-        await using var context = CreateContext();
-        var quizId = Guid.NewGuid();
-        var customQuizId = Guid.NewGuid();
-        var quiz = CreateQuiz(quizId, "user-1");
-        quiz.SourceLanguage = quiz.TargetLanguage = quiz.Language = "Freestyle";
-        context.Quizzes.Add(quiz);
-        context.CustomQuizzes.Add(CreateCustomQuiz(customQuizId, quizId, "Medical review"));
-        await context.SaveChangesAsync();
-        var generativeAi = new CapturingGenerativeAiClient("Built the exercise.");
-        var orchestrator = CreateOrchestrator(
-            context,
-            generativeAi: generativeAi,
-            tools: AssistantToolFactory.Create(context),
-            languageContext: new StaticLanguageContext("Freestyle"));
-        var chat = await orchestrator.CreateChatAsync("user-1", quizId);
-
-        await orchestrator.SendChatMessageAsync(
-            chat.Id,
-            "user-1",
-            "Build a multiple choice question.",
-            contextQuizId: quizId,
-            customQuizId: customQuizId);
-
-        var request = Assert.IsType<AgentRequest>(generativeAi.LastAgentRequest);
-        Assert.Equal(AssistantAgentProfile.FreestyleCustomQuizBuilder, request.Profile);
-        Assert.Contains("add_choice", request.Tools.Select(tool => tool.Name));
-        Assert.Contains("list_items", request.Tools.Select(tool => tool.Name));
-        Assert.DoesNotContain("create_custom_quiz", request.Tools.Select(tool => tool.Name));
     }
 
     // An authored agent receives only the context block, so page text must be in it or
@@ -1455,18 +1336,6 @@ public class AssistantSavedChatsTests
         CreatedAt = DateTimeOffset.UtcNow,
     };
 
-    private static CustomQuiz CreateCustomQuiz(Guid id, Guid quizId, string name) => new()
-    {
-        Id = id,
-        QuizId = quizId,
-        Name = name,
-        DefinitionJson = """{"schemaVersion":1,"stylePreset":"editorial","blocks":[]}""",
-        SchemaVersion = 1,
-        IsPlayable = false,
-        CreatedAt = DateTimeOffset.UtcNow,
-        UpdatedAt = DateTimeOffset.UtcNow,
-    };
-
     private static BookPage CreateBookPage(Guid documentId, string userId, string text)
     {
         var document = new BookDocument
@@ -1702,7 +1571,6 @@ public class AssistantSavedChatsTests
 
         public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = Surface;
         public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; } = Surface;
-        public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; } = Surface;
         public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } = Surface;
         public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } = Surface;
 
@@ -1721,7 +1589,6 @@ public class AssistantSavedChatsTests
 
         public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = [Declaration];
         public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; } = [Declaration];
-        public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; } = [Declaration];
         public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } = [Declaration];
         public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } = [Declaration];
 
@@ -1746,7 +1613,6 @@ public class AssistantSavedChatsTests
     {
         public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = [];
         public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; } = [];
-        public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; } = [];
         public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } = [];
         public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } = [];
 
@@ -1887,7 +1753,6 @@ public class AssistantSavedChatsTests
     {
         public int Calls { get; private set; }
         public IReadOnlyList<AgentToolDeclaration> Declarations { get; } = [];
-        public IReadOnlyList<AgentToolDeclaration> CustomQuizBuilderDeclarations { get; } = [];
         public IReadOnlyList<AgentToolDeclaration> QuizAssistantDeclarations { get; } = [];
         public IReadOnlyList<AgentToolDeclaration> GlobalDeclarations { get; } = [];
         public IReadOnlyList<AgentToolDeclaration> LibrarianDeclarations { get; } =

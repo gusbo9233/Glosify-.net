@@ -139,6 +139,17 @@ index, and column. It preserves `QuizAttempts`, `QuizAttemptItems`, Identity,
 quizzes, books, assistant data, credits, and provider-usage history. Historical
 migrations must remain unchanged.
 
+The final reviewed bundle also applies `RemoveCustomQuizzes`, but only after
+the replacement application has passed its deployment-version and readiness
+checks while the old table still exists. That migration first marks active
+assistant proposal batches containing retired custom-quiz changes as rejected,
+including legacy `create_quiz` payloads with embedded custom content. It then
+drops only `CustomQuizzes`. Saved assistant text, proposal JSON, turn telemetry,
+standard quizzes, words, sentences, and historical analytics remain intact.
+The data loss is intentional: no new custom-quiz export or backup is required
+for this retirement. The remote `foundry-version` branch preserves the retired
+implementation, not the deleted production rows.
+
 The workflow records `ClassroomRetirement__Prepared=true` and
 `ClassroomRetirement__Complete=true` as persistent App Service settings. The
 prepared marker prevents a rerun or later deployment from targeting the
@@ -188,14 +199,16 @@ print the key in test output.
 1. Confirm startup validation succeeds and the health endpoint is healthy.
 2. Send a basic assistant turn and a tool-using turn; confirm usage rows show
    provider `openai`, model `gpt-5.6-luna`, and no hosted conversation ID.
-3. Verify quiz practice, custom quizzes, Anki review, Books/TTS, structured
+3. Verify standard quiz practice, Anki review, Books/TTS, structured
    import, image extraction, and book-page translation.
 4. Start Enhanced subtitles and confirm relay readiness, translated captions,
    duration billing, reconnect, and graceful close.
 5. Start Scribe mode and confirm Azure Translator output remains unchanged.
 6. Verify authentication, payments, and saved assistant/transcript flows.
 7. Confirm `/Speaking`, `/api/speaking/*`, `/Classroom/*`, and
-   `/hubs/classroom-chat` return 404 for an authenticated administrator.
+   `/hubs/classroom-chat` return 404 for an authenticated administrator. Also
+   confirm `/CustomQuizzes/*` and `/Quizzes/{id}/Custom/New` return natural 404s
+   and that quiz and Explore pages contain no custom-quiz controls.
 8. Review Application Insights for startup, routing, missing-service, and SQL
    failures, plus latency, throttling, token usage, and
    credit reservation/settlement counters.
@@ -208,6 +221,9 @@ Do not roll back the application artifact across this migration without first
 reviewing schema compatibility. Rolling the migration down recreates empty
 retired schema only. Restoring the old implementation with its production data
 requires the archived `foundry-version` code and a restore/import from the
-private BACPAC. For unrelated application failures, restore the previous
+private BACPAC. Rolling `RemoveCustomQuizzes` down recreates only the empty
+table, indexes, and quiz foreign key. The archived code can run against that
+empty schema, but it cannot recover deleted custom-quiz rows unless they exist
+in an already-available platform backup. For unrelated application failures, restore the previous
 schema-compatible reviewed artifact; do not add an alternate provider/model
 setting as an emergency switch.

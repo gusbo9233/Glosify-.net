@@ -57,12 +57,10 @@ public sealed class AssistantIntentResolverTests
 
         var allowed = AssistantToolNarrowing.AllowedNames(
             declarations,
-            intent,
-            AssistantAgentProfile.QuizAssistant);
+            intent);
         var withoutOperation = AssistantToolNarrowing.AllowedNames(
             declarations,
-            intent with { OperationKind = AssistantOperationKind.Auto },
-            AssistantAgentProfile.QuizAssistant);
+            intent with { OperationKind = AssistantOperationKind.Auto });
 
         Assert.Equal(withoutOperation.OrderBy(name => name), allowed.OrderBy(name => name));
     }
@@ -70,9 +68,9 @@ public sealed class AssistantIntentResolverTests
     [Theory]
     [InlineData("Create a normal Polish quiz about travel.", AssistantArtifactKind.StandardQuiz)]
     [InlineData("Create a quiz about travel.", AssistantArtifactKind.StandardQuiz)]
-    [InlineData("Create a custom multiple-choice quiz.", AssistantArtifactKind.CustomQuiz)]
-    [InlineData("Make an interactive cloze exercise.", AssistantArtifactKind.CustomQuiz)]
-    [InlineData("Build a fill-in-the-blank drill.", AssistantArtifactKind.CustomQuiz)]
+    [InlineData("Create a custom multiple-choice quiz.", AssistantArtifactKind.StandardQuiz)]
+    [InlineData("Make an interactive cloze exercise.", AssistantArtifactKind.Auto)]
+    [InlineData("Build a fill-in-the-blank drill.", AssistantArtifactKind.Auto)]
     // Source material implies nothing on its own; either kind can be built from a book page.
     [InlineData("Use page 12 of my textbook.", AssistantArtifactKind.Auto)]
     [InlineData("Summarise this transcript for me.", AssistantArtifactKind.Auto)]
@@ -120,33 +118,11 @@ public sealed class AssistantIntentResolverTests
     }
 
     [Fact]
-    public void Standard_quiz_intent_withdraws_custom_creation()
+    public void Standard_quiz_intent_keeps_standard_creation()
     {
         var allowed = Narrow(AssistantContentKind.Auto, AssistantArtifactKind.StandardQuiz);
 
-        Assert.DoesNotContain("create_custom_quiz", allowed);
-        Assert.DoesNotContain("add_choice", allowed);
         Assert.Contains("create_vocabulary_quiz", allowed);
-    }
-
-    // With the creator open, the element tools are the session. Wording that mentions a quiz
-    // must not strip the editor the user is looking at.
-    [Fact]
-    public void The_open_custom_quiz_builder_keeps_its_element_tools()
-    {
-        var declarations = new[]
-        {
-            Declaration("add_choice"),
-            Declaration("configure_custom_quiz_element"),
-        };
-
-        var allowed = AssistantToolNarrowing.AllowedNames(
-            declarations,
-            new AssistantIntent(AssistantArtifactKind.StandardQuiz, AssistantContentKind.Auto),
-            AssistantAgentProfile.CustomQuizBuilder);
-
-        Assert.Contains("add_choice", allowed);
-        Assert.Contains("configure_custom_quiz_element", allowed);
     }
 
     [Fact]
@@ -156,8 +132,7 @@ public sealed class AssistantIntentResolverTests
 
         var allowed = AssistantToolNarrowing.AllowedNames(
             declarations,
-            new AssistantIntent(AssistantArtifactKind.CustomQuiz, AssistantContentKind.Both),
-            AssistantAgentProfile.QuizAssistant);
+            new AssistantIntent(AssistantArtifactKind.Auto, AssistantContentKind.Both));
 
         Assert.Equal(["add_word"], allowed);
     }
@@ -169,13 +144,12 @@ public sealed class AssistantIntentResolverTests
         var declarations = new[]
         {
             "add_word", "add_words", "add_sentence", "add_sentences", "edit_word",
-            "delete_word", "create_vocabulary_quiz", "create_custom_quiz", "add_choice",
+            "delete_word", "create_vocabulary_quiz",
         }.Select(Declaration).ToArray();
 
         return AssistantToolNarrowing.AllowedNames(
             declarations,
-            new AssistantIntent(artifact, content),
-            AssistantAgentProfile.QuizAssistant);
+            new AssistantIntent(artifact, content));
     }
 
     private static AgentToolDeclaration Declaration(string name) =>

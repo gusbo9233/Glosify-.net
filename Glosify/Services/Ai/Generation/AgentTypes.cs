@@ -13,14 +13,11 @@ public enum AssistantAgentProfile
     /// <summary>Full code-owned tool surface and general instruction.</summary>
     General,
 
-    /// <summary>A quiz page: its words, sentences, and custom quizzes.</summary>
+    /// <summary>A quiz page: its words and sentences.</summary>
     QuizAssistant,
 
     /// <summary>No quiz selected: the library, and quizzes built from source material.</summary>
     Librarian,
-
-    /// <summary>The custom quiz creator: element tools only, no quiz-creation tools.</summary>
-    CustomQuizBuilder,
 
     /// <summary>A Freestyle quiz page with generic prompt-and-answer items.</summary>
     FreestyleQuizAssistant,
@@ -28,8 +25,6 @@ public enum AssistantAgentProfile
     /// <summary>The Freestyle library with no quiz selected.</summary>
     FreestyleLibrarian,
 
-    /// <summary>The custom quiz creator while its backing quiz is Freestyle.</summary>
-    FreestyleCustomQuizBuilder,
 }
 
 /// <param name="SystemInstruction">

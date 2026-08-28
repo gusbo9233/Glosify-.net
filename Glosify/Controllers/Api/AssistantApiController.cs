@@ -2,7 +2,6 @@ using Glosify.Extensions;
 using Glosify.Filters;
 using Glosify.Infrastructure.Api;
 using Glosify.Models.Api;
-using Glosify.Models.CustomQuizzes;
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
@@ -93,7 +92,6 @@ public class AssistantApiController : ApiControllerBase
                 input.DocumentId is Guid documentId
                     ? new AssistantDocumentContext(documentId, input.PageNumber ?? 1)
                     : null,
-                input.CustomQuizId,
                 cancellationToken,
                 input.TranscriptId,
                 input.BookDocumentId);
@@ -124,10 +122,6 @@ public class AssistantApiController : ApiControllerBase
             and not QuizCollectionNotFoundException)
         {
             return NotFound(ex.Message);
-        }
-        catch (CustomQuizValidationException ex)
-        {
-            return BadRequest(new { error = string.Join(" ", ex.Errors), errors = ex.Errors });
         }
     }
 

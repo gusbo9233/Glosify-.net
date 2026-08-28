@@ -16,27 +16,9 @@ internal static class AssistantToolNarrowing
     private static readonly string[] WordAdditionTools = ["add_word", "add_words", "add_item", "add_items"];
     private static readonly string[] SentenceAdditionTools = ["add_sentence", "add_sentences"];
 
-    private static readonly string[] CustomQuizTools =
-    [
-        "create_custom_quiz",
-        "create_custom_quiz_from_content",
-        "add_label",
-        "add_text_input",
-        "add_checkbox",
-        "add_choice",
-        "add_word_bank",
-        "add_submit_button",
-        "add_feedback_message",
-        "add_custom_quiz_element",
-        "add_custom_quiz_elements",
-        "configure_custom_quiz_element",
-        "remove_custom_quiz_element",
-    ];
-
     public static IReadOnlySet<string> AllowedNames(
         IReadOnlyList<AgentToolDeclaration> profileDeclarations,
-        AssistantIntent intent,
-        AssistantAgentProfile profile)
+        AssistantIntent intent)
     {
         var allowed = new HashSet<string>(
             profileDeclarations.Select(declaration => declaration.Name),
@@ -50,15 +32,6 @@ internal static class AssistantToolNarrowing
             case AssistantContentKind.Words:
                 allowed.ExceptWith(SentenceAdditionTools);
                 break;
-        }
-
-        // With a custom quiz open on screen the element tools are the whole point of the
-        // session, so wording like "add ten words to this quiz" must not strip the editor.
-        if (intent.ArtifactKind == AssistantArtifactKind.StandardQuiz
-            && profile is not (AssistantAgentProfile.CustomQuizBuilder
-                or AssistantAgentProfile.FreestyleCustomQuizBuilder))
-        {
-            allowed.ExceptWith(CustomQuizTools);
         }
 
         return allowed;

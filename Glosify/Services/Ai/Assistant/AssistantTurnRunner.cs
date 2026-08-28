@@ -63,7 +63,6 @@ internal sealed class AssistantTurnRunner
         Guid? contextQuizId,
         string? focusedWordId,
         AssistantDocumentContext? documentContext,
-        Guid? customQuizId,
         Guid? transcriptId,
         Guid? bookDocumentId,
         AssistantTranscriptPageContext? transcriptPageContext,
@@ -77,7 +76,6 @@ internal sealed class AssistantTurnRunner
             contextQuizId,
             focusedWordId,
             documentContext,
-            customQuizId,
             cancellationToken,
             transcriptId ?? thread.ContextTranscriptId,
             bookDocumentId ?? thread.ContextBookDocumentId,
@@ -100,7 +98,6 @@ internal sealed class AssistantTurnRunner
             quizId,
             focusedWordId,
             documentContext,
-            null,
             cancellationToken,
             thread.ContextTranscriptId,
             thread.ContextBookDocumentId);
@@ -120,7 +117,6 @@ internal sealed class AssistantTurnRunner
             thread.ContextQuizId,
             null,
             documentContext,
-            null,
             cancellationToken,
             thread.ContextTranscriptId,
             thread.ContextBookDocumentId);
@@ -133,7 +129,6 @@ internal sealed class AssistantTurnRunner
         Guid? contextQuizId,
         string? focusedWordId,
         AssistantDocumentContext? documentContext,
-        Guid? customQuizId,
         CancellationToken cancellationToken,
         Guid? transcriptId,
         Guid? bookDocumentId,
@@ -151,7 +146,6 @@ internal sealed class AssistantTurnRunner
                 contextQuizId,
                 focusedWordId,
                 documentContext,
-                customQuizId,
                 leaseId,
                 cancellationToken,
                 transcriptId,
@@ -183,7 +177,6 @@ internal sealed class AssistantTurnRunner
         Guid? contextQuizId,
         string? focusedWordId,
         AssistantDocumentContext? documentContext,
-        Guid? customQuizId,
         Guid leaseId,
         CancellationToken cancellationToken,
         Guid? transcriptId,
@@ -193,11 +186,9 @@ internal sealed class AssistantTurnRunner
         var turnId = Guid.NewGuid();
         var turnStartedAt = Stopwatch.GetTimestamp();
         var now = _timeProvider.GetUtcNow();
-        var preliminaryProfile = customQuizId.HasValue
-            ? AssistantAgentProfile.CustomQuizBuilder
-            : contextQuizId.HasValue
-                ? AssistantAgentProfile.QuizAssistant
-                : AssistantAgentProfile.Librarian;
+        var preliminaryProfile = contextQuizId.HasValue
+            ? AssistantAgentProfile.QuizAssistant
+            : AssistantAgentProfile.Librarian;
         using var turnActivity = AssistantAnalyticsTelemetry.StartTurn(
             turnId,
             thread.Id,
@@ -259,7 +250,6 @@ internal sealed class AssistantTurnRunner
         {
             var contextQuiz = await _contextResolver.ResolveQuizAsync(contextQuizId, userId, cancellationToken);
             var contextQuizIsFreestyle = QuizLanguageCatalog.IsFreestyle(contextQuiz?.TargetLanguage);
-            var contextCustomQuiz = await ValidateCustomQuizAsync(customQuizId, contextQuiz, userId, cancellationToken);
             var focusedWord = contextQuiz is null
                 ? null
                 : await LoadFocusedWordAsync(contextQuiz.Id, focusedWordId, cancellationToken);
@@ -296,21 +286,15 @@ internal sealed class AssistantTurnRunner
             // The page the user is on selects the profile, which fixes both the tool set and
             // which authored agent supplies the instructions. Each profile falls back to the
             // in-code instruction and declarations when no agent is configured for it.
-            var (profile, declarations) = (isFreestyle, contextCustomQuiz is not null, contextQuiz is not null) switch
+            var (profile, declarations) = (isFreestyle, contextQuiz is not null) switch
             {
-                (true, true, true) => (
-                    AssistantAgentProfile.FreestyleCustomQuizBuilder,
-                    _tools.FreestyleCustomQuizBuilderDeclarations),
-                (true, _, true) => (
+                (true, true) => (
                     AssistantAgentProfile.FreestyleQuizAssistant,
                     _tools.FreestyleQuizAssistantDeclarations),
-                (true, _, false) => (
+                (true, false) => (
                     AssistantAgentProfile.FreestyleLibrarian,
                     _tools.FreestyleLibrarianDeclarations),
-                (false, true, true) => (
-                    AssistantAgentProfile.CustomQuizBuilder,
-                    _tools.CustomQuizBuilderDeclarations),
-                (false, _, true) => (
+                (false, true) => (
                     AssistantAgentProfile.QuizAssistant,
                     _tools.QuizAssistantDeclarations),
                 _ => (AssistantAgentProfile.Librarian, _tools.LibrarianDeclarations),
@@ -319,7 +303,7 @@ internal sealed class AssistantTurnRunner
             // user actually asked for. Narrowing on both is what stops "create a quiz" landing
             // in the custom builder and sentence requests landing in word storage.
             var intent = _intentResolver.Resolve(userMessage);
-            var allowedToolNames = AssistantToolNarrowing.AllowedNames(declarations, intent, profile);
+            var allowedToolNames = AssistantToolNarrowing.AllowedNames(declarations, intent);
             const string selectedModel = OpenAiModels.Luna;
             var subjectId = await _context.Users
                 .AsNoTracking()
@@ -349,7 +333,6 @@ internal sealed class AssistantTurnRunner
             toolContext = new AgentToolContext
             {
                 QuizId = contextQuiz?.Id,
-                CustomQuizId = contextCustomQuiz?.Id,
                 UserId = userId,
                 CurrentLanguage = currentLanguage,
                 CurrentLanguageCode = selectedLanguageCode,
@@ -368,7 +351,6 @@ internal sealed class AssistantTurnRunner
                 contextQuiz,
                 focusedWord,
                 documentPage,
-                contextCustomQuiz,
                 transcriptContext,
                 bookContext,
                 currentLanguage);
@@ -378,7 +360,6 @@ internal sealed class AssistantTurnRunner
                 contextQuiz,
                 focusedWord,
                 documentPage,
-                contextCustomQuiz,
                 transcriptContext,
                 bookContext,
                 currentLanguage,
@@ -789,31 +770,6 @@ internal sealed class AssistantTurnRunner
     }
 
     private static string ResolveProviderName() => AiUsageProviders.OpenAi;
-
-    private async Task<CustomQuiz?> ValidateCustomQuizAsync(
-        Guid? customQuizId,
-        Quiz? quiz,
-        string userId,
-        CancellationToken cancellationToken)
-    {
-        if (!customQuizId.HasValue)
-        {
-            return null;
-        }
-
-        if (quiz == null)
-        {
-            throw new InvalidOperationException("Choose the source quiz for this custom quiz.");
-        }
-
-        return await _context.CustomQuizzes
-            .AsNoTracking()
-            .Include(item => item.Quiz)
-            .FirstOrDefaultAsync(item => item.Id == customQuizId.Value
-                && item.QuizId == quiz.Id
-                && item.Quiz.UserId == userId, cancellationToken)
-            ?? throw new InvalidOperationException("That custom quiz was not found.");
-    }
 
     private async Task<Word?> LoadFocusedWordAsync(Guid quizId, string? focusedWordId, CancellationToken ct)
     {

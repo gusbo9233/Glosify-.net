@@ -25,8 +25,8 @@ internal sealed class AssistantOrchestrator(
     public Task<AssistantHistory> GetChatHistoryAsync(Guid threadId, string userId, CancellationToken cancellationToken = default) =>
         threads.GetChatHistoryAsync(threadId, userId, cancellationToken);
 
-    public Task<AssistantTurnResponse> SendChatMessageAsync(Guid threadId, string userId, string userMessage, Guid? contextQuizId = null, string? focusedWordId = null, AssistantDocumentContext? documentContext = null, Guid? customQuizId = null, CancellationToken cancellationToken = default, Guid? transcriptId = null, Guid? bookDocumentId = null, AssistantTranscriptPageContext? transcriptPageContext = null) =>
-        turns.RunChatAsync(threadId, userId, userMessage, contextQuizId, focusedWordId, documentContext, customQuizId, transcriptId, bookDocumentId, transcriptPageContext, cancellationToken);
+    public Task<AssistantTurnResponse> SendChatMessageAsync(Guid threadId, string userId, string userMessage, Guid? contextQuizId = null, string? focusedWordId = null, AssistantDocumentContext? documentContext = null, CancellationToken cancellationToken = default, Guid? transcriptId = null, Guid? bookDocumentId = null, AssistantTranscriptPageContext? transcriptPageContext = null) =>
+        turns.RunChatAsync(threadId, userId, userMessage, contextQuizId, focusedWordId, documentContext, transcriptId, bookDocumentId, transcriptPageContext, cancellationToken);
 
     public Task<AssistantTurnResponse> SendMessageAsync(Guid quizId, string userId, string userMessage, string? focusedWordId = null, AssistantDocumentContext? documentContext = null, CancellationToken cancellationToken = default) =>
         turns.RunQuizAsync(quizId, userId, userMessage, focusedWordId, documentContext, cancellationToken);

@@ -66,7 +66,6 @@ import {
     const activeChatStorageKey = 'glosify.assistant.activeChatId';
 
     const focusedWordId = panel.dataset.focusedWordId || null;
-    const customQuizId = panel.dataset.customQuizId || null;
     const toggle = panel.querySelector('[data-assistant-toggle]');
     const close = panel.querySelector('[data-assistant-close]');
     const reset = panel.querySelector('[data-assistant-reset]');
@@ -756,30 +755,6 @@ import {
         transcript.scrollTop = transcript.scrollHeight;
     };
 
-    const renderCustomQuizCreatedMessage = (createdCustomQuizId, elementCount) => {
-        if (!createdCustomQuizId || !transcript) return;
-        if (empty) empty.remove();
-        const row = document.createElement('article');
-        row.className = 'assistant-message assistant-message-model';
-        const body = document.createElement('div');
-        body.className = 'assistant-bubble';
-
-        // A shell with no elements opens as a blank editor. Say so rather than inviting
-        // the user in and letting them find it empty.
-        const isEmpty = !elementCount;
-        body.appendChild(document.createTextNode(isEmpty
-            ? 'Custom quiz created, but no questions were added to it yet. Ask me to fill it in. '
-            : `Custom quiz created with ${elementCount} element${elementCount === 1 ? '' : 's'}. `));
-
-        const link = document.createElement('a');
-        link.href = `/CustomQuizzes/${encodeURIComponent(createdCustomQuizId)}/Edit`;
-        link.textContent = isEmpty ? 'Open the empty quiz' : 'Open custom quiz creator';
-        body.appendChild(link);
-        row.appendChild(body);
-        transcript.appendChild(row);
-        transcript.scrollTop = transcript.scrollHeight;
-    };
-
     const renderPendingChanges = (message) => {
         const card = document.createElement('div');
         card.className = 'assistant-pending-card';
@@ -873,15 +848,9 @@ import {
                     targetLanguage: '',
                 });
                 renderQuizCreatedMessage(data.createdQuizId);
-                renderCustomQuizCreatedMessage(data.createdCustomQuizId, data.createdCustomQuizElements);
                 setStatus(contextSaved
-                    ? data.createdCustomQuizId ? 'Quiz and custom quiz created.' : 'Quiz created.'
+                    ? 'Quiz created.'
                     : 'Quiz created, but its chat context could not be saved.', !contextSaved);
-            } else if (data.createdCustomQuizId) {
-                renderCustomQuizCreatedMessage(data.createdCustomQuizId, data.createdCustomQuizElements);
-                setStatus(data.createdCustomQuizElements
-                    ? 'Custom quiz created.'
-                    : 'Custom quiz created, but it has no questions yet.');
             } else {
                 setStatus('Changes applied. Reloading...');
                 window.setTimeout(() => window.location.reload(), 600);
@@ -1099,7 +1068,6 @@ import {
                     message,
                     contextQuizId: quizId,
                     focusedWordId,
-                    customQuizId,
                     transcriptId: materialKind === 'transcript' ? materialId : null,
                     bookDocumentId: materialKind === 'book' ? materialId : null,
                     documentContext,

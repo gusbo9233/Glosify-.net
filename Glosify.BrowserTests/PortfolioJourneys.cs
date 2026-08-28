@@ -550,36 +550,6 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
     [BrowserFact]
     [Trait("Category", "Browser")]
-    public async Task CreateSaveAndPlayCustomQuiz()
-    {
-        await RegisterAndSelectPolishAsync();
-        await CreateQuizWithWordAsync();
-        await Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("Build custom quiz", RegexOptions.IgnoreCase) }).ClickAsync();
-        await Expect(Page).ToHaveURLAsync(new Regex("/CustomQuizzes/.+/Edit", RegexOptions.IgnoreCase));
-        await Expect(Page.Locator("script[src*='custom-quiz-editor.js']")).ToHaveCountAsync(1);
-        var runtimeText = await Page.Locator("[data-custom-runtime]").InnerTextAsync();
-        Assert.True(
-            !runtimeText.Contains("Loading editor controls", StringComparison.OrdinalIgnoreCase),
-            $"Custom editor did not initialize. Script responses:{Environment.NewLine}{string.Join(Environment.NewLine, _scriptResponses)}");
-
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Use layout" }).First.ClickAsync();
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Add Text input", Exact = true }).ClickAsync();
-        await Page.GetByLabel("Custom quiz name").FillAsync("Portfolio custom quiz");
-        await AssertNoPageErrorsAsync();
-        await Page.Locator("[data-custom-save]").ClickAsync();
-        await Page.WaitForTimeoutAsync(250);
-        await AssertNoPageErrorsAsync();
-        await Expect(Page.Locator("[data-custom-message]")).ToContainTextAsync("Saved");
-
-        var match = Regex.Match(Page.Url, @"/CustomQuizzes/(?<id>[0-9a-f-]+)/Edit", RegexOptions.IgnoreCase);
-        Assert.True(match.Success, $"Could not read the custom quiz id from {Page.Url}.");
-        await Page.GotoAsync($"/CustomQuizzes/{match.Groups["id"].Value}/Play");
-        await Expect(Page.Locator("[data-custom-player]")).ToBeVisibleAsync();
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Portfolio custom quiz" })).ToBeVisibleAsync();
-    }
-
-    [BrowserFact]
-    [Trait("Category", "Browser")]
     public async Task CreateRenameSwitchAndDeleteAssistantChatsWithoutAi()
     {
         await RegisterAndSelectPolishAsync();
@@ -724,8 +694,6 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
                             targetLanguage = "Polish",
                         },
                         createdCollectionId = (Guid?)null,
-                        createdCustomQuizId = (Guid?)null,
-                        createdCustomQuizElements = 0,
                     }),
             });
         });

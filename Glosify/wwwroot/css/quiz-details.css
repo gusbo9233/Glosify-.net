@@ -176,23 +176,6 @@
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
 
-/* ---- Custom quizzes --------------------------------------------------- */
-
-.custom-quiz-library {
-    margin-top: 8px;
-    padding-top: 24px;
-    border-top: 1px solid rgba(188, 203, 185, 0.12);
-}
-
-.custom-quiz-library .collection-title {
-    font-size: 20px;
-}
-
-.custom-quiz-library .btn-new-quiz {
-    height: 42px;
-    padding-block: 0;
-}
-
 /* site.css gives `.empty-state` a 360px stage; this section only needs a line. */
 .empty-state-slim {
     width: 100%;

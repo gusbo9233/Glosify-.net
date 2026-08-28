@@ -82,7 +82,7 @@ public sealed class QuizJsonImportRepairService : IQuizJsonImportRepairService
         return $$"""
         Repair the supplied text into a Glosify version 1 quiz-import JSON document.
 
-        The target language is fixed by Glosify as {{targetLanguage}} and must not appear in the document. Preserve every usable collection name, quiz name, source language, word, sentence, and translation. Correct syntax and field structure only. Do not translate, improve, invent, remove, or merge learning content. Do not add ids, visibility, target_language, custom quizzes, or commentary.
+        The target language is fixed by Glosify as {{targetLanguage}} and must not appear in the document. Preserve every usable collection name, quiz name, source language, word, sentence, and translation. Correct syntax and field structure only. Do not translate, improve, invent, remove, or merge learning content. Do not add ids, visibility, target_language, unsupported fields, or commentary.
 
         Required snake_case shape:
         {

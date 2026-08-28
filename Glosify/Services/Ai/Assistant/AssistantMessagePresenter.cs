@@ -66,6 +66,11 @@ internal sealed class AssistantMessagePresenter
         PendingChange change,
         IReadOnlyDictionary<string, AssistantWordLabel> wordLabels)
     {
+        if (RetiredPendingChangeKinds.ContainsCustomQuizChange(change))
+        {
+            return "Custom quiz change (no longer available)";
+        }
+
         try
         {
             return change.Kind switch
@@ -81,11 +86,6 @@ internal sealed class AssistantMessagePresenter
                 PendingChangeKinds.MoveQuiz => BuildMoveQuizSummary(change.Payload),
                 PendingChangeKinds.RenameCollection => BuildRenameCollectionSummary(change.Payload),
                 PendingChangeKinds.MoveCollection => BuildMoveCollectionSummary(change.Payload),
-                PendingChangeKinds.CreateCustomQuiz => $"Create custom quiz \"{GetString(change.Payload, "name")}\"",
-                PendingChangeKinds.AddCustomQuizElement => BuildAddCustomQuizElementSummary(change.Payload),
-                PendingChangeKinds.AddCustomQuizElements => $"Add custom quiz elements to \"{GetString(change.Payload, "custom_quiz_name")}\"",
-                PendingChangeKinds.ConfigureCustomQuizElement => $"Configure element {GetString(change.Payload, "block_id")} in \"{GetString(change.Payload, "custom_quiz_name")}\"",
-                PendingChangeKinds.RemoveCustomQuizElement => $"Remove element {GetString(change.Payload, "block_id")} from \"{GetString(change.Payload, "custom_quiz_name")}\"",
                 _ => change.Kind,
             };
         }
@@ -98,20 +98,6 @@ internal sealed class AssistantMessagePresenter
     private static string BuildAddWordSummary(JsonElement payload)
     {
         return $"Add {GetString(payload, "word")} -> {GetString(payload, "translation")}";
-    }
-
-    private static string BuildAddCustomQuizElementSummary(JsonElement payload)
-    {
-        if (!payload.TryGetProperty("block", out var block) || block.ValueKind != JsonValueKind.Object)
-        {
-            return "Add custom quiz element";
-        }
-        var type = GetString(block, "type");
-        var id = GetString(block, "id");
-        var visible = GetString(block, "label");
-        if (string.IsNullOrWhiteSpace(visible)) visible = GetString(block, "text");
-        var detail = string.IsNullOrWhiteSpace(visible) ? id : TruncateValue(visible, 70);
-        return $"Add {type} {detail} to \"{GetString(payload, "custom_quiz_name")}\"";
     }
 
     private static string BuildAddSentenceSummary(JsonElement payload)
@@ -200,12 +186,8 @@ internal sealed class AssistantMessagePresenter
         var name = GetString(payload, "name");
         var source = GetString(payload, "source_language");
         var target = GetString(payload, "target_language");
-        var includesCustomQuiz = payload.TryGetProperty("custom_quiz", out var customQuiz)
-            && customQuiz.ValueKind == JsonValueKind.Object;
         var contents = DescribeStarterContent(payload);
-        return includesCustomQuiz
-            ? $"Create quiz \"{name}\"{contents} and custom quiz \"{GetString(customQuiz, "name")}\" ({source} -> {target})"
-            : $"Create quiz \"{name}\"{contents} ({source} -> {target})";
+        return $"Create quiz \"{name}\"{contents} ({source} -> {target})";
     }
 
     /// <summary>

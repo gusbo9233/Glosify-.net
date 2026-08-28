@@ -11,7 +11,6 @@ public sealed class AssistantPageContext
     public string? FocusedWordId { get; init; }
     public Guid? DocumentId { get; init; }
     public int? CurrentPage { get; init; }
-    public Guid? CustomQuizId { get; init; }
     public Guid? TranscriptId { get; init; }
     public int? TranscriptPage { get; init; }
     public string? TranscriptStream { get; init; }
@@ -32,7 +31,6 @@ public class AssistantPanelViewModel
     public string? FocusedWordId { get; set; }
     public Guid? DocumentId { get; set; }
     public int? CurrentPage { get; set; }
-    public Guid? CustomQuizId { get; set; }
     public Guid? TranscriptId { get; set; }
 
     /// <summary>

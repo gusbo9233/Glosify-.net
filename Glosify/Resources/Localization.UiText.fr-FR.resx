@@ -387,9 +387,6 @@
   <data name="Home.BuildVocabularyText" xml:space="preserve">
     <value>Créez des ensembles ciblés à partir des mots que vous voulez vraiment utiliser.</value>
   </data>
-  <data name="Home.PracticeRecallText" xml:space="preserve">
-    <value>Utilisez des cartes mémoire, la saisie et des quiz personnalisés pour bien mémoriser les mots.</value>
-  </data>
   <data name="Home.ConnectedKicker" xml:space="preserve">
     <value>Un espace de travail connecté</value>
   </data>
@@ -872,12 +869,6 @@
   </data>
   <data name="Client.CheckFailed" xml:space="preserve">
     <value>Impossible de vérifier cette réponse. Réessayez.</value>
-  </data>
-  <data name="Client.DeleteQuizConfirm" xml:space="preserve">
-    <value>Supprimer ce quiz personnalisé ?</value>
-  </data>
-  <data name="Client.DeleteQuizFailed" xml:space="preserve">
-    <value>Impossible de supprimer le quiz personnalisé. Réessayez.</value>
   </data>
   <data name="Client.DeleteChat" xml:space="preserve">
     <value>Supprimer la conversation</value>
@@ -1365,12 +1356,6 @@
   <data name="Quiz.AssistantPlaceholder" xml:space="preserve">
     <value>Posez une question sur ce quiz...</value>
   </data>
-  <data name="Quiz.CustomCount" xml:space="preserve">
-    <value>{0} personnalisés</value>
-  </data>
-  <data name="Quiz.BuildCustom" xml:space="preserve">
-    <value>Créer un quiz personnalisé</value>
-  </data>
   <data name="Quiz.Public" xml:space="preserve">
     <value>Public</value>
   </data>
@@ -1406,24 +1391,6 @@
   </data>
   <data name="Quiz.NoSentences" xml:space="preserve">
     <value>Aucune phrase pour le moment. Demandez à l’assistant d’ajouter des phrases ou de les extraire du texte.</value>
-  </data>
-  <data name="Quiz.CustomQuizzes" xml:space="preserve">
-    <value>Quiz personnalisés</value>
-  </data>
-  <data name="Quiz.CustomHelp" xml:space="preserve">
-    <value>Créez un exercice libre à partir des mots de ce quiz.</value>
-  </data>
-  <data name="Quiz.NewCustom" xml:space="preserve">
-    <value>Nouveau quiz personnalisé</value>
-  </data>
-  <data name="Quiz.Playable" xml:space="preserve">
-    <value>Jouable</value>
-  </data>
-  <data name="Quiz.Draft" xml:space="preserve">
-    <value>Brouillon</value>
-  </data>
-  <data name="Quiz.NoCustom" xml:space="preserve">
-    <value>Aucun quiz personnalisé pour le moment. Créez-en un en faisant glisser des blocs sur une zone de travail.</value>
   </data>
   <data name="Payments.PackageUnavailable" xml:space="preserve">
     <value>Ce pack de crédits n’est plus disponible.</value>
@@ -1509,179 +1476,8 @@
   <data name="Common.Preview" xml:space="preserve">
     <value>Aperçu</value>
   </data>
-  <data name="Custom.EditNamed" xml:space="preserve">
-    <value>Modifier {0}</value>
-  </data>
-  <data name="Custom.AssistantTitle" xml:space="preserve">
-    <value>Assistant de création de quiz</value>
-  </data>
-  <data name="Custom.AssistantEmpty" xml:space="preserve">
-    <value>Demandez-moi d’ajouter, de configurer ou d’organiser des éléments de quiz.</value>
-  </data>
-  <data name="Custom.AssistantPlaceholder" xml:space="preserve">
-    <value>Ajoutez des questions à ce quiz personnalisé…</value>
-  </data>
-  <data name="Custom.Name" xml:space="preserve">
-    <value>Nom du quiz personnalisé</value>
-  </data>
-  <data name="Custom.LoadingEditor" xml:space="preserve">
-    <value>Chargement des commandes de l’éditeur…</value>
-  </data>
-  <data name="Custom.DesignStarters" xml:space="preserve">
-    <value>Modèles de départ</value>
-  </data>
-  <data name="Custom.VisualDirection" xml:space="preserve">
-    <value>Choisissez une orientation visuelle</value>
-  </data>
-  <data name="Custom.TemplateHelp" xml:space="preserve">
-    <value>Appliquez uniquement le style, ou remplacez la zone de travail par une mise en page complète créée à partir des mots de ce quiz.</value>
-  </data>
-  <data name="Custom.UseStyle" xml:space="preserve">
-    <value>Utiliser le style</value>
-  </data>
-  <data name="Custom.UseLayout" xml:space="preserve">
-    <value>Utiliser la mise en page</value>
-  </data>
-  <data name="Custom.BuildingBlocks" xml:space="preserve">
-    <value>Éléments de construction du quiz</value>
-  </data>
-  <data name="Custom.Blocks" xml:space="preserve">
-    <value>Blocs</value>
-  </data>
-  <data name="Custom.BlocksHelp" xml:space="preserve">
-    <value>Glissez-déposez sur n’importe quelle zone libre, ou cliquez pour ajouter automatiquement.</value>
-  </data>
-  <data name="Custom.DragAdd" xml:space="preserve">
-    <value>Glisser ou cliquer pour ajouter {0}</value>
-  </data>
-  <data name="Custom.Add" xml:space="preserve">
-    <value>Ajouter {0}</value>
-  </data>
-  <data name="Custom.Grid" xml:space="preserve">
-    <value>Grille intelligente à 12 colonnes</value>
-  </data>
-  <data name="Custom.GridHelp" xml:space="preserve">
-    <value>Glisser pour placer · les bords s’alignent · les espaces occupés sont évités</value>
-  </data>
-  <data name="Custom.Canvas" xml:space="preserve">
-    <value>Zone de travail du quiz personnalisé</value>
-  </data>
-  <data name="Custom.Properties" xml:space="preserve">
-    <value>Propriétés</value>
-  </data>
-  <data name="Custom.PropertiesHelp" xml:space="preserve">
-    <value>Sélectionnez un bloc pour modifier son contenu et ses liaisons.</value>
-  </data>
-  <data name="Custom.Answer" xml:space="preserve">
-    <value>Réponse</value>
-  </data>
-  <data name="Custom.Choose" xml:space="preserve">
-    <value>Choisir...</value>
-  </data>
-  <data name="Custom.CheckAnswers" xml:space="preserve">
-    <value>Vérifier les réponses</value>
-  </data>
-  <data name="Custom.CompleteThenSubmit" xml:space="preserve">
-    <value>Complétez le quiz, puis envoyez vos réponses.</value>
-  </data>
-  <data name="Custom.Block.Heading" xml:space="preserve">
-    <value>Titre</value>
-  </data>
-  <data name="Custom.Block.Instruction" xml:space="preserve">
-    <value>Instruction</value>
-  </data>
-  <data name="Custom.Block.WordLabel" xml:space="preserve">
-    <value>Libellé du mot</value>
-  </data>
-  <data name="Custom.Block.TranslationLabel" xml:space="preserve">
-    <value>Libellé de la traduction</value>
-  </data>
-  <data name="Custom.Block.TextInput" xml:space="preserve">
-    <value>Champ de texte</value>
-  </data>
-  <data name="Custom.Block.LongAnswer" xml:space="preserve">
-    <value>Réponse longue</value>
-  </data>
-  <data name="Custom.Block.Checkbox" xml:space="preserve">
-    <value>Case à cocher</value>
-  </data>
-  <data name="Custom.Block.RadioChoices" xml:space="preserve">
-    <value>Choix à boutons radio</value>
-  </data>
-  <data name="Custom.Block.CheckboxChoices" xml:space="preserve">
-    <value>Choix à cases à cocher</value>
-  </data>
-  <data name="Custom.Block.SelectMenu" xml:space="preserve">
-    <value>Menu déroulant</value>
-  </data>
-  <data name="Custom.Block.WordBank" xml:space="preserve">
-    <value>Banque de mots</value>
-  </data>
-  <data name="Custom.Block.SubmitButton" xml:space="preserve">
-    <value>Bouton d’envoi</value>
-  </data>
-  <data name="Custom.Block.Feedback" xml:space="preserve">
-    <value>Retour</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Name" xml:space="preserve">
-    <value>Déroulé éditorial</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.Description" xml:space="preserve">
-    <value>Hiérarchie discrète, espacement généreux et une tâche claire par ligne.</value>
-  </data>
-  <data name="Custom.Template.editorial_flow.BestFor" xml:space="preserve">
-    <value>Traductions, consignes de grammaire, rappel ciblé</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Name" xml:space="preserve">
-    <value>Cartes aurora</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.Description" xml:space="preserve">
-    <value>Des couleurs douces, des cartes de pratique associées et une ambiance d’étude dynamique.</value>
-  </data>
-  <data name="Custom.Template.aurora_cards.BestFor" xml:space="preserve">
-    <value>Séries courtes de vocabulaire et repérage visuel</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Name" xml:space="preserve">
-    <value>Exercice de manuel</value>
-  </data>
-  <data name="Custom.Template.paper_choices.Description" xml:space="preserve">
-    <value>Des lignes numérotées compactes, inspirées des exercices du cahier photographié.</value>
-  </data>
-  <data name="Custom.Template.paper_choices.BestFor" xml:space="preserve">
-    <value>Conjugaison, transformations, textes à trous et exercices formels</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Name" xml:space="preserve">
-    <value>Atelier de banque de mots</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.Description" xml:space="preserve">
-    <value>Une banque de mots bien visible guide l’exercice et rend le rappel ludique.</value>
-  </data>
-  <data name="Custom.Template.word_bank_lab.BestFor" xml:space="preserve">
-    <value>Rappel guidé et vocabulaire débutant</value>
-  </data>
-  <data name="Custom.AnswerQuestion" xml:space="preserve">
-    <value>Répondez à cette question.</value>
-  </data>
-  <data name="Custom.Correct" xml:space="preserve">
-    <value>Correct.</value>
-  </data>
-  <data name="Custom.CorrectAnswer" xml:space="preserve">
-    <value>Réponse correcte : {0}</value>
-  </data>
-  <data name="Custom.CompleteAnswers" xml:space="preserve">
-    <value>Complétez toutes les réponses avant de soumettre.</value>
-  </data>
-  <data name="Custom.Score" xml:space="preserve">
-    <value>Score : {0} sur {1} ({2} %).</value>
-  </data>
-  <data name="Custom.GradeFailed" xml:space="preserve">
-    <value>Impossible de noter ce quiz. Réessayez.</value>
-  </data>
   <data name="Explore.PublicQuiz" xml:space="preserve">
     <value>Quiz public</value>
-  </data>
-  <data name="Explore.CustomExercises" xml:space="preserve">
-    <value>Exercices créés à partir du vocabulaire de ce quiz.</value>
   </data>
   <data name="Explore.NoPublicWords" xml:space="preserve">
     <value>Aucun mot n’a encore été ajouté à ce quiz public.</value>
@@ -1755,174 +1551,6 @@
   <data name="Reader.PdfLoadFailed" xml:space="preserve">
     <value>Le PDF n’a pas pu être chargé.</value>
   </data>
-  <data name="Editor.Heading" xml:space="preserve">
-    <value>Titre</value>
-  </data>
-  <data name="Editor.Instruction" xml:space="preserve">
-    <value>Instruction</value>
-  </data>
-  <data name="Editor.WordLabel" xml:space="preserve">
-    <value>Libellé du mot</value>
-  </data>
-  <data name="Editor.TranslationLabel" xml:space="preserve">
-    <value>Libellé de la traduction</value>
-  </data>
-  <data name="Editor.TextInput" xml:space="preserve">
-    <value>Saisie de texte</value>
-  </data>
-  <data name="Editor.LongAnswer" xml:space="preserve">
-    <value>Réponse longue</value>
-  </data>
-  <data name="Editor.Checkbox" xml:space="preserve">
-    <value>Case à cocher</value>
-  </data>
-  <data name="Editor.RadioChoices" xml:space="preserve">
-    <value>Choix à bouton radio</value>
-  </data>
-  <data name="Editor.CheckboxChoices" xml:space="preserve">
-    <value>Choix à cases à cocher</value>
-  </data>
-  <data name="Editor.SelectMenu" xml:space="preserve">
-    <value>Menu de sélection</value>
-  </data>
-  <data name="Editor.WordBank" xml:space="preserve">
-    <value>Banque de mots</value>
-  </data>
-  <data name="Editor.SubmitButton" xml:space="preserve">
-    <value>Bouton de soumission</value>
-  </data>
-  <data name="Editor.Feedback" xml:space="preserve">
-    <value>Retour</value>
-  </data>
-  <data name="Editor.EmptyCanvas" xml:space="preserve">
-    <value>Faites glisser un bloc n’importe où sur ce canevas pour commencer.</value>
-  </data>
-  <data name="Editor.MoveLeft" xml:space="preserve">
-    <value>Déplacer vers la gauche</value>
-  </data>
-  <data name="Editor.MoveUp" xml:space="preserve">
-    <value>Déplacer vers le haut</value>
-  </data>
-  <data name="Editor.MoveDown" xml:space="preserve">
-    <value>Déplacer vers le bas</value>
-  </data>
-  <data name="Editor.MoveRight" xml:space="preserve">
-    <value>Déplacer vers la droite</value>
-  </data>
-  <data name="Editor.RemoveBlock" xml:space="preserve">
-    <value>Supprimer le bloc</value>
-  </data>
-  <data name="Editor.Resize" xml:space="preserve">
-    <value>Faites glisser pour redimensionner la largeur</value>
-  </data>
-  <data name="Editor.Word" xml:space="preserve">
-    <value>Mot</value>
-  </data>
-  <data name="Editor.DisplayField" xml:space="preserve">
-    <value>Champ d’affichage</value>
-  </data>
-  <data name="Editor.Words" xml:space="preserve">
-    <value>Mots</value>
-  </data>
-  <data name="Editor.Options" xml:space="preserve">
-    <value>Options</value>
-  </data>
-  <data name="Editor.CorrectOption" xml:space="preserve">
-    <value>Option correcte</value>
-  </data>
-  <data name="Editor.RemoveOption" xml:space="preserve">
-    <value>Supprimer l’option</value>
-  </data>
-  <data name="Editor.AddOption" xml:space="preserve">
-    <value>Ajouter une option</value>
-  </data>
-  <data name="Editor.Properties" xml:space="preserve">
-    <value>Propriétés</value>
-  </data>
-  <data name="Editor.SelectBlock" xml:space="preserve">
-    <value>Sélectionnez un bloc pour modifier son contenu et ses liaisons.</value>
-  </data>
-  <data name="Editor.TargetInputs" xml:space="preserve">
-    <value>Champs cibles</value>
-  </data>
-  <data name="Editor.PreviewOnly" xml:space="preserve">
-    <value>Aperçu uniquement — enregistrez et lancez pour enregistrer une tentative notée.</value>
-  </data>
-  <data name="Editor.BackToEditor" xml:space="preserve">
-    <value>Retour à l’éditeur</value>
-  </data>
-  <data name="Editor.Preview" xml:space="preserve">
-    <value>Aperçu</value>
-  </data>
-  <data name="Editor.PreviewingOne" xml:space="preserve">
-    <value>Aperçu du bloc {0}.</value>
-  </data>
-  <data name="Editor.PreviewingMany" xml:space="preserve">
-    <value>Aperçu de {0} blocs.</value>
-  </data>
-  <data name="Editor.ReadyOne" xml:space="preserve">
-    <value>Éditeur prêt · {0} bloc sur le canevas. Utilisez + pour ajouter ou faites glisser un bloc.</value>
-  </data>
-  <data name="Editor.ReadyMany" xml:space="preserve">
-    <value>Éditeur prêt · {0} blocs sur le canevas. Utilisez + pour ajouter ou faites glisser un bloc.</value>
-  </data>
-  <data name="Editor.ReplaceConfirm" xml:space="preserve">
-    <value>Remplacer le canevas actuel par la disposition {0} ? Vous pouvez annuler cette modification.</value>
-  </data>
-  <data name="Editor.SaveFailed" xml:space="preserve">
-    <value>Impossible d’enregistrer ce quiz personnalisé.</value>
-  </data>
-  <data name="Editor.SavedPlayable" xml:space="preserve">
-    <value>Enregistré. Ce quiz est prêt à être joué.</value>
-  </data>
-  <data name="Editor.DraftSaved" xml:space="preserve">
-    <value>Brouillon enregistré. Terminez les champs obligatoires du quiz avant de jouer.</value>
-  </data>
-  <data name="Editor.SaveStopped" xml:space="preserve">
-    <value>La demande d’enregistrement s’est arrêtée de manière inattendue. Réessayez.</value>
-  </data>
-  <data name="Editor.WordLemma" xml:space="preserve">
-    <value>Mot / lemme</value>
-  </data>
-  <data name="Editor.Translation" xml:space="preserve">
-    <value>Traduction</value>
-  </data>
-  <data name="Editor.Width" xml:space="preserve">
-    <value>Largeur</value>
-  </data>
-  <data name="Editor.Column" xml:space="preserve">
-    <value>Colonne</value>
-  </data>
-  <data name="Editor.ColumnNumber" xml:space="preserve">
-    <value>Colonne {0}</value>
-  </data>
-  <data name="Editor.Row" xml:space="preserve">
-    <value>Ligne</value>
-  </data>
-  <data name="Editor.Text" xml:space="preserve">
-    <value>Texte</value>
-  </data>
-  <data name="Editor.LiveBinding" xml:space="preserve">
-    <value>Liaison dynamique du mot</value>
-  </data>
-  <data name="Editor.ExerciseRow" xml:space="preserve">
-    <value>Ligne d’exercice (utilisez {{blank}})</value>
-  </data>
-  <data name="Editor.AccessibleLabel" xml:space="preserve">
-    <value>Libellé accessible</value>
-  </data>
-  <data name="Editor.CustomExpected" xml:space="preserve">
-    <value>Réponse attendue personnalisée</value>
-  </data>
-  <data name="Editor.ExpectedBinding" xml:space="preserve">
-    <value>Liaison de mot attendue</value>
-  </data>
-  <data name="Editor.DisplayedWord" xml:space="preserve">
-    <value>Mot affiché</value>
-  </data>
-  <data name="Editor.ExpectedChecked" xml:space="preserve">
-    <value>Doit être cochée</value>
-  </data>
   <data name="Explore.QuizNoLongerPublic" xml:space="preserve">
     <value>Ce quiz n’est plus public.</value>
   </data>
@@ -1967,4 +1595,5 @@
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Prévisualiser le JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Tout importer</value></data>
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>L’aperçu et l’importation sont déterministes et ne contactent aucun fournisseur d’IA. « Réparer avec l’IA » envoie le texte collé à l’IA configurée de Glosify et débite des crédits.</value></data>
+  <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
 </root>

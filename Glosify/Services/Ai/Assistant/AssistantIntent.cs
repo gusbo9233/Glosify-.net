@@ -16,7 +16,6 @@ public enum AssistantArtifactKind
     /// <summary>The request does not say, so the page context decides as before.</summary>
     Auto,
     StandardQuiz,
-    CustomQuiz,
 }
 
 /// <summary>Whether a request asks for a new artifact or for additions to an existing one.</summary>

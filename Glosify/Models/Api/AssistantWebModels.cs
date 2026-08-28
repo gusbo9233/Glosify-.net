@@ -10,7 +10,6 @@ public sealed class SendMessageInput
     public Guid? ContextQuizId { get; set; }
     public string? FocusedWordId { get; set; }
     public DocumentContextInput? DocumentContext { get; set; }
-    public Guid? CustomQuizId { get; set; }
     public Guid? TranscriptId { get; set; }
     public Guid? BookDocumentId { get; set; }
     public TranscriptContextInput? TranscriptContext { get; set; }

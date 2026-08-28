@@ -53,8 +53,6 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<AnkiNote> AnkiNotes { get; set; }
     public DbSet<AnkiCard> AnkiCards { get; set; }
     public DbSet<AnkiReview> AnkiReviews { get; set; }
-    public DbSet<CustomQuiz> CustomQuizzes { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

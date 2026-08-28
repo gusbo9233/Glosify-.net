@@ -43,7 +43,6 @@ export default [
   },
   {
     files: [
-      'Glosify/wwwroot/js/custom-quiz-player.js',
       'Glosify/wwwroot/js/quiz-json-import.js',
     ],
     rules: {

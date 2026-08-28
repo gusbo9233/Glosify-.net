@@ -11,7 +11,6 @@
         FocusedWordId = assistantPageContext?.FocusedWordId,
         DocumentId = assistantPageContext?.DocumentId,
         CurrentPage = assistantPageContext?.CurrentPage,
-        CustomQuizId = assistantPageContext?.CustomQuizId,
         TranscriptId = assistantPageContext?.TranscriptId,
         TranscriptPage = assistantPageContext?.TranscriptPage,
         TranscriptStream = assistantPageContext?.TranscriptStream,
@@ -37,8 +36,7 @@
         CurrentController == "quiz"
         || CurrentController == "quizzes"
         || CurrentController == "flashcardquiz"
-        || CurrentController == "typingquiz"
-        || CurrentController == "customquiz";
+        || CurrentController == "typingquiz";
 
     string NavClass(string controller, string action = "Index") =>
         IsActive(controller, action) ? "app-nav-item is-active" : "app-nav-item";

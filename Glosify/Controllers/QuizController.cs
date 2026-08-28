@@ -6,7 +6,6 @@ using Glosify.Models.Requests;
 using Glosify.Models.ViewModels;
 using Glosify.Services;
 using Glosify.Services.Ai;
-using Glosify.Services.CustomQuizzes;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Words;
@@ -25,7 +24,6 @@ public class QuizController : Controller
     private readonly IWordService _wordService;
     private readonly IImageTextExtractionService _imageTextExtractionService;
     private readonly ILanguageContext _languageContext;
-    private readonly ICustomQuizService _customQuizService;
     private readonly UiTextStringLocalizer _text = new();
     private readonly IAnkiCollectionService _ankiCollections;
 
@@ -35,7 +33,6 @@ public class QuizController : Controller
         IWordService wordService,
         IImageTextExtractionService imageTextExtractionService,
         ILanguageContext languageContext,
-        ICustomQuizService customQuizService,
         IAnkiCollectionService ankiCollections)
     {
         _quizService = quizService;
@@ -43,7 +40,6 @@ public class QuizController : Controller
         _wordService = wordService;
         _imageTextExtractionService = imageTextExtractionService;
         _languageContext = languageContext;
-        _customQuizService = customQuizService;
         _ankiCollections = ankiCollections;
     }
 
@@ -99,7 +95,6 @@ public class QuizController : Controller
         {
             SelectedQuiz = QuizCard.From(selectedQuiz),
             Words = words.Select(WordRow.From).ToList(),
-            CustomQuizzes = await _customQuizService.ListForQuizAsync(selectedQuiz.Id, cancellationToken: cancellationToken),
             Sentences = sentences.Select(s => new QuizSentenceViewModel
             {
                 Id = s.Id,
