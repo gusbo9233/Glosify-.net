@@ -71,6 +71,15 @@ struct PracticeConfiguration: Codable, Sendable, Equatable {
     var direction: PracticeDirection = .sourceToTarget
     var itemCount = 10
     var includesSentences = false
+
+    func availableItemCount(wordCount: Int, sentenceCount: Int) -> Int {
+        wordCount + (includesSentences ? sentenceCount : 0)
+    }
+
+    mutating func normalizeItemCount(wordCount: Int, sentenceCount: Int) {
+        let available = availableItemCount(wordCount: wordCount, sentenceCount: sentenceCount)
+        itemCount = min(max(itemCount, 1), max(available, 1))
+    }
 }
 
 enum PracticeScorer {

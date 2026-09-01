@@ -239,8 +239,22 @@ private struct PracticeSettingsView: View {
     @Bindable var model: AppModel
     let quiz: Quiz
     @Environment(\.dismiss) private var dismiss
-    @State private var configuration = PracticeConfiguration()
+    @State private var configuration: PracticeConfiguration
     @State private var started = false
+
+    init(model: AppModel, quiz: Quiz) {
+        self.model = model
+        self.quiz = quiz
+        var initial = PracticeConfiguration()
+        initial.includesSentences = quiz.words.isEmpty && !quiz.sentences.isEmpty
+        initial.normalizeItemCount(wordCount: quiz.words.count, sentenceCount: quiz.sentences.count)
+        _configuration = State(initialValue: initial)
+    }
+
+    private var availableItemCount: Int {
+        configuration.availableItemCount(wordCount: quiz.words.count, sentenceCount: quiz.sentences.count)
+    }
+
     var body: some View {
         NavigationStack {
             if started { PracticeSessionView(model: model, quiz: quiz, configuration: configuration) }
@@ -248,8 +262,17 @@ private struct PracticeSettingsView: View {
                 Form {
                     Section("Practice mode") { Picker("Mode", selection: $configuration.mode) { Text("Flashcards").tag(PracticeMode.flashcards); Text("Typing").tag(PracticeMode.typing) }.pickerStyle(.segmented) }
                     Section("Direction") { Picker("Direction", selection: $configuration.direction) { ForEach(PracticeDirection.allCases) { Text($0.title).tag($0) } } }
-                    Section("Session") { Stepper("\(configuration.itemCount) items", value: $configuration.itemCount, in: 1...max(quiz.words.count, 1)); Toggle("Include sentences", isOn: $configuration.includesSentences) }
-                    Section { Button("Start session") { started = true }.buttonStyle(PrimaryButtonStyle()).disabled(quiz.words.isEmpty && quiz.sentences.isEmpty) }
+                    Section("Session") {
+                        Stepper("\(configuration.itemCount) items", value: $configuration.itemCount, in: 1...max(availableItemCount, 1))
+                        Toggle("Include sentences", isOn: Binding(
+                            get: { configuration.includesSentences },
+                            set: { includesSentences in
+                                configuration.includesSentences = includesSentences
+                                configuration.normalizeItemCount(wordCount: quiz.words.count, sentenceCount: quiz.sentences.count)
+                            }
+                        ))
+                    }
+                    Section { Button("Start session") { started = true }.buttonStyle(PrimaryButtonStyle()).disabled(availableItemCount == 0) }
                 }.scrollContentBackground(.hidden).background(GlosifyTheme.background).navigationTitle(quiz.name).toolbar { Button("Close") { dismiss() } }
             }
         }.preferredColorScheme(.dark)

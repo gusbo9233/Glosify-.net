@@ -47,7 +47,7 @@ private struct SharedQuizDetailView: View {
                         Task {
                             let ok = await model.perform {
                                 _ = try await model.environment.explore.copySharedQuiz(id: item.id)
-                                model.sharedQuizzes = try await model.environment.explore.sharedQuizzes()
+                                model.sharedQuizzes = try await model.environment.explore.sharedQuizzes(languageCode: model.selectedLanguage.code)
                                 await model.refreshLibrary()
                             }
                             copied = ok

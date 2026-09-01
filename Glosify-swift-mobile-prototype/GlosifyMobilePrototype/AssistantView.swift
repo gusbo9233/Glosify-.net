@@ -56,9 +56,7 @@ struct AssistantView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 4) { Text(item.title).font(.headline); Text(item.contextLabel).font(.caption).foregroundStyle(GlosifyTheme.muted) }
                 }.listRowBackground(GlosifyTheme.surface)
-            }.onDelete { offsets in
-                for offset in offsets { let id = model.chats[offset].id; Task { _ = await model.perform { try await model.environment.assistant.deleteChat(id: id); model.chats = try await model.environment.assistant.chats() } } }
-            }
+            }.onDelete(perform: deleteChats)
         }.scrollContentBackground(.hidden).background(GlosifyTheme.background)
     }
 
@@ -105,7 +103,7 @@ struct AssistantView: View {
 
     private func send() async {
         if chat == nil { await newChat() }
-        guard let id = selectedChatID ?? chat?.id else { return }
+        guard let id = chat?.id else { return }
         let text = draft; draft = ""; selectedPhoto = nil; isSending = true
         defer { isSending = false }
         _ = await model.perform {
@@ -129,5 +127,17 @@ struct AssistantView: View {
 
     private func replace(_ chat: AssistantChat) {
         if let index = model.chats.firstIndex(where: { $0.id == chat.id }) { model.chats[index] = chat } else { model.chats.insert(chat, at: 0) }
+    }
+
+    private func deleteChats(at offsets: IndexSet) {
+        let ids = offsets.compactMap { model.chats.indices.contains($0) ? model.chats[$0].id : nil }
+        Task {
+            let deleted = await model.perform {
+                for id in ids { try await model.environment.assistant.deleteChat(id: id) }
+                model.chats = try await model.environment.assistant.chats()
+            }
+            guard deleted, let selectedChatID, !model.chats.contains(where: { $0.id == selectedChatID }) else { return }
+            self.selectedChatID = model.chats.first?.id
+        }
     }
 }

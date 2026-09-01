@@ -208,28 +208,40 @@ extension MockDataStore: QuizRepository {
         struct ImportQuiz: Decodable { let name: String; let source_language: String?; let words: [ImportWord]?; let sentences: [ImportSentence]? }
         struct ImportWord: Decodable { let word: String; let translation: String }
         struct ImportSentence: Decodable { let text: String; let translation: String }
+        struct ValidatedQuiz {
+            let name: String
+            let sourceLanguage: String
+            let words: [(source: String, translation: String)]
+            let sentences: [(source: String, translation: String)]
+        }
         guard let data = json.data(using: .utf8) else { throw PrototypeError.invalidInput("Paste valid UTF-8 JSON.") }
         let envelope: ImportEnvelope
         do { envelope = try JSONDecoder().decode(ImportEnvelope.self, from: data) }
         catch { throw PrototypeError.invalidInput("JSON must contain a quizzes array with names and learning items.") }
         guard !envelope.quizzes.isEmpty else { throw PrototypeError.invalidInput("Import at least one quiz.") }
         let currentTarget = account?.selectedLanguageCode ?? "pl"
-        var imported: [Quiz] = []
-        for source in envelope.quizzes.prefix(20) {
-            let quiz = Quiz(
-                id: id(),
+        let validated = try envelope.quizzes.prefix(20).map { source in
+            ValidatedQuiz(
                 name: try Self.cleaned(source.name, field: "Quiz name"),
                 sourceLanguage: source.source_language ?? "en",
+                words: try (source.words ?? []).map { (try Self.cleaned($0.word, field: "Word", maximum: 200), try Self.cleaned($0.translation, field: "Translation", maximum: 500)) },
+                sentences: try (source.sentences ?? []).map { (try Self.cleaned($0.text, field: "Sentence", maximum: 500), try Self.cleaned($0.translation, field: "Translation", maximum: 500)) }
+            )
+        }
+        let imported = validated.map { source in
+            Quiz(
+                id: id(),
+                name: source.name,
+                sourceLanguage: source.sourceLanguage,
                 targetLanguage: currentTarget,
                 collectionID: collectionID,
                 isPublic: false,
                 createdAt: Date(),
-                words: try (source.words ?? []).map { VocabularyWord(id: id(), source: try Self.cleaned($0.word, field: "Word", maximum: 200), translation: try Self.cleaned($0.translation, field: "Translation", maximum: 500), createdAt: Date()) },
-                sentences: try (source.sentences ?? []).map { QuizSentence(id: id(), source: try Self.cleaned($0.text, field: "Sentence", maximum: 500), translation: try Self.cleaned($0.translation, field: "Translation", maximum: 500)) }
+                words: source.words.map { VocabularyWord(id: id(), source: $0.source, translation: $0.translation, createdAt: Date()) },
+                sentences: source.sentences.map { QuizSentence(id: id(), source: $0.source, translation: $0.translation) }
             )
-            quizzes.append(quiz)
-            imported.append(quiz)
         }
+        quizzes.append(contentsOf: imported)
         return imported
     }
 }
@@ -270,9 +282,9 @@ extension MockDataStore: AnkiRepository {
 }
 
 extension MockDataStore: ExploreRepository {
-    func sharedQuizzes() async throws -> [SharedQuiz] {
+    func sharedQuizzes(languageCode: String) async throws -> [SharedQuiz] {
         try await prepare(.explore)
-        return shared
+        return shared.filter { $0.quiz.targetLanguage == languageCode }
     }
 
     func copySharedQuiz(id sharedID: UUID) async throws -> Quiz {

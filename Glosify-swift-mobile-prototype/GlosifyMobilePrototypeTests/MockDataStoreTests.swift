@@ -43,14 +43,14 @@ final class MockDataStoreTests: XCTestCase {
         }
 
         let failing = MockDataStore(configuration: MockConfiguration(latency: .zero, failingOperations: [.explore]))
-        await XCTAssertThrowsErrorAsync { _ = try await failing.sharedQuizzes() }
+        await XCTAssertThrowsErrorAsync { _ = try await failing.sharedQuizzes(languageCode: "pl") }
     }
 
     func testEmptyScenarioCoversRepositoryEmptyStates() async throws {
         let store = MockDataStore(configuration: MockConfiguration(latency: .zero, startsEmpty: true))
         let library = try await store.quizLibrary()
         let anki = try await store.ankiCollections()
-        let shared = try await store.sharedQuizzes()
+        let shared = try await store.sharedQuizzes(languageCode: "pl")
         let books = try await store.books()
         let transcripts = try await store.transcripts()
         let chats = try await store.chats()
@@ -71,7 +71,7 @@ final class MockDataStoreTests: XCTestCase {
                 case .authentication: _ = try await store.currentAccount()
                 case .quizzes: _ = try await store.quizLibrary()
                 case .anki: _ = try await store.ankiCollections()
-                case .explore: _ = try await store.sharedQuizzes()
+                case .explore: _ = try await store.sharedQuizzes(languageCode: "pl")
                 case .books: _ = try await store.books()
                 case .transcripts: _ = try await store.transcripts()
                 case .assistant: _ = try await store.chats()
@@ -88,9 +88,31 @@ final class MockDataStoreTests: XCTestCase {
         XCTAssertEqual(imported[0].words.first?.source, "one")
     }
 
+    func testJSONImportDoesNotCommitAnyQuizWhenLaterValidationFails() async throws {
+        let store = MockDataStore(configuration: .immediate)
+        let before = try await store.quizLibrary()
+        let json = #"{"quizzes":[{"name":"Valid","words":[{"word":"one","translation":"jeden"}]},{"name":"   ","words":[]}] }"#
+
+        await XCTAssertThrowsErrorAsync { _ = try await store.importQuizJSON(json, collectionID: nil) }
+
+        let after = try await store.quizLibrary()
+        XCTAssertEqual(after.quizzes, before.quizzes)
+    }
+
     func testPracticeScoringIsTrimmedAndCaseInsensitive() {
         XCTAssertTrue(PracticeScorer.matches("  DOM ", expected: "dom"))
         XCTAssertFalse(PracticeScorer.matches("domu", expected: "dom"))
+    }
+
+    func testPracticeConfigurationCountsSentencesAndClampsItemCount() {
+        var configuration = PracticeConfiguration(mode: .flashcards, direction: .sourceToTarget, itemCount: 10, includesSentences: true)
+        XCTAssertEqual(configuration.availableItemCount(wordCount: 2, sentenceCount: 3), 5)
+        configuration.normalizeItemCount(wordCount: 2, sentenceCount: 3)
+        XCTAssertEqual(configuration.itemCount, 5)
+
+        configuration.includesSentences = false
+        configuration.normalizeItemCount(wordCount: 2, sentenceCount: 3)
+        XCTAssertEqual(configuration.itemCount, 2)
     }
 
     func testAnkiRatingUpdatesIntervalAndReviewCount() async throws {
@@ -106,12 +128,21 @@ final class MockDataStoreTests: XCTestCase {
 
     func testExploreCopyCreatesPrivateLibraryQuiz() async throws {
         let store = MockDataStore(configuration: .immediate)
-        let sharedItems = try await store.sharedQuizzes()
+        let sharedItems = try await store.sharedQuizzes(languageCode: "pl")
         let shared = try XCTUnwrap(sharedItems.first)
         let copied = try await store.copySharedQuiz(id: shared.id)
         XCTAssertFalse(copied.isPublic)
+        XCTAssertEqual(copied.targetLanguage, "pl")
         let library = try await store.quizLibrary()
         XCTAssertTrue(library.quizzes.contains(where: { $0.id == copied.id }))
+    }
+
+    func testExploreOnlyReturnsQuizzesForRequestedLearningLanguage() async throws {
+        let store = MockDataStore(configuration: .immediate)
+        let polish = try await store.sharedQuizzes(languageCode: "pl")
+        let spanish = try await store.sharedQuizzes(languageCode: "es")
+        XCTAssertFalse(polish.isEmpty)
+        XCTAssertTrue(spanish.isEmpty)
     }
 
     func testTranscriptRenameAndDelete() async throws {

@@ -58,7 +58,7 @@ protocol AnkiRepository: Sendable {
 }
 
 protocol ExploreRepository: Sendable {
-    func sharedQuizzes() async throws -> [SharedQuiz]
+    func sharedQuizzes(languageCode: String) async throws -> [SharedQuiz]
     func copySharedQuiz(id: UUID) async throws -> Quiz
 }
 

@@ -37,15 +37,15 @@ final class AppModel {
         errorMessage = nil
         defer { isLoading = false }
         do {
-            async let currentAccount = environment.authentication.currentAccount()
+            let currentAccount = try await environment.authentication.currentAccount()
+            account = currentAccount
             async let library = environment.quizzes.quizLibrary()
             async let anki = environment.anki.ankiCollections()
-            async let explore = environment.explore.sharedQuizzes()
+            async let explore = environment.explore.sharedQuizzes(languageCode: currentAccount?.selectedLanguageCode ?? "pl")
             async let books = environment.books.books()
             async let transcripts = environment.transcripts.transcripts()
             async let chats = environment.assistant.chats()
             async let packages = environment.credits.packages()
-            account = try await currentAccount
             let loadedLibrary = try await library
             collections = loadedLibrary.collections
             quizzes = loadedLibrary.quizzes
@@ -63,6 +63,12 @@ final class AppModel {
             let value = try await environment.quizzes.quizLibrary()
             collections = value.collections
             quizzes = value.quizzes
+        } catch { show(error) }
+    }
+
+    func refreshExplore() async {
+        do {
+            sharedQuizzes = try await environment.explore.sharedQuizzes(languageCode: selectedLanguage.code)
         } catch { show(error) }
     }
 
@@ -85,7 +91,11 @@ final class AppModel {
     }
 
     func selectLanguage(_ code: String) async {
-        _ = await perform { account = try await environment.authentication.selectLanguage(code: code); notice = "Learning mode updated." }
+        _ = await perform {
+            account = try await environment.authentication.selectLanguage(code: code)
+            sharedQuizzes = try await environment.explore.sharedQuizzes(languageCode: code)
+            notice = "Learning mode updated."
+        }
     }
 
     @discardableResult

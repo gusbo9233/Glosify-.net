@@ -114,6 +114,7 @@ private struct AnkiStudyView: View {
     @State private var queue: [AnkiCard] = []
     @State private var index = 0
     @State private var revealed = false
+    @State private var pendingRating: Int?
     private var collection: AnkiCollection? { model.ankiCollections.first { $0.id == collectionID } }
 
     var body: some View {
@@ -146,14 +147,17 @@ private struct AnkiStudyView: View {
 
     private func rating(_ title: String, _ value: Int, _ interval: String) -> some View {
         Button {
+            guard pendingRating == nil, queue.indices.contains(index) else { return }
+            pendingRating = value
             let card = queue[index]
             Task {
-                _ = await model.perform {
+                let rated = await model.perform {
                     let updated = try await model.environment.anki.rateCard(collectionID: collectionID, cardID: card.id, rating: value)
                     if let position = model.ankiCollections.firstIndex(where: { $0.id == updated.id }) { model.ankiCollections[position] = updated }
                 }
-                index += 1; revealed = false
+                if rated { index += 1; revealed = false }
+                pendingRating = nil
             }
-        } label: { HStack { Text(title).fontWeight(.bold); Spacer(); Text(interval).foregroundStyle(GlosifyTheme.muted) } }.buttonStyle(SecondaryButtonStyle())
+        } label: { HStack { Text(title).fontWeight(.bold); Spacer(); if pendingRating == value { ProgressView() } else { Text(interval).foregroundStyle(GlosifyTheme.muted) } } }.buttonStyle(SecondaryButtonStyle()).disabled(pendingRating != nil)
     }
 }
