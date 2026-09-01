@@ -151,6 +151,23 @@ public static class RateLimitingExtensions
                 if (HttpMethods.IsPost(context.Request.Method)
                     && string.Equals(
                         path.Value?.TrimEnd('/'),
+                        "/api/translator/translate",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                        ?? context.Connection.RemoteIpAddress?.ToString()
+                        ?? "unknown";
+                    return RateLimitPartition.GetFixedWindowLimiter($"text-translation:{caller}", _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 30,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                    });
+                }
+
+                if (HttpMethods.IsPost(context.Request.Method)
+                    && string.Equals(
+                        path.Value?.TrimEnd('/'),
                         "/Payments/CreateCheckoutSession",
                         StringComparison.OrdinalIgnoreCase))
                 {

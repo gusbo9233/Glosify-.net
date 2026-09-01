@@ -58,9 +58,13 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("Chrome Web Store Limited Use", privacy);
         Assert.Contains("complete effective model request", privacy);
         Assert.Contains("Transcript saving is off by default", privacy);
+        Assert.Contains("Glosify Translator and Live Subtitles Chrome extensions", privacy);
+        Assert.Contains("translation history is not stored in Chrome", privacy);
+        Assert.Contains("Saved translations are retained until you explicitly delete them", privacy);
         Assert.Contains("provider reports token or audio usage", terms);
         Assert.Contains("mandatory consumer rights", terms);
         Assert.Contains("AI-generated replies", terms);
+        Assert.Contains("The Translator processes text only after you choose Translate", terms);
         Assert.Contains("Do not send passwords", support);
     }
 

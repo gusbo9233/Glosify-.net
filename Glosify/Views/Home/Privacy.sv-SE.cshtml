@@ -4,7 +4,7 @@
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = "Integritetspolicy";
-    ViewData["Description"] = "Så samlar Glosify och Chrome-tillägget Glosify Live Subtitles in, använder, delar och lagrar personuppgifter.";
+    ViewData["Description"] = "Så hanterar Glosify och Chrome-tilläggen Translator och Live Subtitles personuppgifter.";
     var legal = Legal.Value;
 }
 
@@ -20,7 +20,7 @@
             <a asp-action="PrivacyEnglish">Läs den engelska versionen</a>.
         </aside>
 
-        <p>Policyn gäller Glosifys webbapplikation, API:er och Chrome-tillägget Glosify Live Subtitles.</p>
+        <p>Policyn gäller Glosifys webbapplikation, API:er och Chrome-tilläggen Glosify Translator och Live Subtitles.</p>
 
         <h2>Personuppgiftsansvarig och kontakt</h2>
         <p><strong>@legal.ControllerName</strong> driver Glosify och är personuppgiftsansvarig för de personuppgifter som beskrivs här. Kontakta <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> om du har integritetsfrågor eller vill utöva dina rättigheter.</p>
@@ -32,6 +32,7 @@
             <li><strong>Assistentuppgifter:</strong> chattmeddelanden, vald kontext från quiz, bok, sida eller transkription, AI-genererade svar, feedback, verktygsåtgärder och föreslagna eller genomförda ändringar.</li>
             <li><strong>Uppgifter för livetextning:</strong> flikljud som du uttryckligen skickar, identifierad eller översatt text, språkval, tidsstämplar, sessionsstatus och anslutningsdiagnostik. Glosify skriver inte live-ljud från flikar till sin egen permanenta lagring.</li>
             <li><strong>Sparade transkriptioner:</strong> när du separat aktiverar transkriptionssparning lagras färdigställd taltext på originalspråket, titlar, tidsstämplar och valt studiespråk. Transkriptionssparning är avstängd som standard.</li>
+            <li><strong>Översättningsuppgifter:</strong> källtext, översatt text, valda eller identifierade språk, valfria önskemål om dialekt, stil, ton eller formulering samt tidsstämplar. Resultat lagras i Glosify endast när du uttryckligen väljer Spara.</li>
             <li><strong>Krediter och betalningar:</strong> kreditsaldo, reservationer och användningstransaktioner. Om betalningar är aktiverade lagrar Glosify valt paket, belopp, valuta, köpstatus och identifierare för Stripe-betalning, återbetalning eller tvist. Stripe, inte Glosify, tar emot dina kortuppgifter.</li>
             <li><strong>Tekniska uppgifter och säkerhetsuppgifter:</strong> IP-adress, tid och sökväg för förfrågan, svarsstatus, enhets- eller webbläsaruppgifter som följer med förfrågan, händelser för hastighetsbegränsning, spårning och feldiagnostik.</li>
         </ul>
@@ -49,7 +50,7 @@
         </ul>
 
         <h2>Leverantörer för AI, tal och översättning</h2>
-        <p>Assistentförfrågningar, AI-assisterat inlärningsinnehåll och ljud i förbättrad livetextning behandlas direkt av OpenAI. Azure Speech behandlar talsyntes. ElevenLabs behandlar flikljud när Scribe-läget väljs och när en källtranskription begärs i förbättrat läge. Standardloggning för ElevenLabs API är aktiverad, vilket innebär att ElevenLabs kan behålla tjänsteloggar enligt sina tillämpliga villkor och sin lagringspolicy. Föränderliga Scribe-fraser skickas via en skyddad Cloudflare Worker till M2M100 för översättning.</p>
+        <p>Assistentförfrågningar, AI-assisterat inlärningsinnehåll, text som du skickar med Glosify Translator och valfria översättningsönskemål samt ljud i förbättrad livetextning behandlas direkt av OpenAI. Översättningstext skickas först när du väljer Översätt. Azure Speech behandlar talsyntes. ElevenLabs behandlar flikljud när Scribe-läget väljs och när en källtranskription begärs i förbättrat läge. Standardloggning för ElevenLabs API är aktiverad, vilket innebär att ElevenLabs kan behålla tjänsteloggar enligt sina tillämpliga villkor och sin lagringspolicy. Föränderliga Scribe-fraser skickas via en skyddad Cloudflare Worker till M2M100 för översättning.</p>
         <p>Chrome fångar bara ljud efter att du startat undertexter för den aktiva fliken. Undertexter är tillfälliga om du inte väljer att spara källtranskriptionen. Google eller Microsoft behandlar autentiseringsuppgifter enligt sin egen policy när du väljer den leverantören.</p>
 
         <h2>Tjänsteleverantörer, utlämnande och överföringar</h2>
@@ -57,11 +58,11 @@
         <p>Vissa leverantörer kan behandla uppgifter utanför Sverige eller EU/EES. När Glosify ansvarar för en sådan överföring används en tillämplig laglig överföringsmekanism och avtalsmässiga skyddsåtgärder. Kontakta Glosify för mer information. Uppgifter kan också lämnas ut när lag kräver det, för att skydda juridiska rättigheter eller tjänstens säkerhet eller som del av en laglig omorganisation. Glosify säljer inte personuppgifter och använder dem inte för personanpassad reklam.</p>
 
         <h2>Cookies, lokal lagring och externa resurser</h2>
-        <p>Webbapplikationen använder nödvändiga cookies för autentisering, säkerhet, skydd mot förfalskade formuläranrop och språkinställningar. Tillägget lagrar inställningar, kortlivad sessionsstatus och autentiseringsmaterial för Glosify lokalt för att kunna ansluta ditt konto och visa undertexter. Glosify använder inga annonscookies. Sidorna hämtar för närvarande typsnittsresurser från Google, vilket gör att webbläsaren ansluter till Google och lämnar vanlig anslutningsinformation som IP-adress.</p>
+        <p>Webbapplikationen använder nödvändiga cookies för autentisering, säkerhet, skydd mot förfalskade formuläranrop och språkinställningar. Tilläggen lagrar endast de lokala inställningar, kortlivade tillstånd och autentiseringsuppgifter som behövs. Translator lagrar valda språk och valfria önskemål lokalt, men ingen översättningshistorik i Chrome. Glosify använder inga annonscookies. Sidorna hämtar för närvarande typsnittsresurser från Google, vilket gör att webbläsaren ansluter till Google och lämnar vanlig anslutningsinformation som IP-adress.</p>
 
         <h2>Lagring och radering</h2>
         <ul>
-            <li>Konto- och inlärningsinnehåll sparas i regel medan kontot är aktivt eller tills du raderar det berörda objektet. Du kan radera objekt som stöds, exempelvis böcker, chattar och sparade transkriptioner, med kontrollerna i tjänsten.</li>
+            <li>Konto- och inlärningsinnehåll sparas i regel medan kontot är aktivt eller tills du raderar det berörda objektet. Sparade översättningar behålls tills du uttryckligen raderar dem eller kontot. Du kan radera objekt som stöds, exempelvis böcker, chattar, sparade översättningar och transkriptioner, med kontrollerna i tjänsten.</li>
             <li>Begär radering av kontot och återstående kontoinnehåll genom att kontakta <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>. Glosify kan behålla begränsade uppgifter när det krävs för bokföring, bedrägeribekämpning, tvisthantering eller en annan rättslig skyldighet.</li>
             <li>Assistentens innehållsposter följer den tillhörande chattens och kontots raderingscykel. När en chatt raderas köas också radering av dess pseudonyma korrelationsposter i Azure Monitor där den funktionen är konfigurerad.</li>
             <li>Målet för lagringstiden i Azure Monitors driftarbetsyta är 30 dagar. Databassäkerhetskopior, leverantörsloggar och raderingsköer upphör enligt sina konfigurerade scheman och kan finnas kvar en tid i återställningskopior.</li>

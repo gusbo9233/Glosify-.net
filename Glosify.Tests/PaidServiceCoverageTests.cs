@@ -23,6 +23,9 @@ public sealed class PaidServiceCoverageTests
     [InlineData(typeof(BooksApiController), nameof(BooksApiController.Upload), true)]
     [InlineData(typeof(BooksApiController), nameof(BooksApiController.List), false)]
     [InlineData(typeof(BooksApiController), nameof(BooksApiController.Delete), false)]
+    [InlineData(typeof(TranslatorApiController), nameof(TranslatorApiController.Catalog), false)]
+    [InlineData(typeof(TranslatorApiController), nameof(TranslatorApiController.Translate), true)]
+    [InlineData(typeof(TranslatorApiController), nameof(TranslatorApiController.Save), false)]
     public void OnlyPaidOperationsCarryTheControllerGate(Type controller, string action, bool expected)
     {
         var method = Assert.Single(controller.GetMethods(), candidate => candidate.Name == action);

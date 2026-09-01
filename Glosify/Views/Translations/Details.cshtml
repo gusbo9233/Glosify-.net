@@ -1,0 +1,67 @@
+@model SavedTranslationDetailViewModel
+@using Glosify.Services.Language
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Text["Translations.DetailTitle"];
+    var item = Model.Translation;
+    string LanguageName(string code) => QuizLanguageDisplay.Name(QuizLanguageCatalog.Find(code)?.Name ?? code);
+    var effectiveSource = item.SourceLanguage == "auto"
+        ? item.DetectedSourceLanguage ?? item.SourceLanguage
+        : item.SourceLanguage;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/saved-translations.css" asp-append-version="true" />
+}
+@section Scripts {
+    <script src="~/js/saved-translations.js" asp-append-version="true"></script>
+}
+
+<section class="saved-translations-page saved-translation-detail">
+    <a class="saved-translations-back" asp-action="Index">
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+        @Text["Translations.Saved"]
+    </a>
+
+    <header class="saved-translation-detail-header">
+        <div>
+            <p class="saved-translations-eyebrow">@LanguageName(effectiveSource) → @LanguageName(item.TargetLanguage)</p>
+            <h1>@Text["Translations.DetailTitle"]</h1>
+            <p>@Text["Translations.SavedAt"] <time datetime="@item.CreatedAt.ToString("O")" data-local="datetime">@item.CreatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></p>
+        </div>
+        <form method="post" asp-action="Delete" asp-route-id="@item.Id" data-confirm="@Text["Translations.DeleteConfirm"]">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="saved-translation-delete">@Text["Common.Delete"]</button>
+        </form>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(item.Preferences))
+    {
+        <aside class="saved-translation-preferences">
+            <strong>@Text["Translations.Preferences"]</strong>
+            <p dir="auto">@item.Preferences</p>
+        </aside>
+    }
+
+    <div class="saved-translation-columns">
+        <article>
+            <header>
+                <h2>@Text["Translations.Source"]</h2>
+                <button type="button" data-copy-target="saved-source">@Text["Common.Copy"]</button>
+            </header>
+            <p id="saved-source" dir="auto">@item.SourceText</p>
+        </article>
+        <article>
+            <header>
+                <h2>@Text["Translations.Translation"]</h2>
+                <button type="button" data-copy-target="saved-result">@Text["Common.Copy"]</button>
+            </header>
+            <p id="saved-result" dir="auto">@item.TranslatedText</p>
+        </article>
+    </div>
+    <div class="saved-translation-copy-status"
+         data-copy-success="@Text["Translations.Copied"]"
+         data-copy-failed="@Text["Translations.CopyFailed"]"
+         role="status"
+         aria-live="polite"></div>
+</section>

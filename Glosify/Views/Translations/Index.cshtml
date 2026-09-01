@@ -1,0 +1,63 @@
+@model SavedTranslationLibraryViewModel
+@using Glosify.Services.Language
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Text["Translations.Title"];
+    var totalPages = Math.Max(1, (int)Math.Ceiling(Model.Library.TotalCount / (double)Model.Library.PageSize));
+    string LanguageName(string code) => QuizLanguageDisplay.Name(QuizLanguageCatalog.Find(code)?.Name ?? code);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/saved-translations.css" asp-append-version="true" />
+}
+
+<section class="saved-translations-page">
+    <header class="saved-translations-hero">
+        <div>
+            <p class="saved-translations-eyebrow">@Text["Translations.Eyebrow"]</p>
+            <h1>@Text["Translations.Saved"]</h1>
+            <p>@Text["Translations.Intro"]</p>
+        </div>
+        <span class="saved-translations-count">@(Model.Library.TotalCount == 1 ? Text["Translations.CountOne", Model.Library.TotalCount] : Text["Translations.CountMany", Model.Library.TotalCount])</span>
+    </header>
+
+    @if (TempData["TranslationMessage"] is string message)
+    {
+        <div class="saved-translations-notice" role="status">@message</div>
+    }
+
+    <div class="saved-translations-grid">
+        @foreach (var item in Model.Library.Items)
+        {
+            var effectiveSource = item.SourceLanguage == "auto"
+                ? item.DetectedSourceLanguage ?? item.SourceLanguage
+                : item.SourceLanguage;
+            <a class="saved-translation-card" asp-action="Details" asp-route-id="@item.Id">
+                <span class="material-symbols-outlined" aria-hidden="true">translate</span>
+                <div>
+                    <h2 dir="auto">@item.SourcePreview</h2>
+                    <p dir="auto">@item.TranslationPreview</p>
+                    <small>@LanguageName(effectiveSource) → @LanguageName(item.TargetLanguage) · <time datetime="@item.CreatedAt.ToString("O")" data-local="datetime">@item.CreatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></small>
+                </div>
+                <span class="material-symbols-outlined saved-translation-card-arrow" aria-hidden="true">arrow_forward</span>
+            </a>
+        }
+        @if (Model.Library.Items.Count == 0)
+        {
+            <div class="saved-translations-empty">
+                <span class="material-symbols-outlined" aria-hidden="true">translate</span>
+                <h2>@Text["Translations.None"]</h2>
+                <p>@Text["Translations.NoneHelp"]</p>
+            </div>
+        }
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav class="saved-translations-pagination" aria-label="@Text["Translations.PagesAria"]">
+            <a class="@(Model.Library.Page <= 1 ? "is-disabled" : "")" asp-route-page="@(Model.Library.Page - 1)">@Text["Common.Previous"]</a>
+            <span>@Text["Common.PageOf", Model.Library.Page, totalPages]</span>
+            <a class="@(Model.Library.Page >= totalPages ? "is-disabled" : "")" asp-route-page="@(Model.Library.Page + 1)">@Text["Common.Next"]</a>
+        </nav>
+    }
+</section>

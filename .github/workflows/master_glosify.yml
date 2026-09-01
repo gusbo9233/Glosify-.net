@@ -49,6 +49,7 @@ jobs:
           cache-dependency-path: |
             Glosify.ClientTests/package-lock.json
             Glosify.LiveSubtitles.Extension/package-lock.json
+            Glosify.Translator.Extension/package-lock.json
 
       - name: Restore tools and packages
         run: |
@@ -83,15 +84,22 @@ jobs:
         run: |
           npm ci --prefix Glosify.ClientTests
           npm ci --prefix Glosify.LiveSubtitles.Extension
+          npm ci --prefix Glosify.Translator.Extension
 
       - name: Test browser extension JavaScript
-        run: npm test --prefix Glosify.LiveSubtitles.Extension
+        run: |
+          npm test --prefix Glosify.LiveSubtitles.Extension
+          npm test --prefix Glosify.Translator.Extension
 
       - name: Lint JavaScript
-        run: npm run lint --prefix Glosify.LiveSubtitles.Extension
+        run: |
+          npm run lint --prefix Glosify.LiveSubtitles.Extension
+          npm run lint --prefix Glosify.Translator.Extension
 
       - name: Audit extension dependencies
-        run: npm audit --prefix Glosify.LiveSubtitles.Extension
+        run: |
+          npm audit --prefix Glosify.LiveSubtitles.Extension
+          npm audit --prefix Glosify.Translator.Extension
 
       - name: Install extension Playwright Chromium
         working-directory: Glosify.LiveSubtitles.Extension
@@ -112,6 +120,10 @@ jobs:
           pactl set-default-source glosify_test.monitor
           xvfb-run --auto-servernum npm run test:browser
 
+      - name: Test Translator MV3 extension in persistent Chromium
+        working-directory: Glosify.Translator.Extension
+        run: xvfb-run --auto-servernum npm run test:browser
+
       - name: Build and validate Chrome Web Store package
         working-directory: Glosify.LiveSubtitles.Extension
         run: |
@@ -119,6 +131,14 @@ jobs:
           sha256sum artifacts/package/glosify-live-subtitles-0.5.1-beta.zip > "${{ runner.temp }}/extension-package.sha256"
           npm run package:store
           sha256sum --check "${{ runner.temp }}/extension-package.sha256"
+
+      - name: Build and validate Translator Chrome Web Store package
+        working-directory: Glosify.Translator.Extension
+        run: |
+          npm run package:store
+          sha256sum artifacts/package/glosify-translator-0.1.0-beta.zip > "${{ runner.temp }}/translator-extension-package.sha256"
+          npm run package:store
+          sha256sum --check "${{ runner.temp }}/translator-extension-package.sha256"
 
       - name: Test assistant state modules
         run: npm test --prefix Glosify.ClientTests
@@ -172,6 +192,12 @@ jobs:
           name: glosify-live-subtitles-0.5.1-beta
           path: Glosify.LiveSubtitles.Extension/artifacts/package/glosify-live-subtitles-0.5.1-beta.zip
 
+      - name: Upload Translator Chrome Web Store artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: glosify-translator-0.1.0-beta
+          path: Glosify.Translator.Extension/artifacts/package/glosify-translator-0.1.0-beta.zip
+
       - name: Upload test failure diagnostics
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -183,6 +209,7 @@ jobs:
             ${{ runner.temp }}/playwright-traces
             ${{ runner.temp }}/glosify-browser.log
             Glosify.LiveSubtitles.Extension/test-results
+            Glosify.Translator.Extension/test-results
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'

@@ -5,6 +5,7 @@ using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Books;
 using Glosify.Services.Quizzes;
 using Glosify.Services.RealtimeTranslation;
+using Glosify.Services.Translator;
 
 namespace Glosify.Infrastructure.Api;
 
@@ -40,6 +41,8 @@ public static class ApiExceptionMapper
         RealtimeTranslationExpiredException => Error(410, ApiErrorCodes.Gone, exception),
         RealtimeTranslationUnavailableException => Error(503, ApiErrorCodes.DependencyUnavailable, exception),
         RealtimeTranslationUpstreamException => Error(502, ApiErrorCodes.UpstreamFailure, exception),
+        TextTranslationValidationException => Error(400, ApiErrorCodes.ValidationFailed, exception),
+        SavedTranslationNotFoundException => Error(404, ApiErrorCodes.NotFound, exception),
         QuizNotFoundException => Error(404, ApiErrorCodes.NotFound, exception),
         UnauthorizedAccessException => new ApiError(403, ApiErrorCodes.Forbidden, "You do not have access to this resource."),
         _ => null,

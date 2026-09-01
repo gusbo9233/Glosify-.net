@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Glosify Translator</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header><span class="mark">G</span><div><strong>Glosify Translator</strong><small>BETA</small></div></header>
+    <section id="loading">Loading…</section>
+    <section id="signed-out" class="hidden">
+      <p>Connect your Glosify account to translate text on any web page.</p>
+      <button id="connect" class="primary">Connect Glosify</button>
+    </section>
+    <section id="signed-in" class="hidden">
+      <div class="account"><div><strong id="email"></strong><small><span id="credits">0</span> credits</small></div><button id="sign-out" class="link">Sign out</button></div>
+      <button id="start" class="primary">Start translator</button>
+      <button id="saved">Saved translations</button>
+      <p id="error" class="error hidden" role="alert"></p>
+      <p class="disclosure">Text is sent through Glosify to OpenAI only when you choose Translate. Saving is always optional.</p>
+    </section>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

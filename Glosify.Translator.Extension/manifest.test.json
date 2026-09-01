@@ -1,0 +1,5 @@
+{
+  "name": "Glosify Translator TEST",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0F9T/QRiGPMYJTEedJzfGySrPqKv6jLqZ+2L16sEUVP9hLgvutEgo7ciK4KM6y/uo57nzV0/u4rEAQGR0+1j5AFuUVpmXPw3H5LyvZFRBs9dEE3GpOayJoPUxDUPdcXi39eHAigQk0/IiR6LKVgLkCrufK2FwliLxni1dl+A4WOXiEj4NKGvbUvaI0PTOXcPz44IJwQRAxl20YOCe0KES5imd5UjAPSqewGqLXcn4U3okTom0V8qVrohiDpgFmulovmYyLYdfmeetkqHyErYsCojVunDfkvLFUDZGP478kCvrivgRlfHsg8CgTdnwTnG3h6+zdz6dZ/gseRbRv01ZQIDAQAB",
+  "host_permissions": ["http://127.0.0.1/*"]
+}

@@ -7,8 +7,8 @@
 **[Live app](https://glosify.se)** · [Case study](docs/portfolio-case-study.md) · [Architecture](docs/ARCHITECTURE.md) · [ADRs](docs/adr/) · [Tests](Glosify.Tests/)
 
 Glosify is an ASP.NET Core 10 MVC language-learning application with quizzes,
-FSRS-6 study collections, books, saved assistant chats, and a Chrome extension
-for live translated subtitles.
+FSRS-6 study collections, books, saved assistant chats, a focused text-translator
+Chrome extension, and a separate extension for live translated subtitles.
 
 ## AI services
 
@@ -50,6 +50,7 @@ Glosify.Tests/                   .NET unit, integration, and contract tests
 Glosify.BrowserTests/            Chromium user journeys
 Glosify.ClientTests/             Browser JavaScript tests
 Glosify.LiveSubtitles.Extension/ Chrome extension and tests
+Glosify.Translator.Extension/    Text-translator extension and tests
 docs/                            Guides, ADRs, and screenshots
 scripts/                         Development and operations helpers
 ```
@@ -99,6 +100,21 @@ extension, then sign in and select Enhanced:
 npm run build:dev --prefix Glosify.LiveSubtitles.Extension
 ```
 
+The independent text-translator extension is built and loaded separately. It
+uses its own pinned development ID, opens one movable/resizable translator per
+active tab, and stores only authentication material, language choices, and the
+optional preference field in trusted extension storage:
+
+```bash
+npm run build:dev --prefix Glosify.Translator.Extension
+```
+
+The production Chrome Web Store ID is assigned only at publication time. Before
+publishing, add its exact callback
+`https://<store-id>.chromiumapp.org/glosify` to the production
+`ExtensionAuth:AllowedRedirectUris` list. Publication is not performed by this
+repository workflow.
+
 Chrome must trust the local ASP.NET Core HTTPS certificate. Scribe mode also
 requires ElevenLabs and the protected Cloudflare Worker configuration.
 
@@ -117,12 +133,16 @@ running any npm check:
 ```bash
 npm ci --prefix Glosify.ClientTests
 npm ci --prefix Glosify.LiveSubtitles.Extension
+npm ci --prefix Glosify.Translator.Extension
 
 dotnet test Glosify.slnx -c Release
 npm test --prefix Glosify.ClientTests
 npm test --prefix Glosify.LiveSubtitles.Extension
 npm run lint --prefix Glosify.LiveSubtitles.Extension
 npm run test:browser --prefix Glosify.LiveSubtitles.Extension
+npm test --prefix Glosify.Translator.Extension
+npm run lint --prefix Glosify.Translator.Extension
+npm run test:browser --prefix Glosify.Translator.Extension
 ```
 
 The extension browser command runs both synthetic lifecycle journeys and the
