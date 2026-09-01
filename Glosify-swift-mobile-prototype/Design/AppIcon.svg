@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="halo" cx="18%" cy="12%" r="95%">
+      <stop offset="0" stop-color="#1c5329"/>
+      <stop offset="0.48" stop-color="#112036"/>
+      <stop offset="1" stop-color="#041329"/>
+    </radialGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#halo)"/>
+  <circle cx="512" cy="512" r="308" fill="none" stroke="#53e076" stroke-opacity="0.16" stroke-width="22"/>
+  <circle cx="512" cy="512" r="226" fill="#53e076" opacity="0.22" filter="url(#glow)"/>
+  <path d="M512 220c-161 0-292 116-292 260 0 88 49 166 124 213l-25 111 127-68c21 4 43 6 66 6 161 0 292-117 292-262S673 220 512 220Z" fill="#112036" stroke="#53e076" stroke-width="34" stroke-linejoin="round"/>
+  <path d="M626 404c-29-34-66-51-112-51-92 0-158 65-158 157 0 94 67 159 161 159 45 0 84-13 119-40V516H505v67h54v37c-12 6-25 9-40 9-62 0-102-47-102-118 0-69 40-116 99-116 29 0 53 11 74 34l36-25Z" fill="#53e076"/>
+  <circle cx="728" cy="324" r="24" fill="#ffb3b3"/>
+</svg>

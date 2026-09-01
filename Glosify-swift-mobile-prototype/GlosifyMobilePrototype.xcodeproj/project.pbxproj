@@ -1,0 +1,86 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		A10000000000000000000031 = {isa = PBXContainerItemProxy; containerPortal = A10000000000000000000001; proxyType = 1; remoteGlobalIDString = A10000000000000000000011; remoteInfo = GlosifyMobilePrototype; };
+		A10000000000000000000032 = {isa = PBXContainerItemProxy; containerPortal = A10000000000000000000001; proxyType = 1; remoteGlobalIDString = A10000000000000000000011; remoteInfo = GlosifyMobilePrototype; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A10000000000000000000021 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GlosifyMobilePrototype.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000022 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GlosifyMobilePrototypeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000023 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GlosifyMobilePrototypeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A10000000000000000000041 = {isa = PBXFileSystemSynchronizedBuildFileExceptionSet; membershipExceptions = (Info.plist,); target = A10000000000000000000011; };
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A10000000000000000000005 = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A10000000000000000000041,); path = GlosifyMobilePrototype; sourceTree = "<group>"; };
+		A10000000000000000000006 = {isa = PBXFileSystemSynchronizedRootGroup; path = GlosifyMobilePrototypeTests; sourceTree = "<group>"; };
+		A10000000000000000000007 = {isa = PBXFileSystemSynchronizedRootGroup; path = GlosifyMobilePrototypeUITests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000051 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000052 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000053 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000000000000000000002 = {isa = PBXGroup; children = (A10000000000000000000005, A10000000000000000000006, A10000000000000000000007, A10000000000000000000003,); sourceTree = "<group>"; };
+		A10000000000000000000003 = {isa = PBXGroup; children = (A10000000000000000000021, A10000000000000000000022, A10000000000000000000023,); name = Products; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000011 = {isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000071; buildPhases = (A10000000000000000000061, A10000000000000000000051, A10000000000000000000064,); buildRules = (); dependencies = (); fileSystemSynchronizedGroups = (A10000000000000000000005,); name = GlosifyMobilePrototype; packageProductDependencies = (); productName = GlosifyMobilePrototype; productReference = A10000000000000000000021; productType = "com.apple.product-type.application"; };
+		A10000000000000000000012 = {isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000072; buildPhases = (A10000000000000000000062, A10000000000000000000052, A10000000000000000000065,); buildRules = (); dependencies = (A10000000000000000000033,); fileSystemSynchronizedGroups = (A10000000000000000000006,); name = GlosifyMobilePrototypeTests; packageProductDependencies = (); productName = GlosifyMobilePrototypeTests; productReference = A10000000000000000000022; productType = "com.apple.product-type.bundle.unit-test"; };
+		A10000000000000000000013 = {isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000073; buildPhases = (A10000000000000000000063, A10000000000000000000053, A10000000000000000000066,); buildRules = (); dependencies = (A10000000000000000000034,); fileSystemSynchronizedGroups = (A10000000000000000000007,); name = GlosifyMobilePrototypeUITests; packageProductDependencies = (); productName = GlosifyMobilePrototypeUITests; productReference = A10000000000000000000023; productType = "com.apple.product-type.bundle.ui-testing"; };
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000000000000000000001 = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2600; LastUpgradeCheck = 2600; TargetAttributes = {A10000000000000000000011 = {CreatedOnToolsVersion = 26.0; }; A10000000000000000000012 = {CreatedOnToolsVersion = 26.0; TestTargetID = A10000000000000000000011; }; A10000000000000000000013 = {CreatedOnToolsVersion = 26.0; TestTargetID = A10000000000000000000011; }; }; }; buildConfigurationList = A10000000000000000000070; compatibilityVersion = "Xcode 16.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base,); mainGroup = A10000000000000000000002; minimizedProjectReferenceProxies = 1; preferredProjectObjectVersion = 77; productRefGroup = A10000000000000000000003; projectDirPath = ""; projectRoot = ""; targets = (A10000000000000000000011, A10000000000000000000012, A10000000000000000000013,); };
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000000000000000000064 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000065 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000066 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10000000000000000000061 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000062 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000063 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A10000000000000000000033 = {isa = PBXTargetDependency; target = A10000000000000000000011; targetProxy = A10000000000000000000031; };
+		A10000000000000000000034 = {isa = PBXTargetDependency; target = A10000000000000000000011; targetProxy = A10000000000000000000032; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A10000000000000000000081 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; ENABLE_TESTABILITY = YES; IPHONEOS_DEPLOYMENT_TARGET = 18.0; ONLY_ACTIVE_ARCH = YES; SDKROOT = iphoneos; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_VERSION = 5.0; }; name = Debug; };
+		A10000000000000000000082 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 18.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Release; };
+		A10000000000000000000083 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; ENABLE_PREVIEWS = YES; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = GlosifyMobilePrototype/Info.plist; MARKETING_VERSION = 0.1; PRODUCT_BUNDLE_IDENTIFIER = se.glosify.mobileprototype; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_EMIT_LOC_STRINGS = YES; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+		A10000000000000000000084 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor; CODE_SIGN_STYLE = Automatic; CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = GlosifyMobilePrototype/Info.plist; MARKETING_VERSION = 0.1; PRODUCT_BUNDLE_IDENTIFIER = se.glosify.mobileprototype; PRODUCT_NAME = "$(TARGET_NAME)"; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO; SWIFT_EMIT_LOC_STRINGS = YES; TARGETED_DEVICE_FAMILY = 1; VALIDATE_PRODUCT = YES; }; name = Release; };
+		A10000000000000000000085 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = se.glosify.mobileprototype.tests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GlosifyMobilePrototype.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GlosifyMobilePrototype"; }; name = Debug; };
+		A10000000000000000000086 = {isa = XCBuildConfiguration; buildSettings = {BUNDLE_LOADER = "$(TEST_HOST)"; CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = se.glosify.mobileprototype.tests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GlosifyMobilePrototype.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GlosifyMobilePrototype"; }; name = Release; };
+		A10000000000000000000087 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = se.glosify.mobileprototype.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_TARGET_NAME = GlosifyMobilePrototype; }; name = Debug; };
+		A10000000000000000000088 = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = se.glosify.mobileprototype.uitests; PRODUCT_NAME = "$(TARGET_NAME)"; TEST_TARGET_NAME = GlosifyMobilePrototype; }; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000000000000000000070 = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000081, A10000000000000000000082,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000071 = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000083, A10000000000000000000084,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000072 = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000085, A10000000000000000000086,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000073 = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000087, A10000000000000000000088,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = A10000000000000000000001;
+}
