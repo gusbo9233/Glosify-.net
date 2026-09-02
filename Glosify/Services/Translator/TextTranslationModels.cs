@@ -18,10 +18,12 @@ public sealed record TextTranslationResult(
 public sealed record SavedTranslationResult(
     Guid Id,
     Guid SessionId,
+    string LanguageCode,
     DateTimeOffset CreatedAt);
 
 public sealed record SavedTranslationSessionListItem(
     Guid Id,
+    string LanguageCode,
     string Title,
     string SourcePreview,
     string TranslationPreview,
@@ -30,6 +32,7 @@ public sealed record SavedTranslationSessionListItem(
     DateTimeOffset UpdatedAt);
 
 public sealed record SavedTranslationLibraryPage(
+    string LanguageCode,
     IReadOnlyList<SavedTranslationSessionListItem> Items,
     int Page,
     int PageSize,
@@ -48,6 +51,7 @@ public sealed record SavedTranslationDetail(
 
 public sealed record SavedTranslationSessionDetailPage(
     Guid Id,
+    string LanguageCode,
     string Title,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,

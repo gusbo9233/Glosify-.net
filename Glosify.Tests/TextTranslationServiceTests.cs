@@ -172,6 +172,7 @@ public sealed class TextTranslationServiceTests
                 .SequenceEqual([
                     nameof(SavedTranslationSession.UserId),
                     nameof(SavedTranslationSession.ClientSessionId),
+                    nameof(SavedTranslationSession.LanguageCode),
                 ]));
         Assert.Contains(entity.GetIndexes(), index =>
             index.IsUnique
@@ -219,12 +220,15 @@ public sealed class TextTranslationServiceTests
 
         var first = await service.SaveAsync(
             "owner", clientSessionId, requestId, translationOperationId,
+            null,
             "Hello", "Hej", "auto", "en", "sv", "Informal");
         var repeated = await service.SaveAsync(
             "owner", clientSessionId, requestId, Guid.Empty,
+            null,
             "Changed", "Ändrad", "auto", "en", "sv", null);
         var repeatedWithNewRequestId = await service.SaveAsync(
             "owner", clientSessionId, Guid.NewGuid(), translationOperationId,
+            "en",
             "Changed again", "Ändrad igen", "auto", "en", "sv", null);
 
         Assert.Equal(first.Id, repeated.Id);
@@ -232,24 +236,30 @@ public sealed class TextTranslationServiceTests
         Assert.Equal(first.SessionId, repeated.SessionId);
         Assert.Equal(1, await context.SavedTranslations.CountAsync());
         Assert.Equal(1, await context.SavedTranslationSessions.CountAsync());
-        Assert.Empty((await service.GetLibraryAsync("other", 1, 24)).Items);
-        var library = await service.GetLibraryAsync("owner", 1, 24);
+        Assert.Empty((await service.GetLibraryAsync("other", "sv", 1, 24)).Items);
+        var library = await service.GetLibraryAsync("owner", "sv", 1, 24);
         var librarySession = Assert.Single(library.Items);
+        Assert.Equal("sv", library.LanguageCode);
+        Assert.Equal("sv", librarySession.LanguageCode);
         Assert.Equal("Hello", librarySession.SourcePreview);
         Assert.Equal(1, librarySession.TranslationCount);
         Assert.Equal(1, library.TotalTranslations);
-        var clampedLibrary = await service.GetLibraryAsync("owner", 100_000_000, 24);
+        var clampedLibrary = await service.GetLibraryAsync("owner", "sv", 100_000_000, 24);
         Assert.Equal(1, clampedLibrary.Page);
         Assert.Equal("Hello", Assert.Single(clampedLibrary.Items).SourcePreview);
-        Assert.Null(await service.GetSessionAsync(first.SessionId, "other", 1, 24));
+        Assert.Null(await service.GetSessionAsync(first.SessionId, "other", "sv", 1, 24));
+        Assert.Null(await service.GetSessionAsync(first.SessionId, "owner", "en", 1, 24));
         var session = Assert.IsType<SavedTranslationSessionDetailPage>(
-            await service.GetSessionAsync(first.SessionId, "owner", 1, 24));
+            await service.GetSessionAsync(first.SessionId, "owner", "sv", 1, 24));
+        Assert.Equal("sv", session.LanguageCode);
         var detail = Assert.Single(session.Translations);
         Assert.Equal("Informal", detail.Preferences);
 
         await Assert.ThrowsAsync<SavedTranslationNotFoundException>(() =>
-            service.DeleteSessionAsync(first.SessionId, "other"));
-        await service.DeleteSessionAsync(first.SessionId, "owner");
+            service.DeleteSessionAsync(first.SessionId, "other", "sv"));
+        await Assert.ThrowsAsync<SavedTranslationNotFoundException>(() =>
+            service.DeleteSessionAsync(first.SessionId, "owner", "en"));
+        await service.DeleteSessionAsync(first.SessionId, "owner", "sv");
         Assert.Empty(await context.SavedTranslations.ToListAsync());
         Assert.Empty(await context.SavedTranslationSessions.ToListAsync());
     }
@@ -267,21 +277,61 @@ public sealed class TextTranslationServiceTests
 
         var first = await service.SaveAsync(
             "owner", clientSessionId, Guid.NewGuid(), firstOperation,
+            "sv",
             "First source", "First result", "en", "en", "sv", null);
         var second = await service.SaveAsync(
             "owner", clientSessionId, Guid.NewGuid(), secondOperation,
+            "sv",
             "Second source", "Second result", "en", "en", "sv", null);
 
         Assert.Equal(first.SessionId, second.SessionId);
         Assert.Single(await context.SavedTranslationSessions.ToListAsync());
-        var library = await service.GetLibraryAsync("owner", 1, 24);
+        var library = await service.GetLibraryAsync("owner", "sv", 1, 24);
         Assert.Equal(2, Assert.Single(library.Items).TranslationCount);
         var session = Assert.IsType<SavedTranslationSessionDetailPage>(
-            await service.GetSessionAsync(first.SessionId, "owner", 1, 24));
+            await service.GetSessionAsync(first.SessionId, "owner", "sv", 1, 24));
         Assert.Collection(
             session.Translations,
             item => Assert.Equal("First source", item.SourceText),
             item => Assert.Equal("Second source", item.SourceText));
+    }
+
+    [Fact]
+    public async Task Save_defaults_to_target_language_and_can_bind_to_the_source_language()
+    {
+        await using var context = CreateContext();
+        var service = CreateService(context);
+        var clientSessionId = Guid.NewGuid();
+        var targetOperation = Guid.NewGuid();
+        var sourceOperation = Guid.NewGuid();
+        await AddCompletedTranslationAsync(context, "owner", targetOperation);
+        await AddCompletedTranslationAsync(context, "owner", sourceOperation);
+
+        var targetSave = await service.SaveAsync(
+            "owner", clientSessionId, Guid.NewGuid(), targetOperation,
+            null,
+            "Hello", "Hej", "auto", "en", "sv", null);
+        var sourceSave = await service.SaveAsync(
+            "owner", clientSessionId, Guid.NewGuid(), sourceOperation,
+            "en",
+            "Goodbye", "Hej då", "auto", "en", "sv", null);
+
+        Assert.Equal("sv", targetSave.LanguageCode);
+        Assert.Equal("en", sourceSave.LanguageCode);
+        Assert.NotEqual(targetSave.SessionId, sourceSave.SessionId);
+        Assert.Equal(2, await context.SavedTranslationSessions.CountAsync());
+        Assert.Equal(targetSave.SessionId, Assert.Single(
+            (await service.GetLibraryAsync("owner", "sv", 1, 24)).Items).Id);
+        Assert.Equal(sourceSave.SessionId, Assert.Single(
+            (await service.GetLibraryAsync("owner", "en", 1, 24)).Items).Id);
+
+        var unsupportedBinding = Guid.NewGuid();
+        await AddCompletedTranslationAsync(context, "owner", unsupportedBinding);
+        await Assert.ThrowsAsync<TextTranslationValidationException>(() =>
+            service.SaveAsync(
+                "owner", clientSessionId, Guid.NewGuid(), unsupportedBinding,
+                "fr",
+                "Again", "Igen", "auto", "en", "sv", null));
     }
 
     [Fact]
@@ -305,6 +355,7 @@ public sealed class TextTranslationServiceTests
         {
             UserId = "owner",
             ClientSessionId = Guid.NewGuid(),
+            LanguageCode = "sv",
             Title = "Relational session",
         };
         context.SavedTranslationSessions.Add(session);
@@ -338,10 +389,12 @@ public sealed class TextTranslationServiceTests
         await Assert.ThrowsAsync<TextTranslationValidationException>(() =>
             service.SaveAsync(
                 "other", Guid.NewGuid(), Guid.NewGuid(), ownerOperationId,
+                "sv",
                 "Hello", "Hej", "auto", "en", "sv", null));
         await Assert.ThrowsAsync<TextTranslationValidationException>(() =>
             service.SaveAsync(
                 "owner", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                "sv",
                 "Hello", "Hej", "auto", "en", "sv", null));
 
         Assert.Empty(await context.SavedTranslations.ToListAsync());

@@ -43,6 +43,9 @@ public sealed class SaveTranslationRequest
 
     public Guid TranslationOperationId { get; set; }
 
+    [StringLength(8)]
+    public string? LanguageCode { get; set; }
+
     [Required, StringLength(8_000, MinimumLength = 1)]
     public string? SourceText { get; set; }
 
@@ -65,5 +68,6 @@ public sealed class SaveTranslationRequest
 public sealed record SavedTranslationCreatedDto(
     Guid Id,
     Guid SessionId,
+    string LanguageCode,
     DateTimeOffset CreatedAt,
     string HistoryUrl);

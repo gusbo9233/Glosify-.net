@@ -70,6 +70,7 @@ test("auto source swaps only after a detected source is available", () => {
     sourceText: "Hello",
     result: null,
     requestId: null,
+    saveLanguage: null,
     saved: false,
   });
 });

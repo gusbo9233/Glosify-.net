@@ -25,7 +25,7 @@
       };
     },
     invalidate(state) {
-      return { ...state, result: null, requestId: null, saved: false };
+      return { ...state, result: null, requestId: null, saveLanguage: null, saved: false };
     },
     createRequestId(cryptoApi = global.crypto) {
       if (typeof cryptoApi?.getRandomValues !== "function") {
@@ -57,6 +57,7 @@
         sourceText: state.result.translatedText,
         result: null,
         requestId: null,
+        saveLanguage: null,
         saved: false,
       };
     },

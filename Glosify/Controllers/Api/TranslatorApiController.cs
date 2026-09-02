@@ -59,6 +59,7 @@ public sealed class TranslatorApiController : ApiControllerBase
             request.SessionId,
             request.RequestId,
             request.TranslationOperationId,
+            request.LanguageCode,
             request.SourceText,
             request.TranslatedText,
             request.SourceLanguage,
@@ -73,6 +74,7 @@ public sealed class TranslatorApiController : ApiControllerBase
         var response = new SavedTranslationCreatedDto(
             saved.Id,
             saved.SessionId,
+            saved.LanguageCode,
             saved.CreatedAt,
             historyUrl);
         return Created(historyUrl, response);

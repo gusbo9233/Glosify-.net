@@ -35,11 +35,36 @@ test("translator overlay is isolated per tab and saves only after an explicit re
 
     const first = await context.newPage();
     await first.goto(`${mock.baseUrl}/page-one`);
+    await first.evaluate(() => {
+      globalThis.hostShortcutKeys = [];
+      document.addEventListener("keydown", event => {
+        if (event.key === "o" || event.key === " ") {
+          globalThis.hostShortcutKeys.push(event.key);
+          event.preventDefault();
+        }
+      }, true);
+    });
     await first.bringToFront();
     await start(control);
     await start(control);
     await expect(first.locator("#glosify-translator-host")).toHaveCount(1);
+    expect(await first.locator("#glosify-translator-host").evaluate(
+      element => getComputedStyle(element).resize)).toBe("both");
     const firstTabId = await tabId(control, "/page-one");
+
+    await overlay(control, firstTabId, "test:overlay:focus-input");
+    await first.keyboard.type("ho ");
+    expect((await overlay(control, firstTabId, "test:overlay:state")).sourceText).toBe("ho ");
+    expect(await first.evaluate(() => globalThis.hostShortcutKeys)).toEqual([]);
+
+    const beforeDrag = (await overlay(control, firstTabId, "test:overlay:state")).rect;
+    await first.mouse.move(beforeDrag.left + 120, beforeDrag.top + 25);
+    await first.mouse.down();
+    await first.mouse.move(20, beforeDrag.top + 85, { steps: 12 });
+    await first.mouse.up();
+    const afterDrag = (await overlay(control, firstTabId, "test:overlay:state")).rect;
+    expect(afterDrag.left).toBeCloseTo(0, 0);
+    expect(afterDrag.top).toBeCloseTo(beforeDrag.top + 60, 0);
 
     await overlay(control, firstTabId, "test:overlay:set-input", {
       sourceText: "Hello\nworld",
@@ -53,6 +78,7 @@ test("translator overlay is isolated per tab and saves only after an explicit re
       sourceText: "Hello\nworld",
       preferences: "Informal Mexican Spanish",
       translatedText: "Hola\nmundo",
+      saveLanguage: "es",
       saved: false,
     });
     expect(state.requestId).toMatch(
@@ -69,12 +95,16 @@ test("translator overlay is isolated per tab and saves only after an explicit re
     expect(await overlay(control, firstTabId, "test:overlay:minimize")).toBe(true);
     expect((await overlay(control, firstTabId, "test:overlay:state")).minimized).toBe(true);
     await overlay(control, firstTabId, "test:overlay:minimize");
+    expect(await overlay(control, firstTabId, "test:overlay:set-save-language", {
+      languageCode: "en",
+    })).toBe("en");
     expect(await overlay(control, firstTabId, "test:overlay:save")).toBe(true);
     expect(mock.saveRequests).toHaveLength(1);
     expect(mock.saveRequests[0].sessionId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u);
     expect(mock.saveRequests[0].sessionId).toBe(firstSessionId);
     expect(mock.saveRequests[0].requestId).toBe(state.requestId);
+    expect(mock.saveRequests[0].languageCode).toBe("en");
     expect(mock.saveRequests[0].preferences).toBe("Informal Mexican Spanish");
     expect(mock.saveRequests[0].translationOperationId)
       .toBe("22222222-2222-4222-8222-222222222222");

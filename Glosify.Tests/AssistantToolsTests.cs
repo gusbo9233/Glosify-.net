@@ -55,15 +55,24 @@ public class AssistantToolsTests
         {
             UserId = "user-1",
             ClientSessionId = Guid.NewGuid(),
+            LanguageCode = "sv",
             Title = "Travel phrases",
         };
         var foreignSession = new SavedTranslationSession
         {
             UserId = "user-2",
             ClientSessionId = Guid.NewGuid(),
+            LanguageCode = "sv",
             Title = "Private session",
         };
-        db.SavedTranslationSessions.AddRange(ownedSession, foreignSession);
+        var otherLanguageSession = new SavedTranslationSession
+        {
+            UserId = "user-1",
+            ClientSessionId = Guid.NewGuid(),
+            LanguageCode = "en",
+            Title = "English phrases",
+        };
+        db.SavedTranslationSessions.AddRange(ownedSession, foreignSession, otherLanguageSession);
         db.SavedTranslations.AddRange(
             new SavedTranslation
             {
@@ -85,6 +94,16 @@ public class AssistantToolsTests
                 TargetLanguage = "sv",
                 SourceText = "Secret",
                 TranslatedText = "Hemligt",
+            },
+            new SavedTranslation
+            {
+                Session = otherLanguageSession,
+                UserId = "user-1",
+                RequestId = Guid.NewGuid(),
+                SourceLanguage = "sv",
+                TargetLanguage = "en",
+                SourceText = "Hej",
+                TranslatedText = "Hello",
             });
         await db.SaveChangesAsync();
         var tools = AssistantToolFactory.Create(db);
@@ -92,16 +111,17 @@ public class AssistantToolsTests
         var list = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
             "list_saved_translation_sessions",
             "{}",
-            new AgentToolContext { UserId = "user-1" },
+            new AgentToolContext { UserId = "user-1", CurrentLanguageCode = "sv" },
             CancellationToken.None));
         var listed = Assert.Single(list.GetProperty("sessions").EnumerateArray());
         Assert.Equal(ownedSession.Id, listed.GetProperty("id").GetGuid());
+        Assert.Equal("sv", listed.GetProperty("learning_language").GetString());
         Assert.Equal(1, listed.GetProperty("translation_count").GetInt32());
 
         var read = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
             "get_saved_translation_session",
             $$"""{"session_id":"{{ownedSession.Id}}"}""",
-            new AgentToolContext { UserId = "user-1" },
+            new AgentToolContext { UserId = "user-1", CurrentLanguageCode = "sv" },
             CancellationToken.None));
         var translation = Assert.Single(read.GetProperty("translations").EnumerateArray());
         Assert.Equal("Where is the station?", translation.GetProperty("source_text").GetString());
@@ -110,9 +130,16 @@ public class AssistantToolsTests
         var rejected = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
             "get_saved_translation_session",
             $$"""{"session_id":"{{foreignSession.Id}}"}""",
-            new AgentToolContext { UserId = "user-1" },
+            new AgentToolContext { UserId = "user-1", CurrentLanguageCode = "sv" },
             CancellationToken.None));
         Assert.Equal("Saved translation session not found.", rejected.GetProperty("error").GetString());
+
+        var wrongLanguage = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "get_saved_translation_session",
+            $$"""{"session_id":"{{otherLanguageSession.Id}}"}""",
+            new AgentToolContext { UserId = "user-1", CurrentLanguageCode = "sv" },
+            CancellationToken.None));
+        Assert.Equal("Saved translation session not found.", wrongLanguage.GetProperty("error").GetString());
     }
 
     [Theory]

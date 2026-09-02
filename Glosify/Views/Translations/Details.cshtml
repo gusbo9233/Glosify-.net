@@ -23,7 +23,7 @@
 
     <header class="saved-translation-detail-header">
         <div class="saved-translation-detail-heading">
-            <p class="saved-translations-eyebrow">@(session.TotalCount == 1 ? Text["Translations.CountOne", session.TotalCount] : Text["Translations.CountMany", session.TotalCount])</p>
+            <p class="saved-translations-eyebrow">@LanguageName(session.LanguageCode) · @(session.TotalCount == 1 ? Text["Translations.CountOne", session.TotalCount] : Text["Translations.CountMany", session.TotalCount])</p>
             <h1 dir="auto">@session.Title</h1>
             <p class="saved-translation-timestamp"><span class="material-symbols-outlined" aria-hidden="true">schedule</span>@Text["Translations.SavedAt"] <time datetime="@session.CreatedAt.ToString("O")" data-local="datetime">@session.CreatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></p>
         </div>

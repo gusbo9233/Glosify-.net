@@ -121,6 +121,7 @@ public sealed class TextTranslationService : ITextTranslationService
         Guid clientSessionId,
         Guid requestId,
         Guid translationOperationId,
+        string? languageCode,
         string? sourceText,
         string? translatedText,
         string? sourceLanguage,
@@ -137,25 +138,37 @@ public sealed class TextTranslationService : ITextTranslationService
         {
             throw new TextTranslationValidationException("A valid save request ID is required.");
         }
-        var existing = await _context.SavedTranslations.AsNoTracking().FirstOrDefaultAsync(
-            item => item.UserId == userId && item.RequestId == requestId,
+        var existing = await _context.SavedTranslations.AsNoTracking()
+            .Where(item => item.UserId == userId && item.RequestId == requestId)
+            .Select(item => new SavedTranslationResult(
+                item.Id,
+                item.SessionId,
+                item.Session.LanguageCode,
+                item.CreatedAt))
+            .FirstOrDefaultAsync(
             cancellationToken);
         if (existing is not null)
         {
-            return new SavedTranslationResult(existing.Id, existing.SessionId, existing.CreatedAt);
+            return existing;
         }
         if (translationOperationId == Guid.Empty)
         {
             throw new TextTranslationValidationException(
                 "A completed Glosify translation is required before saving.");
         }
-        existing = await _context.SavedTranslations.AsNoTracking().FirstOrDefaultAsync(
-            item => item.UserId == userId
-                && item.TranslationOperationId == translationOperationId,
+        existing = await _context.SavedTranslations.AsNoTracking()
+            .Where(item => item.UserId == userId
+                && item.TranslationOperationId == translationOperationId)
+            .Select(item => new SavedTranslationResult(
+                item.Id,
+                item.SessionId,
+                item.Session.LanguageCode,
+                item.CreatedAt))
+            .FirstOrDefaultAsync(
             cancellationToken);
         if (existing is not null)
         {
-            return new SavedTranslationResult(existing.Id, existing.SessionId, existing.CreatedAt);
+            return existing;
         }
 
         var isCompletedTranslation = await _context.AiCreditTransactions.AsNoTracking().AnyAsync(
@@ -173,19 +186,26 @@ public sealed class TextTranslationService : ITextTranslationService
 
         var normalizedSource = ValidateSourceLanguage(sourceLanguage);
         var target = ValidateTargetLanguage(targetLanguage);
+        var normalizedDetectedSource = NormalizeDetectedLanguage(detectedSourceLanguage);
         if (normalizedSource != AutoLanguageCode
             && string.Equals(normalizedSource, target.Code, StringComparison.OrdinalIgnoreCase))
         {
             throw new TextTranslationValidationException(
                 "Source and target languages must be different.");
         }
+        var effectiveSource = normalizedSource == AutoLanguageCode
+            ? normalizedDetectedSource
+            : normalizedSource;
+        var savedLanguage = ValidateSavedLanguage(languageCode, target.Code, effectiveSource);
         var normalizedSourceText = ValidateText(
             sourceText,
             MaxSourceCharacters,
             "Source text is required.");
         var now = _timeProvider.GetUtcNow();
         var session = await _context.SavedTranslationSessions.SingleOrDefaultAsync(
-            item => item.UserId == userId && item.ClientSessionId == clientSessionId,
+            item => item.UserId == userId
+                && item.ClientSessionId == clientSessionId
+                && item.LanguageCode == savedLanguage,
             cancellationToken);
         if (session is null)
         {
@@ -194,6 +214,7 @@ public sealed class TextTranslationService : ITextTranslationService
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 ClientSessionId = clientSessionId,
+                LanguageCode = savedLanguage,
                 Title = SessionTitle(normalizedSourceText),
                 CreatedAt = now,
                 UpdatedAt = now,
@@ -213,7 +234,7 @@ public sealed class TextTranslationService : ITextTranslationService
             RequestId = requestId,
             TranslationOperationId = translationOperationId,
             SourceLanguage = normalizedSource,
-            DetectedSourceLanguage = NormalizeDetectedLanguage(detectedSourceLanguage),
+            DetectedSourceLanguage = normalizedDetectedSource,
             TargetLanguage = target.Code,
             Preferences = NormalizeOptional(preferences, MaxPreferenceCharacters, "Translation preferences"),
             SourceText = normalizedSourceText,
@@ -228,33 +249,44 @@ public sealed class TextTranslationService : ITextTranslationService
         catch (DbUpdateException)
         {
             _context.Entry(entity).State = EntityState.Detached;
-            existing = await _context.SavedTranslations.AsNoTracking().FirstOrDefaultAsync(
-                item => item.UserId == userId
+            existing = await _context.SavedTranslations.AsNoTracking()
+                .Where(item => item.UserId == userId
                     && (item.RequestId == requestId
-                        || item.TranslationOperationId == translationOperationId),
+                        || item.TranslationOperationId == translationOperationId))
+                .Select(item => new SavedTranslationResult(
+                    item.Id,
+                    item.SessionId,
+                    item.Session.LanguageCode,
+                    item.CreatedAt))
+                .FirstOrDefaultAsync(
                 cancellationToken);
             if (existing is null)
             {
                 throw;
             }
-            return new SavedTranslationResult(existing.Id, existing.SessionId, existing.CreatedAt);
+            return existing;
         }
-        return new SavedTranslationResult(entity.Id, entity.SessionId, entity.CreatedAt);
+        return new SavedTranslationResult(entity.Id, entity.SessionId, savedLanguage, entity.CreatedAt);
     }
 
     public async Task<SavedTranslationLibraryPage> GetLibraryAsync(
         string userId,
+        string languageCode,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, MaximumPageSize);
+        var language = ValidateTargetLanguage(languageCode).Code;
         var query = _context.SavedTranslationSessions.AsNoTracking()
-            .Where(item => item.UserId == userId && item.Translations.Any());
+            .Where(item => item.UserId == userId
+                && item.LanguageCode == language
+                && item.Translations.Any());
         var totalCount = await query.CountAsync(cancellationToken);
         var totalTranslations = await _context.SavedTranslations.AsNoTracking()
-            .CountAsync(item => item.UserId == userId, cancellationToken);
+            .CountAsync(item => item.UserId == userId
+                && item.Session.LanguageCode == language, cancellationToken);
         var totalPages = Math.Max(1, (int)Math.Ceiling(totalCount / (double)pageSize));
         page = Math.Min(page, totalPages);
         var storedItems = await query
@@ -265,6 +297,7 @@ public sealed class TextTranslationService : ITextTranslationService
             .Select(item => new
             {
                 item.Id,
+                item.LanguageCode,
                 item.Title,
                 item.CreatedAt,
                 item.UpdatedAt,
@@ -282,6 +315,7 @@ public sealed class TextTranslationService : ITextTranslationService
             .ToArrayAsync(cancellationToken);
         var items = storedItems.Select(item => new SavedTranslationSessionListItem(
             item.Id,
+            item.LanguageCode,
             item.Title,
             Preview(item.Latest.SourceText),
             Preview(item.Latest.TranslatedText),
@@ -289,6 +323,7 @@ public sealed class TextTranslationService : ITextTranslationService
             item.CreatedAt,
             item.UpdatedAt)).ToArray();
         return new SavedTranslationLibraryPage(
+            language,
             items,
             page,
             pageSize,
@@ -299,19 +334,24 @@ public sealed class TextTranslationService : ITextTranslationService
     public async Task<SavedTranslationSessionDetailPage?> GetSessionAsync(
         Guid id,
         string userId,
+        string languageCode,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default) =>
-        await LoadSessionAsync(id, userId, page, pageSize, cancellationToken);
+        await LoadSessionAsync(id, userId, languageCode, page, pageSize, cancellationToken);
 
     public async Task DeleteSessionAsync(
         Guid id,
         string userId,
+        string languageCode,
         CancellationToken cancellationToken = default)
     {
+        var language = ValidateTargetLanguage(languageCode).Code;
         var session = await _context.SavedTranslationSessions
             .SingleOrDefaultAsync(
-                item => item.Id == id && item.UserId == userId,
+                item => item.Id == id
+                    && item.UserId == userId
+                    && item.LanguageCode == language,
                 cancellationToken);
         if (session is null)
         {
@@ -325,17 +365,22 @@ public sealed class TextTranslationService : ITextTranslationService
     private async Task<SavedTranslationSessionDetailPage?> LoadSessionAsync(
         Guid id,
         string userId,
+        string languageCode,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, MaximumPageSize);
+        var language = ValidateTargetLanguage(languageCode).Code;
         var session = await _context.SavedTranslationSessions.AsNoTracking()
-            .Where(item => item.Id == id && item.UserId == userId)
+            .Where(item => item.Id == id
+                && item.UserId == userId
+                && item.LanguageCode == language)
             .Select(item => new
             {
                 item.Id,
+                item.LanguageCode,
                 item.Title,
                 item.CreatedAt,
                 item.UpdatedAt,
@@ -367,6 +412,7 @@ public sealed class TextTranslationService : ITextTranslationService
             .ToArrayAsync(cancellationToken);
         return new SavedTranslationSessionDetailPage(
             session.Id,
+            session.LanguageCode,
             session.Title,
             session.CreatedAt,
             session.UpdatedAt,
@@ -392,6 +438,23 @@ public sealed class TextTranslationService : ITextTranslationService
         QuizLanguageCatalog.Find(language) is { IsLanguageLearning: true } target
             ? target
             : throw new TextTranslationValidationException("Choose a supported target language.");
+
+    private static string ValidateSavedLanguage(
+        string? languageCode,
+        string targetLanguage,
+        string? effectiveSourceLanguage)
+    {
+        var language = string.IsNullOrWhiteSpace(languageCode)
+            ? targetLanguage
+            : ValidateTargetLanguage(languageCode).Code;
+        if (language == targetLanguage || language == effectiveSourceLanguage)
+        {
+            return language;
+        }
+
+        throw new TextTranslationValidationException(
+            "Save the translation to either its source or target language.");
+    }
 
     private static string? NormalizeDetectedLanguage(string? language) =>
         QuizLanguageCatalog.Find(language) is { IsLanguageLearning: true } detected

@@ -75,6 +75,18 @@ public sealed class LayoutViewComponentTests
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Freestyle_hides_language_bound_transcript_and_translation_navigation()
+    {
+        using var factory = CreateFactory(currentLanguage: QuizLanguageCatalog.FreestyleName);
+        var client = factory.CreateClient();
+
+        var document = await GetHomeAsync(client);
+
+        Assert.Empty(document.QuerySelectorAll("a[href='/Transcripts']"));
+        Assert.Empty(document.QuerySelectorAll("a[href='/Translations']"));
+    }
+
     /// <summary>
     /// Every lookup behind the chrome throws. The page and the best-effort options endpoint
     /// must still respond; a missing dropdown or credit badge is not a reason to serve a 500.
@@ -109,7 +121,9 @@ public sealed class LayoutViewComponentTests
         return await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
     }
 
-    private static WebApplicationFactory<Program> CreateFactory(bool failing = false) =>
+    private static WebApplicationFactory<Program> CreateFactory(
+        bool failing = false,
+        string currentLanguage = "Polish") =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
@@ -122,7 +136,7 @@ public sealed class LayoutViewComponentTests
                 services.RemoveAll<IQuizLanguagePreferenceService>();
                 services.RemoveAll<ILanguageContext>();
 
-                services.AddSingleton<ILanguageContext>(new FixedLanguageContext("Polish"));
+                services.AddSingleton<ILanguageContext>(new FixedLanguageContext(currentLanguage));
                 ChromeServicesBase chrome = failing
                     ? new ThrowingChromeServices()
                     : new StubChromeServices();

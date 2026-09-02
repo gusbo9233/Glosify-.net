@@ -11,9 +11,15 @@ internal sealed class SavedTranslationSessionConfiguration
     {
         entity.HasKey(session => session.Id);
         entity.Property(session => session.UserId).HasMaxLength(450).IsRequired();
+        entity.Property(session => session.LanguageCode).HasMaxLength(8).IsRequired();
         entity.Property(session => session.Title).HasMaxLength(160).IsRequired();
-        entity.HasIndex(session => new { session.UserId, session.ClientSessionId }).IsUnique();
-        entity.HasIndex(session => new { session.UserId, session.UpdatedAt });
+        entity.HasIndex(session => new
+        {
+            session.UserId,
+            session.ClientSessionId,
+            session.LanguageCode,
+        }).IsUnique();
+        entity.HasIndex(session => new { session.UserId, session.LanguageCode, session.UpdatedAt });
 
         entity.HasOne<ApplicationUser>()
             .WithMany()

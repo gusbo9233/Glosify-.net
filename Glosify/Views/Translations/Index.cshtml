@@ -1,8 +1,11 @@
 @model SavedTranslationLibraryViewModel
+@using Glosify.Services.Language
 @{
     Layout = "~/Views/Shared/_AppLayout.cshtml";
     ViewData["Title"] = Text["Translations.Title"];
     var totalPages = Math.Max(1, (int)Math.Ceiling(Model.Library.TotalCount / (double)Model.Library.PageSize));
+    var languageName = QuizLanguageDisplay.Name(
+        QuizLanguageCatalog.Find(Model.Library.LanguageCode)?.Name ?? Model.Library.LanguageCode);
 }
 
 @section Styles {
@@ -12,7 +15,7 @@
 <section class="saved-translations-page">
     <header class="saved-translations-hero">
         <div class="saved-translations-hero-copy">
-            <p class="saved-translations-eyebrow">@Text["Translations.Eyebrow"]</p>
+            <p class="saved-translations-eyebrow">@Text["Translations.Eyebrow"] · @languageName</p>
             <h1>@Text["Translations.Saved"]</h1>
             <p class="saved-translations-intro">@Text["Translations.Intro"]</p>
         </div>

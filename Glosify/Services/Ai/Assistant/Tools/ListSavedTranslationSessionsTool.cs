@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Glosify.Data;
 using Glosify.Services.Ai.Generation;
+using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
 using static Glosify.Services.Ai.Assistant.Tools.ToolArguments;
 using static Glosify.Services.Ai.Assistant.Tools.ToolSchema;
@@ -11,7 +12,7 @@ internal sealed class ListSavedTranslationSessionsTool : IAssistantTool
 {
     private static readonly AgentToolDeclaration DeclarationValue = new(
         "list_saved_translation_sessions",
-        "List the user's saved Translator extension sessions with their ids, titles, dates, and translation counts. Use this when the user refers to saved translations without identifying a session. Returns up to 50 sessions per call.",
+        "List the user's saved Translator extension sessions for the current Glosify learning language, with their ids, titles, dates, and translation counts. Use this when the user refers to saved translations without identifying a session. Returns up to 50 sessions per call.",
         BuildSchema(new Dictionary<string, object>
         {
             ["offset"] = IntegerProp("Optional number of sessions to skip. Defaults to 0."),
@@ -30,9 +31,14 @@ internal sealed class ListSavedTranslationSessionsTool : IAssistantTool
     {
         const int pageSize = 50;
         var offset = GetOffset(args);
+        var languageCode = QuizLanguageCatalog.Find(
+            context.CurrentLanguageCode ?? context.CurrentLanguage)?.Code;
         var query = _context.SavedTranslationSessions
             .AsNoTracking()
-            .Where(session => session.UserId == context.UserId && session.Translations.Any());
+            .Where(session => session.UserId == context.UserId
+                && languageCode != null
+                && session.LanguageCode == languageCode
+                && session.Translations.Any());
         var total = await query.CountAsync(cancellationToken);
         var sessions = await query
             .OrderByDescending(session => session.UpdatedAt)
@@ -43,6 +49,8 @@ internal sealed class ListSavedTranslationSessionsTool : IAssistantTool
             {
                 id = session.Id,
                 title = session.Title,
+                language_code = session.LanguageCode,
+                learning_language = session.LanguageCode,
                 created_at = session.CreatedAt,
                 updated_at = session.UpdatedAt,
                 translation_count = session.Translations.Count,
