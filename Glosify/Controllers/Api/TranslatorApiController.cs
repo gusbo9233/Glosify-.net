@@ -39,6 +39,7 @@ public sealed class TranslatorApiController : ApiControllerBase
             request.Preferences,
             cancellationToken);
         return Ok(new TranslateTextResponse(
+            result.TranslationOperationId,
             result.SourceText,
             result.SourceLanguage,
             result.DetectedSourceLanguage,
@@ -55,7 +56,9 @@ public sealed class TranslatorApiController : ApiControllerBase
         NoStore();
         var saved = await _translator.SaveAsync(
             User.GetUserId(),
+            request.SessionId,
             request.RequestId,
+            request.TranslationOperationId,
             request.SourceText,
             request.TranslatedText,
             request.SourceLanguage,
@@ -66,8 +69,12 @@ public sealed class TranslatorApiController : ApiControllerBase
         var historyUrl = Url.Action(
             nameof(TranslationsController.Details),
             "Translations",
-            new { id = saved.Id }) ?? $"/Translations/{saved.Id}";
-        var response = new SavedTranslationCreatedDto(saved.Id, saved.CreatedAt, historyUrl);
+            new { id = saved.SessionId }) ?? $"/Translations/{saved.SessionId}";
+        var response = new SavedTranslationCreatedDto(
+            saved.Id,
+            saved.SessionId,
+            saved.CreatedAt,
+            historyUrl);
         return Created(historyUrl, response);
     }
 

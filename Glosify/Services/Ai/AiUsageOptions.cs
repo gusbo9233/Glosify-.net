@@ -4,7 +4,7 @@ namespace Glosify.Services.Ai;
 
 public sealed class AiUsageOptions
 {
-    public int TrialGrantCredits { get; set; } = 25;
+    public int TrialGrantCredits { get; set; } = 100;
     public int CreditsPerThousandTokens { get; set; } = 1;
     public int AssistantOutputTokenReserve { get; set; } = 16384;
     public int JsonImportRepairOutputTokenReserve { get; set; } = 16384;

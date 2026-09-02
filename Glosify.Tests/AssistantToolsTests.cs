@@ -43,6 +43,76 @@ public class AssistantToolsTests
         Assert.DoesNotContain("add_choice", names);
         Assert.DoesNotContain("add_text_input", names);
         Assert.DoesNotContain("create_quiz", names);
+        Assert.Contains("list_saved_translation_sessions", names);
+        Assert.Contains("get_saved_translation_session", names);
+    }
+
+    [Fact]
+    public async Task SavedTranslationTools_ListAndReadOnlyOwnedSessions()
+    {
+        await using var db = CreateContext();
+        var ownedSession = new SavedTranslationSession
+        {
+            UserId = "user-1",
+            ClientSessionId = Guid.NewGuid(),
+            Title = "Travel phrases",
+        };
+        var foreignSession = new SavedTranslationSession
+        {
+            UserId = "user-2",
+            ClientSessionId = Guid.NewGuid(),
+            Title = "Private session",
+        };
+        db.SavedTranslationSessions.AddRange(ownedSession, foreignSession);
+        db.SavedTranslations.AddRange(
+            new SavedTranslation
+            {
+                Session = ownedSession,
+                UserId = "user-1",
+                RequestId = Guid.NewGuid(),
+                SourceLanguage = "en",
+                DetectedSourceLanguage = "en",
+                TargetLanguage = "sv",
+                SourceText = "Where is the station?",
+                TranslatedText = "Var ligger stationen?",
+            },
+            new SavedTranslation
+            {
+                Session = foreignSession,
+                UserId = "user-2",
+                RequestId = Guid.NewGuid(),
+                SourceLanguage = "en",
+                TargetLanguage = "sv",
+                SourceText = "Secret",
+                TranslatedText = "Hemligt",
+            });
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+
+        var list = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "list_saved_translation_sessions",
+            "{}",
+            new AgentToolContext { UserId = "user-1" },
+            CancellationToken.None));
+        var listed = Assert.Single(list.GetProperty("sessions").EnumerateArray());
+        Assert.Equal(ownedSession.Id, listed.GetProperty("id").GetGuid());
+        Assert.Equal(1, listed.GetProperty("translation_count").GetInt32());
+
+        var read = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "get_saved_translation_session",
+            $$"""{"session_id":"{{ownedSession.Id}}"}""",
+            new AgentToolContext { UserId = "user-1" },
+            CancellationToken.None));
+        var translation = Assert.Single(read.GetProperty("translations").EnumerateArray());
+        Assert.Equal("Where is the station?", translation.GetProperty("source_text").GetString());
+        Assert.Equal("Var ligger stationen?", translation.GetProperty("translated_text").GetString());
+
+        var rejected = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
+            "get_saved_translation_session",
+            $$"""{"session_id":"{{foreignSession.Id}}"}""",
+            new AgentToolContext { UserId = "user-1" },
+            CancellationToken.None));
+        Assert.Equal("Saved translation session not found.", rejected.GetProperty("error").GetString());
     }
 
     [Theory]

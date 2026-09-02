@@ -1,6 +1,6 @@
 # Glosify Translator Chrome extension
 
-An independent Manifest V3 extension for translating typed or pasted text through Glosify. It stores only the refresh token, selected languages, and preference text in Chrome's trusted extension storage. Translation history is never stored in Chrome; saving a completed result is explicit and writes to the signed-in user's Glosify library.
+An independent Manifest V3 extension for translating typed or pasted text through Glosify. It stores only the refresh token, selected languages, and preference text in Chrome's trusted extension storage. Translation history is never stored in Chrome; saving a completed result is explicit and writes to the signed-in user's Glosify library. Saves made while the same translator box remains open are grouped into one session; closing or reloading the page starts a new session.
 
 ## Development
 

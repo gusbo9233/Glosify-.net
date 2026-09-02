@@ -93,6 +93,52 @@ public sealed class RealtimeTranslationServiceTests
     }
 
     [Fact]
+    public async Task OriginalCaptions_UseScribeWithoutCloudflareAndHaveIndependentPricing()
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var tokens = new FakeRelayTokenStore();
+        var service = CreateService(
+            context,
+            new ManualTimeProvider(TestNow),
+            tokens,
+            options => options.Modes.Original.DisplayName = "No translation",
+            new CreditPricingOptions
+            {
+                Subtitles = new SubtitleCreditPricingOptions
+                {
+                    ScribeCreditsPerStartedMinute = 3,
+                },
+            });
+
+        var catalog = await service.GetCatalogAsync("user-1");
+        var original = Assert.Single(catalog.Modes, mode =>
+            mode.Code == RealtimeTranslationModes.Original);
+        Assert.Equal("No translation", original.Name);
+        Assert.Equal(3, original.CreditsPerMinute);
+
+        var created = await service.CreateSessionAsync(
+            "user-1",
+            "es",
+            translationMode: RealtimeTranslationModes.Original,
+            sourceLanguage: "auto",
+            partialCaptionsEnabled: true);
+        await service.BeginMinuteAsync("user-1", created.SessionId, 1);
+
+        var session = await context.RealtimeTranslationSessions.SingleAsync();
+        Assert.Equal(RealtimeTranslationModes.Original, session.TranslationMode);
+        Assert.Equal(RealtimeSpeechProviders.ElevenLabs, session.SpeechProvider);
+        Assert.Equal("scribe_v2_realtime", session.Model);
+        Assert.Equal("elevenlabs-scribe-v2-realtime", session.BillingModel);
+        Assert.Equal(3, session.CreditsPerStartedMinute);
+        Assert.Equal(RealtimeTranslationModes.Original, tokens.LastTranslationMode);
+        Assert.Equal("auto", tokens.LastRequestedSourceLanguage);
+        var transaction = await context.AiCreditTransactions.SingleAsync(transaction =>
+            transaction.Kind == AiCreditTransactionKinds.UsageDebit);
+        Assert.Equal(RealtimeTranslationConstants.ElevenLabsProvider, transaction.Provider);
+    }
+
+    [Fact]
     public async Task CloudflareScribeSession_IsIsolatedPricedAndBudgetedAsCloudflare()
     {
         await using var context = CreateContext();

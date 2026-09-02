@@ -48,11 +48,11 @@ function render() {
   elements.signedOut.classList.toggle("hidden", currentState.signedIn);
   elements.signedIn.classList.toggle("hidden", !currentState.signedIn);
   elements.connect.disabled = busy;
+  elements.error.textContent = currentState.error ?? "";
+  elements.error.classList.toggle("hidden", !currentState.error);
   if (!currentState.signedIn) return;
   elements.email.textContent = currentState.email ?? "Glosify account";
   elements.credits.textContent = String(currentState.availableCredits ?? 0);
   elements.start.disabled = busy || !currentState.catalog;
   elements.signOut.disabled = busy;
-  elements.error.textContent = currentState.error ?? "";
-  elements.error.classList.toggle("hidden", !currentState.error);
 }

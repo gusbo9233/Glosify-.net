@@ -203,6 +203,11 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
                     _pricing.Subtitles.EnhancedCreditsPerStartedMinute,
                     _realtime.CreditsPerStartedMinute),
                 SubtitlePrice(
+                    "original",
+                    _realtime.Modes.Original.DisplayName.Trim(),
+                    _pricing.Subtitles.ScribeCreditsPerStartedMinute,
+                    _realtime.ElevenLabs.CreditsPerStartedMinute),
+                SubtitlePrice(
                     "scribe_cloudflare",
                     _realtime.Modes.ScribeCloudflare.DisplayName.Trim(),
                     _pricing.Subtitles.CloudflareScribeCreditsPerStartedMinute,

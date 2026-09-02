@@ -445,7 +445,7 @@
     <value>Deneme teklifi:</value>
   </data>
   <data name="Auth.TrialText" xml:space="preserve">
-    <value>Google veya Microsoft ile giriş yaptığınızda bir kez 25 kredi alın. Şifreli hesaplar otomatik deneme kredisi almaz.</value>
+    <value>Google veya Microsoft ile giriş yaptığınızda bir kez {0} kredi alın. Şifreli hesaplar otomatik deneme kredisi almaz.</value>
   </data>
   <data name="Auth.EmailAddress" xml:space="preserve">
     <value>E-posta Adresi</value>
@@ -478,7 +478,7 @@
     <value>Dil öğrenme serüveninize bugün başlayın.</value>
   </data>
   <data name="Auth.RegisterTrialLabel" xml:space="preserve">
-    <value>25 kredilik deneme:</value>
+    <value>{0} kredilik deneme:</value>
   </data>
   <data name="Auth.RegisterTrialText" xml:space="preserve">
     <value>Google veya Microsoft ile bağlayıp giriş yaptığınızda bir kez kullanılabilir. Yalnızca parola ile hesap oluşturmak deneme kredisi eklemez.</value>
@@ -1601,4 +1601,5 @@
   <data name="Translations.CountOne" xml:space="preserve"><value>{0} çeviri</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} çeviri</value></data><data name="Translations.None" xml:space="preserve"><value>Henüz kaydedilmiş çeviri yok</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>Glosify Translator uzantısını kullanın ve çeviriden sonra Kaydet'i seçin.</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>Kaydedilen çeviri sayfaları</value></data>
   <data name="Translations.DetailTitle" xml:space="preserve"><value>Kaydedilen çeviri</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>Kaydedildi</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>Bu kaydedilen çeviri silinsin mi?</value></data><data name="Translations.Preferences" xml:space="preserve"><value>Çeviri tercihleri</value></data><data name="Translations.Source" xml:space="preserve"><value>Kaynak metin</value></data><data name="Translations.Translation" xml:space="preserve"><value>Çeviri</value></data><data name="Translations.Deleted" xml:space="preserve"><value>Çeviri silindi.</value></data>
   <data name="Translations.Copied" xml:space="preserve"><value>Kopyalandı.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Kopyalanamadı. Metni seçip elle kopyalayın.</value></data>
+  <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Bu kayıtlı çeviri oturumu ve içindeki tüm çeviriler silinsin mi?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Çeviri oturumu silindi.</value></data>
 </root>

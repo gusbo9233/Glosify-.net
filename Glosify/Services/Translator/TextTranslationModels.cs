@@ -7,6 +7,7 @@ public sealed class TextTranslationAiResponse
 }
 
 public sealed record TextTranslationResult(
+    Guid TranslationOperationId,
     string SourceText,
     string SourceLanguage,
     string? DetectedSourceLanguage,
@@ -14,22 +15,26 @@ public sealed record TextTranslationResult(
     string TranslatedText,
     int AvailableCredits);
 
-public sealed record SavedTranslationResult(Guid Id, DateTimeOffset CreatedAt);
-
-public sealed record SavedTranslationListItem(
+public sealed record SavedTranslationResult(
     Guid Id,
-    string SourceLanguage,
-    string? DetectedSourceLanguage,
-    string TargetLanguage,
-    string SourcePreview,
-    string TranslationPreview,
+    Guid SessionId,
     DateTimeOffset CreatedAt);
 
+public sealed record SavedTranslationSessionListItem(
+    Guid Id,
+    string Title,
+    string SourcePreview,
+    string TranslationPreview,
+    int TranslationCount,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt);
+
 public sealed record SavedTranslationLibraryPage(
-    IReadOnlyList<SavedTranslationListItem> Items,
+    IReadOnlyList<SavedTranslationSessionListItem> Items,
     int Page,
     int PageSize,
-    int TotalCount);
+    int TotalCount,
+    int TotalTranslations);
 
 public sealed record SavedTranslationDetail(
     Guid Id,
@@ -40,6 +45,16 @@ public sealed record SavedTranslationDetail(
     string SourceText,
     string TranslatedText,
     DateTimeOffset CreatedAt);
+
+public sealed record SavedTranslationSessionDetailPage(
+    Guid Id,
+    string Title,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    IReadOnlyList<SavedTranslationDetail> Translations,
+    int Page,
+    int PageSize,
+    int TotalCount);
 
 public sealed class TextTranslationValidationException(string message) : ArgumentException(message);
 

@@ -445,7 +445,7 @@
     <value>试用优惠：</value>
   </data>
   <data name="Auth.TrialText" xml:space="preserve">
-    <value>使用 Google 或 Microsoft 登录时可一次性获得 25 点数。密码账户不会自动获得试用点数。</value>
+    <value>使用 Google 或 Microsoft 登录时可一次性获得 {0} 点数。密码账户不会自动获得试用点数。</value>
   </data>
   <data name="Auth.EmailAddress" xml:space="preserve">
     <value>电子邮件地址</value>
@@ -478,7 +478,7 @@
     <value>今天就开始您的语言沉浸之旅。</value>
   </data>
   <data name="Auth.RegisterTrialLabel" xml:space="preserve">
-    <value>25 积分试用：</value>
+    <value>{0} 积分试用：</value>
   </data>
   <data name="Auth.RegisterTrialText" xml:space="preserve">
     <value>通过链接并使用 Google 或 Microsoft 登录后可使用一次。仅创建密码账号不会增加试用积分。</value>
@@ -1601,4 +1601,5 @@
   <data name="Translations.CountOne" xml:space="preserve"><value>{0} 条翻译</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} 条翻译</value></data><data name="Translations.None" xml:space="preserve"><value>尚无已保存的翻译</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>使用 Glosify Translator 扩展，并在翻译后选择保存。</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>已保存翻译页面</value></data>
   <data name="Translations.DetailTitle" xml:space="preserve"><value>已保存的翻译</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>保存于</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>删除这条已保存的翻译？</value></data><data name="Translations.Preferences" xml:space="preserve"><value>翻译偏好</value></data><data name="Translations.Source" xml:space="preserve"><value>原文</value></data><data name="Translations.Translation" xml:space="preserve"><value>翻译</value></data><data name="Translations.Deleted" xml:space="preserve"><value>翻译已删除。</value></data>
   <data name="Translations.Copied" xml:space="preserve"><value>已复制。</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>无法复制。请选择文本并手动复制。</value></data>
+  <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>删除此已保存的翻译会话及其中的所有翻译？</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>翻译会话已删除。</value></data>
 </root>

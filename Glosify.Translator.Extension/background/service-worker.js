@@ -290,8 +290,7 @@ async function startOverlay() {
 }
 
 async function saveSettings(settings) {
-  if (!state.catalog) return;
-  Object.assign(state, TranslatorState.normalizeSettings(settings, state.catalog));
+  Object.assign(state, TranslatorState.normalizeSettingsForStorage(settings, state.catalog));
   await persistSettings();
   broadcastState();
 }

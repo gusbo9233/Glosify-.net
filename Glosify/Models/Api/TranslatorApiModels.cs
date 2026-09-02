@@ -27,6 +27,7 @@ public sealed class TranslateTextRequest
 }
 
 public sealed record TranslateTextResponse(
+    Guid TranslationOperationId,
     string SourceText,
     string SourceLanguage,
     string? DetectedSourceLanguage,
@@ -36,7 +37,11 @@ public sealed record TranslateTextResponse(
 
 public sealed class SaveTranslationRequest
 {
+    public Guid SessionId { get; set; }
+
     public Guid RequestId { get; set; }
+
+    public Guid TranslationOperationId { get; set; }
 
     [Required, StringLength(8_000, MinimumLength = 1)]
     public string? SourceText { get; set; }
@@ -57,4 +62,8 @@ public sealed class SaveTranslationRequest
     public string? Preferences { get; set; }
 }
 
-public sealed record SavedTranslationCreatedDto(Guid Id, DateTimeOffset CreatedAt, string HistoryUrl);
+public sealed record SavedTranslationCreatedDto(
+    Guid Id,
+    Guid SessionId,
+    DateTimeOffset CreatedAt,
+    string HistoryUrl);

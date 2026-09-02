@@ -36,15 +36,18 @@ public sealed class TranslationsController : Controller
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Details(
         Guid id,
+        int page = 1,
         CancellationToken cancellationToken = default)
     {
-        var translation = await _translations.GetDetailAsync(
+        var session = await _translations.GetSessionAsync(
             id,
             User.GetUserId(),
+            page,
+            PageSize,
             cancellationToken);
-        return translation is null
+        return session is null
             ? NotFound()
-            : View(new SavedTranslationDetailViewModel { Translation = translation });
+            : View(new SavedTranslationSessionDetailViewModel { Session = session });
     }
 
     [HttpPost("{id:guid}/delete")]
@@ -55,8 +58,8 @@ public sealed class TranslationsController : Controller
     {
         try
         {
-            await _translations.DeleteAsync(id, User.GetUserId(), cancellationToken);
-            TempData["TranslationMessage"] = _text["Translations.Deleted"].Value;
+            await _translations.DeleteSessionAsync(id, User.GetUserId(), cancellationToken);
+            TempData["TranslationMessage"] = _text["Translations.SessionDeleted"].Value;
             return RedirectToAction(nameof(Index));
         }
         catch (SavedTranslationNotFoundException)

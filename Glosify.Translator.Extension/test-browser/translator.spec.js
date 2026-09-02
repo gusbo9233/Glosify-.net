@@ -55,6 +55,9 @@ test("translator overlay is isolated per tab and saves only after an explicit re
       translatedText: "Hola\nmundo",
       saved: false,
     });
+    expect(state.requestId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u);
+    const firstSessionId = state.sessionId;
     expect(mock.translateRequests).toHaveLength(1);
     expect(mock.saveRequests).toHaveLength(0);
 
@@ -68,7 +71,13 @@ test("translator overlay is isolated per tab and saves only after an explicit re
     await overlay(control, firstTabId, "test:overlay:minimize");
     expect(await overlay(control, firstTabId, "test:overlay:save")).toBe(true);
     expect(mock.saveRequests).toHaveLength(1);
+    expect(mock.saveRequests[0].sessionId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u);
+    expect(mock.saveRequests[0].sessionId).toBe(firstSessionId);
+    expect(mock.saveRequests[0].requestId).toBe(state.requestId);
     expect(mock.saveRequests[0].preferences).toBe("Informal Mexican Spanish");
+    expect(mock.saveRequests[0].translationOperationId)
+      .toBe("22222222-2222-4222-8222-222222222222");
 
     const second = await context.newPage();
     await second.goto(`${mock.baseUrl}/page-two`);
@@ -81,6 +90,29 @@ test("translator overlay is isolated per tab and saves only after an explicit re
     await expect(first.locator("#glosify-translator-host")).toHaveCount(0);
     await overlay(control, await tabId(control, "/page-two"), "test:overlay:close");
     await expect(second.locator("#glosify-translator-host")).toHaveCount(0);
+    await second.bringToFront();
+    await start(control);
+    await expect(second.locator("#glosify-translator-host")).toHaveCount(1);
+    const secondTabId = await tabId(control, "/page-two");
+    const restartedState = await overlay(control, secondTabId, "test:overlay:state");
+    expect(restartedState).toMatchObject({ sourceText: "", translatedText: null, saved: false });
+    expect(restartedState.sessionId).not.toBe(firstSessionId);
+    await overlay(control, secondTabId, "test:overlay:set-input", {
+      sourceText: "Hello",
+      sourceLanguage: "auto",
+      targetLanguage: "en",
+    });
+    await overlay(control, secondTabId, "test:overlay:translate");
+    const beforeNoOpSwap = await overlay(control, secondTabId, "test:overlay:state");
+    expect(beforeNoOpSwap).toMatchObject({
+      sourceLanguage: "auto",
+      targetLanguage: "en",
+      translatedText: "Hola\nmundo",
+      swapDisabled: true,
+    });
+    await overlay(control, secondTabId, "test:overlay:swap");
+    expect(await overlay(control, secondTabId, "test:overlay:state"))
+      .toMatchObject(beforeNoOpSwap);
   } finally {
     await context.close();
     await rm(profile, { recursive: true, force: true });
@@ -207,6 +239,7 @@ async function startMock(options = {}) {
         return;
       }
       response.end(JSON.stringify({
+        translationOperationId: "22222222-2222-4222-8222-222222222222",
         sourceText: body.sourceText,
         sourceLanguage: body.sourceLanguage,
         detectedSourceLanguage: "en",
@@ -219,7 +252,7 @@ async function startMock(options = {}) {
     if (request.url === "/api/translator/saved-translations") {
       saveRequests.push(body);
       response.statusCode = 201;
-      response.end(JSON.stringify({ id: "11111111-1111-4111-8111-111111111111", createdAt: new Date().toISOString(), historyUrl: "/Translations/11111111-1111-4111-8111-111111111111" }));
+      response.end(JSON.stringify({ id: "11111111-1111-4111-8111-111111111111", sessionId: "33333333-3333-4333-8333-333333333333", createdAt: new Date().toISOString(), historyUrl: "/Translations/33333333-3333-4333-8333-333333333333" }));
       return;
     }
     response.setHeader("Content-Type", "text/html");

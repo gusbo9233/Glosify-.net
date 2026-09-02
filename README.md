@@ -20,8 +20,9 @@ replays its own saved history and every Responses request uses `store: false`.
 
 Azure Speech provides server-side text-to-speech for book reading. The Enhanced
 subtitle relay connects server-side to `gpt-realtime-translate` while
-the Scribe alternative uses ElevenLabs Scribe v2 followed by Cloudflare Workers
-AI's M2M100 translator.
+the translated Scribe alternative uses ElevenLabs Scribe v2 followed by Cloudflare
+Workers AI's M2M100 translator. Original captions use Scribe alone and return its
+partial and finalized transcription without calling a translation provider.
 Provider keys never reach the browser or extension.
 
 The production key is the Azure App Service setting `OPENAI_SECRET_KEY`. For

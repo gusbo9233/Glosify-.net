@@ -445,7 +445,7 @@
     <value>トライアル特典：</value>
   </data>
   <data name="Auth.TrialText" xml:space="preserve">
-    <value>GoogleまたはMicrosoftでサインインすると、25クレジットを1回受け取れます。パスワードアカウントには自動トライアルクレジットは付与されません。</value>
+    <value>GoogleまたはMicrosoftでサインインすると、{0}クレジットを1回受け取れます。パスワードアカウントには自動トライアルクレジットは付与されません。</value>
   </data>
   <data name="Auth.EmailAddress" xml:space="preserve">
     <value>メールアドレス</value>
@@ -478,7 +478,7 @@
     <value>今日から言語没入の旅を始めましょう。</value>
   </data>
   <data name="Auth.RegisterTrialLabel" xml:space="preserve">
-    <value>25クレジットのトライアル：</value>
+    <value>{0}クレジットのトライアル：</value>
   </data>
   <data name="Auth.RegisterTrialText" xml:space="preserve">
     <value>Google または Microsoft に連携してサインインすると、1回だけ利用できます。パスワードアカウントを作成するだけではトライアルクレジットは追加されません。</value>
@@ -1601,4 +1601,5 @@
   <data name="Translations.CountOne" xml:space="preserve"><value>{0} 件の翻訳</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} 件の翻訳</value></data><data name="Translations.None" xml:space="preserve"><value>保存した翻訳はまだありません</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>Glosify Translator で翻訳後に「保存」を選択してください。</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>保存した翻訳のページ</value></data>
   <data name="Translations.DetailTitle" xml:space="preserve"><value>保存した翻訳</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>保存日時</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>この保存した翻訳を削除しますか？</value></data><data name="Translations.Preferences" xml:space="preserve"><value>翻訳の設定</value></data><data name="Translations.Source" xml:space="preserve"><value>原文</value></data><data name="Translations.Translation" xml:space="preserve"><value>翻訳</value></data><data name="Translations.Deleted" xml:space="preserve"><value>翻訳を削除しました。</value></data>
   <data name="Translations.Copied" xml:space="preserve"><value>コピーしました。</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>コピーできませんでした。テキストを選択して手動でコピーしてください。</value></data>
+  <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>この保存済み翻訳セッションと、その中のすべての翻訳を削除しますか？</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>翻訳セッションを削除しました。</value></data>
 </root>

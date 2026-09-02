@@ -445,7 +445,7 @@
     <value>عرض تجريبي:</value>
   </data>
   <data name="Auth.TrialText" xml:space="preserve">
-    <value>احصل على 25 رصيدًا مرة واحدة عند تسجيل الدخول باستخدام Google أو Microsoft. لا تحصل الحسابات التي تستخدم كلمة مرور على أرصدة تجريبية تلقائية.</value>
+    <value>احصل على {0} رصيد مرة واحدة عند تسجيل الدخول باستخدام Google أو Microsoft. لا تحصل الحسابات التي تستخدم كلمة مرور على أرصدة تجريبية تلقائية.</value>
   </data>
   <data name="Auth.EmailAddress" xml:space="preserve">
     <value>عنوان البريد الإلكتروني</value>
@@ -478,7 +478,7 @@
     <value>ابدأ رحلتك في الانغماس اللغوي اليوم.</value>
   </data>
   <data name="Auth.RegisterTrialLabel" xml:space="preserve">
-    <value>تجربة بـ 25 رصيدًا:</value>
+    <value>تجربة بـ {0} رصيد:</value>
   </data>
   <data name="Auth.RegisterTrialText" xml:space="preserve">
     <value>متاحة مرة واحدة بعد ربط حسابك وتسجيل الدخول باستخدام Google أو Microsoft. إنشاء حساب بكلمة مرور فقط لا يضيف أرصدة تجريبية.</value>
@@ -1601,4 +1601,5 @@
   <data name="Translations.CountOne" xml:space="preserve"><value>{0} ترجمة</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} ترجمات</value></data><data name="Translations.None" xml:space="preserve"><value>لا توجد ترجمات محفوظة بعد</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>استخدم إضافة Glosify Translator واختر الحفظ بعد الترجمة.</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>صفحات الترجمات المحفوظة</value></data>
   <data name="Translations.DetailTitle" xml:space="preserve"><value>ترجمة محفوظة</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>حُفظت</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>حذف هذه الترجمة المحفوظة؟</value></data><data name="Translations.Preferences" xml:space="preserve"><value>تفضيلات الترجمة</value></data><data name="Translations.Source" xml:space="preserve"><value>النص المصدر</value></data><data name="Translations.Translation" xml:space="preserve"><value>الترجمة</value></data><data name="Translations.Deleted" xml:space="preserve"><value>تم حذف الترجمة.</value></data>
   <data name="Translations.Copied" xml:space="preserve"><value>تم النسخ.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>تعذّر النسخ. حدّد النص وانسخه يدويًا.</value></data>
+  <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>هل تريد حذف جلسة الترجمة المحفوظة هذه وجميع الترجمات الموجودة فيها؟</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>تم حذف جلسة الترجمة.</value></data>
 </root>

@@ -6,6 +6,7 @@
     var googleLoginEnabled = ViewData["GoogleLoginEnabled"] as bool? ?? false;
     var microsoftLoginEnabled = ViewData["MicrosoftLoginEnabled"] as bool? ?? false;
     var externalLoginEnabled = googleLoginEnabled || microsoftLoginEnabled;
+    var trialGrantCredits = AiUsage.Value.TrialGrantCredits;
 }
 
 <main class="auth-shell">
@@ -21,7 +22,7 @@
         <header class="auth-card-header">
             <h2>@Text["Auth.WelcomeBack"]</h2>
             <p>@Text["Auth.LoginIntro"]</p>
-            <p><strong>@Text["Auth.TrialLabel"]</strong> @Text["Auth.TrialText"]</p>
+            <p><strong>@Text["Auth.TrialLabel"]</strong> @Text["Auth.TrialText", trialGrantCredits]</p>
         </header>
 
         @if (!ViewData.ModelState.IsValid)

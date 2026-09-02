@@ -16,7 +16,9 @@ public interface ITextTranslationService
 
     Task<SavedTranslationResult> SaveAsync(
         string userId,
+        Guid clientSessionId,
         Guid requestId,
+        Guid translationOperationId,
         string? sourceText,
         string? translatedText,
         string? sourceLanguage,
@@ -31,10 +33,12 @@ public interface ITextTranslationService
         int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task<SavedTranslationDetail?> GetDetailAsync(
+    Task<SavedTranslationSessionDetailPage?> GetSessionAsync(
         Guid id,
         string userId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken = default);
 
-    Task DeleteAsync(Guid id, string userId, CancellationToken cancellationToken = default);
+    Task DeleteSessionAsync(Guid id, string userId, CancellationToken cancellationToken = default);
 }

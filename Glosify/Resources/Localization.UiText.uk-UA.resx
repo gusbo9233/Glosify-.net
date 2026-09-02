@@ -445,7 +445,7 @@
     <value>Пробна пропозиція:</value>
   </data>
   <data name="Auth.TrialText" xml:space="preserve">
-    <value>отримайте 25 кредитів один раз, коли увійдете через Google або Microsoft. Облікові записи з паролем не отримують автоматичні пробні кредити.</value>
+    <value>отримайте {0} кредитів один раз, коли увійдете через Google або Microsoft. Облікові записи з паролем не отримують автоматичні пробні кредити.</value>
   </data>
   <data name="Auth.EmailAddress" xml:space="preserve">
     <value>Адреса електронної пошти</value>
@@ -478,7 +478,7 @@
     <value>Почніть свою подорож мовного занурення вже сьогодні.</value>
   </data>
   <data name="Auth.RegisterTrialLabel" xml:space="preserve">
-    <value>Пробний доступ на 25 кредитів:</value>
+    <value>Пробний доступ на {0} кредитів:</value>
   </data>
   <data name="Auth.RegisterTrialText" xml:space="preserve">
     <value>доступний один раз після прив’язування й входу через Google або Microsoft. Створення лише пароля не додає пробних кредитів.</value>
@@ -1601,4 +1601,5 @@
   <data name="Translations.CountOne" xml:space="preserve"><value>{0} переклад</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} перекладів</value></data><data name="Translations.None" xml:space="preserve"><value>Збережених перекладів ще немає</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>Скористайтеся Glosify Translator і виберіть «Зберегти» після перекладу.</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>Сторінки збережених перекладів</value></data>
   <data name="Translations.DetailTitle" xml:space="preserve"><value>Збережений переклад</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>Збережено</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>Видалити цей збережений переклад?</value></data><data name="Translations.Preferences" xml:space="preserve"><value>Налаштування перекладу</value></data><data name="Translations.Source" xml:space="preserve"><value>Вихідний текст</value></data><data name="Translations.Translation" xml:space="preserve"><value>Переклад</value></data><data name="Translations.Deleted" xml:space="preserve"><value>Переклад видалено.</value></data>
   <data name="Translations.Copied" xml:space="preserve"><value>Скопійовано.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Не вдалося скопіювати. Виділіть текст і скопіюйте його вручну.</value></data>
+  <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Видалити цей збережений сеанс перекладу та всі переклади в ньому?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Сеанс перекладу видалено.</value></data>
 </root>

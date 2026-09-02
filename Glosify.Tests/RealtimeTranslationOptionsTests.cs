@@ -51,7 +51,7 @@ public sealed class RealtimeTranslationOptionsTests
                 MonthlyBudget = new AiMonthlyBudgetOptions
                 {
                     Enabled = true,
-                    Providers = ["openai"],
+                    Providers = ["openai", "elevenlabs"],
                     Models =
                     [
                         new AiModelPriceOptions
@@ -77,7 +77,7 @@ public sealed class RealtimeTranslationOptionsTests
                 MonthlyBudget = new AiMonthlyBudgetOptions
                 {
                     Enabled = true,
-                    Providers = ["openai"],
+                    Providers = ["openai", "elevenlabs"],
                     Models =
                     [
                         new AiModelPriceOptions
@@ -89,6 +89,11 @@ public sealed class RealtimeTranslationOptionsTests
                         {
                             Deployment = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime",
                             AudioSekPerMinute = 1m,
+                        },
+                        new AiModelPriceOptions
+                        {
+                            Deployment = "elevenlabs-scribe-v2-realtime",
+                            AudioSekPerMinute = 0.5m,
                         },
                     ],
                 },
@@ -201,7 +206,7 @@ public sealed class RealtimeTranslationOptionsTests
             MonthlyBudget = new AiMonthlyBudgetOptions
             {
                 Enabled = true,
-                Providers = ["openai"],
+                Providers = ["openai", "elevenlabs"],
                 Models =
                 [
                     new AiModelPriceOptions
@@ -213,6 +218,11 @@ public sealed class RealtimeTranslationOptionsTests
                     {
                         Deployment = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime",
                         AudioSekPerMinute = 1m,
+                    },
+                    new AiModelPriceOptions
+                    {
+                        Deployment = "elevenlabs-scribe-v2-realtime",
+                        AudioSekPerMinute = 0.5m,
                     },
                 ],
             },
@@ -235,6 +245,9 @@ public sealed class RealtimeTranslationOptionsTests
         Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:Endpoint", StringComparison.Ordinal));
         Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:ApiKey", StringComparison.Ordinal));
         Assert.Contains(invalid.Failures!, failure => failure.Contains("ElevenLabs:Model", StringComparison.Ordinal));
+        Assert.Contains(invalid.Failures!, failure => failure.Contains(
+            "ElevenLabs:CreditsPerStartedMinute",
+            StringComparison.Ordinal));
         Assert.Contains(invalid.Failures!, failure => failure.Contains("VadSilenceThresholdSeconds", StringComparison.Ordinal));
 
         options.ElevenLabs.Endpoint = "wss://api.elevenlabs.io/v1/speech-to-text/realtime";
@@ -298,11 +311,12 @@ public sealed class RealtimeTranslationOptionsTests
             MonthlyBudget = new AiMonthlyBudgetOptions
             {
                 Enabled = true,
-                Providers = ["openai"],
+                Providers = ["openai", "elevenlabs"],
                 Models =
                 [
                     new() { Deployment = "gpt-realtime-translate", AudioSekPerMinute = 0.5m },
                     new() { Deployment = "gpt-realtime-translate+elevenlabs-scribe-v2-realtime", AudioSekPerMinute = 0.5m },
+                    new() { Deployment = "elevenlabs-scribe-v2-realtime", AudioSekPerMinute = 0.3m },
                 ],
             },
         };

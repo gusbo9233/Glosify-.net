@@ -3,6 +3,7 @@
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = Text["Auth.CreateAccount"];
     var returnUrl = ViewData["ReturnUrl"] as string ?? "/";
+    var trialGrantCredits = AiUsage.Value.TrialGrantCredits;
 }
 
 <main class="auth-shell">
@@ -18,7 +19,7 @@
         <header class="auth-card-header">
             <h2>@Text["Auth.CreateAccount"]</h2>
             <p>@Text["Auth.RegisterIntro"]</p>
-            <p><strong>@Text["Auth.RegisterTrialLabel"]</strong> @Text["Auth.RegisterTrialText"]</p>
+            <p><strong>@Text["Auth.RegisterTrialLabel", trialGrantCredits]</strong> @Text["Auth.RegisterTrialText"]</p>
         </header>
 
         @if (!ViewData.ModelState.IsValid)

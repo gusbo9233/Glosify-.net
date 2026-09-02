@@ -6,6 +6,7 @@ using Glosify.Services.Translator;
 using Glosify.Controllers;
 using Glosify.Controllers.Api;
 using Glosify.Infrastructure.Api;
+using Microsoft.Data.Sqlite;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -58,6 +59,7 @@ public sealed class TextTranslationServiceTests
         Assert.Equal("en", result.DetectedSourceLanguage);
         Assert.Equal("God morgon\nVärlden", result.TranslatedText);
         Assert.Equal(37, result.AvailableCredits);
+        Assert.Equal(ai.Usage?.OperationId, result.TranslationOperationId);
         Assert.Equal(OpenAiModels.Luna, ai.Model);
         Assert.Equal(AiUsageFeatures.TextTranslation, ai.Usage?.Feature);
         Assert.Equal("translate_text", ai.Usage?.Operation);
@@ -95,6 +97,45 @@ public sealed class TextTranslationServiceTests
         Assert.Equal(0, ai.Calls);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Empty_ai_translation_is_an_upstream_structured_output_failure(
+        string translation)
+    {
+        await using var context = CreateContext();
+        var ai = new FakeGenerativeAiClient
+        {
+            Response = new TextTranslationAiResponse
+            {
+                DetectedSourceLanguage = "en",
+                Translation = translation,
+            },
+        };
+
+        await Assert.ThrowsAsync<GenerativeAiStructuredOutputException>(() =>
+            CreateService(context, ai).TranslateAsync(
+                "user", "Hello", "auto", "sv", null));
+    }
+
+    [Fact]
+    public async Task Oversized_ai_translation_is_an_upstream_structured_output_failure()
+    {
+        await using var context = CreateContext();
+        var ai = new FakeGenerativeAiClient
+        {
+            Response = new TextTranslationAiResponse
+            {
+                DetectedSourceLanguage = "en",
+                Translation = new string('x', TextTranslationService.MaxTranslatedCharacters + 1),
+            },
+        };
+
+        await Assert.ThrowsAsync<GenerativeAiStructuredOutputException>(() =>
+            CreateService(context, ai).TranslateAsync(
+                "user", "Hello", "auto", "sv", null));
+    }
+
     [Fact]
     public async Task Cancellation_is_propagated_without_a_second_paid_call()
     {
@@ -115,13 +156,34 @@ public sealed class TextTranslationServiceTests
     {
         using var context = CreateContext();
         var entity = context.Model.FindEntityType(typeof(SavedTranslation))!;
-        var owner = Assert.Single(entity.GetForeignKeys());
+        var owner = entity.GetForeignKeys().Single(key => key.PrincipalEntityType.ClrType == typeof(ApplicationUser));
         Assert.Equal(typeof(ApplicationUser), owner.PrincipalEntityType.ClrType);
-        Assert.Equal(DeleteBehavior.Cascade, owner.DeleteBehavior);
+        Assert.Equal(DeleteBehavior.NoAction, owner.DeleteBehavior);
+        var sessionRelationship = entity.GetForeignKeys().Single(
+            key => key.PrincipalEntityType.ClrType == typeof(SavedTranslationSession));
+        Assert.Equal(DeleteBehavior.Cascade, sessionRelationship.DeleteBehavior);
+        var sessionEntity = context.Model.FindEntityType(typeof(SavedTranslationSession))!;
+        var sessionOwner = Assert.Single(sessionEntity.GetForeignKeys());
+        Assert.Equal(typeof(ApplicationUser), sessionOwner.PrincipalEntityType.ClrType);
+        Assert.Equal(DeleteBehavior.Cascade, sessionOwner.DeleteBehavior);
+        Assert.Contains(sessionEntity.GetIndexes(), index =>
+            index.IsUnique
+            && index.Properties.Select(property => property.Name)
+                .SequenceEqual([
+                    nameof(SavedTranslationSession.UserId),
+                    nameof(SavedTranslationSession.ClientSessionId),
+                ]));
         Assert.Contains(entity.GetIndexes(), index =>
             index.IsUnique
             && index.Properties.Select(property => property.Name)
                 .SequenceEqual([nameof(SavedTranslation.UserId), nameof(SavedTranslation.RequestId)]));
+        Assert.Contains(entity.GetIndexes(), index =>
+            index.IsUnique
+            && index.Properties.Select(property => property.Name)
+                .SequenceEqual([
+                    nameof(SavedTranslation.UserId),
+                    nameof(SavedTranslation.TranslationOperationId),
+                ]));
         Assert.Contains(entity.GetIndexes(), index =>
             index.Properties.Select(property => property.Name)
                 .SequenceEqual([nameof(SavedTranslation.UserId), nameof(SavedTranslation.CreatedAt)]));
@@ -135,6 +197,11 @@ public sealed class TextTranslationServiceTests
             ApiExceptionMapper.Map(new TextTranslationValidationException("Invalid translation.")));
         Assert.Equal(400, validation.StatusCode);
         Assert.Equal(ApiErrorCodes.ValidationFailed, validation.Code);
+        var malformedAiOutput = Assert.IsType<ApiError>(
+            ApiExceptionMapper.Map(new GenerativeAiStructuredOutputException(
+                "The AI service returned an invalid translation.")));
+        Assert.Equal(502, malformedAiOutput.StatusCode);
+        Assert.Equal(ApiErrorCodes.UpstreamFailure, malformedAiOutput.Code);
         var missing = Assert.IsType<ApiError>(
             ApiExceptionMapper.Map(new SavedTranslationNotFoundException()));
         Assert.Equal(404, missing.StatusCode);
@@ -146,26 +213,154 @@ public sealed class TextTranslationServiceTests
         await using var context = CreateContext();
         var service = CreateService(context);
         var requestId = Guid.NewGuid();
+        var clientSessionId = Guid.NewGuid();
+        var translationOperationId = Guid.NewGuid();
+        await AddCompletedTranslationAsync(context, "owner", translationOperationId);
 
         var first = await service.SaveAsync(
-            "owner", requestId, "Hello", "Hej", "auto", "en", "sv", "Informal");
+            "owner", clientSessionId, requestId, translationOperationId,
+            "Hello", "Hej", "auto", "en", "sv", "Informal");
         var repeated = await service.SaveAsync(
-            "owner", requestId, "Changed", "Ändrad", "auto", "en", "sv", null);
+            "owner", clientSessionId, requestId, Guid.Empty,
+            "Changed", "Ändrad", "auto", "en", "sv", null);
+        var repeatedWithNewRequestId = await service.SaveAsync(
+            "owner", clientSessionId, Guid.NewGuid(), translationOperationId,
+            "Changed again", "Ändrad igen", "auto", "en", "sv", null);
 
         Assert.Equal(first.Id, repeated.Id);
+        Assert.Equal(first.Id, repeatedWithNewRequestId.Id);
+        Assert.Equal(first.SessionId, repeated.SessionId);
         Assert.Equal(1, await context.SavedTranslations.CountAsync());
+        Assert.Equal(1, await context.SavedTranslationSessions.CountAsync());
         Assert.Empty((await service.GetLibraryAsync("other", 1, 24)).Items);
         var library = await service.GetLibraryAsync("owner", 1, 24);
-        Assert.Equal("Hello", Assert.Single(library.Items).SourcePreview);
-        Assert.Null(await service.GetDetailAsync(first.Id, "other"));
-        var detail = Assert.IsType<SavedTranslationDetail>(
-            await service.GetDetailAsync(first.Id, "owner"));
+        var librarySession = Assert.Single(library.Items);
+        Assert.Equal("Hello", librarySession.SourcePreview);
+        Assert.Equal(1, librarySession.TranslationCount);
+        Assert.Equal(1, library.TotalTranslations);
+        var clampedLibrary = await service.GetLibraryAsync("owner", 100_000_000, 24);
+        Assert.Equal(1, clampedLibrary.Page);
+        Assert.Equal("Hello", Assert.Single(clampedLibrary.Items).SourcePreview);
+        Assert.Null(await service.GetSessionAsync(first.SessionId, "other", 1, 24));
+        var session = Assert.IsType<SavedTranslationSessionDetailPage>(
+            await service.GetSessionAsync(first.SessionId, "owner", 1, 24));
+        var detail = Assert.Single(session.Translations);
         Assert.Equal("Informal", detail.Preferences);
 
         await Assert.ThrowsAsync<SavedTranslationNotFoundException>(() =>
-            service.DeleteAsync(first.Id, "other"));
-        await service.DeleteAsync(first.Id, "owner");
+            service.DeleteSessionAsync(first.SessionId, "other"));
+        await service.DeleteSessionAsync(first.SessionId, "owner");
         Assert.Empty(await context.SavedTranslations.ToListAsync());
+        Assert.Empty(await context.SavedTranslationSessions.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Saves_from_one_client_session_are_grouped_in_chronological_order()
+    {
+        await using var context = CreateContext();
+        var service = CreateService(context);
+        var clientSessionId = Guid.NewGuid();
+        var firstOperation = Guid.NewGuid();
+        var secondOperation = Guid.NewGuid();
+        await AddCompletedTranslationAsync(context, "owner", firstOperation);
+        await AddCompletedTranslationAsync(context, "owner", secondOperation);
+
+        var first = await service.SaveAsync(
+            "owner", clientSessionId, Guid.NewGuid(), firstOperation,
+            "First source", "First result", "en", "en", "sv", null);
+        var second = await service.SaveAsync(
+            "owner", clientSessionId, Guid.NewGuid(), secondOperation,
+            "Second source", "Second result", "en", "en", "sv", null);
+
+        Assert.Equal(first.SessionId, second.SessionId);
+        Assert.Single(await context.SavedTranslationSessions.ToListAsync());
+        var library = await service.GetLibraryAsync("owner", 1, 24);
+        Assert.Equal(2, Assert.Single(library.Items).TranslationCount);
+        var session = Assert.IsType<SavedTranslationSessionDetailPage>(
+            await service.GetSessionAsync(first.SessionId, "owner", 1, 24));
+        Assert.Collection(
+            session.Translations,
+            item => Assert.Equal("First source", item.SourceText),
+            item => Assert.Equal("Second source", item.SourceText));
+    }
+
+    [Fact]
+    public async Task Account_deletion_cascades_through_sessions_on_a_relational_database()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:;Foreign Keys=True");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>()
+            .UseSqlite(connection)
+            .Options;
+        await using var context = new GlosifyContext(options);
+        await context.Database.EnsureCreatedAsync();
+        context.Users.Add(new ApplicationUser
+        {
+            Id = "owner",
+            UserName = "owner@example.test",
+            NormalizedUserName = "OWNER@EXAMPLE.TEST",
+            AssistantTelemetrySubjectId = Guid.NewGuid(),
+        });
+        var session = new SavedTranslationSession
+        {
+            UserId = "owner",
+            ClientSessionId = Guid.NewGuid(),
+            Title = "Relational session",
+        };
+        context.SavedTranslationSessions.Add(session);
+        context.SavedTranslations.Add(new SavedTranslation
+        {
+            Session = session,
+            UserId = "owner",
+            RequestId = Guid.NewGuid(),
+            SourceLanguage = "en",
+            TargetLanguage = "sv",
+            SourceText = "Hello",
+            TranslatedText = "Hej",
+        });
+        await context.SaveChangesAsync();
+
+        context.ChangeTracker.Clear();
+        context.Users.Remove(await context.Users.SingleAsync(user => user.Id == "owner"));
+        await context.SaveChangesAsync();
+        Assert.Empty(await context.SavedTranslationSessions.ToListAsync());
+        Assert.Empty(await context.SavedTranslations.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Save_requires_a_completed_paid_translation_owned_by_the_caller()
+    {
+        await using var context = CreateContext();
+        var service = CreateService(context);
+        var ownerOperationId = Guid.NewGuid();
+        await AddCompletedTranslationAsync(context, "owner", ownerOperationId);
+
+        await Assert.ThrowsAsync<TextTranslationValidationException>(() =>
+            service.SaveAsync(
+                "other", Guid.NewGuid(), Guid.NewGuid(), ownerOperationId,
+                "Hello", "Hej", "auto", "en", "sv", null));
+        await Assert.ThrowsAsync<TextTranslationValidationException>(() =>
+            service.SaveAsync(
+                "owner", Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+                "Hello", "Hej", "auto", "en", "sv", null));
+
+        Assert.Empty(await context.SavedTranslations.ToListAsync());
+    }
+
+    private static async Task AddCompletedTranslationAsync(
+        GlosifyContext context,
+        string userId,
+        Guid operationId)
+    {
+        context.AiCreditTransactions.Add(new AiCreditTransaction
+        {
+            UserId = userId,
+            OperationId = operationId,
+            Kind = AiCreditTransactionKinds.UsageDebit,
+            Feature = AiUsageFeatures.TextTranslation,
+            Operation = "translate_text",
+        });
+        await context.SaveChangesAsync();
     }
 
     private static GlosifyContext CreateContext()

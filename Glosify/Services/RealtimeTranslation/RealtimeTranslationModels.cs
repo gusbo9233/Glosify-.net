@@ -12,6 +12,7 @@ public static class RealtimeTranslationModes
     public const string Economical = "economical";
     public const string Scribe = "scribe";
     public const string ScribeCloudflare = "scribe-cf";
+    public const string Original = "original";
     public const string Enhanced = "enhanced";
 }
 

@@ -445,7 +445,7 @@
     <value>Penawaran percobaan:</value>
   </data>
   <data name="Auth.TrialText" xml:space="preserve">
-    <value>dapatkan 25 kredit sekali saat Anda masuk dengan Google atau Microsoft. Akun sandi tidak menerima kredit percobaan otomatis.</value>
+    <value>dapatkan {0} kredit sekali saat Anda masuk dengan Google atau Microsoft. Akun sandi tidak menerima kredit percobaan otomatis.</value>
   </data>
   <data name="Auth.EmailAddress" xml:space="preserve">
     <value>Alamat Email</value>
@@ -478,7 +478,7 @@
     <value>Mulailah perjalanan imersi bahasa Anda hari ini.</value>
   </data>
   <data name="Auth.RegisterTrialLabel" xml:space="preserve">
-    <value>Uji coba 25 kredit:</value>
+    <value>Uji coba {0} kredit:</value>
   </data>
   <data name="Auth.RegisterTrialText" xml:space="preserve">
     <value>tersedia satu kali setelah Anda menautkan dan masuk dengan Google atau Microsoft. Membuat akun sandi saja tidak menambahkan kredit uji coba.</value>
@@ -1601,4 +1601,5 @@
   <data name="Translations.CountOne" xml:space="preserve"><value>{0} terjemahan</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} terjemahan</value></data><data name="Translations.None" xml:space="preserve"><value>Belum ada terjemahan tersimpan</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>Gunakan ekstensi Glosify Translator lalu pilih Simpan setelah menerjemahkan.</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>Halaman terjemahan tersimpan</value></data>
   <data name="Translations.DetailTitle" xml:space="preserve"><value>Terjemahan tersimpan</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>Disimpan</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>Hapus terjemahan tersimpan ini?</value></data><data name="Translations.Preferences" xml:space="preserve"><value>Preferensi terjemahan</value></data><data name="Translations.Source" xml:space="preserve"><value>Teks sumber</value></data><data name="Translations.Translation" xml:space="preserve"><value>Terjemahan</value></data><data name="Translations.Deleted" xml:space="preserve"><value>Terjemahan dihapus.</value></data>
   <data name="Translations.Copied" xml:space="preserve"><value>Disalin.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Tidak dapat menyalin. Pilih teks lalu salin secara manual.</value></data>
+  <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Hapus sesi terjemahan tersimpan ini beserta semua terjemahan di dalamnya?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Sesi terjemahan dihapus.</value></data>
 </root>

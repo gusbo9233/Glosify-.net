@@ -13,11 +13,33 @@
   const root = host.attachShadow({ mode: "closed" });
   root.innerHTML = `
     <style>
-      :host{all:initial}.window{position:fixed;top:72px;right:28px;width:410px;height:600px;min-width:320px;min-height:260px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);resize:both;overflow:hidden;display:flex;flex-direction:column;color:#17233b;background:#fbfbfe;border:1px solid #d9dceb;border-radius:16px;box-shadow:0 18px 55px #1f244a38;font:13px/1.4 Inter,ui-sans-serif,system-ui,sans-serif}
-      *{box-sizing:border-box}.header{display:flex;align-items:center;gap:9px;padding:11px 12px;background:#fff;border-bottom:1px solid #e4e6ee;cursor:move;touch-action:none;user-select:none}.mark{display:grid;place-items:center;width:28px;height:28px;border-radius:8px;background:#6558e8;color:#fff;font-weight:800}.title{font-weight:800;flex:1}.icon{width:30px;height:30px;padding:0;border:0;border-radius:8px;background:transparent;color:#606980;font-size:18px;cursor:pointer}.icon:hover{background:#f0f1f6}.body{display:flex;flex-direction:column;gap:10px;min-height:0;flex:1;padding:12px}.languages{display:grid;grid-template-columns:1fr 36px 1fr;align-items:end;gap:7px}.field{display:flex;flex-direction:column;gap:4px;min-width:0}label{font-size:11px;font-weight:750;color:#697288}select,textarea{width:100%;font:inherit;color:#17233b;background:#fff;border:1px solid #d9dcea;border-radius:9px;padding:8px;outline:0}select:focus,textarea:focus{border-color:#6558e8;box-shadow:0 0 0 2px #6558e81c}.swap{height:36px;padding:0;border:1px solid #d9dcea;border-radius:9px;background:#fff;cursor:pointer;font-size:18px}.swap:disabled{opacity:.4}.source{min-height:115px;resize:vertical}.preferences{min-height:53px;max-height:90px;resize:vertical}.result-wrap{display:flex;flex-direction:column;min-height:90px;flex:1}.result{white-space:pre-wrap;overflow:auto;min-height:70px;flex:1;padding:10px;border:1px solid #e1e3ec;border-radius:9px;background:#fff;color:#17233b;user-select:text}.placeholder{color:#8991a4}.actions{display:grid;grid-template-columns:1fr auto auto;gap:7px}.button{border:1px solid #d5d8e4;border-radius:9px;padding:9px 12px;background:#fff;color:#27324a;font:inherit;font-weight:750;cursor:pointer}.primary{background:#6558e8;border-color:#6558e8;color:#fff}.button:disabled{opacity:.45;cursor:default}.status{min-height:18px;font-size:12px;color:#667086}.status.error{color:#ad2828}.counter{font-size:10px;color:#8b92a2;text-align:right}.minimized{height:auto!important;min-height:0}.minimized .body{display:none}@media(max-width:500px){.window{left:8px!important;right:8px!important;top:8px!important;width:calc(100vw - 16px)}}
+      :host{all:initial;--primary:#53e076;--primary-strong:#72fe8f;--on-primary:#003914;--background:#041329;--surface-lowest:#010e24;--surface-low:#0d1c32;--surface:#112036;--surface-high:#1c2a41;--surface-highest:#27354c;--on-surface:#d6e3ff;--on-surface-variant:#bccbb9;color-scheme:dark}
+      *{box-sizing:border-box}
+      .window{position:fixed;top:72px;right:28px;width:430px;height:625px;min-width:330px;min-height:280px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);resize:both;overflow:hidden;display:flex;flex-direction:column;color:var(--on-surface);background:radial-gradient(circle at 92% 2%,rgba(83,224,118,.12),transparent 31%),linear-gradient(155deg,rgba(28,42,65,.96),rgba(4,19,41,.98) 54%),var(--background);border:1px solid rgba(83,224,118,.24);border-radius:20px;box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 28px 80px rgba(1,10,28,.52),0 0 42px rgba(83,224,118,.08);font:13px/1.45 "Plus Jakarta Sans",Inter,ui-sans-serif,system-ui,sans-serif}
+      .window::before{content:"";position:absolute;z-index:2;inset:0 22px auto;height:1px;background:linear-gradient(90deg,transparent,var(--primary),transparent);opacity:.56;pointer-events:none}
+      .header{display:flex;align-items:center;gap:10px;min-height:58px;padding:10px 12px 10px 14px;background:rgba(1,14,36,.64);border-bottom:1px solid rgba(214,227,255,.1);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);cursor:move;touch-action:none;user-select:none}
+      .mark{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border:1px solid rgba(114,254,143,.38);border-radius:11px;background:linear-gradient(145deg,var(--primary-strong),#1db954);color:var(--on-primary);box-shadow:0 0 20px rgba(83,224,118,.2);font-size:14px;font-style:italic;font-weight:900}
+      .title{display:grid;flex:1;min-width:0;line-height:1}.wordmark{color:var(--primary);font-size:14px;font-style:italic;font-weight:900;letter-spacing:-.03em}.product{margin-top:4px;color:rgba(214,227,255,.54);font-size:8px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+      .beta{margin-right:3px;padding:4px 7px;border:1px solid rgba(83,224,118,.18);border-radius:999px;background:rgba(83,224,118,.07);color:var(--primary);font-size:8px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}
+      .icon{display:grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid transparent;border-radius:9px;background:transparent;color:rgba(214,227,255,.6);font:18px/1 system-ui,sans-serif;cursor:pointer;transition:background 150ms ease,border-color 150ms ease,color 150ms ease}
+      .icon:hover,.icon:focus-visible{border-color:rgba(214,227,255,.1);background:rgba(214,227,255,.07);color:var(--on-surface);outline:0}.close:hover,.close:focus-visible{border-color:rgba(255,180,171,.18);background:rgba(147,0,10,.2);color:#ffb4ab}
+      .body{display:flex;flex:1;flex-direction:column;gap:11px;min-height:0;overflow:auto;padding:15px;scrollbar-color:rgba(83,224,118,.28) transparent;scrollbar-width:thin}
+      .languages{display:grid;grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);align-items:end;gap:8px}.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+      label{color:rgba(214,227,255,.58);font-size:9px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}
+      select,textarea{width:100%;border:1px solid rgba(214,227,255,.12);border-radius:12px;outline:0;background:rgba(1,14,36,.62);color:var(--on-surface);font:inherit;transition:border-color 150ms ease,background 150ms ease,box-shadow 150ms ease}
+      select{height:39px;padding:8px 10px;cursor:pointer}textarea{padding:10px 11px;line-height:1.5}textarea::placeholder{color:rgba(214,227,255,.33)}
+      select:hover,textarea:hover{border-color:rgba(214,227,255,.2);background:rgba(13,28,50,.82)}select:focus,textarea:focus{border-color:var(--primary);background:rgba(13,28,50,.94);box-shadow:0 0 0 3px rgba(83,224,118,.12)}
+      .swap{display:grid;place-items:center;width:38px;height:39px;padding:0;border:1px solid rgba(83,224,118,.2);border-radius:12px;background:rgba(83,224,118,.08);color:var(--primary);font:18px/1 system-ui,sans-serif;cursor:pointer;transition:background 150ms ease,border-color 150ms ease,transform 150ms ease}.swap:hover:not(:disabled),.swap:focus-visible:not(:disabled){border-color:rgba(83,224,118,.46);background:rgba(83,224,118,.14);outline:0;transform:translateY(-1px)}.swap:disabled{opacity:.38;cursor:default}
+      .source{min-height:112px;resize:vertical}.preferences{min-height:55px;max-height:95px;resize:vertical}.counter{margin-top:-1px;color:rgba(214,227,255,.34);font-size:9px;font-variant-numeric:tabular-nums;text-align:right}
+      .result-wrap{display:flex;flex:1;flex-direction:column;gap:5px;min-height:100px}.result{position:relative;flex:1;min-height:76px;overflow:auto;padding:11px;border:1px solid rgba(83,224,118,.14);border-radius:13px;background:radial-gradient(circle at 100% 0,rgba(83,224,118,.06),transparent 40%),rgba(1,14,36,.72);color:var(--on-surface);line-height:1.55;white-space:pre-wrap;user-select:text;scrollbar-color:rgba(83,224,118,.28) transparent;scrollbar-width:thin}.result:focus-visible{border-color:rgba(83,224,118,.46);outline:0}.result.placeholder{color:rgba(214,227,255,.33)}
+      .actions{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}.button{min-height:40px;padding:9px 13px;border:1px solid rgba(214,227,255,.13);border-radius:12px;background:rgba(28,42,65,.72);color:var(--on-surface);font:inherit;font-weight:800;cursor:pointer;transition:border-color 150ms ease,background 150ms ease,box-shadow 150ms ease,transform 150ms ease}.button:hover:not(:disabled),.button:focus-visible:not(:disabled){border-color:rgba(83,224,118,.38);background:var(--surface-highest);outline:0;transform:translateY(-1px)}.button.primary{border-color:rgba(114,254,143,.5);background:linear-gradient(135deg,var(--primary-strong),#36ca61);color:var(--on-primary);box-shadow:0 10px 25px rgba(29,185,84,.16)}.button.primary:hover:not(:disabled),.button.primary:focus-visible:not(:disabled){border-color:var(--primary-strong);background:linear-gradient(135deg,#88ffa1,var(--primary));box-shadow:0 12px 30px rgba(83,224,118,.25)}.button:disabled{opacity:.4;cursor:default;transform:none}
+      .status{display:flex;align-items:center;gap:7px;min-height:18px;color:rgba(214,227,255,.5);font-size:10px;font-weight:650}.status:not(:empty)::before{content:"";flex:0 0 6px;width:6px;height:6px;border-radius:50%;background:var(--primary);box-shadow:0 0 8px rgba(83,224,118,.5)}.status.error{color:#ffb4ab}.status.error::before{background:#ffb4ab;box-shadow:0 0 8px rgba(255,180,171,.42)}
+      .minimized{height:auto!important;min-height:0}.minimized .body{display:none}
+      @media(max-width:500px){.window{left:8px!important;right:8px!important;top:8px!important;width:calc(100vw - 16px)}}
+      @media(prefers-reduced-motion:reduce){*{transition:none!important}}
     </style>
     <section class="window" role="dialog" aria-label="Glosify Translator">
-      <header class="header"><span class="mark">G</span><span class="title">Glosify Translator</span><button class="icon minimize" title="Minimize" aria-label="Minimize">−</button><button class="icon close" title="Close" aria-label="Close">×</button></header>
+      <header class="header"><span class="mark" aria-hidden="true">G</span><span class="title"><span class="wordmark">Glosify</span><span class="product">Translator</span></span><span class="beta">Beta</span><button class="icon minimize" title="Minimize" aria-label="Minimize">−</button><button class="icon close" title="Close" aria-label="Close">×</button></header>
       <div class="body">
         <div class="languages">
           <div class="field"><label for="source-language">From</label><select id="source-language"></select></div>
@@ -51,10 +73,13 @@
     status: root.querySelector(".status"),
   };
   const port = chrome.runtime.connect({ name: "translator-overlay" });
+  const SETTINGS_SAVE_DELAY_MS = 400;
   let catalog = null;
   let initialized = false;
   let testHooksEnabled = false;
+  let settingsSaveTimer = null;
   let state = {
+    sessionId: State.createRequestId(),
     sourceLanguage: "auto",
     targetLanguage: "en",
     preferences: "",
@@ -87,7 +112,7 @@
   };
   globalThis[INSTANCE_KEY] = instance;
 
-  chrome.runtime.onMessage.addListener(message => {
+  function handleRuntimeMessage(message) {
     if (message?.type === "overlay:initialize") {
       instance.initialize(message);
       return Promise.resolve({ initialized: true });
@@ -98,7 +123,8 @@
       return handleTestMessage(message);
     }
     return undefined;
-  });
+  }
+  chrome.runtime.onMessage.addListener(handleRuntimeMessage);
 
   elements.close.addEventListener("click", closeOverlay);
   elements.minimize.addEventListener("click", () => {
@@ -106,10 +132,10 @@
     elements.minimize.textContent = minimized ? "+" : "−";
     elements.minimize.setAttribute("aria-label", minimized ? "Restore" : "Minimize");
   });
-  elements.sourceLanguage.addEventListener("change", changed);
-  elements.targetLanguage.addEventListener("change", changed);
-  elements.sourceText.addEventListener("input", changed);
-  elements.preferences.addEventListener("input", changed);
+  elements.sourceLanguage.addEventListener("change", () => changed("immediate"));
+  elements.targetLanguage.addEventListener("change", () => changed("immediate"));
+  elements.sourceText.addEventListener("input", () => changed());
+  elements.preferences.addEventListener("input", () => changed("debounced"));
   elements.swap.addEventListener("click", swapLanguages);
   elements.translate.addEventListener("click", translate);
   elements.copy.addEventListener("click", copyResult);
@@ -131,7 +157,7 @@
     return node;
   }
 
-  function changed() {
+  function changed(settingsPersistence = "none") {
     state = State.invalidate({
       ...state,
       sourceLanguage: elements.sourceLanguage.value,
@@ -139,6 +165,20 @@
       sourceText: elements.sourceText.value,
       preferences: elements.preferences.value,
     });
+    if (settingsPersistence === "immediate") persistSettings();
+    if (settingsPersistence === "debounced") scheduleSettingsSave();
+    clearStatus();
+    render();
+  }
+
+  function scheduleSettingsSave() {
+    if (settingsSaveTimer !== null) clearTimeout(settingsSaveTimer);
+    settingsSaveTimer = setTimeout(persistSettings, SETTINGS_SAVE_DELAY_MS);
+  }
+
+  function persistSettings() {
+    if (settingsSaveTimer !== null) clearTimeout(settingsSaveTimer);
+    settingsSaveTimer = null;
     void chrome.runtime.sendMessage({
       type: "overlay:settings",
       settings: {
@@ -147,16 +187,16 @@
         preferences: state.preferences,
       },
     });
-    clearStatus();
-    render();
   }
 
   function swapLanguages() {
-    state = State.swap(state);
+    const swapped = State.swap(state);
+    if (swapped === state) return;
+    state = swapped;
     elements.sourceLanguage.value = state.sourceLanguage;
     elements.targetLanguage.value = state.targetLanguage;
     elements.sourceText.value = state.sourceText;
-    changed();
+    changed("immediate");
   }
 
   async function translate() {
@@ -177,7 +217,7 @@
       });
       if (!response?.ok) throw new Error(response?.error || "Translation failed.");
       state.result = response.result;
-      state.requestId = crypto.randomUUID();
+      state.requestId = State.createRequestId();
       state.saved = false;
       setStatus(`${response.result.remainingCredits} credits remaining.`);
     } catch (error) {
@@ -199,7 +239,7 @@
   }
 
   async function saveResult() {
-    if (!state.result || state.saved || state.busy) return;
+    if (!state.result || !state.requestId || state.saved || state.busy) return;
     state.busy = true;
     render();
     setStatus("Saving…");
@@ -207,7 +247,9 @@
       const response = await chrome.runtime.sendMessage({
         type: "overlay:save",
         request: {
+          sessionId: state.sessionId,
           requestId: state.requestId,
+          translationOperationId: state.result.translationOperationId,
           sourceLanguage: state.result.sourceLanguage,
           detectedSourceLanguage: state.result.detectedSourceLanguage,
           targetLanguage: state.result.targetLanguage,
@@ -233,10 +275,15 @@
     const valid = initialized && State.canTranslate(state);
     elements.translate.disabled = !valid;
     elements.copy.disabled = !state.result || state.busy;
-    elements.save.disabled = !state.result || state.saved || state.busy;
+    elements.save.disabled = !state.result || !state.requestId || state.saved || state.busy;
     elements.save.textContent = state.saved ? "Saved" : "Save";
-    const canSwapAuto = state.sourceLanguage !== "auto" || Boolean(state.result?.detectedSourceLanguage);
-    elements.swap.disabled = state.busy || !state.result || !canSwapAuto;
+    const effectiveSource = state.sourceLanguage === "auto"
+      ? state.result?.detectedSourceLanguage
+      : state.sourceLanguage;
+    elements.swap.disabled = state.busy
+      || !state.result
+      || !effectiveSource
+      || effectiveSource === state.targetLanguage;
     elements.sourceLanguage.disabled = state.busy;
     elements.targetLanguage.disabled = state.busy;
     elements.sourceText.disabled = state.busy;
@@ -255,7 +302,9 @@
   }
 
   function closeOverlay() {
+    if (settingsSaveTimer !== null) persistSettings();
     chrome.runtime.sendMessage({ type: "overlay:closed" }).catch(() => {});
+    chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
     port.disconnect();
     delete globalThis[INSTANCE_KEY];
     host.remove();
@@ -292,7 +341,10 @@
           sourceText: state.sourceText,
           preferences: state.preferences,
           translatedText: state.result?.translatedText ?? null,
+          requestId: state.requestId,
+          sessionId: state.sessionId,
           saved: state.saved,
+          swapDisabled: elements.swap.disabled,
           statusText: elements.status.textContent,
           statusError: elements.status.classList.contains("error"),
           minimized: elements.window.classList.contains("minimized"),
@@ -312,6 +364,9 @@
       case "test:overlay:save":
         await saveResult();
         return state.saved;
+      case "test:overlay:swap":
+        elements.swap.click();
+        return true;
       case "test:overlay:minimize":
         elements.minimize.click();
         return elements.window.classList.contains("minimized");
