@@ -1,0 +1,8 @@
+node_modules/
+client/dist/
+server/bin/
+server/obj/
+server/wwwroot/
+*.user
+
+__pycache__/

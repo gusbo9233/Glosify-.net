@@ -1,0 +1,1 @@
+{"mcpServers":{"project-vault":{"command":"python3","args":["${PLUGIN_ROOT}/scripts/runner.py","mcp"]}}}

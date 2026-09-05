@@ -1,0 +1,31 @@
+{
+  "name": "project-vault",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p client/tsconfig.json && vite build --config client/vite.config.ts",
+    "dev": "vite --config client/vite.config.ts --host 127.0.0.1",
+    "test": "node --test tests/*.test.mjs",
+    "start": "bash scripts/start.sh"
+  },
+  "dependencies": {
+    "@xyflow/react": "^12.8.5",
+    "d3-force": "^3.0.0",
+    "elkjs": "^0.10.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/d3-force": "^3.0.10",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.2",
+    "vite": "^6.4.0"
+  }
+}

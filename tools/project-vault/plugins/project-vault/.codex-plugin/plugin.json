@@ -1,0 +1,33 @@
+{
+  "name": "project-vault",
+  "version": "0.1.0+codex.20260904145905",
+  "description": "Author useful project explanations and interactive diagrams through MCP; fulfill documentation requests and review content after code changes.",
+  "author": {
+    "name": "Project Vault"
+  },
+  "license": "MIT",
+  "keywords": [
+    "dotnet",
+    "architecture",
+    "visualization"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Project Vault",
+    "shortDescription": "Agent-authored visual documentation",
+    "longDescription": "Investigate user questions, publish linked explanations and state machines, and review affected documentation. Static analysis provides reference and sanity checks; it does not drive content.",
+    "developerName": "Project Vault",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Document an important workflow with an interactive state machine",
+      "Fulfill a saved documentation request",
+      "Review documents affected by my implementation"
+    ],
+    "brandColor": "#AFA1E9"
+  }
+}
