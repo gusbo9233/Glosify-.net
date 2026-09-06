@@ -45,6 +45,84 @@ public sealed class AnkiCollectionServiceTests
     }
 
     [Fact]
+    public async Task Individual_sentence_from_picker_creates_both_cards_idempotently()
+    {
+        // The picker orders DateTimeOffset values, which SQLite cannot translate.
+        await using var fixture = await Fixture.CreateAsync(useInMemoryDatabase: true);
+        var collection = await fixture.Collections.CreateAsync(new("Polish", "English", "Polish", "UTC"), UserId);
+        var details = await fixture.Collections.GetDetailsAsync(collection.Id, UserId);
+        var item = details!.AvailableItems.First(item => item.ItemType == "sentence");
+        var input = new AddAnkiItemInput(collection.Id, item.QuizId, item.ItemType, item.ItemId, true, true);
+
+        Assert.True(await fixture.Collections.AddItemAsync(input, UserId));
+        Assert.True(await fixture.Collections.AddItemAsync(input, UserId));
+
+        var note = Assert.Single(await fixture.Context.AnkiNotes.ToListAsync());
+        Assert.Equal(Guid.Parse(item.ItemId), note.SentenceId);
+        Assert.Null(note.WordId);
+        Assert.Equal(PracticeItemType.Sentences, note.ItemType);
+        Assert.Equal(item.TargetText, note.TargetText);
+        Assert.Equal(item.SourceText, note.SourceText);
+        var cards = await fixture.Context.AnkiCards.ToListAsync();
+        Assert.Equal(2, cards.Count);
+        Assert.Contains(cards, card => card.Direction == PracticeDirection.SourceToTarget);
+        Assert.Contains(cards, card => card.Direction == PracticeDirection.TargetToSource);
+        Assert.All(cards, card =>
+        {
+            Assert.Equal(note.Id, card.AnkiNoteId);
+            Assert.True(card.IsActive);
+            Assert.True(card.DirectlyIncluded);
+        });
+    }
+
+    [Theory]
+    [InlineData("sentence")]
+    [InlineData("SENTENCE")]
+    [InlineData("sentences")]
+    public async Task Individual_sentence_accepts_singular_and_canonical_types(string itemType)
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var collection = await fixture.Collections.CreateAsync(new("Polish", "English", "Polish", "UTC"), UserId);
+        var sentence = await fixture.Context.QuizSentences.FirstAsync();
+
+        Assert.True(await fixture.Collections.AddItemAsync(
+            new(collection.Id, fixture.Quiz.Id, itemType, sentence.Id.ToString(), true, false), UserId));
+
+        var card = Assert.Single(await fixture.Context.AnkiCards.Include(card => card.Note).ToListAsync());
+        Assert.Equal(sentence.Id, card.Note.SentenceId);
+        Assert.Equal(PracticeItemType.Sentences, card.Note.ItemType);
+        Assert.Equal(PracticeDirection.SourceToTarget, card.Direction);
+    }
+
+    [Theory]
+    [InlineData("owner")]
+    [InlineData("language")]
+    [InlineData("quiz")]
+    [InlineData("invalid-id")]
+    public async Task Individual_sentence_retains_ownership_language_and_item_validation(string mismatch)
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var collection = await fixture.Collections.CreateAsync(
+            new("Polish", mismatch == "language" ? "Swedish" : "English", "Polish", "UTC"), UserId);
+        var sentence = await fixture.Context.QuizSentences.FirstAsync();
+        var quizId = fixture.Quiz.Id;
+        if (mismatch == "quiz")
+        {
+            var otherQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Other", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now };
+            fixture.Context.Quizzes.Add(otherQuiz);
+            await fixture.Context.SaveChangesAsync();
+            quizId = otherQuiz.Id;
+        }
+
+        Assert.False(await fixture.Collections.AddItemAsync(
+            new(collection.Id, quizId, "sentence", mismatch == "invalid-id" ? "bad-id" : sentence.Id.ToString(), true, false),
+            mismatch == "owner" ? "another-user" : UserId));
+
+        Assert.Empty(await fixture.Context.AnkiNotes.ToListAsync());
+        Assert.Empty(await fixture.Context.AnkiCards.ToListAsync());
+    }
+
+    [Fact]
     public async Task Ownership_language_pair_and_direction_independence_are_enforced()
     {
         await using var fixture = await Fixture.CreateAsync();
@@ -322,11 +400,16 @@ public sealed class AnkiCollectionServiceTests
             Study = new AnkiStudyService(context, Collections, new Fsrs6AnkiScheduler(), clock);
         }
 
-        public static async Task<Fixture> CreateAsync()
+        public static async Task<Fixture> CreateAsync(bool useInMemoryDatabase = false)
         {
             var connection = new SqliteConnection("Data Source=:memory:");
             await connection.OpenAsync();
-            var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+            var optionsBuilder = new DbContextOptionsBuilder<GlosifyContext>();
+            if (useInMemoryDatabase)
+                optionsBuilder.UseInMemoryDatabase(Guid.NewGuid().ToString("N"));
+            else
+                optionsBuilder.UseSqlite(connection);
+            var options = optionsBuilder.Options;
             var context = new GlosifyContext(options);
             await context.Database.EnsureCreatedAsync();
             context.Users.Add(new ApplicationUser { Id = UserId, UserName = "anki@example.test", NormalizedUserName = "ANKI@EXAMPLE.TEST" });

@@ -422,7 +422,11 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
             return false;
 
         await SyncCollectionAsync(input.CollectionId, cancellationToken);
-        var itemType = PracticeItemType.Normalize(input.ItemType);
+        // Individual-item forms use singular labels; stored notes use the
+        // canonical practice type, also accepted from existing callers.
+        var itemType = string.Equals(input.ItemType, "sentence", StringComparison.OrdinalIgnoreCase)
+            ? PracticeItemType.Sentences
+            : PracticeItemType.Normalize(input.ItemType);
         string target;
         string source;
         string? wordId = null;
