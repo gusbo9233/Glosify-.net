@@ -818,6 +818,173 @@ public class ChangeApplierTests
         Assert.Empty(await db.QuizSentences.ToListAsync());
     }
 
+    [Theory]
+    [InlineData(PendingChangeKinds.DeleteWord)]
+    [InlineData(PendingChangeKinds.EditWord)]
+    public async Task WordMutation_FreesTheOldLemmaForReplacement(string mutation)
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.Words.Add(new Word { Id = "old", QuizId = quizId, Lemma = "dom", Translation = "incorrect" });
+        await db.SaveChangesAsync();
+
+        var result = await CreateApplier(db).ApplyAsync(quizId, "user-1",
+        [
+            WordChange(mutation, new { word_id = "old", word = "kot", translation = "cat" }),
+            WordChange(PendingChangeKinds.AddWord, new { word = "DOM", translation = "house" }),
+        ], CancellationToken.None);
+
+        Assert.Equal(2, result.Applied);
+        db.ChangeTracker.Clear();
+        var words = await db.Words.Where(word => word.QuizId == quizId).ToListAsync();
+        var replacement = Assert.Single(words, word => word.Lemma == "DOM");
+        Assert.Equal("house", replacement.Translation);
+        Assert.NotEqual("old", replacement.Id);
+        if (mutation == PendingChangeKinds.DeleteWord)
+            Assert.Single(words);
+        else
+        {
+            Assert.Equal(2, words.Count);
+            var renamed = Assert.Single(words, word => word.Id == "old");
+            Assert.Equal("kot", renamed.Lemma);
+            Assert.Equal("cat", renamed.Translation);
+        }
+    }
+
+    [Theory]
+    [InlineData(PendingChangeKinds.DeleteWord)]
+    [InlineData(PendingChangeKinds.EditWord)]
+    public async Task WordMutation_DoesNotReleaseLemmaHeldByAnUntouchedDuplicate(string mutation)
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.Words.AddRange(
+            new Word { Id = "touched", QuizId = quizId, Lemma = "dom", Translation = "house" },
+            new Word { Id = "untouched", QuizId = quizId, Lemma = "DOM", Translation = "home" });
+        await db.SaveChangesAsync();
+
+        var result = await CreateApplier(db).ApplyAsync(quizId, "user-1",
+        [
+            WordChange(mutation, new { word_id = "touched", word = "kot" }),
+            WordChange(PendingChangeKinds.AddWord, new { word = "dom", translation = "duplicate" }),
+        ], CancellationToken.None);
+
+        Assert.Equal(1, result.Applied);
+        db.ChangeTracker.Clear();
+        var remaining = Assert.Single(await db.Words.ToListAsync(),
+            word => string.Equals(word.Lemma, "dom", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("untouched", remaining.Id);
+        Assert.Equal("home", remaining.Translation);
+    }
+
+    [Fact]
+    public async Task WordMutation_DeletingEveryDuplicateAllowsOneReplacement()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.Words.AddRange(
+            new Word { Id = "first", QuizId = quizId, Lemma = "dom", Translation = "bad" },
+            new Word { Id = "second", QuizId = quizId, Lemma = "DOM", Translation = "bad too" });
+        await db.SaveChangesAsync();
+
+        var result = await CreateApplier(db).ApplyAsync(quizId, "user-1",
+        [
+            WordChange(PendingChangeKinds.DeleteWord, new { word_id = "first" }),
+            WordChange(PendingChangeKinds.DeleteWord, new { word_id = "second" }),
+            WordChange(PendingChangeKinds.AddWord, new { word = "dom", translation = "house" }),
+            WordChange(PendingChangeKinds.AddWord, new { word = "DOM", translation = "duplicate" }),
+        ], CancellationToken.None);
+
+        Assert.Equal(3, result.Applied);
+        db.ChangeTracker.Clear();
+        var replacement = Assert.Single(await db.Words.ToListAsync());
+        Assert.Equal("dom", replacement.Lemma);
+        Assert.Equal("house", replacement.Translation);
+    }
+
+    [Fact]
+    public async Task WordMutation_StagedReplacementRetainsLemmaWhenAnotherRowIsDeleted()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.Words.AddRange(
+            new Word { Id = "old", QuizId = quizId, Lemma = "dom", Translation = "bad" },
+            new Word { Id = "other", QuizId = quizId, Lemma = "kot", Translation = "cat" });
+        await db.SaveChangesAsync();
+
+        var result = await CreateApplier(db).ApplyAsync(quizId, "user-1",
+        [
+            WordChange(PendingChangeKinds.DeleteWord, new { word_id = "old" }),
+            WordChange(PendingChangeKinds.AddWord, new { word = "dom", translation = "house" }),
+            WordChange(PendingChangeKinds.EditWord, new { word_id = "other", word = "DOM" }),
+            WordChange(PendingChangeKinds.DeleteWord, new { word_id = "other" }),
+            WordChange(PendingChangeKinds.AddWord, new { word = "dom", translation = "duplicate" }),
+        ], CancellationToken.None);
+
+        Assert.Equal(4, result.Applied);
+        db.ChangeTracker.Clear();
+        var replacement = Assert.Single(await db.Words.ToListAsync());
+        Assert.Equal("dom", replacement.Lemma);
+        Assert.Equal("house", replacement.Translation);
+    }
+
+    [Theory]
+    [InlineData("DOM")]
+    [InlineData("dom")]
+    public async Task WordMutation_SameLemmaEditStillPreventsDuplicateInsertion(string editedLemma)
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.Words.Add(new Word { Id = "old", QuizId = quizId, Lemma = "dom", Translation = "bad" });
+        await db.SaveChangesAsync();
+
+        var result = await CreateApplier(db).ApplyAsync(quizId, "user-1",
+        [
+            WordChange(PendingChangeKinds.EditWord, new { word_id = "old", word = editedLemma, translation = "house" }),
+            WordChange(PendingChangeKinds.AddWord, new { word = "dom", translation = "duplicate" }),
+        ], CancellationToken.None);
+
+        Assert.Equal(1, result.Applied);
+        db.ChangeTracker.Clear();
+        var word = Assert.Single(await db.Words.ToListAsync());
+        Assert.Equal("old", word.Id);
+        Assert.Equal(editedLemma, word.Lemma);
+        Assert.Equal("house", word.Translation);
+    }
+
+    [Fact]
+    public async Task WordMutation_RepeatedRenamesReleaseEachPreviousLemma()
+    {
+        await using var db = CreateContext();
+        var quizId = Guid.NewGuid();
+        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        db.Words.Add(new Word { Id = "old", QuizId = quizId, Lemma = "dom", Translation = "house" });
+        await db.SaveChangesAsync();
+
+        var result = await CreateApplier(db).ApplyAsync(quizId, "user-1",
+        [
+            WordChange(PendingChangeKinds.EditWord, new { word_id = "old", word = "kot", translation = "cat" }),
+            WordChange(PendingChangeKinds.EditWord, new { word_id = "old", word = "pies", translation = "dog" }),
+            WordChange(PendingChangeKinds.AddWord, new { word = "dom", translation = "house" }),
+            WordChange(PendingChangeKinds.AddWord, new { word = "kot", translation = "cat" }),
+        ], CancellationToken.None);
+
+        Assert.Equal(4, result.Applied);
+        db.ChangeTracker.Clear();
+        var words = await db.Words.OrderBy(word => word.Lemma).ToListAsync();
+        Assert.Equal(["dom", "kot", "pies"], words.Select(word => word.Lemma));
+        Assert.Equal(["house", "cat", "dog"], words.Select(word => word.Translation));
+        Assert.Equal("old", words[2].Id);
+    }
+
+    private static PendingChange WordChange(string kind, object payload) =>
+        new(kind, JsonSerializer.SerializeToElement(payload));
+
     private static ChangeApplier CreateApplier(GlosifyContext db)
     {
         var anki = new Glosify.Services.Anki.AnkiCollectionService(db, new FakeTimeProvider(SeededAt));

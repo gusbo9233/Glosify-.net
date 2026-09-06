@@ -194,7 +194,24 @@ public sealed class ChangeApplier : IChangeApplier
         public static readonly QuizContentBatch Empty = new();
 
         public Dictionary<string, Word> WordsById { get; } = new();
-        public HashSet<string> WordLemmas { get; } = new(StringComparer.OrdinalIgnoreCase);
+        // Insert deduplication counts every stored and staged word, including
+        // untouched duplicates that are not loaded into WordsById.
+        public Dictionary<string, int> WordLemmaCounts { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public void RetainWordLemma(string lemma) =>
+            WordLemmaCounts[lemma] = WordLemmaCounts.GetValueOrDefault(lemma) + 1;
+
+        public void ReleaseWordLemma(string lemma)
+        {
+            if (!WordLemmaCounts.TryGetValue(lemma, out var count))
+                return;
+
+            if (count == 1)
+                WordLemmaCounts.Remove(lemma);
+            else
+                WordLemmaCounts[lemma] = count - 1;
+        }
+
         public List<QuizSentence> Sentences { get; } = [];
         public Dictionary<Guid, QuizSentence> SentencesById { get; } = new();
         /// <summary>
@@ -259,7 +276,8 @@ public sealed class ChangeApplier : IChangeApplier
                 .Where(word => word.QuizId == quizId)
                 .Select(word => word.Lemma)
                 .ToListAsync(ct);
-            batch.WordLemmas.UnionWith(lemmas);
+            foreach (var lemma in lemmas)
+                batch.RetainWordLemma(lemma);
         }
 
         // AddWord is in this list because a word may not repeat a sentence the quiz already
@@ -376,7 +394,7 @@ public sealed class ChangeApplier : IChangeApplier
             return false;
         }
 
-        if (!batch.WordLemmas.Add(newWord))
+        if (!batch.WordLemmaCounts.TryAdd(newWord, 1))
         {
             return false;
         }
@@ -432,8 +450,10 @@ public sealed class ChangeApplier : IChangeApplier
         var newTranslation = GetString(payload, "translation");
         if (!string.IsNullOrWhiteSpace(newWord))
         {
+            var replaced = word.Lemma;
             word.Lemma = newWord;
-            batch.WordLemmas.Add(newWord);
+            batch.RetainWordLemma(newWord);
+            batch.ReleaseWordLemma(replaced);
         }
         if (!string.IsNullOrWhiteSpace(newTranslation)) word.Translation = newTranslation;
         return true;
@@ -480,6 +500,7 @@ public sealed class ChangeApplier : IChangeApplier
 
         batch.WordsById.Remove(wordId);
         batch.DeletedWordIds.Add(wordId);
+        batch.ReleaseWordLemma(word.Lemma);
         _context.Words.Remove(word);
         return true;
     }
