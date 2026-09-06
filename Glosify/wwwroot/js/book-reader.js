@@ -357,6 +357,35 @@ const fallbackSentenceSegments = (text) => {
     return results;
 };
 
+// Keep aligned with BookPageTranslationService.MaxSegmentCharacters.
+const MAX_TRANSLATION_SEGMENT_CHARACTERS = 2000;
+const splitTranslationCandidate = (candidate) => {
+    const text = candidate.segment || '';
+    if (normalizeText(text).length <= MAX_TRANSLATION_SEGMENT_CHARACTERS) return [candidate];
+
+    const pieces = [];
+    let start = 0;
+    while (start < text.length) {
+        let end = start;
+        let normalizedLength = 0;
+        let wordBoundary = start;
+        while (end < text.length) {
+            const point = String.fromCodePoint(text.codePointAt(end));
+            // NFKC can expand one PDF character into several output characters.
+            // Summed code-point lengths conservatively bound the normalized text.
+            const length = point.normalize('NFKC').length;
+            if (normalizedLength + length > MAX_TRANSLATION_SEGMENT_CHARACTERS) break;
+            normalizedLength += length;
+            end += point.length;
+            if (/\s/u.test(point)) wordBoundary = end;
+        }
+        if (end < text.length && wordBoundary > start + (end - start) / 2) end = wordBoundary;
+        pieces.push({ segment: text.slice(start, end), index: (Number(candidate.index) || 0) + start });
+        start = end;
+    }
+    return pieces;
+};
+
 const numericItemValue = (item, property, transformIndex) => {
     const direct = Number(item?.[property]);
     if (Number.isFinite(direct) && direct !== 0) return Math.abs(direct);
@@ -458,7 +487,7 @@ const buildPageSegments = (textContent) => {
     }
 
     const segments = [];
-    for (const candidate of candidates) {
+    for (const candidate of candidates.flatMap(splitTranslationCandidate)) {
         const rawSegment = candidate.segment || '';
         const sourceText = normalizeText(rawSegment);
         if (!sourceText) continue;
