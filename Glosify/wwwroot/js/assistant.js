@@ -56,6 +56,11 @@ import {
     const sendErrors = new Map();
     const pendingContextWrites = new Map();
     const ownsSelection = selection => selection === chatSelection;
+    const canConfirmContext = selection => ownsSelection(selection)
+        && selection?.historyLoaded
+        && !pendingContextWrites.has(selection.threadId)
+        && !pendingSends.has(selection.threadId)
+        && !sendErrors.has(selection.threadId);
     let chats = [];
     let chatCatalogRevision = 0;
     let initialized = false;
@@ -1054,7 +1059,7 @@ import {
         const selectedOption = quizSelector.selectedOptions?.[0] || null;
         const label = selectedOption?.dataset.contextLabel || 'Glosify';
         const contextPersisted = await setQuizContext(quizSelector.value || null, label, true);
-        if (contextPersisted && ownsSelection(selection)) {
+        if (contextPersisted && canConfirmContext(selection)) {
             setStatus(quizId ? `Quiz set to ${label}.` : 'No quiz selected.');
         }
     });
@@ -1063,7 +1068,7 @@ import {
         const selection = chatSelection;
         const [kind, id] = (materialSelector.value || '').split(':');
         const contextPersisted = await setMaterialContext(kind || null, id || null, true);
-        if (contextPersisted && ownsSelection(selection)) {
+        if (contextPersisted && canConfirmContext(selection)) {
             setStatus(materialId ? `Reading ${materialLabel()}.` : 'No material selected.');
         }
     });

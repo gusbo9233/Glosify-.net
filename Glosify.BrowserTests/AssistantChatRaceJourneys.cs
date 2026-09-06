@@ -659,6 +659,7 @@ public sealed partial class PortfolioJourneys
         await OpenRaceAssistantAsync();
         const string quizId = "11111111-1111-1111-1111-111111111111";
         var picker = Page.Locator("[data-assistant-quiz-selector]");
+        await Expect(picker).ToBeEnabledAsync();
         await picker.EvaluateAsync("(select, id) => { const option = new Option('New quiz', id); option.dataset.contextLabel = 'New quiz'; select.add(option); }", quizId);
         await picker.SelectOptionAsync(quizId);
         var pending = await patch.Task.WaitAsync(TimeSpan.FromSeconds(10));
@@ -682,6 +683,103 @@ public sealed partial class PortfolioJourneys
         await Expect(RaceTranscript).ToContainTextAsync("Reply");
         Assert.Equal(quizId, sentQuiz);
         Assert.True(disabledBeforeSave);
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_ContextConfirmationsPreservePendingAndFailedReplyStatuses()
+    {
+        var patches = new Queue<TaskCompletionSource<IRoute>>();
+        var sends = new Queue<TaskCompletionSource<IRoute>>();
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "History"));
+        await Page.RouteAsync("**/Assistant/Chats/chat-a", route =>
+        {
+            patches.Dequeue().SetResult(route);
+            return Task.CompletedTask;
+        });
+        await Page.RouteAsync("**/Assistant/Chats/chat-a/Send", route =>
+        {
+            sends.Dequeue().SetResult(route);
+            return Task.CompletedTask;
+        });
+        await OpenRaceAssistantAsync();
+        foreach (var selector in new[] { "quiz", "material" })
+        foreach (var failReply in new[] { false, true })
+        {
+            var patch = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var send = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+            patches.Enqueue(patch);
+            sends.Enqueue(send);
+            await Page.Locator($"[data-assistant-{selector}-selector]").SelectOptionAsync("");
+            var pendingPatch = await patch.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            await SendRaceMessageAsync("Question");
+            var pendingSend = await send.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            if (failReply)
+            {
+                ExpectHttpFailure("POST", "/Assistant/Chats/chat-a/Send", 500);
+                await pendingSend.FulfillAsync(new()
+                {
+                    Status = 500, ContentType = "application/problem+json", Body = "{\"status\":500}",
+                });
+                await Expect(RaceSubmit).ToBeEnabledAsync();
+            }
+            var status = Page.Locator("[data-assistant-status]");
+            var expected = failReply ? "The assistant could not respond." : "Thinking...";
+            await Expect(status).ToHaveTextAsync(expected);
+            var response = Page.WaitForResponseAsync(response => response.Url == pendingPatch.Request.Url);
+            await pendingPatch.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { id = "chat-a", title = "Chat A", preview = "" }),
+            });
+            await (await response).FinishedAsync();
+            await DrainBrowserTasksAsync();
+            var statusAfterPatch = await status.TextContentAsync();
+            if (!failReply) await FulfillReplyAndDrainAsync(pendingSend, "Reply");
+            Assert.Equal(expected, statusAfterPatch);
+        }
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_OnlyLatestQueuedContextWriteConfirmsItsValue()
+    {
+        var patches = new Queue<TaskCompletionSource<IRoute>>();
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "History"));
+        await Page.RouteAsync("**/Assistant/Chats/chat-a", route =>
+        {
+            patches.Dequeue().SetResult(route);
+            return Task.CompletedTask;
+        });
+        await OpenRaceAssistantAsync();
+        var picker = Page.Locator("[data-assistant-quiz-selector]");
+        await Expect(picker).ToBeEnabledAsync();
+        await picker.EvaluateAsync("select => { for (const id of ['quiz-one', 'quiz-two']) { const option = new Option(id, id); option.dataset.contextLabel = id; select.add(option); } }");
+        var first = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var second = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        patches.Enqueue(first);
+        patches.Enqueue(second);
+        await picker.SelectOptionAsync("quiz-one");
+        var pendingFirst = await first.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await picker.SelectOptionAsync("quiz-two");
+        await pendingFirst.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new { id = "chat-a", title = "Chat A", preview = "",
+                contextQuizId = "quiz-one", contextQuizName = "quiz-one" }),
+        });
+        var pendingSecond = await second.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await DrainBrowserTasksAsync();
+        var intermediateStatus = await Page.Locator("[data-assistant-status]").TextContentAsync();
+        await pendingSecond.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new { id = "chat-a", title = "Chat A", preview = "",
+                contextQuizId = "quiz-two", contextQuizName = "quiz-two" }),
+        });
+        await Expect(Page.Locator("[data-assistant-status]")).ToHaveTextAsync("Quiz set to quiz-two.");
+        Assert.Equal("", intermediateStatus);
+        await Expect(picker).ToHaveValueAsync("quiz-two");
     }
 
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
