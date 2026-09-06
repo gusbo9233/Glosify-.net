@@ -6,7 +6,7 @@ public class QuizSessionSettings
 {
     public Guid? QuizId { get; set; }
 
-    [Range(1, 200, ErrorMessage = "Pick a word count between 1 and 200.")]
+    [Range(1, QuizSessionLimits.MaxItems, ErrorMessage = "Pick an item count between {1} and {2}.")]
     public int WordCount { get; set; }
 
     [Range(0, 100, ErrorMessage = "Word range start must be between 0 and 100.")]

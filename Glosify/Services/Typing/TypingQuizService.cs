@@ -76,7 +76,7 @@ public class TypingQuizService : ITypingQuizService
 
     private async Task<IReadOnlyList<TypingWordData>> LoadWordsAsync(Guid quizId, int wordCount, string practiceDirection, int rangeStartPercent = 0, int rangeEndPercent = 100)
     {
-        var take = Math.Clamp(wordCount, 1, 100);
+        var take = QuizSessionLimits.NormalizeCount(wordCount);
 
         var orderedWords = await _context.Words
             .Where(word => word.QuizId == quizId)
@@ -139,7 +139,7 @@ public class TypingQuizService : ITypingQuizService
 
     private async Task<IReadOnlyList<TypingWordData>> LoadSentencesAsync(Guid quizId, int sentenceCount, string practiceDirection, int rangeStartPercent = 0, int rangeEndPercent = 100)
     {
-        var take = Math.Clamp(sentenceCount, 1, 100);
+        var take = QuizSessionLimits.NormalizeCount(sentenceCount);
 
         var orderedSentences = await _context.QuizSentences
             .Where(sentence => sentence.QuizId == quizId)

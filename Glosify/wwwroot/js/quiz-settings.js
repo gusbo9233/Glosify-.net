@@ -41,14 +41,14 @@
 
     const allLengthOption = document.querySelector('input[name="WordCount"][data-length-all]');
 
-    const getRangeFraction = () => {
+    const getRangeItemCount = total => {
         const minEl = document.querySelector('[data-range-min]');
         const maxEl = document.querySelector('[data-range-max]');
-        if (!minEl || !maxEl) return 1;
+        if (!minEl || !maxEl) return total;
         const minVal = Number(minEl.value);
         const maxVal = Number(maxEl.value);
-        const width = Math.max(0, maxVal - minVal);
-        return width / 100;
+        // Match PracticeRange.Slice: round each endpoint, not just the width.
+        return Math.max(1, Math.ceil(total * maxVal / 100) - Math.floor(total * minVal / 100));
     };
 
     const refreshAllLength = () => {
@@ -56,8 +56,9 @@
         const selected = document.querySelector('input[name="PracticeItemType"]:checked');
         const isSentences = selected?.value === 'sentences';
         const total = Number((isSentences ? allLengthOption.dataset.sentenceTotal : allLengthOption.dataset.wordTotal) || '0');
-        const fraction = getRangeFraction();
-        const newValue = Math.max(1, Math.ceil(total * fraction));
+        const rangeCount = getRangeItemCount(total);
+        const maximum = Number(allLengthOption.dataset.maxItems);
+        const newValue = Math.max(1, Math.min(maximum, rangeCount));
         if (isSentences) {
             allLengthOption.dataset.sentenceValue = String(newValue);
         } else {
@@ -65,6 +66,10 @@
         }
         allLengthOption.value = String(newValue);
         allLengthOption.closest('.choice')?.querySelector('[data-length-num]')?.replaceChildren(document.createTextNode(String(newValue)));
+        const label = allLengthOption.closest('.choice')?.querySelector('[data-length-label]');
+        if (label) label.textContent = rangeCount > maximum
+            ? t('Settings.Maximum', 'Maximum')
+            : t('Common.All', 'All');
     };
 
     const refreshContent = () => {
