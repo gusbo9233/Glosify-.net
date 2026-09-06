@@ -5,7 +5,7 @@ import vm from 'node:vm';
 
 const script = readFileSync(new URL('../Glosify/wwwroot/js/quiz-settings.js', import.meta.url), 'utf8');
 
-function settings({ words, sentences = 201, start = 0, end = 100 }) {
+function settings({ words, sentences = 201, start = 0, end = 100, translations = {} }) {
     const node = (extra = {}) => ({
         dataset: {}, textContent: '', value: '', checked: false, listeners: {},
         addEventListener(event, handler) { this.listeners[event] = handler; },
@@ -39,7 +39,9 @@ function settings({ words, sentences = 201, start = 0, end = 100 }) {
             : elements.get(selector) ?? null,
         createTextNode: text => text,
     };
-    vm.runInNewContext(script, { document, window: {}, Intl });
+    vm.runInNewContext(script, { document, window: {
+        glosifyText: (key, fallback) => translations[key] ?? fallback,
+    }, Intl });
     return { all, number, label, startButton, selectSentences() {
         wordType.checked = false;
         sentenceType.checked = true;
@@ -63,6 +65,17 @@ test('All counts the same rounded range endpoints as the server', () => {
     assert.equal(page.all.value, '7');
     assert.equal(page.number.textContent, '7');
     assert.equal(page.label.textContent, 'All');
+});
+
+test('Dynamic content changes retain localized Maximum and All labels', () => {
+    const page = settings({ words: 1500, translations: {
+        'Settings.Maximum': 'Maximalt', 'Common.All': 'Alla',
+    } });
+    assert.equal(page.label.textContent, 'Maximalt');
+    assert.equal(page.all.value, '1000');
+    page.selectSentences();
+    assert.equal(page.label.textContent, 'Alla');
+    assert.equal(page.all.value, '201');
 });
 
 test('A range smaller than the ceiling includes every item and remains labelled All', () => {

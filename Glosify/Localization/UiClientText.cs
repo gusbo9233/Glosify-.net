@@ -19,7 +19,7 @@ public static class UiClientText
         "Quiz.Progress", "Quiz.CorrectCount", "Quiz.CheckAnswer",
         "Settings.Flashcards", "Settings.Typing", "Settings.Choices", "Settings.Quiz", "Settings.WordsLower",
         "Settings.SentencesLower", "Settings.WordLower", "Settings.SentenceLower",
-        "Settings.NeedItem", "Common.All", "Settings.Newest", "Settings.Oldest",
+        "Settings.NeedItem", "Common.All", "Settings.Maximum", "Settings.Newest", "Settings.Oldest",
         "Settings.AllWordsOrder", "Settings.RangeDynamic", "Settings.SelectedCount",
         "Settings.PickedWords", "Settings.PickedCount",
         "Reader.ReadingSentence", "Reader.ReadingSelectionPart", "Reader.ReadingSelection", "Reader.ReadingPage",
