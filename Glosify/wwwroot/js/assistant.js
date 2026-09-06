@@ -1003,11 +1003,15 @@ import {
     close?.addEventListener('click', closeAssistant);
 
     const startNewChat = async () => {
+        let selection = chatSelection;
         try {
             const chat = await createChat(quizId);
-            await selectChat(chat.id);
+            if (!ownsSelection(selection)) return;
+            const loading = selectChat(chat.id);
+            selection = chatSelection;
+            await loading;
         } catch (err) {
-            setStatus(err.message || 'Could not create chat.', true);
+            if (ownsSelection(selection)) setStatus(err.message || 'Could not create chat.', true);
         }
     };
 

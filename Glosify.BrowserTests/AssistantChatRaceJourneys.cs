@@ -281,6 +281,51 @@ public sealed partial class PortfolioJourneys
         await Expect(RaceTranscript).Not.ToContainTextAsync("Stale initial A history");
     }
 
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public Task AssistantChatRace_DelayedNewChatCannotReplaceAnotherSelection() =>
+        VerifyDelayedNewChatAsync(200);
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public Task AssistantChatRace_DelayedNewChatFailureCannotAlterAnotherSelection() =>
+        VerifyDelayedNewChatAsync(500);
+
+    private async Task VerifyDelayedNewChatAsync(int statusCode)
+    {
+        var create = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route,
+            route.Request.Url.Contains("/chat-b/", StringComparison.Ordinal) ? "B history" : "Other history"));
+        await Page.RouteAsync("**/Assistant/Chats", route =>
+        {
+            if (route.Request.Method != "POST") return route.FallbackAsync();
+            create.SetResult(route);
+            return Task.CompletedTask;
+        });
+        await OpenRaceAssistantAsync();
+        await Page.Locator("[data-assistant-new-chat]").DispatchEventAsync("click");
+        var pending = await create.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await SelectRaceChatAsync("Chat B");
+        await Expect(RaceTranscript).ToContainTextAsync("B history");
+        var response = Page.WaitForResponseAsync(response =>
+            response.Url == pending.Request.Url && response.Request.Method == "POST");
+        if (statusCode >= 400) ExpectHttpFailure("POST", "/Assistant/Chats", statusCode);
+        await pending.FulfillAsync(new()
+        {
+            Status = statusCode,
+            ContentType = "application/json",
+            Body = statusCode == 200
+                ? JsonSerializer.Serialize(new { id = "chat-new", title = "New chat", preview = "" })
+                : JsonSerializer.Serialize(new { title = "Create request failed", status = statusCode }),
+        });
+        await (await response).FinishedAsync();
+        await DrainBrowserTasksAsync();
+        await Expect(Page.Locator(".assistant-chat-item.is-active")).ToContainTextAsync("Chat B");
+        await Expect(RaceTranscript).ToContainTextAsync("B history");
+        await Expect(Page.Locator("[data-assistant-status]")).ToHaveTextAsync("");
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+    }
+
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
     private ILocator RaceSubmit => Page.Locator("[data-assistant-submit]");
 
