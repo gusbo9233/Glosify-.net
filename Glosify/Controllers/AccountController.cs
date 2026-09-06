@@ -158,24 +158,41 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Login), new { returnUrl });
 
         var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false);
+        if (!result.Succeeded && !result.RequiresTwoFactor && !result.IsLockedOut && !result.IsNotAllowed)
+        {
+            var resolution = await _externalAccounts.ResolveOrCreateAsync(info);
+            if (resolution.Succeeded)
+            {
+                if (string.IsNullOrWhiteSpace(resolution.User!.DisplayCulture))
+                {
+                    resolution.User.DisplayCulture = CultureInfo.CurrentUICulture.Name;
+                    await _userManager.UpdateAsync(resolution.User);
+                }
+
+                // A newly linked account can already require a second factor or be
+                // locked out. Use the same Identity checks as an existing login.
+                result = await _signInManager.ExternalLoginSignInAsync(
+                    info.LoginProvider, info.ProviderKey, isPersistent: false);
+            }
+        }
+
         if (result.Succeeded)
             return LocalRedirect(SafeLocalReturnUrl(returnUrl));
 
-        var resolution = await _externalAccounts.ResolveOrCreateAsync(info);
-        if (!resolution.Succeeded)
+        if (result.RequiresTwoFactor)
         {
-            ModelState.AddModelError(string.Empty, _text["Auth.ExternalFailed"]);
-            await SetLoginViewDataAsync(returnUrl);
-            return View("Login", new LoginViewModel());
+            return RedirectToPage("/Account/LoginWith2fa", new
+            {
+                area = "Identity",
+                returnUrl = SafeLocalReturnUrl(returnUrl),
+                rememberMe = false,
+            });
         }
 
-        if (string.IsNullOrWhiteSpace(resolution.User!.DisplayCulture))
-        {
-            resolution.User.DisplayCulture = CultureInfo.CurrentUICulture.Name;
-            await _userManager.UpdateAsync(resolution.User);
-        }
-        await _signInManager.SignInAsync(resolution.User, isPersistent: false);
-        return LocalRedirect(SafeLocalReturnUrl(returnUrl));
+        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        ModelState.AddModelError(string.Empty, _text[result.IsLockedOut ? "Auth.AccountLocked" : "Auth.ExternalFailed"]);
+        await SetLoginViewDataAsync(returnUrl);
+        return View("Login", new LoginViewModel());
     }
 
     [HttpGet]

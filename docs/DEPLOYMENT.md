@@ -218,6 +218,14 @@ requires the BACPAC and the archived `foundry-version` code.
 
 ## Pre-deployment verification
 
+External web sign-in honors Identity account confirmation, lockout, and two-factor
+requirements, including accounts newly linked to Google. Users who need a second
+factor continue through the standard Identity two-factor screen. The mobile Google
+authorization-code flow does not collect a second factor and rejects accounts
+with two-factor authentication enabled; clients must use a flow that verifies the
+factor, such as the existing password-and-code `/api/auth/login` endpoint. Mobile
+code exchange rechecks account restrictions before issuing bearer tokens.
+
 ```bash
 dotnet test Glosify.slnx -c Release
 npm test --prefix Glosify.ClientTests
