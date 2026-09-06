@@ -3,6 +3,8 @@ using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Localization;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 
@@ -10,6 +12,33 @@ namespace Glosify.Extensions;
 
 public static class AuthenticationExtensions
 {
+    public static IApplicationBuilder UseGlosifyEndpointAuthentication(this IApplicationBuilder app)
+    {
+        return app.Use(async (context, next) =>
+        {
+            var endpoint = context.GetEndpoint();
+            if (endpoint is not null)
+            {
+                var policy = await AuthorizationPolicy.CombineAsync(
+                    context.RequestServices.GetRequiredService<IAuthorizationPolicyProvider>(),
+                    endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>(),
+                    endpoint.Metadata.GetOrderedMetadata<AuthorizationPolicy>());
+                if (policy?.AuthenticationSchemes.Count > 0)
+                {
+                    // UseAuthentication only runs the default cookie scheme. Resolve
+                    // the endpoint's explicit schemes before localization and rate
+                    // limiting, including clearing a cookie principal on bearer-only
+                    // endpoints when no valid bearer token is supplied. Authorization
+                    // still runs normally after the limiter, even for failed attempts.
+                    await context.RequestServices.GetRequiredService<IPolicyEvaluator>()
+                        .AuthenticateAsync(policy, context);
+                }
+            }
+
+            await next();
+        });
+    }
+
     /// <summary>
     /// Cookie sign-in for the web app, bearer tokens for the mobile client, and the two
     /// external providers, each registered only when its credentials are configured.

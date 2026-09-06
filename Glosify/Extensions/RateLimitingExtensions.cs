@@ -59,8 +59,8 @@ public static class RateLimitingExtensions
                     || isQuizAssistantPath;
                 if (isAssistantPath)
                 {
-                    // UseRateLimiter runs after UseAuthentication, so the user id claim is
-                    // available here; fall back to IP only for unauthenticated callers.
+                    // Default and endpoint-specific authentication run before this
+                    // limiter; fall back to IP only for unauthenticated callers.
                     var caller = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
                         ?? context.Connection.RemoteIpAddress?.ToString()
                         ?? "unknown";
