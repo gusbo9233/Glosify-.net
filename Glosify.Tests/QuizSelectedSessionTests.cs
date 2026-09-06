@@ -125,7 +125,10 @@ public sealed class QuizSelectedSessionTests
             if (session is FlashcardSessionData cards)
             {
                 cards.AgainCards.AddRange(cards.Cards);
-                return _cards.RestartWithAgainCards(cards);
+                var cardsController = Authenticate(new FlashcardQuizController(null!, null!, _cards, null!));
+                var view = Assert.IsType<ViewResult>(cardsController.RestartAgain(cards.SessionId));
+                var model = Assert.IsType<FlashcardQuizViewModel>(view.Model);
+                return _cards.FindSession(model.SessionId, "user")!;
             }
             var typed = (TypingSessionData)session;
             typed.IncorrectWords.AddRange(typed.Words);

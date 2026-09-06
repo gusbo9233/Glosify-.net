@@ -235,7 +235,7 @@ public class FlashcardQuizController : Controller
             session.AgainCards.Count,
             session.AgainCards,
             session.PracticeDirection,
-            session.PracticeItemType);
+            session.PracticeItemType) with { CanResumeFromSettings = false };
 
         _sessionService.SaveSession(restarted);
         return FlashcardResponse(restarted);
