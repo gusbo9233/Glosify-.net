@@ -84,6 +84,7 @@ import {
     const form = panel.querySelector('[data-assistant-form]');
     const textarea = panel.querySelector('[data-assistant-textarea]');
     const submit = panel.querySelector('[data-assistant-submit]');
+    submit.disabled = true;
     const imageInput = panel.querySelector('[data-assistant-image-input]');
     const scanStatus = panel.querySelector('[data-assistant-scan-status]');
     const quizSelector = panel.querySelector('[data-assistant-quiz-selector]');
@@ -1060,19 +1061,8 @@ import {
         event.preventDefault();
         const message = textarea.value.trim();
         if (!message) return;
-        const requestedSelection = chatSelection;
-
-        // Initialize only when no chat has been selected. A later selection must
-        // not wait for the initial chat's obsolete history request.
-        try {
-            if (!requestedSelection) await ensureInitialChat();
-        } catch (err) {
-            setStatus(err.message || 'Could not create chat.', true);
-            return;
-        }
-
-        if (requestedSelection && !ownsSelection(requestedSelection)) return;
         const selection = chatSelection;
+        if (!selection) return;
         const threadId = selection.threadId;
         await activeSelectionPromise;
         if (!ownsSelection(selection) || pendingSends.has(threadId)) return;
@@ -1104,6 +1094,7 @@ import {
         submit.disabled = true;
         setStatus('Thinking...');
         const clientStartedAt = performance.now();
+        let sendError = null;
 
         try {
             const response = await fetch(chatSendUrl(threadId), {
@@ -1121,8 +1112,9 @@ import {
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {
+                sendError = localizedProblem(data, response, 'Client.AssistantFailed', 'The assistant could not respond.');
                 if (ownsSelection(selection)) {
-                    setStatus(localizedProblem(data, response, 'Client.AssistantFailed', 'The assistant could not respond.'), true);
+                    setStatus(sendError, true);
                 }
                 return;
             }
@@ -1147,8 +1139,9 @@ import {
             await loadChats();
             if (ownsSelection(selection)) setStatus('');
         } catch (err) {
+            sendError = t('Client.AssistantNetwork', 'Network error talking to the assistant.');
             if (ownsSelection(selection)) {
-                setStatus(t('Client.AssistantNetwork', 'Network error talking to the assistant.'), true);
+                setStatus(sendError, true);
             }
         } finally {
             pendingSends.delete(threadId);
@@ -1158,7 +1151,10 @@ import {
             } else if (activeThreadId === threadId) {
                 // The user returned while this turn was pending. Reload the stored
                 // conversation instead of appending to a newer history snapshot.
-                await selectChat(threadId);
+                const loading = selectChat(threadId);
+                const reopenedSelection = chatSelection;
+                await loading;
+                if (sendError && ownsSelection(reopenedSelection)) setStatus(sendError, true);
             }
         }
     });

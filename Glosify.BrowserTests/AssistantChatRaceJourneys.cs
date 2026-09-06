@@ -474,6 +474,107 @@ public sealed partial class PortfolioJourneys
         }}),
     });
 
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_PreSelectionSubmissionCannotSendLaterIntoAnotherChat()
+    {
+        var catalog = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var initial = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var catalogs = 0;
+        var sent = new List<string>();
+        await SetupChatRaceAsync(route =>
+        {
+            if (route.Request.Url.Contains("/chat-a/", StringComparison.Ordinal))
+            {
+                initial.SetResult(route);
+                return Task.CompletedTask;
+            }
+            return FulfillHistoryAsync(route, "B history");
+        });
+        await Page.RouteAsync("**/Assistant/Chats", route =>
+        {
+            if (Interlocked.Increment(ref catalogs) != 1) return route.FallbackAsync();
+            catalog.SetResult(route);
+            return Task.CompletedTask;
+        });
+        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        {
+            Assert.Contains("/chat-b/Send", route.Request.Url);
+            using var payload = JsonDocument.Parse(route.Request.PostData!);
+            sent.Add(payload.RootElement.GetProperty("message").GetString()!);
+            return route.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { assistantMessageId = "reply", assistantText = "Reply B",
+                    toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+            });
+        });
+        await Page.Locator("[data-assistant-toggle]").ClickAsync();
+        var pendingCatalog = await catalog.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var disabledBeforeSelection = await RaceSubmit.IsDisabledAsync();
+        await Page.Locator("[data-assistant-textarea]").FillAsync("Before selection");
+        await Page.Locator("[data-assistant-form]").DispatchEventAsync("submit");
+        await FulfillRaceCatalogAsync(pendingCatalog, "");
+        var pendingHistory = await initial.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await SelectRaceChatAsync("Chat B");
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+        await SendRaceMessageAsync("Explicit B question");
+        await Expect(RaceTranscript).ToContainTextAsync("Reply B");
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+        await FulfillAndDrainAsync(pendingHistory, "Stale initial history");
+        Assert.Equal("Explicit B question", Assert.Single(sent));
+        Assert.True(disabledBeforeSelection);
+        await Expect(RaceTranscript).Not.ToContainTextAsync("Before selection");
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public Task AssistantChatRace_ReopenedChatShowsItsFailedReply() => VerifyReopenedReplyFailureAsync(false);
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public Task AssistantChatRace_ReopenedChatShowsItsNetworkFailure() => VerifyReopenedReplyFailureAsync(true);
+
+    private async Task VerifyReopenedReplyFailureAsync(bool networkFailure)
+    {
+        var send = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "Stored history"));
+        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        {
+            send.SetResult(route);
+            return Task.CompletedTask;
+        });
+        await OpenRaceAssistantAsync();
+        await SendRaceMessageAsync("Question A");
+        var pending = await send.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await SelectRaceChatAsync("Chat B");
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+        await SelectRaceChatAsync("Chat A");
+        await Expect(RaceTranscript).ToContainTextAsync("Stored history");
+        await Expect(RaceSubmit).ToBeDisabledAsync();
+        if (networkFailure)
+        {
+            ExpectRequestFailure("POST", "/Assistant/Chats/chat-a/Send");
+            await pending.AbortAsync("failed");
+        }
+        else
+        {
+            ExpectHttpFailure("POST", "/Assistant/Chats/chat-a/Send", 500);
+            await pending.FulfillAsync(new()
+            {
+                Status = 500,
+                ContentType = "application/problem+json",
+                Body = "{\"status\":500,\"title\":\"Failed reply\"}",
+            });
+        }
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+        await Expect(Page.Locator("[data-assistant-status]")).ToHaveTextAsync(networkFailure
+            ? "Network error talking to the assistant."
+            : "The assistant could not respond.");
+        await Expect(Page.Locator(".assistant-chat-item.is-active")).ToContainTextAsync("Chat A");
+        await Expect(RaceTranscript).ToContainTextAsync("Stored history");
+    }
+
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
     private ILocator RaceSubmit => Page.Locator("[data-assistant-submit]");
 
