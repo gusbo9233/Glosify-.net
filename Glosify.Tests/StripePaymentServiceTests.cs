@@ -69,6 +69,109 @@ public sealed class StripePaymentServiceTests
             won => Assert.Equal(80, won.Delta));
     }
 
+    [Theory]
+    [InlineData("won", "needs_response", 0)]
+    [InlineData("won", "needs_response", 20)]
+    [InlineData("warning_closed", "warning_needs_response", 0)]
+    [InlineData("warning_closed", "warning_needs_response", 20)]
+    [InlineData("lost", "needs_response", 0)]
+    public async Task ClosedDispute_IgnoresDelayedCreation(string closedStatus, string openStatus, int refundedCredits)
+    {
+        await using var context = CreateContext();
+        var purchase = PaidPurchase();
+        purchase.RefundedAmountMinor = refundedCredits * 59;
+        purchase.RevokedCredits = refundedCredits;
+        context.StripeCreditPurchases.Add(purchase);
+        await context.SaveChangesAsync();
+        var credits = new RecordingCreditService();
+
+        await CreateService(context, credits).HandleDisputeAsync(
+            "evt_closed", "dp_1", "pi_1", "charge.dispute.closed", closedStatus);
+        context.ChangeTracker.Clear();
+        await CreateService(context, credits).HandleDisputeAsync(
+            "evt_delayed", "dp_1", "pi_1", "charge.dispute.created", openStatus);
+        await CreateService(context, credits).HandleDisputeAsync(
+            "evt_closed_retry", "dp_1", "pi_1", "charge.dispute.closed", closedStatus);
+
+        purchase = await context.StripeCreditPurchases.SingleAsync();
+        Assert.Equal(closedStatus == "lost", purchase.HasUnresolvedDispute);
+        Assert.Equal(closedStatus == "lost" ? 100 : refundedCredits, purchase.RevokedCredits);
+        Assert.Equal(closedStatus == "lost" ? -100 : 0, credits.Adjustments.Sum(item => item.Delta));
+        Assert.Equal(refundedCredits * 59, purchase.RefundedAmountMinor);
+        Assert.All(await context.StripePaymentEvents.ToListAsync(), item => Assert.NotNull(item.AppliedAt));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task WonDispute_TakesPrecedenceOverLostRegardlessOfDeliveryOrder(bool wonFirst)
+    {
+        await using var context = CreateContext();
+        context.StripeCreditPurchases.Add(PaidPurchase());
+        await context.SaveChangesAsync();
+        var credits = new RecordingCreditService();
+        var service = CreateService(context, credits);
+
+        foreach (var status in wonFirst ? new[] { "won", "lost" } : new[] { "lost", "won" })
+        {
+            await service.HandleDisputeAsync($"evt_{status}", "dp_1", "pi_1", "charge.dispute.closed", status);
+        }
+
+        var purchase = await context.StripeCreditPurchases.SingleAsync();
+        Assert.False(purchase.HasUnresolvedDispute);
+        Assert.Equal(0, purchase.RevokedCredits);
+        Assert.Equal(StripeCreditPurchaseStatuses.Paid, purchase.Status);
+        Assert.Equal(0, credits.Adjustments.Sum(item => item.Delta));
+    }
+
+    [Fact]
+    public async Task NewDispute_AfterDifferentDisputeWasWon_StillRevokesCredits()
+    {
+        await using var context = CreateContext();
+        context.StripeCreditPurchases.Add(PaidPurchase());
+        await context.SaveChangesAsync();
+        var credits = new RecordingCreditService();
+        var service = CreateService(context, credits);
+
+        await service.HandleDisputeAsync("evt_won", "dp_1", "pi_1", "charge.dispute.closed", "won");
+        await service.HandleDisputeAsync("evt_new", "dp_2", "pi_1", "charge.dispute.created", "needs_response");
+
+        var purchase = await context.StripeCreditPurchases.SingleAsync();
+        Assert.True(purchase.HasUnresolvedDispute);
+        Assert.Equal(100, purchase.RevokedCredits);
+        Assert.Equal(StripeCreditPurchaseStatuses.Disputed, purchase.Status);
+        Assert.Equal(-100, Assert.Single(credits.Adjustments).Delta);
+    }
+
+    [Fact]
+    public async Task WonDispute_WithPendingCreditRetry_StillIgnoresDelayedCreation()
+    {
+        await using var context = CreateContext();
+        var purchase = PaidPurchase();
+        purchase.HasUnresolvedDispute = true;
+        purchase.RevokedCredits = 100;
+        purchase.Status = StripeCreditPurchaseStatuses.Disputed;
+        context.StripeCreditPurchases.Add(purchase);
+        await context.SaveChangesAsync();
+        var credits = new RecordingCreditService { FailNextAdjustment = true };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => CreateService(context, credits).HandleDisputeAsync(
+            "evt_won", "dp_1", "pi_1", "charge.dispute.closed", "won"));
+        Assert.Null((await context.StripePaymentEvents.SingleAsync()).AppliedAt);
+        context.ChangeTracker.Clear();
+        await CreateService(context, credits).HandleDisputeAsync(
+            "evt_delayed", "dp_1", "pi_1", "charge.dispute.created", "needs_response");
+        await CreateService(context, credits).HandleDisputeAsync(
+            "evt_retry", "dp_1", "pi_1", "charge.dispute.closed", "won");
+
+        purchase = await context.StripeCreditPurchases.SingleAsync();
+        Assert.False(purchase.HasUnresolvedDispute);
+        Assert.Equal(0, purchase.RevokedCredits);
+        Assert.Equal(StripeCreditPurchaseStatuses.Paid, purchase.Status);
+        Assert.Equal(100, Assert.Single(credits.Adjustments).Delta);
+        Assert.All(await context.StripePaymentEvents.ToListAsync(), item => Assert.NotNull(item.AppliedAt));
+    }
+
     [Fact]
     public async Task RefundBeforeCompletion_IsAppliedAfterThePurchaseGrant()
     {
@@ -150,6 +253,7 @@ public sealed class StripePaymentServiceTests
     {
         public List<(string Id, int Delta)> Adjustments { get; } = [];
         public int GrantCount { get; private set; }
+        public bool FailNextAdjustment { get; set; }
 
         public Task<bool> GrantStripePurchaseAsync(
             string targetUserId,
@@ -169,6 +273,11 @@ public sealed class StripePaymentServiceTests
             string note,
             CancellationToken cancellationToken = default)
         {
+            if (FailNextAdjustment)
+            {
+                FailNextAdjustment = false;
+                throw new InvalidOperationException("Simulated credit adjustment failure.");
+            }
             Adjustments.Add((adjustmentId, creditDelta));
             return Task.FromResult(true);
         }

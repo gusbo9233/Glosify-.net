@@ -263,7 +263,7 @@ public sealed class StripePaymentService : IStripePaymentService
                 purchase.RefundedAmountMinor = Math.Min(
                     purchase.UnitAmountMinor,
                     checked(purchase.RefundedAmountMinor + amountMinor));
-                return TargetRevokedCredits(purchase);
+                return Task.FromResult(TargetRevokedCredits(purchase));
             },
             cancellationToken);
     }
@@ -286,8 +286,27 @@ public sealed class StripePaymentService : IStripePaymentService
             eventId,
             eventType,
             paymentIntentId,
-            (purchase, _) =>
+            async (purchase, _) =>
             {
+                // Stripe delivers snapshots out of order. A closed result for this
+                // dispute dominates an earlier creation; a late win also dominates
+                // a lost result. Read the persisted ledger even if its credit delta
+                // still needs retrying, since the purchase state was saved with it.
+                var wonKey = BuildAdjustmentKey("dispute", disputeId, "won");
+                var warningClosedKey = BuildAdjustmentKey("dispute", disputeId, "warning_closed");
+                var lostKey = BuildAdjustmentKey("dispute", disputeId, "lost");
+                var superseded = !releasesHold && await _context.StripePaymentEvents.AnyAsync(
+                    item => item.PurchaseId == purchase.Id
+                        && item.Type == "charge.dispute.closed"
+                        && (item.IdempotencyKey == wonKey
+                            || item.IdempotencyKey == warningClosedKey
+                            || (!isClosed && item.IdempotencyKey == lostKey)),
+                    cancellationToken);
+                if (superseded)
+                {
+                    return TargetRevokedCredits(purchase);
+                }
+
                 purchase.HasUnresolvedDispute = !releasesHold;
                 return TargetRevokedCredits(purchase);
             },
@@ -299,7 +318,7 @@ public sealed class StripePaymentService : IStripePaymentService
         string eventId,
         string eventType,
         string? paymentIntentId,
-        Func<StripeCreditPurchase, StripePaymentEvent, int> updatePurchase,
+        Func<StripeCreditPurchase, StripePaymentEvent, Task<int>> updatePurchase,
         CancellationToken cancellationToken)
     {
         EnsureEnabled();
@@ -362,7 +381,7 @@ public sealed class StripePaymentService : IStripePaymentService
                 Type = eventType,
                 ProcessedAt = DateTimeOffset.UtcNow,
             };
-            var targetRevokedCredits = updatePurchase(purchase, paymentEvent);
+            var targetRevokedCredits = await updatePurchase(purchase, paymentEvent);
             paymentEvent.CreditDelta = purchase.PaidAt is null
                 ? 0
                 : purchase.RevokedCredits - targetRevokedCredits;
