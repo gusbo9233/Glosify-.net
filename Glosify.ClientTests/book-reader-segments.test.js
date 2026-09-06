@@ -92,3 +92,13 @@ for (const length of [1998, 1999, 2000]) {
         verifyOffsets(items, segments);
     });
 }
+
+for (const [name, intl] of [['Intl', Intl], ['fallback', {}]]) {
+    test(`Size splitting never crosses an earlier paragraph boundary with ${name}`, () => {
+        const items = [{ str: 'a'.repeat(100) + '\n\n' + 'b'.repeat(4000) }];
+        const segments = segment(items, intl);
+        assert.deepEqual(segments.map(entry => entry.sourceText), ['a'.repeat(100), 'b'.repeat(2000), 'b'.repeat(2000)]);
+        assert.deepEqual(segments.map(entry => entry.paragraphIndex), [0, 1, 1]);
+        verifyOffsets(items, segments);
+    });
+}

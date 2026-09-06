@@ -482,12 +482,32 @@ const buildPageSegments = (textContent) => {
     }
 
     if (!normalizeText(rawText)) return [];
-    let candidates;
-    if (typeof Intl?.Segmenter === 'function') {
-        candidates = [...new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(rawText)];
-    } else {
-        candidates = fallbackSentenceSegments(rawText);
+    // A translation segment belongs to one paragraph, even when a paragraph has
+    // no sentence punctuation. Keep delimiters in the preceding source range.
+    const paragraphs = [];
+    let paragraphStart = 0;
+    for (const delimiter of rawText.matchAll(/\n\s*\n/gu)) {
+        const end = delimiter.index + delimiter[0].length;
+        paragraphs.push({ text: rawText.slice(paragraphStart, end), index: paragraphStart });
+        paragraphStart = end;
     }
+    if (paragraphStart < rawText.length) paragraphs.push({ text: rawText.slice(paragraphStart), index: paragraphStart });
+    const sentenceSegmenter = typeof Intl?.Segmenter === 'function'
+        ? new Intl.Segmenter(undefined, { granularity: 'sentence' })
+        : null;
+    const candidates = paragraphs.flatMap(paragraph => {
+        const sentences = sentenceSegmenter
+            ? [...sentenceSegmenter.segment(paragraph.text)]
+            : fallbackSentenceSegments(paragraph.text);
+        const contentSentences = sentences.filter(sentence => normalizeText(sentence.segment));
+        return contentSentences.map((sentence, index) => {
+            // Intl can emit a paragraph's final newline as a whitespace-only
+            // sentence. Include those source characters with the preceding text.
+            const start = index === 0 ? 0 : sentence.index;
+            const end = contentSentences[index + 1]?.index ?? paragraph.text.length;
+            return { segment: paragraph.text.slice(start, end), index: paragraph.index + start };
+        });
+    });
 
     const segments = [];
     for (const candidate of candidates.flatMap(splitTranslationCandidate)) {
