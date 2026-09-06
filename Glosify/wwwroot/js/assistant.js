@@ -55,6 +55,7 @@ import {
     const pendingSends = new Set();
     const ownsSelection = selection => selection === chatSelection;
     let chats = [];
+    let chatCatalogRevision = 0;
     let initialized = false;
     const chatsUrl = '/Assistant/Chats';
     const chatHistoryUrl = (threadId) => `/Assistant/Chats/${threadId}/History`;
@@ -316,8 +317,10 @@ import {
     };
 
     const loadChats = async () => {
+        const revision = ++chatCatalogRevision;
         try {
             const data = await api.json(chatsUrl);
+            if (revision !== chatCatalogRevision) return chats;
             chats = data.chats ?? [];
             renderChatList();
             return chats;
@@ -342,6 +345,7 @@ import {
         }
 
         const chat = await response.json();
+        chatCatalogRevision++;
         chats = upsertChat(chats, chat);
         renderChatList();
         return chat;
@@ -359,6 +363,7 @@ import {
         }
 
         const updated = await response.json();
+        chatCatalogRevision++;
         chats = replaceChat(chats, updated);
         renderChatList();
         return updated;
@@ -375,6 +380,7 @@ import {
         }
         await response.text();
 
+        chatCatalogRevision++;
         chats = removeChat(chats, threadId);
         if (activeThreadId === threadId) {
             const next = chats[0] || await createChat(quizId);

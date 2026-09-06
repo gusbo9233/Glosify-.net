@@ -389,6 +389,91 @@ public sealed partial class PortfolioJourneys
         Assert.Equal(1, creates);
     }
 
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_OlderCatalogCannotReplaceNewerChatMetadata()
+    {
+        var older = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requests = 0;
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "History"));
+        await OpenRaceAssistantAsync();
+        await Page.RouteAsync("**/Assistant/Chats", route =>
+        {
+            if (Interlocked.Increment(ref requests) == 1)
+            {
+                older.SetResult(route);
+                return Task.CompletedTask;
+            }
+            return FulfillRaceCatalogAsync(route, "Latest B preview");
+        });
+        await RouteRaceRepliesAsync();
+        await SendRaceMessageAsync("Question A");
+        var pending = await older.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await SelectRaceChatAsync("Chat B");
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+        await SendRaceMessageAsync("Question B");
+        await Expect(Page.Locator(".assistant-chat-main").Filter(new() { HasText = "Chat B" }))
+            .ToContainTextAsync("Latest B preview");
+        var response = Page.WaitForResponseAsync(response => response.Url == pending.Request.Url);
+        await FulfillRaceCatalogAsync(pending, "Stale B preview");
+        await (await response).FinishedAsync();
+        await DrainBrowserTasksAsync();
+        await Expect(Page.Locator(".assistant-chat-main").Filter(new() { HasText = "Chat B" }))
+            .ToContainTextAsync("Latest B preview");
+        await Expect(Page.Locator("[data-assistant-chat-list]")).Not.ToContainTextAsync("Stale B preview");
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_OlderCatalogCannotRemoveANewlyCreatedChat()
+    {
+        var older = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "History"));
+        await OpenRaceAssistantAsync();
+        await Page.RouteAsync("**/Assistant/Chats", route =>
+        {
+            if (route.Request.Method == "GET")
+            {
+                older.SetResult(route);
+                return Task.CompletedTask;
+            }
+            return route.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { id = "chat-new", title = "New chat", preview = "" }),
+            });
+        });
+        await RouteRaceRepliesAsync();
+        await SendRaceMessageAsync("Question A");
+        var pending = await older.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await Page.Locator("[data-assistant-new-chat]").DispatchEventAsync("click");
+        await Expect(Page.Locator(".assistant-chat-item.is-active")).ToContainTextAsync("New chat");
+        var response = Page.WaitForResponseAsync(response => response.Url == pending.Request.Url);
+        await FulfillRaceCatalogAsync(pending, "Old B preview");
+        await (await response).FinishedAsync();
+        await DrainBrowserTasksAsync();
+        await Expect(Page.Locator(".assistant-chat-item.is-active")).ToContainTextAsync("New chat");
+        await Expect(RaceTranscript).ToContainTextAsync("History");
+    }
+
+    private Task RouteRaceRepliesAsync() => Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        route.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new { assistantMessageId = "reply", assistantText = "Reply",
+                toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+        }));
+
+    private static Task FulfillRaceCatalogAsync(IRoute route, string bPreview) => route.FulfillAsync(new()
+    {
+        ContentType = "application/json",
+        Body = JsonSerializer.Serialize(new { chats = new[]
+        {
+            new { id = "chat-a", title = "Chat A", preview = "", updatedAt = DateTimeOffset.UtcNow },
+            new { id = "chat-b", title = "Chat B", preview = bPreview, updatedAt = DateTimeOffset.UtcNow },
+        }}),
+    });
+
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
     private ILocator RaceSubmit => Page.Locator("[data-assistant-submit]");
 
