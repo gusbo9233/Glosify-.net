@@ -96,6 +96,11 @@ public class ExternalAuthApiController : ControllerBase
         // Clear the temporary external cookie used to carry the Google principal.
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
 
+        if (await SignInRejectionAsync(user) is { } rejection)
+        {
+            return AppRedirect($"error={Uri.EscapeDataString(rejection)}");
+        }
+
         var code = _codes.Create(user.Id, codeChallenge!);
         return AppRedirect($"code={Uri.EscapeDataString(code)}");
     }
@@ -115,10 +120,32 @@ public class ExternalAuthApiController : ControllerBase
             return Unauthorized("Invalid or expired code.");
         }
 
+        // Account restrictions may have changed since the browser issued the code.
+        if (await SignInRejectionAsync(user) is { } rejection)
+        {
+            return Unauthorized(rejection);
+        }
+
         // The bearer-token handler writes the AccessTokenResponse JSON to the response.
         _signInManager.AuthenticationScheme = IdentityConstants.BearerScheme;
         await _signInManager.SignInAsync(user, isPersistent: false);
         return new EmptyResult();
+    }
+
+    private async Task<string?> SignInRejectionAsync(ApplicationUser user)
+    {
+        if (!await _signInManager.CanSignInAsync(user))
+            return "Sign-in is not allowed for this account.";
+
+        if (_userManager.SupportsUserLockout && await _userManager.IsLockedOutAsync(user))
+            return "This account is locked. Try again later.";
+
+        // This mobile exchange has no second-factor input. Do not turn an OAuth
+        // identity into a fully authenticated bearer token without that factor.
+        if (_userManager.SupportsUserTwoFactor && await _userManager.GetTwoFactorEnabledAsync(user))
+            return "Two-factor authentication is required. Complete sign-in using a two-factor-capable login flow.";
+
+        return null;
     }
 
     private RedirectResult AppRedirect(string query) => Redirect($"{CallbackScheme}?{query}");
