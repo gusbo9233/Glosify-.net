@@ -1,5 +1,6 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
+using Glosify.Services.Auth;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.RealtimeTranslation;
@@ -9,16 +10,16 @@ public sealed class RealtimeTranslationCaptureService : IRealtimeTranslationCapt
     private const int MaximumStoredTextCharacters = 12_000;
 
     private readonly GlosifyContext _context;
-    private readonly IConfiguration _configuration;
+    private readonly AdministratorAccess _administratorAccess;
     private readonly TimeProvider _timeProvider;
 
     public RealtimeTranslationCaptureService(
         GlosifyContext context,
-        IConfiguration configuration,
+        AdministratorAccess administratorAccess,
         TimeProvider timeProvider)
     {
         _context = context;
-        _configuration = configuration;
+        _administratorAccess = administratorAccess;
         _timeProvider = timeProvider;
     }
 
@@ -26,21 +27,8 @@ public sealed class RealtimeTranslationCaptureService : IRealtimeTranslationCapt
         string userId,
         CancellationToken cancellationToken = default)
     {
-        var email = await _context.Users
-            .AsNoTracking()
-            .Where(user => user.Id == userId)
-            .Select(user => user.Email ?? user.UserName)
-            .SingleOrDefaultAsync(cancellationToken);
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            return false;
-        }
-
-        return _configuration.GetSection("Admin:Emails").Get<string[]>()
-            ?.Any(adminEmail => string.Equals(
-                adminEmail?.Trim(),
-                email.Trim(),
-                StringComparison.OrdinalIgnoreCase)) == true;
+        return _administratorAccess.IsAdminUser(userId)
+            && await _context.Users.AnyAsync(user => user.Id == userId, cancellationToken);
     }
 
     public async Task AppendAsync(

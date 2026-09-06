@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -35,7 +36,7 @@ public sealed class AdminAuthorizationTests
     }
 
     [Fact]
-    public async Task AiCredits_ForbidsNonAdminEmail()
+    public async Task AiCredits_ForbidsNonAdminId()
     {
         using var factory = CreateFactory();
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
@@ -47,7 +48,7 @@ public sealed class AdminAuthorizationTests
     }
 
     [Fact]
-    public async Task AiCredits_AllowsConfiguredAdminEmail()
+    public async Task AiCredits_AllowsConfiguredAdminId()
     {
         using var factory = CreateFactory();
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
@@ -60,7 +61,7 @@ public sealed class AdminAuthorizationTests
     }
 
     [Fact]
-    public async Task TranslationCaptures_ForbidsNonAdminEmail()
+    public async Task TranslationCaptures_ForbidsNonAdminId()
     {
         using var factory = CreateFactory();
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
@@ -107,12 +108,42 @@ public sealed class AdminAuthorizationTests
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("/Admin/AiCredits")]
+    [InlineData("/Admin/TranslationCaptures")]
+    public async Task AdministratorEndpoints_RejectAllowlistedEmailOnAnotherAccount(string path)
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Add(TestAuthHandler.EmailHeader, "gusbo923@gmail.com");
+        client.DefaultRequestHeaders.Add("X-Test-UserId", "learner-1");
+
+        var response = await client.GetAsync(path);
+
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AiCredits_StillAllowsApprovedAccountAfterEmailChange()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Add(TestAuthHandler.EmailHeader, "changed@example.test");
+        client.DefaultRequestHeaders.Add("X-Test-UserId", "admin-1");
+
+        var response = await client.GetAsync("/Admin/AiCredits");
+
+        response.EnsureSuccessStatusCode();
+    }
+
     private static WebApplicationFactory<Program> CreateFactory()
     {
         var databaseName = Guid.NewGuid().ToString("N");
         var factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
+                builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(
+                    new Dictionary<string, string?> { ["Admin:UserIds:0"] = "admin-1" }));
                 builder.ConfigureTestServices(services =>
                 {
                     services.RemoveAll<DbContextOptions<GlosifyContext>>();
@@ -202,9 +233,9 @@ public sealed class AdminAuthorizationTests
             }
 
             var email = emailValues.ToString();
-            var id = string.Equals(email, "gusbo923@gmail.com", StringComparison.OrdinalIgnoreCase)
+            var id = Request.Headers["X-Test-UserId"].FirstOrDefault() ?? (string.Equals(email, "gusbo923@gmail.com", StringComparison.OrdinalIgnoreCase)
                 ? "admin-1"
-                : "learner-1";
+                : "learner-1");
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, id),

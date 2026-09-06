@@ -98,27 +98,19 @@ builder.Services.AddResponseCompression(options =>
     options.Providers.Add<GzipCompressionProvider>();
 });
 
+builder.Services.AddSingleton<AdministratorAccess>();
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
-    var adminEmails = builder.Configuration.GetSection("Admin:Emails").Get<string[]>() ?? [];
-    bool IsAdmin(AuthorizationHandlerContext context)
-    {
-        var email = context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-            ?? context.User.Identity?.Name
-            ?? string.Empty;
-        return adminEmails.Any(adminEmail => string.Equals(
-            adminEmail,
-            email,
-            StringComparison.OrdinalIgnoreCase));
-    }
-
+});
+builder.Services.AddOptions<AuthorizationOptions>().Configure<AdministratorAccess>((options, administratorAccess) =>
+{
     options.AddPolicy(AuthorizationPolicyNames.AiCreditAdmin, policy =>
     {
         policy.RequireAuthenticatedUser();
-        policy.RequireAssertion(IsAdmin);
+        policy.RequireAssertion(context => administratorAccess.IsAdmin(context.User));
     });
 });
 builder.Services.AddMemoryCache();

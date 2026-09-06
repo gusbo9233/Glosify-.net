@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using Glosify.Extensions;
 using Glosify.Services.Ai;
+using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.ViewComponents;
@@ -17,16 +17,16 @@ namespace Glosify.ViewComponents;
 public sealed class AiCreditPillViewComponent : ViewComponent
 {
     private readonly IAiCreditService _credits;
-    private readonly IConfiguration _configuration;
+    private readonly AdministratorAccess _administratorAccess;
     private readonly ILogger<AiCreditPillViewComponent> _logger;
 
     public AiCreditPillViewComponent(
         IAiCreditService credits,
-        IConfiguration configuration,
+        AdministratorAccess administratorAccess,
         ILogger<AiCreditPillViewComponent> logger)
     {
         _credits = credits;
-        _configuration = configuration;
+        _administratorAccess = administratorAccess;
         _logger = logger;
     }
 
@@ -43,26 +43,13 @@ public sealed class AiCreditPillViewComponent : ViewComponent
                 UserClaimsPrincipal.GetUserId(),
                 HttpContext.RequestAborted);
 
-            return View(new AiCreditPillModel(account.AvailableCredits, IsAdmin()));
+            return View(new AiCreditPillModel(account.AvailableCredits, _administratorAccess.IsAdmin(UserClaimsPrincipal)));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _logger.LogWarning(exception, "Could not read the AI credit balance for the top bar");
             return Content(string.Empty);
         }
-    }
-
-    private bool IsAdmin()
-    {
-        var account = UserClaimsPrincipal.FindFirstValue(ClaimTypes.Email)
-            ?? UserClaimsPrincipal.Identity?.Name;
-        if (string.IsNullOrEmpty(account))
-        {
-            return false;
-        }
-
-        var adminEmails = _configuration.GetSection("Admin:Emails").Get<string[]>() ?? [];
-        return adminEmails.Any(email => string.Equals(email, account, StringComparison.OrdinalIgnoreCase));
     }
 }
 

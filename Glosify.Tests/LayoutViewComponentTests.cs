@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -67,12 +68,23 @@ public sealed class LayoutViewComponentTests
         var document = await GetHomeAsync(client);
 
         Assert.Contains("42 credits", document.QuerySelector(".credit-pill")?.TextContent ?? string.Empty);
-        // learner@example.test is not in Admin:Emails, so the balance is not a link.
+        // This account ID has not been granted administrator access.
         Assert.Equal("span", document.QuerySelector(".credit-pill")?.LocalName);
         Assert.EndsWith(
             "Polish",
             document.QuerySelector(".language-context-pill-active")?.TextContent.Trim(),
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Credit_pill_links_to_admin_only_for_approved_account_id()
+    {
+        using var factory = CreateFactory(administratorId: "learner-1");
+        var document = await GetHomeAsync(factory.CreateClient());
+
+        var pill = document.QuerySelector(".credit-pill");
+        Assert.Equal("a", pill?.LocalName);
+        Assert.Equal("/Admin/AiCredits", pill?.GetAttribute("href"));
     }
 
     [Fact]
@@ -123,10 +135,17 @@ public sealed class LayoutViewComponentTests
 
     private static WebApplicationFactory<Program> CreateFactory(
         bool failing = false,
-        string currentLanguage = "Polish") =>
+        string currentLanguage = "Polish",
+        string? administratorId = null) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Development");
+            builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["Admin:UserIds:0"] = administratorId,
+                    ["Admin:Emails:0"] = "learner@example.test",
+                }));
             builder.ConfigureTestServices(services =>
             {
                 services.RemoveAll<IAiCreditService>();
