@@ -53,6 +53,8 @@ import {
     let chatSelection = null;
     let activeSelectionPromise = Promise.resolve();
     const pendingSends = new Set();
+    const sendErrors = new Map();
+    const pendingContextWrites = new Map();
     const ownsSelection = selection => selection === chatSelection;
     let chats = [];
     let chatCatalogRevision = 0;
@@ -245,12 +247,18 @@ import {
 
     const enqueueContextWrite = (snapshot) => {
         const selection = chatSelection;
-        return contextWrites(snapshot).then(
+        const pending = contextWrites(snapshot).then(
             () => true,
             () => {
                 if (ownsSelection(selection)) setStatus('Could not save chat context.', true);
                 return false;
+            }).finally(() => {
+                if (pendingContextWrites.get(snapshot.threadId) === pending) {
+                    pendingContextWrites.delete(snapshot.threadId);
+                }
             });
+        pendingContextWrites.set(snapshot.threadId, pending);
+        return pending;
     };
 
     const persistContext = () => {
@@ -383,6 +391,7 @@ import {
 
         chatCatalogRevision++;
         chats = removeChat(chats, threadId);
+        sendErrors.delete(threadId);
         if (activeThreadId === threadId) {
             const next = chats[0] || await createChat(quizId);
             await selectChat(next.id);
@@ -423,6 +432,11 @@ import {
     const loadSelectedChat = async (selection) => {
         const { threadId } = selection;
         sessionStorage.setItem(activeChatStorageKey, threadId);
+        let contextPersisted = true;
+        while (pendingContextWrites.has(threadId)) {
+            contextPersisted = await pendingContextWrites.get(threadId);
+            if (!ownsSelection(selection)) return;
+        }
         const chat = getActiveChat();
         const contextQuizId = pageQuizId || chat?.contextQuizId || null;
         const contextQuizName = pageQuizId
@@ -444,7 +458,6 @@ import {
         setQuizContext(contextQuizId, contextQuizName, false);
         const adoptsPageQuiz = pageQuizId && chat?.contextQuizId !== pageQuizId;
         const adoptsPageMaterial = !storedId && materialId;
-        let contextPersisted = true;
         if (adoptsPageQuiz || adoptsPageMaterial) {
             contextPersisted = await enqueueContextWrite({
                 threadId,
@@ -457,13 +470,19 @@ import {
         }
         if (!ownsSelection(selection)) return;
         renderChatList();
-        await loadHistory(selection);
+        const historyLoaded = await loadHistory(selection);
         if (!ownsSelection(selection)) return;
         switchPane('chat');
-        submit.disabled = pendingSends.has(threadId);
-        if (contextPersisted) {
-            setStatus(pendingSends.has(threadId) ? 'Thinking...' : '');
+        if (!historyLoaded) {
+            setStatus(t('Client.GenericError', 'Something went wrong. Please try again.'), true);
+            return;
         }
+        selection.historyLoaded = true;
+        submit.disabled = pendingSends.has(threadId);
+        if (!contextPersisted) setStatus('Could not save chat context.', true);
+        else if (pendingSends.has(threadId)) setStatus('Thinking...');
+        else if (sendErrors.has(threadId)) setStatus(sendErrors.get(threadId), true);
+        else setStatus('');
     };
 
     const renderChatList = () => {
@@ -919,21 +938,22 @@ import {
     };
 
     const loadHistory = async (selection) => {
-        if (!ownsSelection(selection)) return;
+        if (!ownsSelection(selection)) return false;
         const { threadId } = selection;
         try {
             const response = await fetch(chatHistoryUrl(threadId), {
                 headers: { 'Accept': 'application/json' },
             });
-            if (!response.ok) return;
+            if (!response.ok) return false;
             const data = await response.json();
-            if (!ownsSelection(selection)) return;
+            if (!ownsSelection(selection) || !Array.isArray(data?.messages)) return false;
             resetTranscript(defaultEmptyText);
             for (const message of data.messages ?? []) {
                 renderMessage(message);
             }
+            return true;
         } catch (err) {
-            // History is best-effort.
+            return false;
         }
     };
 
@@ -1065,8 +1085,9 @@ import {
         if (!selection) return;
         const threadId = selection.threadId;
         await activeSelectionPromise;
-        if (!ownsSelection(selection) || pendingSends.has(threadId)) return;
+        if (!ownsSelection(selection) || !selection.historyLoaded || pendingSends.has(threadId)) return;
         pendingSends.add(threadId);
+        sendErrors.delete(threadId);
 
         const documentContext = currentBookPageContext({
             pageDocumentId: pageDocumentId,
@@ -1094,7 +1115,6 @@ import {
         submit.disabled = true;
         setStatus('Thinking...');
         const clientStartedAt = performance.now();
-        let sendError = null;
 
         try {
             const response = await fetch(chatSendUrl(threadId), {
@@ -1112,7 +1132,8 @@ import {
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {
-                sendError = localizedProblem(data, response, 'Client.AssistantFailed', 'The assistant could not respond.');
+                const sendError = localizedProblem(data, response, 'Client.AssistantFailed', 'The assistant could not respond.');
+                sendErrors.set(threadId, sendError);
                 if (ownsSelection(selection)) {
                     setStatus(sendError, true);
                 }
@@ -1139,7 +1160,8 @@ import {
             await loadChats();
             if (ownsSelection(selection)) setStatus('');
         } catch (err) {
-            sendError = t('Client.AssistantNetwork', 'Network error talking to the assistant.');
+            const sendError = t('Client.AssistantNetwork', 'Network error talking to the assistant.');
+            sendErrors.set(threadId, sendError);
             if (ownsSelection(selection)) {
                 setStatus(sendError, true);
             }
@@ -1151,10 +1173,7 @@ import {
             } else if (activeThreadId === threadId) {
                 // The user returned while this turn was pending. Reload the stored
                 // conversation instead of appending to a newer history snapshot.
-                const loading = selectChat(threadId);
-                const reopenedSelection = chatSelection;
-                await loading;
-                if (sendError && ownsSelection(reopenedSelection)) setStatus(sendError, true);
+                await selectChat(threadId);
             }
         }
     });

@@ -535,7 +535,15 @@ public sealed partial class PortfolioJourneys
     [Trait("Category", "Browser")]
     public Task AssistantChatRace_ReopenedChatShowsItsNetworkFailure() => VerifyReopenedReplyFailureAsync(true);
 
-    private async Task VerifyReopenedReplyFailureAsync(bool networkFailure)
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public Task AssistantChatRace_ReturningAfterAReplyFailedShowsItsError() => VerifyReopenedReplyFailureAsync(false, true);
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public Task AssistantChatRace_ReturningAfterANetworkFailureShowsItsError() => VerifyReopenedReplyFailureAsync(true, true);
+
+    private async Task VerifyReopenedReplyFailureAsync(bool networkFailure, bool returnAfterFailure = false)
     {
         var send = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
         await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "Stored history"));
@@ -549,9 +557,12 @@ public sealed partial class PortfolioJourneys
         var pending = await send.Task.WaitAsync(TimeSpan.FromSeconds(10));
         await SelectRaceChatAsync("Chat B");
         await Expect(RaceSubmit).ToBeEnabledAsync();
-        await SelectRaceChatAsync("Chat A");
-        await Expect(RaceTranscript).ToContainTextAsync("Stored history");
-        await Expect(RaceSubmit).ToBeDisabledAsync();
+        if (!returnAfterFailure)
+        {
+            await SelectRaceChatAsync("Chat A");
+            await Expect(RaceTranscript).ToContainTextAsync("Stored history");
+            await Expect(RaceSubmit).ToBeDisabledAsync();
+        }
         if (networkFailure)
         {
             ExpectRequestFailure("POST", "/Assistant/Chats/chat-a/Send");
@@ -567,12 +578,110 @@ public sealed partial class PortfolioJourneys
                 Body = "{\"status\":500,\"title\":\"Failed reply\"}",
             });
         }
+        if (returnAfterFailure)
+        {
+            await DrainBrowserTasksAsync();
+            await Expect(Page.Locator("[data-assistant-status]")).ToHaveTextAsync("");
+            await SelectRaceChatAsync("Chat A");
+        }
         await Expect(RaceSubmit).ToBeEnabledAsync();
         await Expect(Page.Locator("[data-assistant-status]")).ToHaveTextAsync(networkFailure
             ? "Network error talking to the assistant."
             : "The assistant could not respond.");
         await Expect(Page.Locator(".assistant-chat-item.is-active")).ToContainTextAsync("Chat A");
         await Expect(RaceTranscript).ToContainTextAsync("Stored history");
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_FailedHistoryKeepsSubmissionDisabledUntilRetrySucceeds()
+    {
+        var fail = true;
+        var sends = 0;
+        await SetupChatRaceAsync(route =>
+        {
+            if (!fail) return FulfillHistoryAsync(route, "Recovered history");
+            ExpectHttpFailure("GET", "/Assistant/Chats/chat-a/History", 500);
+            return route.FulfillAsync(new() { Status = 500, ContentType = "application/json", Body = "{}" });
+        });
+        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        {
+            Interlocked.Increment(ref sends);
+            return route.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { assistantMessageId = "reply", assistantText = "Reply",
+                    toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+            });
+        });
+        await Page.Locator("[data-assistant-toggle]").ClickAsync();
+        await Expect(Page.Locator("[data-assistant-panel]"))
+            .ToHaveAttributeAsync("data-assistant-initialized", "true");
+        await Page.Locator("[data-assistant-textarea]").FillAsync("Must not send");
+        await Page.Locator("[data-assistant-form]").DispatchEventAsync("submit");
+        await DrainBrowserTasksAsync();
+        Assert.Equal(0, sends);
+        await Expect(RaceSubmit).ToBeDisabledAsync();
+        await Expect(Page.Locator("[data-assistant-status]"))
+            .ToHaveTextAsync("Something went wrong. Please try again.");
+        fail = false;
+        await SelectRaceChatAsync("Chat A");
+        await Expect(RaceTranscript).ToContainTextAsync("Recovered history");
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+        await SendRaceMessageAsync("After recovery");
+        await Expect(RaceTranscript).ToContainTextAsync("Reply");
+        Assert.Equal(1, sends);
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_ReopenedChatWaitsForItsPendingContextSave()
+    {
+        var patch = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "Stored history"));
+        await Page.RouteAsync("**/Assistant/Chats/chat-a", route =>
+        {
+            patch.SetResult(route);
+            return Task.CompletedTask;
+        });
+        string? sentQuiz = null;
+        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        {
+            using var payload = JsonDocument.Parse(route.Request.PostData!);
+            sentQuiz = payload.RootElement.GetProperty("contextQuizId").GetString();
+            return route.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { assistantMessageId = "reply", assistantText = "Reply",
+                    toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+            });
+        });
+        await OpenRaceAssistantAsync();
+        const string quizId = "11111111-1111-1111-1111-111111111111";
+        var picker = Page.Locator("[data-assistant-quiz-selector]");
+        await picker.EvaluateAsync("(select, id) => { const option = new Option('New quiz', id); option.dataset.contextLabel = 'New quiz'; select.add(option); }", quizId);
+        await picker.SelectOptionAsync(quizId);
+        var pending = await patch.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await SelectRaceChatAsync("Chat B");
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+        await SelectRaceChatAsync("Chat A");
+        await DrainBrowserTasksAsync();
+        var disabledBeforeSave = await RaceSubmit.IsDisabledAsync();
+        var response = Page.WaitForResponseAsync(response => response.Url == pending.Request.Url);
+        await pending.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new { id = "chat-a", title = "Chat A", preview = "",
+                contextQuizId = quizId, contextQuizName = "New quiz" }),
+        });
+        await (await response).FinishedAsync();
+        await DrainBrowserTasksAsync();
+        await Expect(picker).ToHaveValueAsync(quizId);
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+        await SendRaceMessageAsync("Use the new context");
+        await Expect(RaceTranscript).ToContainTextAsync("Reply");
+        Assert.Equal(quizId, sentQuiz);
+        Assert.True(disabledBeforeSave);
     }
 
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
