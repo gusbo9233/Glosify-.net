@@ -8,6 +8,56 @@ namespace Glosify.Tests;
 
 public sealed class RealtimeTranslationOptionsTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void EnabledBillingModels_RejectMissingValuesWithoutThrowing(string? billingModel)
+    {
+        foreach (var provider in new[] { "ElevenLabs", "Cloudflare", "Economical", "SavedTranscript" })
+        {
+            var options = ValidOptions();
+            string expectedFailure;
+            switch (provider)
+            {
+                case "ElevenLabs":
+                    options.ElevenLabs.BillingModel = billingModel!;
+                    expectedFailure = "RealtimeTranslation:ElevenLabs:BillingModel is required";
+                    break;
+                case "Cloudflare":
+                    options.Cloudflare.Enabled = true;
+                    options.Cloudflare.BillingModel = billingModel!;
+                    expectedFailure = "RealtimeTranslation:Cloudflare:BillingModel is required";
+                    break;
+                case "Economical":
+                    options.EconomicalEnabled = true;
+                    options.EconomicalBillingModel = billingModel!;
+                    expectedFailure = "RealtimeTranslation:EconomicalBillingModel is required";
+                    break;
+                default:
+                    options.SavedTranscriptBillingModel = billingModel!;
+                    expectedFailure = "RealtimeTranslation:SavedTranscriptBillingModel is required";
+                    break;
+            }
+            var validator = new RealtimeTranslationOptionsValidator(
+                Options.Create(new AiUsageOptions
+                {
+                    MonthlyBudget = new AiMonthlyBudgetOptions
+                    {
+                        Enabled = true,
+                        Providers = ["openai", "elevenlabs", "cloudflare"],
+                        Models = [new() { Deployment = "gpt-realtime-translate", AudioSekPerMinute = 0.5m }],
+                    },
+                }), ExtensionAuth());
+
+            var result = validator.Validate(null, options);
+
+            Assert.True(result.Failed);
+            Assert.Contains(result.Failures!, failure => failure.StartsWith(expectedFailure, StringComparison.Ordinal));
+            Assert.Contains(result.Failures!, failure => failure.Contains("every enabled realtime subtitle", StringComparison.Ordinal));
+        }
+    }
+
     [Fact]
     public void DisabledFeature_DoesNotRequireSecrets()
     {

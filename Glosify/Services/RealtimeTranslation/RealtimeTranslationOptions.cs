@@ -419,11 +419,11 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 string.Equals(model.Deployment?.Trim(), OpenAiModels.RealtimeTranslation, StringComparison.OrdinalIgnoreCase));
             var savedDurationPrice = options.SavedSourceTranscriptsEnabled
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
-                    string.Equals(model.Deployment?.Trim(), options.SavedTranscriptBillingModel.Trim(), StringComparison.OrdinalIgnoreCase))
+                    string.Equals(model.Deployment?.Trim(), options.SavedTranscriptBillingModel?.Trim(), StringComparison.OrdinalIgnoreCase))
                 : null;
             var economicalDurationPrice = options.EconomicalEnabled
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
-                    string.Equals(model.Deployment?.Trim(), options.EconomicalBillingModel.Trim(), StringComparison.OrdinalIgnoreCase))
+                    string.Equals(model.Deployment?.Trim(), options.EconomicalBillingModel?.Trim(), StringComparison.OrdinalIgnoreCase))
                 : null;
             var cloudflareIsBudgeted = !options.Cloudflare.Enabled
                 || _aiUsageOptions.MonthlyBudget.Providers.Any(provider =>
@@ -435,7 +435,7 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
                     string.Equals(
                         model.Deployment?.Trim(),
-                        options.Cloudflare.BillingModel.Trim(),
+                        options.Cloudflare.BillingModel?.Trim(),
                         StringComparison.OrdinalIgnoreCase))
                 : null;
             var elevenLabsIsBudgeted = !options.ElevenLabs.Enabled
@@ -448,7 +448,7 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
                     string.Equals(
                         model.Deployment?.Trim(),
-                        options.ElevenLabs.BillingModel.Trim(),
+                        options.ElevenLabs.BillingModel?.Trim(),
                         StringComparison.OrdinalIgnoreCase))
                 : null;
             if (!openAiIsBudgeted || durationPrice?.AudioSekPerMinute is not > 0
