@@ -1,6 +1,7 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.RealtimeTranslation;
+using Glosify.Services.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Time.Testing;
@@ -14,11 +15,11 @@ public sealed class RealtimeTranslationCaptureServiceTests
         new(2026, 8, 26, 19, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public async Task Capture_IsEnabledOnlyForConfiguredAdminEmail()
+    public async Task Capture_IsEnabledOnlyForConfiguredAdminId()
     {
         await using var context = CreateContext();
-        AddUserAndSession(context, "admin", "ADMIN@example.test", Guid.NewGuid());
-        AddUserAndSession(context, "learner", "learner@example.test", Guid.NewGuid());
+        AddUserAndSession(context, "admin", "changed@example.test", Guid.NewGuid());
+        AddUserAndSession(context, "learner", "admin@example.test", Guid.NewGuid());
         await context.SaveChangesAsync();
         var service = CreateService(context);
 
@@ -34,7 +35,7 @@ public sealed class RealtimeTranslationCaptureServiceTests
         var adminSession = Guid.NewGuid();
         var learnerSession = Guid.NewGuid();
         AddUserAndSession(context, "admin", "admin@example.test", adminSession);
-        AddUserAndSession(context, "learner", "learner@example.test", learnerSession);
+        AddUserAndSession(context, "learner", "admin@example.test", learnerSession);
         await context.SaveChangesAsync();
         var service = CreateService(context);
         CapturedRealtimeTranslationEvent[] events =
@@ -74,11 +75,12 @@ public sealed class RealtimeTranslationCaptureServiceTests
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Admin:Emails:0"] = "admin@example.test",
+                ["Admin:UserIds:0"] = "admin",
             })
             .Build();
         return new RealtimeTranslationCaptureService(
             context,
-            configuration,
+            new AdministratorAccess(configuration),
             new FakeTimeProvider(Now));
     }
 

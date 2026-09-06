@@ -96,7 +96,7 @@ partial cadence because they do not call a translation provider.
 
 ### Administrator Scribe capture
 
-Scribe sessions started by an account listed in `Admin__Emails` automatically
+Scribe sessions started by an account listed in `Admin__UserIds` automatically
 store an internal analysis trace in `RealtimeTranslationCaptureEvents`. This is
 separate from the user-facing saved-transcript feature and does not capture
 ordinary accounts. Each trace contains the Scribe source partials and finals,
@@ -104,8 +104,19 @@ every Cloudflare partial or final result, whether that result required a
 provider request, and every bubble finalized by the server. Caption text is
 stored only in this database table; logs and metrics remain text-free.
 
-Configure each administrator email as an indexed App Service setting, for
-example `Admin__Emails__0=admin@example.com`. After completing a Scribe run,
+Configure each administrator's immutable `AspNetUsers.Id` as an indexed App
+Service setting, for example `Admin__UserIds__0=<approved-account-id>`.
+Verify the account belongs to the intended administrator before granting access;
+an email match or `EmailConfirmed` flag alone is not an administrator grant.
+The same ID allowlist protects credit administration, navigation links, and Scribe
+capture. IDs are matched exactly; empty configuration grants nobody access.
+`Admin__Emails` no longer grants privileges. Before deploying this change, add
+the approved existing administrator IDs to App Service configuration, then remove
+obsolete email settings after deployment. Do not automatically convert email
+matches into grants. Local development uses the same explicit ID settings through
+user secrets or environment variables. No schema migration is needed.
+
+After completing a Scribe run,
 open `/Admin/TranslationCaptures` while signed in as that administrator to
 download the latest run as JSON. Pass a captured `sessionId` query parameter to
 download an older run. The endpoint never returns another user's sessions.
