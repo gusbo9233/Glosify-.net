@@ -74,6 +74,8 @@ import {
     const close = panel.querySelector('[data-assistant-close]');
     const reset = panel.querySelector('[data-assistant-reset]');
     const newChatButton = panel.querySelector('[data-assistant-new-chat]');
+    const newChatControls = [reset, newChatButton].filter(Boolean);
+    newChatControls.forEach(button => { button.disabled = true; });
     const windowEl = panel.querySelector('[data-assistant-window]');
     const transcript = panel.querySelector('[data-assistant-transcript]');
     let empty = panel.querySelector('[data-assistant-empty]');
@@ -403,6 +405,7 @@ import {
         const selection = { threadId };
         chatSelection = selection;
         activeThreadId = threadId;
+        newChatControls.forEach(button => { button.disabled = false; });
         resetTranscript(defaultEmptyText);
         submit.disabled = true;
         setStatus(t('Client.Loading', 'Loading…'));
@@ -1003,6 +1006,7 @@ import {
     close?.addEventListener('click', closeAssistant);
 
     const startNewChat = async () => {
+        if (!chatSelection) return;
         let selection = chatSelection;
         try {
             const chat = await createChat(quizId);

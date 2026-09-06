@@ -326,6 +326,69 @@ public sealed partial class PortfolioJourneys
         await Expect(RaceSubmit).ToBeEnabledAsync();
     }
 
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_NewChatWaitsUntilInitializationEstablishesASelection()
+    {
+        var catalog = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var initialHistory = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var creates = 0;
+        await SetupChatRaceAsync(route =>
+        {
+            if (route.Request.Url.Contains("/chat-a/", StringComparison.Ordinal))
+            {
+                initialHistory.SetResult(route);
+                return Task.CompletedTask;
+            }
+            return FulfillHistoryAsync(route, "New chat history");
+        });
+        await Page.RouteAsync("**/Assistant/Chats", route =>
+        {
+            if (route.Request.Method == "GET")
+            {
+                catalog.SetResult(route);
+                return Task.CompletedTask;
+            }
+            Interlocked.Increment(ref creates);
+            return route.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { id = "chat-new", title = "New chat", preview = "" }),
+            });
+        });
+        await Page.Locator("[data-assistant-toggle]").ClickAsync();
+        var pending = await catalog.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var newChat = Page.Locator("[data-assistant-new-chat]");
+        var disabledBeforeSelection = await newChat.IsDisabledAsync();
+        await newChat.DispatchEventAsync("click");
+        await DrainBrowserTasksAsync();
+        var createsBeforeSelection = creates;
+        await pending.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new { chats = new[]
+            {
+                new { id = "chat-a", title = "Chat A", preview = "", updatedAt = DateTimeOffset.UtcNow },
+            }}),
+        });
+        var history = await initialHistory.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        try
+        {
+            Assert.True(disabledBeforeSelection);
+            Assert.Equal(0, createsBeforeSelection);
+            await Expect(newChat).ToBeEnabledAsync();
+            await newChat.DispatchEventAsync("click");
+            await Expect(RaceTranscript).ToContainTextAsync("New chat history");
+        }
+        finally
+        {
+            await FulfillAndDrainAsync(history, "Initial A history");
+        }
+        await Expect(Page.Locator(".assistant-chat-item.is-active")).ToContainTextAsync("New chat");
+        await Expect(RaceTranscript).ToContainTextAsync("New chat history");
+        Assert.Equal(1, creates);
+    }
+
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
     private ILocator RaceSubmit => Page.Locator("[data-assistant-submit]");
 
