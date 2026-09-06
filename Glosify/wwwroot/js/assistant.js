@@ -1048,10 +1048,10 @@ import {
         if (!message) return;
         const requestedSelection = chatSelection;
 
-        // Join initialization and the current selection's history before rendering
-        // a local message. Every later chat selection has its own history flight.
+        // Initialize only when no chat has been selected. A later selection must
+        // not wait for the initial chat's obsolete history request.
         try {
-            await ensureInitialChat();
+            if (!requestedSelection) await ensureInitialChat();
         } catch (err) {
             setStatus(err.message || 'Could not create chat.', true);
             return;

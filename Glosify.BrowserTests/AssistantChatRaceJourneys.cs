@@ -238,6 +238,49 @@ public sealed partial class PortfolioJourneys
         await Expect(RaceTranscript).Not.ToContainTextAsync("New chat history");
     }
 
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_SubmissionDoesNotWaitForAnObsoleteInitialHistory()
+    {
+        var initial = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        await SetupChatRaceAsync(route =>
+        {
+            if (route.Request.Url.Contains("/chat-a/", StringComparison.Ordinal))
+            {
+                initial.SetResult(route);
+                return Task.CompletedTask;
+            }
+            return FulfillHistoryAsync(route, "B history");
+        });
+        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        {
+            Assert.Contains("/chat-b/Send", route.Request.Url);
+            return route.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { assistantMessageId = "reply-b", assistantText = "Reply B",
+                    toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+            });
+        });
+        await Page.Locator("[data-assistant-toggle]").ClickAsync();
+        var pending = await initial.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await SelectRaceChatAsync("Chat B");
+        await Expect(RaceTranscript).ToContainTextAsync("B history");
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+        try
+        {
+            await SendRaceMessageAsync("Question B");
+            await Expect(RaceTranscript).ToContainTextAsync("Reply B");
+        }
+        finally
+        {
+            await FulfillAndDrainAsync(pending, "Stale initial A history");
+        }
+        await Expect(RaceTranscript).ToContainTextAsync("Question B");
+        await Expect(RaceTranscript).ToContainTextAsync("Reply B");
+        await Expect(RaceTranscript).Not.ToContainTextAsync("Stale initial A history");
+    }
+
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
     private ILocator RaceSubmit => Page.Locator("[data-assistant-submit]");
 
