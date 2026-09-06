@@ -363,6 +363,25 @@ const splitTranslationCandidate = (candidate) => {
     const text = candidate.segment || '';
     if (normalizeText(text).length <= MAX_TRANSLATION_SEGMENT_CHARACTERS) return [candidate];
 
+    const graphemes = typeof Intl?.Segmenter === 'function'
+        ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)].map(value => value.segment)
+        // Older browsers: keep combining marks, emoji modifiers, flags, and ZWJ
+        // sequences together instead of splitting their constituent code points.
+        : [...text.matchAll(/\p{Regional_Indicator}{2}|\P{M}(?:\p{M}|\p{Emoji_Modifier})*(?:\u200d\P{M}(?:\p{M}|\p{Emoji_Modifier})*)*|\p{M}+/gu)].map(value => value[0]);
+    const units = new Map();
+    let offset = 0;
+    for (const grapheme of graphemes) {
+        // A pathological grapheme can itself exceed the API limit. Only then
+        // fall back to code points, still retaining complete surrogate pairs.
+        const boundedUnits = grapheme.normalize('NFKC').length > MAX_TRANSLATION_SEGMENT_CHARACTERS
+            ? Array.from(grapheme)
+            : [grapheme];
+        for (const unit of boundedUnits) {
+            units.set(offset, unit);
+            offset += unit.length;
+        }
+    }
+
     const pieces = [];
     let start = 0;
     while (start < text.length) {
@@ -370,19 +389,18 @@ const splitTranslationCandidate = (candidate) => {
         let normalizedLength = 0;
         let wordBoundary = start;
         while (end < text.length) {
-            const point = String.fromCodePoint(text.codePointAt(end));
-            // NFKC can expand one PDF character into several output characters.
-            // Summed code-point lengths conservatively bound the normalized text.
-            const length = point.normalize('NFKC').length;
+            const unit = units.get(end);
+            // NFKC can expand PDF characters or compose a base and its marks.
+            const length = unit.normalize('NFKC').length;
             if (normalizedLength + length > MAX_TRANSLATION_SEGMENT_CHARACTERS) break;
             normalizedLength += length;
-            end += point.length;
-            if (/\s/u.test(point)) wordBoundary = end;
+            end += unit.length;
+            if (/\s$/u.test(unit)) wordBoundary = end;
         }
         if (end < text.length && wordBoundary > start + (end - start) / 2) end = wordBoundary;
         // Keep a complete paragraph separator with the preceding piece. Trailing
         // whitespace is trimmed from sourceText and does not use its budget.
-        while (end < text.length && /\s/u.test(text[end])) end += 1;
+        while (end < text.length && /^\s+$/u.test(units.get(end))) end += units.get(end).length;
         pieces.push({ segment: text.slice(start, end), index: (Number(candidate.index) || 0) + start });
         start = end;
     }

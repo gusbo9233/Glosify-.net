@@ -130,3 +130,34 @@ test('Source selection keeps real spaces and paragraph separators when joining s
     const paragraphs = [{ str: 'a'.repeat(100) + '\n\n' + 'b'.repeat(4000) }];
     assert.deepEqual(selectedIndices(paragraphs, 'aaa bbb'), [0, 1]);
 });
+
+for (const [name, intl] of [['Intl', Intl], ['fallback', {}]]) {
+    test(`Size limits keep a decomposed accent with its base using ${name}`, () => {
+        const items = [{ str: 'a'.repeat(1999) + 'e\u0301' + 'b'.repeat(2100) }];
+        const segments = segment(items, intl);
+        assert.equal(segments[0].sourceText, 'a'.repeat(1999) + 'é');
+        assert.equal(segments[1].sourceText.startsWith('b'), true);
+        assert.equal(segments[0].itemParts[0].endOffset, 2001);
+        verifyOffsets(items, segments);
+        if (name === 'Intl') assert.deepEqual(selectedIndices(items, 'aéb'), [0, 1]);
+    });
+}
+
+test('An individually oversized grapheme falls back to bounded pieces with intact raw offsets', () => {
+    const items = [{ str: 'x' + '\u0301'.repeat(2100) }];
+    const segments = segment(items);
+    assert.ok(segments.length > 1);
+    verifyOffsets(items, segments);
+});
+
+for (const [name, intl] of [['Intl', Intl], ['fallback', {}]]) {
+    test(`Emoji sequences remain intact at size boundaries using ${name}`, () => {
+        for (const emoji of ['👩🏽‍💻', '🇸🇪', '👨‍👩‍👧‍👦']) {
+            const items = [{ str: 'a'.repeat(1999) + emoji + 'b'.repeat(2100) }];
+            const segments = segment(items, intl);
+            assert.equal(segments[0].sourceText, 'a'.repeat(1999));
+            assert.equal(segments[1].sourceText.startsWith(emoji), true, emoji);
+            verifyOffsets(items, segments);
+        }
+    });
+}
