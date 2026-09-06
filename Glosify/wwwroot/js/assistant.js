@@ -50,7 +50,19 @@ import {
     let materialId = pageMaterialId;
     let quizId = pageQuizId;
     let activeThreadId = null;
+    let chatSelection = null;
+    let activeSelectionPromise = Promise.resolve();
+    const pendingSends = new Set();
+    const sendErrors = new Map();
+    const pendingContextWrites = new Map();
+    const ownsSelection = selection => selection === chatSelection;
+    const canConfirmContext = selection => ownsSelection(selection)
+        && selection?.historyLoaded
+        && !pendingContextWrites.has(selection.threadId)
+        && !pendingSends.has(selection.threadId)
+        && !sendErrors.has(selection.threadId);
     let chats = [];
+    let chatCatalogRevision = 0;
     let initialized = false;
     const chatsUrl = '/Assistant/Chats';
     const chatHistoryUrl = (threadId) => `/Assistant/Chats/${threadId}/History`;
@@ -70,6 +82,8 @@ import {
     const close = panel.querySelector('[data-assistant-close]');
     const reset = panel.querySelector('[data-assistant-reset]');
     const newChatButton = panel.querySelector('[data-assistant-new-chat]');
+    const newChatControls = [reset, newChatButton].filter(Boolean);
+    newChatControls.forEach(button => { button.disabled = true; });
     const windowEl = panel.querySelector('[data-assistant-window]');
     const transcript = panel.querySelector('[data-assistant-transcript]');
     let empty = panel.querySelector('[data-assistant-empty]');
@@ -77,6 +91,7 @@ import {
     const form = panel.querySelector('[data-assistant-form]');
     const textarea = panel.querySelector('[data-assistant-textarea]');
     const submit = panel.querySelector('[data-assistant-submit]');
+    submit.disabled = true;
     const imageInput = panel.querySelector('[data-assistant-image-input]');
     const scanStatus = panel.querySelector('[data-assistant-scan-status]');
     const quizSelector = panel.querySelector('[data-assistant-quiz-selector]');
@@ -102,8 +117,12 @@ import {
     };
     const api = createAssistantApi(() => tokenInput?.value);
     let visibleAssistantLoadError = null;
+    let contextOptionsBusy = false;
 
-    const setContextSelectorsBusy = (busy) => {
+    const updateContextControls = () => {
+        const contextReady = !!chatSelection?.contextReady;
+        newChatControls.forEach(button => { button.disabled = !contextReady; });
+        const busy = contextOptionsBusy || !contextReady;
         for (const selector of [quizSelector, materialSelector]) {
             if (!selector) {
                 continue;
@@ -112,6 +131,12 @@ import {
             selector.setAttribute('aria-busy', String(busy));
         }
     };
+
+    const setContextSelectorsBusy = (busy) => {
+        contextOptionsBusy = busy;
+        updateContextControls();
+    };
+    updateContextControls();
 
     const loadContextOptions = async () => {
         if (!quizSelector || !materialSelector) {
@@ -235,12 +260,21 @@ import {
 
     const contextWrites = createRecoverablePromiseQueue(({ threadId, payload }) => updateChat(threadId, payload));
 
-    const enqueueContextWrite = (snapshot) => contextWrites(snapshot).then(
-        () => true,
-        () => {
-            setStatus('Could not save chat context.', true);
-            return false;
-        });
+    const enqueueContextWrite = (snapshot) => {
+        const selection = chatSelection;
+        const pending = contextWrites(snapshot).then(
+            () => true,
+            () => {
+                if (ownsSelection(selection)) setStatus('Could not save chat context.', true);
+                return false;
+            }).finally(() => {
+                if (pendingContextWrites.get(snapshot.threadId) === pending) {
+                    pendingContextWrites.delete(snapshot.threadId);
+                }
+            });
+        pendingContextWrites.set(snapshot.threadId, pending);
+        return pending;
+    };
 
     const persistContext = () => {
         if (!activeThreadId) {
@@ -307,8 +341,10 @@ import {
     };
 
     const loadChats = async () => {
+        const revision = ++chatCatalogRevision;
         try {
             const data = await api.json(chatsUrl);
+            if (revision !== chatCatalogRevision) return chats;
             chats = data.chats ?? [];
             renderChatList();
             return chats;
@@ -333,6 +369,7 @@ import {
         }
 
         const chat = await response.json();
+        chatCatalogRevision++;
         chats = upsertChat(chats, chat);
         renderChatList();
         return chat;
@@ -350,6 +387,7 @@ import {
         }
 
         const updated = await response.json();
+        chatCatalogRevision++;
         chats = replaceChat(chats, updated);
         renderChatList();
         return updated;
@@ -366,7 +404,9 @@ import {
         }
         await response.text();
 
+        chatCatalogRevision++;
         chats = removeChat(chats, threadId);
+        sendErrors.delete(threadId);
         if (activeThreadId === threadId) {
             const next = chats[0] || await createChat(quizId);
             await selectChat(next.id);
@@ -392,9 +432,26 @@ import {
         panel.dataset.assistantInitialized = 'true';
     });
 
-    const selectChat = async (threadId) => {
+    const selectChat = (threadId) => {
+        const selection = { threadId };
+        chatSelection = selection;
         activeThreadId = threadId;
+        updateContextControls();
+        resetTranscript(defaultEmptyText);
+        submit.disabled = true;
+        setStatus(t('Client.Loading', 'Loading…'));
+        activeSelectionPromise = loadSelectedChat(selection);
+        return activeSelectionPromise;
+    };
+
+    const loadSelectedChat = async (selection) => {
+        const { threadId } = selection;
         sessionStorage.setItem(activeChatStorageKey, threadId);
+        let contextPersisted = true;
+        while (pendingContextWrites.has(threadId)) {
+            contextPersisted = await pendingContextWrites.get(threadId);
+            if (!ownsSelection(selection)) return;
+        }
         const chat = getActiveChat();
         const contextQuizId = pageQuizId || chat?.contextQuizId || null;
         const contextQuizName = pageQuizId
@@ -414,9 +471,10 @@ import {
         }
 
         setQuizContext(contextQuizId, contextQuizName, false);
+        selection.contextReady = true;
+        updateContextControls();
         const adoptsPageQuiz = pageQuizId && chat?.contextQuizId !== pageQuizId;
         const adoptsPageMaterial = !storedId && materialId;
-        let contextPersisted = true;
         if (adoptsPageQuiz || adoptsPageMaterial) {
             contextPersisted = await enqueueContextWrite({
                 threadId,
@@ -427,12 +485,21 @@ import {
                 },
             });
         }
+        if (!ownsSelection(selection)) return;
         renderChatList();
-        await loadHistory(threadId);
+        const historyLoaded = await loadHistory(selection);
+        if (!ownsSelection(selection)) return;
         switchPane('chat');
-        if (contextPersisted) {
-            setStatus('');
+        if (!historyLoaded) {
+            setStatus(t('Client.GenericError', 'Something went wrong. Please try again.'), true);
+            return;
         }
+        selection.historyLoaded = true;
+        submit.disabled = pendingSends.has(threadId);
+        if (!contextPersisted) setStatus('Could not save chat context.', true);
+        else if (pendingSends.has(threadId)) setStatus('Thinking...');
+        else if (sendErrors.has(threadId)) setStatus(sendErrors.get(threadId), true);
+        else setStatus('');
     };
 
     const renderChatList = () => {
@@ -887,20 +954,23 @@ import {
         }
     };
 
-    const loadHistory = async (threadId) => {
-        resetTranscript(defaultEmptyText);
+    const loadHistory = async (selection) => {
+        if (!ownsSelection(selection)) return false;
+        const { threadId } = selection;
         try {
             const response = await fetch(chatHistoryUrl(threadId), {
                 headers: { 'Accept': 'application/json' },
             });
-            if (!response.ok) return;
+            if (!response.ok) return false;
             const data = await response.json();
+            if (!ownsSelection(selection) || !Array.isArray(data?.messages)) return false;
             resetTranscript(defaultEmptyText);
             for (const message of data.messages ?? []) {
                 renderMessage(message);
             }
+            return true;
         } catch (err) {
-            // History is best-effort.
+            return false;
         }
     };
 
@@ -980,12 +1050,16 @@ import {
     close?.addEventListener('click', closeAssistant);
 
     const startNewChat = async () => {
+        if (!chatSelection?.contextReady) return;
+        let selection = chatSelection;
         try {
             const chat = await createChat(quizId);
-            await selectChat(chat.id);
-            setStatus('');
+            if (!ownsSelection(selection)) return;
+            const loading = selectChat(chat.id);
+            selection = chatSelection;
+            await loading;
         } catch (err) {
-            setStatus(err.message || 'Could not create chat.', true);
+            if (ownsSelection(selection)) setStatus(err.message || 'Could not create chat.', true);
         }
     };
 
@@ -993,18 +1067,22 @@ import {
     newChatButton?.addEventListener('click', startNewChat);
 
     quizSelector?.addEventListener('change', async () => {
+        if (!chatSelection?.contextReady || contextOptionsBusy) return;
+        const selection = chatSelection;
         const selectedOption = quizSelector.selectedOptions?.[0] || null;
         const label = selectedOption?.dataset.contextLabel || 'Glosify';
         const contextPersisted = await setQuizContext(quizSelector.value || null, label, true);
-        if (contextPersisted) {
+        if (contextPersisted && canConfirmContext(selection)) {
             setStatus(quizId ? `Quiz set to ${label}.` : 'No quiz selected.');
         }
     });
 
     materialSelector?.addEventListener('change', async () => {
+        if (!chatSelection?.contextReady || contextOptionsBusy) return;
+        const selection = chatSelection;
         const [kind, id] = (materialSelector.value || '').split(':');
         const contextPersisted = await setMaterialContext(kind || null, id || null, true);
-        if (contextPersisted) {
+        if (contextPersisted && canConfirmContext(selection)) {
             setStatus(materialId ? `Reading ${materialLabel()}.` : 'No material selected.');
         }
     });
@@ -1022,16 +1100,13 @@ import {
         event.preventDefault();
         const message = textarea.value.trim();
         if (!message) return;
-
-        // Opening the assistant selects a thread before its history has finished loading.
-        // Always join that initialization flight so a late history response cannot erase
-        // the message (and any pending-change card) that this submission renders.
-        try {
-            await ensureInitialChat();
-        } catch (err) {
-            setStatus(err.message || 'Could not create chat.', true);
-            return;
-        }
+        const selection = chatSelection;
+        if (!selection) return;
+        const threadId = selection.threadId;
+        await activeSelectionPromise;
+        if (!ownsSelection(selection) || !selection.historyLoaded || pendingSends.has(threadId)) return;
+        pendingSends.add(threadId);
+        sendErrors.delete(threadId);
 
         const documentContext = currentBookPageContext({
             pageDocumentId: pageDocumentId,
@@ -1061,7 +1136,7 @@ import {
         const clientStartedAt = performance.now();
 
         try {
-            const response = await fetch(chatSendUrl(activeThreadId), {
+            const response = await fetch(chatSendUrl(threadId), {
                 method: 'POST',
                 headers: requestHeaders(true),
                 body: JSON.stringify({
@@ -1076,11 +1151,14 @@ import {
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {
-                setStatus(localizedProblem(data, response, 'Client.AssistantFailed', 'The assistant could not respond.'), true);
-                submit.disabled = false;
+                const sendError = localizedProblem(data, response, 'Client.AssistantFailed', 'The assistant could not respond.');
+                sendErrors.set(threadId, sendError);
+                if (ownsSelection(selection)) {
+                    setStatus(sendError, true);
+                }
                 return;
             }
-            renderMessage({
+            if (ownsSelection(selection)) renderMessage({
                 id: data.assistantMessageId,
                 turnId: data.turnId,
                 role: 'model',
@@ -1099,12 +1177,23 @@ import {
                 }).catch(() => { /* Timing is best-effort and never blocks the reply. */ });
             }
             await loadChats();
-            setStatus('');
+            if (ownsSelection(selection)) setStatus('');
         } catch (err) {
-            setStatus(t('Client.AssistantNetwork', 'Network error talking to the assistant.'), true);
+            const sendError = t('Client.AssistantNetwork', 'Network error talking to the assistant.');
+            sendErrors.set(threadId, sendError);
+            if (ownsSelection(selection)) {
+                setStatus(sendError, true);
+            }
         } finally {
-            submit.disabled = false;
-            textarea.focus();
+            pendingSends.delete(threadId);
+            if (ownsSelection(selection)) {
+                submit.disabled = false;
+                if (canFocusAssistant()) textarea.focus();
+            } else if (activeThreadId === threadId) {
+                // The user returned while this turn was pending. Reload the stored
+                // conversation instead of appending to a newer history snapshot.
+                await selectChat(threadId);
+            }
         }
     });
 
