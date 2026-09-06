@@ -5,225 +5,273 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const extensionPath = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)), "../artifacts/test");
+const extensionPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../artifacts/test");
 
-test("translator overlay is isolated per tab and saves only after an explicit result", async () => {
-  const mock = await startMock();
+async function setup(options = {}) {
+  const mock = await startMock(options);
   const profile = await mkdtemp(path.join(os.tmpdir(), "glosify-translator-"));
-  const context = await chromium.launchPersistentContext(profile, {
-    headless: false,
-    args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`],
-  });
+  let context;
   try {
-    const worker = context.serviceWorkers()[0]
-      ?? await context.waitForEvent("serviceworker");
+    context = await chromium.launchPersistentContext(profile, {
+      headless: false,
+      args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`],
+    });
+    const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
     const extensionId = new URL(worker.url()).host;
     const control = await context.newPage();
     await control.goto(`chrome-extension://${extensionId}/popup/popup.html`);
-    const seeded = await control.evaluate(() => chrome.runtime.sendMessage({
-      type: "test:seed-auth",
-      refreshToken: "refresh-token",
-    }));
-    expect(seeded.ok).toBe(true);
-    const account = await control.evaluate(() => chrome.runtime.sendMessage({ type: "popup:get-state" }));
-    expect(account.result).toMatchObject({
-      signedIn: true,
-      email: "translator@example.test",
-      availableCredits: 42,
-    });
-
-    const first = await context.newPage();
-    await first.goto(`${mock.baseUrl}/page-one`);
-    await first.evaluate(() => {
-      globalThis.hostShortcutKeys = [];
-      document.addEventListener("keydown", event => {
-        if (event.key === "o" || event.key === " ") {
-          globalThis.hostShortcutKeys.push(event.key);
-          event.preventDefault();
-        }
-      }, true);
-    });
-    await first.bringToFront();
-    await start(control);
-    await start(control);
-    await expect(first.locator("#glosify-translator-host")).toHaveCount(1);
-    expect(await first.locator("#glosify-translator-host").evaluate(
-      element => getComputedStyle(element).resize)).toBe("both");
-    const firstTabId = await tabId(control, "/page-one");
-
-    await overlay(control, firstTabId, "test:overlay:focus-input");
-    await first.keyboard.type("ho ");
-    expect((await overlay(control, firstTabId, "test:overlay:state")).sourceText).toBe("ho ");
-    expect(await first.evaluate(() => globalThis.hostShortcutKeys)).toEqual([]);
-
-    const beforeDrag = (await overlay(control, firstTabId, "test:overlay:state")).rect;
-    await first.mouse.move(beforeDrag.left + 120, beforeDrag.top + 25);
-    await first.mouse.down();
-    await first.mouse.move(20, beforeDrag.top + 85, { steps: 12 });
-    await first.mouse.up();
-    const afterDrag = (await overlay(control, firstTabId, "test:overlay:state")).rect;
-    expect(afterDrag.left).toBeCloseTo(0, 0);
-    expect(afterDrag.top).toBeCloseTo(beforeDrag.top + 60, 0);
-
-    await overlay(control, firstTabId, "test:overlay:set-input", {
-      sourceText: "Hello\nworld",
-      preferences: "Informal Mexican Spanish",
-      sourceLanguage: "auto",
-      targetLanguage: "es",
-    });
-    await overlay(control, firstTabId, "test:overlay:translate");
-    let state = await overlay(control, firstTabId, "test:overlay:state");
-    expect(state).toMatchObject({
-      sourceText: "Hello\nworld",
-      preferences: "Informal Mexican Spanish",
-      translatedText: "Hola\nmundo",
-      saveLanguage: "es",
-      saved: false,
-    });
-    expect(state.requestId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u);
-    const firstSessionId = state.sessionId;
-    expect(mock.translateRequests).toHaveLength(1);
-    expect(mock.saveRequests).toHaveLength(0);
-
-    await overlay(control, firstTabId, "test:overlay:move-resize", {
-      left: 40, top: 50, width: 500, height: 520,
-    });
-    state = await overlay(control, firstTabId, "test:overlay:state");
-    expect(state.rect).toMatchObject({ left: 40, top: 50, width: 500, height: 520 });
-    expect(await overlay(control, firstTabId, "test:overlay:minimize")).toBe(true);
-    expect((await overlay(control, firstTabId, "test:overlay:state")).minimized).toBe(true);
-    await overlay(control, firstTabId, "test:overlay:minimize");
-    expect(await overlay(control, firstTabId, "test:overlay:set-save-language", {
-      languageCode: "en",
-    })).toBe("en");
-    expect(await overlay(control, firstTabId, "test:overlay:save")).toBe(true);
-    expect(mock.saveRequests).toHaveLength(1);
-    expect(mock.saveRequests[0].sessionId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u);
-    expect(mock.saveRequests[0].sessionId).toBe(firstSessionId);
-    expect(mock.saveRequests[0].requestId).toBe(state.requestId);
-    expect(mock.saveRequests[0].languageCode).toBe("en");
-    expect(mock.saveRequests[0].preferences).toBe("Informal Mexican Spanish");
-    expect(mock.saveRequests[0].translationOperationId)
-      .toBe("22222222-2222-4222-8222-222222222222");
-
-    const second = await context.newPage();
-    await second.goto(`${mock.baseUrl}/page-two`);
-    await second.bringToFront();
-    await start(control);
-    await expect(second.locator("#glosify-translator-host")).toHaveCount(1);
-    await expect(first.locator("#glosify-translator-host")).toHaveCount(1);
-
-    await first.goto(`${mock.baseUrl}/navigated`);
-    await expect(first.locator("#glosify-translator-host")).toHaveCount(0);
-    await overlay(control, await tabId(control, "/page-two"), "test:overlay:close");
-    await expect(second.locator("#glosify-translator-host")).toHaveCount(0);
-    await second.bringToFront();
-    await start(control);
-    await expect(second.locator("#glosify-translator-host")).toHaveCount(1);
-    const secondTabId = await tabId(control, "/page-two");
-    const restartedState = await overlay(control, secondTabId, "test:overlay:state");
-    expect(restartedState).toMatchObject({ sourceText: "", translatedText: null, saved: false });
-    expect(restartedState.sessionId).not.toBe(firstSessionId);
-    await overlay(control, secondTabId, "test:overlay:set-input", {
-      sourceText: "Hello",
-      sourceLanguage: "auto",
-      targetLanguage: "en",
-    });
-    await overlay(control, secondTabId, "test:overlay:translate");
-    const beforeNoOpSwap = await overlay(control, secondTabId, "test:overlay:state");
-    expect(beforeNoOpSwap).toMatchObject({
-      sourceLanguage: "auto",
-      targetLanguage: "en",
-      translatedText: "Hola\nmundo",
-      swapDisabled: true,
-    });
-    await overlay(control, secondTabId, "test:overlay:swap");
-    expect(await overlay(control, secondTabId, "test:overlay:state"))
-      .toMatchObject(beforeNoOpSwap);
-  } finally {
-    await context.close();
-    await rm(profile, { recursive: true, force: true });
-    await mock.close();
-  }
-});
-
-test("insufficient credits use Problem Details and a paid translation is not retried", async () => {
-  const mock = await startMock({ translateFailure: { status: 402, detail: "Add credits before translating." } });
-  const profile = await mkdtemp(path.join(os.tmpdir(), "glosify-translator-error-"));
-  const context = await chromium.launchPersistentContext(profile, {
-    headless: false,
-    args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`],
-  });
-  try {
-    const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
-    const control = await context.newPage();
-    await control.goto(`chrome-extension://${new URL(worker.url()).host}/popup/popup.html`);
     await control.evaluate(() => chrome.runtime.sendMessage({ type: "test:seed-auth", refreshToken: "refresh-token" }));
-    await control.evaluate(() => chrome.runtime.sendMessage({ type: "popup:get-state" }));
-    const page = await context.newPage();
-    await page.goto(`${mock.baseUrl}/error-page`);
-    await page.bringToFront();
-    await start(control);
-    const id = await tabId(control, "/error-page");
-    await overlay(control, id, "test:overlay:set-input", { sourceText: "Hello", targetLanguage: "es" });
-    await overlay(control, id, "test:overlay:translate");
-    const state = await overlay(control, id, "test:overlay:state");
-    expect(state).toMatchObject({
-      translatedText: null,
-      statusText: "Add credits before translating.",
-      statusError: true,
-    });
-    expect(mock.translateRequests).toHaveLength(1);
-  } finally {
-    await context.close();
+    const account = await control.evaluate(() => chrome.runtime.sendMessage({ type: "popup:get-state" }));
+    return {
+      mock, context, control, account, extensionId,
+      async open(suffix) {
+        const page = await context.newPage();
+        await page.goto(`${mock.baseUrl}/${suffix}`);
+        await page.bringToFront();
+        await start(control);
+        const frame = page.frameLocator("#glosify-translator-host");
+        await expect(frame.locator("#target-language")).toHaveValue("en");
+        return { page, frame };
+      },
+      async close() {
+        await context.close();
+        await rm(profile, { recursive: true, force: true });
+        await mock.close();
+      },
+    };
+  } catch (error) {
+    await context?.close();
     await rm(profile, { recursive: true, force: true });
     await mock.close();
+    throw error;
   }
-});
-
-test("an expired refresh token returns the popup to signed-out state", async () => {
-  const mock = await startMock({ refreshFailure: true });
-  const profile = await mkdtemp(path.join(os.tmpdir(), "glosify-translator-auth-"));
-  const context = await chromium.launchPersistentContext(profile, {
-    headless: false,
-    args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`],
-  });
-  try {
-    const worker = context.serviceWorkers()[0] ?? await context.waitForEvent("serviceworker");
-    const control = await context.newPage();
-    await control.goto(`chrome-extension://${new URL(worker.url()).host}/popup/popup.html`);
-    await control.evaluate(() => chrome.runtime.sendMessage({ type: "test:seed-auth", refreshToken: "expired" }));
-    const response = await control.evaluate(() => chrome.runtime.sendMessage({ type: "popup:get-state" }));
-    expect(response.result).toMatchObject({ signedIn: false, status: "disconnected" });
-    expect(mock.refreshRequests).toBe(1);
-  } finally {
-    await context.close();
-    await rm(profile, { recursive: true, force: true });
-    await mock.close();
-  }
-});
+}
 
 async function start(control) {
   const response = await control.evaluate(() => chrome.runtime.sendMessage({ type: "popup:start" }));
   expect(response.ok, JSON.stringify(response)).toBe(true);
 }
 
-async function tabId(control, pathFragment) {
-  return control.evaluate(async fragment => {
-    const tabs = await chrome.tabs.query({});
-    return tabs.find(tab => tab.url?.includes(fragment))?.id;
-  }, pathFragment);
+async function translate(frame, source = "Hello\nworld") {
+  await frame.locator("#source-text").fill(source);
+  await frame.locator("#target-language").selectOption("es");
+  await frame.getByRole("button", { name: "Translate", exact: true }).click();
 }
 
-async function overlay(control, id, type, extra = {}) {
-  return control.evaluate(async ({ tab, message }) => chrome.tabs.sendMessage(tab, message), {
-    tab: id,
-    message: { type, ...extra },
-  });
-}
+test("translator stays private to its extension frame and requires explicit translation and save", async () => {
+  const app = await setup();
+  try {
+    expect(app.account.result).toMatchObject({ signedIn: true, email: "translator@example.test", availableCredits: 42 });
+    const { page, frame } = await app.open("privacy");
+    await page.evaluate(() => {
+      window.hostKeys = [];
+      window.hostMessages = [];
+      document.addEventListener("keydown", event => {
+        window.hostKeys.push(event.key);
+        event.preventDefault();
+      }, true);
+      window.addEventListener("message", event => window.hostMessages.push(event.data));
+    });
+    const boundary = await page.locator("#glosify-translator-host").evaluate(element => {
+      let denied = false;
+      try { void element.contentWindow.document; } catch (error) { denied = error.name === "SecurityError"; }
+      return { documentIsNull: element.contentDocument === null, denied };
+    });
+    expect(boundary).toEqual({ documentIsNull: true, denied: true });
+    await frame.locator("#source-text").pressSequentially("private typed text");
+    await expect(frame.locator("#source-text")).toHaveValue("private typed text");
+    expect(await page.evaluate(() => window.hostKeys)).toEqual([]);
+    await page.locator("#glosify-translator-host").evaluate(element => {
+      element.contentWindow.postMessage({ type: "overlay:translate", request: { sourceText: "page injection" } }, "*");
+      element.contentWindow.postMessage({ type: "test:overlay:set-input", sourceText: "page injection" }, "*");
+    });
+    await expect(frame.locator("#source-text")).toHaveValue("private typed text");
+    await frame.locator("#preferences").fill("Informal Mexican Spanish");
+    await translate(frame);
+    await expect(frame.locator(".result")).toHaveText("Hola\nmundo");
+    expect(app.mock.translateRequests).toHaveLength(1);
+    expect(app.mock.saveRequests).toHaveLength(0);
+    await frame.locator("#save-language").selectOption("en");
+    await frame.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(frame.getByRole("button", { name: "Saved", exact: true })).toBeDisabled();
+    expect(app.mock.saveRequests).toHaveLength(1);
+    expect(app.mock.saveRequests[0]).toMatchObject({
+      languageCode: "en", preferences: "Informal Mexican Spanish",
+      sourceText: "Hello\nworld", translatedText: "Hola\nmundo",
+      translationOperationId: "22222222-2222-4222-8222-222222222222",
+    });
+    expect(app.mock.saveRequests[0].sessionId).toMatch(/^[0-9a-f-]{36}$/u);
+    expect(app.mock.saveRequests[0].requestId).toMatch(/^[0-9a-f-]{36}$/u);
+    const exposed = JSON.stringify(await page.evaluate(() => window.hostMessages));
+    for (const secret of ["private typed text", "Hello", "Hola", "Informal Mexican Spanish", "refresh-token"]) {
+      expect(exposed).not.toContain(secret);
+    }
+  } finally { await app.close(); }
+});
+
+test("Gmail-style shortcuts and Space stay inside both translator inputs", async () => {
+  const app = await setup({ pageCsp: "default-src 'none'; frame-src 'none'" });
+  try {
+    const { page, frame } = await app.open("mail-shortcuts");
+    await page.evaluate(() => {
+      document.body.style.height = "4000px";
+      window.scrollTo(0, 120);
+      window.mailActions = [];
+      for (const type of ["keydown", "keypress", "keyup"]) {
+        document.addEventListener(type, event => {
+          if (["o", "e", "j", "k", " "].includes(event.key)) {
+            window.mailActions.push({ type, key: event.key });
+            event.preventDefault();
+            window.scrollBy(0, 200);
+          }
+        }, true);
+      }
+    });
+    const source = frame.locator("#source-text");
+    const preferences = frame.locator("#preferences");
+    await source.click();
+    const sourceScroll = await page.evaluate(() => window.scrollY);
+    await page.keyboard.type("hello o e j k world");
+    await page.keyboard.press("Space");
+    await page.keyboard.press("Space");
+    await expect(source).toHaveValue("hello o e j k world  ");
+    expect(await page.evaluate(() => window.scrollY)).toBe(sourceScroll);
+    await preferences.click();
+    const preferenceScroll = await page.evaluate(() => window.scrollY);
+    await page.keyboard.type("informal o e j k");
+    await page.keyboard.press("Space");
+    await expect(preferences).toHaveValue("informal o e j k ");
+    expect(await page.evaluate(() => window.scrollY)).toBe(preferenceScroll);
+    await frame.getByRole("button", { name: "Minimize", exact: true }).click();
+    await frame.getByRole("button", { name: "Restore", exact: true }).click();
+    await source.click();
+    const restoredScroll = await page.evaluate(() => window.scrollY);
+    await source.evaluate(element => element.setSelectionRange(element.value.length, element.value.length));
+    await page.keyboard.type("o e j k");
+    await page.keyboard.press("Space");
+    await expect(source).toHaveValue("hello o e j k world  o e j k ");
+    expect(await page.evaluate(() => window.mailActions)).toEqual([]);
+    expect(await page.evaluate(() => window.scrollY)).toBe(restoredScroll);
+    expect(app.mock.translateRequests).toHaveLength(0);
+  } finally { await app.close(); }
+});
+
+test("reopening an existing box preserves its result, preferences and languages across tabs", async () => {
+  const app = await setup();
+  try {
+    const first = await app.open("first");
+    await first.frame.locator("#preferences").fill("First preference");
+    await translate(first.frame);
+    await expect(first.frame.locator(".result")).toHaveText("Hola\nmundo");
+    // A new box starts with global defaults, then changes them independently.
+    const page = await app.context.newPage();
+    await page.goto(`${app.mock.baseUrl}/second`);
+    await page.bringToFront();
+    await start(app.control);
+    const second = page.frameLocator("#glosify-translator-host");
+    await expect(second.locator("#target-language")).toHaveValue("es");
+    await second.locator("#source-language").selectOption("es");
+    await second.locator("#target-language").selectOption("en");
+    await second.locator("#preferences").fill("Second preference");
+    await expect.poll(() => app.control.evaluate(async () =>
+      (await chrome.storage.local.get("glosifyTranslatorPreferences")).glosifyTranslatorPreferences
+    )).toBe("Second preference");
+    await first.page.bringToFront();
+    await start(app.control);
+    await expect(first.page.locator("#glosify-translator-host")).toHaveCount(1);
+    await expect(first.frame.locator("#source-language")).toHaveValue("auto");
+    await expect(first.frame.locator("#target-language")).toHaveValue("es");
+    await expect(first.frame.locator("#preferences")).toHaveValue("First preference");
+    await expect(first.frame.locator(".result")).toHaveText("Hola\nmundo");
+    await first.frame.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(first.frame.getByRole("button", { name: "Saved", exact: true })).toBeVisible();
+    expect(app.mock.saveRequests[0].preferences).toBe("First preference");
+    expect(app.mock.saveRequests[0].targetLanguage).toBe("es");
+    await first.page.reload();
+    await expect(first.page.locator("#glosify-translator-host")).toHaveCount(0);
+    await expect(page.locator("#glosify-translator-host")).toHaveCount(1);
+  } finally { await app.close(); }
+});
+
+test("move, resize, minimize, swap and close preserve the overlay lifecycle", async () => {
+  const app = await setup();
+  try {
+    const { page, frame } = await app.open("lifecycle");
+    const host = page.locator("#glosify-translator-host");
+    expect(await host.evaluate(element => getComputedStyle(element).resize)).toBe("both");
+    const before = await host.boundingBox();
+    await page.mouse.move(before.x + 120, before.y + 25);
+    await page.mouse.down();
+    await page.mouse.move(20, before.y + 85, { steps: 12 });
+    await page.mouse.up();
+    await expect.poll(async () => (await host.boundingBox()).x).toBeCloseTo(0, 0);
+    await expect.poll(async () => (await host.boundingBox()).y).toBeCloseTo(before.y + 60, 0);
+    await host.evaluate(element => { element.style.width = "500px"; element.style.height = "520px"; });
+    await expect.poll(async () => (await host.boundingBox()).height).toBe(520);
+    await frame.getByRole("button", { name: "Minimize", exact: true }).click();
+    await expect.poll(async () => (await host.boundingBox()).height).toBe(58);
+    await start(app.control);
+    await expect.poll(async () => (await host.boundingBox()).height).toBe(520);
+    await translate(frame);
+    await expect(frame.locator(".result")).toHaveText("Hola\nmundo");
+    await frame.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(frame.getByRole("button", { name: "Saved", exact: true })).toBeVisible();
+    const firstSession = app.mock.saveRequests[0].sessionId;
+    await frame.getByRole("button", { name: "Swap languages", exact: true }).click();
+    await expect(frame.locator("#source-language")).toHaveValue("es");
+    await expect(frame.locator("#target-language")).toHaveValue("en");
+    await expect(frame.locator("#source-text")).toHaveValue("Hola\nmundo");
+    await expect(frame.locator(".save")).toBeDisabled();
+    await frame.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(host).toHaveCount(0);
+    await start(app.control);
+    await expect(frame.locator("#source-text")).toHaveValue("");
+    await expect(frame.locator(".result")).toHaveClass(/placeholder/u);
+    await frame.locator("#source-language").selectOption("auto");
+    await frame.locator("#source-text").fill("Hello");
+    await frame.getByRole("button", { name: "Translate", exact: true }).click();
+    await expect(frame.locator(".result")).toHaveText("Hola\nmundo");
+    await expect(frame.getByRole("button", { name: "Swap languages", exact: true })).toBeDisabled();
+    await frame.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(frame.getByRole("button", { name: "Saved", exact: true })).toBeVisible();
+    expect(app.mock.saveRequests[1].sessionId).not.toBe(firstSession);
+  } finally { await app.close(); }
+});
+
+test("insufficient credits display Problem Details without retrying the paid request", async () => {
+  const app = await setup({ translateFailure: { status: 402, detail: "Add credits before translating." } });
+  try {
+    const { frame } = await app.open("credits");
+    await translate(frame);
+    await expect(frame.locator(".status")).toHaveText("Add credits before translating.");
+    await expect(frame.locator(".status")).toHaveClass(/error/u);
+    await expect(frame.locator(".result")).toHaveClass(/placeholder/u);
+    expect(app.mock.translateRequests).toHaveLength(1);
+  } finally { await app.close(); }
+});
+
+test("an expired refresh token returns the popup to signed-out state", async () => {
+  const app = await setup({ refreshFailure: true });
+  try {
+    expect(app.account.result).toMatchObject({ signedIn: false, status: "disconnected" });
+    expect(app.mock.refreshRequests).toBe(1);
+  } finally { await app.close(); }
+});
+
+test("a translation taking longer than 30 seconds returns once and remains saveable", async () => {
+  test.setTimeout(70_000);
+  const app = await setup({ translateDelay: 35_000 });
+  try {
+    const { frame } = await app.open("slow");
+    await translate(frame);
+    await expect(frame.locator(".status")).toHaveText("Translating…");
+    await expect(frame.locator(".result")).toHaveText("Hola\nmundo", { timeout: 50_000 });
+    await frame.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(frame.getByRole("button", { name: "Saved", exact: true })).toBeVisible();
+    expect(app.mock.translateRequests).toHaveLength(1);
+    expect(app.mock.saveRequests).toHaveLength(1);
+  } finally { await app.close(); }
+});
 
 async function startMock(options = {}) {
   const translateRequests = [];
@@ -259,6 +307,7 @@ async function startMock(options = {}) {
     }
     if (request.url === "/api/translator/translate") {
       translateRequests.push(body);
+      if (options.translateDelay) await new Promise(resolve => setTimeout(resolve, options.translateDelay));
       if (options.translateFailure) {
         response.statusCode = options.translateFailure.status;
         response.end(JSON.stringify({
@@ -286,6 +335,7 @@ async function startMock(options = {}) {
       return;
     }
     response.setHeader("Content-Type", "text/html");
+    if (options.pageCsp) response.setHeader("Content-Security-Policy", options.pageCsp);
     response.end("<!doctype html><title>Translator test page</title><main>Page content</main>");
   });
   await new Promise(resolve => server.listen(4178, "127.0.0.1", resolve));

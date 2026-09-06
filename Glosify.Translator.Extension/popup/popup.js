@@ -1,3 +1,6 @@
+import { CONFIG } from "../config.js";
+
+document.querySelector("#server").textContent = new URL(CONFIG.glosifyBaseUrl).host;
 const elements = {
   loading: document.querySelector("#loading"),
   signedOut: document.querySelector("#signed-out"),
@@ -51,8 +54,9 @@ function render() {
   elements.error.textContent = currentState.error ?? "";
   elements.error.classList.toggle("hidden", !currentState.error);
   if (!currentState.signedIn) return;
-  elements.email.textContent = currentState.email ?? "Glosify account";
-  elements.credits.textContent = String(currentState.availableCredits ?? 0);
+  elements.email.textContent = currentState.email ?? "Account details unavailable";
+  elements.credits.textContent = Number.isFinite(currentState.availableCredits)
+    ? `${currentState.availableCredits} credits available` : "Credits unavailable";
   elements.start.disabled = busy || !currentState.catalog;
   elements.signOut.disabled = busy;
 }

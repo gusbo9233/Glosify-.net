@@ -4,7 +4,12 @@
   "description": "Translate text in a movable box using your Glosify account.",
   "version": "0.1.0",
   "minimum_chrome_version": "116",
+  "homepage_url": "https://glosify.se",
   "permissions": ["activeTab", "identity", "scripting", "storage", "clipboardWrite"],
+  "web_accessible_resources": [{
+    "resources": ["overlay/translator.html"],
+    "matches": ["http://*/*", "https://*/*"]
+  }],
   "background": {
     "service_worker": "background/service-worker.js",
     "type": "module"

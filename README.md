@@ -110,7 +110,7 @@ optional preference field in trusted extension storage:
 npm run build:dev --prefix Glosify.Translator.Extension
 ```
 
-The production Chrome Web Store ID is assigned only at publication time. Before
+The production Chrome Web Store ID is assigned when the draft is first uploaded. Before
 publishing, add its exact callback
 `https://<store-id>.chromiumapp.org/glosify` to the production
 `ExtensionAuth:AllowedRedirectUris` list. Publication is not performed by this

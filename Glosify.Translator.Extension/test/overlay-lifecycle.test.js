@@ -12,7 +12,7 @@ test("overlay close unregisters its runtime listener", async () => {
 });
 
 test("source input stays local while preferences are debounced", async () => {
-  const source = await readFile(contentPath, "utf8");
+  const source = await readFile(new URL("../overlay/translator.js", import.meta.url), "utf8");
 
   assert.match(source, /sourceText\.addEventListener\("input", \(\) => changed\(\)\)/u);
   assert.match(source, /preferences\.addEventListener\("input", \(\) => changed\("debounced"\)\)/u);

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const popupCssPath = new URL("../popup/popup.css", import.meta.url);
-const overlayPath = new URL("../content/translator.js", import.meta.url);
+const overlayPath = new URL("../overlay/translator.css", import.meta.url);
 const iconPath = new URL("../icons/source.svg", import.meta.url);
 
 test("popup and overlay use the canonical Glosify palette", async () => {

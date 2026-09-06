@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Glosify Translator</title>
+  <link rel="stylesheet" href="translator.css">
+</head>
+<body>
+    <section class="window" role="dialog" aria-label="Glosify Translator">
+      <header class="header"><span class="mark" aria-hidden="true">G</span><span class="title"><span class="wordmark">Glosify</span><span class="product">Translator</span></span><span class="beta">Beta</span><button class="icon minimize" title="Minimize" aria-label="Minimize">−</button><button class="icon close" title="Close" aria-label="Close">×</button></header>
+      <div class="body">
+        <div class="languages">
+          <div class="field"><label for="source-language">From</label><select id="source-language"></select></div>
+          <button class="swap" title="Swap languages" aria-label="Swap languages">⇄</button>
+          <div class="field"><label for="target-language">To</label><select id="target-language"></select></div>
+        </div>
+        <div class="field"><label for="source-text">Text</label><textarea class="source" id="source-text" placeholder="Type or paste text to translate" maxlength="8000"></textarea><span class="counter source-counter">0 / 8000</span></div>
+        <div class="field"><label for="preferences">Optional preferences</label><textarea class="preferences" id="preferences" placeholder="For example: informal Mexican Spanish" maxlength="500"></textarea><span class="counter preference-counter">0 / 500</span></div>
+        <div class="result-wrap"><label>Translation</label><div class="result placeholder" tabindex="0">Your translation will appear here.</div></div>
+        <div class="save-destination" hidden><label for="save-language">Save to language</label><select id="save-language"></select></div>
+        <p class="disclosure">Translate sends text and preferences to Glosify and OpenAI and uses Glosify credits. Preferences are remembered on this device. Save adds results to your library. <a href="https://glosify.se/privacy/english" target="_blank" rel="noopener noreferrer">Privacy</a></p>
+        <div class="actions"><button class="button primary translate">Translate</button><button class="button copy" disabled>Copy</button><button class="button save" disabled>Save</button></div>
+        <div class="status" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+  <script type="module" src="translator.js"></script>
+</body>
+</html>

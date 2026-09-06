@@ -4,7 +4,7 @@ import test from "node:test";
 
 const popupHtmlPath = new URL("../popup/popup.html", import.meta.url);
 
-test("signed-out sign-in errors remain visible", async () => {
+test("popup renders sign-in errors and unknown balances without inventing an account", async () => {
   const html = await readFile(popupHtmlPath, "utf8");
   const signedInStart = html.indexOf('id="signed-in"');
   const signedInEnd = html.indexOf("</section>", signedInStart);
@@ -13,7 +13,7 @@ test("signed-out sign-in errors remain visible", async () => {
 
   const elements = Object.fromEntries([
     "loading", "signed-out", "signed-in", "connect", "sign-out", "start", "saved",
-    "email", "credits", "error",
+    "email", "credits", "error", "server",
   ].map(id => [id, fakeElement(["signed-out", "signed-in", "error"].includes(id))]));
   const originalDocument = globalThis.document;
   const originalChrome = globalThis.chrome;
@@ -23,9 +23,10 @@ test("signed-out sign-in errors remain visible", async () => {
       return elements[selector.slice(1)];
     },
   };
+  let onState;
   globalThis.chrome = {
     runtime: {
-      onMessage: { addListener() {} },
+      onMessage: { addListener(listener) { onState = listener; } },
       async sendMessage(message) {
         if (message.type === "popup:get-state") {
           return { ok: true, result: { signedIn: false, error: null } };
@@ -40,7 +41,9 @@ test("signed-out sign-in errors remain visible", async () => {
   globalThis.window = { close() {} };
 
   try {
-    await import(`../popup/popup.js?test=${Date.now()}`);
+    const source = (await readFile(new URL("../popup/popup.js", import.meta.url), "utf8"))
+      .replace('"../config.js"', JSON.stringify(new URL("../config.store.js", import.meta.url).href));
+    await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
     await new Promise(resolve => setImmediate(resolve));
     await elements.connect.listeners.get("click")();
 
@@ -48,6 +51,14 @@ test("signed-out sign-in errors remain visible", async () => {
     assert.equal(elements.error.classList.contains("hidden"), false);
     assert.equal(elements["signed-out"].classList.contains("hidden"), false);
     assert.equal(elements["signed-in"].classList.contains("hidden"), true);
+    assert.equal(elements.server.textContent, "glosify.se");
+    onState({ target: "popup", type: "state:update", state: { signedIn: true, availableCredits: null } });
+    assert.equal(elements.email.textContent, "Account details unavailable");
+    assert.equal(elements.credits.textContent, "Credits unavailable");
+    assert.equal(elements.start.disabled, true);
+    onState({ target: "popup", type: "state:update", state: { signedIn: true, email: "person@example.test", availableCredits: 0, catalog: {} } });
+    assert.equal(elements.email.textContent, "person@example.test");
+    assert.equal(elements.credits.textContent, "0 credits available");
   } finally {
     restoreGlobal("document", originalDocument);
     restoreGlobal("chrome", originalChrome);

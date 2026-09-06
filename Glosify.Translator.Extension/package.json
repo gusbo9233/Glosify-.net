@@ -10,6 +10,7 @@
     "build:test": "node scripts/build.mjs test",
     "build:store": "node scripts/build.mjs store",
     "validate:store": "node scripts/validate-store.mjs artifacts/store",
+    "check:production": "node scripts/check-production.mjs",
     "package:store": "node scripts/package-store.mjs",
     "lint": "cd .. && ./Glosify.LiveSubtitles.Extension/node_modules/.bin/eslint --config eslint.config.mjs Glosify.Translator.Extension"
   },

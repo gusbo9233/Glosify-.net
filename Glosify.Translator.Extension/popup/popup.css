@@ -296,6 +296,7 @@ button:disabled { opacity: .46; cursor: default; }
 }
 
 .disclosure strong { color: rgba(214, 227, 255, .74); }
+.disclosure a { color: var(--primary); }
 
 .privacy-dot {
   flex: 0 0 7px;

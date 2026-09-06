@@ -9,11 +9,15 @@ const STORAGE_KEYS = Object.freeze({
   preferences: "glosifyTranslatorPreferences",
 });
 const AUTHORIZATION_CLOCK_SKEW_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 210_000;
+const REQUEST_KEEPALIVE_MS = 20_000;
 
 let accessToken = null;
 let accessExpiresAt = 0;
 let refreshToken = null;
 let refreshGeneration = 0;
+// Unlike refreshGeneration, this changes only when the signed-in session changes.
+let sessionGeneration = 0;
 let refreshPromise = null;
 const activeRequests = new Map();
 const overlayPorts = new Map();
@@ -21,7 +25,7 @@ const state = {
   signedIn: false,
   status: "disconnected",
   email: null,
-  availableCredits: 0,
+  availableCredits: null,
   catalog: null,
   sourceLanguage: "auto",
   targetLanguage: "en",
@@ -32,17 +36,19 @@ const state = {
 const initialization = restoreLocalState();
 
 chrome.runtime.onConnect.addListener(port => {
-  if (port.name !== "translator-overlay" || port.sender?.tab?.id === undefined) return;
+  if (port.name !== "translator-overlay" || !isOverlaySender(port.sender)) return;
   const tabId = port.sender.tab.id;
   overlayPorts.set(tabId, port);
   port.onDisconnect.addListener(() => {
-    if (overlayPorts.get(tabId) === port) overlayPorts.delete(tabId);
+    if (overlayPorts.get(tabId) !== port) return;
+    overlayPorts.delete(tabId);
     activeRequests.get(tabId)?.abort();
     activeRequests.delete(tabId);
   });
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.target === "popup") return false;
   handleMessage(message, sender)
     .then(result => sendResponse({ ok: true, result }))
     .catch(error => {
@@ -54,6 +60,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function handleMessage(message, sender) {
   await initialization;
+  if (message?.type?.startsWith("overlay:")) await requireOverlay(message, sender);
+  else if (sender?.url !== chrome.runtime.getURL("popup/popup.html")) {
+    throw new Error("This message must come from the extension popup.");
+  }
   switch (message?.type) {
     case "popup:get-state":
       if (refreshToken) await refreshAccountState();
@@ -73,6 +83,10 @@ async function handleMessage(message, sender) {
     case "overlay:settings":
       await saveSettings(message.settings);
       return publicState();
+    case "overlay:bootstrap":
+      if (!state.signedIn || !state.catalog) await refreshAccountState();
+      if (!state.signedIn || !state.catalog) throw new Error(state.error || "Connect your Glosify account first.");
+      return publicState();
     case "overlay:translate":
       return translate(sender.tab?.id, message.request);
     case "overlay:save":
@@ -86,6 +100,9 @@ async function handleMessage(message, sender) {
       await chrome.storage.local.set({ [STORAGE_KEYS.refreshToken]: message.refreshToken });
       refreshToken = message.refreshToken;
       refreshGeneration += 1;
+      sessionGeneration += 1;
+      accessToken = null;
+      accessExpiresAt = 0;
       state.signedIn = true;
       return publicState();
     default:
@@ -108,6 +125,7 @@ async function restoreLocalState() {
 }
 
 async function signIn() {
+  const generation = ++sessionGeneration;
   const codeVerifier = base64Url(crypto.getRandomValues(new Uint8Array(32)));
   const codeChallenge = base64Url(new Uint8Array(await crypto.subtle.digest(
     "SHA-256", new TextEncoder().encode(codeVerifier))));
@@ -126,23 +144,30 @@ async function signIn() {
       url: authorizeUrl.toString(),
       interactive: true,
     });
+    requireSession(generation);
     if (!callbackUrl) throw new Error("Glosify sign-in was cancelled.");
     const callback = new URL(callbackUrl);
+    const expectedCallback = new URL(redirectUri);
+    if (callback.origin !== expectedCallback.origin || callback.pathname !== expectedCallback.pathname
+      || callback.username || callback.password || callback.hash) {
+      throw new Error("Glosify sign-in returned an invalid callback URL.");
+    }
     if (callback.searchParams.get("state") !== oauthState) {
       throw new Error("Glosify sign-in returned an invalid state value.");
     }
     const code = callback.searchParams.get("code");
     if (!code) throw new Error(callback.searchParams.get("error") || "Glosify sign-in did not return a code.");
-    const response = await fetch(new URL("/api/extension-auth/exchange", CONFIG.glosifyBaseUrl), {
+    const response = await fetchResponse(new URL("/api/extension-auth/exchange", CONFIG.glosifyBaseUrl), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
       body: JSON.stringify({ code, redirectUri, codeVerifier }),
     });
     if (!response.ok) throw await apiError(response);
-    await acceptTokenResponse(await response.json());
+    await acceptTokenResponse(await response.json(), generation);
     await refreshAccountState();
   } catch (error) {
+    if (generation !== sessionGeneration) throw error;
     state.status = refreshToken ? "ready" : "disconnected";
     state.error = normalizeError(error).message;
     broadcastState();
@@ -151,32 +176,36 @@ async function signIn() {
 }
 
 async function signOut() {
+  sessionGeneration += 1;
   for (const controller of activeRequests.values()) controller.abort();
   activeRequests.clear();
   accessToken = null;
   accessExpiresAt = 0;
   refreshToken = null;
   refreshGeneration += 1;
-  await chrome.storage.local.remove(STORAGE_KEYS.refreshToken);
+  refreshPromise = null;
   Object.assign(state, {
     signedIn: false,
     status: "disconnected",
     email: null,
-    availableCredits: 0,
+    availableCredits: null,
     catalog: null,
     error: null,
   });
   broadcastState();
+  await chrome.storage.local.remove(STORAGE_KEYS.refreshToken);
 }
 
-async function acceptTokenResponse(tokens) {
+async function acceptTokenResponse(tokens, generation) {
+  requireSession(generation);
   if (!tokens?.accessToken || !tokens?.refreshToken) throw new Error("Glosify returned an invalid token response.");
   accessToken = tokens.accessToken;
   accessExpiresAt = Date.now() + Math.max(30_000, Number(tokens.expiresIn ?? 3600) * 1000 - AUTHORIZATION_CLOCK_SKEW_MS);
   refreshToken = tokens.refreshToken;
   refreshGeneration += 1;
-  await chrome.storage.local.set({ [STORAGE_KEYS.refreshToken]: refreshToken });
   state.signedIn = true;
+  await chrome.storage.local.set({ [STORAGE_KEYS.refreshToken]: refreshToken });
+  requireSession(generation);
 }
 
 async function ensureAccessToken() {
@@ -185,49 +214,51 @@ async function ensureAccessToken() {
   if (!refreshPromise) {
     const usedToken = refreshToken;
     const usedGeneration = refreshGeneration;
-    refreshPromise = (async () => {
-      const response = await fetch(new URL("/api/auth/refresh", CONFIG.glosifyBaseUrl), {
+    const generation = sessionGeneration;
+    const pending = (async () => {
+      const response = await fetchResponse(new URL("/api/auth/refresh", CONFIG.glosifyBaseUrl), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
         body: JSON.stringify({ refreshToken: usedToken }),
       });
+      requireSession(generation);
       if (!response.ok) {
-        if (refreshGeneration === usedGeneration && refreshToken === usedToken) await clearExpiredAuthentication();
-        throw new ApiRequestError(401, "Your Glosify session expired. Connect again.");
+        if (response.status === 401 || response.status === 403) {
+          if (refreshGeneration === usedGeneration && refreshToken === usedToken) await clearExpiredAuthentication();
+          throw new ApiRequestError(401, "Your Glosify session expired. Connect again.");
+        }
+        throw await apiError(response);
       }
       if (refreshGeneration !== usedGeneration || refreshToken !== usedToken) return accessToken;
-      await acceptTokenResponse(await response.json());
+      await acceptTokenResponse(await response.json(), generation);
       return accessToken;
-    })().finally(() => { refreshPromise = null; });
+    })().finally(() => { if (refreshPromise === pending) refreshPromise = null; });
+    refreshPromise = pending;
   }
   return refreshPromise;
 }
 
 async function clearExpiredAuthentication() {
-  accessToken = null;
-  accessExpiresAt = 0;
-  refreshToken = null;
-  refreshGeneration += 1;
-  await chrome.storage.local.remove(STORAGE_KEYS.refreshToken);
-  state.signedIn = false;
-  state.status = "disconnected";
-  state.catalog = null;
-  broadcastState();
+  await signOut();
 }
 
 async function apiFetch(path, options = {}, retryAuthentication = true) {
+  const generation = sessionGeneration;
   const token = await ensureAccessToken();
+  requireSession(generation);
   const headers = new Headers(options.headers ?? {});
   headers.set("Authorization", `Bearer ${token}`);
   if (options.body !== undefined && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  const response = await fetch(new URL(path, CONFIG.glosifyBaseUrl), { ...options, headers, cache: "no-store" });
+  const response = await fetchResponse(new URL(path, CONFIG.glosifyBaseUrl), { ...options, headers, cache: "no-store" });
+  requireSession(generation);
   if (response.status === 401 && retryAuthentication) {
     if (accessToken === token) {
       accessToken = null;
       accessExpiresAt = 0;
     }
     await ensureAccessToken();
+    requireSession(generation);
     return apiFetch(path, options, false);
   }
   if (!response.ok) throw await apiError(response);
@@ -245,20 +276,28 @@ async function apiError(response) {
 }
 
 async function refreshAccountState() {
+  const generation = sessionGeneration;
   try {
     const [me, catalog] = await Promise.all([
       apiFetch("/api/me"),
       apiFetch("/api/translator/catalog"),
     ]);
+    requireSession(generation);
+    if (typeof me?.email !== "string" || !me.email || !Number.isFinite(me.availableCredits)
+      || !Array.isArray(catalog?.languages) || !catalog.languages.length
+      || !Array.isArray(catalog.sourceLanguages) || !catalog.sourceLanguages.length) {
+      throw new Error("Glosify returned incompatible account or Translator data. Check the server deployment.");
+    }
     state.signedIn = true;
     state.status = "ready";
     state.email = me.email;
     state.availableCredits = me.availableCredits;
     state.catalog = catalog;
     Object.assign(state, TranslatorState.normalizeSettings(state, catalog));
-    await persistSettings();
     state.error = null;
+    await persistSettings();
   } catch (error) {
+    if (generation !== sessionGeneration) return;
     const normalized = normalizeError(error);
     if (normalized.status !== 401) {
       state.status = "error";
@@ -278,15 +317,51 @@ async function startOverlay() {
     files: ["lib/translator-state.js", "content/translator.js"],
   });
   await chrome.tabs.sendMessage(tab.id, {
-    type: "overlay:initialize",
-    catalog: state.catalog,
-    testHooksEnabled: CONFIG.testHooksEnabled === true,
-    settings: {
-      sourceLanguage: state.sourceLanguage,
-      targetLanguage: state.targetLanguage,
-      preferences: state.preferences,
-    },
-  });
+    type: "overlay:focus",
+  }, { frameId: 0 });
+}
+
+function isOverlaySender(sender) {
+  return sender?.id === chrome.runtime.id && sender.tab?.id !== undefined
+    && sender.url?.split("#")[0] === chrome.runtime.getURL("overlay/translator.html");
+}
+
+async function requireOverlay(message, sender) {
+  if (!isOverlaySender(sender) || !message.instanceId
+    || new URL(sender.url).hash.slice(1) !== message.instanceId) {
+    throw new Error("The translator frame is unavailable.");
+  }
+  // The content-script claim survives worker suspension and rejects unsolicited embedded frames.
+  const claim = await chrome.tabs.sendMessage(sender.tab.id, {
+    type: "host:claim", instanceId: message.instanceId, frameId: sender.frameId,
+  }, { frameId: 0 });
+  if (!claim?.matches) throw new Error("Open the translator from the extension popup.");
+}
+
+function requireSession(generation) {
+  if (generation !== sessionGeneration) throw new ApiRequestError(401, "The Glosify session changed. Try again.");
+}
+
+async function fetchResponse(url, options = {}) {
+  const timeout = new AbortController();
+  const timeoutId = setTimeout(() => timeout.abort(new DOMException("Glosify request timed out.", "TimeoutError")), REQUEST_TIMEOUT_MS);
+  // Chrome's documented long-operation keepalive. Never run this while the extension is idle.
+  const keepAlive = setInterval(() => { chrome.runtime.getPlatformInfo().catch(() => {}); }, REQUEST_KEEPALIVE_MS);
+  try {
+    const signal = options.signal ? AbortSignal.any([options.signal, timeout.signal]) : timeout.signal;
+    const response = await fetch(url, {
+      ...options, signal,
+      // API calls use only explicit bearer credentials. Never forward a refresh
+      // token or submitted text through an unexpected server redirect.
+      credentials: "omit", redirect: "error", referrerPolicy: "no-referrer",
+    });
+    // Keep the worker alive through the body as well as the response headers.
+    const body = response.status === 204 ? null : await response.arrayBuffer();
+    return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
+  } finally {
+    clearInterval(keepAlive);
+    clearTimeout(timeoutId);
+  }
 }
 
 async function saveSettings(settings) {
