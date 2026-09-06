@@ -83,6 +83,16 @@ public class AccountController : Controller
         if (result.Succeeded)
             return LocalRedirect(SafeLocalReturnUrl(returnUrl));
 
+        if (result.RequiresTwoFactor)
+        {
+            return RedirectToPage("/Account/LoginWith2fa", new
+            {
+                area = "Identity",
+                returnUrl = SafeLocalReturnUrl(returnUrl),
+                rememberMe = model.RememberMe,
+            });
+        }
+
         if (result.IsLockedOut)
         {
             ModelState.AddModelError(string.Empty, _text["Auth.AccountLocked"]);
