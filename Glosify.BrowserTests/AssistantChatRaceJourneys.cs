@@ -149,6 +149,95 @@ public sealed partial class PortfolioJourneys
         Assert.Equal(1, sends);
     }
 
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_ContextConfirmationCannotReplaceAnotherChatsLoadingStatus()
+    {
+        var patches = new Queue<TaskCompletionSource<IRoute>>();
+        var histories = new Queue<TaskCompletionSource<IRoute>>();
+        await SetupChatRaceAsync(route =>
+        {
+            if (route.Request.Url.Contains("/chat-b/", StringComparison.Ordinal))
+            {
+                histories.Dequeue().SetResult(route);
+                return Task.CompletedTask;
+            }
+            return FulfillHistoryAsync(route, "A history");
+        });
+        await Page.RouteAsync("**/Assistant/Chats/chat-a", route =>
+        {
+            patches.Dequeue().SetResult(route);
+            return Task.CompletedTask;
+        });
+        await OpenRaceAssistantAsync();
+        foreach (var selector in new[] { "quiz", "material" })
+        {
+            var patch = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var history = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+            patches.Enqueue(patch);
+            histories.Enqueue(history);
+            await Page.Locator($"[data-assistant-{selector}-selector]").SelectOptionAsync("");
+            var pendingPatch = await patch.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            await SelectRaceChatAsync("Chat B");
+            var pendingHistory = await history.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            var status = Page.Locator("[data-assistant-status]");
+            var loading = await status.TextContentAsync();
+            var response = Page.WaitForResponseAsync(response => response.Url == pendingPatch.Request.Url);
+            await pendingPatch.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { id = "chat-a", title = "Chat A", preview = "" }),
+            });
+            await (await response).FinishedAsync();
+            await DrainBrowserTasksAsync();
+            // Complete the held request even if the subsequent regression assertion fails.
+            var statusAfterPatch = await status.TextContentAsync();
+            await Expect(RaceSubmit).ToBeDisabledAsync();
+            await FulfillAndDrainAsync(pendingHistory, "B history");
+            Assert.False(string.IsNullOrWhiteSpace(loading));
+            Assert.Equal(loading, statusAfterPatch);
+            await SelectRaceChatAsync("Chat A");
+            await Expect(RaceTranscript).ToContainTextAsync("A history");
+        }
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_NewChatHistoryCannotClearAnotherChatsLoadingStatus()
+    {
+        var created = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var selected = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        await SetupChatRaceAsync(route =>
+        {
+            if (route.Request.Url.Contains("/chat-new/", StringComparison.Ordinal)) created.SetResult(route);
+            else if (route.Request.Url.Contains("/chat-b/", StringComparison.Ordinal)) selected.SetResult(route);
+            else return FulfillHistoryAsync(route, "A history");
+            return Task.CompletedTask;
+        });
+        await Page.RouteAsync("**/Assistant/Chats", route => route.Request.Method == "POST"
+            ? route.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { id = "chat-new", title = "New chat", preview = "" }),
+            })
+            : route.FallbackAsync());
+        await OpenRaceAssistantAsync();
+        await Page.Locator("[data-assistant-new-chat]").DispatchEventAsync("click");
+        var newHistory = await created.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await SelectRaceChatAsync("Chat B");
+        var bHistory = await selected.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        var status = Page.Locator("[data-assistant-status]");
+        var loading = await status.TextContentAsync();
+        await FulfillAndDrainAsync(newHistory, "New chat history");
+        var statusAfterHistory = await status.TextContentAsync();
+        await Expect(RaceSubmit).ToBeDisabledAsync();
+        await FulfillAndDrainAsync(bHistory, "B history");
+        Assert.False(string.IsNullOrWhiteSpace(loading));
+        Assert.Equal(loading, statusAfterHistory);
+        await Expect(RaceTranscript).ToContainTextAsync("B history");
+        await Expect(RaceTranscript).Not.ToContainTextAsync("New chat history");
+    }
+
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
     private ILocator RaceSubmit => Page.Locator("[data-assistant-submit]");
 

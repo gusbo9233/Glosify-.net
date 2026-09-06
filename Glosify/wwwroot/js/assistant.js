@@ -1006,7 +1006,6 @@ import {
         try {
             const chat = await createChat(quizId);
             await selectChat(chat.id);
-            setStatus('');
         } catch (err) {
             setStatus(err.message || 'Could not create chat.', true);
         }
@@ -1016,18 +1015,20 @@ import {
     newChatButton?.addEventListener('click', startNewChat);
 
     quizSelector?.addEventListener('change', async () => {
+        const selection = chatSelection;
         const selectedOption = quizSelector.selectedOptions?.[0] || null;
         const label = selectedOption?.dataset.contextLabel || 'Glosify';
         const contextPersisted = await setQuizContext(quizSelector.value || null, label, true);
-        if (contextPersisted) {
+        if (contextPersisted && ownsSelection(selection)) {
             setStatus(quizId ? `Quiz set to ${label}.` : 'No quiz selected.');
         }
     });
 
     materialSelector?.addEventListener('change', async () => {
+        const selection = chatSelection;
         const [kind, id] = (materialSelector.value || '').split(':');
         const contextPersisted = await setMaterialContext(kind || null, id || null, true);
-        if (contextPersisted) {
+        if (contextPersisted && ownsSelection(selection)) {
             setStatus(materialId ? `Reading ${materialLabel()}.` : 'No material selected.');
         }
     });
