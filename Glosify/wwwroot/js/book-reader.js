@@ -357,6 +357,56 @@ const fallbackSentenceSegments = (text) => {
     return results;
 };
 
+// Keep aligned with BookPageTranslationService.MaxSegmentCharacters.
+const MAX_TRANSLATION_SEGMENT_CHARACTERS = 2000;
+const splitTranslationCandidate = (candidate) => {
+    const text = candidate.segment || '';
+    if (normalizeText(text).length <= MAX_TRANSLATION_SEGMENT_CHARACTERS) return [candidate];
+
+    const graphemes = typeof Intl?.Segmenter === 'function'
+        ? [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text)].map(value => value.segment)
+        // Older browsers: keep combining marks, emoji modifiers, flags, and ZWJ
+        // sequences together instead of splitting their constituent code points.
+        : [...text.matchAll(/\p{Regional_Indicator}{2}|\P{M}(?:\p{M}|\p{Emoji_Modifier})*(?:\u200d\P{M}(?:\p{M}|\p{Emoji_Modifier})*)*|\p{M}+/gu)].map(value => value[0]);
+    const units = new Map();
+    let offset = 0;
+    for (const grapheme of graphemes) {
+        // A pathological grapheme can itself exceed the API limit. Only then
+        // fall back to code points, still retaining complete surrogate pairs.
+        const boundedUnits = grapheme.normalize('NFKC').length > MAX_TRANSLATION_SEGMENT_CHARACTERS
+            ? Array.from(grapheme)
+            : [grapheme];
+        for (const unit of boundedUnits) {
+            units.set(offset, unit);
+            offset += unit.length;
+        }
+    }
+
+    const pieces = [];
+    let start = 0;
+    while (start < text.length) {
+        let end = start;
+        let normalizedLength = 0;
+        let wordBoundary = start;
+        while (end < text.length) {
+            const unit = units.get(end);
+            // NFKC can expand PDF characters or compose a base and its marks.
+            const length = unit.normalize('NFKC').length;
+            if (normalizedLength + length > MAX_TRANSLATION_SEGMENT_CHARACTERS) break;
+            normalizedLength += length;
+            end += unit.length;
+            if (/\s$/u.test(unit)) wordBoundary = end;
+        }
+        if (end < text.length && wordBoundary > start + (end - start) / 2) end = wordBoundary;
+        // Keep a complete paragraph separator with the preceding piece. Trailing
+        // whitespace is trimmed from sourceText and does not use its budget.
+        while (end < text.length && /^\s+$/u.test(units.get(end))) end += units.get(end).length;
+        pieces.push({ segment: text.slice(start, end), index: (Number(candidate.index) || 0) + start });
+        start = end;
+    }
+    return pieces;
+};
+
 const numericItemValue = (item, property, transformIndex) => {
     const direct = Number(item?.[property]);
     if (Number.isFinite(direct) && direct !== 0) return Math.abs(direct);
@@ -450,20 +500,46 @@ const buildPageSegments = (textContent) => {
     }
 
     if (!normalizeText(rawText)) return [];
-    let candidates;
-    if (typeof Intl?.Segmenter === 'function') {
-        candidates = [...new Intl.Segmenter(undefined, { granularity: 'sentence' }).segment(rawText)];
-    } else {
-        candidates = fallbackSentenceSegments(rawText);
+    // A translation segment belongs to one paragraph, even when a paragraph has
+    // no sentence punctuation. Keep delimiters in the preceding source range.
+    const paragraphs = [];
+    let paragraphStart = 0;
+    for (const delimiter of rawText.matchAll(/\n\s*\n/gu)) {
+        const end = delimiter.index + delimiter[0].length;
+        paragraphs.push({ text: rawText.slice(paragraphStart, end), index: paragraphStart });
+        paragraphStart = end;
     }
+    if (paragraphStart < rawText.length) paragraphs.push({ text: rawText.slice(paragraphStart), index: paragraphStart });
+    const sentenceSegmenter = typeof Intl?.Segmenter === 'function'
+        ? new Intl.Segmenter(undefined, { granularity: 'sentence' })
+        : null;
+    const candidates = paragraphs.flatMap(paragraph => {
+        const sentences = sentenceSegmenter
+            ? [...sentenceSegmenter.segment(paragraph.text)]
+            : fallbackSentenceSegments(paragraph.text);
+        const contentSentences = sentences.filter(sentence => normalizeText(sentence.segment));
+        return contentSentences.map((sentence, index) => {
+            // Intl can emit a paragraph's final newline as a whitespace-only
+            // sentence. Include those source characters with the preceding text.
+            const start = index === 0 ? 0 : sentence.index;
+            const end = contentSentences[index + 1]?.index ?? paragraph.text.length;
+            return { segment: paragraph.text.slice(start, end), index: paragraph.index + start };
+        });
+    });
 
     const segments = [];
-    for (const candidate of candidates) {
+    let previousEnd = 0;
+    let previousEndsWithSpace = false;
+    for (const candidate of candidates.flatMap(splitTranslationCandidate)) {
         const rawSegment = candidate.segment || '';
         const sourceText = normalizeText(rawSegment);
         if (!sourceText) continue;
         const start = Number(candidate.index) || 0;
         const end = start + rawSegment.length;
+        const normalizedRawSegment = rawSegment.normalize('NFKC');
+        const sourceSeparator = segments.length > 0 && (previousEndsWithSpace
+            || /^\s/u.test(normalizedRawSegment)
+            || /\s/u.test(rawText.slice(previousEnd, start).normalize('NFKC'))) ? ' ' : '';
         const paragraphIndex = (rawText.slice(0, start).match(/\n\s*\n/gu) || []).length;
         const overlappingItems = itemRanges
             .filter(range => range.end > start && range.start < end);
@@ -477,9 +553,12 @@ const buildPageSegments = (textContent) => {
             index: segments.length,
             paragraphIndex,
             sourceText,
+            sourceSeparator,
             itemIndices,
             itemParts,
         });
+        previousEnd = end;
+        previousEndsWithSpace = /\s$/u.test(normalizedRawSegment);
     }
 
     return segments;
@@ -1194,7 +1273,7 @@ const findSelectedSegments = (selectedText, result, preferredIndices = []) => {
     const sources = result.segments.map(segment => normalizeText(segment.sourceText));
     let combined = '';
     const ranges = sources.map((source, index) => {
-        if (combined) combined += ' ';
+        if (combined) combined += currentSegments[result.segments[index].index]?.sourceSeparator ?? ' ';
         const start = combined.length;
         combined += source;
         return { index, start, end: combined.length };
