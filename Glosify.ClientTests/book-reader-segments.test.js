@@ -102,3 +102,31 @@ for (const [name, intl] of [['Intl', Intl], ['fallback', {}]]) {
         verifyOffsets(items, segments);
     });
 }
+
+function selectedIndices(items, selectedText, preferred = []) {
+    const start = reader.indexOf('const findSelectedSegments =');
+    const end = reader.indexOf('const positionPopover =', start);
+    assert.ok(start > 0 && end > start);
+    const select = vm.runInNewContext(`${reader.slice(0, boundary)}
+${reader.slice(start, end)}
+(items, selected, preferred) => {
+        currentSegments = buildPageSegments({ items });
+        const result = { segments: currentSegments.map(({ index, paragraphIndex, sourceText }) =>
+            ({ index, paragraphIndex, sourceText, translation: 'translated ' + index })) };
+        return findSelectedSegments(selected, result, preferred).map(segment => segment.index);
+    };`, { document: { querySelector: () => null }, window: {}, Intl });
+    return JSON.parse(JSON.stringify(select(items, selectedText, preferred)));
+}
+
+test('A source selection spanning an unbroken size boundary matches both translated pieces', () => {
+    const items = [{ str: 'a'.repeat(1999) + 'X' + 'Y' + 'b'.repeat(2100) }];
+    assert.deepEqual(selectedIndices(items, 'aXYb'), [0, 1]);
+    assert.deepEqual(selectedIndices(items, 'XY', [1]), [0, 1]);
+});
+
+test('Source selection keeps real spaces and paragraph separators when joining segments', () => {
+    const items = [{ str: 'a'.repeat(1998) + ' X Y ' + 'b'.repeat(2100) }];
+    assert.deepEqual(selectedIndices(items, 'a X Y b'), [0, 1]);
+    const paragraphs = [{ str: 'a'.repeat(100) + '\n\n' + 'b'.repeat(4000) }];
+    assert.deepEqual(selectedIndices(paragraphs, 'aaa bbb'), [0, 1]);
+});

@@ -510,12 +510,18 @@ const buildPageSegments = (textContent) => {
     });
 
     const segments = [];
+    let previousEnd = 0;
+    let previousEndsWithSpace = false;
     for (const candidate of candidates.flatMap(splitTranslationCandidate)) {
         const rawSegment = candidate.segment || '';
         const sourceText = normalizeText(rawSegment);
         if (!sourceText) continue;
         const start = Number(candidate.index) || 0;
         const end = start + rawSegment.length;
+        const normalizedRawSegment = rawSegment.normalize('NFKC');
+        const sourceSeparator = segments.length > 0 && (previousEndsWithSpace
+            || /^\s/u.test(normalizedRawSegment)
+            || /\s/u.test(rawText.slice(previousEnd, start).normalize('NFKC'))) ? ' ' : '';
         const paragraphIndex = (rawText.slice(0, start).match(/\n\s*\n/gu) || []).length;
         const overlappingItems = itemRanges
             .filter(range => range.end > start && range.start < end);
@@ -529,9 +535,12 @@ const buildPageSegments = (textContent) => {
             index: segments.length,
             paragraphIndex,
             sourceText,
+            sourceSeparator,
             itemIndices,
             itemParts,
         });
+        previousEnd = end;
+        previousEndsWithSpace = /\s$/u.test(normalizedRawSegment);
     }
 
     return segments;
@@ -1246,7 +1255,7 @@ const findSelectedSegments = (selectedText, result, preferredIndices = []) => {
     const sources = result.segments.map(segment => normalizeText(segment.sourceText));
     let combined = '';
     const ranges = sources.map((source, index) => {
-        if (combined) combined += ' ';
+        if (combined) combined += currentSegments[result.segments[index].index]?.sourceSeparator ?? ' ';
         const start = combined.length;
         combined += source;
         return { index, start, end: combined.length };
