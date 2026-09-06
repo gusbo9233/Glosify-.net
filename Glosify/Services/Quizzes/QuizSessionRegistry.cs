@@ -12,6 +12,7 @@ public record ActiveQuizSession
     public string PracticeDirection { get; init; } = string.Empty;
     public string PracticeItemType { get; init; } = string.Empty;
     public int WordCount { get; init; }
+    public bool CanResumeFromSettings { get; init; } = true;
     public int WordRangeStart { get; init; }
     public int WordRangeEnd { get; init; } = 100;
     public string CacheKey { get; init; } = string.Empty;
@@ -88,7 +89,8 @@ public class QuizSessionRegistry : IQuizSessionRegistry
         {
             PruneExpired(sessions);
             var active = sessions.FirstOrDefault(s =>
-                s.Mode == mode
+                s.CanResumeFromSettings
+                && s.Mode == mode
                 && s.QuizId == quizId
                 && string.Equals(s.PracticeDirection, practiceDirection, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(s.PracticeItemType, practiceItemType, StringComparison.OrdinalIgnoreCase)

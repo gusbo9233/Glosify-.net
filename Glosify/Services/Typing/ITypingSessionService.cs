@@ -39,6 +39,7 @@ public record TypingSessionData : Glosify.Services.Quizzes.IQuizSessionData
     public int WordRangeStart { get; init; }
     public int WordRangeEnd { get; init; } = 100;
     public string? SelectedWordIds { get; init; }
+    public bool CanResumeFromSettings { get; init; } = true;
     public int CurrentIndex { get; set; }
     public int CorrectCount { get; set; }
     public int IncorrectCount { get; set; }

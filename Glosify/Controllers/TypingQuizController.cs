@@ -152,7 +152,12 @@ public class TypingQuizController : Controller
     [HttpPost]
     public IActionResult Restart(Guid quizId, int wordCount, string? practiceDirection = null, string? practiceItemType = null, int wordRangeStart = 0, int wordRangeEnd = 100, string? selectedWordIds = null)
     {
-        _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount, wordRangeStart, wordRangeEnd);
+        // Selected starts are always fresh and must not reset an unrelated
+        // count-based session with the same settings.
+        if (PracticeItemType.IsSentences(practiceItemType) || WordIdList.Parse(selectedWordIds).Count == 0)
+        {
+            _sessionService.ResetSession(User.GetUserId(), quizId, practiceDirection, practiceItemType, wordCount, wordRangeStart, wordRangeEnd);
+        }
         return RedirectToAction(nameof(Index), new { id = quizId, wordCount, practiceDirection = PracticeDirection.Normalize(practiceDirection), practiceItemType = PracticeItemType.Normalize(practiceItemType), wordRangeStart, wordRangeEnd, selectedWordIds });
     }
 
@@ -175,7 +180,7 @@ public class TypingQuizController : Controller
             session.IncorrectWords.Count,
             session.IncorrectWords,
             session.PracticeDirection,
-            session.PracticeItemType);
+            session.PracticeItemType) with { CanResumeFromSettings = false };
 
         _sessionService.SaveSession(restarted);
 

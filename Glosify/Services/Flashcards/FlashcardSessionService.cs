@@ -53,6 +53,7 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
             WordRangeStart = Math.Clamp(rangeStartPercent, 0, 100),
             WordRangeEnd = Math.Clamp(rangeEndPercent, 0, 100),
             SelectedWordIds = string.IsNullOrWhiteSpace(selectedWordIds) ? null : selectedWordIds,
+            CanResumeFromSettings = WordIdList.Parse(selectedWordIds).Count == 0,
             Cards = cards.Select(card => card with
             {
                 Prompt = promptIsLemma ? card.Lemma : card.Translation,
@@ -102,6 +103,6 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
             session.AgainCards.Count,
             session.AgainCards,
             session.PracticeDirection,
-            session.PracticeItemType);
+            session.PracticeItemType) with { CanResumeFromSettings = false };
     }
 }

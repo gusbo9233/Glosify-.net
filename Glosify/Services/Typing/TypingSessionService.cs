@@ -52,6 +52,7 @@ public class TypingSessionService : QuizSessionStore<TypingSessionData>, ITyping
             WordRangeStart = Math.Clamp(rangeStartPercent, 0, 100),
             WordRangeEnd = Math.Clamp(rangeEndPercent, 0, 100),
             SelectedWordIds = string.IsNullOrWhiteSpace(selectedWordIds) ? null : selectedWordIds,
+            CanResumeFromSettings = WordIdList.Parse(selectedWordIds).Count == 0,
             Words = words
         };
     }
