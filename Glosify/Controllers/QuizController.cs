@@ -380,10 +380,11 @@ public class QuizController : Controller
             }
         }
 
+        var selectedWordIds = PracticeItemType.IsSentences(normalizedItemType) ? null : settings.SelectedWordIds;
         return settings.Mode switch
         {
-            "flashcards" => RedirectToAction("Index", "FlashcardQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = normalizedItemType, wordRangeStart = settings.WordRangeStart, wordRangeEnd = settings.WordRangeEnd, selectedWordIds = settings.SelectedWordIds }),
-            "typing" => RedirectToAction("Index", "TypingQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = normalizedItemType, wordRangeStart = settings.WordRangeStart, wordRangeEnd = settings.WordRangeEnd, selectedWordIds = settings.SelectedWordIds }),
+            "flashcards" => RedirectToAction("Index", "FlashcardQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = normalizedItemType, wordRangeStart = settings.WordRangeStart, wordRangeEnd = settings.WordRangeEnd, selectedWordIds }),
+            "typing" => RedirectToAction("Index", "TypingQuiz", new { id = settings.QuizId, wordCount = settings.WordCount, practiceDirection = PracticeDirection.Normalize(settings.PracticeDirection), practiceItemType = normalizedItemType, wordRangeStart = settings.WordRangeStart, wordRangeEnd = settings.WordRangeEnd, selectedWordIds }),
             // "multiple-choice" mode is exposed in settings UI but not yet implemented; route back to settings.
             _ => RedirectToAction(nameof(Settings))
         };

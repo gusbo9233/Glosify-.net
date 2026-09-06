@@ -275,7 +275,15 @@
         if (pickerRow) {
             const syncPickerVisibility = () => {
                 const selected = document.querySelector('input[name="PracticeItemType"]:checked');
-                pickerRow.hidden = selected?.value === 'sentences';
+                const isSentences = selected?.value === 'sentences';
+                pickerRow.hidden = isSentences;
+                if (hiddenInput) hiddenInput.disabled = isSentences;
+                if (isSentences) {
+                    checkboxes.forEach(cb => { cb.checked = true; });
+                    applySelection();
+                    updateCount();
+                    wordPickerDialog.close();
+                }
             };
             itemTypes.forEach(itemType => itemType.addEventListener('change', syncPickerVisibility));
             syncPickerVisibility();
