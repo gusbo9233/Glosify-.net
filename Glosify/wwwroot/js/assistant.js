@@ -50,6 +50,10 @@ import {
     let materialId = pageMaterialId;
     let quizId = pageQuizId;
     let activeThreadId = null;
+    let chatSelection = null;
+    let activeSelectionPromise = Promise.resolve();
+    const pendingSends = new Set();
+    const ownsSelection = selection => selection === chatSelection;
     let chats = [];
     let initialized = false;
     const chatsUrl = '/Assistant/Chats';
@@ -235,12 +239,15 @@ import {
 
     const contextWrites = createRecoverablePromiseQueue(({ threadId, payload }) => updateChat(threadId, payload));
 
-    const enqueueContextWrite = (snapshot) => contextWrites(snapshot).then(
-        () => true,
-        () => {
-            setStatus('Could not save chat context.', true);
-            return false;
-        });
+    const enqueueContextWrite = (snapshot) => {
+        const selection = chatSelection;
+        return contextWrites(snapshot).then(
+            () => true,
+            () => {
+                if (ownsSelection(selection)) setStatus('Could not save chat context.', true);
+                return false;
+            });
+    };
 
     const persistContext = () => {
         if (!activeThreadId) {
@@ -392,8 +399,19 @@ import {
         panel.dataset.assistantInitialized = 'true';
     });
 
-    const selectChat = async (threadId) => {
+    const selectChat = (threadId) => {
+        const selection = { threadId };
+        chatSelection = selection;
         activeThreadId = threadId;
+        resetTranscript(defaultEmptyText);
+        submit.disabled = true;
+        setStatus(t('Client.Loading', 'Loading…'));
+        activeSelectionPromise = loadSelectedChat(selection);
+        return activeSelectionPromise;
+    };
+
+    const loadSelectedChat = async (selection) => {
+        const { threadId } = selection;
         sessionStorage.setItem(activeChatStorageKey, threadId);
         const chat = getActiveChat();
         const contextQuizId = pageQuizId || chat?.contextQuizId || null;
@@ -427,11 +445,14 @@ import {
                 },
             });
         }
+        if (!ownsSelection(selection)) return;
         renderChatList();
-        await loadHistory(threadId);
+        await loadHistory(selection);
+        if (!ownsSelection(selection)) return;
         switchPane('chat');
+        submit.disabled = pendingSends.has(threadId);
         if (contextPersisted) {
-            setStatus('');
+            setStatus(pendingSends.has(threadId) ? 'Thinking...' : '');
         }
     };
 
@@ -887,14 +908,16 @@ import {
         }
     };
 
-    const loadHistory = async (threadId) => {
-        resetTranscript(defaultEmptyText);
+    const loadHistory = async (selection) => {
+        if (!ownsSelection(selection)) return;
+        const { threadId } = selection;
         try {
             const response = await fetch(chatHistoryUrl(threadId), {
                 headers: { 'Accept': 'application/json' },
             });
             if (!response.ok) return;
             const data = await response.json();
+            if (!ownsSelection(selection)) return;
             resetTranscript(defaultEmptyText);
             for (const message of data.messages ?? []) {
                 renderMessage(message);
@@ -1022,16 +1045,23 @@ import {
         event.preventDefault();
         const message = textarea.value.trim();
         if (!message) return;
+        const requestedSelection = chatSelection;
 
-        // Opening the assistant selects a thread before its history has finished loading.
-        // Always join that initialization flight so a late history response cannot erase
-        // the message (and any pending-change card) that this submission renders.
+        // Join initialization and the current selection's history before rendering
+        // a local message. Every later chat selection has its own history flight.
         try {
             await ensureInitialChat();
         } catch (err) {
             setStatus(err.message || 'Could not create chat.', true);
             return;
         }
+
+        if (requestedSelection && !ownsSelection(requestedSelection)) return;
+        const selection = chatSelection;
+        const threadId = selection.threadId;
+        await activeSelectionPromise;
+        if (!ownsSelection(selection) || pendingSends.has(threadId)) return;
+        pendingSends.add(threadId);
 
         const documentContext = currentBookPageContext({
             pageDocumentId: pageDocumentId,
@@ -1061,7 +1091,7 @@ import {
         const clientStartedAt = performance.now();
 
         try {
-            const response = await fetch(chatSendUrl(activeThreadId), {
+            const response = await fetch(chatSendUrl(threadId), {
                 method: 'POST',
                 headers: requestHeaders(true),
                 body: JSON.stringify({
@@ -1076,11 +1106,12 @@ import {
             });
             const data = await response.json().catch(() => null);
             if (!response.ok) {
-                setStatus(localizedProblem(data, response, 'Client.AssistantFailed', 'The assistant could not respond.'), true);
-                submit.disabled = false;
+                if (ownsSelection(selection)) {
+                    setStatus(localizedProblem(data, response, 'Client.AssistantFailed', 'The assistant could not respond.'), true);
+                }
                 return;
             }
-            renderMessage({
+            if (ownsSelection(selection)) renderMessage({
                 id: data.assistantMessageId,
                 turnId: data.turnId,
                 role: 'model',
@@ -1099,12 +1130,21 @@ import {
                 }).catch(() => { /* Timing is best-effort and never blocks the reply. */ });
             }
             await loadChats();
-            setStatus('');
+            if (ownsSelection(selection)) setStatus('');
         } catch (err) {
-            setStatus(t('Client.AssistantNetwork', 'Network error talking to the assistant.'), true);
+            if (ownsSelection(selection)) {
+                setStatus(t('Client.AssistantNetwork', 'Network error talking to the assistant.'), true);
+            }
         } finally {
-            submit.disabled = false;
-            textarea.focus();
+            pendingSends.delete(threadId);
+            if (ownsSelection(selection)) {
+                submit.disabled = false;
+                if (canFocusAssistant()) textarea.focus();
+            } else if (activeThreadId === threadId) {
+                // The user returned while this turn was pending. Reload the stored
+                // conversation instead of appending to a newer history snapshot.
+                await selectChat(threadId);
+            }
         }
     });
 
