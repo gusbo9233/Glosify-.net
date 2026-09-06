@@ -15,6 +15,42 @@ const sessionId = "11111111-1111-4111-8111-111111111111";
 const extensionId = "akepdpjieiokffdapibipomhbplikock";
 const execFileAsync = promisify(execFile);
 
+for (const refreshStatus of [429, 503, 401, 403]) {
+  test(`account refresh handles HTTP ${refreshStatus} without misclassifying the login`, async () => {
+    const harness = await launchHarness({ refreshStatus });
+    try {
+      await harness.control.evaluate(() => chrome.runtime.sendMessage({
+        type: "test:restore-local-state",
+      }));
+      const failed = await harness.control.evaluate(() => chrome.runtime.sendMessage({
+        type: "popup:refresh",
+      }));
+      expect(failed.ok).toBe(true);
+      const rejected = refreshStatus === 401 || refreshStatus === 403;
+      expect(failed.result.signedIn).toBe(!rejected);
+      expect(failed.result.status).toBe(rejected ? "disconnected" : "error");
+      if (!rejected) expect(failed.result.error).toBe("Refresh temporarily unavailable");
+      expect(await harness.worker.evaluate(async () => (
+        await chrome.storage.local.get("glosifyRefreshToken")
+      ).glosifyRefreshToken)).toBe(rejected ? undefined : "refresh-token");
+
+      if (!rejected) {
+        harness.mock.refreshStatus = 200;
+        const recovered = await harness.control.evaluate(() => chrome.runtime.sendMessage({
+          type: "popup:refresh",
+        }));
+        expect(recovered.ok).toBe(true);
+        expect(recovered.result).toMatchObject({ signedIn: true, status: "ready", error: null });
+        expect(await harness.worker.evaluate(async () => (
+          await chrome.storage.local.get("glosifyRefreshToken")
+        ).glosifyRefreshToken)).toBe("rotated-refresh-token");
+      }
+    } finally {
+      await harness.close();
+    }
+  });
+}
+
 test("same-document navigation continues and full navigation stops capture", async () => {
   const harness = await launchHarness({
     storage: { glosifyTransparentSubtitles: true },
@@ -207,6 +243,7 @@ test("tab-capture profile streams real tab audio and renders the final caption",
 async function launchHarness({
   captureMode = "synthetic",
   createDelayMs = 0,
+  refreshStatus = 200,
   finalCaption = "Synthetic final caption",
   storage = {},
 } = {}) {
@@ -215,7 +252,7 @@ async function launchHarness({
   let mock = null;
   try {
     mock = await test.step("start isolated mock backend", () => (
-      startMockGlosify({ createDelayMs, finalCaption })));
+      startMockGlosify({ createDelayMs, finalCaption, refreshStatus })));
     const builtProfile = captureMode === "tab" ? "test-tab" : "test";
     const extensionRoot = path.join(temporaryRoot, "extension");
     await test.step("generate isolated extension profile", async () => {
@@ -362,12 +399,13 @@ async function overlayState(control) {
   });
 }
 
-async function startMockGlosify({ createDelayMs = 0, finalCaption } = {}) {
+async function startMockGlosify({ createDelayMs = 0, finalCaption, refreshStatus = 200 } = {}) {
   let startedAtUtc = null;
   const state = {
     audioMessages: 0,
     deletedSessions: 0,
     refreshRequests: 0,
+    refreshStatus,
     createdSessions: 0,
     drainRequests: 0,
     sessionRequests: [],
@@ -390,6 +428,11 @@ async function startMockGlosify({ createDelayMs = 0, finalCaption } = {}) {
     }
     if (url.pathname === "/api/auth/refresh" && request.method === "POST") {
       state.refreshRequests += 1;
+      if (state.refreshStatus !== 200) {
+        response.writeHead(state.refreshStatus, { "Content-Type": "application/problem+json" });
+        response.end(JSON.stringify({ detail: "Refresh temporarily unavailable" }));
+        return;
+      }
       return json(response, {
         accessToken: "access-token",
         refreshToken: "rotated-refresh-token",

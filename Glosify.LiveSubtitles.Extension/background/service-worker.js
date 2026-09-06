@@ -375,10 +375,13 @@ async function ensureAccessToken() {
         body: JSON.stringify({ refreshToken: tokenUsed }),
       });
       if (!response.ok) {
-        if (refreshTokenGeneration === generationUsed && refreshToken === tokenUsed) {
-          await clearExpiredAuthentication();
+        if (response.status === 401 || response.status === 403) {
+          if (refreshTokenGeneration === generationUsed && refreshToken === tokenUsed) {
+            await clearExpiredAuthentication();
+          }
+          throw new ApiRequestError(401, "Your Glosify session expired. Connect again.");
         }
-        throw new ApiRequestError(401, "Your Glosify session expired. Connect again.");
+        throw await apiError(response);
       }
       if (refreshTokenGeneration !== generationUsed || refreshToken !== tokenUsed) {
         return accessToken;
