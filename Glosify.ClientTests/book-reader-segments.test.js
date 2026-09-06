@@ -81,3 +81,14 @@ test('Short sentences retain their existing PDF mappings', () => {
     ]);
     verifyOffsets(items, segments);
 });
+
+for (const length of [1998, 1999, 2000]) {
+    test(`A split beside a paragraph separator keeps the next paragraph at length ${length}`, () => {
+        const items = [{ str: 'a'.repeat(length) + '\n\n' + 'b'.repeat(100) }];
+        const segments = segment(items, {});
+        assert.deepEqual(segments.map(entry => entry.sourceText), ['a'.repeat(length), 'b'.repeat(100)]);
+        assert.deepEqual(segments.map(entry => entry.paragraphIndex), [0, 1]);
+        assert.equal(segments[1].itemParts[0].startOffset, length + 2);
+        verifyOffsets(items, segments);
+    });
+}

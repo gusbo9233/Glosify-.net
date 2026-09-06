@@ -380,6 +380,9 @@ const splitTranslationCandidate = (candidate) => {
             if (/\s/u.test(point)) wordBoundary = end;
         }
         if (end < text.length && wordBoundary > start + (end - start) / 2) end = wordBoundary;
+        // Keep a complete paragraph separator with the preceding piece. Trailing
+        // whitespace is trimmed from sourceText and does not use its budget.
+        while (end < text.length && /\s/u.test(text[end])) end += 1;
         pieces.push({ segment: text.slice(start, end), index: (Number(candidate.index) || 0) + start });
         start = end;
     }
