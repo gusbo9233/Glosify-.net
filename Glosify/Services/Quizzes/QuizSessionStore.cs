@@ -15,6 +15,7 @@ public interface IQuizSessionData
     string PracticeDirection { get; }
     string PracticeItemType { get; }
     int WordCount { get; }
+    bool CanResumeFromSettings { get; }
     int WordRangeStart { get; }
     int WordRangeEnd { get; }
 }
@@ -78,6 +79,7 @@ public abstract class QuizSessionStore<TSession> where TSession : class, IQuizSe
                 PracticeDirection = session.PracticeDirection,
                 PracticeItemType = session.PracticeItemType,
                 WordCount = session.WordCount,
+                CanResumeFromSettings = session.CanResumeFromSettings,
                 WordRangeStart = session.WordRangeStart,
                 WordRangeEnd = session.WordRangeEnd,
                 CacheKey = CacheKey(session.SessionId)
