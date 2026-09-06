@@ -125,11 +125,15 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         }
 
         var cacheKey = CacheKeyPrefix + HashToken(token);
-        if (!_cache.TryGetValue(cacheKey, out RelayTokenEntry? entry) || entry is null)
+        if (!_cache.TryGetValue(cacheKey, out RelayTokenEntry? entry)
+            || entry is null
+            || !entry.TryConsume())
         {
             return false;
         }
 
+        // Concurrent cache readers can retain the same entry after removal. The
+        // entry's atomic claim ensures only one reader can authorize a stream.
         // Relay grants are single-use even when the caller supplies the wrong
         // session id. This prevents retrying a captured token against routes.
         _cache.Remove(cacheKey);
@@ -174,5 +178,10 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         bool SaveTranscript,
         string? TranscriptSourceLanguage,
         bool PartialCaptionsEnabled,
-        DateTimeOffset ExpiresAt);
+        DateTimeOffset ExpiresAt)
+    {
+        private int _consumed;
+
+        public bool TryConsume() => Interlocked.Exchange(ref _consumed, 1) == 0;
+    }
 }
