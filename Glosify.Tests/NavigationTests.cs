@@ -1,6 +1,11 @@
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
+using Glosify.Services.Ai;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -18,6 +23,13 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     {
         AllowAutoRedirect = false
     });
+
+    private WebApplicationFactory<Program> CreateFactoryWithTrialGrant(int credits) =>
+        _factory.WithWebHostBuilder(builder => builder.ConfigureAppConfiguration((_, configuration) =>
+            configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AiUsage:TrialGrantCredits"] = credits.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            })));
 
     [Theory]
     [InlineData("/")]
@@ -49,19 +61,72 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         var terms = await (await client.GetAsync("/Home/Terms")).Content.ReadAsStringAsync();
         var support = await (await client.GetAsync("/Home/Support")).Content.ReadAsStringAsync();
 
-        Assert.Contains("receive 25 credits once when you sign in with Google or Microsoft", login);
+        Assert.Contains("receive 100 credits once when you sign in with Google or Microsoft", login);
         Assert.Contains("Password accounts do not receive automatic trial credits", login);
-        Assert.Contains("25-credit trial", register);
+        Assert.Contains("100-credit trial", register);
         Assert.Contains("returnUrl=%2Fextension%2Fconnect%3Fstate%3Dtest", register);
         Assert.DoesNotContain("href=\"#\"", login);
         Assert.DoesNotContain("href=\"#\"", register);
         Assert.Contains("Chrome Web Store Limited Use", privacy);
         Assert.Contains("complete effective model request", privacy);
         Assert.Contains("Transcript saving is off by default", privacy);
+        Assert.Contains("Glosify Translator and Live Subtitles Chrome extensions", privacy);
+        Assert.Contains("translation history is not stored in Chrome", privacy);
+        Assert.Contains("Saved translations are retained until you explicitly delete them", privacy);
+        Assert.Contains("100-credit trial", terms);
         Assert.Contains("provider reports token or audio usage", terms);
         Assert.Contains("mandatory consumer rights", terms);
         Assert.Contains("AI-generated replies", terms);
+        Assert.Contains("The Translator processes text only after you choose Translate", terms);
         Assert.Contains("Do not send passwords", support);
+    }
+
+    [Fact]
+    public void TrialGrantDefaultsAndShippedConfigurationAre100Credits()
+    {
+        var configured = _factory.Services.GetRequiredService<IOptions<AiUsageOptions>>().Value;
+
+        Assert.Equal(100, new AiUsageOptions().TrialGrantCredits);
+        Assert.Equal(100, configured.TrialGrantCredits);
+    }
+
+    [Fact]
+    public async Task TrialGrantConfigurationControlsEveryPublicTrialDisclosure()
+    {
+        using var factory = CreateFactoryWithTrialGrant(321);
+        var client = factory.CreateClient();
+
+        Assert.Equal(
+            321,
+            factory.Services.GetRequiredService<IOptions<AiUsageOptions>>().Value.TrialGrantCredits);
+
+        var login = await (await client.GetAsync("/login")).Content.ReadAsStringAsync();
+        var register = await (await client.GetAsync("/Account/Register")).Content.ReadAsStringAsync();
+        var terms = await (await client.GetAsync("/Home/Terms")).Content.ReadAsStringAsync();
+
+        Assert.Contains("receive 321 credits once", login);
+        Assert.Contains("321-credit trial", register);
+        Assert.Contains("321-credit trial", terms);
+
+        string[] localizedTermsRoutes =
+        [
+            "/sv-SE/terms",
+            "/es-419/terms",
+            "/pt-BR/terms",
+            "/fr-FR/terms",
+            "/ja-JP/terms",
+            "/zh-Hans/terms",
+            "/uk-UA/terms",
+            "/tr-TR/terms",
+            "/id-ID/terms",
+            "/vi-VN/terms",
+            "/ar/terms",
+        ];
+        foreach (var route in localizedTermsRoutes)
+        {
+            var localizedTerms = await (await client.GetAsync(route)).Content.ReadAsStringAsync();
+            Assert.Contains("321", localizedTerms);
+        }
     }
 
     [Fact]

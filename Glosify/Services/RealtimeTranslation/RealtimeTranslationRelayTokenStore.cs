@@ -57,7 +57,8 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         ArgumentException.ThrowIfNullOrWhiteSpace(targetLanguage);
 
         if (translationMode is not (
-                RealtimeTranslationModes.Scribe
+                RealtimeTranslationModes.Original
+                or RealtimeTranslationModes.Scribe
                 or RealtimeTranslationModes.ScribeCloudflare
                 or RealtimeTranslationModes.Enhanced))
         {
@@ -72,7 +73,9 @@ public sealed class RealtimeTranslationRelayTokenStore : IRealtimeTranslationRel
         }
         var expectedSpeechProvider = translationMode switch
         {
-            RealtimeTranslationModes.Scribe or RealtimeTranslationModes.ScribeCloudflare =>
+            RealtimeTranslationModes.Original
+                or RealtimeTranslationModes.Scribe
+                or RealtimeTranslationModes.ScribeCloudflare =>
                 RealtimeSpeechProviders.ElevenLabs,
             _ => RealtimeSpeechProviders.OpenAi,
         };

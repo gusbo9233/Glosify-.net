@@ -16,6 +16,7 @@ using Glosify.Services.RealtimeTranslation;
 using Glosify.Services.Speech;
 using Glosify.Services.Storage;
 using Glosify.Services.Typing;
+using Glosify.Services.Translator;
 using Glosify.Services.Words;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Options;
@@ -111,6 +112,7 @@ public static class ApplicationServiceExtensions
         services.AddSingleton<IBookPageTranslationCoordinator, BookPageTranslationCoordinator>();
         services.AddScoped<IBookPageTranslationService, BookPageTranslationService>();
         services.AddScoped<IQuizAttemptService, QuizAttemptService>();
+        services.AddScoped<ITextTranslationService, TextTranslationService>();
         services.AddScoped<IAiCreditService, AiCreditService>();
         services.AddScoped<IStripePaymentService, StripePaymentService>();
         services.AddScoped<IPaidServiceGate, PaidServiceGate>();

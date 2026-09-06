@@ -62,6 +62,14 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             .Select(language => new RealtimeTranslationLanguage(language.Code, language.Name))
             .ToArray();
         var modes = new List<RealtimeTranslationMode>();
+        if (_options.ElevenLabs.Enabled)
+        {
+            modes.Add(new RealtimeTranslationMode(
+                RealtimeTranslationModes.Original,
+                _options.Modes.Original.DisplayName.Trim(),
+                _options.Modes.Original.Description.Trim(),
+                _pricing.ScribeSubtitleCreditsPerStartedMinute));
+        }
         if (_options.Cloudflare.Enabled && _options.ElevenLabs.Enabled)
         {
             // Keep the legacy code in the API catalog while 0.5.0 clients are still
@@ -133,11 +141,17 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             ? RealtimeTranslationModes.ScribeCloudflare
             : requestedMode;
         if (mode is not (
-                RealtimeTranslationModes.ScribeCloudflare
+                RealtimeTranslationModes.Original
+                or RealtimeTranslationModes.ScribeCloudflare
                 or RealtimeTranslationModes.Enhanced))
         {
             throw new RealtimeTranslationValidationException(
                 "Choose an available live subtitle mode.");
+        }
+        if (mode == RealtimeTranslationModes.Original && !_options.ElevenLabs.Enabled)
+        {
+            throw new RealtimeTranslationUnavailableException(
+                "Original captions are not enabled on this Glosify deployment.");
         }
         if (mode == RealtimeTranslationModes.ScribeCloudflare
             && (!_options.ElevenLabs.Enabled || !_options.Cloudflare.Enabled))
@@ -147,11 +161,14 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         }
         var canonicalSpeechProvider = mode switch
         {
-            RealtimeTranslationModes.Scribe or RealtimeTranslationModes.ScribeCloudflare =>
+            RealtimeTranslationModes.Original
+                or RealtimeTranslationModes.Scribe
+                or RealtimeTranslationModes.ScribeCloudflare =>
                 RealtimeSpeechProviders.ElevenLabs,
             _ => RealtimeSpeechProviders.OpenAi,
         };
-        var usesScribe = mode is RealtimeTranslationModes.Scribe
+        var usesScribe = mode is RealtimeTranslationModes.Original
+            or RealtimeTranslationModes.Scribe
             or RealtimeTranslationModes.ScribeCloudflare || saveTranscript;
         var canonicalSourceLanguage = usesScribe
             ? string.IsNullOrWhiteSpace(sourceLanguage)
@@ -254,7 +271,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 SourceLanguage = canonicalSourceLanguage,
                 Model = mode switch
                 {
-                    RealtimeTranslationModes.Scribe => _options.ElevenLabs.Model,
+                    RealtimeTranslationModes.Original or RealtimeTranslationModes.Scribe =>
+                        _options.ElevenLabs.Model,
                     RealtimeTranslationModes.ScribeCloudflare => _options.Cloudflare.Model,
                     _ => OpenAiModels.RealtimeTranslation,
                 },
@@ -263,14 +281,16 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                     : null,
                 BillingModel = mode switch
                 {
-                    RealtimeTranslationModes.Scribe => _options.ElevenLabs.BillingModel,
+                    RealtimeTranslationModes.Original or RealtimeTranslationModes.Scribe =>
+                        _options.ElevenLabs.BillingModel,
                     RealtimeTranslationModes.ScribeCloudflare => _options.Cloudflare.BillingModel,
                     _ when transcript is null => OpenAiModels.RealtimeTranslation,
                     _ => _options.SavedTranscriptBillingModel,
                 },
                 CreditsPerStartedMinute = mode switch
                 {
-                    RealtimeTranslationModes.Scribe => _pricing.ScribeSubtitleCreditsPerStartedMinute,
+                    RealtimeTranslationModes.Original or RealtimeTranslationModes.Scribe =>
+                        _pricing.ScribeSubtitleCreditsPerStartedMinute,
                     RealtimeTranslationModes.ScribeCloudflare =>
                         _pricing.CloudflareScribeSubtitleCreditsPerStartedMinute,
                     _ when transcript is null => _pricing.EnhancedSubtitleCreditsPerStartedMinute,

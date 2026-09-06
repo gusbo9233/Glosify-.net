@@ -1836,6 +1836,113 @@ namespace Glosify.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.SavedTranslation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DetectedSourceLanguage")
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("Preferences")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SourceLanguage")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("SourceText")
+                        .IsRequired()
+                        .HasMaxLength(8000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TargetLanguage")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("TranslatedText")
+                        .IsRequired()
+                        .HasMaxLength(16000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("TranslationOperationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "CreatedAt");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.HasIndex("UserId", "RequestId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "TranslationOperationId")
+                        .IsUnique()
+                        .HasFilter("[TranslationOperationId] IS NOT NULL");
+
+                    b.ToTable("SavedTranslations");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.SavedTranslationSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ClientSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("LanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ClientSessionId", "LanguageCode")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "LanguageCode", "UpdatedAt");
+
+                    b.ToTable("SavedTranslationSessions");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.StripeCreditPurchase", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2609,6 +2716,35 @@ namespace Glosify.Migrations
                     b.Navigation("Transcript");
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.SavedTranslation", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.SavedTranslationSession", "Session")
+                        .WithMany("Translations")
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_SavedTranslations_SavedTranslationSessions_SessionId");
+
+                    b.HasOne("Glosify.Models.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired()
+                        .HasConstraintName("FK_SavedTranslations_AspNetUsers_UserId");
+
+                    b.Navigation("Session");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.SavedTranslationSession", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_SavedTranslationSessions_AspNetUsers_UserId");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.StripeCreditPurchase", b =>
                 {
                     b.HasOne("Glosify.Models.Entities.ApplicationUser", null)
@@ -2772,6 +2908,11 @@ namespace Glosify.Migrations
                     b.Navigation("Segments");
 
                     b.Navigation("Sessions");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.SavedTranslationSession", b =>
+                {
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("Glosify.Models.Library.BookDocument", b =>

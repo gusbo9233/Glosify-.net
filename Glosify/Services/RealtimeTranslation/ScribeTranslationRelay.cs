@@ -52,7 +52,8 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
     {
         var supportedMode = authorization.TranslationMode switch
         {
-            RealtimeTranslationModes.Scribe => _options.ElevenLabs.Enabled,
+            RealtimeTranslationModes.Original or RealtimeTranslationModes.Scribe =>
+                _options.ElevenLabs.Enabled,
             RealtimeTranslationModes.ScribeCloudflare =>
                 _options.ElevenLabs.Enabled && _options.Cloudflare.Enabled,
             _ => false,
@@ -328,11 +329,18 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         var scheduler = new AdaptivePartialTranslationScheduler(
             _timeProvider,
             _options.ElevenLabs,
-            translatePartials: authorization.PartialCaptionsEnabled
-                && (_options.ElevenLabs.TranslatePartials || captureRecorder is not null),
-            partialInterval: authorization.TranslationMode == RealtimeTranslationModes.ScribeCloudflare
-                ? TimeSpan.FromSeconds(_options.Cloudflare.PartialIntervalSeconds)
-                : null,
+            translatePartials: ShouldTranslatePartials(
+                authorization.TranslationMode,
+                authorization.PartialCaptionsEnabled,
+                _options.ElevenLabs.TranslatePartials,
+                captureRecorder is not null),
+            partialInterval: authorization.TranslationMode switch
+            {
+                RealtimeTranslationModes.Original => TimeSpan.FromMilliseconds(250),
+                RealtimeTranslationModes.ScribeCloudflare =>
+                    TimeSpan.FromSeconds(_options.Cloudflare.PartialIntervalSeconds),
+                _ => null,
+            },
             paceFromRequestStart:
                 authorization.TranslationMode == RealtimeTranslationModes.ScribeCloudflare,
             ignorePartialTranslationFailures:
@@ -378,6 +386,8 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         string targetLanguage,
         CancellationToken cancellationToken) => translationMode switch
         {
+            RealtimeTranslationModes.Original => Task.FromResult(
+                CreateOriginalCaption(segment, targetLanguage)),
             RealtimeTranslationModes.Scribe => _translator.TranslateAsync(
                 segment,
                 targetLanguage,
@@ -389,6 +399,27 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
             _ => throw new RealtimeTranslationValidationException(
                 "The requested Scribe translation mode is not supported."),
         };
+
+    internal static TranslatedSubtitleSegment CreateOriginalCaption(
+        RecognizedSpeechSegment segment,
+        string targetLanguage) => new(
+            segment.Sequence,
+            segment.Text,
+            segment.Text,
+            segment.SourceLanguage,
+            targetLanguage,
+            segment.CapturedAt,
+            ProviderRequest: false);
+
+    internal static bool ShouldTranslatePartials(
+        string translationMode,
+        bool partialCaptionsEnabled,
+        bool translatedPartialsEnabled,
+        bool captureEnabled) =>
+        partialCaptionsEnabled
+        && (translationMode == RealtimeTranslationModes.Original
+            || translatedPartialsEnabled
+            || captureEnabled);
 
     private static async Task SendTranslationAsync(
         WebSocket browserSocket,

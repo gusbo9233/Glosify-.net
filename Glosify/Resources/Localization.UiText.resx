@@ -155,7 +155,7 @@
   <data name="Auth.WelcomeBack" xml:space="preserve"><value>Welcome Back</value></data>
   <data name="Auth.LoginIntro" xml:space="preserve"><value>Please enter your details to resume your journey.</value></data>
   <data name="Auth.TrialLabel" xml:space="preserve"><value>Trial offer:</value></data>
-  <data name="Auth.TrialText" xml:space="preserve"><value>receive 25 credits once when you sign in with Google or Microsoft. Password accounts do not receive automatic trial credits.</value></data>
+  <data name="Auth.TrialText" xml:space="preserve"><value>receive {0} credits once when you sign in with Google or Microsoft. Password accounts do not receive automatic trial credits.</value></data>
   <data name="Auth.EmailAddress" xml:space="preserve"><value>Email Address</value></data>
   <data name="Auth.Password" xml:space="preserve"><value>Password</value></data>
   <data name="Auth.Forgot" xml:space="preserve"><value>Forgot?</value></data>
@@ -166,7 +166,7 @@
   <data name="Auth.RegisterTitle" xml:space="preserve"><value>Register</value></data>
   <data name="Auth.CreateYourAccount" xml:space="preserve"><value>Create your account</value></data>
   <data name="Auth.RegisterIntro" xml:space="preserve"><value>Start your language immersion journey today.</value></data>
-  <data name="Auth.RegisterTrialLabel" xml:space="preserve"><value>25-credit trial:</value></data>
+  <data name="Auth.RegisterTrialLabel" xml:space="preserve"><value>{0}-credit trial:</value></data>
   <data name="Auth.RegisterTrialText" xml:space="preserve"><value>available once after you link and sign in with Google or Microsoft. Creating a password account alone does not add trial credits.</value></data>
   <data name="Auth.ConfirmPassword" xml:space="preserve"><value>Confirm password</value></data>
   <data name="Auth.AlreadyAccount" xml:space="preserve"><value>Already have an account?</value></data>
@@ -436,4 +436,10 @@
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Preview JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Import everything</value></data>
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Preview and import are deterministic and do not contact an AI provider. “Repair with AI” sends the pasted text to Glosify’s configured AI and charges credits.</value></data>
+  <data name="Nav.Translations" xml:space="preserve"><value>Translations</value></data>
+  <data name="Translations.Title" xml:space="preserve"><value>Saved translations</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>Translator</value></data><data name="Translations.Saved" xml:space="preserve"><value>Saved translations</value></data><data name="Translations.Intro" xml:space="preserve"><value>Translations you explicitly saved from the Glosify Translator extension.</value></data>
+  <data name="Translations.CountOne" xml:space="preserve"><value>{0} translation</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} translations</value></data><data name="Translations.None" xml:space="preserve"><value>No saved translations yet</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>Use the Glosify Translator extension and choose Save after translating.</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>Saved translation pages</value></data>
+  <data name="Translations.DetailTitle" xml:space="preserve"><value>Saved translation</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>Saved</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>Delete this saved translation?</value></data><data name="Translations.Preferences" xml:space="preserve"><value>Translation preferences</value></data><data name="Translations.Source" xml:space="preserve"><value>Source text</value></data><data name="Translations.Translation" xml:space="preserve"><value>Translation</value></data><data name="Translations.Deleted" xml:space="preserve"><value>Translation deleted.</value></data>
+  <data name="Translations.Copied" xml:space="preserve"><value>Copied.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Could not copy. Select the text and copy it manually.</value></data>
+  <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Delete this saved translation session and every translation in it?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Translation session deleted.</value></data>
 </root>

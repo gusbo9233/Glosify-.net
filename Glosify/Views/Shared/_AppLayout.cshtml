@@ -172,6 +172,10 @@
                         @NavIcon("subtitles")
                         @Text["Nav.Transcripts"]
                     </a>
+                    <a class="@NavClass("Translations")" asp-controller="Translations" asp-action="Index">
+                        @NavIcon("translate")
+                        @Text["Nav.Translations"]
+                    </a>
                 }
                 <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
                     @NavIcon("quiz")
@@ -273,6 +277,10 @@
             <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
                 @NavIcon("subtitles")
                 <span>@Text["Nav.Transcripts"]</span>
+            </a>
+            <a class="@NavClass("Translations")" asp-controller="Translations" asp-action="Index">
+                @NavIcon("translate")
+                <span>@Text["Nav.Translations"]</span>
             </a>
         }
         @if (User.Identity?.IsAuthenticated == true)

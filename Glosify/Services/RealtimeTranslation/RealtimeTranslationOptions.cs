@@ -48,6 +48,12 @@ public sealed class RealtimeTranslationOptions
 
 public sealed class RealtimeTranslationModeCatalogOptions
 {
+    public RealtimeTranslationModeDisplayOptions Original { get; set; } = new()
+    {
+        DisplayName = "Original captions",
+        Description = "Fast captions without translation",
+    };
+
     public RealtimeTranslationModeDisplayOptions Enhanced { get; set; } = new()
     {
         DisplayName = "Enhanced",
@@ -141,6 +147,10 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
 
         var failures = new List<string>();
         ValidateModeDisplay(
+            options.Modes.Original,
+            "RealtimeTranslation:Modes:Original",
+            failures);
+        ValidateModeDisplay(
             options.Modes.Enhanced,
             "RealtimeTranslation:Modes:Enhanced",
             failures);
@@ -221,6 +231,16 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
             {
                 failures.Add(
                     "RealtimeTranslation:ElevenLabs:Model must be scribe_v2_realtime.");
+            }
+            if (string.IsNullOrWhiteSpace(options.ElevenLabs.BillingModel))
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:BillingModel is required when ElevenLabs subtitles are enabled.");
+            }
+            if (options.ElevenLabs.CreditsPerStartedMinute <= 0)
+            {
+                failures.Add(
+                    "RealtimeTranslation:ElevenLabs:CreditsPerStartedMinute must be greater than zero.");
             }
             if (options.ElevenLabs.VadSilenceThresholdSeconds is < 0.3 or > 5)
             {
@@ -399,11 +419,11 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 string.Equals(model.Deployment?.Trim(), OpenAiModels.RealtimeTranslation, StringComparison.OrdinalIgnoreCase));
             var savedDurationPrice = options.SavedSourceTranscriptsEnabled
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
-                    string.Equals(model.Deployment?.Trim(), options.SavedTranscriptBillingModel.Trim(), StringComparison.OrdinalIgnoreCase))
+                    string.Equals(model.Deployment?.Trim(), options.SavedTranscriptBillingModel?.Trim(), StringComparison.OrdinalIgnoreCase))
                 : null;
             var economicalDurationPrice = options.EconomicalEnabled
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
-                    string.Equals(model.Deployment?.Trim(), options.EconomicalBillingModel.Trim(), StringComparison.OrdinalIgnoreCase))
+                    string.Equals(model.Deployment?.Trim(), options.EconomicalBillingModel?.Trim(), StringComparison.OrdinalIgnoreCase))
                 : null;
             var cloudflareIsBudgeted = !options.Cloudflare.Enabled
                 || _aiUsageOptions.MonthlyBudget.Providers.Any(provider =>
@@ -415,14 +435,29 @@ public sealed class RealtimeTranslationOptionsValidator : IValidateOptions<Realt
                 ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
                     string.Equals(
                         model.Deployment?.Trim(),
-                        options.Cloudflare.BillingModel.Trim(),
+                        options.Cloudflare.BillingModel?.Trim(),
+                        StringComparison.OrdinalIgnoreCase))
+                : null;
+            var elevenLabsIsBudgeted = !options.ElevenLabs.Enabled
+                || _aiUsageOptions.MonthlyBudget.Providers.Any(provider =>
+                    string.Equals(
+                        provider?.Trim(),
+                        RealtimeTranslationConstants.ElevenLabsProvider,
+                        StringComparison.OrdinalIgnoreCase));
+            var elevenLabsDurationPrice = options.ElevenLabs.Enabled
+                ? _aiUsageOptions.MonthlyBudget.Models.FirstOrDefault(model =>
+                    string.Equals(
+                        model.Deployment?.Trim(),
+                        options.ElevenLabs.BillingModel?.Trim(),
                         StringComparison.OrdinalIgnoreCase))
                 : null;
             if (!openAiIsBudgeted || durationPrice?.AudioSekPerMinute is not > 0
                 || (options.SavedSourceTranscriptsEnabled && savedDurationPrice?.AudioSekPerMinute is not > 0)
                 || (options.EconomicalEnabled && economicalDurationPrice?.AudioSekPerMinute is not > 0)
                 || !cloudflareIsBudgeted
-                || (options.Cloudflare.Enabled && cloudflareDurationPrice?.AudioSekPerMinute is not > 0))
+                || (options.Cloudflare.Enabled && cloudflareDurationPrice?.AudioSekPerMinute is not > 0)
+                || !elevenLabsIsBudgeted
+                || (options.ElevenLabs.Enabled && elevenLabsDurationPrice?.AudioSekPerMinute is not > 0))
             {
                 failures.Add("AiUsage:MonthlyBudget must include every enabled realtime subtitle provider and positive AudioSekPerMinute prices for every enabled realtime subtitle billing model.");
             }

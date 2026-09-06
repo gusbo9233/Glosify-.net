@@ -18,10 +18,13 @@ public sealed class CreditPricingOptionsTests
                 ["CreditPricing:DefaultModelMultiplier"] = "0.12",
                 ["CreditPricing:TokenFeatures:assistant"] = "1.5",
                 ["CreditPricing:Subtitles:EnhancedCreditsPerStartedMinute"] = "8",
+                ["CreditPricing:Subtitles:ScribeCreditsPerStartedMinute"] = "2",
                 ["CreditPricing:Subtitles:CloudflareScribeCreditsPerStartedMinute"] = "3",
                 ["CreditPricing:Subtitles:EnhancedWithTranscriptCreditsPerStartedMinute"] = "16",
                 ["RealtimeTranslation:Modes:Enhanced:DisplayName"] = "Premium",
                 ["RealtimeTranslation:Modes:Enhanced:Description"] = "Highest quality",
+                ["RealtimeTranslation:Modes:Original:DisplayName"] = "Original speech",
+                ["RealtimeTranslation:Modes:Original:Description"] = "No translation",
                 ["RealtimeTranslation:Modes:ScribeCloudflare:DisplayName"] = "Economic",
                 ["RealtimeTranslation:Modes:ScribeCloudflare:Description"] = "Lower cost",
             })
@@ -39,8 +42,10 @@ public sealed class CreditPricingOptionsTests
         Assert.Equal(0.12m, options.DefaultModelMultiplier);
         Assert.Equal(1.5m, options.TokenFeatures["assistant"]);
         Assert.Equal(8, options.Subtitles.EnhancedCreditsPerStartedMinute);
+        Assert.Equal(2, options.Subtitles.ScribeCreditsPerStartedMinute);
         Assert.Equal(3, options.Subtitles.CloudflareScribeCreditsPerStartedMinute);
         Assert.Equal("Premium", realtime.Modes.Enhanced.DisplayName);
+        Assert.Equal("Original speech", realtime.Modes.Original.DisplayName);
         Assert.Equal("Economic", realtime.Modes.ScribeCloudflare.DisplayName);
     }
 

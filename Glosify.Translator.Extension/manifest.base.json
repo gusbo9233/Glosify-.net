@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Glosify Translator BETA",
+  "description": "Translate text in a movable box using your Glosify account.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "116",
+  "homepage_url": "https://glosify.se",
+  "permissions": ["activeTab", "identity", "scripting", "storage", "clipboardWrite"],
+  "web_accessible_resources": [{
+    "resources": ["overlay/translator.html"],
+    "matches": ["http://*/*", "https://*/*"]
+  }],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Glosify Translator BETA",
+    "default_popup": "popup/popup.html",
+    "default_icon": { "16": "icons/icon16.png", "32": "icons/icon32.png" }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

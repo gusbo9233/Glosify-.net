@@ -4,12 +4,13 @@ namespace Glosify.Services.Ai;
 
 public sealed class AiUsageOptions
 {
-    public int TrialGrantCredits { get; set; } = 25;
+    public int TrialGrantCredits { get; set; } = 100;
     public int CreditsPerThousandTokens { get; set; } = 1;
     public int AssistantOutputTokenReserve { get; set; } = 16384;
     public int JsonImportRepairOutputTokenReserve { get; set; } = 16384;
     public int ImageExtractionOutputTokenReserve { get; set; } = 1024;
     public int PageTranslationOutputTokenReserve { get; set; } = 4096;
+    public int TextTranslationOutputTokenReserve { get; set; } = 4096;
     public AiMonthlyBudgetOptions MonthlyBudget { get; set; } = new();
 
     public int GetOutputReserve(string feature)
@@ -20,6 +21,7 @@ public sealed class AiUsageOptions
             AiUsageFeatures.JsonImportRepair => JsonImportRepairOutputTokenReserve,
             AiUsageFeatures.ImageExtraction => ImageExtractionOutputTokenReserve,
             AiUsageFeatures.PageTranslation => PageTranslationOutputTokenReserve,
+            AiUsageFeatures.TextTranslation => TextTranslationOutputTokenReserve,
             _ => AssistantOutputTokenReserve,
         };
     }
@@ -95,6 +97,11 @@ public sealed class AiUsageOptionsValidator : IValidateOptions<AiUsageOptions>
         if (options.PageTranslationOutputTokenReserve <= 0)
         {
             failures.Add("AiUsage:PageTranslationOutputTokenReserve must be greater than zero.");
+        }
+
+        if (options.TextTranslationOutputTokenReserve <= 0)
+        {
+            failures.Add("AiUsage:TextTranslationOutputTokenReserve must be greater than zero.");
         }
 
         if (options.JsonImportRepairOutputTokenReserve <= 0)
@@ -188,4 +195,5 @@ public static class AiUsageFeatures
     public const string ImageExtraction = "image_extraction";
     public const string PageTranslation = "page_translation";
     public const string RealtimeTranslation = "realtime_translation";
+    public const string TextTranslation = "text_translation";
 }

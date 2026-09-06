@@ -156,6 +156,54 @@ public sealed class BookUploadRateLimitTests
         Assert.True(anotherUser.IsAcquired);
     }
 
+    [Fact]
+    public async Task ThirtyFirstTextTranslationWithinMinute_IsRejectedPerUser()
+    {
+        using var services = new ServiceCollection()
+            .AddLogging()
+            .AddGlosifyRateLimiting()
+            .BuildServiceProvider();
+        var limiter = services.GetRequiredService<IOptions<RateLimiterOptions>>().Value.GlobalLimiter!;
+        var context = CreateContext("/api/translator/translate", "user-1");
+
+        for (var attempt = 0; attempt < 30; attempt++)
+        {
+            using var lease = await limiter.AcquireAsync(context, 1);
+            Assert.True(lease.IsAcquired);
+        }
+
+        using var rejected = await limiter.AcquireAsync(context, 1);
+        Assert.False(rejected.IsAcquired);
+
+        using var anotherUser = await limiter.AcquireAsync(
+            CreateContext("/api/translator/translate", "user-2"), 1);
+        Assert.True(anotherUser.IsAcquired);
+    }
+
+    [Fact]
+    public async Task ThirtyFirstSavedTranslationWithinMinute_IsRejectedPerUser()
+    {
+        using var services = new ServiceCollection()
+            .AddLogging()
+            .AddGlosifyRateLimiting()
+            .BuildServiceProvider();
+        var limiter = services.GetRequiredService<IOptions<RateLimiterOptions>>().Value.GlobalLimiter!;
+        var context = CreateContext("/api/translator/saved-translations", "user-1");
+
+        for (var attempt = 0; attempt < 30; attempt++)
+        {
+            using var lease = await limiter.AcquireAsync(context, 1);
+            Assert.True(lease.IsAcquired);
+        }
+
+        using var rejected = await limiter.AcquireAsync(context, 1);
+        Assert.False(rejected.IsAcquired);
+
+        using var anotherUser = await limiter.AcquireAsync(
+            CreateContext("/api/translator/saved-translations", "user-2"), 1);
+        Assert.True(anotherUser.IsAcquired);
+    }
+
     private static HttpContext CreateContext(string path, string userId)
     {
         var context = new DefaultHttpContext();

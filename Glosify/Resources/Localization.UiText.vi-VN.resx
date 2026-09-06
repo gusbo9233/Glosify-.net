@@ -445,7 +445,7 @@
     <value>Ưu đãi dùng thử:</value>
   </data>
   <data name="Auth.TrialText" xml:space="preserve">
-    <value>nhận 25 credit một lần khi bạn đăng nhập bằng Google hoặc Microsoft. Tài khoản mật khẩu không nhận credit dùng thử tự động.</value>
+    <value>nhận {0} credit một lần khi bạn đăng nhập bằng Google hoặc Microsoft. Tài khoản mật khẩu không nhận credit dùng thử tự động.</value>
   </data>
   <data name="Auth.EmailAddress" xml:space="preserve">
     <value>Địa chỉ email</value>
@@ -478,7 +478,7 @@
     <value>Bắt đầu hành trình đắm mình trong ngôn ngữ của bạn ngay hôm nay.</value>
   </data>
   <data name="Auth.RegisterTrialLabel" xml:space="preserve">
-    <value>Dùng thử 25 tín dụng:</value>
+    <value>Dùng thử {0} tín dụng:</value>
   </data>
   <data name="Auth.RegisterTrialText" xml:space="preserve">
     <value>chỉ dùng được một lần sau khi bạn liên kết và đăng nhập bằng Google hoặc Microsoft. Chỉ tạo tài khoản mật khẩu sẽ không được cộng tín dụng dùng thử.</value>
@@ -1596,4 +1596,10 @@
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Nhập tất cả</value></data>
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Việc xem trước và nhập có tính xác định và không liên hệ nhà cung cấp AI. “Sửa bằng AI” gửi văn bản đã dán đến AI được cấu hình của Glosify và tính tín dụng.</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
+  <data name="Nav.Translations" xml:space="preserve"><value>Bản dịch</value></data>
+  <data name="Translations.Title" xml:space="preserve"><value>Bản dịch đã lưu</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>Trình dịch</value></data><data name="Translations.Saved" xml:space="preserve"><value>Bản dịch đã lưu</value></data><data name="Translations.Intro" xml:space="preserve"><value>Các bản dịch bạn đã chủ động lưu từ tiện ích Glosify Translator.</value></data>
+  <data name="Translations.CountOne" xml:space="preserve"><value>{0} bản dịch</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} bản dịch</value></data><data name="Translations.None" xml:space="preserve"><value>Chưa có bản dịch nào được lưu</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>Dùng tiện ích Glosify Translator và chọn Lưu sau khi dịch.</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>Các trang bản dịch đã lưu</value></data>
+  <data name="Translations.DetailTitle" xml:space="preserve"><value>Bản dịch đã lưu</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>Đã lưu</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>Xóa bản dịch đã lưu này?</value></data><data name="Translations.Preferences" xml:space="preserve"><value>Tùy chọn dịch</value></data><data name="Translations.Source" xml:space="preserve"><value>Văn bản nguồn</value></data><data name="Translations.Translation" xml:space="preserve"><value>Bản dịch</value></data><data name="Translations.Deleted" xml:space="preserve"><value>Đã xóa bản dịch.</value></data>
+  <data name="Translations.Copied" xml:space="preserve"><value>Đã sao chép.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Không thể sao chép. Hãy chọn văn bản và sao chép thủ công.</value></data>
+  <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Xóa phiên dịch đã lưu này và tất cả bản dịch trong đó?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Đã xóa phiên dịch.</value></data>
 </root>

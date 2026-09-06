@@ -39,12 +39,12 @@ Feature-specific settings remain required when those features are enabled:
 - Azure Speech endpoint/resource/region settings for server-side TTS;
 - `RealtimeTranslation__Cloudflare__Endpoint` and
   `RealtimeTranslation__Cloudflare__ApiToken` for Scribe subtitle mode;
-- `RealtimeTranslation__ElevenLabs__ApiKey` for Scribe mode and optional saved
+- `RealtimeTranslation__ElevenLabs__ApiKey` for Original/Scribe modes and optional saved
   source transcripts;
 - Blob Storage, Stripe, OAuth, and email settings
   for their corresponding features.
 
-The two user-selectable subtitle modes can be renamed and repriced without a
+The three user-selectable subtitle modes can be renamed and repriced without a
 deployment. Set these App Service environment variables and restart the app:
 
 During the 0.5.0-to-0.5.1 extension rollout, the API also returns the legacy
@@ -54,11 +54,14 @@ hides that duplicate and sends `scribe-cf`; older clients continue to select
 
 | App Service variable | Default |
 |---|---|
+| `RealtimeTranslation__Modes__Original__DisplayName` | `Original captions` |
+| `RealtimeTranslation__Modes__Original__Description` | `Fast captions without translation` |
 | `RealtimeTranslation__Modes__Enhanced__DisplayName` | `Enhanced` |
 | `RealtimeTranslation__Modes__Enhanced__Description` | `Best translation quality` |
 | `RealtimeTranslation__Modes__ScribeCloudflare__DisplayName` | `Scribe + Cloudflare` |
 | `RealtimeTranslation__Modes__ScribeCloudflare__Description` | `Lower-cost translation with coalesced live partials` |
 | `CreditPricing__Subtitles__EnhancedCreditsPerStartedMinute` | `7` |
+| `CreditPricing__Subtitles__ScribeCreditsPerStartedMinute` | `3` |
 | `CreditPricing__Subtitles__CloudflareScribeCreditsPerStartedMinute` | `4` |
 
 Display names must contain 1–80 characters, descriptions 1–200 characters,
@@ -78,7 +81,7 @@ behavior without a deployment:
 
 | Setting | Default | Purpose |
 |---|---:|---|
-| `RealtimeTranslation__ElevenLabs__TranslatePartials` | `true` | Set to `false` to translate committed transcripts only. |
+| `RealtimeTranslation__ElevenLabs__TranslatePartials` | `true` | Set to `false` to translate only committed Scribe transcripts. Original mode still emits partial transcriptions. |
 | `RealtimeTranslation__ElevenLabs__PartialInitialDelaySeconds` | `1` | Delay before the first partial translation. |
 | `RealtimeTranslation__Cloudflare__PartialIntervalSeconds` | `1` | Normal interval between Cloudflare partial translations; newly completed sentences bypass it. |
 | `RealtimeTranslation__ElevenLabs__PartialMinimumGrowthCharacters` | `8` | Accumulated Unicode growth required for a partial update. |
@@ -88,7 +91,8 @@ For a temporary legacy-like cadence, use an initial delay of `0`, a Cloudflare
 interval of `0.75`, and minimum growth of `1`. Prefer adjusting only the initial
 delay for latency tuning and the recurring interval for cost tuning. The
 `RealtimeTranslation__ElevenLabs__PartialIntervalSeconds` setting remains the
-cadence for non-Cloudflare scheduler paths.
+cadence for translated Scribe partials. Original captions use a fixed 250 ms
+partial cadence because they do not call a translation provider.
 
 ### Administrator Scribe capture
 
@@ -120,7 +124,8 @@ Application constants fix these routes:
 |---|---|
 | Assistant, structured generation, image extraction, page translation | OpenAI Responses API, `gpt-5.6-luna` |
 | Enhanced live subtitles | OpenAI realtime translation, `gpt-realtime-translate` |
-| Alternative subtitles | ElevenLabs `scribe_v2_realtime` + Cloudflare M2M100 |
+| Original live captions | ElevenLabs `scribe_v2_realtime` |
+| Scribe + Cloudflare subtitles | ElevenLabs `scribe_v2_realtime` + Cloudflare M2M100 |
 | Book text-to-speech | Azure Speech |
 
 `GenerativeAi__TimeoutSeconds` may override the default 180-second timeout. Do
@@ -129,6 +134,10 @@ realtime endpoints to deployment configuration.
 
 ## Pricing and credit checks
 
+Set `AiUsage__TrialGrantCredits` to a whole-credit amount and restart the App
+Service to change the one-time trial grant. The grant service and every localized
+login, registration, and terms disclosure read this same setting.
+
 `AiUsage__MonthlyBudget` fails closed for enabled, metered services without a
 matching price. The shipped configuration prices:
 
@@ -136,6 +145,7 @@ matching price. The shipped configuration prices:
   output tokens;
 - `gpt-realtime-translate`: 0.3804 SEK per audio minute;
 - `gpt-realtime-translate+elevenlabs-scribe-v2-realtime`: 0.4531 SEK per minute;
+- `elevenlabs-scribe-v2-realtime`: 0.35 SEK per minute;
 - `elevenlabs-scribe-v2-realtime+cloudflare-m2m100-1.2b`: 0.35 SEK per minute.
 
 Before enabling realtime translation, verify the relevant provider is budgeted,

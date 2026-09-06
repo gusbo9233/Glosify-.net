@@ -105,6 +105,10 @@ public sealed class ShippedConfigurationTests
         Assert.False(shippedRealtime.Cloudflare.Enabled);
         Assert.Equal(5, options.ElevenLabs.CreditsPerStartedMinute);
         Assert.Contains("cloudflare", budget.Providers, StringComparer.OrdinalIgnoreCase);
+        Assert.Contains("elevenlabs", budget.Providers, StringComparer.OrdinalIgnoreCase);
+        Assert.True(
+            budget.FindModelPrice(options.ElevenLabs.BillingModel)?.AudioSekPerMinute is >= 0.35m,
+            "Original Scribe captions must retain the reviewed 0.35 SEK/minute safety price until invoice data justifies a reviewed change.");
         Assert.True(
             budget.FindModelPrice(options.Cloudflare.BillingModel)?.AudioSekPerMinute is >= 0.35m,
             "Cloudflare Scribe subtitles must retain the reviewed 0.35 SEK/minute safety price until invoice data justifies a reviewed change.");
@@ -123,6 +127,7 @@ public sealed class ShippedConfigurationTests
         Assert.Collection(
             pricing.GetCatalog().Subtitles,
             enhanced => Assert.Equal(7m, enhanced.Value),
+            original => Assert.Equal(3m, original.Value),
             cloudflareScribe => Assert.Equal(4m, cloudflareScribe.Value),
             enhancedTranscript => Assert.Equal(8m, enhancedTranscript.Value));
     }

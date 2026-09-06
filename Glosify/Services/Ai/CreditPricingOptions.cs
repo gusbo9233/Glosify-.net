@@ -28,6 +28,7 @@ public sealed class CreditPricingOptionsValidator : IValidateOptions<CreditPrici
         AiUsageFeatures.Assistant,
         AiUsageFeatures.ImageExtraction,
         AiUsageFeatures.PageTranslation,
+        AiUsageFeatures.TextTranslation,
     };
 
     public ValidateOptionsResult Validate(string? name, CreditPricingOptions options)
@@ -101,6 +102,7 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
         (AiUsageFeatures.Assistant, "Assistant"),
         (AiUsageFeatures.ImageExtraction, "Image text extraction"),
         (AiUsageFeatures.PageTranslation, "Book page translation"),
+        (AiUsageFeatures.TextTranslation, "Text translation"),
     ];
 
     private readonly CreditPricingOptions _pricing;
@@ -200,6 +202,11 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
                     _realtime.Modes.Enhanced.DisplayName.Trim(),
                     _pricing.Subtitles.EnhancedCreditsPerStartedMinute,
                     _realtime.CreditsPerStartedMinute),
+                SubtitlePrice(
+                    "original",
+                    _realtime.Modes.Original.DisplayName.Trim(),
+                    _pricing.Subtitles.ScribeCreditsPerStartedMinute,
+                    _realtime.ElevenLabs.CreditsPerStartedMinute),
                 SubtitlePrice(
                     "scribe_cloudflare",
                     _realtime.Modes.ScribeCloudflare.DisplayName.Trim(),

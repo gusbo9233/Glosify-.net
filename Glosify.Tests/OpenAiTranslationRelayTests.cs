@@ -286,6 +286,46 @@ public sealed class OpenAiTranslationRelayTests
     }
 
     [Fact]
+    public void OriginalCaption_PreservesTranscriptionWithoutAProviderRequest()
+    {
+        var source = new RecognizedSpeechSegment(
+            7,
+            "Hello from the source",
+            "en",
+            "en-US",
+            TestNow,
+            IsFinal: false);
+
+        var caption = ScribeTranslationRelay.CreateOriginalCaption(source, "sv");
+
+        Assert.Equal(source.Text, caption.SourceText);
+        Assert.Equal(source.Text, caption.TranslatedText);
+        Assert.Equal("en", caption.SourceLanguage);
+        Assert.Equal("sv", caption.TargetLanguage);
+        Assert.False(caption.ProviderRequest);
+    }
+
+    [Fact]
+    public void OriginalCaption_PartialsDoNotDependOnTranslatedPartialCostSetting()
+    {
+        Assert.True(ScribeTranslationRelay.ShouldTranslatePartials(
+            RealtimeTranslationModes.Original,
+            partialCaptionsEnabled: true,
+            translatedPartialsEnabled: false,
+            captureEnabled: false));
+        Assert.False(ScribeTranslationRelay.ShouldTranslatePartials(
+            RealtimeTranslationModes.Scribe,
+            partialCaptionsEnabled: true,
+            translatedPartialsEnabled: false,
+            captureEnabled: false));
+        Assert.False(ScribeTranslationRelay.ShouldTranslatePartials(
+            RealtimeTranslationModes.Original,
+            partialCaptionsEnabled: false,
+            translatedPartialsEnabled: true,
+            captureEnabled: true));
+    }
+
+    [Fact]
     public void RelayToken_WrongSessionConsumesGrantAndExpiredGrantFails()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());
@@ -358,6 +398,7 @@ public sealed class OpenAiTranslationRelayTests
 
     [Theory]
     [InlineData(RealtimeTranslationModes.Enhanced, 1, 0)]
+    [InlineData(RealtimeTranslationModes.Original, 0, 1)]
     [InlineData(RealtimeTranslationModes.Scribe, 0, 1)]
     [InlineData(RealtimeTranslationModes.ScribeCloudflare, 0, 1)]
     public async Task RelayRouter_DelegatesToTheAuthorizedMode(
@@ -376,11 +417,15 @@ public sealed class OpenAiTranslationRelayTests
             mode,
             mode switch
             {
-                RealtimeTranslationModes.Scribe or RealtimeTranslationModes.ScribeCloudflare =>
+                RealtimeTranslationModes.Original
+                    or RealtimeTranslationModes.Scribe
+                    or RealtimeTranslationModes.ScribeCloudflare =>
                     RealtimeSpeechProviders.ElevenLabs,
                 _ => RealtimeSpeechProviders.OpenAi,
             },
-            mode is RealtimeTranslationModes.Scribe or RealtimeTranslationModes.ScribeCloudflare
+            mode is RealtimeTranslationModes.Original
+                or RealtimeTranslationModes.Scribe
+                or RealtimeTranslationModes.ScribeCloudflare
                 ? "pl"
                 : null,
             SaveTranscript: false,

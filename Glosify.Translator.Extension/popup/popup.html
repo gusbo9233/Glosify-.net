@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Glosify Translator</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="shell">
+    <div class="ambient ambient-top" aria-hidden="true"></div>
+    <div class="ambient ambient-bottom" aria-hidden="true"></div>
+    <header class="brand-header">
+      <span class="mark" aria-hidden="true">G</span>
+      <div class="brand-lockup"><strong>Glosify</strong><span>Translator</span></div>
+      <small class="beta">BETA</small>
+    </header>
+    <section id="loading" class="loading-card" aria-live="polite">
+      <span class="spinner" aria-hidden="true"></span>
+      <span>Connecting to Glosify…</span>
+    </section>
+    <section id="signed-out" class="hidden">
+      <p class="eyebrow">Translate anywhere</p>
+      <h1>Your language workspace.</h1>
+      <p class="intro">Connect your Glosify account to translate text without leaving the page you are reading.</p>
+      <p class="disclosure">Connect shares your account email and credit balance with this extension and remembers a sign-in token locally. Translation requires Glosify credits.</p>
+      <button id="connect" class="primary"><span>Connect Glosify</span><span class="arrow" aria-hidden="true">→</span></button>
+      <p class="trust"><span aria-hidden="true">●</span> Secure Glosify sign-in</p>
+    </section>
+    <section id="signed-in" class="hidden">
+      <div class="account">
+        <span class="account-mark" aria-hidden="true">G</span>
+        <div class="account-copy"><strong id="email"></strong><small id="credits">Credits unavailable</small></div>
+        <button id="sign-out" class="link">Sign out</button>
+      </div>
+      <p class="eyebrow workspace-label">Workspace</p>
+      <button id="start" class="primary"><span>Start translator</span><span class="arrow" aria-hidden="true">↗</span></button>
+      <button id="saved" class="secondary"><span>Saved translations</span><span class="arrow" aria-hidden="true">→</span></button>
+      <p class="disclosure"><span class="privacy-dot" aria-hidden="true"></span><span><strong>Translate</strong> sends your text and preferences to Glosify and OpenAI and uses Glosify credits. Results enter your library only when you choose <strong>Save</strong>.</span></p>
+    </section>
+    <footer class="disclosure"><span id="server"></span> · <a href="https://glosify.se/privacy/english" target="_blank" rel="noopener noreferrer">Privacy</a> · <a href="https://glosify.se/support" target="_blank" rel="noopener noreferrer">Support</a></footer>
+    <p id="error" class="error hidden" role="alert"></p>
+  </main>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

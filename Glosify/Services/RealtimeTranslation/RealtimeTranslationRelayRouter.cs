@@ -14,7 +14,9 @@ public sealed class RealtimeTranslationRelayRouter(
         {
             RealtimeTranslationModes.Enhanced =>
                 enhancedRelay.RelayAsync(browserSocket, authorization, cancellationToken),
-            RealtimeTranslationModes.Scribe or RealtimeTranslationModes.ScribeCloudflare =>
+            RealtimeTranslationModes.Original
+                or RealtimeTranslationModes.Scribe
+                or RealtimeTranslationModes.ScribeCloudflare =>
                 scribeRelay.RelayAsync(browserSocket, authorization, cancellationToken),
             _ => throw new RealtimeTranslationValidationException(
                 "The requested live subtitle mode is not supported."),

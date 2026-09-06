@@ -445,7 +445,7 @@
     <value>Oferta de teste:</value>
   </data>
   <data name="Auth.TrialText" xml:space="preserve">
-    <value>receba 25 créditos uma vez ao entrar com Google ou Microsoft. Contas com senha não recebem créditos de teste automáticos.</value>
+    <value>receba {0} créditos uma vez ao entrar com Google ou Microsoft. Contas com senha não recebem créditos de teste automáticos.</value>
   </data>
   <data name="Auth.EmailAddress" xml:space="preserve">
     <value>Endereço de e-mail</value>
@@ -478,7 +478,7 @@
     <value>Comece hoje mesmo sua jornada de imersão no idioma.</value>
   </data>
   <data name="Auth.RegisterTrialLabel" xml:space="preserve">
-    <value>Teste de 25 créditos:</value>
+    <value>Teste de {0} créditos:</value>
   </data>
   <data name="Auth.RegisterTrialText" xml:space="preserve">
     <value>disponível uma vez depois que você vincular e entrar com Google ou Microsoft. Criar apenas uma conta com senha não adiciona créditos de teste.</value>
@@ -1596,4 +1596,10 @@
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Importar tudo</value></data>
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>A prévia e a importação são determinísticas e não contatam nenhum provedor de IA. “Reparar com IA” envia o texto colado à IA configurada do Glosify e cobra créditos.</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
+  <data name="Nav.Translations" xml:space="preserve"><value>Traduções</value></data>
+  <data name="Translations.Title" xml:space="preserve"><value>Traduções salvas</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>Tradutor</value></data><data name="Translations.Saved" xml:space="preserve"><value>Traduções salvas</value></data><data name="Translations.Intro" xml:space="preserve"><value>Traduções que você salvou explicitamente na extensão Glosify Translator.</value></data>
+  <data name="Translations.CountOne" xml:space="preserve"><value>{0} tradução</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} traduções</value></data><data name="Translations.None" xml:space="preserve"><value>Nenhuma tradução salva ainda</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>Use a extensão Glosify Translator e escolha Salvar depois de traduzir.</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>Páginas de traduções salvas</value></data>
+  <data name="Translations.DetailTitle" xml:space="preserve"><value>Tradução salva</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>Salva</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>Excluir esta tradução salva?</value></data><data name="Translations.Preferences" xml:space="preserve"><value>Preferências de tradução</value></data><data name="Translations.Source" xml:space="preserve"><value>Texto de origem</value></data><data name="Translations.Translation" xml:space="preserve"><value>Tradução</value></data><data name="Translations.Deleted" xml:space="preserve"><value>Tradução excluída.</value></data>
+  <data name="Translations.Copied" xml:space="preserve"><value>Copiado.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Não foi possível copiar. Selecione o texto e copie manualmente.</value></data>
+  <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Excluir esta sessão de tradução salva e todas as traduções nela?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Sessão de tradução excluída.</value></data>
 </root>

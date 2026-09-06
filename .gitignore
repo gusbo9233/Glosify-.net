@@ -49,6 +49,7 @@ Generated\ Files/
 # MSTest test Results
 [Tt]est[Rr]esult*/
 Glosify.LiveSubtitles.Extension/test-results/
+Glosify.Translator.Extension/test-results/
 [Bb]uild[Ll]og.*
 
 # NUnit
