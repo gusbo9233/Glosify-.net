@@ -70,9 +70,82 @@ public sealed class TranslatorApiAuthenticationTests
         Assert.Contains("SourceText", problem.RootElement.GetProperty("errors").EnumerateObject().Select(property => property.Name));
     }
 
-    private static AuthenticationTicket Ticket(string scheme) => new(
+    [Theory]
+    [InlineData("/api/translator/translate", false)]
+    [InlineData("/api/translator/translate", true)]
+    [InlineData("/api/translator/saved-translations", false)]
+    [InlineData("/api/translator/saved-translations", true)]
+    public async Task BearerUsers_HaveIndependentLimitsBehindTheSameIp(string endpoint, bool withWebCookie)
+    {
+        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(
+            builder => builder.UseEnvironment("Testing"));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false, HandleCookies = false,
+        });
+        var bearer = factory.Services.GetRequiredService<IOptionsMonitor<BearerTokenOptions>>()
+            .Get(IdentityConstants.BearerScheme);
+        if (withWebCookie)
+        {
+            var cookies = factory.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
+                .Get(IdentityConstants.ApplicationScheme);
+            client.DefaultRequestHeaders.Add("Cookie",
+                $"{cookies.Cookie.Name}={cookies.TicketDataFormat.Protect(Ticket(IdentityConstants.ApplicationScheme, "browser-user"))}");
+        }
+
+        // Use invalid bodies to exercise authentication, limiting and validation
+        // without invoking paid providers or writing application data.
+        client.DefaultRequestHeaders.Authorization = new("Bearer",
+            bearer.BearerTokenProtector.Protect(Ticket(IdentityConstants.BearerScheme, "user-a")));
+        for (var request = 0; request < 30; request++)
+        {
+            using var response = await client.PostAsJsonAsync(endpoint, new { });
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+        using var limited = await client.PostAsJsonAsync(endpoint, new { });
+        Assert.Equal(HttpStatusCode.TooManyRequests, limited.StatusCode);
+
+        client.DefaultRequestHeaders.Authorization = new("Bearer",
+            bearer.BearerTokenProtector.Protect(Ticket(IdentityConstants.BearerScheme, "user-b")));
+        using var otherUser = await client.PostAsJsonAsync(endpoint, new { });
+        Assert.Equal(HttpStatusCode.BadRequest, otherUser.StatusCode);
+
+        // Rotating a user's access token must not reset that user's allowance.
+        client.DefaultRequestHeaders.Authorization = new("Bearer",
+            bearer.BearerTokenProtector.Protect(Ticket(IdentityConstants.BearerScheme, "user-a")));
+        using var sameUser = await client.PostAsJsonAsync(endpoint, new { });
+        Assert.Equal(HttpStatusCode.TooManyRequests, sameUser.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InvalidBearerRequests_KeepTheIpLimitDespiteDifferentWebCookies(bool invalidToken)
+    {
+        using var factory = new WebApplicationFactory<Program>().WithWebHostBuilder(
+            builder => builder.UseEnvironment("Testing"));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false, HandleCookies = false,
+        });
+        var cookies = factory.Services.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
+            .Get(IdentityConstants.ApplicationScheme);
+
+        for (var request = 0; request <= 30; request++)
+        {
+            client.DefaultRequestHeaders.Remove("Cookie");
+            client.DefaultRequestHeaders.Add("Cookie",
+                $"{cookies.Cookie.Name}={cookies.TicketDataFormat.Protect(Ticket(IdentityConstants.ApplicationScheme, $"browser-{request}"))}");
+            if (invalidToken)
+                client.DefaultRequestHeaders.Authorization = new("Bearer", $"invalid-{request}");
+            using var response = await client.PostAsJsonAsync("/api/translator/translate", new { });
+            Assert.Equal(request < 30 ? HttpStatusCode.Unauthorized : HttpStatusCode.TooManyRequests, response.StatusCode);
+        }
+    }
+
+    private static AuthenticationTicket Ticket(string scheme, string userId = "translator-auth-test") => new(
         new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "translator-auth-test")], scheme)),
+            [new Claim(ClaimTypes.NameIdentifier, userId)], scheme)),
         new AuthenticationProperties
         {
             IssuedUtc = DateTimeOffset.UtcNow,

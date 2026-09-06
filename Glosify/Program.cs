@@ -290,9 +290,10 @@ app.UseGlosifySecurityHeaders(builder.Configuration);
 
 app.UseRouting();
 
-// Authentication must run before the rate limiter so the assistant limit can be
-// partitioned per user rather than per IP.
+// Resolve both the default web identity and endpoint-specific API schemes before
+// localization and per-user rate-limit partitioning.
 app.UseAuthentication();
+app.UseGlosifyEndpointAuthentication();
 
 // Account culture is stored in the authenticated principal. Keep localization after
 // authentication, but before every component that can produce a routed response.
