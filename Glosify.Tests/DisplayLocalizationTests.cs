@@ -100,6 +100,7 @@ public sealed class DisplayLocalizationTests
         var clientText = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
             document.Body?.GetAttribute("data-i18n") ?? "{}");
         Assert.Equal("Något gick fel. Försök igen.", clientText?["Client.GenericError"]);
+        Assert.Equal("Maximalt", clientText?.GetValueOrDefault("Settings.Maximum"));
         Assert.DoesNotContain("Client.JoinCallFailed", clientText!.Keys);
         Assert.DoesNotContain("Client.CallTokenFailed", clientText.Keys);
     }

@@ -1602,4 +1602,5 @@
   <data name="Translations.DetailTitle" xml:space="preserve"><value>已保存的翻译</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>保存于</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>删除这条已保存的翻译？</value></data><data name="Translations.Preferences" xml:space="preserve"><value>翻译偏好</value></data><data name="Translations.Source" xml:space="preserve"><value>原文</value></data><data name="Translations.Translation" xml:space="preserve"><value>翻译</value></data><data name="Translations.Deleted" xml:space="preserve"><value>翻译已删除。</value></data>
   <data name="Translations.Copied" xml:space="preserve"><value>已复制。</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>无法复制。请选择文本并手动复制。</value></data>
   <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>删除此已保存的翻译会话及其中的所有翻译？</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>翻译会话已删除。</value></data>
+  <data name="Settings.Maximum" xml:space="preserve"><value>上限</value></data>
 </root>

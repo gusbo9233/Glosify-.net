@@ -105,7 +105,7 @@ public abstract class QuizSessionStore<TSession> where TSession : class, IQuizSe
             quizId,
             PracticeDirection.Normalize(practiceDirection),
             PracticeItemType.Normalize(practiceItemType),
-            Math.Clamp(wordCount, 1, 100),
+            QuizSessionLimits.NormalizeCount(wordCount),
             Math.Clamp(rangeStartPercent, 0, 100),
             Math.Clamp(rangeEndPercent, 0, 100));
 

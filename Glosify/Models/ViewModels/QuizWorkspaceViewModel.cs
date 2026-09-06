@@ -135,8 +135,8 @@ public sealed record QuizSettingsPresentation(
         string defaultTargetLanguage,
         string wordsLabel)
     {
-        var normalizedWordCount = Math.Max(availableWordCount, 1);
-        var normalizedSentenceCount = Math.Max(availableSentenceCount, 1);
+        var normalizedWordCount = QuizSessionLimits.NormalizeCount(availableWordCount);
+        var normalizedSentenceCount = QuizSessionLimits.NormalizeCount(availableSentenceCount);
         var isFreestyle = selectedQuiz?.IsFreestyle == true;
         var sourceLanguage = QuizLanguageDisplay.Name(selectedQuiz?.SourceLanguage);
         var targetLanguage = QuizLanguageDisplay.Name(selectedQuiz?.TargetLanguage);

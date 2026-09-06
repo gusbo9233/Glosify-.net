@@ -40,8 +40,8 @@
                         <span class="choice-card"><span class="num" data-length-num>@presentation.StandardLength.WordCount</span><span class="label">@Text["Settings.Standard"]</span></span>
                     </label>
                     <label class="choice">
-                        <input type="radio" name="WordCount" value="@presentation.AllLength.WordCount" data-word-value="@presentation.AllLength.WordCount" data-sentence-value="@presentation.AllLength.SentenceCount" data-word-total="@Model.AvailableWordCount" data-sentence-total="@Model.AvailableSentenceCount" data-length-all @(presentation.AllLength.IsSelected ? "checked" : "") />
-                        <span class="choice-card"><span class="num" data-length-num>@presentation.AllLength.WordCount</span><span class="label">@Text["Common.All"]</span></span>
+                        <input type="radio" name="WordCount" value="@presentation.AllLength.WordCount" data-word-value="@presentation.AllLength.WordCount" data-sentence-value="@presentation.AllLength.SentenceCount" data-word-total="@Model.AvailableWordCount" data-sentence-total="@Model.AvailableSentenceCount" data-max-items="@QuizSessionLimits.MaxItems" data-length-all @(presentation.AllLength.IsSelected ? "checked" : "") />
+                        <span class="choice-card"><span class="num" data-length-num>@presentation.AllLength.WordCount</span><span class="label" data-length-label>@Text[Model.AvailableWordCount > QuizSessionLimits.MaxItems ? "Settings.Maximum" : "Common.All"]</span></span>
                     </label>
                 </div>
             </div>

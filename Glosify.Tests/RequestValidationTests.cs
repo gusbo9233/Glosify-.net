@@ -39,7 +39,7 @@ public class RequestValidationTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    [InlineData(201)]
+    [InlineData(1001)]
     public void QuizSessionSettings_RejectsOutOfRangeWordCount(int wordCount)
     {
         var settings = new QuizSessionSettings { WordCount = wordCount, Mode = "flashcards" };
