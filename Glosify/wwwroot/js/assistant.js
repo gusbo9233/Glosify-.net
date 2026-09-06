@@ -117,8 +117,12 @@ import {
     };
     const api = createAssistantApi(() => tokenInput?.value);
     let visibleAssistantLoadError = null;
+    let contextOptionsBusy = false;
 
-    const setContextSelectorsBusy = (busy) => {
+    const updateContextControls = () => {
+        const contextReady = !!chatSelection?.contextReady;
+        newChatControls.forEach(button => { button.disabled = !contextReady; });
+        const busy = contextOptionsBusy || !contextReady;
         for (const selector of [quizSelector, materialSelector]) {
             if (!selector) {
                 continue;
@@ -127,6 +131,12 @@ import {
             selector.setAttribute('aria-busy', String(busy));
         }
     };
+
+    const setContextSelectorsBusy = (busy) => {
+        contextOptionsBusy = busy;
+        updateContextControls();
+    };
+    updateContextControls();
 
     const loadContextOptions = async () => {
         if (!quizSelector || !materialSelector) {
@@ -426,7 +436,7 @@ import {
         const selection = { threadId };
         chatSelection = selection;
         activeThreadId = threadId;
-        newChatControls.forEach(button => { button.disabled = false; });
+        updateContextControls();
         resetTranscript(defaultEmptyText);
         submit.disabled = true;
         setStatus(t('Client.Loading', 'Loading…'));
@@ -461,6 +471,8 @@ import {
         }
 
         setQuizContext(contextQuizId, contextQuizName, false);
+        selection.contextReady = true;
+        updateContextControls();
         const adoptsPageQuiz = pageQuizId && chat?.contextQuizId !== pageQuizId;
         const adoptsPageMaterial = !storedId && materialId;
         if (adoptsPageQuiz || adoptsPageMaterial) {
@@ -1038,7 +1050,7 @@ import {
     close?.addEventListener('click', closeAssistant);
 
     const startNewChat = async () => {
-        if (!chatSelection) return;
+        if (!chatSelection?.contextReady) return;
         let selection = chatSelection;
         try {
             const chat = await createChat(quizId);
@@ -1055,6 +1067,7 @@ import {
     newChatButton?.addEventListener('click', startNewChat);
 
     quizSelector?.addEventListener('change', async () => {
+        if (!chatSelection?.contextReady || contextOptionsBusy) return;
         const selection = chatSelection;
         const selectedOption = quizSelector.selectedOptions?.[0] || null;
         const label = selectedOption?.dataset.contextLabel || 'Glosify';
@@ -1065,6 +1078,7 @@ import {
     });
 
     materialSelector?.addEventListener('change', async () => {
+        if (!chatSelection?.contextReady || contextOptionsBusy) return;
         const selection = chatSelection;
         const [kind, id] = (materialSelector.value || '').split(':');
         const contextPersisted = await setMaterialContext(kind || null, id || null, true);

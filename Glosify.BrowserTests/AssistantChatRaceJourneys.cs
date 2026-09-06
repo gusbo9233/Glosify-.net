@@ -782,6 +782,72 @@ public sealed partial class PortfolioJourneys
         await Expect(picker).ToHaveValueAsync("quiz-two");
     }
 
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantChatRace_ContextControlsWaitForReopenedContextRestoration()
+    {
+        var patch = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var patchCount = 0;
+        var createCount = 0;
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "History"));
+        await Page.RouteAsync("**/Assistant/Chats/chat-a", route =>
+        {
+            if (Interlocked.Increment(ref patchCount) == 1)
+            {
+                patch.SetResult(route);
+                return Task.CompletedTask;
+            }
+            return route.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { id = "chat-a", title = "Chat A", preview = "" }),
+            });
+        });
+        await Page.RouteAsync("**/Assistant/Chats", route =>
+        {
+            if (route.Request.Method != "POST") return route.FallbackAsync();
+            Interlocked.Increment(ref createCount);
+            return route.FulfillAsync(new()
+            {
+                ContentType = "application/json",
+                Body = JsonSerializer.Serialize(new { id = "chat-new", title = "New chat", preview = "" }),
+            });
+        });
+        await OpenRaceAssistantAsync();
+        var quiz = Page.Locator("[data-assistant-quiz-selector]");
+        var material = Page.Locator("[data-assistant-material-selector]");
+        var newChat = Page.Locator("[data-assistant-new-chat]");
+        await quiz.SelectOptionAsync("");
+        var pending = await patch.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        await SelectRaceChatAsync("Chat B");
+        await Expect(RaceSubmit).ToBeEnabledAsync();
+        await SelectRaceChatAsync("Chat A");
+        var quizDisabled = await quiz.IsDisabledAsync();
+        var materialDisabled = await material.IsDisabledAsync();
+        var newChatDisabled = await newChat.IsDisabledAsync();
+        // Disabled controls must also reject directly dispatched events during restoration.
+        await quiz.DispatchEventAsync("change");
+        await material.DispatchEventAsync("change");
+        await newChat.DispatchEventAsync("click");
+        var response = Page.WaitForResponseAsync(response => response.Url == pending.Request.Url);
+        await pending.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new { id = "chat-a", title = "Chat A", preview = "" }),
+        });
+        await (await response).FinishedAsync();
+        await DrainBrowserTasksAsync();
+        Assert.Equal(0, createCount);
+        Assert.Equal(1, patchCount);
+        Assert.True(quizDisabled);
+        Assert.True(materialDisabled);
+        Assert.True(newChatDisabled);
+        await Expect(quiz).ToBeEnabledAsync();
+        await Expect(material).ToBeEnabledAsync();
+        await Expect(newChat).ToBeEnabledAsync();
+        await Expect(Page.Locator(".assistant-chat-item.is-active")).ToContainTextAsync("Chat A");
+    }
+
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
     private ILocator RaceSubmit => Page.Locator("[data-assistant-submit]");
 
