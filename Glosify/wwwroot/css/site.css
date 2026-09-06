@@ -2483,6 +2483,10 @@ body {
         margin-top: 18px;
     }
 
+    .word-picker-row[hidden] {
+        display: none;
+    }
+
     .word-picker-summary {
         color: var(--primary);
         font-size: 13px;

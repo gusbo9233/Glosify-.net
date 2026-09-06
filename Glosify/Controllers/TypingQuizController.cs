@@ -38,7 +38,6 @@ public class TypingQuizController : Controller
         var userId = User.GetUserId();
         var normalizedDirection = PracticeDirection.Normalize(practiceDirection);
         var normalizedItemType = PracticeItemType.Normalize(practiceItemType);
-        var wordIds = WordIdList.Parse(selectedWordIds);
 
         var selectedQuiz = await _quizService.FindQuizAsync(userId, id, cancellationToken: cancellationToken);
 
@@ -48,6 +47,12 @@ public class TypingQuizController : Controller
         {
             normalizedItemType = PracticeItemType.Words;
         }
+
+        if (PracticeItemType.IsSentences(normalizedItemType))
+        {
+            selectedWordIds = null;
+        }
+        var wordIds = WordIdList.Parse(selectedWordIds);
 
         // Hand-picked word sets always start a fresh session rather than resuming
         // one matched only by count/range, since the exact word set can't be

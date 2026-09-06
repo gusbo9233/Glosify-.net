@@ -48,10 +48,10 @@ public class TypingQuizService : ITypingQuizService
                 : PracticeDirection.SourceToTarget
             : normalizedDirection;
 
-        var words = wordIds is { Count: > 0 }
-            ? await LoadWordsByIdsAsync(quizId, wordIds, contentDirection)
-            : PracticeItemType.IsSentences(normalizedItemType)
-                ? await LoadSentencesAsync(quizId, wordCount, contentDirection, rangeStartPercent, rangeEndPercent)
+        var words = PracticeItemType.IsSentences(normalizedItemType)
+            ? await LoadSentencesAsync(quizId, wordCount, contentDirection, rangeStartPercent, rangeEndPercent)
+            : wordIds is { Count: > 0 }
+                ? await LoadWordsByIdsAsync(quizId, wordIds, contentDirection)
                 : await LoadWordsAsync(quizId, wordCount, contentDirection, rangeStartPercent, rangeEndPercent);
 
         return new TypingQuizData
