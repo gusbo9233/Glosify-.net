@@ -63,6 +63,7 @@ let activeLinkedIndices = [];
 let readerTtsPlaying = false;
 let readerTtsStatusTimer = null;
 let lastReaderSelection = null;
+let preserveReaderSelection = false;
 
 const translationCache = new Map();
 const ZOOM_MIN = 0.25;
@@ -141,10 +142,13 @@ const paintHighlightRects = (clientRects, kind) => {
         const fragment = document.createElement('div');
         fragment.className = `reader-highlight-fragment is-${kind}`;
         fragment.dataset.readerHighlight = kind;
-        fragment.style.left = `${Math.floor(rect.left)}px`;
-        fragment.style.top = `${Math.floor(rect.top)}px`;
-        fragment.style.width = `${Math.ceil(rect.right - rect.left)}px`;
-        fragment.style.height = `${Math.ceil(rect.bottom - rect.top)}px`;
+        // Round the edges outward so snapping the origin cannot shorten the end.
+        const left = Math.floor(rect.left);
+        const top = Math.floor(rect.top);
+        fragment.style.left = `${left}px`;
+        fragment.style.top = `${top}px`;
+        fragment.style.width = `${Math.ceil(rect.right) - left}px`;
+        fragment.style.height = `${Math.ceil(rect.bottom) - top}px`;
         highlightLayer.append(fragment);
     }
 };
@@ -869,7 +873,8 @@ const captureReaderSelection = () => {
 
 const rememberReaderSelection = () => {
     const snapshot = captureReaderSelection();
-    if (!snapshot) return;
+    // Speech controls can collapse the native selection while taking focus.
+    if (!snapshot && preserveReaderSelection) return;
     lastReaderSelection = snapshot;
     updateReaderTtsPrompt();
 };
@@ -1147,6 +1152,8 @@ const renderPage = async (pageNumber) => {
         scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, scale));
         zoomScale = scale;
         const viewport = page.getViewport({ scale, rotation });
+        // PDF.js text spans use this CSS scale for their font sizes and positions.
+        pageSurface.style.setProperty('--scale-factor', String(viewport.scale));
         const context = canvas.getContext('2d');
         const ratio = Math.min(window.devicePixelRatio || 1, 2);
 
@@ -1488,10 +1495,9 @@ translationContent?.addEventListener('mouseup', event => {
     sourceTarget?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
 });
 document.addEventListener('pointerdown', event => {
-    if (!textLayerElement?.contains(event.target)
-        && !translationContent?.contains(event.target)
-        && !readerTtsToggle?.contains(event.target)
-        && !readerVoiceControl?.contains(event.target)) {
+    preserveReaderSelection = Boolean(readerTtsToggle?.contains(event.target)
+        || readerVoiceControl?.contains(event.target));
+    if (!preserveReaderSelection) {
         lastReaderSelection = null;
         updateReaderTtsPrompt();
     }
@@ -1503,6 +1509,8 @@ document.addEventListener('pointerdown', event => {
 });
 
 window.addEventListener('keydown', (event) => {
+    preserveReaderSelection = Boolean(readerTtsToggle?.contains(event.target)
+        || readerVoiceControl?.contains(event.target));
     if (event.altKey || event.metaKey || event.shiftKey || isTextInput(event.target)) return;
     if (event.key === '+' || event.key === '=') {
         event.preventDefault();
