@@ -30,7 +30,7 @@
         var a = normalizeLocale(first).toLowerCase();
         var b = normalizeLocale(second).toLowerCase();
         // Cantonese and Mandarin must not be conflated as generic "zh".
-        return a === b || (a && b && !a.startsWith('zh-') && a.split('-')[0] === b.split('-')[0]);
+        return a === b || (a && b && a.split('-')[0] !== 'zh' && b.split('-')[0] !== 'zh' && a.split('-')[0] === b.split('-')[0]);
     }
 
     function cancellationError() {
@@ -121,7 +121,6 @@
         var voices = window.speechSynthesis.getVoices();
         if (!voices || !voices.length) return null;
         var lower = locale.toLowerCase();
-        var langOnly = lower.split('-')[0];
         var exact = voices.filter(function (voice) {
             return voice.lang && voice.lang.toLowerCase() === lower;
         });
@@ -129,7 +128,7 @@
             return exact.find(function (voice) { return voice.localService; }) || exact[0];
         }
         var sameLanguage = voices.filter(function (voice) {
-            return voice.lang && voice.lang.toLowerCase().split('-')[0] === langOnly;
+            return voice.lang && sameSpeechLanguage(voice.lang, locale);
         });
         if (sameLanguage.length) {
             return sameLanguage.find(function (voice) { return voice.localService; }) || sameLanguage[0];
@@ -318,7 +317,6 @@
             utterance: null,
         };
         currentSession = session;
-        pendingPreparation = callbacks;
         safeCall(callbacks.onStateChange, 'playing', null);
         runQueue(session);
         return result;
@@ -332,7 +330,14 @@
     var settingsContext = {};
     var lastContext = {};
     var preferences = {};
-    try { preferences = JSON.parse(localStorage.getItem('glosify.speech.preferences') || '{}') || {}; } catch { /* Optional. */ }
+    var preferenceStorageKey = 'glosify.speech.preferences.user:' + encodeURIComponent(document.body?.dataset.speechUser || 'anonymous');
+    try {
+        var savedPreferences = localStorage.getItem(preferenceStorageKey);
+        preferences = JSON.parse(savedPreferences || localStorage.getItem('glosify.speech.preferences') || '{}') || {};
+        // Legacy preferences have no account owner. Retain voices, but require
+        // this account to accept the rate explicitly before any Azure request.
+        if (!savedPreferences) delete preferences.acceptedAzureRate;
+    } catch { /* Optional. */ }
     if (typeof preferences !== 'object' || Array.isArray(preferences)) preferences = {};
     var providerSelect = dialog?.querySelector('[data-speech-provider]');
     var languageSelect = dialog?.querySelector('[data-speech-language]');
@@ -503,7 +508,7 @@
             if (!preferences.bookLanguages || typeof preferences.bookLanguages !== 'object') preferences.bookLanguages = {};
             preferences.bookLanguages[settingsContext.bookId] = languageSelect.value;
         }
-        try { localStorage.setItem('glosify.speech.preferences', JSON.stringify(preferences)); } catch { /* Optional. */ }
+        try { localStorage.setItem(preferenceStorageKey, JSON.stringify(preferences)); } catch { /* Optional. */ }
         dialog.close();
         if (errorNotice) errorNotice.hidden = true;
         document.dispatchEvent(new CustomEvent('glosify:speech-settings-changed'));

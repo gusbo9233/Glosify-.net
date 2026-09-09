@@ -287,7 +287,7 @@ setting as an emergency switch.
 
 ### Speech provider and voice selection
 
-Read-aloud controls use saved speech preferences directly. Explicit Speech settings buttons open the shared browser/Azure and voice editor. Save persists settings without playback; Cancel discards edits. Browser is the default. Providers are global, voices are saved per provider/language, and reader language overrides are scoped to the book.
+Read-aloud controls use saved speech preferences directly. Explicit Speech settings buttons open the shared browser/Azure and voice editor. Save persists settings without playback; Cancel discards edits. Browser is the default. Preferences and rate acceptance are scoped to the signed-in account on this device. The provider is shared across features, voices are saved per provider/language, and reader language overrides are scoped to the book.
 Browser speech is the initial default and never calls the paid synthesis API.
 Azure failures are shown to the user; playback does not switch providers.
 Azure playback deducts user Glosify AI credits. `Speech:CreditsPerRequest` defaults

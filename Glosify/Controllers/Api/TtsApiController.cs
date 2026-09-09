@@ -125,7 +125,7 @@ public sealed class TtsApiController : ControllerBase
 
 public sealed class SpeechPlaybackRequest
 {
-    [Required, StringLength(200)]
+    [Required]
     public string Text { get; set; } = string.Empty;
     [Required, StringLength(64)]
     public string Lang { get; set; } = string.Empty;

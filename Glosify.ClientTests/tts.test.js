@@ -13,8 +13,9 @@ class Control {
     replaceChildren() { this.options = []; this.value = ''; }
     add(option) { this.options.push(option); if (this.options.length === 1) this.value = option.value; }
 }
-function setup(fetchResponse = async () => ({ ok: true, blob: async () => ({}) }), initial = {}) {
-    const requests = [], requestOptions = [], spoken = [], audio = [], stored = new Map([['glosify.speech.preferences', JSON.stringify(initial)]]);
+function setup(fetchResponse = async () => ({ ok: true, blob: async () => ({}) }), initial = {}, options = {}) {
+    const storageKey = 'glosify.speech.preferences.user:' + (options.userId || 'speaker');
+    const requests = [], requestOptions = [], spoken = [], audio = [], stored = options.stored || new Map([[storageKey, JSON.stringify(initial)]]);
     const controls = Object.fromEntries(['provider', 'language', 'voice', 'status', 'save', 'credits', 'price', 'cancel'].map(key => [key, new Control()]));
     controls.language.options = ['en-GB', 'sv-SE', 'pl-PL'].map(value => ({ value }));
     controls.price.dataset = { priceTemplate: '{0} credits total; {1} per segment' };
@@ -28,10 +29,10 @@ function setup(fetchResponse = async () => ({ ok: true, blob: async () => ({}) }
     const browserVoices = [{ name: 'English', voiceURI: 'en-local', lang: 'en-US' }, { name: 'Swedish', voiceURI: 'sv-local', lang: 'sv-SE' }];
     const speechSynthesis = { getVoices: () => browserVoices, addEventListener() {}, removeEventListener() {}, cancel() {}, speak(utterance) { spoken.push(utterance); queueMicrotask(() => utterance.onend?.()); } };
     class Audio { constructor(url) { this.url = url; audio.push(this); } play() { queueMicrotask(() => this.onended?.()); return Promise.resolve(); } pause() {} removeAttribute() {} }
-    const context = { document: { body: { dataset: { ttsLocales: JSON.stringify({ english: 'en-GB', swedish: 'sv-SE', polish: 'pl-PL' }) } }, querySelector: selector => selector === '[data-speech-dialog]' ? dialog : error, addEventListener() {}, dispatchEvent() {} }, window: { speechSynthesis }, localStorage: { getItem: key => stored.get(key), setItem: (key, value) => stored.set(key, value) }, CustomEvent: function(name) { this.type = name; }, Option: function(label, value) { this.label = label; this.value = value; }, Audio, AbortController, setTimeout, console, URL: { createObjectURL: () => 'blob:test', revokeObjectURL() {} }, fetch: async (url, options) => { requests.push(url); requestOptions.push(options); return fetchResponse(url, options); }, SpeechSynthesisUtterance: function(text) { this.text = text; } };
+    const context = { document: { body: { dataset: { speechUser: options.userId || 'speaker', ttsLocales: JSON.stringify({ english: 'en-GB', swedish: 'sv-SE', polish: 'pl-PL' }) } }, querySelector: selector => selector === '[data-speech-dialog]' ? dialog : error, addEventListener() {}, dispatchEvent() {} }, window: { speechSynthesis }, localStorage: { getItem: key => stored.get(key), setItem: (key, value) => stored.set(key, value) }, CustomEvent: function(name) { this.type = name; }, Option: function(label, value) { this.label = label; this.value = value; }, Audio, AbortController, setTimeout, console, URL: { createObjectURL: () => 'blob:test', revokeObjectURL() {} }, fetch: async (url, options) => { requests.push(url); requestOptions.push(options); return fetchResponse(url, options); }, SpeechSynthesisUtterance: function(text) { this.text = text; } };
     context.window.SpeechSynthesisUtterance = context.SpeechSynthesisUtterance;
     vm.runInNewContext(script, context);
-    return { api: context.window.GlosifyTts, requests, requestOptions, spoken, audio, controls, dialog, error, stored, browserVoices };
+    return { api: context.window.GlosifyTts, requests, requestOptions, spoken, audio, controls, dialog, error, stored, browserVoices, storageKey };
 }
 
 test('browser provider never calls Azure and honors the selected browser voice', async () => {
@@ -59,7 +60,7 @@ const azureResponse = (rate = 1) => async url => url.includes('/voices?')
         { shortName: 'sv-SE-MattiasNeural', displayName: 'Mattias', locale: 'sv-SE' },
         { shortName: 'pl-PL-ZofiaNeural', displayName: 'Zofia', locale: 'pl-PL' },
     ] }) } : { ok: true, blob: async () => ({}) };
-const prefs = h => JSON.parse(h.stored.get('glosify.speech.preferences'));
+const prefs = h => JSON.parse(h.stored.get(h.storageKey));
 const paidRequests = h => h.requestOptions.filter(options => options.method === 'POST');
 async function saveAzure(h, lang = 'Swedish', bookId) {
     h.api.openSettings({ lang, bookId });
@@ -202,4 +203,60 @@ test('insufficient credits are shown inline with no fallback', async () => {
     assert.equal(h.error.textContent, 'Insufficient AI credits');
     assert.equal(h.dialog.open, undefined);
     assert.equal(h.spoken.length, 0);
+});
+
+
+test('paid preferences and rate acceptance belong to the signed-in account', async () => {
+    const alice = setup(azureResponse(), {}, { userId: 'alice' });
+    await saveAzure(alice);
+    const bob = setup(azureResponse(), {}, { userId: 'bob', stored: alice.stored });
+    assert.equal(bob.api.getProvider(), 'browser');
+    assert.equal((await bob.api.playSavedQueue([{ text: 'Hej', lang: 'Swedish' }])).state, 'completed');
+    assert.equal(paidRequests(bob).length, 0);
+    const aliceAgain = setup(azureResponse(), {}, { userId: 'alice', stored: alice.stored });
+    assert.equal((await aliceAgain.api.playSavedQueue([{ text: 'Hej', lang: 'Swedish' }])).state, 'completed');
+    assert.equal(paidRequests(aliceAgain).length, 1);
+});
+
+test('legacy voices are retained without inheriting account-less billing consent', async () => {
+    const stored = new Map([['glosify.speech.preferences', JSON.stringify({ provider: 'azure', acceptedAzureRate: 1, 'azure:sv-SE': 'sv-SE-MattiasNeural' })]]);
+    const h = setup(azureResponse(), {}, { stored });
+    assert.equal((await h.api.playSavedQueue([{ text: 'Hej', lang: 'Swedish' }])).state, 'error');
+    assert.equal(paidRequests(h).length, 0);
+    h.api.openSettings({ lang: 'Swedish' });
+    await tick();
+    assert.equal(h.controls.voice.value, 'sv-SE-MattiasNeural');
+    h.controls.save.fire('click');
+    assert.equal(prefs(h).acceptedAzureRate, 1);
+});
+
+for (const lang of ['zh-HK', 'zh-CN']) {
+    test(`generic zh voices cannot stand in for ${lang}`, async () => {
+        const h = setup();
+        h.browserVoices.splice(0, h.browserVoices.length, { name: 'Generic Chinese', voiceURI: 'zh-local', lang: 'zh' });
+        assert.equal((await h.api.playSavedQueue([{ text: '你好', lang }])).state, 'error');
+        assert.equal(h.spoken.length, 0);
+        assert.equal((await h.api.playQueue([{ text: '你好', lang, provider: 'browser' }])).state, 'error');
+        assert.equal(h.spoken.length, 0);
+    });
+}
+
+test('completed playback never receives a later stopped callback', async () => {
+    const h = setup();
+    const states = [];
+    await h.api.playSavedQueue([{ text: 'Hej', lang: 'Swedish' }], { onStateChange: state => states.push(state) });
+    const completedStates = [...states];
+    h.api.openSettings({ lang: 'Swedish' });
+    assert.deepEqual(states, completedStates);
+    assert.equal(states.at(-1), 'completed');
+});
+
+test('stopping active playback reports stopped exactly once', async () => {
+    const h = setup(() => new Promise(() => {}));
+    const states = [];
+    const result = h.api.playQueue([{ text: 'Hej', lang: 'Swedish', provider: 'azure', maxCredits: 1 }], { onStateChange: state => states.push(state) });
+    await tick();
+    h.api.stop();
+    assert.equal((await result).state, 'stopped');
+    assert.deepEqual(states, ['playing', 'stopped']);
 });
