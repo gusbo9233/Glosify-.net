@@ -4,6 +4,8 @@ public interface ITextToSpeechService
 {
     bool IsConfigured { get; }
 
+    Task<IReadOnlyList<SpeechVoice>> GetVoicesAsync(string languageCode, CancellationToken cancellationToken = default);
+
     Task<Stream> GetOrSynthesizeAsync(
         string text,
         string languageCode,
@@ -11,3 +13,5 @@ public interface ITextToSpeechService
         string? voicePreference = null,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record SpeechVoice(string ShortName, string DisplayName, string Locale);

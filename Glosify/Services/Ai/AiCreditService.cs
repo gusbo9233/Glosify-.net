@@ -381,6 +381,84 @@ public sealed class AiCreditService : IAiCreditService
         return true;
     }
 
+    public Task<Guid> ReserveSpeechAsync(string userId, int credits, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(credits);
+        return WithConcurrencyRetryAsync(async () =>
+        {
+            var account = await GetOrCreateAccountEntityAsync(userId, cancellationToken);
+            await ApplyTrialGrantIfNeededAsync(account, cancellationToken);
+            if (account.AvailableCredits < credits)
+            {
+                var available = account.AvailableCredits;
+                DetachCreditEntities();
+                throw new InsufficientAiCreditsException(available, credits);
+            }
+            var now = _timeProvider.GetUtcNow();
+            var reservationId = Guid.NewGuid();
+            account.ReservedCredits += credits;
+            account.UpdatedAt = now;
+            _context.AiCreditTransactions.Add(new AiCreditTransaction
+            {
+                UserId = userId,
+                ReservationId = reservationId,
+                OperationId = Guid.NewGuid(),
+                Kind = AiCreditTransactionKinds.Reservation,
+                CreditAmount = credits,
+                BalanceAfterCredits = account.BalanceCredits,
+                ReservedAfterCredits = account.ReservedCredits,
+                Provider = "azure-speech",
+                Model = "speech",
+                Feature = AiUsageFeatures.TextToSpeech,
+                Operation = "read_aloud",
+                Note = "One audio segment, including cached audio.",
+                CreatedAt = now,
+            });
+            await _context.SaveChangesAsync(cancellationToken);
+            return reservationId;
+        });
+    }
+
+    public async Task CommitSpeechAsync(Guid reservationId, CancellationToken cancellationToken = default)
+    {
+        // Settle in a fresh scope so an interrupted request cannot later flush
+        // stale account mutations. The existing ledger terminal check is idempotent.
+        DetachCreditEntities();
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var service = new AiCreditService(context, _contextFactory, Options.Create(_options),
+            _pricing, _trialEligibility, _timeProvider);
+        await service.WithConcurrencyRetryAsync(async () =>
+        {
+            var reservation = await service.LoadReservationAsync(reservationId, cancellationToken);
+            if (reservation is null) return false;
+            if (reservation.Feature != AiUsageFeatures.TextToSpeech)
+                throw new InvalidOperationException("The reservation is not for speech playback.");
+            var account = await service.GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
+            var now = _timeProvider.GetUtcNow();
+            account.ReservedCredits = Math.Max(0, account.ReservedCredits - reservation.CreditAmount);
+            account.BalanceCredits -= reservation.CreditAmount;
+            account.UpdatedAt = now;
+            context.AiCreditTransactions.Add(new AiCreditTransaction
+            {
+                UserId = reservation.UserId,
+                ReservationId = reservationId,
+                OperationId = reservation.OperationId,
+                Kind = AiCreditTransactionKinds.UsageDebit,
+                CreditAmount = -reservation.CreditAmount,
+                BalanceAfterCredits = account.BalanceCredits,
+                ReservedAfterCredits = account.ReservedCredits,
+                Provider = reservation.Provider,
+                Model = reservation.Model,
+                Feature = reservation.Feature,
+                Operation = reservation.Operation,
+                Note = reservation.Note,
+                CreatedAt = now,
+            });
+            await context.SaveChangesAsync(cancellationToken);
+            return true;
+        });
+    }
+
     public Task ReleaseAsync(Guid reservationId, CancellationToken cancellationToken = default)
         => WithConcurrencyRetryAsync(() => ReleaseCoreAsync(reservationId, cancellationToken));
 

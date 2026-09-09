@@ -13,6 +13,7 @@ public sealed class SpeechOptions
     public string Key { get; set; } = string.Empty;
     public string Region { get; set; } = string.Empty;
     public string BlobContainer { get; set; } = "tts-cache";
+    public int CreditsPerRequest { get; set; } = 1;
     public int MaxTextLength { get; set; } = 200;
     public SpeechHighDefinitionOptions HighDefinition { get; set; } = new();
 }

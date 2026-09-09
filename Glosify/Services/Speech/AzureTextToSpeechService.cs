@@ -9,6 +9,7 @@ using Azure.Storage.Blobs.Models;
 using Glosify.Services.Storage;
 using Glosify.Services.Ai;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Glosify.Services.Speech;
 
@@ -20,6 +21,7 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
     private static readonly TokenRequestContext SpeechTokenContext =
         new(["https://cognitiveservices.azure.com/.default"]);
 
+    private readonly IMemoryCache _voiceCache;
     private readonly SpeechOptions _speech;
     private readonly BlobContainerClient? _container;
     private readonly TokenCredential _credential;
@@ -33,8 +35,10 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
         TokenCredential credential,
         IHttpClientFactory httpClientFactory,
         ILogger<AzureTextToSpeechService> logger,
-        IPaidServiceGate paidServices)
+        IPaidServiceGate paidServices,
+        IMemoryCache voiceCache)
     {
+        _voiceCache = voiceCache;
         _speech = speechOptions.Value;
         _credential = credential;
         _httpClientFactory = httpClientFactory;
@@ -105,9 +109,24 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
             throw new ArgumentException("Text is required.", nameof(text));
         }
 
-        if (!VoiceMap.TryResolve(languageCode, voicePreference, out var locale, out var voice))
+        var locale = VoiceMap.ResolveLocale(languageCode)
+            ?? throw new NotSupportedException("This language is not supported.");
+        VoiceMap.TryResolve(languageCode, voicePreference, out _, out var voice);
+        // Preserve existing short Polish preferences for older clients. New clients
+        // submit the exact Azure voice id, validated against the resource's catalog.
+        var legacyPolishVoice = locale == "pl-PL"
+            && voicePreference?.Trim().ToLowerInvariant() is "zofia" or "agnieszka" or "marek";
+        if ((!string.IsNullOrWhiteSpace(voicePreference) && !legacyPolishVoice)
+            || string.IsNullOrEmpty(voice))
         {
-            throw new NotSupportedException($"Language '{languageCode}' has no configured voice.");
+            var choices = await GetVoicesAsync(languageCode, cancellationToken);
+            var selected = string.IsNullOrWhiteSpace(voicePreference)
+                ? choices.FirstOrDefault()
+                : choices.FirstOrDefault(item => item.ShortName == voicePreference);
+            if (selected is null)
+                throw new NotSupportedException("The selected voice is not available for this language.");
+            voice = selected.ShortName;
+            locale = selected.Locale;
         }
 
         var trimmed = text.Trim();
@@ -120,7 +139,8 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
         var outputFormat = string.Equals(locale, "pl-PL", StringComparison.OrdinalIgnoreCase)
             ? PolishOutputFormat
             : DefaultOutputFormat;
-        var highDefinitionConnection = preferHighDefinition ? HighDefinitionConnection : null;
+        var highDefinitionConnection = preferHighDefinition && string.IsNullOrWhiteSpace(voicePreference)
+            ? HighDefinitionConnection : null;
         if (highDefinitionConnection is not null
             && VoiceMap.TryResolveHighDefinition(languageCode, out var highDefinitionVoice))
         {
@@ -151,6 +171,52 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
             outputFormat,
             connection,
             cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<SpeechVoice>> GetVoicesAsync(
+        string languageCode, CancellationToken cancellationToken = default)
+    {
+        var locale = VoiceMap.ResolveLocale(languageCode);
+        if (locale is null) return [];
+        var connection = StandardConnection ?? HighDefinitionConnection;
+        if (connection is null) return [];
+        var endpoint = BuildSynthesisEndpoint(connection);
+        var cacheKey = $"speech-voices:{endpoint}:{connection.ResourceId}";
+        var all = await _voiceCache.GetOrCreateAsync(cacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
+            var path = string.IsNullOrWhiteSpace(connection.Region)
+                ? "/tts/cognitiveservices/voices/list" : "/cognitiveservices/voices/list";
+            using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(endpoint, path));
+            await AuthorizeAsync(request, connection, cancellationToken);
+            var client = _httpClientFactory.CreateClient(nameof(AzureTextToSpeechService));
+            using var response = await client.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<SpeechVoice[]>(cancellationToken)
+                ?? [];
+        });
+        // Only expose standard neural voices in the requested locale. HD selection
+        // has a separate resource and must not silently replace a chosen voice.
+        return (all ?? []).Where(item =>
+                string.Equals(item.Locale, locale, StringComparison.OrdinalIgnoreCase)
+                && item.ShortName.StartsWith(locale + "-", StringComparison.OrdinalIgnoreCase)
+                && item.ShortName.EndsWith("Neural", StringComparison.Ordinal)
+                && item.ShortName.All(character => char.IsAsciiLetterOrDigit(character) || character == '-'))
+            .OrderBy(item => item.DisplayName, StringComparer.Ordinal).ToArray();
+    }
+
+    private async Task AuthorizeAsync(HttpRequestMessage request, SpeechConnection connection, CancellationToken ct)
+    {
+        if (connection.UsesEntra)
+        {
+            var token = await _credential.GetTokenAsync(SpeechTokenContext, ct);
+            request.Headers.Authorization = new AuthenticationHeaderValue(
+                "Bearer", $"aad#{connection.ResourceId.Trim()}#{token.Token}");
+        }
+        else
+        {
+            request.Headers.Add("Ocp-Apim-Subscription-Key", connection.Key);
+        }
     }
 
     private async Task<Stream> GetOrSynthesizeWithVoiceAsync(
@@ -199,17 +265,7 @@ public sealed class AzureTextToSpeechService : ITextToSpeechService
     {
         var ssml = BuildSsml(text, locale, voice);
         using var request = new HttpRequestMessage(HttpMethod.Post, BuildSynthesisEndpoint(connection));
-        if (connection.UsesEntra)
-        {
-            var token = await _credential.GetTokenAsync(SpeechTokenContext, ct);
-            request.Headers.Authorization = new AuthenticationHeaderValue(
-                "Bearer",
-                $"aad#{connection.ResourceId.Trim()}#{token.Token}");
-        }
-        else
-        {
-            request.Headers.Add("Ocp-Apim-Subscription-Key", connection.Key);
-        }
+        await AuthorizeAsync(request, connection, ct);
         request.Headers.Add("X-Microsoft-OutputFormat", outputFormat);
         request.Headers.Add("User-Agent", "Glosify");
         request.Content = new StringContent(ssml, Encoding.UTF8, "application/ssml+xml");

@@ -443,4 +443,24 @@
   <data name="Translations.Copied" xml:space="preserve"><value>Kopierat.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Det gick inte att kopiera. Markera texten och kopiera den manuellt.</value></data>
   <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Ta bort den här sparade översättningssessionen och alla översättningar i den?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Översättningssessionen har tagits bort.</value></data>
   <data name="Settings.Maximum" xml:space="preserve"><value>Maximalt</value></data>
+  <data name="Speech.Title" xml:space="preserve"><value>Läs upp</value></data>
+  <data name="Speech.Provider" xml:space="preserve"><value>Rösttjänst</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Webbläsarröst · inga Glosify-krediter</value></data>
+  <data name="Speech.Azure" xml:space="preserve"><value>Azure-röst · använder AI-krediter</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>Azure-röster drar Glosify AI-krediter för varje ljudsegment, även cachat ljud. Misslyckad syntes debiteras inte. Webbläsarröster är gratis.</value></data>
+  <data name="Speech.Language" xml:space="preserve"><value>Textens språk</value></data>
+  <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Välj ett språk</value></data>
+  <data name="Speech.Voice" xml:space="preserve"><value>Röst</value></data>
+  <data name="Speech.Play" xml:space="preserve"><value>Spela upp</value></data>
+  <data name="Speech.Loading" xml:space="preserve"><value>Läser in röster…</value></data>
+  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>Azure-röster kunde inte läsas in. Försök igen eller välj webbläsarröst.</value></data>
+  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>Azure-röster är inte tillgängliga för detta språk i den konfigurerade tjänsten. Välj webbläsarröst eller ett annat språk.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Ingen webbläsarröst är tillgänglig för detta språk. Välj Azure eller installera en röst på din enhet.</value></data>
+  <data name="Speech.Price" xml:space="preserve"><value>Totalt: {0} AI-krediter ({1} per ljudsegment).</value></data>
+  <data name="Speech.Settings" xml:space="preserve"><value>Talinställningar</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>{0} AI-krediter per ljudsegment. Spara för att godkänna priset.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Beräknad totalsumma: {0} AI-krediter</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>Granska och spara talinställningarna för att godkänna det aktuella Azure-priset före uppläsning.</value></data>
+  <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Din sparade röst är inte tillgänglig. Välj en annan röst i talinställningarna.</value></data>
+  <data name="Speech.UsesCredits" xml:space="preserve"><value>Använder AI-krediter</value></data>
 </root>

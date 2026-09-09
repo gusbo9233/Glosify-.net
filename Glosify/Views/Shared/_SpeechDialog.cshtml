@@ -1,0 +1,39 @@
+<dialog class="speech-dialog" data-speech-dialog aria-labelledby="speech-title"
+        data-rate="@Text["Speech.Rate"]"
+        data-estimate="@Text["Speech.Estimate"]"
+        data-review-rate="@Text["Speech.ReviewRate"]"
+        data-voice-unavailable="@Text["Speech.VoiceUnavailable"]"
+        data-browser-label="@Text["Speech.Browser"]"
+        data-azure-label="Azure · @Text["Speech.UsesCredits"]"
+        data-loading="@Text["Speech.Loading"]"
+        data-azure-unavailable="@Text["Speech.AzureUnavailable"]"
+        data-no-azure-voices="@Text["Speech.NoAzureVoices"]"
+        data-no-browser-voices="@Text["Speech.NoBrowserVoices"]">
+    <h2 id="speech-title">@Text["Speech.Settings"]</h2>
+    <label for="speech-provider">@Text["Speech.Provider"]</label>
+    <select id="speech-provider" data-speech-provider>
+        <option value="browser">@Text["Speech.Browser"]</option>
+        <option value="azure">@Text["Speech.Azure"]</option>
+    </select>
+    <div data-speech-token hidden>@Html.AntiForgeryToken()</div>
+    <div class="speech-credit-notice" data-speech-credits hidden>
+        <p>@Text["Speech.Credits"]</p>
+        <p data-speech-price data-price-template="@Text["Speech.Price"]"></p>
+    </div>
+    <label for="speech-language">@Text["Speech.Language"]</label>
+    <select id="speech-language" data-speech-language>
+        <option value="">@Text["Speech.ChooseLanguage"]</option>
+        @foreach (var language in Glosify.Services.Language.QuizLanguageCatalog.LanguageLearning)
+        {
+            <option value="@Glosify.Services.Speech.VoiceMap.ResolveLocale(language.Code)">@QuizLanguageDisplay.Name(language.Name)</option>
+        }
+    </select>
+    <label for="speech-voice">@Text["Speech.Voice"]</label>
+    <select id="speech-voice" data-speech-voice disabled></select>
+    <p data-speech-status role="status"></p>
+    <div class="speech-dialog-actions">
+        <button type="button" class="btn-secondary" data-speech-cancel>@Text["Common.Cancel"]</button>
+        <button type="button" class="btn-primary" data-speech-save disabled>@Text["Common.Save"]</button>
+    </div>
+</dialog>
+
