@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "description": "Repository architecture constraints and evidence-based handling of automated review findings."
+    },
+    {
+      "path": "README.md",
+      "description": "Application context, local setup, testing, and deployment overview."
+    },
+    {
+      "path": "docs/adr/0001-single-instance-state.md",
+      "description": "Intentional single-instance deployment and process-local state tradeoffs."
+    },
+    {
+      "path": "docs/adr/0002-problem-details-compatibility.md",
+      "description": "Required error compatibility alias in the unversioned Problem Details contract."
+    }
+  ]
+}

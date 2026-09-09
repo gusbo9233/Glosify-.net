@@ -188,3 +188,29 @@ or the Glosify user-secret store.
 The workflow in `.github/workflows/master_glosify.yml` validates pull requests.
 A push to `master` applies the reviewed EF migration bundle and deploys Azure
 Web App `glosify-app`. See [the deployment runbook](docs/DEPLOYMENT.md).
+
+## Pull-request review
+
+GitHub Copilot and Greptile provide complementary, advisory reviews. Before
+merging, inspect both reviewers' feedback on the latest revision, fix confirmed
+issues, and explain rejected findings with evidence. Handle duplicate reports
+once; record an unavailable review explicitly. CI and human judgment still govern
+merge readiness. See [the agent guidance](AGENTS.md).
+
+Greptile's GitHub app must be installed and this repository enabled in its
+dashboard. Repository settings live in [.greptile/config.json](.greptile/config.json),
+with review guidance and context in the same directory. Reviews run again on PR
+updates, focus on logic and syntax, and publish a status check. Automatic approval
+is disabled. The status check is advisory; this configuration does not add a
+required branch-protection check or change Copilot settings.
+
+For a manual review, comment `@greptileai` on the PR. Draft PRs are skipped by
+default; explicitly request a draft review when needed. After pushing this
+configuration, verify that a ready PR receives a Greptile review and status check,
+and that a subsequent commit triggers another review alongside the existing
+Copilot flow. No additional GitHub Actions job or API-key secret is needed for
+the GitHub app integration.
+
+References: [Greptile setup](https://www.greptile.com/docs/quickstart),
+[configuration reference](https://www.greptile.com/docs/code-review/greptile-config-reference),
+and [manual reviews](https://www.greptile.com/docs/code-review/developer-essentials).
