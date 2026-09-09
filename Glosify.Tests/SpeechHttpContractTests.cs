@@ -85,6 +85,8 @@ public sealed class SpeechHttpContractTests
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Speech-Test-User", "speaker");
         client.DefaultRequestHeaders.Add("RequestVerificationToken", await client.GetStringAsync("/_speech-test-token"));
+        var catalog = await client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/tts/voices?lang=Swedish");
+        Assert.Equal(limit, catalog.GetProperty("maxTextLength").GetInt32());
         var response = await client.PostAsJsonAsync("/api/tts", new { text = new string('a', length), lang = "Swedish", maxCredits = 1 });
         Assert.Equal(expected, response.StatusCode);
         if (expected == HttpStatusCode.BadRequest)

@@ -29,7 +29,7 @@ function setup(fetchResponse = async () => ({ ok: true, blob: async () => ({}) }
     const browserVoices = [{ name: 'English', voiceURI: 'en-local', lang: 'en-US' }, { name: 'Swedish', voiceURI: 'sv-local', lang: 'sv-SE' }];
     const speechSynthesis = { getVoices: () => browserVoices, addEventListener() {}, removeEventListener() {}, cancel() {}, speak(utterance) { spoken.push(utterance); queueMicrotask(() => utterance.onend?.()); } };
     class Audio { constructor(url) { this.url = url; audio.push(this); } play() { queueMicrotask(() => this.onended?.()); return Promise.resolve(); } pause() {} removeAttribute() {} }
-    const context = { document: { body: { dataset: { speechUser: options.userId || 'speaker', ttsLocales: JSON.stringify({ english: 'en-GB', swedish: 'sv-SE', polish: 'pl-PL' }) } }, querySelector: selector => selector === '[data-speech-dialog]' ? dialog : error, addEventListener() {}, dispatchEvent() {} }, window: { speechSynthesis }, localStorage: { getItem: key => stored.get(key), setItem: (key, value) => stored.set(key, value) }, CustomEvent: function(name) { this.type = name; }, Option: function(label, value) { this.label = label; this.value = value; }, Audio, AbortController, setTimeout, console, URL: { createObjectURL: () => 'blob:test', revokeObjectURL() {} }, fetch: async (url, options) => { requests.push(url); requestOptions.push(options); return fetchResponse(url, options); }, SpeechSynthesisUtterance: function(text) { this.text = text; } };
+    const context = { document: { body: { dataset: { speechUser: options.userId || 'speaker', ttsLocales: JSON.stringify({ zh: 'zh-CN', english: 'en-GB', swedish: 'sv-SE', polish: 'pl-PL' }) } }, querySelector: selector => selector === '[data-speech-dialog]' ? dialog : error, addEventListener() {}, dispatchEvent() {} }, window: { speechSynthesis }, localStorage: { getItem: key => stored.get(key), setItem: (key, value) => stored.set(key, value) }, CustomEvent: function(name) { this.type = name; }, Option: function(label, value) { this.label = label; this.value = value; }, Audio, AbortController, setTimeout, console, URL: { createObjectURL: () => 'blob:test', revokeObjectURL() {} }, fetch: async (url, options) => { requests.push(url); requestOptions.push(options); return fetchResponse(url, options); }, SpeechSynthesisUtterance: function(text) { this.text = text; } };
     context.window.SpeechSynthesisUtterance = context.SpeechSynthesisUtterance;
     vm.runInNewContext(script, context);
     return { api: context.window.GlosifyTts, requests, requestOptions, spoken, audio, controls, dialog, error, stored, browserVoices, storageKey };
@@ -259,4 +259,18 @@ test('stopping active playback reports stopped exactly once', async () => {
     h.api.stop();
     assert.equal((await result).state, 'stopped');
     assert.deepEqual(states, ['playing', 'stopped']);
+});
+
+
+test('Azure uses the advertised segment limit for both quotes and paid requests', async () => {
+    const h = setup(async url => {
+        const response = await azureResponse(2)(url);
+        if (!url.includes('/voices?')) return response;
+        return { ok: true, json: async () => ({ ...await response.json(), maxTextLength: 100 }) };
+    }, { provider: 'azure', acceptedAzureRate: 2 });
+    const items = [{ text: 'a'.repeat(250), lang: 'Swedish' }];
+    assert.equal(await h.api.estimateQueue(items), 'Azure · Uses AI credits · Estimated total: 6 AI credits');
+    assert.equal(paidRequests(h).length, 0);
+    assert.equal((await h.api.playSavedQueue(items)).state, 'completed');
+    assert.deepEqual(paidRequests(h).map(request => JSON.parse(request.body).text.length), [100, 100, 50]);
 });

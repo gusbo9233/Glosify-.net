@@ -27,6 +27,8 @@
     }
 
     function sameSpeechLanguage(first, second) {
+        // A generic browser tag is ambiguous even when the content alias maps zh to Mandarin.
+        if (String(first || '').trim().toLowerCase() === 'zh' || String(second || '').trim().toLowerCase() === 'zh') return false;
         var a = normalizeLocale(first).toLowerCase();
         var b = normalizeLocale(second).toLowerCase();
         // Cantonese and Mandarin must not be conflated as generic "zh".
@@ -372,7 +374,9 @@
             var result = await response.json();
             if (!Number.isSafeInteger(result.creditsPerRequest) || result.creditsPerRequest < 1)
                 throw new Error(message('azureUnavailable'));
-            return { rate: result.creditsPerRequest, voices: result.configured ? result.voices
+            var maxTextLength = result.maxTextLength ?? 180;
+            if (!Number.isSafeInteger(maxTextLength) || maxTextLength < 1) throw new Error(message('azureUnavailable'));
+            return { rate: result.creditsPerRequest, maxTextLength: maxTextLength, voices: result.configured ? result.voices
                 .filter(function (voice) { return sameSpeechLanguage(voice.locale, lang); })
                 .map(function (voice) { return { value: voice.shortName, label: voice.displayName + ' (' + voice.locale + ')' }; }) : [] };
         })();
@@ -405,17 +409,19 @@
         } catch (error) { if (revision === choiceRevision) choiceStatus.textContent = error.message; }
     }
 
-    function splitSpeechItems(items) {
+    function splitSpeechItems(items, maxTextLength) {
+        var limit = Math.min(180, maxTextLength || 180);
         return items.flatMap(function (item) {
             var remaining = String(item.text || '').trim();
             var parts = [];
             while (remaining) {
                 var end = remaining.length;
-                if (end > 180) {
-                    end = remaining.lastIndexOf(' ', 180);
-                    if (end <= 0) end = 180;
+                if (end > limit) {
+                    end = remaining.lastIndexOf(' ', limit);
+                    if (end <= 0) end = limit;
                     var last = remaining.charCodeAt(end - 1);
                     if (last >= 0xD800 && last <= 0xDBFF) end -= 1;
+                    if (!end) throw new Error(message('azureUnavailable'));
                 }
                 parts.push(Object.assign({}, item, { text: remaining.slice(0, end).trim() }));
                 remaining = remaining.slice(end).trim();
@@ -436,13 +442,17 @@
     }
 
     async function estimateQueue(items) {
-        items = splitSpeechItems(items);
+        items = items.filter(function (item) { return String(item.text || '').trim(); });
         var provider = getProvider();
         var label = message(provider === 'azure' ? 'azureLabel' : 'browserLabel');
         if (provider !== 'azure' || !items.length) return label;
         try {
-            var catalog = await voiceCatalog(provider, normalizeLocale(items[0].lang), false);
-            return label + ' · ' + message('estimate').replace('{0}', String(catalog.rate * items.length));
+            var total = 0;
+            for (var item of items) {
+                var catalog = await voiceCatalog(provider, normalizeLocale(item.lang), false);
+                total += catalog.rate * splitSpeechItems([item], catalog.maxTextLength).length;
+            }
+            return label + ' · ' + message('estimate').replace('{0}', String(total));
         } catch { return label; }
     }
 
@@ -450,7 +460,7 @@
         stop();
         var revision = preparationRevision;
         callbacks = callbacks || {};
-        items = splitSpeechItems(items);
+        items = items.filter(function (item) { return String(item.text || '').trim(); });
         lastContext = Object.assign({ lang: items[0]?.lang || '' }, context);
         if (errorNotice) errorNotice.hidden = true;
         var provider = getProvider();
@@ -471,8 +481,8 @@
                 if (saved && !catalog.voices.some(function (voice) { return voice.value === saved; }))
                     throw new Error(message('voiceUnavailable'));
                 if (!catalog.voices.length) throw new Error(message(provider === 'azure' ? 'noAzureVoices' : 'noBrowserVoices'));
-                prepared.push(Object.assign({}, item, { lang: lang, provider: provider,
-                    voice: saved || catalog.voices[0].value, quality: '', maxCredits: catalog.rate }));
+                prepared.push(...splitSpeechItems([Object.assign({}, item, { lang: lang, provider: provider,
+                    voice: saved || catalog.voices[0].value, quality: '', maxCredits: catalog.rate })], catalog.maxTextLength));
             }
             if (revision !== preparationRevision) throw cancellationError();
             pendingPreparation = null;

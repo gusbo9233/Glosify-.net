@@ -36,7 +36,7 @@ public sealed class TtsApiController : ControllerBase
     {
         try
         {
-            return Ok(new { configured = _tts.IsConfigured, creditsPerRequest = _options.CreditsPerRequest, voices = await _tts.GetVoicesAsync(lang, cancellationToken) });
+            return Ok(new { configured = _tts.IsConfigured, creditsPerRequest = _options.CreditsPerRequest, maxTextLength = _options.MaxTextLength, voices = await _tts.GetVoicesAsync(lang, cancellationToken) });
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
