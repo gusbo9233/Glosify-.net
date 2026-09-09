@@ -20,3 +20,4 @@
 - [ ] I added or updated tests when behavior changed.
 - [ ] I did not commit secrets or private user data.
 - [ ] I updated documentation when setup or behavior changed.
+- [ ] I assessed Copilot and Greptile feedback for the latest revision, fixed confirmed issues, and documented rejected findings or unavailable reviews.

@@ -1,0 +1,10 @@
+{
+  "strictness": 2,
+  "commentTypes": ["logic", "syntax"],
+  "triggerOnUpdates": true,
+  "statusCheck": true,
+  "shouldUpdateDescription": false,
+  "autoApprove": {
+    "enabled": false
+  }
+}
