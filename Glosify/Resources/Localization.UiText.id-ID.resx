@@ -1603,4 +1603,24 @@
   <data name="Translations.Copied" xml:space="preserve"><value>Disalin.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Tidak dapat menyalin. Pilih teks lalu salin secara manual.</value></data>
   <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Hapus sesi terjemahan tersimpan ini beserta semua terjemahan di dalamnya?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Sesi terjemahan dihapus.</value></data>
   <data name="Settings.Maximum" xml:space="preserve"><value>Maksimum</value></data>
+  <data name="Speech.Title" xml:space="preserve"><value>Baca dengan suara</value></data>
+  <data name="Speech.Provider" xml:space="preserve"><value>Layanan suara</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Suara browser · tanpa kredit Glosify</value></data>
+  <data name="Speech.Azure" xml:space="preserve"><value>Suara Azure · memakai kredit AI</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>Suara Azure memotong kredit AI Glosify untuk tiap segmen audio, termasuk audio dalam cache. Sintesis yang gagal tidak dikenai biaya. Suara browser gratis.</value></data>
+  <data name="Speech.Language" xml:space="preserve"><value>Bahasa teks</value></data>
+  <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Pilih bahasa</value></data>
+  <data name="Speech.Voice" xml:space="preserve"><value>Suara</value></data>
+  <data name="Speech.Play" xml:space="preserve"><value>Putar</value></data>
+  <data name="Speech.Loading" xml:space="preserve"><value>Memuat suara…</value></data>
+  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>Suara Azure tidak dapat dimuat. Coba lagi atau pilih suara browser.</value></data>
+  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>Tidak ada suara Azure untuk bahasa ini pada layanan yang dikonfigurasi. Pilih suara browser atau bahasa lain.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Tidak ada suara browser untuk bahasa ini. Pilih Azure atau instal suara di perangkat Anda.</value></data>
+  <data name="Speech.Price" xml:space="preserve"><value>Total: {0} kredit AI ({1} per segmen audio).</value></data>
+  <data name="Speech.Settings" xml:space="preserve"><value>Pengaturan suara</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>{0} kredit AI per segmen audio. Menyimpan berarti menyetujui tarif ini.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Perkiraan total: {0} kredit AI</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>Tinjau dan simpan pengaturan suara untuk menyetujui tarif Azure saat ini sebelum membaca.</value></data>
+  <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Suara tersimpan tidak tersedia. Pilih suara lain di pengaturan suara.</value></data>
+  <data name="Speech.UsesCredits" xml:space="preserve"><value>Menggunakan kredit AI</value></data>
 </root>

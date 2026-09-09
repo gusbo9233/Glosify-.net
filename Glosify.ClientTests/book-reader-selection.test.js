@@ -12,12 +12,15 @@ function setup() {
     const context = vm.createContext({
         document: { addEventListener: (name, callback) => { listeners[name] = callback; } },
         window: {
-            GlosifyTts: { playQueue: items => { context.spoken = items; } },
+            GlosifyTts: { getBookLanguage: () => context.bookLanguage || '', playSavedQueue: items => { context.spoken = items; } },
             addEventListener: (name, callback) => { listeners[name] = callback; },
         },
         isTextInput: target => target === 'voice',
         readerTtsToggle: button,
-        readerVoiceControl: { contains: target => target === 'voice' },
+        refreshSpeechInfo() {},
+        documentId: 'book-1',
+        readerSpeechSettings: { contains: target => target === 'settings' },
+        speechDialog: { contains: target => target === 'voice' },
         selectionPopover: { hidden: true },
         readerTtsPlaying: false,
         currentPage: 1,
@@ -25,7 +28,8 @@ function setup() {
         lastReaderSelection: null,
         preserveReaderSelection: false,
         captureReaderSelection: () => context.live,
-        sourceSpeechLanguage: () => 'en',
+        readingLanguage: 'Polish',
+        currentTranslation: () => ({ detectedSourceLanguage: 'English' }),
         voiceForSpeechLanguage: () => '',
         chunkTextForSpeech: text => [text],
         translationLanguage: { value: 'sv' },
@@ -36,6 +40,7 @@ function setup() {
         live: null,
     });
     vm.runInContext([
+        section('const sourceSpeechLanguage =', 'const clearReaderTtsStatus ='),
         section('const updateReaderTtsPrompt =', 'const updateReaderTtsButton ='),
         section('const rememberReaderSelection =', 'const paintSpeechSegment ='),
         section('const buildReaderSpeechQueue =', 'const renderTranslation ='),
@@ -53,6 +58,8 @@ function setup() {
         key(target, key) { listeners.keydown({ target, key }); },
         play() { vm.runInContext('startReaderTts()', context); return context.spoken.map(item => item.text).join(' '); },
         prompt: () => button.title,
+        language: () => context.spoken[0].lang,
+        overrideLanguage: lang => { context.bookLanguage = lang; },
     };
 }
 
@@ -76,7 +83,7 @@ test('Clearing a selection without a pointer restores full-page speech', () => {
     assert.equal(reader.play(), 'The complete page.');
 });
 
-for (const control of ['tts', 'voice']) {
+for (const control of ['tts', 'voice', 'settings']) {
     test(`${control} keyboard interaction preserves selection until keyboard deselection in the reader`, () => {
         const reader = setup();
         reader.select();
@@ -100,3 +107,16 @@ for (const control of ['tts', 'voice']) {
         assert.equal(reader.play(), 'The complete page.');
     });
 }
+
+
+test('reader uses detected content language, scopes overrides to source text and keeps translation language', () => {
+    const reader = setup();
+    reader.play();
+    assert.equal(reader.language(), 'English');
+    reader.overrideLanguage('fr-FR');
+    reader.play();
+    assert.equal(reader.language(), 'fr-FR');
+    reader.select('translation');
+    reader.play();
+    assert.equal(reader.language(), 'sv');
+});

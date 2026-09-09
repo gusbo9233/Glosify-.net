@@ -630,6 +630,123 @@ public sealed class AiCreditServiceTests
         Assert.Equal("Original name", (await context.Quizzes.SingleAsync(q => q.Id == quiz.Id)).Name);
     }
 
+    [Fact]
+    public async Task Speech_commit_is_idempotent_and_uses_the_existing_credit_balance()
+    {
+        await using var context = CreateContext();
+        var service = CreateService(context);
+        var reservation = await service.ReserveSpeechAsync("speaker", 2);
+        Assert.Equal(23, (await service.GetOrCreateAccountAsync("speaker")).AvailableCredits);
+        await service.CommitSpeechAsync(reservation);
+        await service.CommitSpeechAsync(reservation);
+        await service.ReleaseAsync(reservation);
+        var account = await service.GetOrCreateAccountAsync("speaker");
+        Assert.Equal(23, account.BalanceCredits);
+        Assert.Equal(0, account.ReservedCredits);
+        var debit = Assert.Single(await context.AiCreditTransactions
+            .Where(item => item.Kind == AiCreditTransactionKinds.UsageDebit).ToListAsync());
+        Assert.Equal(-2, debit.CreditAmount);
+        Assert.Equal(AiUsageFeatures.TextToSpeech, debit.Feature);
+        Assert.Null(debit.TotalTokens);
+        Assert.Null(debit.AudioDurationSeconds);
+    }
+
+    [Fact]
+    public async Task Speech_playback_charges_successful_audio_and_disables_browser_caching()
+    {
+        await using var context = CreateContext();
+        var credits = CreateService(context);
+        var speech = new TestSpeech();
+        var controller = SpeechController(credits, speech);
+        var result = await controller.Synthesize(SpeechRequest(2), CancellationToken.None);
+        var file = Assert.IsType<Microsoft.AspNetCore.Mvc.FileStreamResult>(result);
+        await file.FileStream.DisposeAsync();
+        Assert.Equal("no-store", controller.Response.Headers.CacheControl.ToString());
+        Assert.Equal(1, speech.Calls);
+        Assert.Equal(23, (await credits.GetOrCreateAccountAsync("speaker")).AvailableCredits);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Speech_failure_or_cancellation_releases_reserved_credits(bool cancelled)
+    {
+        await using var context = CreateContext();
+        var credits = CreateService(context);
+        var speech = new TestSpeech { Failure = cancelled ? new OperationCanceledException() : new HttpRequestException() };
+        var controller = SpeechController(credits, speech);
+        if (cancelled)
+            await Assert.ThrowsAsync<OperationCanceledException>(() => controller.Synthesize(SpeechRequest(2), CancellationToken.None));
+        else
+            Assert.Equal(502, Assert.IsType<Microsoft.AspNetCore.Mvc.ObjectResult>(
+                await controller.Synthesize(SpeechRequest(2), CancellationToken.None)).StatusCode);
+        var account = await credits.GetOrCreateAccountAsync("speaker");
+        Assert.Equal(25, account.BalanceCredits);
+        Assert.Equal(0, account.ReservedCredits);
+        Assert.Empty(await context.AiCreditTransactions.Where(item => item.Kind == AiCreditTransactionKinds.UsageDebit).ToListAsync());
+    }
+
+    [Fact]
+    public async Task Speech_insufficient_credits_prevent_provider_calls()
+    {
+        await using var context = CreateContext();
+        var credits = CreateService(context);
+        var speech = new TestSpeech();
+        var controller = SpeechController(credits, speech, 26);
+        await Assert.ThrowsAsync<InsufficientAiCreditsException>(() => controller.Synthesize(SpeechRequest(26), CancellationToken.None));
+        Assert.Equal(0, speech.Calls);
+        Assert.Equal(25, (await credits.GetOrCreateAccountAsync("speaker")).AvailableCredits);
+    }
+
+    [Fact]
+    public async Task Speech_changed_price_requires_a_new_quote_before_reserving_credits()
+    {
+        await using var context = CreateContext();
+        var speech = new TestSpeech();
+        var controller = SpeechController(CreateService(context), speech);
+        Assert.IsType<Microsoft.AspNetCore.Mvc.ConflictObjectResult>(
+            await controller.Synthesize(SpeechRequest(1), CancellationToken.None));
+        Assert.Equal(0, speech.Calls);
+        Assert.Empty(await context.AiCreditTransactions.ToListAsync());
+    }
+
+    private static Glosify.Controllers.Api.SpeechPlaybackRequest SpeechRequest(int maximum) => new()
+    {
+        Text = "Hej", Lang = "Swedish", Voice = "sv-SE-SofieNeural", MaxCredits = maximum,
+    };
+
+    private static Glosify.Controllers.Api.TtsApiController SpeechController(
+        IAiCreditService credits, TestSpeech speech, int price = 2)
+    {
+        var controller = new Glosify.Controllers.Api.TtsApiController(speech,
+            Options.Create(new Glosify.Services.Speech.SpeechOptions { CreditsPerRequest = price }),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<Glosify.Controllers.Api.TtsApiController>.Instance,
+            credits);
+        controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext
+        {
+            HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+            {
+                User = new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity(
+                    [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "speaker")], "test")),
+            },
+        };
+        return controller;
+    }
+
+    private sealed class TestSpeech : Glosify.Services.Speech.ITextToSpeechService
+    {
+        public bool IsConfigured => true;
+        public int Calls { get; private set; }
+        public Exception? Failure { get; init; }
+        public Task<IReadOnlyList<Glosify.Services.Speech.SpeechVoice>> GetVoicesAsync(string languageCode, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<Glosify.Services.Speech.SpeechVoice>>([]);
+        public Task<Stream> GetOrSynthesizeAsync(string text, string languageCode, bool preferHighDefinition = false, string? voicePreference = null, CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Failure is null ? Task.FromResult<Stream>(new MemoryStream([1, 2, 3])) : Task.FromException<Stream>(Failure);
+        }
+    }
+
     private static GlosifyContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<GlosifyContext>()

@@ -1603,4 +1603,24 @@
   <data name="Translations.Copied" xml:space="preserve"><value>Скопійовано.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Не вдалося скопіювати. Виділіть текст і скопіюйте його вручну.</value></data>
   <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Видалити цей збережений сеанс перекладу та всі переклади в ньому?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Сеанс перекладу видалено.</value></data>
   <data name="Settings.Maximum" xml:space="preserve"><value>Максимум</value></data>
+  <data name="Speech.Title" xml:space="preserve"><value>Читати вголос</value></data>
+  <data name="Speech.Provider" xml:space="preserve"><value>Сервіс озвучення</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Голос браузера · без кредитів Glosify</value></data>
+  <data name="Speech.Azure" xml:space="preserve"><value>Голос Azure · витрачає кредити ШІ</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>Озвучення Azure списує кредити ШІ Glosify за кожен аудіосегмент, зокрема кешований. Невдалий синтез не оплачується. Озвучення браузера безкоштовне.</value></data>
+  <data name="Speech.Language" xml:space="preserve"><value>Мова тексту</value></data>
+  <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Виберіть мову</value></data>
+  <data name="Speech.Voice" xml:space="preserve"><value>Голос</value></data>
+  <data name="Speech.Play" xml:space="preserve"><value>Відтворити</value></data>
+  <data name="Speech.Loading" xml:space="preserve"><value>Завантаження голосів…</value></data>
+  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>Не вдалося завантажити голоси Azure. Спробуйте ще раз або виберіть голос браузера.</value></data>
+  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>У налаштованому сервісі немає голосів Azure для цієї мови. Виберіть голос браузера або іншу мову.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>У браузері немає голосу для цієї мови. Виберіть Azure або встановіть голос на своєму пристрої.</value></data>
+  <data name="Speech.Price" xml:space="preserve"><value>Разом: {0} кредитів ШІ ({1} за аудіосегмент).</value></data>
+  <data name="Speech.Settings" xml:space="preserve"><value>Налаштування мовлення</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>{0} кредитів ШІ за аудіосегмент. Збереження означає згоду з тарифом.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Орієнтовна сума: {0} кредитів ШІ</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>Перегляньте та збережіть налаштування мовлення, щоб прийняти поточний тариф Azure перед читанням.</value></data>
+  <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Збережений голос недоступний. Виберіть інший у налаштуваннях мовлення.</value></data>
+  <data name="Speech.UsesCredits" xml:space="preserve"><value>Використовує кредити ШІ</value></data>
 </root>

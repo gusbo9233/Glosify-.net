@@ -139,6 +139,7 @@
 <body class="app-body"
       data-i18n="@System.Text.Json.JsonSerializer.Serialize(UiClientText.Create(Text))"
       data-tts-locales="@System.Text.Json.JsonSerializer.Serialize(Glosify.Services.Speech.VoiceMap.ClientLocaleAliases)">
+    <partial name="_SpeechDialog" />
     <div class="app-shell">
         <aside class="app-sidebar">
             <div class="app-sidebar-brand">
@@ -202,6 +203,7 @@
                     Glosify
                 </a>
                 <div class="app-topbar-right">
+                    <button type="button" class="speech-settings-button" data-speech-settings title="@Text["Speech.Settings"]" aria-label="@Text["Speech.Settings"]"><span class="material-symbols-outlined" aria-hidden="true">tune</span></button>
                     @await Html.PartialAsync("_DisplayLanguageSelector")
                     @if (User.Identity?.IsAuthenticated == true)
                     {
@@ -240,6 +242,10 @@
             </header>
 
             <div class="app-canvas">
+                <div class="speech-error" data-speech-error role="alert" hidden>
+                    <span data-speech-error-text></span>
+                    <button type="button" data-speech-settings>@Text["Speech.Settings"]</button>
+                </div>
                 @RenderBody()
             </div>
             <footer class="app-legal-footer">

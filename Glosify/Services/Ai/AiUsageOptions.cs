@@ -196,4 +196,5 @@ public static class AiUsageFeatures
     public const string PageTranslation = "page_translation";
     public const string RealtimeTranslation = "realtime_translation";
     public const string TextTranslation = "text_translation";
+    public const string TextToSpeech = "text_to_speech";
 }

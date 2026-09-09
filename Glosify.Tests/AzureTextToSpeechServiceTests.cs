@@ -38,7 +38,7 @@ public class AzureTextToSpeechServiceTests
             StubHandler.NeverCalled());
 
         await Assert.ThrowsAsync<NotSupportedException>(
-            () => service.GetOrSynthesizeAsync("sannu", "ha-NG"));
+            () => service.GetOrSynthesizeAsync("sannu", "not-a-language"));
     }
 
     [Theory]
@@ -79,6 +79,7 @@ public class AzureTextToSpeechServiceTests
 
             Assert.True(VoiceMap.ClientLocaleAliases.TryGetValue(language.Code, out var browserLocale));
             Assert.False(string.IsNullOrWhiteSpace(browserLocale));
+            Assert.Equal(browserLocale, VoiceMap.ResolveLocale(browserLocale));
         }
     }
 
@@ -318,6 +319,58 @@ public class AzureTextToSpeechServiceTests
         Assert.Contains("name='et-EE-AnuNeural'", ssml, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("Swedish", "sv-SE", "sv-SE-MattiasNeural")]
+    [InlineData("Polish", "pl-PL", "pl-PL-MarekNeural")]
+    [InlineData("French", "fr-FR", "fr-FR-HenriNeural")]
+    public async Task Catalog_voice_selection_is_used_in_synthesis_and_cached(string language, string locale, string voice)
+    {
+        var lists = 0;
+        string? ssml = null;
+        var handler = new StubHandler(request =>
+        {
+            if (request.Method == HttpMethod.Get)
+            {
+                lists++;
+                Assert.Equal("/cognitiveservices/voices/list", request.RequestUri!.AbsolutePath);
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = System.Net.Http.Json.JsonContent.Create(new[] { new SpeechVoice(voice, "Selected voice", locale) }),
+                };
+            }
+            ssml = request.Content!.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([1, 2]) };
+        });
+        var service = CreateService(new SpeechOptions { Key = "k", Region = "eastus", BlobContainer = "" }, handler);
+        Assert.Equal(voice, Assert.Single(await service.GetVoicesAsync(language)).ShortName);
+        using var stream = await service.GetOrSynthesizeAsync("Hello", language, true, voice);
+        Assert.Equal(1, lists);
+        Assert.Contains($"name='{voice}'", ssml, StringComparison.Ordinal);
+        Assert.Contains($"xml:lang='{locale}'", ssml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Catalog_filters_other_languages_and_rejects_unlisted_voice_before_synthesis()
+    {
+        var handler = new StubHandler(request =>
+        {
+            Assert.Equal(HttpMethod.Get, request.Method);
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = System.Net.Http.Json.JsonContent.Create(new[] {
+                    new SpeechVoice("pl-PL-ZofiaNeural", "Zofia", "pl-PL"),
+                    new SpeechVoice("sv-SE-SofieNeural", "Sofie", "sv-SE"),
+                    new SpeechVoice("sv-SE-Unsafe'Neural", "Invalid", "sv-SE"),
+                }),
+            };
+        });
+        var service = CreateService(new SpeechOptions { Key = "k", Region = "eastus", BlobContainer = "" }, handler);
+        Assert.Equal("sv-SE-SofieNeural", Assert.Single(await service.GetVoicesAsync("Swedish")).ShortName);
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            service.GetOrSynthesizeAsync("Hej", "Swedish", voicePreference: "pl-PL-ZofiaNeural"));
+        Assert.Equal(1, handler.CallCount);
+    }
+
     private static AzureTextToSpeechService CreateService(
         SpeechOptions speech,
         StubHandler handler,
@@ -335,7 +388,8 @@ public class AzureTextToSpeechServiceTests
             sharedCredential,
             factory,
             NullLogger<AzureTextToSpeechService>.Instance,
-            new AlwaysAvailablePaidServiceGate());
+            new AlwaysAvailablePaidServiceGate(),
+            new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
     }
 
     private sealed class StubHttpClientFactory : IHttpClientFactory

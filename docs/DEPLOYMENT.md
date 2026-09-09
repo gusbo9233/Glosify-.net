@@ -284,3 +284,27 @@ empty schema, but it cannot recover deleted custom-quiz rows unless they exist
 in an already-available platform backup. For unrelated application failures, restore the previous
 schema-compatible reviewed artifact; do not add an alternate provider/model
 setting as an emergency switch.
+
+### Speech provider and voice selection
+
+Read-aloud controls use saved speech preferences directly. Explicit Speech settings buttons open the shared browser/Azure and voice editor. Save persists settings without playback; Cancel discards edits. Browser is the default. Providers are global, voices are saved per provider/language, and reader language overrides are scoped to the book.
+Browser speech is the initial default and never calls the paid synthesis API.
+Azure failures are shown to the user; playback does not switch providers.
+Azure playback deducts user Glosify AI credits. `Speech:CreditsPerRequest` defaults
+to 1 credit per audio segment (up to `Speech:MaxTextLength`, currently 200
+characters). The reader shows the estimated total inline. Saving Azure settings accepts the displayed per-segment rate. Existing Azure preferences without an accepted rate and rate increases stop playback with an inline settings instruction. Each successful audio
+request, including a Blob-cache hit, is charged; failed synthesis releases its
+reservation. Stopping a queue prevents charges for segments not yet requested.
+The charged endpoint is now antiforgery-protected `POST /api/tts`; its response
+is `no-store`. Older GET callers must reload/update to use the current client. The
+request's `maxCredits` quote prevents a price increase from being charged without
+review. Speech uses the existing credit ledger, without a schema migration.
+
+`GET /api/tts/voices?lang=...` requires sign-in and lists standard neural voices
+for the chosen language from the configured Speech resource. The server caches
+that catalog for one hour and validates selected voice IDs against it before
+synthesis. Listing voices does not synthesize audio or require available paid
+budget. Languages without a voice in that resource remain selectable with
+browser speech when the device has a matching voice installed. The dialog also
+allows correcting the text's language before playback, independently of the
+learning-language selection.

@@ -140,6 +140,15 @@ public static class VoiceMap
         return false;
     }
 
+    public static string? ResolveLocale(string languageCode)
+    {
+        var code = ResolveCatalogCode(languageCode);
+        if (code is null) return null;
+        return Voices.TryGetValue(code, out var voice)
+            ? voice.Locale
+            : QuizLanguageCatalog.Find(code)?.Locale;
+    }
+
     private static string? ResolveCatalogCode(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -150,7 +159,9 @@ public static class VoiceMap
         var candidate = value.Trim();
         return QuizLanguageCatalog.Find(candidate)?.Code
             ?? QuizLanguageCatalog.LanguageLearning.FirstOrDefault(language =>
-                string.Equals(language.Locale, candidate, StringComparison.OrdinalIgnoreCase))?.Code;
+                string.Equals(language.Locale, candidate, StringComparison.OrdinalIgnoreCase))?.Code
+            ?? Voices.FirstOrDefault(pair =>
+                string.Equals(pair.Value.Locale, candidate, StringComparison.OrdinalIgnoreCase)).Key;
     }
 
     private static FrozenDictionary<string, string> BuildClientLocaleAliases()

@@ -1603,4 +1603,24 @@
   <data name="Translations.Copied" xml:space="preserve"><value>Copiado.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Não foi possível copiar. Selecione o texto e copie manualmente.</value></data>
   <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Excluir esta sessão de tradução salva e todas as traduções nela?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Sessão de tradução excluída.</value></data>
   <data name="Settings.Maximum" xml:space="preserve"><value>Máximo</value></data>
+  <data name="Speech.Title" xml:space="preserve"><value>Ler em voz alta</value></data>
+  <data name="Speech.Provider" xml:space="preserve"><value>Serviço de voz</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Voz do navegador · sem créditos Glosify</value></data>
+  <data name="Speech.Azure" xml:space="preserve"><value>Voz Azure · usa créditos de IA</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>A voz Azure desconta créditos de IA Glosify por segmento de áudio, inclusive em cache. Falhas na síntese não são cobradas. A voz do navegador é grátis.</value></data>
+  <data name="Speech.Language" xml:space="preserve"><value>Idioma do texto</value></data>
+  <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Escolha um idioma</value></data>
+  <data name="Speech.Voice" xml:space="preserve"><value>Voz</value></data>
+  <data name="Speech.Play" xml:space="preserve"><value>Reproduzir</value></data>
+  <data name="Speech.Loading" xml:space="preserve"><value>Carregando vozes…</value></data>
+  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>Não foi possível carregar as vozes Azure. Tente novamente ou escolha a voz do navegador.</value></data>
+  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>Não há vozes Azure para este idioma no serviço configurado. Escolha a voz do navegador ou outro idioma.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Não há vozes do navegador para este idioma. Escolha Azure ou instale uma voz no dispositivo.</value></data>
+  <data name="Speech.Price" xml:space="preserve"><value>Total: {0} créditos de IA ({1} por segmento de áudio).</value></data>
+  <data name="Speech.Settings" xml:space="preserve"><value>Configurações de voz</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>{0} créditos de IA por segmento de áudio. Salvar aceita esta tarifa.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Total estimado: {0} créditos de IA</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>Revise e salve as configurações de voz para aceitar a tarifa atual do Azure antes da leitura.</value></data>
+  <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Sua voz salva está indisponível. Escolha outra nas configurações de voz.</value></data>
+  <data name="Speech.UsesCredits" xml:space="preserve"><value>Usa créditos de IA</value></data>
 </root>

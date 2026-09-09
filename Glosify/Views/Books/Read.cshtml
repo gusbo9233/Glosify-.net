@@ -25,6 +25,8 @@
     <form class="reader-antiforgery" aria-hidden="true">
         @Html.AntiForgeryToken()
     </form>
+        <div class="speech-error" data-reader-speech-error role="alert" hidden><span data-speech-error-text></span><button type="button" data-speech-settings>@Text["Speech.Settings"]</button></div>
+        <div class="reader-speech-info" data-reader-speech-info aria-live="polite">@Text["Speech.Browser"]</div>
     <section class="pdf-reader-shell"
              data-document-id="@Model.Book.Id"
              data-page-count="@Model.Book.PageCount"
@@ -73,14 +75,6 @@
                 <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span>
             </button>
             <span class="reader-tool-divider" aria-hidden="true"></span>
-            <label class="reader-voice-picker" data-reader-voice-control hidden>
-                <span class="visually-hidden">@Text["Reader.PolishVoice"]</span>
-                <select data-reader-voice data-default-aria-label="Polish reading voice" aria-label="@Text["Reader.PolishVoice"]" title="@Text["Reader.PolishVoice"]">
-                    <option value="zofia" selected>Zofia</option>
-                    <option value="agnieszka">Agnieszka</option>
-                    <option value="marek">Marek</option>
-                </select>
-            </label>
             <button class="reader-tool reader-tts-toggle"
                     type="button"
                     data-reader-tts
@@ -92,6 +86,7 @@
                 <span class="material-symbols-outlined" data-reader-tts-icon aria-hidden="true">volume_up</span>
                 <span class="reader-tts-label" data-reader-tts-label>@Text["Reader.Read"]</span>
             </button>
+            <button type="button" class="reader-tool" data-reader-speech-settings title="@Text["Speech.Settings"]" aria-label="@Text["Speech.Settings"]"><span class="material-symbols-outlined" aria-hidden="true">tune</span><span>@Text["Speech.Settings"]</span></button>
         </div>
 
         <div class="reader-translation-tools" role="toolbar" aria-label="@Text["Reader.TranslationControls"]">

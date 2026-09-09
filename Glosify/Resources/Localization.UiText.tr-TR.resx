@@ -1603,4 +1603,24 @@
   <data name="Translations.Copied" xml:space="preserve"><value>Kopyalandı.</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>Kopyalanamadı. Metni seçip elle kopyalayın.</value></data>
   <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>Bu kayıtlı çeviri oturumu ve içindeki tüm çeviriler silinsin mi?</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>Çeviri oturumu silindi.</value></data>
   <data name="Settings.Maximum" xml:space="preserve"><value>Maksimum</value></data>
+  <data name="Speech.Title" xml:space="preserve"><value>Sesli oku</value></data>
+  <data name="Speech.Provider" xml:space="preserve"><value>Ses hizmeti</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Tarayıcı sesi · Glosify kredisi kullanmaz</value></data>
+  <data name="Speech.Azure" xml:space="preserve"><value>Azure sesi · yapay zekâ kredisi kullanır</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>Azure sesi, önbellekteki sesler dahil her ses bölümü için Glosify yapay zekâ kredisi düşer. Başarısız sentez ücretlendirilmez. Tarayıcı sesi ücretsizdir.</value></data>
+  <data name="Speech.Language" xml:space="preserve"><value>Metnin dili</value></data>
+  <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Bir dil seçin</value></data>
+  <data name="Speech.Voice" xml:space="preserve"><value>Ses</value></data>
+  <data name="Speech.Play" xml:space="preserve"><value>Oynat</value></data>
+  <data name="Speech.Loading" xml:space="preserve"><value>Sesler yükleniyor…</value></data>
+  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>Azure sesleri yüklenemedi. Yeniden deneyin veya tarayıcı sesini seçin.</value></data>
+  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>Yapılandırılmış hizmette bu dil için Azure sesi yok. Tarayıcı sesini veya başka bir dili seçin.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Bu dil için tarayıcı sesi yok. Azure’u seçin veya cihazınıza bir ses yükleyin.</value></data>
+  <data name="Speech.Price" xml:space="preserve"><value>Toplam: {0} yapay zekâ kredisi (ses bölümü başına {1}).</value></data>
+  <data name="Speech.Settings" xml:space="preserve"><value>Konuşma ayarları</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>Ses bölümü başına {0} yapay zekâ kredisi. Kaydetmek bu ücreti kabul eder.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Tahmini toplam: {0} yapay zekâ kredisi</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>Okumadan önce güncel Azure ücretini kabul etmek için konuşma ayarlarını inceleyip kaydedin.</value></data>
+  <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Kaydedilen ses kullanılamıyor. Konuşma ayarlarından başka bir ses seçin.</value></data>
+  <data name="Speech.UsesCredits" xml:space="preserve"><value>Yapay zekâ kredisi kullanır</value></data>
 </root>

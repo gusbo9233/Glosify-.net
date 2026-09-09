@@ -16,7 +16,7 @@ public sealed class PaidServiceCoverageTests
     [InlineData(typeof(RealtimeTranslationApiController), nameof(RealtimeTranslationApiController.Catalog), false)]
     [InlineData(typeof(RealtimeTranslationApiController), nameof(RealtimeTranslationApiController.Heartbeat), false)]
     [InlineData(typeof(RealtimeTranslationApiController), nameof(RealtimeTranslationApiController.EndSession), false)]
-    [InlineData(typeof(TtsApiController), nameof(TtsApiController.Get), true)]
+    [InlineData(typeof(TtsApiController), nameof(TtsApiController.Synthesize), true)]
     [InlineData(typeof(BooksController), nameof(BooksController.Upload), false)]
     [InlineData(typeof(BooksController), nameof(BooksController.Delete), false)]
     [InlineData(typeof(BooksController), nameof(BooksController.Read), false)]

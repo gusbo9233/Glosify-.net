@@ -217,7 +217,10 @@ public static class ApplicationServiceExtensions
         services.AddScoped<AssistantChangeWorkflow>();
         services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
 
-        services.Configure<SpeechOptions>(configuration.GetSection(SpeechOptions.SectionName));
+        services.AddOptions<SpeechOptions>()
+            .Bind(configuration.GetSection(SpeechOptions.SectionName))
+            .Validate(options => options.CreditsPerRequest > 0, "Speech:CreditsPerRequest must be positive.")
+            .ValidateOnStart();
         services.AddSingleton<TokenCredential>(_ =>
             AzureCredentialFactory.Create(environment, configuration));
         services.AddSingleton<GlosifyBlobServiceClient>();

@@ -19,8 +19,10 @@ const readerTtsToggle = document.querySelector('[data-reader-tts]');
 const readerTtsIcon = document.querySelector('[data-reader-tts-icon]');
 const readerTtsLabel = document.querySelector('[data-reader-tts-label]');
 const readerTtsStatus = document.querySelector('[data-reader-tts-status]');
-const readerVoiceControl = document.querySelector('[data-reader-voice-control]');
-const readerVoiceSelect = document.querySelector('[data-reader-voice]');
+const readerSpeechSettings = document.querySelector('[data-reader-speech-settings]');
+const readerSpeechInfo = document.querySelector('[data-reader-speech-info]');
+let speechInfoRevision = 0;
+const speechDialog = document.querySelector('[data-speech-dialog]');
 const workspace = document.querySelector('[data-reader-workspace]');
 const originalPane = document.querySelector('[data-reader-original-pane]');
 const translationPane = document.querySelector('[data-reader-translation-pane]');
@@ -70,8 +72,6 @@ const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 5;
 const ZOOM_STEP = 0.25;
 const TTS_CHUNK_LENGTH = 180;
-const POLISH_VOICE_STORAGE_KEY = 'glosify.reader.polishVoice';
-const POLISH_VOICES = new Set(['zofia', 'agnieszka', 'marek']);
 let fitMode = 'width';
 let zoomScale = 1;
 let rotation = 0;
@@ -635,38 +635,11 @@ const currentTranslation = () => translationCache.get(
     translationKey(currentPage, translationLanguage?.value || 'English', currentSegments));
 
 const sourceSpeechLanguage = () =>
-    currentTranslation()?.detectedSourceLanguage?.trim()
+    window.GlosifyTts?.getBookLanguage(documentId)
+    || currentTranslation()?.detectedSourceLanguage?.trim()
     || readingLanguage
     || '';
 
-const isPolishSpeechLanguage = (language) => {
-    const normalized = String(language || '').trim().toLowerCase().replace('_', '-');
-    return normalized === 'pl' || normalized === 'pl-pl' || normalized === 'polish';
-};
-
-const selectedPolishVoice = () => {
-    const value = String(readerVoiceSelect?.value || 'zofia').trim().toLowerCase();
-    return POLISH_VOICES.has(value) ? value : 'zofia';
-};
-
-const voiceForSpeechLanguage = (language) =>
-    isPolishSpeechLanguage(language) ? selectedPolishVoice() : '';
-
-const updateReaderVoiceControl = () => {
-    if (!readerVoiceControl) return;
-    readerVoiceControl.hidden = !isPolishSpeechLanguage(sourceSpeechLanguage())
-        && !isPolishSpeechLanguage(translationLanguage?.value);
-};
-
-const restoreReaderVoice = () => {
-    if (!readerVoiceSelect) return;
-    try {
-        const storedVoice = String(localStorage.getItem(POLISH_VOICE_STORAGE_KEY) || '').toLowerCase();
-        readerVoiceSelect.value = POLISH_VOICES.has(storedVoice) ? storedVoice : 'zofia';
-    } catch {
-        readerVoiceSelect.value = 'zofia';
-    }
-};
 
 const clearReaderTtsStatus = () => {
     clearTimeout(readerTtsStatusTimer);
@@ -689,7 +662,16 @@ const showReaderTtsStatus = (message, { error = false, transient = false } = {})
     }
 };
 
+const refreshSpeechInfo = async () => {
+    if (!readerSpeechInfo || !window.GlosifyTts?.estimateQueue) return;
+    const revision = ++speechInfoRevision;
+    const selection = lastReaderSelection?.pageNumber === currentPage ? lastReaderSelection : null;
+    const label = await window.GlosifyTts.estimateQueue(buildReaderSpeechQueue(selection));
+    if (revision === speechInfoRevision) readerSpeechInfo.textContent = label;
+};
+
 const updateReaderTtsPrompt = () => {
+    refreshSpeechInfo();
     if (!readerTtsToggle || readerTtsPlaying) return;
     const hasSelection = lastReaderSelection?.pageNumber === currentPage;
     const label = hasSelection ? 'Read selected text aloud' : 'Read this page aloud';
@@ -899,8 +881,6 @@ const buildReaderSpeechQueue = (selection) => {
         return chunkTextForSpeech(selection.text).map((text, index) => ({
             text,
             lang: language,
-            quality: 'hd-supported-v2',
-            voice: voiceForSpeechLanguage(language),
             meta: {
                 mode: 'selection',
                 selectionKind: selection.kind,
@@ -916,8 +896,6 @@ const buildReaderSpeechQueue = (selection) => {
         chunkTextForSpeech(segment.sourceText).map(text => ({
             text,
             lang: language,
-            quality: 'hd-supported-v2',
-            voice: voiceForSpeechLanguage(language),
             meta: { mode: 'page', segmentIndex: segment.index },
         })));
 };
@@ -931,7 +909,7 @@ const startReaderTts = () => {
         showReaderTtsStatus(t('Client.TtsNoText', 'No selectable text is available to read.'), { error: true });
         return;
     }
-    if (!window.GlosifyTts?.playQueue) {
+    if (!window.GlosifyTts?.playSavedQueue) {
         showReaderTtsStatus(t('Client.TtsUnavailable', 'Text-to-speech is unavailable in this browser.'), { error: true });
         return;
     }
@@ -949,7 +927,7 @@ const startReaderTts = () => {
 
     setStatus('');
     clearSpeechHighlights();
-    window.GlosifyTts.playQueue(items, {
+    window.GlosifyTts.playSavedQueue(items, {
         onItemStart: (item, index, total) => {
             if (item.meta?.mode === 'page') {
                 paintSpeechSegment(item.meta.segmentIndex);
@@ -999,10 +977,11 @@ const startReaderTts = () => {
                 setStatus(message);
             }
         },
-    });
+    }, selection?.kind === 'translation' ? {} : { bookId: documentId, lang: sourceSpeechLanguage() });
 };
 
 const renderTranslation = (result) => {
+    refreshSpeechInfo();
     if (!translationContent) return;
     translationContent.replaceChildren();
     setTranslationState('');
@@ -1013,7 +992,6 @@ const renderTranslation = (result) => {
             ? t(result.cached ? 'Reader.DetectedCached' : 'Reader.Detected', result.cached ? 'Detected {0} · cached' : 'Detected {0}', result.detectedSourceLanguage)
             : result.cached ? t('Reader.CachedTranslation', 'Cached translation') : '';
     }
-    updateReaderVoiceControl();
 
     let paragraph = null;
     let paragraphIndex = null;
@@ -1422,19 +1400,19 @@ rotateBtn?.addEventListener('click', () => {
     renderPage(currentPage);
 });
 readerTtsToggle?.addEventListener('click', startReaderTts);
-readerVoiceSelect?.addEventListener('change', () => {
-    stopReaderTts();
-    const voice = selectedPolishVoice();
-    readerVoiceSelect.value = voice;
-    try { localStorage.setItem(POLISH_VOICE_STORAGE_KEY, voice); } catch { /* Optional preference. */ }
+readerSpeechSettings?.addEventListener('click', () => {
+    const selection = lastReaderSelection?.pageNumber === currentPage ? lastReaderSelection : null;
+    window.GlosifyTts?.openSettings(selection?.kind === 'translation'
+        ? { lang: translationLanguage?.value || '' }
+        : { lang: sourceSpeechLanguage(), bookId: documentId });
 });
+document.addEventListener('glosify:speech-settings-changed', refreshSpeechInfo);
 translationToggle?.addEventListener('click', () => setTranslationEnabled(!translationEnabled));
 splitViewToggle?.addEventListener('click', () => setSplitView(!splitViewEnabled));
 translationLanguage?.addEventListener('change', async () => {
     stopReaderTts();
     closeSelectionPopover();
     if (translationHeadingLanguage) translationHeadingLanguage.textContent = translationLanguage.value;
-    updateReaderVoiceControl();
     await persistTranslationLanguage();
     if (translationEnabled) queueCurrentPageTranslation();
 });
@@ -1496,7 +1474,9 @@ translationContent?.addEventListener('mouseup', event => {
 });
 document.addEventListener('pointerdown', event => {
     preserveReaderSelection = Boolean(readerTtsToggle?.contains(event.target)
-        || readerVoiceControl?.contains(event.target));
+        || readerSpeechSettings?.contains(event.target)
+        || event.target.closest?.('[data-speech-settings]')
+        || speechDialog?.contains(event.target));
     if (!preserveReaderSelection) {
         lastReaderSelection = null;
         updateReaderTtsPrompt();
@@ -1510,8 +1490,10 @@ document.addEventListener('pointerdown', event => {
 
 window.addEventListener('keydown', (event) => {
     preserveReaderSelection = Boolean(readerTtsToggle?.contains(event.target)
-        || readerVoiceControl?.contains(event.target));
-    if (event.altKey || event.metaKey || event.shiftKey || isTextInput(event.target)) return;
+        || readerSpeechSettings?.contains(event.target)
+        || event.target.closest?.('[data-speech-settings]')
+        || speechDialog?.contains(event.target));
+    if (speechDialog?.open || event.altKey || event.metaKey || event.shiftKey || isTextInput(event.target)) return;
     if (event.key === '+' || event.key === '=') {
         event.preventDefault();
         applyZoom(zoomScale + ZOOM_STEP);
@@ -1557,8 +1539,6 @@ window.addEventListener('resize', () => {
 });
 window.addEventListener('beforeunload', () => window.GlosifyTts?.stop());
 
-restoreReaderVoice();
-updateReaderVoiceControl();
 
 try {
     pdfjs = await import('/lib/pdfjs/pdf.min.mjs');

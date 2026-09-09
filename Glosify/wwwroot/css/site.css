@@ -6536,3 +6536,25 @@ html[dir="rtl"] :is(.legal-page, .auth-shell, .app-main, .app-topbar) { directio
     .app-topbar-right .display-language-selector .material-symbols-outlined { display: none; }
     .app-topbar-right .display-language-selector select { max-width: 6.2rem; }
 }
+
+/* Native hidden must win over component display rules. */
+.speech-dialog [hidden], .speech-error[hidden], .reader-voice-picker[hidden] { display: none; }
+.speech-dialog { width: min(440px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 24px; border: 1px solid var(--border, #888); border-radius: 16px; background: var(--surface, #fff); color: var(--on-surface, #18221c); }
+.speech-dialog::backdrop { background: rgb(0 0 0 / 55%); }
+.speech-dialog h2 { margin: 0 0 20px; }
+.speech-dialog label { display: block; margin: 16px 0 6px; font-weight: 600; }
+.speech-dialog select { display: block; width: 100%; min-height: 44px; padding: 8px; color: inherit; background: inherit; border: 1px solid #888; border-radius: 6px; }
+.speech-dialog p { margin: 12px 0; font-size: 14px; }
+.speech-credit-notice { padding: 12px; border-left: 3px solid #b77800; background: rgb(205 153 30 / 12%); }
+.speech-dialog-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+.speech-dialog-actions button { min-height: 44px; padding: 8px 18px; }
+.speech-dialog-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.speech-error { margin: 8px 16px; padding: 16px; border-radius: 8px; background: #7f1d1d; color: white; }
+
+.speech-dialog-actions [data-speech-save] { border: 0; border-radius: 9999px; background: var(--primary); color: var(--on-primary); font: inherit; font-weight: 700; cursor: pointer; }
+
+.speech-settings-button { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; }
+.speech-error button { margin-inline-start: 8px; color: inherit; background: transparent; border: 0; text-decoration: underline; cursor: pointer; min-height: 44px; }
+.reader-speech-info { padding: 4px 16px; font-size: .8rem; color: var(--on-surface-variant); }
+[data-reader-speech-settings] { min-height: 44px; }
+@media (max-width: 760px) { [data-reader-speech-settings] > span:last-child { display: none; } }
