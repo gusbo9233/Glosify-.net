@@ -1606,21 +1606,34 @@
   <data name="Speech.Title" xml:space="preserve"><value>Ler em voz alta</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Serviço de voz</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Voz do navegador · sem créditos Glosify</value></data>
-  <data name="Speech.Azure" xml:space="preserve"><value>Voz Azure · usa créditos de IA</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>A voz Azure desconta créditos de IA Glosify por segmento de áudio, inclusive em cache. Falhas na síntese não são cobradas. A voz do navegador é grátis.</value></data>
+  <data name="Speech.ElevenLabs" xml:space="preserve"><value>Voz ElevenLabs · usa créditos de IA</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>A voz ElevenLabs desconta créditos de IA Glosify por segmento de áudio, inclusive em cache. Falhas na síntese não são cobradas. A voz do navegador é grátis.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Idioma do texto</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Escolha um idioma</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Voz</value></data>
   <data name="Speech.Play" xml:space="preserve"><value>Reproduzir</value></data>
   <data name="Speech.Loading" xml:space="preserve"><value>Carregando vozes…</value></data>
-  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>Não foi possível carregar as vozes Azure. Tente novamente ou escolha a voz do navegador.</value></data>
-  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>Não há vozes Azure para este idioma no serviço configurado. Escolha a voz do navegador ou outro idioma.</value></data>
-  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Não há vozes do navegador para este idioma. Escolha Azure ou instale uma voz no dispositivo.</value></data>
+  <data name="Speech.ElevenLabsUnavailable" xml:space="preserve"><value>Não foi possível carregar as vozes ElevenLabs. Tente novamente ou escolha a voz do navegador.</value></data>
+  <data name="Speech.NoElevenLabsVoices" xml:space="preserve"><value>Não há vozes ElevenLabs para este idioma no serviço configurado. Escolha a voz do navegador ou outro idioma.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Não há vozes do navegador para este idioma. Escolha ElevenLabs ou instale uma voz no dispositivo.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>Total: {0} créditos de IA ({1} por segmento de áudio).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Configurações de voz</value></data>
   <data name="Speech.Rate" xml:space="preserve"><value>{0} créditos de IA por segmento de áudio. Salvar aceita esta tarifa.</value></data>
   <data name="Speech.Estimate" xml:space="preserve"><value>Total estimado: {0} créditos de IA</value></data>
-  <data name="Speech.ReviewRate" xml:space="preserve"><value>Revise e salve as configurações de voz para aceitar a tarifa atual do Azure antes da leitura.</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>Revise e salve as configurações de voz para aceitar a tarifa atual do ElevenLabs antes da leitura.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Sua voz salva está indisponível. Escolha outra nas configurações de voz.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Usa créditos de IA</value></data>
+  <data name="Auth.SocialSignupUnavailable" xml:space="preserve"><value>O cadastro está temporariamente indisponível. Usuários existentes ainda podem entrar.</value></data>
+  <data name="Usage.Title" xml:space="preserve"><value>Uso da conta</value></data>
+  <data name="Usage.Help" xml:space="preserve"><value>Exclua conteúdo salvo para liberar espaço. O conteúdo existente é mantido ao atingir um limite.</value></data>
+  <data name="Usage.LimitReached" xml:space="preserve"><value>Seu limite de armazenamento foi atingido. Abra Uso da conta para liberar espaço.</value></data>
+  <data name="Usage.SiteFull" xml:space="preserve"><value>O armazenamento do Glosify está cheio. Tente novamente mais tarde.</value></data>
+  <data name="Usage.Resource" xml:space="preserve"><value>Recurso</value></data>
+  <data name="Usage.Used" xml:space="preserve"><value>Usado</value></data>
+  <data name="Usage.Reserved" xml:space="preserve"><value>Reservado</value></data>
+  <data name="Usage.Maximum" xml:space="preserve"><value>Limite</value></data>
+  <data name="Usage.DeleteHistory" xml:space="preserve"><value>Excluir histórico de prática</value></data>
+  <data name="Usage.HistoryHelp" xml:space="preserve"><value>Exclua tentativas de quizzes e histórico de revisões para liberar espaço. Os cartões e seus agendamentos de estudo são mantidos.</value></data>
+  <data name="Auth.SignupsClosed" xml:space="preserve"><value>Novos cadastros estão temporariamente fechados. Usuários existentes ainda podem entrar.</value></data>
+  <data name="Auth.SignupsLimited" xml:space="preserve"><value>O limite de novas contas foi atingido. Tente novamente mais tarde.</value></data>
 </root>

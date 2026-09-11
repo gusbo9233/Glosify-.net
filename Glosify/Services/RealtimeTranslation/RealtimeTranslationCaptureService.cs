@@ -12,22 +12,25 @@ public sealed class RealtimeTranslationCaptureService : IRealtimeTranslationCapt
     private readonly GlosifyContext _context;
     private readonly AdministratorAccess _administratorAccess;
     private readonly TimeProvider _timeProvider;
+    private readonly bool _captureContent;
 
     public RealtimeTranslationCaptureService(
         GlosifyContext context,
         AdministratorAccess administratorAccess,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider,
+        Microsoft.Extensions.Options.IOptions<Glosify.Services.Ai.Assistant.AssistantAnalyticsOptions>? analytics = null)
     {
         _context = context;
         _administratorAccess = administratorAccess;
         _timeProvider = timeProvider;
+        _captureContent = analytics?.Value.CaptureContent ?? false;
     }
 
     public async Task<bool> IsAdminUserAsync(
         string userId,
         CancellationToken cancellationToken = default)
     {
-        return _administratorAccess.IsAdminUser(userId)
+        return _captureContent && _administratorAccess.IsAdminUser(userId)
             && await _context.Users.AnyAsync(user => user.Id == userId, cancellationToken);
     }
 

@@ -1,3 +1,7 @@
+using Glosify.Data;
+using Glosify.Models.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text.RegularExpressions;
@@ -78,6 +82,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
     private async Task<IBrowserContext> NewObservedContextAsync(BrowserNewContextOptions options)
     {
+        options.ExtraHTTPHeaders = new Dictionary<string, string> { ["X-Forwarded-For"] = TestClientIp };
         var context = await _browser!.NewContextAsync(options);
         // Web fonts are an external presentation dependency, not part of the application
         // contract exercised by these journeys. Stub their stylesheets so the observer can
@@ -328,11 +333,30 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
     [BrowserFact]
     [Trait("Category", "Browser")]
-    public async Task RegisterLoginLogoutAndProtectedRedirect()
+    public async Task AccountUsageShowsCurrentCountsAndAllowsHistoryDeletion()
+    {
+        await RegisterAndSelectPolishAsync();
+        await CreateQuizWithWordAsync();
+        await Page.GotoAsync("/account/usage");
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Account usage" })).ToBeVisibleAsync();
+        var row = Page.Locator("tbody tr").Filter(new() { HasTextRegex = new Regex("^quizzes", RegexOptions.IgnoreCase) });
+        await Expect(row.GetByRole(AriaRole.Cell).Nth(1)).ToHaveTextAsync("1");
+        await Expect(row.GetByRole(AriaRole.Cell).Nth(2)).ToHaveTextAsync("0");
+        await Expect(row.GetByRole(AriaRole.Cell).Nth(3)).ToHaveTextAsync("1,000");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Delete practice history" }).ClickAsync();
+        await Expect(Page).ToHaveURLAsync(new Regex("/account/usage$", RegexOptions.IgnoreCase));
+        await Expect(row.GetByRole(AriaRole.Cell).Nth(1)).ToHaveTextAsync("1");
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task SocialOnlyRegistrationPreservesExistingPasswordLoginAndProtectedRedirect()
     {
         await Page.GotoAsync("/Quizzes");
         await Expect(Page).ToHaveURLAsync(new Regex("/login", RegexOptions.IgnoreCase));
 
+        await Page.GotoAsync("/Account/Register");
+        await Expect(Page.Locator("input[type=password]")).ToHaveCountAsync(0);
         var credentials = await RegisterAsync();
         await AssertLanguageCatalogSupportsSearchKeyboardMobileAndNoJavaScriptSelectionAsync();
         await Page.GetByRole(AriaRole.Button, new() { Name = "Log out" }).ClickAsync();
@@ -814,12 +838,11 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
         var email = $"sv-e2e-{Guid.NewGuid():N}@example.test";
         const string password = "Portfolio!123";
-        await RouteRegistrationAsTestClientAsync();
-        await Page.GotoAsync("/Account/Register");
+        await SeedExistingAccountAsync(email, password, "sv-SE");
+        await Page.GotoAsync("/login");
         await Page.GetByLabel("E-postadress").FillAsync(email);
         await Page.GetByLabel("Lösenord", new() { Exact = true }).FillAsync(password);
-        await Page.GetByLabel("Bekräfta lösenord").FillAsync(password);
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Skapa konto" }).ClickAsync();
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Logga in" }).ClickAsync();
         await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
 
         await using var otherDevice = await NewObservedContextAsync(new BrowserNewContextOptions { BaseURL = BaseUrl });
@@ -883,25 +906,28 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
     {
         var email = $"e2e-{Guid.NewGuid():N}@example.test";
         const string password = "Portfolio!123";
-        await RouteRegistrationAsTestClientAsync();
-        await Page.GotoAsync("/Account/Register");
+        await SeedExistingAccountAsync(email, password);
+        await Page.GotoAsync("/login");
         await Page.GetByLabel("Email Address").FillAsync(email);
         await Page.GetByLabel("Password", new() { Exact = true }).FillAsync(password);
-        await Page.GetByLabel("Confirm Password").FillAsync(password);
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Create Account" }).ClickAsync();
-        await Expect(Page).Not.ToHaveURLAsync(new Regex("/Account/Register", RegexOptions.IgnoreCase));
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Log In" }).ClickAsync();
+        await Expect(Page).Not.ToHaveURLAsync(new Regex("/login", RegexOptions.IgnoreCase));
         return (email, password);
     }
 
-    private Task RouteRegistrationAsTestClientAsync() =>
-        Page.RouteAsync("**/Account/Register*", route =>
-        {
-            var headers = new Dictionary<string, string>(route.Request.Headers, StringComparer.OrdinalIgnoreCase)
-            {
-                ["X-Forwarded-For"] = TestClientIp,
-            };
-            return route.FallbackAsync(new RouteFallbackOptions { Headers = headers });
-        });
+    private static async Task SeedExistingAccountAsync(string email, string password, string? culture = null)
+    {
+        // The authenticated loopback handshake has already succeeded. Seed the
+        // explicit test database directly; production signup stays closed.
+        var connection = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? throw new InvalidOperationException("Browser account fixtures require an explicit test SQL connection.");
+        await using var db = new GlosifyContext(new DbContextOptionsBuilder<GlosifyContext>().UseSqlServer(connection).Options);
+        var user = new ApplicationUser { UserName = email, NormalizedUserName = email.ToUpperInvariant(),
+            Email = email, NormalizedEmail = email.ToUpperInvariant(), EmailConfirmed = true,
+            DisplayCulture = culture, SecurityStamp = Guid.NewGuid().ToString() };
+        user.PasswordHash = new PasswordHasher<ApplicationUser>().HashPassword(user, password);
+        db.Users.Add(user); await db.SaveChangesAsync();
+    }
 
     private async Task RegisterAndSelectPolishAsync()
     {

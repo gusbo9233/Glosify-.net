@@ -446,21 +446,34 @@
   <data name="Speech.Title" xml:space="preserve"><value>Läs upp</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Rösttjänst</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Webbläsarröst · inga Glosify-krediter</value></data>
-  <data name="Speech.Azure" xml:space="preserve"><value>Azure-röst · använder AI-krediter</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>Azure-röster drar Glosify AI-krediter för varje ljudsegment, även cachat ljud. Misslyckad syntes debiteras inte. Webbläsarröster är gratis.</value></data>
+  <data name="Speech.ElevenLabs" xml:space="preserve"><value>ElevenLabs-röst · använder AI-krediter</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs-röster drar Glosify AI-krediter för varje ljudsegment, även cachat ljud. Misslyckad syntes debiteras inte. Webbläsarröster är gratis.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Textens språk</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Välj ett språk</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Röst</value></data>
   <data name="Speech.Play" xml:space="preserve"><value>Spela upp</value></data>
   <data name="Speech.Loading" xml:space="preserve"><value>Läser in röster…</value></data>
-  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>Azure-röster kunde inte läsas in. Försök igen eller välj webbläsarröst.</value></data>
-  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>Azure-röster är inte tillgängliga för detta språk i den konfigurerade tjänsten. Välj webbläsarröst eller ett annat språk.</value></data>
-  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Ingen webbläsarröst är tillgänglig för detta språk. Välj Azure eller installera en röst på din enhet.</value></data>
+  <data name="Speech.ElevenLabsUnavailable" xml:space="preserve"><value>ElevenLabs-röster kunde inte läsas in. Försök igen eller välj webbläsarröst.</value></data>
+  <data name="Speech.NoElevenLabsVoices" xml:space="preserve"><value>ElevenLabs-röster är inte tillgängliga för detta språk i den konfigurerade tjänsten. Välj webbläsarröst eller ett annat språk.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Ingen webbläsarröst är tillgänglig för detta språk. Välj ElevenLabs eller installera en röst på din enhet.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>Totalt: {0} AI-krediter ({1} per ljudsegment).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Talinställningar</value></data>
   <data name="Speech.Rate" xml:space="preserve"><value>{0} AI-krediter per ljudsegment. Spara för att godkänna priset.</value></data>
   <data name="Speech.Estimate" xml:space="preserve"><value>Beräknad totalsumma: {0} AI-krediter</value></data>
-  <data name="Speech.ReviewRate" xml:space="preserve"><value>Granska och spara talinställningarna för att godkänna det aktuella Azure-priset före uppläsning.</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>Granska och spara talinställningarna för att godkänna det aktuella ElevenLabs-priset före uppläsning.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Din sparade röst är inte tillgänglig. Välj en annan röst i talinställningarna.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Använder AI-krediter</value></data>
+  <data name="Auth.SocialSignupUnavailable" xml:space="preserve"><value>Registrering är tillfälligt stängd. Befintliga användare kan fortfarande logga in.</value></data>
+  <data name="Usage.Title" xml:space="preserve"><value>Kontots användning</value></data>
+  <data name="Usage.Help" xml:space="preserve"><value>Radera sparat innehåll för att frigöra utrymme. Befintligt innehåll behålls när en gräns nås.</value></data>
+  <data name="Usage.LimitReached" xml:space="preserve"><value>Din lagringsgräns har nåtts. Öppna Kontots användning för att frigöra utrymme.</value></data>
+  <data name="Usage.SiteFull" xml:space="preserve"><value>Glosifys lagringsutrymme är fullt. Försök igen senare.</value></data>
+  <data name="Usage.Resource" xml:space="preserve"><value>Resurs</value></data>
+  <data name="Usage.Used" xml:space="preserve"><value>Använt</value></data>
+  <data name="Usage.Reserved" xml:space="preserve"><value>Reserverat</value></data>
+  <data name="Usage.Maximum" xml:space="preserve"><value>Gräns</value></data>
+  <data name="Usage.DeleteHistory" xml:space="preserve"><value>Radera övningshistorik</value></data>
+  <data name="Usage.HistoryHelp" xml:space="preserve"><value>Radera sparade quizförsök och repetitionshistorik för att frigöra utrymme. Korten och deras aktuella studiescheman behålls.</value></data>
+  <data name="Auth.SignupsClosed" xml:space="preserve"><value>Nyregistrering är tillfälligt stängd. Befintliga användare kan fortfarande logga in.</value></data>
+  <data name="Auth.SignupsLimited" xml:space="preserve"><value>Gränsen för nya konton har nåtts. Försök igen senare.</value></data>
 </root>

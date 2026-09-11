@@ -4,6 +4,8 @@ using Glosify.Models.Library;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Glosify.Services.Abuse;
+using Microsoft.Extensions.Options;
 
 namespace Glosify.Data;
 
@@ -12,9 +14,32 @@ namespace Glosify.Data;
 /// </summary>
 public class GlosifyContext : IdentityDbContext<ApplicationUser>
 {
-    public GlosifyContext(DbContextOptions<GlosifyContext> options)
+    public GlosifyContext(DbContextOptions<GlosifyContext> options, IOptions<AbuseOptions>? abuse = null,
+        RequestResourceReservations? requests = null)
         : base(options)
     {
+        AbuseLimits = abuse?.Value ?? new();
+        RequireAccountingReady = abuse is not null;
+        EnforceAccounting = abuse is not null;
+        RequestReservations = requests;
+    }
+
+    internal AbuseOptions AbuseLimits { get; }
+    internal bool RequireAccountingReady { get; }
+    internal bool EnforceAccounting { get; }
+    internal RequestResourceReservations? RequestReservations { get; }
+    internal bool KeepResourceReservation { get; set; }
+    internal bool AccountingBypass { get; set; }
+    internal (Guid Id, string UserId)? ClaimedResourceReservation { get; set; }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess) =>
+        SaveChangesAsync(acceptAllChangesOnSuccess).GetAwaiter().GetResult();
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        try { return await ResourceAccounting.SaveAsync(this, () => base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken), cancellationToken); }
+        catch (ResourceQuotaException) { ChangeTracker.Clear(); throw; }
+        finally { ClaimedResourceReservation = null; KeepResourceReservation = false; }
     }
 
     public DbSet<Quiz> Quizzes { get; set; }

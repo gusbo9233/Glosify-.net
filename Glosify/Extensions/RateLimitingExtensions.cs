@@ -5,13 +5,12 @@ namespace Glosify.Extensions;
 public static class RateLimitingExtensions
 {
     /// <summary>
-    /// Per-endpoint rate limits. Everything not named here is unlimited.
+    /// Dedicated endpoint policies plus shared authenticated mutation limits.
     /// </summary>
     public static IServiceCollection AddGlosifyRateLimiting(this IServiceCollection services)
     {
-        // Rate limiting: strict on credential endpoints (per IP), moderate on the AI
-        // assistant (per user), unlimited elsewhere. Counts only POSTs on auth paths so
-        // rendering the login page never trips the limiter.
+        // Credential POSTs and OAuth flows use IP limits. Merely rendering a
+        // password login page does not consume the credential limit.
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -34,11 +33,13 @@ public static class RateLimitingExtensions
                 }
 
                 var isAuthPath = path.StartsWithSegments("/login")
-                    || path.StartsWithSegments("/Account")
+                    || path.StartsWithSegments("/Account") && !path.StartsWithSegments("/account/usage")
                     || path.StartsWithSegments("/api/auth")
                     || path.StartsWithSegments("/api/extension-auth")
                     || path.StartsWithSegments("/Identity/Account");
-                if (isAuthPath && HttpMethods.IsPost(context.Request.Method))
+                var isOAuth = path.Value?.Contains("ExternalLogin", StringComparison.OrdinalIgnoreCase) == true
+                    || path.StartsWithSegments("/api/auth/external") || IsOAuthProtocolCallback(path);
+                if (isOAuth || isAuthPath && HttpMethods.IsPost(context.Request.Method))
                 {
                     var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                     return RateLimitPartition.GetFixedWindowLimiter($"auth:{ip}", _ => new FixedWindowRateLimiterOptions
@@ -215,7 +216,56 @@ public static class RateLimitingExtensions
 
                 return RateLimitPartition.GetNoLimiter("default");
             });
+            var mutations = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            {
+                var path = context.Request.Path.Value ?? "";
+                if (context.User.Identity?.IsAuthenticated != true || !IsMutation(context.Request.Method)
+                    || path.StartsWith("/api/auth", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/Account", StringComparison.OrdinalIgnoreCase) && !path.StartsWith("/account/usage", StringComparison.OrdinalIgnoreCase)
+                    || path.Contains("webhook", StringComparison.OrdinalIgnoreCase)
+                    || path.Contains("RealtimeTranslation", StringComparison.OrdinalIgnoreCase)
+                    || path.Contains("realtime-translation", StringComparison.OrdinalIgnoreCase))
+                    return RateLimitPartition.GetNoLimiter("other");
+                var user = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+                return RateLimitPartition.GetFixedWindowLimiter(user, _ => new FixedWindowRateLimiterOptions
+                    { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 });
+            });
+            var heavy = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            {
+                var path = context.Request.Path.Value ?? "";
+                if (context.User.Identity?.IsAuthenticated != true || !IsMutation(context.Request.Method)
+                    || !(path.Contains("import", StringComparison.OrdinalIgnoreCase) || path.Contains("copy", StringComparison.OrdinalIgnoreCase)))
+                    return RateLimitPartition.GetNoLimiter("other");
+                var user = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+                return RateLimitPartition.GetFixedWindowLimiter(user, _ => new FixedWindowRateLimiterOptions
+                    { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 });
+            });
+            var concurrency = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            {
+                var path = context.Request.Path.Value?.TrimEnd('/') ?? "";
+                var pdf = path.Equals("/Books/Upload", StringComparison.OrdinalIgnoreCase) || path.Equals("/api/books", StringComparison.OrdinalIgnoreCase);
+                var tts = path.Equals("/api/tts", StringComparison.OrdinalIgnoreCase);
+                if (!HttpMethods.IsPost(context.Request.Method) || !(pdf || tts) || context.User.Identity?.IsAuthenticated != true)
+                    return RateLimitPartition.GetNoLimiter("other");
+                var user = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+                return RateLimitPartition.GetConcurrencyLimiter((pdf ? "pdf:" : "tts:") + user,
+                    _ => new ConcurrencyLimiterOptions { PermitLimit = pdf ? 1 : 2, QueueLimit = 0 });
+            });
+            options.GlobalLimiter = PartitionedRateLimiter.CreateChained(options.GlobalLimiter, mutations, heavy, concurrency);
+            options.OnRejected = async (rejected, ct) =>
+            {
+                Glosify.Services.Abuse.AbuseMetrics.RecordQuota("request_throttle", false);
+                var retry = rejected.Lease.TryGetMetadata(MetadataName.RetryAfter, out var duration) ? duration : TimeSpan.FromSeconds(1);
+                rejected.HttpContext.Response.Headers.RetryAfter = Math.Max(1, (long)Math.Ceiling(retry.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                await Glosify.Infrastructure.Api.GlosifyProblemDetails.WriteAsync(rejected.HttpContext, 429, "rate_limited", "Too many requests. Please try again later.");
+            };
         });
         return services;
     }
+
+    private static bool IsMutation(string method) => HttpMethods.IsPost(method) || HttpMethods.IsPut(method)
+        || HttpMethods.IsPatch(method) || HttpMethods.IsDelete(method);
+
+    public static bool IsOAuthProtocolCallback(PathString path) => path.StartsWithSegments("/signin-google")
+        || path.StartsWithSegments("/signin-microsoft");
 }

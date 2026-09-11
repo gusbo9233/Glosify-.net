@@ -3,31 +3,33 @@ using Glosify.Models.Library;
 using Glosify.Services.Language;
 using Glosify.Services.Storage;
 using Microsoft.EntityFrameworkCore;
+using Glosify.Services.Abuse;
 
 namespace Glosify.Services.Books;
 
 public sealed class BookDocumentService : IBookDocumentService
 {
-    private const long MaxPdfBytes = 25 * 1024 * 1024;
-
     private readonly GlosifyContext _context;
     private readonly IBookFileStorage _storage;
     private readonly IPdfTextExtractionService _pdfTextExtraction;
     private readonly ILanguageContext _languageContext;
     private readonly ILogger<BookDocumentService> _logger;
+    private readonly ResourceQuotaService? _quotas;
 
     public BookDocumentService(
         GlosifyContext context,
         IBookFileStorage storage,
         IPdfTextExtractionService pdfTextExtraction,
         ILanguageContext languageContext,
-        ILogger<BookDocumentService> logger)
+        ILogger<BookDocumentService> logger,
+        ResourceQuotaService? quotas = null)
     {
         _context = context;
         _storage = storage;
         _pdfTextExtraction = pdfTextExtraction;
         _languageContext = languageContext;
         _logger = logger;
+        _quotas = quotas;
     }
 
     public async Task<IReadOnlyList<BookDocument>> GetUserBooksAsync(
@@ -59,26 +61,34 @@ public sealed class BookDocumentService : IBookDocumentService
         var documentId = Guid.NewGuid();
         var blobName = $"users/{userId}/books/{documentId}.pdf";
         var now = DateTimeOffset.UtcNow;
+        Guid? reservation = _quotas is null ? null : await _quotas.ReserveAsync(userId,
+            new() { ["books"] = 1, ["pdf_bytes"] = file.Length, ["content_bytes"] = 12L * 1024 * 1024 },
+            cancellationToken, blobName);
 
         // ASP.NET has already buffered the form file (memory or temp file), so each
         // OpenReadStream call is an independent seekable view; copying the whole PDF
         // into a MemoryStream here just doubled the memory cost of an upload.
         IReadOnlyList<ExtractedPdfPage> pages;
+        var uploadAttempted = false;
         try
         {
-            await using (var uploadStream = file.OpenReadStream())
-            {
-                await _storage.UploadAsync(uploadStream, blobName, "application/pdf", cancellationToken);
-            }
-
             await using (var extractionStream = file.OpenReadStream())
             {
                 pages = await _pdfTextExtraction.ExtractPagesAsync(extractionStream, cancellationToken);
             }
+            await using (var uploadStream = file.OpenReadStream())
+            {
+                uploadAttempted = true;
+                using var uploadTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                uploadTimeout.CancelAfter(TimeSpan.FromSeconds(60));
+                await _storage.UploadAsync(uploadStream, blobName, "application/pdf", uploadTimeout.Token);
+            }
         }
         catch
         {
-            await TryDeleteUploadedBlobAsync(blobName);
+            var deleted = !uploadAttempted || await TryDeleteUploadedBlobAsync(blobName);
+            if (deleted && reservation.HasValue && _quotas is not null)
+                await _quotas.ReleaseAsync(reservation.Value, userId, CancellationToken.None);
             throw;
         }
 
@@ -91,6 +101,7 @@ public sealed class BookDocumentService : IBookDocumentService
             BlobName = blobName,
             Language = _languageContext.CurrentLanguage,
             PageCount = pages.Count,
+            FileSizeBytes = file.Length,
             ProcessingStatus = "Ready",
             CreatedAt = now,
             UpdatedAt = now,
@@ -112,6 +123,7 @@ public sealed class BookDocumentService : IBookDocumentService
         try
         {
             _context.BookDocuments.Add(document);
+            if (reservation.HasValue) _context.ClaimedResourceReservation = (reservation.Value, userId);
             await _context.SaveChangesAsync(cancellationToken);
             return document;
         }
@@ -119,7 +131,9 @@ public sealed class BookDocumentService : IBookDocumentService
         {
             // Blob storage and SQL cannot share a transaction. Compensate the completed
             // upload when persistence fails so an invisible orphan is not left behind.
-            await TryDeleteUploadedBlobAsync(blobName);
+            var deleted = await TryDeleteUploadedBlobAsync(blobName);
+            if (deleted && reservation.HasValue && _quotas is not null)
+                await _quotas.ReleaseAsync(reservation.Value, userId, CancellationToken.None);
             throw;
         }
     }
@@ -186,6 +200,9 @@ public sealed class BookDocumentService : IBookDocumentService
 
         // Pages and their cached translations cascade from the document.
         _context.BookDocuments.Remove(document);
+        var cleanup = new BlobCleanupRequest { Id = Guid.NewGuid(), UserId = userId,
+            BlobName = document.BlobName, Bytes = document.FileSizeBytes, CreatedAt = DateTimeOffset.UtcNow };
+        _context.Add(cleanup);
         await _context.SaveChangesAsync(cancellationToken);
 
         // Deliberately after the commit. A leftover blob is invisible and merely costs
@@ -194,6 +211,8 @@ public sealed class BookDocumentService : IBookDocumentService
         try
         {
             await _storage.DeleteIfExistsAsync(document.BlobName, CancellationToken.None);
+            _context.Remove(cleanup);
+            await _context.SaveChangesAsync(CancellationToken.None);
         }
         catch (Exception ex)
         {
@@ -207,17 +226,18 @@ public sealed class BookDocumentService : IBookDocumentService
         return true;
     }
 
-    private static void ValidatePdf(IFormFile? file)
+    private void ValidatePdf(IFormFile? file)
     {
         if (file is null || file.Length == 0)
         {
             throw new ArgumentException("Choose a PDF file to upload.");
         }
 
-        if (file.Length > MaxPdfBytes)
+        if (file.Length > _context.AbuseLimits.MaxPdfBytes)
         {
-            throw new ArgumentException("Choose a PDF under 25 MB.");
+            throw new ArgumentException($"Choose a PDF no larger than {_context.AbuseLimits.MaxPdfBytes / 1048576m:0.##} MiB.");
         }
+        if (Path.GetFileName(file.FileName).Length > 255) throw new ArgumentException("The PDF filename is too long.");
 
         var hasPdfExtension = string.Equals(
             Path.GetExtension(file.FileName),
@@ -234,11 +254,12 @@ public sealed class BookDocumentService : IBookDocumentService
         }
     }
 
-    private async Task TryDeleteUploadedBlobAsync(string blobName)
+    private async Task<bool> TryDeleteUploadedBlobAsync(string blobName)
     {
         try
         {
             await _storage.DeleteIfExistsAsync(blobName, CancellationToken.None);
+            return true;
         }
         catch (Exception cleanupException)
         {
@@ -246,6 +267,7 @@ public sealed class BookDocumentService : IBookDocumentService
                 cleanupException,
                 "Could not compensate failed book upload by deleting blob {BlobName}.",
                 blobName);
+            return false;
         }
     }
 }

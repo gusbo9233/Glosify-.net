@@ -55,7 +55,7 @@ public class BooksApiController : ApiControllerBase
         {
             throw;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not Glosify.Services.Abuse.ResourceQuotaException)
         {
             _logger.LogWarning(ex, "Book upload failed for user {UserId}", User.GetUserId());
             return UnprocessableEntity("The PDF could not be processed. Try a text-based PDF.");

@@ -6,6 +6,13 @@ namespace Glosify.Infrastructure.Api;
 
 public static class GlosifyProblemDetails
 {
+    public static Task WriteAsync(HttpContext context, int status, string code, string detail)
+    {
+        context.Response.StatusCode = status;
+        return context.Response.WriteAsJsonAsync(Create(context, status, code, detail),
+            options: (System.Text.Json.JsonSerializerOptions?)null, contentType: "application/problem+json",
+            cancellationToken: context.RequestAborted);
+    }
     public static ObjectResult Result(
         HttpContext httpContext,
         int statusCode,

@@ -9,7 +9,26 @@ public sealed class ApiExceptionFilter(
 {
     public void OnException(ExceptionContext context)
     {
-        if (context.HttpContext.GetEndpoint()?.Metadata.GetMetadata<IApiBehaviorMetadata>() is null
+        var request = context.HttpContext.Request;
+        var expectsJson = context.HttpContext.GetEndpoint()?.Metadata.GetMetadata<IApiBehaviorMetadata>() is not null
+            || request.HasJsonContentType() || request.Headers.Accept.ToString().Contains("application/json", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(request.Headers["X-Requested-With"], "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+        if (context.Exception is Glosify.Services.Abuse.SignupLimitException signup)
+            context.HttpContext.Response.Headers.RetryAfter = Math.Max(1, (long)(signup.RetryAt - DateTimeOffset.UtcNow).TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (!expectsJson
+            && context.Exception is Glosify.Services.Abuse.ResourceQuotaException or Glosify.Services.Abuse.SignupLimitException)
+        {
+            var text = new Glosify.Localization.UiTextStringLocalizer();
+            var quota = context.Exception as Glosify.Services.Abuse.ResourceQuotaException;
+            var message = quota is null ? context.Exception.Message : text[quota.StatusCode == 503 ? "Usage.SiteFull" : "Usage.LimitReached"].Value;
+            context.Result = new Microsoft.AspNetCore.Mvc.ViewResult { ViewName = "ResourceLimit",
+                StatusCode = quota?.StatusCode ?? 429,
+                ViewData = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary<string>(
+                    new Microsoft.AspNetCore.Mvc.ModelBinding.EmptyModelMetadataProvider(), context.ModelState) { Model = message } };
+            context.ExceptionHandled = true;
+            return;
+        }
+        if (!expectsJson
             || context.Exception is OperationCanceledException
                 && context.HttpContext.RequestAborted.IsCancellationRequested)
         {
@@ -40,7 +59,8 @@ public sealed class ApiExceptionFilter(
                 ApiErrorCodes.Unexpected,
                 "An unexpected error occurred. Please try again.");
         }
-        else if (error.Value.StatusCode >= StatusCodes.Status500InternalServerError)
+        else if (error.Value.StatusCode >= StatusCodes.Status500InternalServerError
+            && context.Exception is not Glosify.Services.Abuse.ResourceQuotaException)
         {
             logger.LogWarning(context.Exception, "API dependency failure in {Action}", context.ActionDescriptor.DisplayName);
         }

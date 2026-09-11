@@ -2,6 +2,11 @@ namespace Glosify.Services.Speech;
 
 public sealed class SpeechOptions
 {
+    public bool Enabled { get; set; }
+    public string ApiKey { get; set; } = string.Empty;
+    public string DefaultVoiceId { get; set; } = "JBFqnCBsd6RMkjVDRZzb";
+    public List<string> AllowedVoiceIds { get; set; } = ["JBFqnCBsd6RMkjVDRZzb"];
+    public long MemoryCacheBytes { get; set; } = 64L * 1024 * 1024;
     public const string SectionName = "Speech";
 
     // Endpoint and ResourceId enable keyless Microsoft Entra authentication.

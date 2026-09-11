@@ -190,10 +190,10 @@ public class CollectionService : ICollectionService
             return false;
         }
 
-        await _context.Quizzes
+        var quizzes = await _context.Quizzes
             .Where(q => q.CollectionId == collectionId && q.UserId == userId)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(q => q.CollectionId, (Guid?)null), cancellationToken);
+            .ToListAsync(cancellationToken);
+        foreach (var quiz in quizzes) quiz.CollectionId = null;
 
         _context.Collections.Remove(collection);
         await _context.SaveChangesAsync(cancellationToken);

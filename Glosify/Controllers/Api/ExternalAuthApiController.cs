@@ -77,6 +77,10 @@ public class ExternalAuthApiController : ControllerBase
             return AppRedirect("error=Google sign-in failed.");
         }
 
+        if (info.AuthenticationProperties?.Items.TryGetValue(ChallengePropertyKey, out var verifiedChallenge) != true
+            || !Pkce.IsValidChallenge(verifiedChallenge))
+            return AppRedirect("error=Sign-in could not be verified. Please try again.");
+
         var resolution = await _externalAccounts.ResolveOrCreateAsync(info);
         if (!resolution.Succeeded)
         {

@@ -1606,21 +1606,34 @@
   <data name="Speech.Title" xml:space="preserve"><value>القراءة بصوت عالٍ</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>خدمة الصوت</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>صوت المتصفح · دون رصيد Glosify</value></data>
-  <data name="Speech.Azure" xml:space="preserve"><value>صوت Azure · يستهلك رصيد الذكاء الاصطناعي</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>يخصم صوت Azure من رصيد الذكاء الاصطناعي Glosify لكل مقطع صوتي، بما في ذلك الصوت المخزن مؤقتًا. لا يتم الخصم عند فشل توليد الصوت. صوت المتصفح مجاني.</value></data>
+  <data name="Speech.ElevenLabs" xml:space="preserve"><value>صوت ElevenLabs · يستهلك رصيد الذكاء الاصطناعي</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>يخصم صوت ElevenLabs من رصيد الذكاء الاصطناعي Glosify لكل مقطع صوتي، بما في ذلك الصوت المخزن مؤقتًا. لا يتم الخصم عند فشل توليد الصوت. صوت المتصفح مجاني.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>لغة النص</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>اختر لغة</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>الصوت</value></data>
   <data name="Speech.Play" xml:space="preserve"><value>تشغيل</value></data>
   <data name="Speech.Loading" xml:space="preserve"><value>جارٍ تحميل الأصوات…</value></data>
-  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>تعذّر تحميل أصوات Azure. أعد المحاولة أو اختر صوت المتصفح.</value></data>
-  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>لا تتوفر أصوات Azure لهذه اللغة في الخدمة المضبوطة. اختر صوت المتصفح أو لغة أخرى.</value></data>
-  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>لا يتوفر صوت متصفح لهذه اللغة. اختر Azure أو ثبّت صوتًا على جهازك.</value></data>
+  <data name="Speech.ElevenLabsUnavailable" xml:space="preserve"><value>تعذّر تحميل أصوات ElevenLabs. أعد المحاولة أو اختر صوت المتصفح.</value></data>
+  <data name="Speech.NoElevenLabsVoices" xml:space="preserve"><value>لا تتوفر أصوات ElevenLabs لهذه اللغة في الخدمة المضبوطة. اختر صوت المتصفح أو لغة أخرى.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>لا يتوفر صوت متصفح لهذه اللغة. اختر ElevenLabs أو ثبّت صوتًا على جهازك.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>الإجمالي: {0} من رصيد الذكاء الاصطناعي ({1} لكل مقطع صوتي).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>إعدادات النطق</value></data>
   <data name="Speech.Rate" xml:space="preserve"><value>{0} من أرصدة الذكاء الاصطناعي لكل مقطع صوتي. الحفظ يعني قبول هذا السعر.</value></data>
   <data name="Speech.Estimate" xml:space="preserve"><value>الإجمالي التقديري: {0} من أرصدة الذكاء الاصطناعي</value></data>
-  <data name="Speech.ReviewRate" xml:space="preserve"><value>راجع إعدادات النطق واحفظها لقبول سعر Azure الحالي قبل القراءة.</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>راجع إعدادات النطق واحفظها لقبول سعر ElevenLabs الحالي قبل القراءة.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>الصوت المحفوظ غير متاح. اختر صوتًا آخر في إعدادات النطق.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>يستخدم أرصدة الذكاء الاصطناعي</value></data>
+  <data name="Auth.SocialSignupUnavailable" xml:space="preserve"><value>التسجيل غير متاح مؤقتًا. لا يزال بإمكان المستخدمين الحاليين تسجيل الدخول.</value></data>
+  <data name="Usage.Title" xml:space="preserve"><value>استخدام الحساب</value></data>
+  <data name="Usage.Help" xml:space="preserve"><value>احذف المحتوى المحفوظ لتوفير مساحة. يُحتفظ بالمحتوى الموجود عند بلوغ الحد.</value></data>
+  <data name="Usage.LimitReached" xml:space="preserve"><value>بلغت حد التخزين. افتح استخدام الحساب لتوفير مساحة.</value></data>
+  <data name="Usage.SiteFull" xml:space="preserve"><value>بلغت سعة تخزين Glosify حدها. حاول لاحقًا.</value></data>
+  <data name="Usage.Resource" xml:space="preserve"><value>المورد</value></data>
+  <data name="Usage.Used" xml:space="preserve"><value>المستخدم</value></data>
+  <data name="Usage.Reserved" xml:space="preserve"><value>المحجوز</value></data>
+  <data name="Usage.Maximum" xml:space="preserve"><value>الحد</value></data>
+  <data name="Usage.DeleteHistory" xml:space="preserve"><value>حذف سجل التدريب</value></data>
+  <data name="Usage.HistoryHelp" xml:space="preserve"><value>احذف محاولات الاختبارات وسجل المراجعة لتوفير مساحة. ستُحفظ البطاقات وجداول دراستها الحالية.</value></data>
+  <data name="Auth.SignupsClosed" xml:space="preserve"><value>التسجيل الجديد مغلق مؤقتًا. لا يزال بإمكان المستخدمين الحاليين تسجيل الدخول.</value></data>
+  <data name="Auth.SignupsLimited" xml:space="preserve"><value>تم بلوغ حد الحسابات الجديدة. يُرجى المحاولة لاحقًا.</value></data>
 </root>

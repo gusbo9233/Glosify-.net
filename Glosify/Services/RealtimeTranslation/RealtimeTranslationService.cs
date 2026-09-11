@@ -21,6 +21,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<RealtimeTranslationService> _logger;
     private readonly IKeyedAsyncLock _keyedLock;
+    private readonly Glosify.Services.Abuse.ResourceQuotaService? _quotas;
 
     public RealtimeTranslationService(
         GlosifyContext context,
@@ -32,7 +33,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         ICreditPricingResolver pricing,
         TimeProvider timeProvider,
         ILogger<RealtimeTranslationService> logger,
-        IKeyedAsyncLock keyedLock)
+        IKeyedAsyncLock keyedLock,
+        Glosify.Services.Abuse.ResourceQuotaService? quotas = null)
     {
         _context = context;
         _credits = credits;
@@ -44,6 +46,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         _timeProvider = timeProvider;
         _logger = logger;
         _keyedLock = keyedLock;
+        _quotas = quotas;
     }
 
     public async Task<RealtimeTranslationCatalog> GetCatalogAsync(
@@ -305,12 +308,21 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             };
 
             AiDurationCreditReservation reservation;
+            if (saveTranscript && _quotas is not null)
+            {
+                var charges = new Dictionary<string, long> { ["content_bytes"] = 2 * 1024 * 1024 };
+                if (!transcriptId.HasValue) charges["transcripts"] = 1;
+                session.StorageReservationId = await _quotas.ReserveAsync(userId, charges, cancellationToken,
+                    lifetime: TimeSpan.FromMinutes(_options.MaxSessionMinutes + 10));
+            }
             try
             {
                 reservation = await ReserveCreditsAsync(session, 1, cancellationToken);
             }
             catch (InsufficientAiCreditsException)
             {
+                if (session.StorageReservationId is { } storage && _quotas is not null)
+                    await _quotas.ReleaseAsync(storage, userId, CancellationToken.None);
                 RealtimeTranslationTelemetry.CreditFailures.Add(1);
                 throw;
             }
@@ -320,6 +332,11 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             _context.RealtimeTranslationSessions.Add(session);
             try
             {
+                if (session.StorageReservationId is { } storage)
+                {
+                    _context.ClaimedResourceReservation = (storage, userId);
+                    _context.KeepResourceReservation = true;
+                }
                 await _context.SaveChangesAsync(cancellationToken);
             }
             catch
@@ -331,6 +348,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                     _context.Entry(transcript).State = EntityState.Detached;
                 }
                 await _credits.ReleaseAsync(reservation.ReservationId, cancellationToken);
+                if (session.StorageReservationId is { } storage && _quotas is not null)
+                    await _quotas.ReleaseAsync(storage, userId, CancellationToken.None);
                 throw;
             }
 
@@ -605,6 +624,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         session.EndedAt = now;
         session.LastHeartbeatAt = now;
         await _context.SaveChangesAsync(cancellationToken);
+        if (session.StorageReservationId is { } storage && _quotas is not null)
+            await _quotas.ReleaseAsync(storage, session.UserId, CancellationToken.None);
         RealtimeTranslationTelemetry.SessionsEnded.Add(
             1,
             new KeyValuePair<string, object?>("status", terminalStatus));

@@ -100,6 +100,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 FullMode = BoundedChannelFullMode.Wait,
             })
             : null;
+        using var browserSendLock = new SemaphoreSlim(1, 1);
         Task? transcriptWriter = null;
         Task? captureWriter = null;
         var captureRecorder = captures is null
@@ -117,11 +118,13 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 authorization,
                 relayToken);
             var billing = new RealtimeTranslationRelayBillingState(session.ChargedMinutes);
+            var storageWarning = new System.Runtime.CompilerServices.StrongBox<int>();
             if (transcripts is not null)
             {
                 transcriptWriter = WriteTranscriptsAsync(
                     authorization.SessionId,
                     transcripts.Reader,
+                    storageWarning, browserSocket, browserSendLock,
                     CancellationToken.None);
             }
             if (captures is not null)
@@ -153,6 +156,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 recognized.Reader,
                 transcripts?.Writer,
                 captureRecorder,
+                storageWarning, browserSendLock,
                 relayToken);
             var authorizationMonitor = _authorizationMonitor.MonitorAuthorizationAsync(
                 authorization,
@@ -324,6 +328,8 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         ChannelReader<RecognizedSpeechSegment> recognized,
         ChannelWriter<CapturedTranslationSegment>? transcripts,
         AdminCaptureRecorder? captureRecorder,
+        System.Runtime.CompilerServices.StrongBox<int> storageWarning,
+        SemaphoreSlim browserSendLock,
         CancellationToken cancellationToken)
     {
         var scheduler = new AdaptivePartialTranslationScheduler(
@@ -355,6 +361,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 token),
             async (segment, result, providerRequest, token) =>
             {
+
                 var bubbleUpdate = bubbleFinalizer.Apply(
                     segment.Sequence,
                     result.TranslatedText,
@@ -369,7 +376,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                         token);
                 }
                 await SendTranslationAsync(
-                    browserSocket,
+                    browserSocket, browserSendLock,
                     segment,
                     result,
                     bubbleUpdate,
@@ -422,7 +429,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
             || captureEnabled);
 
     private static async Task SendTranslationAsync(
-        WebSocket browserSocket,
+        WebSocket browserSocket, SemaphoreSlim browserSendLock,
         RecognizedSpeechSegment segment,
         TranslatedSubtitleSegment result,
         TranslationBubbleUpdate bubbleUpdate,
@@ -441,11 +448,12 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
             committedBubbles = bubbleUpdate.CommittedBubbles,
             pendingText = bubbleUpdate.PendingText,
         });
-        await browserSocket.SendAsync(
-            payload,
-            WebSocketMessageType.Text,
-            endOfMessage: true,
-            cancellationToken);
+        await browserSendLock.WaitAsync(cancellationToken);
+        try
+        {
+            await browserSocket.SendAsync(payload, WebSocketMessageType.Text, endOfMessage: true, cancellationToken);
+        }
+        finally { browserSendLock.Release(); }
 
         if (transcripts is not null && segment.IsFinal)
         {
@@ -519,11 +527,14 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
     private async Task WriteTranscriptsAsync(
         Guid sessionId,
         ChannelReader<CapturedTranslationSegment> reader,
+        System.Runtime.CompilerServices.StrongBox<int> storageWarning,
+        WebSocket browserSocket, SemaphoreSlim browserSendLock,
         CancellationToken cancellationToken)
     {
         var batch = new List<CapturedTranslationSegment>(20);
         await foreach (var segment in reader.ReadAllAsync(cancellationToken))
         {
+            if (Volatile.Read(ref storageWarning.Value) == 1) continue;
             batch.Add(segment);
             while (batch.Count < 20 && reader.TryRead(out var next))
             {
@@ -534,6 +545,11 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 using var scope = _scopeFactory.CreateScope();
                 var service = scope.ServiceProvider.GetRequiredService<IRealtimeTranslationTranscriptService>();
                 await service.AppendAsync(sessionId, batch, cancellationToken);
+            }
+            catch (Glosify.Services.Abuse.ResourceQuotaException)
+            {
+                Interlocked.Exchange(ref storageWarning.Value, 1);
+                await OpenAiTranslationRelay.SendTranscriptStorageWarningAsync(browserSocket, browserSendLock);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {

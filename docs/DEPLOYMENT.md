@@ -9,9 +9,10 @@ to avoid feedback on unfinished work.
 Copilot review is advisory: its comments do not count as an approval, replace
 CI, or establish that a finding is correct. Validate its findings against the
 current code, tests, migrations, configuration, and applicable primary
-documentation. A reviewed push to `master` applies a compatibility migration,
-deploys and readiness-checks the replacement application, then applies the
-destructive EF migration and checks readiness again.
+documentation. A reviewed push to `master` applies reviewed additive migrations before
+replacing the application, then verifies the deployed commit and readiness,
+including completion of resource accounting. Historical destructive retirements
+must already be complete.
 
 ## Required App Service settings
 
@@ -36,7 +37,7 @@ during rollout.
 
 Feature-specific settings remain required when those features are enabled:
 
-- Azure Speech endpoint/resource/region settings for server-side TTS;
+- An ElevenLabs API key, allowlisted voice IDs and a positive v3 character price for server-side TTS;
 - `RealtimeTranslation__Cloudflare__Endpoint` and
   `RealtimeTranslation__Cloudflare__ApiToken` for Scribe subtitle mode;
 - `RealtimeTranslation__ElevenLabs__ApiKey` for Original/Scribe modes and optional saved
@@ -69,7 +70,7 @@ and prices must be positive whole credits. Startup validation rejects invalid
 overrides before the application serves a misleading catalog.
 
 Managed identity is still used for supported Azure services such as Blob
-Storage, Azure Speech, and telemetry. OpenAI and the protected Cloudflare Worker
+Storage and telemetry. OpenAI, ElevenLabs and the protected Cloudflare Worker
 use server-side API credentials.
 
 During continuous speech, Scribe + Cloudflare normally translates the latest
@@ -96,13 +97,13 @@ partial cadence because they do not call a translation provider.
 
 ### Administrator Scribe capture
 
-Scribe sessions started by an account listed in `Admin__UserIds` automatically
-store an internal analysis trace in `RealtimeTranslationCaptureEvents`. This is
+When `AssistantAnalytics__CaptureContent=true` is explicitly enabled, Scribe
+sessions started by an account listed in `Admin__UserIds` store an internal analysis trace in `RealtimeTranslationCaptureEvents`. This is
 separate from the user-facing saved-transcript feature and does not capture
 ordinary accounts. Each trace contains the Scribe source partials and finals,
 every Cloudflare partial or final result, whether that result required a
-provider request, and every bubble finalized by the server. Caption text is
-stored only in this database table; logs and metrics remain text-free.
+provider request, and every bubble finalized by the server. Capture is disabled by default and retained for at most 30 days by maintenance.
+Caption text is stored only in this database table; logs and metrics remain text-free.
 
 Configure each administrator's immutable `AspNetUsers.Id` as an indexed App
 Service setting, for example `Admin__UserIds__0=<approved-account-id>`.
@@ -137,7 +138,7 @@ Application constants fix these routes:
 | Enhanced live subtitles | OpenAI realtime translation, `gpt-realtime-translate` |
 | Original live captions | ElevenLabs `scribe_v2_realtime` |
 | Scribe + Cloudflare subtitles | ElevenLabs `scribe_v2_realtime` + Cloudflare M2M100 |
-| Book text-to-speech | Azure Speech |
+| Book text-to-speech | ElevenLabs `eleven_v3` |
 
 `GenerativeAi__TimeoutSeconds` may override the default 180-second timeout. Do
 not add model names, alternate provider keys, agent pins, callback secrets, or
@@ -165,6 +166,15 @@ and the relay startup/heartbeat/session limits match the production policy.
 
 ## Database deployment
 
+The current release requires the historical retirement to be complete
+(`ClassroomRetirement__Complete=true`). Its additive abuse-control migration
+must run before artifact replacement because startup and request handling use
+those tables and columns. `/readyz` remains unhealthy until quota backfill
+completes. The previous application remains compatible with the added schema.
+Do not introduce future destructive migrations into this pre-deployment step;
+those need a separately reviewed staged rollout. The retirement procedure below
+records the prerequisites and recovery rules for the already completed rollout.
+
 The application does not migrate its schema at startup. Generate and review a
 migration locally, then verify:
 
@@ -173,7 +183,7 @@ dotnet ef migrations has-pending-model-changes --project Glosify
 dotnet ef migrations bundle --project Glosify --configuration Release
 ```
 
-The workflow first targets migration
+The historical retirement workflow first targeted migration
 `20260827093000_PrepareClassroomRetirement`, which detaches foreign keys from
 retired tables into retained Identity, quiz, and book tables without deleting
 data. Both the previous and replacement artifacts remain functional on that
@@ -287,24 +297,19 @@ setting as an emergency switch.
 
 ### Speech provider and voice selection
 
-Read-aloud controls use saved speech preferences directly. Explicit Speech settings buttons open the shared browser/Azure and voice editor. Save persists settings without playback; Cancel discards edits. Browser is the default. Preferences and rate acceptance are scoped to the signed-in account on this device. The provider is shared across features, voices are saved per provider/language, and reader language overrides are scoped to the book.
-Browser speech is the initial default and never calls the paid synthesis API.
-Azure failures are shown to the user; playback does not switch providers.
-Azure playback deducts user Glosify AI credits. `Speech:CreditsPerRequest` defaults
-to 1 credit per audio segment (up to `Speech:MaxTextLength`, currently 200
-characters). The reader shows the estimated total inline. Saving Azure settings accepts the displayed per-segment rate. Existing Azure preferences without an accepted rate and rate increases stop playback with an inline settings instruction. Each successful audio
-request, including a Blob-cache hit, is charged; failed synthesis releases its
-reservation. Stopping a queue prevents charges for segments not yet requested.
-The charged endpoint is now antiforgery-protected `POST /api/tts`; its response
-is `no-store`. Older GET callers must reload/update to use the current client. The
-request's `maxCredits` quote prevents a price increase from being charged without
-review. Speech uses the existing credit ledger, without a schema migration.
+Read-aloud settings offer browser speech and ElevenLabs v3. Browser speech is the
+initial default and requires no provider request. Old Azure preferences reset to
+browser speech; the user explicitly chooses paid ElevenLabs playback. Failures
+are shown without switching providers. Voice and rate preferences remain scoped
+to the signed-in account, language and reader book.
 
-`GET /api/tts/voices?lang=...` requires sign-in and lists standard neural voices
-for the chosen language from the configured Speech resource. The server caches
-that catalog for one hour and validates selected voice IDs against it before
-synthesis. Listing voices does not synthesize audio or require available paid
-budget. Languages without a voice in that resource remain selectable with
-browser speech when the device has a matching voice installed. The dialog also
-allows correcting the text's language before playback, independently of the
-learning-language selection.
+`POST /api/tts` retains antiforgery protection, audio output, the `maxCredits`
+quote and a `no-store` response. Each successful request costs one user credit,
+including memory-cache hits. Failed preparation releases user credits. Provider
+cost is reserved only for synthesis cache misses. `GET /api/tts/voices?lang=...`
+retains its response shape and lists configured, available ElevenLabs voices for
+supported v3 languages. Other languages expose the browser speech option.
+
+See [abuse controls and ElevenLabs rollout](ABUSE-PROTECTION.md) for required
+pricing, voice validation, durable quotas, migration/backfill, retention and the
+separate retired blob-cache cleanup command.

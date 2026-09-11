@@ -16,7 +16,7 @@ ASP.NET Core MVC + APIs
           +--> EF Core --> Azure SQL
           +--> OpenAI Responses API (gpt-5.6-luna)
           +--> OpenAI Realtime Translation (gpt-realtime-translate)
-          +--> Azure Speech / Translator
+          +--> ElevenLabs v3 / Scribe
           +--> ElevenLabs Scribe v2
           +--> Azure Blob Storage
           +--> Stripe

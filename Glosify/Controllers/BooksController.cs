@@ -82,7 +82,7 @@ public sealed class BooksController : Controller
             TempData[NotificationKeys.Book] = PaidServicesUnavailableMessage(ex.Reason, ex.ResetsAtUtc);
             return RedirectToAction(nameof(Index));
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not Glosify.Services.Abuse.ResourceQuotaException)
         {
             _logger.LogWarning(ex, "Book upload failed for user {UserId}", userId);
             TempData[NotificationKeys.Book] = _text["Books.ProcessFailed"].Value;

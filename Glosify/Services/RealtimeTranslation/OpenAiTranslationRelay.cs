@@ -112,6 +112,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                     authorization.SessionId,
                     transcriptChannel.Reader,
                     transcriptState,
+                    browserSocket, browserSendLock,
                     CancellationToken.None);
                 sourceAudio = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(32)
                 {
@@ -525,7 +526,9 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                     await SendBrowserControlAsync(
                         browserSocket,
                         "glosify.transcript.warning",
-                        "Live subtitles are continuing, but part of the saved transcript could not be stored.",
+                        Volatile.Read(ref transcriptState.StorageStopped) == 1
+                            ? "Transcript saving stopped because your storage limit was reached. Saved captions are kept; live subtitles are continuing."
+                            : "Live subtitles are continuing, but part of the saved transcript could not be stored.",
                         cancellationToken);
                 }
                 finally
@@ -561,11 +564,13 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         Guid sessionId,
         ChannelReader<CapturedTranslationSegment> reader,
         RelayTranscriptState state,
+        WebSocket browserSocket, SemaphoreSlim browserSendLock,
         CancellationToken cancellationToken)
     {
         var batch = new List<CapturedTranslationSegment>(20);
         await foreach (var segment in reader.ReadAllAsync(cancellationToken))
         {
+            if (Volatile.Read(ref state.StorageStopped) == 1) continue;
             batch.Add(segment);
             while (batch.Count < 20 && reader.TryRead(out var next))
             {
@@ -580,6 +585,13 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 Interlocked.Exchange(ref state.WarningPending, 1);
+                if (exception is Glosify.Services.Abuse.ResourceQuotaException)
+                {
+                    Interlocked.Exchange(ref state.StorageStopped, 1);
+                    Interlocked.Exchange(ref state.WarningPending, 0);
+                    await SendTranscriptStorageWarningAsync(browserSocket, browserSendLock);
+                    continue;
+                }
                 _logger.LogWarning(
                     exception,
                     "Could not store finalized captions for session {SessionId}",
@@ -590,6 +602,23 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                 batch.Clear();
             }
         }
+    }
+
+    internal static async Task SendTranscriptStorageWarningAsync(WebSocket socket, SemaphoreSlim sendLock)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try
+        {
+            await sendLock.WaitAsync(timeout.Token);
+            try
+            {
+                if (socket.State == WebSocketState.Open)
+                    await SendBrowserControlAsync(socket, "glosify.transcript.warning",
+                        "Transcript saving stopped because your storage limit was reached. Saved captions are kept; live subtitles are continuing.", timeout.Token);
+            }
+            finally { sendLock.Release(); }
+        }
+        catch (Exception ex) when (ex is WebSocketException or OperationCanceledException) { }
     }
 
     private static async Task<byte[]?> ReceiveTextMessageAsync(
@@ -743,5 +772,6 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
     private sealed class RelayTranscriptState
     {
         public int WarningPending;
+        public int StorageStopped;
     }
 }

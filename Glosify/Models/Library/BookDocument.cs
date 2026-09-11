@@ -15,6 +15,7 @@ public class BookDocument
     public string? Language { get; set; }
 
     public int PageCount { get; set; }
+    public long FileSizeBytes { get; set; }
     public string ProcessingStatus { get; set; } = "Ready";
     public string? ProcessingMessage { get; set; }
     public string? PreferredTranslationLanguage { get; set; }

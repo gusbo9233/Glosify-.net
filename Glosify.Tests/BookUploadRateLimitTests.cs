@@ -11,6 +11,21 @@ namespace Glosify.Tests;
 public sealed class BookUploadRateLimitTests
 {
     [Theory]
+    [InlineData("/signin-google")]
+    [InlineData("/signin-microsoft")]
+    [InlineData("/api/auth/external/google")]
+    [InlineData("/Account/ExternalLoginCallback")]
+    public async Task OAuthInitiationAndCallbacksHaveAnIpLimitEvenForGet(string path)
+    {
+        using var services = new ServiceCollection().AddLogging().AddGlosifyRateLimiting().BuildServiceProvider();
+        var limiter = services.GetRequiredService<IOptions<RateLimiterOptions>>().Value.GlobalLimiter!;
+        var context = CreateContext(path, "anonymous"); context.Request.Method = "GET";
+        context.Connection.RemoteIpAddress = System.Net.IPAddress.Parse("192.0.2.5");
+        for (var i = 0; i < 20; i++) { using var lease = await limiter.AcquireAsync(context, 1); Assert.True(lease.IsAcquired); }
+        using var rejected = await limiter.AcquireAsync(context, 1); Assert.False(rejected.IsAcquired);
+    }
+
+    [Theory]
     [InlineData("/Account/Register")]
     [InlineData("/api/auth/register")]
     public async Task SixthRegistrationWithinHour_IsRejectedPerIp(string path)
@@ -132,7 +147,7 @@ public sealed class BookUploadRateLimitTests
     }
 
     [Fact]
-    public async Task ThirteenthJsonImportAiRepairWithinWindow_IsRejectedPerUser()
+    public async Task EleventhJsonImportAiRepairWithinWindow_IsRejectedPerUser()
     {
         using var services = new ServiceCollection()
             .AddLogging()
@@ -141,7 +156,7 @@ public sealed class BookUploadRateLimitTests
         var limiter = services.GetRequiredService<IOptions<RateLimiterOptions>>().Value.GlobalLimiter!;
         var context = CreateContext("/Quiz/RepairJsonImportWithAi", "user-1");
 
-        for (var attempt = 0; attempt < 12; attempt++)
+        for (var attempt = 0; attempt < 10; attempt++)
         {
             using var lease = await limiter.AcquireAsync(context, 1);
             Assert.True(lease.IsAcquired);

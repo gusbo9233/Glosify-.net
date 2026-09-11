@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Glosify.Models.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Auth;
 
@@ -44,9 +45,36 @@ public sealed class IdentityExternalAccountUserStore(
 
 public sealed class ExternalAccountService(
     IExternalAccountUserStore userStore,
-    ILogger<ExternalAccountService> logger) : IExternalAccountService
+    ILogger<ExternalAccountService> logger,
+    Glosify.Data.GlosifyContext? database = null,
+    Glosify.Services.Abuse.SignupAdmissionService? admission = null) : IExternalAccountService
 {
     public async Task<ExternalAccountResolution> ResolveOrCreateAsync(ExternalLoginInfo info)
+    {
+        if (database is null) return await ResolveCoreAsync(info);
+        try
+        {
+            return await Glosify.Services.Abuse.ResourceAccounting.TransactionAsync(database, async () =>
+            {
+                await Glosify.Services.Abuse.ResourceAccounting.LockAsync(database, "glosify:signup-admission", default);
+                var result = await ResolveCoreAsync(info);
+                if (!result.Succeeded) throw new AccountCreationRejectedException(result);
+                return result;
+            }, default);
+        }
+        catch (AccountCreationRejectedException rejected)
+        {
+            database.ChangeTracker.Clear();
+            return rejected.Resolution;
+        }
+    }
+
+    private sealed class AccountCreationRejectedException(ExternalAccountResolution resolution) : Exception
+    {
+        public ExternalAccountResolution Resolution { get; } = resolution;
+    }
+
+    private async Task<ExternalAccountResolution> ResolveCoreAsync(ExternalLoginInfo info)
     {
         var user = await userStore.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
         if (user is not null)
@@ -74,6 +102,9 @@ public sealed class ExternalAccountService(
                 : Failure("Could not link the external account.", linkResult);
         }
 
+        if (info.LoginProvider is not ("Google" or "Microsoft"))
+            return Failure("Use Google or Microsoft to create an account.");
+        if (admission is not null) await admission.AdmitAsync();
         user = new ApplicationUser { UserName = email, Email = email };
         var createResult = await userStore.CreateAsync(user);
         if (!createResult.Succeeded)
