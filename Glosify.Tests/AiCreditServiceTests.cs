@@ -711,6 +711,25 @@ public sealed class AiCreditServiceTests
     }
 
     [Fact]
+    public async Task WholeCreditPurchasesAndRefundsPreserveTheFractionalRemainder()
+    {
+        await using var context = CreateContext();
+        var credits = CreateService(context);
+        await credits.GetOrCreateAccountAsync("speaker");
+        var account = await context.AiCreditAccounts.SingleAsync();
+        account.BalanceCredits = 0.2m;
+        await context.SaveChangesAsync();
+        Assert.True(await credits.GrantStripePurchaseAsync("speaker", "purchase", 10, "purchase"));
+        Assert.False(await credits.GrantStripePurchaseAsync("speaker", "purchase", 10, "retry"));
+        Assert.True(await credits.ApplyStripePaymentAdjustmentAsync("speaker", "refund", -10, "refund"));
+        Assert.False(await credits.ApplyStripePaymentAdjustmentAsync("speaker", "refund", -10, "retry"));
+        Assert.Equal(0.2m, (await credits.GetOrCreateAccountAsync("speaker")).BalanceCredits);
+        var id = await credits.ReserveSpeechAsync("speaker", 0.2m);
+        await credits.CommitSpeechAsync(id);
+        Assert.Equal(0m, (await credits.GetOrCreateAccountAsync("speaker")).BalanceCredits);
+    }
+
+    [Fact]
     public async Task ShortSpeechUsesFractionalCharacterChargesOnEverySuccessfulPreparation()
     {
         await using var context = CreateContext();

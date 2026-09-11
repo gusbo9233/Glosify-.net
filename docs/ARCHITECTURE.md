@@ -136,3 +136,16 @@ scripts/                         local development and operations helpers
 ADRs in `docs/adr/` record decisions at the time they were made. Current code,
 tests, migrations, CI, and this document are authoritative for the active
 runtime.
+
+### Fractional credit accounting
+
+Credit accounts and transaction amounts use SQL `decimal(19,6)` and .NET decimal
+arithmetic. Token charges use actual token counts; TTS uses an explicit character
+price and SEK-to-credit conversion. Calculated charges round upward only to a
+microcredit. Reservations, eligibility, settlement, refunds and releases operate
+on exact balances; integer UI/API balances are presentation-only projections.
+The credit account version is read before reservation terminal state so concurrent
+settlements cannot debit the same reservation against a newer account version.
+Financial history is retained, and integer-only applications are incompatible
+with the fractional ledger. See DEPLOYMENT.md for the coordinated maintenance
+and financial fingerprint checks.
