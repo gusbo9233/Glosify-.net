@@ -1637,4 +1637,15 @@
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>التسجيل الجديد مغلق مؤقتًا. لا يزال بإمكان المستخدمين الحاليين تسجيل الدخول.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>تم بلوغ حد الحسابات الجديدة. يُرجى المحاولة لاحقًا.</value></data>
   <data name="Usage.Initializing" xml:space="preserve"><value>يجري إعداد حساب استخدام التخزين. يُرجى المحاولة مجددًا بعد قليل.</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>الاختبارات</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>أسئلة الاختبارات</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>أسئلة أكبر اختبار</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>ملفات PDF</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>المجموعات</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>المحادثات المحفوظة</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>النصوص المفرغة المحفوظة</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>الترجمات المحفوظة</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>جلسات الترجمة</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>مساحة تخزين PDF</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>المحتوى المخزن</value></data>
 </root>

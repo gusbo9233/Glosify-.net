@@ -1637,4 +1637,15 @@
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Yeni kayıtlar geçici olarak kapalı. Mevcut kullanıcılar giriş yapabilir.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>Yeni hesap sınırına ulaşıldı. Lütfen daha sonra tekrar deneyin.</value></data>
   <data name="Usage.Initializing" xml:space="preserve"><value>Depolama kullanımı hesaplanıyor. Lütfen kısa süre sonra tekrar deneyin.</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>Testler</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>Test soruları</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>En büyük testteki sorular</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>PDF dosyaları</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>Koleksiyonlar</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>Kaydedilen sohbetler</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>Kaydedilen dökümler</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>Kaydedilen çeviriler</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Çeviri oturumları</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>PDF depolama alanı</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Depolanan içerik</value></data>
 </root>

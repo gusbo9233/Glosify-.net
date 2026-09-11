@@ -19,9 +19,16 @@ public sealed class AccountUsageController(ResourceQuotaService quotas, GlosifyC
     public async Task<IActionResult> ClearPracticeHistory(CancellationToken ct)
     {
         var user = User.GetUserId();
-        db.QuizAttempts.RemoveRange(await db.QuizAttempts.Where(x => x.UserId == user).ToListAsync(ct));
-        db.AnkiReviews.RemoveRange(await db.AnkiReviews.Where(x => x.Collection.UserId == user).ToListAsync(ct));
-        await db.SaveChangesAsync(ct);
+        while (true)
+        {
+            var attempts = await db.QuizAttempts.Where(x => x.UserId == user).Take(100).ToListAsync(ct);
+            var reviews = await db.AnkiReviews.Where(x => x.Collection.UserId == user).Take(100).ToListAsync(ct);
+            if (attempts.Count == 0 && reviews.Count == 0) break;
+            db.QuizAttempts.RemoveRange(attempts);
+            db.AnkiReviews.RemoveRange(reviews);
+            await db.SaveChangesAsync(ct);
+            db.ChangeTracker.Clear();
+        }
         return RedirectToAction(nameof(Index));
     }
 }

@@ -1637,4 +1637,15 @@
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Нові реєстрації тимчасово закрито. Наявні користувачі можуть увійти.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>Досягнуто ліміту нових облікових записів. Спробуйте пізніше.</value></data>
   <data name="Usage.Initializing" xml:space="preserve"><value>Триває обчислення використаного сховища. Спробуйте ще раз трохи згодом.</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>Тести</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>Запитання тестів</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>Запитання в найбільшому тесті</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>PDF-файли</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>Колекції</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>Збережені чати</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>Збережені транскрипти</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>Збережені переклади</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Сеанси перекладу</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Сховище PDF</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Збережений вміст</value></data>
 </root>

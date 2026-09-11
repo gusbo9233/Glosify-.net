@@ -2419,7 +2419,8 @@ namespace Glosify.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ExpiresAt");
+                    b.HasIndex("ExpiresAt")
+                        .HasFilter("[Settled] = 0");
 
                     b.ToTable("SpeechBudgetReservation");
                 });

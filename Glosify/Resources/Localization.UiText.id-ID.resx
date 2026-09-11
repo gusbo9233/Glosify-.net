@@ -1637,4 +1637,15 @@
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Pendaftaran baru ditutup sementara. Pengguna yang sudah ada masih dapat masuk.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>Batas akun baru telah tercapai. Coba lagi nanti.</value></data>
   <data name="Usage.Initializing" xml:space="preserve"><value>Penggunaan penyimpanan sedang dihitung. Coba lagi sebentar lagi.</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>Kuis</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>Soal kuis</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>Soal dalam kuis terbesar</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>PDF</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>Koleksi</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>Percakapan tersimpan</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>Transkrip tersimpan</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>Terjemahan tersimpan</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Sesi terjemahan</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Penyimpanan PDF</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Konten tersimpan</value></data>
 </root>

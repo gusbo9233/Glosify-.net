@@ -132,7 +132,7 @@ retain deleted audio according to your Azure account policy.
 ## Migration and rollout checks
 
 Apply `20260911151434_DurableAbuseControls` before starting the new build. Startup
-maintenance sets accounting readiness false, rebuilds counters/snapshots in
+maintenance keeps accounting readiness false for the initial backfill, builds counters/snapshots in
 bounded batches, and resolves existing PDF lengths from blob properties. Missing
 blob permissions or a failed backfill keep new content disabled. Repair access
 or missing-blob discrepancies explicitly; maintenance does not delete user
@@ -140,8 +140,12 @@ content to make quotas fit. Existing reads/sign-ins remain available.
 
 Check `ResourceAccountingState` has `Id=1, Ready=1` after completion. Confirm the
 usage page on an existing account and SQL counters, including existing blob
-sizes. Maintenance reconciles daily and retries cleanup/expired reservations
-once per minute. Keep one active instance during reconciliation.
+sizes. Later startups and daily maintenance repair counters atomically from the
+durable entry ledger under the accounting lock, keeping readiness true. Every
+application content write updates that ledger in the same transaction. This
+routine repair does not discover unsupported, out-of-band SQL content edits;
+those require an operator-controlled full backfill. Maintenance retries cleanup
+and expired reservations once per minute. Keep one active instance.
 
 Diagnostic content capture is disabled with `AssistantAnalytics__CaptureContent=false`.
 Local invocation/tool/caption diagnostic records are pruned after 30 days.

@@ -74,6 +74,10 @@ public sealed class SignupAdmissionDurabilityTests
         Assert.Equal(1, await seed.UserLogins.CountAsync());
         Assert.All(await seed.Set<SignupBucket>().ToListAsync(), x => Assert.Equal(1, x.Count));
         settings.SignupsEnabled = false;
+        await using var heldSignupLock = await seed.Database.BeginTransactionAsync();
+        await ResourceAccounting.LockAsync(seed, "glosify:signup-admission", default);
+        // Ordinary sign-in must succeed even while another transaction owns the
+        // signup lock and new account admission is disabled.
         Assert.True((await Resolve(false)).Succeeded);
     });
 

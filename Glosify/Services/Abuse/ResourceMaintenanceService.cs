@@ -18,7 +18,10 @@ public sealed class ResourceMaintenanceService(IServiceScopeFactory scopes, ILog
                 var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
                 if (DateTimeOffset.UtcNow >= reconcileAt)
                 {
-                    await RebuildAsync(db, scope.ServiceProvider, stoppingToken);
+                    if (await db.Set<ResourceAccountingState>().AnyAsync(x => x.Id == 1 && x.Ready, stoppingToken))
+                        await ReconcileCountersAsync(db, stoppingToken);
+                    else
+                        await RebuildAsync(db, scope.ServiceProvider, stoppingToken);
                     reconcileAt = DateTimeOffset.UtcNow.AddDays(1);
                 }
                 await CleanupAsync(scope.ServiceProvider, stoppingToken);
@@ -27,6 +30,35 @@ public sealed class ResourceMaintenanceService(IServiceScopeFactory scopes, ILog
             catch (Exception ex) { logger.LogWarning(ex, "Resource accounting maintenance failed; new content remains protected."); }
             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
+    }
+
+    internal static async Task ReconcileCountersAsync(GlosifyContext db, CancellationToken ct)
+    {
+        // Content and its durable snapshots are committed together. Routine repair
+        // aggregates that ledger in SQL, without reopening the initial backfill gate
+        // or making provider calls while a transaction is open.
+        if (!db.Database.IsSqlServer()) return;
+        await ResourceAccounting.TransactionAsync(db, async () =>
+        {
+            await ResourceAccounting.LockAsync(db, "glosify:resource-accounting", ct);
+            await db.Database.ExecuteSqlRawAsync("""
+                DELETE FROM [ResourceUsage];
+                WITH charges AS (
+                    SELECT e.[UserId], j.[key] AS [Resource], CONVERT(bigint, j.[value]) AS [Amount]
+                    FROM [ResourceEntry] e CROSS APPLY OPENJSON(e.[ChargesJson]) j
+                ), scoped AS (
+                    SELECT [UserId] AS [Scope], [Resource], [Amount] FROM charges
+                    UNION ALL
+                    SELECT N'$site', [Resource], [Amount] FROM charges
+                    WHERE [Resource] IN (N'content_bytes', N'pdf_bytes')
+                )
+                INSERT INTO [ResourceUsage] ([Scope], [Resource], [Used])
+                SELECT [Scope], [Resource], SUM([Amount]) FROM scoped
+                GROUP BY [Scope], [Resource];
+                """, ct);
+            return true;
+        }, ct);
+        db.ChangeTracker.Clear();
     }
 
     internal static async Task RebuildAsync(GlosifyContext db, IServiceProvider services, CancellationToken ct)
@@ -123,8 +155,11 @@ public sealed class ResourceMaintenanceService(IServiceScopeFactory scopes, ILog
             db.Remove(request);
             await db.SaveChangesAsync(ct);
         }
-        foreach (var reservation in await db.Set<SpeechBudgetReservation>().Where(x => !x.Settled).AsNoTracking().ToListAsync(ct))
-            if (reservation.ExpiresAt <= now) await services.GetRequiredService<SpeechProviderBudget>().SettleAsync(reservation.Id, true, ct);
+        // Settlements are financial records and are intentionally retained. Use the
+        // expiry index and bound each cleanup pass instead of loading their history.
+        foreach (var reservation in await db.Set<SpeechBudgetReservation>()
+            .Where(x => !x.Settled && x.ExpiresAt <= now).OrderBy(x => x.ExpiresAt).Take(100).AsNoTracking().ToListAsync(ct))
+            await services.GetRequiredService<SpeechProviderBudget>().SettleAsync(reservation.Id, true, ct);
         var buckets = await db.Set<SignupBucket>().ToListAsync(ct);
         db.RemoveRange(buckets.Where(x => x.ExpiresAt < now));
         await db.SaveChangesAsync(ct);

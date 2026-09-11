@@ -23,7 +23,7 @@ internal sealed class SpeechBudgetConfiguration : IEntityTypeConfiguration<Speec
 {
     public void Configure(EntityTypeBuilder<SpeechBudgetReservation> b)
     {
-        b.HasKey(x => x.Id); b.Property(x => x.PeriodKey).HasMaxLength(7); b.HasIndex(x => x.ExpiresAt);
+        b.HasKey(x => x.Id); b.Property(x => x.PeriodKey).HasMaxLength(7); b.HasIndex(x => x.ExpiresAt).HasFilter("[Settled] = 0");
     }
 }
 

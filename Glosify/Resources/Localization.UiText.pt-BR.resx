@@ -1637,4 +1637,15 @@
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Novos cadastros estão temporariamente fechados. Usuários existentes ainda podem entrar.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>O limite de novas contas foi atingido. Tente novamente mais tarde.</value></data>
   <data name="Usage.Initializing" xml:space="preserve"><value>O uso do armazenamento está sendo calculado. Tente novamente em instantes.</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>Questionários</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>Perguntas dos questionários</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>Perguntas do maior questionário</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>PDFs</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>Coleções</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>Conversas salvas</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>Transcrições salvas</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>Traduções salvas</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Sessões de tradução</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Armazenamento de PDFs</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Conteúdo armazenado</value></data>
 </root>

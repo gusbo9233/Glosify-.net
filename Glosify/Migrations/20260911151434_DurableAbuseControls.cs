@@ -160,7 +160,8 @@ namespace Glosify.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_SpeechBudgetReservation_ExpiresAt",
                 table: "SpeechBudgetReservation",
-                column: "ExpiresAt");
+                column: "ExpiresAt",
+                filter: "[Settled] = 0");
         }
 
         /// <inheritdoc />

@@ -1637,4 +1637,15 @@
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>新用户注册暂时关闭。现有用户仍可登录。</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>新账户数量已达上限。请稍后重试。</value></data>
   <data name="Usage.Initializing" xml:space="preserve"><value>正在计算存储使用量。请稍后重试。</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>测验</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>测验题目</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>最大测验的题目数</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>PDF 文件</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>合集</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>已保存的聊天</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>已保存的转录</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>已保存的翻译</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>翻译会话</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>PDF 存储空间</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>已存储的内容</value></data>
 </root>

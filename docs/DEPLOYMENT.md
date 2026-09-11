@@ -55,8 +55,8 @@ to configuration files.
 that exact environment variable explicitly. It is never emitted in HTML, API
 responses, relay tokens, logs, or extension configuration.
 
-The deployment workflow verifies that the setting is non-empty before changing
-production. After the replacement artifact is deployed, it removes retired
+The deployment workflow verifies required key presence and validates the signup
+key encoding and decoded length before changing production. After the replacement artifact is deployed, it removes retired
 Foundry/Gemini, Speaking, and Azure Communication Services settings. The cleanup
 deliberately runs after deployment so the previous artifact remains functional
 during rollout.

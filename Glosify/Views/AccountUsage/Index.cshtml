@@ -13,7 +13,7 @@
         {
             var bytes = row.Resource.EndsWith("_bytes", StringComparison.Ordinal);
             string Format(long value) => bytes ? $"{value / 1048576m:0.##} MiB" : value.ToString("N0");
-            <tr><td>@row.Resource.Replace('_', ' ')</td><td>@Format(row.Current)</td><td>@Format(row.Reserved)</td><td>@Format(row.Maximum)</td></tr>
+            <tr><td>@Text["Usage.Resource." + row.Resource]</td><td>@Format(row.Current)</td><td>@Format(row.Reserved)</td><td>@Format(row.Maximum)</td></tr>
         }
         </tbody>
     </table>

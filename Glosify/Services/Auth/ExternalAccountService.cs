@@ -51,6 +51,8 @@ public sealed class ExternalAccountService(
 {
     public async Task<ExternalAccountResolution> ResolveOrCreateAsync(ExternalLoginInfo info)
     {
+        var existing = await userStore.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+        if (existing is not null) return new ExternalAccountResolution(existing, null);
         if (database is null) return await ResolveCoreAsync(info);
         try
         {

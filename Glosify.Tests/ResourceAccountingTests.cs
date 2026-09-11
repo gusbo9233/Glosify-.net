@@ -11,6 +11,39 @@ namespace Glosify.Tests;
 
 public sealed class ResourceAccountingTests
 {
+    [SqlServerFact]
+    public Task RoutineReconciliationRepairsCountersAndKeepsContentAndReservations() => SqlServerTestDatabase.RunAsync("quota_reconcile", async seed =>
+    {
+        var settings = new DbContextOptionsBuilder<GlosifyContext>().UseSqlServer(seed.Database.GetConnectionString()).Options;
+        await using var db = new GlosifyContext(settings, Options.Create(new AbuseOptions()));
+        db.Users.Add(new ApplicationUser { Id = "owner", UserName = "owner" });
+        db.Add(new ResourceAccountingState { Id = 1, Ready = true });
+        await db.SaveChangesAsync();
+        db.Add(Quiz("one", "Swedish"));
+        await db.SaveChangesAsync();
+        var expected = (await db.Set<ResourceUsage>().AsNoTracking().ToListAsync()).ToDictionary(x => (x.Scope, x.Resource), x => x.Used);
+        db.Add(new ResourceReservation { Id = Guid.NewGuid(), UserId = "owner", ChargesJson = "{\"quizzes\":1}", ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5) });
+        foreach (var counter in await db.Set<ResourceUsage>().ToListAsync()) counter.Used = 99;
+        db.Add(new ResourceUsage { Scope = "owner", Resource = "stale", Used = 10 });
+        await db.SaveChangesAsync();
+        await ResourceMaintenanceService.ReconcileCountersAsync(db, default);
+        Assert.True((await db.Set<ResourceAccountingState>().SingleAsync()).Ready);
+        Assert.Equal(1, await db.Quizzes.CountAsync());
+        Assert.Equal(1, await db.Set<ResourceReservation>().CountAsync());
+        var actual = await db.Set<ResourceUsage>().ToListAsync();
+        Assert.Equal(expected.Count, actual.Count);
+        Assert.All(actual, row => Assert.Equal(expected[(row.Scope, row.Resource)], row.Used));
+
+        // A malformed ledger must roll back the counter replacement, preserving
+        // the last consistent allowance instead of exposing empty capacity.
+        (await db.Set<ResourceEntry>().FirstAsync()).ChargesJson = "invalid";
+        await db.SaveChangesAsync();
+        await Assert.ThrowsAsync<Microsoft.Data.SqlClient.SqlException>(() => ResourceMaintenanceService.ReconcileCountersAsync(db, default));
+        db.ChangeTracker.Clear();
+        Assert.True((await db.Set<ResourceAccountingState>().SingleAsync()).Ready);
+        Assert.All(await db.Set<ResourceUsage>().ToListAsync(), row => Assert.Equal(expected[(row.Scope, row.Resource)], row.Used));
+    });
+
     [Fact]
     public void BackfillErrorsAreDistinctFromExhaustedSiteCapacity()
     {

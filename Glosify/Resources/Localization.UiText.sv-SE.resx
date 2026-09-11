@@ -477,4 +477,15 @@
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Nyregistrering är tillfälligt stängd. Befintliga användare kan fortfarande logga in.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>Gränsen för nya konton har nåtts. Försök igen senare.</value></data>
   <data name="Usage.Initializing" xml:space="preserve"><value>Lagringsanvändningen beräknas. Försök igen om en liten stund.</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>Quiz</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>Quizfrågor</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>Frågor i största quizet</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>PDF-filer</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>Samlingar</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>Sparade chattar</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>Sparade transkript</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>Sparade översättningar</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Översättningssessioner</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>PDF-lagring</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Lagrat innehåll</value></data>
 </root>

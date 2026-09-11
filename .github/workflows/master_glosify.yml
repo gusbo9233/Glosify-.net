@@ -253,6 +253,14 @@ jobs:
               echo "::error::App Service setting $setting is missing or empty."
               exit 1
             fi
+            if [[ "$setting" == "Abuse__SignupHashKey" ]]; then
+              printf '%s' "$configured_key" | python3 -c '
+          import base64, sys
+          try:
+              assert len(base64.b64decode(sys.stdin.read(), validate=True)) >= 32
+          except Exception:
+              sys.exit("::error::Abuse__SignupHashKey must be base64 encoding at least 32 bytes.")'
+            fi
             unset configured_key
           done
 

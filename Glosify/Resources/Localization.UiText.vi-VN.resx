@@ -1637,4 +1637,15 @@
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Tạm thời đóng đăng ký mới. Người dùng hiện tại vẫn có thể đăng nhập.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>Đã đạt giới hạn tài khoản mới. Vui lòng thử lại sau.</value></data>
   <data name="Usage.Initializing" xml:space="preserve"><value>Đang tính dung lượng lưu trữ. Vui lòng thử lại sau ít phút.</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>Bài kiểm tra</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>Câu hỏi kiểm tra</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>Câu hỏi trong bài kiểm tra lớn nhất</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>Tệp PDF</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>Bộ sưu tập</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>Cuộc trò chuyện đã lưu</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>Bản chép lời đã lưu</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>Bản dịch đã lưu</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Phiên dịch</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Dung lượng PDF</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Nội dung đã lưu</value></data>
 </root>
