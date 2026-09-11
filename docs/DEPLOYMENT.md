@@ -3,16 +3,41 @@
 Glosify deploys to Azure App Service from
 `.github/workflows/master_glosify.yml`. Pull requests targeting `master` build
 and test. The repository ruleset should automatically request GitHub Copilot
-code review for new pull requests and new pushes; draft reviews remain disabled
-to avoid feedback on unfinished work.
+code review for new pull requests and new pushes. The Greptile GitHub app must
+also be connected with this repository enabled. Its version-controlled settings
+in `.greptile/config.json` enable reviews on updates and status checks, with
+automatic approval disabled. Draft reviews remain disabled by default.
 
-Copilot review is advisory: its comments do not count as an approval, replace
-CI, or establish that a finding is correct. Validate its findings against the
+Copilot and Greptile reviews are advisory: their findings do not replace
+CI or establish that a defect exists. Validate findings against the
 current code, tests, migrations, configuration, and applicable primary
 documentation. A reviewed push to `master` applies reviewed additive migrations before
 replacing the application, then verifies the deployed commit and readiness,
 including completion of resource accounting. Historical destructive retirements
 must already be complete.
+
+## Review and release flow
+
+1. Open a pull request targeting `master`; direct pushes are blocked by branch
+   protection. Require the `build` check and inspect the other CI results.
+2. Assess Copilot and Greptile feedback for the latest PR commit. Fix confirmed
+   defects, explain rejected findings with evidence, and handle duplicates once.
+   Record an unavailable review explicitly rather than treating it as clean.
+   Greptile can be requested manually with a PR comment containing `@greptileai`.
+3. After any update, wait for fresh checks and review feedback. Confirm the
+   reviewed commit matches the PR head; an earlier review is not verification
+   of a later revision. Greptile's confidence score is advisory.
+4. Merge through GitHub after the required checks pass and findings are assessed.
+   The resulting push to `master` starts the build and production deployment.
+   Manual `workflow_dispatch` runs build only: the deploy job requires a push to
+   `master`.
+5. Follow the workflow for the exact merged commit through build, deployment,
+   migrations, and final health verification. Confirm `/deployment-version`
+   reports that commit and `/readyz` succeeds after settings cleanup.
+
+Review configuration and documentation changes use this same protected release
+path. They do not require a new application secret or a separate review Actions
+job. Keep the existing migration and readiness safeguards in place.
 
 ## Required App Service settings
 
