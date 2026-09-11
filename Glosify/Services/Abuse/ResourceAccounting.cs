@@ -26,6 +26,47 @@ public static class ResourceAccounting
     public static string Key(EntityEntry entry) => Key(entry.Metadata,
         entry.Metadata.FindPrimaryKey()!.Properties.Select(p => entry.Property(p.Name).CurrentValue).ToArray());
 
+    public sealed class ReservedTotal
+    {
+        public string Scope { get; set; } = "";
+        public string Resource { get; set; } = "";
+        public long Amount { get; set; }
+    }
+
+    internal static async Task<Dictionary<(string Scope, string Resource), long>> ReservedTotalsAsync(
+        GlosifyContext db, IEnumerable<(string Scope, string Resource)> requested,
+        IEnumerable<Guid> excluded, CancellationToken ct)
+    {
+        var keys = requested.Distinct().ToArray();
+        if (keys.Length == 0) return [];
+        var ids = excluded.Distinct().ToArray();
+        var now = DateTimeOffset.UtcNow;
+        if (db.Database.IsSqlServer())
+        {
+            var keyJson = JsonSerializer.Serialize(keys.Select(x => new { x.Scope, x.Resource }));
+            var excludedJson = JsonSerializer.Serialize(ids);
+            var rows = await db.Database.SqlQuery<ReservedTotal>($"""
+                SELECT q.[Scope], q.[Resource], SUM(CONVERT(bigint, j.[value])) AS [Amount]
+                FROM [ResourceReservation] r
+                CROSS APPLY OPENJSON(r.[ChargesJson]) j
+                INNER JOIN OPENJSON({keyJson}) WITH ([Scope] nvarchar(450), [Resource] nvarchar(128)) q
+                    ON q.[Resource] = j.[key] AND (q.[Scope] = N'$site' OR q.[Scope] = r.[UserId])
+                WHERE (r.[ExpiresAt] > {now} OR r.[BlobName] IS NOT NULL)
+                    AND NOT EXISTS (SELECT 1 FROM OPENJSON({excludedJson}) e WHERE CONVERT(uniqueidentifier, e.[value]) = r.[Id])
+                GROUP BY q.[Scope], q.[Resource]
+                """).ToListAsync(ct);
+            return rows.ToDictionary(x => (x.Scope, x.Resource), x => x.Amount);
+        }
+        // SQLite test provider cannot compare DateTimeOffset in SQL.
+        var users = keys.Select(x => x.Scope).ToArray();
+        var query = db.Set<ResourceReservation>().AsNoTracking();
+        if (!users.Contains(Site)) query = query.Where(x => users.Contains(x.UserId));
+        var pending = (await query.ToListAsync(ct)).Where(x => !ids.Contains(x.Id)
+            && (x.ExpiresAt > now || x.BlobName != null)).ToArray();
+        return keys.ToDictionary(key => key, key => pending.Where(x => key.Scope == Site || x.UserId == key.Scope)
+            .Sum(x => Charges(x.ChargesJson).GetValueOrDefault(key.Resource)));
+    }
+
     public static async Task LockAsync(GlosifyContext db, string name, CancellationToken ct)
     {
         if (db.Database.IsSqlServer())
@@ -170,15 +211,13 @@ public static class ResourceAccounting
                 }
                 else db.Remove(reservation);
             }
-            var reservations = await db.Set<ResourceReservation>().AsNoTracking().ToListAsync(ct);
-            var pending = reservations.Where(x => !claims.Any(c => c.Id == x.Id)
-                && (x.ExpiresAt > DateTimeOffset.UtcNow || x.BlobName != null)).ToArray();
+            var reservedTotals = await ReservedTotalsAsync(db,
+                deltas.Where(x => x.Value > 0).Select(x => x.Key), claims.Select(x => x.Id), ct);
             foreach (var ((scope, resource), amount) in deltas)
             {
                 var counter = await db.Set<ResourceUsage>().FindAsync([scope, resource], ct);
                 if (counter is null) { counter = new() { Scope = scope, Resource = resource }; db.Add(counter); }
-                var reserved = pending.Where(x => scope == Site || x.UserId == scope)
-                    .Sum(x => Charges(x.ChargesJson).GetValueOrDefault(resource));
+                var reserved = reservedTotals.GetValueOrDefault((scope, resource));
                 var next = checked(counter.Used + amount);
                 if (amount > 0 && next + reserved > db.AbuseLimits.Limit(resource, scope == Site))
                     throw new ResourceQuotaException(resource, scope == Site);

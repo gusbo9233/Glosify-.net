@@ -12,6 +12,28 @@ namespace Glosify.Tests;
 public sealed class ResourceAccountingTests
 {
     [SqlServerFact]
+    public Task ReservationAggregationScopesActiveClaimsAndRetainsExpiredBlobCapacity() => SqlServerTestDatabase.RunAsync("quota_totals", async db =>
+    {
+        var now = DateTimeOffset.UtcNow;
+        var claimed = Guid.NewGuid();
+        db.AddRange(
+            new ResourceReservation { Id = Guid.NewGuid(), UserId = "owner", ExpiresAt = now.AddMinutes(5), ChargesJson = "{\"content_bytes\":100,\"quizzes\":1}" },
+            new ResourceReservation { Id = Guid.NewGuid(), UserId = "other", ExpiresAt = now.AddMinutes(5), ChargesJson = "{\"content_bytes\":200,\"quizzes\":7}" },
+            new ResourceReservation { Id = Guid.NewGuid(), UserId = "owner", ExpiresAt = now.AddMinutes(-5), ChargesJson = "{\"content_bytes\":1000,\"quizzes\":9}" },
+            new ResourceReservation { Id = Guid.NewGuid(), UserId = "owner", ExpiresAt = now.AddMinutes(-5), BlobName = "pending.pdf", ChargesJson = "{\"pdf_bytes\":40}" },
+            new ResourceReservation { Id = claimed, UserId = "owner", ExpiresAt = now.AddMinutes(5), ChargesJson = "{\"content_bytes\":500}" });
+        await db.SaveChangesAsync();
+        var totals = await ResourceAccounting.ReservedTotalsAsync(db,
+            [("owner", "content_bytes"), ("owner", "quizzes"), ("owner", "pdf_bytes"), (ResourceAccounting.Site, "content_bytes"), (ResourceAccounting.Site, "pdf_bytes")], [claimed], default);
+        Assert.Equal(5, totals.Count);
+        Assert.Equal(100, totals[("owner", "content_bytes")]);
+        Assert.Equal(1, totals[("owner", "quizzes")]);
+        Assert.Equal(40, totals[("owner", "pdf_bytes")]);
+        Assert.Equal(300, totals[(ResourceAccounting.Site, "content_bytes")]);
+        Assert.Equal(40, totals[(ResourceAccounting.Site, "pdf_bytes")]);
+    });
+
+    [SqlServerFact]
     public Task RoutineReconciliationRepairsCountersAndKeepsContentAndReservations() => SqlServerTestDatabase.RunAsync("quota_reconcile", async seed =>
     {
         var settings = new DbContextOptionsBuilder<GlosifyContext>().UseSqlServer(seed.Database.GetConnectionString()).Options;
