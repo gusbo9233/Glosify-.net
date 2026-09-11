@@ -329,6 +329,10 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Serbian (Latin)", Exact = true })
             .PressAsync("Enter");
         await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
+        // URL matching happens before the destination's assets finish loading.
+        // Drain this observed context before disposal can strand its requests.
+        await noJavaScriptPage.WaitForLoadStateAsync(LoadState.Load);
+        await WaitForNetworkQuiescenceAsync();
     }
 
     [BrowserFact]
