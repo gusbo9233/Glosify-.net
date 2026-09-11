@@ -43,6 +43,14 @@ public static class CreditLedgerDeploymentCheck
             Console.WriteLine(Convert.ToDecimal(balance, CultureInfo.InvariantCulture).ToString("F6", CultureInfo.InvariantCulture));
             return 0;
         }
+        Console.WriteLine(await FingerprintAsync(connection));
+        return 0;
+    }
+
+    internal static async Task<string> FingerprintAsync(SqlConnection connection)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandTimeout = 120;
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         // Canonical decimal casts produce identical bytes before and after migration.
         // Include every key and financial value, not just aggregate sums.
@@ -69,7 +77,6 @@ public static class CreditLedgerDeploymentCheck
                 }
             }
         } while (await reader.NextResultAsync());
-        Console.WriteLine(Convert.ToHexString(hash.GetHashAndReset()));
-        return 0;
+        return Convert.ToHexString(hash.GetHashAndReset());
     }
 }

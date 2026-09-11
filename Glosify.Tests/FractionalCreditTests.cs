@@ -146,7 +146,11 @@ public sealed class FractionalCreditTests
             INSERT INTO AiCreditTransactions(Id,UserId,Kind,CreditAmount,BalanceAfterCredits,ReservedAfterCredits,CreatedAt,Note)
             VALUES ('10000000-0000-0000-0000-000000000001','legacy','usage_debit',-17,2147483647,17,SYSUTCDATETIME(),'preserve me');
             """);
+        await db.Database.OpenConnectionAsync();
+        var connection = (Microsoft.Data.SqlClient.SqlConnection)db.Database.GetDbConnection();
+        var fingerprint = await CreditLedgerDeploymentCheck.FingerprintAsync(connection);
         await migrator.MigrateAsync();
+        Assert.Equal(fingerprint, await CreditLedgerDeploymentCheck.FingerprintAsync(connection));
         var account = await db.AiCreditAccounts.SingleAsync();
         Assert.Equal(2147483647m, account.BalanceCredits);
         Assert.Equal(17m, account.ReservedCredits);
@@ -159,6 +163,7 @@ public sealed class FractionalCreditTests
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
         Assert.Equal(2147483646.8m, (await db.AiCreditAccounts.SingleAsync()).BalanceCredits);
+        Assert.NotEqual(fingerprint, await CreditLedgerDeploymentCheck.FingerprintAsync(connection));
         Assert.Throws<NotSupportedException>(() => new Glosify.Migrations.FractionalCredits().DownOperations);
     });
 
