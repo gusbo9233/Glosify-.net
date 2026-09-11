@@ -65,6 +65,13 @@ refresh, recovery, management and provider linking remain supported. Trial
 credit amount and eligibility rules are unchanged.
 
 Admission, user creation and external-login association commit atomically.
+Set `Abuse__SignupHashKey` to a persistent, cryptographically random base64 key
+of at least 32 bytes in App Service settings or Key Vault. IP buckets use HMAC
+so a database reader cannot enumerate the IPv4 input space without this secret.
+Missing keys close new signup; existing sign-in and linking remain available.
+Do not rotate the key within an active daily admission window, because rotation
+changes IP bucket identities. Never commit the production key.
+
 Existing-user callbacks/linking use no admission slots. Defaults: five new
 accounts per IP/hour, ten per IP/UTC day and 200 site-wide/UTC day. IPv4-mapped
 addresses normalize to IPv4; IPv6 addresses share a /64. Only hashed address

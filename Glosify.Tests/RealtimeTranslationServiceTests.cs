@@ -4,6 +4,7 @@ using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Language;
 using Glosify.Services.RealtimeTranslation;
+using Glosify.Services.Abuse;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -577,6 +578,33 @@ public sealed class RealtimeTranslationServiceTests
             (await context.RealtimeTranslationSessions.SingleAsync()).Status);
     }
 
+    [Theory]
+    [InlineData("reserve")]
+    [InlineData("account")]
+    [InlineData("relay")]
+    [InlineData("release")]
+    public async Task EveryFailedSessionSetupReleasesTranscriptStorage(string failure)
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var quotas = new ResourceQuotaService(new TestDbContextFactory(context), Options.Create(new AbuseOptions()));
+        var service = CreateService(context, new ManualTimeProvider(TestNow),
+            new FakeRelayTokenStore(fail: failure is "relay" or "release"), quotas: quotas,
+            creditDecorator: inner => new FailingSetupCredits(inner, failure));
+        Exception error = failure == "relay"
+            ? await Assert.ThrowsAsync<RealtimeTranslationUpstreamException>(() => service.CreateSessionAsync("user-1", "es", saveTranscript: true))
+            : await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateSessionAsync("user-1", "es", saveTranscript: true));
+        Assert.Equal(failure switch { "reserve" => "Credit reservation failed.", "account" => "Account lookup failed.",
+            "release" => "Credit release failed.", _ => "OpenAI unavailable." }, error.Message);
+        Assert.Empty(await context.Set<ResourceReservation>().ToListAsync());
+        Assert.All(await quotas.GetUsageAsync("user-1", default), usage => Assert.Equal(0, usage.Reserved));
+        if (failure is "account" or "relay")
+        {
+            Assert.Equal(RealtimeTranslationSessionStatuses.Failed, (await context.RealtimeTranslationSessions.SingleAsync()).Status);
+            Assert.Equal(25, (await context.AiCreditAccounts.SingleAsync()).AvailableCredits);
+        }
+    }
+
     [Fact]
     public async Task Cleanup_ReleasesAnUnstartedStaleReservation()
     {
@@ -620,7 +648,9 @@ public sealed class RealtimeTranslationServiceTests
         TimeProvider timeProvider,
         IRealtimeTranslationRelayTokenStore relayTokens,
         Action<RealtimeTranslationOptions>? configure = null,
-        CreditPricingOptions? pricingOptions = null)
+        CreditPricingOptions? pricingOptions = null,
+        ResourceQuotaService? quotas = null,
+        Func<IAiCreditService, IAiCreditService>? creditDecorator = null)
     {
         var usageOptions = new AiUsageOptions
         {
@@ -631,13 +661,14 @@ public sealed class RealtimeTranslationServiceTests
             Options.Create(new CreditPricingOptions()),
             Options.Create(usageOptions),
             Options.Create(new RealtimeTranslationOptions()));
-        var credits = new AiCreditService(
+        IAiCreditService credits = new AiCreditService(
             context,
             new TestDbContextFactory(context),
             Options.Create(usageOptions),
             creditPricing,
             new AlwaysEligibleTrialService(),
             timeProvider);
+        if (creditDecorator is not null) credits = creditDecorator(credits);
         var realtimeOptions = new RealtimeTranslationOptions
         {
             Enabled = true,
@@ -675,7 +706,24 @@ public sealed class RealtimeTranslationServiceTests
             realtimePricing,
             timeProvider,
             NullLogger<RealtimeTranslationService>.Instance,
-            new ReferenceCountedKeyedAsyncLock());
+            new ReferenceCountedKeyedAsyncLock(), quotas);
+    }
+
+    private sealed class FailingSetupCredits(IAiCreditService inner, string failure) : IAiCreditService
+    {
+        public Task<AiCreditAccountView> GetOrCreateAccountAsync(string userId, CancellationToken cancellationToken = default) =>
+            failure == "account" ? throw new InvalidOperationException("Account lookup failed.") : inner.GetOrCreateAccountAsync(userId, cancellationToken);
+        public Task<IReadOnlyList<AiCreditTransaction>> GetRecentTransactionsAsync(string userId, int count = 25, CancellationToken cancellationToken = default) =>
+            inner.GetRecentTransactionsAsync(userId, count, cancellationToken);
+        public Task<AiCreditReservation> ReserveAsync(AiUsageContext context, string provider, string model, int estimatedTokens, CancellationToken cancellationToken = default) =>
+            inner.ReserveAsync(context, provider, model, estimatedTokens, cancellationToken);
+        public Task<AiDurationCreditReservation> ReserveDurationAsync(AiUsageContext context, string provider, string model, int durationSeconds, int requiredCredits, CancellationToken cancellationToken = default) =>
+            failure == "reserve" ? throw new InvalidOperationException("Credit reservation failed.") : inner.ReserveDurationAsync(context, provider, model, durationSeconds, requiredCredits, cancellationToken);
+        public Task CommitUsageAsync(Guid id, AiTokenUsage usage, CancellationToken cancellationToken = default) => inner.CommitUsageAsync(id, usage, cancellationToken);
+        public Task ReleaseAsync(Guid id, CancellationToken cancellationToken = default) =>
+            failure == "release" ? throw new InvalidOperationException("Credit release failed.") : inner.ReleaseAsync(id, cancellationToken);
+        public Task GrantAsync(string admin, string user, int credits, string note, CancellationToken cancellationToken = default) =>
+            inner.GrantAsync(admin, user, credits, note, cancellationToken);
     }
 
     private sealed class StaticRealtimeTranslationLanguageCatalog(RealtimeTranslationOptions options)

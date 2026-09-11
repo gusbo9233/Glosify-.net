@@ -242,7 +242,11 @@ public sealed class ExternalSignInSecurityTests
                 services.RemoveAll<IDbContextOptionsConfiguration<GlosifyContext>>();
                 services.AddDbContext<GlosifyContext>(options => options.UseInMemoryDatabase(databaseName));
                 services.Configure<IdentityOptions>(options => options.SignIn.RequireConfirmedAccount = requireConfirmation);
-                services.Configure<Glosify.Services.Abuse.AbuseOptions>(options => options.SignupsEnabled = signupsEnabled);
+                services.Configure<Glosify.Services.Abuse.AbuseOptions>(options =>
+                {
+                    options.SignupsEnabled = signupsEnabled;
+                    options.SignupHashKey = SignupAdmissionTests.HashKey;
+                });
             });
         });
     }

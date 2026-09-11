@@ -9,6 +9,17 @@ namespace Glosify.Services.Abuse;
 
 public sealed class SignupAdmissionService(GlosifyContext db, IHttpContextAccessor http, IOptions<AbuseOptions> options, TimeProvider clock)
 {
+    internal static bool HasValidHashKey(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return false;
+        try { return Convert.FromBase64String(key).Length >= 32; }
+        catch (FormatException) { return false; }
+    }
+
+    internal static string HashAddress(string window, IPAddress? address, string key) =>
+        Convert.ToHexString(HMACSHA256.HashData(Convert.FromBase64String(key),
+            Encoding.UTF8.GetBytes(window + ":" + NormalizeAddress(address))));
+
     public static string NormalizeAddress(IPAddress? address)
     {
         if (address is null) return "unknown";
@@ -25,10 +36,10 @@ public sealed class SignupAdmissionService(GlosifyContext db, IHttpContextAccess
         var now = clock.GetUtcNow();
         var day = new DateTimeOffset(now.UtcDateTime.Date, TimeSpan.Zero);
         var hour = day.AddHours(now.Hour);
-        if (!options.Value.SignupsEnabled) throw new SignupLimitException(day.AddDays(1), true);
+        if (!options.Value.SignupsEnabled || !HasValidHashKey(options.Value.SignupHashKey))
+            throw new SignupLimitException(day.AddDays(1), true);
         await ResourceAccounting.LockAsync(db, "glosify:signup-admission", ct);
-        var address = NormalizeAddress(http.HttpContext?.Connection.RemoteIpAddress);
-        string Hash(string window) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(window + ":" + address)));
+        string Hash(string window) => HashAddress(window, http.HttpContext?.Connection.RemoteIpAddress, options.Value.SignupHashKey!);
         var limits = new[] {
             ("day:" + day.ToUnixTimeSeconds(), options.Value.SignupsPerDay, day.AddDays(1)),
             ("ip-day:" + Hash(day.ToString("O")), options.Value.SignupsPerIpDay, day.AddDays(1)),

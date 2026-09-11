@@ -49,6 +49,7 @@ to configuration files.
 | `ConnectionStrings__DefaultConnection` | Azure SQL connection string |
 | `OPENAI_SECRET_KEY` | Direct OpenAI Responses and realtime translation |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | Application Insights export |
+| `Abuse__SignupHashKey` | Persistent random base64 key (at least 32 bytes) for HMAC signup IP buckets; missing key closes new signup |
 
 `OPENAI_SECRET_KEY` is mandatory outside Development and Testing. The app reads
 that exact environment variable explicitly. It is never emitted in HTML, API

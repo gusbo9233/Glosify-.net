@@ -21,7 +21,7 @@ public sealed class SignupAdmissionDurabilityTests
     {
         var now = new DateTimeOffset(2026, 9, 11, 22, 59, 59, TimeSpan.Zero);
         var clock = new FakeTimeProvider(now);
-        var settings = new AbuseOptions { SignupsPerIpHour = 1, SignupsPerIpDay = 2, SignupsPerDay = 3 };
+        var settings = new AbuseOptions { SignupHashKey = SignupAdmissionTests.HashKey, SignupsPerIpHour = 1, SignupsPerIpDay = 2, SignupsPerDay = 3 };
         async Task Admit(string ip)
         {
             await using var db = Context(seed);
@@ -53,7 +53,7 @@ public sealed class SignupAdmissionDurabilityTests
     [SqlServerFact]
     public Task AccountAssociationAndAdmissionAreAtomic_AndDuplicateCallbacksConsumeOneSlot() => SqlServerTestDatabase.RunAsync("signup_atomic", async seed =>
     {
-        var settings = new AbuseOptions { SignupsPerDay = 1 };
+        var settings = new AbuseOptions { SignupHashKey = SignupAdmissionTests.HashKey, SignupsPerDay = 1 };
         async Task<ExternalAccountResolution> Resolve(bool failLogin)
         {
             await using var db = Context(seed);

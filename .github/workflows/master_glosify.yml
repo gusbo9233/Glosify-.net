@@ -240,19 +240,21 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_210765179BDB40158ADE7F23514669FF }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_EE07FD7E4DAF4E32BF67F3AFE307E71F }}
 
-      - name: Require direct OpenAI App Service key
+      - name: Require provider and signup App Service keys
         shell: bash
         run: |
-          openai_key="$(az webapp config appsettings list \
-            --name glosify-app \
-            --resource-group glosify \
-            --query "[?name=='OPENAI_SECRET_KEY'].value | [0]" \
-            --output tsv)"
-          if [[ -z "$openai_key" ]]; then
-            echo "::error::App Service setting OPENAI_SECRET_KEY is missing or empty."
-            exit 1
-          fi
-          unset openai_key
+          for setting in OPENAI_SECRET_KEY Abuse__SignupHashKey; do
+            configured_key="$(az webapp config appsettings list \
+              --name glosify-app \
+              --resource-group glosify \
+              --query "[?name=='$setting'].value | [0]" \
+              --output tsv)"
+            if [[ -z "$configured_key" ]]; then
+              echo "::error::App Service setting $setting is missing or empty."
+              exit 1
+            fi
+            unset configured_key
+          done
 
       # Historical destructive retirements must already be complete. This release
       # adds tables/columns used during startup, so migrate before replacing the app.

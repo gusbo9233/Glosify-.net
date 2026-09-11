@@ -315,77 +315,84 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                 session.StorageReservationId = await _quotas.ReserveAsync(userId, charges, cancellationToken,
                     lifetime: TimeSpan.FromMinutes(_options.MaxSessionMinutes + 10));
             }
+            var setupCompleted = false;
             try
             {
-                reservation = await ReserveCreditsAsync(session, 1, cancellationToken);
-            }
-            catch (InsufficientAiCreditsException)
-            {
-                if (session.StorageReservationId is { } storage && _quotas is not null)
-                    await _quotas.ReleaseAsync(storage, userId, CancellationToken.None);
-                RealtimeTranslationTelemetry.CreditFailures.Add(1);
-                throw;
-            }
-
-            var minute = BuildMinute(session.Id, 1, reservation, now);
-            session.Minutes.Add(minute);
-            _context.RealtimeTranslationSessions.Add(session);
-            try
-            {
-                if (session.StorageReservationId is { } storage)
+                try
                 {
-                    _context.ClaimedResourceReservation = (storage, userId);
-                    _context.KeepResourceReservation = true;
+                    reservation = await ReserveCreditsAsync(session, 1, cancellationToken);
                 }
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            catch
-            {
-                _context.Entry(minute).State = EntityState.Detached;
-                _context.Entry(session).State = EntityState.Detached;
-                if (transcript is not null && _context.Entry(transcript).State == EntityState.Added)
+                catch (InsufficientAiCreditsException)
                 {
-                    _context.Entry(transcript).State = EntityState.Detached;
+                    RealtimeTranslationTelemetry.CreditFailures.Add(1);
+                    throw;
                 }
-                await _credits.ReleaseAsync(reservation.ReservationId, cancellationToken);
-                if (session.StorageReservationId is { } storage && _quotas is not null)
-                    await _quotas.ReleaseAsync(storage, userId, CancellationToken.None);
-                throw;
-            }
 
-            try
-            {
-                var grant = _relayTokens.Create(
-                    session.Id,
-                    userId,
-                    language.Code,
-                    mode,
-                    canonicalSpeechProvider,
-                    canonicalSourceLanguage,
-                    transcript is not null,
-                    selectedQuizLanguage?.Code,
-                    partialCaptionsEnabled);
-                var account = await _credits.GetOrCreateAccountAsync(userId, cancellationToken);
-                RealtimeTranslationTelemetry.SessionsCreated.Add(1);
-                return new RealtimeTranslationSessionCreated(
-                    session.Id,
-                    grant.Token,
-                    grant.ExpiresAt,
-                    $"/api/realtime-translation/sessions/{session.Id:D}/stream",
-                    1,
-                    account.AvailableCredits,
-                    session.CreditsPerStartedMinute,
-                    session.TranscriptId);
+                var minute = BuildMinute(session.Id, 1, reservation, now);
+                session.Minutes.Add(minute);
+                _context.RealtimeTranslationSessions.Add(session);
+                try
+                {
+                    if (session.StorageReservationId is { } storage)
+                    {
+                        _context.ClaimedResourceReservation = (storage, userId);
+                        _context.KeepResourceReservation = true;
+                    }
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+                catch
+                {
+                    _context.Entry(minute).State = EntityState.Detached;
+                    _context.Entry(session).State = EntityState.Detached;
+                    if (transcript is not null && _context.Entry(transcript).State == EntityState.Added)
+                    {
+                        _context.Entry(transcript).State = EntityState.Detached;
+                    }
+                    await _credits.ReleaseAsync(reservation.ReservationId, CancellationToken.None);
+                    throw;
+                }
+
+                try
+                {
+                    var grant = _relayTokens.Create(
+                        session.Id,
+                        userId,
+                        language.Code,
+                        mode,
+                        canonicalSpeechProvider,
+                        canonicalSourceLanguage,
+                        transcript is not null,
+                        selectedQuizLanguage?.Code,
+                        partialCaptionsEnabled);
+                    var account = await _credits.GetOrCreateAccountAsync(userId, cancellationToken);
+                    RealtimeTranslationTelemetry.SessionsCreated.Add(1);
+                    var created = new RealtimeTranslationSessionCreated(
+                        session.Id,
+                        grant.Token,
+                        grant.ExpiresAt,
+                        $"/api/realtime-translation/sessions/{session.Id:D}/stream",
+                        1,
+                        account.AvailableCredits,
+                        session.CreditsPerStartedMinute,
+                        session.TranscriptId);
+                    setupCompleted = true;
+                    return created;
+                }
+                catch
+                {
+                    await _credits.ReleaseAsync(reservation.ReservationId, CancellationToken.None);
+                    minute.Status = RealtimeTranslationMinuteStatuses.Released;
+                    minute.ReleasedAt = _timeProvider.GetUtcNow();
+                    session.Status = RealtimeTranslationSessionStatuses.Failed;
+                    session.EndedAt = minute.ReleasedAt;
+                    await _context.SaveChangesAsync(CancellationToken.None);
+                    throw;
+                }
             }
-            catch
+            finally
             {
-                await _credits.ReleaseAsync(reservation.ReservationId, cancellationToken);
-                minute.Status = RealtimeTranslationMinuteStatuses.Released;
-                minute.ReleasedAt = _timeProvider.GetUtcNow();
-                session.Status = RealtimeTranslationSessionStatuses.Failed;
-                session.EndedAt = minute.ReleasedAt;
-                await _context.SaveChangesAsync(cancellationToken);
-                throw;
+                if (!setupCompleted && session.StorageReservationId is { } storage && _quotas is not null)
+                    await _quotas.ReleaseAsync(storage, userId, CancellationToken.None);
             }
         }
     }

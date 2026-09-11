@@ -19,6 +19,7 @@ public sealed class AbuseOptions
     public long SitePdfBytes { get; set; } = 10L * 1024 * 1024 * 1024;
     public long SiteContentBytes { get; set; } = 1024L * 1024 * 1024;
     public bool SignupsEnabled { get; set; } = true;
+    public string? SignupHashKey { get; set; }
     public int SignupsPerIpHour { get; set; } = 5;
     public int SignupsPerIpDay { get; set; } = 10;
     public int SignupsPerDay { get; set; } = 200;
@@ -41,6 +42,8 @@ public sealed class AbuseOptions
 public sealed class AbuseOptionsValidator : IValidateOptions<AbuseOptions>
 {
     public ValidateOptionsResult Validate(string? name, AbuseOptions options) =>
+        options.SignupHashKey is not null && !SignupAdmissionService.HasValidHashKey(options.SignupHashKey)
+            ? ValidateOptionsResult.Fail("Abuse:SignupHashKey must be a base64-encoded key of at least 32 bytes.") :
         options.MaxPdfBytes > 25L * 1024 * 1024 || typeof(AbuseOptions).GetProperties().Any(p => p.PropertyType == typeof(int) && (int)p.GetValue(options)! <= 0
             || p.PropertyType == typeof(long) && (long)p.GetValue(options)! <= 0)
             ? ValidateOptionsResult.Fail("All abuse limits must be positive; MaxPdfBytes cannot exceed the 25 MiB worker limit.") : ValidateOptionsResult.Success;
