@@ -20,7 +20,7 @@ public sealed class ApiExceptionFilter(
         {
             var text = new Glosify.Localization.UiTextStringLocalizer();
             var quota = context.Exception as Glosify.Services.Abuse.ResourceQuotaException;
-            var message = quota is null ? context.Exception.Message : text[quota.StatusCode == 503 ? "Usage.SiteFull" : "Usage.LimitReached"].Value;
+            var message = quota is null ? context.Exception.Message : text[quota.MessageKey].Value;
             context.Result = new Microsoft.AspNetCore.Mvc.ViewResult { ViewName = "ResourceLimit",
                 StatusCode = quota?.StatusCode ?? 429,
                 ViewData = new Microsoft.AspNetCore.Mvc.ViewFeatures.ViewDataDictionary<string>(

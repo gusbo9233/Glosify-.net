@@ -476,4 +476,5 @@
   <data name="Usage.HistoryHelp" xml:space="preserve"><value>Delete saved quiz attempts and review history to free space. Cards and their current study schedules are kept.</value></data>
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>New registrations are temporarily closed. Existing users can still sign in.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>The new-account limit has been reached. Please try again later.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>Storage accounting is being prepared. Please try again shortly.</value></data>
 </root>

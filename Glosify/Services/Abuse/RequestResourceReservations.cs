@@ -19,7 +19,10 @@ public sealed class RequestResourceReservations
                 foreach (var (id, user) in Pending)
                     await quotas.RenewAsync(id, user, request.Token);
         }
-        catch (OperationCanceledException) when (request.IsCancellationRequested) { }
+        // SQL Server can surface cancellation during savepoint creation as a
+        // SqlException rather than OperationCanceledException.
+        catch (Exception ex) when (request.IsCancellationRequested && ex is
+            OperationCanceledException or Microsoft.Data.SqlClient.SqlException or Microsoft.EntityFrameworkCore.DbUpdateException) { }
         catch { request.Cancel(); throw; }
     }
     public async Task ReleaseAsync(ResourceQuotaService quotas)

@@ -12,6 +12,18 @@ namespace Glosify.Tests;
 public sealed class ResourceAccountingTests
 {
     [Fact]
+    public void BackfillErrorsAreDistinctFromExhaustedSiteCapacity()
+    {
+        var initializing = Glosify.Infrastructure.Api.ApiExceptionMapper.Map(new ResourceQuotaException("accounting_initializing", true))!.Value;
+        var full = Glosify.Infrastructure.Api.ApiExceptionMapper.Map(new ResourceQuotaException("content_bytes", true))!.Value;
+        Assert.Equal(503, initializing.StatusCode);
+        Assert.Equal("accounting_initializing", initializing.Code);
+        Assert.Equal(503, full.StatusCode);
+        Assert.Equal("site_capacity_exceeded", full.Code);
+        Assert.NotEqual(initializing.Detail, full.Detail);
+    }
+
+    [Fact]
     public async Task QuizLimit_IsAcrossLanguages_AndDeletionFreesCapacity()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");

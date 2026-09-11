@@ -1636,4 +1636,5 @@
   <data name="Usage.HistoryHelp" xml:space="preserve"><value>Hapus percobaan kuis dan riwayat ulasan untuk mengosongkan ruang. Kartu dan jadwal belajarnya tetap disimpan.</value></data>
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Pendaftaran baru ditutup sementara. Pengguna yang sudah ada masih dapat masuk.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>Batas akun baru telah tercapai. Coba lagi nanti.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>Penggunaan penyimpanan sedang dihitung. Coba lagi sebentar lagi.</value></data>
 </root>

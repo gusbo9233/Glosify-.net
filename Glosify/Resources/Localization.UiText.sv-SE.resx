@@ -476,4 +476,5 @@
   <data name="Usage.HistoryHelp" xml:space="preserve"><value>Radera sparade quizförsök och repetitionshistorik för att frigöra utrymme. Korten och deras aktuella studiescheman behålls.</value></data>
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Nyregistrering är tillfälligt stängd. Befintliga användare kan fortfarande logga in.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>Gränsen för nya konton har nåtts. Försök igen senare.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>Lagringsanvändningen beräknas. Försök igen om en liten stund.</value></data>
 </root>

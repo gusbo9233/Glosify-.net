@@ -1636,4 +1636,5 @@
   <data name="Usage.HistoryHelp" xml:space="preserve"><value>Видаліть спроби тестів та історію повторень, щоб звільнити місце. Картки та їхні поточні розклади навчання збережуться.</value></data>
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Нові реєстрації тимчасово закрито. Наявні користувачі можуть увійти.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>Досягнуто ліміту нових облікових записів. Спробуйте пізніше.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>Триває обчислення використаного сховища. Спробуйте ще раз трохи згодом.</value></data>
 </root>

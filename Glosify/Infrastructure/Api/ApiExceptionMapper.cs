@@ -16,7 +16,7 @@ public static class ApiExceptionMapper
     public static ApiError? Map(Exception exception) => exception switch
     {
         Glosify.Services.Abuse.ResourceQuotaException quota => new ApiError(quota.StatusCode, quota.Code,
-            new Glosify.Localization.UiTextStringLocalizer()[quota.StatusCode == 503 ? "Usage.SiteFull" : "Usage.LimitReached"].Value),
+            new Glosify.Localization.UiTextStringLocalizer()[quota.MessageKey].Value),
         Glosify.Services.Abuse.SignupLimitException => Error(429, ApiErrorCodes.RateLimited, exception),
         CollectionParentNotFoundException => Error(400, ApiErrorCodes.CollectionParentNotFound, exception),
         CollectionNameConflictException => Error(409, ApiErrorCodes.CollectionNameConflict, exception),

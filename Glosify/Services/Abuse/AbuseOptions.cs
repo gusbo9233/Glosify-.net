@@ -47,12 +47,17 @@ public sealed class AbuseOptionsValidator : IValidateOptions<AbuseOptions>
 }
 
 public sealed class ResourceQuotaException(string resource, bool site = false)
-    : Exception(site ? "Glosify's storage capacity has been reached. Please try again later."
+    : Exception(resource == "accounting_initializing"
+        ? new Glosify.Localization.UiTextStringLocalizer()["Usage.Initializing"].Value
+        : site ? "Glosify's storage capacity has been reached. Please try again later."
         : $"Your {resource.Replace('_', ' ')} limit has been reached. Delete saved content from Account usage to free space.")
 {
     public string Resource { get; } = AbuseMetrics.RecordQuota(resource, site);
     public int StatusCode => site ? 503 : 409;
-    public string Code => site ? "site_capacity_exceeded" : "resource_quota_exceeded";
+    public string Code => Resource == "accounting_initializing" ? "accounting_initializing"
+        : site ? "site_capacity_exceeded" : "resource_quota_exceeded";
+    public string MessageKey => Resource == "accounting_initializing" ? "Usage.Initializing"
+        : site ? "Usage.SiteFull" : "Usage.LimitReached";
 }
 
 internal static class AbuseMetrics

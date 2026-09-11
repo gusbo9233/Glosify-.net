@@ -1636,4 +1636,5 @@
   <data name="Usage.HistoryHelp" xml:space="preserve"><value>Elimina intentos de cuestionarios e historial de repasos para liberar espacio. Se conservan las tarjetas y sus calendarios de estudio.</value></data>
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Los registros nuevos están cerrados temporalmente. Los usuarios existentes pueden iniciar sesión.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>Se alcanzó el límite de cuentas nuevas. Inténtalo más tarde.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>Se está calculando el uso del almacenamiento. Inténtalo de nuevo en un momento.</value></data>
 </root>

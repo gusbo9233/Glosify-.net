@@ -101,6 +101,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
             })
             : null;
         using var browserSendLock = new SemaphoreSlim(1, 1);
+        using var storageCancellation = new CancellationTokenSource();
         Task? transcriptWriter = null;
         Task? captureWriter = null;
         var captureRecorder = captures is null
@@ -125,7 +126,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                     authorization.SessionId,
                     transcripts.Reader,
                     storageWarning, browserSocket, browserSendLock,
-                    CancellationToken.None);
+                    storageCancellation.Token);
             }
             if (captures is not null)
             {
@@ -133,7 +134,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                     authorization.SessionId,
                     authorization.UserId,
                     captures.Reader,
-                    CancellationToken.None);
+                    storageCancellation.Token);
             }
 
             var browserPump = PumpBrowserAudioAsync(
@@ -266,17 +267,10 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 .ToArray();
             if (storageWriters.Length > 0)
             {
-                try
-                {
-                    await Task.WhenAll(storageWriters)
-                        .WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
-                }
-                catch (TimeoutException)
-                {
+                if (!await OpenAiTranslationRelay.DrainStorageWriterAsync(Task.WhenAll(storageWriters), storageCancellation))
                     _logger.LogWarning(
                         "Timed out while flushing speech-recognition data for session {SessionId}",
                         authorization.SessionId);
-                }
             }
             await CloseQuietlyAsync(browserSocket);
         }

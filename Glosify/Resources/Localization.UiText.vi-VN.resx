@@ -1636,4 +1636,5 @@
   <data name="Usage.HistoryHelp" xml:space="preserve"><value>Xóa lượt làm bài và lịch sử ôn tập để giải phóng dung lượng. Thẻ và lịch học hiện tại vẫn được giữ.</value></data>
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Tạm thời đóng đăng ký mới. Người dùng hiện tại vẫn có thể đăng nhập.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>Đã đạt giới hạn tài khoản mới. Vui lòng thử lại sau.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>Đang tính dung lượng lưu trữ. Vui lòng thử lại sau ít phút.</value></data>
 </root>

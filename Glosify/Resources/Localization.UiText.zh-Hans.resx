@@ -1636,4 +1636,5 @@
   <data name="Usage.HistoryHelp" xml:space="preserve"><value>删除测验作答和复习记录以释放空间。卡片及其当前学习计划将保留。</value></data>
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>新用户注册暂时关闭。现有用户仍可登录。</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>新账户数量已达上限。请稍后重试。</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>正在计算存储使用量。请稍后重试。</value></data>
 </root>

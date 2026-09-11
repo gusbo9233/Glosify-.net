@@ -1636,4 +1636,5 @@
   <data name="Usage.HistoryHelp" xml:space="preserve"><value>احذف محاولات الاختبارات وسجل المراجعة لتوفير مساحة. ستُحفظ البطاقات وجداول دراستها الحالية.</value></data>
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>التسجيل الجديد مغلق مؤقتًا. لا يزال بإمكان المستخدمين الحاليين تسجيل الدخول.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>تم بلوغ حد الحسابات الجديدة. يُرجى المحاولة لاحقًا.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>يجري إعداد حساب استخدام التخزين. يُرجى المحاولة مجددًا بعد قليل.</value></data>
 </root>

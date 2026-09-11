@@ -1636,4 +1636,5 @@
   <data name="Usage.HistoryHelp" xml:space="preserve"><value>Supprimez les tentatives de quiz et l’historique des révisions pour libérer de l’espace. Les cartes et leur calendrier d’étude sont conservés.</value></data>
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>Les nouvelles inscriptions sont temporairement fermées. Les utilisateurs existants peuvent toujours se connecter.</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>La limite de nouveaux comptes est atteinte. Réessayez plus tard.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>Le calcul du stockage est en cours. Réessayez dans quelques instants.</value></data>
 </root>

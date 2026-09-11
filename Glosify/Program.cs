@@ -308,7 +308,10 @@ app.UseGlosifyEndpointAuthentication();
 // authentication, but before every component that can produce a routed response.
 app.UseRequestLocalization();
 
-app.UseRateLimiter();
+// Protocol callbacks already passed the pre-authentication limiter. An
+// unconfigured provider may fall through authentication; do not charge it twice.
+app.UseWhen(context => !RateLimitingExtensions.IsOAuthProtocolCallback(context.Request.Path),
+    branch => branch.UseRateLimiter());
 
 app.UseAuthorization();
 app.Use(async (context, next) =>

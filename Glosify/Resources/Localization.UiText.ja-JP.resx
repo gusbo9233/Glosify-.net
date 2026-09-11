@@ -1636,4 +1636,5 @@
   <data name="Usage.HistoryHelp" xml:space="preserve"><value>クイズの解答履歴と復習履歴を削除して容量を空けます。カードと現在の学習スケジュールは保持されます。</value></data>
   <data name="Auth.SignupsClosed" xml:space="preserve"><value>新規登録は一時的に停止しています。既存のユーザーは引き続きログインできます。</value></data>
   <data name="Auth.SignupsLimited" xml:space="preserve"><value>新規アカウント数の上限に達しました。後でもう一度お試しください。</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>ストレージ使用量を計算しています。しばらくしてからもう一度お試しください。</value></data>
 </root>

@@ -76,6 +76,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         relayCancellation.CancelAfter(TimeSpan.FromMinutes(_options.MaxSessionMinutes + 1));
         var relayToken = relayCancellation.Token;
         var sessionCloseSent = false;
+        using var storageCancellation = new CancellationTokenSource();
 
         try
         {
@@ -113,7 +114,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                     transcriptChannel.Reader,
                     transcriptState,
                     browserSocket, browserSendLock,
-                    CancellationToken.None);
+                    storageCancellation.Token);
                 sourceAudio = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(32)
                 {
                     SingleReader = true,
@@ -243,22 +244,10 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                 transcriptChannel?.Writer.TryComplete();
                 if (transcriptWriter is not null)
                 {
-                    try
-                    {
-                        // CancellationToken.None on purpose. This runs in the teardown path,
-                        // after relayCancellation.Cancel(), so the caller's token is normally
-                        // already cancelled — forwarding it would abandon the caption flush
-                        // instead of giving it the five seconds this drain exists to provide,
-                        // and the OperationCanceledException would escape the TimeoutException
-                        // catch below and mask whatever was already unwinding.
-                        await transcriptWriter.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
-                    }
-                    catch (TimeoutException)
-                    {
+                    if (!await DrainStorageWriterAsync(transcriptWriter, storageCancellation))
                         _logger.LogWarning(
                             "Timed out while flushing saved captions for session {SessionId}",
                             authorization.SessionId);
-                    }
                 }
             }
         }
@@ -601,6 +590,24 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
             {
                 batch.Clear();
             }
+        }
+    }
+
+    internal static async Task<bool> DrainStorageWriterAsync(Task writer, CancellationTokenSource cancellation,
+        TimeSpan? gracePeriod = null)
+    {
+        try
+        {
+            await writer.WaitAsync(gracePeriod ?? TimeSpan.FromSeconds(5), CancellationToken.None);
+            return true;
+        }
+        catch (TimeoutException)
+        {
+            cancellation.Cancel();
+            // Do not dispose sockets, locks or scopes until their writer has exited.
+            try { await writer; }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+            return false;
         }
     }
 

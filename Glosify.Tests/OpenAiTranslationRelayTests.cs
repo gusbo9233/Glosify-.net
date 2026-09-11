@@ -13,6 +13,25 @@ namespace Glosify.Tests;
 
 public sealed class OpenAiTranslationRelayTests
 {
+    [Fact]
+    public async Task StorageDrainCancelsAndAwaitsSlowWriterBeforeResourcesCanBeDisposed()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var exited = false;
+        async Task Writer()
+        {
+            try { await Task.Delay(Timeout.InfiniteTimeSpan, cancellation.Token); }
+            finally { await Task.Yield(); exited = true; }
+        }
+        var writer = Writer();
+        Assert.False(await OpenAiTranslationRelay.DrainStorageWriterAsync(writer, cancellation, TimeSpan.FromMilliseconds(10)));
+        Assert.True(exited);
+        Assert.True(writer.IsCanceled);
+        using var completedCancellation = new CancellationTokenSource();
+        Assert.True(await OpenAiTranslationRelay.DrainStorageWriterAsync(Task.CompletedTask, completedCancellation));
+        Assert.False(completedCancellation.IsCancellationRequested);
+    }
+
     private static readonly DateTimeOffset TestNow =
         new(2026, 8, 11, 8, 0, 0, TimeSpan.Zero);
 

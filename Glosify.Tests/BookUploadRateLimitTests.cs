@@ -11,6 +11,33 @@ namespace Glosify.Tests;
 public sealed class BookUploadRateLimitTests
 {
     [Theory]
+    [InlineData("/signin-google", false)]
+    [InlineData("/signin-google", true)]
+    [InlineData("/signin-microsoft", false)]
+    [InlineData("/signin-microsoft", true)]
+    public async Task OAuthProtocolRequestsConsumeOnePermitAcrossTheFullPipeline(string path, bool configured)
+    {
+        using var factory = new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                foreach (var provider in new[] { "Google", "Microsoft" })
+                {
+                    builder.UseSetting($"Authentication:{provider}:ClientId", configured ? "test-client" : "");
+                    builder.UseSetting($"Authentication:{provider}:ClientSecret", configured ? "test-secret" : "");
+                }
+            });
+        using var client = factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        for (var i = 0; i < 20; i++)
+        {
+            using var response = await client.GetAsync(path);
+            Assert.NotEqual(System.Net.HttpStatusCode.TooManyRequests, response.StatusCode);
+        }
+        using var rejected = await client.GetAsync(path);
+        Assert.Equal(System.Net.HttpStatusCode.TooManyRequests, rejected.StatusCode);
+        Assert.NotNull(rejected.Headers.RetryAfter);
+    }
+
+    [Theory]
     [InlineData("/signin-google")]
     [InlineData("/signin-microsoft")]
     [InlineData("/api/auth/external/google")]
