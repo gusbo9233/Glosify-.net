@@ -1607,7 +1607,7 @@
   <data name="Speech.Provider" xml:space="preserve"><value>Servicio de voz</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Voz del navegador · sin créditos Glosify</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>Voz ElevenLabs · usa créditos de IA</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>La voz ElevenLabs descuenta créditos de IA Glosify por cada segmento de audio, incluso si está en caché. La síntesis fallida no se cobra. La voz del navegador es gratis.</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs descuenta fracciones de crédito por carácter, incluido el audio en caché. La preparación fallida no se cobra. La voz del navegador es gratis.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Idioma del texto</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Elige un idioma</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Voz</value></data>
@@ -1618,8 +1618,8 @@
   <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>No hay voces del navegador para este idioma. Elige ElevenLabs o instala una voz en tu dispositivo.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>Total: {0} créditos de IA ({1} por segmento de audio).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Ajustes de voz</value></data>
-  <data name="Speech.Rate" xml:space="preserve"><value>{0} créditos de IA por segmento de audio. Al guardar, aceptas esta tarifa.</value></data>
-  <data name="Speech.Estimate" xml:space="preserve"><value>Total estimado: {0} créditos de IA</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>Hasta {0} créditos de IA por segmento de hasta {1} caracteres. Se cobra por carácter. Guardar acepta este máximo.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Total máximo: {0} créditos de IA</value></data>
   <data name="Speech.ReviewRate" xml:space="preserve"><value>Revisa y guarda los ajustes de voz para aceptar la tarifa actual de ElevenLabs antes de la lectura.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Tu voz guardada no está disponible. Elige otra en los ajustes de voz.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Usa créditos de IA</value></data>
@@ -1648,4 +1648,6 @@
   <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Sesiones de traducción</value></data>
   <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Almacenamiento de PDF</value></data>
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Contenido almacenado</value></data>
+  <data name="Payments.RoundedBalance" xml:space="preserve"><value>Los saldos se redondean hacia arriba a créditos enteros. Los descuentos reales dependen del uso.</value></data>
+  <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Tu saldo exacto no es suficiente. Los saldos mostrados se redondean hacia arriba; agrega créditos o reduce la solicitud.</value></data>
 </root>

@@ -18,6 +18,13 @@ public sealed class SpeechOptions
     public string Key { get; set; } = string.Empty;
     public string Region { get; set; } = string.Empty;
     public string BlobContainer { get; set; } = "tts-cache";
+    // Customer pricing is explicit and independent of package or provider-budget changes.
+    public decimal TextSekPerMillionCharacters { get; set; } = 1928.29m;
+    public decimal SekPerCredit { get; set; } = 0.1058m;
+    public decimal CalculateCredits(int characters) => Glosify.Services.Ai.CreditAmounts.RoundCharge(
+        Math.Max(0, characters) * TextSekPerMillionCharacters / 1_000_000m / SekPerCredit);
+    public int MaximumSegmentCredits => Glosify.Services.Ai.CreditAmounts.Display(CalculateCredits(MaxTextLength));
+    // Retained only for the retired Azure service's compatibility tests.
     public int CreditsPerRequest { get; set; } = 1;
     public int MaxTextLength { get; set; } = 200;
     public SpeechHighDefinitionOptions HighDefinition { get; set; } = new();

@@ -19,7 +19,7 @@ public sealed record AiTokenUsage(
 public sealed record AiCreditReservation(
     Guid ReservationId,
     string UserId,
-    int ReservedCredits,
+    decimal ReservedCredits,
     int EstimatedTokens);
 
 public sealed record AiDurationCreditReservation(
@@ -30,22 +30,22 @@ public sealed record AiDurationCreditReservation(
 
 public sealed record AiCreditAccountView(
     string UserId,
-    int BalanceCredits,
-    int ReservedCredits,
-    int AvailableCredits,
+    decimal BalanceCredits,
+    decimal ReservedCredits,
+    decimal AvailableCredits,
     DateTimeOffset? TrialGrantedAt);
 
 public sealed class InsufficientAiCreditsException : InvalidOperationException
 {
-    public InsufficientAiCreditsException(int availableCredits, int requiredCredits)
-        : base($"You need {requiredCredits} AI credits for this request, but you have {availableCredits} available.")
+    public InsufficientAiCreditsException(decimal availableCredits, decimal requiredCredits)
+        : base("Your exact credit balance is insufficient for this request. Displayed balances are rounded up; add credits or reduce the request.")
     {
         AvailableCredits = availableCredits;
         RequiredCredits = requiredCredits;
     }
 
-    public int AvailableCredits { get; }
-    public int RequiredCredits { get; }
+    public decimal AvailableCredits { get; }
+    public decimal RequiredCredits { get; }
 }
 
 public class PaidServicesBudgetExhaustedException : InvalidOperationException

@@ -105,7 +105,22 @@ The server uses ElevenLabs' [convert endpoint](https://elevenlabs.io/docs/api-re
 with a 30-second timeout and no automatic POST retries. Unsupported languages
 only offer explicit browser speech. Legacy Azure preferences reset to browser
 speech; legacy quality request fields are tolerated. The audio/voice-list API
-shape, 200-character segments and one-credit playback price remain unchanged.
+shape and 200-character segment limit remain compatible. TTS now charges
+`characters × 1928.29 / 1,000,000 / 0.1058` credits, rounded upward only to six
+decimal places. These explicit Speech settings use the researched doubled rate
+and the 529 SEK / 5,000 credit conversion; package edits do not reprice playback.
+The catalog's `creditsPerRequest` is the rounded maximum segment quote (4), with
+`maximumSegmentCredits`, `creditsPerMillionCharacters`, and `pricingUnit` metadata.
+`maxCredits` remains an integer upper bound. Cached preparations have the same
+customer price; only cache misses consume provider budget.
+
+Balances, reservations and ledger amounts use `decimal(19,6)`. Token usage is
+charged without thousand-token or whole-credit rounding. Subtitle minutes,
+purchases, trial grants and refund rules are unchanged. Public balances remain
+integers rounded upward from the exact balance; server eligibility never uses
+rounded values. Signed ledger displays round the magnitude up, keeping the sign.
+TTS preparation reservations expire after five minutes, are released by bounded
+maintenance, and cannot later commit. Financial history is retained.
 
 The dedicated cache is capped at 64 MiB (configurable downward through
 `Speech__MemoryCacheBytes`), one hour and 2 MiB per audio entry. Keys include

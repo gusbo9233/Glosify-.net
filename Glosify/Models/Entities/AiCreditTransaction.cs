@@ -8,9 +8,9 @@ public sealed class AiCreditTransaction
     public Guid? OperationId { get; set; }
     public Guid? AssistantTurnId { get; set; }
     public string Kind { get; set; } = AiCreditTransactionKinds.UsageDebit;
-    public int CreditAmount { get; set; }
-    public int BalanceAfterCredits { get; set; }
-    public int ReservedAfterCredits { get; set; }
+    public decimal CreditAmount { get; set; }
+    public decimal BalanceAfterCredits { get; set; }
+    public decimal ReservedAfterCredits { get; set; }
     public string? Provider { get; set; }
     public string? Model { get; set; }
     public string? Feature { get; set; }

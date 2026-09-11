@@ -18,7 +18,8 @@
     <div data-speech-token hidden>@Html.AntiForgeryToken()</div>
     <div class="speech-credit-notice" data-speech-credits hidden>
         <p>@Text["Speech.Credits"]</p>
-        <p data-speech-price data-price-template="@Text["Speech.Price"]"></p>
+        <p>@Text["Payments.RoundedBalance"]</p>
+        <p data-speech-price></p>
     </div>
     <label for="speech-language">@Text["Speech.Language"]</label>
     <select id="speech-language" data-speech-language>

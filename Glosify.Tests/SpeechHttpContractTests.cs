@@ -64,7 +64,7 @@ public sealed class SpeechHttpContractTests
     [Fact]
     public async Task Rate_conflicts_already_preserve_review_instructions_as_problem_details()
     {
-        using var factory = CreateFactory(options => options.CreditsPerRequest = 2);
+        using var factory = CreateFactory(options => { options.TextSekPerMillionCharacters = 1_000_000m; options.SekPerCredit = 1m; });
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Speech-Test-User", "speaker");
         client.DefaultRequestHeaders.Add("RequestVerificationToken", await client.GetStringAsync("/_speech-test-token"));
@@ -87,7 +87,7 @@ public sealed class SpeechHttpContractTests
         client.DefaultRequestHeaders.Add("RequestVerificationToken", await client.GetStringAsync("/_speech-test-token"));
         var catalog = await client.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/tts/voices?lang=Swedish");
         Assert.Equal(limit, catalog.GetProperty("maxTextLength").GetInt32());
-        var response = await client.PostAsJsonAsync("/api/tts", new { text = new string('a', length), lang = "Swedish", maxCredits = 1 });
+        var response = await client.PostAsJsonAsync("/api/tts", new { text = new string('a', length), lang = "Swedish", maxCredits = 4 });
         Assert.Equal(expected, response.StatusCode);
         if (expected == HttpStatusCode.BadRequest)
         {

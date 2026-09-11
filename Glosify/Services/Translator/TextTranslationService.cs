@@ -113,7 +113,7 @@ public sealed class TextTranslationService : ITextTranslationService
             detected,
             target.Code,
             translatedText,
-            account.AvailableCredits);
+            Glosify.Services.Ai.CreditAmounts.Display(account.AvailableCredits));
     }
 
     public async Task<SavedTranslationResult> SaveAsync(

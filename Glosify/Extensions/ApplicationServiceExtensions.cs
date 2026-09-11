@@ -220,7 +220,9 @@ public static class ApplicationServiceExtensions
         services.AddOptions<SpeechOptions>()
             .Bind(configuration.GetSection(SpeechOptions.SectionName))
             .Configure(options => { if (string.IsNullOrWhiteSpace(options.ApiKey)) options.ApiKey = ResolveElevenLabsApiKey(configuration) ?? ""; })
-            .Validate(options => options.CreditsPerRequest > 0, "Speech:CreditsPerRequest must be positive.")
+            .Validate(options => options.TextSekPerMillionCharacters is > 0 and <= 1_000_000m
+                && options.SekPerCredit is >= 0.000001m and <= 1_000_000m,
+                "Speech character pricing and SEK per credit must be positive and bounded.")
             .Validate(options => options.MaxTextLength is > 0 and <= 200 && options.MemoryCacheBytes is > 0 and <= 67108864,
                 "Speech segments must be at most 200 characters and the cache at most 64 MiB.")
             .Validate(options => !options.Enabled || (!string.IsNullOrWhiteSpace(options.ApiKey)

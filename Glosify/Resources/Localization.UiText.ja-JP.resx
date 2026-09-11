@@ -1607,7 +1607,7 @@
   <data name="Speech.Provider" xml:space="preserve"><value>音声サービス</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>ブラウザー音声 · Glosifyクレジット不要</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>ElevenLabs音声 · AIクレジットを使用</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs音声はキャッシュ済み音声を含む各音声区間に対してGlosify AIクレジットを消費します。音声合成に失敗した場合は課金されません。ブラウザー音声は無料です。</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabsはキャッシュ済み音声も含め、文字数に応じて小数単位のクレジットを消費します。準備に失敗した場合は課金されません。ブラウザー音声は無料です。</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>テキストの言語</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>言語を選択</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>音声</value></data>
@@ -1618,8 +1618,8 @@
   <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>この言語のブラウザー音声がありません。ElevenLabsを選択するか、端末に音声をインストールしてください。</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>合計：{0} AIクレジット（音声区間ごとに{1}）。</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>読み上げ設定</value></data>
-  <data name="Speech.Rate" xml:space="preserve"><value>音声セグメントごとに {0} AIクレジット。保存すると、この料金に同意します。</value></data>
-  <data name="Speech.Estimate" xml:space="preserve"><value>推定合計：{0} AIクレジット</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>最大{1}文字の区間ごとに最大{0} AIクレジット。文字数に応じて課金されます。保存するとこの上限に同意します。</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>合計上限：{0} AIクレジット</value></data>
   <data name="Speech.ReviewRate" xml:space="preserve"><value>読み上げる前に設定を確認して保存し、現在のElevenLabs料金に同意してください。</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>保存した音声は利用できません。読み上げ設定で別の音声を選んでください。</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>AIクレジットを使用</value></data>
@@ -1648,4 +1648,6 @@
   <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>翻訳セッション</value></data>
   <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>PDFストレージ</value></data>
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>保存済みコンテンツ</value></data>
+  <data name="Payments.RoundedBalance" xml:space="preserve"><value>残高は整数に切り上げて表示されます。実際の消費量は使用量に応じて変わります。</value></data>
+  <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>正確な残高が不足しています。表示残高は切り上げられています。クレジットを追加するか、リクエストを減らしてください。</value></data>
 </root>

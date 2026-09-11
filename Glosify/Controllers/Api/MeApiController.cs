@@ -25,6 +25,6 @@ public class MeApiController : ApiControllerBase
     {
         var account = await _aiCreditService.GetOrCreateAccountAsync(User.GetUserId(), cancellationToken);
         var email = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name ?? "Signed in";
-        return Ok(new MeDto(email, account.AvailableCredits));
+        return Ok(new MeDto(email, Glosify.Services.Ai.CreditAmounts.Display(account.AvailableCredits)));
     }
 }

@@ -381,9 +381,10 @@ public sealed class AiCreditService : IAiCreditService
         return true;
     }
 
-    public Task<Guid> ReserveSpeechAsync(string userId, int credits, CancellationToken cancellationToken = default)
+    public Task<Guid> ReserveSpeechAsync(string userId, decimal credits, CancellationToken cancellationToken = default)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(credits);
+        CreditAmounts.ValidatePrecision(credits);
         return WithConcurrencyRetryAsync(async () =>
         {
             var account = await GetOrCreateAccountEntityAsync(userId, cancellationToken);
@@ -411,7 +412,7 @@ public sealed class AiCreditService : IAiCreditService
                 Model = "eleven_v3",
                 Feature = AiUsageFeatures.TextToSpeech,
                 Operation = "read_aloud",
-                Note = "One audio segment, including cached audio.",
+                Note = "Character-priced audio preparation, including cached audio.",
                 CreatedAt = now,
             });
             await _context.SaveChangesAsync(cancellationToken);
@@ -427,10 +428,17 @@ public sealed class AiCreditService : IAiCreditService
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var service = new AiCreditService(context, _contextFactory, Options.Create(_options),
             _pricing, _trialEligibility, _timeProvider);
-        await service.WithConcurrencyRetryAsync(async () =>
+        var committed = await service.WithConcurrencyRetryAsync(async () =>
         {
             var reservation = await service.LoadReservationAsync(reservationId, cancellationToken);
-            if (reservation is null) return false;
+            if (reservation is null)
+                return await context.AiCreditTransactions.AnyAsync(t => t.ReservationId == reservationId
+                    && t.Kind == AiCreditTransactionKinds.UsageDebit && t.Feature == AiUsageFeatures.TextToSpeech, cancellationToken);
+            if (reservation.CreatedAt.AddMinutes(5) <= _timeProvider.GetUtcNow())
+            {
+                await service.ReleaseCoreAsync(reservationId, cancellationToken);
+                return false;
+            }
             if (reservation.Feature != AiUsageFeatures.TextToSpeech)
                 throw new InvalidOperationException("The reservation is not for speech playback.");
             var account = await service.GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
@@ -457,6 +465,7 @@ public sealed class AiCreditService : IAiCreditService
             await context.SaveChangesAsync(cancellationToken);
             return true;
         });
+        if (!committed) throw new InvalidOperationException("Speech preparation expired or was released. Please try again.");
     }
 
     public Task ReleaseAsync(Guid reservationId, CancellationToken cancellationToken = default)
@@ -800,6 +809,10 @@ public sealed class AiCreditService : IAiCreditService
             return null;
         }
 
+        // Read the account version BEFORE checking terminal state. Otherwise a
+        // competing settlement can finish between this check and the account read,
+        // letting us load its new balance/version and debit the same reservation twice.
+        _ = await GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
         var hasTerminalTransaction = await _context.AiCreditTransactions
             .AnyAsync(transaction =>
                 transaction.ReservationId == reservationId
@@ -812,7 +825,7 @@ public sealed class AiCreditService : IAiCreditService
     private AiCreditTransaction BuildReleaseTransaction(
         AiCreditTransaction reservation,
         AiCreditAccount account,
-        int credits,
+        decimal credits,
         long budgetMicros,
         string note)
     {

@@ -1607,7 +1607,7 @@
   <data name="Speech.Provider" xml:space="preserve"><value>Service vocal</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Voix du navigateur · sans crédits Glosify</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>Voix ElevenLabs · utilise des crédits IA</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>La voix ElevenLabs déduit vos crédits IA Glosify pour chaque segment audio, même en cache. Une synthèse échouée n’est pas facturée. La voix du navigateur est gratuite.</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs déduit des fractions de crédit par caractère, y compris pour le son en cache. Une préparation échouée n’est pas facturée. La voix du navigateur est gratuite.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Langue du texte</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Choisir une langue</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Voix</value></data>
@@ -1618,8 +1618,8 @@
   <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Aucune voix du navigateur disponible pour cette langue. Choisissez ElevenLabs ou installez une voix sur votre appareil.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>Total : {0} crédits IA ({1} par segment audio).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Paramètres vocaux</value></data>
-  <data name="Speech.Rate" xml:space="preserve"><value>{0} crédits IA par segment audio. Enregistrer accepte ce tarif.</value></data>
-  <data name="Speech.Estimate" xml:space="preserve"><value>Total estimé : {0} crédits IA</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>Jusqu’à {0} crédits IA par segment de {1} caractères maximum. Facturation par caractère. Enregistrer accepte ce maximum.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Total maximum : {0} crédits IA</value></data>
   <data name="Speech.ReviewRate" xml:space="preserve"><value>Vérifiez et enregistrez les paramètres vocaux pour accepter le tarif ElevenLabs actuel avant la lecture.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Votre voix enregistrée est indisponible. Choisissez une autre voix dans les paramètres vocaux.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Utilise des crédits IA</value></data>
@@ -1648,4 +1648,6 @@
   <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Sessions de traduction</value></data>
   <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Stockage PDF</value></data>
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Contenu stocké</value></data>
+  <data name="Payments.RoundedBalance" xml:space="preserve"><value>Les soldes sont arrondis à l’entier supérieur. Les déductions réelles dépendent de l’utilisation.</value></data>
+  <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Votre solde exact est insuffisant. Les soldes affichés sont arrondis au supérieur ; ajoutez des crédits ou réduisez la demande.</value></data>
 </root>

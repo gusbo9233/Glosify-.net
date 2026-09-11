@@ -8,6 +8,9 @@ internal sealed class AiCreditTransactionConfiguration : IEntityTypeConfiguratio
 {
     public void Configure(EntityTypeBuilder<AiCreditTransaction> entity)
     {
+        entity.Property(x => x.CreditAmount).HasPrecision(19, 6);
+        entity.Property(x => x.BalanceAfterCredits).HasPrecision(19, 6);
+        entity.Property(x => x.ReservedAfterCredits).HasPrecision(19, 6);
         entity.HasKey(transaction => transaction.Id);
         entity.Property(transaction => transaction.UserId).HasMaxLength(450).IsRequired();
         entity.Property(transaction => transaction.Kind).HasMaxLength(32).IsRequired();

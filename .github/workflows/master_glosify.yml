@@ -180,11 +180,14 @@ jobs:
           name: glosify-web
           path: ${{ runner.temp }}/myapp
 
+      - name: Include production billing smoke check
+        run: cp scripts/verify-fractional-tts.py "${{ runner.temp }}/migration/verify-fractional-tts.py"
+
       - name: Upload migration artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: glosify-migration
-          path: ${{ runner.temp }}/migration/efbundle
+          path: ${{ runner.temp }}/migration/
 
       - name: Upload Chrome Web Store artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -215,6 +218,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: build
+    concurrency:
+      group: glosify-production-deployment
+      cancel-in-progress: false
     environment: production
     permissions:
       id-token: write
@@ -264,8 +270,22 @@ jobs:
             unset configured_key
           done
 
+      - name: Validate fractional TTS rollout settings
+        run: |
+          az webapp config appsettings list -g glosify -n glosify-app | python3 -c '
+          import json,sys,decimal
+          s={x["name"]:x["value"] for x in json.load(sys.stdin)}
+          assert s.get("Speech__Enabled", "false").lower()=="true", "Enable the reviewed TTS rollout before deployment"
+          assert s.get("Speech__ApiKey") or s.get("RealtimeTranslation__ElevenLabs__ApiKey"), "An ElevenLabs key is required"
+          assert s.get("Demo__Enabled", "false").lower()=="true" and s.get("Demo__Password"), "An existing smoke account is required"
+          assert decimal.Decimal(s.get("Speech__TextSekPerMillionCharacters", "1928.29"))==decimal.Decimal("1928.29"), "Customer TTS price differs from reviewed rate"
+          assert decimal.Decimal(s.get("Speech__SekPerCredit", "0.1058"))==decimal.Decimal("0.1058"), "Credit conversion differs from reviewed rate"
+          prices=[k.rsplit("__",1)[0] for k,v in s.items() if k.startswith("AiUsage__MonthlyBudget__Models__") and k.endswith("__Deployment") and v=="eleven_v3"]
+          assert len(prices)==1 and decimal.Decimal(s.get(prices[0]+"__TextSekPerMillionCharacters", "0"))>0, "A positive v3 provider-budget price is required"
+          '
+
       # Historical destructive retirements must already be complete. This release
-      # adds tables/columns used during startup, so migrate before replacing the app.
+      # converts financial columns only while the old workers are stopped.
       - name: Require completed historical retirement
         shell: bash
         run: |
@@ -279,13 +299,75 @@ jobs:
             exit 1
           fi
 
-      - name: Apply reviewed additive database migrations
+      - name: Set up .NET for read-only ledger verification
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Close public ingress for the approved billing maintenance
+        id: ingress
+        shell: bash
+        run: |
+          az webapp config access-restriction show -g glosify -n glosify-app > "$RUNNER_TEMP/access.json"
+          python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); assert not c.get("scmIpSecurityRestrictionsUseMain"), "SCM must remain separate during maintenance"; assert not any(r.get("priority",2147483647)<=2 or r.get("name", "").startswith("fractional-maintenance-") for r in c.get("ipSecurityRestrictions", [])), "Resolve conflicting maintenance rules before release"' "$RUNNER_TEMP/access.json"
+          runner_ip="$(curl --fail --silent --max-time 30 https://api.ipify.org)"
+          python3 -c 'import ipaddress,sys; assert ipaddress.ip_address(sys.argv[1]).version == 4' "$runner_ip"
+          echo "owned=true" >> "$GITHUB_OUTPUT"
+          az webapp config access-restriction add -g glosify -n glosify-app --rule-name fractional-maintenance-runner --priority 1 --action Allow --ip-address "$runner_ip/32" --output none
+          az webapp config access-restriction add -g glosify -n glosify-app --rule-name fractional-maintenance-public --priority 2 --action Deny --ip-address "0.0.0.0/0,::/0" --output none
+
+      - name: Drain existing billing operations
+        env:
+          ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
+        shell: bash
+        run: |
+          # Access restrictions prevent new HTTP work. Existing realtime connections
+          # expire when their blocked heartbeat/minute calls stop. Never migrate live writers.
+          # Allow requests admitted just before restriction propagation to finish
+          # preparation before checking their durable reservations.
+          timeout="$(az webapp config appsettings list -g glosify -n glosify-app --query "[?name=='GenerativeAi__TimeoutSeconds'].value | [0]" -o tsv)"
+          timeout="${timeout:-180}"
+          [[ "$timeout" =~ ^[0-9]+$ && "$timeout" -le 600 ]] || exit 1
+          sleep "$((timeout + 60))"
+          for attempt in {1..72}; do
+            if dotnet app/Glosify.dll --credit-ledger-check drained; then exit 0; fi
+            sleep 10
+          done
+          echo "::error::Billing did not drain. Migration has not started."
+          exit 1
+
+      - name: Stop old workers before changing financial column types
+        id: stop
+        shell: bash
+        run: |
+          az webapp stop -g glosify -n glosify-app
+          for attempt in {1..30}; do
+            state="$(az webapp show -g glosify -n glosify-app --query state -o tsv)"
+            if [[ "$state" == "Stopped" ]]; then exit 0; fi
+            sleep 5
+          done
+          exit 1
+
+      - name: Fingerprint preserved financial records
+        env:
+          ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
+        run: dotnet app/Glosify.dll --credit-ledger-check fingerprint > "$RUNNER_TEMP/ledger-before.txt"
+
+      - name: Apply reviewed fractional credit migration with workers stopped
+        id: migration
         env:
           PRODUCTION_SQL_CONNECTION_STRING: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
           ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
         run: |
           chmod +x migration/efbundle
-          migration/efbundle 20260911151434_DurableAbuseControls --connection "$PRODUCTION_SQL_CONNECTION_STRING"
+          migration/efbundle 20260911195324_FractionalCredits --connection "$PRODUCTION_SQL_CONNECTION_STRING"
+
+      - name: Verify every preserved financial amount
+        env:
+          ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
+        run: |
+          dotnet app/Glosify.dll --credit-ledger-check fingerprint > "$RUNNER_TEMP/ledger-after.txt"
+          cmp "$RUNNER_TEMP/ledger-before.txt" "$RUNNER_TEMP/ledger-after.txt"
 
       - name: Deploy Azure Web App
         uses: azure/webapps-deploy@v3
@@ -294,18 +376,21 @@ jobs:
           slot-name: Production
           package: app
 
+      - name: Start fractional-aware application behind maintenance rules
+        run: az webapp start -g glosify -n glosify-app
+
       - name: Verify replacement artifact readiness
         shell: bash
         run: |
           for attempt in {1..30}; do
-            deployed_commit="$(curl --fail --silent https://glosify-app.azurewebsites.net/deployment-version || true)"
+            deployed_commit="$(curl --fail --silent --max-time 30 https://glosify-app.azurewebsites.net/deployment-version || true)"
             if [[ "$deployed_commit" == "$GITHUB_SHA" ]] \
-              && curl --fail --silent https://glosify-app.azurewebsites.net/readyz > /dev/null; then
+              && curl --fail --silent --max-time 30 https://glosify-app.azurewebsites.net/readyz > /dev/null; then
               exit 0
             fi
             sleep 10
           done
-          deployed_commit="$(curl --fail --silent https://glosify-app.azurewebsites.net/deployment-version || true)"
+          deployed_commit="$(curl --fail --silent --max-time 30 https://glosify-app.azurewebsites.net/deployment-version || true)"
           if [[ "$deployed_commit" != "$GITHUB_SHA" ]]; then
             echo "::error::Expected deployment $GITHUB_SHA but the production worker reported ${deployed_commit:-no version}."
             exit 1
@@ -365,9 +450,32 @@ jobs:
         shell: bash
         run: |
           for attempt in {1..30}; do
-            if curl --fail --silent https://glosify-app.azurewebsites.net/readyz > /dev/null; then
+            if curl --fail --silent --max-time 30 https://glosify-app.azurewebsites.net/readyz > /dev/null; then
               exit 0
             fi
             sleep 10
           done
           curl --fail https://glosify-app.azurewebsites.net/readyz
+
+      - name: Verify real TTS and exact credit settlement before reopening
+        env:
+          ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
+        run: python3 migration/verify-fractional-tts.py app/Glosify.dll
+
+      - name: Reopen public ingress after successful verification
+        run: |
+          az webapp config access-restriction remove -g glosify -n glosify-app --rule-name fractional-maintenance-public --action Deny --output none
+          az webapp config access-restriction remove -g glosify -n glosify-app --rule-name fractional-maintenance-runner --output none
+          curl --fail --silent --max-time 60 https://glosify-app.azurewebsites.net/readyz
+
+      - name: Restore ingress if preparation failed before stopping workers
+        if: failure() && steps.stop.outcome == 'skipped' && steps.ingress.outputs.owned == 'true'
+        run: |
+          az webapp config access-restriction remove -g glosify -n glosify-app --rule-name fractional-maintenance-public --action Deny --output none
+          az webapp config access-restriction remove -g glosify -n glosify-app --rule-name fractional-maintenance-runner --output none
+
+      - name: Keep unsafe releases closed for recovery
+        if: failure() && steps.stop.outcome != 'skipped'
+        run: |
+          az webapp stop -g glosify -n glosify-app
+          echo "::error::Maintenance remains active. Do not restart an integer-only artifact or downgrade the ledger. Recover with a fractional-compatible artifact and verify before removing maintenance rules."
