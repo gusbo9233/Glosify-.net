@@ -1,9 +1,13 @@
 @model RegisterViewModel
+@inject Microsoft.AspNetCore.Authentication.IAuthenticationSchemeProvider SchemeProvider
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = Text["Auth.CreateAccount"];
     var returnUrl = ViewData["ReturnUrl"] as string ?? "/";
     var trialGrantCredits = AiUsage.Value.TrialGrantCredits;
+    var schemes = await SchemeProvider.GetAllSchemesAsync();
+    ViewData["GoogleLoginEnabled"] = schemes.Any(x => x.Name == "Google");
+    ViewData["MicrosoftLoginEnabled"] = schemes.Any(x => x.Name == "Microsoft");
 }
 
 <main class="auth-shell">
@@ -32,35 +36,22 @@
             </div>
         }
 
-        <form asp-controller="Account" asp-action="Register" asp-route-returnUrl="@returnUrl" method="post" class="auth-form">
-            @Html.AntiForgeryToken()
-
-            <div class="field">
-                <label class="field-label" asp-for="Email">@Text["Auth.EmailAddress"]</label>
-                <input asp-for="Email" type="email"
-                       class="field-input"
-                       placeholder="name@@domain.com" autocomplete="email" />
-            </div>
-
-            <div class="field">
-                <label class="field-label" asp-for="Password">@Text["Auth.Password"]</label>
-                <input asp-for="Password" type="password"
-                       class="field-input"
-                       placeholder="••••••••" autocomplete="new-password" />
-            </div>
-
-            <div class="field">
-                <label class="field-label" asp-for="ConfirmPassword">@Text["Auth.ConfirmPassword"]</label>
-                <input asp-for="ConfirmPassword" type="password"
-                       class="field-input"
-                       placeholder="••••••••" autocomplete="new-password" />
-            </div>
-
-            <button type="submit" class="btn-primary-pill">
-                @Text["Auth.CreateAccount"]
-                <span class="material-symbols-outlined">arrow_forward</span>
-            </button>
-        </form>
+        @foreach (var provider in new[] { "Google", "Microsoft" })
+        {
+            if (ViewData[provider + "LoginEnabled"] is true)
+            {
+                <form asp-controller="Account" asp-action="ExternalLogin" method="post" class="auth-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="provider" value="@provider" />
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <button class="btn-primary-pill" type="submit">@Text["Auth.ContinueProvider", provider]</button>
+                </form>
+            }
+        }
+        @if (ViewData["GoogleLoginEnabled"] is not true && ViewData["MicrosoftLoginEnabled"] is not true)
+        {
+            <p role="status">@Text["Auth.SocialSignupUnavailable"]</p>
+        }
 
         <footer class="auth-footer">
             @Text["Auth.AlreadyAccount"]

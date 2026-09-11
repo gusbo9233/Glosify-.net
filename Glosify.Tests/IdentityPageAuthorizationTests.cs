@@ -50,10 +50,7 @@ public sealed class IdentityPageAuthorizationTests
 
         var response = await client.GetAsync("/Identity/Account/Register");
 
-        // The page carries its own [AllowAnonymous], so it must not be challenged.
-        // Asserting it renders, not merely that it is not a redirect: the Identity UI
-        // layout needs a _LoginPartial, and without one these pages return 500 — which
-        // a "not a redirect" assertion accepts.
-        response.EnsureSuccessStatusCode();
+        Assert.Equal(System.Net.HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("/Account/Register", response.Headers.Location?.OriginalString);
     }
 }

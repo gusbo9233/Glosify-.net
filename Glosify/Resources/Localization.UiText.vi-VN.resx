@@ -1606,21 +1606,46 @@
   <data name="Speech.Title" xml:space="preserve"><value>Đọc thành tiếng</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Dịch vụ giọng nói</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Giọng trình duyệt · không tốn tín dụng Glosify</value></data>
-  <data name="Speech.Azure" xml:space="preserve"><value>Giọng Azure · dùng tín dụng AI</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>Giọng Azure trừ tín dụng AI Glosify cho mỗi đoạn âm thanh, kể cả âm thanh lưu đệm. Tổng hợp giọng nói thất bại không bị tính phí. Giọng trình duyệt miễn phí.</value></data>
+  <data name="Speech.ElevenLabs" xml:space="preserve"><value>Giọng ElevenLabs · dùng tín dụng AI</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>Giọng ElevenLabs trừ tín dụng AI Glosify cho mỗi đoạn âm thanh, kể cả âm thanh lưu đệm. Tổng hợp giọng nói thất bại không bị tính phí. Giọng trình duyệt miễn phí.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Ngôn ngữ văn bản</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Chọn ngôn ngữ</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Giọng đọc</value></data>
   <data name="Speech.Play" xml:space="preserve"><value>Phát</value></data>
   <data name="Speech.Loading" xml:space="preserve"><value>Đang tải giọng đọc…</value></data>
-  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>Không thể tải giọng Azure. Hãy thử lại hoặc chọn giọng trình duyệt.</value></data>
-  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>Dịch vụ đã cấu hình không có giọng Azure cho ngôn ngữ này. Hãy chọn giọng trình duyệt hoặc ngôn ngữ khác.</value></data>
-  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Không có giọng trình duyệt cho ngôn ngữ này. Hãy chọn Azure hoặc cài giọng đọc trên thiết bị của bạn.</value></data>
+  <data name="Speech.ElevenLabsUnavailable" xml:space="preserve"><value>Không thể tải giọng ElevenLabs. Hãy thử lại hoặc chọn giọng trình duyệt.</value></data>
+  <data name="Speech.NoElevenLabsVoices" xml:space="preserve"><value>Dịch vụ đã cấu hình không có giọng ElevenLabs cho ngôn ngữ này. Hãy chọn giọng trình duyệt hoặc ngôn ngữ khác.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Không có giọng trình duyệt cho ngôn ngữ này. Hãy chọn ElevenLabs hoặc cài giọng đọc trên thiết bị của bạn.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>Tổng: {0} tín dụng AI ({1} cho mỗi đoạn âm thanh).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Cài đặt giọng đọc</value></data>
   <data name="Speech.Rate" xml:space="preserve"><value>{0} tín dụng AI cho mỗi đoạn âm thanh. Lưu nghĩa là chấp nhận mức phí này.</value></data>
   <data name="Speech.Estimate" xml:space="preserve"><value>Tổng ước tính: {0} tín dụng AI</value></data>
-  <data name="Speech.ReviewRate" xml:space="preserve"><value>Xem lại và lưu cài đặt giọng đọc để chấp nhận mức phí Azure hiện tại trước khi đọc.</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>Xem lại và lưu cài đặt giọng đọc để chấp nhận mức phí ElevenLabs hiện tại trước khi đọc.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Giọng đọc đã lưu không khả dụng. Chọn giọng khác trong cài đặt giọng đọc.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Sử dụng tín dụng AI</value></data>
+  <data name="Auth.SocialSignupUnavailable" xml:space="preserve"><value>Tạm thời không thể đăng ký. Người dùng hiện tại vẫn có thể đăng nhập.</value></data>
+  <data name="Usage.Title" xml:space="preserve"><value>Mức sử dụng tài khoản</value></data>
+  <data name="Usage.Help" xml:space="preserve"><value>Xóa nội dung đã lưu để giải phóng dung lượng. Nội dung hiện có được giữ lại khi đạt giới hạn.</value></data>
+  <data name="Usage.LimitReached" xml:space="preserve"><value>Đã đạt giới hạn lưu trữ. Mở Mức sử dụng tài khoản để giải phóng dung lượng.</value></data>
+  <data name="Usage.SiteFull" xml:space="preserve"><value>Dung lượng lưu trữ của Glosify đã đầy. Vui lòng thử lại sau.</value></data>
+  <data name="Usage.Resource" xml:space="preserve"><value>Tài nguyên</value></data>
+  <data name="Usage.Used" xml:space="preserve"><value>Đã dùng</value></data>
+  <data name="Usage.Reserved" xml:space="preserve"><value>Đã giữ chỗ</value></data>
+  <data name="Usage.Maximum" xml:space="preserve"><value>Giới hạn</value></data>
+  <data name="Usage.DeleteHistory" xml:space="preserve"><value>Xóa lịch sử luyện tập</value></data>
+  <data name="Usage.HistoryHelp" xml:space="preserve"><value>Xóa lượt làm bài và lịch sử ôn tập để giải phóng dung lượng. Thẻ và lịch học hiện tại vẫn được giữ.</value></data>
+  <data name="Auth.SignupsClosed" xml:space="preserve"><value>Tạm thời đóng đăng ký mới. Người dùng hiện tại vẫn có thể đăng nhập.</value></data>
+  <data name="Auth.SignupsLimited" xml:space="preserve"><value>Đã đạt giới hạn tài khoản mới. Vui lòng thử lại sau.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>Đang tính dung lượng lưu trữ. Vui lòng thử lại sau ít phút.</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>Bài kiểm tra</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>Câu hỏi kiểm tra</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>Câu hỏi trong bài kiểm tra lớn nhất</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>Tệp PDF</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>Bộ sưu tập</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>Cuộc trò chuyện đã lưu</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>Bản chép lời đã lưu</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>Bản dịch đã lưu</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Phiên dịch</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Dung lượng PDF</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Nội dung đã lưu</value></data>
 </root>

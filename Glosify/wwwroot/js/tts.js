@@ -5,7 +5,7 @@
     var nextSessionId = 0;
 
     // The server derives this map from the canonical quiz-language catalog and
-    // Azure voice map so browser speech cannot drift onto the OS default voice.
+    // ElevenLabs voice map so browser speech cannot drift onto the OS default voice.
     var LOCALE_MAP = {};
     try {
         var configuredLocales = JSON.parse(document.body?.dataset.ttsLocales || '{}');
@@ -173,7 +173,7 @@
                     return candidate.voiceURI === item.voice && sameSpeechLanguage(candidate.lang, locale);
                 })
                 : pickVoice(locale);
-            if (!voice) throw new Error('No browser voice is available for this language. Choose Azure or install a browser voice.');
+            if (!voice) throw new Error('No browser voice is available for this language. Choose ElevenLabs or install a browser voice.');
             utterance.voice = voice;
             utterance.lang = voice.lang;
         }
@@ -199,7 +199,7 @@
         });
     }
 
-    async function playAzure(item, session) {
+    async function playElevenLabs(item, session) {
         var controller = new AbortController();
         session.abortController = controller;
         var response;
@@ -223,7 +223,7 @@
         if (!response.ok) {
             var detail = '';
             try { var problem = await response.json(); detail = problem.detail || problem.error || ''; } catch { /* Non-JSON response. */ }
-            throw new Error(detail || 'Azure speech is unavailable. Try again or choose browser speech.');
+            throw new Error(detail || 'ElevenLabs speech is unavailable. Try again or choose browser speech.');
         }
 
         var blob = await response.blob();
@@ -256,8 +256,8 @@
     }
 
     async function playItem(item, session) {
-        if (item.provider === 'azure') {
-            await playAzure(item, session);
+        if (item.provider === 'elevenlabs') {
+            await playElevenLabs(item, session);
         } else {
             await playBrowser(item, session);
         }
@@ -288,7 +288,7 @@
                 return {
                     text: String(item && item.text || '').trim(),
                     lang: String(item && item.lang || '').trim(),
-                    provider: item && item.provider === 'azure' ? 'azure' : 'browser',
+                    provider: item && item.provider === 'elevenlabs' ? 'elevenlabs' : 'browser',
                     maxCredits: Number(item && item.maxCredits) || 0,
                     quality: String(item && item.quality || '').trim(),
                     voice: String(item && item.voice || '').trim(),
@@ -337,10 +337,15 @@
         var savedPreferences = localStorage.getItem(preferenceStorageKey);
         preferences = JSON.parse(savedPreferences || localStorage.getItem('glosify.speech.preferences') || '{}') || {};
         // Legacy preferences have no account owner. Retain voices, but require
-        // this account to accept the rate explicitly before any Azure request.
-        if (!savedPreferences) delete preferences.acceptedAzureRate;
+        // this account to accept the rate explicitly before any ElevenLabs request.
+        if (!savedPreferences) delete preferences.acceptedElevenLabsRate;
     } catch { /* Optional. */ }
     if (typeof preferences !== 'object' || Array.isArray(preferences)) preferences = {};
+    if (preferences.provider === 'azure') {
+        preferences.provider = 'browser';
+        delete preferences.acceptedAzureRate;
+        Object.keys(preferences).filter(key => key.startsWith('azure:')).forEach(key => delete preferences[key]);
+    }
     var providerSelect = dialog?.querySelector('[data-speech-provider]');
     var languageSelect = dialog?.querySelector('[data-speech-language]');
     var voiceSelect = dialog?.querySelector('[data-speech-voice]');
@@ -353,7 +358,7 @@
     var errorText = errorNotice?.querySelector('[data-speech-error-text]');
     var catalogCache = new Map();
 
-    function getProvider() { return preferences.provider === 'azure' ? 'azure' : 'browser'; }
+    function getProvider() { return preferences.provider === 'elevenlabs' ? 'elevenlabs' : 'browser'; }
     function getBookLanguage(bookId) { return preferences.bookLanguages?.[bookId] || ''; }
     function message(key) { return dialog?.dataset[key] || key; }
     function reportError(error) {
@@ -370,12 +375,12 @@
         if (!fresh && catalogCache.has(lang)) return catalogCache.get(lang);
         var request = (async function () {
             var response = await fetch('/api/tts/voices?lang=' + encodeURIComponent(lang), { credentials: 'same-origin' });
-            if (!response.ok) throw new Error(message('azureUnavailable'));
+            if (!response.ok) throw new Error(message('elevenlabsUnavailable'));
             var result = await response.json();
             if (!Number.isSafeInteger(result.creditsPerRequest) || result.creditsPerRequest < 1)
-                throw new Error(message('azureUnavailable'));
+                throw new Error(message('elevenlabsUnavailable'));
             var maxTextLength = result.maxTextLength ?? 180;
-            if (!Number.isSafeInteger(maxTextLength) || maxTextLength < 1) throw new Error(message('azureUnavailable'));
+            if (!Number.isSafeInteger(maxTextLength) || maxTextLength < 1) throw new Error(message('elevenlabsUnavailable'));
             return { rate: result.creditsPerRequest, maxTextLength: maxTextLength, voices: result.configured ? result.voices
                 .filter(function (voice) { return sameSpeechLanguage(voice.locale, lang); })
                 .map(function (voice) { return { value: voice.shortName, label: voice.displayName + ' (' + voice.locale + ')' }; }) : [] };
@@ -390,7 +395,7 @@
         voiceSelect.replaceChildren();
         saveButton.disabled = true;
         voiceSelect.disabled = true;
-        creditNotice.hidden = provider !== 'azure';
+        creditNotice.hidden = provider !== 'elevenlabs';
         choiceStatus.textContent = message('loading');
         quotedCredits = 0;
         priceNotice.textContent = '';
@@ -405,7 +410,7 @@
             if (catalog.voices.some(function (voice) { return voice.value === saved; })) voiceSelect.value = saved;
             voiceSelect.disabled = !catalog.voices.length;
             saveButton.disabled = !catalog.voices.length;
-            choiceStatus.textContent = catalog.voices.length ? '' : message(provider === 'azure' ? 'noAzureVoices' : 'noBrowserVoices');
+            choiceStatus.textContent = catalog.voices.length ? '' : message(provider === 'elevenlabs' ? 'noElevenLabsVoices' : 'noBrowserVoices');
         } catch (error) { if (revision === choiceRevision) choiceStatus.textContent = error.message; }
     }
 
@@ -421,7 +426,7 @@
                     if (end <= 0) end = limit;
                     var last = remaining.charCodeAt(end - 1);
                     if (last >= 0xD800 && last <= 0xDBFF) end -= 1;
-                    if (!end) throw new Error(message('azureUnavailable'));
+                    if (!end) throw new Error(message('elevenlabsUnavailable'));
                 }
                 parts.push(Object.assign({}, item, { text: remaining.slice(0, end).trim() }));
                 remaining = remaining.slice(end).trim();
@@ -444,8 +449,8 @@
     async function estimateQueue(items) {
         items = items.filter(function (item) { return String(item.text || '').trim(); });
         var provider = getProvider();
-        var label = message(provider === 'azure' ? 'azureLabel' : 'browserLabel');
-        if (provider !== 'azure' || !items.length) return label;
+        var label = message(provider === 'elevenlabs' ? 'elevenlabsLabel' : 'browserLabel');
+        if (provider !== 'elevenlabs' || !items.length) return label;
         try {
             var total = 0;
             for (var item of items) {
@@ -475,12 +480,12 @@
                 if (!catalogs.has(lang)) catalogs.set(lang, await voiceCatalog(provider, lang, true));
                 if (revision !== preparationRevision) throw cancellationError();
                 var catalog = catalogs.get(lang);
-                if (provider === 'azure' && (!Number.isSafeInteger(preferences.acceptedAzureRate)
-                    || preferences.acceptedAzureRate < catalog.rate)) throw new Error(message('reviewRate'));
+                if (provider === 'elevenlabs' && (!Number.isSafeInteger(preferences.acceptedElevenLabsRate)
+                    || preferences.acceptedElevenLabsRate < catalog.rate)) throw new Error(message('reviewRate'));
                 var saved = preferences[provider + ':' + lang];
                 if (saved && !catalog.voices.some(function (voice) { return voice.value === saved; }))
                     throw new Error(message('voiceUnavailable'));
-                if (!catalog.voices.length) throw new Error(message(provider === 'azure' ? 'noAzureVoices' : 'noBrowserVoices'));
+                if (!catalog.voices.length) throw new Error(message(provider === 'elevenlabs' ? 'noElevenLabsVoices' : 'noBrowserVoices'));
                 prepared.push(...splitSpeechItems([Object.assign({}, item, { lang: lang, provider: provider,
                     voice: saved || catalog.voices[0].value, quality: '', maxCredits: catalog.rate })], catalog.maxTextLength));
             }
@@ -513,7 +518,7 @@
         if (!dialog.open || saveButton.disabled) return;
         preferences.provider = providerSelect.value;
         preferences[providerSelect.value + ':' + languageSelect.value] = voiceSelect.value;
-        if (providerSelect.value === 'azure') preferences.acceptedAzureRate = quotedCredits;
+        if (providerSelect.value === 'elevenlabs') preferences.acceptedElevenLabsRate = quotedCredits;
         if (settingsContext.bookId) {
             if (!preferences.bookLanguages || typeof preferences.bookLanguages !== 'object') preferences.bookLanguages = {};
             preferences.bookLanguages[settingsContext.bookId] = languageSelect.value;

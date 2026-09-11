@@ -442,7 +442,7 @@ internal sealed class AssistantTurnRunner
                         ex,
                         Stopwatch.GetElapsedTime(invocationStartedAt).TotalMilliseconds,
                         invocationActivity);
-                    if (!cancellationToken.IsCancellationRequested)
+                    if (!cancellationToken.IsCancellationRequested && ex is not Glosify.Services.Abuse.ResourceQuotaException)
                     {
                         _logger.LogWarning(ex, "Generative AI turn failed for assistant thread {ThreadId}", thread.Id);
                     }

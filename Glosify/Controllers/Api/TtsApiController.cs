@@ -43,11 +43,12 @@ public sealed class TtsApiController : ControllerBase
             _logger.LogWarning(ex, "Speech voice catalog could not be loaded.");
             return Glosify.Infrastructure.Api.GlosifyProblemDetails.Result(
                 HttpContext, StatusCodes.Status502BadGateway, "speech_voices_unavailable",
-                "Azure voices could not be loaded. Try again or choose browser speech.");
+                "ElevenLabs voices could not be loaded. Try again or choose browser speech.");
         }
     }
 
     [HttpPost]
+    [RequestSizeLimit(8192)]
     [ValidateAntiForgeryToken]
     [RequirePaidServices]
     [AiServiceExceptionFilter]
@@ -100,6 +101,15 @@ public sealed class TtsApiController : ControllerBase
         catch (NotSupportedException ex)
         {
             return StatusCode(StatusCodes.Status501NotImplemented, ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (SpeechBusyException ex)
+        {
+            Response.Headers.RetryAfter = "1";
+            return Glosify.Infrastructure.Api.GlosifyProblemDetails.Result(HttpContext, 429, "rate_limited", ex.Message);
         }
         catch (Exception ex) when (ex is PaidServicesBudgetExhaustedException or InsufficientAiCreditsException or OperationCanceledException)
         {

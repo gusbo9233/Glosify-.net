@@ -4,16 +4,16 @@
         data-review-rate="@Text["Speech.ReviewRate"]"
         data-voice-unavailable="@Text["Speech.VoiceUnavailable"]"
         data-browser-label="@Text["Speech.Browser"]"
-        data-azure-label="Azure · @Text["Speech.UsesCredits"]"
+        data-elevenlabs-label="ElevenLabs · @Text["Speech.UsesCredits"]"
         data-loading="@Text["Speech.Loading"]"
-        data-azure-unavailable="@Text["Speech.AzureUnavailable"]"
-        data-no-azure-voices="@Text["Speech.NoAzureVoices"]"
+        data-elevenlabs-unavailable="@Text["Speech.ElevenLabsUnavailable"]"
+        data-no-elevenlabs-voices="@Text["Speech.NoElevenLabsVoices"]"
         data-no-browser-voices="@Text["Speech.NoBrowserVoices"]">
     <h2 id="speech-title">@Text["Speech.Settings"]</h2>
     <label for="speech-provider">@Text["Speech.Provider"]</label>
     <select id="speech-provider" data-speech-provider>
         <option value="browser">@Text["Speech.Browser"]</option>
-        <option value="azure">@Text["Speech.Azure"]</option>
+        <option value="elevenlabs">@Text["Speech.ElevenLabs"]</option>
     </select>
     <div data-speech-token hidden>@Html.AntiForgeryToken()</div>
     <div class="speech-credit-notice" data-speech-credits hidden>

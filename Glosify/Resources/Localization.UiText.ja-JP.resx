@@ -1606,21 +1606,46 @@
   <data name="Speech.Title" xml:space="preserve"><value>読み上げ</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>音声サービス</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>ブラウザー音声 · Glosifyクレジット不要</value></data>
-  <data name="Speech.Azure" xml:space="preserve"><value>Azure音声 · AIクレジットを使用</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>Azure音声はキャッシュ済み音声を含む各音声区間に対してGlosify AIクレジットを消費します。音声合成に失敗した場合は課金されません。ブラウザー音声は無料です。</value></data>
+  <data name="Speech.ElevenLabs" xml:space="preserve"><value>ElevenLabs音声 · AIクレジットを使用</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs音声はキャッシュ済み音声を含む各音声区間に対してGlosify AIクレジットを消費します。音声合成に失敗した場合は課金されません。ブラウザー音声は無料です。</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>テキストの言語</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>言語を選択</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>音声</value></data>
   <data name="Speech.Play" xml:space="preserve"><value>再生</value></data>
   <data name="Speech.Loading" xml:space="preserve"><value>音声を読み込み中…</value></data>
-  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>Azure音声を読み込めませんでした。再試行するか、ブラウザー音声を選択してください。</value></data>
-  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>設定されたサービスには、この言語のAzure音声がありません。ブラウザー音声または別の言語を選択してください。</value></data>
-  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>この言語のブラウザー音声がありません。Azureを選択するか、端末に音声をインストールしてください。</value></data>
+  <data name="Speech.ElevenLabsUnavailable" xml:space="preserve"><value>ElevenLabs音声を読み込めませんでした。再試行するか、ブラウザー音声を選択してください。</value></data>
+  <data name="Speech.NoElevenLabsVoices" xml:space="preserve"><value>設定されたサービスには、この言語のElevenLabs音声がありません。ブラウザー音声または別の言語を選択してください。</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>この言語のブラウザー音声がありません。ElevenLabsを選択するか、端末に音声をインストールしてください。</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>合計：{0} AIクレジット（音声区間ごとに{1}）。</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>読み上げ設定</value></data>
   <data name="Speech.Rate" xml:space="preserve"><value>音声セグメントごとに {0} AIクレジット。保存すると、この料金に同意します。</value></data>
   <data name="Speech.Estimate" xml:space="preserve"><value>推定合計：{0} AIクレジット</value></data>
-  <data name="Speech.ReviewRate" xml:space="preserve"><value>読み上げる前に設定を確認して保存し、現在のAzure料金に同意してください。</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>読み上げる前に設定を確認して保存し、現在のElevenLabs料金に同意してください。</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>保存した音声は利用できません。読み上げ設定で別の音声を選んでください。</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>AIクレジットを使用</value></data>
+  <data name="Auth.SocialSignupUnavailable" xml:space="preserve"><value>新規登録は一時的に利用できません。既存のユーザーはログインできます。</value></data>
+  <data name="Usage.Title" xml:space="preserve"><value>アカウントの使用状況</value></data>
+  <data name="Usage.Help" xml:space="preserve"><value>保存済みコンテンツを削除して空き容量を増やせます。上限に達しても既存のコンテンツは保持されます。</value></data>
+  <data name="Usage.LimitReached" xml:space="preserve"><value>ストレージの上限に達しました。アカウントの使用状況を開いて空き容量を増やしてください。</value></data>
+  <data name="Usage.SiteFull" xml:space="preserve"><value>Glosifyのストレージ容量が上限に達しました。後でもう一度お試しください。</value></data>
+  <data name="Usage.Resource" xml:space="preserve"><value>リソース</value></data>
+  <data name="Usage.Used" xml:space="preserve"><value>使用済み</value></data>
+  <data name="Usage.Reserved" xml:space="preserve"><value>予約済み</value></data>
+  <data name="Usage.Maximum" xml:space="preserve"><value>上限</value></data>
+  <data name="Usage.DeleteHistory" xml:space="preserve"><value>練習履歴を削除</value></data>
+  <data name="Usage.HistoryHelp" xml:space="preserve"><value>クイズの解答履歴と復習履歴を削除して容量を空けます。カードと現在の学習スケジュールは保持されます。</value></data>
+  <data name="Auth.SignupsClosed" xml:space="preserve"><value>新規登録は一時的に停止しています。既存のユーザーは引き続きログインできます。</value></data>
+  <data name="Auth.SignupsLimited" xml:space="preserve"><value>新規アカウント数の上限に達しました。後でもう一度お試しください。</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>ストレージ使用量を計算しています。しばらくしてからもう一度お試しください。</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>クイズ</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>クイズの問題</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>最大のクイズの問題数</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>PDF</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>コレクション</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>保存済みチャット</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>保存済み文字起こし</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>保存済み翻訳</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>翻訳セッション</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>PDFストレージ</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>保存済みコンテンツ</value></data>
 </root>

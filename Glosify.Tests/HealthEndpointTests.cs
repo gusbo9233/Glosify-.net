@@ -1,11 +1,38 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging.Abstractions;
+using Glosify.Data;
+using Glosify.Services.Abuse;
+using Glosify.Infrastructure.Health;
 
 namespace Glosify.Tests;
 
 public sealed class HealthEndpointTests
 {
+    [SqlServerFact]
+    public Task ReadinessRequiresCompletedResourceBackfill() => SqlServerTestDatabase.RunAsync("quota_readiness", async database =>
+    {
+        var services = new ServiceCollection();
+        services.AddDbContext<GlosifyContext>(options => options.UseSqlServer(database.Database.GetConnectionString()));
+        await using var provider = services.BuildServiceProvider();
+        var check = new DatabaseReadinessHealthCheck(
+            provider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<DatabaseReadinessHealthCheck>.Instance);
+        var context = new HealthCheckContext();
+        Assert.Equal(HealthStatus.Unhealthy, (await check.CheckHealthAsync(context)).Status);
+        var state = new ResourceAccountingState { Id = 1, Ready = false };
+        database.Add(state);
+        await database.SaveChangesAsync();
+        Assert.Equal(HealthStatus.Unhealthy, (await check.CheckHealthAsync(context)).Status);
+        state.Ready = true;
+        await database.SaveChangesAsync();
+        Assert.Equal(HealthStatus.Healthy, (await check.CheckHealthAsync(context)).Status);
+    });
+
     [Fact]
     public async Task HealthEndpointAnswersAnonymously()
     {

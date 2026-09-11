@@ -1,0 +1,30 @@
+@model IReadOnlyList<Glosify.Services.Abuse.ResourceUsageView>
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Text["Usage.Title"];
+}
+<main class="container py-4">
+    <h1>@Text["Usage.Title"]</h1>
+    <p>@Text["Usage.Help"]</p>
+    <table class="table">
+        <thead><tr><th>@Text["Usage.Resource"]</th><th>@Text["Usage.Used"]</th><th>@Text["Usage.Reserved"]</th><th>@Text["Usage.Maximum"]</th></tr></thead>
+        <tbody>
+        @foreach (var row in Model)
+        {
+            var bytes = row.Resource.EndsWith("_bytes", StringComparison.Ordinal);
+            string Format(long value) => bytes ? $"{value / 1048576m:0.##} MiB" : value.ToString("N0");
+            <tr><td>@Text["Usage.Resource." + row.Resource]</td><td>@Format(row.Current)</td><td>@Format(row.Reserved)</td><td>@Format(row.Maximum)</td></tr>
+        }
+        </tbody>
+    </table>
+    <nav aria-label="Manage saved content">
+        <a href="/Books">@Text["Nav.Books"]</a> · <a href="/Quiz">@Text["Nav.Quizzes"]</a> ·
+        <a href="/Assistant">@Text["Assistant.Title"]</a> · <a href="/Anki">@Text["Quiz.Collections"]</a> ·
+        <a href="/Transcripts">@Text["Nav.Transcripts"]</a> · <a href="/Translations">@Text["Nav.Translations"]</a>
+    </nav>
+    <form asp-action="ClearPracticeHistory" method="post" class="mt-4">
+        @Html.AntiForgeryToken()
+        <p>@Text["Usage.HistoryHelp"]</p>
+        <button type="submit" class="btn btn-secondary">@Text["Usage.DeleteHistory"]</button>
+    </form>
+</main>

@@ -1606,21 +1606,46 @@
   <data name="Speech.Title" xml:space="preserve"><value>Sesli oku</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Ses hizmeti</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Tarayıcı sesi · Glosify kredisi kullanmaz</value></data>
-  <data name="Speech.Azure" xml:space="preserve"><value>Azure sesi · yapay zekâ kredisi kullanır</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>Azure sesi, önbellekteki sesler dahil her ses bölümü için Glosify yapay zekâ kredisi düşer. Başarısız sentez ücretlendirilmez. Tarayıcı sesi ücretsizdir.</value></data>
+  <data name="Speech.ElevenLabs" xml:space="preserve"><value>ElevenLabs sesi · yapay zekâ kredisi kullanır</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs sesi, önbellekteki sesler dahil her ses bölümü için Glosify yapay zekâ kredisi düşer. Başarısız sentez ücretlendirilmez. Tarayıcı sesi ücretsizdir.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Metnin dili</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Bir dil seçin</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Ses</value></data>
   <data name="Speech.Play" xml:space="preserve"><value>Oynat</value></data>
   <data name="Speech.Loading" xml:space="preserve"><value>Sesler yükleniyor…</value></data>
-  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>Azure sesleri yüklenemedi. Yeniden deneyin veya tarayıcı sesini seçin.</value></data>
-  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>Yapılandırılmış hizmette bu dil için Azure sesi yok. Tarayıcı sesini veya başka bir dili seçin.</value></data>
-  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Bu dil için tarayıcı sesi yok. Azure’u seçin veya cihazınıza bir ses yükleyin.</value></data>
+  <data name="Speech.ElevenLabsUnavailable" xml:space="preserve"><value>ElevenLabs sesleri yüklenemedi. Yeniden deneyin veya tarayıcı sesini seçin.</value></data>
+  <data name="Speech.NoElevenLabsVoices" xml:space="preserve"><value>Yapılandırılmış hizmette bu dil için ElevenLabs sesi yok. Tarayıcı sesini veya başka bir dili seçin.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Bu dil için tarayıcı sesi yok. ElevenLabs’u seçin veya cihazınıza bir ses yükleyin.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>Toplam: {0} yapay zekâ kredisi (ses bölümü başına {1}).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Konuşma ayarları</value></data>
   <data name="Speech.Rate" xml:space="preserve"><value>Ses bölümü başına {0} yapay zekâ kredisi. Kaydetmek bu ücreti kabul eder.</value></data>
   <data name="Speech.Estimate" xml:space="preserve"><value>Tahmini toplam: {0} yapay zekâ kredisi</value></data>
-  <data name="Speech.ReviewRate" xml:space="preserve"><value>Okumadan önce güncel Azure ücretini kabul etmek için konuşma ayarlarını inceleyip kaydedin.</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>Okumadan önce güncel ElevenLabs ücretini kabul etmek için konuşma ayarlarını inceleyip kaydedin.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Kaydedilen ses kullanılamıyor. Konuşma ayarlarından başka bir ses seçin.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Yapay zekâ kredisi kullanır</value></data>
+  <data name="Auth.SocialSignupUnavailable" xml:space="preserve"><value>Yeni kayıtlar geçici olarak kapalıdır. Mevcut kullanıcılar giriş yapabilir.</value></data>
+  <data name="Usage.Title" xml:space="preserve"><value>Hesap kullanımı</value></data>
+  <data name="Usage.Help" xml:space="preserve"><value>Yer açmak için kayıtlı içeriği silin. Sınıra ulaşıldığında mevcut içerik korunur.</value></data>
+  <data name="Usage.LimitReached" xml:space="preserve"><value>Depolama sınırınıza ulaştınız. Yer açmak için Hesap kullanımı bölümünü açın.</value></data>
+  <data name="Usage.SiteFull" xml:space="preserve"><value>Glosify depolama kapasitesine ulaştı. Daha sonra tekrar deneyin.</value></data>
+  <data name="Usage.Resource" xml:space="preserve"><value>Kaynak</value></data>
+  <data name="Usage.Used" xml:space="preserve"><value>Kullanılan</value></data>
+  <data name="Usage.Reserved" xml:space="preserve"><value>Ayrılan</value></data>
+  <data name="Usage.Maximum" xml:space="preserve"><value>Sınır</value></data>
+  <data name="Usage.DeleteHistory" xml:space="preserve"><value>Alıştırma geçmişini sil</value></data>
+  <data name="Usage.HistoryHelp" xml:space="preserve"><value>Yer açmak için sınav denemelerini ve tekrar geçmişini silin. Kartlar ve mevcut çalışma programları korunur.</value></data>
+  <data name="Auth.SignupsClosed" xml:space="preserve"><value>Yeni kayıtlar geçici olarak kapalı. Mevcut kullanıcılar giriş yapabilir.</value></data>
+  <data name="Auth.SignupsLimited" xml:space="preserve"><value>Yeni hesap sınırına ulaşıldı. Lütfen daha sonra tekrar deneyin.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>Depolama kullanımı hesaplanıyor. Lütfen kısa süre sonra tekrar deneyin.</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>Testler</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>Test soruları</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>En büyük testteki sorular</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>PDF dosyaları</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>Koleksiyonlar</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>Kaydedilen sohbetler</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>Kaydedilen dökümler</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>Kaydedilen çeviriler</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Çeviri oturumları</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>PDF depolama alanı</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Depolanan içerik</value></data>
 </root>

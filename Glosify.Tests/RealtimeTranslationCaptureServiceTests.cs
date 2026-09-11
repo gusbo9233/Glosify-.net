@@ -81,7 +81,8 @@ public sealed class RealtimeTranslationCaptureServiceTests
         return new RealtimeTranslationCaptureService(
             context,
             new AdministratorAccess(configuration),
-            new FakeTimeProvider(Now));
+            new FakeTimeProvider(Now),
+            Microsoft.Extensions.Options.Options.Create(new Glosify.Services.Ai.Assistant.AssistantAnalyticsOptions { CaptureContent = true }));
     }
 
     private static GlosifyContext CreateContext() => new(

@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Services.Abuse;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -29,7 +30,11 @@ public sealed class DatabaseReadinessHealthCheck(
             _ = await database.QuizAttempts.AsNoTracking().Select(attempt => attempt.Id).FirstOrDefaultAsync(timeout.Token);
             _ = await database.BookDocuments.AsNoTracking().Select(book => book.Id).FirstOrDefaultAsync(timeout.Token);
 
-            return HealthCheckResult.Healthy("The SQL database and retained schema are ready.");
+            if (!await database.Set<ResourceAccountingState>().AsNoTracking()
+                .AnyAsync(state => state.Id == 1 && state.Ready, timeout.Token))
+                return HealthCheckResult.Unhealthy("Resource accounting backfill is not ready.");
+
+            return HealthCheckResult.Healthy("The SQL database, retained schema and resource accounting are ready.");
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {

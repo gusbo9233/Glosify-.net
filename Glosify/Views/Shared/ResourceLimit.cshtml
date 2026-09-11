@@ -1,0 +1,11 @@
+@model string
+@{
+    Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
+    ViewData["Title"] = Text["Usage.Title"];
+}
+<main class="container py-4">
+    <h1>@Text["Usage.Title"]</h1>
+    <p role="alert">@Model</p>
+    <a href="/account/usage">@Text["Usage.Title"]</a>
+    <a href="/login">@Text["Common.LogIn"]</a>
+</main>

@@ -407,6 +407,7 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
         {
             return;
         }
+        if (session.TranscriptStorageStopped) return;
 
         // The source and translation streams number their own segments, so a key is
         // only a duplicate when the stream matches too.
@@ -442,7 +443,34 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             });
         }
         session.Transcript.UpdatedAt = _timeProvider.GetUtcNow();
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            if (session.StorageReservationId is { } storage)
+            {
+                _context.ClaimedResourceReservation = (storage, session.UserId);
+                _context.KeepResourceReservation = true;
+            }
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (Glosify.Services.Abuse.ResourceQuotaException)
+        {
+            _context.ChangeTracker.Clear();
+            await Glosify.Services.Abuse.ResourceAccounting.TransactionAsync(_context, async () =>
+            {
+                await Glosify.Services.Abuse.ResourceAccounting.LockAsync(_context, "glosify:resource-accounting", cancellationToken);
+                var stopped = await _context.RealtimeTranslationSessions.SingleAsync(x => x.Id == sessionId, cancellationToken);
+                stopped.TranscriptStorageStopped = true;
+                if (stopped.StorageReservationId is { } id)
+                {
+                    var unused = await _context.Set<Glosify.Services.Abuse.ResourceReservation>().FindAsync([id], cancellationToken);
+                    if (unused?.UserId == stopped.UserId) _context.Remove(unused);
+                    stopped.StorageReservationId = null;
+                }
+                await _context.SaveChangesAsync(cancellationToken);
+                return true;
+            }, cancellationToken);
+            throw;
+        }
     }
 
     private async Task<RealtimeTranslationTranscript> LoadOwnedAsync(

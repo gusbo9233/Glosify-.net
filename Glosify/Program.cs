@@ -18,8 +18,21 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Glosify.Services.Abuse;
+
+if (args.FirstOrDefault() == "--extract-pdf")
+{
+    Environment.ExitCode = await Glosify.Services.Books.IsolatedPdfTextExtractionService.RunWorkerAsync(args);
+    return Environment.ExitCode;
+}
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddOptions<AbuseOptions>().BindConfiguration("Abuse").ValidateOnStart();
+builder.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<AbuseOptions>, AbuseOptionsValidator>();
+builder.Services.AddScoped<ResourceQuotaService>();
+builder.Services.AddScoped<RequestResourceReservations>();
+builder.Services.AddScoped<SignupAdmissionService>();
+builder.Services.AddHostedService<ResourceMaintenanceService>();
 
 const string browserTestingEnvironment = "BrowserTesting";
 const string browserTestTokenHeader = "X-Glosify-Browser-Test-Token";
@@ -144,6 +157,7 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNEC
             .AddSource(RealtimeTranslationTelemetry.ActivitySourceName))
         .WithMetrics(metrics => metrics
             .AddMeter(GenerativeAiTelemetry.MeterName)
+            .AddMeter("Glosify.Abuse")
             .AddMeter(RealtimeTranslationTelemetry.MeterName)
             .AddMeter(DisplayLanguageTelemetry.MeterName))
         .UseAzureMonitor(options =>
@@ -194,17 +208,7 @@ var app = builder.Build();
 // Azure App Service front ends terminate TLS and forward the client address in
 // X-Forwarded-* headers; without this, RemoteIpAddress is the front end's address
 // and every user shares the same rate-limit partition.
-var forwardedHeadersOptions = new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor
-        | ForwardedHeaders.XForwardedProto
-        | ForwardedHeaders.XForwardedHost,
-};
-// The App Service front-end addresses are not statically known, so the default
-// loopback-only proxy allowlist must be cleared for the headers to be honored.
-forwardedHeadersOptions.KnownIPNetworks.Clear();
-forwardedHeadersOptions.KnownProxies.Clear();
-app.UseForwardedHeaders(forwardedHeadersOptions);
+app.UseForwardedHeaders(Glosify.Infrastructure.TrustedForwarding.Create(builder.Configuration));
 
 // Configure the HTTP request pipeline. In Development, WebApplication has already added
 // the developer exception page; registering the handler unconditionally would sit inside
@@ -290,6 +294,11 @@ app.UseGlosifySecurityHeaders(builder.Configuration);
 
 app.UseRouting();
 
+// OAuth handlers exchange provider codes inside authentication middleware, before
+// routed controller policies can run. Throttle those protocol callbacks first.
+app.UseWhen(context => Glosify.Extensions.RateLimitingExtensions.IsOAuthProtocolCallback(context.Request.Path),
+    branch => branch.UseRateLimiter());
+
 // Resolve both the default web identity and endpoint-specific API schemes before
 // localization and per-user rate-limit partitioning.
 app.UseAuthentication();
@@ -299,9 +308,47 @@ app.UseGlosifyEndpointAuthentication();
 // authentication, but before every component that can produce a routed response.
 app.UseRequestLocalization();
 
-app.UseRateLimiter();
+// Protocol callbacks already passed the pre-authentication limiter. An
+// unconfigured provider may fall through authentication; do not charge it twice.
+app.UseWhen(context => !RateLimitingExtensions.IsOAuthProtocolCallback(context.Request.Path),
+    branch => branch.UseRateLimiter());
 
 app.UseAuthorization();
+app.Use(async (context, next) =>
+{
+    var reservations = context.RequestServices.GetRequiredService<RequestResourceReservations>();
+    var quotas = context.RequestServices.GetRequiredService<ResourceQuotaService>();
+    var originalAbort = context.RequestAborted;
+    using var activeRequest = CancellationTokenSource.CreateLinkedTokenSource(originalAbort);
+    context.RequestAborted = activeRequest.Token;
+    var renewal = reservations.RenewWhileActiveAsync(quotas, activeRequest);
+    try { await next(); }
+    finally
+    {
+        activeRequest.Cancel();
+        context.RequestAborted = originalAbort;
+        try { await renewal; }
+        finally { await reservations.ReleaseAsync(quotas); }
+    }
+});
+
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value?.TrimEnd('/');
+    if (string.Equals(path, "/Identity/Account/Register", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(path, "/Identity/Account/ExternalLogin", StringComparison.OrdinalIgnoreCase))
+    {
+        if (HttpMethods.IsGet(context.Request.Method)) context.Response.Redirect("/Account/Register");
+        else await GlosifyProblemDetails.WriteAsync(context, 403, "social_signup_required", "Create your account with Google or Microsoft.");
+        return;
+    }
+    if (HttpMethods.IsPost(context.Request.Method) && string.Equals(path, "/api/auth/register", StringComparison.OrdinalIgnoreCase))
+    {
+        await GlosifyProblemDetails.WriteAsync(context, 403, "social_signup_required", "Create your account with Google or Microsoft.");
+        return;
+    }
+    await next();
+});
 
 // The static-asset endpoint intentionally answers unsupported HTTP methods with 405.
 // Short-circuit the retired custom-quiz paths after authorization so every former

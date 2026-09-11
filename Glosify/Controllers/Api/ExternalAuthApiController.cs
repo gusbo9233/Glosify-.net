@@ -71,13 +71,27 @@ public class ExternalAuthApiController : ControllerBase
     [HttpGet("google/callback")]
     public async Task<IActionResult> GoogleCallback()
     {
+        Response.Headers.CacheControl = "no-store";
         var info = await _signInManager.GetExternalLoginInfoAsync();
         if (info == null)
         {
             return AppRedirect("error=Google sign-in failed.");
         }
 
-        var resolution = await _externalAccounts.ResolveOrCreateAsync(info);
+        if (info.AuthenticationProperties?.Items.TryGetValue(ChallengePropertyKey, out var verifiedChallenge) != true
+            || !Pkce.IsValidChallenge(verifiedChallenge))
+            return AppRedirect("error=Sign-in could not be verified. Please try again.");
+
+        ExternalAccountResolution resolution;
+        try { resolution = await _externalAccounts.ResolveOrCreateAsync(info); }
+        catch (Glosify.Services.Abuse.SignupLimitException exception)
+        {
+            var retryAfter = Math.Max(1, (long)Math.Ceiling((exception.RetryAt - DateTimeOffset.UtcNow).TotalSeconds))
+                .ToString(System.Globalization.CultureInfo.InvariantCulture);
+            Response.Headers.RetryAfter = retryAfter;
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            return AppRedirect($"error={Uri.EscapeDataString(exception.Message)}&retryAfter={retryAfter}");
+        }
         if (!resolution.Succeeded)
         {
             return AppRedirect($"error={Uri.EscapeDataString(resolution.ErrorMessage ?? "Google sign-in failed.")}");

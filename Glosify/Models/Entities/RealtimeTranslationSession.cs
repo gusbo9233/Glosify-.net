@@ -2,6 +2,8 @@ namespace Glosify.Models.Entities;
 
 public sealed class RealtimeTranslationSession
 {
+    public Guid? StorageReservationId { get; set; }
+    public bool TranscriptStorageStopped { get; set; }
     public Guid Id { get; set; } = Guid.NewGuid();
     public string UserId { get; set; } = string.Empty;
     public string TargetLanguage { get; set; } = string.Empty;

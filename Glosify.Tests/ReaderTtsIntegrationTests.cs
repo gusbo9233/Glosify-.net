@@ -54,7 +54,7 @@ public sealed class ReaderTtsIntegrationTests : IClassFixture<WebApplicationFact
         Assert.NotNull(document.QuerySelector("[data-speech-settings]"));
         Assert.NotNull(dialog.QuerySelector("[data-speech-save]"));
         Assert.Null(dialog.QuerySelector("[data-speech-play]"));
-        Assert.Equal(new[] { "browser", "azure" }, dialog.QuerySelectorAll("[data-speech-provider] option")
+        Assert.Equal(new[] { "browser", "elevenlabs" }, dialog.QuerySelectorAll("[data-speech-provider] option")
             .Select(option => option.GetAttribute("value")));
         Assert.False(string.IsNullOrWhiteSpace(dialog.QuerySelector("[data-speech-token] input")?.GetAttribute("value")));
         Assert.Contains("AI credits", dialog.QuerySelector("[data-speech-credits]")!.TextContent, StringComparison.Ordinal);

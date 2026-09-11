@@ -76,6 +76,7 @@ public static class AiUsageProviders
 
 public sealed class AiModelPriceOptions
 {
+    public decimal? TextSekPerMillionCharacters { get; set; }
     public string Deployment { get; set; } = string.Empty;
     public decimal InputSekPerMillionTokens { get; set; }
     public decimal OutputSekPerMillionTokens { get; set; }
@@ -165,10 +166,11 @@ public sealed class AiUsageOptionsValidator : IValidateOptions<AiUsageOptions>
             var hasPartialTokenPrice = model.InputSekPerMillionTokens != 0
                 || model.OutputSekPerMillionTokens != 0;
             var hasAudioPrice = model.AudioSekPerMinute is > 0;
-            if (!hasTokenPrice && !hasAudioPrice)
+            var hasCharacterPrice = model.TextSekPerMillionCharacters is > 0;
+            if (!hasTokenPrice && !hasAudioPrice && !hasCharacterPrice)
             {
                 failures.Add(
-                    $"AiUsage:MonthlyBudget:Models deployment '{model.Deployment.Trim()}' requires positive token prices or AudioSekPerMinute.");
+                    $"AiUsage:MonthlyBudget:Models deployment '{model.Deployment.Trim()}' requires positive token, audio-minute, or text-character prices.");
             }
             else if (hasPartialTokenPrice && !hasTokenPrice)
             {

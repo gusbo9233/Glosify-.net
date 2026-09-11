@@ -23,7 +23,7 @@ public sealed class AdministratorRegistrationSecurityTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Register_WithFormerAdminEmail_CannotAcquireAdministratorGrant(bool confirmEmail)
+    public async Task PasswordSignupIsClosed_AndExistingFormerAdminEmailCannotAcquireGrant(bool confirmEmail)
     {
         const string email = "formerly-allowlisted@example.test";
         const string approvedId = "operator-approved-existing-account";
@@ -49,7 +49,7 @@ public sealed class AdministratorRegistrationSecurityTests
             BaseAddress = new Uri("https://localhost"),
             AllowAutoRedirect = false,
         });
-        var registerPage = new HtmlParser().ParseDocument(await client.GetStringAsync("/Account/Register"));
+        var registerPage = new HtmlParser().ParseDocument(await client.GetStringAsync("/login"));
         var token = registerPage.QuerySelector("input[name='__RequestVerificationToken']")!.GetAttribute("value")!;
 
         var registration = await client.PostAsync("/Account/Register", new FormUrlEncodedContent(new Dictionary<string, string>
@@ -61,12 +61,13 @@ public sealed class AdministratorRegistrationSecurityTests
             ["__RequestVerificationToken"] = token,
         }));
 
-        Assert.Equal(HttpStatusCode.Redirect, registration.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, registration.StatusCode);
         using (var scope = factory.Services.CreateScope())
         {
             var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-            var user = await users.FindByEmailAsync(email);
-            Assert.NotNull(user);
+            Assert.Null(await users.FindByEmailAsync(email));
+            var user = new ApplicationUser { UserName = email, Email = email };
+            Assert.True((await users.CreateAsync(user, "Registration1!")).Succeeded);
             Assert.NotEqual(approvedId, user.Id);
             Assert.False(user.EmailConfirmed);
             if (confirmEmail)
@@ -77,6 +78,11 @@ public sealed class AdministratorRegistrationSecurityTests
             var captures = scope.ServiceProvider.GetRequiredService<IRealtimeTranslationCaptureService>();
             Assert.False(await captures.IsAdminUserAsync(user.Id));
         }
+        var login = await client.PostAsync("/Account/Login", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Email"] = email, ["Password"] = "Registration1!", ["__RequestVerificationToken"] = token,
+        }));
+        Assert.Equal(HttpStatusCode.Redirect, login.StatusCode);
         var profile = await client.GetAsync("/Identity/Account/Manage");
         profile.EnsureSuccessStatusCode();
         Assert.Contains(email, await profile.Content.ReadAsStringAsync());

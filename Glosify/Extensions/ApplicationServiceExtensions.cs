@@ -107,7 +107,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ITypingQuizService, TypingQuizService>();
         services.AddScoped<ITypingSessionService, TypingSessionService>();
         services.AddScoped<IBookFileStorage, AzureBlobBookFileStorage>();
-        services.AddScoped<IPdfTextExtractionService, PdfPigTextExtractionService>();
+        services.AddScoped<IPdfTextExtractionService, IsolatedPdfTextExtractionService>();
         services.AddScoped<IBookDocumentService, BookDocumentService>();
         services.AddSingleton<IBookPageTranslationCoordinator, BookPageTranslationCoordinator>();
         services.AddScoped<IBookPageTranslationService, BookPageTranslationService>();
@@ -219,17 +219,27 @@ public static class ApplicationServiceExtensions
 
         services.AddOptions<SpeechOptions>()
             .Bind(configuration.GetSection(SpeechOptions.SectionName))
+            .Configure(options => { if (string.IsNullOrWhiteSpace(options.ApiKey)) options.ApiKey = ResolveElevenLabsApiKey(configuration) ?? ""; })
             .Validate(options => options.CreditsPerRequest > 0, "Speech:CreditsPerRequest must be positive.")
+            .Validate(options => options.MaxTextLength is > 0 and <= 200 && options.MemoryCacheBytes is > 0 and <= 67108864,
+                "Speech segments must be at most 200 characters and the cache at most 64 MiB.")
+            .Validate(options => !options.Enabled || (!string.IsNullOrWhiteSpace(options.ApiKey)
+                && options.AllowedVoiceIds.Contains(options.DefaultVoiceId)), "Enabled speech requires an API key and an allowlisted default voice.")
+            .Validate(options => !options.Enabled || configuration.GetSection("AiUsage:MonthlyBudget:Models")
+                .Get<List<AiModelPriceOptions>>()?.Any(price => price.Deployment == ElevenLabsTextToSpeechService.Model
+                    && price.TextSekPerMillionCharacters > 0) == true,
+                "Enabled speech requires an explicit positive eleven_v3 TextSekPerMillionCharacters price.")
             .ValidateOnStart();
         services.AddSingleton<TokenCredential>(_ =>
             AzureCredentialFactory.Create(environment, configuration));
         services.AddSingleton<GlosifyBlobServiceClient>();
-        // Without a resilience handler this client falls back to HttpClient's 100-second
-        // default with no retry and no circuit breaker, so a Speech regional brownout would
-        // hold a request thread for the full 100 seconds per call.
-        services.AddHttpClient(nameof(AzureTextToSpeechService))
-            .AddStandardResilienceHandler();
-        services.AddScoped<ITextToSpeechService, AzureTextToSpeechService>();
+        // Synthesis POSTs must not be automatically retried after an ambiguous outcome.
+        services.AddHttpClient(ElevenLabsTextToSpeechService.ClientName, client => client.Timeout = TimeSpan.FromSeconds(30))
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+        services.AddSingleton<SpeechAudioCache>();
+        services.AddScoped<SpeechProviderBudget>();
+        services.AddScoped<ISpeechProviderBudget>(provider => provider.GetRequiredService<SpeechProviderBudget>());
+        services.AddScoped<ITextToSpeechService, ElevenLabsTextToSpeechService>();
         services.AddSingleton(TimeProvider.System);
 
         return services;

@@ -76,6 +76,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         relayCancellation.CancelAfter(TimeSpan.FromMinutes(_options.MaxSessionMinutes + 1));
         var relayToken = relayCancellation.Token;
         var sessionCloseSent = false;
+        using var storageCancellation = new CancellationTokenSource();
 
         try
         {
@@ -112,7 +113,8 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                     authorization.SessionId,
                     transcriptChannel.Reader,
                     transcriptState,
-                    CancellationToken.None);
+                    browserSocket, browserSendLock,
+                    storageCancellation.Token);
                 sourceAudio = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(32)
                 {
                     SingleReader = true,
@@ -242,22 +244,10 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                 transcriptChannel?.Writer.TryComplete();
                 if (transcriptWriter is not null)
                 {
-                    try
-                    {
-                        // CancellationToken.None on purpose. This runs in the teardown path,
-                        // after relayCancellation.Cancel(), so the caller's token is normally
-                        // already cancelled — forwarding it would abandon the caption flush
-                        // instead of giving it the five seconds this drain exists to provide,
-                        // and the OperationCanceledException would escape the TimeoutException
-                        // catch below and mask whatever was already unwinding.
-                        await transcriptWriter.WaitAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
-                    }
-                    catch (TimeoutException)
-                    {
+                    if (!await DrainStorageWriterAsync(transcriptWriter, storageCancellation))
                         _logger.LogWarning(
                             "Timed out while flushing saved captions for session {SessionId}",
                             authorization.SessionId);
-                    }
                 }
             }
         }
@@ -525,7 +515,9 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                     await SendBrowserControlAsync(
                         browserSocket,
                         "glosify.transcript.warning",
-                        "Live subtitles are continuing, but part of the saved transcript could not be stored.",
+                        Volatile.Read(ref transcriptState.StorageStopped) == 1
+                            ? "Transcript saving stopped because your storage limit was reached. Saved captions are kept; live subtitles are continuing."
+                            : "Live subtitles are continuing, but part of the saved transcript could not be stored.",
                         cancellationToken);
                 }
                 finally
@@ -561,11 +553,13 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         Guid sessionId,
         ChannelReader<CapturedTranslationSegment> reader,
         RelayTranscriptState state,
+        WebSocket browserSocket, SemaphoreSlim browserSendLock,
         CancellationToken cancellationToken)
     {
         var batch = new List<CapturedTranslationSegment>(20);
         await foreach (var segment in reader.ReadAllAsync(cancellationToken))
         {
+            if (Volatile.Read(ref state.StorageStopped) == 1) continue;
             batch.Add(segment);
             while (batch.Count < 20 && reader.TryRead(out var next))
             {
@@ -580,6 +574,13 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 Interlocked.Exchange(ref state.WarningPending, 1);
+                if (exception is Glosify.Services.Abuse.ResourceQuotaException)
+                {
+                    Interlocked.Exchange(ref state.StorageStopped, 1);
+                    Interlocked.Exchange(ref state.WarningPending, 0);
+                    await SendTranscriptStorageWarningAsync(browserSocket, browserSendLock);
+                    continue;
+                }
                 _logger.LogWarning(
                     exception,
                     "Could not store finalized captions for session {SessionId}",
@@ -590,6 +591,41 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
                 batch.Clear();
             }
         }
+    }
+
+    internal static async Task<bool> DrainStorageWriterAsync(Task writer, CancellationTokenSource cancellation,
+        TimeSpan? gracePeriod = null)
+    {
+        try
+        {
+            await writer.WaitAsync(gracePeriod ?? TimeSpan.FromSeconds(5), CancellationToken.None);
+            return true;
+        }
+        catch (TimeoutException)
+        {
+            cancellation.Cancel();
+            // Do not dispose sockets, locks or scopes until their writer has exited.
+            try { await writer; }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { }
+            return false;
+        }
+    }
+
+    internal static async Task SendTranscriptStorageWarningAsync(WebSocket socket, SemaphoreSlim sendLock)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        try
+        {
+            await sendLock.WaitAsync(timeout.Token);
+            try
+            {
+                if (socket.State == WebSocketState.Open)
+                    await SendBrowserControlAsync(socket, "glosify.transcript.warning",
+                        "Transcript saving stopped because your storage limit was reached. Saved captions are kept; live subtitles are continuing.", timeout.Token);
+            }
+            finally { sendLock.Release(); }
+        }
+        catch (Exception ex) when (ex is WebSocketException or OperationCanceledException) { }
     }
 
     private static async Task<byte[]?> ReceiveTextMessageAsync(
@@ -743,5 +779,6 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
     private sealed class RelayTranscriptState
     {
         public int WarningPending;
+        public int StorageStopped;
     }
 }

@@ -28,19 +28,25 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
     private readonly AiUsageOptions _usageOptions;
     private readonly IAiCreditService _credits;
     private readonly ILogger<OpenAiGenerativeAiClient> _logger;
+    private readonly Glosify.Services.Abuse.ResourceQuotaService? _quotas;
+    private readonly Glosify.Services.Abuse.RequestResourceReservations? _storageReservations;
 
     public OpenAiGenerativeAiClient(
         IOpenAiResponsesTransport transport,
         IOptions<GenerativeAiOptions> options,
         IOptions<AiUsageOptions> usageOptions,
         IAiCreditService credits,
-        ILogger<OpenAiGenerativeAiClient> logger)
+        ILogger<OpenAiGenerativeAiClient> logger,
+        Glosify.Services.Abuse.ResourceQuotaService? quotas = null,
+        Glosify.Services.Abuse.RequestResourceReservations? storageReservations = null)
     {
         _transport = transport;
         _options = options.Value;
         _usageOptions = usageOptions.Value;
         _credits = credits;
         _logger = logger;
+        _quotas = quotas;
+        _storageReservations = storageReservations;
     }
 
     public async Task<T> GenerateStructuredAsync<T>(
@@ -250,6 +256,12 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
         CreateResponseOptions request,
         CancellationToken cancellationToken)
     {
+        if (_quotas is not null && _storageReservations is not null)
+        {
+            var storage = await _quotas.ReserveAsync(usageContext.UserId,
+                new() { ["content_bytes"] = Math.Max(1024L * 1024, outputTokenReserve * 64L) }, cancellationToken);
+            _storageReservations.Track(storage, usageContext.UserId);
+        }
         var estimatedTokens = Math.Max(1, promptTokenEstimate) + Math.Max(0, outputTokenReserve);
         var outcome = "failure";
         GenerativeAiTelemetry.Requests.Add(

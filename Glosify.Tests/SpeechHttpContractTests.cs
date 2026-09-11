@@ -76,8 +76,8 @@ public sealed class SpeechHttpContractTests
     }
 
     [Theory]
-    [InlineData(300, 250, HttpStatusCode.ServiceUnavailable)]
-    [InlineData(300, 301, HttpStatusCode.BadRequest)]
+    [InlineData(200, 150, HttpStatusCode.ServiceUnavailable)]
+    [InlineData(200, 201, HttpStatusCode.BadRequest)]
     [InlineData(100, 101, HttpStatusCode.BadRequest)]
     public async Task Configured_text_limit_is_enforced_before_synthesis(int limit, int length, HttpStatusCode expected)
     {

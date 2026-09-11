@@ -146,6 +146,12 @@ public sealed class AdminAuthorizationTests
                     new Dictionary<string, string?> { ["Admin:UserIds:0"] = "admin-1" }));
                 builder.ConfigureTestServices(services =>
                 {
+                    // This fixture seeds a prepared database; background backfill
+                    // would race the deterministic authorization data below.
+                    foreach (var registration in services.Where(x =>
+                        x.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService)
+                        && x.ImplementationType == typeof(Glosify.Services.Abuse.ResourceMaintenanceService)).ToArray())
+                        services.Remove(registration);
                     services.RemoveAll<DbContextOptions<GlosifyContext>>();
                     services.RemoveAll<IDbContextOptionsConfiguration<GlosifyContext>>();
                     services.AddDbContext<GlosifyContext>(options => options.UseInMemoryDatabase(databaseName));
@@ -162,6 +168,8 @@ public sealed class AdminAuthorizationTests
 
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
+        context.Add(new Glosify.Services.Abuse.ResourceAccountingState { Id = 1, Ready = true });
+        context.SaveChanges();
         context.Users.AddRange(
             new ApplicationUser { Id = "admin-1", Email = "gusbo923@gmail.com", UserName = "gusbo923@gmail.com" },
             new ApplicationUser { Id = "learner-1", Email = "learner@example.test", UserName = "learner@example.test" });

@@ -1710,6 +1710,9 @@ namespace Glosify.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<Guid?>("StorageReservationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("TargetLanguage")
                         .IsRequired()
                         .HasMaxLength(16)
@@ -1720,6 +1723,9 @@ namespace Glosify.Migrations
 
                     b.Property<Guid?>("TranscriptId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("TranscriptStorageStopped")
+                        .HasColumnType("bit");
 
                     b.Property<string>("TranslationMode")
                         .IsRequired()
@@ -2115,6 +2121,9 @@ namespace Glosify.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("Language")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
@@ -2236,6 +2245,184 @@ namespace Glosify.Migrations
                         .IsUnique();
 
                     b.ToTable("BookPageTranslations");
+                });
+
+            modelBuilder.Entity("Glosify.Services.Abuse.BlobCleanupRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BlobName")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<long>("Bytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BlobName")
+                        .IsUnique();
+
+                    b.ToTable("BlobCleanupRequest");
+                });
+
+            modelBuilder.Entity("Glosify.Services.Abuse.ResourceAccountingState", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+
+                    b.Property<bool>("Ready")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ResourceAccountingState");
+                });
+
+            modelBuilder.Entity("Glosify.Services.Abuse.ResourceEntry", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("CascadeAncestors")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ChargesJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EntityKeyJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ResourceEntry");
+                });
+
+            modelBuilder.Entity("Glosify.Services.Abuse.ResourceReservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BlobName")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("ChargesJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ResourceReservation");
+                });
+
+            modelBuilder.Entity("Glosify.Services.Abuse.ResourceUsage", b =>
+                {
+                    b.Property<string>("Scope")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Resource")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<long>("Used")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Scope", "Resource");
+
+                    b.ToTable("ResourceUsage");
+                });
+
+            modelBuilder.Entity("Glosify.Services.Abuse.SignupBucket", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.ToTable("SignupBucket");
+                });
+
+            modelBuilder.Entity("Glosify.Services.Speech.SpeechBudgetReservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("ActualMicros")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("AmountMicros")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PeriodKey")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)");
+
+                    b.Property<bool>("Settled")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasFilter("[Settled] = 0");
+
+                    b.ToTable("SpeechBudgetReservation");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

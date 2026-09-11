@@ -1606,21 +1606,46 @@
   <data name="Speech.Title" xml:space="preserve"><value>Leer en voz alta</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Servicio de voz</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Voz del navegador · sin créditos Glosify</value></data>
-  <data name="Speech.Azure" xml:space="preserve"><value>Voz Azure · usa créditos de IA</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>La voz Azure descuenta créditos de IA Glosify por cada segmento de audio, incluso si está en caché. La síntesis fallida no se cobra. La voz del navegador es gratis.</value></data>
+  <data name="Speech.ElevenLabs" xml:space="preserve"><value>Voz ElevenLabs · usa créditos de IA</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>La voz ElevenLabs descuenta créditos de IA Glosify por cada segmento de audio, incluso si está en caché. La síntesis fallida no se cobra. La voz del navegador es gratis.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Idioma del texto</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Elige un idioma</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Voz</value></data>
   <data name="Speech.Play" xml:space="preserve"><value>Reproducir</value></data>
   <data name="Speech.Loading" xml:space="preserve"><value>Cargando voces…</value></data>
-  <data name="Speech.AzureUnavailable" xml:space="preserve"><value>No se pudieron cargar las voces Azure. Inténtalo de nuevo o elige la voz del navegador.</value></data>
-  <data name="Speech.NoAzureVoices" xml:space="preserve"><value>No hay voces Azure para este idioma en el servicio configurado. Elige la voz del navegador u otro idioma.</value></data>
-  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>No hay voces del navegador para este idioma. Elige Azure o instala una voz en tu dispositivo.</value></data>
+  <data name="Speech.ElevenLabsUnavailable" xml:space="preserve"><value>No se pudieron cargar las voces ElevenLabs. Inténtalo de nuevo o elige la voz del navegador.</value></data>
+  <data name="Speech.NoElevenLabsVoices" xml:space="preserve"><value>No hay voces ElevenLabs para este idioma en el servicio configurado. Elige la voz del navegador u otro idioma.</value></data>
+  <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>No hay voces del navegador para este idioma. Elige ElevenLabs o instala una voz en tu dispositivo.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>Total: {0} créditos de IA ({1} por segmento de audio).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Ajustes de voz</value></data>
   <data name="Speech.Rate" xml:space="preserve"><value>{0} créditos de IA por segmento de audio. Al guardar, aceptas esta tarifa.</value></data>
   <data name="Speech.Estimate" xml:space="preserve"><value>Total estimado: {0} créditos de IA</value></data>
-  <data name="Speech.ReviewRate" xml:space="preserve"><value>Revisa y guarda los ajustes de voz para aceptar la tarifa actual de Azure antes de la lectura.</value></data>
+  <data name="Speech.ReviewRate" xml:space="preserve"><value>Revisa y guarda los ajustes de voz para aceptar la tarifa actual de ElevenLabs antes de la lectura.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Tu voz guardada no está disponible. Elige otra en los ajustes de voz.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Usa créditos de IA</value></data>
+  <data name="Auth.SocialSignupUnavailable" xml:space="preserve"><value>El registro no está disponible temporalmente. Los usuarios existentes pueden iniciar sesión.</value></data>
+  <data name="Usage.Title" xml:space="preserve"><value>Uso de la cuenta</value></data>
+  <data name="Usage.Help" xml:space="preserve"><value>Elimina contenido guardado para liberar espacio. El contenido existente se conserva al alcanzar un límite.</value></data>
+  <data name="Usage.LimitReached" xml:space="preserve"><value>Alcanzaste tu límite de almacenamiento. Abre Uso de la cuenta para liberar espacio.</value></data>
+  <data name="Usage.SiteFull" xml:space="preserve"><value>Glosify alcanzó su capacidad de almacenamiento. Inténtalo más tarde.</value></data>
+  <data name="Usage.Resource" xml:space="preserve"><value>Recurso</value></data>
+  <data name="Usage.Used" xml:space="preserve"><value>Usado</value></data>
+  <data name="Usage.Reserved" xml:space="preserve"><value>Reservado</value></data>
+  <data name="Usage.Maximum" xml:space="preserve"><value>Límite</value></data>
+  <data name="Usage.DeleteHistory" xml:space="preserve"><value>Eliminar historial de práctica</value></data>
+  <data name="Usage.HistoryHelp" xml:space="preserve"><value>Elimina intentos de cuestionarios e historial de repasos para liberar espacio. Se conservan las tarjetas y sus calendarios de estudio.</value></data>
+  <data name="Auth.SignupsClosed" xml:space="preserve"><value>Los registros nuevos están cerrados temporalmente. Los usuarios existentes pueden iniciar sesión.</value></data>
+  <data name="Auth.SignupsLimited" xml:space="preserve"><value>Se alcanzó el límite de cuentas nuevas. Inténtalo más tarde.</value></data>
+  <data name="Usage.Initializing" xml:space="preserve"><value>Se está calculando el uso del almacenamiento. Inténtalo de nuevo en un momento.</value></data>
+  <data name="Usage.Resource.quizzes" xml:space="preserve"><value>Cuestionarios</value></data>
+  <data name="Usage.Resource.quiz_items" xml:space="preserve"><value>Preguntas de los cuestionarios</value></data>
+  <data name="Usage.Resource.largest_quiz_items" xml:space="preserve"><value>Preguntas del cuestionario más grande</value></data>
+  <data name="Usage.Resource.books" xml:space="preserve"><value>Archivos PDF</value></data>
+  <data name="Usage.Resource.collections" xml:space="preserve"><value>Colecciones</value></data>
+  <data name="Usage.Resource.chats" xml:space="preserve"><value>Chats guardados</value></data>
+  <data name="Usage.Resource.transcripts" xml:space="preserve"><value>Transcripciones guardadas</value></data>
+  <data name="Usage.Resource.translations" xml:space="preserve"><value>Traducciones guardadas</value></data>
+  <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Sesiones de traducción</value></data>
+  <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Almacenamiento de PDF</value></data>
+  <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Contenido almacenado</value></data>
 </root>

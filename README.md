@@ -18,7 +18,7 @@ is no model picker, configured alternative, or provider fallback. Prompts, JSON
 schemas, and function tools are defined and executed in this repository. Glosify
 replays its own saved history and every Responses request uses `store: false`.
 
-Azure Speech provides server-side text-to-speech for book reading. The Enhanced
+ElevenLabs v3 provides server-side text-to-speech for book reading, with a bounded memory cache. The Enhanced
 subtitle relay connects server-side to `gpt-realtime-translate` while
 the translated Scribe alternative uses ElevenLabs Scribe v2 followed by Cloudflare
 Workers AI's M2M100 translator. Original captions use Scribe alone and return its
@@ -41,7 +41,7 @@ directly to SQL Server. There is no generic repository, CQRS layer, or separate
 domain assembly.
 
 Main technologies include .NET 10, EF Core 10, Azure SQL, ASP.NET Core Identity,
-OpenAI, Azure Speech, Cloudflare Workers AI, Azure Blob Storage, ElevenLabs Scribe v2,
+OpenAI, Cloudflare Workers AI, Azure Blob Storage, ElevenLabs v3/Scribe v2,
 Stripe, OpenTelemetry,
 xUnit, AngleSharp, and Playwright.
 
@@ -214,3 +214,5 @@ the GitHub app integration.
 References: [Greptile setup](https://www.greptile.com/docs/quickstart),
 [configuration reference](https://www.greptile.com/docs/code-review/greptile-config-reference),
 and [manual reviews](https://www.greptile.com/docs/code-review/developer-essentials).
+
+See [abuse controls and ElevenLabs rollout](docs/ABUSE-PROTECTION.md).

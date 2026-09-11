@@ -240,56 +240,52 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_210765179BDB40158ADE7F23514669FF }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_EE07FD7E4DAF4E32BF67F3AFE307E71F }}
 
-      - name: Require direct OpenAI App Service key
+      - name: Require provider and signup App Service keys
         shell: bash
         run: |
-          openai_key="$(az webapp config appsettings list \
+          for setting in OPENAI_SECRET_KEY Abuse__SignupHashKey; do
+            configured_key="$(az webapp config appsettings list \
+              --name glosify-app \
+              --resource-group glosify \
+              --query "[?name=='$setting'].value | [0]" \
+              --output tsv)"
+            if [[ -z "$configured_key" ]]; then
+              echo "::error::App Service setting $setting is missing or empty."
+              exit 1
+            fi
+            if [[ "$setting" == "Abuse__SignupHashKey" ]]; then
+              printf '%s' "$configured_key" | python3 -c '
+          import base64, sys
+          try:
+              assert len(base64.b64decode(sys.stdin.read(), validate=True)) >= 32
+          except Exception:
+              sys.exit("::error::Abuse__SignupHashKey must be base64 encoding at least 32 bytes.")'
+            fi
+            unset configured_key
+          done
+
+      # Historical destructive retirements must already be complete. This release
+      # adds tables/columns used during startup, so migrate before replacing the app.
+      - name: Require completed historical retirement
+        shell: bash
+        run: |
+          complete="$(az webapp config appsettings list \
             --name glosify-app \
             --resource-group glosify \
-            --query "[?name=='OPENAI_SECRET_KEY'].value | [0]" \
+            --query "[?name=='ClassroomRetirement__Complete'].value | [0]" \
             --output tsv)"
-          if [[ -z "$openai_key" ]]; then
-            echo "::error::App Service setting OPENAI_SECRET_KEY is missing or empty."
+          if [[ "$complete" != "true" ]]; then
+            echo "::error::Complete the documented historical retirement rollout before deploying this release."
             exit 1
           fi
-          unset openai_key
 
-      - name: Read retirement compatibility state
-        id: retirement-compatibility
-        shell: bash
-        run: |
-          prepared="$(az webapp config appsettings list \
-            --name glosify-app \
-            --resource-group glosify \
-            --query "[?name=='ClassroomRetirement__Prepared'].value | [0]" \
-            --output tsv)"
-          if [[ "$prepared" == "true" ]]; then
-            echo "prepared=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "prepared=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # Detach only references from retired tables into retained data. Both the
-      # previous and replacement artifacts can run on this compatibility schema.
-      - name: Prepare schema for artifact replacement
-        if: steps.retirement-compatibility.outputs.prepared != 'true'
+      - name: Apply reviewed additive database migrations
         env:
           PRODUCTION_SQL_CONNECTION_STRING: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
           ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
         run: |
           chmod +x migration/efbundle
-          migration/efbundle 20260827093000_PrepareClassroomRetirement --connection "$PRODUCTION_SQL_CONNECTION_STRING"
-
-      # This durable marker prevents a later workflow rerun from targeting the
-      # compatibility migration after the destructive migration is already applied.
-      - name: Record retirement compatibility state
-        if: steps.retirement-compatibility.outputs.prepared != 'true'
-        run: >-
-          az webapp config appsettings set
-          --name glosify-app
-          --resource-group glosify
-          --settings ClassroomRetirement__Prepared=true
-          --output none
+          migration/efbundle 20260911151434_DurableAbuseControls --connection "$PRODUCTION_SQL_CONNECTION_STRING"
 
       - name: Deploy Azure Web App
         uses: azure/webapps-deploy@v3
@@ -314,38 +310,6 @@ jobs:
             echo "::error::Expected deployment $GITHUB_SHA but the production worker reported ${deployed_commit:-no version}."
             exit 1
           fi
-          curl --fail https://glosify-app.azurewebsites.net/readyz
-
-      # Apply destructive retirement migrations, including CustomQuizzes removal,
-      # only after the replacement artifact is ready on the compatibility schema.
-      # Authenticated retired-route 404s are
-      # covered by the integration suite; anonymous production probes are challenged
-      # by the fallback authorization policy and cannot prove absence.
-      - name: Apply reviewed database migrations
-        env:
-          PRODUCTION_SQL_CONNECTION_STRING: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
-          ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
-        run: |
-          chmod +x migration/efbundle
-          migration/efbundle --connection "$PRODUCTION_SQL_CONNECTION_STRING"
-
-      - name: Record retirement migration completion
-        run: >-
-          az webapp config appsettings set
-          --name glosify-app
-          --resource-group glosify
-          --settings ClassroomRetirement__Complete=true
-          --output none
-
-      - name: Verify health after database migration
-        shell: bash
-        run: |
-          for attempt in {1..30}; do
-            if curl --fail --silent https://glosify-app.azurewebsites.net/readyz > /dev/null; then
-              exit 0
-            fi
-            sleep 10
-          done
           curl --fail https://glosify-app.azurewebsites.net/readyz
 
       # Remove these only after the replacement artifact is healthy. The prior
