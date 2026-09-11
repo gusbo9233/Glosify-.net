@@ -275,7 +275,7 @@ jobs:
           ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
         run: |
           chmod +x migration/efbundle
-          migration/efbundle --connection "$PRODUCTION_SQL_CONNECTION_STRING"
+          migration/efbundle 20260911151434_DurableAbuseControls --connection "$PRODUCTION_SQL_CONNECTION_STRING"
 
       - name: Deploy Azure Web App
         uses: azure/webapps-deploy@v3

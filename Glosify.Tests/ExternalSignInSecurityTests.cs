@@ -128,6 +128,36 @@ public sealed class ExternalSignInSecurityTests
     }
 
     [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task MobileSignupDenialReturnsToAppWithRetryMetadata(bool killSwitch)
+    {
+        using var factory = CreateFactory(signupsEnabled: !killSwitch);
+        if (!killSwitch)
+        {
+            using var scope = factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
+            var day = new DateTimeOffset(DateTime.UtcNow.Date, TimeSpan.Zero);
+            db.Add(new Glosify.Services.Abuse.SignupBucket { Id = "day:" + day.ToUnixTimeSeconds(), Count = 200, ExpiresAt = day.AddDays(1) });
+            await db.SaveChangesAsync();
+        }
+        using var client = CreateClient(factory);
+        AddExternalCookie(factory, client);
+        using var response = await client.GetAsync("/api/auth/external/google/callback");
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("glosify", response.Headers.Location?.Scheme);
+        var query = QueryHelpers.ParseQuery(response.Headers.Location!.Query);
+        Assert.NotEmpty(query["error"].ToString());
+        Assert.False(query.ContainsKey("code"));
+        Assert.True(response.Headers.RetryAfter?.Delta > TimeSpan.Zero);
+        Assert.Equal(((long)response.Headers.RetryAfter!.Delta!.Value.TotalSeconds).ToString(), query["retryAfter"]);
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        using var verify = factory.Services.CreateScope();
+        Assert.Empty(await verify.ServiceProvider.GetRequiredService<GlosifyContext>().Users.ToListAsync());
+        AssertNoApplicationCookie(factory, response);
+    }
+
+    [Theory]
     [InlineData("locked")]
     [InlineData("unconfirmed")]
     [InlineData("twofactor")]
@@ -200,7 +230,7 @@ public sealed class ExternalSignInSecurityTests
         Assert.Equal(Email, profile.GetProperty("email").GetString());
     }
 
-    private static WebApplicationFactory<Program> CreateFactory(bool requireConfirmation = false)
+    private static WebApplicationFactory<Program> CreateFactory(bool requireConfirmation = false, bool signupsEnabled = true)
     {
         var databaseName = Guid.NewGuid().ToString("N");
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
@@ -212,6 +242,7 @@ public sealed class ExternalSignInSecurityTests
                 services.RemoveAll<IDbContextOptionsConfiguration<GlosifyContext>>();
                 services.AddDbContext<GlosifyContext>(options => options.UseInMemoryDatabase(databaseName));
                 services.Configure<IdentityOptions>(options => options.SignIn.RequireConfirmedAccount = requireConfirmation);
+                services.Configure<Glosify.Services.Abuse.AbuseOptions>(options => options.SignupsEnabled = signupsEnabled);
             });
         });
     }

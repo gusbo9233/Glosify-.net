@@ -196,6 +196,8 @@ The current release requires the historical retirement to be complete
 must run before artifact replacement because startup and request handling use
 those tables and columns. `/readyz` remains unhealthy until quota backfill
 completes. The previous application remains compatible with the added schema.
+The workflow pins the bundle target to `20260911151434_DurableAbuseControls`;
+advance that target deliberately after reviewing each future migration.
 Do not introduce future destructive migrations into this pre-deployment step;
 those need a separately reviewed staged rollout. The retirement procedure below
 records the prerequisites and recovery rules for the already completed rollout.
