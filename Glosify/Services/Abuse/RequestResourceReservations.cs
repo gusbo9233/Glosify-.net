@@ -20,11 +20,18 @@ public sealed class RequestResourceReservations
                     await quotas.RenewAsync(id, user, request.Token);
         }
         // SQL Server can surface cancellation during savepoint creation as a
-        // SqlException rather than OperationCanceledException.
-        catch (Exception ex) when (request.IsCancellationRequested && ex is
-            OperationCanceledException or Microsoft.Data.SqlClient.SqlException or Microsoft.EntityFrameworkCore.DbUpdateException) { }
+        // SqlException rather than OperationCanceledException. EF's non-retrying
+        // execution strategy can wrap that in InvalidOperationException.
+        catch (Exception ex) when (request.IsCancellationRequested && IsDatabaseCancellation(ex)) { }
         catch { request.Cancel(); throw; }
     }
+    private static bool IsDatabaseCancellation(Exception exception) => exception switch
+    {
+        OperationCanceledException or Microsoft.Data.SqlClient.SqlException or Microsoft.EntityFrameworkCore.DbUpdateException => true,
+        InvalidOperationException { InnerException: { } inner } => IsDatabaseCancellation(inner),
+        _ => false,
+    };
+
     public async Task ReleaseAsync(ResourceQuotaService quotas)
     {
         // Release is idempotent. Include consumed claims because the enclosing
