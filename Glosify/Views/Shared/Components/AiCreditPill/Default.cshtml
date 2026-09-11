@@ -1,7 +1,7 @@
 @model Glosify.ViewComponents.AiCreditPillModel
 @if (Model.IsAdmin)
 {
-    <a class="credit-pill" asp-controller="Admin" asp-action="AiCredits" title="@Text["Payments.AiCredits"]">
+    <a class="credit-pill" asp-controller="Admin" asp-action="AiCredits" title="@Text["Payments.RoundedBalance"]">
         <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
         <span>@Text["Payments.CreditCount", Model.AvailableCredits]</span>
     </a>
@@ -11,7 +11,7 @@
 }
 else
 {
-    <span class="credit-pill" title="@Text["Payments.AiCredits"]">
+    <span class="credit-pill" title="@Text["Payments.RoundedBalance"]">
         <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
         <span>@Text["Payments.CreditCount", Model.AvailableCredits]</span>
     </span>

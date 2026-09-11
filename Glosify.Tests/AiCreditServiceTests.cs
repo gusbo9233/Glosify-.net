@@ -134,7 +134,7 @@ public sealed class AiCreditServiceTests
     }
 
     [Fact]
-    public async Task CommitUsage_DebitsRoundedCreditsAndReleasesUnusedReserve()
+    public async Task CommitUsage_DebitsFractionalCreditsAndReleasesUnusedReserve()
     {
         await using var context = CreateContext();
         context.Users.Add(new ApplicationUser { Id = "user-1", Email = "user@example.test", UserName = "user@example.test" });
@@ -145,9 +145,9 @@ public sealed class AiCreditServiceTests
         await service.CommitUsageAsync(reservation.ReservationId, new AiTokenUsage(900, 200, 0, 0, 1_100));
 
         var account = await service.GetOrCreateAccountAsync("user-1");
-        Assert.Equal(23, account.BalanceCredits);
+        Assert.Equal(23.9m, account.BalanceCredits);
         Assert.Equal(0, account.ReservedCredits);
-        Assert.Equal(2, (await context.AiCreditTransactions.SingleAsync(t => t.Kind == AiCreditTransactionKinds.UsageDebit)).CreditAmount * -1);
+        Assert.Equal(1.1m, (await context.AiCreditTransactions.SingleAsync(t => t.Kind == AiCreditTransactionKinds.UsageDebit)).CreditAmount * -1);
         Assert.Single(await context.AiCreditTransactions.Where(t => t.Kind == AiCreditTransactionKinds.Release).ToListAsync());
     }
 
@@ -169,11 +169,11 @@ public sealed class AiCreditServiceTests
             new AiTokenUsage(900, 200, 0, 0, 1_100));
 
         var account = await service.GetOrCreateAccountAsync("user-1");
-        Assert.Equal(24, account.BalanceCredits);
+        Assert.Equal(24.45m, account.BalanceCredits);
         Assert.Equal(0, account.ReservedCredits);
         var debit = await context.AiCreditTransactions
             .SingleAsync(transaction => transaction.Kind == AiCreditTransactionKinds.UsageDebit);
-        Assert.Equal(-1, debit.CreditAmount);
+        Assert.Equal(-0.55m, debit.CreditAmount);
         Assert.Single(await context.AiCreditTransactions
             .Where(transaction => transaction.Kind == AiCreditTransactionKinds.Release)
             .ToListAsync());
@@ -239,7 +239,7 @@ public sealed class AiCreditServiceTests
             new AiTokenUsage(25, 25, 0, 0, 50));
 
         var account = await service.GetOrCreateAccountAsync("user-1");
-        Assert.Equal(24, account.BalanceCredits);
+        Assert.Equal(24.95m, account.BalanceCredits);
         Assert.Equal(0, account.ReservedCredits);
 
         var budget = await context.AiMonthlyBudgets.SingleAsync();
@@ -248,12 +248,12 @@ public sealed class AiCreditServiceTests
 
         var usageDebit = await context.AiCreditTransactions
             .SingleAsync(transaction => transaction.Kind == AiCreditTransactionKinds.UsageDebit);
-        Assert.Equal(-1, usageDebit.CreditAmount);
+        Assert.Equal(-0.05m, usageDebit.CreditAmount);
         Assert.Equal(50, usageDebit.TotalTokens);
         Assert.Equal(50_000_000, usageDebit.BudgetAmountMicros);
         var release = await context.AiCreditTransactions
             .SingleAsync(transaction => transaction.Kind == AiCreditTransactionKinds.Release);
-        Assert.Equal(0, release.CreditAmount);
+        Assert.Equal(0.05m, release.CreditAmount);
         Assert.Equal(50_000_000, release.BudgetAmountMicros);
     }
 
@@ -463,6 +463,11 @@ public sealed class AiCreditServiceTests
         var budget = await context.AiMonthlyBudgets.SingleAsync();
         Assert.Equal(200_000_000, budget.SpentMicros);
         Assert.Equal(50_000_000, budget.OverrunMicros);
+        var debit = await context.AiCreditTransactions.SingleAsync(item => item.Kind == AiCreditTransactionKinds.UsageDebit);
+        Assert.Equal(-0.1m, debit.CreditAmount);
+        Assert.Equal(250, debit.TotalTokens);
+        Assert.Equal(250_000_000, debit.BudgetAmountMicros + budget.OverrunMicros);
+        Assert.Equal(24.9m, (await service.GetOrCreateAccountAsync("user-1")).BalanceCredits);
         Assert.Equal(0, budget.AvailableMicros);
         Assert.NotNull(budget.ExhaustedAt);
     }
@@ -710,16 +715,53 @@ public sealed class AiCreditServiceTests
         Assert.Empty(await context.AiCreditTransactions.ToListAsync());
     }
 
+    [Fact]
+    public async Task WholeCreditPurchasesAndRefundsPreserveTheFractionalRemainder()
+    {
+        await using var context = CreateContext();
+        var credits = CreateService(context);
+        await credits.GetOrCreateAccountAsync("speaker");
+        var account = await context.AiCreditAccounts.SingleAsync();
+        account.BalanceCredits = 0.2m;
+        await context.SaveChangesAsync();
+        Assert.True(await credits.GrantStripePurchaseAsync("speaker", "purchase", 10, "purchase"));
+        Assert.False(await credits.GrantStripePurchaseAsync("speaker", "purchase", 10, "retry"));
+        Assert.True(await credits.ApplyStripePaymentAdjustmentAsync("speaker", "refund", -10, "refund"));
+        Assert.False(await credits.ApplyStripePaymentAdjustmentAsync("speaker", "refund", -10, "retry"));
+        Assert.Equal(0.2m, (await credits.GetOrCreateAccountAsync("speaker")).BalanceCredits);
+        var id = await credits.ReserveSpeechAsync("speaker", 0.2m);
+        await credits.CommitSpeechAsync(id);
+        Assert.Equal(0m, (await credits.GetOrCreateAccountAsync("speaker")).BalanceCredits);
+    }
+
+    [Fact]
+    public async Task ShortSpeechUsesFractionalCharacterChargesOnEverySuccessfulPreparation()
+    {
+        await using var context = CreateContext();
+        var credits = CreateService(context);
+        var speech = new TestSpeech();
+        var controller = SpeechController(credits, speech, null);
+        for (var i = 0; i < 2; i++)
+        {
+            var result = await controller.Synthesize(new() { Text = new string('a', 20), Lang = "en", MaxCredits = 4 }, default);
+            await Assert.IsType<Microsoft.AspNetCore.Mvc.FileStreamResult>(result).FileStream.DisposeAsync();
+        }
+        Assert.Equal(24.270966m, (await credits.GetOrCreateAccountAsync("speaker")).BalanceCredits);
+        var debits = await context.AiCreditTransactions.Where(x => x.Kind == AiCreditTransactionKinds.UsageDebit).ToListAsync();
+        Assert.Equal(2, debits.Count);
+        Assert.All(debits, debit => Assert.Equal(-0.364517m, debit.CreditAmount));
+    }
+
     private static Glosify.Controllers.Api.SpeechPlaybackRequest SpeechRequest(int maximum) => new()
     {
         Text = "Hej", Lang = "Swedish", Voice = "sv-SE-SofieNeural", MaxCredits = maximum,
     };
 
     private static Glosify.Controllers.Api.TtsApiController SpeechController(
-        IAiCreditService credits, TestSpeech speech, int price = 2)
+        IAiCreditService credits, TestSpeech speech, int? price = 2)
     {
         var controller = new Glosify.Controllers.Api.TtsApiController(speech,
-            Options.Create(new Glosify.Services.Speech.SpeechOptions { CreditsPerRequest = price }),
+            Options.Create(price.HasValue ? new Glosify.Services.Speech.SpeechOptions { TextSekPerMillionCharacters = price.Value * 1_000_000m, SekPerCredit = 3m } : new Glosify.Services.Speech.SpeechOptions()),
             Microsoft.Extensions.Logging.Abstractions.NullLogger<Glosify.Controllers.Api.TtsApiController>.Instance,
             credits);
         controller.ControllerContext = new Microsoft.AspNetCore.Mvc.ControllerContext

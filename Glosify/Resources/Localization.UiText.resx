@@ -447,7 +447,7 @@
   <data name="Speech.Provider" xml:space="preserve"><value>Speech provider</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Browser speech · no Glosify credits</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>ElevenLabs speech · uses AI credits</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs speech deducts your Glosify AI credits for each audio segment, including cached audio. Failed synthesis is not charged. Browser speech is free.</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs deducts fractional AI credits by character, including cached audio. Failed preparation is not charged. Browser speech is free.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Language of the text</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Choose a language</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Voice</value></data>
@@ -458,8 +458,8 @@
   <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>No browser voice is available for this language. Choose ElevenLabs or install a voice on your device.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>AI credits: {0} total ({1} per audio segment).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Speech settings</value></data>
-  <data name="Speech.Rate" xml:space="preserve"><value>{0} AI credits per audio segment. Saving accepts this rate.</value></data>
-  <data name="Speech.Estimate" xml:space="preserve"><value>Estimated total: {0} AI credits</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>Up to {0} AI credits per segment of at most {1} characters. Charged by character. Saving accepts this maximum.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Maximum total: {0} AI credits</value></data>
   <data name="Speech.ReviewRate" xml:space="preserve"><value>Review and save Speech settings to accept the current ElevenLabs rate before reading.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Your saved voice is unavailable. Choose another voice in Speech settings.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Uses AI credits</value></data>
@@ -488,4 +488,6 @@
   <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Translation sessions</value></data>
   <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>PDF storage</value></data>
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Stored content</value></data>
+  <data name="Payments.RoundedBalance" xml:space="preserve"><value>Balances are rounded up to whole credits. Actual deductions depend on usage.</value></data>
+  <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Your exact credit balance is insufficient. Displayed balances are rounded up; add credits or reduce the request.</value></data>
 </root>

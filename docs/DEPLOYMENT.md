@@ -192,16 +192,46 @@ and the relay startup/heartbeat/session limits match the production policy.
 
 ## Database deployment
 
-The current release requires the historical retirement to be complete
-(`ClassroomRetirement__Complete=true`). Its additive abuse-control migration
-must run before artifact replacement because startup and request handling use
-those tables and columns. `/readyz` remains unhealthy until quota backfill
-completes. The previous application remains compatible with the added schema.
-The workflow pins the bundle target to `20260911151434_DurableAbuseControls`;
-advance that target deliberately after reviewing each future migration.
-Do not introduce future destructive migrations into this pre-deployment step;
-those need a separately reviewed staged rollout. The retirement procedure below
-records the prerequisites and recovery rules for the already completed rollout.
+The fractional-credit release requires a coordinated maintenance window. Integer-only
+application binaries cannot safely share the converted ledger. The workflow:
+
+1. Requires the historical retirement marker, provider/signup keys, separate SCM
+   access, and no conflicting priority 1–2 access rules.
+2. Adds a runner-only allow rule and a public IPv4/IPv6 deny rule, preserving
+   existing rules. Stripe callbacks retry after maintenance; existing users see
+   the platform's temporary access-denied response.
+3. Waits the configured AI timeout plus 60 seconds, then polls recent unsettled
+   reservations for up to 12 minutes. Older abandoned reservations are preserved.
+4. Stops App Service and confirms its stopped state. Only then fingerprints every
+   account and transaction financial amount with the read-only application command.
+5. Applies the pinned `20260911195324_FractionalCredits` migration and compares the
+   full financial fingerprint. Integer values convert exactly to `decimal(19,6)`.
+6. Deploys/starts the new artifact behind maintenance rules, verifies the exact
+   commit, readiness, and settings cleanup, then runs real short TTS synthesis,
+   cached playback, exact SQL balance deductions, and integer API display checks.
+7. Removes only the two temporary access rules after verification passes.
+
+The existing demo account must be enabled and have enough credits for the two
+short smoke requests. TTS must be enabled with a working key, default voice and
+positive provider-budget price. Customer speech settings must match the reviewed
+`Speech:TextSekPerMillionCharacters=1928.29` and `Speech:SekPerCredit=0.1058`.
+These are explicit customer prices, independent of the provider budget and Stripe
+package edits; the earlier doubled rate must not be doubled again.
+
+Before stopping workers, a failed preparation restores ingress. After stopping,
+failures leave maintenance active for recovery. Do not restart an integer-only
+artifact against the converted schema. The migration refuses downgrade; recover
+with a fractional-compatible artifact, repeat health and billing verification,
+then remove `fractional-maintenance-public` and `fractional-maintenance-runner`.
+Do not bypass ledger fingerprint failures. Use a fresh protected release to retry;
+resolve leftover maintenance rules deliberately before initiating another run.
+Production deployments are serialized and never automatically cancelled.
+
+The read-only `dotnet Glosify.dll --credit-ledger-check drained|fingerprint|balance`
+command runs before normal host initialization. It uses the explicitly supplied
+`ConnectionStrings__DefaultConnection`; balance mode additionally requires the
+smoke account's `CreditSmoke__Email`. Fingerprints disclose neither identities
+nor financial amounts. Do not enable raw SQL or credential logging.
 
 The application does not migrate its schema at startup. Generate and review a
 migration locally, then verify:
@@ -312,6 +342,10 @@ print the key in test output.
 
 ## Rollback
 
+The fractional-credit migration must not be downgraded. All artifact recovery
+after this release must retain decimal ledger support; the pre-fractional
+artifact is incompatible even when no user has spent a fraction yet.
+
 Do not roll back the application artifact across this migration without first
 reviewing schema compatibility. Rolling the migration down recreates empty
 retired schema only. Restoring the old implementation with its production data
@@ -332,8 +366,9 @@ are shown without switching providers. Voice and rate preferences remain scoped
 to the signed-in account, language and reader book.
 
 `POST /api/tts` retains antiforgery protection, audio output, the `maxCredits`
-quote and a `no-store` response. Each successful request costs one user credit,
-including memory-cache hits. Failed preparation releases user credits. Provider
+quote and a `no-store` response. Each successful request charges fractional credits by character,
+including memory-cache hits. The catalog exposes an integer maximum segment
+quote; the server compares the exact charge to the accepted `maxCredits`. Failed preparation releases user credits. Provider
 cost is reserved only for synthesis cache misses. `GET /api/tts/voices?lang=...`
 retains its response shape and lists configured, available ElevenLabs voices for
 supported v3 languages. Other languages expose the browser speech option.

@@ -1607,7 +1607,7 @@
   <data name="Speech.Provider" xml:space="preserve"><value>Dịch vụ giọng nói</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Giọng trình duyệt · không tốn tín dụng Glosify</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>Giọng ElevenLabs · dùng tín dụng AI</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>Giọng ElevenLabs trừ tín dụng AI Glosify cho mỗi đoạn âm thanh, kể cả âm thanh lưu đệm. Tổng hợp giọng nói thất bại không bị tính phí. Giọng trình duyệt miễn phí.</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs trừ tín dụng lẻ theo ký tự, kể cả âm thanh lưu đệm. Chuẩn bị thất bại không bị tính phí. Giọng trình duyệt miễn phí.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Ngôn ngữ văn bản</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Chọn ngôn ngữ</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Giọng đọc</value></data>
@@ -1618,8 +1618,8 @@
   <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Không có giọng trình duyệt cho ngôn ngữ này. Hãy chọn ElevenLabs hoặc cài giọng đọc trên thiết bị của bạn.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>Tổng: {0} tín dụng AI ({1} cho mỗi đoạn âm thanh).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Cài đặt giọng đọc</value></data>
-  <data name="Speech.Rate" xml:space="preserve"><value>{0} tín dụng AI cho mỗi đoạn âm thanh. Lưu nghĩa là chấp nhận mức phí này.</value></data>
-  <data name="Speech.Estimate" xml:space="preserve"><value>Tổng ước tính: {0} tín dụng AI</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>Tối đa {0} tín dụng AI cho đoạn tối đa {1} ký tự. Tính phí theo ký tự. Lưu nghĩa là chấp nhận mức tối đa này.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Tổng tối đa: {0} tín dụng AI</value></data>
   <data name="Speech.ReviewRate" xml:space="preserve"><value>Xem lại và lưu cài đặt giọng đọc để chấp nhận mức phí ElevenLabs hiện tại trước khi đọc.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Giọng đọc đã lưu không khả dụng. Chọn giọng khác trong cài đặt giọng đọc.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Sử dụng tín dụng AI</value></data>
@@ -1648,4 +1648,6 @@
   <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Phiên dịch</value></data>
   <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Dung lượng PDF</value></data>
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Nội dung đã lưu</value></data>
+  <data name="Payments.RoundedBalance" xml:space="preserve"><value>Số dư được làm tròn lên thành tín dụng nguyên. Mức trừ thực tế phụ thuộc vào sử dụng.</value></data>
+  <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Số dư chính xác không đủ. Số dư hiển thị được làm tròn lên; hãy thêm tín dụng hoặc giảm yêu cầu.</value></data>
 </root>

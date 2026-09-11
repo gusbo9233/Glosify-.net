@@ -117,7 +117,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             _options.RenewalLeadSeconds,
             _options.HeartbeatSeconds,
             OpenAiModels.RealtimeTranslation,
-            account.AvailableCredits,
+            Glosify.Services.Ai.CreditAmounts.Display(account.AvailableCredits),
             modes,
             sourceLanguages);
     }
@@ -372,7 +372,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                         grant.ExpiresAt,
                         $"/api/realtime-translation/sessions/{session.Id:D}/stream",
                         1,
-                        account.AvailableCredits,
+                        Glosify.Services.Ai.CreditAmounts.Display(account.AvailableCredits),
                         session.CreditsPerStartedMinute,
                         session.TranscriptId);
                     setupCompleted = true;
@@ -725,7 +725,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             session.Id,
             minute.MinuteIndex,
             minute.Status,
-            account.AvailableCredits,
+            Glosify.Services.Ai.CreditAmounts.Display(account.AvailableCredits),
             session.ChargedMinutes,
             session.CreditsCharged,
             session.StartedAt,

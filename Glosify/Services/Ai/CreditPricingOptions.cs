@@ -83,7 +83,7 @@ public sealed class CreditPricingOptionsValidator : IValidateOptions<CreditPrici
 
 public interface ICreditPricingResolver
 {
-    int CalculateTokenCredits(int totalTokens, string feature, string model);
+    decimal CalculateTokenCredits(int totalTokens, string feature, string model);
     decimal GetTokenFeatureRate(string feature);
     decimal GetModelMultiplier(string model);
     int EnhancedSubtitleCreditsPerStartedMinute { get; }
@@ -135,19 +135,15 @@ public sealed class CreditPricingResolver : ICreditPricingResolver
         _pricing.Subtitles.EnhancedWithTranscriptCreditsPerStartedMinute
         ?? _realtime.SavedTranscriptCreditsPerStartedMinute;
 
-    public int CalculateTokenCredits(int totalTokens, string feature, string model)
+    public decimal CalculateTokenCredits(int totalTokens, string feature, string model)
     {
         if (totalTokens <= 0)
         {
             return 0;
         }
 
-        var thousands = decimal.Ceiling(totalTokens / 1000m);
-        var credits = decimal.Ceiling(
-            thousands
-            * GetTokenFeatureRate(feature)
-            * GetModelMultiplier(model));
-        return Math.Max(1, checked((int)credits));
+        return CreditAmounts.RoundCharge(totalTokens / 1000m
+            * GetTokenFeatureRate(feature) * GetModelMultiplier(model));
     }
 
     public decimal GetTokenFeatureRate(string feature)

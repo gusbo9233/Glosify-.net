@@ -36,7 +36,7 @@ public sealed class TtsApiController : ControllerBase
     {
         try
         {
-            return Ok(new { configured = _tts.IsConfigured, creditsPerRequest = _options.CreditsPerRequest, maxTextLength = _options.MaxTextLength, voices = await _tts.GetVoicesAsync(lang, cancellationToken) });
+            return Ok(new { configured = _tts.IsConfigured, creditsPerRequest = _options.MaximumSegmentCredits, maximumSegmentCredits = _options.MaximumSegmentCredits, creditsPerMillionCharacters = _options.TextSekPerMillionCharacters / _options.SekPerCredit, pricingUnit = "characters", maxTextLength = _options.MaxTextLength, voices = await _tts.GetVoicesAsync(lang, cancellationToken) });
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -62,8 +62,6 @@ public sealed class TtsApiController : ControllerBase
         var quality = request.Quality;
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userId)) return Unauthorized();
-        if (request.MaxCredits < _options.CreditsPerRequest)
-            return Conflict("Speech pricing changed. Open speech settings again to review the price.");
         if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(lang))
         {
             return BadRequest("text and lang are required.");
@@ -73,6 +71,10 @@ public sealed class TtsApiController : ControllerBase
         {
             return BadRequest($"text exceeds max length of {_options.MaxTextLength}.");
         }
+
+        var requiredCredits = _options.CalculateCredits(text.Length);
+        if (request.MaxCredits < requiredCredits)
+            return Conflict("Speech pricing changed. Open speech settings again to review the price.");
 
         if (!_tts.IsConfigured)
         {
@@ -86,7 +88,7 @@ public sealed class TtsApiController : ControllerBase
         {
             var preferHighDefinition = string.Equals(quality, "hd", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(quality, "hd-supported-v2", StringComparison.OrdinalIgnoreCase);
-            reservationId = await _credits.ReserveSpeechAsync(userId, _options.CreditsPerRequest, cancellationToken);
+            reservationId = await _credits.ReserveSpeechAsync(userId, requiredCredits, cancellationToken);
             audio = await _tts.GetOrSynthesizeAsync(
                 text,
                 lang,

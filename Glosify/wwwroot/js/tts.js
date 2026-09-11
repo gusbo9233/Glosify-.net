@@ -404,7 +404,7 @@
             var catalog = await voiceCatalog(provider, lang, true);
             if (revision !== choiceRevision || !dialog.open) return;
             quotedCredits = catalog.rate;
-            priceNotice.textContent = message('rate').replace('{0}', String(quotedCredits));
+            priceNotice.textContent = message('rate').replace('{0}', String(quotedCredits)).replace('{1}', String(catalog.maxTextLength));
             catalog.voices.forEach(function (voice) { voiceSelect.add(new Option(voice.label, voice.value)); });
             var saved = preferences[provider + ':' + lang];
             if (catalog.voices.some(function (voice) { return voice.value === saved; })) voiceSelect.value = saved;

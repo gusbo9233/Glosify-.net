@@ -118,7 +118,7 @@ public sealed class DemoAccountSeeder
         await _credits.GrantAsync(
             adminUserId: userId,
             targetUserId: userId,
-            credits: shortfall,
+            credits: Glosify.Services.Ai.CreditAmounts.Display(shortfall),
             note: "Demo account top-up",
             cancellationToken);
         _logger.LogInformation(

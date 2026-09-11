@@ -1607,7 +1607,7 @@
   <data name="Speech.Provider" xml:space="preserve"><value>语音服务</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>浏览器语音 · 不消耗Glosify积分</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>ElevenLabs语音 · 消耗AI积分</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs语音会为每个音频片段扣除Glosify AI积分，包括缓存的音频。合成失败不收费。浏览器语音免费。</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs按字符扣除小数积分，包括缓存音频。准备失败不收费。浏览器语音免费。</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>文本语言</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>选择语言</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>声音</value></data>
@@ -1618,8 +1618,8 @@
   <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>没有此语言的浏览器声音。请选择ElevenLabs或在设备上安装声音。</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>总计：{0} AI积分（每个音频片段{1}）。</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>语音设置</value></data>
-  <data name="Speech.Rate" xml:space="preserve"><value>每个音频片段消耗 {0} 个AI积分。保存即表示接受此费率。</value></data>
-  <data name="Speech.Estimate" xml:space="preserve"><value>预计总计：{0} 个AI积分</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>每段最多{1}个字符，最多消耗{0}个AI积分。按字符计费。保存即接受此上限。</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>总计上限：{0}个AI积分</value></data>
   <data name="Speech.ReviewRate" xml:space="preserve"><value>朗读前请查看并保存语音设置，以接受当前的ElevenLabs费率。</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>已保存的语音不可用。请在语音设置中选择其他语音。</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>消耗AI积分</value></data>
@@ -1648,4 +1648,6 @@
   <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>翻译会话</value></data>
   <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>PDF 存储空间</value></data>
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>已存储的内容</value></data>
+  <data name="Payments.RoundedBalance" xml:space="preserve"><value>余额向上取整显示。实际扣费取决于使用量。</value></data>
+  <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>您的实际积分余额不足。显示的余额已向上取整；请充值或减少请求内容。</value></data>
 </root>

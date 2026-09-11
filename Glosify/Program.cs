@@ -26,6 +26,11 @@ if (args.FirstOrDefault() == "--extract-pdf")
     return Environment.ExitCode;
 }
 
+if (args.FirstOrDefault() == "--credit-ledger-check")
+{
+    return await Glosify.Services.Ai.CreditLedgerDeploymentCheck.RunAsync(args);
+}
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOptions<AbuseOptions>().BindConfiguration("Abuse").ValidateOnStart();
 builder.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<AbuseOptions>, AbuseOptionsValidator>();

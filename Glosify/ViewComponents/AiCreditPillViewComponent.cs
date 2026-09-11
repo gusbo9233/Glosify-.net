@@ -43,7 +43,7 @@ public sealed class AiCreditPillViewComponent : ViewComponent
                 UserClaimsPrincipal.GetUserId(),
                 HttpContext.RequestAborted);
 
-            return View(new AiCreditPillModel(account.AvailableCredits, _administratorAccess.IsAdmin(UserClaimsPrincipal)));
+            return View(new AiCreditPillModel(Glosify.Services.Ai.CreditAmounts.Display(account.AvailableCredits), _administratorAccess.IsAdmin(UserClaimsPrincipal)));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

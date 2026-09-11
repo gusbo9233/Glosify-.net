@@ -84,7 +84,7 @@ public sealed class CreditPricingOptionsTests
             TokenFeatures = { [AiUsageFeatures.Assistant] = 1.5m },
         });
 
-        Assert.Equal(4, resolver.CalculateTokenCredits(
+        Assert.Equal(3.75m, resolver.CalculateTokenCredits(
             5_000,
             AiUsageFeatures.Assistant,
             OpenAiModels.Luna));

@@ -129,6 +129,7 @@ function render() {
   }
 
   elements.email.textContent = currentState.email ?? "Glosify account";
+  elements.credits.title = "Balances are rounded up to whole credits. Actual deductions depend on usage.";
   elements.credits.textContent = String(currentState.availableCredits ?? 0);
   const price = currentState.effectiveCreditsPerMinute;
   elements.price.textContent = Number.isFinite(price)

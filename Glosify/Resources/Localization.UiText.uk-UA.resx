@@ -1607,7 +1607,7 @@
   <data name="Speech.Provider" xml:space="preserve"><value>Сервіс озвучення</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Голос браузера · без кредитів Glosify</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>Голос ElevenLabs · витрачає кредити ШІ</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>Озвучення ElevenLabs списує кредити ШІ Glosify за кожен аудіосегмент, зокрема кешований. Невдалий синтез не оплачується. Озвучення браузера безкоштовне.</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs списує частки кредитів за символ, зокрема за кешоване аудіо. Невдала підготовка не оплачується. Озвучення браузера безкоштовне.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Мова тексту</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Виберіть мову</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Голос</value></data>
@@ -1618,8 +1618,8 @@
   <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>У браузері немає голосу для цієї мови. Виберіть ElevenLabs або встановіть голос на своєму пристрої.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>Разом: {0} кредитів ШІ ({1} за аудіосегмент).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Налаштування мовлення</value></data>
-  <data name="Speech.Rate" xml:space="preserve"><value>{0} кредитів ШІ за аудіосегмент. Збереження означає згоду з тарифом.</value></data>
-  <data name="Speech.Estimate" xml:space="preserve"><value>Орієнтовна сума: {0} кредитів ШІ</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>До {0} кредитів ШІ за сегмент до {1} символів. Оплата за символ. Збереження підтверджує цей максимум.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Максимум: {0} кредитів ШІ</value></data>
   <data name="Speech.ReviewRate" xml:space="preserve"><value>Перегляньте та збережіть налаштування мовлення, щоб прийняти поточний тариф ElevenLabs перед читанням.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Збережений голос недоступний. Виберіть інший у налаштуваннях мовлення.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Використовує кредити ШІ</value></data>
@@ -1648,4 +1648,6 @@
   <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Сеанси перекладу</value></data>
   <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Сховище PDF</value></data>
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Збережений вміст</value></data>
+  <data name="Payments.RoundedBalance" xml:space="preserve"><value>Баланс округлюється вгору до цілих кредитів. Фактичні списання залежать від використання.</value></data>
+  <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Точного балансу недостатньо. Показаний баланс округлено вгору; додайте кредити або зменште запит.</value></data>
 </root>

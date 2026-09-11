@@ -112,9 +112,9 @@ public sealed class AdminController : Controller
             {
                 UserId = user.Id,
                 Email = user.Email ?? user.UserName ?? user.Id,
-                BalanceCredits = account.BalanceCredits,
-                ReservedCredits = account.ReservedCredits,
-                AvailableCredits = account.AvailableCredits,
+                BalanceCredits = Glosify.Services.Ai.CreditAmounts.Display(account.BalanceCredits),
+                ReservedCredits = Glosify.Services.Ai.CreditAmounts.Display(account.ReservedCredits),
+                AvailableCredits = Glosify.Services.Ai.CreditAmounts.Display(account.AvailableCredits),
                 TrialGrantedAt = account.TrialGrantedAt,
             });
         }

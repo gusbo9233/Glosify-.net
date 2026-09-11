@@ -55,6 +55,7 @@ function render() {
   elements.error.classList.toggle("hidden", !currentState.error);
   if (!currentState.signedIn) return;
   elements.email.textContent = currentState.email ?? "Account details unavailable";
+  elements.credits.title = "Balances are rounded up to whole credits. Actual deductions depend on usage.";
   elements.credits.textContent = Number.isFinite(currentState.availableCredits)
     ? `${currentState.availableCredits} credits available` : "Credits unavailable";
   elements.start.disabled = busy || !currentState.catalog;

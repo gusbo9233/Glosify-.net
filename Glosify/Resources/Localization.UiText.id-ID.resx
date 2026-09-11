@@ -1607,7 +1607,7 @@
   <data name="Speech.Provider" xml:space="preserve"><value>Layanan suara</value></data>
   <data name="Speech.Browser" xml:space="preserve"><value>Suara browser · tanpa kredit Glosify</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>Suara ElevenLabs · memakai kredit AI</value></data>
-  <data name="Speech.Credits" xml:space="preserve"><value>Suara ElevenLabs memotong kredit AI Glosify untuk tiap segmen audio, termasuk audio dalam cache. Sintesis yang gagal tidak dikenai biaya. Suara browser gratis.</value></data>
+  <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs memotong pecahan kredit per karakter, termasuk audio dalam cache. Persiapan yang gagal tidak dikenai biaya. Suara browser gratis.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Bahasa teks</value></data>
   <data name="Speech.ChooseLanguage" xml:space="preserve"><value>Pilih bahasa</value></data>
   <data name="Speech.Voice" xml:space="preserve"><value>Suara</value></data>
@@ -1618,8 +1618,8 @@
   <data name="Speech.NoBrowserVoices" xml:space="preserve"><value>Tidak ada suara browser untuk bahasa ini. Pilih ElevenLabs atau instal suara di perangkat Anda.</value></data>
   <data name="Speech.Price" xml:space="preserve"><value>Total: {0} kredit AI ({1} per segmen audio).</value></data>
   <data name="Speech.Settings" xml:space="preserve"><value>Pengaturan suara</value></data>
-  <data name="Speech.Rate" xml:space="preserve"><value>{0} kredit AI per segmen audio. Menyimpan berarti menyetujui tarif ini.</value></data>
-  <data name="Speech.Estimate" xml:space="preserve"><value>Perkiraan total: {0} kredit AI</value></data>
+  <data name="Speech.Rate" xml:space="preserve"><value>Maksimal {0} kredit AI per segmen hingga {1} karakter. Biaya per karakter. Menyimpan berarti menerima batas ini.</value></data>
+  <data name="Speech.Estimate" xml:space="preserve"><value>Total maksimum: {0} kredit AI</value></data>
   <data name="Speech.ReviewRate" xml:space="preserve"><value>Tinjau dan simpan pengaturan suara untuk menyetujui tarif ElevenLabs saat ini sebelum membaca.</value></data>
   <data name="Speech.VoiceUnavailable" xml:space="preserve"><value>Suara tersimpan tidak tersedia. Pilih suara lain di pengaturan suara.</value></data>
   <data name="Speech.UsesCredits" xml:space="preserve"><value>Menggunakan kredit AI</value></data>
@@ -1648,4 +1648,6 @@
   <data name="Usage.Resource.translation_sessions" xml:space="preserve"><value>Sesi terjemahan</value></data>
   <data name="Usage.Resource.pdf_bytes" xml:space="preserve"><value>Penyimpanan PDF</value></data>
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Konten tersimpan</value></data>
+  <data name="Payments.RoundedBalance" xml:space="preserve"><value>Saldo dibulatkan ke atas ke kredit utuh. Potongan sebenarnya bergantung pada penggunaan.</value></data>
+  <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Saldo kredit persis Anda tidak cukup. Saldo yang ditampilkan dibulatkan ke atas; tambahkan kredit atau kurangi permintaan.</value></data>
 </root>

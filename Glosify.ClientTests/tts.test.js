@@ -284,3 +284,20 @@ test('retired Azure preferences reset to browser without paid synthesis', async 
     assert.equal(h.spoken[0].voice.voiceURI, 'sv-local');
     assert.equal(h.audio.length, 0);
 });
+
+test('fractional character billing requires accepting the whole maximum quote', async () => {
+    const response = async (url) => url.includes('/voices?')
+        ? { ok: true, json: async () => ({ configured: true, creditsPerRequest: 4, maximumSegmentCredits: 4,
+            maxTextLength: 200, creditsPerMillionCharacters: 18225.8034026465, pricingUnit: 'characters',
+            voices: [{ shortName: 'JBFqnCBsd6RMkjVDRZzb', displayName: 'George', locale: 'sv' }] }) }
+        : { ok: true, blob: async () => ({}) };
+    const h = setup(response, { provider: 'elevenlabs', acceptedElevenLabsRate: 1 });
+    h.dialog.dataset.rate = 'Up to {0} credits per {1} characters';
+    assert.equal((await h.api.playSavedQueue([{ text: 'Hej', lang: 'Swedish' }])).state, 'error');
+    assert.equal(paidRequests(h).length, 0);
+    await saveElevenLabs(h);
+    assert.equal(h.controls.price.textContent, 'Up to 4 credits per 200 characters');
+    assert.equal((await h.api.playSavedQueue([{ text: 'Hej', lang: 'Swedish' }])).state, 'completed');
+    assert.equal(JSON.parse(paidRequests(h)[0].body).maxCredits, 4);
+    assert.equal(JSON.parse(paidRequests(h)[0].body).text, 'Hej');
+});

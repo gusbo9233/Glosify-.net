@@ -145,7 +145,7 @@ public sealed record AiCreditTransactionRow(
 {
     public static AiCreditTransactionRow From(AiCreditTransaction transaction) => new(
         transaction.Kind,
-        transaction.CreditAmount,
+        Glosify.Services.Ai.CreditAmounts.Display(transaction.CreditAmount),
         transaction.Feature,
         transaction.TotalTokens,
         transaction.Note,

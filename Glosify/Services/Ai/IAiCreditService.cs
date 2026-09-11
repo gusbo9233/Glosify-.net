@@ -51,7 +51,7 @@ public interface IAiCreditService
         CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("This AI credit service does not support duration billing.");
 
-    Task<Guid> ReserveSpeechAsync(string userId, int credits, CancellationToken cancellationToken = default) =>
+    Task<Guid> ReserveSpeechAsync(string userId, decimal credits, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("This credit service does not support speech billing.");
 
     Task CommitSpeechAsync(Guid reservationId, CancellationToken cancellationToken = default) =>

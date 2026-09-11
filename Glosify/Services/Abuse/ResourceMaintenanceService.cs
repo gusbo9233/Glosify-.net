@@ -155,6 +155,16 @@ public sealed class ResourceMaintenanceService(IServiceScopeFactory scopes, ILog
             db.Remove(request);
             await db.SaveChangesAsync(ct);
         }
+        var speechExpiry = now.AddMinutes(-5);
+        var abandonedSpeech = await db.AiCreditTransactions.AsNoTracking()
+            .Where(r => r.Kind == Glosify.Models.Entities.AiCreditTransactionKinds.Reservation
+                && r.Feature == Glosify.Services.Ai.AiUsageFeatures.TextToSpeech && r.CreatedAt <= speechExpiry
+                && !db.AiCreditTransactions.Any(t => t.ReservationId == r.ReservationId
+                    && (t.Kind == Glosify.Models.Entities.AiCreditTransactionKinds.UsageDebit
+                        || t.Kind == Glosify.Models.Entities.AiCreditTransactionKinds.Release)))
+            .OrderBy(r => r.CreatedAt).Take(100).Select(r => r.ReservationId!.Value).ToListAsync(ct);
+        foreach (var id in abandonedSpeech)
+            await services.GetRequiredService<Glosify.Services.Ai.IAiCreditService>().ReleaseAsync(id, ct);
         // Settlements are financial records and are intentionally retained. Use the
         // expiry index and bound each cleanup pass instead of loading their history.
         foreach (var reservation in await db.Set<SpeechBudgetReservation>()

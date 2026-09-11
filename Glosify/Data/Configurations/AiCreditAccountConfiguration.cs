@@ -8,6 +8,8 @@ internal sealed class AiCreditAccountConfiguration : IEntityTypeConfiguration<Ai
 {
     public void Configure(EntityTypeBuilder<AiCreditAccount> entity)
     {
+        entity.Property(x => x.BalanceCredits).HasPrecision(19, 6);
+        entity.Property(x => x.ReservedCredits).HasPrecision(19, 6);
         entity.HasKey(account => account.UserId);
         entity.Property(account => account.UserId).HasMaxLength(450).IsRequired();
         entity.Property(account => account.RowVersion).IsRowVersion();
