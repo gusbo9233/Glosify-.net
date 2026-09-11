@@ -41,6 +41,23 @@ public sealed class ResourceQuotaService(IDbContextFactory<GlosifyContext> facto
         }, ct);
     }
 
+    internal async Task RenewAsync(Guid id, string userId, CancellationToken ct = default)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        await ResourceAccounting.TransactionAsync(db, async () =>
+        {
+            await ResourceAccounting.LockAsync(db, "glosify:resource-accounting", ct);
+            var row = await db.Set<ResourceReservation>().SingleOrDefaultAsync(x => x.Id == id, ct);
+            // A successful content save may already have consumed the reservation.
+            if (row is null) return true;
+            if (row.UserId != userId || row.ExpiresAt <= DateTimeOffset.UtcNow)
+                throw new ResourceQuotaException("reservation_expired");
+            row.ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(5);
+            await db.SaveChangesAsync(ct);
+            return true;
+        }, ct);
+    }
+
     public async Task ReleaseAsync(Guid id, string userId, CancellationToken ct = default)
     {
         await using var db = await factory.CreateDbContextAsync(ct);

@@ -313,11 +313,19 @@ app.UseRateLimiter();
 app.UseAuthorization();
 app.Use(async (context, next) =>
 {
+    var reservations = context.RequestServices.GetRequiredService<RequestResourceReservations>();
+    var quotas = context.RequestServices.GetRequiredService<ResourceQuotaService>();
+    var originalAbort = context.RequestAborted;
+    using var activeRequest = CancellationTokenSource.CreateLinkedTokenSource(originalAbort);
+    context.RequestAborted = activeRequest.Token;
+    var renewal = reservations.RenewWhileActiveAsync(quotas, activeRequest);
     try { await next(); }
     finally
     {
-        await context.RequestServices.GetRequiredService<RequestResourceReservations>()
-            .ReleaseAsync(context.RequestServices.GetRequiredService<ResourceQuotaService>());
+        activeRequest.Cancel();
+        context.RequestAborted = originalAbort;
+        try { await renewal; }
+        finally { await reservations.ReleaseAsync(quotas); }
     }
 });
 

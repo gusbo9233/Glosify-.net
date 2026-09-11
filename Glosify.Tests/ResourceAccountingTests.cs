@@ -114,6 +114,53 @@ public sealed class ResourceAccountingTests
     }
 
     [SqlServerFact]
+    public Task ActiveRequestsRenewCapacity_AndStopOnCompletion() => SqlServerTestDatabase.RunAsync("quota_renewal", async seed =>
+    {
+        seed.Add(new ResourceAccountingState { Id = 1, Ready = true });
+        await seed.SaveChangesAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlServer(seed.Database.GetConnectionString()).Options;
+        var limits = Options.Create(new AbuseOptions());
+        var quotas = new ResourceQuotaService(new Factory(options, limits), limits);
+        var id = await quotas.ReserveAsync("owner", new() { ["content_bytes"] = 100 }, lifetime: TimeSpan.FromMinutes(1));
+        var before = (await seed.Set<ResourceReservation>().AsNoTracking().SingleAsync()).ExpiresAt;
+        var request = new RequestResourceReservations();
+        request.Track(id, "owner");
+        using var active = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var renewal = request.RenewWhileActiveAsync(quotas, active, TimeSpan.FromMilliseconds(20));
+        try
+        {
+            DateTimeOffset after;
+            do
+            {
+                await Task.Delay(20, active.Token);
+                after = (await seed.Set<ResourceReservation>().AsNoTracking().SingleAsync(active.Token)).ExpiresAt;
+            } while (after <= before);
+            Assert.True(after > before.AddMinutes(3));
+        }
+        finally { active.Cancel(); await renewal; }
+        await request.ReleaseAsync(quotas);
+        Assert.Empty(await seed.Set<ResourceReservation>().ToListAsync());
+    });
+
+    [Fact]
+    public async Task RenewalCannotResurrectExpiredOrForeignReservations()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:"); await connection.OpenAsync();
+        var settings = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        var limits = Options.Create(new AbuseOptions());
+        await using var db = new GlosifyContext(settings, limits); await Initialize(db);
+        var quotas = new ResourceQuotaService(new Factory(settings, limits), limits);
+        var id = await quotas.ReserveAsync("owner", new() { ["content_bytes"] = 100 });
+        var before = (await db.Set<ResourceReservation>().AsNoTracking().SingleAsync()).ExpiresAt;
+        await Assert.ThrowsAsync<ResourceQuotaException>(() => quotas.RenewAsync(id, "another-user"));
+        Assert.Equal(before, (await db.Set<ResourceReservation>().AsNoTracking().SingleAsync()).ExpiresAt);
+        var row = await db.Set<ResourceReservation>().SingleAsync();
+        row.ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(-1); await db.SaveChangesAsync();
+        await Assert.ThrowsAsync<ResourceQuotaException>(() => quotas.RenewAsync(id, "owner"));
+        Assert.Equal(row.ExpiresAt, (await db.Set<ResourceReservation>().AsNoTracking().SingleAsync()).ExpiresAt);
+    }
+
+    [SqlServerFact]
     public Task BackfillPreservesLegacyContentAboveLimit_AndAllowsShrinkingEdits() => SqlServerTestDatabase.RunAsync("quota_backfill", async seed =>
     {
         seed.Users.Add(new ApplicationUser { Id = "owner", UserName = "owner", Email = "owner@example.test" });

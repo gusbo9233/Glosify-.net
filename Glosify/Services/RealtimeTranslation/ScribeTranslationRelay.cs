@@ -179,11 +179,16 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                     await translationPump;
                     if (browserSocket.State == WebSocketState.Open)
                     {
-                        await OpenAiTranslationRelay.SendBrowserControlAsync(
-                            browserSocket,
-                            "glosify.relay.closed",
-                            null,
-                            relayToken);
+                        await browserSendLock.WaitAsync(relayToken);
+                        try
+                        {
+                            await OpenAiTranslationRelay.SendBrowserControlAsync(
+                                browserSocket,
+                                "glosify.relay.closed",
+                                null,
+                                relayToken);
+                        }
+                        finally { browserSendLock.Release(); }
                     }
                 }
                 else

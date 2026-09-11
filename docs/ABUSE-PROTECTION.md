@@ -34,7 +34,10 @@ The `Glosify.Abuse` meter aggregates denials without user/quiz identifiers.
 
 Reservations persist before uploads, AI generation, and transcript saving. No
 SQL transaction spans provider calls or PDF extraction. Ordinary reservations
-expire in five minutes. Transcript reservations last for the session and are
+expire in five minutes. Active HTTP requests renew pending generated-content
+reservations every minute, stopping renewal and releasing capacity when the
+request ends. Lost renewal cancels further request work; expired or foreign
+reservations cannot be revived. Transcript reservations last for the session and are
 consumed incrementally; exhaustion stops saving with a visible warning while
 captions continue. A stale/foreign reservation cannot commit content. An expired
 blob reservation remains charged until its blob has been deleted successfully.

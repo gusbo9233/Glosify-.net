@@ -6,7 +6,7 @@ import re
 import subprocess
 
 CONTAINER = "tts-cache"
-PATTERN = re.compile(r"[a-z]{2,3}-[A-Z]{2}-[^/]+Neural/[0-9a-f]{64}\.mp3\Z")
+PATTERN = re.compile(r"[a-z]{2,3}-(?:[A-Z][a-z]{3}-)?[A-Z]{2}-[^/]+Neural/[0-9a-f]{64}\.mp3\Z")
 
 
 def main():

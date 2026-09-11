@@ -260,7 +260,7 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
         {
             var storage = await _quotas.ReserveAsync(usageContext.UserId,
                 new() { ["content_bytes"] = Math.Max(1024L * 1024, outputTokenReserve * 64L) }, cancellationToken);
-            _storageReservations.Pending.Add((storage, usageContext.UserId));
+            _storageReservations.Track(storage, usageContext.UserId);
         }
         var estimatedTokens = Math.Max(1, promptTokenEstimate) + Math.Max(0, outputTokenReserve);
         var outcome = "failure";
