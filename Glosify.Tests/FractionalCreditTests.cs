@@ -21,6 +21,10 @@ public sealed class FractionalCreditTests
     [InlineData("-0.2", -1)]
     [InlineData("-9.8", -10)]
     [InlineData("0", 0)]
+    [InlineData("2147483647.000001", int.MaxValue)]
+    [InlineData("9999999999999.999999", int.MaxValue)]
+    [InlineData("-2147483648.000001", int.MinValue)]
+    [InlineData("-9999999999999.999999", int.MinValue)]
     public void DisplaysWholeCreditsWithoutChangingTheAmount(string value, int expected)
         => Assert.Equal(expected, CreditAmounts.Display(decimal.Parse(value, System.Globalization.CultureInfo.InvariantCulture)));
 
@@ -74,6 +78,32 @@ public sealed class FractionalCreditTests
         Assert.Equal(-0.2m, debit.CreditAmount);
         Assert.Equal("elevenlabs", debit.Provider);
         Assert.Equal("eleven_v3", debit.Model);
+    });
+
+    [SqlServerFact]
+    public Task UnderestimatedTokensCannotSpendAnotherReservation() => SqlServerTestDatabase.RunAsync("fractional_underestimate", async db =>
+    {
+        db.Users.Add(new ApplicationUser { Id = "speaker", UserName = "speaker" });
+        db.AiCreditAccounts.Add(new AiCreditAccount { UserId = "speaker", BalanceCredits = 0.2m });
+        await db.SaveChangesAsync();
+        var factory = new Factory(db.Database.GetConnectionString()!);
+        var service = Service(db, factory);
+        var first = await service.ReserveAsync(new AiUsageContext("speaker", AiUsageFeatures.Assistant, "test", Guid.NewGuid()), "openai", "test", 1250);
+        Assert.Equal(0.1m, first.ReservedCredits);
+        var other = await service.ReserveSpeechAsync("speaker", 0.1m);
+        await service.CommitUsageAsync(first.ReservationId, new AiTokenUsage(1300, 75, 0, 0, 1375));
+        await service.CommitUsageAsync(first.ReservationId, new AiTokenUsage(1300, 75, 0, 0, 1375));
+        var account = await service.GetOrCreateAccountAsync("speaker");
+        Assert.Equal(0.1m, account.BalanceCredits);
+        Assert.Equal(0.1m, account.ReservedCredits);
+        Assert.Equal(0m, account.AvailableCredits);
+        var debit = await db.AiCreditTransactions.SingleAsync(x => x.Kind == AiCreditTransactionKinds.UsageDebit);
+        Assert.Equal(-0.1m, debit.CreditAmount);
+        Assert.Equal(1375, debit.TotalTokens);
+        Assert.Contains("capped", debit.Note);
+        await service.CommitSpeechAsync(other);
+        db.ChangeTracker.Clear();
+        Assert.Equal(0m, (await service.GetOrCreateAccountAsync("speaker")).BalanceCredits);
     });
 
     [SqlServerFact]

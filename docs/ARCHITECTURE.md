@@ -149,3 +149,9 @@ settlements cannot debit the same reservation against a newer account version.
 Financial history is retained, and integer-only applications are incompatible
 with the fractional ledger. See DEPLOYMENT.md for the coordinated maintenance
 and financial fingerprint checks.
+
+Token settlement cannot debit more user credits than its reservation, even when
+prompt estimates are low; actual provider usage and cost are still recorded in
+full. Integer presentation saturates at the signed 32-bit bounds for unusually
+large balances, while the ledger and spending checks retain the exact decimal
+amount.

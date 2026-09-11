@@ -16,5 +16,11 @@ public static class CreditAmounts
     }
 
     // Preserve the sign for debits, including a negative balance after a refund.
-    public static int Display(decimal credits) => checked((int)(Math.Sign(credits) * decimal.Ceiling(Math.Abs(credits))));
+    public static int Display(decimal credits)
+    {
+        // Legacy API fields cannot represent the entire decimal ledger range.
+        // Saturate presentation only; spending always uses the exact ledger amount.
+        var rounded = credits < 0 ? decimal.Floor(credits) : decimal.Ceiling(credits);
+        return (int)Math.Clamp(rounded, int.MinValue, int.MaxValue);
+    }
 }

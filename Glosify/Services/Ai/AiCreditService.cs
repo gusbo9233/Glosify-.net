@@ -144,10 +144,14 @@ public sealed class AiCreditService : IAiCreditService
         }
 
         var account = await GetOrCreateAccountEntityAsync(reservation.UserId, cancellationToken);
-        var debitCredits = _pricing.CalculateTokenCredits(
+        var calculatedCredits = _pricing.CalculateTokenCredits(
             usage.TotalTokens,
             reservation.Feature ?? string.Empty,
             reservation.Model ?? string.Empty);
+        // Prompt token estimates can be low. Never consume another operation's
+        // reservation or debit more user credits than this operation reserved.
+        // Provider accounting below still records all actual tokens and costs.
+        var debitCredits = Math.Min(calculatedCredits, reservation.CreditAmount);
         var releaseCredits = Math.Max(0, reservation.CreditAmount - debitCredits);
         var budgetCharge = await CommitMonthlyBudgetAsync(
             reservation,
@@ -182,6 +186,7 @@ public sealed class AiCreditService : IAiCreditService
             RelatedEntityId = reservation.RelatedEntityId,
             BudgetPeriodKey = reservation.BudgetPeriodKey,
             BudgetAmountMicros = budgetCharge?.ActualMicros,
+            Note = calculatedCredits > debitCredits ? "User charge capped at reserved credits; actual provider usage retained." : null,
             CreatedAt = now,
         });
 

@@ -463,6 +463,11 @@ public sealed class AiCreditServiceTests
         var budget = await context.AiMonthlyBudgets.SingleAsync();
         Assert.Equal(200_000_000, budget.SpentMicros);
         Assert.Equal(50_000_000, budget.OverrunMicros);
+        var debit = await context.AiCreditTransactions.SingleAsync(item => item.Kind == AiCreditTransactionKinds.UsageDebit);
+        Assert.Equal(-0.1m, debit.CreditAmount);
+        Assert.Equal(250, debit.TotalTokens);
+        Assert.Equal(250_000_000, debit.BudgetAmountMicros + budget.OverrunMicros);
+        Assert.Equal(24.9m, (await service.GetOrCreateAccountAsync("user-1")).BalanceCredits);
         Assert.Equal(0, budget.AvailableMicros);
         Assert.NotNull(budget.ExhaustedAt);
     }
