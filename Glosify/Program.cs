@@ -9,6 +9,7 @@ using Glosify.Services.Ai.Generation;
 using Glosify.Services.Auth;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -214,6 +215,28 @@ var app = builder.Build();
 // X-Forwarded-* headers; without this, RemoteIpAddress is the front end's address
 // and every user shares the same rate-limit partition.
 app.UseForwardedHeaders(Glosify.Infrastructure.TrustedForwarding.Create(builder.Configuration));
+
+// GlobeGlotter is reserved as the future primary domain. Until that migration is
+// complete, keep every request on the established Glosify origin so authentication,
+// payment returns, SEO canonicals, and extension integrations stay on one host.
+app.Use(async (context, next) =>
+{
+    var host = context.Request.Host.Host;
+    if (string.Equals(host, "globeglotter.app", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(host, "www.globeglotter.app", StringComparison.OrdinalIgnoreCase))
+    {
+        var destination = UriHelper.BuildAbsolute(
+            "https",
+            new HostString("glosify.se"),
+            context.Request.PathBase,
+            context.Request.Path,
+            context.Request.QueryString);
+        context.Response.Redirect(destination, permanent: true, preserveMethod: true);
+        return;
+    }
+
+    await next();
+});
 
 // Configure the HTTP request pipeline. In Development, WebApplication has already added
 // the developer exception page; registering the handler unconditionally would sit inside
