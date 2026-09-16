@@ -39,6 +39,44 @@ Review configuration and documentation changes use this same protected release
 path. They do not require a new application secret or a separate review Actions
 job. Keep the existing migration and readiness safeguards in place.
 
+## Custom domains
+
+`glosify.se` remains the canonical production origin. `globeglotter.app` and
+`www.globeglotter.app` are interim aliases: the application permanently redirects
+every request on either hostname to the same path and query on
+`https://glosify.se`. Do not change Stripe return URLs, OAuth registrations, SEO
+canonicals, sitemap origins, or extension hosts until the separate primary-domain
+migration.
+
+The GlobeGlotter DNS zone is hosted by Loopia. Keep these records present while
+the aliases are bound to the `glosify-app` App Service:
+
+| Type | Host | Value |
+|---|---|---|
+| `A` | `@` | The current App Service external IP |
+| `CNAME` | `www` | `glosify-app.azurewebsites.net` |
+| `TXT` | `asuid` | The current App Service custom-domain verification ID |
+| `TXT` | `asuid.www` | The same custom-domain verification ID |
+
+Read the current values before changing DNS rather than copying a historical IP
+or verification ID:
+
+```bash
+az webapp config hostname get-external-ip \
+  --resource-group glosify \
+  --webapp-name glosify-app
+az webapp show \
+  --resource-group glosify \
+  --name glosify-app \
+  --query customDomainVerificationId \
+  --output tsv
+```
+
+Both hostnames require their own App Service managed certificate and SNI binding.
+Because the `.app` top-level domain requires HTTPS, do not advertise either alias
+until both hostname bindings report `SniEnabled`. Leave deployment readiness probes
+on `glosify-app.azurewebsites.net` so custom DNS cannot block a deployment.
+
 ## Required App Service settings
 
 Set secrets as App Service settings or Key Vault references. Do not commit them
