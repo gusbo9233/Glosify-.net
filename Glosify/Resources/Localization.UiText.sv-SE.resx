@@ -18,8 +18,8 @@
   <data name="Common.Back" xml:space="preserve"><value>Tillbaka</value></data>
   <data name="Common.Next" xml:space="preserve"><value>Nästa</value></data>
   <data name="Common.Previous" xml:space="preserve"><value>Föregående</value></data>
-  <data name="Layout.MetaDescription" xml:space="preserve"><value>Glosify gör det du läser till ord du kan använda: bygg ordlistor från böcker och transkriptioner, träna med quiz och minneskort och öva sedan högt med en AI-samtalspartner.</value></data>
-  <data name="Layout.AuthMetaDescription" xml:space="preserve"><value>Logga in på Glosify för att bygga ordförråd från det du läser, träna med quiz och prata med en AI-samtalspartner.</value></data>
+  <data name="Layout.MetaDescription" xml:space="preserve"><value>GlobeGlotter gör det du läser till ord du kan använda: bygg ordlistor från böcker och transkriptioner, träna med quiz och minneskort och öva sedan högt med en AI-samtalspartner.</value></data>
+  <data name="Layout.AuthMetaDescription" xml:space="preserve"><value>Logga in på GlobeGlotter för att bygga ordförråd från det du läser, träna med quiz och prata med en AI-samtalspartner.</value></data>
   <data name="Layout.PremiumLearner" xml:space="preserve"><value>Premiumelev</value></data>
   <data name="Layout.SearchPlaceholder" xml:space="preserve"><value>Vad vill du lära dig?</value></data>
   <data name="Layout.Notifications" xml:space="preserve"><value>Aviseringar</value></data>
@@ -53,7 +53,7 @@
   <data name="Languages.NoneHelp" xml:space="preserve"><value>Prova ett engelskt namn, språkets eget namn eller en språkkod.</value></data>
   <data name="Languages.Pick" xml:space="preserve"><value>Välj ett språk</value></data>
   <data name="Assistant.Title" xml:space="preserve"><value>Assistent</value></data>
-  <data name="Assistant.Empty" xml:space="preserve"><value>Be om hjälp var du än är i Glosify.</value></data>
+  <data name="Assistant.Empty" xml:space="preserve"><value>Be om hjälp var du än är i GlobeGlotter.</value></data>
   <data name="Assistant.Placeholder" xml:space="preserve"><value>Fråga assistenten...</value></data>
   <data name="Assistant.Workspace" xml:space="preserve"><value>Assistentens arbetsyta</value></data>
   <data name="Assistant.Chat" xml:space="preserve"><value>CHATT</value></data>
@@ -121,7 +121,7 @@
   <data name="Home.ChooseLanguage" xml:space="preserve"><value>Välj ett språk</value></data>
   <data name="Home.BrowseShared" xml:space="preserve"><value>Bläddra bland delade set</value></data>
   <data name="Home.OpenQuizzes" xml:space="preserve"><value>Öppna mina quiz</value></data>
-  <data name="Home.WaysAria" xml:space="preserve"><value>Sätt att lära sig med Glosify</value></data>
+  <data name="Home.WaysAria" xml:space="preserve"><value>Sätt att lära sig med GlobeGlotter</value></data>
   <data name="Home.ReadContext" xml:space="preserve"><value>Läs i sitt sammanhang</value></data>
   <data name="Home.PracticeRecall" xml:space="preserve"><value>Träna aktiv återkallning</value></data>
   <data name="Home.LoopAria" xml:space="preserve"><value>En sammanhängande läranderesa från läsning till aktiv återkallning</value></data>
@@ -212,7 +212,7 @@
   <data name="Books.YourLibrary" xml:space="preserve"><value>Ditt bibliotek</value></data>
   <data name="Books.HeroPrefix" xml:space="preserve"><value>Gör varje sida till</value></data>
   <data name="Books.Progress" xml:space="preserve"><value>framsteg.</value></data>
-  <data name="Books.HeroText" xml:space="preserve"><value>Ta med eget läsmaterial och använd Glosify för att utforska varje sida, fras och nytt ord.</value></data>
+  <data name="Books.HeroText" xml:space="preserve"><value>Ta med eget läsmaterial och använd GlobeGlotter för att utforska varje sida, fras och nytt ord.</value></data>
   <data name="Books.SummaryAria" xml:space="preserve"><value>Sammanfattning av biblioteket</value></data>
   <data name="Books.BookOne" xml:space="preserve"><value>bok</value></data>
   <data name="Books.BookMany" xml:space="preserve"><value>böcker</value></data>
@@ -386,7 +386,7 @@
   <data name="Common.Edit" xml:space="preserve"><value>Redigera</value></data><data name="Common.Play" xml:space="preserve"><value>Spela</value></data>
   <data name="Quiz.AssistantEmpty" xml:space="preserve"><value>Starta en konversation om det här quizet.</value></data><data name="Quiz.AssistantPlaceholder" xml:space="preserve"><value>Fråga om det här quizet...</value></data><data name="Quiz.Public" xml:space="preserve"><value>Offentligt</value></data><data name="Quiz.Word" xml:space="preserve"><value>Ord</value></data><data name="Quiz.WordExample" xml:space="preserve"><value>t.ex. Bibliothèque</value></data><data name="Quiz.TranslationExample" xml:space="preserve"><value>t.ex. Bibliotek</value></data><data name="Quiz.AddWord" xml:space="preserve"><value>Lägg till ord</value></data><data name="Quiz.ItemsIn" xml:space="preserve"><value>{0} {1} i {2}</value></data><data name="Quiz.ContentAria" xml:space="preserve"><value>Quizets innehåll</value></data>
   <data name="Quiz.OpenWiktionary" xml:space="preserve"><value>Öppna {0} på Wiktionary</value></data><data name="Quiz.DeleteWordConfirm" xml:space="preserve"><value>Vill du ta bort ordet?</value></data><data name="Quiz.NoWords" xml:space="preserve"><value>Inga ord än. Lägg till det första ordet i fältet ovan.</value></data><data name="Quiz.LinkedWords" xml:space="preserve"><value>{0} länkade {1}</value></data><data name="Quiz.NoSentences" xml:space="preserve"><value>Inga meningar än. Be assistenten att lägga till meningar eller hämta dem från text.</value></data>
-  <data name="Payments.PackageUnavailable" xml:space="preserve"><value>Det kreditpaketet är inte längre tillgängligt.</value></data><data name="Payments.CreditsReady" xml:space="preserve"><value>Betalningen är bekräftad. Dina krediter är redo.</value></data><data name="Payments.AwaitingOrFailed" xml:space="preserve"><value>Betalningen väntar fortfarande på bekräftelse eller kunde inte verifieras.</value></data><data name="Payments.GetCredits" xml:space="preserve"><value>Skaffa krediter</value></data><data name="Payments.GlosifyCredits" xml:space="preserve"><value>Glosify-krediter</value></data><data name="Payments.Hero" xml:space="preserve"><value>Håll din inlärning igång.</value></data><data name="Payments.Intro" xml:space="preserve"><value>Krediter driver Glosifys AI-assisterade lärfunktioner och livetextning.</value></data><data name="Payments.NotAvailable" xml:space="preserve"><value>Betalningar är inte tillgängliga än</value></data><data name="Payments.NotConnected" xml:space="preserve"><value>Den här Glosify-installationen har inte anslutits till Stripe.</value></data><data name="Payments.CreditPack" xml:space="preserve"><value>Kreditpaket</value></data><data name="Payments.CreditCount" xml:space="preserve"><value>{0} krediter</value></data><data name="Payments.ContinueCheckout" xml:space="preserve"><value>Fortsätt till säker betalning</value></data><data name="Payments.StripeNotice" xml:space="preserve"><value>Betalningen hanteras av Stripe. Glosify tar aldrig emot eller lagrar kortuppgifter.</value></data><data name="Payments.Status" xml:space="preserve"><value>Betalningsstatus</value></data><data name="Payments.Confirmed" xml:space="preserve"><value>Betalningen är bekräftad</value></data><data name="Payments.Processing" xml:space="preserve"><value>Betalningen behandlas</value></data><data name="Payments.Back" xml:space="preserve"><value>Tillbaka till Glosify</value></data><data name="Payments.AiCredits" xml:space="preserve"><value>AI-krediter</value></data><data name="Payments.AiCreditAdmin" xml:space="preserve"><value>Administration av AI-krediter</value></data>
+  <data name="Payments.PackageUnavailable" xml:space="preserve"><value>Det kreditpaketet är inte längre tillgängligt.</value></data><data name="Payments.CreditsReady" xml:space="preserve"><value>Betalningen är bekräftad. Dina krediter är redo.</value></data><data name="Payments.AwaitingOrFailed" xml:space="preserve"><value>Betalningen väntar fortfarande på bekräftelse eller kunde inte verifieras.</value></data><data name="Payments.GetCredits" xml:space="preserve"><value>Skaffa krediter</value></data><data name="Payments.GlosifyCredits" xml:space="preserve"><value>GlobeGlotter-krediter</value></data><data name="Payments.Hero" xml:space="preserve"><value>Håll din inlärning igång.</value></data><data name="Payments.Intro" xml:space="preserve"><value>Krediter driver GlobeGlotters AI-assisterade lärfunktioner och livetextning.</value></data><data name="Payments.NotAvailable" xml:space="preserve"><value>Betalningar är inte tillgängliga än</value></data><data name="Payments.NotConnected" xml:space="preserve"><value>Den här GlobeGlotter-installationen har inte anslutits till Stripe.</value></data><data name="Payments.CreditPack" xml:space="preserve"><value>Kreditpaket</value></data><data name="Payments.CreditCount" xml:space="preserve"><value>{0} krediter</value></data><data name="Payments.ContinueCheckout" xml:space="preserve"><value>Fortsätt till säker betalning</value></data><data name="Payments.StripeNotice" xml:space="preserve"><value>Betalningen hanteras av Stripe. GlobeGlotter tar aldrig emot eller lagrar kortuppgifter.</value></data><data name="Payments.Status" xml:space="preserve"><value>Betalningsstatus</value></data><data name="Payments.Confirmed" xml:space="preserve"><value>Betalningen är bekräftad</value></data><data name="Payments.Processing" xml:space="preserve"><value>Betalningen behandlas</value></data><data name="Payments.Back" xml:space="preserve"><value>Tillbaka till GlobeGlotter</value></data><data name="Payments.AiCredits" xml:space="preserve"><value>AI-krediter</value></data><data name="Payments.AiCreditAdmin" xml:space="preserve"><value>Administration av AI-krediter</value></data>
   <data name="Error.StartupDelay" xml:space="preserve"><value>Tillfällig startfördröjning</value></data><data name="Error.RequestFailed" xml:space="preserve"><value>Begäran misslyckades</value></data><data name="Error.RequestId" xml:space="preserve"><value>Begärande-ID:</value></data><data name="Error.WarmupTitle" xml:space="preserve"><value>Tjänsten startar</value></data><data name="Error.WarmupMessage" xml:space="preserve"><value>Vänta en stund och försök igen.</value></data><data name="Error.GenericTitle" xml:space="preserve"><value>Något gick fel</value></data><data name="Error.GenericMessage" xml:space="preserve"><value>Begäran kunde inte slutföras. Försök igen.</value></data>
   <data name="Common.Undo" xml:space="preserve"><value>Ångra</value></data><data name="Common.Preview" xml:space="preserve"><value>Förhandsgranska</value></data>
   <data name="Explore.PublicQuiz" xml:space="preserve"><value>Offentligt quiz</value></data><data name="Explore.NoPublicWords" xml:space="preserve"><value>Inga ord har lagts till i det offentliga quizet än.</value></data><data name="Explore.NoPublicSentences" xml:space="preserve"><value>Inga meningar har lagts till i det offentliga quizet än.</value></data><data name="Explore.PublicCollection" xml:space="preserve"><value>Offentlig samling</value></data><data name="Explore.CollectionIntro" xml:space="preserve"><value>Utforska {0} {1} i {2} samlingar och kopiera sedan hela paketet till ditt bibliotek.</value></data><data name="Explore.CollectionSummary" xml:space="preserve"><value>Sammanfattning av samlingen</value></data><data name="Explore.CopyCollection" xml:space="preserve"><value>Kopiera samling</value></data><data name="Explore.InCollection" xml:space="preserve"><value>I den här samlingen</value></data><data name="Explore.FiledInside" xml:space="preserve"><value>Quiz direkt i {0}.</value></data><data name="Explore.NoDirectQuizzes" xml:space="preserve"><value>Inga quiz direkt i den här samlingen.</value></data>
@@ -420,7 +420,7 @@
   <data name="Quiz.JsonImport" xml:space="preserve"><value>Importera JSON</value></data>
   <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Import från extern AI</value></data>
   <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Skapa quiz utan att använda krediter</value></data>
-  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Be valfri AI om Glosify-JSON, klistra in den här, granska det exakta resultatet och importera det till {0}.</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Be valfri AI om GlobeGlotter-JSON, klistra in den här, granska det exakta resultatet och importera det till {0}.</value></data>
   <data name="Quiz.JsonImportClose" xml:space="preserve"><value>Stäng importdialogen</value></data>
   <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Kopiera instruktioner till din AI</value></data>
   <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Lägg till vad du vill lära dig och skicka sedan prompten till ChatGPT, Claude, Gemini eller en annan AI.</value></data>
@@ -434,7 +434,7 @@
   <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Reparera med AI · använder krediter</value></data>
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Förhandsgranska JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Importera allt</value></data>
-  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Förhandsgranskning och import är deterministiska och kontaktar ingen AI-leverantör. ”Reparera med AI” skickar den inklistrade texten till Glosifys konfigurerade AI och debiterar krediter.</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Förhandsgranskning och import är deterministiska och kontaktar ingen AI-leverantör. ”Reparera med AI” skickar den inklistrade texten till GlobeGlotters konfigurerade AI och debiterar krediter.</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
   <data name="Nav.Translations" xml:space="preserve"><value>Översättningar</value></data>
   <data name="Translations.Title" xml:space="preserve"><value>Sparade översättningar</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>Översättare</value></data><data name="Translations.Saved" xml:space="preserve"><value>Sparade översättningar</value></data><data name="Translations.Intro" xml:space="preserve"><value>Översättningar som du uttryckligen har sparat från tillägget Glosify Translator.</value></data>
@@ -445,7 +445,7 @@
   <data name="Settings.Maximum" xml:space="preserve"><value>Maximalt</value></data>
   <data name="Speech.Title" xml:space="preserve"><value>Läs upp</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Rösttjänst</value></data>
-  <data name="Speech.Browser" xml:space="preserve"><value>Webbläsarröst · inga Glosify-krediter</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Webbläsarröst · inga GlobeGlotter-krediter</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>ElevenLabs-röst · använder AI-krediter</value></data>
   <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs drar delar av krediter per tecken, även för cachat ljud. Misslyckad förberedelse debiteras inte. Webbläsarröster är gratis.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Textens språk</value></data>
@@ -490,4 +490,7 @@
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Lagrat innehåll</value></data>
   <data name="Payments.RoundedBalance" xml:space="preserve"><value>Saldon avrundas uppåt till hela krediter. Faktiska avdrag beror på användningen.</value></data>
   <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Ditt exakta kreditsaldo räcker inte. Visade saldon avrundas uppåt; fyll på krediter eller minska begäran.</value></data>
+  <data name="Home.GlobeFocus" xml:space="preserve"><value>Jordglob centrerad på språket du lär dig: {0}</value></data>
+  <data name="Home.GlobeAria" xml:space="preserve"><value>En jordglob</value></data>
+  <data name="Home.GlobeCaption" xml:space="preserve"><value>Upptäck världen genom språk</value></data>
 </root>

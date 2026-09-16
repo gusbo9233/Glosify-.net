@@ -101,7 +101,7 @@ import {
     const panes = Array.from(panel.querySelectorAll('[data-assistant-pane]'));
     const tokenInput = panel.querySelector('input[name="__RequestVerificationToken"]')
         || document.querySelector('input[name="__RequestVerificationToken"]');
-    const defaultEmptyText = empty?.textContent?.trim() || t('Assistant.Empty', 'Ask for help anywhere in Glosify.');
+    const defaultEmptyText = empty?.textContent?.trim() || t('Assistant.Empty', 'Ask for help anywhere in GlobeGlotter.');
     const canFocusAssistant = () => !windowEl?.hidden
         && !document.querySelector('.modal-backdrop.open');
 
@@ -1070,7 +1070,7 @@ import {
         if (!chatSelection?.contextReady || contextOptionsBusy) return;
         const selection = chatSelection;
         const selectedOption = quizSelector.selectedOptions?.[0] || null;
-        const label = selectedOption?.dataset.contextLabel || 'Glosify';
+        const label = selectedOption?.dataset.contextLabel || 'GlobeGlotter';
         const contextPersisted = await setQuizContext(quizSelector.value || null, label, true);
         if (contextPersisted && canConfirmContext(selection)) {
             setStatus(quizId ? `Quiz set to ${label}.` : 'No quiz selected.');

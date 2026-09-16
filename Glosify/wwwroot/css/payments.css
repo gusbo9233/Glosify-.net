@@ -55,7 +55,7 @@
     border-radius: 999px;
     padding: 12px 18px;
     background: var(--primary);
-    box-shadow: 0 12px 28px rgba(29, 185, 84, 0.2);
+    box-shadow: 0 12px 28px rgba(24, 134, 75, 0.2);
     color: var(--on-primary);
     font: inherit;
     font-weight: 800;
@@ -70,7 +70,7 @@
 
 .payment-button:hover {
     color: var(--on-primary);
-    box-shadow: 0 16px 34px rgba(29, 185, 84, 0.3);
+    box-shadow: 0 16px 34px rgba(24, 134, 75, 0.3);
     transform: translateY(-2px);
 }
 
@@ -80,7 +80,7 @@
 }
 
 .payment-button:active {
-    box-shadow: 0 8px 20px rgba(29, 185, 84, 0.2);
+    box-shadow: 0 8px 20px rgba(24, 134, 75, 0.2);
     transform: translateY(0);
 }
 

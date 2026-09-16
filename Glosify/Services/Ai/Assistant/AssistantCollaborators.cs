@@ -146,7 +146,7 @@ internal sealed class AssistantContextResolver(
         }
         if (selectedLanguage is null)
         {
-            throw new InvalidOperationException("Choose a Glosify quiz language before using saved transcripts.");
+            throw new InvalidOperationException("Choose a GlobeGlotter quiz language before using saved transcripts.");
         }
 
         var resolved = await context.RealtimeTranslationTranscripts

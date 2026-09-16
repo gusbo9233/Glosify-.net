@@ -103,7 +103,7 @@ public sealed class ApiProblemDetailsContractTests
             ApiErrorCodes.PaidServicesBudgetExhausted,
             json.RootElement.GetProperty("code").GetString());
         Assert.Equal(
-            "Paid features are unavailable because Glosify's monthly application budget has been reached.",
+            "Paid features are unavailable because GlobeGlotter's monthly application budget has been reached.",
             json.RootElement.GetProperty("error").GetString());
         Assert.Equal(503, json.RootElement.GetProperty("status").GetInt32());
         Assert.Equal(resetsAtUtc, json.RootElement.GetProperty("resetsAtUtc").GetDateTimeOffset());
@@ -141,7 +141,7 @@ public sealed class ApiProblemDetailsContractTests
         public Task<PaidServiceStatus> GetStatusAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new PaidServiceStatus(
                 false,
-                "Paid features are unavailable because Glosify's monthly application budget has been reached.",
+                "Paid features are unavailable because GlobeGlotter's monthly application budget has been reached.",
                 resetsAtUtc));
 
         public Task EnsureAvailableAsync(CancellationToken cancellationToken = default) =>

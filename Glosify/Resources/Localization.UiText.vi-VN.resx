@@ -55,10 +55,10 @@
     <value>Trước đó</value>
   </data>
   <data name="Layout.MetaDescription" xml:space="preserve">
-    <value>Glosify biến những gì bạn đọc thành từ vựng có thể dùng: tạo danh sách từ từ sách và bản chép lời, luyện chúng bằng câu đố và thẻ ghi nhớ, rồi thực hành nói thành tiếng với một đối tác trò chuyện AI.</value>
+    <value>GlobeGlotter biến những gì bạn đọc thành từ vựng có thể dùng: tạo danh sách từ từ sách và bản chép lời, luyện chúng bằng câu đố và thẻ ghi nhớ, rồi thực hành nói thành tiếng với một đối tác trò chuyện AI.</value>
   </data>
   <data name="Layout.AuthMetaDescription" xml:space="preserve">
-    <value>Đăng nhập vào Glosify để xây dựng từ vựng từ những gì bạn đọc, luyện tập bằng câu đố và nói nó với một đối tác trò chuyện AI.</value>
+    <value>Đăng nhập vào GlobeGlotter để xây dựng từ vựng từ những gì bạn đọc, luyện tập bằng câu đố và nói nó với một đối tác trò chuyện AI.</value>
   </data>
   <data name="Layout.PremiumLearner" xml:space="preserve">
     <value>Người học cao cấp</value>
@@ -142,7 +142,7 @@
     <value>Trợ lý</value>
   </data>
   <data name="Assistant.Empty" xml:space="preserve">
-    <value>Hãy yêu cầu trợ giúp ở bất kỳ đâu trong Glosify.</value>
+    <value>Hãy yêu cầu trợ giúp ở bất kỳ đâu trong GlobeGlotter.</value>
   </data>
   <data name="Assistant.Placeholder" xml:space="preserve">
     <value>Hỏi trợ lý...</value>
@@ -346,7 +346,7 @@
     <value>Mở các bài quiz của tôi</value>
   </data>
   <data name="Home.WaysAria" xml:space="preserve">
-    <value>Các cách học với Glosify</value>
+    <value>Các cách học với GlobeGlotter</value>
   </data>
   <data name="Home.ReadContext" xml:space="preserve">
     <value>Đọc trong ngữ cảnh</value>
@@ -619,7 +619,7 @@
     <value>sự tiến bộ.</value>
   </data>
   <data name="Books.HeroText" xml:space="preserve">
-    <value>Mang tài liệu đọc của riêng bạn và dùng Glosify để khám phá từng trang, cụm từ và từ mới.</value>
+    <value>Mang tài liệu đọc của riêng bạn và dùng GlobeGlotter để khám phá từng trang, cụm từ và từ mới.</value>
   </data>
   <data name="Books.SummaryAria" xml:space="preserve">
     <value>Tóm tắt thư viện</value>
@@ -1405,19 +1405,19 @@
     <value>Nhận tín dụng</value>
   </data>
   <data name="Payments.GlosifyCredits" xml:space="preserve">
-    <value>Tín dụng Glosify</value>
+    <value>Tín dụng GlobeGlotter</value>
   </data>
   <data name="Payments.Hero" xml:space="preserve">
     <value>Hãy tiếp tục vòng lặp học tập của bạn.</value>
   </data>
   <data name="Payments.Intro" xml:space="preserve">
-    <value>Tín dụng cung cấp năng lượng cho các tính năng học tập hỗ trợ AI và phụ đề trực tiếp của Glosify.</value>
+    <value>Tín dụng cung cấp năng lượng cho các tính năng học tập hỗ trợ AI và phụ đề trực tiếp của GlobeGlotter.</value>
   </data>
   <data name="Payments.NotAvailable" xml:space="preserve">
     <value>Thanh toán hiện chưa khả dụng</value>
   </data>
   <data name="Payments.NotConnected" xml:space="preserve">
-    <value>Triển khai Glosify này chưa được kết nối với Stripe.</value>
+    <value>Triển khai GlobeGlotter này chưa được kết nối với Stripe.</value>
   </data>
   <data name="Payments.CreditPack" xml:space="preserve">
     <value>Gói tín dụng</value>
@@ -1429,7 +1429,7 @@
     <value>Tiếp tục đến thanh toán an toàn</value>
   </data>
   <data name="Payments.StripeNotice" xml:space="preserve">
-    <value>Thanh toán được lưu trữ bởi Stripe. Glosify không bao giờ nhận hoặc lưu thông tin thẻ.</value>
+    <value>Thanh toán được lưu trữ bởi Stripe. GlobeGlotter không bao giờ nhận hoặc lưu thông tin thẻ.</value>
   </data>
   <data name="Payments.Status" xml:space="preserve">
     <value>Trạng thái thanh toán</value>
@@ -1441,7 +1441,7 @@
     <value>Đang xử lý thanh toán</value>
   </data>
   <data name="Payments.Back" xml:space="preserve">
-    <value>Quay lại Glosify</value>
+    <value>Quay lại GlobeGlotter</value>
   </data>
   <data name="Payments.AiCredits" xml:space="preserve">
     <value>Tín dụng AI</value>
@@ -1580,7 +1580,7 @@
   <data name="Quiz.JsonImport" xml:space="preserve"><value>Nhập JSON</value></data>
   <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Nhập từ AI bên ngoài</value></data>
   <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Tạo bài kiểm tra mà không dùng tín dụng</value></data>
-  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Yêu cầu bất kỳ AI nào tạo JSON Glosify, dán vào đây, xem lại kết quả chính xác rồi nhập vào {0}.</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Yêu cầu bất kỳ AI nào tạo JSON GlobeGlotter, dán vào đây, xem lại kết quả chính xác rồi nhập vào {0}.</value></data>
   <data name="Quiz.JsonImportClose" xml:space="preserve"><value>Đóng hộp thoại nhập</value></data>
   <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Sao chép hướng dẫn cho AI của bạn</value></data>
   <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Thêm nội dung bạn muốn học, rồi gửi lời nhắc này cho ChatGPT, Claude, Gemini hoặc AI khác.</value></data>
@@ -1594,7 +1594,7 @@
   <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Sửa bằng AI · dùng tín dụng</value></data>
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Xem trước JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Nhập tất cả</value></data>
-  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Việc xem trước và nhập có tính xác định và không liên hệ nhà cung cấp AI. “Sửa bằng AI” gửi văn bản đã dán đến AI được cấu hình của Glosify và tính tín dụng.</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Việc xem trước và nhập có tính xác định và không liên hệ nhà cung cấp AI. “Sửa bằng AI” gửi văn bản đã dán đến AI được cấu hình của GlobeGlotter và tính tín dụng.</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
   <data name="Nav.Translations" xml:space="preserve"><value>Bản dịch</value></data>
   <data name="Translations.Title" xml:space="preserve"><value>Bản dịch đã lưu</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>Trình dịch</value></data><data name="Translations.Saved" xml:space="preserve"><value>Bản dịch đã lưu</value></data><data name="Translations.Intro" xml:space="preserve"><value>Các bản dịch bạn đã chủ động lưu từ tiện ích Glosify Translator.</value></data>
@@ -1605,7 +1605,7 @@
   <data name="Settings.Maximum" xml:space="preserve"><value>Tối đa</value></data>
   <data name="Speech.Title" xml:space="preserve"><value>Đọc thành tiếng</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Dịch vụ giọng nói</value></data>
-  <data name="Speech.Browser" xml:space="preserve"><value>Giọng trình duyệt · không tốn tín dụng Glosify</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Giọng trình duyệt · không tốn tín dụng GlobeGlotter</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>Giọng ElevenLabs · dùng tín dụng AI</value></data>
   <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs trừ tín dụng lẻ theo ký tự, kể cả âm thanh lưu đệm. Chuẩn bị thất bại không bị tính phí. Giọng trình duyệt miễn phí.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Ngôn ngữ văn bản</value></data>
@@ -1650,4 +1650,7 @@
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Nội dung đã lưu</value></data>
   <data name="Payments.RoundedBalance" xml:space="preserve"><value>Số dư được làm tròn lên thành tín dụng nguyên. Mức trừ thực tế phụ thuộc vào sử dụng.</value></data>
   <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Số dư chính xác không đủ. Số dư hiển thị được làm tròn lên; hãy thêm tín dụng hoặc giảm yêu cầu.</value></data>
+  <data name="Home.GlobeFocus" xml:space="preserve"><value>Quả địa cầu tập trung vào ngôn ngữ đang học: {0}</value></data>
+  <data name="Home.GlobeAria" xml:space="preserve"><value>Quả địa cầu thế giới</value></data>
+  <data name="Home.GlobeCaption" xml:space="preserve"><value>Khám phá thế giới qua ngôn ngữ</value></data>
 </root>

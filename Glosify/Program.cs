@@ -238,6 +238,28 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// GlobeGlotter is reserved as the future primary domain. Until that migration is
+// complete, keep every request on the established Glosify origin so authentication,
+// payment returns, SEO canonicals, and extension integrations stay on one host.
+app.Use(async (context, next) =>
+{
+    var host = context.Request.Host.Host;
+    if (string.Equals(host, "globeglotter.app", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(host, "www.globeglotter.app", StringComparison.OrdinalIgnoreCase))
+    {
+        var destination = UriHelper.BuildAbsolute(
+            "https",
+            new HostString("glosify.se"),
+            context.Request.PathBase,
+            context.Request.Path,
+            context.Request.QueryString);
+        context.Response.Redirect(destination, permanent: true, preserveMethod: true);
+        return;
+    }
+
+    await next();
+});
+
 // Configure the HTTP request pipeline. In Development, WebApplication has already added
 // the developer exception page; registering the handler unconditionally would sit inside
 // it and swallow the exception before that page ever saw it.

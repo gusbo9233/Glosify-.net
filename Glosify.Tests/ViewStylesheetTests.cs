@@ -29,6 +29,17 @@ public sealed class ViewStylesheetTests
     }
 
     [Fact]
+    public void Register_provider_forms_have_separation_and_a_distinct_button_treatment()
+    {
+        var siteCss = File.ReadAllText(Path.Combine(WebRootDirectory(), "css", "site.css"));
+
+        const string providerForm = ".auth-form:has(input[name=\"provider\"])";
+        Assert.Contains($"{providerForm} +\n{providerForm}", siteCss, StringComparison.Ordinal);
+        Assert.Contains($"{providerForm} .btn-primary-pill", siteCss, StringComparison.Ordinal);
+        Assert.Contains("margin-top: 12px", siteCss, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Payment_views_use_the_button_defined_by_their_stylesheet()
     {
         var paymentsCss = File.ReadAllText(Path.Combine(WebRootDirectory(), "css", "payments.css"));

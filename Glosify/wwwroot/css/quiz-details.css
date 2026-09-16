@@ -65,7 +65,7 @@
 .quiz-hero .btn-hero {
     font-size: 14px;
     padding-inline: 24px;
-    box-shadow: 0 10px 24px rgba(29, 185, 84, 0.2);
+    box-shadow: 0 10px 24px rgba(24, 134, 75, 0.2);
 }
 
 .quiz-hero .btn-hero .material-symbols-outlined {
@@ -82,7 +82,7 @@
 }
 
 .quiz-hero .btn-hero-secondary:hover {
-    border-color: rgba(83, 224, 118, 0.45);
+    border-color: rgba(24, 134, 75, 0.45);
     background: rgba(17, 32, 54, 0.92);
     box-shadow: none;
 }

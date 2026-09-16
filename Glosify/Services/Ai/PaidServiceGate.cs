@@ -15,7 +15,7 @@ public interface IPaidServiceGate
 public sealed class PaidServiceGate : IPaidServiceGate
 {
     public const string BudgetExhaustedReason =
-        "Paid features are unavailable because Glosify's monthly application budget has been reached.";
+        "Paid features are unavailable because GlobeGlotter's monthly application budget has been reached.";
 
     private readonly GlosifyContext _context;
     private readonly AiUsageOptions _options;

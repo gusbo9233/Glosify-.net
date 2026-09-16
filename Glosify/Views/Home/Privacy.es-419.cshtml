@@ -4,7 +4,7 @@
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = "Política de privacidad";
-    ViewData["Description"] = "Cómo Glosify y la extensión Chrome Glosify Live Subtitles manejan los datos personales.";
+    ViewData["Description"] = "Cómo GlobeGlotter y la extensión Chrome Glosify Live Subtitles manejan los datos personales.";
     var legal = Legal.Value;
 }
 
@@ -22,9 +22,9 @@
 
 
         <h2>Quién controla tus datos</h2>
-        <p><strong>@legal.ControllerName</strong> opera Glosify y es el responsable del tratamiento de los datos personales descritos aquí. Contacta a <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> para solicitudes de privacidad o eliminación.</p>
+        <p><strong>@legal.ControllerName</strong> opera GlobeGlotter y es el responsable del tratamiento de los datos personales descritos aquí. Contacta a <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> para solicitudes de privacidad o eliminación.</p>
 
-        <h2>Datos que maneja Glosify</h2>
+        <h2>Datos que maneja GlobeGlotter</h2>
         <ul>
             <li>Información de la cuenta, como dirección de correo electrónico, ID interno de la cuenta, método de autenticación e identificadores externos de inicio de sesión de Google o Microsoft.</li>
             <li>Preferencias de idioma, cuestionarios, contenido de aprendizaje, créditos, reservas, transacciones de uso y metadatos de sesión necesarios para prestar y proteger el servicio.</li>
@@ -36,24 +36,24 @@
         <p>El análisis operativo del asistente registra nombres de modelos y herramientas, recuentos de tokens, tiempos, resultados e identificadores de correlación seudónimos. Está configurado para no duplicar solicitudes completas, respuestas, argumentos de herramientas ni resultados de herramientas en el almacenamiento de analíticas o telemetría.</p>
 
         <h2>Subtítulos en vivo y procesamiento de proveedores</h2>
-        <p>Chrome captura audio solo después de que presionas <strong>Iniciar subtítulos</strong> en la pestaña activa. En modo Enhanced, el audio se transmite a través de Glosify a OpenAI para el procesamiento y la traducción de voz en tiempo real. Si el guardado de transcripciones está activado, el mismo audio también se transmite a ElevenLabs Scribe v2 para producir la transcripción final en el idioma original. En el modo Scribe + Cloudflare, el audio se transmite a través de Glosify a ElevenLabs para la transcripción y las frases en evolución se envían a Cloudflare Workers AI M2M100 para su traducción. El audio de la pestaña no se escribe en el almacenamiento de Glosify.</p>
+        <p>Chrome captura audio solo después de que presionas <strong>Iniciar subtítulos</strong> en la pestaña activa. En modo Enhanced, el audio se transmite a través de GlobeGlotter a OpenAI para el procesamiento y la traducción de voz en tiempo real. Si el guardado de transcripciones está activado, el mismo audio también se transmite a ElevenLabs Scribe v2 para producir la transcripción final en el idioma original. En el modo Scribe + Cloudflare, el audio se transmite a través de GlobeGlotter a ElevenLabs para la transcripción y las frases en evolución se envían a Cloudflare Workers AI M2M100 para su traducción. El audio de la pestaña no se escribe en el almacenamiento de GlobeGlotter.</p>
         <p>Los subtítulos y las frases reconocidas se muestran de forma transitoria, a menos que actives por separado el guardado de transcripciones. OpenAI procesa el audio, las frases reconocidas y los metadatos del servicio relacionados para los subtítulos Enhanced. ElevenLabs procesa esos datos cuando el modo Scribe está activo o cuando el guardado de transcripciones Enhanced está activado. El registro estándar de ElevenLabs API está habilitado, por lo que ElevenLabs puede conservar datos de solicitudes y registros del servicio conforme a sus términos de servicio y política de retención aplicables. Google y Microsoft procesan información conforme a sus propias políticas cuando eliges sus servicios de inicio de sesión OAuth.</p>
 
         <h2>Finalidades y base jurídica</h2>
-        <p>Glosify usa estos datos para autenticarse contigo, entregarte las funciones solicitadas de aprendizaje y subtítulos, mantener tu contenido, administrar los créditos y el presupuesto de la aplicación, prevenir abusos, solucionar fallas y cumplir con obligaciones legales. El tratamiento es necesario para prestarte el servicio que solicitas y para intereses legítimos de seguridad y fiabilidad; el almacenamiento opcional de transcripciones se basa en tu elección explícita.</p>
+        <p>GlobeGlotter usa estos datos para autenticarse contigo, entregarte las funciones solicitadas de aprendizaje y subtítulos, mantener tu contenido, administrar los créditos y el presupuesto de la aplicación, prevenir abusos, solucionar fallas y cumplir con obligaciones legales. El tratamiento es necesario para prestarte el servicio que solicitas y para intereses legítimos de seguridad y fiabilidad; el almacenamiento opcional de transcripciones se basa en tu elección explícita.</p>
 
         <h2>Almacenamiento, conservación y eliminación</h2>
-        <p>El guardado de transcripciones está desactivado de forma predeterminada. Cuando se activa, el habla original finalizada se almacena en tu cuenta privada de Glosify hasta que elimines la transcripción o la cuenta. El contenido de la cuenta y los registros de créditos se conservan mientras la cuenta esté activa y durante el tiempo que sea razonablemente necesario por motivos de seguridad, contabilidad, gestión de disputas u obligaciones legales. Las copias de respaldo en la nube y de registros operativos caducan según los cronogramas de retención configurados de Microsoft Azure en lugar de desaparecer de inmediato.</p>
+        <p>El guardado de transcripciones está desactivado de forma predeterminada. Cuando se activa, el habla original finalizada se almacena en tu cuenta privada de GlobeGlotter hasta que elimines la transcripción o la cuenta. El contenido de la cuenta y los registros de créditos se conservan mientras la cuenta esté activa y durante el tiempo que sea razonablemente necesario por motivos de seguridad, contabilidad, gestión de disputas u obligaciones legales. Las copias de respaldo en la nube y de registros operativos caducan según los cronogramas de retención configurados de Microsoft Azure en lugar de desaparecer de inmediato.</p>
         <p>Puedes eliminar las transcripciones guardadas desde la página de Transcripts y usar las herramientas de eliminación de administración de la cuenta después de iniciar sesión. También puedes contactar a la dirección anterior. Eliminar contenido no revoca la propia copia de un proveedor de OAuth; gestiona también esa relación con Google o Microsoft.</p>
 
         <h2>Glosify Translator</h2>
-        <p>El texto fuente, el idioma y las preferencias opcionales de dialecto, registro, tono o redacción se envían a través de Glosify a OpenAI solo cuando eliges Traducir. La extensión guarda localmente el token de actualización, los idiomas elegidos y las preferencias, pero no el historial. Una traducción se conserva en tu cuenta solo si eliges Guardar y permanece allí hasta que la elimines o elimines la cuenta.</p>
+        <p>El texto fuente, el idioma y las preferencias opcionales de dialecto, registro, tono o redacción se envían a través de GlobeGlotter a OpenAI solo cuando eliges Traducir. La extensión guarda localmente el token de actualización, los idiomas elegidos y las preferencias, pero no el historial. Una traducción se conserva en tu cuenta solo si eliges Guardar y permanece allí hasta que la elimines o elimines la cuenta.</p>
 
         <h2>Datos de la extensión Chrome</h2>
-        <p>La extensión almacena la configuración local mínima y el material de autenticación necesarios para mantenerse conectada, como las elecciones de idioma, el estado de la sesión y los tokens bearer de Glosify. Usa active-tab, tab-capture, offscreen, scripting, storage, identity y acceso a glosify.se solo para conectar la cuenta y colocar subtítulos traducidos sobre la pestaña que el usuario inicia.</p>
+        <p>La extensión almacena la configuración local mínima y el material de autenticación necesarios para mantenerse conectada, como las elecciones de idioma, el estado de la sesión y los tokens bearer de GlobeGlotter. Usa active-tab, tab-capture, offscreen, scripting, storage, identity y acceso a glosify.se solo para conectar la cuenta y colocar subtítulos traducidos sobre la pestaña que el usuario inicia.</p>
 
         <h2>Uso limitado de Chrome Web Store</h2>
-        <p>El uso y la transferencia de la información recibida de Google APIs por parte de Glosify se adherirán a la Política de Datos de Usuario de Chrome Web Store, incluidos los requisitos de Uso Limitado. Glosify no vende datos de los usuarios de la extensión, no los usa para publicidad personalizada ni los transfiere para fines no relacionados de crédito o préstamos.</p>
+        <p>El uso y la transferencia de la información recibida de Google APIs por parte de GlobeGlotter se adherirán a la Política de Datos de Usuario de Chrome Web Store, incluidos los requisitos de Uso Limitado. GlobeGlotter no vende datos de los usuarios de la extensión, no los usa para publicidad personalizada ni los transfiere para fines no relacionados de crédito o préstamos.</p>
 
         <h2>Cambios y preguntas</h2>
         <p>Los cambios importantes se publicarán en esta página con una nueva fecha de entrada en vigor. Para preguntas, acceso, corrección, portabilidad, oposición o solicitudes de eliminación, contacta a <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>

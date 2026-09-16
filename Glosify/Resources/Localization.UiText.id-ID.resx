@@ -55,10 +55,10 @@
     <value>Sebelumnya</value>
   </data>
   <data name="Layout.MetaDescription" xml:space="preserve">
-    <value>Glosify mengubah apa yang Anda baca menjadi kosakata yang dapat Anda gunakan: buat daftar kata dari buku dan transkrip, latih dengan kuis dan kartu flash, lalu berlatih berbicara dengan pasangan percakapan AI.</value>
+    <value>GlobeGlotter mengubah apa yang Anda baca menjadi kosakata yang dapat Anda gunakan: buat daftar kata dari buku dan transkrip, latih dengan kuis dan kartu flash, lalu berlatih berbicara dengan pasangan percakapan AI.</value>
   </data>
   <data name="Layout.AuthMetaDescription" xml:space="preserve">
-    <value>Masuk ke Glosify untuk membangun kosakata dari apa yang Anda baca, melatihnya dengan kuis, dan mengucapkannya dengan pasangan percakapan AI.</value>
+    <value>Masuk ke GlobeGlotter untuk membangun kosakata dari apa yang Anda baca, melatihnya dengan kuis, dan mengucapkannya dengan pasangan percakapan AI.</value>
   </data>
   <data name="Layout.PremiumLearner" xml:space="preserve">
     <value>Pembelajar Premium</value>
@@ -142,7 +142,7 @@
     <value>Asisten</value>
   </data>
   <data name="Assistant.Empty" xml:space="preserve">
-    <value>Minta bantuan di mana saja di Glosify.</value>
+    <value>Minta bantuan di mana saja di GlobeGlotter.</value>
   </data>
   <data name="Assistant.Placeholder" xml:space="preserve">
     <value>Tanyakan kepada asisten...</value>
@@ -346,7 +346,7 @@
     <value>Buka kuis saya</value>
   </data>
   <data name="Home.WaysAria" xml:space="preserve">
-    <value>Cara belajar dengan Glosify</value>
+    <value>Cara belajar dengan GlobeGlotter</value>
   </data>
   <data name="Home.ReadContext" xml:space="preserve">
     <value>Membaca dalam konteks</value>
@@ -619,7 +619,7 @@
     <value>progres.</value>
   </data>
   <data name="Books.HeroText" xml:space="preserve">
-    <value>Bawa bahan bacaan Anda sendiri dan gunakan Glosify untuk menjelajahi setiap halaman, frasa, dan kata baru.</value>
+    <value>Bawa bahan bacaan Anda sendiri dan gunakan GlobeGlotter untuk menjelajahi setiap halaman, frasa, dan kata baru.</value>
   </data>
   <data name="Books.SummaryAria" xml:space="preserve">
     <value>Ringkasan perpustakaan</value>
@@ -1405,19 +1405,19 @@
     <value>Dapatkan kredit</value>
   </data>
   <data name="Payments.GlosifyCredits" xml:space="preserve">
-    <value>Kredit Glosify</value>
+    <value>Kredit GlobeGlotter</value>
   </data>
   <data name="Payments.Hero" xml:space="preserve">
     <value>Terus lanjutkan siklus belajar Anda.</value>
   </data>
   <data name="Payments.Intro" xml:space="preserve">
-    <value>Kredit mendukung fitur pembelajaran berbantuan AI dan subtitle langsung Glosify.</value>
+    <value>Kredit mendukung fitur pembelajaran berbantuan AI dan subtitle langsung GlobeGlotter.</value>
   </data>
   <data name="Payments.NotAvailable" xml:space="preserve">
     <value>Pembayaran belum tersedia</value>
   </data>
   <data name="Payments.NotConnected" xml:space="preserve">
-    <value>Penerapan Glosify ini belum terhubung ke Stripe.</value>
+    <value>Penerapan GlobeGlotter ini belum terhubung ke Stripe.</value>
   </data>
   <data name="Payments.CreditPack" xml:space="preserve">
     <value>Paket kredit</value>
@@ -1429,7 +1429,7 @@
     <value>Lanjutkan ke pembayaran aman</value>
   </data>
   <data name="Payments.StripeNotice" xml:space="preserve">
-    <value>Pembayaran diproses oleh Stripe. Glosify tidak pernah menerima atau menyimpan detail kartu.</value>
+    <value>Pembayaran diproses oleh Stripe. GlobeGlotter tidak pernah menerima atau menyimpan detail kartu.</value>
   </data>
   <data name="Payments.Status" xml:space="preserve">
     <value>Status pembayaran</value>
@@ -1441,7 +1441,7 @@
     <value>Pembayaran diproses</value>
   </data>
   <data name="Payments.Back" xml:space="preserve">
-    <value>Kembali ke Glosify</value>
+    <value>Kembali ke GlobeGlotter</value>
   </data>
   <data name="Payments.AiCredits" xml:space="preserve">
     <value>Kredit AI</value>
@@ -1580,7 +1580,7 @@
   <data name="Quiz.JsonImport" xml:space="preserve"><value>Impor JSON</value></data>
   <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Impor dari AI eksternal</value></data>
   <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Buat kuis tanpa menggunakan kredit</value></data>
-  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Minta JSON Glosify dari AI apa pun, tempel di sini, tinjau hasil persisnya, lalu impor ke {0}.</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Minta JSON GlobeGlotter dari AI apa pun, tempel di sini, tinjau hasil persisnya, lalu impor ke {0}.</value></data>
   <data name="Quiz.JsonImportClose" xml:space="preserve"><value>Tutup dialog impor</value></data>
   <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Salin petunjuk untuk AI Anda</value></data>
   <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Tambahkan apa yang ingin Anda pelajari, lalu kirim prompt ini ke ChatGPT, Claude, Gemini, atau AI lainnya.</value></data>
@@ -1594,7 +1594,7 @@
   <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Perbaiki dengan AI · menggunakan kredit</value></data>
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Pratinjau JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Impor semuanya</value></data>
-  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Pratinjau dan impor bersifat deterministik dan tidak menghubungi penyedia AI. “Perbaiki dengan AI” mengirim teks yang ditempel ke AI yang dikonfigurasi Glosify dan mengenakan biaya kredit.</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Pratinjau dan impor bersifat deterministik dan tidak menghubungi penyedia AI. “Perbaiki dengan AI” mengirim teks yang ditempel ke AI yang dikonfigurasi GlobeGlotter dan mengenakan biaya kredit.</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
   <data name="Nav.Translations" xml:space="preserve"><value>Terjemahan</value></data>
   <data name="Translations.Title" xml:space="preserve"><value>Terjemahan tersimpan</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>Penerjemah</value></data><data name="Translations.Saved" xml:space="preserve"><value>Terjemahan tersimpan</value></data><data name="Translations.Intro" xml:space="preserve"><value>Terjemahan yang Anda simpan secara eksplisit dari ekstensi Glosify Translator.</value></data>
@@ -1605,7 +1605,7 @@
   <data name="Settings.Maximum" xml:space="preserve"><value>Maksimum</value></data>
   <data name="Speech.Title" xml:space="preserve"><value>Baca dengan suara</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Layanan suara</value></data>
-  <data name="Speech.Browser" xml:space="preserve"><value>Suara browser · tanpa kredit Glosify</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Suara browser · tanpa kredit GlobeGlotter</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>Suara ElevenLabs · memakai kredit AI</value></data>
   <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs memotong pecahan kredit per karakter, termasuk audio dalam cache. Persiapan yang gagal tidak dikenai biaya. Suara browser gratis.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Bahasa teks</value></data>
@@ -1650,4 +1650,7 @@
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Konten tersimpan</value></data>
   <data name="Payments.RoundedBalance" xml:space="preserve"><value>Saldo dibulatkan ke atas ke kredit utuh. Potongan sebenarnya bergantung pada penggunaan.</value></data>
   <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Saldo kredit persis Anda tidak cukup. Saldo yang ditampilkan dibulatkan ke atas; tambahkan kredit atau kurangi permintaan.</value></data>
+  <data name="Home.GlobeFocus" xml:space="preserve"><value>Globe berpusat pada bahasa yang dipelajari: {0}</value></data>
+  <data name="Home.GlobeAria" xml:space="preserve"><value>Globe dunia</value></data>
+  <data name="Home.GlobeCaption" xml:space="preserve"><value>Jelajahi dunia melalui bahasa</value></data>
 </root>

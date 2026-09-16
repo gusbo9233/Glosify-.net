@@ -15,7 +15,7 @@
         TranscriptPage = assistantPageContext?.TranscriptPage,
         TranscriptStream = assistantPageContext?.TranscriptStream,
         Title = assistantPageContext?.Title ?? Text["Assistant.Title"],
-        ContextLabel = assistantPageContext?.ContextLabel ?? "Glosify",
+        ContextLabel = assistantPageContext?.ContextLabel ?? "GlobeGlotter",
         EmptyText = assistantPageContext?.EmptyText ?? Text["Assistant.Empty"],
         Placeholder = assistantPageContext?.Placeholder ?? Text["Assistant.Placeholder"]
     };
@@ -120,9 +120,10 @@
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentUICulture.Name" dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")" data-display-culture="@CultureInfo.CurrentUICulture.Name">
 <head>
+    <link rel="icon" type="image/svg+xml" href="~/images/favicon.svg" asp-append-version="true" />
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport" />
-    <title>@ViewData["Title"] - Glosify</title>
+    <title>@ViewData["Title"] - GlobeGlotter</title>
     <meta name="description" content="@MetaDescription" />
     @await Html.PartialAsync("_LocalizedPublicSeo")
     @* The font files come from a second origin, so both are preconnected before
@@ -145,7 +146,7 @@
         <aside class="app-sidebar">
             <div class="app-sidebar-brand">
                 <h1 class="wordmark">
-                    <a asp-controller="Home" asp-action="Index">Glosify</a>
+                    <a asp-controller="Home" asp-action="Index">GlobeGlotter</a>
                 </h1>
                 <p class="brand-tier">@Text["Layout.PremiumLearner"]</p>
                 @await Component.InvokeAsync("LanguagePill")
@@ -200,8 +201,8 @@
 
         <main class="app-main">
             <header class="app-topbar">
-                <a class="app-mobile-brand" asp-controller="Home" asp-action="Index" aria-label="Glosify @Text["Nav.Home"]">
-                    Glosify
+                <a class="app-mobile-brand" asp-controller="Home" asp-action="Index" aria-label="GlobeGlotter @Text["Nav.Home"]">
+                    GlobeGlotter
                 </a>
                 <div class="app-topbar-right">
                     <button type="button" class="speech-settings-button" data-speech-settings title="@Text["Speech.Settings"]" aria-label="@Text["Speech.Settings"]"><span class="material-symbols-outlined" aria-hidden="true">tune</span></button>

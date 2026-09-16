@@ -6,6 +6,7 @@
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var currentLanguage = LangContext.CurrentLanguage;
     var hasLanguage = !string.IsNullOrWhiteSpace(currentLanguage);
+    var globeRegion = Glosify.Services.Language.QuizLanguageCatalog.Find(currentLanguage)?.FlagRegion;
     var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(currentLanguage);
     ViewData.SetAssistantPageContext(new AssistantPageContext
     {
@@ -91,35 +92,41 @@
             </ul>
         </div>
 
-        <div class="home-hero-visual" aria-label="@Text["Home.LoopAria"]">
-            <div class="home-orbit home-orbit-outer" aria-hidden="true"></div>
-            <div class="home-orbit home-orbit-inner" aria-hidden="true"></div>
-
-            <div class="home-orbit-node home-orbit-node-book">
-                <span class="material-symbols-outlined" aria-hidden="true">auto_stories</span>
-                <small>@Text["Home.Discover"]</small>
-            </div>
-            <div class="home-orbit-node home-orbit-node-quiz">
-                <span class="material-symbols-outlined" aria-hidden="true">neurology</span>
-                <small>@Text["Home.Remember"]</small>
-            </div>
-            <div class="home-orbit-node home-orbit-node-review">
-                <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "checklist" : "style")</span>
-                <small>@(isFreestyle ? "Test" : "Anki")</small>
-            </div>
-
-            <div class="home-orbit-core">
-                <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "category" : "translate")</span>
-                <strong>@(hasLanguage ? currentLanguage : "Glosify")</strong>
-                <small>@Text["Home.LearningLoop"]</small>
-            </div>
-
-            <div class="home-phrase-card">
-                <span class="home-phrase-label">@Text["Home.TodayMindset"]</span>
-                <strong>@Text["Home.SmallSteps"]</strong>
-                <div class="home-phrase-progress" aria-hidden="true"><span></span></div>
-            </div>
-        </div>
+        <figure class="home-hero-visual" data-home-globe data-region="@globeRegion"
+                role="img" aria-label="@(hasLanguage && !isFreestyle ? Text["Home.GlobeFocus", currentLanguage!] : Text["Home.GlobeAria"])">
+            <svg class="home-globe" viewBox="0 0 440 440" aria-hidden="true" focusable="false">
+                <defs>
+                    <radialGradient id="globe-ocean" cx="32%" cy="26%" r="78%">
+                        <stop offset="0%" stop-color="#203c43" />
+                        <stop offset="58%" stop-color="#102b38" />
+                        <stop offset="100%" stop-color="#06172b" />
+                    </radialGradient>
+                    <radialGradient id="globe-shade" cx="35%" cy="30%" r="72%">
+                        <stop offset="35%" stop-color="#041329" stop-opacity="0" />
+                        <stop offset="100%" stop-color="#041329" stop-opacity="0.65" />
+                    </radialGradient>
+                    <clipPath id="globe-disc"><circle cx="220" cy="220" r="184" /></clipPath>
+                </defs>
+                <circle class="home-globe-atmosphere" cx="220" cy="220" r="193" />
+                <circle cx="220" cy="220" r="184" fill="url(#globe-ocean)" />
+                <g clip-path="url(#globe-disc)">
+                    <image data-globe-fallback href="@Url.Content("~/images/globe-neutral.svg")" width="440" height="440" />
+                    <path class="home-globe-grid" data-globe-grid />
+                    <path class="home-globe-land" data-globe-land />
+                    <circle cx="220" cy="220" r="184" fill="url(#globe-shade)" />
+                </g>
+                <circle class="home-globe-rim" cx="220" cy="220" r="184" />
+                <g class="home-globe-marker" data-globe-marker>
+                    <circle class="home-globe-pulse" r="17" />
+                    <circle class="home-globe-marker-ring" r="11" />
+                    <circle class="home-globe-marker-dot" r="5" />
+                </g>
+            </svg>
+            <figcaption class="home-globe-caption">
+                <span>@Text["Home.GlobeCaption"]</span>
+                <strong>@(hasLanguage ? currentLanguage : "GlobeGlotter")</strong>
+            </figcaption>
+        </figure>
     </section>
 
     <section class="home-section" aria-labelledby="next-move-title">
@@ -251,3 +258,7 @@
         }
     </section>
 </div>
+
+@section Scripts {
+    <script type="module" src="~/js/home-globe.js" asp-append-version="true"></script>
+}

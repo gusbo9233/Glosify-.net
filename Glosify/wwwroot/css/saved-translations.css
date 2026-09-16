@@ -14,7 +14,7 @@
     width: 460px;
     height: 460px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(83, 224, 118, 0.09), transparent 68%);
+    background: radial-gradient(circle, rgba(24, 134, 75, 0.09), transparent 68%);
     content: "";
     pointer-events: none;
 }
@@ -67,13 +67,13 @@
     gap: 8px;
     min-height: 38px;
     padding: 8px 14px;
-    border: 1px solid rgba(83, 224, 118, 0.2);
+    border: 1px solid rgba(24, 134, 75, 0.2);
     border-radius: var(--radius-full);
-    background: rgba(83, 224, 118, 0.08);
+    background: rgba(24, 134, 75, 0.08);
     color: var(--primary);
     font-size: 12px;
     font-weight: 800;
-    box-shadow: 0 0 24px rgba(83, 224, 118, 0.06);
+    box-shadow: 0 0 24px rgba(24, 134, 75, 0.06);
 }
 
 .saved-translations-count .material-symbols-outlined {
@@ -118,8 +118,8 @@
 
 .saved-translation-card:hover,
 .saved-translation-card:focus-visible {
-    border-color: rgba(83, 224, 118, 0.32);
-    box-shadow: 0 20px 52px rgba(1, 10, 28, 0.36), 0 0 32px rgba(83, 224, 118, 0.06);
+    border-color: rgba(24, 134, 75, 0.32);
+    box-shadow: 0 20px 52px rgba(1, 10, 28, 0.36), 0 0 32px rgba(24, 134, 75, 0.06);
     outline: 0;
     transform: translateY(-2px);
 }
@@ -134,9 +134,9 @@
     place-items: center;
     width: 46px;
     height: 46px;
-    border: 1px solid rgba(83, 224, 118, 0.18);
+    border: 1px solid rgba(24, 134, 75, 0.18);
     border-radius: 14px;
-    background: rgba(83, 224, 118, 0.08);
+    background: rgba(24, 134, 75, 0.08);
     color: var(--primary);
     font-size: 23px;
     transition: background var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
@@ -144,7 +144,7 @@
 
 .saved-translation-card:hover .saved-translation-card-icon,
 .saved-translation-card:focus-visible .saved-translation-card-icon {
-    background: rgba(83, 224, 118, 0.14);
+    background: rgba(24, 134, 75, 0.14);
     transform: scale(1.04);
 }
 
@@ -214,7 +214,7 @@
 
 .saved-translation-card:hover .saved-translation-card-arrow,
 .saved-translation-card:focus-visible .saved-translation-card-arrow {
-    border-color: rgba(83, 224, 118, 0.2);
+    border-color: rgba(24, 134, 75, 0.2);
     color: var(--primary);
     transform: translateX(2px);
 }
@@ -223,7 +223,7 @@
     display: grid;
     justify-items: center;
     padding: 62px 24px;
-    border: 1px dashed rgba(83, 224, 118, 0.24);
+    border: 1px dashed rgba(24, 134, 75, 0.24);
     border-radius: 20px;
     background: rgba(13, 28, 50, 0.5);
     text-align: center;
@@ -236,7 +236,7 @@
     height: 60px;
     margin-bottom: 17px;
     border-radius: 18px;
-    background: rgba(83, 224, 118, 0.1);
+    background: rgba(24, 134, 75, 0.1);
     color: var(--primary);
     font-size: 30px;
 }
@@ -275,7 +275,7 @@
 
 .saved-translations-pagination a:hover,
 .saved-translations-pagination a:focus-visible {
-    border-color: rgba(83, 224, 118, 0.32);
+    border-color: rgba(24, 134, 75, 0.32);
     color: var(--primary);
     outline: 0;
 }
@@ -291,9 +291,9 @@
     gap: 9px;
     margin-bottom: 20px;
     padding: 12px 14px;
-    border: 1px solid rgba(83, 224, 118, 0.2);
+    border: 1px solid rgba(24, 134, 75, 0.2);
     border-radius: 12px;
-    background: rgba(83, 224, 118, 0.08);
+    background: rgba(24, 134, 75, 0.08);
     color: var(--primary);
     font-size: 12px;
     font-weight: 750;
@@ -304,7 +304,7 @@
     height: 7px;
     border-radius: 50%;
     background: var(--primary);
-    box-shadow: 0 0 10px rgba(83, 224, 118, 0.5);
+    box-shadow: 0 0 10px rgba(24, 134, 75, 0.5);
     content: "";
 }
 
@@ -329,7 +329,7 @@
 
 .saved-translations-back:hover,
 .saved-translations-back:focus-visible {
-    border-color: rgba(83, 224, 118, 0.28);
+    border-color: rgba(24, 134, 75, 0.28);
     color: var(--primary);
     outline: 0;
 }
@@ -382,9 +382,9 @@
     gap: 12px;
     margin-bottom: 18px;
     padding: 15px 16px;
-    border: 1px solid rgba(83, 224, 118, 0.15);
+    border: 1px solid rgba(24, 134, 75, 0.15);
     border-radius: 14px;
-    background: rgba(83, 224, 118, 0.06);
+    background: rgba(24, 134, 75, 0.06);
 }
 
 .saved-translation-preferences-icon {
@@ -393,7 +393,7 @@
     width: 34px;
     height: 34px;
     border-radius: 10px;
-    background: rgba(83, 224, 118, 0.1);
+    background: rgba(24, 134, 75, 0.1);
     color: var(--primary);
     font-size: 19px;
 }
@@ -446,9 +446,9 @@
     align-items: center;
     min-height: 25px;
     padding: 4px 8px;
-    border: 1px solid rgba(83, 224, 118, 0.18);
+    border: 1px solid rgba(24, 134, 75, 0.18);
     border-radius: var(--radius-full);
-    background: rgba(83, 224, 118, 0.08);
+    background: rgba(24, 134, 75, 0.08);
     color: var(--primary);
     font-variant-numeric: tabular-nums;
 }
@@ -478,9 +478,9 @@
 }
 
 .saved-translation-result {
-    border-color: rgba(83, 224, 118, 0.17);
+    border-color: rgba(24, 134, 75, 0.17);
     background:
-        radial-gradient(circle at 100% 0, rgba(83, 224, 118, 0.07), transparent 42%),
+        radial-gradient(circle at 100% 0, rgba(24, 134, 75, 0.07), transparent 42%),
         linear-gradient(145deg, rgba(44, 57, 81, 0.5), rgba(13, 28, 50, 0.76) 58%),
         var(--surface-low);
 }
@@ -526,9 +526,9 @@
     gap: 6px;
     min-height: 34px;
     padding: 7px 10px;
-    border: 1px solid rgba(83, 224, 118, 0.18);
+    border: 1px solid rgba(24, 134, 75, 0.18);
     border-radius: 10px;
-    background: rgba(83, 224, 118, 0.07);
+    background: rgba(24, 134, 75, 0.07);
     color: var(--primary);
     font: inherit;
     font-size: 10px;
@@ -542,8 +542,8 @@
 
 .saved-translation-panel button:hover,
 .saved-translation-panel button:focus-visible {
-    border-color: rgba(83, 224, 118, 0.42);
-    background: rgba(83, 224, 118, 0.13);
+    border-color: rgba(24, 134, 75, 0.42);
+    background: rgba(24, 134, 75, 0.13);
     outline: 0;
 }
 
@@ -576,7 +576,7 @@
     height: 6px;
     border-radius: 50%;
     background: var(--primary);
-    box-shadow: 0 0 8px rgba(83, 224, 118, 0.45);
+    box-shadow: 0 0 8px rgba(24, 134, 75, 0.45);
     content: "";
 }
 

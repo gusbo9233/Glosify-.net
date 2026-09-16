@@ -1,6 +1,6 @@
 /* Shared collection and quiz library surfaces ----------------------------- */
 .library-page {
-    --library-green: #53e076;
+    --library-green: #18864B;
     --library-blue: #78b7ff;
     width: min(100%, 1560px);
     margin-inline: auto;
@@ -14,10 +14,10 @@
     overflow: hidden;
     min-height: 270px;
     padding: clamp(28px, 4vw, 52px);
-    border: 1px solid rgba(110, 232, 139, 0.16);
+    border: 1px solid rgba(24, 134, 75, 0.16);
     border-radius: 28px;
     background:
-        radial-gradient(circle at 88% 10%, rgba(83, 224, 118, 0.14), transparent 27%),
+        radial-gradient(circle at 88% 10%, rgba(24, 134, 75, 0.14), transparent 27%),
         radial-gradient(circle at 62% 115%, rgba(75, 148, 255, 0.12), transparent 32%),
         linear-gradient(135deg, rgba(17, 32, 54, 0.98), rgba(9, 26, 48, 0.96));
     box-shadow: 0 24px 70px rgba(1, 10, 28, 0.28);
@@ -133,14 +133,14 @@
     border-radius: 14px;
     background: var(--library-green);
     color: #042312;
-    box-shadow: 0 14px 35px rgba(29, 185, 84, 0.24);
+    box-shadow: 0 14px 35px rgba(24, 134, 75, 0.24);
     transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
 .library-page .btn-new-quiz:hover {
     transform: translateY(-2px);
-    background: #6bea8b;
-    box-shadow: 0 18px 38px rgba(29, 185, 84, 0.3);
+    background: #43B873;
+    box-shadow: 0 18px 38px rgba(24, 134, 75, 0.3);
 }
 
 .library-page .btn-secondary-action,
@@ -277,9 +277,9 @@
 
 .library-page .library-section--quizzes .quiz-card {
     min-height: 260px;
-    border-color: rgba(83, 224, 118, 0.12);
+    border-color: rgba(24, 134, 75, 0.12);
     background:
-        linear-gradient(145deg, rgba(83, 224, 118, 0.055), transparent 44%),
+        linear-gradient(145deg, rgba(24, 134, 75, 0.055), transparent 44%),
         var(--surface);
 }
 
@@ -306,9 +306,9 @@
 }
 
 .library-page .library-section--quizzes .quiz-card:hover {
-    border-color: rgba(83, 224, 118, 0.34);
+    border-color: rgba(24, 134, 75, 0.34);
     background:
-        linear-gradient(145deg, rgba(83, 224, 118, 0.09), transparent 48%),
+        linear-gradient(145deg, rgba(24, 134, 75, 0.09), transparent 48%),
         var(--surface-high);
 }
 
@@ -327,9 +327,9 @@
 .library-page .quiz-icon {
     width: 46px;
     height: 46px;
-    border: 1px solid rgba(83, 224, 118, 0.12);
+    border: 1px solid rgba(24, 134, 75, 0.12);
     border-radius: 14px;
-    background: rgba(83, 224, 118, 0.1);
+    background: rgba(24, 134, 75, 0.1);
     box-shadow: 0 8px 22px rgba(1, 14, 36, 0.24);
 }
 
@@ -365,8 +365,8 @@
 }
 
 .library-page .quiz-card:hover .quiz-arrow {
-    border-color: rgba(83, 224, 118, 0.2);
-    background: rgba(83, 224, 118, 0.1);
+    border-color: rgba(24, 134, 75, 0.2);
+    background: rgba(24, 134, 75, 0.1);
     color: var(--library-green);
     transform: translate(2px, -2px);
 }
@@ -462,9 +462,9 @@
     gap: 6px;
     min-height: 32px;
     padding: 0 11px;
-    border: 1px solid rgba(83, 224, 118, 0.18);
+    border: 1px solid rgba(24, 134, 75, 0.18);
     border-radius: 10px;
-    background: rgba(83, 224, 118, 0.1);
+    background: rgba(24, 134, 75, 0.1);
     color: var(--library-green);
     cursor: pointer;
     font: inherit;
@@ -475,8 +475,8 @@
 
 .library-page .btn-copy-public:hover {
     transform: translateY(-1px);
-    border-color: rgba(83, 224, 118, 0.35);
-    background: rgba(83, 224, 118, 0.17);
+    border-color: rgba(24, 134, 75, 0.35);
+    background: rgba(24, 134, 75, 0.17);
 }
 
 .library-page .btn-copy-public .material-symbols-outlined {
@@ -506,7 +506,7 @@
 
 .library-page .page-message {
     margin-block: -20px 0;
-    border: 1px solid rgba(83, 224, 118, 0.16);
+    border: 1px solid rgba(24, 134, 75, 0.16);
     border-radius: 14px;
 }
 
@@ -514,7 +514,7 @@
     min-height: 380px;
     border-radius: 24px;
     background:
-        radial-gradient(circle at 50% 0, rgba(83, 224, 118, 0.08), transparent 38%),
+        radial-gradient(circle at 50% 0, rgba(24, 134, 75, 0.08), transparent 38%),
         var(--surface);
 }
 
@@ -737,9 +737,9 @@
 }
 
 .json-import-success {
-    border: 1px solid rgba(83, 224, 118, 0.24);
-    background: rgba(83, 224, 118, 0.1);
-    color: #a5f4b7;
+    border: 1px solid rgba(24, 134, 75, 0.24);
+    background: rgba(24, 134, 75, 0.1);
+    color: #43B873;
     font-size: 14px;
     font-weight: 750;
 }
@@ -747,9 +747,9 @@
 .json-import-preview {
     margin-top: 20px;
     padding: 20px;
-    border: 1px solid rgba(83, 224, 118, 0.16);
+    border: 1px solid rgba(24, 134, 75, 0.16);
     border-radius: 18px;
-    background: rgba(83, 224, 118, 0.04);
+    background: rgba(24, 134, 75, 0.04);
 }
 
 .json-import-preview h3 {
@@ -766,10 +766,10 @@
 
 .json-import-total {
     padding: 5px 9px;
-    border: 1px solid rgba(83, 224, 118, 0.15);
+    border: 1px solid rgba(24, 134, 75, 0.15);
     border-radius: 999px;
-    background: rgba(83, 224, 118, 0.08);
-    color: #a5f4b7;
+    background: rgba(24, 134, 75, 0.08);
+    color: #43B873;
     font-size: 10px;
     font-weight: 750;
 }

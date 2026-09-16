@@ -28,7 +28,7 @@ public static class WebFonts
         "folder_shared", "format_quote", "graphic_eq", "grid_4x4",
         "group", "help", "hourglass_top", "info", "inventory_2", "keyboard",
         "library_add", "library_books", "lock", "lock_reset", "login", "logout",
-        "menu_book", "more_vert", "neurology", "north_east", "notes", "person_search", "picture_as_pdf",
+        "menu_book", "more_vert", "north_east", "notes", "person_search", "picture_as_pdf",
         "play_circle", "progress_activity", "psychology", "public", "quiz", "remove", "rotate_right", "schedule", "school", "search",
         "search_off", "settings", "short_text", "stacks", "stop_circle", "style", "subject", "subtitles", "subtitles_off",
         "swap_horiz", "task_alt", "thumb_down", "thumb_up", "timer", "translate", "travel_explore", "tune",

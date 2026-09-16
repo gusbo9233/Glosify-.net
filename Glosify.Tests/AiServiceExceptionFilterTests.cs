@@ -81,7 +81,7 @@ public sealed class AiServiceExceptionFilterTests
                 0,
                 1),
             StatusCodes.Status503ServiceUnavailable,
-            "Paid features are unavailable because Glosify's monthly application budget has been reached."
+            "Paid features are unavailable because GlobeGlotter's monthly application budget has been reached."
         },
         {
             new BookPageTranslationValidationException("Invalid translation input."),
