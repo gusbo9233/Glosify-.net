@@ -1653,4 +1653,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>Globo centrado no idioma em estudo: {0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>Um globo terrestre</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>Explore por meio dos idiomas</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Traga seu material, transforme-o em perguntas específicas e revise até fixar.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Começar</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Crie material de aprendizagem do seu jeito</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Escreva um quiz, crie um com o assistente de IA ou comece com um conteúdo que você já tem.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Escrever</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Perguntar à IA</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Usar uma imagem</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Em breve</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Transforme o material em exercícios</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Escolha entre múltipla escolha, lacunas, caixas de seleção e respostas digitadas.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Qual resposta se encaixa?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>O que a palavra significa?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Revise até ficar natural</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Tenha palavras úteis sempre à mão</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Repita as ideias que precisam de atenção e avance no seu ritmo.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Revise com quizzes focados e salve as palavras que quiser no Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Explore mais formas de aprender</value></data>
 </root>

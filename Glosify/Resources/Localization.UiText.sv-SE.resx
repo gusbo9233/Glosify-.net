@@ -493,4 +493,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>Jordglob centrerad på språket du lär dig: {0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>En jordglob</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>Upptäck världen genom språk</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Ta med material, forma det till fokuserade frågor och återkom till det tills det sitter.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Börja</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Skapa läromaterial på ditt sätt</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Skriv ett quiz själv, skapa ett med AI-assistenten eller utgå från innehåll du redan har.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Skriv själv</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Fråga AI</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Använd en bild</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Kommer snart</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Gör materialet till en övningsuppsättning</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Välj mellan flervalsfrågor, lucktexter, kryssrutor och skrivna svar.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Vilket svar passar?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>Vad betyder ordet?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Repetera tills det känns naturligt</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Ha användbara ord nära till hands</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Repetera det som behöver övas och gå framåt i din egen takt.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Repetera med fokuserade quiz och spara sedan de ord du vill ha i Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Utforska fler sätt att lära</value></data>
 </root>

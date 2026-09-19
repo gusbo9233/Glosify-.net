@@ -98,6 +98,13 @@ public sealed class DisplayLocalizationTests
         Assert.Contains("lang=\"sv-SE\"", html);
         var document = await new HtmlParser().ParseDocumentAsync(html);
         Assert.Equal("Gör nya ord till riktiga samtal.", document.QuerySelector("#home-title")?.TextContent.Trim());
+        Assert.Equal("Skapa läromaterial på ditt sätt", document.QuerySelector(".home-story-copy strong")?.TextContent);
+        Assert.Equal("Skriv ett quiz själv, skapa ett med AI-assistenten eller utgå från innehåll du redan har.",
+            document.QuerySelector(".home-story-copy > span")?.TextContent);
+        Assert.Equal("Kommer snart", document.QuerySelector(".home-create-option.is-coming-soon small")?.TextContent);
+        Assert.Equal("Ha användbara ord nära till hands",
+            document.QuerySelector(".home-action-card-anki .home-story-copy strong")?.TextContent);
+        Assert.Equal("Utforska fler sätt att lära", document.QuerySelector(".home-story-footer nav")?.GetAttribute("aria-label"));
         var clientText = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
             document.Body?.GetAttribute("data-i18n") ?? "{}");
         Assert.Equal("Något gick fel. Försök igen.", clientText?["Client.GenericError"]);

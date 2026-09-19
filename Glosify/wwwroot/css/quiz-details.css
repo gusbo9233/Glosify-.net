@@ -65,7 +65,7 @@
 .quiz-hero .btn-hero {
     font-size: 14px;
     padding-inline: 24px;
-    box-shadow: 0 10px 24px rgba(24, 134, 75, 0.2);
+    box-shadow: 0 10px 24px rgba(83,224,118, 0.2);
 }
 
 .quiz-hero .btn-hero .material-symbols-outlined {
@@ -75,15 +75,15 @@
 /* site.css declares the filled `.btn-hero` background after the secondary
    variant, so the quiet button has to reclaim its own colours here. */
 .quiz-hero .btn-hero-secondary {
-    border: 1px solid rgba(214, 227, 255, 0.22);
-    background: rgba(17, 32, 54, 0.72);
+    border: 1px solid rgba(214,227,255, 0.22);
+    background: rgba(17,32,54, 0.72);
     color: var(--on-surface);
     box-shadow: none;
 }
 
 .quiz-hero .btn-hero-secondary:hover {
-    border-color: rgba(24, 134, 75, 0.45);
-    background: rgba(17, 32, 54, 0.92);
+    border-color: rgba(83,224,118, 0.45);
+    background: rgba(17,32,54, 0.92);
     box-shadow: none;
 }
 
@@ -99,7 +99,7 @@
     align-items: flex-end;
     gap: 14px;
     background: var(--surface);
-    border: 1px solid rgba(61, 74, 61, 0.28);
+    border: 1px solid rgba(61,74,61, 0.28);
     border-radius: 12px;
     padding: 14px 16px;
 }

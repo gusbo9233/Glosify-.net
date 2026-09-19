@@ -1653,4 +1653,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>Глобус із фокусом на мові, яку ви вивчаєте: {0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>Глобус світу</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>Відкривайте світ через мови</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Додайте матеріал, перетворіть його на конкретні запитання й повторюйте, доки не запам’ятаєте.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Почати</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Створюйте навчальні матеріали по-своєму</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Напишіть тест самостійно, створіть його з ШІ-помічником або почніть із наявних матеріалів.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Написати</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Запитати ШІ</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Використати зображення</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Незабаром</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Перетворіть матеріал на набір вправ</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Вибирайте між вибором відповіді, заповненням пропусків, прапорцями та введенням відповідей.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Яка відповідь підходить?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>Що означає це слово?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Повторюйте, доки не стане легко</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Тримайте корисні слова під рукою</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Повторюйте те, що потребує уваги, і рухайтеся у власному темпі.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Повторюйте за допомогою тематичних тестів, а потім зберігайте потрібні слова в Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Відкрийте більше способів навчання</value></data>
 </root>

@@ -1653,4 +1653,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>以所学语言为中心的地球仪：{0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>世界地球仪</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>通过语言探索世界</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>导入资料，将其整理为重点问题，并反复练习直到掌握。</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>开始</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>按自己的方式创建学习资料</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>自己编写测验、与 AI 助手一起创建，或从已有内容开始。</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>自己编写</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>询问 AI</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>使用图片</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>即将推出</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>将资料变成练习集</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>可选择单项选择、填空、多项选择或输入答案。</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>哪个答案合适？</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>这个词是什么意思？</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>反复练习，直到熟练掌握</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>让实用词汇随手可得</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>重复练习需要巩固的知识，按自己的节奏进步。</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>通过重点测验复习，再将所需词汇保存到 Anki。</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>探索更多学习方式</value></data>
 </root>

@@ -493,4 +493,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>Globe centered on the learning language: {0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>A globe of the world</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>Explore through language</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Bring in material, shape it into focused questions, and return to it until it sticks.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Create learning material your way</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Write a quiz yourself, shape one with the AI assistant, or start from content you already have.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Write it</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Ask AI</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Use a picture</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Coming soon</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Turn material into a practice set</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Choose from multiple choice, cloze, checkbox, and typed answers.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Which answer fits?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>What does the word mean?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Revisit it until it feels natural</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Keep useful words in reach</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Repeat the ideas that need work and move forward at your pace.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Review with focused quizzes, then save the words you want in Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Explore more ways to learn</value></data>
 </root>

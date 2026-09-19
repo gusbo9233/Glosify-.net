@@ -1653,4 +1653,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>كرة أرضية تتمحور حول اللغة التي تتعلمها: {0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>كرة أرضية للعالم</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>اكتشف العالم عبر اللغات</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>أضف موادك، وحوّلها إلى أسئلة مركّزة، وراجعها حتى ترسخ في ذهنك.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>ابدأ</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>أنشئ مواد تعليمية بطريقتك</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>اكتب اختبارًا بنفسك، أو أنشئه مع مساعد الذكاء الاصطناعي، أو ابدأ بمحتوى لديك بالفعل.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>اكتب بنفسك</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>اسأل الذكاء الاصطناعي</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>استخدم صورة</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>قريبًا</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>حوّل المواد إلى مجموعة تمارين</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>اختر بين الاختيار من متعدد، وملء الفراغات، ومربعات الاختيار، والإجابات المكتوبة.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>ما الإجابة المناسبة؟</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>ما معنى الكلمة؟</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>راجع حتى تصبح الممارسة سهلة</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>احتفظ بالكلمات المفيدة في متناول يدك</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>كرّر الأفكار التي تحتاج إلى تدريب وتقدّم بالوتيرة التي تناسبك.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>راجع باختبارات مركّزة، ثم احفظ الكلمات التي تريدها في Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>استكشف المزيد من طرق التعلّم</value></data>
 </root>

@@ -51,7 +51,7 @@
 .transcripts-count {
     flex-shrink: 0;
     border-radius: 9999px;
-    background: rgba(24, 134, 75, 0.12);
+    background: rgba(83,224,118, 0.12);
     color: var(--primary);
     font-size: 13px;
     font-weight: 800;
@@ -71,7 +71,7 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    border: 1px solid rgba(61, 74, 61, 0.22);
+    border: 1px solid rgba(61,74,61, 0.22);
     border-radius: 8px;
     background: var(--surface-low);
     color: inherit;
@@ -82,7 +82,7 @@
 
 .transcript-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(24, 134, 75, 0.52);
+    border-color: rgba(83,224,118, 0.52);
     background: var(--surface);
 }
 
@@ -121,14 +121,14 @@
 
 .transcript-card small {
     display: block;
-    color: rgba(188, 203, 185, 0.65);
+    color: var(--on-surface-var);
     font-size: 12px;
     font-weight: 700;
     margin-top: 3px;
 }
 
 .transcript-card-arrow {
-    color: rgba(188, 203, 185, 0.5);
+    color: var(--on-surface-var);
     transition: color 0.2s, transform 0.2s;
 }
 
@@ -143,7 +143,7 @@
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    border: 1px dashed rgba(24, 134, 75, 0.35);
+    border: 1px dashed rgba(83,224,118, 0.35);
     border-radius: 8px;
     background: var(--surface-low);
     color: var(--on-surface-var);
@@ -240,13 +240,13 @@
 
 .transcript-actions button:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 12px 28px rgba(24, 134, 75, 0.24);
+    box-shadow: 0 12px 28px rgba(83,224,118, 0.24);
 }
 
 .transcript-actions .transcript-delete {
     background: transparent;
     border: 1px solid rgba(255, 96, 96, 0.42);
-    color: #ffb4b4;
+    color: #ffb4ab;
 }
 
 .transcript-actions .transcript-delete:hover:not(:disabled) {
@@ -267,7 +267,7 @@
 }
 
 .transcript-streams a {
-    border: 1px solid rgba(61, 74, 61, 0.22);
+    border: 1px solid rgba(61,74,61, 0.22);
     border-radius: 9999px;
     color: var(--on-surface-var);
     font-size: 13px;
@@ -278,17 +278,17 @@
 }
 
 .transcript-streams a:hover {
-    background: rgba(24, 134, 75, 0.12);
+    background: rgba(83,224,118, 0.12);
 }
 
 .transcript-streams a.is-active {
     border-color: transparent;
-    background: rgba(24, 134, 75, 0.16);
+    background: rgba(83,224,118, 0.16);
     color: var(--primary);
 }
 
 .transcript-stream-note {
-    color: rgba(188, 203, 185, 0.6);
+    color: var(--on-surface-var);
     font-size: 13px;
     line-height: 1.5;
     margin: 0;
@@ -298,7 +298,7 @@
 
 .transcript-reader {
     overflow: hidden;
-    border: 1px solid rgba(61, 74, 61, 0.22);
+    border: 1px solid rgba(61,74,61, 0.22);
     border-radius: 8px;
     background: var(--surface-low);
 }
@@ -307,7 +307,7 @@
     display: grid;
     grid-template-columns: 82px 1fr;
     gap: 18px;
-    border-bottom: 1px solid rgba(188, 203, 185, 0.08);
+    border-bottom: 1px solid rgba(82,104,91, 0.08);
     padding: 16px 22px;
 }
 
@@ -316,7 +316,7 @@
 }
 
 .transcript-segment time {
-    color: rgba(188, 203, 185, 0.6);
+    color: var(--on-surface-var);
     font-size: 12px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -352,12 +352,12 @@
 }
 
 .transcript-pagination a:hover {
-    background: rgba(24, 134, 75, 0.12);
+    background: rgba(83,224,118, 0.12);
 }
 
 .transcript-pagination .is-disabled {
     pointer-events: none;
-    color: rgba(188, 203, 185, 0.4);
+    color: var(--on-surface-var);
 }
 
 .transcript-jump {
@@ -375,7 +375,7 @@
 .transcript-jump select,
 .transcript-jump input {
     height: 40px;
-    border: 1px solid rgba(61, 74, 61, 0.35);
+    border: 1px solid rgba(61,74,61, 0.35);
     border-radius: 9999px;
     background: var(--surface-low);
     color: var(--on-surface);
@@ -404,12 +404,12 @@
 
 .transcript-jump button:hover {
     transform: translateY(-1px);
-    box-shadow: 0 12px 28px rgba(24, 134, 75, 0.24);
+    box-shadow: 0 12px 28px rgba(83,224,118, 0.24);
 }
 
 .transcripts-notice {
     border-radius: 8px;
-    background: rgba(24, 134, 75, 0.12);
+    background: rgba(83,224,118, 0.12);
     color: var(--primary);
     font-size: 13px;
     font-weight: 750;
@@ -419,7 +419,7 @@
 
 .transcripts-notice.is-error {
     background: rgba(255, 96, 96, 0.14);
-    color: #ffb4b4;
+    color: #ffb4ab;
 }
 
 /* ---- Responsive ------------------------------------------------------- */
@@ -459,3 +459,8 @@
         gap: 5px;
     }
 }
+
+.transcripts-hero,.transcript-detail-header { border: 1px solid rgba(214,227,255,.12); border-radius: 16px; }
+.transcripts-hero h1,.transcript-detail-header h1 { font-family: var(--font-serif); font-size: clamp(32px,3.4vw,46px); font-weight: 500; line-height: 1.16; letter-spacing: -.035em; }
+.transcripts-empty { border: 1px solid rgba(214,227,255,.12); border-radius: 16px; padding: 40px 24px; }
+.transcripts-empty h2 { font-size: 22px; font-weight: 650; }

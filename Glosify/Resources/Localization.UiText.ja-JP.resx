@@ -1653,4 +1653,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>学習中の言語を中心にした地球儀：{0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>世界の地球儀</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>言語を通じて世界を探ろう</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>教材を取り込み、的を絞った問題にして、身につくまで繰り返しましょう。</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>始める</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>自分に合った学習教材を作成</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>自分でクイズを書く、AIアシスタントと作る、手持ちのコンテンツから始めるなど、自由に作成できます。</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>自分で書く</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>AIに聞く</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>画像を使う</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>近日公開</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>教材を練習セットに変える</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>選択式、穴埋め、チェックボックス、入力式の回答から選べます。</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>どの答えが合いますか？</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>この単語の意味は？</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>自然にできるまで復習する</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>役立つ単語を手元に</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>苦手な内容を繰り返し、自分のペースで進みましょう。</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>的を絞ったクイズで復習し、残したい単語をAnkiに保存しましょう。</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>もっと多くの学び方を探す</value></data>
 </root>

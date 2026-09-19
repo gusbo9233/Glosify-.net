@@ -129,10 +129,8 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
         var html = await response.Content.ReadAsStringAsync();
         var document = await new HtmlParser().ParseDocumentAsync(html);
 
-        var heroActions = document.QuerySelectorAll(".home-hero-actions a");
-        Assert.Equal(2, heroActions.Length);
-        Assert.Contains("/Quiz", heroActions[0].GetAttribute("href"), StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("/Books", heroActions[1].GetAttribute("href"), StringComparison.OrdinalIgnoreCase);
+        Assert.NotNull(document.QuerySelector(".home-hero #home-title"));
+        Assert.Empty(document.QuerySelectorAll(".home-hero-actions"));
         Assert.NotNull(document.QuerySelector(".home-action-card-anki[href*='/Anki']"));
         Assert.NotNull(document.QuerySelector(".home-feature-card-books"));
         Assert.NotNull(document.QuerySelector(".home-feature-card-explore"));

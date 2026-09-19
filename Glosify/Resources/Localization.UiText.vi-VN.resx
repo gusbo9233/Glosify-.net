@@ -1653,4 +1653,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>Quả địa cầu tập trung vào ngôn ngữ đang học: {0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>Quả địa cầu thế giới</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>Khám phá thế giới qua ngôn ngữ</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Thêm tài liệu, chuyển thành câu hỏi trọng tâm và ôn lại cho đến khi ghi nhớ.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Bắt đầu</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Tạo tài liệu học theo cách của bạn</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Tự viết bài kiểm tra, tạo cùng trợ lý AI hoặc bắt đầu từ nội dung bạn đã có.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Tự viết</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Hỏi AI</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Dùng hình ảnh</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Sắp ra mắt</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Biến tài liệu thành bộ bài tập</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Chọn câu hỏi trắc nghiệm, điền khuyết, ô chọn hoặc nhập câu trả lời.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Câu trả lời nào phù hợp?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>Từ này có nghĩa là gì?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Ôn lại cho đến khi thành thạo</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Giữ các từ hữu ích trong tầm tay</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Ôn lại những ý cần luyện tập và tiến bộ theo nhịp độ của bạn.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Ôn tập bằng các bài kiểm tra trọng tâm, rồi lưu những từ bạn muốn vào Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Khám phá thêm cách học</value></data>
 </root>

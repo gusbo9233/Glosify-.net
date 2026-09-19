@@ -1653,4 +1653,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>Globe centré sur la langue étudiée : {0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>Un globe terrestre</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>Explorez le monde par les langues</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Apportez du contenu, transformez-le en questions ciblées et revenez-y jusqu’à le retenir.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Commencer</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Créez vos supports d’apprentissage à votre façon</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Rédigez un quiz, créez-en un avec l’assistant IA ou partez d’un contenu que vous avez déjà.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Rédiger</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Demander à l’IA</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Utiliser une image</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Bientôt disponible</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Transformez le contenu en exercices</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Choisissez entre choix multiples, textes à trous, cases à cocher et réponses saisies.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Quelle réponse convient ?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>Que signifie ce mot ?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Révisez jusqu’à ce que cela devienne naturel</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Gardez les mots utiles à portée de main</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Reprenez les notions à travailler et avancez à votre rythme.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Révisez avec des quiz ciblés, puis enregistrez les mots souhaités dans Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Découvrez d’autres façons d’apprendre</value></data>
 </root>

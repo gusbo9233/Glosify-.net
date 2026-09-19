@@ -1653,4 +1653,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>Globe berpusat pada bahasa yang dipelajari: {0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>Globe dunia</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>Jelajahi dunia melalui bahasa</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Tambahkan materi, ubah menjadi pertanyaan terarah, lalu ulangi hingga melekat dalam ingatan.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Mulai</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Buat materi belajar dengan caramu sendiri</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Tulis kuis sendiri, buat bersama asisten AI, atau mulai dari konten yang sudah kamu miliki.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Tulis sendiri</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Tanya AI</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Gunakan gambar</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Segera hadir</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Ubah materi menjadi kumpulan latihan</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Pilih dari pilihan ganda, isian rumpang, kotak centang, dan jawaban yang diketik.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Jawaban mana yang sesuai?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>Apa arti kata ini?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Ulangi hingga terasa alami</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Simpan kata berguna agar mudah diakses</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Ulangi konsep yang perlu dilatih dan maju sesuai kecepatanmu.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Ulangi dengan kuis terarah, lalu simpan kata yang kamu inginkan di Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Jelajahi lebih banyak cara belajar</value></data>
 </root>

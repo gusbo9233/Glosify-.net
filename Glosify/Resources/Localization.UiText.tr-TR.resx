@@ -1653,4 +1653,21 @@
   <data name="Home.GlobeFocus" xml:space="preserve"><value>Öğrenilen dile odaklanan küre: {0}</value></data>
   <data name="Home.GlobeAria" xml:space="preserve"><value>Bir dünya küresi</value></data>
   <data name="Home.GlobeCaption" xml:space="preserve"><value>Dillerle dünyayı keşfet</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Materyallerinizi ekleyin, odaklı sorulara dönüştürün ve öğrenene kadar tekrar edin.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Başla</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Öğrenme materyallerini kendi tarzınızda oluşturun</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Kendiniz bir test yazın, yapay zekâ asistanıyla oluşturun veya elinizdeki içerikten başlayın.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Kendin yaz</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Yapay zekâya sor</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Görsel kullan</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Yakında</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Materyalleri alıştırma setine dönüştürün</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Çoktan seçmeli, boşluk doldurma, onay kutuları ve yazılı yanıtlar arasından seçim yapın.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Hangi yanıt uygun?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>Kelimenin anlamı nedir?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Doğal gelene kadar tekrar edin</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Faydalı kelimeler elinizin altında olsun</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Çalışmanız gereken konuları tekrarlayın ve kendi hızınızda ilerleyin.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Odaklı testlerle tekrar edin, ardından istediğiniz kelimeleri Anki’ye kaydedin.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Daha fazla öğrenme yöntemi keşfedin</value></data>
 </root>
