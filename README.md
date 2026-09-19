@@ -1,4 +1,4 @@
-# GlobeGlotter (Glosify)
+# Glosify
 
 [![Build, test, and deploy](https://github.com/gusbo9233/Glosify-.net/actions/workflows/master_glosify.yml/badge.svg)](https://github.com/gusbo9233/Glosify-.net/actions/workflows/master_glosify.yml)
 [![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
@@ -6,20 +6,17 @@
 
 **[Live app](https://glosify.se)** · [Case study](docs/portfolio-case-study.md) · [Architecture](docs/ARCHITECTURE.md) · [ADRs](docs/adr/) · [Tests](Glosify.Tests/)
 
-GlobeGlotter is an ASP.NET Core 10 MVC language-learning application with quizzes,
+Glosify is an ASP.NET Core 10 MVC language-learning application with quizzes,
 FSRS-6 study collections, books, saved assistant chats, a focused text-translator
-Chrome extension, and a separate extension for live translated subtitles. The
-repository, solution, assemblies, database objects, and Azure resources retain
-the established `Glosify` technical name.
+Chrome extension, and a separate extension for live translated subtitles.
 
 ## AI services
 
-All generative, text-agent, and vision work goes directly from the GlobeGlotter
-server to the OpenAI Responses API. The model is fixed in code to `gpt-5.6-luna`;
-there is no model picker, configured alternative, or provider fallback. Prompts,
-JSON schemas, and function tools are defined and executed in this repository. The
-application replays its own saved history and every Responses request uses
-`store: false`.
+All generative, text-agent, and vision work goes directly from the Glosify server
+to the OpenAI Responses API. The model is fixed in code to `gpt-5.6-luna`; there
+is no model picker, configured alternative, or provider fallback. Prompts, JSON
+schemas, and function tools are defined and executed in this repository. Glosify
+replays its own saved history and every Responses request uses `store: false`.
 
 ElevenLabs v3 provides server-side text-to-speech for book reading, with a bounded memory cache. The Enhanced
 subtitle relay connects server-side to `gpt-realtime-translate` while
@@ -37,16 +34,6 @@ dotnet user-secrets set "OPENAI_SECRET_KEY" "<key>" --project Glosify
 ```
 
 ## Design and stack
-
-The public product name is **GlobeGlotter**. `Glosify` remains the internal and
-infrastructure identifier, so routes, project paths, user-secret commands, and
-resource names should not be renamed as part of visual branding work.
-
-The home page presents a localized learning journey. A selected learning language
-drives its literary quotation and an orthographic globe focus; anonymous,
-Freestyle, and unknown selections use neutral fallbacks. The globe pauses when
-hidden or offscreen and respects reduced-motion preferences. Quote provenance and
-editorial decisions are recorded in [the quote catalog notes](docs/home-language-quotes.md).
 
 The repository deliberately keeps one web project. MVC and API controllers
 orchestrate HTTP work, feature services own application rules, and EF Core talks
