@@ -11,6 +11,21 @@ Sources checked on 2026-09-19. These links document the replacement text and
 attribution; they are not a claim that all inherited proverbs have been verified.
 Some evidence is a secondary quotation rather than an original manuscript.
 
+## Catalog maintenance
+
+The runtime entries live in `Glosify/Models/HomeLanguageQuoteCatalog.cs` and are
+selected by the stable codes in `QuizLanguageCatalog.LanguageLearning`. Every
+learning-language code must have exactly one non-empty original, English rendering,
+and attribution; `HomeLanguageQuoteCatalogTests` enforces that coverage. Freestyle
+must not have a quotation.
+
+When adding or changing an entry, update this document with the source and any
+translation or attribution caveat. Keep the original text short enough for the
+home-page hero, flatten line breaks, use an ellipsis for excerpts, and do not present
+an editorial English rendering as a published translation. Region coordinates in
+`home-globe.js` are representative visual orientations, not claims about the full
+geography of a language.
+
 ## Replacements and attribution corrections
 
 | Code | Author / work | Source |

@@ -1,15 +1,17 @@
-# Glosify project overview and case study
+# GlobeGlotter project overview and case study
 
 [Open the live application](https://glosify.se) · [Return to the repository README](../README.md)
 
-Glosify is the main full-stack project I use to learn how a complete .NET web
-application fits together. It started as a school project and grew into a
-deployed language-learning application with authentication, SQL persistence,
-AI features, browser tests, and an Azure delivery pipeline.
+GlobeGlotter is the public name of the main full-stack project I use to learn how
+a complete .NET web application fits together. It started as a school project and
+grew into a deployed language-learning application with authentication, SQL
+persistence, AI features, browser tests, and an Azure delivery pipeline. The
+source repository, solution, assemblies, and Azure resources retain the technical
+name `Glosify`.
 
 ## What the application does
 
-Glosify brings several language-learning activities into one account:
+GlobeGlotter brings several language-learning activities into one account:
 
 - save vocabulary and sentences in quizzes and collections;
 - practise with flashcards and typing exercises;
@@ -19,6 +21,16 @@ Glosify brings several language-learning activities into one account:
 - translate audio from a Chrome tab with the Live Subtitles extension.
 
 ## Product tour
+
+### Language-focused home page
+
+The home page connects creation, focused practice, and review in one learning
+journey. Selecting a learning language shows a sourced quotation in the original
+language with an editorial English translation and focuses an animated globe on a
+representative region. Anonymous and Freestyle contexts use neutral fallbacks,
+and the globe pauses offscreen or when the browser requests reduced motion. The
+[quote catalog notes](home-language-quotes.md) record sources, translations, and
+maintenance rules.
 
 ### Assistant-driven quiz creation
 
@@ -51,16 +63,17 @@ explicit context.
 
 [![Live Subtitles extension settings](screenshots/live-subtitles-settings.png)](screenshots/live-subtitles-settings.png)
 
-The Manifest V3 extension is integrated with the Glosify web application. The
-user connects it through the website using a one-time, PKCE-protected code. The
-extension exchanges that code for Identity bearer credentials and then uses the
-same account, APIs, and AI credit balance as the website.
+The Manifest V3 extension is integrated with the GlobeGlotter web application.
+The user connects it through the website using a one-time, PKCE-protected code.
+The extension exchanges that code for Identity bearer credentials and then uses
+the same account, APIs, and AI credit balance as the website.
 
 The extension captures audio from the active tab and opens a short-lived,
-authenticated WebSocket relay through Glosify. The translated text is displayed
-over the current page. Audio is relayed in memory and is not stored. Saving the
-original-language transcript is a separate user choice; saved transcripts can
-be managed in the website and selected as context for the assistant.
+authenticated WebSocket relay through GlobeGlotter. The translated text is
+displayed over the current page. Audio is relayed in memory and is not stored.
+Saving the original-language transcript is a separate user choice; saved
+transcripts can be managed in the website and selected as context for the
+assistant.
 
 ## Architecture
 
@@ -81,7 +94,8 @@ flowchart LR
     Extension --> Relay["Short-lived WebSocket relay"]
     EF --> SQL["SQL Server / Azure SQL"]
     Services --> OpenAI["OpenAI Responses and realtime translation"]
-    Services --> Speech["Azure AI Speech"]
+    Services --> Speech["ElevenLabs v3 / Scribe v2"]
+    Services --> Cloudflare["Cloudflare M2M100 translation"]
     Services --> Storage["Azure Blob Storage"]
 ```
 
@@ -108,13 +122,15 @@ when they make responsibilities clearer or make code easier to test.
 
 ### Data and external services
 
-- One clean `InitialCreate` migration for the current schema.
+- Reviewed EF Core migrations and a generated migration bundle for production
+  schema changes.
 - SQL Server locally and Azure SQL in production.
 - A compatibility migration keeps old and replacement artifacts functional;
   the destructive retirement migration runs only after replacement readiness.
 - Blob compensation removes uploaded files when later persistence fails.
 - Managed identity is used for supported Azure resources.
-- Optional AI, speech, and storage providers stay outside readiness checks.
+- Optional AI, speech, and storage providers stay outside routine readiness checks;
+  release-specific provider smoke checks run before maintenance ingress reopens.
 
 ### Testing and delivery
 
@@ -122,14 +138,16 @@ The current automated suite contains:
 
 - a broad .NET unit, integration, and contract suite, with direct OpenAI smoke
   tests credential-gated and skipped by default;
-- 35 dependency-free JavaScript tests;
+- dependency-free JavaScript suites for the website and both extensions;
 - Playwright journeys covering accounts, standard quizzes, Anki review, and
   assistant chat management;
 - a CI migration check that applies the schema to an empty SQL Server database
   and checks for pending model changes.
 
 GitHub Actions publishes the application, builds the EF migration bundle, signs
-in to Azure with OpenID Connect, applies migrations, and deploys to App Service.
+in to Azure with OpenID Connect, applies reviewed migrations, deploys to App Service,
+verifies the exact commit and readiness, and reopens maintenance ingress only after
+the release-specific billing and provider checks pass.
 CodeQL, secret scanning, push protection, Dependabot, and protected-branch
 checks are enabled for the public repository.
 
