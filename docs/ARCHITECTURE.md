@@ -1,9 +1,11 @@
-# Glosify architecture
+# GlobeGlotter (Glosify) architecture
 
-Glosify is a deliberately modular ASP.NET Core 10 MVC application in one web
-project. Feature slices own their HTTP orchestration, application rules, EF Core
-queries, views, and tests. The application does not add repository, unit-of-work,
-CQRS, or mediator layers over EF Core.
+GlobeGlotter is the public product name; `Glosify` remains the repository,
+assembly, database, and Azure-resource identifier. It is a deliberately modular
+ASP.NET Core 10 MVC application in one web project. Feature slices own their HTTP
+orchestration, application rules, EF Core queries, views, and tests. The
+application does not add repository, unit-of-work, CQRS, or mediator layers over
+EF Core.
 
 ## Runtime overview
 
@@ -28,6 +30,27 @@ Identity and authorization are enforced at the application boundary. External
 provider credentials stay on the server. API failures use the shared Problem
 Details contract.
 
+## Presentation and learning context
+
+The server-rendered home page derives its state from `ILanguageContext` and
+`QuizLanguageCatalog`. A recognized learning language selects a sourced entry in
+`HomeLanguageQuoteCatalog`, its locale and flag, and a representative flag region.
+Anonymous, Freestyle, and unknown selections render neutral copy instead of
+inventing a quotation or geographic focus. The quote catalog must cover every
+language-learning entry; its regression test fails when the two catalogs drift.
+
+`home-globe.js` maps flag regions to representative coordinates and projects the
+checked-in land-point data into one SVG land path and one grid path. It uses a
+static SVG fallback before JavaScript runs, hides the location marker for neutral
+contexts, pauses animation when the page is hidden or the globe is offscreen, and
+renders a stationary globe when reduced motion is requested. The coordinates
+orient an illustration; they do not claim to map every place a language is spoken.
+
+Localized journey copy advertises only active practice modes: flashcards and typed
+answers, in either direction. Multiple-choice, checkbox, cloze, and custom quiz
+surfaces remain retired. Source and editorial notes for the 69-language quotation
+catalog live in [home-language-quotes.md](home-language-quotes.md).
+
 ## Direct OpenAI generation
 
 All generative text and image-input work is implemented by
@@ -46,7 +69,7 @@ Every request:
 - maps throttling, upstream failures, timeouts, cancellation, and invalid output
   into the existing service exceptions and Problem Details behavior.
 
-Glosify retains saved assistant conversation history and replays it manually;
+The application retains saved assistant conversation history and replays it manually;
 OpenAI-hosted conversation state is not used. Structured generation supplies
 strict JSON schemas. Image extraction sends
 image input to the same fixed model.
@@ -88,7 +111,7 @@ preserved.
 Scribe mode remains the user-selectable alternative: ElevenLabs Scribe v2
 produces evolving source text and Cloudflare M2M100 translates it. Enhanced mode
 can also send audio to Scribe when the user separately enables saved source
-transcripts. Glosify does not store tab audio.
+transcripts. GlobeGlotter does not store tab audio.
 
 ## Data and accounting
 
