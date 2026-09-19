@@ -1662,7 +1662,7 @@
   <data name="Home.UsePicture" xml:space="preserve"><value>Використати зображення</value></data>
   <data name="Home.ComingSoon" xml:space="preserve"><value>Незабаром</value></data>
   <data name="Home.PracticeSet" xml:space="preserve"><value>Перетворіть матеріал на набір вправ</value></data>
-  <data name="Home.PracticeSetText" xml:space="preserve"><value>Вибирайте між вибором відповіді, заповненням пропусків, прапорцями та введенням відповідей.</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Вибирайте картки або введення відповіді й тренуйтеся в обох напрямках.</value></data>
   <data name="Home.AnswerQuestion" xml:space="preserve"><value>Яка відповідь підходить?</value></data>
   <data name="Home.WordQuestion" xml:space="preserve"><value>Що означає це слово?</value></data>
   <data name="Home.Revisit" xml:space="preserve"><value>Повторюйте, доки не стане легко</value></data>

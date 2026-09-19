@@ -1662,7 +1662,7 @@
   <data name="Home.UsePicture" xml:space="preserve"><value>使用图片</value></data>
   <data name="Home.ComingSoon" xml:space="preserve"><value>即将推出</value></data>
   <data name="Home.PracticeSet" xml:space="preserve"><value>将资料变成练习集</value></data>
-  <data name="Home.PracticeSetText" xml:space="preserve"><value>可选择单项选择、填空、多项选择或输入答案。</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>选择抽认卡或输入答案，并可双向练习。</value></data>
   <data name="Home.AnswerQuestion" xml:space="preserve"><value>哪个答案合适？</value></data>
   <data name="Home.WordQuestion" xml:space="preserve"><value>这个词是什么意思？</value></data>
   <data name="Home.Revisit" xml:space="preserve"><value>反复练习，直到熟练掌握</value></data>

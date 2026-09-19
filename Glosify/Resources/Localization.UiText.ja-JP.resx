@@ -1662,7 +1662,7 @@
   <data name="Home.UsePicture" xml:space="preserve"><value>画像を使う</value></data>
   <data name="Home.ComingSoon" xml:space="preserve"><value>近日公開</value></data>
   <data name="Home.PracticeSet" xml:space="preserve"><value>教材を練習セットに変える</value></data>
-  <data name="Home.PracticeSetText" xml:space="preserve"><value>選択式、穴埋め、チェックボックス、入力式の回答から選べます。</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>フラッシュカードまたは入力式の回答を選び、どちらの方向でも練習できます。</value></data>
   <data name="Home.AnswerQuestion" xml:space="preserve"><value>どの答えが合いますか？</value></data>
   <data name="Home.WordQuestion" xml:space="preserve"><value>この単語の意味は？</value></data>
   <data name="Home.Revisit" xml:space="preserve"><value>自然にできるまで復習する</value></data>

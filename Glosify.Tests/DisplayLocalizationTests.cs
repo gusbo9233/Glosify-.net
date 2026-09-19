@@ -387,6 +387,24 @@ public sealed class DisplayLocalizationTests
         Assert.Null(document.QuerySelector(".home-orbit-core"));
     }
 
+    [Fact]
+    public async Task Freestyle_homepage_describes_only_supported_practice_modes()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+        client.DefaultRequestHeaders.Add("Cookie", "glosify.language=Freestyle");
+
+        var response = await client.GetAsync("/");
+        response.EnsureSuccessStatusCode();
+        var document = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+        var practiceDescription = document.QuerySelector(".home-action-card-vocabulary .home-story-copy > span")?.TextContent;
+
+        Assert.Equal("Choose flashcards or typed answers, and practice in either direction.", practiceDescription);
+        Assert.DoesNotContain("multiple choice", practiceDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("cloze", practiceDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("checkbox", practiceDescription, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Theory]
     [InlineData("/")]
     [InlineData("/login")]

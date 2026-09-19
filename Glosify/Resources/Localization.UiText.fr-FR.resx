@@ -1662,7 +1662,7 @@
   <data name="Home.UsePicture" xml:space="preserve"><value>Utiliser une image</value></data>
   <data name="Home.ComingSoon" xml:space="preserve"><value>Bientôt disponible</value></data>
   <data name="Home.PracticeSet" xml:space="preserve"><value>Transformez le contenu en exercices</value></data>
-  <data name="Home.PracticeSetText" xml:space="preserve"><value>Choisissez entre choix multiples, textes à trous, cases à cocher et réponses saisies.</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Choisissez des cartes mémoire ou des réponses saisies, et entraînez-vous dans les deux sens.</value></data>
   <data name="Home.AnswerQuestion" xml:space="preserve"><value>Quelle réponse convient ?</value></data>
   <data name="Home.WordQuestion" xml:space="preserve"><value>Que signifie ce mot ?</value></data>
   <data name="Home.Revisit" xml:space="preserve"><value>Révisez jusqu’à ce que cela devienne naturel</value></data>

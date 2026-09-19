@@ -1662,7 +1662,7 @@
   <data name="Home.UsePicture" xml:space="preserve"><value>Gunakan gambar</value></data>
   <data name="Home.ComingSoon" xml:space="preserve"><value>Segera hadir</value></data>
   <data name="Home.PracticeSet" xml:space="preserve"><value>Ubah materi menjadi kumpulan latihan</value></data>
-  <data name="Home.PracticeSetText" xml:space="preserve"><value>Pilih dari pilihan ganda, isian rumpang, kotak centang, dan jawaban yang diketik.</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Pilih kartu belajar atau jawaban yang diketik, lalu berlatih dalam kedua arah.</value></data>
   <data name="Home.AnswerQuestion" xml:space="preserve"><value>Jawaban mana yang sesuai?</value></data>
   <data name="Home.WordQuestion" xml:space="preserve"><value>Apa arti kata ini?</value></data>
   <data name="Home.Revisit" xml:space="preserve"><value>Ulangi hingga terasa alami</value></data>

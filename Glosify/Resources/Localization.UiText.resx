@@ -502,7 +502,7 @@
   <data name="Home.UsePicture" xml:space="preserve"><value>Use a picture</value></data>
   <data name="Home.ComingSoon" xml:space="preserve"><value>Coming soon</value></data>
   <data name="Home.PracticeSet" xml:space="preserve"><value>Turn material into a practice set</value></data>
-  <data name="Home.PracticeSetText" xml:space="preserve"><value>Choose from multiple choice, cloze, checkbox, and typed answers.</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Choose flashcards or typed answers, and practice in either direction.</value></data>
   <data name="Home.AnswerQuestion" xml:space="preserve"><value>Which answer fits?</value></data>
   <data name="Home.WordQuestion" xml:space="preserve"><value>What does the word mean?</value></data>
   <data name="Home.Revisit" xml:space="preserve"><value>Revisit it until it feels natural</value></data>

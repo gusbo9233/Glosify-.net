@@ -1662,7 +1662,7 @@
   <data name="Home.UsePicture" xml:space="preserve"><value>Görsel kullan</value></data>
   <data name="Home.ComingSoon" xml:space="preserve"><value>Yakında</value></data>
   <data name="Home.PracticeSet" xml:space="preserve"><value>Materyalleri alıştırma setine dönüştürün</value></data>
-  <data name="Home.PracticeSetText" xml:space="preserve"><value>Çoktan seçmeli, boşluk doldurma, onay kutuları ve yazılı yanıtlar arasından seçim yapın.</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Bilgi kartlarını veya yazılı yanıtları seçin ve her iki yönde de pratik yapın.</value></data>
   <data name="Home.AnswerQuestion" xml:space="preserve"><value>Hangi yanıt uygun?</value></data>
   <data name="Home.WordQuestion" xml:space="preserve"><value>Kelimenin anlamı nedir?</value></data>
   <data name="Home.Revisit" xml:space="preserve"><value>Doğal gelene kadar tekrar edin</value></data>

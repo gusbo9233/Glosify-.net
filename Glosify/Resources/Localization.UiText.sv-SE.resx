@@ -502,7 +502,7 @@
   <data name="Home.UsePicture" xml:space="preserve"><value>Använd en bild</value></data>
   <data name="Home.ComingSoon" xml:space="preserve"><value>Kommer snart</value></data>
   <data name="Home.PracticeSet" xml:space="preserve"><value>Gör materialet till en övningsuppsättning</value></data>
-  <data name="Home.PracticeSetText" xml:space="preserve"><value>Välj mellan flervalsfrågor, lucktexter, kryssrutor och skrivna svar.</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Välj flashkort eller skrivna svar och öva i båda riktningarna.</value></data>
   <data name="Home.AnswerQuestion" xml:space="preserve"><value>Vilket svar passar?</value></data>
   <data name="Home.WordQuestion" xml:space="preserve"><value>Vad betyder ordet?</value></data>
   <data name="Home.Revisit" xml:space="preserve"><value>Repetera tills det känns naturligt</value></data>

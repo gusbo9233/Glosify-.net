@@ -1662,7 +1662,7 @@
   <data name="Home.UsePicture" xml:space="preserve"><value>استخدم صورة</value></data>
   <data name="Home.ComingSoon" xml:space="preserve"><value>قريبًا</value></data>
   <data name="Home.PracticeSet" xml:space="preserve"><value>حوّل المواد إلى مجموعة تمارين</value></data>
-  <data name="Home.PracticeSetText" xml:space="preserve"><value>اختر بين الاختيار من متعدد، وملء الفراغات، ومربعات الاختيار، والإجابات المكتوبة.</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>اختر البطاقات التعليمية أو الإجابات المكتوبة، وتدرّب في كلا الاتجاهين.</value></data>
   <data name="Home.AnswerQuestion" xml:space="preserve"><value>ما الإجابة المناسبة؟</value></data>
   <data name="Home.WordQuestion" xml:space="preserve"><value>ما معنى الكلمة؟</value></data>
   <data name="Home.Revisit" xml:space="preserve"><value>راجع حتى تصبح الممارسة سهلة</value></data>

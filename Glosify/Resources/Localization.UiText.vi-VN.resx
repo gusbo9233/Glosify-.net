@@ -1662,7 +1662,7 @@
   <data name="Home.UsePicture" xml:space="preserve"><value>Dùng hình ảnh</value></data>
   <data name="Home.ComingSoon" xml:space="preserve"><value>Sắp ra mắt</value></data>
   <data name="Home.PracticeSet" xml:space="preserve"><value>Biến tài liệu thành bộ bài tập</value></data>
-  <data name="Home.PracticeSetText" xml:space="preserve"><value>Chọn câu hỏi trắc nghiệm, điền khuyết, ô chọn hoặc nhập câu trả lời.</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Chọn thẻ ghi nhớ hoặc câu trả lời nhập và luyện tập theo cả hai chiều.</value></data>
   <data name="Home.AnswerQuestion" xml:space="preserve"><value>Câu trả lời nào phù hợp?</value></data>
   <data name="Home.WordQuestion" xml:space="preserve"><value>Từ này có nghĩa là gì?</value></data>
   <data name="Home.Revisit" xml:space="preserve"><value>Ôn lại cho đến khi thành thạo</value></data>
