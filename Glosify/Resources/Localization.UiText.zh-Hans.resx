@@ -55,10 +55,10 @@
     <value>上一页</value>
   </data>
   <data name="Layout.MetaDescription" xml:space="preserve">
-    <value>Glosify 将你读到的内容转化为可用词汇：从书籍和转录稿中创建单词列表，用测验和抽认卡练习，然后与 AI 对话伙伴开口练习。</value>
+    <value>GlobeGlotter 将你读到的内容转化为可用词汇：从书籍和转录稿中创建单词列表，用测验和抽认卡练习，然后与 AI 对话伙伴开口练习。</value>
   </data>
   <data name="Layout.AuthMetaDescription" xml:space="preserve">
-    <value>登录 Glosify，从你读到的内容中构建词汇，用测验练习，并与 AI 对话伙伴开口练习。</value>
+    <value>登录 GlobeGlotter，从你读到的内容中构建词汇，用测验练习，并与 AI 对话伙伴开口练习。</value>
   </data>
   <data name="Layout.PremiumLearner" xml:space="preserve">
     <value>高级学习者</value>
@@ -142,7 +142,7 @@
     <value>助手</value>
   </data>
   <data name="Assistant.Empty" xml:space="preserve">
-    <value>在 Glosify 的任何地方都可以寻求帮助。</value>
+    <value>在 GlobeGlotter 的任何地方都可以寻求帮助。</value>
   </data>
   <data name="Assistant.Placeholder" xml:space="preserve">
     <value>向助手提问...</value>
@@ -346,7 +346,7 @@
     <value>打开我的测验</value>
   </data>
   <data name="Home.WaysAria" xml:space="preserve">
-    <value>使用 Glosify 学习的方式</value>
+    <value>使用 GlobeGlotter 学习的方式</value>
   </data>
   <data name="Home.ReadContext" xml:space="preserve">
     <value>在语境中阅读</value>
@@ -619,7 +619,7 @@
     <value>进步。</value>
   </data>
   <data name="Books.HeroText" xml:space="preserve">
-    <value>带上您自己的阅读材料，用 Glosify 探索每一页、每个短语和每个新单词。</value>
+    <value>带上您自己的阅读材料，用 GlobeGlotter 探索每一页、每个短语和每个新单词。</value>
   </data>
   <data name="Books.SummaryAria" xml:space="preserve">
     <value>书库摘要</value>
@@ -1405,19 +1405,19 @@
     <value>获取积分</value>
   </data>
   <data name="Payments.GlosifyCredits" xml:space="preserve">
-    <value>Glosify 积分</value>
+    <value>GlobeGlotter 积分</value>
   </data>
   <data name="Payments.Hero" xml:space="preserve">
     <value>让你的学习循环持续进行。</value>
   </data>
   <data name="Payments.Intro" xml:space="preserve">
-    <value>积分可支持 Glosify 的 AI 辅助学习功能和实时字幕。</value>
+    <value>积分可支持 GlobeGlotter 的 AI 辅助学习功能和实时字幕。</value>
   </data>
   <data name="Payments.NotAvailable" xml:space="preserve">
     <value>付款暂不可用</value>
   </data>
   <data name="Payments.NotConnected" xml:space="preserve">
-    <value>此 Glosify 部署尚未连接到 Stripe。</value>
+    <value>此 GlobeGlotter 部署尚未连接到 Stripe。</value>
   </data>
   <data name="Payments.CreditPack" xml:space="preserve">
     <value>积分包</value>
@@ -1429,7 +1429,7 @@
     <value>继续安全结账</value>
   </data>
   <data name="Payments.StripeNotice" xml:space="preserve">
-    <value>结账由 Stripe 托管。Glosify 不会接收或存储卡片详情。</value>
+    <value>结账由 Stripe 托管。GlobeGlotter 不会接收或存储卡片详情。</value>
   </data>
   <data name="Payments.Status" xml:space="preserve">
     <value>付款状态</value>
@@ -1441,7 +1441,7 @@
     <value>付款处理中</value>
   </data>
   <data name="Payments.Back" xml:space="preserve">
-    <value>返回 Glosify</value>
+    <value>返回 GlobeGlotter</value>
   </data>
   <data name="Payments.AiCredits" xml:space="preserve">
     <value>AI 积分</value>
@@ -1580,7 +1580,7 @@
   <data name="Quiz.JsonImport" xml:space="preserve"><value>导入 JSON</value></data>
   <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>从外部 AI 导入</value></data>
   <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>无需使用点数即可创建测验</value></data>
-  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>让任意 AI 生成 Glosify JSON，将其粘贴到此处，核对准确结果，然后导入到{0}。</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>让任意 AI 生成 GlobeGlotter JSON，将其粘贴到此处，核对准确结果，然后导入到{0}。</value></data>
   <data name="Quiz.JsonImportClose" xml:space="preserve"><value>关闭导入对话框</value></data>
   <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. 复制给 AI 的说明</value></data>
   <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>添加你想学习的内容，然后将此提示发送给 ChatGPT、Claude、Gemini 或其他 AI。</value></data>
@@ -1594,7 +1594,7 @@
   <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>使用 AI 修复 · 消耗点数</value></data>
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>预览 JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>全部导入</value></data>
-  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>预览和导入是确定性的，不会联系 AI 提供商。“使用 AI 修复”会将粘贴的文本发送给 Glosify 配置的 AI 并扣除点数。</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>预览和导入是确定性的，不会联系 AI 提供商。“使用 AI 修复”会将粘贴的文本发送给 GlobeGlotter 配置的 AI 并扣除点数。</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
   <data name="Nav.Translations" xml:space="preserve"><value>翻译</value></data>
   <data name="Translations.Title" xml:space="preserve"><value>已保存的翻译</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>翻译器</value></data><data name="Translations.Saved" xml:space="preserve"><value>已保存的翻译</value></data><data name="Translations.Intro" xml:space="preserve"><value>你在 Glosify Translator 扩展中明确保存的翻译。</value></data>
@@ -1605,7 +1605,7 @@
   <data name="Settings.Maximum" xml:space="preserve"><value>上限</value></data>
   <data name="Speech.Title" xml:space="preserve"><value>朗读</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>语音服务</value></data>
-  <data name="Speech.Browser" xml:space="preserve"><value>浏览器语音 · 不消耗Glosify积分</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>浏览器语音 · 不消耗GlobeGlotter积分</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>ElevenLabs语音 · 消耗AI积分</value></data>
   <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs按字符扣除小数积分，包括缓存音频。准备失败不收费。浏览器语音免费。</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>文本语言</value></data>
@@ -1650,4 +1650,24 @@
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>已存储的内容</value></data>
   <data name="Payments.RoundedBalance" xml:space="preserve"><value>余额向上取整显示。实际扣费取决于使用量。</value></data>
   <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>您的实际积分余额不足。显示的余额已向上取整；请充值或减少请求内容。</value></data>
+  <data name="Home.GlobeFocus" xml:space="preserve"><value>以所学语言为中心的地球仪：{0}</value></data>
+  <data name="Home.GlobeAria" xml:space="preserve"><value>世界地球仪</value></data>
+  <data name="Home.GlobeCaption" xml:space="preserve"><value>通过语言探索世界</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>导入资料，将其整理为重点问题，并反复练习直到掌握。</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>开始</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>按自己的方式创建学习资料</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>自己编写测验、与 AI 助手一起创建，或从已有内容开始。</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>自己编写</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>询问 AI</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>使用图片</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>即将推出</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>将资料变成练习集</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>选择抽认卡或输入答案，并可双向练习。</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>哪个答案合适？</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>这个词是什么意思？</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>反复练习，直到熟练掌握</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>让实用词汇随手可得</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>重复练习需要巩固的知识，按自己的节奏进步。</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>通过重点测验复习，再将所需词汇保存到 Anki。</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>探索更多学习方式</value></data>
 </root>

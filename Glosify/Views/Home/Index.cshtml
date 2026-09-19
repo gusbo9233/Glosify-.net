@@ -6,6 +6,9 @@
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var currentLanguage = LangContext.CurrentLanguage;
     var hasLanguage = !string.IsNullOrWhiteSpace(currentLanguage);
+    var selectedLanguage = Glosify.Services.Language.QuizLanguageCatalog.Find(currentLanguage);
+    var globeRegion = selectedLanguage?.FlagRegion;
+    var languageQuote = HomeLanguageQuoteCatalog.Find(selectedLanguage?.Code);
     var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(currentLanguage);
     ViewData.SetAssistantPageContext(new AssistantPageContext
     {
@@ -21,192 +24,162 @@
 <div class="home-page">
     <section class="home-hero" aria-labelledby="home-title">
         <div class="home-hero-copy">
-            <p class="home-kicker">
-                <span class="home-kicker-dot" aria-hidden="true"></span>
-                @Text["Home.Kicker"]
-            </p>
-            <h1 id="home-title">
-                @if (isFreestyle)
-                {
-                    @:Study anything with Freestyle
-                }
-                else if (hasLanguage)
-                {
-                    @Text["Home.TitleWithLanguage", currentLanguage!]
-                }
-                else
-                {
-                    @Text["Home.TitleAnonymous"]
-                }
-            </h1>
-            <p class="home-hero-lede">
-                @(isFreestyle ? "Create focused quizzes for medicine, science, history, or any subject you choose." : Text["Home.Description"])
-            </p>
-
-            <div class="home-hero-actions">
-                @if (!isAuthenticated)
-                {
-                    <a class="home-button home-button-primary" asp-controller="Account" asp-action="Register">
-                        @Text["Home.StartLearning"]
-                        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-                    </a>
-                    <a class="home-button home-button-secondary" asp-controller="Account" asp-action="Login">
-                        @Text["Common.LogIn"]
-                    </a>
-                }
-                else if (!hasLanguage)
-                {
-                    <a class="home-button home-button-primary" asp-controller="Languages" asp-action="Index">
-                        @Text["Home.ChooseLanguage"]
-                        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-                    </a>
-                    <a class="home-button home-button-secondary" asp-controller="Explore" asp-action="Index">
-                        @Text["Home.BrowseShared"]
-                    </a>
-                }
-                else if (isFreestyle)
-                {
-                    <a class="home-button home-button-primary" asp-controller="Quiz" asp-action="Index">
-                        Open your quizzes
-                        <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
-                    </a>
-                    <a class="home-button home-button-secondary" asp-controller="Explore" asp-action="Index">Browse shared quizzes</a>
-                }
-                else
-                {
-                    <a class="home-button home-button-primary" asp-controller="Quiz" asp-action="Index">
-                        @Text["Home.OpenQuizzes"]
-                        <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
-                    </a>
-                    <a class="home-button home-button-secondary" asp-controller="Books" asp-action="Index">
-                        @Text["Nav.Books"]
-                    </a>
-                }
-            </div>
-
-            <ul class="home-hero-points" aria-label="@Text["Home.WaysAria"]">
-                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> @(isFreestyle ? "Organize material by subject" : Text["Home.ReadContext"])</li>
-                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> @Text["Home.PracticeRecall"]</li>
-                <li><span class="material-symbols-outlined" aria-hidden="true">check</span> @(isFreestyle ? "Build interactive exercises" : Text["Anki.AddToAnki"])</li>
-            </ul>
-        </div>
-
-        <div class="home-hero-visual" aria-label="@Text["Home.LoopAria"]">
-            <div class="home-orbit home-orbit-outer" aria-hidden="true"></div>
-            <div class="home-orbit home-orbit-inner" aria-hidden="true"></div>
-
-            <div class="home-orbit-node home-orbit-node-book">
-                <span class="material-symbols-outlined" aria-hidden="true">auto_stories</span>
-                <small>@Text["Home.Discover"]</small>
-            </div>
-            <div class="home-orbit-node home-orbit-node-quiz">
-                <span class="material-symbols-outlined" aria-hidden="true">neurology</span>
-                <small>@Text["Home.Remember"]</small>
-            </div>
-            <div class="home-orbit-node home-orbit-node-review">
-                <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "checklist" : "style")</span>
-                <small>@(isFreestyle ? "Test" : "Anki")</small>
-            </div>
-
-            <div class="home-orbit-core">
-                <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "category" : "translate")</span>
-                <strong>@(hasLanguage ? currentLanguage : "Glosify")</strong>
-                <small>@Text["Home.LearningLoop"]</small>
-            </div>
-
-            <div class="home-phrase-card">
-                <span class="home-phrase-label">@Text["Home.TodayMindset"]</span>
-                <strong>@Text["Home.SmallSteps"]</strong>
-                <div class="home-phrase-progress" aria-hidden="true"><span></span></div>
-            </div>
-        </div>
-    </section>
-
-    <section class="home-section" aria-labelledby="next-move-title">
-        <div class="home-section-heading">
-            <div>
-                <p class="home-kicker">@Text["Home.QuickStart"]</p>
-                <h2 id="next-move-title">@Text["Home.ChooseNext"]</h2>
-            </div>
-            @if (hasLanguage)
+            @if (languageQuote is not null)
             {
-                <a class="home-text-link" asp-controller="Languages" asp-action="Index">
-                    @(isFreestyle ? "Using Freestyle" : Text["Home.LearningLanguage", currentLanguage!])
-                    <span class="material-symbols-outlined" aria-hidden="true">swap_horiz</span>
-                </a>
+                <figure class="home-language-quote" aria-labelledby="home-title">
+                    <blockquote>
+                        <p id="home-title" lang="@selectedLanguage!.Locale" dir="auto">“@languageQuote.Original”</p>
+                        <strong lang="en" dir="ltr">“@languageQuote.English”</strong>
+                    </blockquote>
+                    <figcaption>
+                        <span class="home-language-flag" aria-label="@selectedLanguage.Name flag">@selectedLanguage.Flag</span>
+                        <cite>@languageQuote.Attribution</cite>
+                    </figcaption>
+                </figure>
+            }
+            else
+            {
+                <h1 id="home-title">
+                    @if (isFreestyle)
+                    {
+                        @:Study anything with Freestyle
+                    }
+                    else if (hasLanguage)
+                    {
+                        @Text["Home.TitleWithLanguage", currentLanguage!]
+                    }
+                    else
+                    {
+                        @Text["Home.TitleAnonymous"]
+                    }
+                </h1>
             }
         </div>
 
-        <div class="home-action-grid">
-            <a class="home-action-card home-action-card-vocabulary" asp-controller="Quiz" asp-action="Index">
-                <span class="home-action-number">01</span>
-                <span class="home-action-icon">
-                    <span class="material-symbols-outlined" aria-hidden="true">library_add</span>
-                </span>
-                <span class="home-action-content">
-                    <strong>@(isFreestyle ? "Build a question bank" : Text["Home.BuildVocabulary"])</strong>
-                    <small>@(isFreestyle ? "Add prompts and answers for any subject." : Text["Home.BuildVocabularyText"])</small>
-                </span>
-                <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
-            </a>
-
-            <a class="home-action-card home-action-card-practice" asp-controller="Quiz" asp-action="Index">
-                <span class="home-action-number">02</span>
-                <span class="home-action-icon">
-                    <span class="material-symbols-outlined" aria-hidden="true">psychology</span>
-                </span>
-                <span class="home-action-content">
-                    <strong>@Text["Home.PracticeRecall"]</strong>
-                    <small>@Text["Home.PracticeRecallText"]</small>
-                </span>
-                <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
-            </a>
-
-            <a class="home-action-card home-action-card-anki" asp-controller="@(isFreestyle ? "Quiz" : "Anki")" asp-action="Index">
-                <span class="home-action-number">03</span>
-                <span class="home-action-icon">
-                    <span class="material-symbols-outlined" aria-hidden="true">@(isFreestyle ? "dashboard_customize" : "style")</span>
-                </span>
-                <span class="home-action-content">
-                    <strong>@(isFreestyle ? "Create interactive quizzes" : "Anki")</strong>
-                    <small>@(isFreestyle ? "Use multiple choice, checkbox, cloze, and more." : Text["Anki.AddToAnki"])</small>
-                </span>
-                <span class="home-action-arrow material-symbols-outlined" aria-hidden="true">north_east</span>
-            </a>
-        </div>
+        <figure class="home-hero-visual" data-home-globe data-region="@globeRegion"
+                role="img" aria-label="@(hasLanguage && !isFreestyle ? Text["Home.GlobeFocus", currentLanguage!] : Text["Home.GlobeAria"])">
+            <svg class="home-globe" viewBox="0 0 440 440" aria-hidden="true" focusable="false">
+                <defs>
+                    <radialGradient id="globe-ocean" cx="32%" cy="26%" r="78%">
+                        <stop offset="0%" stop-color="#203c43" />
+                        <stop offset="58%" stop-color="#102b38" />
+                        <stop offset="100%" stop-color="#06172b" />
+                    </radialGradient>
+                    <radialGradient id="globe-shade" cx="35%" cy="30%" r="72%">
+                        <stop offset="35%" stop-color="#041329" stop-opacity="0" />
+                        <stop offset="100%" stop-color="#041329" stop-opacity="0.12" />
+                    </radialGradient>
+                    <clipPath id="globe-disc"><circle cx="220" cy="220" r="184" /></clipPath>
+                </defs>
+                <circle class="home-globe-atmosphere" cx="220" cy="220" r="193" />
+                <circle cx="220" cy="220" r="184" fill="url(#globe-ocean)" />
+                <g clip-path="url(#globe-disc)">
+                    <image data-globe-fallback href="@Url.Content("~/images/globe-neutral.svg")" width="440" height="440" />
+                    <path class="home-globe-grid" data-globe-grid />
+                    <path class="home-globe-land" data-globe-land />
+                    <circle cx="220" cy="220" r="184" fill="url(#globe-shade)" />
+                </g>
+                <circle class="home-globe-rim" cx="220" cy="220" r="184" />
+                <g class="home-globe-marker" data-globe-marker>
+                    <circle class="home-globe-pulse" r="17" />
+                    <circle class="home-globe-marker-ring" r="11" />
+                    <circle class="home-globe-marker-dot" r="5" />
+                </g>
+            </svg>
+            <figcaption class="home-globe-caption">
+                <span>@Text["Home.GlobeCaption"]</span>
+                <strong>@(hasLanguage ? currentLanguage : "GlobeGlotter")</strong>
+            </figcaption>
+        </figure>
     </section>
 
-    <section class="home-connected" aria-labelledby="connected-title">
-        <div class="home-connected-copy">
-            <p class="home-kicker">@Text["Home.ConnectedKicker"]</p>
-            <h2 id="connected-title">@Text["Home.ConnectedTitle"]</h2>
+    <section class="home-story" aria-labelledby="learning-loop-title">
+        <header class="home-story-heading">
+            <div>
+                <p class="home-kicker">@Text["Home.ConnectedKicker"]</p>
+                <h2 id="learning-loop-title">@Text["Home.LearningLoop"]</h2>
+            </div>
+            <p>@(isFreestyle
+                ? Text["Home.FreestyleDescription"]
+                : Text["Home.Description"])</p>
+        </header>
+
+        <div class="home-story-flow" aria-label="@Text["Home.LoopAria"]">
+            <a class="home-story-step" asp-controller="Quiz" asp-action="Index">
+                <span class="home-story-index" aria-hidden="true">01</span>
+                <span class="home-story-copy">
+                    <small>@(isFreestyle ? Text["Home.Start"] : Text["Home.Discover"])</small>
+                    <strong>@Text["Home.CreateMaterial"]</strong>
+                    <span>@Text["Home.CreateMaterialText"]</span>
+                </span>
+                <span class="home-story-demo home-story-demo-create" aria-hidden="true">
+                    <span class="home-create-option">
+                        <span class="home-create-mark" aria-hidden="true">+</span>
+                        <b>@Text["Home.WriteIt"]</b>
+                    </span>
+                    <span class="home-create-option is-featured">
+                        <span class="home-create-mark" aria-hidden="true">✦</span>
+                        <b>@Text["Home.AskAi"]</b>
+                    </span>
+                    <span class="home-create-option is-coming-soon">
+                        <span class="home-create-mark home-create-mark-image" aria-hidden="true"></span>
+                        <b>@Text["Home.UsePicture"]</b>
+                        <small>@Text["Home.ComingSoon"]</small>
+                    </span>
+                </span>
+                <span class="home-story-open material-symbols-outlined" aria-hidden="true">north_east</span>
+            </a>
+
+            <a class="home-story-step home-action-card-vocabulary" asp-controller="Quiz" asp-action="Index">
+                <span class="home-story-index" aria-hidden="true">02</span>
+                <span class="home-story-copy">
+                    <small>@Text["Home.BuildVocabulary"]</small>
+                    <strong>@(isFreestyle ? Text["Home.PracticeSet"] : Text["Home.PracticeRecall"])</strong>
+                    <span>@(isFreestyle ? Text["Home.PracticeSetText"] : Text["Home.PracticeRecallText"])</span>
+                </span>
+                <span class="home-story-demo home-story-demo-quiz" aria-hidden="true">
+                    <span class="home-demo-question">@(isFreestyle ? Text["Home.AnswerQuestion"] : Text["Home.WordQuestion"])</span>
+                    <span class="home-demo-options"><i></i><i class="is-active"></i><i></i></span>
+                    <span class="home-demo-progress"><i></i></span>
+                </span>
+                <span class="home-story-open material-symbols-outlined" aria-hidden="true">north_east</span>
+            </a>
+
+            <a class="home-story-step home-action-card-anki" asp-controller="@(isFreestyle ? "Quiz" : "Anki")" asp-action="Index">
+                <span class="home-story-index" aria-hidden="true">03</span>
+                <span class="home-story-copy">
+                    <small>@Text["Home.Remember"]</small>
+                    <strong>@(isFreestyle ? Text["Home.Revisit"] : Text["Home.KeepWords"])</strong>
+                    <span>@(isFreestyle ? Text["Home.RevisitText"] : Text["Home.KeepWordsText"])</span>
+                </span>
+                <span class="home-story-demo home-story-demo-memory" aria-hidden="true">
+                    <span class="home-memory-card home-memory-card-back"></span>
+                    <span class="home-memory-card">
+                        <span class="material-symbols-outlined">psychology</span>
+                        <b>@Text["Home.SmallSteps"]</b>
+                    </span>
+                </span>
+                <span class="home-story-open material-symbols-outlined" aria-hidden="true">north_east</span>
+            </a>
+        </div>
+
+        <footer class="home-story-footer">
             <p>@Text["Home.ConnectedText"]</p>
-            <a class="home-text-link home-text-link-bright" asp-controller="Explore" asp-action="Index">
-                @Text["Home.ExploreCollections"]
-                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
-            </a>
-        </div>
-
-        <div class="home-feature-grid">
-            <a class="home-feature-card home-feature-card-books" asp-controller="Books" asp-action="Index">
-                <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">menu_book</span>
-                <span>
-                    <strong>@Text["Home.ReadCollect"]</strong>
-                    <small>@Text["Home.ReadCollectText"]</small>
-                </span>
-                <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
-            </a>
-
-            <a class="home-feature-card home-feature-card-explore" asp-controller="Explore" asp-action="Index">
-                <span class="home-feature-icon material-symbols-outlined" aria-hidden="true">travel_explore</span>
-                <span>
-                    <strong>@Text["Home.ExploreTogether"]</strong>
-                    <small>@Text["Home.ExploreTogetherText"]</small>
-                </span>
-                <span class="material-symbols-outlined home-feature-arrow" aria-hidden="true">chevron_right</span>
-            </a>
-
-        </div>
+            <nav aria-label="@Text["Home.ExploreWays"]">
+                <a class="home-feature-card home-feature-card-books" asp-controller="Books" asp-action="Index">
+                    <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+                    @Text["Home.ReadCollect"]
+                </a>
+                <a class="home-feature-card home-feature-card-explore" asp-controller="Explore" asp-action="Index">
+                    <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
+                    @Text["Home.ExploreCollections"]
+                </a>
+                <a class="home-feature-card" asp-controller="Quiz" asp-action="Index">
+                    <span class="material-symbols-outlined" aria-hidden="true">quiz</span>
+                    @Text["Home.OpenQuizzes"]
+                </a>
+            </nav>
+        </footer>
     </section>
 
     <section class="home-final-cta" aria-labelledby="home-final-title">
@@ -251,3 +224,7 @@
         }
     </section>
 </div>
+
+@section Scripts {
+    <script type="module" src="~/js/home-globe.js" asp-append-version="true"></script>
+}

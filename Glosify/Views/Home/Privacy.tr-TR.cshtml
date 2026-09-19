@@ -4,7 +4,7 @@
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = "Gizlilik Politikası";
-    ViewData["Description"] = "Glosify ve Glosify Live Subtitles Chrome uzantısının kişisel verileri nasıl işlediği.";
+    ViewData["Description"] = "GlobeGlotter ve Glosify Live Subtitles Chrome uzantısının kişisel verileri nasıl işlediği.";
     var legal = Legal.Value;
 }
 
@@ -22,9 +22,9 @@
 
 
         <h2>Verilerinizi kim kontrol ediyor</h2>
-        <p><strong>@legal.ControllerName</strong> Glosify’ı işletir ve burada açıklanan kişisel veriler için veri sorumlusudur. Gizlilik veya silme talepleri için <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> ile iletişime geçin.</p>
+        <p><strong>@legal.ControllerName</strong> GlobeGlotter’ı işletir ve burada açıklanan kişisel veriler için veri sorumlusudur. Gizlilik veya silme talepleri için <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> ile iletişime geçin.</p>
 
-        <h2>Glosify’ın işlediği veriler</h2>
+        <h2>GlobeGlotter’ın işlediği veriler</h2>
         <ul>
             <li>E-posta adresi, dahili hesap kimliği, kimlik doğrulama yöntemi ve Google veya Microsoft harici giriş tanımlayıcıları gibi hesap bilgileri.</li>
             <li>Dil tercihleri, sınavlar, öğrenme içeriği, krediler, rezervasyonlar, kullanım işlemleri ve hizmeti sunmak ve korumak için gerekli oturum meta verileri.</li>
@@ -36,25 +36,25 @@
         <p>Asistan operasyonel analitiği, model ve araç adlarını, token sayılarını, süreleri, sonuçları ve takma adlı ilişkilendirme tanımlayıcılarını kaydeder. Tam istemleri, yanıtları, araç argümanlarını veya araç sonuçlarını analitik depolamasına ya da telemetriye kopyalamayacak şekilde yapılandırılmıştır.</p>
 
         <h2>Canlı altyazılar ve sağlayıcı işlemleri</h2>
-        <p>Chrome, etkin sekme için <strong>Altyazıları başlat</strong> düğmesine bastıktan sonra yalnızca sesi yakalar. Gelişmiş modda ses, gerçek zamanlı konuşma işleme ve çeviri için Glosify üzerinden OpenAI’ye aktarılır. Transkript kaydı etkinse, aynı ses son hali verilmiş kaynak transkripti oluşturmak için ElevenLabs Scribe v2’ye de aktarılır. Scribe + Cloudflare modunda ses, transkripsiyon için Glosify üzerinden ElevenLabs’a aktarılır ve gelişen ifadeler çeviri için Cloudflare Workers AI M2M100'a gönderilir. Sekme sesi Glosify depolamasına yazılmaz.</p>
+        <p>Chrome, etkin sekme için <strong>Altyazıları başlat</strong> düğmesine bastıktan sonra yalnızca sesi yakalar. Gelişmiş modda ses, gerçek zamanlı konuşma işleme ve çeviri için GlobeGlotter üzerinden OpenAI’ye aktarılır. Transkript kaydı etkinse, aynı ses son hali verilmiş kaynak transkripti oluşturmak için ElevenLabs Scribe v2’ye de aktarılır. Scribe + Cloudflare modunda ses, transkripsiyon için GlobeGlotter üzerinden ElevenLabs’a aktarılır ve gelişen ifadeler çeviri için Cloudflare Workers AI M2M100'a gönderilir. Sekme sesi GlobeGlotter depolamasına yazılmaz.</p>
         <p>Transkript kaydını ayrıca açmadığınız sürece altyazılar ve tanınan ifadeler geçici olarak gösterilir. OpenAI, Gelişmiş altyazılar için ses, tanınan ifadeler ve ilgili hizmet meta verilerini işler. Scribe modu etkin olduğunda veya Gelişmiş transkript kaydı etkinleştirildiğinde ElevenLabs bu verileri işler. Standart ElevenLabs API günlük kaydı etkindir; bu nedenle ElevenLabs, geçerli hizmet koşulları ve saklama politikası kapsamında istek ve hizmet günlüğü verilerini saklayabilir. Google ve Microsoft, OAuth giriş hizmetlerini seçtiğinizde kendi politikaları kapsamında bilgi işler.
 </p>
 
         <h2>Amaçlar ve hukuki dayanak</h2>
-        <p>Glosify bu verileri sizi doğrulamak, talep ettiğiniz öğrenme ve altyazı özelliklerini sunmak, içeriğinizi yönetmek, kredileri ve uygulama bütçesini idare etmek, kötüye kullanımı önlemek, sorunları gidermek ve yasal yükümlülüklere uymak için kullanır. İşleme, talep ettiğiniz hizmeti sağlamak ve meşru güvenlik ile güvenilirlik çıkarları için gereklidir; isteğe bağlı transkript depolama ise açık seçiminize dayanır.</p>
+        <p>GlobeGlotter bu verileri sizi doğrulamak, talep ettiğiniz öğrenme ve altyazı özelliklerini sunmak, içeriğinizi yönetmek, kredileri ve uygulama bütçesini idare etmek, kötüye kullanımı önlemek, sorunları gidermek ve yasal yükümlülüklere uymak için kullanır. İşleme, talep ettiğiniz hizmeti sağlamak ve meşru güvenlik ile güvenilirlik çıkarları için gereklidir; isteğe bağlı transkript depolama ise açık seçiminize dayanır.</p>
 
         <h2>Depolama, saklama ve silme</h2>
-        <p>Transkript kaydı varsayılan olarak kapalıdır. Etkinleştirildiğinde, son hali verilmiş orijinal konuşma, transkripti veya hesabı siz silene kadar özel Glosify hesabınızda saklanır. Hesap içeriği ve kredi kayıtları, hesap aktif olduğu sürece ve güvenlik, muhasebe, uyuşmazlık yönetimi veya yasal yükümlülükler için makul ölçüde gerekli olduğu müddetçe saklanır. Bulut yedekleme ve operasyon günlük kopyaları, yapılandırılmış Microsoft Azure saklama planlarına göre süreleri dolunca hemen ortadan kalkmaz.</p>
+        <p>Transkript kaydı varsayılan olarak kapalıdır. Etkinleştirildiğinde, son hali verilmiş orijinal konuşma, transkripti veya hesabı siz silene kadar özel GlobeGlotter hesabınızda saklanır. Hesap içeriği ve kredi kayıtları, hesap aktif olduğu sürece ve güvenlik, muhasebe, uyuşmazlık yönetimi veya yasal yükümlülükler için makul ölçüde gerekli olduğu müddetçe saklanır. Bulut yedekleme ve operasyon günlük kopyaları, yapılandırılmış Microsoft Azure saklama planlarına göre süreleri dolunca hemen ortadan kalkmaz.</p>
         <p>Oturum açtıktan sonra Transkriptler sayfasından kaydedilmiş transkriptleri silebilir ve hesap yönetimi silme araçlarını kullanabilirsiniz. Ayrıca yukarıdaki adrese de başvurabilirsiniz. İçeriği silmek, bir OAuth sağlayıcısının kendi kopyasını geri almaz; o ilişkiyi de Google veya Microsoft üzerinden yönetin.</p>
 
         <h2>Glosify Translator</h2>
-        <p>Kaynak metin, diller ve isteğe bağlı lehçe, resmiyet, ton veya ifade tercihleri yalnızca Çevir'i seçtiğinizde Glosify üzerinden OpenAI'ye gönderilir. Uzantı yenileme belirtecini, seçilen dilleri ve tercihleri yerel olarak saklar; çeviri geçmişini saklamaz. Bir çeviri yalnızca Kaydet'i seçerseniz hesabınızda tutulur ve siz çeviriyi veya hesabı silene kadar korunur.</p>
+        <p>Kaynak metin, diller ve isteğe bağlı lehçe, resmiyet, ton veya ifade tercihleri yalnızca Çevir'i seçtiğinizde GlobeGlotter üzerinden OpenAI'ye gönderilir. Uzantı yenileme belirtecini, seçilen dilleri ve tercihleri yerel olarak saklar; çeviri geçmişini saklamaz. Bir çeviri yalnızca Kaydet'i seçerseniz hesabınızda tutulur ve siz çeviriyi veya hesabı silene kadar korunur.</p>
 
         <h2>Chrome uzantısı verileri</h2>
-        <p>Uzantı, bağlı kalmak için gereken minimum yerel ayarları ve kimlik doğrulama materyallerini depolar; buna dil seçimleri, oturum durumu ve Glosify bearer token’ları dahildir. Hesabı bağlamak ve kullanıcı tarafından başlatılan sekmenin üzerine çevrilmiş altyazıları yerleştirmek için yalnızca active-tab, tab-capture, offscreen, scripting, storage, identity ve glosify.se erişimini kullanır.</p>
+        <p>Uzantı, bağlı kalmak için gereken minimum yerel ayarları ve kimlik doğrulama materyallerini depolar; buna dil seçimleri, oturum durumu ve GlobeGlotter bearer token’ları dahildir. Hesabı bağlamak ve kullanıcı tarafından başlatılan sekmenin üzerine çevrilmiş altyazıları yerleştirmek için yalnızca active-tab, tab-capture, offscreen, scripting, storage, identity ve glosify.se erişimini kullanır.</p>
 
         <h2>Chrome Web Store Sınırlı Kullanım</h2>
-        <p>Glosify’ın Google API’lerinden alınan bilgileri kullanması ve aktarması, Sınırlı Kullanım gereklilikleri dahil olmak üzere Chrome Web Store Kullanıcı Verileri Politikası’na uygun olacaktır. Glosify, uzantı kullanıcı verilerini satmaz, bunları kişiselleştirilmiş reklamlar için kullanmaz veya ilgisiz kredi ya da borç verme amaçları için aktarmayacaktır.</p>
+        <p>GlobeGlotter’ın Google API’lerinden alınan bilgileri kullanması ve aktarması, Sınırlı Kullanım gereklilikleri dahil olmak üzere Chrome Web Store Kullanıcı Verileri Politikası’na uygun olacaktır. GlobeGlotter, uzantı kullanıcı verilerini satmaz, bunları kişiselleştirilmiş reklamlar için kullanmaz veya ilgisiz kredi ya da borç verme amaçları için aktarmayacaktır.</p>
 
         <h2>Değişiklikler ve sorular</h2>
         <p>Önemli değişiklikler, yeni bir yürürlük tarihiyle bu sayfada yayımlanacaktır. Sorular, erişim, düzeltme, taşınabilirlik, itiraz veya silme talepleri için <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> ile iletişime geçin.</p>

@@ -13,7 +13,7 @@ export function problemMessages(problem) {
 }
 
 export function buildExternalRepairPrompt(json, messages) {
-    return `Repair this into Glosify version 1 quiz-import JSON. Return only the complete JSON object. Preserve all usable learning content and translations; do not invent ids, visibility, target_language, or unsupported fields.\n\nValidation errors:\n${messages.join('\n')}\n\nJSON to repair:\n${json}`;
+    return `Repair this into GlobeGlotter version 1 quiz-import JSON. Return only the complete JSON object. Preserve all usable learning content and translations; do not invent ids, visibility, target_language, or unsupported fields.\n\nValidation errors:\n${messages.join('\n')}\n\nJSON to repair:\n${json}`;
 }
 
 export function previewMatches(canonicalJson, currentJson) {
@@ -263,7 +263,7 @@ function initialize() {
             }
             renderProblem({ detail: isRequestTimeout(error)
                 ? 'The preview timed out. No content was created; try again.'
-                : 'Could not reach Glosify. Check your connection and try again.' }, 0);
+                : 'Could not reach GlobeGlotter. Check your connection and try again.' }, 0);
         } finally {
             setBusy(false);
         }
@@ -272,7 +272,7 @@ function initialize() {
     const repairWithAi = async () => {
         const revision = inputRevision;
         const json = input.value;
-        setBusy(true, 'Repairing with Glosify AI. This uses credits…');
+        setBusy(true, 'Repairing with GlobeGlotter AI. This uses credits…');
         try {
             const { response, payload } = await request(form.dataset.repairUrl, aiRepairTimeoutMs, json);
             if (revision !== inputRevision) {
@@ -358,7 +358,7 @@ function initialize() {
         'AI instructions copied. Add your topic or content request before sending them.'));
     repairPromptButton.addEventListener('click', () => copyText(
         buildExternalRepairPrompt(input.value, lastErrorMessages),
-        'Repair prompt copied. This option uses your external AI, not Glosify credits.'));
+        'Repair prompt copied. This option uses your external AI, not GlobeGlotter credits.'));
     updateSize();
 }
 

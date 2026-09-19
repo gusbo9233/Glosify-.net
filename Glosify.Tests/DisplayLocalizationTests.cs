@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using AngleSharp.Html.Parser;
 using Glosify.Localization;
+using Glosify.Services.Ai;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Localization;
@@ -97,6 +98,13 @@ public sealed class DisplayLocalizationTests
         Assert.Contains("lang=\"sv-SE\"", html);
         var document = await new HtmlParser().ParseDocumentAsync(html);
         Assert.Equal("Gör nya ord till riktiga samtal.", document.QuerySelector("#home-title")?.TextContent.Trim());
+        Assert.Equal("Skapa läromaterial på ditt sätt", document.QuerySelector(".home-story-copy strong")?.TextContent);
+        Assert.Equal("Skriv ett quiz själv, skapa ett med AI-assistenten eller utgå från innehåll du redan har.",
+            document.QuerySelector(".home-story-copy > span")?.TextContent);
+        Assert.Equal("Kommer snart", document.QuerySelector(".home-create-option.is-coming-soon small")?.TextContent);
+        Assert.Equal("Ha användbara ord nära till hands",
+            document.QuerySelector(".home-action-card-anki .home-story-copy strong")?.TextContent);
+        Assert.Equal("Utforska fler sätt att lära", document.QuerySelector(".home-story-footer nav")?.GetAttribute("aria-label"));
         var clientText = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
             document.Body?.GetAttribute("data-i18n") ?? "{}");
         Assert.Equal("Något gick fel. Försök igen.", clientText?["Client.GenericError"]);
@@ -354,6 +362,89 @@ public sealed class DisplayLocalizationTests
                 }).AddScheme<AuthenticationSchemeOptions, SwedishAuthHandler>(SwedishAuthHandler.TestScheme, _ => { });
             });
         });
+
+    [Theory]
+    [InlineData("", "", "GlobeGlotter")]
+    [InlineData("Polish", "PL", "Polish")]
+    [InlineData("English", "GB", "English")]
+    [InlineData("Spanish", "ES", "Spanish")]
+    [InlineData("Japanese", "JP", "Japanese")]
+    [InlineData("Freestyle", "", "Freestyle")]
+    [InlineData("Unknown", "", "GlobeGlotter")]
+    public async Task Homepage_globe_uses_the_learning_language_cookie(string language, string region, string label)
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+        client.DefaultRequestHeaders.Add("Cookie", $"glosify.language={language}");
+
+        var response = await client.GetAsync("/");
+        response.EnsureSuccessStatusCode();
+        var document = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(region, document.QuerySelector("[data-home-globe]")?.GetAttribute("data-region"));
+        Assert.Equal(label, document.QuerySelector(".home-globe-caption strong")?.TextContent);
+        Assert.EndsWith(" - GlobeGlotter", document.Title);
+        Assert.Null(document.QuerySelector(".home-orbit-core"));
+    }
+
+    [Fact]
+    public async Task Freestyle_homepage_describes_only_supported_practice_modes()
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+        client.DefaultRequestHeaders.Add("Cookie", "glosify.language=Freestyle");
+
+        var response = await client.GetAsync("/");
+        response.EnsureSuccessStatusCode();
+        var document = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+        var practiceDescription = document.QuerySelector(".home-action-card-vocabulary .home-story-copy > span")?.TextContent;
+
+        Assert.Equal("Choose flashcards or typed answers, and practice in either direction.", practiceDescription);
+        Assert.DoesNotContain("multiple choice", practiceDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("cloze", practiceDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("checkbox", practiceDescription, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/login")]
+    [InlineData("/Account/Register")]
+    [InlineData("/sv-SE")]
+    [InlineData("/ja-JP")]
+    public async Task Website_pages_render_the_new_brand(string path)
+    {
+        using var factory = CreateFactory();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var response = await client.GetAsync(path);
+        response.EnsureSuccessStatusCode();
+        var document = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+
+        Assert.EndsWith(" - GlobeGlotter", document.Title);
+        var description = document.QuerySelector("meta[name='description']")?.GetAttribute("content");
+        Assert.Contains("GlobeGlotter", description);
+        Assert.DoesNotContain("Glosify", description);
+    }
+
+    [Fact]
+    public async Task Authenticated_homepage_updates_globe_after_learning_language_changes()
+    {
+        using var factory = AuthenticatedFactory().WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+                services.AddSingleton<IAiCreditService>(new StubChromeServices())));
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+        foreach (var (language, region) in new[] { ("Polish", "PL"), ("Japanese", "JP"), ("Freestyle", "") })
+        {
+            client.DefaultRequestHeaders.Remove("Cookie");
+            client.DefaultRequestHeaders.Add("Cookie", $"glosify.language={language}");
+            var response = await client.GetAsync("/");
+            response.EnsureSuccessStatusCode();
+            var document = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+
+            Assert.Equal(region, document.QuerySelector("[data-home-globe]")?.GetAttribute("data-region"));
+            Assert.Equal(language, document.QuerySelector(".home-globe-caption strong")?.TextContent);
+            Assert.Equal("sv-SE", document.DocumentElement.GetAttribute("lang"));
+        }
+    }
 
     private static WebApplicationFactory<Program> CreateFactory() =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>

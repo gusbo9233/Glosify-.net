@@ -5,7 +5,7 @@ namespace Glosify.Services;
 public static class ServiceWarmupMessage
 {
     public const string LlmAssistant = "The AI assistant is taking longer than usual. Please try again in a moment.";
-    public const string Dependencies = "Glosify is waiting for its database and background services to wake up. Please try again in a minute.";
+    public const string Dependencies = "GlobeGlotter is waiting for its database and background services to wake up. Please try again in a minute.";
 
     public static bool IsDatabaseWarmupFailure(Exception exception)
     {

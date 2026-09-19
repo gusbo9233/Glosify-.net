@@ -21,14 +21,14 @@ public static class WebFonts
     [
         "account_circle", "account_tree", "add", "add_circle", "arrow_back", "arrow_forward",
         "arrow_outward", "arrow_upward", "auto_awesome", "auto_fix_high", "auto_stories", "backspace", "block", "bolt", "bookmark",
-        "calendar_today", "category", "chat_bubble", "check", "check_circle", "checklist",
+        "calendar_today", "category", "chat_bubble", "check_circle", "checklist",
         "chevron_left", "chevron_right", "close", "content_copy", "create_new_folder",
-        "dashboard_customize", "data_object", "delete", "east", "edit",
+        "data_object", "delete", "east", "edit",
         "edit_note", "error", "event", "explore", "fit_screen", "flag", "folder", "folder_open",
         "folder_shared", "format_quote", "graphic_eq", "grid_4x4",
         "group", "help", "hourglass_top", "info", "inventory_2", "keyboard",
         "library_add", "library_books", "lock", "lock_reset", "login", "logout",
-        "menu_book", "more_vert", "neurology", "north_east", "notes", "person_search", "picture_as_pdf",
+        "menu_book", "more_vert", "north_east", "notes", "person_search", "picture_as_pdf",
         "play_circle", "progress_activity", "psychology", "public", "quiz", "remove", "rotate_right", "schedule", "school", "search",
         "search_off", "settings", "short_text", "stacks", "stop_circle", "style", "subject", "subtitles", "subtitles_off",
         "swap_horiz", "task_alt", "thumb_down", "thumb_up", "timer", "translate", "travel_explore", "tune",
@@ -43,7 +43,8 @@ public static class WebFonts
     /// </summary>
     public const string TextStylesheetUrl =
         "https://fonts.googleapis.com/css2"
-        + "?family=Lora:ital,wght@0,400..700;1,400..700"
+        + "?family=Caveat:wght@400..700"
+        + "&family=Lora:ital,wght@0,400..700;1,400..700"
         + "&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,400..800"
         + "&display=swap";
 

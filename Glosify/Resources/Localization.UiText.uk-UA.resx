@@ -55,10 +55,10 @@
     <value>Попередній</value>
   </data>
   <data name="Layout.MetaDescription" xml:space="preserve">
-    <value>Glosify перетворює те, що ви читаєте, на лексику, яку можна використовувати: створюйте списки слів із книжок і транскриптів, тренуйте їх у вікторинах і картках, а потім практикуйтеся вголос з партнером для розмови на основі AI.</value>
+    <value>GlobeGlotter перетворює те, що ви читаєте, на лексику, яку можна використовувати: створюйте списки слів із книжок і транскриптів, тренуйте їх у вікторинах і картках, а потім практикуйтеся вголос з партнером для розмови на основі AI.</value>
   </data>
   <data name="Layout.AuthMetaDescription" xml:space="preserve">
-    <value>Увійдіть у Glosify, щоб створювати лексику з того, що ви читаєте, тренувати її у вікторинах і говорити нею з партнером для розмови на основі AI.</value>
+    <value>Увійдіть у GlobeGlotter, щоб створювати лексику з того, що ви читаєте, тренувати її у вікторинах і говорити нею з партнером для розмови на основі AI.</value>
   </data>
   <data name="Layout.PremiumLearner" xml:space="preserve">
     <value>Преміум-учень</value>
@@ -142,7 +142,7 @@
     <value>Помічник</value>
   </data>
   <data name="Assistant.Empty" xml:space="preserve">
-    <value>Просіть про допомогу будь-де в Glosify.</value>
+    <value>Просіть про допомогу будь-де в GlobeGlotter.</value>
   </data>
   <data name="Assistant.Placeholder" xml:space="preserve">
     <value>Запитайте помічника...</value>
@@ -346,7 +346,7 @@
     <value>Відкрити мої вікторини</value>
   </data>
   <data name="Home.WaysAria" xml:space="preserve">
-    <value>Способи вивчати з Glosify</value>
+    <value>Способи вивчати з GlobeGlotter</value>
   </data>
   <data name="Home.ReadContext" xml:space="preserve">
     <value>Читати в контексті</value>
@@ -619,7 +619,7 @@
     <value>прогрес.</value>
   </data>
   <data name="Books.HeroText" xml:space="preserve">
-    <value>Завантажте власні матеріали для читання й використовуйте Glosify, щоб досліджувати кожну сторінку, фразу та нове слово.</value>
+    <value>Завантажте власні матеріали для читання й використовуйте GlobeGlotter, щоб досліджувати кожну сторінку, фразу та нове слово.</value>
   </data>
   <data name="Books.SummaryAria" xml:space="preserve">
     <value>Зведення бібліотеки</value>
@@ -1405,19 +1405,19 @@
     <value>Отримати кредити</value>
   </data>
   <data name="Payments.GlosifyCredits" xml:space="preserve">
-    <value>Кредити Glosify</value>
+    <value>Кредити GlobeGlotter</value>
   </data>
   <data name="Payments.Hero" xml:space="preserve">
     <value>Продовжуйте свій цикл навчання.</value>
   </data>
   <data name="Payments.Intro" xml:space="preserve">
-    <value>Кредити відкривають AI-функції навчання Glosify та живі субтитри.</value>
+    <value>Кредити відкривають AI-функції навчання GlobeGlotter та живі субтитри.</value>
   </data>
   <data name="Payments.NotAvailable" xml:space="preserve">
     <value>Платежі ще недоступні</value>
   </data>
   <data name="Payments.NotConnected" xml:space="preserve">
-    <value>Цей розгорток Glosify не підключено до Stripe.</value>
+    <value>Цей розгорток GlobeGlotter не підключено до Stripe.</value>
   </data>
   <data name="Payments.CreditPack" xml:space="preserve">
     <value>Пакет кредитів</value>
@@ -1429,7 +1429,7 @@
     <value>Продовжити до безпечного оформлення</value>
   </data>
   <data name="Payments.StripeNotice" xml:space="preserve">
-    <value>Оформлення замовлення відбувається на Stripe. Glosify ніколи не отримує і не зберігає дані картки.</value>
+    <value>Оформлення замовлення відбувається на Stripe. GlobeGlotter ніколи не отримує і не зберігає дані картки.</value>
   </data>
   <data name="Payments.Status" xml:space="preserve">
     <value>Статус платежу</value>
@@ -1441,7 +1441,7 @@
     <value>Обробка платежу</value>
   </data>
   <data name="Payments.Back" xml:space="preserve">
-    <value>Назад до Glosify</value>
+    <value>Назад до GlobeGlotter</value>
   </data>
   <data name="Payments.AiCredits" xml:space="preserve">
     <value>AI-кредити</value>
@@ -1580,7 +1580,7 @@
   <data name="Quiz.JsonImport" xml:space="preserve"><value>Імпортувати JSON</value></data>
   <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Імпорт із зовнішнього ШІ</value></data>
   <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Створюйте тести без використання кредитів</value></data>
-  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Попросіть будь-який ШІ створити JSON для Glosify, вставте його сюди, перевірте точний результат та імпортуйте до {0}.</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Попросіть будь-який ШІ створити JSON для GlobeGlotter, вставте його сюди, перевірте точний результат та імпортуйте до {0}.</value></data>
   <data name="Quiz.JsonImportClose" xml:space="preserve"><value>Закрити діалог імпорту</value></data>
   <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Скопіюйте інструкції для свого ШІ</value></data>
   <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Додайте те, що хочете вивчити, і надішліть цей запит до ChatGPT, Claude, Gemini або іншого ШІ.</value></data>
@@ -1594,7 +1594,7 @@
   <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Виправити за допомогою ШІ · використовує кредити</value></data>
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Переглянути JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Імпортувати все</value></data>
-  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Попередній перегляд та імпорт є детермінованими й не звертаються до постачальника ШІ. «Виправити за допомогою ШІ» надсилає вставлений текст до налаштованого ШІ Glosify та списує кредити.</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Попередній перегляд та імпорт є детермінованими й не звертаються до постачальника ШІ. «Виправити за допомогою ШІ» надсилає вставлений текст до налаштованого ШІ GlobeGlotter та списує кредити.</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
   <data name="Nav.Translations" xml:space="preserve"><value>Переклади</value></data>
   <data name="Translations.Title" xml:space="preserve"><value>Збережені переклади</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>Перекладач</value></data><data name="Translations.Saved" xml:space="preserve"><value>Збережені переклади</value></data><data name="Translations.Intro" xml:space="preserve"><value>Переклади, які ви явно зберегли з розширення Glosify Translator.</value></data>
@@ -1605,7 +1605,7 @@
   <data name="Settings.Maximum" xml:space="preserve"><value>Максимум</value></data>
   <data name="Speech.Title" xml:space="preserve"><value>Читати вголос</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Сервіс озвучення</value></data>
-  <data name="Speech.Browser" xml:space="preserve"><value>Голос браузера · без кредитів Glosify</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Голос браузера · без кредитів GlobeGlotter</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>Голос ElevenLabs · витрачає кредити ШІ</value></data>
   <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs списує частки кредитів за символ, зокрема за кешоване аудіо. Невдала підготовка не оплачується. Озвучення браузера безкоштовне.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Мова тексту</value></data>
@@ -1650,4 +1650,24 @@
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Збережений вміст</value></data>
   <data name="Payments.RoundedBalance" xml:space="preserve"><value>Баланс округлюється вгору до цілих кредитів. Фактичні списання залежать від використання.</value></data>
   <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Точного балансу недостатньо. Показаний баланс округлено вгору; додайте кредити або зменште запит.</value></data>
+  <data name="Home.GlobeFocus" xml:space="preserve"><value>Глобус із фокусом на мові, яку ви вивчаєте: {0}</value></data>
+  <data name="Home.GlobeAria" xml:space="preserve"><value>Глобус світу</value></data>
+  <data name="Home.GlobeCaption" xml:space="preserve"><value>Відкривайте світ через мови</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Додайте матеріал, перетворіть його на конкретні запитання й повторюйте, доки не запам’ятаєте.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Почати</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Створюйте навчальні матеріали по-своєму</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Напишіть тест самостійно, створіть його з ШІ-помічником або почніть із наявних матеріалів.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Написати</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Запитати ШІ</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Використати зображення</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Незабаром</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Перетворіть матеріал на набір вправ</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Вибирайте картки або введення відповіді й тренуйтеся в обох напрямках.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Яка відповідь підходить?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>Що означає це слово?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Повторюйте, доки не стане легко</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Тримайте корисні слова під рукою</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Повторюйте те, що потребує уваги, і рухайтеся у власному темпі.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Повторюйте за допомогою тематичних тестів, а потім зберігайте потрібні слова в Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Відкрийте більше способів навчання</value></data>
 </root>

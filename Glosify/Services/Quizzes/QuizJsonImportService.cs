@@ -140,7 +140,7 @@ public sealed class QuizJsonImportService : IQuizJsonImportService
         {
             errors.Add(
                 string.IsNullOrWhiteSpace(exception.Path) ? "$" : exception.Path,
-                "The text is not valid Glosify import JSON. Free repair only handles wrappers, comments, and trailing commas.");
+                "The text is not valid GlobeGlotter import JSON. Free repair only handles wrappers, comments, and trailing commas.");
             throw errors.ToException();
         }
 
@@ -261,7 +261,7 @@ public sealed class QuizJsonImportService : IQuizJsonImportService
     {
         if (document.Version != 1)
         {
-            errors.Add("$.version", "Only Glosify JSON import version 1 is supported.");
+            errors.Add("$.version", "Only GlobeGlotter JSON import version 1 is supported.");
         }
 
         var isFreestyle = QuizLanguageCatalog.IsFreestyle(targetLanguage);

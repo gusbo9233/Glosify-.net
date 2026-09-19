@@ -4,7 +4,7 @@
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = "Privacy Policy";
-    ViewData["Description"] = "How Glosify and its Translator and Live Subtitles Chrome extensions collect, use, share, and retain personal data.";
+    ViewData["Description"] = "How GlobeGlotter and its Translator and Live Subtitles Chrome extensions collect, use, share, and retain personal data.";
     var legal = Legal.Value;
 }
 
@@ -15,31 +15,31 @@
             <p>Last updated 6 September 2026</p>
         </header>
 
-        <p>This policy applies to the Glosify web application, its APIs, and the Glosify Translator and Live Subtitles Chrome extensions.</p>
+        <p>This policy applies to the GlobeGlotter web application, its APIs, and the Glosify Translator and Live Subtitles Chrome extensions.</p>
 
         <h2>Controller and contact</h2>
-        <p><strong>@legal.ControllerName</strong> operates Glosify and is the controller for the personal data described here. Contact <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> for privacy questions or to exercise your rights.</p>
+        <p><strong>@legal.ControllerName</strong> operates GlobeGlotter and is the controller for the personal data described here. Contact <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> for privacy questions or to exercise your rights.</p>
 
-        <h2>Personal data Glosify handles</h2>
+        <h2>Personal data GlobeGlotter handles</h2>
         <ul>
             <li><strong>Account and authentication data:</strong> email address, internal account ID, password hash, authentication method, security data, and identifiers received when you choose Google or Microsoft sign-in.</li>
             <li><strong>Learning data:</strong> language and display preferences, quizzes, words, sentences, attempts, Anki-style study records, uploaded books and extracted page text, saved translations, and other content you create.</li>
             <li><strong>Assistant data:</strong> chat messages, selected quiz, book, page, or transcript context, AI-generated replies, feedback, tool actions, and proposed or applied changes.</li>
-            <li><strong>Live subtitle data:</strong> tab audio you explicitly submit, recognized or translated text, language choices, timestamps, session state, and connection diagnostics. Glosify does not write live tab audio to its own persistent storage.</li>
+            <li><strong>Live subtitle data:</strong> tab audio you explicitly submit, recognized or translated text, language choices, timestamps, session state, and connection diagnostics. GlobeGlotter does not write live tab audio to its own persistent storage.</li>
             <li><strong>Saved transcripts:</strong> when you separately enable transcript saving, finalized original-language speech, titles, timestamps, and the selected learning language. Transcript saving is off by default.</li>
-            <li><strong>Translator data:</strong> source text, translated text, selected or detected languages, optional dialect, register, tone, or wording preferences, and timestamps. Results are stored in Glosify only when you explicitly choose Save.</li>
-            <li><strong>Credits and payments:</strong> credit balance, reservations and usage transactions. If payments are enabled, Glosify stores the selected package, amount, currency, purchase status, and Stripe checkout, payment, refund, or dispute identifiers. Stripe, not Glosify, receives your card details.</li>
+            <li><strong>Translator data:</strong> source text, translated text, selected or detected languages, optional dialect, register, tone, or wording preferences, and timestamps. Results are stored in GlobeGlotter only when you explicitly choose Save.</li>
+            <li><strong>Credits and payments:</strong> credit balance, reservations and usage transactions. If payments are enabled, GlobeGlotter stores the selected package, amount, currency, purchase status, and Stripe checkout, payment, refund, or dispute identifiers. Stripe, not GlobeGlotter, receives your card details.</li>
             <li><strong>Technical and security data:</strong> IP address, request time and route, response status, device or browser information made available by the request, rate-limit events, traces, and error diagnostics.</li>
         </ul>
 
         <h2>Assistant content and operational analytics</h2>
-        <p>Glosify stores saved assistant chats so you can return to them. Content capture is also currently enabled for assistant operations. This means an analytics record may contain the complete effective model request—including system instructions, replayed chat history, selected learning context, and tool schemas—as well as the model response, tool arguments, and tool results. Known secrets are redacted before storage, but these records can still contain your prompts and learning content.</p>
+        <p>GlobeGlotter stores saved assistant chats so you can return to them. Content capture is also currently enabled for assistant operations. This means an analytics record may contain the complete effective model request—including system instructions, replayed chat history, selected learning context, and tool schemas—as well as the model response, tool arguments, and tool results. Known secrets are redacted before storage, but these records can still contain your prompts and learning content.</p>
         <p>Separate Azure Monitor telemetry records operational information such as model and tool names, token counts, timings, outcomes, and pseudonymous correlation identifiers. It is designed not to copy complete prompts, responses, tool arguments, tool results, tab audio, or caption text into that telemetry.</p>
 
         <h2>How and why the data is used</h2>
         <ul>
             <li><strong>To provide the service and perform the agreement:</strong> create and secure your account; save and synchronize your learning content; run quizzes, books, Anki, assistant, translation, subtitle, credit, and payment features; and respond to support requests.</li>
-            <li><strong>For legitimate interests:</strong> prevent fraud and abuse, enforce limits, protect users and infrastructure, diagnose failures, measure reliability and costs, and improve the service. Glosify balances these interests against your rights and limits content access to what is reasonably needed.</li>
+            <li><strong>For legitimate interests:</strong> prevent fraud and abuse, enforce limits, protect users and infrastructure, diagnose failures, measure reliability and costs, and improve the service. GlobeGlotter balances these interests against your rights and limits content access to what is reasonably needed.</li>
             <li><strong>To comply with law:</strong> keep payment, accounting, security, dispute, and compliance records where legally required.</li>
             <li><strong>Based on your choice:</strong> use an external sign-in provider, capture a chosen tab for live subtitles, save a transcript, upload content, or share content with others.</li>
         </ul>
@@ -49,27 +49,27 @@
         <p>Chrome captures audio only after you start subtitles for the active tab. Captions are transient unless you opt in to saving the source transcript. Google or Microsoft processes authentication data under its own policy when you choose that provider.</p>
 
         <h2>Service providers, disclosures, and transfers</h2>
-        <p>Glosify uses Microsoft Azure for application hosting, databases, blob storage, monitoring, and identity infrastructure; Cloudflare for M2M100 translation in Scribe mode; OpenAI for the direct AI and Enhanced subtitle processing described above; ElevenLabs for read-aloud and Scribe speech features; Stripe for checkout and payment processing when enabled; and Google or Microsoft for optional sign-in. These providers process data on Glosify's behalf or as independent controllers for their own parts of the service.</p>
-        <p>Some providers may process data outside Sweden or the EU/EEA. Where Glosify is responsible for such a transfer, it relies on an applicable lawful transfer mechanism and contractual safeguards. Contact Glosify for more information. Data may also be disclosed where required by law, to protect legal rights or service security, or as part of a lawful reorganization. Glosify does not sell personal data or use it for personalized advertising.</p>
+        <p>GlobeGlotter uses Microsoft Azure for application hosting, databases, blob storage, monitoring, and identity infrastructure; Cloudflare for M2M100 translation in Scribe mode; OpenAI for the direct AI and Enhanced subtitle processing described above; ElevenLabs for read-aloud and Scribe speech features; Stripe for checkout and payment processing when enabled; and Google or Microsoft for optional sign-in. These providers process data on GlobeGlotter's behalf or as independent controllers for their own parts of the service.</p>
+        <p>Some providers may process data outside Sweden or the EU/EEA. Where GlobeGlotter is responsible for such a transfer, it relies on an applicable lawful transfer mechanism and contractual safeguards. Contact GlobeGlotter for more information. Data may also be disclosed where required by law, to protect legal rights or service security, or as part of a lawful reorganization. GlobeGlotter does not sell personal data or use it for personalized advertising.</p>
 
         <h2>Cookies, local storage, and external resources</h2>
-        <p>The web application uses essential authentication, security, antiforgery, and language-preference cookies. The extensions store only the local settings, short-lived state, and Glosify authentication material needed for their disclosed functions. Translator settings include source and target languages and optional preferences; translation history is not stored in Chrome. Glosify does not use advertising cookies. The pages currently load font resources from Google, which causes the browser to connect to Google and disclose ordinary connection information such as the IP address.</p>
+        <p>The web application uses essential authentication, security, antiforgery, and language-preference cookies. The extensions store only the local settings, short-lived state, and GlobeGlotter authentication material needed for their disclosed functions. Translator settings include source and target languages and optional preferences; translation history is not stored in Chrome. GlobeGlotter does not use advertising cookies. The pages currently load font resources from Google, which causes the browser to connect to Google and disclose ordinary connection information such as the IP address.</p>
 
         <h2>Retention and deletion</h2>
         <ul>
             <li>Account and learning content is generally kept while the account is active or until you delete the relevant item. Saved translations are retained until you explicitly delete them, or the account is deleted. You can delete supported items such as books, chats, saved translations, and saved transcripts through their in-app controls.</li>
-            <li>To request deletion of the account and remaining account content, contact <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>. Glosify may keep limited records when required for accounting, fraud prevention, dispute handling, or another legal obligation.</li>
+            <li>To request deletion of the account and remaining account content, contact <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>. GlobeGlotter may keep limited records when required for accounting, fraud prevention, dispute handling, or another legal obligation.</li>
             <li>Assistant content-capture records follow the associated assistant chat and account deletion lifecycle. Deleting a chat also queues deletion of its pseudonymous Azure Monitor correlation records where configured.</li>
             <li>Azure Monitor's operational workspace retention target is 30 days. Database backups, provider logs, and deletion queues expire under their configured schedules and may not disappear immediately from recovery copies.</li>
-            <li>Stripe and external sign-in providers keep their own records under their policies. Deleting Glosify data does not delete an independent copy held by those providers.</li>
+            <li>Stripe and external sign-in providers keep their own records under their policies. Deleting GlobeGlotter data does not delete an independent copy held by those providers.</li>
         </ul>
 
         <h2>Your rights</h2>
-        <p>Subject to applicable law, you may request access, correction, deletion, restriction, or portability of your personal data, and you may object to processing based on legitimate interests. Where processing relies on consent, you may withdraw it without affecting earlier processing. Glosify may need to verify your identity before completing a request.</p>
+        <p>Subject to applicable law, you may request access, correction, deletion, restriction, or portability of your personal data, and you may object to processing based on legitimate interests. Where processing relies on consent, you may withdraw it without affecting earlier processing. GlobeGlotter may need to verify your identity before completing a request.</p>
         <p>You may complain to the <a href="https://www.imy.se/en/individuals/forms-and-e-services/file-a-gdpr-complaint/">Swedish Authority for Privacy Protection (IMY)</a> or another competent supervisory authority.</p>
 
         <h2>Chrome Web Store Limited Use</h2>
-        <p>Glosify's use and transfer of user data from its Chrome extensions adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements. Extension data is used only to provide and protect the disclosed translator, subtitle, and account-connection features, not for advertising or sale to data brokers. Human access is limited to the policy's permitted cases, such as your explicit consent for specific data, necessary security investigations, or legal obligations.</p>
+        <p>GlobeGlotter's use and transfer of user data from its Chrome extensions adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements. Extension data is used only to provide and protect the disclosed translator, subtitle, and account-connection features, not for advertising or sale to data brokers. Human access is limited to the policy's permitted cases, such as your explicit consent for specific data, necessary security investigations, or legal obligations.</p>
 
         <h2>Changes</h2>
         <p>Material changes will be published here with a new effective date and, when appropriate, communicated in the service. Questions can be sent to <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>

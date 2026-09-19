@@ -55,10 +55,10 @@
     <value>Anterior</value>
   </data>
   <data name="Layout.MetaDescription" xml:space="preserve">
-    <value>O Glosify transforma o que você lê em vocabulário que você pode usar: crie listas de palavras a partir de livros e transcrições, treine com quizzes e flashcards e depois pratique em voz alta com um parceiro de conversa com IA.</value>
+    <value>O GlobeGlotter transforma o que você lê em vocabulário que você pode usar: crie listas de palavras a partir de livros e transcrições, treine com quizzes e flashcards e depois pratique em voz alta com um parceiro de conversa com IA.</value>
   </data>
   <data name="Layout.AuthMetaDescription" xml:space="preserve">
-    <value>Entre no Glosify para criar vocabulário a partir do que você lê, praticá-lo com quizzes e falá-lo com um parceiro de conversa com IA.</value>
+    <value>Entre no GlobeGlotter para criar vocabulário a partir do que você lê, praticá-lo com quizzes e falá-lo com um parceiro de conversa com IA.</value>
   </data>
   <data name="Layout.PremiumLearner" xml:space="preserve">
     <value>Aprendiz Premium</value>
@@ -142,7 +142,7 @@
     <value>Assistente</value>
   </data>
   <data name="Assistant.Empty" xml:space="preserve">
-    <value>Peça ajuda em qualquer lugar no Glosify.</value>
+    <value>Peça ajuda em qualquer lugar no GlobeGlotter.</value>
   </data>
   <data name="Assistant.Placeholder" xml:space="preserve">
     <value>Pergunte ao assistente...</value>
@@ -346,7 +346,7 @@
     <value>Abrir meus quizzes</value>
   </data>
   <data name="Home.WaysAria" xml:space="preserve">
-    <value>Formas de aprender com Glosify</value>
+    <value>Formas de aprender com GlobeGlotter</value>
   </data>
   <data name="Home.ReadContext" xml:space="preserve">
     <value>Ler em contexto</value>
@@ -619,7 +619,7 @@
     <value>progresso.</value>
   </data>
   <data name="Books.HeroText" xml:space="preserve">
-    <value>Traga seu próprio material de leitura e use o Glosify para explorar cada página, frase e palavra nova.</value>
+    <value>Traga seu próprio material de leitura e use o GlobeGlotter para explorar cada página, frase e palavra nova.</value>
   </data>
   <data name="Books.SummaryAria" xml:space="preserve">
     <value>Resumo da biblioteca</value>
@@ -1405,19 +1405,19 @@
     <value>Obter créditos</value>
   </data>
   <data name="Payments.GlosifyCredits" xml:space="preserve">
-    <value>Créditos Glosify</value>
+    <value>Créditos GlobeGlotter</value>
   </data>
   <data name="Payments.Hero" xml:space="preserve">
     <value>Mantenha seu ciclo de aprendizado em andamento.</value>
   </data>
   <data name="Payments.Intro" xml:space="preserve">
-    <value>Os créditos alimentam os recursos de aprendizado assistidos por IA do Glosify e as legendas ao vivo.</value>
+    <value>Os créditos alimentam os recursos de aprendizado assistidos por IA do GlobeGlotter e as legendas ao vivo.</value>
   </data>
   <data name="Payments.NotAvailable" xml:space="preserve">
     <value>Os pagamentos ainda não estão disponíveis</value>
   </data>
   <data name="Payments.NotConnected" xml:space="preserve">
-    <value>Esta implantação do Glosify não foi conectada ao Stripe.</value>
+    <value>Esta implantação do GlobeGlotter não foi conectada ao Stripe.</value>
   </data>
   <data name="Payments.CreditPack" xml:space="preserve">
     <value>Pacote de créditos</value>
@@ -1429,7 +1429,7 @@
     <value>Continuar para o checkout seguro</value>
   </data>
   <data name="Payments.StripeNotice" xml:space="preserve">
-    <value>O checkout é hospedado pelo Stripe. O Glosify nunca recebe nem armazena dados do cartão.</value>
+    <value>O checkout é hospedado pelo Stripe. O GlobeGlotter nunca recebe nem armazena dados do cartão.</value>
   </data>
   <data name="Payments.Status" xml:space="preserve">
     <value>Status do pagamento</value>
@@ -1441,7 +1441,7 @@
     <value>Processando pagamento</value>
   </data>
   <data name="Payments.Back" xml:space="preserve">
-    <value>Voltar para o Glosify</value>
+    <value>Voltar para o GlobeGlotter</value>
   </data>
   <data name="Payments.AiCredits" xml:space="preserve">
     <value>Créditos de IA</value>
@@ -1580,7 +1580,7 @@
   <data name="Quiz.JsonImport" xml:space="preserve"><value>Importar JSON</value></data>
   <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Importação de IA externa</value></data>
   <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Crie quizzes sem usar créditos</value></data>
-  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Peça um JSON do Glosify a qualquer IA, cole-o aqui, confira o resultado exato e importe-o para {0}.</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Peça um JSON do GlobeGlotter a qualquer IA, cole-o aqui, confira o resultado exato e importe-o para {0}.</value></data>
   <data name="Quiz.JsonImportClose" xml:space="preserve"><value>Fechar janela de importação</value></data>
   <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Copie as instruções para sua IA</value></data>
   <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Adicione o que você quer aprender e envie este prompt ao ChatGPT, Claude, Gemini ou outra IA.</value></data>
@@ -1594,7 +1594,7 @@
   <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Reparar com IA · usa créditos</value></data>
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>Visualizar JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Importar tudo</value></data>
-  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>A prévia e a importação são determinísticas e não contatam nenhum provedor de IA. “Reparar com IA” envia o texto colado à IA configurada do Glosify e cobra créditos.</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>A prévia e a importação são determinísticas e não contatam nenhum provedor de IA. “Reparar com IA” envia o texto colado à IA configurada do GlobeGlotter e cobra créditos.</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
   <data name="Nav.Translations" xml:space="preserve"><value>Traduções</value></data>
   <data name="Translations.Title" xml:space="preserve"><value>Traduções salvas</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>Tradutor</value></data><data name="Translations.Saved" xml:space="preserve"><value>Traduções salvas</value></data><data name="Translations.Intro" xml:space="preserve"><value>Traduções que você salvou explicitamente na extensão Glosify Translator.</value></data>
@@ -1605,7 +1605,7 @@
   <data name="Settings.Maximum" xml:space="preserve"><value>Máximo</value></data>
   <data name="Speech.Title" xml:space="preserve"><value>Ler em voz alta</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Serviço de voz</value></data>
-  <data name="Speech.Browser" xml:space="preserve"><value>Voz do navegador · sem créditos Glosify</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Voz do navegador · sem créditos GlobeGlotter</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>Voz ElevenLabs · usa créditos de IA</value></data>
   <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs desconta frações de crédito por caractere, inclusive áudio em cache. Falhas na preparação não são cobradas. A voz do navegador é grátis.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Idioma do texto</value></data>
@@ -1650,4 +1650,24 @@
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Conteúdo armazenado</value></data>
   <data name="Payments.RoundedBalance" xml:space="preserve"><value>Os saldos são arredondados para cima. Os descontos reais dependem do uso.</value></data>
   <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Seu saldo exato é insuficiente. Os saldos exibidos são arredondados para cima; adicione créditos ou reduza a solicitação.</value></data>
+  <data name="Home.GlobeFocus" xml:space="preserve"><value>Globo centrado no idioma em estudo: {0}</value></data>
+  <data name="Home.GlobeAria" xml:space="preserve"><value>Um globo terrestre</value></data>
+  <data name="Home.GlobeCaption" xml:space="preserve"><value>Explore por meio dos idiomas</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Traga seu material, transforme-o em perguntas específicas e revise até fixar.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Começar</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Crie material de aprendizagem do seu jeito</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Escreva um quiz, crie um com o assistente de IA ou comece com um conteúdo que você já tem.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Escrever</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Perguntar à IA</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Usar uma imagem</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Em breve</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Transforme o material em exercícios</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Escolha cartões ou respostas digitadas e pratique nos dois sentidos.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Qual resposta se encaixa?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>O que a palavra significa?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Revise até ficar natural</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Tenha palavras úteis sempre à mão</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Repita as ideias que precisam de atenção e avance no seu ritmo.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Revise com quizzes focados e salve as palavras que quiser no Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Explore mais formas de aprender</value></data>
 </root>

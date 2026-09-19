@@ -129,7 +129,7 @@ public sealed class StripePaymentService : IStripePaymentService
         var purchaseId = GetPurchaseId(session.Metadata);
         if (purchaseId is null)
         {
-            return new StripePaymentConfirmation(false, false, "The payment could not be matched to a Glosify purchase.");
+            return new StripePaymentConfirmation(false, false, "The payment could not be matched to a GlobeGlotter purchase.");
         }
 
         var belongsToUser = await _context.StripeCreditPurchases
@@ -171,7 +171,7 @@ public sealed class StripePaymentService : IStripePaymentService
         if (purchaseId is null)
         {
             _logger.LogWarning("Ignoring Stripe session {SessionId} without a valid purchase id.", sessionId);
-            return new StripePaymentConfirmation(false, false, "The payment could not be matched to a Glosify purchase.");
+            return new StripePaymentConfirmation(false, false, "The payment could not be matched to a GlobeGlotter purchase.");
         }
 
         var purchase = await _context.StripeCreditPurchases
@@ -179,7 +179,7 @@ public sealed class StripePaymentService : IStripePaymentService
         if (purchase is null)
         {
             _logger.LogWarning("Ignoring Stripe session {SessionId} for unknown purchase {PurchaseId}.", sessionId, purchaseId);
-            return new StripePaymentConfirmation(false, false, "The payment could not be matched to a Glosify purchase.");
+            return new StripePaymentConfirmation(false, false, "The payment could not be matched to a GlobeGlotter purchase.");
         }
 
         if (purchase.StripeCheckoutSessionId is not null
@@ -189,7 +189,7 @@ public sealed class StripePaymentService : IStripePaymentService
                 "Ignoring mismatched Stripe session {SessionId} for purchase {PurchaseId}.",
                 sessionId,
                 purchaseId);
-            return new StripePaymentConfirmation(false, false, "The payment could not be matched to a Glosify purchase.");
+            return new StripePaymentConfirmation(false, false, "The payment could not be matched to a GlobeGlotter purchase.");
         }
 
         if (amountTotal != purchase.UnitAmountMinor

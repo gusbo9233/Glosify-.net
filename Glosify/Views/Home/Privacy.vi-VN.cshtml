@@ -4,7 +4,7 @@
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = "Chính sách bảo mật";
-    ViewData["Description"] = "Cách Glosify và tiện ích Chrome Glosify Live Subtitles xử lý dữ liệu cá nhân.";
+    ViewData["Description"] = "Cách GlobeGlotter và tiện ích Chrome Glosify Live Subtitles xử lý dữ liệu cá nhân.";
     var legal = Legal.Value;
 }
 
@@ -22,9 +22,9 @@
 
 
         <h2>Ai kiểm soát dữ liệu của bạn</h2>
-        <p><strong>@legal.ControllerName</strong> vận hành Glosify và là bên kiểm soát dữ liệu cá nhân được mô tả ở đây. Vui lòng liên hệ <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> nếu có yêu cầu về quyền riêng tư hoặc xóa dữ liệu.</p>
+        <p><strong>@legal.ControllerName</strong> vận hành GlobeGlotter và là bên kiểm soát dữ liệu cá nhân được mô tả ở đây. Vui lòng liên hệ <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a> nếu có yêu cầu về quyền riêng tư hoặc xóa dữ liệu.</p>
 
-        <h2>Dữ liệu mà Glosify xử lý</h2>
+        <h2>Dữ liệu mà GlobeGlotter xử lý</h2>
         <ul>
             <li>Thông tin tài khoản như địa chỉ email, mã tài khoản nội bộ, phương thức xác thực và các mã định danh đăng nhập ngoài từ Google hoặc Microsoft.</li>
             <li>Tùy chọn ngôn ngữ, bài kiểm tra, nội dung học tập, tín dụng, lượt đặt chỗ, giao dịch sử dụng và siêu dữ liệu phiên cần thiết để cung cấp và bảo vệ dịch vụ.</li>
@@ -36,24 +36,24 @@
         <p>Phân tích vận hành của trợ lý ghi nhận tên mô hình và công cụ, số lượng token, thời gian xử lý, kết quả và các mã tương quan giả danh. Hệ thống được cấu hình để không sao chép toàn bộ prompt, phản hồi, đối số công cụ hoặc kết quả công cụ vào bộ lưu trữ phân tích hay telemetry.</p>
 
         <h2>Phụ đề trực tiếp và xử lý bởi nhà cung cấp</h2>
-        <p>Chrome chỉ thu âm thanh sau khi bạn nhấn <strong>Bắt đầu phụ đề</strong> cho tab đang hoạt động. Ở chế độ Nâng cao, âm thanh được truyền qua Glosify tới OpenAI để xử lý và dịch giọng nói theo thời gian thực. Nếu bật lưu bản ghi, âm thanh đó cũng được truyền tới ElevenLabs Scribe v2 để tạo bản ghi nguồn đã hoàn tất. Ở chế độ Scribe + Cloudflare, âm thanh được truyền qua Glosify tới ElevenLabs để chuyển lời nói thành văn bản và các cụm từ đang phát triển được gửi tới Cloudflare Workers AI M2M100 để dịch. Âm thanh của tab không được ghi vào bộ lưu trữ của Glosify.</p>
+        <p>Chrome chỉ thu âm thanh sau khi bạn nhấn <strong>Bắt đầu phụ đề</strong> cho tab đang hoạt động. Ở chế độ Nâng cao, âm thanh được truyền qua GlobeGlotter tới OpenAI để xử lý và dịch giọng nói theo thời gian thực. Nếu bật lưu bản ghi, âm thanh đó cũng được truyền tới ElevenLabs Scribe v2 để tạo bản ghi nguồn đã hoàn tất. Ở chế độ Scribe + Cloudflare, âm thanh được truyền qua GlobeGlotter tới ElevenLabs để chuyển lời nói thành văn bản và các cụm từ đang phát triển được gửi tới Cloudflare Workers AI M2M100 để dịch. Âm thanh của tab không được ghi vào bộ lưu trữ của GlobeGlotter.</p>
         <p>Phụ đề và các cụm từ được nhận diện sẽ chỉ hiển thị tạm thời, trừ khi bạn chọn riêng việc lưu bản ghi. OpenAI xử lý âm thanh, các cụm từ được nhận diện và siêu dữ liệu dịch vụ liên quan cho phụ đề Nâng cao. ElevenLabs xử lý dữ liệu đó khi chế độ Scribe đang hoạt động hoặc khi tính năng lưu bản ghi Nâng cao được bật. Việc ghi nhật ký tiêu chuẩn của ElevenLabs API được bật, vì vậy ElevenLabs có thể lưu giữ dữ liệu yêu cầu và nhật ký dịch vụ theo các điều khoản dịch vụ và chính sách lưu giữ dữ liệu áp dụng của họ. Google và Microsoft xử lý thông tin theo các chính sách riêng của họ khi bạn chọn dịch vụ đăng nhập OAuth của họ.</p>
 
         <h2>Mục đích và cơ sở pháp lý</h2>
-        <p>Glosify sử dụng dữ liệu này để xác thực bạn, cung cấp các tính năng học tập và phụ đề theo yêu cầu, duy trì nội dung của bạn, quản lý tín dụng và ngân sách ứng dụng, ngăn chặn lạm dụng, khắc phục sự cố và tuân thủ các nghĩa vụ pháp lý. Việc xử lý là cần thiết để cung cấp dịch vụ bạn yêu cầu và vì các lợi ích hợp pháp về bảo mật và độ tin cậy; việc lưu trữ bản ghi tùy chọn dựa trên lựa chọn rõ ràng của bạn.</p>
+        <p>GlobeGlotter sử dụng dữ liệu này để xác thực bạn, cung cấp các tính năng học tập và phụ đề theo yêu cầu, duy trì nội dung của bạn, quản lý tín dụng và ngân sách ứng dụng, ngăn chặn lạm dụng, khắc phục sự cố và tuân thủ các nghĩa vụ pháp lý. Việc xử lý là cần thiết để cung cấp dịch vụ bạn yêu cầu và vì các lợi ích hợp pháp về bảo mật và độ tin cậy; việc lưu trữ bản ghi tùy chọn dựa trên lựa chọn rõ ràng của bạn.</p>
 
         <h2>Lưu trữ, thời hạn giữ và xóa</h2>
-        <p>Tính năng lưu bản ghi mặc định là tắt. Khi được bật, phần nói gốc đã hoàn tất sẽ được lưu trong tài khoản Glosify riêng tư của bạn cho đến khi bạn xóa bản ghi hoặc tài khoản. Nội dung tài khoản và hồ sơ tín dụng được lưu giữ trong khi tài khoản còn hoạt động và trong thời gian hợp lý cần thiết cho bảo mật, kế toán, xử lý tranh chấp hoặc nghĩa vụ pháp lý. Bản sao sao lưu đám mây và nhật ký vận hành sẽ hết hạn theo lịch lưu giữ Microsoft Azure đã cấu hình thay vì biến mất ngay lập tức.</p>
+        <p>Tính năng lưu bản ghi mặc định là tắt. Khi được bật, phần nói gốc đã hoàn tất sẽ được lưu trong tài khoản GlobeGlotter riêng tư của bạn cho đến khi bạn xóa bản ghi hoặc tài khoản. Nội dung tài khoản và hồ sơ tín dụng được lưu giữ trong khi tài khoản còn hoạt động và trong thời gian hợp lý cần thiết cho bảo mật, kế toán, xử lý tranh chấp hoặc nghĩa vụ pháp lý. Bản sao sao lưu đám mây và nhật ký vận hành sẽ hết hạn theo lịch lưu giữ Microsoft Azure đã cấu hình thay vì biến mất ngay lập tức.</p>
         <p>Bạn có thể xóa các bản ghi đã lưu từ trang Bản ghi và sử dụng các công cụ xóa trong quản lý tài khoản sau khi đăng nhập. Bạn cũng có thể liên hệ theo địa chỉ ở trên. Việc xóa nội dung không hủy bản sao mà nhà cung cấp OAuth của bạn đang giữ; hãy quản lý mối quan hệ đó với Google hoặc Microsoft.</p>
 
         <h2>Glosify Translator</h2>
-        <p>Văn bản nguồn, ngôn ngữ và tùy chọn về phương ngữ, mức độ trang trọng, giọng điệu hoặc cách diễn đạt chỉ được gửi qua Glosify tới OpenAI khi bạn chọn Dịch. Tiện ích lưu cục bộ token làm mới, ngôn ngữ và tùy chọn, nhưng không lưu lịch sử. Bản dịch chỉ được giữ trong tài khoản khi bạn chọn Lưu, cho đến khi bạn xóa bản dịch hoặc tài khoản.</p>
+        <p>Văn bản nguồn, ngôn ngữ và tùy chọn về phương ngữ, mức độ trang trọng, giọng điệu hoặc cách diễn đạt chỉ được gửi qua GlobeGlotter tới OpenAI khi bạn chọn Dịch. Tiện ích lưu cục bộ token làm mới, ngôn ngữ và tùy chọn, nhưng không lưu lịch sử. Bản dịch chỉ được giữ trong tài khoản khi bạn chọn Lưu, cho đến khi bạn xóa bản dịch hoặc tài khoản.</p>
 
         <h2>Dữ liệu của tiện ích Chrome</h2>
-        <p>Tiện ích lưu trữ các cài đặt cục bộ tối thiểu và thông tin xác thực cần thiết để duy trì kết nối, chẳng hạn như lựa chọn ngôn ngữ, trạng thái phiên và token bearer của Glosify. Tiện ích chỉ sử dụng active-tab, tab-capture, offscreen, scripting, storage, identity và truy cập glosify.se để kết nối tài khoản và hiển thị phụ đề đã dịch phủ lên tab mà người dùng bắt đầu.</p>
+        <p>Tiện ích lưu trữ các cài đặt cục bộ tối thiểu và thông tin xác thực cần thiết để duy trì kết nối, chẳng hạn như lựa chọn ngôn ngữ, trạng thái phiên và token bearer của GlobeGlotter. Tiện ích chỉ sử dụng active-tab, tab-capture, offscreen, scripting, storage, identity và truy cập glosify.se để kết nối tài khoản và hiển thị phụ đề đã dịch phủ lên tab mà người dùng bắt đầu.</p>
 
         <h2>Sử dụng giới hạn của Chrome Web Store</h2>
-        <p>Việc Glosify sử dụng và chuyển giao thông tin nhận được từ Google APIs sẽ tuân thủ Chính sách Dữ liệu Người dùng của Chrome Web Store, bao gồm các yêu cầu Sử dụng Giới hạn. Glosify không bán dữ liệu người dùng của tiện ích, không sử dụng dữ liệu đó cho quảng cáo cá nhân hóa, và không chuyển giao dữ liệu đó cho các mục đích tín dụng hoặc cho vay không liên quan.</p>
+        <p>Việc GlobeGlotter sử dụng và chuyển giao thông tin nhận được từ Google APIs sẽ tuân thủ Chính sách Dữ liệu Người dùng của Chrome Web Store, bao gồm các yêu cầu Sử dụng Giới hạn. GlobeGlotter không bán dữ liệu người dùng của tiện ích, không sử dụng dữ liệu đó cho quảng cáo cá nhân hóa, và không chuyển giao dữ liệu đó cho các mục đích tín dụng hoặc cho vay không liên quan.</p>
 
         <h2>Thay đổi và câu hỏi</h2>
         <p>Các thay đổi quan trọng sẽ được công bố trên trang này cùng ngày có hiệu lực mới. Nếu có câu hỏi, yêu cầu truy cập, chỉnh sửa, di chuyển dữ liệu, phản đối hoặc xóa dữ liệu, vui lòng liên hệ <a href="mailto:@legal.ContactEmail">@legal.ContactEmail</a>.</p>

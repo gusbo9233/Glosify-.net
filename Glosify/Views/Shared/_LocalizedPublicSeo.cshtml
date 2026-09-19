@@ -2,7 +2,7 @@
 @{
     var page = ViewData["LocalizedPublicPage"] as string;
     var description = ViewData["Description"] as string ?? Text["Layout.MetaDescription"].Value;
-    var title = $"{ViewData["Title"]} - Glosify";
+    var title = $"{ViewData["Title"]} - GlobeGlotter";
     var origin = HostEnvironment.IsProduction()
         ? "https://glosify.se"
         : $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}";

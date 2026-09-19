@@ -55,10 +55,10 @@
     <value>السابق</value>
   </data>
   <data name="Layout.MetaDescription" xml:space="preserve">
-    <value>يحوّل Glosify ما تقرؤه إلى مفردات يمكنك استخدامها: أنشئ قوائم كلمات من الكتب والنصوص، ودرّب نفسك عليها بالاختبارات وبطاقات المراجعة، ثم تدرّب على التحدث بصوت عالٍ مع شريك محادثة بالذكاء الاصطناعي.</value>
+    <value>يحوّل GlobeGlotter ما تقرؤه إلى مفردات يمكنك استخدامها: أنشئ قوائم كلمات من الكتب والنصوص، ودرّب نفسك عليها بالاختبارات وبطاقات المراجعة، ثم تدرّب على التحدث بصوت عالٍ مع شريك محادثة بالذكاء الاصطناعي.</value>
   </data>
   <data name="Layout.AuthMetaDescription" xml:space="preserve">
-    <value>سجّل الدخول إلى Glosify لبناء مفردات من ما تقرؤه، وممارستها بالاختبارات، والتحدث بها مع شريك محادثة بالذكاء الاصطناعي.</value>
+    <value>سجّل الدخول إلى GlobeGlotter لبناء مفردات من ما تقرؤه، وممارستها بالاختبارات، والتحدث بها مع شريك محادثة بالذكاء الاصطناعي.</value>
   </data>
   <data name="Layout.PremiumLearner" xml:space="preserve">
     <value>متعلّم مميز</value>
@@ -142,7 +142,7 @@
     <value>المساعد</value>
   </data>
   <data name="Assistant.Empty" xml:space="preserve">
-    <value>اطلب المساعدة من أي مكان في Glosify.</value>
+    <value>اطلب المساعدة من أي مكان في GlobeGlotter.</value>
   </data>
   <data name="Assistant.Placeholder" xml:space="preserve">
     <value>اسأل المساعد...</value>
@@ -346,7 +346,7 @@
     <value>افتح اختباراتي القصيرة</value>
   </data>
   <data name="Home.WaysAria" xml:space="preserve">
-    <value>طرق التعلم باستخدام Glosify</value>
+    <value>طرق التعلم باستخدام GlobeGlotter</value>
   </data>
   <data name="Home.ReadContext" xml:space="preserve">
     <value>القراءة في السياق</value>
@@ -619,7 +619,7 @@
     <value>تقدّم.</value>
   </data>
   <data name="Books.HeroText" xml:space="preserve">
-    <value>أحضر مواد القراءة الخاصة بك واستخدم Glosify لاستكشاف كل صفحة وعبارة وكلمة جديدة.</value>
+    <value>أحضر مواد القراءة الخاصة بك واستخدم GlobeGlotter لاستكشاف كل صفحة وعبارة وكلمة جديدة.</value>
   </data>
   <data name="Books.SummaryAria" xml:space="preserve">
     <value>ملخص المكتبة</value>
@@ -1405,19 +1405,19 @@
     <value>الحصول على أرصدة</value>
   </data>
   <data name="Payments.GlosifyCredits" xml:space="preserve">
-    <value>أرصدة Glosify</value>
+    <value>أرصدة GlobeGlotter</value>
   </data>
   <data name="Payments.Hero" xml:space="preserve">
     <value>أبقِ حلقة التعلم لديك مستمرة.</value>
   </data>
   <data name="Payments.Intro" xml:space="preserve">
-    <value>تدعم الأرصدة ميزات Glosify التعليمية المدعومة بالذكاء الاصطناعي والترجمات الفرعية المباشرة.</value>
+    <value>تدعم الأرصدة ميزات GlobeGlotter التعليمية المدعومة بالذكاء الاصطناعي والترجمات الفرعية المباشرة.</value>
   </data>
   <data name="Payments.NotAvailable" xml:space="preserve">
     <value>المدفوعات غير متاحة بعد</value>
   </data>
   <data name="Payments.NotConnected" xml:space="preserve">
-    <value>لم يتم ربط هذا النشر من Glosify بـ Stripe.</value>
+    <value>لم يتم ربط هذا النشر من GlobeGlotter بـ Stripe.</value>
   </data>
   <data name="Payments.CreditPack" xml:space="preserve">
     <value>حزمة أرصدة</value>
@@ -1429,7 +1429,7 @@
     <value>المتابعة إلى الدفع الآمن</value>
   </data>
   <data name="Payments.StripeNotice" xml:space="preserve">
-    <value>تتم عملية الدفع عبر Stripe. لا يتلقى Glosify تفاصيل البطاقة أو يخزنها أبدًا.</value>
+    <value>تتم عملية الدفع عبر Stripe. لا يتلقى GlobeGlotter تفاصيل البطاقة أو يخزنها أبدًا.</value>
   </data>
   <data name="Payments.Status" xml:space="preserve">
     <value>حالة الدفع</value>
@@ -1441,7 +1441,7 @@
     <value>جارٍ معالجة الدفع</value>
   </data>
   <data name="Payments.Back" xml:space="preserve">
-    <value>العودة إلى Glosify</value>
+    <value>العودة إلى GlobeGlotter</value>
   </data>
   <data name="Payments.AiCredits" xml:space="preserve">
     <value>أرصدة الذكاء الاصطناعي</value>
@@ -1580,7 +1580,7 @@
   <data name="Quiz.JsonImport" xml:space="preserve"><value>استيراد JSON</value></data>
   <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>استيراد من ذكاء اصطناعي خارجي</value></data>
   <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>أنشئ اختبارات دون استخدام الأرصدة</value></data>
-  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>اطلب من أي ذكاء اصطناعي إنشاء JSON لـ Glosify، والصقه هنا، وراجع النتيجة الدقيقة، ثم استورده إلى {0}.</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>اطلب من أي ذكاء اصطناعي إنشاء JSON لـ GlobeGlotter، والصقه هنا، وراجع النتيجة الدقيقة، ثم استورده إلى {0}.</value></data>
   <data name="Quiz.JsonImportClose" xml:space="preserve"><value>إغلاق مربع حوار الاستيراد</value></data>
   <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. انسخ التعليمات للذكاء الاصطناعي</value></data>
   <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>أضف ما تريد تعلمه، ثم أرسل هذا الطلب إلى ChatGPT أو Claude أو Gemini أو أي ذكاء اصطناعي آخر.</value></data>
@@ -1594,7 +1594,7 @@
   <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>الإصلاح بالذكاء الاصطناعي · يستخدم الأرصدة</value></data>
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>معاينة JSON</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>استيراد الكل</value></data>
-  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>المعاينة والاستيراد حتميان ولا يتصلان بمزوّد ذكاء اصطناعي. يرسل «الإصلاح بالذكاء الاصطناعي» النص الملصق إلى الذكاء الاصطناعي المُعدّ في Glosify ويخصم الأرصدة.</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>المعاينة والاستيراد حتميان ولا يتصلان بمزوّد ذكاء اصطناعي. يرسل «الإصلاح بالذكاء الاصطناعي» النص الملصق إلى الذكاء الاصطناعي المُعدّ في GlobeGlotter ويخصم الأرصدة.</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
   <data name="Nav.Translations" xml:space="preserve"><value>الترجمات</value></data>
   <data name="Translations.Title" xml:space="preserve"><value>الترجمات المحفوظة</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>المترجم</value></data><data name="Translations.Saved" xml:space="preserve"><value>الترجمات المحفوظة</value></data><data name="Translations.Intro" xml:space="preserve"><value>الترجمات التي حفظتها صراحةً من إضافة Glosify Translator.</value></data>
@@ -1605,7 +1605,7 @@
   <data name="Settings.Maximum" xml:space="preserve"><value>الحد الأقصى</value></data>
   <data name="Speech.Title" xml:space="preserve"><value>القراءة بصوت عالٍ</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>خدمة الصوت</value></data>
-  <data name="Speech.Browser" xml:space="preserve"><value>صوت المتصفح · دون رصيد Glosify</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>صوت المتصفح · دون رصيد GlobeGlotter</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>صوت ElevenLabs · يستهلك رصيد الذكاء الاصطناعي</value></data>
   <data name="Speech.Credits" xml:space="preserve"><value>يخصم ElevenLabs أجزاء من الرصيد لكل حرف، بما في ذلك الصوت المخزن مؤقتًا. لا تُحسب تكلفة عند فشل التجهيز. صوت المتصفح مجاني.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>لغة النص</value></data>
@@ -1650,4 +1650,24 @@
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>المحتوى المخزن</value></data>
   <data name="Payments.RoundedBalance" xml:space="preserve"><value>تُقرّب الأرصدة إلى العدد الصحيح الأعلى. تعتمد الخصومات الفعلية على الاستخدام.</value></data>
   <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>رصيدك الدقيق غير كافٍ. الأرصدة المعروضة مقربة للأعلى؛ أضف رصيدًا أو قلّل الطلب.</value></data>
+  <data name="Home.GlobeFocus" xml:space="preserve"><value>كرة أرضية تتمحور حول اللغة التي تتعلمها: {0}</value></data>
+  <data name="Home.GlobeAria" xml:space="preserve"><value>كرة أرضية للعالم</value></data>
+  <data name="Home.GlobeCaption" xml:space="preserve"><value>اكتشف العالم عبر اللغات</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>أضف موادك، وحوّلها إلى أسئلة مركّزة، وراجعها حتى ترسخ في ذهنك.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>ابدأ</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>أنشئ مواد تعليمية بطريقتك</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>اكتب اختبارًا بنفسك، أو أنشئه مع مساعد الذكاء الاصطناعي، أو ابدأ بمحتوى لديك بالفعل.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>اكتب بنفسك</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>اسأل الذكاء الاصطناعي</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>استخدم صورة</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>قريبًا</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>حوّل المواد إلى مجموعة تمارين</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>اختر البطاقات التعليمية أو الإجابات المكتوبة، وتدرّب في كلا الاتجاهين.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>ما الإجابة المناسبة؟</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>ما معنى الكلمة؟</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>راجع حتى تصبح الممارسة سهلة</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>احتفظ بالكلمات المفيدة في متناول يدك</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>كرّر الأفكار التي تحتاج إلى تدريب وتقدّم بالوتيرة التي تناسبك.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>راجع باختبارات مركّزة، ثم احفظ الكلمات التي تريدها في Anki.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>استكشف المزيد من طرق التعلّم</value></data>
 </root>

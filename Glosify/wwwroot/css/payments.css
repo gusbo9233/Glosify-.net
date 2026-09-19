@@ -55,7 +55,7 @@
     border-radius: 999px;
     padding: 12px 18px;
     background: var(--primary);
-    box-shadow: 0 12px 28px rgba(29, 185, 84, 0.2);
+    box-shadow: 0 12px 28px rgba(83,224,118, 0.2);
     color: var(--on-primary);
     font: inherit;
     font-weight: 800;
@@ -70,7 +70,7 @@
 
 .payment-button:hover {
     color: var(--on-primary);
-    box-shadow: 0 16px 34px rgba(29, 185, 84, 0.3);
+    box-shadow: 0 16px 34px rgba(83,224,118, 0.3);
     transform: translateY(-2px);
 }
 
@@ -80,7 +80,7 @@
 }
 
 .payment-button:active {
-    box-shadow: 0 8px 20px rgba(29, 185, 84, 0.2);
+    box-shadow: 0 8px 20px rgba(83,224,118, 0.2);
     transform: translateY(0);
 }
 
@@ -126,3 +126,9 @@
         transition: none;
     }
 }
+
+.page-heading h1 { font-family: var(--font-serif); font-size: clamp(32px,3.4vw,46px); font-weight: 500; line-height: 1.16; letter-spacing: -.035em; }
+.surface-card { border-radius: 16px; }
+.payment-button { border-radius: 10px; }
+.content-page > .empty-state { min-height: auto; gap: 12px; padding: 40px 24px; }
+.content-page > .empty-state p { margin: 0; line-height: 1.7; }

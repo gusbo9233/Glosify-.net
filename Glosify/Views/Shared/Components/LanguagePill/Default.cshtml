@@ -2,9 +2,17 @@
 @if (!string.IsNullOrEmpty(Model))
 {
     var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(Model);
+    var language = Glosify.Services.Language.QuizLanguageCatalog.Find(Model);
     <a asp-controller="Languages" asp-action="Index"
        class="language-context-pill language-context-pill-active">
-        <span class="material-symbols-outlined language-context-icon">@(isFreestyle ? "category" : "translate")</span>
+        @if (language is { IsLanguageLearning: true })
+        {
+            <span class="language-context-flag" aria-hidden="true">@language.Flag</span>
+        }
+        else
+        {
+            <span class="material-symbols-outlined language-context-icon" aria-hidden="true">@(isFreestyle ? "category" : "translate")</span>
+        }
         @QuizLanguageDisplay.Name(Model)
     </a>
 }

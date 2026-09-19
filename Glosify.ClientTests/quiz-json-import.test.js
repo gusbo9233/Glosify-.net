@@ -31,7 +31,7 @@ test('editing canonical JSON invalidates its preview', () => {
 
 test('external repair prompt carries errors and content without provider coupling', () => {
     const prompt = buildExternalRepairPrompt('{ bad json }', ['$.version: Missing.']);
-    assert.match(prompt, /Glosify version 1/);
+    assert.match(prompt, /GlobeGlotter version 1/);
     assert.match(prompt, /\$\.version: Missing\./);
     assert.match(prompt, /\{ bad json \}/);
 });

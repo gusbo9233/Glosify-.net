@@ -55,10 +55,10 @@
     <value>Önceki</value>
   </data>
   <data name="Layout.MetaDescription" xml:space="preserve">
-    <value>Glosify, okuduklarınızı kullanabileceğiniz kelimelere dönüştürür: kitaplar ve transkriptlerden kelime listeleri oluşturun, bunları quizler ve bilgi kartlarıyla pekiştirin, ardından bir AI sohbet partneriyle yüksek sesle pratik yapın.</value>
+    <value>GlobeGlotter, okuduklarınızı kullanabileceğiniz kelimelere dönüştürür: kitaplar ve transkriptlerden kelime listeleri oluşturun, bunları quizler ve bilgi kartlarıyla pekiştirin, ardından bir AI sohbet partneriyle yüksek sesle pratik yapın.</value>
   </data>
   <data name="Layout.AuthMetaDescription" xml:space="preserve">
-    <value>Okuduklarınızdan kelime dağarcığı oluşturmak, quizlerle pratik yapmak ve bir AI sohbet partneriyle konuşmak için Glosify'a giriş yapın.</value>
+    <value>Okuduklarınızdan kelime dağarcığı oluşturmak, quizlerle pratik yapmak ve bir AI sohbet partneriyle konuşmak için GlobeGlotter'a giriş yapın.</value>
   </data>
   <data name="Layout.PremiumLearner" xml:space="preserve">
     <value>Premium Öğrenci</value>
@@ -142,7 +142,7 @@
     <value>Asistan</value>
   </data>
   <data name="Assistant.Empty" xml:space="preserve">
-    <value>Glosify içinde istediğiniz yerden yardım isteyin.</value>
+    <value>GlobeGlotter içinde istediğiniz yerden yardım isteyin.</value>
   </data>
   <data name="Assistant.Placeholder" xml:space="preserve">
     <value>Asistana sorun...</value>
@@ -346,7 +346,7 @@
     <value>Quizlerimi aç</value>
   </data>
   <data name="Home.WaysAria" xml:space="preserve">
-    <value>Glosify ile öğrenme yolları</value>
+    <value>GlobeGlotter ile öğrenme yolları</value>
   </data>
   <data name="Home.ReadContext" xml:space="preserve">
     <value>Bağlam içinde okuyun</value>
@@ -619,7 +619,7 @@
     <value>ilerleme.</value>
   </data>
   <data name="Books.HeroText" xml:space="preserve">
-    <value>Kendi okuma materyalinizi getirin ve Glosify ile her sayfayı, ifadeyi ve yeni kelimeyi keşfedin.</value>
+    <value>Kendi okuma materyalinizi getirin ve GlobeGlotter ile her sayfayı, ifadeyi ve yeni kelimeyi keşfedin.</value>
   </data>
   <data name="Books.SummaryAria" xml:space="preserve">
     <value>Kütüphane özeti</value>
@@ -1405,19 +1405,19 @@
     <value>Kredi al</value>
   </data>
   <data name="Payments.GlosifyCredits" xml:space="preserve">
-    <value>Glosify kredileri</value>
+    <value>GlobeGlotter kredileri</value>
   </data>
   <data name="Payments.Hero" xml:space="preserve">
     <value>Öğrenme döngünüzü sürdürün.</value>
   </data>
   <data name="Payments.Intro" xml:space="preserve">
-    <value>Krediler, Glosify’nin AI destekli öğrenme özelliklerini ve canlı altyazıları çalıştırır.</value>
+    <value>Krediler, GlobeGlotter’nin AI destekli öğrenme özelliklerini ve canlı altyazıları çalıştırır.</value>
   </data>
   <data name="Payments.NotAvailable" xml:space="preserve">
     <value>Ödemeler henüz kullanılamıyor</value>
   </data>
   <data name="Payments.NotConnected" xml:space="preserve">
-    <value>Bu Glosify dağıtımı Stripe'a bağlı değil.</value>
+    <value>Bu GlobeGlotter dağıtımı Stripe'a bağlı değil.</value>
   </data>
   <data name="Payments.CreditPack" xml:space="preserve">
     <value>Kredi paketi</value>
@@ -1429,7 +1429,7 @@
     <value>Güvenli ödeme adımına devam et</value>
   </data>
   <data name="Payments.StripeNotice" xml:space="preserve">
-    <value>Ödeme işlemi Stripe tarafından barındırılır. Glosify kart bilgilerinizi hiçbir zaman almaz veya saklamaz.</value>
+    <value>Ödeme işlemi Stripe tarafından barındırılır. GlobeGlotter kart bilgilerinizi hiçbir zaman almaz veya saklamaz.</value>
   </data>
   <data name="Payments.Status" xml:space="preserve">
     <value>Ödeme durumu</value>
@@ -1441,7 +1441,7 @@
     <value>Ödeme işleniyor</value>
   </data>
   <data name="Payments.Back" xml:space="preserve">
-    <value>Glosify'a dön</value>
+    <value>GlobeGlotter'a dön</value>
   </data>
   <data name="Payments.AiCredits" xml:space="preserve">
     <value>AI kredileri</value>
@@ -1580,7 +1580,7 @@
   <data name="Quiz.JsonImport" xml:space="preserve"><value>JSON içe aktar</value></data>
   <data name="Quiz.JsonImportKicker" xml:space="preserve"><value>Harici yapay zekâdan içe aktarma</value></data>
   <data name="Quiz.JsonImportTitle" xml:space="preserve"><value>Kredi kullanmadan quiz oluşturun</value></data>
-  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Herhangi bir yapay zekâdan Glosify JSON isteyin, buraya yapıştırın, sonucu aynen inceleyin ve {0} konumuna aktarın.</value></data>
+  <data name="Quiz.JsonImportDescription" xml:space="preserve"><value>Herhangi bir yapay zekâdan GlobeGlotter JSON isteyin, buraya yapıştırın, sonucu aynen inceleyin ve {0} konumuna aktarın.</value></data>
   <data name="Quiz.JsonImportClose" xml:space="preserve"><value>İçe aktarma penceresini kapat</value></data>
   <data name="Quiz.JsonImportInstructionsSummary" xml:space="preserve"><value>1. Yapay zekânız için talimatları kopyalayın</value></data>
   <data name="Quiz.JsonImportInstructionsHelp" xml:space="preserve"><value>Öğrenmek istediğinizi ekleyin ve bu istemi ChatGPT, Claude, Gemini veya başka bir yapay zekâya gönderin.</value></data>
@@ -1594,7 +1594,7 @@
   <data name="Quiz.JsonImportRepairWithAi" xml:space="preserve"><value>Yapay zekâ ile onar · kredi kullanır</value></data>
   <data name="Quiz.JsonImportPreviewButton" xml:space="preserve"><value>JSON’u önizle</value></data>
   <data name="Quiz.JsonImportApplyButton" xml:space="preserve"><value>Tümünü içe aktar</value></data>
-  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Önizleme ve içe aktarma deterministiktir ve bir yapay zekâ sağlayıcısıyla iletişim kurmaz. “Yapay zekâ ile onar”, yapıştırılan metni Glosify’ın yapılandırılmış yapay zekâsına gönderir ve kredi harcar.</value></data>
+  <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>Önizleme ve içe aktarma deterministiktir ve bir yapay zekâ sağlayıcısıyla iletişim kurmaz. “Yapay zekâ ile onar”, yapıştırılan metni GlobeGlotter’ın yapılandırılmış yapay zekâsına gönderir ve kredi harcar.</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
   <data name="Nav.Translations" xml:space="preserve"><value>Çeviriler</value></data>
   <data name="Translations.Title" xml:space="preserve"><value>Kaydedilen çeviriler</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>Çevirmen</value></data><data name="Translations.Saved" xml:space="preserve"><value>Kaydedilen çeviriler</value></data><data name="Translations.Intro" xml:space="preserve"><value>Glosify Translator uzantısından açıkça kaydettiğiniz çeviriler.</value></data>
@@ -1605,7 +1605,7 @@
   <data name="Settings.Maximum" xml:space="preserve"><value>Maksimum</value></data>
   <data name="Speech.Title" xml:space="preserve"><value>Sesli oku</value></data>
   <data name="Speech.Provider" xml:space="preserve"><value>Ses hizmeti</value></data>
-  <data name="Speech.Browser" xml:space="preserve"><value>Tarayıcı sesi · Glosify kredisi kullanmaz</value></data>
+  <data name="Speech.Browser" xml:space="preserve"><value>Tarayıcı sesi · GlobeGlotter kredisi kullanmaz</value></data>
   <data name="Speech.ElevenLabs" xml:space="preserve"><value>ElevenLabs sesi · yapay zekâ kredisi kullanır</value></data>
   <data name="Speech.Credits" xml:space="preserve"><value>ElevenLabs, önbellekteki ses dahil karakter başına kesirli kredi düşer. Başarısız hazırlık ücretlendirilmez. Tarayıcı sesi ücretsizdir.</value></data>
   <data name="Speech.Language" xml:space="preserve"><value>Metnin dili</value></data>
@@ -1650,4 +1650,24 @@
   <data name="Usage.Resource.content_bytes" xml:space="preserve"><value>Depolanan içerik</value></data>
   <data name="Payments.RoundedBalance" xml:space="preserve"><value>Bakiyeler tam krediye yukarı yuvarlanır. Gerçek kesintiler kullanıma bağlıdır.</value></data>
   <data name="Payments.InsufficientExactBalance" xml:space="preserve"><value>Kesin kredi bakiyeniz yetersiz. Gösterilen bakiyeler yukarı yuvarlanır; kredi ekleyin veya isteği küçültün.</value></data>
+  <data name="Home.GlobeFocus" xml:space="preserve"><value>Öğrenilen dile odaklanan küre: {0}</value></data>
+  <data name="Home.GlobeAria" xml:space="preserve"><value>Bir dünya küresi</value></data>
+  <data name="Home.GlobeCaption" xml:space="preserve"><value>Dillerle dünyayı keşfet</value></data>
+  <data name="Home.FreestyleDescription" xml:space="preserve"><value>Materyallerinizi ekleyin, odaklı sorulara dönüştürün ve öğrenene kadar tekrar edin.</value></data>
+  <data name="Home.Start" xml:space="preserve"><value>Başla</value></data>
+  <data name="Home.CreateMaterial" xml:space="preserve"><value>Öğrenme materyallerini kendi tarzınızda oluşturun</value></data>
+  <data name="Home.CreateMaterialText" xml:space="preserve"><value>Kendiniz bir test yazın, yapay zekâ asistanıyla oluşturun veya elinizdeki içerikten başlayın.</value></data>
+  <data name="Home.WriteIt" xml:space="preserve"><value>Kendin yaz</value></data>
+  <data name="Home.AskAi" xml:space="preserve"><value>Yapay zekâya sor</value></data>
+  <data name="Home.UsePicture" xml:space="preserve"><value>Görsel kullan</value></data>
+  <data name="Home.ComingSoon" xml:space="preserve"><value>Yakında</value></data>
+  <data name="Home.PracticeSet" xml:space="preserve"><value>Materyalleri alıştırma setine dönüştürün</value></data>
+  <data name="Home.PracticeSetText" xml:space="preserve"><value>Bilgi kartlarını veya yazılı yanıtları seçin ve her iki yönde de pratik yapın.</value></data>
+  <data name="Home.AnswerQuestion" xml:space="preserve"><value>Hangi yanıt uygun?</value></data>
+  <data name="Home.WordQuestion" xml:space="preserve"><value>Kelimenin anlamı nedir?</value></data>
+  <data name="Home.Revisit" xml:space="preserve"><value>Doğal gelene kadar tekrar edin</value></data>
+  <data name="Home.KeepWords" xml:space="preserve"><value>Faydalı kelimeler elinizin altında olsun</value></data>
+  <data name="Home.RevisitText" xml:space="preserve"><value>Çalışmanız gereken konuları tekrarlayın ve kendi hızınızda ilerleyin.</value></data>
+  <data name="Home.KeepWordsText" xml:space="preserve"><value>Odaklı testlerle tekrar edin, ardından istediğiniz kelimeleri Anki’ye kaydedin.</value></data>
+  <data name="Home.ExploreWays" xml:space="preserve"><value>Daha fazla öğrenme yöntemi keşfedin</value></data>
 </root>
