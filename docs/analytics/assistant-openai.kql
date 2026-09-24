@@ -1,7 +1,7 @@
 // Glosify assistant direct OpenAI / Application Insights query pack.
 // Content fields are included only when the configured analytics policy permits it.
 
-// Assistant request volume, success rate, and latency by fixed model.
+// Assistant request volume, success rate, and latency by model during rollout.
 customMetrics
 | where timestamp > ago(24h)
 | where name in ("glosify.ai.requests", "glosify.ai.duration")
@@ -10,9 +10,9 @@ customMetrics
              tostring(customDimensions["ai.model"]),
              tostring(customDimensions["ai.deployment"])),
          outcome = tostring(customDimensions["ai.outcome"])
-| where provider == "openai" and model == "gpt-6-luna"
+| where provider == "openai" and model in ("gpt-5.6-luna", "gpt-6-luna")
 | summarize samples=sum(value), average=avg(value), p95=percentile(value, 95)
-    by name, outcome, bin(timestamp, 1h)
+    by model, name, outcome, bin(timestamp, 1h)
 | order by timestamp desc
 
 // Token usage by application feature.
@@ -24,8 +24,8 @@ customMetrics
              tostring(customDimensions["ai.model"]),
              tostring(customDimensions["ai.deployment"])),
          feature = tostring(customDimensions["ai.feature"])
-| where provider == "openai" and model == "gpt-6-luna"
-| summarize tokens=sum(value) by feature, name, bin(timestamp, 1d)
+| where provider == "openai" and model in ("gpt-5.6-luna", "gpt-6-luna")
+| summarize tokens=sum(value) by model, feature, name, bin(timestamp, 1d)
 | order by timestamp desc
 
 // Tool-loop activity and failures without learner free text.
