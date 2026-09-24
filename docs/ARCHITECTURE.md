@@ -16,7 +16,7 @@ Browser / Chrome extension
 ASP.NET Core MVC + APIs
           |
           +--> EF Core --> Azure SQL
-          +--> OpenAI Responses API (gpt-5.6-luna)
+          +--> OpenAI Responses API (gpt-6-luna)
           +--> OpenAI Realtime Translation (gpt-realtime-translate)
           +--> ElevenLabs v3 text-to-speech
           +--> ElevenLabs Scribe v2
@@ -55,7 +55,7 @@ catalog live in [home-language-quotes.md](home-language-quotes.md).
 
 All generative text and image-input work is implemented by
 `OpenAiGenerativeAiClient` on the official OpenAI C# SDK and Responses API. The
-model is the code constant `OpenAiModels.Luna` (`gpt-5.6-luna`). There is no
+model is the code constant `OpenAiModels.Luna` (`gpt-6-luna`). There is no
 provider selector, alternate model, model catalog, client-side model preference,
 or deployment-configured fallback.
 
@@ -117,7 +117,7 @@ transcripts. GlobeGlotter does not store tab audio.
 
 SQL Server stores Identity data, quizzes, books, chats, transcripts, credit
 reservations, usage debits, and provider usage. New text and vision usage rows
-use provider `openai` and model `gpt-5.6-luna`; enhanced subtitle rows
+use provider `openai` and model `gpt-6-luna`; enhanced subtitle rows
 use provider `openai` and model `gpt-realtime-translate`. Historical provider
 values, including rows from retired features, remain valid database history.
 
@@ -126,8 +126,8 @@ markup:
 
 | Meter | Price |
 |---|---:|
-| Luna input | 2.2373 SEK / million tokens |
-| Luna output | 13.4233 SEK / million tokens |
+| Luna input | 1.1187 SEK / million tokens |
+| Luna output | 6.7117 SEK / million tokens |
 | Realtime translation | 0.3804 SEK / audio minute |
 | Realtime translation + saved Scribe transcript | 0.4531 SEK / minute |
 | Scribe + Cloudflare estimate | 0.35 SEK / minute |

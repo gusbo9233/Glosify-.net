@@ -13,7 +13,7 @@ Chrome extension, and a separate extension for live translated subtitles.
 ## AI services
 
 All generative, text-agent, and vision work goes directly from the Glosify server
-to the OpenAI Responses API. The model is fixed in code to `gpt-5.6-luna`; there
+to the OpenAI Responses API. The model is fixed in code to `gpt-6-luna`; there
 is no model picker, configured alternative, or provider fallback. Prompts, JSON
 schemas, and function tools are defined and executed in this repository. Glosify
 replays its own saved history and every Responses request uses `store: false`.

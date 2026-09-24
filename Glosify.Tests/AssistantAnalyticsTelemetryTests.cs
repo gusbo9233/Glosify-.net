@@ -28,21 +28,21 @@ public sealed class AssistantAnalyticsTelemetryTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             "Librarian",
-            "gpt-5.6-luna"))
+            "gpt-6-luna"))
         {
             using var invocation = AssistantAnalyticsTelemetry.StartInvocation(
                 turnId,
                 invocationId,
                 0,
                 "Librarian",
-                "gpt-5.6-luna");
+                "gpt-6-luna");
             AssistantAnalyticsTelemetry.CompleteInvocation(
                 invocation,
                 new AgentTurnResult("Done", [])
                 {
                     Metadata = new AgentInvocationMetadata(
                         "foundry",
-                        "gpt-5.6-luna",
+                        "gpt-6-luna",
                         "resp-1",
                         new AiTokenUsage(10, 5, 0, 0, 15),
                         "glosify-librarian",

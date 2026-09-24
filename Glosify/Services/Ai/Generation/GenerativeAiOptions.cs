@@ -4,7 +4,7 @@ namespace Glosify.Services.Ai.Generation;
 
 public static class OpenAiModels
 {
-    public const string Luna = "gpt-5.6-luna";
+    public const string Luna = "gpt-6-luna";
     public const string RealtimeTranslation = "gpt-realtime-translate";
 }
 

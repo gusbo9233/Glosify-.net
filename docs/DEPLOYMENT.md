@@ -198,7 +198,7 @@ Application constants fix these routes:
 
 | Feature | Route |
 |---|---|
-| Assistant, structured generation, image extraction, page translation | OpenAI Responses API, `gpt-5.6-luna` |
+| Assistant, structured generation, image extraction, page translation | OpenAI Responses API, `gpt-6-luna` |
 | Enhanced live subtitles | OpenAI realtime translation, `gpt-realtime-translate` |
 | Original live captions | ElevenLabs `scribe_v2_realtime` |
 | Scribe + Cloudflare subtitles | ElevenLabs `scribe_v2_realtime` + Cloudflare M2M100 |
@@ -217,7 +217,7 @@ login, registration, and terms disclosure read this same setting.
 `AiUsage__MonthlyBudget` fails closed for enabled, metered services without a
 matching price. The shipped configuration prices:
 
-- `gpt-5.6-luna`: 2.2373 SEK per million input tokens and 13.4233 SEK per million
+- `gpt-6-luna`: 1.1187 SEK per million input tokens and 6.7117 SEK per million
   output tokens;
 - `gpt-realtime-translate`: 0.3804 SEK per audio minute;
 - `gpt-realtime-translate+elevenlabs-scribe-v2-realtime`: 0.4531 SEK per minute;
@@ -361,7 +361,7 @@ print the key in test output.
 
 1. Confirm startup validation succeeds and the health endpoint is healthy.
 2. Send a basic assistant turn and a tool-using turn; confirm usage rows show
-   provider `openai`, model `gpt-5.6-luna`, and no hosted conversation ID.
+   provider `openai`, model `gpt-6-luna`, and no hosted conversation ID.
 3. Verify standard quiz practice, Anki review, Books/TTS, structured
    import, image extraction, and book-page translation.
 4. Start Enhanced subtitles and confirm relay readiness, translated captions,
