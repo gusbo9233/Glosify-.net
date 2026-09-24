@@ -10,7 +10,7 @@ customMetrics
              tostring(customDimensions["ai.model"]),
              tostring(customDimensions["ai.deployment"])),
          outcome = tostring(customDimensions["ai.outcome"])
-| where provider == "openai" and model == "gpt-5.6-luna"
+| where provider == "openai" and model == "gpt-6-luna"
 | summarize samples=sum(value), average=avg(value), p95=percentile(value, 95)
     by name, outcome, bin(timestamp, 1h)
 | order by timestamp desc
@@ -24,7 +24,7 @@ customMetrics
              tostring(customDimensions["ai.model"]),
              tostring(customDimensions["ai.deployment"])),
          feature = tostring(customDimensions["ai.feature"])
-| where provider == "openai" and model == "gpt-5.6-luna"
+| where provider == "openai" and model == "gpt-6-luna"
 | summarize tokens=sum(value) by feature, name, bin(timestamp, 1d)
 | order by timestamp desc
 

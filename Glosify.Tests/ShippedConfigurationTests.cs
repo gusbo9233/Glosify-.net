@@ -49,8 +49,8 @@ public sealed class ShippedConfigurationTests
         Assert.True(budget.MetersProvider(AiUsageProviders.OpenAi));
         Assert.True(budget.HasTokenPrice(OpenAiModels.Luna));
         var price = budget.FindModelPrice(OpenAiModels.Luna);
-        Assert.Equal(2.2373m, price?.InputSekPerMillionTokens);
-        Assert.Equal(13.4233m, price?.OutputSekPerMillionTokens);
+        Assert.Equal(1.1187m, price?.InputSekPerMillionTokens);
+        Assert.Equal(6.7117m, price?.OutputSekPerMillionTokens);
     }
 
     [Fact]

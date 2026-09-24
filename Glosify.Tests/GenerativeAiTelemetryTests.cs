@@ -11,10 +11,10 @@ public sealed class GenerativeAiTelemetryTests
         var tags = GenerativeAiTelemetry.Tags(
             "assistant",
             "openai",
-            "gpt-5.6-luna");
+            "gpt-6-luna");
 
         Assert.Contains(tags, tag =>
-            tag.Key == "ai.model" && Equals(tag.Value, "gpt-5.6-luna"));
+            tag.Key == "ai.model" && Equals(tag.Value, "gpt-6-luna"));
         Assert.DoesNotContain(tags, tag => tag.Key == "ai.deployment");
     }
 }
