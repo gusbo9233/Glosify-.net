@@ -6,11 +6,11 @@ public sealed class AiUsageOptions
 {
     public int TrialGrantCredits { get; set; } = 100;
     public int CreditsPerThousandTokens { get; set; } = 1;
-    public int AssistantOutputTokenReserve { get; set; } = 16384;
-    public int JsonImportRepairOutputTokenReserve { get; set; } = 16384;
-    public int ImageExtractionOutputTokenReserve { get; set; } = 1024;
-    public int PageTranslationOutputTokenReserve { get; set; } = 4096;
-    public int TextTranslationOutputTokenReserve { get; set; } = 4096;
+    public int AssistantOutputTokenReserve { get; set; } = 81920;
+    public int JsonImportRepairOutputTokenReserve { get; set; } = 81920;
+    public int ImageExtractionOutputTokenReserve { get; set; } = 5120;
+    public int PageTranslationOutputTokenReserve { get; set; } = 20480;
+    public int TextTranslationOutputTokenReserve { get; set; } = 20480;
     public AiMonthlyBudgetOptions MonthlyBudget { get; set; } = new();
 
     public int GetOutputReserve(string feature)
