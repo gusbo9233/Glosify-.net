@@ -145,16 +145,24 @@ public static class ResourceAccounting
                     deltas[(Site, resource)] = deltas.GetValueOrDefault((Site, resource)) + amount;
             }
             var removed = new HashSet<string>();
-            foreach (var change in changes.Where(x => x.State == EntityState.Deleted))
+            var deletions = changes.Where(x => x.State == EntityState.Deleted).ToArray();
+            if (deletions.Length > 0)
             {
-                var id = Key(change);
-                var marker = "|" + id + "|";
-                var userDeleted = change.Metadata.ClrType.Name == "ApplicationUser"
-                    ? (string)change.Property("Id").CurrentValue! : "";
-                var entries = await db.Set<ResourceEntry>().Where(x => x.Id == id || x.CascadeAncestors.Contains(marker)
-                    || userDeleted != "" && x.UserId == userDeleted && x.EntityType != "BlobCleanupRequest").ToListAsync(ct);
-                foreach (var old in entries.Where(x => removed.Add(x.Id)))
+                // A separate ancestor scan per word held the site-wide accounting
+                // lock for the entire batch. Fetch the union once, and only search
+                // ancestors for entities that can actually cascade to dependents.
+                var ids = deletions.Select(Key).ToArray();
+                var markers = deletions.Where(x => x.Metadata.GetReferencingForeignKeys()
+                        .Any(f => f.DeleteBehavior is DeleteBehavior.Cascade or DeleteBehavior.ClientCascade))
+                    .Select(x => "|" + Key(x) + "|").ToArray();
+                var users = deletions.Where(x => x.Metadata.ClrType.Name == "ApplicationUser")
+                    .Select(x => (string)x.Property("Id").CurrentValue!).ToArray();
+                var entries = await db.Set<ResourceEntry>().Where(x => ids.Contains(x.Id)
+                    || markers.Any(marker => x.CascadeAncestors.Contains(marker))
+                    || users.Contains(x.UserId) && x.EntityType != "BlobCleanupRequest").ToListAsync(ct);
+                foreach (var old in entries)
                 {
+                    removed.Add(old.Id);
                     foreach (var (resource, amount) in Charges(old.ChargesJson)) Delta(old.UserId, resource, -amount);
                     db.Remove(old);
                 }
