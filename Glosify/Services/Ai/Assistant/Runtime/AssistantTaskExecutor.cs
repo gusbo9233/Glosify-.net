@@ -518,6 +518,11 @@ internal sealed class AssistantTaskExecutor(GlosifyContext db, AssistantTaskStor
                     || !(correction.Status == "success" && RuntimeJson.Read<AssistantToolOutcome>(correction.ResultJson).Saved > 0
                         || task.ManualApproval && correction.Status == "proposed"))
                     return new("correctable", Error: "The evidence must be a successful correction of the same mutation type, not a read, failure, or partial batch.");
+                var rejectedCall = await db.AssistantTaskCalls.AsNoTracking().SingleOrDefaultAsync(x =>
+                    x.TaskId == task.Id && x.Sequence == rejectedSequence, ct);
+                if (rejectedCall is null || !RuntimeMutationCorrections.MatchesCorrection(key, rejectedTool,
+                    rejectedCall.ArgumentsJson, correction.ToolName, correction.ArgumentsJson))
+                    return new("correctable", Error: "The correction must contain exactly one matching item and preserve the rejected item's usable text and translation. If no usable content remains, ask the user to clarify.");
                 state.MutationCorrectionEvidence.Add(correctedSequence);
                 state.UnresolvedMutations.Remove(key);
                 state.NeedsCorrection = state.UnresolvedMutations.Count > 0;

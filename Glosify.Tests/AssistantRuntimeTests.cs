@@ -375,6 +375,42 @@ public sealed class AssistantRuntimeTests
         if (!manualApproval) Assert.Equal(["dom", "woda"], await h.Db.Words.OrderBy(x => x.Lemma).Select(x => x.Lemma).ToListAsync());
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Unrelated_saved_word_cannot_resolve_an_unidentified_rejection(bool manualApproval)
+    {
+        await using var h = await Harness.Create();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (request, n) =>
+        {
+            string Link(int sequence)
+            {
+                using var context = JsonDocument.Parse(request.ContextInstruction!.Split("\nTask state: ")[1]);
+                var key = context.RootElement.GetProperty("unresolvedMutations").EnumerateObject().Single().Name;
+                return RuntimeJson.Write(new { mutation_key = key, saved_call = sequence.ToString() });
+            }
+            return n switch
+            {
+                1 => ("add_words", "{\"words\":[{\"word\":\"\",\"translation\":\"house\"}]}"),
+                2 => ("add_word", "{\"word\":\"las\",\"translation\":\"forest\"}"),
+                3 => ("resolve_rejected_item", Link(1)),
+                4 => ("finish_task", "{\"summary\":\"Too early\"}"),
+                5 => ("add_word", "{\"word\":\"dom\",\"translation\":\"house\"}"),
+                6 => ("resolve_rejected_item", Link(4)),
+                _ => ("finish_task", "{\"summary\":\"Done\"}"),
+            };
+        };
+        var task = await h.Store.StartAsync(h.ThreadId, "user", new("bound-correction", new("Add these words", h.QuizId)), default, manualApproval);
+        await h.Drain(25);
+        Assert.Equal("completed", (await h.Store.ViewAsync(task.Id, "user", default)).Status);
+        Assert.Equal(["correctable", "success"], await h.Db.AssistantTaskCalls
+            .Where(x => x.ToolName == "resolve_rejected_item").OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync());
+        Assert.Equal(["correctable", "success"], await h.Db.AssistantTaskCalls
+            .Where(x => x.ToolName == "finish_task").OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync());
+        if (!manualApproval) Assert.Equal("house", (await h.Db.Words.SingleAsync(x => x.Lemma == "dom")).Translation);
+    }
+
     [Fact]
     public async Task Intentional_word_sentence_deduplication_does_not_block_completed_draft()
     {

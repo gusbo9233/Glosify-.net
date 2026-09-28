@@ -12,6 +12,49 @@ internal static class RuntimeMutationCorrections
         "edit_words" => "edit_word", "edit_sentences" => "edit_sentence", _ => tool,
     };
 
+    // Missing identities can only be repaired by preserving the usable content that
+    // survived the rejected call. A model's assertion that two calls are related is
+    // not evidence, and an entirely blank item cannot be resolved automatically.
+    internal static bool MatchesCorrection(string key, string rejectedTool, string rejectedArguments,
+        string correctionTool, string correctionArguments)
+    {
+        var rejected = ToolArguments.ParseArgs(rejectedArguments);
+        var correction = ToolArguments.ParseArgs(correctionArguments);
+        static IEnumerable<(string Kind, JsonElement Item)> Items(string tool, JsonElement args)
+        {
+            var properties = tool switch
+            {
+                "add_words" => new[] { (args.TryGetProperty("items", out _) ? "items" : "words", "word") },
+                "add_sentences" => [("sentences", "sentence")],
+                "edit_words" => [("changes", "word")],
+                "edit_sentences" => [("changes", "sentence")],
+                "create_vocabulary_quiz" => [(args.TryGetProperty("items", out _) ? "items" : "words", "word"), ("sentences", "sentence")],
+                _ => Array.Empty<(string, string)>(),
+            };
+            foreach (var (property, kind) in properties)
+                if (ToolArguments.TryGetArray(args, property, out var array))
+                    foreach (var item in array.EnumerateArray()) yield return (kind, item);
+            if (tool is "add_word" or "edit_word") yield return ("word", args);
+            if (tool is "add_sentence" or "edit_sentence") yield return ("sentence", args);
+        }
+        static string Text(JsonElement item, params string[] names) => item.ValueKind != JsonValueKind.Object ? ""
+            : names.Select(name => ToolArguments.GetString(item, name)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? "";
+        var original = Items(rejectedTool, rejected).Where(x =>
+            key == "tool:" + rejectedTool + ":unidentified:" + RuntimeJson.Hash(x.Item.GetRawText())).ToArray();
+        var candidates = Items(correctionTool, correction).ToArray();
+        if (original.Length != 1 || candidates.Length != 1 || original[0].Kind != candidates[0].Kind) return false;
+        if (rejectedTool == "create_vocabulary_quiz"
+            && Text(rejected, "draft_id") != Text(correction, "draft_id")) return false;
+        var oldItem = original[0].Item;
+        var newItem = candidates[0].Item;
+        var textFields = original[0].Kind == "word" ? new[] { "word", "prompt" } : ["text"];
+        var oldText = Text(oldItem, textFields);
+        var oldTranslation = Text(oldItem, "translation", "answer");
+        return (oldText.Length > 0 || oldTranslation.Length > 0)
+            && (oldText.Length == 0 || oldText == Text(newItem, textFields))
+            && (oldTranslation.Length == 0 || oldTranslation == Text(newItem, "translation", "answer"));
+    }
+
     internal static void Observe(AssistantRuntimeState state, string tool, string arguments, AssistantToolOutcome outcome, int sequence)
     {
         if (ToolExecutionPolicy.For(tool).Operation is "read" or "control"
