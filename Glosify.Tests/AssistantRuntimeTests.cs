@@ -52,6 +52,109 @@ public sealed class AssistantRuntimeTests
         Assert.Equal("success", (await h.Db.AssistantTaskCalls.FirstAsync()).Status);
     }
 
+    [Theory]
+    [InlineData("Use list_quizzes to check whether my library contains any quizzes, then briefly report the result. Do not create, edit, move, or delete anything.")]
+    [InlineData("No new quiz, just list my quizzes.")]
+    [InlineData("Do not create a quiz, add, or edit anything; list my quizzes.")]
+    [InlineData("Do not create a quiz, add and remove anything; list my quizzes.")]
+    [InlineData("Do not create just because I mentioned a new quiz; list my quizzes.")]
+    [InlineData("How do I create a quiz? First inspect my existing library.")]
+    [InlineData("Add nothing; list my quizzes.")]
+    [InlineData("Create no new quiz; list my quizzes.")]
+    [InlineData("Start new topic: list my quizzes.")]
+    [InlineData("Start new quiz? No—just list my quizzes.")]
+    [InlineData("Create a new quiz. Actually, do not create anything; list my quizzes.")]
+    [InlineData("Add a word? Just explain the available options.")]
+    public async Task Read_only_requests_complete_after_library_read_without_forced_writes(string message)
+    {
+        foreach (var prose in new[] { false, true })
+        {
+            await using var h = await Harness.Create();
+            var thread = await h.Db.AssistantThreads.SingleAsync();
+            thread.ContextQuizId = null;
+            await h.Db.SaveChangesAsync();
+            h.Model.ReportedTokens = 100;
+            h.Model.Script = (_, n) => n == 1
+                ? ("list_quizzes", "{\"language\":null}")
+                : prose ? ("text", "Your library was checked.") : ("finish_task", "{\"summary\":\"Your library was checked.\"}");
+            var task = await h.Store.StartAsync(h.ThreadId, "user", new("read-only", new(message)), default);
+            await h.Drain(25);
+            var result = await h.Store.ViewAsync(task.Id, "user", default);
+            Assert.Equal("completed", result.Status);
+            Assert.Equal(0, result.SavedChanges);
+            Assert.Equal(2, result.ModelCalls);
+            Assert.Contains(result.Activity, x => x.Tool == "list_quizzes" && x.Status == "success");
+            Assert.Single(await h.Db.Quizzes.ToListAsync());
+            Assert.Empty(await h.Db.Words.ToListAsync());
+        }
+    }
+
+    [Theory]
+    [InlineData("Add the word dom to this quiz.")]
+    [InlineData("Please add the word dom to this quiz.")]
+    [InlineData("Add only the word dom to this quiz.")]
+    public async Task Explicit_initial_addition_still_requires_a_saved_mutation(string message)
+    {
+        await using var h = await Harness.Create();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (_, n) => n switch
+        {
+            1 => ("finish_task", "{\"summary\":\"Too early\"}"),
+            2 => ("add_word", "{\"word\":\"dom\",\"translation\":\"house\"}"),
+            _ => ("finish_task", "{\"summary\":\"Done\"}"),
+        };
+        var task = await h.Start(message);
+        await h.Drain();
+        Assert.Equal("completed", (await h.Store.ViewAsync(task.Id, "user", default)).Status);
+        Assert.Equal(["correctable", "success"], await h.Db.AssistantTaskCalls.Where(x => x.ToolName == "finish_task")
+            .OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync());
+        Assert.Equal("dom", (await h.Db.Words.SingleAsync()).Lemma);
+    }
+
+    [Theory]
+    [InlineData("Start new quiz called Travel.")]
+    [InlineData("Make new quiz called Travel.")]
+    public async Task Direct_new_quiz_command_requires_a_saved_quiz(string message)
+    {
+        await using var h = await Harness.Create();
+        var thread = await h.Db.AssistantThreads.SingleAsync();
+        thread.ContextQuizId = null;
+        await h.Db.SaveChangesAsync();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (_, n) => n switch
+        {
+            1 => ("finish_task", "{\"summary\":\"Too early\"}"),
+            2 => ("create_vocabulary_quiz", "{\"name\":\"Travel\",\"source_language\":\"English\",\"target_language\":\"Polish\",\"complete\":true,\"words\":[{\"word\":\"dom\",\"translation\":\"house\"}],\"sentences\":[]}"),
+            _ => ("finish_task", "{\"summary\":\"Done\"}"),
+        };
+        var task = await h.Store.StartAsync(h.ThreadId, "user", new("new-quiz", new(message)), default);
+        await h.Drain();
+        Assert.Equal("completed", (await h.Store.ViewAsync(task.Id, "user", default)).Status);
+        Assert.Equal(["correctable", "success"], await h.Db.AssistantTaskCalls.Where(x => x.ToolName == "finish_task")
+            .OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync());
+        var quiz = await h.Db.Quizzes.SingleAsync(x => x.Name == "Travel");
+        Assert.Equal("dom", (await h.Db.Words.SingleAsync(x => x.QuizId == quiz.Id)).Lemma);
+    }
+
+    [Theory]
+    [InlineData("No new quiz just go ahead and add the word dom to this one.")]
+    [InlineData("Do not create a quiz, add and explain the word dom to this one.")]
+    public async Task Mixed_instructions_reach_the_model_intact_and_allow_requested_additions(string message)
+    {
+        await using var h = await Harness.Create();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (request, n) =>
+        {
+            Assert.Contains(message, request.ContextInstruction);
+            return n == 1 ? ("add_word", "{\"word\":\"dom\",\"translation\":\"house\"}")
+                : ("finish_task", "{\"summary\":\"Done\"}");
+        };
+        var task = await h.Start(message);
+        await h.Drain();
+        Assert.Equal("completed", (await h.Store.ViewAsync(task.Id, "user", default)).Status);
+        Assert.Equal("dom", (await h.Db.Words.SingleAsync()).Lemma);
+    }
+
     [Fact]
     public async Task Idempotency_ownership_and_single_active_user_are_enforced()
     {
