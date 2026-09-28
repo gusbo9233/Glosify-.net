@@ -36,12 +36,21 @@ public sealed class AssistantIntentResolverTests
     [InlineData("Why does this take the dative case?", AssistantOperationKind.Auto)]
     [InlineData("Start with the dative case, please.", AssistantOperationKind.Auto)]
     [InlineData("Make sure the translations are right.", AssistantOperationKind.Auto)]
+    [InlineData("List my quizzes. Do not create, edit, move, or delete anything.", AssistantOperationKind.Auto)]
+    [InlineData("Please don't create a new quiz or add words.", AssistantOperationKind.Auto)]
+    [InlineData("Never generate a quiz. Just explain.", AssistantOperationKind.Auto)]
+    [InlineData("Explain without adding anything.", AssistantOperationKind.Auto)]
+    [InlineData("Do not create a quiz; add five words to this one.", AssistantOperationKind.Add)]
+    [InlineData("Do not edit this quiz, but create a new quiz.", AssistantOperationKind.Create)]
+    [InlineData("Do not create a quiz. Instead add five words.", AssistantOperationKind.Add)]
+    [InlineData("Create a quiz. Do not add sentences.", AssistantOperationKind.Create)]
+    [InlineData("Don't forget to create the quiz.", AssistantOperationKind.Create)]
     public void Operation_intent_prefers_creation_over_addition(
         string message,
         AssistantOperationKind expected) =>
         Assert.Equal(expected, _resolver.Resolve(message).OperationKind);
 
-    // Operation is recorded, never enforced: it must not remove a tool the page allowed.
+    // Operation must not remove a tool the page allowed.
     [Theory]
     [InlineData("Create a quiz with five words.")]
     [InlineData("Add five words.")]

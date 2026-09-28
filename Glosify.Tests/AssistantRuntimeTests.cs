@@ -52,6 +52,31 @@ public sealed class AssistantRuntimeTests
         Assert.Equal("success", (await h.Db.AssistantTaskCalls.FirstAsync()).Status);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Read_only_request_with_negated_creation_completes_after_library_read(bool prose)
+    {
+        await using var h = await Harness.Create();
+        var thread = await h.Db.AssistantThreads.SingleAsync();
+        thread.ContextQuizId = null;
+        await h.Db.SaveChangesAsync();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (_, n) => n == 1
+            ? ("list_quizzes", "{\"language\":null}")
+            : prose ? ("text", "Your library was checked.") : ("finish_task", "{\"summary\":\"Your library was checked.\"}");
+        var task = await h.Store.StartAsync(h.ThreadId, "user", new("read-only", new(
+            "Use list_quizzes to check whether my library contains any quizzes, then briefly report the result. Do not create, edit, move, or delete anything.")), default);
+        await h.Drain(25);
+        var result = await h.Store.ViewAsync(task.Id, "user", default);
+        Assert.Equal("completed", result.Status);
+        Assert.Equal(0, result.SavedChanges);
+        Assert.Equal(2, result.ModelCalls);
+        Assert.Contains(result.Activity, x => x.Tool == "list_quizzes" && x.Status == "success");
+        Assert.Single(await h.Db.Quizzes.ToListAsync());
+        Assert.Empty(await h.Db.Words.ToListAsync());
+    }
+
     [Fact]
     public async Task Idempotency_ownership_and_single_active_user_are_enforced()
     {
