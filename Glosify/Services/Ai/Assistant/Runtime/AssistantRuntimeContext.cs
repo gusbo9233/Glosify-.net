@@ -68,7 +68,8 @@ internal sealed class AssistantRuntimeContext(GlosifyContext db, AssistantContex
                     quiz_id = state.DraftQuizzes.GetValueOrDefault(x.Payload.GetProperty("draft_id").GetString()!),
                     words = x.Payload.GetProperty("words").GetArrayLength(), sentences = x.Payload.GetProperty("sentences").GetArrayLength(),
                 }),
-                savedChanges = task.SavedChanges, recentErrors = state.LastErrors.TakeLast(3), steering,
+                savedChanges = task.SavedChanges, recentErrors = state.LastErrors.TakeLast(3),
+                unresolvedMutations = state.UnresolvedMutations, steering,
             });
         return new(context, new(instruction, state.History, offered.Select(RuntimeToolSchema.Strict).ToArray(), profile, contextInstruction, allowed, DurableExecution: true));
     }

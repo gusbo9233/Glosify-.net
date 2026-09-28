@@ -92,6 +92,7 @@ internal sealed class AssistantTaskExecutor(GlosifyContext db, AssistantTaskStor
                 s.DraftCollections.Clear();
                 s.NoProgress = 0;
                 s.NeedsCorrection = false;
+                s.UnresolvedMutations.Clear();
                 t.ApprovalGranted = false;
             }, ct);
             return;
@@ -140,7 +141,8 @@ internal sealed class AssistantTaskExecutor(GlosifyContext db, AssistantTaskStor
                     var journal = await db.AssistantTaskCalls.SingleOrDefaultAsync(x => x.TaskId == id && x.Sequence == s.CallSequence, ct);
                     if (journal is not null) { journal.Status = "correctable"; journal.ResultJson = RuntimeJson.Write(outcome); }
                     s.CallResults.Add(ResponsePart(failedCall, outcome));
-                    s.NextCall++; s.CallSequence++; s.NoProgress++; s.NeedsCorrection = true;
+                    RuntimeMutationCorrections.Observe(s, tools.ResolveCanonicalName(failedCall.Name) ?? failedCall.Name, failedCall.ArgsJson, outcome);
+                    s.NextCall++; s.CallSequence++; s.NoProgress++;
                     if (s.NextCall == s.Calls.Count) FlushResults(s);
                     t.Status = "queued";
                     t.Reason = "Correcting a failed tool call; earlier saved changes are retained.";
@@ -334,7 +336,12 @@ internal sealed class AssistantTaskExecutor(GlosifyContext db, AssistantTaskStor
                 else if (journal.Status == "awaiting_approval" && task.ApprovalGranted)
                 {
                     await SaveChangesAsync(task, state, runtime.Tools.QuizId, ct);
-                    outcome = new("success", Saved: task.SavedChanges - before);
+                    // Approval applies accepted proposals; it does not repair skipped items.
+                    var proposed = RuntimeJson.Read<AssistantToolOutcome>(journal.ResultJson!);
+                    var proposalData = JsonSerializer.SerializeToElement(proposed.Data, RuntimeJson.Options);
+                    var partial = proposalData.ValueKind == JsonValueKind.Object && proposalData.EnumerateObject().Any(x =>
+                        x.Name.StartsWith("skipped", StringComparison.Ordinal) && x.Value.ValueKind == JsonValueKind.Array && x.Value.GetArrayLength() > 0);
+                    outcome = new(partial ? "partial" : "success", proposed.Data, Saved: task.SavedChanges - before);
                     task.ApprovalGranted = false;
                 }
                 else
@@ -394,10 +401,7 @@ internal sealed class AssistantTaskExecutor(GlosifyContext db, AssistantTaskStor
             state.CallResults.Add(ResponsePart(call, new { sequence, outcome }));
             state.NextCall++;
             state.CallSequence++;
-            var mutation = ToolExecutionPolicy.For(canonical).Operation is not ("read" or "control");
-            if (outcome.Status is "correctable" or "partial" && mutation) state.NeedsCorrection = true;
-            // A synchronous task proposes instead of saving, so an accepted proposal resolves too.
-            else if (outcome.Saved > 0 || mutation && outcome.Status == "proposed") state.NeedsCorrection = false;
+            RuntimeMutationCorrections.Observe(state, canonical, call.ArgsJson, outcome);
             var earlierResults = outcome.Saved == 0 ? await db.AssistantTaskCalls.AsNoTracking()
                 .Where(x => x.TaskId == id && x.Sequence < sequence && x.ToolName == canonical && x.ResultJson != null)
                 .OrderByDescending(x => x.Sequence).Take(6).Select(x => x.ResultJson!).ToListAsync(ct) : [];

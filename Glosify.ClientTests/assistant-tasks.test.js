@@ -89,3 +89,27 @@ test('Stop retries across progress revisions but approval never silently approve
     await assert.rejects(tasks.command('chat', 'approve'));
     assert.equal(revisions.filter(x => x[0].endsWith('/approve')).length, 1);
 });
+
+
+test('discovery after a lost start response preserves idempotent submission recovery', async () => {
+    const calls = [];
+    let first = true;
+    const tasks = createAssistantTasks({
+        request: async (url, options) => {
+            if (url.endsWith('capabilities')) return { enabled: true };
+            calls.push({ url, body: options?.body && JSON.parse(options.body) });
+            if (options?.method === 'POST' && first) { first = false; throw new Error('lost response'); }
+            return { id: 'task', status: 'running', revision: 7 };
+        }, onProgress() {}, onCompleted() {}, isCurrent: () => true,
+        schedule() {}, isHidden: () => false, isOnline: () => true, newKey: () => 'original-key',
+    });
+    const input = { message: 'Make a quiz' };
+    await assert.rejects(tasks.send('chat', input));
+    await tasks.discover('chat');
+    await tasks.send('chat', input);
+    const posts = calls.filter(x => x.body);
+    assert.equal(posts.length, 2);
+    assert.equal(posts[1].url, '/Assistant/Tasks/chats/chat');
+    assert.equal(posts[1].body.idempotencyKey, posts[0].body.idempotencyKey);
+    assert.equal(calls.some(x => x.url.endsWith('/steer')), false);
+});

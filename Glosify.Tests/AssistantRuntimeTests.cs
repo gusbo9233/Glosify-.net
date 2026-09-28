@@ -275,6 +275,68 @@ public sealed class AssistantRuntimeTests
         Assert.Empty(await h.Db.Words.ToListAsync()); // Still a proposal for Apply.
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Partial_batch_requires_every_skipped_target_to_be_corrected(bool manualApproval)
+    {
+        await using var h = await Harness.Create();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (_, n) => n switch
+        {
+            1 => ("add_words", "{\"words\":[{\"word\":\"dom\",\"translation\":\"house\"},{\"word\":\"kot\",\"translation\":\"\"},{\"word\":\"woda\",\"translation\":\"\"}]}"),
+            2 => ("add_word", "{\"word\":\"kot\",\"translation\":\"cat\"}"),
+            3 => ("finish_task", "{\"summary\":\"Too early\"}"),
+            4 => ("add_word", "{\"word\":\"las\",\"translation\":\"forest\"}"),
+            5 => ("finish_task", "{\"summary\":\"Still too early\"}"),
+            6 => ("add_word", "{\"word\":\"woda\",\"translation\":\"water\"}"),
+            _ => ("finish_task", "{\"summary\":\"All corrected\"}"),
+        };
+        var task = await h.Store.StartAsync(h.ThreadId, "user", new("partial-corrections", new("Add these words", h.QuizId)), default, manualApproval);
+        await h.Drain(25);
+        var view = await h.Store.ViewAsync(task.Id, "user", default);
+        Assert.Equal("completed", view.Status);
+        var finishes = await h.Db.AssistantTaskCalls.AsNoTracking().Where(x => x.ToolName == "finish_task")
+            .OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync();
+        Assert.Equal(["correctable", "correctable", "success"], finishes);
+        Assert.Equal(7, h.Model.Calls);
+        if (manualApproval)
+        {
+            var response = RuntimeJson.Read<AssistantTurnResponse>(RuntimeJson.Write(view.Result));
+            Assert.Equal(4, response.PendingChanges.Count);
+            Assert.Empty(await h.Db.Words.ToListAsync());
+        }
+        else Assert.Equal(["dom", "kot", "las", "woda"], await h.Db.Words.OrderBy(x => x.Lemma).Select(x => x.Lemma).ToListAsync());
+    }
+
+    [Fact]
+    public async Task Approving_a_partial_bulk_edit_keeps_skipped_items_unresolved()
+    {
+        await using var h = await Harness.Create();
+        h.Db.Words.AddRange(Enumerable.Range(1, 3).Select(i => new Word
+            { Id = "w" + i, QuizId = h.QuizId, Lemma = "word" + i, Translation = "old" }));
+        await h.Db.SaveChangesAsync();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (_, n) => n switch
+        {
+            1 => ("edit_words", "{\"changes\":[{\"word_id\":\"w1\",\"word\":null,\"translation\":\"one\"},{\"word_id\":\"w2\",\"word\":null,\"translation\":\"two\"},{\"word_id\":\"w3\",\"word\":null,\"translation\":\"\"}]}"),
+            2 => ("finish_task", "{\"summary\":\"Too early\"}"),
+            3 => ("edit_word", "{\"word_id\":\"w3\",\"word\":null,\"translation\":\"three\"}"),
+            _ => ("finish_task", "{\"summary\":\"Done\"}"),
+        };
+        var task = await h.Start("Edit the three translations");
+        await h.Drain();
+        var pending = await h.Store.ViewAsync(task.Id, "user", default);
+        Assert.Equal("awaiting_approval", pending.Status);
+        h.Db.ChangeTracker.Clear();
+        await h.Store.CommandAsync(task.Id, "user", "approve", new(pending.Revision), default);
+        await h.Drain();
+        Assert.Equal("completed", (await h.Store.ViewAsync(task.Id, "user", default)).Status);
+        Assert.Equal(["correctable", "success"], await h.Db.AssistantTaskCalls.Where(x => x.ToolName == "finish_task")
+            .OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync());
+        Assert.Equal(["one", "two", "three"], await h.Db.Words.OrderBy(x => x.Id).Select(x => x.Translation).ToListAsync());
+    }
+
     [Fact]
     public async Task Deleting_chat_cascades_operational_records_and_prevents_resume()
     {

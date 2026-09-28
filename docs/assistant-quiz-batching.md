@@ -22,14 +22,16 @@ mark the draft complete. While any draft is unfinished, a text-only model respon
 causes the runner to continue with draft ids and counts in its context. Apply still
 uses the existing transaction and saves one quiz from the combined proposal.
 
-The existing 8,000-character pasted-message limit, 24-invocation limit,
-cancellation, provider timeout, and credit checks remain in effect. Reaching the
-invocation limit explicitly reports partial work.
-This is a bounded request-time loop, not a durable background job: interruption
-recovery, cross-turn draft continuation, and live progress streaming are not provided.
-Completion is the model's coverage assessment, not a deterministic proof that every
-source word was included. A refusal before starting any draft is addressed through
-the instructions, not forced mutation based on an intent guess.
+Requests accept up to 50,000 characters. With `AssistantRuntime:Enabled`, the
+[durable runtime](assistant-runtime.md) owns execution, checkpoints batches, and
+supports interruption recovery. The web rollout adds progress polling, Stop,
+Resume, steering, and approvals. Saved batches remain when a task pauses.
+
+With the runtime disabled, the legacy request-time loop retains its 24-invocation
+limit, cancellation, provider timeout, and credit checks. Reaching the limit
+explicitly reports partial work; that legacy loop does not recover interrupted
+requests. Coverage checks account for source spans but cannot prove semantic
+translation or extraction accuracy.
 
 Regression tests cover multi-batch assembly, duplicate batches, content-kind and
 draft boundaries, premature final replies, invocation limits, and transactional

@@ -99,7 +99,10 @@ Source coverage records UTF-16 spans referencing successful saved calls or expli
 exclusions. It checks that source text was accounted for; it cannot independently
 prove that every generated translation or vocabulary extraction is semantically
 correct. `finish_task` checks the coverage ledger, unfinished drafts, approval state,
-and unresolved mutation errors. Ordinary non-mutating questions can finish with one
+and unresolved mutation errors. Rejected/skipped mutation targets stay in a
+checkpointed ledger until matching targets are successfully saved or proposed;
+unrelated writes and approval of a partial batch do not clear them. Steering can
+supersede these obligations when the user changes the request. Ordinary non-mutating questions can finish with one
 model response. Three unproductive steps request a changed approach; six pause.
 
 Legacy synchronous endpoints wait for a durable task when enabled and retain their

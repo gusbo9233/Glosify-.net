@@ -61,6 +61,7 @@ internal sealed class AssistantRuntimeState
     public int CallSequence { get; set; }
     public int SteeringCount { get; set; }
     public bool NeedsCorrection { get; set; }
+    public HashSet<string> UnresolvedMutations { get; set; } = [];
     public Dictionary<string, string> CoverageEvidence { get; set; } = [];
     public int NoProgress { get; set; }
     public Guid? FinalMessageId { get; set; }

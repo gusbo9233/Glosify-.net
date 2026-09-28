@@ -49,8 +49,11 @@ export function createAssistantTasks({ request, onProgress, onCompleted, isCurre
         async send(threadId, input) {
             if (!await enabled()) return false;
             const current = tasks.get(threadId);
+            const fingerprint = JSON.stringify({ threadId, input });
+            // Recover an ambiguous submission before treating this text as new steering.
+            const pendingKey = submissions.get(fingerprint);
             let task;
-            if (active(current)) {
+            if (active(current) && !pendingKey) {
                 let latest = current;
                 for (let attempt = 0; attempt < 3; attempt++) {
                     try {
@@ -65,8 +68,7 @@ export function createAssistantTasks({ request, onProgress, onCompleted, isCurre
                     }
                 }
             } else {
-                const fingerprint = JSON.stringify({ threadId, input });
-                const key = submissions.get(fingerprint) ?? newKey();
+                const key = pendingKey ?? newKey();
                 submissions.set(fingerprint, key);
                 task = await request(`/Assistant/Tasks/chats/${threadId}`, {
                     method: 'POST', body: JSON.stringify({ idempotencyKey: key, request: input }),
