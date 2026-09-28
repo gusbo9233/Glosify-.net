@@ -235,7 +235,7 @@ internal sealed class CreateQuizTool : IAssistantTool
                 dropped.Add(new SkippedItem(
                     sourceIndexes[index],
                     $"\"{words[index].Word}\" is already proposed as a sentence. "
-                    + "A sentence is stored once, as a sentence."));
+                    + "A sentence is stored once, as a sentence.", Code: "already_sentence"));
                 continue;
             }
 

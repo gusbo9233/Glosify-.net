@@ -141,7 +141,7 @@ internal sealed class AssistantTaskExecutor(GlosifyContext db, AssistantTaskStor
                     var journal = await db.AssistantTaskCalls.SingleOrDefaultAsync(x => x.TaskId == id && x.Sequence == s.CallSequence, ct);
                     if (journal is not null) { journal.Status = "correctable"; journal.ResultJson = RuntimeJson.Write(outcome); }
                     s.CallResults.Add(ResponsePart(failedCall, outcome));
-                    RuntimeMutationCorrections.Observe(s, tools.ResolveCanonicalName(failedCall.Name) ?? failedCall.Name, failedCall.ArgsJson, outcome);
+                    RuntimeMutationCorrections.Observe(s, tools.ResolveCanonicalName(failedCall.Name) ?? failedCall.Name, failedCall.ArgsJson, outcome, s.CallSequence);
                     s.NextCall++; s.CallSequence++; s.NoProgress++;
                     if (s.NextCall == s.Calls.Count) FlushResults(s);
                     t.Status = "queued";
@@ -401,7 +401,7 @@ internal sealed class AssistantTaskExecutor(GlosifyContext db, AssistantTaskStor
             state.CallResults.Add(ResponsePart(call, new { sequence, outcome }));
             state.NextCall++;
             state.CallSequence++;
-            RuntimeMutationCorrections.Observe(state, canonical, call.ArgsJson, outcome);
+            RuntimeMutationCorrections.Observe(state, canonical, call.ArgsJson, outcome, sequence);
             var earlierResults = outcome.Saved == 0 ? await db.AssistantTaskCalls.AsNoTracking()
                 .Where(x => x.TaskId == id && x.Sequence < sequence && x.ToolName == canonical && x.ResultJson != null)
                 .OrderByDescending(x => x.Sequence).Take(6).Select(x => x.ResultJson!).ToListAsync(ct) : [];
@@ -503,6 +503,25 @@ internal sealed class AssistantTaskExecutor(GlosifyContext db, AssistantTaskStor
                 if (!state.CoveredSections.Contains(sectionId)) state.CoveredSections.Add(sectionId);
                 state.CoverageEvidence[sectionId] = Value("coverage_json");
                 return new("success", new { sectionId });
+            case "resolve_rejected_item":
+                var key = Value("mutation_key");
+                if (!key.Contains(":unidentified:", StringComparison.Ordinal)
+                    || !state.UnresolvedMutations.TryGetValue(key, out var rejectedSequence)
+                    || !int.TryParse(Value("saved_call"), out var correctedSequence)
+                    || correctedSequence <= rejectedSequence || state.MutationCorrectionEvidence.Contains(correctedSequence))
+                    return new("correctable", Error: "Link one unidentified rejected item to a later, unused successful correction call.");
+                var correction = await db.AssistantTaskCalls.AsNoTracking().SingleOrDefaultAsync(x =>
+                    x.TaskId == task.Id && x.Sequence == correctedSequence, ct);
+                var rejectedTool = key.Split(':')[1];
+                if (correction?.ResultJson is null
+                    || RuntimeMutationCorrections.Family(correction.ToolName) != RuntimeMutationCorrections.Family(rejectedTool)
+                    || !(correction.Status == "success" && RuntimeJson.Read<AssistantToolOutcome>(correction.ResultJson).Saved > 0
+                        || task.ManualApproval && correction.Status == "proposed"))
+                    return new("correctable", Error: "The evidence must be a successful correction of the same mutation type, not a read, failure, or partial batch.");
+                state.MutationCorrectionEvidence.Add(correctedSequence);
+                state.UnresolvedMutations.Remove(key);
+                state.NeedsCorrection = state.UnresolvedMutations.Count > 0;
+                return new("success", new { resolved = key, correctedSequence });
             case "ask_user":
                 if (task.ManualApproval)
                 {

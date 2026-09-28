@@ -70,9 +70,16 @@ export function createAssistantTasks({ request, onProgress, onCompleted, isCurre
             } else {
                 const key = pendingKey ?? newKey();
                 submissions.set(fingerprint, key);
-                task = await request(`/Assistant/Tasks/chats/${threadId}`, {
-                    method: 'POST', body: JSON.stringify({ idempotencyKey: key, request: input }),
-                });
+                try {
+                    task = await request(`/Assistant/Tasks/chats/${threadId}`, {
+                        method: 'POST', body: JSON.stringify({ idempotencyKey: key, request: input }),
+                    });
+                } catch (error) {
+                    // A definite rejection admitted no task. Only ambiguous failures retain
+                    // the key for recovery; otherwise discovery can enable normal steering.
+                    if (error.status >= 400 && error.status < 500 && error.status !== 408) submissions.delete(fingerprint);
+                    throw error;
+                }
                 submissions.delete(fingerprint);
             }
             await update(threadId, task);

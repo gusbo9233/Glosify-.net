@@ -57,7 +57,7 @@ internal sealed class AddWordsTool : IAssistantTool
                 skippedDuplicates.Add(new SkippedItem(
                     sourceIndexes[index],
                     $"\"{word.Word}\" is already proposed as a sentence. "
-                    + "A sentence is stored once, as a sentence."));
+                    + "A sentence is stored once, as a sentence.", Code: "already_sentence"));
                 continue;
             }
 

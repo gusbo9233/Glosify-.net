@@ -113,3 +113,23 @@ test('discovery after a lost start response preserves idempotent submission reco
     assert.equal(posts[1].body.idempotencyKey, posts[0].body.idempotencyKey);
     assert.equal(calls.some(x => x.url.endsWith('/steer')), false);
 });
+
+test('a rejected start releases its key so discovered work can be steered', async () => {
+    const posts = [];
+    const tasks = createAssistantTasks({
+        request: async (url, options) => {
+            if (url.endsWith('capabilities')) return { enabled: true };
+            if (options?.method === 'POST') {
+                posts.push(url);
+                if (posts.length === 1) { const error = new Error('another task is active'); error.status = 409; throw error; }
+            }
+            return { id: 'existing-task', status: 'running', revision: 4 };
+        }, onProgress() {}, onCompleted() {}, isCurrent: () => true,
+        schedule() {}, isHidden: () => false, isOnline: () => true, newKey: () => 'rejected-key',
+    });
+    const input = { message: 'Include sentences too' };
+    await assert.rejects(tasks.send('chat', input));
+    await tasks.discover('chat');
+    await tasks.send('chat', input);
+    assert.deepEqual(posts, ['/Assistant/Tasks/chats/chat', '/Assistant/Tasks/existing-task/steer']);
+});

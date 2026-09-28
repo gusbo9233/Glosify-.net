@@ -102,7 +102,10 @@ correct. `finish_task` checks the coverage ledger, unfinished drafts, approval s
 and unresolved mutation errors. Rejected/skipped mutation targets stay in a
 checkpointed ledger until matching targets are successfully saved or proposed;
 unrelated writes and approval of a partial batch do not clear them. Steering can
-supersede these obligations when the user changes the request. Ordinary non-mutating questions can finish with one
+supersede these obligations when the user changes the request. An item without a
+stable identity is resolved explicitly with `resolve_rejected_item`, referencing a
+later successful correction of the same mutation type; evidence cannot be reused.
+Typed word/sentence deduplication outcomes are intentional exclusions, not errors. Ordinary non-mutating questions can finish with one
 model response. Three unproductive steps request a changed approach; six pause.
 
 Legacy synchronous endpoints wait for a durable task when enabled and retain their

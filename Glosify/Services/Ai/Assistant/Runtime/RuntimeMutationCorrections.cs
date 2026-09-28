@@ -6,7 +6,13 @@ namespace Glosify.Services.Ai.Assistant.Runtime;
 /// <summary>Completion blockers belong to individual mutation targets, not the last tool call.</summary>
 internal static class RuntimeMutationCorrections
 {
-    internal static void Observe(AssistantRuntimeState state, string tool, string arguments, AssistantToolOutcome outcome)
+    internal static string Family(string tool) => tool switch
+    {
+        "add_words" => "add_word", "add_sentences" => "add_sentence",
+        "edit_words" => "edit_word", "edit_sentences" => "edit_sentence", _ => tool,
+    };
+
+    internal static void Observe(AssistantRuntimeState state, string tool, string arguments, AssistantToolOutcome outcome, int sequence)
     {
         if (ToolExecutionPolicy.For(tool).Operation is "read" or "control"
             || outcome.Status is not ("correctable" or "partial" or "success" or "proposed")) return;
@@ -28,7 +34,8 @@ internal static class RuntimeMutationCorrections
         {
             if (!ToolArguments.TryGetArray(args, property, out var array)) return;
             var skipped = result.ValueKind == JsonValueKind.Object && ToolArguments.TryGetArray(result, skippedProperty, out var errors)
-                ? errors.EnumerateArray().Where(x => x.TryGetProperty("index", out var i) && i.TryGetInt32(out _))
+                ? errors.EnumerateArray().Where(x => x.TryGetProperty("index", out var i) && i.TryGetInt32(out _)
+                    && ToolArguments.GetString(x, "code") != "already_sentence")
                     .Select(x => x.GetProperty("index").GetInt32()).ToHashSet() : [];
             var index = 0;
             foreach (var item in array.EnumerateArray()) targets.Add((Key(operation, item, names), skipped.Contains(index++)));
@@ -66,7 +73,7 @@ internal static class RuntimeMutationCorrections
             foreach (var target in targets.Where(x => !x.Skipped)) state.UnresolvedMutations.Remove(target.Key);
             if (outcome.Status != "partial") state.UnresolvedMutations.Remove(fallback);
         }
-        foreach (var target in targets.Where(x => !accepted || x.Skipped)) state.UnresolvedMutations.Add(target.Key);
+        foreach (var target in targets.Where(x => !accepted || x.Skipped)) state.UnresolvedMutations[target.Key] = sequence;
         state.NeedsCorrection = state.UnresolvedMutations.Count > 0;
     }
 }

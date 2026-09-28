@@ -337,6 +337,70 @@ public sealed class AssistantRuntimeTests
         Assert.Equal(["one", "two", "three"], await h.Db.Words.OrderBy(x => x.Id).Select(x => x.Translation).ToListAsync());
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Unidentified_rejected_items_require_distinct_later_correction_evidence(bool manualApproval)
+    {
+        await using var h = await Harness.Create();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (request, n) =>
+        {
+            string Link(int sequence)
+            {
+                using var context = JsonDocument.Parse(request.ContextInstruction!.Split("\nTask state: ")[1]);
+                var key = context.RootElement.GetProperty("unresolvedMutations").EnumerateObject().First().Name;
+                return RuntimeJson.Write(new { mutation_key = key, saved_call = sequence.ToString() });
+            }
+            return n switch
+            {
+                1 => ("add_words", "{\"words\":[{\"word\":\"\",\"translation\":\"house\"},{\"word\":\"\",\"translation\":\"water\"}]}"),
+                2 => ("add_word", "{\"word\":\"dom\",\"translation\":\"house\"}"),
+                3 => ("resolve_rejected_item", Link(0)), // The rejected call is not evidence.
+                4 => ("resolve_rejected_item", Link(1)),
+                5 => ("resolve_rejected_item", Link(1)), // One correction cannot resolve two missing items.
+                6 => ("finish_task", "{\"summary\":\"Too early\"}"),
+                7 => ("add_word", "{\"word\":\"woda\",\"translation\":\"water\"}"),
+                8 => ("resolve_rejected_item", Link(6)),
+                _ => ("finish_task", "{\"summary\":\"Done\"}"),
+            };
+        };
+        var task = await h.Store.StartAsync(h.ThreadId, "user", new("missing-identities", new("Add these words", h.QuizId)), default, manualApproval);
+        await h.Drain(25);
+        Assert.Equal("completed", (await h.Store.ViewAsync(task.Id, "user", default)).Status);
+        Assert.Equal(["correctable", "success", "correctable", "success"], await h.Db.AssistantTaskCalls
+            .Where(x => x.ToolName == "resolve_rejected_item").OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync());
+        Assert.Equal(["correctable", "success"], await h.Db.AssistantTaskCalls
+            .Where(x => x.ToolName == "finish_task").OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync());
+        if (!manualApproval) Assert.Equal(["dom", "woda"], await h.Db.Words.OrderBy(x => x.Lemma).Select(x => x.Lemma).ToListAsync());
+    }
+
+    [Fact]
+    public async Task Intentional_word_sentence_deduplication_does_not_block_completed_draft()
+    {
+        await using var h = await Harness.Create();
+        var thread = await h.Db.AssistantThreads.SingleAsync();
+        thread.ContextQuizId = null;
+        await h.Db.SaveChangesAsync();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (request, n) =>
+        {
+            if (n == 1) return ("create_vocabulary_quiz", "{\"name\":\"Deduplicated\",\"source_language\":\"English\",\"target_language\":\"Polish\",\"complete\":false,\"words\":[{\"word\":\"Ala ma kota.\",\"translation\":\"Ala has a cat.\"}],\"sentences\":[{\"text\":\"Ala ma kota.\",\"translation\":\"Ala has a cat.\"}]}" );
+            if (n == 2)
+            {
+                using var context = JsonDocument.Parse(request.ContextInstruction!.Split("\nTask state: ")[1]);
+                return ("create_vocabulary_quiz", RuntimeJson.Write(new
+                { draft_id = context.RootElement.GetProperty("drafts")[0].GetProperty("id").GetString(), complete = true, words = Array.Empty<object>(), sentences = Array.Empty<object>() }));
+            }
+            return ("finish_task", "{\"summary\":\"Done\"}");
+        };
+        var task = await h.Store.StartAsync(h.ThreadId, "user", new("deduplication", new("Create a quiz from these words and sentences")), default);
+        await h.Drain();
+        Assert.Equal("completed", (await h.Store.ViewAsync(task.Id, "user", default)).Status);
+        Assert.Empty(await h.Db.Words.ToListAsync());
+        Assert.Equal("Ala ma kota.", (await h.Db.QuizSentences.SingleAsync()).Text);
+    }
+
     [Fact]
     public async Task Deleting_chat_cascades_operational_records_and_prevents_resume()
     {
