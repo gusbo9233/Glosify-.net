@@ -45,6 +45,12 @@ public sealed class AssistantIntentResolverTests
     [InlineData("Do not create a quiz. Instead add five words.", AssistantOperationKind.Add)]
     [InlineData("Create a quiz. Do not add sentences.", AssistantOperationKind.Create)]
     [InlineData("Don't forget to create the quiz.", AssistantOperationKind.Create)]
+    [InlineData("Do not create a quiz, please add five words to this one.", AssistantOperationKind.Add)]
+    [InlineData("Do not create a quiz, add five words to this one.", AssistantOperationKind.Add)]
+    [InlineData("Do not create, add, or edit anything.", AssistantOperationKind.Auto)]
+    [InlineData("No new quiz, just list my quizzes.", AssistantOperationKind.Auto)]
+    [InlineData("No need to create a quiz. Just list my quizzes.", AssistantOperationKind.Auto)]
+    [InlineData("No new quiz, but add five words to this one.", AssistantOperationKind.Add)]
     public void Operation_intent_prefers_creation_over_addition(
         string message,
         AssistantOperationKind expected) =>

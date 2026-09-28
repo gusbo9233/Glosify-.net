@@ -53,9 +53,11 @@ public sealed class AssistantRuntimeTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Read_only_request_with_negated_creation_completes_after_library_read(bool prose)
+    [InlineData(false, "Use list_quizzes to check whether my library contains any quizzes, then briefly report the result. Do not create, edit, move, or delete anything.")]
+    [InlineData(true, "Use list_quizzes to check whether my library contains any quizzes, then briefly report the result. Do not create, edit, move, or delete anything.")]
+    [InlineData(false, "No new quiz, just list my quizzes.")]
+    [InlineData(true, "No new quiz, just list my quizzes.")]
+    public async Task Read_only_request_with_negated_creation_completes_after_library_read(bool prose, string message)
     {
         await using var h = await Harness.Create();
         var thread = await h.Db.AssistantThreads.SingleAsync();
@@ -65,8 +67,7 @@ public sealed class AssistantRuntimeTests
         h.Model.Script = (_, n) => n == 1
             ? ("list_quizzes", "{\"language\":null}")
             : prose ? ("text", "Your library was checked.") : ("finish_task", "{\"summary\":\"Your library was checked.\"}");
-        var task = await h.Store.StartAsync(h.ThreadId, "user", new("read-only", new(
-            "Use list_quizzes to check whether my library contains any quizzes, then briefly report the result. Do not create, edit, move, or delete anything.")), default);
+        var task = await h.Store.StartAsync(h.ThreadId, "user", new("read-only", new(message)), default);
         await h.Drain(25);
         var result = await h.Store.ViewAsync(task.Id, "user", default);
         Assert.Equal("completed", result.Status);
@@ -75,6 +76,25 @@ public sealed class AssistantRuntimeTests
         Assert.Contains(result.Activity, x => x.Tool == "list_quizzes" && x.Status == "success");
         Assert.Single(await h.Db.Quizzes.ToListAsync());
         Assert.Empty(await h.Db.Words.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Positive_addition_after_comma_still_requires_a_saved_mutation()
+    {
+        await using var h = await Harness.Create();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (_, n) => n switch
+        {
+            1 => ("finish_task", "{\"summary\":\"Too early\"}"),
+            2 => ("add_word", "{\"word\":\"dom\",\"translation\":\"house\"}"),
+            _ => ("finish_task", "{\"summary\":\"Done\"}"),
+        };
+        var task = await h.Start("Do not create a quiz, please add the word dom to this one.");
+        await h.Drain();
+        Assert.Equal("completed", (await h.Store.ViewAsync(task.Id, "user", default)).Status);
+        Assert.Equal(["correctable", "success"], await h.Db.AssistantTaskCalls.Where(x => x.ToolName == "finish_task")
+            .OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync());
+        Assert.Equal("dom", (await h.Db.Words.SingleAsync()).Lemma);
     }
 
     [Fact]

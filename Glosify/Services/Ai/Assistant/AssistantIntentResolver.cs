@@ -41,7 +41,7 @@ internal sealed partial class AssistantIntentResolver
     {
         // A prohibition covers its coordinated verbs until the sentence ends or a
         // contrast starts a new instruction: "do not create or add; just list".
-        message = NegatedOperations().Replace(message, " ");
+        message = NegatedArtifacts().Replace(NegatedOperations().Replace(message, " "), " ");
         if (CreateTerms().IsMatch(message))
         {
             return AssistantOperationKind.Create;
@@ -93,9 +93,12 @@ internal sealed partial class AssistantIntentResolver
     private static partial Regex SentenceTerms();
 
     [GeneratedRegex(
-        @"\b(?:do\s+not|don['’]t|never|without|not)\s+(?:create|generate|build|make|start|add|append|insert|include|extend|edit|move|delete)\b.*?(?=[.!?;\r\n]|\b(?:but|instead|then)\b|$)",
+        @"\b(?:do\s+not|don['’]t|never|without|not|no\s+need\s+to)\s+(?:create|generate|build|make|start|add|append|insert|include|extend|edit|move|delete)\b(?:\s*(?:,\s*(?:(?:and|or)\s+)?|(?:and|or)\s+)(?:create|generate|build|make|start|add|append|insert|include|extend|edit|move|delete)\b)*.*?(?=[.!?;\r\n]|,(?!\s*(?:and|or)\b)|\b(?:but|instead|then)\b|$)",
         RegexOptions.IgnoreCase)]
     private static partial Regex NegatedOperations();
+
+    [GeneratedRegex(@"\bno\s+(?:new\s+)?(?:quiz|quizzes|collection|list)\b.*?(?=[,.!?;\r\n]|\b(?:but|instead|then)\b|$)", RegexOptions.IgnoreCase)]
+    private static partial Regex NegatedArtifacts();
 
     // "start" and "new" only count next to an artifact noun: "start with the dative case" is a
     // lesson request, not a creation.
