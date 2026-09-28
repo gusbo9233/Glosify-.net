@@ -59,6 +59,8 @@ public sealed class AssistantRuntimeTests
     [InlineData("Do not create a quiz, add and remove anything; list my quizzes.")]
     [InlineData("Do not create just because I mentioned a new quiz; list my quizzes.")]
     [InlineData("How do I create a quiz? First inspect my existing library.")]
+    [InlineData("Add nothing; list my quizzes.")]
+    [InlineData("Create no new quiz; list my quizzes.")]
     public async Task Read_only_requests_complete_after_library_read_without_forced_writes(string message)
     {
         foreach (var prose in new[] { false, true })
