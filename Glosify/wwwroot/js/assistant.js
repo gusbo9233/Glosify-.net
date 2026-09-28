@@ -1,5 +1,6 @@
+import { createAssistantTasks } from './assistant/tasks.js';
 import { createAssistantApi } from './assistant/api.js';
-import { chooseInitialChat, createRecoverablePromiseQueue, createRecoverableSingleFlight, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
+import { chatContext, chooseInitialChat, createRecoverablePromiseQueue, createRecoverableSingleFlight, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
 import { escapeHtml, formatChatDate } from './assistant/presentation.js';
 import { currentBookPageContext, matchesOwnedStatus, populateContextOptions } from './assistant/context-options.js';
 import {
@@ -353,13 +354,12 @@ import {
         }
     };
 
-    const createChat = async (contextQuizId = quizId) => {
+    const createChat = async (context = chatContext(null)) => {
         const response = await fetch(chatsUrl, {
             method: 'POST',
             headers: requestHeaders(true),
             body: JSON.stringify({
-                contextQuizId: contextQuizId || null,
-                ...materialPayload(),
+                ...context,
                 updateContext: true,
             }),
         });
@@ -408,7 +408,7 @@ import {
         chats = removeChat(chats, threadId);
         sendErrors.delete(threadId);
         if (activeThreadId === threadId) {
-            const next = chats[0] || await createChat(quizId);
+            const next = chats[0] || await createChat();
             await selectChat(next.id);
         } else {
             renderChatList();
@@ -426,7 +426,10 @@ import {
         // First open in this session: start empty. Reuse the newest chat when it is
         // already blank so repeat sessions don't pile up empty threads in the list.
         const chat = storedChat
-            || await createChat(quizId);
+            || await createChat({
+                contextQuizId: pageQuizId,
+                ...buildMaterialPayload(pageMaterialKind, pageMaterialId),
+            });
         await selectChat(chat.id);
         initialized = true;
         panel.dataset.assistantInitialized = 'true';
@@ -453,38 +456,20 @@ import {
             if (!ownsSelection(selection)) return;
         }
         const chat = getActiveChat();
-        const contextQuizId = pageQuizId || chat?.contextQuizId || null;
-        const contextQuizName = pageQuizId
-            ? pageContextLabel || chat?.contextQuizName || null
-            : chat?.contextQuizName || null;
+        const selectedContext = chatContext(chat);
+        const contextQuizId = selectedContext.contextQuizId;
+        const contextQuizName = chat?.contextQuizName || null;
 
-        // The chat's stored material wins over the page. Only a chat with no material of
-        // its own inherits the book or transcript the panel was opened on.
-        const storedKind = chat?.contextTranscriptId
+        // Each chat owns its context. The page only seeds a chat when it is first created.
+        const storedKind = selectedContext.contextTranscriptId
             ? 'transcript'
-            : chat?.contextBookDocumentId ? 'book' : null;
-        const storedId = chat?.contextTranscriptId || chat?.contextBookDocumentId || null;
-        if (storedId) {
-            setMaterialContext(storedKind, storedId, false);
-        } else {
-            setMaterialContext(pageMaterialKind, pageMaterialId, false);
-        }
+            : selectedContext.contextBookDocumentId ? 'book' : null;
+        const storedId = selectedContext.contextTranscriptId || selectedContext.contextBookDocumentId;
+        setMaterialContext(storedKind, storedId, false);
 
         setQuizContext(contextQuizId, contextQuizName, false);
         selection.contextReady = true;
         updateContextControls();
-        const adoptsPageQuiz = pageQuizId && chat?.contextQuizId !== pageQuizId;
-        const adoptsPageMaterial = !storedId && materialId;
-        if (adoptsPageQuiz || adoptsPageMaterial) {
-            contextPersisted = await enqueueContextWrite({
-                threadId,
-                payload: {
-                    contextQuizId: quizId,
-                    ...materialPayload(),
-                    updateContext: true,
-                },
-            });
-        }
         if (!ownsSelection(selection)) return;
         renderChatList();
         const historyLoaded = await loadHistory(selection);
@@ -954,6 +939,107 @@ import {
         }
     };
 
+    let taskControls;
+    const taskStatusLabels = {
+        queued: ['Client.AssistantTaskQueued', 'Queued'],
+        running: ['Client.AssistantTaskRunning', 'Working'],
+        retry_wait: ['Client.AssistantTaskRetrying', 'Retrying soon'],
+        awaiting_input: ['Client.AssistantTaskAwaitingInput', 'Waiting for your reply'],
+        awaiting_approval: ['Client.AssistantTaskAwaitingApproval', 'Waiting for your review'],
+        paused: ['Client.AssistantTaskPaused', 'Paused'],
+        completed: ['Client.AssistantTaskCompleted', 'Finished'],
+        cancelled: ['Client.AssistantTaskCancelled', 'Stopped'],
+        failed: ['Client.AssistantTaskFailed', 'Could not finish'],
+    };
+    const taskStatusLabel = status => taskStatusLabels[status] ? t(...taskStatusLabels[status]) : status;
+    // Quiz processing states set by the task runtime.
+    const artifactStatusLabels = {
+        Building: ['Client.AssistantArtifactBuilding', 'Building'],
+        Ready: ['Client.AssistantArtifactReady', 'Ready'],
+        Paused: ['Client.AssistantTaskPaused', 'Paused'],
+        Incomplete: ['Client.AssistantArtifactIncomplete', 'Incomplete'],
+    };
+    const artifactStatusLabel = status => artifactStatusLabels[status] ? t(...artifactStatusLabels[status]) : status;
+    const durableTasks = createAssistantTasks({
+        request: async (url, options = {}) => {
+            const response = await fetch(url, { ...options, headers: requestHeaders(options.method === 'POST') });
+            const data = await response.json().catch(() => null);
+            if (!response.ok) {
+                const error = new Error(data?.detail || data?.title || 'Could not update assistant task.');
+                error.status = response.status;
+                throw error;
+            }
+            return data;
+        },
+        isCurrent: threadId => activeThreadId === threadId,
+        onCompleted: async () => { if (chatSelection) await loadHistory(chatSelection); await loadChats(); },
+        onProgress: task => {
+            if (!task) { if (taskControls) taskControls.hidden = true; return; }
+            if (!taskControls) {
+                taskControls = document.createElement('div');
+                taskControls.className = 'assistant-task-progress';
+                form.before(taskControls);
+            }
+            taskControls.hidden = false;
+            const wasOpen = taskControls.querySelector('details')?.open;
+            taskControls.replaceChildren();
+            const progress = document.createElement('p');
+            progress.setAttribute('role', 'status');
+            progress.textContent = t('Client.AssistantTaskProgress', '{0} · {1} saved changes',
+                taskStatusLabel(task.status), task.savedChanges);
+            taskControls.appendChild(progress);
+            if (task.reason) {
+                const reason = document.createElement('p'); reason.textContent = task.reason; taskControls.appendChild(reason);
+            }
+            for (const [command, label, visible] of [
+                ['cancel', t('Client.Stop', 'Stop'), !['completed', 'cancelled', 'failed'].includes(task.status)],
+                ['resume', t('Client.AssistantTaskResume', 'Resume'), ['paused', 'awaiting_input'].includes(task.status)],
+                ['approve', t('Client.AssistantTaskApprove', 'Apply reviewed changes'), task.status === 'awaiting_approval'],
+            ]) {
+                if (!visible) continue;
+                const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
+                button.addEventListener('click', async () => {
+                    button.disabled = true;
+                    try { await durableTasks.command(task.threadId, command); }
+                    catch (error) { setStatus(error.message, true); await durableTasks.discover(task.threadId); }
+                });
+                taskControls.appendChild(button);
+            }
+            if (task.approvalChanges?.length) {
+                const proposals = document.createElement('ul');
+                for (const change of task.approvalChanges) {
+                    const item = document.createElement('li');
+                    item.textContent = change.summary; proposals.appendChild(item);
+                }
+                taskControls.appendChild(proposals);
+            }
+            for (const artifact of task.artifacts ?? []) {
+                const link = document.createElement('a');
+                link.href = `/Quiz/Details/${encodeURIComponent(artifact.id)}`;
+                link.textContent = `${artifact.name} (${artifactStatusLabel(artifact.status)})`;
+                taskControls.appendChild(link);
+            }
+            const details = document.createElement('details'); details.open = !!wasOpen;
+            const summary = document.createElement('summary');
+            summary.textContent = t('Client.AssistantTaskActivity', 'Activity · {0}/{1} calls evaluated', task.evaluatedCalls, task.totalCalls);
+            details.appendChild(summary);
+            for (const event of task.activity ?? []) {
+                const line = document.createElement('p');
+                const findings = event.evaluation?.findings?.filter(x => x.verdict !== 'pass')
+                    .map(x => {
+                        const finding = t('Client.AssistantTaskConfidence', '{0} (confidence {1}%)', x.message, Math.round(x.confidence * 100));
+                        return x.verdict === 'uncertain' ? t('Client.AssistantTaskUncertain', 'Uncertain: {0}', finding) : finding;
+                    }) ?? [];
+                // Tool names and statuses are diagnostic identifiers shown as sent.
+                line.textContent = t('Client.AssistantTaskReview', '{0}: {1} · Review: {2}', event.tool, event.status, event.evaluationStatus)
+                    + (findings.length ? ' · ' + findings.join(' ') : '');
+                details.appendChild(line);
+            }
+            taskControls.appendChild(details);
+            setStatus('');
+        },
+    });
+
     const loadHistory = async (selection) => {
         if (!ownsSelection(selection)) return false;
         const { threadId } = selection;
@@ -968,6 +1054,7 @@ import {
             for (const message of data.messages ?? []) {
                 renderMessage(message);
             }
+            void durableTasks.discover(threadId).catch(() => { /* Polling can reconnect later. */ });
             return true;
         } catch (err) {
             return false;
@@ -1053,7 +1140,7 @@ import {
         if (!chatSelection?.contextReady) return;
         let selection = chatSelection;
         try {
-            const chat = await createChat(quizId);
+            const chat = await createChat();
             if (!ownsSelection(selection)) return;
             const loading = selectChat(chat.id);
             selection = chatSelection;
@@ -1136,6 +1223,12 @@ import {
         const clientStartedAt = performance.now();
 
         try {
+            if (await durableTasks.send(threadId, {
+                message, contextQuizId: quizId, focusedWordId,
+                transcriptId: materialKind === 'transcript' ? materialId : null,
+                bookDocumentId: materialKind === 'book' ? materialId : null,
+                documentContext, transcriptContext,
+            })) return;
             const response = await fetch(chatSendUrl(threadId), {
                 method: 'POST',
                 headers: requestHeaders(true),
@@ -1158,6 +1251,7 @@ import {
                 }
                 return;
             }
+            if (!data) throw new Error('The assistant returned an unreadable response. Reopen the chat to check its status.');
             if (ownsSelection(selection)) renderMessage({
                 id: data.assistantMessageId,
                 turnId: data.turnId,
@@ -1179,7 +1273,13 @@ import {
             await loadChats();
             if (ownsSelection(selection)) setStatus('');
         } catch (err) {
-            const sendError = t('Client.AssistantNetwork', 'Network error talking to the assistant.');
+            // fetch rejects with a TypeError worded by the browser ("Failed to fetch"). Show
+            // the localized network message then; errors raised here keep their own text.
+            const sendError = err instanceof TypeError || !err?.message
+                ? t('Client.AssistantNetwork', 'Network error talking to the assistant.')
+                : err.message;
+            if (ownsSelection(selection) && !textarea.value) textarea.value = message;
+            void durableTasks.discover(threadId).catch(() => { /* Reconnect when the user reopens the chat. */ });
             sendErrors.set(threadId, sendError);
             if (ownsSelection(selection)) {
                 setStatus(sendError, true);

@@ -510,4 +510,23 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Repetera det som behöver övas och gå framåt i din egen takt.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Repetera med fokuserade quiz och spara sedan de ord du vill ha i Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Utforska fler sätt att lära</value></data>
+  <data name="Client.AssistantTaskProgress" xml:space="preserve"><value>{0} · {1} sparade ändringar</value></data>
+  <data name="Client.AssistantTaskResume" xml:space="preserve"><value>Återuppta</value></data>
+  <data name="Client.AssistantTaskApprove" xml:space="preserve"><value>Tillämpa granskade ändringar</value></data>
+  <data name="Client.AssistantTaskActivity" xml:space="preserve"><value>Aktivitet · {0}/{1} anrop utvärderade</value></data>
+  <data name="Client.AssistantTaskConfidence" xml:space="preserve"><value>{0} (säkerhet {1} %)</value></data>
+  <data name="Client.AssistantTaskUncertain" xml:space="preserve"><value>Osäkert: {0}</value></data>
+  <data name="Client.AssistantTaskReview" xml:space="preserve"><value>{0}: {1} · Granskning: {2}</value></data>
+  <data name="Client.AssistantTaskQueued" xml:space="preserve"><value>I kö</value></data>
+  <data name="Client.AssistantTaskRunning" xml:space="preserve"><value>Arbetar</value></data>
+  <data name="Client.AssistantTaskRetrying" xml:space="preserve"><value>Försöker igen snart</value></data>
+  <data name="Client.AssistantTaskAwaitingInput" xml:space="preserve"><value>Väntar på ditt svar</value></data>
+  <data name="Client.AssistantTaskAwaitingApproval" xml:space="preserve"><value>Väntar på din granskning</value></data>
+  <data name="Client.AssistantTaskPaused" xml:space="preserve"><value>Pausad</value></data>
+  <data name="Client.AssistantTaskCompleted" xml:space="preserve"><value>Klar</value></data>
+  <data name="Client.AssistantTaskCancelled" xml:space="preserve"><value>Stoppad</value></data>
+  <data name="Client.AssistantTaskFailed" xml:space="preserve"><value>Kunde inte slutföras</value></data>
+  <data name="Client.AssistantArtifactBuilding" xml:space="preserve"><value>Byggs</value></data>
+  <data name="Client.AssistantArtifactReady" xml:space="preserve"><value>Klar</value></data>
+  <data name="Client.AssistantArtifactIncomplete" xml:space="preserve"><value>Ofullständig</value></data>
 </root>

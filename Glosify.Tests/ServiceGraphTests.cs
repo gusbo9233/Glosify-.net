@@ -1,4 +1,5 @@
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Assistant.Runtime;
 using Glosify.Services.Ai;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -26,6 +27,10 @@ public sealed class ServiceGraphTests : IClassFixture<WebApplicationFactory<Prog
     }
 
     [Theory]
+    [InlineData(typeof(AssistantTaskStore))]
+    [InlineData(typeof(AssistantTaskExecutor))]
+    [InlineData(typeof(AssistantTaskEvaluationWorker))]
+    [InlineData(typeof(IToolUseEvaluator))]
     [InlineData(typeof(IAssistantTools))]
     [InlineData(typeof(IQuizJsonImportService))]
     [InlineData(typeof(IQuizJsonImportRepairService))]

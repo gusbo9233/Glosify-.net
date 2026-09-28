@@ -488,7 +488,8 @@ internal static class ToolArguments
         Guid SentenceId,
         string? Text,
         string? Translation);
-    internal sealed record SkippedItem(int Index, string Reason);
+    internal sealed record SkippedItem(int Index, string Reason,
+        [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? Code = null);
 
     internal static void QueueSentenceEdit(
         AgentToolContext context,

@@ -93,13 +93,15 @@ internal static class FreestyleToolDeclarations
                 }, required: ["item_id"])),
             "create_vocabulary_quiz" => new(
                 "create_quiz",
-                "Propose creating a prompt-and-answer quiz.",
+                "Build one prompt-and-answer quiz across batches of at most 100 items. Reuse the returned draft_id to append to the same proposal. Set complete=true only after covering the entire request. Saved only when the user clicks Apply.",
                 BuildSchema(new Dictionary<string, object>
                 {
                     ["name"] = StringProp("Quiz name."),
+                    ["draft_id"] = StringProp("Id returned by an earlier create_quiz call in this turn. Omit to start a quiz; supply to append. Name and collection are only needed on the first call."),
+                    ["complete"] = Tools.CreateQuizTool.CompletionProperty,
                     ["collection_id"] = StringProp("Optional destination collection id."),
                     ["items"] = ItemArray("Optional starter items."),
-                }, required: ["name"])),
+                })),
             "list_collections" => new(
                 "list_collections",
                 "List the user's Freestyle collections.",

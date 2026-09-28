@@ -1670,4 +1670,61 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Повторюйте те, що потребує уваги, і рухайтеся у власному темпі.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Повторюйте за допомогою тематичних тестів, а потім зберігайте потрібні слова в Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Відкрийте більше способів навчання</value></data>
+  <data name="Client.AssistantTaskProgress" xml:space="preserve">
+    <value>{0} · збережених змін: {1}</value>
+  </data>
+  <data name="Client.AssistantTaskResume" xml:space="preserve">
+    <value>Продовжити</value>
+  </data>
+  <data name="Client.AssistantTaskApprove" xml:space="preserve">
+    <value>Застосувати переглянуті зміни</value>
+  </data>
+  <data name="Client.AssistantTaskActivity" xml:space="preserve">
+    <value>Активність · оцінено викликів: {0}/{1}</value>
+  </data>
+  <data name="Client.AssistantTaskConfidence" xml:space="preserve">
+    <value>{0} (упевненість {1}%)</value>
+  </data>
+  <data name="Client.AssistantTaskUncertain" xml:space="preserve">
+    <value>Непевно: {0}</value>
+  </data>
+  <data name="Client.AssistantTaskReview" xml:space="preserve">
+    <value>{0}: {1} · Перевірка: {2}</value>
+  </data>
+  <data name="Client.AssistantTaskQueued" xml:space="preserve">
+    <value>У черзі</value>
+  </data>
+  <data name="Client.AssistantTaskRunning" xml:space="preserve">
+    <value>Виконується</value>
+  </data>
+  <data name="Client.AssistantTaskRetrying" xml:space="preserve">
+    <value>Незабаром повторна спроба</value>
+  </data>
+  <data name="Client.AssistantTaskAwaitingInput" xml:space="preserve">
+    <value>Очікує на вашу відповідь</value>
+  </data>
+  <data name="Client.AssistantTaskAwaitingApproval" xml:space="preserve">
+    <value>Очікує на вашу перевірку</value>
+  </data>
+  <data name="Client.AssistantTaskPaused" xml:space="preserve">
+    <value>Призупинено</value>
+  </data>
+  <data name="Client.AssistantTaskCompleted" xml:space="preserve">
+    <value>Завершено</value>
+  </data>
+  <data name="Client.AssistantTaskCancelled" xml:space="preserve">
+    <value>Зупинено</value>
+  </data>
+  <data name="Client.AssistantTaskFailed" xml:space="preserve">
+    <value>Не вдалося завершити</value>
+  </data>
+  <data name="Client.AssistantArtifactBuilding" xml:space="preserve">
+    <value>Створюється</value>
+  </data>
+  <data name="Client.AssistantArtifactReady" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="Client.AssistantArtifactIncomplete" xml:space="preserve">
+    <value>Не завершено</value>
+  </data>
 </root>

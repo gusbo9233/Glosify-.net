@@ -1670,4 +1670,61 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Ôn lại những ý cần luyện tập và tiến bộ theo nhịp độ của bạn.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Ôn tập bằng các bài kiểm tra trọng tâm, rồi lưu những từ bạn muốn vào Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Khám phá thêm cách học</value></data>
+  <data name="Client.AssistantTaskProgress" xml:space="preserve">
+    <value>{0} · {1} thay đổi đã lưu</value>
+  </data>
+  <data name="Client.AssistantTaskResume" xml:space="preserve">
+    <value>Tiếp tục</value>
+  </data>
+  <data name="Client.AssistantTaskApprove" xml:space="preserve">
+    <value>Áp dụng các thay đổi đã xem xét</value>
+  </data>
+  <data name="Client.AssistantTaskActivity" xml:space="preserve">
+    <value>Hoạt động · đã đánh giá {0}/{1} lệnh gọi</value>
+  </data>
+  <data name="Client.AssistantTaskConfidence" xml:space="preserve">
+    <value>{0} (độ tin cậy {1}%)</value>
+  </data>
+  <data name="Client.AssistantTaskUncertain" xml:space="preserve">
+    <value>Không chắc chắn: {0}</value>
+  </data>
+  <data name="Client.AssistantTaskReview" xml:space="preserve">
+    <value>{0}: {1} · Đánh giá: {2}</value>
+  </data>
+  <data name="Client.AssistantTaskQueued" xml:space="preserve">
+    <value>Đang chờ</value>
+  </data>
+  <data name="Client.AssistantTaskRunning" xml:space="preserve">
+    <value>Đang xử lý</value>
+  </data>
+  <data name="Client.AssistantTaskRetrying" xml:space="preserve">
+    <value>Sắp thử lại</value>
+  </data>
+  <data name="Client.AssistantTaskAwaitingInput" xml:space="preserve">
+    <value>Đang chờ bạn trả lời</value>
+  </data>
+  <data name="Client.AssistantTaskAwaitingApproval" xml:space="preserve">
+    <value>Đang chờ bạn xem xét</value>
+  </data>
+  <data name="Client.AssistantTaskPaused" xml:space="preserve">
+    <value>Đã tạm dừng</value>
+  </data>
+  <data name="Client.AssistantTaskCompleted" xml:space="preserve">
+    <value>Đã xong</value>
+  </data>
+  <data name="Client.AssistantTaskCancelled" xml:space="preserve">
+    <value>Đã dừng</value>
+  </data>
+  <data name="Client.AssistantTaskFailed" xml:space="preserve">
+    <value>Không thể hoàn tất</value>
+  </data>
+  <data name="Client.AssistantArtifactBuilding" xml:space="preserve">
+    <value>Đang tạo</value>
+  </data>
+  <data name="Client.AssistantArtifactReady" xml:space="preserve">
+    <value>Sẵn sàng</value>
+  </data>
+  <data name="Client.AssistantArtifactIncomplete" xml:space="preserve">
+    <value>Chưa hoàn tất</value>
+  </data>
 </root>

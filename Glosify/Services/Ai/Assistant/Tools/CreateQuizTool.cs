@@ -10,10 +10,12 @@ internal sealed class CreateQuizTool : IAssistantTool
 {
     private static readonly AgentToolDeclaration DeclarationValue = new(
         "create_vocabulary_quiz",
-        "Propose creating a standard vocabulary quiz with words and translations. This tool does not create an interactive custom-quiz document. The change is only saved when the user clicks Apply.",
+        "Build one standard quiz proposal across as many batches as needed. First call creates a draft; subsequent calls with its draft_id append content to that same quiz. Send at most 100 words and 100 sentences per call. Set complete only after covering the entire request. The quiz is saved only when the user clicks Apply.",
         BuildSchema(new Dictionary<string, object>
         {
             ["name"] = StringProp("Quiz name."),
+            ["draft_id"] = StringProp("Id returned by an earlier call in this turn. Omit to start a quiz; supply to append to that draft. Name and language fields are only needed on the first call."),
+            ["complete"] = CompletionProperty,
             ["source_language"] = StringProp(
                 "Language the user already knows. Defaults to the translation language the "
                 + "conversation has established, so it can be omitted rather than asked about."),
@@ -37,15 +39,21 @@ internal sealed class CreateQuizTool : IAssistantTool
             ["sentences"] = SentenceArrayProp(
                 "Optional standalone example sentences for the new quiz. Full sentences belong "
                 + "here, never in words."),
-        }, required: ["name"]));
+        }));
+
+    internal static object CompletionProperty => new Dictionary<string, object>
+    {
+        ["type"] = "boolean",
+        ["description"] = "Defaults to false. Set true only when all requested material has been processed. For a large request, keep false while appending batches, then true on the last batch or an empty completion call. Check skipped items before finishing.",
+    };
 
     /// <summary>
-    /// The most starter words or sentences one proposal may carry.
+    /// The most words or sentences one batch may carry.
     /// </summary>
     /// <remarks>
     /// A whole-chapter extraction can otherwise put hundreds of generated items into one
-    /// tool argument, one pending payload and one review card. The overflow is reported as
-    /// skipped rather than dropped silently, so the model can propose the rest separately.
+    /// tool argument. Overflow is reported as skipped so the model can append it in a later
+    /// batch to the same proposal.
     /// </remarks>
     private const int MaxStarterItems = 100;
 
@@ -66,14 +74,25 @@ internal sealed class CreateQuizTool : IAssistantTool
 
     private static object QueueCreateQuiz(JsonElement args, AgentToolContext context)
     {
-        var name = GetString(args, "name");
+        var draftId = GetString(args, "draft_id");
+        var draftIndex = string.IsNullOrWhiteSpace(draftId) ? -1 : context.PendingChanges.FindIndex(change =>
+            change.Kind == PendingChangeKinds.CreateQuiz && GetString(change.Payload, "draft_id") == draftId);
+        if (!string.IsNullOrWhiteSpace(draftId) && draftIndex < 0)
+        {
+            return new { error = "draft_id must identify a quiz draft created in this turn." };
+        }
+
+        // Only the draft's original metadata controls its destination. Continuation calls
+        // cannot silently change its language or collection.
+        var metadata = draftIndex < 0 ? args : context.PendingChanges[draftIndex].Payload;
+        var name = GetString(metadata, "name");
         var sourceLanguage = context.IsFreestyle
             ? Glosify.Services.Language.QuizLanguageCatalog.FreestyleName
-            : FirstNonBlank(GetString(args, "source_language"), context.SourceLanguage);
+            : FirstNonBlank(GetString(metadata, "source_language"), context.SourceLanguage);
         var targetLanguage = context.IsFreestyle
             ? Glosify.Services.Language.QuizLanguageCatalog.FreestyleName
-            : FirstNonBlank(GetString(args, "target_language"), context.CurrentLanguage);
-        var collectionId = GetNullableGuidString(args, "collection_id");
+            : FirstNonBlank(GetString(metadata, "target_language"), context.CurrentLanguage);
+        var collectionId = GetNullableGuidString(metadata, "collection_id");
         // Every skipped report is in request-array coordinates. The source map has to be built
         // from the parse failures alone, before any later stage adds entries of its own:
         // mixing coordinate systems in one list is what made the reported positions wrong.
@@ -121,9 +140,29 @@ internal sealed class CreateQuizTool : IAssistantTool
             return new { error = "collection_id must be a valid id." };
         }
 
+        // Keep the per-call limit, not a whole-quiz limit. Replayed batches and repeated
+        // choruses keep their first translation and their first-appearance order.
+        var previousWords = draftIndex < 0 ? [] : GetWordDrafts(metadata, "words").Words;
+        var previousSentences = draftIndex < 0 ? [] : GetSentenceDrafts(metadata, "sentences").Sentences;
+        sentences = previousSentences.Concat(sentences)
+            .DistinctBy(sentence => NormalizeForDuplicateMatch(sentence.Text), StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        var sentenceKeys = sentences.Select(sentence => NormalizeForDuplicateMatch(sentence.Text))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        words = previousWords.Concat(words)
+            .DistinctBy(word => NormalizeForDuplicateMatch(word.Word), StringComparer.OrdinalIgnoreCase)
+            .Where(word => !sentenceKeys.Contains(NormalizeForDuplicateMatch(word.Word)))
+            .ToArray();
+        if (string.IsNullOrWhiteSpace(draftId))
+        {
+            draftId = Guid.NewGuid().ToString();
+        }
+        var complete = GetBool(args, "complete") && skippedWords.Count == 0 && skippedSentences.Count == 0;
         var payload = JsonSerializer.SerializeToElement(new
         {
             kind = PendingChangeKinds.CreateQuiz,
+            draft_id = draftId,
+            complete,
             name = name.Trim(),
             source_language = sourceLanguage.Trim(),
             target_language = targetLanguage.Trim(),
@@ -132,10 +171,22 @@ internal sealed class CreateQuizTool : IAssistantTool
             sentences,
         }, JsonOptions);
 
-        context.PendingChanges.Add(new PendingChange(PendingChangeKinds.CreateQuiz, payload));
+        var change = new PendingChange(PendingChangeKinds.CreateQuiz, payload);
+        if (draftIndex < 0)
+        {
+            context.PendingChanges.Add(change);
+        }
+        else
+        {
+            context.PendingChanges[draftIndex] = change;
+        }
         return new
         {
             queued = true,
+            draft_id = draftId,
+            complete,
+            next_action = complete ? "Review ready. Summarize the proposed quiz."
+                : "Continue processing the remaining source and append batches using this draft_id. Correct skipped items. Set complete=true only after checking coverage of the entire request.",
             kind = PendingChangeKinds.CreateQuiz,
             name = name.Trim(),
             word_count = words.Count,
@@ -184,7 +235,7 @@ internal sealed class CreateQuizTool : IAssistantTool
                 dropped.Add(new SkippedItem(
                     sourceIndexes[index],
                     $"\"{words[index].Word}\" is already proposed as a sentence. "
-                    + "A sentence is stored once, as a sentence."));
+                    + "A sentence is stored once, as a sentence.", Code: "already_sentence"));
                 continue;
             }
 
@@ -211,7 +262,7 @@ internal sealed class CreateQuizTool : IAssistantTool
         {
             capped.Add(new SkippedItem(
                 sourceIndexes[index],
-                $"Only the first {MaxStarterItems} items are accepted in one proposal."));
+                $"Only the first {MaxStarterItems} items are accepted in one batch. Append this item in the next call using draft_id."));
         }
 
         return (items.Take(MaxStarterItems).ToArray(), capped);

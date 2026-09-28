@@ -353,14 +353,14 @@ jobs:
           ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
         run: dotnet app/Glosify.dll --credit-ledger-check fingerprint > "$RUNNER_TEMP/ledger-before.txt"
 
-      - name: Apply reviewed fractional credit migration with workers stopped
+      - name: Apply reviewed migrations with workers stopped
         id: migration
         env:
           PRODUCTION_SQL_CONNECTION_STRING: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
           ConnectionStrings__DefaultConnection: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
         run: |
           chmod +x migration/efbundle
-          migration/efbundle 20260911195324_FractionalCredits --connection "$PRODUCTION_SQL_CONNECTION_STRING"
+          migration/efbundle --connection "$PRODUCTION_SQL_CONNECTION_STRING"
 
       - name: Verify every preserved financial amount
         env:
