@@ -57,6 +57,8 @@ public sealed class AssistantRuntimeTests
     [InlineData(true, "Use list_quizzes to check whether my library contains any quizzes, then briefly report the result. Do not create, edit, move, or delete anything.")]
     [InlineData(false, "No new quiz, just list my quizzes.")]
     [InlineData(true, "No new quiz, just list my quizzes.")]
+    [InlineData(false, "Do not create a quiz, add, or edit anything. List my quizzes.")]
+    [InlineData(true, "Do not create a quiz, add, or edit anything. List my quizzes.")]
     public async Task Read_only_request_with_negated_creation_completes_after_library_read(bool prose, string message)
     {
         await using var h = await Harness.Create();
@@ -78,8 +80,10 @@ public sealed class AssistantRuntimeTests
         Assert.Empty(await h.Db.Words.ToListAsync());
     }
 
-    [Fact]
-    public async Task Positive_addition_after_comma_still_requires_a_saved_mutation()
+    [Theory]
+    [InlineData("Do not create a quiz, please add the word dom to this one.")]
+    [InlineData("No new quiz just add the word dom to this one.")]
+    public async Task Positive_addition_after_prohibition_still_requires_a_saved_mutation(string message)
     {
         await using var h = await Harness.Create();
         h.Model.ReportedTokens = 100;
@@ -89,7 +93,7 @@ public sealed class AssistantRuntimeTests
             2 => ("add_word", "{\"word\":\"dom\",\"translation\":\"house\"}"),
             _ => ("finish_task", "{\"summary\":\"Done\"}"),
         };
-        var task = await h.Start("Do not create a quiz, please add the word dom to this one.");
+        var task = await h.Start(message);
         await h.Drain();
         Assert.Equal("completed", (await h.Store.ViewAsync(task.Id, "user", default)).Status);
         Assert.Equal(["correctable", "success"], await h.Db.AssistantTaskCalls.Where(x => x.ToolName == "finish_task")
