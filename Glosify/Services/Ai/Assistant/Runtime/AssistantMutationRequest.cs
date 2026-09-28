@@ -13,6 +13,6 @@ internal static partial class AssistantMutationRequest
     // approval, and source-coverage requirement independently of this hint.
     internal static bool IsExplicitInitialCommand(string message) => InitialCommand().IsMatch(message);
 
-    [GeneratedRegex(@"^\s*(?:please\s+)?(?:create|generate|build|add|append|insert|include|extend|(?:make|start)\s+(?:a|an|another|one))\b(?!\s+(?:nothing|no|not|zero)\b)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^\s*(?:please\s+)?(?:create|generate|build|add|append|insert|include|extend|(?:make|start)\s+(?:a|an|another|one|new\s+(?:quiz|quizzes|collection|list)))\b(?!\s+(?:nothing|no|not|zero)\b)", RegexOptions.IgnoreCase)]
     private static partial Regex InitialCommand();
 }

@@ -61,6 +61,7 @@ public sealed class AssistantRuntimeTests
     [InlineData("How do I create a quiz? First inspect my existing library.")]
     [InlineData("Add nothing; list my quizzes.")]
     [InlineData("Create no new quiz; list my quizzes.")]
+    [InlineData("Start new topic: list my quizzes.")]
     public async Task Read_only_requests_complete_after_library_read_without_forced_writes(string message)
     {
         foreach (var prose in new[] { false, true })
@@ -104,6 +105,31 @@ public sealed class AssistantRuntimeTests
         Assert.Equal(["correctable", "success"], await h.Db.AssistantTaskCalls.Where(x => x.ToolName == "finish_task")
             .OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync());
         Assert.Equal("dom", (await h.Db.Words.SingleAsync()).Lemma);
+    }
+
+    [Theory]
+    [InlineData("Start new quiz called Travel.")]
+    [InlineData("Make new quiz called Travel.")]
+    public async Task Direct_new_quiz_command_requires_a_saved_quiz(string message)
+    {
+        await using var h = await Harness.Create();
+        var thread = await h.Db.AssistantThreads.SingleAsync();
+        thread.ContextQuizId = null;
+        await h.Db.SaveChangesAsync();
+        h.Model.ReportedTokens = 100;
+        h.Model.Script = (_, n) => n switch
+        {
+            1 => ("finish_task", "{\"summary\":\"Too early\"}"),
+            2 => ("create_vocabulary_quiz", "{\"name\":\"Travel\",\"source_language\":\"English\",\"target_language\":\"Polish\",\"complete\":true,\"words\":[{\"word\":\"dom\",\"translation\":\"house\"}],\"sentences\":[]}"),
+            _ => ("finish_task", "{\"summary\":\"Done\"}"),
+        };
+        var task = await h.Store.StartAsync(h.ThreadId, "user", new("new-quiz", new(message)), default);
+        await h.Drain();
+        Assert.Equal("completed", (await h.Store.ViewAsync(task.Id, "user", default)).Status);
+        Assert.Equal(["correctable", "success"], await h.Db.AssistantTaskCalls.Where(x => x.ToolName == "finish_task")
+            .OrderBy(x => x.Sequence).Select(x => x.Status).ToListAsync());
+        var quiz = await h.Db.Quizzes.SingleAsync(x => x.Name == "Travel");
+        Assert.Equal("dom", (await h.Db.Words.SingleAsync(x => x.QuizId == quiz.Id)).Lemma);
     }
 
     [Theory]
