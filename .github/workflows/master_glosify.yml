@@ -8,6 +8,12 @@ on:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy the validated master revision to production
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   build:
@@ -215,7 +221,7 @@ jobs:
             Glosify.Translator.Extension/test-results
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy))
     runs-on: ubuntu-latest
     needs: build
     concurrency:
