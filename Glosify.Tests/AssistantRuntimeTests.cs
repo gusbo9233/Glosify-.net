@@ -92,6 +92,7 @@ public sealed class AssistantRuntimeTests
     [Theory]
     [InlineData("Add the word dom to this quiz.")]
     [InlineData("Please add the word dom to this quiz.")]
+    [InlineData("Add only the word dom to this quiz.")]
     public async Task Explicit_initial_addition_still_requires_a_saved_mutation(string message)
     {
         await using var h = await Harness.Create();

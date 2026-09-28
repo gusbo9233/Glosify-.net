@@ -16,7 +16,7 @@ internal static partial class AssistantMutationRequest
 
     // Opt out of the extra hint for the entire request; do not infer which clause
     // overrides another or remove any words from the model's instruction.
-    [GeneratedRegex(@"\b(?:no|not|never|nothing|zero|don['’]t|without|cancel|stop|instead|rather|forget|wait|actually|only)\b", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"\b(?:no|not|never|nothing|zero|don['’]t|without|cancel|stop|instead|rather|forget|wait|actually)\b", RegexOptions.IgnoreCase)]
     private static partial Regex NonAffirmativeRequest();
 
     [GeneratedRegex(@"^\s*(?:please\s+)?(?:create|generate|build|add|append|insert|include|extend|(?:make|start)\s+(?:a|an|another|one|new\s+(?:quiz|quizzes|collection|list)))\b(?!\s+(?:nothing|no|not|zero)\b)", RegexOptions.IgnoreCase)]
