@@ -35,13 +35,10 @@ internal sealed partial class AssistantIntentResolver
 
     // Creation wins over addition because naming a new artifact describes the turn even when
     // the same sentence also says what to put in it: "create a quiz and add ten words" is one
-    // creation, not an addition. The durable completion guard also uses this signal, so
-    // explicit prohibitions must not be interpreted as requests to write content.
+    // creation, not an addition. Nothing narrows on this, so an unrecognised phrasing costs a
+    // dataset label rather than a capability.
     private static AssistantOperationKind ResolveOperation(string message)
     {
-        // A prohibition covers its coordinated verbs until the sentence ends or a
-        // contrast starts a new instruction: "do not create or add; just list".
-        message = NegatedArtifacts().Replace(NegatedOperations().Replace(message, " "), " ");
         if (CreateTerms().IsMatch(message))
         {
             return AssistantOperationKind.Create;
@@ -91,14 +88,6 @@ internal sealed partial class AssistantIntentResolver
 
     [GeneratedRegex(@"\b(sentences?|phrases in context)\b", RegexOptions.IgnoreCase)]
     private static partial Regex SentenceTerms();
-
-    [GeneratedRegex(
-        @"\b(?:do\s+not|don['’]t|never|without|not|no\s+need\s+to)\s+(?:create|generate|build|make|start|add|append|insert|include|extend|edit|move|delete)\b(?:\s*(?:,\s*(?:(?:and|or)\s+)?|(?:and|or)\s+)(?:create|generate|build|make|start|add|append|insert|include|extend|edit|move|delete)\b)*.*?(?=[.!?;\r\n]|,(?!\s*(?:(?:and|or)\b|(?:create|generate|build|make|start|add|append|insert|include|extend|edit|move|delete)\s*(?:,|\b(?:and|or)\s+(?:create|generate|build|make|start|add|append|insert|include|extend|edit|move|delete)\b)))|\b(?:but|instead|then)\b|\b(?:just|please|simply)\s+(?=(?:create|generate|build|make|start|add|append|insert|include|extend|edit|move|delete)\b)|$)",
-        RegexOptions.IgnoreCase)]
-    private static partial Regex NegatedOperations();
-
-    [GeneratedRegex(@"\bno\s+(?:new\s+)?(?:quiz|quizzes|collection|list)\b.*?(?=[,.!?;\r\n]|\b(?:but|instead|then)\b|\b(?:just|please|simply)\s+(?=(?:create|generate|build|make|start|add|append|insert|include|extend|edit|move|delete)\b)|$)", RegexOptions.IgnoreCase)]
-    private static partial Regex NegatedArtifacts();
 
     // "start" and "new" only count next to an artifact noun: "start with the dative case" is a
     // lesson request, not a creation.

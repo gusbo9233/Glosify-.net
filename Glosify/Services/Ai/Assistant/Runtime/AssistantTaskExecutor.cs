@@ -595,8 +595,8 @@ internal sealed class AssistantTaskExecutor(GlosifyContext db, AssistantTaskStor
     private static bool RequiresInitialMutation(AssistantTask task, AssistantRuntimeState state) =>
         // Later steering can withdraw an earlier creation/addition request. Do not force
         // a write using a keyword from the superseded initial instruction.
-        state.SteeringCount == 0 && new AssistantIntentResolver()
-            .Resolve(RuntimeJson.Read<AssistantTaskInput>(task.RequestJson).Message).OperationKind != AssistantOperationKind.Auto;
+        state.SteeringCount == 0 && AssistantMutationRequest.IsExplicitInitialCommand(
+            RuntimeJson.Read<AssistantTaskInput>(task.RequestJson).Message);
 
     private static List<PendingChange> Unapplied(AssistantRuntimeState state) => state.PendingChanges
         .Where(x => x.Kind == PendingChangeKinds.CreateQuiz
