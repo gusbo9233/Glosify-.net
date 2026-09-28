@@ -3,6 +3,7 @@ using Glosify.Infrastructure.Concurrency;
 using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Assistant.Runtime;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Anki;
 using Glosify.Services.Auth;
@@ -182,6 +183,18 @@ public static class ApplicationServiceExtensions
             services.GetRequiredService<OpenAiGenerativeAiClient>());
         services.AddScoped<IQuizJsonImportRepairService, QuizJsonImportRepairService>();
         services.AddScoped<IImageTextExtractionService, LlmImageTextExtractionService>();
+        services.AddOptions<AssistantRuntimeOptions>().Bind(configuration.GetSection("AssistantRuntime")).ValidateDataAnnotations().ValidateOnStart();
+        services.AddOptions<JevOptions>().Bind(configuration.GetSection("Jev"))
+            .Configure(o => o.ApiKey = configuration["TYPESAFE_API_KEY"] ?? o.ApiKey)
+            .ValidateDataAnnotations().ValidateOnStart();
+        services.AddScoped<AssistantTaskStore>();
+        services.AddScoped<AssistantDurableAdapter>();
+        services.AddScoped<AssistantRuntimeContext>();
+        services.AddScoped<AssistantTaskExecutor>();
+        services.AddScoped<AssistantReadPrefetcher>();
+        services.AddScoped<AssistantTaskEvaluationWorker>();
+        services.AddHttpClient<IToolUseEvaluator, JevToolUseEvaluator>();
+        services.AddHostedService<AssistantTaskWorker>();
         services.AddAssistantTools();
         services.AddScoped<IChangeApplier, ChangeApplier>();
         services.AddScoped<AssistantContextResolver>();

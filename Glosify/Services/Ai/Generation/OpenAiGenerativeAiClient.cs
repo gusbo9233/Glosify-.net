@@ -180,7 +180,9 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
             request.Tools,
             request.AllowedToolNames);
         var outputReserve = _usageOptions.GetOutputReserve(usageContext.Feature);
+        if (request.MaxOutputTokens is int maximum) outputReserve = Math.Min(outputReserve, maximum);
         var openAiRequest = CreateRequest(usageContext, outputReserve);
+        if (request.DurableExecution) openAiRequest.Metadata["assistant_runtime"] = "durable";
         openAiRequest.Instructions = string.IsNullOrWhiteSpace(request.SystemInstruction)
             ? "Help the user with their language-learning request."
             : request.SystemInstruction;

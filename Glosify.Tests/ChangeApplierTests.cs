@@ -368,6 +368,40 @@ public class ChangeApplierTests
         Assert.Equal("The train leaves at eight.", sentences[0].Translation);
     }
 
+    [Fact]
+    public async Task Apply_batched_draft_persists_all_content_in_one_quiz_once()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var db = new SqliteGlosifyContext(new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options);
+        await db.Database.EnsureCreatedAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var toolContext = new AgentToolContext { UserId = "user-1", SourceLanguage = "English", CurrentLanguage = "Polish" };
+        string? draftId = null;
+        for (var batch = 0; batch < 3; batch++)
+        {
+            var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync("create_vocabulary_quiz", JsonSerializer.Serialize(new
+            {
+                name = "Whole source", draft_id = draftId, complete = batch == 2,
+                words = Enumerable.Range(batch * 50, 50).Select(i => new { word = $"word{i}", translation = $"meaning{i}" }),
+                sentences = Enumerable.Range(batch * 50, 50).Select(i => new { text = $"Sentence {i}.", translation = $"Translation {i}." }),
+            }), toolContext, CancellationToken.None));
+            draftId = result.GetProperty("draft_id").GetString();
+        }
+        var messageId = await SeedProposalAsync(db, toolContext.PendingChanges);
+        var workflow = new AssistantChangeWorkflow(db, CreateApplier(db), new AssistantMessagePresenter(), null!, new FakeTimeProvider(SeededAt));
+
+        await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
+        await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
+
+        db.ChangeTracker.Clear();
+        var quiz = Assert.Single(await db.Quizzes.ToListAsync());
+        Assert.Equal(150, await db.Words.CountAsync(word => word.QuizId == quiz.Id));
+        Assert.Equal(150, await db.QuizSentences.CountAsync(sentence => sentence.QuizId == quiz.Id));
+        Assert.Equal("meaning149", (await db.Words.SingleAsync(word => word.Lemma == "word149")).Translation);
+        Assert.Equal("Translation 149.", (await db.QuizSentences.SingleAsync(sentence => sentence.Text == "Sentence 149.")).Translation);
+    }
+
     // A stored proposal can be applied long after it was built, so the durable boundary
     // filters the overlap too rather than trusting the tool to have caught it.
     [Fact]

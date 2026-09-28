@@ -9,7 +9,7 @@ public sealed record AssistantChatInput(
     Guid? ContextBookDocumentId = null);
 
 public sealed record AssistantSendInput(
-    [param: Required, StringLength(8000)] string Message,
+    [param: Required, StringLength(50000)] string Message,
     Guid? ContextQuizId,
     string? FocusedWordId,
     Guid? DocumentId,

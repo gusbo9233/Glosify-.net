@@ -34,7 +34,7 @@ public sealed class AssistantToolSurfaceRegressionTests
             Assert.DoesNotContain("create_custom_quiz", AssistantProfileInstructions.Get(profile));
         }
 
-        Assert.Equal("20260916.globeglotter-brand.1", AssistantProfileInstructions.Version);
+        Assert.Equal("20260927.quiz-draft-batches.1", AssistantProfileInstructions.Version);
 
         var promptVersionProperty = context.Model
             .FindEntityType(typeof(AssistantTurn))!

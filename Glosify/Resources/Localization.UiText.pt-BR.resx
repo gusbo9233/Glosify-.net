@@ -1670,4 +1670,61 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Repita as ideias que precisam de atenção e avance no seu ritmo.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Revise com quizzes focados e salve as palavras que quiser no Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Explore mais formas de aprender</value></data>
+  <data name="Client.AssistantTaskProgress" xml:space="preserve">
+    <value>{0} · {1} alterações salvas</value>
+  </data>
+  <data name="Client.AssistantTaskResume" xml:space="preserve">
+    <value>Retomar</value>
+  </data>
+  <data name="Client.AssistantTaskApprove" xml:space="preserve">
+    <value>Aplicar alterações revisadas</value>
+  </data>
+  <data name="Client.AssistantTaskActivity" xml:space="preserve">
+    <value>Atividade · {0}/{1} chamadas avaliadas</value>
+  </data>
+  <data name="Client.AssistantTaskConfidence" xml:space="preserve">
+    <value>{0} (confiança {1}%)</value>
+  </data>
+  <data name="Client.AssistantTaskUncertain" xml:space="preserve">
+    <value>Incerto: {0}</value>
+  </data>
+  <data name="Client.AssistantTaskReview" xml:space="preserve">
+    <value>{0}: {1} · Revisão: {2}</value>
+  </data>
+  <data name="Client.AssistantTaskQueued" xml:space="preserve">
+    <value>Na fila</value>
+  </data>
+  <data name="Client.AssistantTaskRunning" xml:space="preserve">
+    <value>Trabalhando</value>
+  </data>
+  <data name="Client.AssistantTaskRetrying" xml:space="preserve">
+    <value>Tentando novamente em breve</value>
+  </data>
+  <data name="Client.AssistantTaskAwaitingInput" xml:space="preserve">
+    <value>Aguardando sua resposta</value>
+  </data>
+  <data name="Client.AssistantTaskAwaitingApproval" xml:space="preserve">
+    <value>Aguardando sua revisão</value>
+  </data>
+  <data name="Client.AssistantTaskPaused" xml:space="preserve">
+    <value>Pausado</value>
+  </data>
+  <data name="Client.AssistantTaskCompleted" xml:space="preserve">
+    <value>Concluído</value>
+  </data>
+  <data name="Client.AssistantTaskCancelled" xml:space="preserve">
+    <value>Interrompido</value>
+  </data>
+  <data name="Client.AssistantTaskFailed" xml:space="preserve">
+    <value>Não foi possível concluir</value>
+  </data>
+  <data name="Client.AssistantArtifactBuilding" xml:space="preserve">
+    <value>Em criação</value>
+  </data>
+  <data name="Client.AssistantArtifactReady" xml:space="preserve">
+    <value>Pronto</value>
+  </data>
+  <data name="Client.AssistantArtifactIncomplete" xml:space="preserve">
+    <value>Incompleto</value>
+  </data>
 </root>

@@ -3,7 +3,7 @@ namespace Glosify.Services.Ai.Generation;
 public sealed record AgentToolDeclaration(
     string Name,
     string Description,
-    object ParametersJsonSchema);
+    object ParametersJsonSchema, bool Strict = false);
 
 /// <summary>
 /// Selects the code-owned profile instruction and narrow tool surface for a turn.
@@ -51,7 +51,7 @@ public sealed record AgentRequest(
     AssistantAgentProfile Profile = AssistantAgentProfile.General,
     string? ContextInstruction = null,
     IReadOnlySet<string>? AllowedToolNames = null,
-    bool CaptureEffectiveRequest = false);
+    bool CaptureEffectiveRequest = false, bool DurableExecution = false, int? MaxOutputTokens = null);
 
 /// <summary>
 /// Applies a turn's tool allowlist to whichever declaration list is in force.

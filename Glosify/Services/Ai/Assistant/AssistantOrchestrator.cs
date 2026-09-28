@@ -1,3 +1,5 @@
+using Glosify.Services.Ai.Assistant.Runtime;
+
 namespace Glosify.Services.Ai.Assistant;
 
 /// <summary>
@@ -8,7 +10,8 @@ internal sealed class AssistantOrchestrator(
     AssistantThreadStore threads,
     AssistantTurnRunner turns,
     AssistantChangeWorkflow changes,
-    AssistantFeedbackService feedback) : IAssistantOrchestrator
+    AssistantFeedbackService feedback,
+    AssistantDurableAdapter? durable = null) : IAssistantOrchestrator
 {
     public Task<IReadOnlyList<AssistantChatSummary>> ListChatsAsync(string userId, CancellationToken cancellationToken = default) =>
         threads.ListAsync(userId, cancellationToken);
@@ -26,13 +29,23 @@ internal sealed class AssistantOrchestrator(
         threads.GetChatHistoryAsync(threadId, userId, cancellationToken);
 
     public Task<AssistantTurnResponse> SendChatMessageAsync(Guid threadId, string userId, string userMessage, Guid? contextQuizId = null, string? focusedWordId = null, AssistantDocumentContext? documentContext = null, CancellationToken cancellationToken = default, Guid? transcriptId = null, Guid? bookDocumentId = null, AssistantTranscriptPageContext? transcriptPageContext = null) =>
-        turns.RunChatAsync(threadId, userId, userMessage, contextQuizId, focusedWordId, documentContext, transcriptId, bookDocumentId, transcriptPageContext, cancellationToken);
+        durable?.Enabled == true
+            ? durable.SendAsync(threadId, userId, new(userMessage, contextQuizId, focusedWordId, documentContext, transcriptId, bookDocumentId, transcriptPageContext), cancellationToken)
+            : turns.RunChatAsync(threadId, userId, userMessage, contextQuizId, focusedWordId, documentContext, transcriptId, bookDocumentId, transcriptPageContext, cancellationToken);
 
-    public Task<AssistantTurnResponse> SendMessageAsync(Guid quizId, string userId, string userMessage, string? focusedWordId = null, AssistantDocumentContext? documentContext = null, CancellationToken cancellationToken = default) =>
-        turns.RunQuizAsync(quizId, userId, userMessage, focusedWordId, documentContext, cancellationToken);
+    public async Task<AssistantTurnResponse> SendMessageAsync(Guid quizId, string userId, string userMessage, string? focusedWordId = null, AssistantDocumentContext? documentContext = null, CancellationToken cancellationToken = default)
+    {
+        if (durable?.Enabled != true) return await turns.RunQuizAsync(quizId, userId, userMessage, focusedWordId, documentContext, cancellationToken);
+        var thread = await threads.GetOrCreateDefaultAsync(userId, quizId, cancellationToken);
+        return await durable.SendAsync(thread.Id, userId, new(userMessage, quizId, focusedWordId, documentContext), cancellationToken);
+    }
 
-    public Task<AssistantTurnResponse> SendGlobalMessageAsync(string userId, string userMessage, AssistantDocumentContext? documentContext = null, CancellationToken cancellationToken = default) =>
-        turns.RunGlobalAsync(userId, userMessage, documentContext, cancellationToken);
+    public async Task<AssistantTurnResponse> SendGlobalMessageAsync(string userId, string userMessage, AssistantDocumentContext? documentContext = null, CancellationToken cancellationToken = default)
+    {
+        if (durable?.Enabled != true) return await turns.RunGlobalAsync(userId, userMessage, documentContext, cancellationToken);
+        var thread = await threads.GetOrCreateDefaultAsync(userId, null, cancellationToken);
+        return await durable.SendAsync(thread.Id, userId, new(userMessage, thread.ContextQuizId, DocumentContext: documentContext), cancellationToken);
+    }
 
     public Task<AssistantHistory> GetHistoryAsync(Guid quizId, string userId, CancellationToken cancellationToken = default) =>
         threads.GetQuizHistoryAsync(quizId, userId, cancellationToken);

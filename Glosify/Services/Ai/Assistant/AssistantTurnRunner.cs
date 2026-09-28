@@ -13,6 +13,10 @@ namespace Glosify.Services.Ai.Assistant;
 internal sealed class AssistantTurnRunner
 {
     private const int MaxToolTurns = 24;
+    private const int MaxDraftContinuationPrompts = 2;
+    private const string DraftContinuationPrompt =
+        "Your reply did not finish the open quiz draft. Continue with the creation tool and the same draft_id, "
+        + "or set complete=true once every requested item has been added.";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly GlosifyContext _context;
@@ -369,6 +373,8 @@ internal sealed class AssistantTurnRunner
             var completedTurnMessages = new List<AssistantMessage>();
 
             AgentTurnResult? finalTurn = null;
+            var consecutiveDraftProse = 0;
+            var stoppedWithUnfinishedDraft = false;
             for (var loop = 0; loop < MaxToolTurns; loop++)
             {
                 if (!await _turnLeases.RenewAsync(thread.Id, leaseId, cancellationToken))
@@ -381,7 +387,7 @@ internal sealed class AssistantTurnRunner
                     history,
                     declarations,
                     profile,
-                    contextInstruction,
+                    contextInstruction + BuildDraftContinuationInstruction(toolContext),
                     allowedToolNames,
                     // Composing the effective request means serializing the instruction, the
                     // whole replayed history and every tool schema. Ask for it only when the
@@ -451,9 +457,36 @@ internal sealed class AssistantTurnRunner
 
                 if (turn.FunctionCalls.Count == 0)
                 {
+                    // A prose answer is not a completion signal while a quiz still has
+                    // pending batches. Replaying the unchanged request would only return the
+                    // same prose, so keep the reply and say why it did not finish. A model
+                    // that keeps answering in prose ends the turn as partial work instead of
+                    // spending the rest of the tool-call cap.
+                    if (UnfinishedQuizDrafts(toolContext).Any())
+                    {
+                        if (++consecutiveDraftProse > MaxDraftContinuationPrompts)
+                        {
+                            stoppedWithUnfinishedDraft = true;
+                            break;
+                        }
+                        var proseParts = string.IsNullOrWhiteSpace(turn.Text)
+                            ? new List<StoredPart>()
+                            : [new StoredPart { Kind = "text", Text = turn.Text }];
+                        if (proseParts.Count > 0 || turn.OutputItemsJson.Count > 0)
+                        {
+                            history.Add(new AgentTurn(
+                                AssistantMessageRole.Model,
+                                SerializeContent(proseParts, turn.OutputItemsJson)));
+                        }
+                        history.Add(new AgentTurn(
+                            AssistantMessageRole.User,
+                            SerializeContent([new StoredPart { Kind = "text", Text = DraftContinuationPrompt }])));
+                        continue;
+                    }
                     finalTurn = turn;
                     break;
                 }
+                consecutiveDraftProse = 0;
 
                 var modelParts = new List<StoredPart>();
                 if (!string.IsNullOrWhiteSpace(turn.Text))
@@ -571,7 +604,9 @@ internal sealed class AssistantTurnRunner
                 });
             }
 
-            var finalText = finalTurn?.Text ?? "I hit my tool-call limit before finishing. Please try a smaller request.";
+            var finalText = finalTurn?.Text ?? (stoppedWithUnfinishedDraft
+                ? "I stopped before finishing the quiz. Any proposed changes are partial; the full request is not complete."
+                : "I hit my tool-call limit before finishing. Any proposed changes are partial; the full request is not complete.");
             var pendingChangesJson = toolContext.PendingChanges.Count == 0
                 ? null
                 : JsonSerializer.Serialize(toolContext.PendingChanges, JsonOptions);
@@ -606,7 +641,8 @@ internal sealed class AssistantTurnRunner
             _context.AssistantMessages.Add(finalMessage);
             thread.UpdatedAt = finalMessage.CreatedAt;
             turnEntity.Status = AssistantTurnStatus.Completed;
-            turnEntity.ErrorCategory = finalTurn is null ? "tool_limit_reached" : null;
+            turnEntity.ErrorCategory = finalTurn is not null ? null
+                : stoppedWithUnfinishedDraft ? "draft_unfinished" : "tool_limit_reached";
             turnEntity.Provider = lastMetadata?.Provider ?? ResolveProviderName();
             turnEntity.ActualModel = lastMetadata?.Model ?? selectedModel;
             turnEntity.ProviderResponseId = lastMetadata?.ResponseId;
@@ -685,6 +721,26 @@ internal sealed class AssistantTurnRunner
                 CancellationToken.None);
             throw;
         }
+    }
+
+    private static IEnumerable<PendingChange> UnfinishedQuizDrafts(AgentToolContext context) =>
+        context.PendingChanges.Where(change => change.Kind == PendingChangeKinds.CreateQuiz
+            && change.Payload.TryGetProperty("complete", out var complete)
+            && complete.ValueKind == JsonValueKind.False);
+
+    private static string BuildDraftContinuationInstruction(AgentToolContext context)
+    {
+        var drafts = UnfinishedQuizDrafts(context).Select(change => new
+        {
+            draft_id = change.Payload.GetProperty("draft_id").GetString(),
+            words = change.Payload.GetProperty("words").GetArrayLength(),
+            sentences = change.Payload.GetProperty("sentences").GetArrayLength(),
+        }).ToArray();
+        return drafts.Length == 0 ? string.Empty
+            : "\n\nUnfinished quiz drafts in this turn: " + JsonSerializer.Serialize(drafts)
+                + ". Continue the requested work using the creation tool with the same draft_id. "
+                + "Append the remaining batches, verify full source coverage, then set complete=true. "
+                + "A text-only response does not finish an open draft.";
     }
 
     /// <summary>
