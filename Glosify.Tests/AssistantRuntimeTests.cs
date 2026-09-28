@@ -59,6 +59,8 @@ public sealed class AssistantRuntimeTests
     [InlineData(true, "No new quiz, just list my quizzes.")]
     [InlineData(false, "Do not create a quiz, add, or edit anything. List my quizzes.")]
     [InlineData(true, "Do not create a quiz, add, or edit anything. List my quizzes.")]
+    [InlineData(false, "Do not create just because I mentioned a new quiz; list my quizzes.")]
+    [InlineData(true, "Do not create just because I mentioned a new quiz; list my quizzes.")]
     public async Task Read_only_request_with_negated_creation_completes_after_library_read(bool prose, string message)
     {
         await using var h = await Harness.Create();
@@ -83,6 +85,7 @@ public sealed class AssistantRuntimeTests
     [Theory]
     [InlineData("Do not create a quiz, please add the word dom to this one.")]
     [InlineData("No new quiz just add the word dom to this one.")]
+    [InlineData("Do not create a quiz, add and explain the word dom to this one.")]
     public async Task Positive_addition_after_prohibition_still_requires_a_saved_mutation(string message)
     {
         await using var h = await Harness.Create();
