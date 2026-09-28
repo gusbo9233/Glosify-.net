@@ -40,7 +40,9 @@ internal static class RuntimeMutationCorrections
         static string Text(JsonElement item, params string[] names) => item.ValueKind != JsonValueKind.Object ? ""
             : names.Select(name => ToolArguments.GetString(item, name)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? "";
         var original = Items(rejectedTool, rejected).Where(x =>
-            key == "tool:" + rejectedTool + ":unidentified:" + RuntimeJson.Hash(x.Item.GetRawText())).ToArray();
+            key == "tool:" + rejectedTool + ":unidentified:" + RuntimeJson.Hash(x.Item.GetRawText()))
+            // Repeated identical input shares one ledger target and needs one correction.
+            .DistinctBy(x => (x.Kind, Json: x.Item.GetRawText())).ToArray();
         var candidates = Items(correctionTool, correction).ToArray();
         if (original.Length != 1 || candidates.Length != 1 || original[0].Kind != candidates[0].Kind) return false;
         if (rejectedTool == "create_vocabulary_quiz"

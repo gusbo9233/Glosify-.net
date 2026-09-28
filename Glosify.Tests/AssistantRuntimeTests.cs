@@ -376,9 +376,11 @@ public sealed class AssistantRuntimeTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Unrelated_saved_word_cannot_resolve_an_unidentified_rejection(bool manualApproval)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task Unrelated_saved_word_cannot_resolve_an_unidentified_rejection(bool manualApproval, bool duplicate)
     {
         await using var h = await Harness.Create();
         h.Model.ReportedTokens = 100;
@@ -392,7 +394,7 @@ public sealed class AssistantRuntimeTests
             }
             return n switch
             {
-                1 => ("add_words", "{\"words\":[{\"word\":\"\",\"translation\":\"house\"}]}"),
+                1 => ("add_words", RuntimeJson.Write(new { words = Enumerable.Repeat(new { word = "", translation = "house" }, duplicate ? 2 : 1).ToArray() })),
                 2 => ("add_word", "{\"word\":\"las\",\"translation\":\"forest\"}"),
                 3 => ("resolve_rejected_item", Link(1)),
                 4 => ("finish_task", "{\"summary\":\"Too early\"}"),
