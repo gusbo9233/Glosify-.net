@@ -29,6 +29,12 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
         {
             builder.ConfigureTestServices(services =>
             {
+                // These route tests seed an empty in-memory database. Its accounting
+                // readiness must not race the production background backfill worker.
+                foreach (var registration in services.Where(x =>
+                    x.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService)
+                    && x.ImplementationType == typeof(Glosify.Services.Abuse.ResourceMaintenanceService)).ToArray())
+                    services.Remove(registration);
                 services.RemoveAll<DbContextOptions<GlosifyContext>>();
                 services.RemoveAll<IDbContextOptionsConfiguration<GlosifyContext>>();
                 services.AddDbContext<GlosifyContext>(options => options.UseInMemoryDatabase(databaseName));
@@ -94,6 +100,8 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
         await using (var scope = _factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
+            db.Add(new Glosify.Services.Abuse.ResourceAccountingState { Id = 1, Ready = true });
+            await db.SaveChangesAsync();
             db.Quizzes.Add(new Quiz
             {
                 Id = quizId,
