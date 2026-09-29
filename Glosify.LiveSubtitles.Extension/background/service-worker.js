@@ -1,3 +1,4 @@
+import { createTabAuth } from "../lib/tab-auth.js";
 import { CONFIG } from "../config.js";
 import { getBillingAction } from "../lib/billing.js";
 import "../lib/subtitle-appearance.js";
@@ -56,7 +57,7 @@ const state = {
   availableCredits: 0,
   catalog: null,
   targetLanguage: "en",
-  translationMode: "scribe-cf",
+  translationMode: "enhanced",
   sourceLanguage: "auto",
   partialCaptionsEnabled: true,
   transparentSubtitles: false,
@@ -88,6 +89,30 @@ const state = {
 };
 
 const initialization = initializeWorker();
+const tabAuth = createTabAuth({
+  chrome,
+  complete: async credentials => {
+    await initialization;
+    const response = await fetch(new URL("/api/extension-auth/exchange", CONFIG.glosifyBaseUrl), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify(credentials),
+    });
+    if (!response.ok) throw await apiError(response);
+    await acceptTokenResponse(await response.json());
+    if (!await refreshAccountState()) return;
+    state.notice = "Connected to GlobeGlotter. Choose a tab with audio to start subtitles.";
+    broadcastState();
+  },
+  failed: async error => {
+    await initialization;
+    state.status = refreshToken ? "ready" : "disconnected";
+    state.notice = null;
+    state.error = normalizeError(error).message;
+    broadcastState();
+  },
+});
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || message.target === "offscreen" || message.target === "popup") {
@@ -213,7 +238,7 @@ async function handleMessage(message) {
       pendingDiagnostics.backpressureEvents += boundedNumber(
         message.backpressureEvents, 0, 100);
       state.notice = message.active
-        ? "The subtitle connection is degraded; Glosify is protecting billing while audio is delayed."
+        ? "The subtitle connection is degraded; GlobeGlotter is protecting billing while audio is delayed."
         : "The subtitle connection recovered.";
       await sendToTab({ type: "overlay:status", text: state.notice });
       broadcastState();
@@ -257,7 +282,7 @@ async function restoreLocalState() {
   refreshToken = stored[STORAGE_KEYS.refreshToken] ?? null;
   refreshTokenGeneration += 1;
   state.targetLanguage = stored[STORAGE_KEYS.targetLanguage] ?? "en";
-  state.translationMode = stored[STORAGE_KEYS.translationMode] ?? "scribe-cf";
+  state.translationMode = stored[STORAGE_KEYS.translationMode] ?? "enhanced";
   state.sourceLanguage = stored[STORAGE_KEYS.sourceLanguage] ?? "auto";
   state.partialCaptionsEnabled = stored[STORAGE_KEYS.partialCaptionsEnabled] !== false;
   state.transparentSubtitles = SubtitleAppearance.normalizeTransparentSubtitles(
@@ -282,34 +307,11 @@ async function signIn() {
   state.error = null;
   broadcastState();
   try {
-    const callbackUrl = await chrome.identity.launchWebAuthFlow({
-      url: authorizeUrl.toString(),
-      interactive: true,
+    await tabAuth.start({
+      authorizeUrl: authorizeUrl.toString(), redirectUri, codeVerifier, oauthState,
     });
-    if (!callbackUrl) {
-      throw new Error("Glosify sign-in was cancelled.");
-    }
-
-    const callback = new URL(callbackUrl);
-    if (callback.searchParams.get("state") !== oauthState) {
-      throw new Error("Glosify sign-in returned an invalid state value.");
-    }
-    const code = callback.searchParams.get("code");
-    if (!code) {
-      throw new Error(callback.searchParams.get("error") || "Glosify sign-in did not return a code.");
-    }
-
-    const response = await fetch(new URL("/api/extension-auth/exchange", CONFIG.glosifyBaseUrl), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
-      body: JSON.stringify({ code, redirectUri, codeVerifier }),
-    });
-    if (!response.ok) {
-      throw await apiError(response);
-    }
-    await acceptTokenResponse(await response.json());
-    await refreshAccountState();
+    state.notice = "Finish signing in in the GlobeGlotter tab, then reopen this extension.";
+    broadcastState();
   } catch (error) {
     state.status = refreshToken ? "ready" : "disconnected";
     state.error = normalizeError(error).message;
@@ -319,6 +321,7 @@ async function signIn() {
 }
 
 async function signOut() {
+  await tabAuth.cancel();
   if (state.sessionId || startPromise) {
     await stopSession(null, "ready");
   }
@@ -347,7 +350,7 @@ async function signOut() {
 
 async function acceptTokenResponse(tokens) {
   if (!tokens?.accessToken || !tokens?.refreshToken) {
-    throw new Error("Glosify returned an invalid token response.");
+    throw new Error("GlobeGlotter returned an invalid token response.");
   }
   accessToken = tokens.accessToken;
   accessExpiresAt = Date.now() + Math.max(30, Number(tokens.expiresIn ?? 3600) - 30) * 1000;
@@ -362,7 +365,7 @@ async function ensureAccessToken() {
     return accessToken;
   }
   if (!refreshToken) {
-    throw new ApiRequestError(401, "Connect your Glosify account first.");
+    throw new ApiRequestError(401, "Connect your GlobeGlotter account first.");
   }
   if (!refreshPromise) {
     const tokenUsed = refreshToken;
@@ -379,7 +382,7 @@ async function ensureAccessToken() {
           if (refreshTokenGeneration === generationUsed && refreshToken === tokenUsed) {
             await clearExpiredAuthentication();
           }
-          throw new ApiRequestError(401, "Your Glosify session expired. Connect again.");
+          throw new ApiRequestError(401, "Your GlobeGlotter session expired. Connect again.");
         }
         throw await apiError(response);
       }
@@ -437,7 +440,7 @@ async function apiFetch(path, options = {}, retry = true) {
 }
 
 async function apiError(response) {
-  let message = `Glosify request failed (${response.status}).`;
+  let message = `GlobeGlotter request failed (${response.status}).`;
   let code = null;
   let resetsAtUtc = null;
   try {
@@ -456,9 +459,10 @@ async function refreshAccountState() {
     state.signedIn = false;
     state.status = "disconnected";
     broadcastState();
-    return;
+    return false;
   }
 
+  let refreshed = false;
   try {
     const me = await apiFetch("/api/me");
     state.signedIn = true;
@@ -497,7 +501,9 @@ async function refreshAccountState() {
       state.status = state.paidServicesAvailable ? "ready" : "budget_exhausted";
     }
     state.error = null;
+    refreshed = true;
   } catch (error) {
+    state.notice = null;
     const normalized = normalizeError(error);
     if (normalized.status !== 401) {
       state.signedIn = true;
@@ -506,6 +512,7 @@ async function refreshAccountState() {
     }
   }
   broadcastState();
+  return refreshed;
 }
 
 async function setTargetLanguage(targetLanguage) {
@@ -586,7 +593,7 @@ async function setQuizLanguage(code) {
 
 async function setSaveTranscript(enabled, requestedQuizLanguageCode) {
   if (relaySwitchBusy) {
-    throw new Error("Glosify is already changing subtitle mode.");
+    throw new Error("GlobeGlotter is already changing subtitle mode.");
   }
   if (enabled === state.saveTranscript) {
     return;
@@ -604,7 +611,7 @@ async function setSaveTranscript(enabled, requestedQuizLanguageCode) {
       const requiredCredits = effectiveCreditsPerMinute();
       if (!Number.isFinite(requiredCredits) || requiredCredits <= 0) {
         state.saveTranscript = previousValue;
-        throw new Error("Glosify did not return a valid subtitle price.");
+        throw new Error("GlobeGlotter did not return a valid subtitle price.");
       }
       if (state.availableCredits < requiredCredits) {
         state.saveTranscript = previousValue;
@@ -644,7 +651,7 @@ async function ensureTranscriptLearningLanguage(requestedCode) {
   const matchingTarget = quizLanguages.find(language => language.code === state.targetLanguage);
   const learningLanguage = requested ?? selected ?? matchingTarget ?? quizLanguages[0];
   if (!learningLanguage) {
-    throw new Error("Glosify did not return a supported quiz language.");
+    throw new Error("GlobeGlotter did not return a supported quiz language.");
   }
   if (selected?.code === learningLanguage.code) {
     return;
@@ -685,7 +692,7 @@ async function startSessionCore(generation, signal) {
     await refreshAccountState();
     throwIfLifecycleCancelled(generation, signal);
     if (!state.signedIn || !state.catalog) {
-      throw new Error(state.error || "Connect your Glosify account first.");
+      throw new Error(state.error || "Connect your GlobeGlotter account first.");
     }
     if (!state.paidServicesAvailable) {
       throw new ApiRequestError(
@@ -699,10 +706,10 @@ async function startSessionCore(generation, signal) {
     }
     const requiredCredits = effectiveCreditsPerMinute();
     if (!Number.isFinite(requiredCredits) || requiredCredits <= 0) {
-      throw new Error("Glosify did not return a valid subtitle price.");
+      throw new Error("GlobeGlotter did not return a valid subtitle price.");
     }
     if (state.availableCredits < requiredCredits) {
-      throw new ApiRequestError(402, "You do not have enough Glosify credits to start subtitles.");
+      throw new ApiRequestError(402, "You do not have enough GlobeGlotter credits to start subtitles.");
     }
 
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -723,7 +730,7 @@ async function startSessionCore(generation, signal) {
     }
     state.overlayInstanceId = overlay.overlayInstanceId;
     await syncOverlayAppearance();
-    await sendToTab({ type: "overlay:status", text: "Connecting to Glosify…" });
+    await sendToTab({ type: "overlay:status", text: "Connecting to GlobeGlotter…" });
     await ensureOffscreenDocument();
     throwIfLifecycleCancelled(generation, signal);
 
@@ -840,7 +847,7 @@ async function processTick() {
           budgetClosed
             ? budgetUnavailableMessage(normalized.resetsAtUtc)
             : normalized.status === 402
-              ? "Subtitles stopped because your Glosify credits ran out."
+              ? "Subtitles stopped because your GlobeGlotter credits ran out."
               : normalized.message,
           budgetClosed ? "budget_exhausted" : normalized.status === 402 ? "insufficient_credits" : "error");
       } finally {
@@ -901,7 +908,7 @@ async function processBillingAction(action) {
       budgetStopped
         ? budgetUnavailableMessage()
         : state.stopAtBoundary
-          ? "Subtitles stopped because your Glosify credits ran out."
+          ? "Subtitles stopped because your GlobeGlotter credits ran out."
           : "The next minute was not authorized.",
       budgetStopped ? "budget_exhausted" : state.stopAtBoundary ? "insufficient_credits" : "error");
     return;
@@ -1182,7 +1189,7 @@ async function ensureOffscreenDocumentCore() {
   await chrome.offscreen.createDocument({
     url: "offscreen/offscreen.html",
     reasons: ["USER_MEDIA", "AUDIO_PLAYBACK"],
-    justification: "Capture tab audio, keep it audible locally, and stream it through Glosify for live subtitles.",
+    justification: "Capture tab audio, keep it audible locally, and stream it through GlobeGlotter for live subtitles.",
   });
 }
 
@@ -1233,7 +1240,7 @@ async function applyServerAuthorization(result) {
     ? Date.parse(state.sessionStartedAtUtc)
     : null;
   if (currentStartedAt !== null && currentStartedAt !== sessionStartedAtUtc) {
-    throw new Error("Glosify returned a different server session start time.");
+    throw new Error("GlobeGlotter returned a different server session start time.");
   }
   const previousDeadline = state.audioSendAuthorizedUntilUtc
     ? Date.parse(state.audioSendAuthorizedUntilUtc)
@@ -1245,7 +1252,7 @@ async function applyServerAuthorization(result) {
       || authorizedUntilUtc <= serverNowUtc
       || authorizedUntilUtc < previousDeadline
       || authorizedUntilUtc > maximumDeadline) {
-    throw new Error("Glosify returned an invalid audio authorization deadline.");
+    throw new Error("GlobeGlotter returned an invalid audio authorization deadline.");
   }
   state.sessionStartedAtServerMs = sessionStartedAtUtc;
   state.sessionStartedAtUtc = new Date(sessionStartedAtUtc).toISOString();
@@ -1369,7 +1376,7 @@ async function reconcileActiveSession() {
 
     await refreshAccountState();
     if (!state.signedIn || !state.catalog) {
-      throw new Error("The Glosify account could not be restored.");
+      throw new Error("The GlobeGlotter account could not be restored.");
     }
     const server = await apiFetch(
       `/api/realtime-translation/sessions/${stored.sessionId}/heartbeat`, {
@@ -1505,7 +1512,7 @@ async function flushClientDiagnostics() {
 function parseServerTimestamp(value, label) {
   const parsed = Date.parse(value);
   if (!Number.isFinite(parsed)) {
-    throw new Error(`Glosify returned an invalid ${label}.`);
+    throw new Error(`GlobeGlotter returned an invalid ${label}.`);
   }
   return parsed;
 }
@@ -1513,7 +1520,7 @@ function parseServerTimestamp(value, label) {
 function currentServerTimeMs() {
   const elapsed = performance.now() - state.serverClockMonotonicAtSync;
   if (!Number.isFinite(elapsed) || elapsed < 0 || !state.serverNowAtSync) {
-    throw new Error("The Glosify server clock is not synchronized.");
+    throw new Error("The GlobeGlotter server clock is not synchronized.");
   }
   return state.serverNowAtSync + elapsed;
 }
@@ -1597,7 +1604,7 @@ function saveTranscriptUnavailableMessage() {
   }
   return selected
     ? `Check anytime to use Scribe with ${speechHint} and save the original speech for your ${selected.name} learning context.`
-    : "Check anytime to save. Glosify will use the quiz language shown above.";
+    : "Check anytime to save. GlobeGlotter will use the quiz language shown above.";
 }
 
 async function refreshPaidServiceStatus() {
@@ -1615,7 +1622,7 @@ function budgetUnavailableMessage(resetOverride = null) {
   const suffix = reset && !Number.isNaN(reset.valueOf())
     ? ` They reopen ${reset.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}.`
     : " They reopen at the start of next month.";
-  return `${state.paidServicesReason ?? "Glosify's monthly paid-services budget has been reached."}${suffix}`;
+  return `${state.paidServicesReason ?? "GlobeGlotter's monthly paid-services budget has been reached."}${suffix}`;
 }
 
 function rememberBudgetClosure(error) {

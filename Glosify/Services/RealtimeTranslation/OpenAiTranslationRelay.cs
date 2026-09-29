@@ -47,7 +47,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         if (!_options.Enabled)
         {
             throw new RealtimeTranslationUnavailableException(
-                "Live subtitles are not enabled on this Glosify deployment.");
+                "Live subtitles are not enabled on this GlobeGlotter deployment.");
         }
         if (string.IsNullOrWhiteSpace(_openAi.ApiKey))
         {
@@ -61,7 +61,7 @@ public sealed class OpenAiTranslationRelay : IEnhancedTranslationRelay
         if (authorization.SaveTranscript && !_options.ElevenLabs.Enabled)
         {
             throw new RealtimeTranslationUnavailableException(
-                "Saved transcripts require ElevenLabs Scribe v2 on this Glosify deployment.");
+                "Saved transcripts require ElevenLabs Scribe v2 on this GlobeGlotter deployment.");
         }
 
         var requestHeaders = OpenAiTranslationProtocol.CreateRequestHeaders(

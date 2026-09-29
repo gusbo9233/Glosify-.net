@@ -46,6 +46,7 @@ public sealed class ShippedConfigurationTests
         var openAi = services.GetRequiredService<IOptions<GenerativeAiOptions>>().Value;
 
         Assert.Equal(180, openAi.TimeoutSeconds);
+        Assert.Equal(3000m, budget.LimitSek);
         Assert.True(budget.MetersProvider(AiUsageProviders.OpenAi));
         Assert.True(budget.HasTokenPrice(OpenAiModels.Luna));
         var price = budget.FindModelPrice(OpenAiModels.Luna);

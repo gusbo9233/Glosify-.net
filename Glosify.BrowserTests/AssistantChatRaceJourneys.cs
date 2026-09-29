@@ -46,6 +46,40 @@ public sealed partial class PortfolioJourneys
 
     [BrowserFact]
     [Trait("Category", "Browser")]
+    public async Task AssistantRunningTask_KeepsStopAvailableWithoutShowingActivityPanel()
+    {
+        const string taskId = "00000000-0000-0000-0000-000000000117";
+        var running = new { id = taskId, threadId = "chat-a", status = "running", revision = 1 };
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "History"));
+        await Page.RouteAsync("**/Assistant/Tasks/capabilities", route => route.FulfillAsync(new()
+        {
+            ContentType = "application/json", Body = "{\"enabled\":true}",
+        }));
+        await Page.RouteAsync("**/Assistant/Tasks/chats/chat-a", route => route.FulfillAsync(new()
+        {
+            ContentType = "application/json", Body = JsonSerializer.Serialize(running),
+        }));
+        await Page.RouteAsync($"**/Assistant/Tasks/{taskId}", route => route.FulfillAsync(new()
+        {
+            ContentType = "application/json", Body = JsonSerializer.Serialize(running),
+        }));
+        await Page.RouteAsync($"**/Assistant/Tasks/{taskId}/cancel", route => route.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new { id = taskId, threadId = "chat-a", status = "cancelled", revision = 2 }),
+        }));
+
+        await OpenRaceAssistantAsync();
+        var stop = Page.Locator(".assistant-task-progress button").Filter(new() { HasText = "Stop" });
+        await Expect(Page.Locator("[data-assistant-status]")).ToHaveTextAsync("Thinking...");
+        await Expect(stop).ToBeVisibleAsync();
+        await Expect(Page.Locator(".assistant-task-progress p")).ToHaveCountAsync(0);
+        await stop.ClickAsync();
+        await Expect(Page.Locator(".assistant-task-progress")).ToBeHiddenAsync();
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
     public async Task AssistantChatRace_DelayedReplyCannotAlterAnotherChatsTranscriptOrPendingControls()
     {
         var sendA = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);

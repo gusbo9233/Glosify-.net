@@ -1597,8 +1597,8 @@
   <data name="Quiz.JsonImportPrivacy" xml:space="preserve"><value>预览和导入是确定性的，不会联系 AI 提供商。“使用 AI 修复”会将粘贴的文本发送给 GlobeGlotter 配置的 AI 并扣除点数。</value></data>
   <data name="Home.PracticeRecallText" xml:space="preserve"><value>Use flashcards and typing exercises to make words stick.</value></data>
   <data name="Nav.Translations" xml:space="preserve"><value>翻译</value></data>
-  <data name="Translations.Title" xml:space="preserve"><value>已保存的翻译</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>翻译器</value></data><data name="Translations.Saved" xml:space="preserve"><value>已保存的翻译</value></data><data name="Translations.Intro" xml:space="preserve"><value>你在 Glosify Translator 扩展中明确保存的翻译。</value></data>
-  <data name="Translations.CountOne" xml:space="preserve"><value>{0} 条翻译</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} 条翻译</value></data><data name="Translations.None" xml:space="preserve"><value>尚无已保存的翻译</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>使用 Glosify Translator 扩展，并在翻译后选择保存。</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>已保存翻译页面</value></data>
+  <data name="Translations.Title" xml:space="preserve"><value>已保存的翻译</value></data><data name="Translations.Eyebrow" xml:space="preserve"><value>翻译器</value></data><data name="Translations.Saved" xml:space="preserve"><value>已保存的翻译</value></data><data name="Translations.Intro" xml:space="preserve"><value>你在 GlobeGlotter Translator 扩展中明确保存的翻译。</value></data>
+  <data name="Translations.CountOne" xml:space="preserve"><value>{0} 条翻译</value></data><data name="Translations.CountMany" xml:space="preserve"><value>{0} 条翻译</value></data><data name="Translations.None" xml:space="preserve"><value>尚无已保存的翻译</value></data><data name="Translations.NoneHelp" xml:space="preserve"><value>使用 GlobeGlotter Translator 扩展，并在翻译后选择保存。</value></data><data name="Translations.PagesAria" xml:space="preserve"><value>已保存翻译页面</value></data>
   <data name="Translations.DetailTitle" xml:space="preserve"><value>已保存的翻译</value></data><data name="Translations.SavedAt" xml:space="preserve"><value>保存于</value></data><data name="Translations.DeleteConfirm" xml:space="preserve"><value>删除这条已保存的翻译？</value></data><data name="Translations.Preferences" xml:space="preserve"><value>翻译偏好</value></data><data name="Translations.Source" xml:space="preserve"><value>原文</value></data><data name="Translations.Translation" xml:space="preserve"><value>翻译</value></data><data name="Translations.Deleted" xml:space="preserve"><value>翻译已删除。</value></data>
   <data name="Translations.Copied" xml:space="preserve"><value>已复制。</value></data><data name="Translations.CopyFailed" xml:space="preserve"><value>无法复制。请选择文本并手动复制。</value></data>
   <data name="Translations.DeleteSessionConfirm" xml:space="preserve"><value>删除此已保存的翻译会话及其中的所有翻译？</value></data><data name="Translations.SessionDeleted" xml:space="preserve"><value>翻译会话已删除。</value></data>
@@ -1627,7 +1627,7 @@
   <data name="Usage.Title" xml:space="preserve"><value>账户用量</value></data>
   <data name="Usage.Help" xml:space="preserve"><value>删除已保存的内容以释放空间。达到上限时，现有内容会保留。</value></data>
   <data name="Usage.LimitReached" xml:space="preserve"><value>已达到存储上限。请打开账户用量以释放空间。</value></data>
-  <data name="Usage.SiteFull" xml:space="preserve"><value>Glosify的存储容量已满。请稍后重试。</value></data>
+  <data name="Usage.SiteFull" xml:space="preserve"><value>GlobeGlotter的存储容量已满。请稍后重试。</value></data>
   <data name="Usage.Resource" xml:space="preserve"><value>资源</value></data>
   <data name="Usage.Used" xml:space="preserve"><value>已使用</value></data>
   <data name="Usage.Reserved" xml:space="preserve"><value>已预留</value></data>

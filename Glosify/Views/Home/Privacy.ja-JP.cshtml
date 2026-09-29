@@ -4,7 +4,7 @@
 @{
     Layout = "~/Views/Shared/_GlosifyLayout.cshtml";
     ViewData["Title"] = "プライバシーポリシー";
-    ViewData["Description"] = "GlobeGlotter と Glosify Live Subtitles Chrome 拡張機能における個人データの取り扱いについて説明します。";
+    ViewData["Description"] = "GlobeGlotter と GlobeGlotter Live Subtitles Chrome 拡張機能における個人データの取り扱いについて説明します。";
     var legal = Legal.Value;
 }
 
@@ -18,7 +18,7 @@
             この翻訳は便宜上提供されています。英語版と異なる場合は、英語版が優先されます。
             <a asp-action="PrivacyEnglish">適用される英語版を読む</a>。
         </aside>
-        <p>ElevenLabs の読み上げ音声を選ぶと、テキストは ElevenLabs によって処理されます。生成された音声は最長1時間メモリに保持され、Glosify のファイルストレージには保存されません。</p>
+        <p>ElevenLabs の読み上げ音声を選ぶと、テキストは ElevenLabs によって処理されます。生成された音声は最長1時間メモリに保持され、GlobeGlotter のファイルストレージには保存されません。</p>
 
 
         <h2>データを管理する者</h2>
@@ -46,7 +46,7 @@
         <p>トランスクリプト保存は既定でオフです。有効にした場合、確定した元の音声は、お客様がトランスクリプトまたはアカウントを削除するまで、非公開の GlobeGlotter アカウントに保存されます。アカウントのコンテンツとクレジット記録は、アカウントが有効である限り、またセキュリティ、会計、紛争対応、または法的義務のために合理的に必要な期間保持されます。クラウドバックアップおよび運用ログのコピーは、設定された Microsoft Azure の保持スケジュールに従って期限切れとなり、直ちに消えるわけではありません。</p>
         <p>保存済みトランスクリプトは Transcripts ページから削除でき、サインイン後にアカウント管理の削除ツールを使用できます。上記の住所に連絡することもできます。コンテンツを削除しても、OAuth プロバイダー側のコピーは取り消されません。Google または Microsoft 側でその関係も管理してください。</p>
 
-        <h2>Glosify Translator</h2>
+        <h2>GlobeGlotter Translator</h2>
         <p>原文、言語、方言・文体・トーン・言い回しの任意設定は、「翻訳」を選んだ場合にのみ GlobeGlotter 経由で OpenAI に送信されます。拡張機能は更新トークン、選択言語、設定をローカルに保存しますが、翻訳履歴は保存しません。「保存」を選んだ翻訳だけがアカウントに保持され、翻訳またはアカウントを削除するまで保存されます。</p>
 
         <h2>Chrome 拡張機能のデータ</h2>

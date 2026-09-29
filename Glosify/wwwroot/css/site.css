@@ -4797,9 +4797,6 @@ body { margin: 0; }
 
 .assistant-task-progress p { margin: 0.35rem 0; }
 .assistant-task-progress button { margin-inline-end: 0.5rem; }
-.assistant-task-progress a { display: block; margin-block: 0.5rem; }
-.assistant-task-progress pre { white-space: pre-wrap; overflow-wrap: anywhere; }
-.assistant-task-progress summary { cursor: pointer; }
 
 .assistant-input {
     display: flex;

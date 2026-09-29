@@ -1,6 +1,6 @@
-# Glosify Translator Chrome extension
+# GlobeGlotter Translator Chrome extension
 
-An independent Manifest V3 extension for translating typed or pasted text through Glosify. It stores only the refresh token, selected languages, and preference text in Chrome's trusted extension storage. Translation history is never stored in Chrome; saving a completed result is explicit and writes to the signed-in user's Glosify library. Saves made while the same translator box remains open are grouped into one session; closing or reloading the page starts a new session.
+An independent Manifest V3 extension for translating typed or pasted text through GlobeGlotter. It stores only the refresh token, selected languages, and preference text in Chrome's trusted extension storage. Translation history is never stored in Chrome; saving a completed result is explicit and writes to the signed-in user's GlobeGlotter library. Saves made while the same translator box remains open are grouped into one session; closing or reloading the page starts a new session.
 
 The translator controls run in an extension-origin iframe, so the underlying page
 cannot read input or receive its keyboard events (including Gmail shortcuts and
@@ -18,7 +18,7 @@ timeout expires. Paid requests are not retried for transient failures.
 
 ## Development
 
-1. Run Glosify at `https://localhost:7032`.
+1. Run GlobeGlotter at `https://localhost:7032`.
 2. Run `npm install` and `npm run build:dev` in this directory.
 3. Open `chrome://extensions`, enable Developer mode, and load `artifacts/development` unpacked.
 4. The pinned development callback `https://gogoghheeaelbddlgiehjdpmnnpnpjfk.chromiumapp.org/glosify` is already present in the HTTPS launch profile's `ExtensionAuth:AllowedRedirectUris` list.

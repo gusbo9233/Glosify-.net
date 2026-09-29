@@ -64,7 +64,7 @@
     parseProblem(problem, status = 0) {
       return {
         status,
-        message: problem?.detail ?? problem?.title ?? problem?.error ?? `Glosify request failed (${status}).`,
+        message: problem?.detail ?? problem?.title ?? problem?.error ?? `GlobeGlotter request failed (${status}).`,
         code: problem?.code ?? null,
       };
     },

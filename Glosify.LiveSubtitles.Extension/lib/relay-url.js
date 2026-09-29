@@ -11,7 +11,7 @@ export function buildRelayWebSocketUrl(
     base = new URL(baseUrl);
     relay = new URL(relayPath, base);
   } catch {
-    throw new Error("Glosify returned an invalid subtitle relay URL.");
+    throw new Error("GlobeGlotter returned an invalid subtitle relay URL.");
   }
 
   const match = RELAY_PATH.exec(relay.pathname);
@@ -30,7 +30,7 @@ export function buildRelayWebSocketUrl(
       || relay.hash
       || !match
       || match[1].toLowerCase() !== String(sessionId).toLowerCase()) {
-    throw new Error("Glosify returned an invalid subtitle relay URL.");
+    throw new Error("GlobeGlotter returned an invalid subtitle relay URL.");
   }
 
   relay.protocol = secureOrigin ? "wss:" : "ws:";
@@ -39,7 +39,7 @@ export function buildRelayWebSocketUrl(
 
 export function buildRelayProtocols(relayToken) {
   if (typeof relayToken !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(relayToken)) {
-    throw new Error("Glosify returned an invalid subtitle relay token.");
+    throw new Error("GlobeGlotter returned an invalid subtitle relay token.");
   }
   return ["glosify-realtime", `relay-token.${relayToken}`];
 }

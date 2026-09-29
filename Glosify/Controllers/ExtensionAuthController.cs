@@ -32,7 +32,7 @@ public sealed class ExtensionAuthController : Controller
         Response.Headers.CacheControl = "no-store";
         if (!_options.IsAllowedRedirectUri(redirectUri))
         {
-            return BadRequest("This Chrome extension redirect URI is not configured in Glosify.");
+            return BadRequest("This Chrome extension redirect URI is not configured in GlobeGlotter.");
         }
         if (string.IsNullOrWhiteSpace(state) || state.Length > 256)
         {

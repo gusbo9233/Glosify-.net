@@ -1,4 +1,4 @@
-# Glosify Live Subtitles extension
+# GlobeGlotter Live Subtitles extension
 
 The source directory is intentionally not a loadable unpacked extension. Build one of the explicit profiles so development permissions cannot leak into the Store package.
 
@@ -28,3 +28,11 @@ absent until its server-side key and monthly-budget price are configured.
 Scribe users can disable partial captions before starting a session. Final-only
 Scribe sessions do not request interim speech results, avoiding interim
 Cloudflare translation work. Enhanced keeps its normal streaming caption behavior.
+
+
+Sign-in opens the GlobeGlotter website in a regular Chrome tab. The extension
+closes that tab after processing the callback; reopen the extension on the tab
+you want to subtitle. Closing the login tab cancels sign-in. Pending logins
+expire after ten minutes and retain their PKCE verifier only in trusted,
+in-memory session storage so a background-worker restart does not lose the
+callback. The existing extension redirect URI and server allowlist remain in use.

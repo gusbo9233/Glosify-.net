@@ -93,7 +93,8 @@ public sealed class ExternalAccountService(
         user = await userStore.FindByEmailAsync(email);
         if (user is not null)
         {
-            if (!string.Equals(info.LoginProvider, "Google", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(info.LoginProvider, "Google", StringComparison.OrdinalIgnoreCase)
+                || user.PasswordHash is not null && !user.EmailConfirmed)
             {
                 return Failure("An account with this email already exists. Sign in with the method you originally used.");
             }

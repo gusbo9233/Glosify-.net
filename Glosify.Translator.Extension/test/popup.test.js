@@ -32,7 +32,7 @@ test("popup renders sign-in errors and unknown balances without inventing an acc
           return { ok: true, result: { signedIn: false, error: null } };
         }
         if (message.type === "popup:sign-in") {
-          return { ok: false, error: "Glosify sign-in failed." };
+          return { ok: false, error: "GlobeGlotter sign-in failed." };
         }
         return { ok: true, result: { signedIn: false } };
       },
@@ -47,7 +47,7 @@ test("popup renders sign-in errors and unknown balances without inventing an acc
     await new Promise(resolve => setImmediate(resolve));
     await elements.connect.listeners.get("click")();
 
-    assert.equal(elements.error.textContent, "Glosify sign-in failed.");
+    assert.equal(elements.error.textContent, "GlobeGlotter sign-in failed.");
     assert.equal(elements.error.classList.contains("hidden"), false);
     assert.equal(elements["signed-out"].classList.contains("hidden"), false);
     assert.equal(elements["signed-in"].classList.contains("hidden"), true);

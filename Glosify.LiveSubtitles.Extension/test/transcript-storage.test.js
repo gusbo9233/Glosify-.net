@@ -157,12 +157,15 @@ test("the transcript toggle is not gated by active state or language matching", 
   }), true);
 });
 
-test("an unavailable saved mode falls back to Cloudflare Scribe before Enhanced", () => {
+test("Best is preferred by default while saved Budget choices are preserved", () => {
   const modes = [
     { code: "scribe-cf", name: "Scribe + Cloudflare" },
     { code: "enhanced", name: "Enhanced" },
   ];
-  assert.equal(selectAvailableTranslationMode(modes, "scribe"), "scribe-cf");
+  assert.equal(selectAvailableTranslationMode(modes, "scribe"), "enhanced");
+  assert.equal(selectAvailableTranslationMode(modes, undefined), "enhanced");
+  assert.equal(selectAvailableTranslationMode(modes, "scribe-cf"), "scribe-cf");
+  assert.equal(selectAvailableTranslationMode([{ code: "scribe-cf" }], "enhanced"), "scribe-cf");
   assert.equal(selectAvailableTranslationMode(modes, "enhanced"), "enhanced");
   assert.equal(selectAvailableTranslationMode([{ code: "enhanced" }], "scribe"), "enhanced");
 });
@@ -180,4 +183,15 @@ test("current clients hide the legacy Scribe compatibility alias", () => {
   assert.deepEqual(
     selectCurrentTranslationModes([{ code: "scribe" }]).map(mode => mode.code),
     ["scribe"]);
+});
+
+
+test("mode labels use Best and Budget even with an older server catalog", () => {
+  assert.deepEqual(selectCurrentTranslationModes([
+    { code: "enhanced", name: "Enhanced", creditsPerMinute: 7 },
+    { code: "scribe-cf", name: "Scribe + Cloudflare", creditsPerMinute: 2 },
+  ]), [
+    { code: "enhanced", name: "Best", creditsPerMinute: 7 },
+    { code: "scribe-cf", name: "Budget", creditsPerMinute: 2 },
+  ]);
 });

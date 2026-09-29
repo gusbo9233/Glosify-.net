@@ -85,7 +85,7 @@ async function handleMessage(message, sender) {
       return publicState();
     case "overlay:bootstrap":
       if (!state.signedIn || !state.catalog) await refreshAccountState();
-      if (!state.signedIn || !state.catalog) throw new Error(state.error || "Connect your Glosify account first.");
+      if (!state.signedIn || !state.catalog) throw new Error(state.error || "Connect your GlobeGlotter account first.");
       return publicState();
     case "overlay:translate":
       return translate(sender.tab?.id, message.request);
@@ -145,18 +145,18 @@ async function signIn() {
       interactive: true,
     });
     requireSession(generation);
-    if (!callbackUrl) throw new Error("Glosify sign-in was cancelled.");
+    if (!callbackUrl) throw new Error("GlobeGlotter sign-in was cancelled.");
     const callback = new URL(callbackUrl);
     const expectedCallback = new URL(redirectUri);
     if (callback.origin !== expectedCallback.origin || callback.pathname !== expectedCallback.pathname
       || callback.username || callback.password || callback.hash) {
-      throw new Error("Glosify sign-in returned an invalid callback URL.");
+      throw new Error("GlobeGlotter sign-in returned an invalid callback URL.");
     }
     if (callback.searchParams.get("state") !== oauthState) {
-      throw new Error("Glosify sign-in returned an invalid state value.");
+      throw new Error("GlobeGlotter sign-in returned an invalid state value.");
     }
     const code = callback.searchParams.get("code");
-    if (!code) throw new Error(callback.searchParams.get("error") || "Glosify sign-in did not return a code.");
+    if (!code) throw new Error(callback.searchParams.get("error") || "GlobeGlotter sign-in did not return a code.");
     const response = await fetchResponse(new URL("/api/extension-auth/exchange", CONFIG.glosifyBaseUrl), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -198,7 +198,7 @@ async function signOut() {
 
 async function acceptTokenResponse(tokens, generation) {
   requireSession(generation);
-  if (!tokens?.accessToken || !tokens?.refreshToken) throw new Error("Glosify returned an invalid token response.");
+  if (!tokens?.accessToken || !tokens?.refreshToken) throw new Error("GlobeGlotter returned an invalid token response.");
   accessToken = tokens.accessToken;
   accessExpiresAt = Date.now() + Math.max(30_000, Number(tokens.expiresIn ?? 3600) * 1000 - AUTHORIZATION_CLOCK_SKEW_MS);
   refreshToken = tokens.refreshToken;
@@ -210,7 +210,7 @@ async function acceptTokenResponse(tokens, generation) {
 
 async function ensureAccessToken() {
   if (accessToken && Date.now() < accessExpiresAt) return accessToken;
-  if (!refreshToken) throw new ApiRequestError(401, "Connect your Glosify account first.");
+  if (!refreshToken) throw new ApiRequestError(401, "Connect your GlobeGlotter account first.");
   if (!refreshPromise) {
     const usedToken = refreshToken;
     const usedGeneration = refreshGeneration;
@@ -226,7 +226,7 @@ async function ensureAccessToken() {
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           if (refreshGeneration === usedGeneration && refreshToken === usedToken) await clearExpiredAuthentication();
-          throw new ApiRequestError(401, "Your Glosify session expired. Connect again.");
+          throw new ApiRequestError(401, "Your GlobeGlotter session expired. Connect again.");
         }
         throw await apiError(response);
       }
@@ -271,7 +271,7 @@ async function apiError(response) {
   try {
     return Object.assign(new ApiRequestError(response.status, ""), TranslatorState.parseProblem(await response.json(), response.status));
   } catch {
-    return new ApiRequestError(response.status, `Glosify request failed (${response.status}).`);
+    return new ApiRequestError(response.status, `GlobeGlotter request failed (${response.status}).`);
   }
 }
 
@@ -286,7 +286,7 @@ async function refreshAccountState() {
     if (typeof me?.email !== "string" || !me.email || !Number.isFinite(me.availableCredits)
       || !Array.isArray(catalog?.languages) || !catalog.languages.length
       || !Array.isArray(catalog.sourceLanguages) || !catalog.sourceLanguages.length) {
-      throw new Error("Glosify returned incompatible account or Translator data. Check the server deployment.");
+      throw new Error("GlobeGlotter returned incompatible account or Translator data. Check the server deployment.");
     }
     state.signedIn = true;
     state.status = "ready";
@@ -309,7 +309,7 @@ async function refreshAccountState() {
 
 async function startOverlay() {
   if (!state.signedIn || !state.catalog) await refreshAccountState();
-  if (!state.signedIn || !state.catalog) throw new Error(state.error || "Connect your Glosify account first.");
+  if (!state.signedIn || !state.catalog) throw new Error(state.error || "Connect your GlobeGlotter account first.");
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id || !isWebUrl(tab.url)) throw new Error("Open a normal web page before starting the translator.");
   await chrome.scripting.executeScript({
@@ -339,12 +339,12 @@ async function requireOverlay(message, sender) {
 }
 
 function requireSession(generation) {
-  if (generation !== sessionGeneration) throw new ApiRequestError(401, "The Glosify session changed. Try again.");
+  if (generation !== sessionGeneration) throw new ApiRequestError(401, "The GlobeGlotter session changed. Try again.");
 }
 
 async function fetchResponse(url, options = {}) {
   const timeout = new AbortController();
-  const timeoutId = setTimeout(() => timeout.abort(new DOMException("Glosify request timed out.", "TimeoutError")), REQUEST_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => timeout.abort(new DOMException("GlobeGlotter request timed out.", "TimeoutError")), REQUEST_TIMEOUT_MS);
   // Chrome's documented long-operation keepalive. Never run this while the extension is idle.
   const keepAlive = setInterval(() => { chrome.runtime.getPlatformInfo().catch(() => {}); }, REQUEST_KEEPALIVE_MS);
   try {

@@ -235,13 +235,13 @@ async function connectRelay({
       throw new Error("The subtitle relay was replaced while connecting.");
     }
     if (socket.protocol !== "glosify-realtime") {
-      throw new Error("Glosify returned an invalid subtitle relay protocol.");
+      throw new Error("GlobeGlotter returned an invalid subtitle relay protocol.");
     }
     connection.ready = true;
     socket.onmessage = event => handleRelayMessage(event, connection);
     socket.onerror = () => reportRelayFailure(
       connection,
-      "The Glosify subtitle relay encountered a network error.");
+      "The GlobeGlotter subtitle relay encountered a network error.");
     socket.onclose = () => {
       if (!isCurrentConnection(connection)) {
         return;
@@ -250,7 +250,7 @@ async function connectRelay({
       connection.authorizedUntil = 0;
       connection.authorizedUntilMonotonic = 0;
       if (!connection.expectedClose) {
-        reportRelayFailure(connection, "The Glosify subtitle relay ended.");
+        reportRelayFailure(connection, "The GlobeGlotter subtitle relay ended.");
       }
     };
   } catch (error) {
@@ -267,7 +267,7 @@ function waitForRelayReady(connection) {
     let settled = false;
     const timeout = setTimeout(() => finish(new Error(
       isCurrentConnection(connection)
-        ? "Timed out while connecting to Glosify live subtitles."
+        ? "Timed out while connecting to GlobeGlotter live subtitles."
         : "The subtitle relay was replaced while connecting.")), RELAY_CONNECT_TIMEOUT_MS);
     const finish = error => {
       if (settled) {
@@ -293,17 +293,17 @@ function waitForRelayReady(connection) {
       if (providerEvent?.type === "glosify.relay.ready") {
         finish();
       } else if (providerEvent?.type === "glosify.relay.error") {
-        finish(new Error(providerEvent.message || "Glosify ended the subtitle relay."));
+        finish(new Error(providerEvent.message || "GlobeGlotter ended the subtitle relay."));
       }
     };
     const onClose = () => {
       finish(new Error(isCurrentConnection(connection)
-        ? "The Glosify subtitle relay closed while connecting."
+        ? "The GlobeGlotter subtitle relay closed while connecting."
         : "The subtitle relay was replaced while connecting."));
     };
     const onError = () => {
       finish(new Error(isCurrentConnection(connection)
-        ? "The Glosify subtitle relay could not be reached."
+        ? "The GlobeGlotter subtitle relay could not be reached."
         : "The subtitle relay was replaced while connecting."));
     };
     socket.addEventListener("message", onMessage);
@@ -326,7 +326,7 @@ function handleRelayMessage({ data }, connection) {
   if (providerEvent?.type === "glosify.relay.error") {
     reportRelayFailure(connection, boundedRelayMessage(
       providerEvent.message,
-      "Glosify ended the subtitle relay."));
+      "GlobeGlotter ended the subtitle relay."));
     return;
   }
   if (providerEvent?.type === "glosify.relay.closed") {
@@ -399,7 +399,7 @@ function authorizeUntil({
       || deadline > sessionStartedAt + maximumMinutes * 60_000 + 2_000
       || (connection.sessionStartedAt && connection.sessionStartedAt !== sessionStartedAt)
       || deadline < connection.authorizedUntil) {
-    throw new Error("Glosify returned invalid minute authorization.");
+    throw new Error("GlobeGlotter returned invalid minute authorization.");
   }
   connection.sessionStartedAt = sessionStartedAt;
   connection.authorizedUntil = deadline;

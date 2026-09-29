@@ -54,7 +54,7 @@ for (const status of [429, 503]) {
 
 test("non-JSON server errors retain status without exposing the upstream body", async () => {
   const auth = harness(async () => new Response("private upstream diagnostics", { status: 502 }));
-  await assert.rejects(auth.ensureAccessToken(), { status: 502, message: "Glosify request failed (502)." });
+  await assert.rejects(auth.ensureAccessToken(), { status: 502, message: "GlobeGlotter request failed (502)." });
   assert.equal(auth.storage.glosifyRefreshToken, "original-refresh");
   assert.equal(auth.state.signedIn, true);
 });
@@ -74,7 +74,7 @@ test("network failures retain credentials and allow the next refresh", async () 
 for (const status of [401, 403]) {
   test(`refresh ${status} clears rejected credentials and disconnects`, async () => {
     const auth = harness(async () => new Response(null, { status }));
-    await assert.rejects(auth.ensureAccessToken(), { status: 401, message: "Your Glosify session expired. Connect again." });
+    await assert.rejects(auth.ensureAccessToken(), { status: 401, message: "Your GlobeGlotter session expired. Connect again." });
     assert.equal(auth.storage.glosifyRefreshToken, undefined);
     assert.equal(auth.state.signedIn, false);
     assert.equal(auth.state.status, "disconnected");

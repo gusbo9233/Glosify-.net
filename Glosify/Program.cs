@@ -393,7 +393,9 @@ app.Use(async (context, next) =>
         else await GlosifyProblemDetails.WriteAsync(context, 403, "social_signup_required", "Create your account with Google or Microsoft.");
         return;
     }
-    if (HttpMethods.IsPost(context.Request.Method) && string.Equals(path, "/api/auth/register", StringComparison.OrdinalIgnoreCase))
+    if (!app.Environment.IsDevelopment()
+        && HttpMethods.IsPost(context.Request.Method)
+        && string.Equals(path, "/api/auth/register", StringComparison.OrdinalIgnoreCase))
     {
         await GlosifyProblemDetails.WriteAsync(context, 403, "social_signup_required", "Create your account with Google or Microsoft.");
         return;

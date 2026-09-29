@@ -154,13 +154,13 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
         if (mode == RealtimeTranslationModes.Original && !_options.ElevenLabs.Enabled)
         {
             throw new RealtimeTranslationUnavailableException(
-                "Original captions are not enabled on this Glosify deployment.");
+                "Original captions are not enabled on this GlobeGlotter deployment.");
         }
         if (mode == RealtimeTranslationModes.ScribeCloudflare
             && (!_options.ElevenLabs.Enabled || !_options.Cloudflare.Enabled))
         {
             throw new RealtimeTranslationUnavailableException(
-                "Scribe with Cloudflare translation is not enabled on this Glosify deployment.");
+                "Scribe with Cloudflare translation is not enabled on this GlobeGlotter deployment.");
         }
         var canonicalSpeechProvider = mode switch
         {
@@ -193,18 +193,18 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             if (!_options.SavedSourceTranscriptsEnabled)
             {
                 throw new RealtimeTranslationUnavailableException(
-                    "Saved source transcripts are not enabled on this Glosify deployment.");
+                    "Saved source transcripts are not enabled on this GlobeGlotter deployment.");
             }
             selectedQuizLanguage = await _languagePreferences.GetSelectedAsync(userId, cancellationToken);
             if (selectedQuizLanguage is null || !selectedQuizLanguage.IsLanguageLearning)
             {
                 throw new RealtimeTranslationValidationException(
-                    "Choose a quiz language in Glosify before saving an original speech transcript.");
+                    "Choose a quiz language in GlobeGlotter before saving an original speech transcript.");
             }
             if (!_options.ElevenLabs.Enabled)
             {
                 throw new RealtimeTranslationUnavailableException(
-                    "Saved transcripts require ElevenLabs Scribe v2 on this Glosify deployment.");
+                    "Saved transcripts require ElevenLabs Scribe v2 on this GlobeGlotter deployment.");
             }
         }
         await using (await _keyedLock.AcquireAsync("user:" + userId, cancellationToken))
@@ -711,7 +711,7 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
     {
         if (!_options.Enabled)
         {
-            throw new RealtimeTranslationUnavailableException("Live subtitles are not enabled on this Glosify deployment.");
+            throw new RealtimeTranslationUnavailableException("Live subtitles are not enabled on this GlobeGlotter deployment.");
         }
     }
 

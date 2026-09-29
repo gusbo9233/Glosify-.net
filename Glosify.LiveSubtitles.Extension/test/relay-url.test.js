@@ -6,7 +6,7 @@ const sessionId = "36ec3a0a-b0fb-4aa5-a216-46a78e9d7356";
 const path = `/api/realtime-translation/sessions/${sessionId}/stream`;
 const token = "A".repeat(43);
 
-test("builds a secure same-origin Glosify relay URL", () => {
+test("builds a secure same-origin GlobeGlotter relay URL", () => {
   assert.equal(
     buildRelayWebSocketUrl("https://glosify.example", path, sessionId),
     `wss://glosify.example${path}`);

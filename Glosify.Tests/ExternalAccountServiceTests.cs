@@ -43,6 +43,39 @@ public sealed class ExternalAccountServiceTests
     }
 
     [Fact]
+    public async Task GoogleProvider_DoesNotLinkToUnverifiedPasswordAccount()
+    {
+        var existing = new ApplicationUser
+        {
+            Id = "existing", Email = "learner@example.test", PasswordHash = "password-hash", EmailConfirmed = false,
+        };
+        var store = new StubExternalAccountUserStore { ExistingByEmail = existing };
+        var service = CreateService(store);
+
+        var result = await service.ResolveOrCreateAsync(CreateLogin("Google"));
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, store.AddLoginCalls);
+    }
+
+    [Fact]
+    public async Task GoogleProvider_CanLinkToVerifiedPasswordAccount()
+    {
+        var existing = new ApplicationUser
+        {
+            Id = "existing", Email = "learner@example.test", PasswordHash = "password-hash", EmailConfirmed = true,
+        };
+        var store = new StubExternalAccountUserStore { ExistingByEmail = existing };
+        var service = CreateService(store);
+
+        var result = await service.ResolveOrCreateAsync(CreateLogin("Google"));
+
+        Assert.True(result.Succeeded);
+        Assert.Same(existing, result.User);
+        Assert.Equal(1, store.AddLoginCalls);
+    }
+
+    [Fact]
     public async Task NonGoogleProvider_DoesNotLinkByEmail()
     {
         var existing = new ApplicationUser { Id = "existing", Email = "learner@example.test" };

@@ -10,7 +10,7 @@
   const extensionOrigin = new URL(frameUrl).origin;
   const host = document.createElement("iframe");
   host.id = "glosify-translator-host";
-  host.title = "Glosify Translator";
+  host.title = "GlobeGlotter Translator";
   host.src = `${frameUrl}#${instanceId}`;
   host.style.cssText = "all:initial;position:fixed;z-index:2147483647;top:72px;right:28px;width:430px;height:625px;min-width:330px;min-height:280px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);resize:both;overflow:auto;border:0;border-radius:20px;background:transparent;color-scheme:dark";
   if (innerWidth <= 500) {
