@@ -428,6 +428,7 @@ async function overlayState(control) {
 
 async function startMockGlosify({ createDelayMs = 0, finalCaption, refreshStatus = 200 } = {}) {
   let startedAtUtc = null;
+  let pendingLoginCallback = null;
   const state = {
     authExchanges: 0,
     authChallenge: null,
@@ -442,16 +443,29 @@ async function startMockGlosify({ createDelayMs = 0, finalCaption, refreshStatus
   const requestHandler = async (request, response) => {
     const url = new URL(request.url, "http://127.0.0.1");
     if (url.pathname === "/extension/connect") {
+      if (url.searchParams.get("redirect_uri") !== `https://${extensionId}.chromiumapp.org/glosify`) {
+        response.writeHead(400);
+        response.end();
+        return;
+      }
       state.authChallenge = url.searchParams.get("code_challenge");
-      const destination = new URL(url.searchParams.get("redirect_uri"));
+      const destination = new URL(`https://${extensionId}.chromiumapp.org/glosify`);
       destination.searchParams.set("state", url.searchParams.get("state"));
       destination.searchParams.set("code", "test-auth-code");
+      pendingLoginCallback = destination.toString();
       response.writeHead(200, { "Content-Type": "text/html" });
-      response.end(`<!doctype html><title>Test GlobeGlotter login</title><a href="/finish-login?callback=${encodeURIComponent(destination.toString())}">Complete test login</a>`);
+      response.end('<!doctype html><title>Test GlobeGlotter login</title><a href="/finish-login">Complete test login</a>');
       return;
     }
     if (url.pathname === "/finish-login") {
-      response.writeHead(302, { Location: url.searchParams.get("callback") });
+      if (!pendingLoginCallback) {
+        response.writeHead(400);
+        response.end();
+        return;
+      }
+      const destination = pendingLoginCallback;
+      pendingLoginCallback = null;
+      response.writeHead(302, { Location: destination });
       response.end();
       return;
     }
