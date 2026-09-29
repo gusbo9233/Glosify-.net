@@ -49,7 +49,7 @@ public sealed partial class PortfolioJourneys
     public async Task AssistantRunningTask_KeepsStopAvailableWithoutShowingActivityPanel()
     {
         const string taskId = "00000000-0000-0000-0000-000000000117";
-        var running = new { id = taskId, threadId = "chat-a", status = "running", revision = 1 };
+        var currentTask = new { id = taskId, threadId = "chat-a", status = "running", revision = 1 };
         await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "History"));
         await Page.RouteAsync("**/Assistant/Tasks/capabilities", route => route.FulfillAsync(new()
         {
@@ -57,17 +57,20 @@ public sealed partial class PortfolioJourneys
         }));
         await Page.RouteAsync("**/Assistant/Tasks/chats/chat-a", route => route.FulfillAsync(new()
         {
-            ContentType = "application/json", Body = JsonSerializer.Serialize(running),
+            ContentType = "application/json", Body = JsonSerializer.Serialize(currentTask),
         }));
         await Page.RouteAsync($"**/Assistant/Tasks/{taskId}", route => route.FulfillAsync(new()
         {
-            ContentType = "application/json", Body = JsonSerializer.Serialize(running),
+            ContentType = "application/json", Body = JsonSerializer.Serialize(currentTask),
         }));
-        await Page.RouteAsync($"**/Assistant/Tasks/{taskId}/cancel", route => route.FulfillAsync(new()
+        await Page.RouteAsync($"**/Assistant/Tasks/{taskId}/cancel", route =>
         {
-            ContentType = "application/json",
-            Body = JsonSerializer.Serialize(new { id = taskId, threadId = "chat-a", status = "cancelled", revision = 2 }),
-        }));
+            currentTask = new { id = taskId, threadId = "chat-a", status = "cancelled", revision = 2 };
+            return route.FulfillAsync(new()
+            {
+                ContentType = "application/json", Body = JsonSerializer.Serialize(currentTask),
+            });
+        });
 
         await OpenRaceAssistantAsync();
         var stop = Page.Locator(".assistant-task-progress button").Filter(new() { HasText = "Stop" });
