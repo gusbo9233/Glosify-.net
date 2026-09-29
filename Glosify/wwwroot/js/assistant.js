@@ -969,7 +969,7 @@ import {
             else if (needsAction) setStatus(taskStatusLabel(task.status));
             else setStatus('');
 
-            if (!needsAction) {
+            if (!working && !needsAction) {
                 if (taskControls) taskControls.hidden = true;
                 return;
             }
@@ -980,7 +980,7 @@ import {
             }
             taskControls.hidden = false;
             taskControls.replaceChildren();
-            if (task.reason) {
+            if (needsAction && task.reason) {
                 const reason = document.createElement('p'); reason.textContent = task.reason; taskControls.appendChild(reason);
             }
             for (const [command, label, visible] of [

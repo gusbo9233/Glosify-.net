@@ -126,7 +126,8 @@ public class AccountController : Controller
         {
             UserName = model.Email,
             Email = model.Email,
-            EmailConfirmed = true,
+            // Development signup has no email proof; keep it distinct from a verified provider identity.
+            EmailConfirmed = false,
             DisplayCulture = CultureInfo.CurrentUICulture.Name,
         };
         var result = await _userManager.CreateAsync(user, model.Password);
