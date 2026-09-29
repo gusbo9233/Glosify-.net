@@ -43,7 +43,7 @@ export async function validateStore(directory) {
   const allFiles = await listFiles(directory);
   const expectedFiles = ["manifest.json", "config.js", "background/service-worker.js", "content/translator.js",
     "lib/translator-state.js", "overlay/translator.html", "overlay/translator.js", "overlay/translator.css",
-    "popup/popup.html", "popup/popup.js", "popup/popup.css", "icons/source.svg",
+    "popup/popup.html", "popup/popup.js", "popup/popup.css",
     "icons/icon16.png", "icons/icon32.png", "icons/icon48.png", "icons/icon128.png"];
   if (JSON.stringify(allFiles.sort()) !== JSON.stringify(expectedFiles.sort())) {
     throw new Error("Store build contains missing or unreviewed files.");

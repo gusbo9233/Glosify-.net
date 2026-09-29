@@ -220,7 +220,7 @@ async function saveResult() {
     });
     if (!response?.ok) throw new Error(response?.error || "Saving failed.");
     state.saved = true;
-    setStatus("Saved to Glosify.");
+    setStatus("Saved to GlobeGlotter.");
   } catch (error) {
     setStatus(error?.message || "Saving failed.", true);
   } finally {

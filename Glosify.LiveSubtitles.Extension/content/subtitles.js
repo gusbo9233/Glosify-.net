@@ -52,11 +52,11 @@
         border: 1px solid rgba(255, 255, 255, .16);
         border-radius: 16px;
         color: #f8fafc;
-        background: rgba(10, 14, 23, .94);
+        background: rgba(4, 19, 41, .96);
         box-shadow: 0 18px 55px rgba(0, 0, 0, .48);
         backdrop-filter: blur(14px) saturate(125%);
         -webkit-backdrop-filter: blur(14px) saturate(125%);
-        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family: "Plus Jakarta Sans", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-size: 14px;
         line-height: 1.4;
       }
@@ -101,14 +101,10 @@
         flex: 0 0 28px;
         width: 28px;
         height: 28px;
-        display: grid;
-        place-items: center;
+        display: block;
         border-radius: 9px;
-        color: #fff;
-        background: linear-gradient(145deg, #8b5cf6, #4f46e5);
-        font-size: 15px;
-        font-weight: 800;
-        box-shadow: 0 5px 14px rgba(79, 70, 229, .3);
+        object-fit: cover;
+        box-shadow: 0 5px 14px rgba(112, 255, 0, .14);
       }
       .heading { min-width: 0; flex: 1; }
       .title {
@@ -144,7 +140,7 @@
         touch-action: manipulation;
       }
       .action:hover { color: #fff; background: rgba(255, 255, 255, .1); }
-      .action:focus-visible { outline: 2px solid #a78bfa; outline-offset: 1px; }
+      .action:focus-visible { outline: 2px solid #53e076; outline-offset: 1px; }
       .action:disabled { cursor: wait; opacity: .62; }
       .stop { color: #fca5a5; }
       .stop:hover:not(:disabled) { color: #fff; background: rgba(239, 68, 68, .24); }
@@ -260,7 +256,7 @@
         height: 7px;
         flex: 0 0 7px;
         border-radius: 50%;
-        background: #34d399;
+        background: #53e076;
         box-shadow: 0 0 0 3px rgba(52, 211, 153, .12);
       }
       .status-text {
@@ -299,9 +295,9 @@
         background: transparent;
       }
     </style>
-    <section class="panel hidden" role="region" aria-label="Glosify translated subtitle chat">
+    <section class="panel hidden" role="region" aria-label="GlobeGlotter translated subtitle chat">
       <header class="header">
-        <div class="brand" aria-hidden="true">G</div>
+        <img class="brand" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAACXBIWXMAAAsSAAALEgHS3X78AAAFVUlEQVRIx41WW2xURRj+/pk5l92WtlooLZeEpBpKobSBGqIhIiCYWCORQCIivinGeMNE8cF4eyVGn0gUlUQUoyLogwEh+lBBAUsKJFyDrRSKBFp6o91zm/l92D3d3e5u4TycnDMz/+X75798pKbOBwjIvCY+jMm2aPyDCo6mf6GyZzlfnkqYGddLuXo4fnFmK15XKPVwCWOFu7lWC3ZFcQVUIMD5kkWDVmSR1J3dL1zkuxaJEXDJ/UI0pdzHZAaKqSUICRJgA6OZROZ3EmeL4lJFXSIJ7cOMAQpOFYMQDIJDEkmWDliXAMp3dwckEQ7TlDrd/GI4d1VUUccAbt+gi7+pzt3W8DVhTQGbGA0BDDYlE4myhZb+FwiH0bgmenJbqma20QwmIgAMSdx3Ve552b14SNmViMZgAgAgC8oFCGyKXHieAZIcDoqWjcEzn40CItLs2DAgBksgCElKCObtj5d1HbSq5ut7ZhmhMNQr+i8JMFR5TvTiMlQ5vnM4hunN0dqPUhpCMKKU+Gun1XNUgTFzsW592p86jU/8YrnVvOGH0fqHI7eSiRCMiCud4vdtzr/tyqqYiCOLQEgEQ1j36dhDzwWBpqFe+dWmRO8RSTZAxGM8Z5VuWR/2nhZt76UqpiJkKAIAZoAQBvTjFrfjC9uqyssCKZI1AIgo8lE507R96KlygPD9C8muXy2nFsKGcGBVcv9ZoZk27hhTSRhG6InuY+rKKRlpKqtmqdC4Our+W/WdFzKRvYY4TYk5RHW9mVLHktDdoS4clKraRB6BwQQTEVw0rQmkAwZ6OtTeLe6Nc5INpIPWZ4NHt3rJal76kt91WMFkEah0fIgIBhXTmQgE9F0SekjMXRutfMv3RwgCBNhJ7uuik3ut+mXRN5sSA12CXLCBTtGfHzsduyySACAVM1OugWxemSitn6UFAPfWmgeW+CMaUiIChcCcVjq5z/5juzPQJd1pXHO/tsvBBhDQIWBAEre6xcgNCJVRqrLDQOJWD4UhWxZmtkSy0lw+LX/6PBGmEPmobdCNbZExEArXz0gIkMS67d7seTowIAFmGA1b8e7nkye+tlUlG5NNU2Ym6fLNi+LmOVG7UNfUm9Xve/u3Jn4+nBCKTEStm73mJ8IUEzOEyETAH6ExH2GKiCAkS5cNMHSdIJg5iwBpBFKRfwvHd9nrtqVGU1j+ajCjiS8cUqGHugW6aU3oRSQIApjRFJ7ZI1nju82ucmAMgtu0Yedo/ZJw4D/Vd0mQhfw7IIBhNFQFjn5p3/dItLgtHPGpYUU4b2XIYAIHoUgo7u5Uw/207DXv3AHrarvyb0posMaDb3izF0UE6mqXgz3CKs8UBzhdBxS3CmKjcX6/5dZi1kItBMeTlZREd6d1dr/Vsj6sqEbDY5GsYFWGukV65bvesld8Egh8sW9LYviakA7GM7VIszMhTIA5S6PGtmh6g1E2Bnrpn3Z18ltr+Zve2ne8QU8ICcuCAQMghjawJPa+nTjyiW1Vxd2CARo3kNPNiQBCeJugARHnGEOWMRgrtgbLX/ccx5i0PBMRhgbowAfu8R2OVc7ME3vRguy4yGE3ecMrbo1sEI3SjMV64VPhjObITpI/gsvH1Kk9qv+CtCpj7fntekGRwVQ4nuJ1EohGiQNAgmywDxgIl1UCxuSwrliJmtC+84hJMRusoZJMZWCADcgFAcwwhsCc9Q95dXAnxkDpWsmwNjaxaQLr7HfM+OKTub2oOAfNdQeMkvwzvcJ3oi1UgvZyIaGjvAOULx8DzUdABUQzNyyTcLKJcCiDJmfgFKPWXIA6L7U4RyfnB41Bedr+Bxn8hL8WgXTxAAAAAElFTkSuQmCC" alt="" aria-hidden="true">
         <div class="heading">
           <div class="title">Live subtitle chat</div>
           <div class="subtitle">Drag the header · resize from the corner</div>

@@ -9,9 +9,8 @@
   <circle cx="388" cy="24" r="96" fill="#53e076" opacity=".08"/><circle cx="18" cy="274" r="90" fill="#2d7abf" opacity=".1"/>
   <rect x="38" y="38" width="364" height="204" rx="22" fill="#0d1c32" stroke="#53e076" stroke-opacity=".24" filter="url(#shadow)"/>
   <path d="M60 39h320" stroke="url(#button)" stroke-opacity=".65"/>
-  <rect x="58" y="59" width="44" height="44" rx="13" fill="url(#brand)" stroke="#72fe8f" stroke-opacity=".45"/>
-  <text x="80" y="89" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" font-style="italic" font-weight="900" fill="#003914">G</text>
-  <text x="119" y="79" font-family="Arial,sans-serif" font-size="20" font-style="italic" font-weight="900" fill="#53e076">Glosify</text>
+  <image x="58" y="59" width="44" height="44" href="../../icons/icon128.png"/>
+  <text x="119" y="79" font-family="Arial,sans-serif" font-size="20" font-style="italic" font-weight="900" fill="#53e076">GlobeGlotter</text>
   <text x="119" y="99" font-family="Arial,sans-serif" font-size="9" font-weight="700" letter-spacing="2" fill="#9eaeaa">TRANSLATOR</text>
   <rect x="326" y="68" width="54" height="24" rx="12" fill="#53e076" fill-opacity=".08" stroke="#53e076" stroke-opacity=".2"/><text x="353" y="84" text-anchor="middle" font-family="Arial,sans-serif" font-size="8" font-weight="800" letter-spacing="1" fill="#53e076">BETA</text>
   <rect x="58" y="125" width="140" height="36" rx="11" fill="#010e24" stroke="#d6e3ff" stroke-opacity=".13"/><text x="72" y="148" font-family="Arial,sans-serif" font-size="12" fill="#d6e3ff">Auto-detect</text>

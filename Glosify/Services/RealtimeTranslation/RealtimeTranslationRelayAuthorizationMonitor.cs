@@ -96,7 +96,7 @@ public sealed class RealtimeTranslationRelayAuthorizationMonitor(
                 if (consecutiveDatabaseFailures >= 3)
                 {
                     throw new RealtimeTranslationUpstreamException(
-                        "Glosify could not verify the live subtitle session.");
+                        "GlobeGlotter could not verify the live subtitle session.");
                 }
             }
 

@@ -112,9 +112,34 @@ public class AccountController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null) =>
-        Task.FromResult<IActionResult>(Glosify.Infrastructure.Api.GlosifyProblemDetails.Result(
-            HttpContext, 403, "social_signup_required", "Create your account with Google or Microsoft."));
+    public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
+    {
+        if (!HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment())
+            return Glosify.Infrastructure.Api.GlosifyProblemDetails.Result(
+                HttpContext, 403, "social_signup_required", "Create your account with Google or Microsoft.");
+
+        SetRegisterViewData(returnUrl);
+        if (!ModelState.IsValid)
+            return View(model);
+
+        var user = new ApplicationUser
+        {
+            UserName = model.Email,
+            Email = model.Email,
+            EmailConfirmed = true,
+            DisplayCulture = CultureInfo.CurrentUICulture.Name,
+        };
+        var result = await _userManager.CreateAsync(user, model.Password);
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+            return View(model);
+        }
+
+        await _signInManager.SignInAsync(user, isPersistent: false);
+        return LocalRedirect(SafeLocalReturnUrl(returnUrl));
+    }
 
     [HttpPost]
     public async Task<IActionResult> Logout()

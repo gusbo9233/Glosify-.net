@@ -62,7 +62,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
             || string.IsNullOrWhiteSpace(authorization.SourceLanguage))
         {
             throw new RealtimeTranslationUnavailableException(
-                "The selected speech recognition mode is not configured on this Glosify deployment.");
+                "The selected speech recognition mode is not configured on this GlobeGlotter deployment.");
         }
 
         var captureAdminSession = await IsAdminCaptureEnabledAsync(

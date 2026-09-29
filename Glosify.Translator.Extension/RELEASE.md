@@ -73,7 +73,7 @@ Keep that preview outside `artifacts/store` and do not repackage it. Verify its
 ID in `chrome://extensions` matches the draft exactly. See
 [Chrome's identity guidance](https://developer.chrome.com/docs/extensions/reference/manifest/key).
 
-- With a production test account, choose Connect and finish Glosify sign-in.
+- With a production test account, choose Connect and finish GlobeGlotter sign-in.
   Confirm the email and credit balance match that same account on `glosify.se`.
 - Repeat with an active production web session, and after closing/cancelling the
   authorization window. Reconnect must remain possible. Localhost sessions and

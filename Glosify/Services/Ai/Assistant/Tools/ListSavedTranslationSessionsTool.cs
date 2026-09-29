@@ -12,7 +12,7 @@ internal sealed class ListSavedTranslationSessionsTool : IAssistantTool
 {
     private static readonly AgentToolDeclaration DeclarationValue = new(
         "list_saved_translation_sessions",
-        "List the user's saved Translator extension sessions for the current Glosify learning language, with their ids, titles, dates, and translation counts. Use this when the user refers to saved translations without identifying a session. Returns up to 50 sessions per call.",
+        "List the user's saved Translator extension sessions for the current GlobeGlotter learning language, with their ids, titles, dates, and translation counts. Use this when the user refers to saved translations without identifying a session. Returns up to 50 sessions per call.",
         BuildSchema(new Dictionary<string, object>
         {
             ["offset"] = IntegerProp("Optional number of sessions to skip. Defaults to 0."),

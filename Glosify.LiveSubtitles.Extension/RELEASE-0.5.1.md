@@ -1,4 +1,4 @@
-# Glosify Live Subtitles 0.5.1 BETA release checklist
+# GlobeGlotter Live Subtitles 0.5.1 BETA release checklist
 
 ## Server-first deployment
 
@@ -23,7 +23,7 @@ Run both Scribe and Enhanced modes in a clean headed Chrome profile:
 
 - [ ] Run `npm test`, `npm run test:browser`, and `npm run package:store` from this directory.
 - [ ] Upload only `artifacts/package/glosify-live-subtitles-0.5.1-beta.zip`.
-- [ ] Select **Public** visibility and retain **Glosify Live Subtitles BETA** branding.
+- [ ] Select **Public** visibility and retain **GlobeGlotter Live Subtitles BETA** branding.
 - [ ] Recheck the Store privacy declarations and the navigation-stop/degraded-connection copy.
 - [ ] Use deferred publishing only after the backend verification and headed checks pass.
 

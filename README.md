@@ -1,4 +1,4 @@
-# Glosify
+# GlobeGlotter
 
 [![Build, test, and deploy](https://github.com/gusbo9233/Glosify-.net/actions/workflows/master_glosify.yml/badge.svg)](https://github.com/gusbo9233/Glosify-.net/actions/workflows/master_glosify.yml)
 [![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
@@ -6,16 +6,16 @@
 
 **[Live app](https://glosify.se)** · [Case study](docs/portfolio-case-study.md) · [Architecture](docs/ARCHITECTURE.md) · [ADRs](docs/adr/) · [Tests](Glosify.Tests/)
 
-Glosify is an ASP.NET Core 10 MVC language-learning application with quizzes,
+GlobeGlotter is an ASP.NET Core 10 MVC language-learning application with quizzes,
 FSRS-6 study collections, books, saved assistant chats, a focused text-translator
 Chrome extension, and a separate extension for live translated subtitles.
 
 ## AI services
 
-All generative, text-agent, and vision work goes directly from the Glosify server
+All generative, text-agent, and vision work goes directly from the GlobeGlotter server
 to the OpenAI Responses API. The model is fixed in code to `gpt-6-luna`; there
 is no model picker, configured alternative, or provider fallback. Prompts, JSON
-schemas, and function tools are defined and executed in this repository. Glosify
+schemas, and function tools are defined and executed in this repository. GlobeGlotter
 replays its own saved history and every Responses request uses `store: false`.
 
 ElevenLabs v3 provides server-side text-to-speech for book reading, with a bounded memory cache. The Enhanced
@@ -74,8 +74,11 @@ dotnet dev-certs https --trust
 dotnet run --project Glosify --launch-profile https
 ```
 
-Register at `https://localhost:7032/Account/Register`; the login route is
-`/login`. Ordinary quiz, Anki, sharing, and UI development does not
+In Development, register with an email and password at
+`https://localhost:7032/Account/Register`; the login route is `/login`.
+The password signup form and `/api/auth/register` are enabled only in Development;
+other environments require Google or Microsoft for signup. Ordinary quiz, Anki,
+sharing, and UI development does not
 need external service credentials. Azure-backed features use `az login` during
 local development.
 
@@ -83,7 +86,7 @@ local development.
 
 The HTTPS launch profile enables Enhanced subtitles and allowlists the pinned
 development extension callback. It still reads the exact `OPENAI_SECRET_KEY`
-from the Glosify user-secret store.
+from the GlobeGlotter user-secret store.
 
 Run the two opt-in direct API smoke tests (structured output plus a stateless
 two-request function loop) with:
@@ -183,7 +186,7 @@ before any journey creates or changes data and always stops the published app.
 
 Credential-gated direct OpenAI smoke tests can be enabled with
 `RUN_OPENAI_SMOKE_TESTS=true`; they read `OPENAI_SECRET_KEY` from the environment
-or the Glosify user-secret store.
+or the GlobeGlotter user-secret store.
 
 The workflow in `.github/workflows/master_glosify.yml` validates pull requests.
 A push to `master` applies the reviewed EF migration bundle and deploys Azure

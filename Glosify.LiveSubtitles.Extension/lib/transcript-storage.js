@@ -67,15 +67,21 @@ export function selectAvailableTranslationMode(modes, requestedMode) {
   if (modes?.some(mode => mode.code === requestedMode)) {
     return requestedMode;
   }
-  return modes?.find(mode => mode.code === "scribe-cf")?.code
-    ?? modes?.find(mode => mode.code === "enhanced")?.code
+  return modes?.find(mode => mode.code === "enhanced")?.code
+    ?? modes?.find(mode => mode.code === "scribe-cf")?.code
     ?? modes?.[0]?.code
     ?? "enhanced";
 }
 
 export function selectCurrentTranslationModes(modes) {
   const available = Array.isArray(modes) ? modes : [];
-  return available.some(mode => mode.code === "scribe-cf")
+  const current = available.some(mode => mode.code === "scribe-cf")
     ? available.filter(mode => mode.code !== "scribe")
     : available;
+  // Keep labels consistent with older deployed catalogs during rollout.
+  return current.map(mode => ({
+    ...mode,
+    name: mode.code === "enhanced" ? "Best"
+      : isScribeTranslationMode(mode.code) ? "Budget" : mode.name,
+  }));
 }

@@ -56,6 +56,24 @@ public sealed class AccountReturnUrlTests
     }
 
     [Fact]
+    public async Task RegisterPage_InDevelopment_OffersPasswordRegistration()
+    {
+        using var factory = new WebApplicationFactory<Program>();
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+        });
+
+        var response = await client.GetAsync("/Account/Register");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("name=\"Password\"", html);
+        Assert.Contains("name=\"ConfirmPassword\"", html);
+        Assert.Contains("__RequestVerificationToken", html);
+    }
+
+    [Fact]
     public void ExternalOauthFailure_PreservesTheFullLocalPkceReturnUrl()
     {
         const string returnUrl = "/extension/connect?redirect_uri=https%3A%2F%2Fakepdpjieiokffdapibipomhbplikock.chromiumapp.org%2Fglosify&state=a-b_c&code_challenge=challenge&code_challenge_method=S256";

@@ -56,13 +56,13 @@ public sealed class RealtimeTranslationModeCatalogOptions
 
     public RealtimeTranslationModeDisplayOptions Enhanced { get; set; } = new()
     {
-        DisplayName = "Enhanced",
+        DisplayName = "Best",
         Description = "Best translation quality",
     };
 
     public RealtimeTranslationModeDisplayOptions ScribeCloudflare { get; set; } = new()
     {
-        DisplayName = "Scribe + Cloudflare",
+        DisplayName = "Budget",
         Description = "Lower-cost translation with coalesced live partials",
     };
 }

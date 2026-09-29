@@ -3,25 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Glosify Live Subtitles</title>
+  <title>GlobeGlotter Live Subtitles</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <main>
     <header>
-      <div class="brand-mark" aria-hidden="true">G</div>
+      <img class="brand-mark" src="../icons/icon128.png" alt="" aria-hidden="true">
       <div>
         <h1>Live Subtitles</h1>
-        <p class="brand-subtitle">Powered by Glosify</p>
+        <p class="brand-subtitle">Powered by GlobeGlotter</p>
       </div>
     </header>
 
-    <section id="loading" class="panel muted">Loading Glosify…</section>
+    <section id="loading" class="panel muted" role="status">Loading GlobeGlotter…</section>
 
     <section id="signed-out" class="panel hidden">
       <h2>Translate this tab’s audio</h2>
-      <p>Connect your Glosify account to use credits for real-time subtitles.</p>
-      <button id="connect" class="primary">Connect Glosify</button>
+      <p>Sign in to GlobeGlotter in a new tab to use your credits for real-time subtitles.</p>
+      <button id="connect" class="primary">Connect GlobeGlotter</button>
     </section>
 
     <section id="signed-in" class="hidden">
@@ -33,65 +33,79 @@
         <button id="sign-out" class="link-button">Sign out</button>
       </div>
 
+      <p class="intro">Play audio in this tab, then start subtitles.</p>
       <div class="panel controls">
         <label for="translation-mode">Subtitle mode</label>
         <select id="translation-mode"></select>
+        <p id="mode-description" class="mode-description"></p>
 
         <div id="source-language-group" class="control-group">
           <label for="source-language">Spoken language hint</label>
           <select id="source-language"></select>
         </div>
 
+        <label for="language">Subtitle language</label>
+        <select id="language"></select>
+
+        <details class="preferences">
+          <summary>Caption preferences</summary>
+          <label id="partial-captions-row" class="switch-row" for="partial-captions">
+            <span>
+              <strong>Show partial captions</strong>
+              <small>Updates captions while speech is ongoing. Turn off to show finalized captions only.</small>
+            </span>
+            <input id="partial-captions" type="checkbox">
+          </label>
+
+          <label class="switch-row" for="transparent-subtitles">
+            <span>
+              <strong>Transparent subtitle window</strong>
+              <small>Shows only subtitle text until you hover over or focus the window.</small>
+            </span>
+            <input id="transparent-subtitles" type="checkbox">
+          </label>
+
+        </details>
+
+        <label class="switch-row" for="save-transcript">
+          <span>
+            <strong>Save original speech transcript</strong>
+            <small id="save-transcript-help">Optional and off by default. Stores finalized original-language speech in your private GlobeGlotter account until you delete the transcript or account.</small>
+          </span>
+          <input id="save-transcript" type="checkbox">
+        </label>
+
         <div id="quiz-language-group" class="control-group hidden">
-          <label for="quiz-language">Glosify quiz language</label>
+          <label for="quiz-language">GlobeGlotter quiz language</label>
           <select id="quiz-language">
             <option value="">Choose a quiz language…</option>
           </select>
         </div>
 
-        <label for="language">Subtitle language</label>
-        <select id="language"></select>
+      </div>
 
-        <label id="partial-captions-row" class="switch-row" for="partial-captions">
-          <span>
-            <strong>Show partial captions</strong>
-            <small>Updates captions while speech is ongoing. Turn off to show finalized captions only.</small>
-          </span>
-          <input id="partial-captions" type="checkbox">
-        </label>
-
-        <label class="switch-row" for="transparent-subtitles">
-          <span>
-            <strong>Transparent subtitle window</strong>
-            <small>Shows only subtitle text until you hover over or focus the window.</small>
-          </span>
-          <input id="transparent-subtitles" type="checkbox">
-        </label>
-
-        <label class="switch-row" for="save-transcript">
-          <span>
-            <strong>Save original speech transcript</strong>
-            <small id="save-transcript-help">Optional and off by default. Stores finalized original-language speech in your private Glosify account until you delete the transcript or account.</small>
-          </span>
-          <input id="save-transcript" type="checkbox">
-        </label>
-
+      <div class="session-actions">
+        <div id="session-status" class="status hidden" role="status"></div>
+        <p id="start-help" class="start-help"></p>
         <div class="price-row">
           <span>Price</span>
           <strong id="price">Loading price…</strong>
         </div>
 
-        <p id="service-disclosure" class="service-disclosure">When you start, this tab’s audio is streamed through Glosify to Microsoft services for live subtitles. Audio is not stored. Each started minute consumes credits.</p>
-        <p class="usage-warning"><strong>Credits and AI output:</strong> Provider-reported audio usage consumes credits even if captions are interrupted, inaccurate, or unusable. Mandatory consumer rights still apply. AI-generated captions and translations may be incorrect. Do not rely on them for safety-critical or high-stakes decisions.</p>
         <button id="start" class="primary">Start subtitles</button>
         <button id="stop" class="danger hidden">Stop subtitles</button>
         <button id="view-transcripts" class="secondary" type="button">View saved transcripts</button>
       </div>
 
-      <div id="session-status" class="status hidden"></div>
-      <div id="notice" class="notice hidden"></div>
-      <div id="error" class="error hidden"></div>
+      <details class="privacy-details">
+        <summary>Audio privacy &amp; credit usage</summary>
+        <p id="service-disclosure" class="service-disclosure">When you start, this tab’s audio is streamed through GlobeGlotter to the selected speech service for live subtitles. Audio is not stored. Each started minute consumes credits.</p>
+        <p class="usage-warning"><strong>Credits and AI output:</strong> Provider-reported audio usage consumes credits even if captions are interrupted, inaccurate, or unusable. Mandatory consumer rights still apply. AI-generated captions and translations may be incorrect. Do not rely on them for safety-critical or high-stakes decisions.</p>
+      </details>
     </section>
+
+    <div id="notice" class="notice hidden" role="status"></div>
+    <div id="error" class="error hidden" role="alert"></div>
 
     <footer class="legal-footer">
       <a href="https://glosify.se/Home/Privacy" target="_blank" rel="noreferrer">Privacy</a>

@@ -16,6 +16,7 @@ const elements = {
   quizLanguageGroup: document.querySelector("#quiz-language-group"),
   language: document.querySelector("#language"),
   translationMode: document.querySelector("#translation-mode"),
+  modeDescription: document.querySelector("#mode-description"),
   sourceLanguage: document.querySelector("#source-language"),
   sourceLanguageGroup: document.querySelector("#source-language-group"),
   partialCaptionsRow: document.querySelector("#partial-captions-row"),
@@ -24,6 +25,7 @@ const elements = {
   saveTranscript: document.querySelector("#save-transcript"),
   saveTranscriptHelp: document.querySelector("#save-transcript-help"),
   price: document.querySelector("#price"),
+  startHelp: document.querySelector("#start-help"),
   serviceDisclosure: document.querySelector("#service-disclosure"),
   start: document.querySelector("#start"),
   stop: document.querySelector("#stop"),
@@ -124,11 +126,15 @@ function render() {
   elements.signedOut.classList.toggle("hidden", currentState.signedIn);
   elements.signedIn.classList.toggle("hidden", !currentState.signedIn);
   elements.connect.disabled = busy;
+  elements.connect.textContent = busy ? "Connecting…" : "Connect GlobeGlotter";
+  elements.signOut.disabled = busy || Boolean(currentState.active);
+  setMessage(elements.notice, currentState.notice);
+  setMessage(elements.error, currentState.error);
   if (!currentState.signedIn) {
     return;
   }
 
-  elements.email.textContent = currentState.email ?? "Glosify account";
+  elements.email.textContent = currentState.email ?? "GlobeGlotter account";
   elements.credits.title = "Balances are rounded up to whole credits. Actual deductions depend on usage.";
   elements.credits.textContent = String(currentState.availableCredits ?? 0);
   const price = currentState.effectiveCreditsPerMinute;
@@ -142,13 +148,14 @@ function render() {
     elements.translationMode.replaceChildren(...modes.map(mode => {
       const option = document.createElement("option");
       option.value = mode.code;
-      option.textContent = `${mode.name} — ${mode.description}`;
+      option.textContent = mode.name;
       return option;
     }));
     elements.translationMode.dataset.signature = modeSignature;
   }
   elements.translationMode.value = currentState.translationMode ?? "enhanced";
   elements.translationMode.disabled = busy || currentState.active;
+  setMessage(elements.modeDescription, modes.find(mode => mode.code === elements.translationMode.value)?.description);
 
   const usesScribe = currentState.translationMode === "scribe"
     || currentState.translationMode === "scribe-cf"
@@ -221,12 +228,12 @@ function render() {
     catalog: currentState.catalog,
   });
   elements.saveTranscriptHelp.textContent = currentState.saveTranscriptHelp
-    ?? "Optional and off by default. Stores finalized original-language speech in your private Glosify account until you delete the transcript or account.";
+    ?? "Optional and off by default. Stores finalized original-language speech in your private GlobeGlotter account until you delete the transcript or account.";
   elements.serviceDisclosure.textContent = ["scribe", "scribe-cf"].includes(currentState.translationMode)
-    ? "When you start, this tab’s audio is streamed through Glosify to ElevenLabs Scribe v2, and evolving phrases are sent through Glosify to a Cloudflare Worker for M2M100 translation. Glosify processes one subtitle revision at a time, replaces queued revisions with the latest text, and may translate long revisions in parallel chunks. Glosify does not store tab audio. Each started minute consumes credits."
+    ? "When you start, this tab’s audio is streamed through GlobeGlotter to ElevenLabs Scribe v2, and evolving phrases are sent through GlobeGlotter to a Cloudflare Worker for M2M100 translation. GlobeGlotter processes one subtitle revision at a time, replaces queued revisions with the latest text, and may translate long revisions in parallel chunks. GlobeGlotter does not store tab audio. Each started minute consumes credits."
     : currentState.saveTranscript
-      ? "When you start, this tab’s audio is streamed through Glosify to OpenAI for enhanced live translation and to ElevenLabs Scribe v2 for the saved source transcript. ElevenLabs may retain standard API logs under its service policy. Glosify does not store tab audio. Each started minute consumes credits."
-      : "When you start, this tab’s audio is streamed through Glosify to OpenAI for enhanced live translation. Audio is not stored. Each started minute consumes credits.";
+      ? "When you start, this tab’s audio is streamed through GlobeGlotter to OpenAI for enhanced live translation and to ElevenLabs Scribe v2 for the saved source transcript. ElevenLabs may retain standard API logs under its service policy. GlobeGlotter does not store tab audio. Each started minute consumes credits."
+      : "When you start, this tab’s audio is streamed through GlobeGlotter to OpenAI for enhanced live translation. Audio is not stored. Each started minute consumes credits.";
 
   const canStart = !busy
     && !currentState.active
@@ -241,6 +248,17 @@ function render() {
   elements.stop.classList.toggle("hidden", !currentState.active);
   elements.start.disabled = !canStart;
   elements.stop.disabled = busy;
+  elements.start.textContent = busy ? "Please wait…" : "Start subtitles";
+  elements.stop.textContent = busy ? "Please wait…" : "Stop subtitles";
+  setMessage(elements.startHelp, currentState.active
+    ? "Stop subtitles to change the language or mode."
+    : currentState.paidServicesAvailable === false
+      ? "Paid subtitles are temporarily unavailable."
+      : !currentState.catalog || !Number.isFinite(price) || !languages.length
+        ? "Subtitle settings are unavailable. Reopen the extension to try again."
+        : currentState.availableCredits < price
+          ? "Add credits in GlobeGlotter before starting subtitles."
+          : "This tab’s audio is shared with the selected speech service. Each started minute uses credits.");
 
   const statusText = describeStatus(currentState);
   setMessage(elements.sessionStatus, statusText);
@@ -250,10 +268,10 @@ function render() {
 
 function describeStatus(state) {
   switch (state.status) {
-    case "connecting": return "Connecting tab audio to the Glosify relay…";
+    case "connecting": return "Connecting tab audio to the GlobeGlotter relay…";
     case "subtitling": return `Subtitling · paid minute ${state.currentMinute}`;
     case "reconnecting": return "Reconnecting after the 30-minute session limit…";
-    case "insufficient_credits": return "Stopped: insufficient Glosify credits.";
+    case "insufficient_credits": return "Stopped: insufficient GlobeGlotter credits.";
     case "budget_exhausted": return `Paid features reopen ${formatReset(state.paidServicesResetAtUtc)}.`;
     default: return null;
   }

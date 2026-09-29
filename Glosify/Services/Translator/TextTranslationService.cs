@@ -154,7 +154,7 @@ public sealed class TextTranslationService : ITextTranslationService
         if (translationOperationId == Guid.Empty)
         {
             throw new TextTranslationValidationException(
-                "A completed Glosify translation is required before saving.");
+                "A completed GlobeGlotter translation is required before saving.");
         }
         existing = await _context.SavedTranslations.AsNoTracking()
             .Where(item => item.UserId == userId
@@ -181,7 +181,7 @@ public sealed class TextTranslationService : ITextTranslationService
         if (!isCompletedTranslation)
         {
             throw new TextTranslationValidationException(
-                "A completed Glosify translation is required before saving.");
+                "A completed GlobeGlotter translation is required before saving.");
         }
 
         var normalizedSource = ValidateSourceLanguage(sourceLanguage);

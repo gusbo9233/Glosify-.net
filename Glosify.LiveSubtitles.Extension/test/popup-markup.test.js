@@ -18,7 +18,7 @@ test("popup offers mode, optional language hint, target, quiz-language, and tran
   assert.match(markup, /<input id="transparent-subtitles" type="checkbox">/);
   assert.match(markup, /Transparent subtitle window/);
   assert.match(markup, /Shows only subtitle text until you hover over or focus the window/);
-  assert.match(markup, /audio is streamed through Glosify to Microsoft services/);
+  assert.match(markup, /audio is streamed through GlobeGlotter to the selected speech service/);
   assert.match(markup, /Audio is not stored/);
   assert.match(markup, /Each started minute consumes credits/);
   assert.match(markup, /Provider-reported audio usage consumes credits/);

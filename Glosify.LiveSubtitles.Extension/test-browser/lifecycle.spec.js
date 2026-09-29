@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { test, expect, chromium } from "@playwright/test";
 import { execFile } from "node:child_process";
 import { cp, mkdtemp, rm, writeFile } from "node:fs/promises";
@@ -14,6 +15,32 @@ const artifactsRoot = path.resolve(
 const sessionId = "11111111-1111-4111-8111-111111111111";
 const extensionId = "akepdpjieiokffdapibipomhbplikock";
 const execFileAsync = promisify(execFile);
+
+test("sign-in opens a tab in the same window and completes the PKCE callback", async () => {
+  const harness = await launchHarness();
+  try {
+    await harness.control.evaluate(() => chrome.runtime.sendMessage({ type: "popup:sign-out" }));
+    const originalWindow = await harness.control.evaluate(async () => (await chrome.tabs.getCurrent()).windowId);
+    const newPage = harness.context.waitForEvent("page");
+    await harness.control.getByRole("button", { name: "Connect GlobeGlotter" }).click();
+    const login = await newPage;
+    await expect(login.getByRole("link", { name: "Complete test login" })).toBeVisible();
+    const loginTab = await harness.control.evaluate(async baseUrl => (
+      await chrome.tabs.query({ url: baseUrl + "/extension/connect*" })
+    )[0], harness.mock.baseUrl);
+    expect(loginTab.windowId).toBe(originalWindow);
+    expect(harness.mock.authExchanges).toBe(0);
+    await login.getByRole("link", { name: "Complete test login" }).click();
+    await expect.poll(() => harness.mock.authExchanges).toBe(1);
+    await expect.poll(() => login.isClosed()).toBe(true);
+    await expect(harness.control.locator("#email")).toHaveText("extension@example.test");
+    expect(await harness.worker.evaluate(async () => (
+      await chrome.storage.session.get("glosifyPendingTabAuth")
+    ).glosifyPendingTabAuth)).toBeUndefined();
+  } finally {
+    await harness.close();
+  }
+});
 
 for (const refreshStatus of [429, 503, 401, 403]) {
   test(`account refresh handles HTTP ${refreshStatus} without misclassifying the login`, async () => {
@@ -212,7 +239,7 @@ test("tab-capture profile streams real tab audio and renders the final caption",
     await expect.poll(() => tabIsAudible(harness.worker, targetTabId)).toBe(true);
 
     await page.bringToFront();
-    await pressNativeTabCaptureShortcut("Glosify tab capture test");
+    await pressNativeTabCaptureShortcut("GlobeGlotter tab capture test");
 
     await expect.poll(() => extensionState(harness.worker)).toMatchObject({
       active: true,
@@ -402,6 +429,8 @@ async function overlayState(control) {
 async function startMockGlosify({ createDelayMs = 0, finalCaption, refreshStatus = 200 } = {}) {
   let startedAtUtc = null;
   const state = {
+    authExchanges: 0,
+    authChallenge: null,
     audioMessages: 0,
     deletedSessions: 0,
     refreshRequests: 0,
@@ -412,9 +441,37 @@ async function startMockGlosify({ createDelayMs = 0, finalCaption, refreshStatus
   };
   const requestHandler = async (request, response) => {
     const url = new URL(request.url, "http://127.0.0.1");
+    if (url.pathname === "/extension/connect") {
+      state.authChallenge = url.searchParams.get("code_challenge");
+      const destination = new URL(url.searchParams.get("redirect_uri"));
+      destination.searchParams.set("state", url.searchParams.get("state"));
+      destination.searchParams.set("code", "test-auth-code");
+      response.writeHead(200, { "Content-Type": "text/html" });
+      response.end(`<!doctype html><title>Test GlobeGlotter login</title><a href="/finish-login?callback=${encodeURIComponent(destination.toString())}">Complete test login</a>`);
+      return;
+    }
+    if (url.pathname === "/finish-login") {
+      response.writeHead(302, { Location: url.searchParams.get("callback") });
+      response.end();
+      return;
+    }
+    if (url.pathname === "/api/extension-auth/exchange") {
+      let body = "";
+      for await (const chunk of request) body += chunk;
+      const credentials = JSON.parse(body);
+      const challenge = createHash("sha256").update(credentials.codeVerifier).digest("base64url");
+      if (challenge !== state.authChallenge || credentials.code !== "test-auth-code"
+          || credentials.redirectUri !== `https://${extensionId}.chromiumapp.org/glosify`) {
+        response.writeHead(400);
+        response.end();
+        return;
+      }
+      state.authExchanges += 1;
+      return json(response, { accessToken: "access-token", refreshToken: "login-refresh-token", expiresIn: 3600 });
+    }
     if (url.pathname === "/audio" || url.pathname.startsWith("/audio/") || url.pathname === "/next") {
       response.writeHead(200, { "Content-Type": "text/html" });
-      response.end(`<!doctype html><title>Glosify tab capture test</title><button>Play synthetic speech</button><script>
+      response.end(`<!doctype html><title>GlobeGlotter tab capture test</title><button>Play synthetic speech</button><script>
         document.querySelector('button').onclick = async () => {
           const context = new AudioContext();
           const oscillator = context.createOscillator();

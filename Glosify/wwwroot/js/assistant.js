@@ -941,25 +941,12 @@ import {
 
     let taskControls;
     const taskStatusLabels = {
-        queued: ['Client.AssistantTaskQueued', 'Queued'],
-        running: ['Client.AssistantTaskRunning', 'Working'],
-        retry_wait: ['Client.AssistantTaskRetrying', 'Retrying soon'],
         awaiting_input: ['Client.AssistantTaskAwaitingInput', 'Waiting for your reply'],
         awaiting_approval: ['Client.AssistantTaskAwaitingApproval', 'Waiting for your review'],
         paused: ['Client.AssistantTaskPaused', 'Paused'],
-        completed: ['Client.AssistantTaskCompleted', 'Finished'],
-        cancelled: ['Client.AssistantTaskCancelled', 'Stopped'],
         failed: ['Client.AssistantTaskFailed', 'Could not finish'],
     };
     const taskStatusLabel = status => taskStatusLabels[status] ? t(...taskStatusLabels[status]) : status;
-    // Quiz processing states set by the task runtime.
-    const artifactStatusLabels = {
-        Building: ['Client.AssistantArtifactBuilding', 'Building'],
-        Ready: ['Client.AssistantArtifactReady', 'Ready'],
-        Paused: ['Client.AssistantTaskPaused', 'Paused'],
-        Incomplete: ['Client.AssistantArtifactIncomplete', 'Incomplete'],
-    };
-    const artifactStatusLabel = status => artifactStatusLabels[status] ? t(...artifactStatusLabels[status]) : status;
     const durableTasks = createAssistantTasks({
         request: async (url, options = {}) => {
             const response = await fetch(url, { ...options, headers: requestHeaders(options.method === 'POST') });
@@ -975,24 +962,29 @@ import {
         onCompleted: async () => { if (chatSelection) await loadHistory(chatSelection); await loadChats(); },
         onProgress: task => {
             if (!task) { if (taskControls) taskControls.hidden = true; return; }
+            const working = ['queued', 'running', 'retry_wait'].includes(task.status);
+            const needsAction = ['awaiting_input', 'awaiting_approval', 'paused'].includes(task.status);
+            if (working) setStatus('Thinking...');
+            else if (task.status === 'failed') setStatus(task.reason || taskStatusLabel(task.status), true);
+            else if (needsAction) setStatus(taskStatusLabel(task.status));
+            else setStatus('');
+
+            if (!needsAction) {
+                if (taskControls) taskControls.hidden = true;
+                return;
+            }
             if (!taskControls) {
                 taskControls = document.createElement('div');
                 taskControls.className = 'assistant-task-progress';
                 form.before(taskControls);
             }
             taskControls.hidden = false;
-            const wasOpen = taskControls.querySelector('details')?.open;
             taskControls.replaceChildren();
-            const progress = document.createElement('p');
-            progress.setAttribute('role', 'status');
-            progress.textContent = t('Client.AssistantTaskProgress', '{0} · {1} saved changes',
-                taskStatusLabel(task.status), task.savedChanges);
-            taskControls.appendChild(progress);
             if (task.reason) {
                 const reason = document.createElement('p'); reason.textContent = task.reason; taskControls.appendChild(reason);
             }
             for (const [command, label, visible] of [
-                ['cancel', t('Client.Stop', 'Stop'), !['completed', 'cancelled', 'failed'].includes(task.status)],
+                ['cancel', t('Client.Stop', 'Stop'), true],
                 ['resume', t('Client.AssistantTaskResume', 'Resume'), ['paused', 'awaiting_input'].includes(task.status)],
                 ['approve', t('Client.AssistantTaskApprove', 'Apply reviewed changes'), task.status === 'awaiting_approval'],
             ]) {
@@ -1013,30 +1005,6 @@ import {
                 }
                 taskControls.appendChild(proposals);
             }
-            for (const artifact of task.artifacts ?? []) {
-                const link = document.createElement('a');
-                link.href = `/Quiz/Details/${encodeURIComponent(artifact.id)}`;
-                link.textContent = `${artifact.name} (${artifactStatusLabel(artifact.status)})`;
-                taskControls.appendChild(link);
-            }
-            const details = document.createElement('details'); details.open = !!wasOpen;
-            const summary = document.createElement('summary');
-            summary.textContent = t('Client.AssistantTaskActivity', 'Activity · {0}/{1} calls evaluated', task.evaluatedCalls, task.totalCalls);
-            details.appendChild(summary);
-            for (const event of task.activity ?? []) {
-                const line = document.createElement('p');
-                const findings = event.evaluation?.findings?.filter(x => x.verdict !== 'pass')
-                    .map(x => {
-                        const finding = t('Client.AssistantTaskConfidence', '{0} (confidence {1}%)', x.message, Math.round(x.confidence * 100));
-                        return x.verdict === 'uncertain' ? t('Client.AssistantTaskUncertain', 'Uncertain: {0}', finding) : finding;
-                    }) ?? [];
-                // Tool names and statuses are diagnostic identifiers shown as sent.
-                line.textContent = t('Client.AssistantTaskReview', '{0}: {1} · Review: {2}', event.tool, event.status, event.evaluationStatus)
-                    + (findings.length ? ' · ' + findings.join(' ') : '');
-                details.appendChild(line);
-            }
-            taskControls.appendChild(details);
-            setStatus('');
         },
     });
 
