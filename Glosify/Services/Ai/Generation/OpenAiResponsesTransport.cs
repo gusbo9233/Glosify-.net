@@ -39,17 +39,20 @@ public sealed class OpenAiTransportException(
     : Exception(message, innerException)
 {
     public int StatusCode { get; } = statusCode;
+    public TimeSpan? RetryAfter { get; init; }
 }
 
 public sealed class OpenAiResponsesTransport : IOpenAiResponsesTransport
 {
     private readonly GenerativeAiOptions _options;
     private readonly Lazy<ResponsesClient> _client;
+    private readonly Lazy<ResponsesClient> _durableClient;
 
     public OpenAiResponsesTransport(IOptions<GenerativeAiOptions> options)
     {
         _options = options.Value;
-        _client = new Lazy<ResponsesClient>(CreateClient, LazyThreadSafetyMode.ExecutionAndPublication);
+        _client = new Lazy<ResponsesClient>(() => CreateClient(false), LazyThreadSafetyMode.ExecutionAndPublication);
+        _durableClient = new Lazy<ResponsesClient>(() => CreateClient(true), LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
     public async Task<OpenAiResponseEnvelope> CreateResponseAsync(
@@ -58,7 +61,8 @@ public sealed class OpenAiResponsesTransport : IOpenAiResponsesTransport
     {
         try
         {
-            var response = (await _client.Value.CreateResponseAsync(request, cancellationToken)).Value;
+            var client = request.Metadata.TryGetValue("assistant_runtime", out var runtime) && runtime == "durable" ? _durableClient : _client;
+            var response = (await client.Value.CreateResponseAsync(request, cancellationToken)).Value;
             var calls = response.OutputItems
                 .OfType<FunctionCallResponseItem>()
                 .Select(call => new OpenAiFunctionCall(
@@ -106,14 +110,20 @@ public sealed class OpenAiResponsesTransport : IOpenAiResponsesTransport
         }
         catch (ClientResultException ex)
         {
+            TimeSpan? retryAfter = null;
+            if (ex.GetRawResponse()?.Headers.TryGetValue("Retry-After", out var header) == true)
+            {
+                if (int.TryParse(header, out var seconds)) retryAfter = TimeSpan.FromSeconds(Math.Max(0, seconds));
+                else if (DateTimeOffset.TryParse(header, out var date)) retryAfter = date - DateTimeOffset.UtcNow;
+            }
             throw new OpenAiTransportException(
                 ex.Status,
                 "The OpenAI Responses API returned an unsuccessful status.",
-                ex);
+                ex) { RetryAfter = retryAfter };
         }
     }
 
-    private ResponsesClient CreateClient()
+    private ResponsesClient CreateClient(bool durable)
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
         {
@@ -125,6 +135,7 @@ public sealed class OpenAiResponsesTransport : IOpenAiResponsesTransport
         {
             NetworkTimeout = TimeSpan.FromSeconds(_options.TimeoutSeconds),
         };
+        if (durable) clientOptions.RetryPolicy = new ClientRetryPolicy(0);
         return new ResponsesClient(
             new ApiKeyCredential(_options.ApiKey.Trim()),
             clientOptions);

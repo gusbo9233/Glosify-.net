@@ -90,6 +90,31 @@ public sealed class OpenAiGenerativeAiTests
         Assert.Contains(OpenAiModels.Luna, requestJson, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData(1234)]
+    public async Task Assistant_output_reserve_does_not_cap_model_generation(int? explicitLimit)
+    {
+        var transport = new RecordingTransport();
+        var credits = new RecordingCredits();
+        var client = CreateClient(transport, credits);
+        var request = new AgentRequest("Help.", [], [], MaxOutputTokens: explicitLimit);
+
+        await client.RunAgentTurnAsync(request, Usage(AiUsageFeatures.Assistant));
+
+        var sent = Assert.Single(transport.Requests);
+        Assert.Equal(explicitLimit, sent.MaxOutputTokenCount);
+        var json = SerializeRequest(sent);
+        Assert.Equal("fast", json.GetProperty("service_tier").GetString());
+        Assert.Equal("medium", json.GetProperty("reasoning").GetProperty("effort").GetString());
+        if (explicitLimit is int limit)
+            Assert.Equal(limit, json.GetProperty("max_output_tokens").GetInt32());
+        else
+            Assert.False(json.TryGetProperty("max_output_tokens", out _));
+        Assert.Single(credits.Reservations);
+        Assert.Single(credits.Commits);
+    }
+
     [Fact]
     public async Task Agent_turn_replays_manual_history_and_preserves_function_call_ids()
     {

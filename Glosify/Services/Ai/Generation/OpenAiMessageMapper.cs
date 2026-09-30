@@ -107,7 +107,7 @@ internal static class OpenAiMessageMapper
             BinaryData.FromString(JsonSerializer.Serialize(
                 declaration.ParametersJsonSchema,
                 JsonOptions)),
-            strictModeEnabled: false,
+            strictModeEnabled: declaration.Strict,
             declaration.Description);
 
     private static ResponseItem MapText(string role, string text) =>

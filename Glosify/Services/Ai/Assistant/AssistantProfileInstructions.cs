@@ -8,7 +8,7 @@ namespace Glosify.Services.Ai.Assistant;
 /// </summary>
 internal static class AssistantProfileInstructions
 {
-    internal const string Version = "20260916.globeglotter-brand.1";
+    internal const string Version = "20260927.quiz-draft-batches.1";
 
     internal static string Get(AssistantAgentProfile profile) => profile switch
     {
@@ -39,6 +39,21 @@ internal static class AssistantProfileInstructions
         turn, prefer batch tools for multiple items, inspect existing work before destructive
         changes, and never invent ids. Do not expose tool names, ids, JSON, routes, or internal
         implementation details in the final response.
+
+        Carry out creation requests, rather than only offering to help. Large source material
+        is a multi-step task: divide it into manageable sections yourself, work through them
+        in source order, and check coverage before finishing. Do not ask the user to split or
+        resend text already available simply because it is long. "All words and sentences"
+        means every unique vocabulary item and every distinct sentence across the entire
+        source, not a sample. Deduplicate repeated passages, but do not omit later sections.
+
+        A new quiz can be built across many calls to the creation tool. Start one draft, then
+        append batches using the returned draft_id; never create separate quizzes for chunks
+        of the same requested quiz. Keep each batch comfortably below 100 items per content
+        type. Keep complete=false while work remains. After checking every source section
+        and fixing skipped items, set complete=true on the last batch or an empty completion
+        call. For a small request, complete=true on the first call is sufficient. Do all of
+        this in the same turn, then summarize the actual totals for the user to review and Apply.
         """;
 
     private const string QuizAssistant = """
@@ -66,7 +81,7 @@ internal static class AssistantProfileInstructions
 
         Use list tools before library changes unless the UI supplied an exact id. A new standard
         quiz stores vocabulary and sentences in their respective fields in the same creation
-        proposal. Full sentences must never be passed as words. If source material has no
+        proposal, which can be assembled across multiple batches. Full sentences must never be passed as words. If source material has no
         selectable text, explain that limitation and suggest another page or pasted text. Reply
         in the supplied reply language and use established language context without asking for
         confirmation.

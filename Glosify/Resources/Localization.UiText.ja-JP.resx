@@ -891,6 +891,63 @@
   <data name="Client.AssistantNetwork" xml:space="preserve">
     <value>アシスタントとの通信中にネットワークエラーが発生しました。</value>
   </data>
+  <data name="Client.AssistantTaskProgress" xml:space="preserve">
+    <value>{0} · 保存済みの変更 {1} 件</value>
+  </data>
+  <data name="Client.AssistantTaskResume" xml:space="preserve">
+    <value>再開</value>
+  </data>
+  <data name="Client.AssistantTaskApprove" xml:space="preserve">
+    <value>確認した変更を適用</value>
+  </data>
+  <data name="Client.AssistantTaskActivity" xml:space="preserve">
+    <value>アクティビティ · {0}/{1} 件の呼び出しを評価済み</value>
+  </data>
+  <data name="Client.AssistantTaskConfidence" xml:space="preserve">
+    <value>{0}（信頼度 {1}%）</value>
+  </data>
+  <data name="Client.AssistantTaskUncertain" xml:space="preserve">
+    <value>不確実: {0}</value>
+  </data>
+  <data name="Client.AssistantTaskReview" xml:space="preserve">
+    <value>{0}: {1} · レビュー: {2}</value>
+  </data>
+  <data name="Client.AssistantTaskQueued" xml:space="preserve">
+    <value>待機中</value>
+  </data>
+  <data name="Client.AssistantTaskRunning" xml:space="preserve">
+    <value>作業中</value>
+  </data>
+  <data name="Client.AssistantTaskRetrying" xml:space="preserve">
+    <value>まもなく再試行</value>
+  </data>
+  <data name="Client.AssistantTaskAwaitingInput" xml:space="preserve">
+    <value>返信を待っています</value>
+  </data>
+  <data name="Client.AssistantTaskAwaitingApproval" xml:space="preserve">
+    <value>確認を待っています</value>
+  </data>
+  <data name="Client.AssistantTaskPaused" xml:space="preserve">
+    <value>一時停止中</value>
+  </data>
+  <data name="Client.AssistantTaskCompleted" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="Client.AssistantTaskCancelled" xml:space="preserve">
+    <value>停止済み</value>
+  </data>
+  <data name="Client.AssistantTaskFailed" xml:space="preserve">
+    <value>完了できませんでした</value>
+  </data>
+  <data name="Client.AssistantArtifactBuilding" xml:space="preserve">
+    <value>作成中</value>
+  </data>
+  <data name="Client.AssistantArtifactReady" xml:space="preserve">
+    <value>準備完了</value>
+  </data>
+  <data name="Client.AssistantArtifactIncomplete" xml:space="preserve">
+    <value>未完了</value>
+  </data>
   <data name="Client.PictureFailed" xml:space="preserve">
     <value>この画像からテキストを読み取れませんでした。</value>
   </data>

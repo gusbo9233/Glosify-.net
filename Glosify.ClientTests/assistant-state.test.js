@@ -1,10 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chooseInitialChat, createRecoverablePromiseQueue, createRecoverableSingleFlight, materialPayload, removeChat, replaceChat, upsertChat } from '../Glosify/wwwroot/js/assistant/state.js';
+import { chatContext, chooseInitialChat, createRecoverablePromiseQueue, createRecoverableSingleFlight, materialPayload, removeChat, replaceChat, upsertChat } from '../Glosify/wwwroot/js/assistant/state.js';
 
 test('material context is all-or-nothing', () => {
     assert.deepEqual(materialPayload('book', 'book-1'), { contextTranscriptId: null, contextBookDocumentId: 'book-1' });
     assert.deepEqual(materialPayload(null, null), { contextTranscriptId: null, contextBookDocumentId: null });
+});
+
+test('a new chat starts without the previous chat context', () => {
+    const previous = { contextQuizId: 'quiz-1', contextBookDocumentId: 'book-1' };
+    assert.deepEqual(chatContext(previous), {
+        contextQuizId: 'quiz-1', contextTranscriptId: null, contextBookDocumentId: 'book-1',
+    });
+    assert.deepEqual(chatContext(null), {
+        contextQuizId: null, contextTranscriptId: null, contextBookDocumentId: null,
+    });
+    assert.deepEqual(chatContext({ id: 'new-chat' }), chatContext(null));
 });
 
 test('chat updates are case-insensitive and immutable', () => {

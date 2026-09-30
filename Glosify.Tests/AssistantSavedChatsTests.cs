@@ -1252,6 +1252,85 @@ public class AssistantSavedChatsTests
             await context.AssistantMessages.CountAsync(message => message.ThreadId == result.ThreadId));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Assistant_keeps_working_after_prose_completion_until_draft_is_complete_or_limit_reached(bool neverFinishes)
+    {
+        await using var context = CreateContext();
+        var client = new QuizDraftGenerativeAiClient(neverFinishes);
+        var orchestrator = CreateOrchestrator(context, generativeAi: client, tools: AssistantToolFactory.Create(context));
+
+        var result = await orchestrator.SendGlobalMessageAsync("user-1", "Make a Polish-English quiz from all words and sentences in this source.");
+
+        // A repeated prose reply ends the turn after two continuation prompts instead of
+        // replaying an unchanged request until the 24-call cap.
+        Assert.Equal(4, client.Calls);
+        Assert.Equal(neverFinishes ? 2 : 1, client.ContinuationPromptsSeen);
+        Assert.DoesNotContain("Premature answer", result.AssistantText);
+        var message = await context.AssistantMessages.SingleAsync(message => message.Id == result.AssistantMessageId);
+        var changes = JsonSerializer.Deserialize<List<PendingChange>>(message.PendingChangesJson!, new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        var payload = Assert.Single(changes).Payload;
+        Assert.Equal(!neverFinishes, payload.GetProperty("complete").GetBoolean());
+        Assert.Equal(neverFinishes ? 80 : 160, payload.GetProperty("words").GetArrayLength());
+        Assert.Equal(neverFinishes ? 60 : 120, payload.GetProperty("sentences").GetArrayLength());
+        Assert.Empty(context.Quizzes);
+        if (neverFinishes)
+        {
+            Assert.Contains("partial", result.AssistantText);
+            Assert.Equal("draft_unfinished", (await context.AssistantTurns.SingleAsync()).ErrorCategory);
+        }
+        else
+        {
+            Assert.Equal("Prepared the whole quiz.", result.AssistantText);
+            Assert.Null((await context.AssistantTurns.SingleAsync()).ErrorCategory);
+        }
+    }
+
+    private sealed class QuizDraftGenerativeAiClient(bool neverFinishes) : IGenerativeAiClient
+    {
+        public int Calls { get; private set; }
+        public int ContinuationPromptsSeen { get; private set; }
+        public Task<T> GenerateStructuredAsync<T>(string prompt, AiUsageContext usageContext, string? model = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<string> ExtractTextFromImageAsync(byte[] imageBytes, string contentType, string prompt, AiUsageContext usageContext, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, AiUsageContext usageContext, CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            // After a rejected prose reply, the next request must differ: it carries that
+            // reply and the reason it did not finish the draft.
+            if (request.History.Last().ContentJson.Contains("did not finish the open quiz draft"))
+            {
+                ContinuationPromptsSeen++;
+                Assert.Contains("Premature answer", request.History[^2].ContentJson);
+            }
+            if (Calls == 2 || (neverFinishes && Calls > 1))
+            {
+                return Task.FromResult(new AgentTurnResult("Premature answer", []));
+            }
+            if (Calls == 4)
+            {
+                return Task.FromResult(new AgentTurnResult("Prepared the whole quiz.", []));
+            }
+
+            string? draftId = null;
+            if (Calls > 1)
+            {
+                Assert.Contains("Unfinished quiz drafts", request.ContextInstruction);
+                using var history = JsonDocument.Parse(request.History.Last(turn => turn.ContentJson.Contains("function_response")).ContentJson);
+                using var response = JsonDocument.Parse(history.RootElement.GetProperty("parts")[0].GetProperty("responseJson").GetString()!);
+                draftId = response.RootElement.GetProperty("draft_id").GetString();
+            }
+            var args = JsonSerializer.Serialize(new
+            {
+                name = "Complete source", source_language = "English", target_language = "Polish",
+                draft_id = draftId, complete = Calls == 3,
+                words = Enumerable.Range(Calls == 1 ? 0 : 80, 80).Select(i => new { word = $"word{i}", translation = $"meaning{i}" }),
+                sentences = Enumerable.Range(Calls == 1 ? 0 : 60, 60).Select(i => new { text = $"Sentence {i}.", translation = $"Translation {i}." }),
+            });
+            return Task.FromResult(new AgentTurnResult(string.Empty, [new AgentFunctionCall("create_vocabulary_quiz", args) { CallId = $"draft-call-{Calls}" }]));
+        }
+    }
+
     private static GlosifyContext CreateContext(
         string? databaseName = null,
         InMemoryDatabaseRoot? databaseRoot = null,

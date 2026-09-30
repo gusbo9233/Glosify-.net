@@ -3,6 +3,12 @@ export const materialPayload = (kind, id) => ({
     contextBookDocumentId: kind === 'book' ? id : null,
 });
 
+export const chatContext = (chat) => ({
+    contextQuizId: chat?.contextQuizId || null,
+    contextTranscriptId: chat?.contextTranscriptId || null,
+    contextBookDocumentId: chat?.contextBookDocumentId || null,
+});
+
 const sameId = (left, right) => String(left).toLowerCase() === String(right).toLowerCase();
 
 export const upsertChat = (chats, updated) => [updated, ...chats.filter(chat => !sameId(chat.id, updated.id))];

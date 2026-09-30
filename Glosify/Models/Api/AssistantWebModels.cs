@@ -5,7 +5,7 @@ namespace Glosify.Models.Api;
 public sealed class SendMessageInput
 {
     [Required]
-    [StringLength(8000)]
+    [StringLength(50000)]
     public string Message { get; set; } = string.Empty;
     public Guid? ContextQuizId { get; set; }
     public string? FocusedWordId { get; set; }

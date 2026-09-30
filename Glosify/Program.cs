@@ -164,6 +164,7 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNEC
         .WithMetrics(metrics => metrics
             .AddMeter(GenerativeAiTelemetry.MeterName)
             .AddMeter("Glosify.Abuse")
+            .AddMeter("Glosify.Assistant.Runtime")
             .AddMeter(RealtimeTranslationTelemetry.MeterName)
             .AddMeter(DisplayLanguageTelemetry.MeterName))
         .UseAzureMonitor(options =>

@@ -180,7 +180,19 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
             request.Tools,
             request.AllowedToolNames);
         var outputReserve = _usageOptions.GetOutputReserve(usageContext.Feature);
+        if (request.MaxOutputTokens is int maximum) outputReserve = Math.Min(outputReserve, maximum);
         var openAiRequest = CreateRequest(usageContext, outputReserve);
+        // The assistant's output reserve is for credit/resource accounting, not a
+        // generation cap. Let the model enforce its own output limit by default.
+        if (usageContext.Feature == AiUsageFeatures.Assistant)
+        {
+            openAiRequest.MaxOutputTokenCount = request.MaxOutputTokens;
+            // The installed SDK has no typed Fast service-tier option yet.
+#pragma warning disable SCME0001
+            openAiRequest.Patch.Set("$.service_tier"u8, "fast");
+#pragma warning restore SCME0001
+        }
+        if (request.DurableExecution) openAiRequest.Metadata["assistant_runtime"] = "durable";
         openAiRequest.Instructions = string.IsNullOrWhiteSpace(request.SystemInstruction)
             ? "Help the user with their language-learning request."
             : request.SystemInstruction;
