@@ -10,10 +10,18 @@ on:
         options:
           - live-subtitles
           - translator
-      run_id:
-        description: Successful master push run ID from Build, migrate, and deploy Glosify
-        type: string
+      operation:
+        description: Check connection or upload a tested draft
+        type: choice
         required: true
+        default: check
+        options:
+          - check
+          - upload
+      run_id:
+        description: Successful master push run ID (required only for upload)
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -38,7 +46,17 @@ jobs:
         with:
           node-version: 24.x
 
+      - name: Verify Chrome Web Store authentication and access
+        env:
+          CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: node scripts/upload-chrome-web-store.mjs --status | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Verify source CI run and download its tested package
+        if: inputs.operation == 'upload'
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_RUN_ID: ${{ inputs.run_id }}
@@ -70,6 +88,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload draft to Chrome Web Store
+        if: inputs.operation == 'upload'
         env:
           CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
           CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
@@ -79,4 +98,5 @@ jobs:
         run: node scripts/upload-chrome-web-store.mjs "$RUNNER_TEMP/extension.zip"
 
       - name: Record completed upload
+        if: inputs.operation == 'upload'
         run: echo 'Draft upload succeeded. Review and publish in the Chrome Web Store dashboard.' >> "$GITHUB_STEP_SUMMARY"
