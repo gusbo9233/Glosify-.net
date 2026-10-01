@@ -48,6 +48,7 @@ jobs:
 
       - name: Verify Chrome Web Store authentication and access
         if: inputs.operation == 'check'
+        shell: bash
         env:
           CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
           CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
