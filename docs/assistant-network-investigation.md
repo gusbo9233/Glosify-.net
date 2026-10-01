@@ -68,3 +68,10 @@ For reliable long tasks:
 Increasing the provider timeout, retrying the POST automatically, or changing the
 error label does not fix the confirmed loss of work. A browser/network trace near
 the one-minute boundary is still needed to attribute the timeout to a component.
+
+## Resolution
+
+The assistant now runs as durable background runs with the properties listed
+above; see [assistant-runtime.md](assistant-runtime.md). The request-reply
+endpoints wait for a run rather than doing the work, so a dropped connection no
+longer loses it.

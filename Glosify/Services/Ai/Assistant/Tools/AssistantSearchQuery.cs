@@ -50,6 +50,24 @@ internal static class AssistantSearchQuery
             || word.Translation.Contains(term, StringComparison.OrdinalIgnoreCase));
     }
 
+    internal static IQueryable<QuizSentence> WhereSentenceContains(
+        IQueryable<QuizSentence> query,
+        string term,
+        DatabaseFacade database)
+    {
+        if (database.IsSqlServer())
+        {
+            return query.Where(sentence =>
+                EF.Functions.Collate(sentence.Text, SqlServerCaseInsensitiveCollation).Contains(term)
+                || EF.Functions.Collate(sentence.Translation, SqlServerCaseInsensitiveCollation).Contains(term));
+        }
+
+        EnsureInMemoryProvider(database);
+        return query.Where(sentence =>
+            sentence.Text.Contains(term, StringComparison.OrdinalIgnoreCase)
+            || sentence.Translation.Contains(term, StringComparison.OrdinalIgnoreCase));
+    }
+
     private static void EnsureInMemoryProvider(DatabaseFacade database)
     {
         if (!string.Equals(

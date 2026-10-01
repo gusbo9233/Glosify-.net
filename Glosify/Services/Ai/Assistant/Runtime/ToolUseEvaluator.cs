@@ -37,7 +37,7 @@ public sealed class JevToolUseEvaluator(HttpClient client, IOptions<JevOptions> 
     // concerns operations, scope, targets and routing, never linguistic quality.
     internal static JsonNode BuildState(ToolDecisionSnapshot snapshot)
     {
-        var node = JsonSerializer.SerializeToNode(snapshot, RuntimeJson.Options)!;
+        var node = JsonSerializer.SerializeToNode(snapshot, RunJson.Options)!;
         if (node["executionResult"] is JsonValue execution && execution.TryGetValue<string>(out var result))
         {
             try { node["executionResult"] = JsonNode.Parse(result); }

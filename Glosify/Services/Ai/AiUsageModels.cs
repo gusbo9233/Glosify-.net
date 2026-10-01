@@ -14,7 +14,8 @@ public sealed record AiTokenUsage(
     int CandidateTokens,
     int ThoughtTokens,
     int ToolPromptTokens,
-    int TotalTokens);
+    int TotalTokens,
+    int CachedPromptTokens = 0);
 
 public sealed record AiCreditReservation(
     Guid ReservationId,

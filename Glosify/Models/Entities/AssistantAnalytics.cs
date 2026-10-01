@@ -195,6 +195,10 @@ public sealed class AssistantModelInvocation
     [Column("total_tokens")]
     public int? TotalTokens { get; set; }
 
+    /// <summary>Prompt tokens the provider served from its prompt cache.</summary>
+    [Column("cached_prompt_tokens")]
+    public int? CachedPromptTokens { get; set; }
+
     [Column("trace_id")]
     public string? TraceId { get; set; }
 

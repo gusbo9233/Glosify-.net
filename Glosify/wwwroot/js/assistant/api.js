@@ -13,6 +13,10 @@ export const createAssistantApi = (tokenProvider) => ({
         };
         const response = await fetch(url, { ...options, headers });
         if (!response.ok) await readError(response, fallback);
-        return response.status === 204 ? null : response.json();
+        if (response.status === 204) {
+            await response.text();
+            return null;
+        }
+        return response.json();
     },
 });

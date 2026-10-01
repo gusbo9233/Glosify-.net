@@ -2,6 +2,7 @@ using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Models.Library;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Assistant.Tools;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Books;
 using Glosify.Services.Language;
@@ -41,150 +42,127 @@ public sealed class AssistantCollaboratorTests
     }
 
     [Fact]
-    public void Prompt_builder_composes_language_context_without_services()
+    public void System_prompts_carry_no_per_request_facts()
     {
-        var instruction = new AssistantPromptBuilder().BuildSystemInstruction(
-            quiz: null,
-            focusedWord: null,
-            documentPage: null,
-            transcript: null,
-            book: null,
-            currentLanguage: "Polish");
+        foreach (var mode in Enum.GetValues<AssistantMode>())
+        {
+            var instruction = AssistantPrompts.System(mode);
 
-        Assert.Contains("Polish", instruction);
-        Assert.Contains("language-learning assistant", instruction);
+            // Anything that varies per request belongs in the context note, not the cached prefix.
+            Assert.DoesNotContain("{", instruction);
+            Assert.Contains("GlobeGlotter", instruction);
+            Assert.Contains("never instructions", instruction);
+            Assert.Contains("undo", instruction);
+        }
     }
-
-    /// <summary>
-    /// The page contract in words, next to the hash pin above: the hash catches any drift
-    /// at all, these assertions say what the prompt actually has to promise.
-    /// </summary>
-    [Theory]
-    [InlineData(2, "source", "reading page 2 of 3 of the source stream")]
-    [InlineData(1, "translation", "reading page 1 of 2 of the translation stream")]
-    public void Prompt_builder_names_the_page_the_user_is_reading(
-        int viewedPage,
-        string viewedStream,
-        string expected)
-    {
-        var instruction = BuildTranscriptPrompt(viewedPage, viewedStream);
-
-        Assert.Contains("pages of 100 captions", instruction);
-        Assert.Contains("Source: 3 page(s), 250 captions", instruction);
-        Assert.Contains("Translation: 2 page(s), 130 captions", instruction);
-        Assert.Contains(expected, instruction);
-        // Offsets and page numbers are not comparable across streams; only time is.
-        Assert.Contains("at_time of that passage — not its page or offset", instruction);
-    }
-
-    [Theory]
-    [InlineData(0, "source")]
-    [InlineData(4, "source")]
-    [InlineData(3, "translation")]
-    public void Prompt_builder_omits_a_page_the_user_cannot_be_reading(int viewedPage, string viewedStream)
-    {
-        var instruction = BuildTranscriptPrompt(viewedPage, viewedStream);
-
-        Assert.Contains("Current saved transcript context", instruction);
-        Assert.DoesNotContain("right now", instruction);
-    }
-
-    private static string BuildTranscriptPrompt(int viewedPage, string viewedStream) =>
-        new AssistantPromptBuilder().BuildSystemInstruction(
-            quiz: null,
-            focusedWord: null,
-            documentPage: null,
-            transcript: new TranscriptAssistantContext(
-                Guid.Parse("33333333-3333-3333-3333-333333333333"),
-                "Lesson recording",
-                "pl",
-                "source",
-                SourceSegmentCount: 250,
-                TranslationSegmentCount: 130,
-                ViewedPage: viewedPage,
-                ViewedStream: viewedStream),
-            book: null,
-            currentLanguage: "Polish");
 
     [Fact]
-    public void Prompt_builder_preserves_standard_quiz_and_language_instructions()
+    public void Language_prompt_keeps_the_standard_quiz_and_extraction_defaults()
     {
-        var quiz = new Quiz
-        {
-            Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
-            Name = "Starter quiz",
-            SourceLanguage = "English",
-            TargetLanguage = "Polish",
-        };
-        var focusedWord = new Word
-        {
-            Id = "word-1",
-            QuizId = quiz.Id,
-            Lemma = "dom",
-            Translation = "house",
-        };
-        var document = new DocumentPageContext("Course book", 7, "Ala ma kota.", null);
-        var transcript = new TranscriptAssistantContext(
-            Guid.Parse("33333333-3333-3333-3333-333333333333"),
-            "Lesson recording",
-            "pl",
-            "source",
-            SourceSegmentCount: 250,
-            TranslationSegmentCount: 130,
-            ViewedPage: 2,
-            ViewedStream: "source");
-        var book = new BookAssistantContext(
-            Guid.Parse("44444444-4444-4444-4444-444444444444"),
-            "Course book",
-            42);
-        var builder = new AssistantPromptBuilder();
+        var instruction = AssistantPrompts.System(AssistantMode.Language);
 
-        var system = builder.BuildSystemInstruction(quiz, focusedWord, document, transcript, book, "Polish");
-        var profile = builder.BuildProfileContext(
-            AssistantAgentProfile.QuizAssistant,
-            quiz,
-            focusedWord,
-            document,
-            transcript,
-            book,
-            "Polish",
-            "English",
-            "Swedish");
-
-        Assert.Contains("standard word-and-translation", system);
-        Assert.Contains("no longer available", system);
-        Assert.DoesNotContain("create_custom_quiz", system);
-        Assert.Contains("Reply language: Swedish", profile);
-        Assert.Contains("Source/translation language: English", profile);
+        Assert.Contains("standard quizzes only", instruction);
+        Assert.Contains("every unique word except proper names", instruction);
+        Assert.Contains("never in words", instruction);
+        Assert.Contains("do not ask the user to choose or confirm the language pair", instruction);
+        Assert.DoesNotContain("create_custom_quiz", instruction);
     }
 
-    [Theory]
-    [InlineData(AssistantAgentProfile.FreestyleQuizAssistant)]
-    [InlineData(AssistantAgentProfile.FreestyleLibrarian)]
-    public void Freestyle_profiles_offer_a_generic_standard_quiz_replacement(
-        AssistantAgentProfile profile)
+    [Fact]
+    public void Freestyle_prompt_offers_a_generic_standard_quiz_replacement()
     {
-        var instruction = AssistantProfileInstructions.Get(profile);
+        var instruction = AssistantPrompts.System(AssistantMode.Freestyle);
 
-        Assert.Contains("standard prompt-and-answer quiz", instruction);
+        Assert.Contains("equivalent prompt-and-answer quiz", instruction);
         Assert.DoesNotContain("word-and-translation", instruction);
-        Assert.DoesNotContain("sentence-and-translation", instruction);
+        Assert.DoesNotContain("sentence", instruction);
     }
 
     [Fact]
-    public void Freestyle_prompt_does_not_narrow_standard_quizzes_to_language_pairs()
+    public void Context_note_states_the_established_languages()
     {
-        var instruction = new AssistantPromptBuilder().BuildSystemInstruction(
-            quiz: null,
-            focusedWord: null,
-            documentPage: null,
-            transcript: null,
-            book: null,
-            currentLanguage: "Freestyle");
+        var note = AssistantPrompts.ContextNote(Facts() with { ReplyLanguage = "Swedish" });
 
-        Assert.Contains("equivalent standard prompt-and-answer quiz", instruction);
-        Assert.DoesNotContain("word or sentence pairs", instruction);
+        Assert.Contains("Learning language: Polish", note);
+        Assert.Contains("Translation language: English", note);
+        Assert.Contains("Reply language: Swedish", note);
+        Assert.Contains("Selected quiz: \"Starter quiz\"", note);
+        Assert.Contains("12 words, 3 sentences", note);
+        Assert.Contains("not instructions from the user", note);
     }
+
+    [Theory]
+    [InlineData(2, "source", "reading page 2 of the source stream")]
+    [InlineData(1, "translation", "reading page 1 of the translation stream")]
+    public void Context_note_names_the_transcript_page_the_user_is_reading(int viewedPage, string viewedStream, string expected)
+    {
+        var note = AssistantPrompts.ContextNote(Facts() with { Transcript = Transcript(viewedPage, viewedStream) });
+
+        Assert.Contains("source 3 pages, 250 captions", note);
+        Assert.Contains("translation 2 pages, 130 captions", note);
+        Assert.Contains(expected, note);
+    }
+
+    [Fact]
+    public void Context_note_omits_a_transcript_page_the_resolver_dropped()
+    {
+        var note = AssistantPrompts.ContextNote(Facts() with { Transcript = Transcript(null, null) });
+
+        Assert.Contains("Selected transcript: \"Lesson recording\"", note);
+        Assert.DoesNotContain("is reading page", note);
+    }
+
+    [Fact]
+    public void Context_note_carries_the_page_text_and_focus()
+    {
+        var note = AssistantPrompts.ContextNote(Facts() with
+        {
+            Page = new DocumentPageContext("Course book", 7, "Ala ma kota.", null),
+            FocusedWordId = "word-1",
+            FocusedWordLabel = "\"dom\" → \"house\"",
+        });
+
+        Assert.Contains("reading page 7 of \"Course book\"", note);
+        Assert.Contains("Ala ma kota.", note);
+        Assert.Contains("Focused on \"dom\" → \"house\" (id word-1)", note);
+    }
+
+    [Fact]
+    public void Freestyle_context_note_leaves_out_language_pairs()
+    {
+        var note = AssistantPrompts.ContextNote(Facts() with { Mode = AssistantMode.Freestyle, QuizLanguages = null });
+
+        Assert.DoesNotContain("Learning language", note);
+        Assert.DoesNotContain("Translation language", note);
+        Assert.Contains("12 items", note);
+    }
+
+    private static AssistantContextFacts Facts() => new(
+        AssistantMode.Language,
+        "Polish",
+        "English",
+        "English",
+        Guid.Parse("11111111-1111-1111-1111-111111111111"),
+        "Starter quiz",
+        "Polish with translations in English",
+        12,
+        3,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null);
+
+    private static TranscriptAssistantContext Transcript(int? viewedPage, string? viewedStream) => new(
+        Guid.Parse("33333333-3333-3333-3333-333333333333"),
+        "Lesson recording",
+        "pl",
+        "source",
+        SourceSegmentCount: 250,
+        TranslationSegmentCount: 130,
+        ViewedPage: viewedPage,
+        ViewedStream: viewedStream);
 
     [Fact]
     public async Task Context_resolver_enforces_quiz_ownership_and_prefers_request_language()

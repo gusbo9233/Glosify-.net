@@ -303,6 +303,28 @@
   <data name="Client.RejectNetwork" xml:space="preserve"><value>Nätverksfel när ändringarna skulle avvisas.</value></data>
   <data name="Client.AssistantFailed" xml:space="preserve"><value>Assistenten kunde inte svara.</value></data>
   <data name="Client.AssistantNetwork" xml:space="preserve"><value>Nätverksfel vid kontakt med assistenten.</value></data>
+  <data name="Client.AssistantRunQueued" xml:space="preserve"><value>I kö</value></data>
+  <data name="Client.AssistantRunWorking" xml:space="preserve"><value>Arbetar…</value></data>
+  <data name="Client.AssistantRunRetrying" xml:space="preserve"><value>Försöker igen snart</value></data>
+  <data name="Client.AssistantRunAwaitingInput" xml:space="preserve"><value>Väntar på ditt svar</value></data>
+  <data name="Client.AssistantRunAwaitingApproval" xml:space="preserve"><value>Väntar på ditt godkännande</value></data>
+  <data name="Client.AssistantRunPaused" xml:space="preserve"><value>Pausad</value></data>
+  <data name="Client.AssistantRunStopped" xml:space="preserve"><value>Stoppad</value></data>
+  <data name="Client.AssistantRunFailed" xml:space="preserve"><value>Kunde inte slutföras</value></data>
+  <data name="Client.AssistantResume" xml:space="preserve"><value>Återuppta</value></data>
+  <data name="Client.AssistantApprove" xml:space="preserve"><value>Godkänn</value></data>
+  <data name="Client.AssistantApproveAlways" xml:space="preserve"><value>Tillåt alltid i den här chatten</value></data>
+  <data name="Client.AssistantDecline" xml:space="preserve"><value>Avböj</value></data>
+  <data name="Client.AssistantDeclineReason" xml:space="preserve"><value>Varför inte? (valfritt)</value></data>
+  <data name="Client.AssistantApprovalTitle" xml:space="preserve"><value>Godkänna de här ändringarna?</value></data>
+  <data name="Client.AssistantAnswerPlaceholder" xml:space="preserve"><value>Eller skriv ett eget svar</value></data>
+  <data name="Client.AssistantAnswer" xml:space="preserve"><value>Svara</value></data>
+  <data name="Client.AssistantPlan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Client.AssistantUndo" xml:space="preserve"><value>Ångra ändringarna</value></data>
+  <data name="Client.AssistantUndone" xml:space="preserve"><value>Ändringarna har ångrats</value></data>
+  <data name="Client.AssistantUndoKept" xml:space="preserve"><value>{0} ångrade · {1} behölls eftersom du ändrat dem</value></data>
+  <data name="Client.AssistantSaved" xml:space="preserve"><value>{0} sparade</value></data>
+  <data name="Client.AssistantUndoConfirm" xml:space="preserve"><value>Ångra alla ändringar från det här svaret?</value></data>
   <data name="Client.PictureFailed" xml:space="preserve"><value>Texten i bilden kunde inte läsas.</value></data>
   <data name="Client.PictureNetwork" xml:space="preserve"><value>Nätverksfel när bilden skulle läsas.</value></data>
   <data name="Client.MessageFailed" xml:space="preserve"><value>Meddelandet kunde inte skickas.</value></data>
@@ -510,23 +532,4 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Repetera det som behöver övas och gå framåt i din egen takt.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Repetera med fokuserade quiz och spara sedan de ord du vill ha i Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Utforska fler sätt att lära</value></data>
-  <data name="Client.AssistantTaskProgress" xml:space="preserve"><value>{0} · {1} sparade ändringar</value></data>
-  <data name="Client.AssistantTaskResume" xml:space="preserve"><value>Återuppta</value></data>
-  <data name="Client.AssistantTaskApprove" xml:space="preserve"><value>Tillämpa granskade ändringar</value></data>
-  <data name="Client.AssistantTaskActivity" xml:space="preserve"><value>Aktivitet · {0}/{1} anrop utvärderade</value></data>
-  <data name="Client.AssistantTaskConfidence" xml:space="preserve"><value>{0} (säkerhet {1} %)</value></data>
-  <data name="Client.AssistantTaskUncertain" xml:space="preserve"><value>Osäkert: {0}</value></data>
-  <data name="Client.AssistantTaskReview" xml:space="preserve"><value>{0}: {1} · Granskning: {2}</value></data>
-  <data name="Client.AssistantTaskQueued" xml:space="preserve"><value>I kö</value></data>
-  <data name="Client.AssistantTaskRunning" xml:space="preserve"><value>Arbetar</value></data>
-  <data name="Client.AssistantTaskRetrying" xml:space="preserve"><value>Försöker igen snart</value></data>
-  <data name="Client.AssistantTaskAwaitingInput" xml:space="preserve"><value>Väntar på ditt svar</value></data>
-  <data name="Client.AssistantTaskAwaitingApproval" xml:space="preserve"><value>Väntar på din granskning</value></data>
-  <data name="Client.AssistantTaskPaused" xml:space="preserve"><value>Pausad</value></data>
-  <data name="Client.AssistantTaskCompleted" xml:space="preserve"><value>Klar</value></data>
-  <data name="Client.AssistantTaskCancelled" xml:space="preserve"><value>Stoppad</value></data>
-  <data name="Client.AssistantTaskFailed" xml:space="preserve"><value>Kunde inte slutföras</value></data>
-  <data name="Client.AssistantArtifactBuilding" xml:space="preserve"><value>Byggs</value></data>
-  <data name="Client.AssistantArtifactReady" xml:space="preserve"><value>Klar</value></data>
-  <data name="Client.AssistantArtifactIncomplete" xml:space="preserve"><value>Ofullständig</value></data>
 </root>

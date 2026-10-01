@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Playwright;
 using Xunit;
@@ -46,43 +47,6 @@ public sealed partial class PortfolioJourneys
 
     [BrowserFact]
     [Trait("Category", "Browser")]
-    public async Task AssistantRunningTask_KeepsStopAvailableWithoutShowingActivityPanel()
-    {
-        const string taskId = "00000000-0000-0000-0000-000000000117";
-        var currentTask = new { id = taskId, threadId = "chat-a", status = "running", revision = 1 };
-        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "History"));
-        await Page.RouteAsync("**/Assistant/Tasks/capabilities", route => route.FulfillAsync(new()
-        {
-            ContentType = "application/json", Body = "{\"enabled\":true}",
-        }));
-        await Page.RouteAsync("**/Assistant/Tasks/chats/chat-a", route => route.FulfillAsync(new()
-        {
-            ContentType = "application/json", Body = JsonSerializer.Serialize(currentTask),
-        }));
-        await Page.RouteAsync($"**/Assistant/Tasks/{taskId}", route => route.FulfillAsync(new()
-        {
-            ContentType = "application/json", Body = JsonSerializer.Serialize(currentTask),
-        }));
-        await Page.RouteAsync($"**/Assistant/Tasks/{taskId}/cancel", route =>
-        {
-            currentTask = new { id = taskId, threadId = "chat-a", status = "cancelled", revision = 2 };
-            return route.FulfillAsync(new()
-            {
-                ContentType = "application/json", Body = JsonSerializer.Serialize(currentTask),
-            });
-        });
-
-        await OpenRaceAssistantAsync();
-        var stop = Page.Locator(".assistant-task-progress button").Filter(new() { HasText = "Stop" });
-        await Expect(Page.Locator("[data-assistant-status]")).ToHaveTextAsync("Thinking...");
-        await Expect(stop).ToBeVisibleAsync();
-        await Expect(Page.Locator(".assistant-task-progress p")).ToHaveCountAsync(0);
-        await stop.ClickAsync();
-        await Expect(Page.Locator(".assistant-task-progress")).ToBeHiddenAsync();
-    }
-
-    [BrowserFact]
-    [Trait("Category", "Browser")]
     public async Task AssistantChatRace_DelayedReplyCannotAlterAnotherChatsTranscriptOrPendingControls()
     {
         var sendA = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -91,9 +55,9 @@ public sealed partial class PortfolioJourneys
         await SetupChatRaceAsync(route => FulfillHistoryAsync(route,
             route.Request.Url.Contains("/chat-a/", StringComparison.Ordinal)
                 ? aReplyStored ? "Reply for A" : "A history" : "B history"));
-        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        await RouteRunStartsAsync(route =>
         {
-            (route.Request.Url.Contains("/chat-a/", StringComparison.Ordinal) ? sendA : sendB).SetResult(route);
+            (route.Request.Url.EndsWith("/chat-a", StringComparison.Ordinal) ? sendA : sendB).SetResult(route);
             return Task.CompletedTask;
         });
         await OpenRaceAssistantAsync();
@@ -109,7 +73,7 @@ public sealed partial class PortfolioJourneys
         await Expect(RaceTranscript).Not.ToContainTextAsync("Reply for A");
         await Expect(RaceTranscript).ToContainTextAsync("Question B");
         await Expect(RaceSubmit).ToBeDisabledAsync();
-        await Expect(Page.Locator("[data-assistant-status]")).ToHaveTextAsync("Thinking...");
+        await Expect(Page.Locator("[data-assistant-status]")).ToHaveTextAsync("Working…");
         await FulfillReplyAndDrainAsync(b, "Reply for B");
         await Expect(RaceTranscript).ToContainTextAsync("Reply for B");
         await Expect(RaceSubmit).ToBeEnabledAsync();
@@ -127,7 +91,7 @@ public sealed partial class PortfolioJourneys
         await SetupChatRaceAsync(route => FulfillHistoryAsync(route,
             route.Request.Url.Contains("/chat-a/", StringComparison.Ordinal)
                 ? stored ? "Stored A reply" : "A history" : "B history"));
-        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        await RouteRunStartsAsync(route =>
         {
             send.SetResult(route);
             return Task.CompletedTask;
@@ -157,20 +121,19 @@ public sealed partial class PortfolioJourneys
         {
             if (route.Request.Url.Contains("/chat-b/", StringComparison.Ordinal))
             {
-                history.SetResult(route);
-                return Task.CompletedTask;
+                if (history.TrySetResult(route)) return Task.CompletedTask;
+                return FulfillHistoryAsync(route, "B history");
             }
             return FulfillHistoryAsync(route, "A history");
         });
-        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        await RouteRunStartsAsync(route =>
         {
             Interlocked.Increment(ref sends);
-            Assert.Contains("/chat-b/Send", route.Request.Url);
+            Assert.Contains("/chats/chat-b", route.Request.Url);
             return route.FulfillAsync(new()
             {
                 ContentType = "application/json",
-                Body = JsonSerializer.Serialize(new { assistantMessageId = "reply-b", assistantText = "Reply B",
-                    toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+                Body = CompletedRun(route, "Reply B"),
             });
         });
         await OpenRaceAssistantAsync();
@@ -289,14 +252,13 @@ public sealed partial class PortfolioJourneys
             }
             return FulfillHistoryAsync(route, "B history");
         });
-        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        await RouteRunStartsAsync(route =>
         {
-            Assert.Contains("/chat-b/Send", route.Request.Url);
+            Assert.Contains("/chats/chat-b", route.Request.Url);
             return route.FulfillAsync(new()
             {
                 ContentType = "application/json",
-                Body = JsonSerializer.Serialize(new { assistantMessageId = "reply-b", assistantText = "Reply B",
-                    toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+                Body = CompletedRun(route, "Reply B"),
             });
         });
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
@@ -471,8 +433,8 @@ public sealed partial class PortfolioJourneys
         {
             if (route.Request.Method == "GET")
             {
-                older.SetResult(route);
-                return Task.CompletedTask;
+                if (older.TrySetResult(route)) return Task.CompletedTask;
+                return route.FallbackAsync();
             }
             return route.FulfillAsync(new()
             {
@@ -493,12 +455,11 @@ public sealed partial class PortfolioJourneys
         await Expect(RaceTranscript).ToContainTextAsync("History");
     }
 
-    private Task RouteRaceRepliesAsync() => Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+    private Task RouteRaceRepliesAsync() => RouteRunStartsAsync(route =>
         route.FulfillAsync(new()
         {
             ContentType = "application/json",
-            Body = JsonSerializer.Serialize(new { assistantMessageId = "reply", assistantText = "Reply",
-                toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+            Body = CompletedRun(route, "Reply"),
         }));
 
     private static Task FulfillRaceCatalogAsync(IRoute route, string bPreview) => route.FulfillAsync(new()
@@ -534,16 +495,15 @@ public sealed partial class PortfolioJourneys
             catalog.SetResult(route);
             return Task.CompletedTask;
         });
-        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        await RouteRunStartsAsync(route =>
         {
-            Assert.Contains("/chat-b/Send", route.Request.Url);
+            Assert.Contains("/chats/chat-b", route.Request.Url);
             using var payload = JsonDocument.Parse(route.Request.PostData!);
-            sent.Add(payload.RootElement.GetProperty("message").GetString()!);
+            sent.Add(payload.RootElement.GetProperty("request").GetProperty("message").GetString()!);
             return route.FulfillAsync(new()
             {
                 ContentType = "application/json",
-                Body = JsonSerializer.Serialize(new { assistantMessageId = "reply", assistantText = "Reply B",
-                    toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+                Body = CompletedRun(route, "Reply B"),
             });
         });
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
@@ -584,7 +544,7 @@ public sealed partial class PortfolioJourneys
     {
         var send = new TaskCompletionSource<IRoute>(TaskCreationOptions.RunContinuationsAsynchronously);
         await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "Stored history"));
-        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        await RouteRunStartsAsync(route =>
         {
             send.SetResult(route);
             return Task.CompletedTask;
@@ -602,12 +562,12 @@ public sealed partial class PortfolioJourneys
         }
         if (networkFailure)
         {
-            ExpectRequestFailure("POST", "/Assistant/Chats/chat-a/Send");
+            ExpectRequestFailure("POST", "/Assistant/Runs/chats/chat-a");
             await pending.AbortAsync("failed");
         }
         else
         {
-            ExpectHttpFailure("POST", "/Assistant/Chats/chat-a/Send", 500);
+            ExpectHttpFailure("POST", "/Assistant/Runs/chats/chat-a", 500);
             await pending.FulfillAsync(new()
             {
                 Status = 500,
@@ -641,14 +601,13 @@ public sealed partial class PortfolioJourneys
             ExpectHttpFailure("GET", "/Assistant/Chats/chat-a/History", 500);
             return route.FulfillAsync(new() { Status = 500, ContentType = "application/json", Body = "{}" });
         });
-        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        await RouteRunStartsAsync(route =>
         {
             Interlocked.Increment(ref sends);
             return route.FulfillAsync(new()
             {
                 ContentType = "application/json",
-                Body = JsonSerializer.Serialize(new { assistantMessageId = "reply", assistantText = "Reply",
-                    toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+                Body = CompletedRun(route, "Reply"),
             });
         });
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
@@ -682,15 +641,14 @@ public sealed partial class PortfolioJourneys
             return Task.CompletedTask;
         });
         string? sentQuiz = null;
-        await Page.RouteAsync("**/Assistant/Chats/*/Send", route =>
+        await RouteRunStartsAsync(route =>
         {
             using var payload = JsonDocument.Parse(route.Request.PostData!);
-            sentQuiz = payload.RootElement.GetProperty("contextQuizId").GetString();
+            sentQuiz = payload.RootElement.GetProperty("request").GetProperty("contextQuizId").GetString();
             return route.FulfillAsync(new()
             {
                 ContentType = "application/json",
-                Body = JsonSerializer.Serialize(new { assistantMessageId = "reply", assistantText = "Reply",
-                    toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+                Body = CompletedRun(route, "Reply"),
             });
         });
         await OpenRaceAssistantAsync();
@@ -734,7 +692,7 @@ public sealed partial class PortfolioJourneys
             patches.Dequeue().SetResult(route);
             return Task.CompletedTask;
         });
-        await Page.RouteAsync("**/Assistant/Chats/chat-a/Send", route =>
+        await RouteRunStartsAsync(route =>
         {
             sends.Dequeue().SetResult(route);
             return Task.CompletedTask;
@@ -753,7 +711,7 @@ public sealed partial class PortfolioJourneys
             var pendingSend = await send.Task.WaitAsync(TimeSpan.FromSeconds(10));
             if (failReply)
             {
-                ExpectHttpFailure("POST", "/Assistant/Chats/chat-a/Send", 500);
+                ExpectHttpFailure("POST", "/Assistant/Runs/chats/chat-a", 500);
                 await pendingSend.FulfillAsync(new()
                 {
                     Status = 500, ContentType = "application/problem+json", Body = "{\"status\":500}",
@@ -761,7 +719,7 @@ public sealed partial class PortfolioJourneys
                 await Expect(RaceSubmit).ToBeEnabledAsync();
             }
             var status = Page.Locator("[data-assistant-status]");
-            var expected = failReply ? "The assistant could not respond." : "Thinking...";
+            var expected = failReply ? "The assistant could not respond." : "Working…";
             await Expect(status).ToHaveTextAsync(expected);
             var response = Page.WaitForResponseAsync(response => response.Url == pendingPatch.Request.Url);
             await pendingPatch.FulfillAsync(new()
@@ -885,8 +843,38 @@ public sealed partial class PortfolioJourneys
         await Expect(Page.Locator(".assistant-chat-item.is-active")).ToContainTextAsync("Chat A");
     }
 
+    private readonly ConcurrentDictionary<string, (string Question, string Reply)> _raceReplies = new();
+
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
     private ILocator RaceSubmit => Page.Locator("[data-assistant-submit]");
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantQuestion_MultipleChoicesExposeSelectionAndCanBeDeselected()
+    {
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "History"));
+        var runId = Guid.NewGuid();
+        await RouteRunStartsAsync(route => route.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new { id = runId, threadId = "chat-a", status = "awaiting_input", revision = 1,
+                turnId = Guid.NewGuid(), savedChanges = 0, parts = Array.Empty<object>(), plan = Array.Empty<object>(),
+                question = new { question = "Choose topics", options = new[] { "Travel", "Food" }, multiple = true } }),
+        }));
+        await Page.RouteAsync($"**/Assistant/Runs/{runId}/events", route => route.FulfillAsync(new()
+        {
+            ContentType = "text/event-stream", Body = ": waiting\n\n",
+        }));
+        await OpenRaceAssistantAsync();
+        await SendRaceMessageAsync("Ask me for topics");
+        var travel = Page.Locator(".assistant-question-options button").Filter(new() { HasText = "Travel" });
+        await Expect(travel).ToHaveAttributeAsync("aria-pressed", "false");
+        await travel.FocusAsync();
+        await Page.Keyboard.PressAsync("Space");
+        await Expect(travel).ToHaveAttributeAsync("aria-pressed", "true");
+        await Page.Keyboard.PressAsync("Space");
+        await Expect(travel).ToHaveAttributeAsync("aria-pressed", "false");
+    }
 
     private async Task SetupChatRaceAsync(Func<IRoute, Task> history)
     {
@@ -900,6 +888,15 @@ public sealed partial class PortfolioJourneys
             }}),
         }));
         await Page.RouteAsync("**/Assistant/Chats/*/History", history);
+        // Mock runs use synthetic turn IDs that do not exist in the SQL database.
+        await Page.RouteAsync("**/Assistant/Turns/*/ClientMetrics", route =>
+            route.FulfillAsync(new() { Status = 204 }));
+        // No chat has a run in progress unless a test starts one.
+        await Page.RouteAsync("**/Assistant/Runs/chats/*", route => route.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = "null",
+        }));
         await RegisterAndSelectPolishAsync();
         await Page.GotoAsync("/Quizzes");
     }
@@ -921,14 +918,29 @@ public sealed partial class PortfolioJourneys
         await RaceSubmit.ClickAsync();
     }
 
-    private static Task FulfillHistoryAsync(IRoute route, string text) => route.FulfillAsync(new()
+    private Task FulfillHistoryAsync(IRoute route, string text)
     {
-        ContentType = "application/json",
-        Body = JsonSerializer.Serialize(new { messages = new[]
+        var messages = new List<object>();
+        object Message(string role, string content) => new
         {
-            new { id = text, role = "model", text, toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" },
-        }}),
-    });
+            id = content, role, text = content, toolEvents = Array.Empty<object>(),
+            pendingChanges = Array.Empty<object>(), status = "active",
+        };
+        messages.Add(Message("model", text));
+        var chat = new Uri(route.Request.Url).Segments[^2].Trim('/');
+        // A completed durable run is already committed before its response is returned.
+        // History refreshes must therefore include the reply, just like the real endpoint.
+        if (_raceReplies.TryGetValue(chat, out var saved) && text != saved.Reply)
+        {
+            messages.Add(Message("user", saved.Question));
+            messages.Add(Message("model", saved.Reply));
+        }
+        return route.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new { messages }),
+        });
+    }
 
     private async Task FulfillAndDrainAsync(IRoute route, string text)
     {
@@ -944,11 +956,33 @@ public sealed partial class PortfolioJourneys
         await route.FulfillAsync(new()
         {
             ContentType = "application/json",
-            Body = JsonSerializer.Serialize(new { assistantMessageId = text, assistantText = text,
-                toolEvents = Array.Empty<object>(), pendingChanges = Array.Empty<object>(), status = "active" }),
+            Body = CompletedRun(route, text),
         });
         await (await response).FinishedAsync();
         await DrainBrowserTasksAsync();
+    }
+
+    /// <summary>Handles starting a run; reading a chat's latest run falls through to "none".</summary>
+    private Task RouteRunStartsAsync(Func<IRoute, Task> start) =>
+        Page.RouteAsync("**/Assistant/Runs/chats/*", route => route.Request.Method == "POST" ? start(route) : route.FallbackAsync());
+
+    /// <summary>A run that finished with a text reply, for the chat named in the start URL.</summary>
+    private string CompletedRun(IRoute route, string text)
+    {
+        var chat = route.Request.Url[(route.Request.Url.LastIndexOf('/') + 1)..];
+        using var input = JsonDocument.Parse(route.Request.PostData!);
+        _raceReplies[chat] = (input.RootElement.GetProperty("request").GetProperty("message").GetString()!, text);
+        return JsonSerializer.Serialize(new
+        {
+            id = Guid.NewGuid(),
+            threadId = chat,
+            status = "completed",
+            revision = 1,
+            turnId = Guid.NewGuid(),
+            savedChanges = 0,
+            parts = new[] { new { id = Guid.NewGuid(), type = "text", text } },
+            plan = Array.Empty<object>(),
+        });
     }
 
     private Task DrainBrowserTasksAsync() => Page.EvaluateAsync(

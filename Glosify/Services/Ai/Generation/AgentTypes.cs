@@ -31,18 +31,21 @@ public enum AssistantAgentProfile
 /// The complete code-owned instruction.
 /// </param>
 /// <param name="ContextInstruction">
-/// The facts that change per turn (open quiz, languages).
+/// Extra instruction text appended to <paramref name="SystemInstruction"/>. Anything that
+/// varies per request belongs in <see cref="TrailingInstruction"/> instead, so the cached
+/// prefix is not rewritten.
 /// </param>
 /// <param name="AllowedToolNames">
-/// The tool names this turn may offer, or null for no restriction.
+/// The declared tools this request may call, or null for no restriction. Enforced with the
+/// provider's allowed_tools choice; the declaration list itself is always sent whole.
 /// </param>
 /// <param name="CaptureEffectiveRequest">
 /// Whether the client should return the composed request as
 /// <see cref="AgentInvocationMetadata.EffectiveRequestJson"/>.
 /// </param>
 /// <remarks>
-/// <paramref name="AllowedToolNames"/> can only remove entries from the code-owned
-/// declaration list. It can never widen the tool surface.
+/// <paramref name="AllowedToolNames"/> can only narrow the code-owned declaration list. It can
+/// never widen the tool surface.
 /// </remarks>
 public sealed record AgentRequest(
     string SystemInstruction,
@@ -51,19 +54,23 @@ public sealed record AgentRequest(
     AssistantAgentProfile Profile = AssistantAgentProfile.General,
     string? ContextInstruction = null,
     IReadOnlySet<string>? AllowedToolNames = null,
-    bool CaptureEffectiveRequest = false, bool DurableExecution = false, int? MaxOutputTokens = null);
-
-/// <summary>
-/// Applies a turn's tool allowlist to whichever declaration list is in force.
-/// </summary>
-public static class AgentToolFilter
+    bool CaptureEffectiveRequest = false, bool DurableExecution = false, int? MaxOutputTokens = null)
 {
-    public static IReadOnlyList<AgentToolDeclaration> Narrow(
-        IReadOnlyList<AgentToolDeclaration> declarations,
-        IReadOnlySet<string>? allowedNames) =>
-        allowedNames is null
-            ? declarations
-            : declarations.Where(tool => allowedNames.Contains(tool.Name)).ToArray();
+    /// <summary>
+    /// Volatile notes sent as the last input item, after the history. Keeping per-step state
+    /// here instead of in the instructions leaves the cached prompt prefix intact.
+    /// </summary>
+    public string? TrailingInstruction { get; init; }
+
+    public AgentToolChoice ToolChoice { get; init; } = AgentToolChoice.Auto;
+}
+
+public enum AgentToolChoice
+{
+    Auto,
+
+    /// <summary>Tools stay declared, keeping the cached prefix, but the model must reply in text.</summary>
+    None,
 }
 
 public sealed record AgentTurn(string Role, string ContentJson);

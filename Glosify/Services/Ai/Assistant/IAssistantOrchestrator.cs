@@ -112,6 +112,10 @@ public interface IAssistantOrchestrator
         CancellationToken cancellationToken = default);
 }
 
+/// <summary>The chat already has a request in progress; the caller should wait or send a follow-up.</summary>
+public sealed class AssistantTurnInProgressException()
+    : InvalidOperationException("Another assistant response is already in progress for this chat. Try again shortly.");
+
 public sealed record AssistantTurnResponse(
     Guid ThreadId,
     Guid TurnId,
@@ -153,7 +157,11 @@ public sealed record AssistantMessageView(
     string Status,
     DateTimeOffset CreatedAt,
     bool CanRate,
-    AssistantFeedbackView? Feedback = null);
+    AssistantFeedbackView? Feedback = null,
+    Guid? RunId = null,
+    IReadOnlyList<Runtime.AssistantPartView>? Parts = null,
+    bool CanUndo = false,
+    bool Undone = false);
 
 public sealed record AssistantFeedbackView(
     string Rating,

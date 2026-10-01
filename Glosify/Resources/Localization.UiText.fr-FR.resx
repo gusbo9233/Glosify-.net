@@ -891,6 +891,28 @@
   <data name="Client.AssistantNetwork" xml:space="preserve">
     <value>Erreur réseau lors de la communication avec l’assistant.</value>
   </data>
+  <data name="Client.AssistantRunQueued" xml:space="preserve"><value>En file d’attente</value></data>
+  <data name="Client.AssistantRunWorking" xml:space="preserve"><value>En cours…</value></data>
+  <data name="Client.AssistantRunRetrying" xml:space="preserve"><value>Nouvelle tentative bientôt</value></data>
+  <data name="Client.AssistantRunAwaitingInput" xml:space="preserve"><value>En attente de votre réponse</value></data>
+  <data name="Client.AssistantRunAwaitingApproval" xml:space="preserve"><value>En attente de votre approbation</value></data>
+  <data name="Client.AssistantRunPaused" xml:space="preserve"><value>En pause</value></data>
+  <data name="Client.AssistantRunStopped" xml:space="preserve"><value>Arrêté</value></data>
+  <data name="Client.AssistantRunFailed" xml:space="preserve"><value>Impossible de terminer</value></data>
+  <data name="Client.AssistantResume" xml:space="preserve"><value>Reprendre</value></data>
+  <data name="Client.AssistantApprove" xml:space="preserve"><value>Approuver</value></data>
+  <data name="Client.AssistantApproveAlways" xml:space="preserve"><value>Toujours autoriser dans cette discussion</value></data>
+  <data name="Client.AssistantDecline" xml:space="preserve"><value>Refuser</value></data>
+  <data name="Client.AssistantDeclineReason" xml:space="preserve"><value>Pourquoi pas ? (facultatif)</value></data>
+  <data name="Client.AssistantApprovalTitle" xml:space="preserve"><value>Approuver ces modifications ?</value></data>
+  <data name="Client.AssistantAnswerPlaceholder" xml:space="preserve"><value>Ou saisissez votre propre réponse</value></data>
+  <data name="Client.AssistantAnswer" xml:space="preserve"><value>Répondre</value></data>
+  <data name="Client.AssistantPlan" xml:space="preserve"><value>Plan</value></data>
+  <data name="Client.AssistantUndo" xml:space="preserve"><value>Annuler les modifications</value></data>
+  <data name="Client.AssistantUndone" xml:space="preserve"><value>Modifications annulées</value></data>
+  <data name="Client.AssistantUndoKept" xml:space="preserve"><value>{0} annulées · {1} conservées car vous les avez modifiées</value></data>
+  <data name="Client.AssistantSaved" xml:space="preserve"><value>{0} enregistrées</value></data>
+  <data name="Client.AssistantUndoConfirm" xml:space="preserve"><value>Annuler toutes les modifications de cette réponse ?</value></data>
   <data name="Client.PictureFailed" xml:space="preserve">
     <value>Impossible de lire le texte de cette image.</value>
   </data>
@@ -1670,61 +1692,4 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Reprenez les notions à travailler et avancez à votre rythme.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Révisez avec des quiz ciblés, puis enregistrez les mots souhaités dans Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Découvrez d’autres façons d’apprendre</value></data>
-  <data name="Client.AssistantTaskProgress" xml:space="preserve">
-    <value>{0} · {1} modifications enregistrées</value>
-  </data>
-  <data name="Client.AssistantTaskResume" xml:space="preserve">
-    <value>Reprendre</value>
-  </data>
-  <data name="Client.AssistantTaskApprove" xml:space="preserve">
-    <value>Appliquer les modifications vérifiées</value>
-  </data>
-  <data name="Client.AssistantTaskActivity" xml:space="preserve">
-    <value>Activité · {0}/{1} appels évalués</value>
-  </data>
-  <data name="Client.AssistantTaskConfidence" xml:space="preserve">
-    <value>{0} (confiance {1} %)</value>
-  </data>
-  <data name="Client.AssistantTaskUncertain" xml:space="preserve">
-    <value>Incertain : {0}</value>
-  </data>
-  <data name="Client.AssistantTaskReview" xml:space="preserve">
-    <value>{0} : {1} · Vérification : {2}</value>
-  </data>
-  <data name="Client.AssistantTaskQueued" xml:space="preserve">
-    <value>En attente</value>
-  </data>
-  <data name="Client.AssistantTaskRunning" xml:space="preserve">
-    <value>En cours</value>
-  </data>
-  <data name="Client.AssistantTaskRetrying" xml:space="preserve">
-    <value>Nouvelle tentative bientôt</value>
-  </data>
-  <data name="Client.AssistantTaskAwaitingInput" xml:space="preserve">
-    <value>En attente de votre réponse</value>
-  </data>
-  <data name="Client.AssistantTaskAwaitingApproval" xml:space="preserve">
-    <value>En attente de votre vérification</value>
-  </data>
-  <data name="Client.AssistantTaskPaused" xml:space="preserve">
-    <value>En pause</value>
-  </data>
-  <data name="Client.AssistantTaskCompleted" xml:space="preserve">
-    <value>Terminé</value>
-  </data>
-  <data name="Client.AssistantTaskCancelled" xml:space="preserve">
-    <value>Arrêté</value>
-  </data>
-  <data name="Client.AssistantTaskFailed" xml:space="preserve">
-    <value>Impossible de terminer</value>
-  </data>
-  <data name="Client.AssistantArtifactBuilding" xml:space="preserve">
-    <value>En construction</value>
-  </data>
-  <data name="Client.AssistantArtifactReady" xml:space="preserve">
-    <value>Prêt</value>
-  </data>
-  <data name="Client.AssistantArtifactIncomplete" xml:space="preserve">
-    <value>Incomplet</value>
-  </data>
 </root>
